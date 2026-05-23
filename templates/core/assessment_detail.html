@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assessment.company_name }} — EcoIQ{% endblock %}
+
+{% block extra_head %}
+<style>
+  .score-card {
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .score-card .score-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1b4332;
+    line-height: 1;
+  }
+  .score-card.overall .score-value { color: #fff; }
+  .score-card .score-label {
+    font-size: 0.78rem;
+    color: #444;
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .score-card.overall .score-label { color: #d8f3dc; }
+
+  .score-bar-wrap {
+    background: #e9ecef;
+    border-radius: 20px;
+    height: 5px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    background: #2d6a4f;
+    border-radius: 20px;
+  }
+  .score-card.overall .score-bar-fill { background: #d8f3dc; }
+
+  .pillar-note {
+    border-left: 3px solid;
+    padding: 0.6rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 0.75rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Header ─────────────────────────────────────────────────────────── #}
+<div class="card">
+  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.4rem; flex-wrap:wrap;">
+    <h1 style="flex:1; min-width:0;">{{ assessment.company_name }}</h1>
+    <span class="badge badge-{{ assessment.status }}">{{ assessment.get_status_display }}</span>
+  </div>
+  <p style="color:#888; font-size:0.88rem;">Created {{ assessment.created_at|date:"d M Y, H:i" }}</p>
+  {% if assessment.notes %}
+  <blockquote style="border-left:3px solid #2d6a4f; margin:1rem 0 0; padding:0.5rem 1rem; color:#555; font-style:italic; font-size:0.92rem;">
+    {{ assessment.notes }}
+  </blockquote>
+  {% endif %}
+</div>
+
+{# ── Next-step CTA when ready but not yet analysed ───────────────────── #}
+{% if assessment.status == 'ready' or assessment.status == 'processing' %}
+<div class="card" style="border-left:4px solid #2d6a4f;">
+  <h2>Next step</h2>
+  <p style="margin-bottom:1rem;">
+    {% if assessment.status == 'ready' %}
+      Document uploaded. Complete the questionnaire to generate your EcoIQ report.
+    {% else %}
+      Questionnaire answers saved. Run the analysis to generate findings.
+    {% endif %}
+  </p>
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+    <a href="{% url 'questionnaire' assessment.pk %}" class="btn btn-{% if assessment.status == 'ready' %}primary{% else %}secondary{% endif %}">
+      {% if assessment.status == 'ready' %}Start Questionnaire →{% else %}Edit Answers{% endif %}
+    </a>
+    {% if assessment.status == 'processing' %}
+    <a href="{% url 'run_analysis' assessment.pk %}" class="btn btn-primary">Generate Findings →</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ── EcoIQ score grid ────────────────────────────────────────────────── #}
+{% if scores %}
+<div class="card">
+  <h2 style="margin-bottom:1.25rem;">EcoIQ Scores</h2>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:0.75rem;">
+    {% for label, score, color in scores %}
+    <div class="score-card {% if label == 'Overall' %}overall{% endif %}" style="background:{{ color }};">
+      <div class="score-value">{{ score }}</div>
+      <div class="score-label">{{ label }}</div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-fill" style="width:{{ score }}%;"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── AI Summary ──────────────────────────────────────────────────────── #}
+{% if assessment.finding.summary %}
+<div class="card">
+  <h2>Summary</h2>
+  <div style="line-height:1.75; color:#333; white-space:pre-line;">{{ assessment.finding.summary }}</div>
+</div>
+{% endif %}
+
+{# ── Per-pillar notes ────────────────────────────────────────────────── #}
+{% if pillar_notes %}
+<div class="card">
+  <h2 style="margin-bottom:1rem;">Pillar Analysis</h2>
+  {% for label, note, color in pillar_notes %}
+    {% if note %}
+    <div class="pillar-note" style="border-color:{{ color }}; background:{{ color }}22;">
+      <strong style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; color:#1b4332;">{{ label }}</strong><br>
+      {{ note }}
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── Extracted text preview ──────────────────────────────────────────── #}
+{% if assessment.extracted_text %}
+<div class="card">
+  <h2>Extracted Document Text</h2>
+  <pre style="white-space:pre-wrap; font-size:0.8rem; color:#555; max-height:260px; overflow-y:auto; background:#f8f8f8; padding:1rem; border-radius:6px; margin:0;">{{ assessment.extracted_text|truncatechars:2000 }}</pre>
+</div>
+{% endif %}
+
+{# ── Actions ─────────────────────────────────────────────────────────── #}
+<div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem;">
+  <a href="{% url 'index' %}" class="btn btn-secondary">← All Assessments</a>
+  {% if assessment.status == 'complete' %}
+  <a href="{% url 'report' assessment.pk %}" class="btn btn-primary">View Full Report</a>
+  <a href="{% url 'questionnaire' assessment.pk %}" class="btn btn-secondary">Re-run Questionnaire</a>
+  {% endif %}
+</div>
+
+{% endblock %}

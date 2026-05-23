@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Generating Findings — {{ assessment.company_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .spinner {
+    width: 52px; height: 52px;
+    border: 5px solid #d8f3dc;
+    border-top-color: #2d6a4f;
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+    margin: 0 auto 1.5rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .step-list {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    text-align: left;
+    background: #f5f7f5;
+    border-radius: 8px;
+    padding: 1.25rem 1.75rem;
+    font-size: 0.9rem;
+    color: #444;
+    min-width: 260px;
+  }
+  .step-list .done  { color: #2d6a4f; font-weight: 500; }
+  .step-list .active { color: #664d03; }
+  .step-list .pending { color: #bbb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align:center; padding:3rem 2rem;">
+  <div class="spinner" id="spinner"></div>
+  <h1 style="margin-bottom:0.5rem;">Generating EcoIQ Findings</h1>
+  <p style="color:#555; margin-bottom:2rem;">
+    Analysing <strong>{{ assessment.company_name }}</strong> across all five pillars.<br>
+    This may take up to 30 seconds — please keep this page open.
+  </p>
+
+  <div class="step-list">
+    <div class="done">&#10003; Document text extracted</div>
+    <div class="done">&#10003; Questionnaire answers saved</div>
+    <div class="active" id="step-ai">&#8987; Sending to Claude AI&hellip;</div>
+    <div class="pending" id="step-score">&#8987; Scoring KPIs</div>
+    <div class="pending" id="step-report">&#8987; Building report</div>
+  </div>
+
+  {# Hidden form — submitted automatically by JS to trigger the AI call #}
+  <form method="post" id="analysis-form" style="display:none;">
+    {% csrf_token %}
+  </form>
+</div>
+
+<script>
+  // Animate the step indicators while we wait
+  var steps = ['step-ai', 'step-score', 'step-report'];
+  var delays = [0, 8000, 16000];
+  delays.forEach(function(delay, i) {
+    setTimeout(function() {
+      if (i > 0) {
+        var prev = document.getElementById(steps[i - 1]);
+        prev.className = 'done';
+        prev.innerHTML = '&#10003; ' + prev.textContent.replace(/^[^\s]+\s/, '');
+      }
+      var el = document.getElementById(steps[i]);
+      if (el) { el.className = 'active'; }
+    }, delay);
+  });
+
+  // Submit the form — Django processes it synchronously; browser waits for the redirect
+  document.getElementById('analysis-form').submit();
+</script>
+{% endblock %}

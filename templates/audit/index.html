@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load audit_tags %}
+{% block title %}Industrial Audit — EcoIQ{% endblock %}
+
+{% block extra_head %}
+<style>
+  .status-badge {
+    display:inline-block; padding:.2rem .6rem; border-radius:20px;
+    font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .s-draft      { background:#e9ecef; color:#555; }
+  .s-ready      { background:#d8f3dc; color:#1b4332; }
+  .s-processing { background:#fff3cd; color:#664d03; }
+  .s-complete   { background:#1b4332; color:#fff; }
+  .s-error      { background:#fee2e2; color:#991b1b; }
+  .hero { background:linear-gradient(135deg,#1b4332 0%,#2d6a4f 100%);
+          color:#fff; border-radius:10px; padding:2.5rem; margin-bottom:1.5rem; }
+  .hero h1 { font-size:1.9rem; margin-bottom:.5rem; }
+  .hero p  { color:#a8d5b5; max-width:560px; line-height:1.6; }
+  .pill-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.75rem; margin:1.5rem 0; }
+  .pill { border-radius:8px; padding:.75rem 1rem; font-size:.82rem; font-weight:600; color:#1b4332; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Industrial Audit &amp; Modernisation</h1>
+  <p>AI-powered analysis of facility inefficiencies, modernisation opportunities,
+     and ROI-backed action plans for manufacturing operations.</p>
+  <div class="pill-grid">
+    <div class="pill" style="background:#fef3c7;">⚡ Energy Waste</div>
+    <div class="pill" style="background:#dcfce7;">⚙️ Production Loss</div>
+    <div class="pill" style="background:#ede9fe;">🔧 Maintenance</div>
+    <div class="pill" style="background:#fce7f3;">🤖 Automation</div>
+    <div class="pill" style="background:#dbeafe;">🏭 Infrastructure</div>
+  </div>
+  <a href="{% url 'audit_upload' %}" class="btn btn-primary" style="background:#d8f3dc;color:#1b4332;font-weight:700;">
+    + Start New Audit
+  </a>
+</div>
+
+{% if sessions %}
+<div class="card">
+  <h2 style="margin-bottom:1rem;">Audit Sessions</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:.92rem;">
+    <thead>
+      <tr style="border-bottom:2px solid #e9ecef;text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:#888;">
+        <th style="padding:.5rem .75rem;">Facility</th>
+        <th style="padding:.5rem .75rem;">Sector</th>
+        <th style="padding:.5rem .75rem;">Status</th>
+        <th style="padding:.5rem .75rem;">Efficiency</th>
+        <th style="padding:.5rem .75rem;">Savings Potential</th>
+        <th style="padding:.5rem .75rem;">Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for s in sessions %}
+      <tr style="border-bottom:1px solid #f5f5f5;">
+        <td style="padding:.6rem .75rem;font-weight:600;">{{ s.facility_name }}</td>
+        <td style="padding:.6rem .75rem;color:#666;">{{ s.get_sector_display }}</td>
+        <td style="padding:.6rem .75rem;">
+          <span class="status-badge s-{{ s.status }}">{{ s.get_status_display }}</span>
+        </td>
+        <td style="padding:.6rem .75rem;">
+          {% if s.report %}
+            <strong>{{ s.report.overall_efficiency_score }}</strong>
+            <span style="color:#aaa;">→</span>
+            <strong style="color:#2d6a4f;">{{ s.report.modernization_score }}</strong>
+          {% else %}—{% endif %}
+        </td>
+        <td style="padding:.6rem .75rem;">
+          {% if s.report and s.report.total_savings_potential %}
+            <strong style="color:#2d6a4f;">{{ s.report.total_savings_potential|fmt_usd }}/yr</strong>
+          {% else %}—{% endif %}
+        </td>
+        <td style="padding:.6rem .75rem;color:#888;font-size:.85rem;">{{ s.created_at|date:"d M Y" }}</td>
+        <td style="padding:.6rem .75rem;">
+          <a href="{% url 'audit_detail' s.pk %}" class="btn btn-secondary" style="padding:.3rem .8rem;font-size:.82rem;">View</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:3rem;color:#888;">
+  No audits yet. <a href="{% url 'audit_upload' %}">Start your first facility audit.</a>
+</div>
+{% endif %}
+{% endblock %}

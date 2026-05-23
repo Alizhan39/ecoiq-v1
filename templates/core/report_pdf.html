@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EcoIQ Report — {{ assessment.company_name }}</title>
+  <style>
+    /* ── Page setup ─────────────────────────────────────────────── */
+    @page {
+      size: A4;
+      margin: 1.8cm 1.8cm 2cm 1.8cm;
+      @bottom-center {
+        content: "EcoIQ Ethical Intelligence Report  ·  " string(company);
+        font-size: 8pt;
+        color: #aaa;
+      }
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 8pt;
+        color: #aaa;
+      }
+    }
+
+    /* ── Reset ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      color: #1a1a1a;
+      line-height: 1.55;
+    }
+
+    /* ── Company string for @page footer ────────────────────────── */
+    .cover-company { string-set: company content(); }
+
+    /* ── Cover block ────────────────────────────────────────────── */
+    .cover {
+      background: #1b4332;
+      color: #fff;
+      padding: 2.2cm 1.8cm 1.6cm;
+      margin: -1.8cm -1.8cm 0 -1.8cm;   /* bleed to page edge */
+    }
+    .cover-eyebrow {
+      font-size: 7pt;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #a8d5b5;
+      margin-bottom: 0.4cm;
+    }
+    .cover-company {
+      font-size: 22pt;
+      font-weight: 700;
+      margin-bottom: 0.2cm;
+    }
+    .cover-meta { font-size: 8.5pt; color: #a8d5b5; }
+
+    .overall-badge {
+      float: right;
+      background: #2d6a4f;
+      border-radius: 10px;
+      padding: 0.5cm 0.8cm;
+      text-align: center;
+      margin-top: 0.2cm;
+    }
+    .overall-badge .val { font-size: 26pt; font-weight: 800; line-height: 1; }
+    .overall-badge .lbl {
+      font-size: 6.5pt;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #a8d5b5;
+      margin-top: 0.15cm;
+    }
+
+    /* ── Sections ───────────────────────────────────────────────── */
+    .section {
+      margin-top: 0.9cm;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 7pt;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #888;
+      font-weight: 700;
+      border-bottom: 1pt solid #e0e0e0;
+      padding-bottom: 0.2cm;
+      margin-bottom: 0.5cm;
+    }
+
+    /* ── Score grid ─────────────────────────────────────────────── */
+    .score-grid {
+      display: table;
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0.25cm;
+    }
+    .score-row { display: table-row; }
+    .score-cell {
+      display: table-cell;
+      width: 20%;
+      border-radius: 7px;
+      padding: 0.5cm 0.3cm;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .score-cell .val  { font-size: 18pt; font-weight: 700; color: #1b4332; line-height: 1; }
+    .score-cell .lbl  { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #444; margin-top: 0.15cm; }
+
+    /* ── Score bar (WeasyPrint supports width on divs) ───────────── */
+    .bar-wrap { background: #ddd; border-radius: 5pt; height: 3pt; margin-top: 0.3cm; overflow: hidden; }
+    .bar-fill { height: 3pt; background: #2d6a4f; border-radius: 5pt; }
+
+    /* ── Radar chart ────────────────────────────────────────────── */
+    .radar-wrap { text-align: center; margin-top: 0.4cm; }
+
+    /* ── Summary ────────────────────────────────────────────────── */
+    .summary-text {
+      color: #333;
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    /* ── Pillar rows ────────────────────────────────────────────── */
+    .pillar-row { margin-bottom: 0.6cm; page-break-inside: avoid; }
+    .pillar-header {
+      border-radius: 6px 6px 0 0;
+      padding: 0.3cm 0.5cm;
+      display: flex;
+      align-items: center;
+    }
+    /* WeasyPrint doesn't support flex well; use table layout fallback */
+    .pillar-header-name {
+      font-weight: 700;
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #1b4332;
+    }
+    .pillar-header-score {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #1b4332;
+      float: right;
+    }
+    .pillar-header-score small { font-size: 7pt; font-weight: 400; color: #666; }
+
+    .pillar-body {
+      border: 1pt solid #e8e8e8;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      padding: 0.4cm 0.5cm;
+    }
+    .pillar-note { font-size: 9.5pt; color: #333; margin-bottom: 0.35cm; line-height: 1.55; }
+
+    /* ── Q&A ────────────────────────────────────────────────────── */
+    .qa-item { margin-bottom: 0.4cm; }
+    .qa-item:last-child { margin-bottom: 0; }
+    .qa-q { font-size: 8pt; font-weight: 700; color: #555; margin-bottom: 0.1cm; }
+    .qa-a { font-size: 9pt; color: #333; }
+    .qa-none { font-size: 8.5pt; color: #bbb; font-style: italic; }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    .report-footer {
+      margin-top: 1cm;
+      padding-top: 0.4cm;
+      border-top: 1pt solid #e0e0e0;
+      font-size: 7.5pt;
+      color: #aaa;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div class="overall-badge">
+    <div class="val">{{ finding.score_overall }}</div>
+    <div class="lbl">Overall</div>
+  </div>
+  <div class="cover-eyebrow">EcoIQ Ethical Intelligence Report</div>
+  <div class="cover-company">{{ assessment.company_name }}</div>
+  <div class="cover-meta">
+    Generated {{ assessment.updated_at|date:"d F Y" }}
+    &nbsp;·&nbsp;
+    Assessment #{{ assessment.pk }}
+  </div>
+</div>
+
+<!-- Score grid -->
+<div class="section">
+  <div class="section-title">KPI Scores — Five Pillars</div>
+  <table style="width:100%; border-collapse:separate; border-spacing:5px;">
+    <tr>
+      {% for pillar in pillars %}
+      <td style="background:{{ pillar.color }}; border-radius:7px; padding:8px 5px; text-align:center; width:20%;">
+        <div style="font-size:18pt; font-weight:700; color:#1b4332; line-height:1;">{{ pillar.score }}</div>
+        <div style="font-size:6.5pt; text-transform:uppercase; letter-spacing:0.05em; color:#444; margin-top:3px;">{{ pillar.name }}</div>
+        <div style="background:#ddd; border-radius:5pt; height:3pt; margin-top:5px; overflow:hidden;">
+          <div style="height:3pt; width:{{ pillar.score }}%; background:#2d6a4f; border-radius:5pt;"></div>
+        </div>
+      </td>
+      {% endfor %}
+    </tr>
+  </table>
+
+  <!-- Radar chart -->
+  <div class="radar-wrap">
+    <svg viewBox="0 0 300 300" width="220" height="220" xmlns="http://www.w3.org/2000/svg">
+      {% for ring in radar_grid %}
+      <polygon points="{{ ring }}" fill="none" stroke="#e0e0e0" stroke-width="1"/>
+      {% endfor %}
+      {% for x1,y1,x2,y2 in radar_axes %}
+      <line x1="{{ x1 }}" y1="{{ y1 }}" x2="{{ x2 }}" y2="{{ y2 }}" stroke="#ddd" stroke-width="1"/>
+      {% endfor %}
+      <polygon points="{{ radar_polygon }}"
+               fill="#2d6a4f33"
+               stroke="#2d6a4f"
+               stroke-width="2"
+               stroke-linejoin="round"/>
+      {% for lx,ly,lbl in radar_labels %}
+      <text x="{{ lx }}" y="{{ ly }}"
+            text-anchor="middle" dominant-baseline="middle"
+            font-size="10" font-family="Helvetica,Arial,sans-serif"
+            fill="#444">{{ lbl }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+</div>
+
+<!-- Summary -->
+{% if finding.summary %}
+<div class="section">
+  <div class="section-title">Executive Summary</div>
+  <div class="summary-text">{{ finding.summary }}</div>
+</div>
+{% endif %}
+
+<!-- Pillar analysis -->
+<div class="section">
+  <div class="section-title">Pillar Analysis</div>
+  {% for pillar in pillars %}
+  <div class="pillar-row">
+    <div style="background:{{ pillar.color }}; border-radius:6px 6px 0 0; padding:5px 10px; overflow:hidden;">
+      <span style="font-weight:700; font-size:8pt; text-transform:uppercase; letter-spacing:0.06em; color:#1b4332;">{{ pillar.name }}</span>
+      <span style="float:right; font-size:13pt; font-weight:800; color:#1b4332;">{{ pillar.score }}<span style="font-size:7pt; font-weight:400; color:#666;">/100</span></span>
+    </div>
+    <div style="border:1pt solid #e8e8e8; border-top:none; border-radius:0 0 6px 6px; padding:8px 10px;">
+      {% if pillar.note %}
+      <div class="pillar-note">{{ pillar.note }}</div>
+      {% endif %}
+      {% if pillar.questions %}
+        {% for q in pillar.questions %}
+        <div class="qa-item">
+          <div class="qa-q">Q{{ q.number }}. {{ q.text }}</div>
+          <div class="qa-a">{{ q.answer }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="qa-none">No questionnaire answers provided for this pillar.</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Footer -->
+<div class="report-footer">
+  <span>EcoIQ v1 — Ethical Intelligence Platform</span>
+  <span>Generated {{ assessment.updated_at|date:"d M Y, H:i" }} UTC</span>
+</div>
+
+</body>
+</html>

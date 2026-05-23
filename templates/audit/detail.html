@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load audit_tags %}
+{% block title %}{{ session.facility_name }} — Audit Detail{% endblock %}
+
+{% block extra_head %}
+<style>
+  .sbadge { display:inline-block;padding:.2rem .65rem;border-radius:20px;
+            font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em; }
+  .s-draft      { background:#e9ecef;color:#555; }
+  .s-ready      { background:#d8f3dc;color:#1b4332; }
+  .s-processing { background:#fff3cd;color:#664d03; }
+  .s-complete   { background:#1b4332;color:#fff; }
+  .s-error      { background:#fee2e2;color:#991b1b; }
+
+  .kpi-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem; }
+  .kpi { background:#f5f7f5;border-radius:8px;padding:1rem;text-align:center; }
+  .kpi .val { font-size:1.8rem;font-weight:800;color:#1b4332;line-height:1; }
+  .kpi .lbl { font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#666;margin-top:.25rem; }
+
+  .finding-row { border-left:4px solid;border-radius:0 6px 6px 0;padding:.65rem 1rem;
+                 margin-bottom:.6rem;background:#fff; }
+  .finding-row .ftitle { font-weight:700;font-size:.92rem; }
+  .finding-row .fdesc  { font-size:.87rem;color:#444;margin-top:.2rem;line-height:1.5; }
+  .finding-row .floss  { font-size:.8rem;color:#991b1b;font-weight:700;margin-top:.3rem; }
+
+  .rec-card { border:1px solid #e8e8e8;border-radius:8px;margin-bottom:.75rem;overflow:hidden; }
+  .rec-head { padding:.6rem 1rem;display:flex;align-items:center;gap:.5rem; }
+  .rec-body { padding:.75rem 1rem;font-size:.88rem; }
+  .rec-roi  { display:flex;gap:1rem;margin-top:.5rem;flex-wrap:wrap; }
+  .roi-chip { background:#f5f7f5;border-radius:6px;padding:.3rem .7rem;font-size:.8rem; }
+  .roi-chip strong { color:#1b4332; }
+
+  .phase-card { border-radius:8px;padding:1.1rem 1.25rem;margin-bottom:.75rem; }
+  .phase-card h3 { font-size:.92rem;margin-bottom:.5rem;color:#1b4332; }
+  .phase-card ul { padding-left:1.1rem;line-height:1.9;font-size:.88rem;color:#333; }
+  .phase-meta { font-size:.8rem;color:#666;margin-top:.4rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Header #}
+<div class="card">
+  <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem;">
+    <h1 style="flex:1;min-width:0;">{{ session.facility_name }}</h1>
+    <span class="sbadge s-{{ session.status }}">{{ session.get_status_display }}</span>
+  </div>
+  <p style="color:#888;font-size:.85rem;">
+    {{ session.get_sector_display }}
+    {% if session.location %}&nbsp;·&nbsp;{{ session.location }}{% endif %}
+    &nbsp;·&nbsp; Created {{ session.created_at|date:"d M Y" }}
+  </p>
+</div>
+
+{# Next step CTAs #}
+{% if session.status == 'ready' %}
+<div class="card" style="border-left:4px solid #2d6a4f;">
+  <h2>Next step</h2>
+  <p style="margin-bottom:1rem;">Facility created. Complete the questionnaire to run the analysis.</p>
+  <a href="{% url 'audit_questionnaire' session.pk %}" class="btn btn-primary">Start Questionnaire →</a>
+</div>
+{% elif session.status == 'processing' %}
+<div class="card" style="border-left:4px solid #d97706;">
+  <h2>Next step</h2>
+  <p style="margin-bottom:1rem;">Questionnaire saved. Run the AI analysis to generate findings.</p>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+    <a href="{% url 'audit_analyse' session.pk %}" class="btn btn-primary">Run Analysis →</a>
+    <a href="{% url 'audit_questionnaire' session.pk %}" class="btn btn-secondary">Edit Answers</a>
+  </div>
+</div>
+{% elif session.status == 'error' %}
+<div class="card" style="border-left:4px solid #dc2626;">
+  <h2>Analysis failed</h2>
+  <p style="margin-bottom:1rem;">Check your ANTHROPIC_API_KEY in <code>.env</code> and try again.</p>
+  <a href="{% url 'audit_analyse' session.pk %}" class="btn btn-primary">Retry Analysis</a>
+</div>
+{% endif %}
+
+{# KPI summary #}
+{% if report %}
+<div class="card">
+  <h2 style="margin-bottom:1rem;">Audit Summary</h2>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="val" style="color:#dc2626;">{{ report.overall_efficiency_score }}</div>
+      <div class="lbl">Current Efficiency</div>
+    </div>
+    <div class="kpi">
+      <div class="val" style="color:#16a34a;">{{ report.modernization_score }}</div>
+      <div class="lbl">Projected Efficiency</div>
+    </div>
+    <div class="kpi">
+      <div class="val">{{ report.total_savings_potential|fmt_usd }}</div>
+      <div class="lbl">Annual Savings Potential</div>
+    </div>
+    <div class="kpi">
+      <div class="val">{{ report.total_investment_required|fmt_usd }}</div>
+      <div class="lbl">Total Investment</div>
+    </div>
+    <div class="kpi">
+      <div class="val">{{ report.blended_roi_months }}mo</div>
+      <div class="lbl">Payback Period</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.5rem;">
+    <a href="{% url 'audit_report' session.pk %}" class="btn btn-primary">View Full Report</a>
+    <a href="{% url 'audit_report_pdf' session.pk %}" class="btn btn-secondary">Download PDF</a>
+    <a href="{% url 'audit_questionnaire' session.pk %}" class="btn btn-secondary">Edit &amp; Re-run</a>
+  </div>
+</div>
+{% endif %}
+
+{# Findings #}
+{% if findings %}
+<div class="card">
+  <h2 style="margin-bottom:1rem;">Key Findings ({{ findings|length }})</h2>
+  {% for f in findings %}
+  <div class="finding-row" style="border-color:{{ f.priority_badge }};">
+    <span style="display:inline-block;background:{{ f.priority_badge }};color:#fff;border-radius:4px;
+                 font-size:.68rem;font-weight:700;padding:.15rem .5rem;text-transform:uppercase;
+                 margin-right:.4rem;">{{ f.severity }}</span>
+    <span class="ftitle">{{ f.title }}</span>
+    <div class="fdesc">{{ f.description }}</div>
+    {% if f.loss_usd %}<div class="floss">Estimated loss: {{ f.loss_usd|fmt_usd }}/yr</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Recommendations #}
+{% if recs %}
+<div class="card">
+  <h2 style="margin-bottom:1rem;">Recommendations ({{ recs|length }})</h2>
+  {% for r in recs %}
+  <div class="rec-card">
+    <div class="rec-head" style="background:{{ r.area_color }};">
+      <span style="background:{{ r.priority_badge }};color:#fff;border-radius:4px;
+                   font-size:.68rem;font-weight:700;padding:.15rem .5rem;text-transform:uppercase;">
+        {{ r.priority }}</span>
+      <span style="font-weight:700;font-size:.92rem;color:#1b4332;flex:1;">{{ r.title }}</span>
+      {% if r.is_quick_win %}
+      <span style="background:#d8f3dc;color:#1b4332;border-radius:4px;font-size:.68rem;
+                   font-weight:700;padding:.15rem .5rem;">⚡ Quick Win</span>
+      {% endif %}
+    </div>
+    <div class="rec-body">
+      <p style="color:#444;margin-bottom:.4rem;"><strong>Problem:</strong> {{ r.problem }}</p>
+      <p style="color:#333;"><strong>Solution:</strong> {{ r.solution }}</p>
+      <div class="rec-roi">
+        <div class="roi-chip">Saves <strong>{{ r.savings_usd|fmt_usd }}/yr</strong></div>
+        <div class="roi-chip">Cost <strong>{{ r.cost_usd|fmt_usd }}</strong></div>
+        <div class="roi-chip">Payback <strong>{{ r.roi_months }} months</strong></div>
+        <div class="roi-chip">Complexity <strong>{{ r.complexity|capfirst }}</strong></div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Roadmap #}
+{% if phases %}
+<div class="card">
+  <h2 style="margin-bottom:1rem;">Implementation Roadmap</h2>
+  {% for ph in phases %}
+  {% with colors="#dcfce7,#fef3c7,#dbeafe" %}
+  <div class="phase-card" style="background:{% if ph.phase == 1 %}#dcfce7{% elif ph.phase == 2 %}#fef3c7{% else %}#dbeafe{% endif %};">
+    <h3>Phase {{ ph.phase }}: {{ ph.label }}</h3>
+    <ul>{% for item in ph.items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <div class="phase-meta">
+      Investment: {{ ph.investment|fmt_usd }} &nbsp;·&nbsp;
+      Annual savings: {{ ph.savings|fmt_usd }}
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<div style="margin-top:.5rem;">
+  <a href="{% url 'audit_index' %}" class="btn btn-secondary">← All Audits</a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Analysing — {{ session.facility_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .spinner-ring {
+    width:64px;height:64px;margin:0 auto 1.75rem;position:relative;
+  }
+  .spinner-ring::before {
+    content:'';display:block;width:100%;height:100%;
+    border:5px solid #d8f3dc;border-top-color:#2d6a4f;
+    border-radius:50%;animation:spin .9s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .step-list {
+    display:inline-flex;flex-direction:column;gap:.6rem;text-align:left;
+    background:#f5f7f5;border-radius:10px;padding:1.4rem 1.9rem;
+    font-size:.875rem;min-width:300px;max-width:480px;
+  }
+  .step { display:flex;align-items:center;gap:.65rem;color:#9ca3af;transition:color .3s; }
+  .step .icon { font-size:1rem;width:1.25rem;text-align:center;flex-shrink:0; }
+  .step .label { line-height:1.4; }
+
+  .step.done   { color:#2d6a4f; }
+  .step.active { color:#854d0e;font-weight:600; }
+  .step.wait   { color:#9ca3af; }
+
+  .step.active .icon::after  { content:'⏳'; }
+  .step.done   .icon::after  { content:'✓'; }
+  .step.wait   .icon::after  { content:'○'; }
+
+  .time-est {
+    display:inline-flex;align-items:center;gap:.4rem;
+    background:#fef9c3;color:#713f12;border-radius:6px;
+    padding:.35rem .9rem;font-size:.82rem;font-weight:600;margin-top:1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align:center;padding:3.5rem 2rem 2.5rem;">
+
+  <div class="spinner-ring"></div>
+
+  <h1 style="font-size:1.6rem;margin-bottom:.5rem;">AI Analysis In Progress</h1>
+  <p style="color:#555;line-height:1.65;margin-bottom:1.5rem;max-width:440px;margin-left:auto;margin-right:auto;">
+    Running a deep diagnostic on <strong>{{ session.facility_name }}</strong>
+    using two sequential AI calls. Do not close this tab.
+  </p>
+
+  <div class="step-list">
+    <div class="step done" id="s0">
+      <span class="icon"></span>
+      <span class="label">Facility profile &amp; documents loaded</span>
+    </div>
+    <div class="step done" id="s1">
+      <span class="icon"></span>
+      <span class="label">Questionnaire answers saved</span>
+    </div>
+    <div class="step wait" id="s2">
+      <span class="icon"></span>
+      <span class="label">Call 1 — Diagnostic analysis (findings, losses, root causes)</span>
+    </div>
+    <div class="step wait" id="s3">
+      <span class="icon"></span>
+      <span class="label">Call 2 — Recommendations, ROI &amp; roadmap</span>
+    </div>
+    <div class="step wait" id="s4">
+      <span class="icon"></span>
+      <span class="label">Persisting results &amp; building report</span>
+    </div>
+  </div>
+
+  <div class="time-est">⏱ Estimated time: 3–5 minutes</div>
+
+  <form method="post" id="aform" style="display:none;">{% csrf_token %}</form>
+</div>
+
+<script>
+(function(){
+  var schedule = [
+    {id:'s2', delay:1200},
+    {id:'s3', delay:55000},
+    {id:'s4', delay:160000},
+  ];
+
+  schedule.forEach(function(item, idx){
+    setTimeout(function(){
+      // Mark previous as done
+      if(idx > 0){
+        var prevEl = document.getElementById(schedule[idx-1].id);
+        if(prevEl){ prevEl.className = 'step done'; }
+      }
+      var el = document.getElementById(item.id);
+      if(el){ el.className = 'step active'; }
+    }, item.delay);
+  });
+
+  // Submit after 1.2s so the spinner is visible first
+  setTimeout(function(){
+    document.getElementById('aform').submit();
+  }, 1200);
+})();
+</script>
+{% endblock %}

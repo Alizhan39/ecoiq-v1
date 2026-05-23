@@ -1,0 +1,5 @@
+anthropic==0.104.1
+Django==5.2.14
+pypdf==6.12.1
+python-dotenv==1.2.2
+weasyprint==68.1

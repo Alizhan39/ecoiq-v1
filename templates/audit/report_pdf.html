@@ -1,0 +1,314 @@
+{% load audit_tags %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Audit Report — {{ session.facility_name }}</title>
+  <style>
+    @page {
+      size: A4; margin: 1.6cm 1.8cm 2cm 1.8cm;
+      @bottom-left  { content: "EcoIQ Industrial Audit — Confidential"; font-size:7pt; color:#aaa; }
+      @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size:7pt; color:#aaa; }
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:9.5pt;
+         color:#1a1a1a;line-height:1.6}
+
+    /* Cover */
+    .cover{background:#1b4332;color:#fff;padding:2cm 1.8cm 1.5cm;
+           margin:-1.6cm -1.8cm 0 -1.8cm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cover-eye{font-size:6.5pt;letter-spacing:.16em;text-transform:uppercase;color:#52b788;
+               font-weight:700;margin-bottom:.4cm}
+    .cover-name{font-size:19pt;font-weight:900;margin-bottom:.25cm;line-height:1.15}
+    .cover-sub{font-size:7.5pt;color:#a8d5b5;margin-bottom:.8cm}
+    .cover-scores{display:table;border-collapse:separate;border-spacing:6pt;margin-bottom:.6cm}
+    .cover-scores tr{display:table-row}
+    .score-box{display:table-cell;border-radius:8pt;padding:7pt 11pt;text-align:center;
+               -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .score-box .v{font-size:20pt;font-weight:900;line-height:1}
+    .score-box .l{font-size:5.5pt;text-transform:uppercase;letter-spacing:.1em;margin-top:2pt}
+    .score-now{background:#7f1d1d;color:#fecaca}
+    .score-proj{background:#166534;color:#bbf7d0}
+    .cover-kpis{display:table;width:100%;border-collapse:separate;border-spacing:0;
+                border-top:0.5pt solid rgba(255,255,255,.2);padding-top:.5cm;margin-top:.2cm}
+    .cover-kpi{display:table-cell;text-align:center;width:25%}
+    .cover-kpi .v{font-size:12pt;font-weight:800;color:#fff}
+    .cover-kpi .l{font-size:5.5pt;text-transform:uppercase;letter-spacing:.07em;color:#a8d5b5;margin-top:1.5pt}
+
+    /* Sections */
+    .sec{margin-top:.7cm;page-break-inside:avoid}
+    .sec-header{display:flex;align-items:center;gap:6pt;margin-bottom:.35cm;
+                border-bottom:0.5pt solid #e0e0e0;padding-bottom:.2cm}
+    .sec-num{font-size:5.5pt;font-weight:900;letter-spacing:.1em;color:#52b788;
+             background:#f0fdf4;border:0.5pt solid #d8f3dc;border-radius:3pt;
+             padding:1.5pt 4pt;text-transform:uppercase}
+    .sec-title{font-size:6pt;letter-spacing:.13em;text-transform:uppercase;color:#888;font-weight:700}
+
+    /* Executive summary */
+    .exec-text{color:#333;line-height:1.75;white-space:pre-line;font-size:9pt}
+
+    /* Projected improvements */
+    .proj-table{width:100%;border-collapse:separate;border-spacing:4pt}
+    .proj-cell{border-radius:5pt;padding:7pt 8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+               background:#f9fafb;border:0.5pt solid #e9ecef}
+    .proj-cell .icon{font-size:9pt}
+    .proj-cell .lbl{font-size:5.5pt;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;font-weight:700}
+    .proj-cell .pct{font-size:14pt;font-weight:900;color:#1b4332;line-height:1.1;margin-top:2pt}
+    .prog-wrap{height:4pt;background:#e5e7eb;border-radius:2pt;margin-top:4pt;overflow:hidden;
+               -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .prog-fill{height:100%;border-radius:2pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+    /* Gauge */
+    .gauge-wrap{display:table;margin:0 auto .3cm;border-collapse:separate;border-spacing:20pt}
+    .gauge-cell{display:table-cell;text-align:center}
+
+    /* Before/after */
+    .ba{width:100%;border-collapse:collapse;font-size:8pt}
+    .ba th{text-align:left;padding:4pt 6pt;background:#f5f5f5;font-size:5.5pt;
+           text-transform:uppercase;letter-spacing:.05em;color:#777;
+           border-bottom:1pt solid #ddd;
+           -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .ba td{padding:5pt 6pt;border-bottom:.5pt solid #eee;vertical-align:top}
+    .ba tr:last-child td{border-bottom:none}
+    .pct{background:#dcfce7;color:#166534;border-radius:2pt;padding:1pt 4pt;
+         font-size:6.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+    /* Findings */
+    .finding{border-left:3pt solid;border-radius:0 5pt 5pt 0;margin-bottom:5pt;
+             background:#fafafa;overflow:hidden;page-break-inside:avoid;
+             -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .finding-head{display:flex;align-items:center;gap:4pt;padding:4pt 7pt;
+                  border-bottom:0.5pt solid #eee}
+    .finding-body{padding:5pt 7pt}
+    .ft{font-weight:700;font-size:8.5pt}
+    .fd{font-size:8pt;color:#444;margin-top:2pt;line-height:1.55}
+    .finding-grid{display:table;width:100%;border-collapse:separate;border-spacing:3pt;margin-top:4pt}
+    .finding-grid-cell{display:table-cell;width:50%;background:#f5f5f5;border-radius:3pt;
+                       padding:4pt 5pt;vertical-align:top;
+                       -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .fg-label{font-size:5pt;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;font-weight:700;margin-bottom:2pt}
+    .fg-text{font-size:7.5pt;color:#374151;line-height:1.5}
+    .finding-metrics{margin-top:4pt;padding-top:4pt;border-top:.5pt solid #eee;font-size:7.5pt}
+    .badge{display:inline-block;border-radius:2.5pt;padding:1pt 4pt;
+           font-size:5.5pt;font-weight:700;text-transform:uppercase;color:#fff;
+           -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .area-badge{display:inline-block;border-radius:2.5pt;padding:1pt 4pt;
+                font-size:5.5pt;font-weight:700;text-transform:uppercase;
+                background:#f0f9ff;color:#0369a1;
+                -webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+    /* Recommendations */
+    .rec{border:0.5pt solid #e0e0e0;border-radius:5pt;margin-bottom:6pt;page-break-inside:avoid}
+    .rec-h{padding:4pt 8pt;border-radius:5pt 5pt 0 0;display:flex;align-items:center;gap:4pt;
+            -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rec-score-bar{width:36pt;height:4pt;background:#e5e7eb;border-radius:2pt;overflow:hidden;
+                   -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rec-score-fill{height:100%;background:#1b4332;border-radius:2pt;
+                    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rec-b{padding:5pt 8pt;font-size:8pt}
+    .rec-b p{margin-bottom:2.5pt;line-height:1.5;color:#374151}
+    .rec-b ol{padding-left:1em;font-size:7.5pt;color:#444;line-height:1.8;margin-top:2pt}
+    .chips{margin-top:4pt;display:flex;flex-wrap:wrap;gap:3pt}
+    .chip{background:#f0f0f0;border-radius:3pt;padding:1.5pt 5pt;
+          font-size:7pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .chip strong{color:#1b4332}
+
+    /* Roadmap */
+    .roadmap-table{width:100%;border-collapse:separate;border-spacing:4pt}
+    .phase{border-radius:5pt;padding:7pt 9pt;page-break-inside:avoid;
+           -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .phase-num{font-size:5.5pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:2pt}
+    .phase h3{font-size:8pt;font-weight:800;color:#1b4332;margin-bottom:3pt}
+    .phase ul{padding-left:.9em;line-height:1.8;font-size:7.5pt;color:#374151}
+    .phase-meta{font-size:6.5pt;color:#666;margin-top:4pt;padding-top:3pt;border-top:.5pt solid rgba(0,0,0,.08)}
+
+    /* Footer */
+    .rep-footer{margin-top:.6cm;padding-top:.3cm;border-top:.5pt solid #e0e0e0;
+                font-size:7pt;color:#aaa;display:flex;justify-content:space-between}
+  </style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div style="float:right;margin-top:-.3cm;">
+    <table class="cover-scores">
+      <tr>
+        <td class="score-box score-now">
+          <div class="v">{{ report.overall_efficiency_score }}</div>
+          <div class="l">Current</div>
+        </td>
+        <td class="score-box score-proj">
+          <div class="v">{{ report.modernization_score }}</div>
+          <div class="l">Projected</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div class="cover-eye">EcoIQ Industrial Audit Report</div>
+  <div class="cover-name">{{ session.facility_name }}</div>
+  <div class="cover-sub">
+    {{ session.get_sector_display }}{% if session.location %}&nbsp;·&nbsp;{{ session.location }}{% endif %}&nbsp;·&nbsp;Generated {{ session.updated_at|date:"d F Y" }}
+  </div>
+  <table class="cover-kpis">
+    <tr>
+      <td class="cover-kpi"><div class="v">{{ report.total_savings_potential|fmt_usd }}</div><div class="l">Annual Savings</div></td>
+      <td class="cover-kpi"><div class="v">{{ report.total_investment_required|fmt_usd }}</div><div class="l">Investment Required</div></td>
+      <td class="cover-kpi"><div class="v">{{ report.blended_roi_months }}mo</div><div class="l">Payback Period</div></td>
+      <td class="cover-kpi"><div class="v">{{ findings|length }}&nbsp;/&nbsp;{{ recs|length }}</div><div class="l">Findings / Recs</div></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 01 Executive Summary -->
+{% if report.executive_summary %}
+<div class="sec">
+  <div class="sec-header"><span class="sec-num">01</span><span class="sec-title">Executive Summary</span></div>
+  <div class="exec-text">{{ report.executive_summary }}</div>
+</div>
+{% endif %}
+
+<!-- 02 Projected Improvements -->
+{% if projections %}
+<div class="sec">
+  <div class="sec-header"><span class="sec-num">02</span><span class="sec-title">Projected Improvements — Full Implementation</span></div>
+  <table class="proj-table">
+    <tr>
+      {% for p in projections %}
+      <td class="proj-cell" style="width:25%;">
+        <div class="lbl">{{ p.icon }} {{ p.label }}</div>
+        <div class="pct">–{{ p.pct }}%</div>
+        <div class="prog-wrap">
+          <div class="prog-fill" style="width:{{ p.pct }}%;background:{{ p.color }};"></div>
+        </div>
+      </td>
+      {% endfor %}
+    </tr>
+  </table>
+</div>
+{% endif %}
+
+<!-- 03 Before / After -->
+{% if ba_rows %}
+<div class="sec">
+  <div class="sec-header"><span class="sec-num">03</span><span class="sec-title">Before / After — Operational Comparison</span></div>
+  <table class="ba">
+    <thead><tr>
+      <th style="width:12%">Area</th><th>Current State</th><th>Future State</th><th style="text-align:center;width:8%">Gain</th>
+    </tr></thead>
+    <tbody>
+    {% for row in ba_rows %}
+    <tr>
+      <td><strong>{{ row.icon }} {{ row.area }}</strong></td>
+      <td style="color:#555;">{{ row.current }}</td>
+      <td style="color:#166534;">{{ row.future }}</td>
+      <td style="text-align:center;"><span class="pct">+{{ row.pct }}%</span></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- 04 Findings -->
+{% if findings %}
+<div class="sec">
+  <div class="sec-header"><span class="sec-num">04</span><span class="sec-title">Diagnostic Findings ({{ findings|length }})</span></div>
+  {% for f in findings %}
+  <div class="finding" style="border-color:{{ f.priority_badge }};">
+    <div class="finding-head" style="background:{{ f.area_color }};">
+      <span class="badge" style="background:{{ f.priority_badge }};">{{ f.severity }}</span>
+      <span class="area-badge">{{ f.area }}</span>
+      <span class="ft">{{ f.title }}</span>
+    </div>
+    <div class="finding-body">
+      <div class="fd">{{ f.description }}</div>
+      {% if f.root_cause or f.recommended_action %}
+      <table class="finding-grid">
+        <tr>
+          {% if f.root_cause %}
+          <td class="finding-grid-cell">
+            <div class="fg-label">Root Cause</div>
+            <div class="fg-text">{{ f.root_cause }}</div>
+          </td>
+          {% endif %}
+          {% if f.recommended_action %}
+          <td class="finding-grid-cell">
+            <div class="fg-label">Recommended Action</div>
+            <div class="fg-text">{{ f.recommended_action }}</div>
+          </td>
+          {% endif %}
+        </tr>
+      </table>
+      {% endif %}
+      <div class="finding-metrics">
+        {% if f.loss_usd %}<strong style="color:#dc2626;">{{ f.loss_usd|fmt_usd }}/yr loss</strong>{% endif %}
+        {% if f.efficiency_gain_pct %}&nbsp;·&nbsp;<strong style="color:#16a34a;">+{{ f.efficiency_gain_pct }}% efficiency gain</strong>{% endif %}
+        {% if f.sustainability_impact %}&nbsp;·&nbsp;<span style="color:#2d6a4f;">{{ f.sustainability_impact }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- 05 Recommendations -->
+{% if recs %}
+<div class="sec">
+  <div class="sec-header"><span class="sec-num">05</span><span class="sec-title">Modernisation Recommendations — Ranked by Priority</span></div>
+  {% for r in recs %}
+  <div class="rec">
+    <div class="rec-h" style="background:{{ r.area_color }};">
+      <span class="badge" style="background:{{ r.priority_badge }};margin-right:2pt;">{{ r.priority }}</span>
+      <strong style="font-size:8.5pt;color:#1b4332;flex:1;">{{ r.title }}</strong>
+      {% if r.is_quick_win %}<span style="font-size:6pt;color:#166534;font-weight:700;">⚡ Quick Win</span>{% endif %}
+      <span style="font-size:6.5pt;color:#6b7280;margin-left:6pt;">Priority {{ r.computed_score }}/100</span>
+      <div class="rec-score-bar" style="margin-left:4pt;">
+        <div class="rec-score-fill" style="width:{{ r.computed_score }}%;"></div>
+      </div>
+    </div>
+    <div class="rec-b">
+      <p><strong>Problem:</strong> {{ r.problem }}</p>
+      <p><strong>Solution:</strong> {{ r.solution }}</p>
+      {% if r.impl_steps %}<ol>{% for s in r.impl_steps %}<li>{{ s }}</li>{% endfor %}</ol>{% endif %}
+      <div class="chips">
+        <span class="chip">Saves <strong>{{ r.savings_usd|fmt_usd }}/yr</strong></span>
+        <span class="chip">Cost <strong>{{ r.cost_usd|fmt_usd }}</strong></span>
+        <span class="chip">Payback <strong>{{ r.roi_months }}mo</strong></span>
+        <span class="chip">Complexity <strong>{{ r.complexity|capfirst }}</strong></span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- 06 Roadmap -->
+{% if phases %}
+<div class="sec">
+  <div class="sec-header"><span class="sec-num">06</span><span class="sec-title">Implementation Roadmap</span></div>
+  <table class="roadmap-table">
+    <tr>
+      {% for ph in phases %}
+      <td style="width:33.3%;vertical-align:top;">
+        <div class="phase" style="background:{% if ph.phase == 1 %}#f0fdf4{% elif ph.phase == 2 %}#fefce8{% else %}#eff6ff{% endif %};">
+          <div class="phase-num">Phase {{ ph.phase }}</div>
+          <h3>{{ ph.label }}</h3>
+          <ul>{% for item in ph.items %}<li>{{ item }}</li>{% endfor %}</ul>
+          <div class="phase-meta">
+            Investment: {{ ph.investment|fmt_usd }}&nbsp;·&nbsp;Savings: {{ ph.savings|fmt_usd }}/yr
+          </div>
+        </div>
+      </td>
+      {% endfor %}
+    </tr>
+  </table>
+</div>
+{% endif %}
+
+<div class="rep-footer">
+  <span>EcoIQ Industrial Audit Platform — Confidential</span>
+  <span>{{ session.updated_at|date:"d M Y, H:i" }} UTC</span>
+</div>
+
+</body>
+</html>

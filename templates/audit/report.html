@@ -1,0 +1,427 @@
+{% load audit_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Audit Report — {{ session.facility_name }}</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Segoe UI",Arial,sans-serif;
+         background:#f4f6f4;color:#1a1a1a;font-size:14px;line-height:1.65}
+
+    /* ── Toolbar ───────────────────────────────────────────── */
+    .toolbar{background:#1b4332;color:#fff;padding:.65rem 1.5rem;display:flex;
+             align-items:center;gap:.75rem;position:sticky;top:0;z-index:99;
+             border-bottom:3px solid #2d6a4f}
+    .toolbar a,.toolbar button{font-size:.8rem;font-family:inherit;cursor:pointer;
+      border:none;border-radius:5px;padding:.35rem .9rem;font-weight:600;text-decoration:none;
+      transition:opacity .15s}
+    .toolbar a:hover,.toolbar button:hover{opacity:.85}
+    .tb-back{background:transparent;color:#d8f3dc;border:1px solid #d8f3dc55}
+    .tb-print{background:#2d6a4f;color:#fff}
+    .tb-pdf{background:#d8f3dc;color:#1b4332}
+    .tb-facility{font-size:.82rem;color:#a8d5b5;font-weight:600}
+    .spacer{flex:1}
+
+    /* ── Page wrapper ──────────────────────────────────────── */
+    .page{max-width:960px;margin:1.5rem auto 4rem;background:#fff;
+          border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.10);overflow:hidden}
+
+    /* ── Cover ─────────────────────────────────────────────── */
+    .cover{background:linear-gradient(135deg,#0d2b1d 0%,#1b4332 55%,#2d6a4f 100%);
+           color:#fff;padding:2.5rem 2.5rem 2rem;position:relative;overflow:hidden}
+    .cover::before{content:'';position:absolute;top:-40px;right:-40px;
+                   width:300px;height:300px;border-radius:50%;
+                   background:rgba(255,255,255,.03);pointer-events:none}
+    .cover-eye{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+               color:#52b788;font-weight:700;margin-bottom:.5rem}
+    .cover-name{font-size:2.2rem;font-weight:900;line-height:1.1;margin-bottom:.4rem;
+                max-width:520px}
+    .cover-sub{font-size:.84rem;color:#a8d5b5;margin-bottom:1.5rem}
+    .cover-scores{display:flex;gap:1rem;margin-top:.5rem}
+    .score-box{border-radius:12px;padding:.9rem 1.4rem;text-align:center;min-width:90px}
+    .score-box .v{font-size:2.4rem;font-weight:900;line-height:1}
+    .score-box .l{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem;opacity:.9}
+    .score-now{background:rgba(127,29,29,.85);color:#fecaca;border:1px solid rgba(220,38,38,.4)}
+    .score-proj{background:rgba(22,101,52,.85);color:#bbf7d0;border:1px solid rgba(22,163,74,.4)}
+    .cover-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;
+                margin-top:1.75rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.12)}
+    .cover-kpi{text-align:center}
+    .cover-kpi .v{font-size:1.4rem;font-weight:800;color:#fff;line-height:1}
+    .cover-kpi .l{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;
+                  color:#a8d5b5;margin-top:.2rem}
+
+    /* ── Sections ──────────────────────────────────────────── */
+    .sec{padding:2rem 2.5rem;border-bottom:1px solid #f0f0f0}
+    .sec:last-of-type{border-bottom:none}
+    .sec-header{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1.25rem}
+    .sec-num{font-size:.6rem;font-weight:900;letter-spacing:.1em;color:#52b788;
+             background:#f0fdf4;border:1px solid #d8f3dc;border-radius:4px;
+             padding:.25rem .5rem;text-transform:uppercase;flex-shrink:0}
+    .sec-title{font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;
+               color:#6b7280;font-weight:700}
+
+    /* ── Executive summary ─────────────────────────────────── */
+    .exec-text{color:#333;line-height:1.85;white-space:pre-line;font-size:.94rem}
+
+    /* ── Projected improvements ────────────────────────────── */
+    .proj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+    .proj-card{background:#f9fafb;border-radius:10px;padding:1.1rem 1.25rem;
+               border:1px solid #e9ecef}
+    .proj-top{display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem}
+    .proj-icon{font-size:1.25rem}
+    .proj-label{font-size:.78rem;font-weight:700;color:#374151;text-transform:uppercase;
+                letter-spacing:.05em}
+    .proj-pct{font-size:1.8rem;font-weight:900;color:#1b4332;line-height:1;margin-bottom:.35rem}
+    .proj-sub{font-size:.72rem;color:#6b7280}
+    .prog-wrap{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin-top:.5rem}
+    .prog-fill{height:100%;border-radius:4px;transition:width .6s ease}
+
+    /* ── Before/After table ────────────────────────────────── */
+    .ba-table{width:100%;border-collapse:collapse;font-size:.86rem}
+    .ba-table th{text-align:left;padding:.55rem .8rem;background:#f5f7f5;
+                 font-size:.64rem;text-transform:uppercase;letter-spacing:.07em;color:#777;
+                 border-bottom:2px solid #e5e7eb}
+    .ba-table td{padding:.65rem .8rem;border-bottom:1px solid #f3f4f6;vertical-align:top}
+    .ba-table tr:last-child td{border-bottom:none}
+    .ba-table tr:hover td{background:#fafafa}
+    .pct-badge{display:inline-block;background:#dcfce7;color:#166534;border-radius:4px;
+               padding:.15rem .5rem;font-size:.75rem;font-weight:700}
+
+    /* ── Gauge SVG ──────────────────────────────────────────── */
+    .gauge-wrap{display:flex;justify-content:center;gap:4rem;margin:.5rem 0 1rem}
+
+    /* ── Finding cards ─────────────────────────────────────── */
+    .finding{border-left:4px solid;border-radius:0 8px 8px 0;margin-bottom:.85rem;
+             background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+    .finding-head{display:flex;align-items:center;gap:.6rem;padding:.75rem 1rem;
+                  border-bottom:1px solid #f3f4f6;flex-wrap:wrap}
+    .finding-body{padding:.9rem 1rem}
+    .finding-desc{font-size:.88rem;color:#374151;line-height:1.65;margin-bottom:.75rem}
+    .finding-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem}
+    .finding-block{background:#f9fafb;border-radius:6px;padding:.65rem .8rem}
+    .finding-block-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;
+                         color:#9ca3af;font-weight:700;margin-bottom:.25rem}
+    .finding-block-text{font-size:.83rem;color:#374151;line-height:1.5}
+    .finding-metrics{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.75rem;
+                     padding-top:.65rem;border-top:1px solid #f3f4f6}
+    .f-chip{display:flex;align-items:center;gap:.3rem;font-size:.78rem;font-weight:600}
+    .f-chip-loss{color:#dc2626}
+    .f-chip-gain{color:#16a34a}
+    .f-chip-eco{color:#2d6a4f}
+    .ft{font-size:.94rem;font-weight:700;color:#111}
+    .badge{display:inline-block;border-radius:4px;padding:.2rem .55rem;
+           font-size:.64rem;font-weight:700;text-transform:uppercase;color:#fff;flex-shrink:0}
+    .area-badge{display:inline-block;border-radius:4px;padding:.2rem .55rem;
+                font-size:.64rem;font-weight:600;text-transform:uppercase;
+                background:#f0f9ff;color:#0369a1;flex-shrink:0}
+
+    /* ── Recommendation cards ──────────────────────────────── */
+    .rec{border:1px solid #e8e8e8;border-radius:10px;margin-bottom:1rem;overflow:hidden;
+         box-shadow:0 1px 3px rgba(0,0,0,.05)}
+    .rec-head{padding:.65rem 1rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+    .rec-score{display:flex;align-items:center;gap:.5rem;margin-left:auto}
+    .rec-score-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7280}
+    .rec-score-val{font-size:.9rem;font-weight:800;color:#1b4332}
+    .score-pip-wrap{width:60px;height:5px;background:#e5e7eb;border-radius:3px;overflow:hidden}
+    .score-pip{height:100%;background:linear-gradient(to right,#52b788,#1b4332);border-radius:3px}
+    .rec-b{padding:.85rem 1rem;font-size:.87rem}
+    .rec-b p{margin-bottom:.4rem;line-height:1.6;color:#374151}
+    .rec-b p strong{color:#111}
+    .steps{margin:.4rem 0 .75rem;padding-left:1.15rem;color:#4b5563;font-size:.84rem;line-height:1.9}
+    .chips{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;padding-top:.6rem;
+           border-top:1px solid #f3f4f6}
+    .chip{background:#f5f5f5;border-radius:5px;padding:.28rem .7rem;font-size:.78rem;
+          color:#555;border:1px solid #eee}
+    .chip strong{color:#1b4332}
+    .qw-tag{background:#d8f3dc;color:#1b4332;border-radius:5px;
+            font-size:.72rem;font-weight:700;padding:.2rem .55rem}
+    .complexity-low{background:#dcfce7;color:#166534}
+    .complexity-medium{background:#fef9c3;color:#854d0e}
+    .complexity-high{background:#fee2e2;color:#991b1b}
+
+    /* ── Roadmap ────────────────────────────────────────────── */
+    .roadmap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+    .phase{border-radius:10px;padding:1.1rem 1.25rem;border:1px solid transparent}
+    .phase-1{background:#f0fdf4;border-color:#bbf7d0}
+    .phase-2{background:#fefce8;border-color:#fef08a}
+    .phase-3{background:#eff6ff;border-color:#bfdbfe}
+    .phase-num{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+               color:#6b7280;margin-bottom:.3rem}
+    .phase h3{font-size:.88rem;font-weight:800;color:#1b4332;margin-bottom:.6rem;line-height:1.3}
+    .phase ul{padding-left:1rem;font-size:.83rem;color:#374151;line-height:1.85}
+    .phase-meta{font-size:.78rem;color:#555;margin-top:.75rem;padding-top:.6rem;
+                border-top:1px solid rgba(0,0,0,.06);display:flex;flex-direction:column;gap:.15rem}
+    .phase-meta strong{color:#1b4332}
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .rep-footer{background:#1b4332;color:#a8d5b5;padding:1rem 2.5rem;
+                display:flex;justify-content:space-between;align-items:center;
+                font-size:.75rem}
+    .rep-footer strong{color:#d8f3dc}
+
+    /* ── Print ─────────────────────────────────────────────── */
+    @media print{
+      body{background:#fff;font-size:11px}
+      .toolbar{display:none!important}
+      .page{margin:0;max-width:100%;box-shadow:none;border-radius:0}
+      .cover,.proj-card,.phase,.rep-footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .sec{page-break-inside:avoid}
+      .rec,.finding,.phase{page-break-inside:avoid}
+      .roadmap-grid{grid-template-columns:repeat(3,1fr)}
+      .proj-grid{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+
+<div class="toolbar">
+  <a href="{% url 'audit_detail' session.pk %}" class="tb-back">← Back</a>
+  <span class="spacer"></span>
+  <span class="tb-facility">{{ session.facility_name }}</span>
+  <button class="tb-print" onclick="window.print()">Print / Save as PDF</button>
+  <a href="{% url 'audit_report_pdf' session.pk %}" class="tb-pdf">Download PDF ↓</a>
+</div>
+
+<div class="page">
+
+  <!-- ── Cover ─────────────────────────────────────────── -->
+  <div class="cover">
+    <div class="cover-eye">EcoIQ Industrial Audit Report</div>
+    <div class="cover-name">{{ session.facility_name }}</div>
+    <div class="cover-sub">
+      {{ session.get_sector_display }}{% if session.location %}&nbsp;·&nbsp;{{ session.location }}{% endif %}&nbsp;·&nbsp;Generated {{ session.updated_at|date:"d F Y" }}
+    </div>
+    <div class="cover-scores">
+      <div class="score-box score-now">
+        <div class="v">{{ report.overall_efficiency_score }}</div>
+        <div class="l">Current Score</div>
+      </div>
+      <div class="score-box score-proj">
+        <div class="v">{{ report.modernization_score }}</div>
+        <div class="l">Projected Score</div>
+      </div>
+    </div>
+    <div class="cover-kpis">
+      <div class="cover-kpi">
+        <div class="v">{{ report.total_savings_potential|fmt_usd }}</div>
+        <div class="l">Annual Savings</div>
+      </div>
+      <div class="cover-kpi">
+        <div class="v">{{ report.total_investment_required|fmt_usd }}</div>
+        <div class="l">Investment Required</div>
+      </div>
+      <div class="cover-kpi">
+        <div class="v">{{ report.blended_roi_months }}mo</div>
+        <div class="l">Payback Period</div>
+      </div>
+      <div class="cover-kpi">
+        <div class="v">{{ findings|length }}&nbsp;/&nbsp;{{ recs|length }}</div>
+        <div class="l">Findings / Recs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01 Executive Summary ──────────────────────────── -->
+  {% if report.executive_summary %}
+  <div class="sec">
+    <div class="sec-header">
+      <span class="sec-num">01</span>
+      <span class="sec-title">Executive Summary</span>
+    </div>
+    <div class="exec-text">{{ report.executive_summary }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ── 02 Projected Improvements ─────────────────────── -->
+  {% if projections %}
+  <div class="sec">
+    <div class="sec-header">
+      <span class="sec-num">02</span>
+      <span class="sec-title">Projected Improvements — Full Implementation</span>
+    </div>
+    <div class="proj-grid">
+      {% for p in projections %}
+      <div class="proj-card">
+        <div class="proj-top">
+          <span class="proj-icon">{{ p.icon }}</span>
+          <span class="proj-label">{{ p.label }}</span>
+        </div>
+        <div class="proj-pct">{{ p.sign }}{{ p.pct }}%</div>
+        <div class="proj-sub">Projected reduction after full implementation</div>
+        <div class="prog-wrap">
+          <div class="prog-fill" style="width:{{ p.pct }}%;background:{{ p.color }};"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Efficiency gauge -->
+    <div class="gauge-wrap" style="margin-top:1.5rem;">
+      {% for label, score, color, ring in gauges %}
+      <div style="text-align:center;">
+        <svg width="140" height="82" viewBox="0 0 140 82">
+          <path d="M15,70 A55,55 0 0,1 125,70" fill="none" stroke="#e5e7eb" stroke-width="13" stroke-linecap="round"/>
+          <path d="M15,70 A55,55 0 0,1 125,70" fill="none" stroke="{{ ring }}" stroke-width="13"
+                stroke-linecap="round" stroke-dasharray="{{ score|floatformat:0 }} 100" pathLength="100"/>
+          <text x="70" y="66" text-anchor="middle" font-size="22" font-weight="900" fill="{{ ring }}">{{ score }}</text>
+        </svg>
+        <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#777;margin-top:.1rem;">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── 03 Before / After ─────────────────────────────── -->
+  {% if ba_rows %}
+  <div class="sec">
+    <div class="sec-header">
+      <span class="sec-num">03</span>
+      <span class="sec-title">Before / After — Operational Comparison</span>
+    </div>
+    <table class="ba-table">
+      <thead>
+        <tr>
+          <th style="width:13%">Area</th>
+          <th>Current State</th>
+          <th>Future State (post-implementation)</th>
+          <th style="text-align:center;width:9%">Gain</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in ba_rows %}
+        <tr>
+          <td>
+            <span style="font-size:1rem;">{{ row.icon }}</span>
+            <strong style="margin-left:.3rem;font-size:.87rem;">{{ row.area }}</strong>
+          </td>
+          <td style="color:#555;font-size:.86rem;">{{ row.current }}</td>
+          <td style="color:#166534;font-size:.86rem;">{{ row.future }}</td>
+          <td style="text-align:center;"><span class="pct-badge">+{{ row.pct }}%</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ── 04 Diagnostic Findings ────────────────────────── -->
+  {% if findings %}
+  <div class="sec">
+    <div class="sec-header">
+      <span class="sec-num">04</span>
+      <span class="sec-title">Diagnostic Findings ({{ findings|length }})</span>
+    </div>
+    {% for f in findings %}
+    <div class="finding" style="border-color:{{ f.priority_badge }};">
+      <div class="finding-head" style="background:{{ f.area_color }};">
+        <span class="badge" style="background:{{ f.priority_badge }};">{{ f.severity }}</span>
+        <span class="area-badge">{{ f.area }}</span>
+        <span class="ft">{{ f.title }}</span>
+      </div>
+      <div class="finding-body">
+        <div class="finding-desc">{{ f.description }}</div>
+        <div class="finding-row">
+          {% if f.root_cause %}
+          <div class="finding-block">
+            <div class="finding-block-label">Root Cause</div>
+            <div class="finding-block-text">{{ f.root_cause }}</div>
+          </div>
+          {% endif %}
+          {% if f.recommended_action %}
+          <div class="finding-block">
+            <div class="finding-block-label">Recommended Action</div>
+            <div class="finding-block-text">{{ f.recommended_action }}</div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="finding-metrics">
+          {% if f.loss_usd %}
+          <span class="f-chip f-chip-loss">💸 {{ f.loss_usd|fmt_usd }}/yr loss</span>
+          {% endif %}
+          {% if f.efficiency_gain_pct %}
+          <span class="f-chip f-chip-gain">📈 +{{ f.efficiency_gain_pct }}% efficiency gain</span>
+          {% endif %}
+          {% if f.sustainability_impact %}
+          <span class="f-chip f-chip-eco">🌿 {{ f.sustainability_impact }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── 05 Recommendations ────────────────────────────── -->
+  {% if recs %}
+  <div class="sec">
+    <div class="sec-header">
+      <span class="sec-num">05</span>
+      <span class="sec-title">Modernisation Recommendations — Ranked by Priority</span>
+    </div>
+    {% for r in recs %}
+    <div class="rec">
+      <div class="rec-head" style="background:{{ r.area_color }};">
+        <span class="badge" style="background:{{ r.priority_badge }};">{{ r.priority }}</span>
+        <span style="font-weight:700;font-size:.92rem;color:#1b4332;flex:1;">{{ r.title }}</span>
+        {% if r.is_quick_win %}<span class="qw-tag">⚡ Quick Win</span>{% endif %}
+        <div class="rec-score">
+          <span class="rec-score-label">Priority</span>
+          <span class="rec-score-val">{{ r.computed_score }}</span>
+          <div class="score-pip-wrap">
+            <div class="score-pip" style="width:{{ r.computed_score }}%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rec-b">
+        <p><strong>Problem:</strong> {{ r.problem }}</p>
+        <p><strong>Solution:</strong> {{ r.solution }}</p>
+        {% if r.impl_steps %}
+        <ol class="steps">{% for s in r.impl_steps %}<li>{{ s }}</li>{% endfor %}</ol>
+        {% endif %}
+        <div class="chips">
+          <div class="chip">Saves <strong>{{ r.savings_usd|fmt_usd }}/yr</strong></div>
+          <div class="chip">Investment <strong>{{ r.cost_usd|fmt_usd }}</strong></div>
+          <div class="chip">Payback <strong>{{ r.roi_months }} months</strong></div>
+          <div class="chip complexity-{{ r.complexity }}">Complexity <strong>{{ r.complexity|capfirst }}</strong></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── 06 Implementation Roadmap ─────────────────────── -->
+  {% if phases %}
+  <div class="sec">
+    <div class="sec-header">
+      <span class="sec-num">06</span>
+      <span class="sec-title">Implementation Roadmap</span>
+    </div>
+    <div class="roadmap-grid">
+      {% for ph in phases %}
+      <div class="phase phase-{{ ph.phase }}">
+        <div class="phase-num">Phase {{ ph.phase }}</div>
+        <h3>{{ ph.label }}</h3>
+        <ul>{% for item in ph.items %}<li>{{ item }}</li>{% endfor %}</ul>
+        <div class="phase-meta">
+          <span>Investment: <strong>{{ ph.investment|fmt_usd }}</strong></span>
+          <span>Annual savings: <strong>{{ ph.savings|fmt_usd }}</strong></span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Footer ────────────────────────────────────────── -->
+  <div class="rep-footer">
+    <span><strong>EcoIQ</strong> Industrial Audit Platform — Confidential</span>
+    <span>Generated {{ session.updated_at|date:"d M Y, H:i" }} UTC</span>
+  </div>
+
+</div>
+</body>
+</html>

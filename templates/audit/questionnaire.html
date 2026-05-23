@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Questionnaire — {{ session.facility_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .area-block { border-radius:8px; overflow:hidden; margin-bottom:1.5rem; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+  .area-header { padding:.7rem 1.25rem; display:flex; align-items:center; gap:.6rem; }
+  .area-header .icon { font-size:1.2rem; }
+  .area-header .name { font-weight:700; font-size:.95rem; color:#1b4332; }
+  .area-body   { background:#fff; padding:1.25rem; }
+  .q-block     { margin-bottom:1.3rem; }
+  .q-block:last-child { margin-bottom:0; }
+  .q-label { display:block; font-weight:600; font-size:.9rem; color:#222; margin-bottom:.4rem; line-height:1.45; }
+  .q-num { display:inline-flex; align-items:center; justify-content:center;
+            background:#1b4332; color:#fff; border-radius:50%;
+            width:1.35rem; height:1.35rem; font-size:.7rem; font-weight:700;
+            margin-right:.4rem; flex-shrink:0; vertical-align:middle; }
+  textarea.q-input {
+    width:100%; padding:.6rem .8rem; border:1px solid #d0d5d0; border-radius:6px;
+    font-size:.9rem; font-family:inherit; background:#fafcfa; resize:vertical; min-height:75px; }
+  textarea.q-input:focus { outline:none; border-color:#2d6a4f; background:#fff; }
+  .progress-wrap { background:#e9ecef; border-radius:20px; height:6px; margin-bottom:.5rem; overflow:hidden; }
+  .progress-fill { height:100%; background:#2d6a4f; border-radius:20px; transition:width .25s; }
+  .hint { font-size:.75rem; color:#bbb; margin-top:.2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:1rem;">
+  <div style="display:flex;align-items:baseline;gap:.75rem;margin-bottom:.75rem;">
+    <h1 style="flex:1;">Facility Questionnaire</h1>
+    <span style="font-size:.85rem;color:#666;">{{ session.facility_name }}</span>
+  </div>
+  <p style="color:#555;font-size:.9rem;margin-bottom:1rem;">
+    Answer as many questions as possible — specific numbers and examples
+    produce the most actionable recommendations and accurate ROI estimates.
+  </p>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="pfill" style="width:0%"></div>
+  </div>
+  <p style="font-size:.8rem;color:#888;" id="plabel">0 of {{ total }} answered</p>
+</div>
+
+<form method="post" id="qform">
+  {% csrf_token %}
+  {% for area, data in groups.items %}
+  <div class="area-block">
+    <div class="area-header" style="background:{{ data.color }};">
+      <span class="icon">{{ data.icon }}</span>
+      <span class="name">{{ area }}</span>
+    </div>
+    <div class="area-body">
+      {% for q in data.questions %}
+      <div class="q-block">
+        <label class="q-label" for="id_{{ q.key }}">
+          <span class="q-num">{{ q.number }}</span>{{ q.text }}
+        </label>
+        <textarea class="q-input" id="id_{{ q.key }}" name="{{ q.key }}"
+                  placeholder="{{ q.placeholder }}" rows="3">{{ q.answer }}</textarea>
+        <div class="hint" id="h_{{ q.key }}">{% if q.answer %}{{ q.answer|length }} chars{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div style="display:flex;gap:1rem;margin-top:.5rem;flex-wrap:wrap;align-items:center;">
+    <button type="submit" id="submit-btn" class="btn btn-primary">Save &amp; Run AI Analysis →</button>
+    <a href="{% url 'audit_detail' session.pk %}" class="btn btn-secondary">Back</a>
+    <span id="submit-status" style="font-size:.85rem;color:#555;display:none;">Saving answers…</span>
+  </div>
+</form>
+
+<script>
+(function(){
+  var tas = document.querySelectorAll('textarea.q-input');
+  var total = {{ total }};
+  function update(){
+    var n=0;
+    tas.forEach(function(ta){
+      if(ta.value.trim()) n++;
+      var h=document.getElementById('h_'+ta.name);
+      if(h) h.textContent = ta.value.length ? ta.value.length+' chars' : '';
+    });
+    document.getElementById('pfill').style.width = Math.round(n/total*100)+'%';
+    document.getElementById('plabel').textContent = n+' of '+total+' answered';
+  }
+  tas.forEach(function(ta){ ta.addEventListener('input', update); });
+  update();
+
+  // Show loading state on submit
+  var form = document.querySelector('form');
+  var btn  = document.getElementById('submit-btn');
+  var status = document.getElementById('submit-status');
+  form.addEventListener('submit', function(){
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    btn.style.opacity = '0.7';
+    status.style.display = 'inline';
+  });
+})();
+</script>
+{% endblock %}

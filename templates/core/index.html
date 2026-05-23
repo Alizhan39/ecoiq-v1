@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}EcoIQ — Ethical Intelligence Platform{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>EcoIQ</h1>
+  <p style="color:#555; margin-bottom:1.5rem; font-size:1.05rem;">
+    Ethical Intelligence Platform — assess your organisation's impact across
+    Environment, Social, Governance, Ethics, and Innovation.
+  </p>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:2rem;">
+    {% for pillar, color in pillars %}
+    <div style="background:{{ color }}; border-radius:8px; padding:1rem; text-align:center;">
+      <div style="font-size:1.5rem; font-weight:600;">{{ pillar|first }}</div>
+      <div style="font-size:0.85rem; margin-top:0.25rem; color:#333;">{{ pillar }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <a href="{% url 'upload' %}" class="btn btn-primary">+ Start New Assessment</a>
+</div>
+
+{% if assessments %}
+<div class="card">
+  <h2>Assessments</h2>
+  <table style="width:100%; border-collapse:collapse; font-size:0.95rem;">
+    <thead>
+      <tr style="border-bottom:2px solid #e9ecef; text-align:left;">
+        <th style="padding:0.5rem 0.75rem;">Company</th>
+        <th style="padding:0.5rem 0.75rem;">Status</th>
+        <th style="padding:0.5rem 0.75rem;">Created</th>
+        <th style="padding:0.5rem 0.75rem;">Overall</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in assessments %}
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:0.6rem 0.75rem; font-weight:500;">{{ a.company_name }}</td>
+        <td style="padding:0.6rem 0.75rem;">
+          <span class="badge badge-{{ a.status }}">{{ a.get_status_display }}</span>
+        </td>
+        <td style="padding:0.6rem 0.75rem; color:#666;">{{ a.created_at|date:"d M Y" }}</td>
+        <td style="padding:0.6rem 0.75rem;">
+          {% if a.finding %}{{ a.finding.score_overall }}/100{% else %}—{% endif %}
+        </td>
+        <td style="padding:0.6rem 0.75rem;">
+          <a href="{% url 'assessment_detail' a.pk %}" class="btn btn-secondary" style="padding:0.3rem 0.8rem; font-size:0.85rem;">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center; color:#777; padding:3rem;">
+  No assessments yet. <a href="{% url 'upload' %}">Start your first one.</a>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>How it works</h2>
+  <ol style="padding-left:1.2rem; line-height:2.2;">
+    <li>Upload a company document (PDF or plain text)</li>
+    <li>Answer the guided EcoIQ questionnaire</li>
+    <li>Receive AI-generated findings and KPI scores</li>
+    <li>Download your HTML or PDF report</li>
+  </ol>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}EcoIQ{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f7f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1b4332;
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    header a { color: #fff; text-decoration: none; font-weight: 600; font-size: 1.2rem; }
+    header nav { margin-left: auto; display: flex; gap: 1.5rem; }
+    header nav a { color: #d8f3dc; font-size: 0.9rem; }
+
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #1b4332; }
+    h2 { font-size: 1.3rem; margin-bottom: 1rem; color: #2d6a4f; }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: #2d6a4f; color: #fff; }
+    .btn-primary:hover { background: #1b4332; }
+    .btn-secondary { background: #e9ecef; color: #333; }
+    .btn-secondary:hover { background: #dee2e6; }
+
+    .badge {
+      display:inline-block; padding:0.25rem 0.7rem; border-radius:20px;
+      font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.03em;
+    }
+    .badge-draft      { background:#e9ecef; color:#555; }
+    .badge-ready      { background:#d8f3dc; color:#1b4332; }
+    .badge-processing { background:#fff3cd; color:#664d03; }
+    .badge-complete   { background:#2d6a4f; color:#fff; }
+    .badge-error      { background:#ffe0e0; color:#7c2020; }
+
+    .messages { list-style: none; margin-bottom: 1rem; }
+    .messages li { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; }
+    .messages .success { background: #d8f3dc; color: #1b4332; }
+    .messages .error   { background: #ffe0e0; color: #7c2020; }
+    .messages .warning { background: #fff3cd; color: #664d03; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.8rem;
+      color: #888;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <a href="/">EcoIQ</a>
+    <nav>
+      <a href="/audit/" style="background:#2d6a4f; padding:0.25rem 0.75rem; border-radius:5px; font-weight:600;">Industrial Audit</a>
+      <a href="/">ESG</a>
+      <a href="/admin/">Admin</a>
+    </nav>
+  </header>
+
+  <main>
+    {% if messages %}
+      <ul class="messages">
+        {% for msg in messages %}
+          <li class="{{ msg.tags }}">{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>EcoIQ v1 — Ethical Intelligence Platform</footer>
+</body>
+</html>

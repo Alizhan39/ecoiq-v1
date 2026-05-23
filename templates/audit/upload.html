@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}New Audit — EcoIQ Industrial{% endblock %}
+
+{% block extra_head %}
+<style>
+  .field-group { margin-bottom:1.1rem; }
+  .field-group label { display:block; font-weight:600; font-size:.88rem; color:#333; margin-bottom:.3rem; }
+  .field-group input, .field-group select, .field-group textarea {
+    width:100%; padding:.55rem .75rem; border:1px solid #ccc; border-radius:6px;
+    font-size:.92rem; font-family:inherit; background:#fafafa; }
+  .field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+    outline:none; border-color:#2d6a4f; background:#fff; }
+  .field-error { display:block; color:#b00020; font-size:.8rem; margin-top:.2rem; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media(max-width:600px){ .grid-2 { grid-template-columns:1fr; } }
+  .section-label {
+    font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+    color:#888; margin:1.5rem 0 .75rem; padding-bottom:.3rem; border-bottom:1px solid #eee;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>New Facility Audit</h1>
+  <p style="color:#555;margin-bottom:1.5rem;font-size:.95rem;">
+    Enter facility details and upload any available documents — maintenance logs,
+    energy bills, production reports, equipment lists, or prior audits.
+    The more context provided, the richer the AI analysis.
+  </p>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <div class="section-label">Facility Information</div>
+    <div class="field-group">
+      <label for="{{ form.facility_name.id_for_label }}">{{ form.fields.facility_name.label }}</label>
+      {{ form.facility_name }}
+      {% for e in form.facility_name.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+    </div>
+    <div class="grid-2">
+      <div class="field-group">
+        <label for="{{ form.sector.id_for_label }}">{{ form.fields.sector.label }}</label>
+        {{ form.sector }}
+      </div>
+      <div class="field-group">
+        <label for="{{ form.location.id_for_label }}">{{ form.fields.location.label }}</label>
+        {{ form.location }}
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field-group">
+        <label for="{{ form.facility_age.id_for_label }}">{{ form.fields.facility_age.label }}</label>
+        {{ form.facility_age }}
+      </div>
+      <div class="field-group">
+        <label for="{{ form.headcount.id_for_label }}">{{ form.fields.headcount.label }}</label>
+        {{ form.headcount }}
+      </div>
+    </div>
+    <div class="field-group">
+      <label for="{{ form.annual_revenue.id_for_label }}">{{ form.fields.annual_revenue.label }}</label>
+      {{ form.annual_revenue }}
+    </div>
+
+    <div class="section-label">Documents</div>
+    <div class="field-group">
+      <label for="{{ form.uploaded_file.id_for_label }}">{{ form.fields.uploaded_file.label }}</label>
+      {{ form.uploaded_file }}
+      {% for e in form.uploaded_file.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+      <span style="display:block;font-size:.8rem;color:#888;margin-top:.25rem;">
+        PDF, TXT, or MD · max 10 MB · maintenance logs, energy bills, prior reports, equipment lists
+      </span>
+    </div>
+    <div class="field-group">
+      <label for="{{ form.notes.id_for_label }}">{{ form.fields.notes.label }}</label>
+      {{ form.notes }}
+    </div>
+
+    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+      <button type="submit" class="btn btn-primary">Save &amp; Start Questionnaire →</button>
+      <a href="{% url 'audit_index' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

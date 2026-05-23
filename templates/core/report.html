@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoIQ Report — {{ assessment.company_name }}</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f7f5;
+      color: #1a1a1a;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Screen controls (hidden on print) ────────────────────────── */
+    .screen-bar {
+      background: #1b4332;
+      color: #fff;
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .screen-bar a, .screen-bar button {
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      padding: 0.4rem 1rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .screen-bar .btn-back   { background: transparent; color: #d8f3dc; border: 1px solid #d8f3dc44; }
+    .screen-bar .btn-print  { background: #2d6a4f; color: #fff; }
+    .screen-bar .btn-pdf    { background: #d8f3dc; color: #1b4332; }
+    .screen-bar .spacer     { flex: 1; }
+    .screen-bar span        { font-size: 0.8rem; color: #a8d5b5; }
+
+    /* ── Report page ──────────────────────────────────────────────── */
+    .report-page {
+      max-width: 860px;
+      margin: 2rem auto 4rem;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.09);
+      overflow: hidden;
+    }
+
+    /* ── Cover strip ─────────────────────────────────────────────── */
+    .cover {
+      background: #1b4332;
+      color: #fff;
+      padding: 2.5rem 2.5rem 2rem;
+    }
+    .cover-eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #a8d5b5;
+      margin-bottom: 0.5rem;
+    }
+    .cover-company { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .cover-meta    { font-size: 0.85rem; color: #a8d5b5; }
+
+    .overall-badge {
+      float: right;
+      background: #2d6a4f;
+      border-radius: 12px;
+      padding: 0.9rem 1.4rem;
+      text-align: center;
+      margin-top: -0.25rem;
+    }
+    .overall-badge .val  { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .overall-badge .lbl  { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: #a8d5b5; margin-top: 0.15rem; }
+
+    /* ── Section wrapper ─────────────────────────────────────────── */
+    .section { padding: 2rem 2.5rem; border-bottom: 1px solid #f0f0f0; }
+    .section:last-child { border-bottom: none; }
+    .section-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 1.25rem;
+      font-weight: 600;
+    }
+
+    /* ── Score grid ──────────────────────────────────────────────── */
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .score-cell {
+      border-radius: 8px;
+      padding: 0.9rem 0.5rem;
+      text-align: center;
+    }
+    .score-cell .val  { font-size: 1.7rem; font-weight: 700; color: #1b4332; line-height: 1; }
+    .score-cell .lbl  { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: #555; margin-top: 0.25rem; }
+    .score-bar-wrap   { background: rgba(0,0,0,.08); border-radius: 20px; height: 4px; margin-top: 0.5rem; overflow: hidden; }
+    .score-bar-fill   { height: 100%; background: #2d6a4f; border-radius: 20px; }
+
+    /* ── Radar chart ─────────────────────────────────────────────── */
+    .radar-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 1.25rem 0 0;
+    }
+
+    /* ── Summary ─────────────────────────────────────────────────── */
+    .summary-text {
+      color: #333;
+      line-height: 1.8;
+      white-space: pre-line;
+    }
+
+    /* ── Pillar rows ─────────────────────────────────────────────── */
+    .pillar-row {
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .pillar-row:last-child { margin-bottom: 0; }
+
+    .pillar-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.65rem 1rem;
+    }
+    .pillar-header .pillar-name {
+      font-weight: 700;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #1b4332;
+      flex: 1;
+    }
+    .pillar-header .pillar-score {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #1b4332;
+      min-width: 2.5rem;
+      text-align: right;
+    }
+    .pillar-body {
+      background: #fff;
+      padding: 0.85rem 1rem;
+    }
+    .pillar-note {
+      font-size: 0.9rem;
+      color: #444;
+      line-height: 1.6;
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── QA answers ──────────────────────────────────────────────── */
+    .qa-list { margin: 0; padding: 0; list-style: none; }
+    .qa-item  { margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f5f5f5; }
+    .qa-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .qa-q { font-size: 0.82rem; font-weight: 600; color: #555; margin-bottom: 0.2rem; }
+    .qa-a { font-size: 0.88rem; color: #333; line-height: 1.55; }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    .report-footer {
+      background: #1b4332;
+      color: #a8d5b5;
+      padding: 1.25rem 2.5rem;
+      font-size: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* ── Print styles ────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; font-size: 12px; }
+      .screen-bar { display: none !important; }
+      .report-page {
+        margin: 0;
+        max-width: 100%;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .score-cell, .pillar-header, .report-footer {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .section { page-break-inside: avoid; }
+      .pillar-row { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Screen-only toolbar ──────────────────────────────────────────── -->
+<div class="screen-bar">
+  <a href="{% url 'assessment_detail' assessment.pk %}" class="btn-back">← Back</a>
+  <span class="spacer"></span>
+  <span>{{ assessment.company_name }}</span>
+  <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+  <a href="{% url 'report_pdf' assessment.pk %}" class="btn-pdf">Download PDF ↓</a>
+</div>
+
+<!-- ── Report page ───────────────────────────────────────────────────── -->
+<div class="report-page">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="overall-badge">
+      <div class="val">{{ finding.score_overall }}</div>
+      <div class="lbl">Overall</div>
+    </div>
+    <div class="cover-eyebrow">EcoIQ Ethical Intelligence Report</div>
+    <div class="cover-company">{{ assessment.company_name }}</div>
+    <div class="cover-meta">
+      Generated {{ assessment.updated_at|date:"d F Y" }}
+      &nbsp;·&nbsp;
+      Assessment #{{ assessment.pk }}
+    </div>
+  </div>
+
+  <!-- Score grid + radar -->
+  <div class="section">
+    <div class="section-title">KPI Scores — Five Pillars</div>
+
+    <div class="score-grid">
+      {% for pillar in pillars %}
+      <div class="score-cell" style="background:{{ pillar.color }};">
+        <div class="val">{{ pillar.score }}</div>
+        <div class="lbl">{{ pillar.name }}</div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" style="width:{{ pillar.score }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- SVG radar chart -->
+    <div class="radar-wrap">
+      <svg viewBox="0 0 300 300" width="280" height="280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Grid rings -->
+        {% for ring in radar_grid %}
+        <polygon points="{{ ring }}" fill="none" stroke="#e0e0e0" stroke-width="1"/>
+        {% endfor %}
+        <!-- Axes -->
+        {% for x1,y1,x2,y2 in radar_axes %}
+        <line x1="{{ x1 }}" y1="{{ y1 }}" x2="{{ x2 }}" y2="{{ y2 }}" stroke="#ddd" stroke-width="1"/>
+        {% endfor %}
+        <!-- Score polygon -->
+        <polygon points="{{ radar_polygon }}"
+                 fill="#2d6a4f33"
+                 stroke="#2d6a4f"
+                 stroke-width="2"
+                 stroke-linejoin="round"/>
+        <!-- Score dots -->
+        {% for pillar in pillars %}
+        {# Recalculate dot positions inline via template — done server-side in view context #}
+        {% endfor %}
+        <!-- Labels -->
+        {% for lx,ly,lbl in radar_labels %}
+        <text x="{{ lx }}" y="{{ ly }}"
+              text-anchor="middle" dominant-baseline="middle"
+              font-size="11" font-family="-apple-system,sans-serif"
+              fill="#444">{{ lbl }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  {% if finding.summary %}
+  <div class="section">
+    <div class="section-title">Executive Summary</div>
+    <div class="summary-text">{{ finding.summary }}</div>
+  </div>
+  {% endif %}
+
+  <!-- Pillar analysis -->
+  <div class="section">
+    <div class="section-title">Pillar Analysis</div>
+    {% for pillar in pillars %}
+    <div class="pillar-row">
+      <div class="pillar-header" style="background:{{ pillar.color }};">
+        <span class="pillar-name">{{ pillar.name }}</span>
+        <span class="pillar-score">{{ pillar.score }}<span style="font-size:0.7rem;font-weight:400;color:#666;">/100</span></span>
+      </div>
+      <div class="pillar-body">
+        {% if pillar.note %}
+        <div class="pillar-note">{{ pillar.note }}</div>
+        {% endif %}
+
+        {% if pillar.questions %}
+        <ul class="qa-list">
+          {% for q in pillar.questions %}
+          <li class="qa-item">
+            <div class="qa-q">Q{{ q.number }}. {{ q.text }}</div>
+            <div class="qa-a">{{ q.answer }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p style="font-size:0.85rem;color:#aaa;font-style:italic;">No questionnaire answers provided for this pillar.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Footer -->
+  <div class="report-footer">
+    <span>EcoIQ v1 — Ethical Intelligence Platform</span>
+    <span>Generated {{ assessment.updated_at|date:"d M Y, H:i" }} UTC</span>
+  </div>
+
+</div>
+</body>
+</html>

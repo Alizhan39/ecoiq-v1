@@ -1,3 +1,8 @@
+# Project-specific
+.claude/
+media/
+*.pdf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
