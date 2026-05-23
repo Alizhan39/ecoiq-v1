@@ -266,6 +266,16 @@ def report_pdf(request, pk):
         resp = HttpResponse(pdf_bytes, content_type='application/pdf')
         resp['Content-Disposition'] = f'attachment; filename="{name}"'
         return resp
-    except Exception as exc:
-        messages.error(request, f'PDF generation failed: {exc}')
+    except (ImportError, OSError, Exception) as exc:
+        # WeasyPrint requires Cairo/Pango system libraries.
+        # On Render free tier these may not be present — PDF export degrades gracefully.
+        if 'cairo' in str(exc).lower() or 'pango' in str(exc).lower() or isinstance(exc, OSError):
+            messages.error(
+                request,
+                'PDF export is not available in this environment — '
+                'Cairo/Pango system libraries are missing. '
+                'Use your browser\'s Print → Save as PDF instead.'
+            )
+        else:
+            messages.error(request, f'PDF generation failed: {exc}')
         return redirect('audit_report', pk=pk)
