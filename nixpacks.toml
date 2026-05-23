@@ -1,0 +1,21 @@
+# WeasyPrint needs Cairo + Pango system libraries
+[phases.setup]
+nixPkgs = [
+  "cairo",
+  "pango",
+  "gdk-pixbuf",
+  "libffi",
+  "shared-mime-info",
+  "gobject-introspection",
+  "harfbuzz",
+  "fontconfig",
+]
+
+[phases.build]
+cmds = [
+  "pip install -r requirements.txt",
+  "python manage.py collectstatic --no-input",
+]
+
+[start]
+cmd = "gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 300"

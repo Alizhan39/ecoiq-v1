@@ -120,6 +120,59 @@ A complete analysis typically takes 3–5 minutes.
 
 ---
 
+## Deploying to Railway (recommended)
+
+Railway provides free-tier hosting with zero-config Django support.
+
+### 1. Install Railway CLI
+```bash
+npm install -g @railway/cli   # or brew install railway
+railway login
+```
+
+### 2. Create a new project and deploy
+```bash
+railway init          # creates new Railway project
+railway up            # deploys from current directory
+```
+
+### 3. Set environment variables in Railway dashboard
+| Variable | Value |
+|---|---|
+| `ANTHROPIC_API_KEY` | `sk-ant-...` (your key) |
+| `DJANGO_SECRET_KEY` | Generate with: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
+| `DEBUG` | `False` |
+| `ALLOWED_HOSTS` | `yourapp.up.railway.app` (Railway gives you this URL) |
+| `CSRF_TRUSTED_ORIGINS` | `https://yourapp.up.railway.app` |
+
+### 4. First deploy runs automatically
+- `migrate` runs via the `release` phase in `Procfile`
+- `collectstatic` runs during Nixpacks build
+- WeasyPrint system libraries (Cairo, Pango) are installed via `nixpacks.toml`
+
+> **Note on SQLite + Railway:** Railway's filesystem is ephemeral — data resets on redeploy. For a persistent production database, upgrade to PostgreSQL (Railway has a one-click Postgres plugin). When ready, set `DATABASE_URL` and add `dj-database-url` to requirements.
+
+---
+
+## Deploying to Render (alternative)
+
+1. Create a new **Web Service** pointing at your GitHub repo
+2. Build command: `pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate`
+3. Start command: `gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 300`
+4. Add the same environment variables as above
+
+---
+
+## Generating a Secure Secret Key
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Set this as `DJANGO_SECRET_KEY` in your platform's environment variables. Never commit it.
+
+---
+
 ## Roadmap (Future)
 
 - [ ] PostgreSQL + Celery async analysis

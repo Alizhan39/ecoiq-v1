@@ -1,5 +1,7 @@
 anthropic==0.104.1
 Django==5.2.14
+gunicorn==23.0.0
 pypdf==6.12.1
 python-dotenv==1.2.2
 weasyprint==68.1
+whitenoise==6.9.0

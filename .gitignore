@@ -1,6 +1,7 @@
 # Project-specific
 .claude/
 media/
+staticfiles/
 *.pdf
 
 # Byte-compiled / optimized / DLL files
