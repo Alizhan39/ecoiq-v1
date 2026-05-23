@@ -1,24 +1,31 @@
 from pathlib import Path
 import os
+import dj_database_url
 from dotenv import load_dotenv
 
-load_dotenv(override=True)  # .env values win over shell-inherited empty vars
+load_dotenv(override=True)   # local .env wins over shell-inherited vars
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-only-change-in-production')
+# ── Core ──────────────────────────────────────────────────────────────────────
+
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-dev-only-CHANGE-IN-PRODUCTION',
+)
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Accept Railway/Render/Heroku domain automatically; add your custom domain here
-_raw_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1')
-ALLOWED_HOSTS = _raw_hosts.split()
+# Space-separated list: "myapp.onrender.com localhost"
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split()
 
-# Trust Railway's reverse proxy so HTTPS is detected correctly
+# Required for Render/Railway HTTPS reverse proxy
 CSRF_TRUSTED_ORIGINS = [
-    h for h in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split()
-    if h
+    h.strip() for h in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split()
+    if h.strip()
 ]
+
+# ── Applications ──────────────────────────────────────────────────────────────
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -31,9 +38,11 @@ INSTALLED_APPS = [
     'audit',
 ]
 
+# ── Middleware ────────────────────────────────────────────────────────────────
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # serve static files in production
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # static files — must be 2nd
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -61,12 +70,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ecoiq.wsgi.application'
 
+# ── Database ──────────────────────────────────────────────────────────────────
+# DATABASE_URL set → PostgreSQL (production)
+# Not set         → SQLite (local development)
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -75,32 +91,47 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ── Internationalisation ──────────────────────────────────────────────────────
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ── Static files ──────────────────────────────────────────────────────────────
+
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'          # collectstatic target
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Only include custom static dir if it actually exists (safe for fresh clones)
+_static_src = BASE_DIR / 'static'
+STATICFILES_DIRS = [_static_src] if _static_src.exists() else []
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ── Media files ───────────────────────────────────────────────────────────────
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# ── Misc ──────────────────────────────────────────────────────────────────────
 
-# ── Production security (enabled when DEBUG=False) ────────────────────────────
-if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 60
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # Max upload size: 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+# ── Production security ───────────────────────────────────────────────────────
+# All of these are harmless in dev and critical in prod.
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT      = True
+    SESSION_COOKIE_SECURE    = True
+    CSRF_COOKIE_SECURE       = True
+    SECURE_HSTS_SECONDS      = 31536000   # 1 year — set low (60) first deploy, raise after
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD      = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
