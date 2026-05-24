@@ -1,3 +1,4 @@
+{% load core_tags %}
 <!-- ══════════════════════════════════════════════════════
      SECTION 02 · HOW IT WORKS
 ══════════════════════════════════════════════════════ -->
@@ -6,18 +7,19 @@
 
     <!-- Heading -->
     <div class="max-w-2xl mb-16 reveal">
-      <span class="eyebrow mb-4 block">How It Works</span>
+      <span class="eyebrow mb-4 block">Methodology</span>
       <h2 class="text-3xl sm:text-4xl lg:text-[2.75rem] font-black text-white leading-tight tracking-tight mb-5">
-        From audit documents<br>to action plan — in minutes.
+        From raw facility data<br>to board-ready intelligence.
       </h2>
       <p class="text-slate-400 text-[1.02rem] leading-[1.75]">
-        Two sequential AI calls transform raw facility data into a board-ready
-        modernization report with quantified findings and phased ROI roadmap.
+        A structured three-stage process transforms operational documentation and
+        expert questionnaire responses into quantified findings and a phased
+        36-month modernization roadmap — in minutes, not months.
       </p>
     </div>
 
     <!-- Steps grid -->
-    <div class="grid md:grid-cols-3 gap-5 lg:gap-7">
+    <div class="grid md:grid-cols-3 gap-5 lg:gap-7 mb-12">
 
       <!-- Step 01 -->
       <div class="glass glass-lift rounded-2xl p-8 reveal" style="transition-delay: .06s;">
@@ -31,12 +33,20 @@
           </div>
           <span class="font-mono text-[11px] text-slate-600 tracking-widest font-semibold">01</span>
         </div>
-        <h3 class="text-[1.05rem] font-bold text-white mb-3 tracking-tight">Upload Industrial Audit</h3>
-        <p class="text-slate-400 text-sm leading-[1.75]">
-          Upload facility documents — energy reports, maintenance logs, P&amp;IDs,
-          environmental permits. Describe the site profile and complete a structured
-          operations questionnaire.
+        <h3 class="text-[1.05rem] font-bold text-white mb-3 tracking-tight">Facility Intake &amp; Document Ingestion</h3>
+        <p class="text-slate-400 text-sm leading-[1.75] mb-4">
+          Upload energy audits, maintenance logs, P&amp;IDs, environmental permits,
+          or HSE reports. Complete a structured ESG questionnaire covering Environment,
+          Social, Governance, Ethics, and Innovation.
         </p>
+        <!-- Sub-items -->
+        <div class="space-y-1.5">
+          {% for item in step1_items %}
+          <div class="flex items-start gap-2 text-[11.5px] text-slate-500">
+            <span class="text-emerald-500/60 mt-0.5">→</span>{{ item }}
+          </div>
+          {% endfor %}
+        </div>
       </div>
 
       <!-- Step 02 -->
@@ -52,11 +62,18 @@
           <span class="font-mono text-[11px] text-slate-600 tracking-widest font-semibold">02</span>
         </div>
         <h3 class="text-[1.05rem] font-bold text-white mb-3 tracking-tight">AI Diagnostic Analysis</h3>
-        <p class="text-slate-400 text-sm leading-[1.75]">
-          EcoIQ's AI analyses the facility across energy, maintenance, production,
-          safety, and sustainability vectors — surfacing specific findings with
-          financial quantification and root-cause attribution.
+        <p class="text-slate-400 text-sm leading-[1.75] mb-4">
+          EcoIQ's AI engine analyses the facility across five ESG pillars — surfacing
+          operational gaps with root-cause attribution, financial quantification, and
+          emissions consequence. Each finding includes a concrete modernization action.
         </p>
+        <div class="space-y-1.5">
+          {% for item in step2_items %}
+          <div class="flex items-start gap-2 text-[11.5px] text-slate-500">
+            <span class="text-emerald-500/60 mt-0.5">→</span>{{ item }}
+          </div>
+          {% endfor %}
+        </div>
       </div>
 
       <!-- Step 03 -->
@@ -71,20 +88,43 @@
           </div>
           <span class="font-mono text-[11px] text-slate-600 tracking-widest font-semibold">03</span>
         </div>
-        <h3 class="text-[1.05rem] font-bold text-white mb-3 tracking-tight">ROI + Modernization Roadmap</h3>
-        <p class="text-slate-400 text-sm leading-[1.75]">
-          Receive a phased 36-month implementation roadmap with priority-scored
-          recommendations, illustrative ROI estimates, before/after projections,
-          and sustainability impact per intervention.
+        <h3 class="text-[1.05rem] font-bold text-white mb-3 tracking-tight">Modernization Roadmap + Report</h3>
+        <p class="text-slate-400 text-sm leading-[1.75] mb-4">
+          Receive a board-ready report with priority-scored recommendations, illustrative
+          ROI estimates, before/after sustainability projections, and a phased
+          implementation sequence validated against asset lifecycle constraints.
         </p>
+        <div class="space-y-1.5">
+          {% for item in step3_items %}
+          <div class="flex items-start gap-2 text-[11.5px] text-slate-500">
+            <span class="text-emerald-500/60 mt-0.5">→</span>{{ item }}
+          </div>
+          {% endfor %}
+        </div>
       </div>
 
     </div>
 
+    <!-- Compatible frameworks strip -->
+    <div class="glass rounded-2xl px-6 py-5 reveal flex flex-col sm:flex-row items-start sm:items-center gap-4" style="transition-delay:.26s;">
+      <div class="text-[10px] text-slate-600 uppercase tracking-widest font-semibold shrink-0">
+        Framework-Compatible
+      </div>
+      <div class="w-px h-4 bg-white/[.06] shrink-0 hidden sm:block"></div>
+      <div class="flex flex-wrap gap-3">
+        {% for fw in frameworks %}
+        <span class="text-[11px] text-slate-500 font-mono px-2.5 py-1 rounded"
+              style="background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.055);">
+          {{ fw }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+
     <!-- Illustrative disclaimer -->
-    <p class="text-[11px] text-slate-600 mt-8 text-center reveal" style="transition-delay: .26s;">
-      Financial estimates and KPI projections produced by EcoIQ are AI-assisted and illustrative in nature.
-      All figures should be validated by qualified engineers before capital commitment.
+    <p class="text-[11px] text-slate-600 mt-6 text-center reveal" style="transition-delay: .3s;">
+      All financial estimates and KPI projections produced by EcoIQ are AI-assisted and illustrative.
+      Figures should be independently validated by qualified engineers before capital commitment.
     </p>
 
   </div>

@@ -1,0 +1,71 @@
+{% load core_tags %}
+<!-- ══════════════════════════════════════════════════════
+     SECTION · INDUSTRIES SERVED
+══════════════════════════════════════════════════════ -->
+<section class="relative py-24 lg:py-32 border-t border-white/[.045] overflow-hidden">
+
+  <div class="orb w-[500px] h-[500px] bg-teal-500 opacity-[.03] -bottom-20 -left-40 pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto px-5 sm:px-8">
+
+    <!-- Heading -->
+    <div class="text-center mb-14 reveal">
+      <span class="eyebrow mb-4 block">Sectors</span>
+      <h2 class="text-3xl sm:text-4xl font-black text-white leading-tight tracking-tight mb-4">
+        Built for heavy industry.
+      </h2>
+      <p class="text-slate-400 text-[1rem] leading-[1.75] max-w-xl mx-auto">
+        EcoIQ is designed for asset-intensive operations with complex
+        energy profiles, regulatory obligations, and sustainability targets.
+      </p>
+    </div>
+
+    <!-- Industry grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-10">
+
+      {% for icon, label, sub in industries %}
+      <div class="glass glass-lift rounded-xl p-4 text-center reveal cursor-default">
+        <div class="text-2xl mb-2">{{ icon }}</div>
+        <div class="text-[12px] font-semibold text-slate-200 leading-snug mb-1">{{ label }}</div>
+        <div class="text-[10.5px] text-slate-600 leading-snug">{{ sub }}</div>
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <!-- Asset lifecycle note -->
+    <div class="glass rounded-2xl p-6 reveal">
+      <div class="grid sm:grid-cols-3 gap-6">
+
+        <div>
+          <div class="text-[10px] text-emerald-500/70 uppercase tracking-widest font-bold mb-2">Asset Lifecycle</div>
+          <p class="text-slate-400 text-[12.5px] leading-[1.7]">
+            EcoIQ analyses facilities across the full asset lifecycle — from
+            brownfield legacy operations to capital-intensive upgrade cycles and
+            greenfield transition planning.
+          </p>
+        </div>
+
+        <div>
+          <div class="text-[10px] text-emerald-500/70 uppercase tracking-widest font-bold mb-2">Maintenance Strategy</div>
+          <p class="text-slate-400 text-[12.5px] leading-[1.7]">
+            Findings cover reactive, preventive, and predictive maintenance
+            postures — surfacing CMMS gaps, turnaround scope optimisation,
+            and condition monitoring opportunities.
+          </p>
+        </div>
+
+        <div>
+          <div class="text-[10px] text-emerald-500/70 uppercase tracking-widest font-bold mb-2">Regulatory Landscape</div>
+          <p class="text-slate-400 text-[12.5px] leading-[1.7]">
+            Analysis is contextualised against sector-relevant compliance
+            obligations: EU ETS, IED, IPPC, ISO 14001, F-Gas, ICMM,
+            and TSM protocol performance expectations.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>

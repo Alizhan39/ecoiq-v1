@@ -1,5 +1,6 @@
+{% load core_tags %}
 <!-- ══════════════════════════════════════════════════════
-     SECTION 04 · CTA
+     SECTION 05 · CTA
 ══════════════════════════════════════════════════════ -->
 <section id="cta" class="relative py-28 lg:py-40 border-t border-white/[.045] overflow-hidden">
 
@@ -8,42 +9,41 @@
 
   <!-- Ambient glow -->
   <div class="orb w-[800px] h-[800px] bg-emerald-500 opacity-[.055]
-              top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+              top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
   <div class="relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
 
-    <!-- Pill badge -->
+    <!-- Status pill -->
     <div class="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-[12px]
                 text-slate-400 mb-10 reveal"
          style="border-color: rgba(16,185,129,.18);">
       <span class="w-[7px] h-[7px] rounded-full bg-emerald-500 shrink-0"
             style="animation: pulse 2s ease-in-out infinite;"></span>
-      Accepting pilot partners — limited availability
+      Founding design partner cohort — accepting applications
     </div>
 
     <!-- Headline -->
-    <h2 class="text-[2.5rem] sm:text-5xl lg:text-[3.25rem] font-black text-white
+    <h2 class="text-[2.4rem] sm:text-5xl lg:text-[3.2rem] font-black text-white
                leading-[1.07] tracking-[-0.02em] mb-6 reveal" style="transition-delay: .07s;">
-      Request access to<br>
-      <span class="gradient-word">EcoIQ v1.</span>
+      Transform how your facility<br>
+      <span class="gradient-word">sees itself.</span>
     </h2>
 
     <!-- Subtext -->
     <p class="text-slate-400 text-[1.05rem] leading-[1.78] max-w-xl mx-auto mb-10
               reveal" style="transition-delay: .13s;">
-      EcoIQ is currently in pilot-ready development. We are onboarding founding
-      design partners from heavy industry to co-develop the platform's analytical
-      capabilities alongside real facility data.
+      EcoIQ surfaces what traditional audits miss — hidden energy losses, compliance
+      exposure, and modernization opportunities — in the time it takes to read a report.
+      No consulting retainer. No 6-month engagement. Just intelligence.
     </p>
 
-    <!-- CTA buttons -->
-    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12
-                reveal" style="transition-delay: .18s;">
+    <!-- CTA pair -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-10 reveal" style="transition-delay: .18s;">
       <a href="/request-access/"
          class="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400
-                text-black font-bold text-[15px] px-7 py-3.5 rounded-xl glow-emerald
+                text-black font-bold text-[15px] px-8 py-4 rounded-xl glow-emerald
                 transition-colors w-full sm:w-auto">
-        Request platform access
+        Request Pilot Access
         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 16 16">
           <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round"/>
@@ -51,16 +51,28 @@
       </a>
       <a href="/request-access/"
          class="inline-flex items-center justify-center gap-2 glass text-slate-300
-                font-semibold text-[15px] px-7 py-3.5 rounded-xl
+                font-semibold text-[15px] px-8 py-4 rounded-xl
                 hover:border-emerald-500/30 hover:text-white glass-lift
                 w-full sm:w-auto">
-        Book a strategic conversation
+        Enquire — Design Partner Programme
       </a>
     </div>
 
+    <!-- Micro-guarantees -->
+    <div class="flex flex-wrap justify-center gap-4 mb-12 reveal" style="transition-delay:.22s;">
+      {% for signal in cta_trust_signals %}
+      <div class="flex items-center gap-1.5 text-[12px] text-slate-500">
+        <svg class="w-3.5 h-3.5 text-emerald-500/50 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        {{ signal }}
+      </div>
+      {% endfor %}
+    </div>
+
     <!-- Industries served -->
-    <div class="reveal" style="transition-delay: .23s;">
-      <p class="text-[11.5px] text-slate-600 mb-4 uppercase tracking-widest font-semibold">
+    <div class="reveal" style="transition-delay: .27s;">
+      <p class="text-[11px] text-slate-600 mb-4 uppercase tracking-widest font-semibold">
         Designed for
       </p>
       <div class="flex flex-wrap justify-center gap-2">

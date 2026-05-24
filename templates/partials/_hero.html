@@ -1,3 +1,4 @@
+{% load core_tags %}
 <!-- ══════════════════════════════════════════════════════
      SECTION 01 · HERO
 ══════════════════════════════════════════════════════ -->
@@ -12,7 +13,16 @@
     <!-- ── Left copy ──────────────────────────────── -->
     <div class="reveal">
 
-      <span class="eyebrow mb-5 block">AI-Assisted Industrial Platform · Pilot-Ready</span>
+      <!-- Eyebrow with status pill -->
+      <div class="flex flex-wrap items-center gap-3 mb-6">
+        <span class="eyebrow">Industrial Modernization Intelligence</span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide"
+              style="background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.2); color: #34d399;">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
+                style="animation: ping 2.5s cubic-bezier(0,0,.2,1) infinite;"></span>
+          Pilot-Ready v1
+        </span>
+      </div>
 
       <h1 class="text-[2.75rem] sm:text-5xl lg:text-[3.35rem] xl:text-[3.75rem]
                  font-black leading-[1.07] tracking-[-0.02em] text-white mb-6">
@@ -21,36 +31,60 @@
         <span class="gradient-word">modernization.</span>
       </h1>
 
-      <p class="text-[1.05rem] text-slate-400 leading-[1.78] max-w-[500px] mb-10">
-        AI-assisted diagnostics, sustainability analysis, and operational
-        modernization insights for industrial facilities.
+      <p class="text-[1.05rem] text-slate-400 leading-[1.78] max-w-[500px] mb-4">
+        AI-assisted operational diagnostics, ESG scoring, and phased modernization
+        roadmaps — purpose-built for heavy industry asset owners and operators.
       </p>
 
+      <!-- Capability chips -->
+      <div class="flex flex-wrap gap-2 mb-9">
+        {% for chip in capability_chips %}
+        <span class="text-[11px] font-medium text-slate-500 px-2.5 py-1 rounded-full"
+              style="background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);">
+          {{ chip }}
+        </span>
+        {% endfor %}
+      </div>
+
       <!-- CTAs -->
-      <div class="flex flex-wrap gap-3 mb-11">
+      <div class="flex flex-wrap gap-3 mb-10">
         <a href="/request-access/"
            class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400
-                  text-black font-bold text-[15px] px-6 py-3 rounded-xl glow-emerald transition-colors">
-          Request platform access
+                  text-black font-bold text-[15px] px-6 py-3.5 rounded-xl glow-emerald transition-colors">
+          Join the Pilot Cohort
           <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 16 16">
             <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
-        <a href="#cta"
+        <a href="#design-partner"
            class="inline-flex items-center gap-2 glass text-slate-300 font-semibold
-                  text-[15px] px-6 py-3 rounded-xl hover:border-emerald-500/30
+                  text-[15px] px-6 py-3.5 rounded-xl hover:border-emerald-500/30
                   hover:text-white glass-lift">
-          Become a design partner
+          Design Partner Programme
         </a>
       </div>
 
-      <!-- Trust signal -->
-      <div class="flex items-center gap-2 text-[12px] text-slate-500">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" style="animation: pulse 2.5s ease-in-out infinite;
-             box-shadow: 0 0 0 0 rgba(16,185,129,.5);
-             animation: ping 2.5s cubic-bezier(0,0,.2,1) infinite;"></span>
-        Pilot-stage platform · Numbers shown are illustrative · No credit card required
+      <!-- Trust signals row -->
+      <div class="space-y-2 text-[12px] text-slate-500">
+        <div class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-emerald-500/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          No credit card · No commitment · 48-hour response
+        </div>
+        <div class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-emerald-500/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          All financial projections are AI-assisted and illustrative in nature
+        </div>
+        <div class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-emerald-500/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          Compatible with ISO 14001 · ICMM · TSM · GRI Standards frameworks
+        </div>
       </div>
     </div>
 
@@ -81,17 +115,18 @@
             <span class="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-emerald-500/75">
               <span class="w-[7px] h-[7px] rounded-full bg-emerald-500 inline-block"
                     style="animation: pulse 2s ease-in-out infinite;"></span>
-              RUNNING
+              ANALYSIS COMPLETE
             </span>
           </div>
 
           <!-- Terminal output -->
           <div class="p-5 font-mono text-[11.5px] space-y-2.5 text-slate-500 leading-relaxed">
 
-            <div class="text-slate-600">$ ecoiq run-diagnostic --facility "Refinery Unit 3"</div>
-            <div class="text-emerald-500/70">✓  Document extraction complete · 312 pages indexed</div>
-            <div class="text-emerald-500/70">✓  Questionnaire responses loaded · 12 / 12</div>
-            <div class="text-slate-600 pb-1">Running AI analysis pass 2 / 2…</div>
+            <div class="text-slate-600">$ ecoiq analyse --facility "CDU Unit 3 · Midland Refinery"</div>
+            <div class="text-emerald-500/70">✓  Document extraction · 312 pages indexed</div>
+            <div class="text-emerald-500/70">✓  ESG questionnaire · 10 / 10 responses</div>
+            <div class="text-emerald-500/70">✓  AI diagnostic pass 2 / 2 complete</div>
+            <div class="text-slate-600 pb-1">Generating findings and modernization roadmap…</div>
 
             <!-- Finding block -->
             <div class="rounded-xl p-4 space-y-3"
@@ -102,7 +137,11 @@
                 <span class="sev-high text-[10px] font-bold px-2 py-[3px] rounded-[5px] tracking-widest uppercase">
                   HIGH
                 </span>
-                <span class="text-slate-200 font-semibold text-[12.5px] tracking-tight">
+                <span class="text-[10px] px-2 py-[3px] rounded-[5px] tracking-widest uppercase font-bold"
+                      style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.2);">
+                  Energy
+                </span>
+                <span class="text-slate-200 font-semibold text-[12.5px] tracking-tight ml-1">
                   CDU Heat Exchanger Fouling
                 </span>
               </div>
@@ -110,7 +149,7 @@
               <!-- Root cause -->
               <p class="text-slate-400 text-[11px] leading-relaxed">
                 <span class="text-slate-600 uppercase tracking-wider text-[9.5px] mr-1">Root cause ·</span>
-                3-year maintenance backlog. No predictive monitoring active on 8 critical heat exchangers.
+                No predictive monitoring active. Stack temp 68°C above design on F-101. 3-year maintenance backlog.
               </p>
 
               <!-- Metrics grid -->
@@ -137,25 +176,43 @@
 
               <!-- Action -->
               <div class="space-y-1">
-                <div class="text-[9.5px] text-slate-600 uppercase tracking-widest">Suggested modernization action</div>
+                <div class="text-[9.5px] text-slate-600 uppercase tracking-widest">Priority modernization action</div>
                 <p class="text-slate-400 text-[11px] leading-relaxed">
-                  Schedule emergency tube-side cleaning Q3. Integrate OPC-UA sensor feed for automated fouling detection. Estimated payback 8–11 months.
+                  Schedule Q3 tube-side cleaning. Integrate OPC-UA sensor feed for automated fouling detection. Est. payback 8–11 months (illustrative).
                 </p>
+              </div>
+
+              <!-- Overall score -->
+              <div class="flex items-center justify-between pt-1 border-t border-white/[.04]">
+                <span class="text-slate-600 text-[10.5px]">EcoIQ score · Environment pillar</span>
+                <div class="flex items-center gap-2">
+                  <div class="h-1.5 w-20 rounded-full overflow-hidden" style="background:rgba(255,255,255,.06);">
+                    <div style="width:34%;height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:99px;"></div>
+                  </div>
+                  <span class="font-mono text-[11px] font-bold text-slate-300">34/100</span>
+                </div>
               </div>
             </div>
 
             <!-- Footer line -->
             <div class="flex items-center justify-between text-[10.5px] pt-0.5">
-              <span class="text-slate-600">8 findings identified · analysis complete</span>
-              <span class="text-emerald-500 font-medium">→ view full report</span>
+              <span class="text-slate-600">8 findings · 5 pillar scores · roadmap generated</span>
+              <span class="text-emerald-500 font-medium">→ view report</span>
             </div>
-            <!-- Cursor -->
             <div class="flex gap-1 text-[11px]">
               <span class="text-slate-700">$</span>
               <span class="text-slate-600 cursor">▋</span>
             </div>
 
           </div>
+        </div>
+
+        <!-- Floating badge -->
+        <div class="absolute -bottom-4 -right-4 glass rounded-xl px-3.5 py-2.5 text-center"
+             style="border-color: rgba(16,185,129,.2);">
+          <div class="font-mono font-black text-emerald-400 text-[18px] leading-none">49</div>
+          <div class="text-[9px] text-slate-500 uppercase tracking-widest mt-1">EcoIQ Overall</div>
+          <div class="text-[8px] text-slate-700 mt-0.5">illustrative</div>
         </div>
       </div>
     </div>

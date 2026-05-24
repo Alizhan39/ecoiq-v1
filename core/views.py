@@ -38,10 +38,103 @@ CTA_SECTORS = [
 ]
 
 
+CAPABILITY_CHIPS = [
+    'AI Operational Diagnostics',
+    'ESG Pillar Scoring',
+    'Modernization Roadmaps',
+    'Compliance Gap Analysis',
+    'Sustainability Intelligence',
+]
+
+DESIGN_PARTNER_BENEFITS = [
+    (
+        'Full platform access — no cost',
+        'Run unlimited assessments on your facility data throughout the pilot phase.',
+    ),
+    (
+        'Direct product input',
+        'Shape the analytical models, questionnaire structure, and report format alongside the EcoIQ team.',
+    ),
+    (
+        'Preferential commercial terms',
+        'Design partners receive locked pricing and early-adopter SLA commitments at general release.',
+    ),
+    (
+        'Confidential and secure',
+        'All facility data is handled under NDA. No data is shared with third parties.',
+    ),
+]
+
+PILOT_TIMELINE = [
+    (
+        'Access Request',
+        'Week 0–1',
+        'Submit your facility profile via the access request form. EcoIQ reviews within 48 hours.',
+    ),
+    (
+        'Discovery Call',
+        'Week 1–2',
+        '30-minute call to align on facility scope, data availability, and pilot objectives.',
+    ),
+    (
+        'First Audit Session',
+        'Week 2–4',
+        'Upload facility documentation, complete the ESG questionnaire, generate your first AI report.',
+    ),
+    (
+        'Feedback Loop',
+        'Month 2–3',
+        'Iterative refinement of findings and roadmap with EcoIQ team based on your operational reality.',
+    ),
+    (
+        'Design Partner Status',
+        'Month 3+',
+        'Formalise design partner agreement, shape v2 feature roadmap, receive preferential terms.',
+    ),
+]
+
+
+HOW_IT_STEP1 = [
+    'PDF / plain-text document extraction',
+    'Structured 10-question ESG questionnaire',
+    'Facility profile and sector classification',
+]
+HOW_IT_STEP2 = [
+    'Five-pillar ESG scoring (0–100 per pillar)',
+    'Root cause and financial impact per finding',
+    'Emissions and sustainability consequence',
+    'Regulatory compliance gap identification',
+]
+HOW_IT_STEP3 = [
+    'Radar chart score visualization',
+    'Executive summary with priority actions',
+    'Per-pillar analysis and Q&A transcript',
+    'Printable and PDF export',
+]
+FRAMEWORKS = [
+    'ISO 14001', 'GRI Standards', 'TCFD', 'ICMM Principles',
+    'TSM Protocol', 'EU ETS', 'SBTi', 'Copper Mark', 'BRC Global Standard',
+]
+CTA_TRUST_SIGNALS = [
+    'No commitment required',
+    '48-hour response',
+    'NDA available on request',
+    'No credit card',
+]
+
+
 def landing(request):
     return render(request, 'landing.html', {
-        'industries':  INDUSTRIES,
-        'cta_sectors': CTA_SECTORS,
+        'industries':              INDUSTRIES,
+        'cta_sectors':             CTA_SECTORS,
+        'capability_chips':        CAPABILITY_CHIPS,
+        'design_partner_benefits': DESIGN_PARTNER_BENEFITS,
+        'pilot_timeline':          PILOT_TIMELINE,
+        'step1_items':             HOW_IT_STEP1,
+        'step2_items':             HOW_IT_STEP2,
+        'step3_items':             HOW_IT_STEP3,
+        'frameworks':              FRAMEWORKS,
+        'cta_trust_signals':       CTA_TRUST_SIGNALS,
     })
 
 

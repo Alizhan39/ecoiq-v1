@@ -3,7 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="AI-assisted diagnostics, sustainability analysis, and operational modernization insights for industrial facilities." />
+  <meta name="description" content="EcoIQ is a pilot-ready AI platform delivering operational diagnostics, sustainability analysis, and modernization intelligence for industrial facilities." />
+  <meta name="keywords" content="industrial AI, ESG analytics, operational diagnostics, industrial modernization, sustainability intelligence, energy efficiency, pilot platform" />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="EcoIQ — Ethical Intelligence for Industrial Modernization" />
+  <meta property="og:description" content="AI-assisted operational diagnostics, sustainability scoring, and modernization roadmaps for heavy industry. Pilot-ready." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://ecoiq.uk/" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="EcoIQ — Industrial Modernization Intelligence" />
+  <meta name="twitter:description" content="AI diagnostics. ESG scoring. Operational roadmaps. Pilot-ready industrial intelligence platform." />
+
   <title>EcoIQ — Ethical Intelligence for Industrial Modernization</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -159,7 +172,7 @@
         <a href="/audit/" class="hidden sm:block text-[13px] font-medium text-slate-500 hover:text-slate-300 transition-colors">
           Dashboard
         </a>
-        <a href="/audit/new/"
+        <a href="/request-access/"
            class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-[13px] px-4 py-2 rounded-lg glow-emerald transition-colors">
           Request Access
         </a>
@@ -185,26 +198,69 @@
        SECTIONS
   ══════════════════════════════════════════════ -->
   {% include "partials/_hero.html" %}
+  {% include "partials/_proof_band.html" %}
   {% include "partials/_how_it_works.html" %}
   {% include "partials/_findings.html" %}
+  {% include "partials/_industries.html" %}
+  {% include "partials/_design_partner.html" %}
   {% include "partials/_cta.html" %}
 
   <!-- ══════════════════════════════════════════════
        FOOTER
   ══════════════════════════════════════════════ -->
-  <footer class="border-t border-white/[.045] py-9">
-    <div class="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-2.5">
-        <div class="w-5 h-5 rounded-[4px] bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-          <span class="text-emerald-400 font-black" style="font-size:9px;">E</span>
+  <footer class="border-t border-white/[.045] pt-12 pb-8">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8">
+
+      <!-- Footer top row -->
+      <div class="grid sm:grid-cols-3 gap-8 mb-10">
+
+        <!-- Brand -->
+        <div>
+          <div class="flex items-center gap-2.5 mb-4">
+            <div class="w-[28px] h-[28px] rounded-[6px] bg-emerald-500 flex items-center justify-center">
+              <svg viewBox="0 0 20 20" fill="none" style="width:13px;height:13px;">
+                <path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/>
+                <circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/>
+              </svg>
+            </div>
+            <span class="font-black text-white" style="font-size:14px;">EcoIQ</span>
+          </div>
+          <p class="text-slate-600 text-[12px] leading-[1.7]">
+            AI-assisted operational diagnostics and sustainability intelligence for industrial facilities.
+            Pilot-ready platform, built for heavy industry.
+          </p>
         </div>
-        <span class="text-slate-600 text-[12px]">© 2025 EcoIQ · Pilot-ready AI platform for industrial modernization</span>
+
+        <!-- Platform links -->
+        <div>
+          <div class="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Platform</div>
+          <div class="space-y-2 text-[12px] text-slate-500">
+            <a href="/request-access/" class="block hover:text-slate-300 transition-colors">Request Pilot Access</a>
+            <a href="/esg/"            class="block hover:text-slate-300 transition-colors">ESG Assessment</a>
+            <a href="/audit/"          class="block hover:text-slate-300 transition-colors">Industrial Audit</a>
+            <a href="/admin/"          class="block hover:text-slate-300 transition-colors">Admin Portal</a>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div>
+          <div class="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Contact</div>
+          <div class="space-y-2 text-[12px] text-slate-500">
+            <a href="mailto:hello@ecoiq.uk" class="block hover:text-slate-300 transition-colors">hello@ecoiq.uk</a>
+            <span class="block">Design Partner enquiries welcome</span>
+          </div>
+        </div>
       </div>
-      <div class="flex items-center gap-5 text-[12px] text-slate-600">
-        <a href="/audit/" class="hover:text-slate-400 transition-colors">Industrial Audit</a>
-        <a href="/esg/"   class="hover:text-slate-400 transition-colors">ESG Assessment</a>
-        <a href="/admin/" class="hover:text-slate-400 transition-colors">Admin</a>
+
+      <!-- Divider -->
+      <div class="border-t border-white/[.04] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <span class="text-slate-700 text-[11px]">© {% now "Y" %} EcoIQ · All rights reserved</span>
+        <p class="text-slate-700 text-[11px] text-center sm:text-right max-w-md leading-[1.6]">
+          All financial projections and KPI estimates produced by EcoIQ are AI-assisted and illustrative.
+          Not investment advice. Figures should be validated by qualified engineers before capital commitment.
+        </p>
       </div>
+
     </div>
   </footer>
 
