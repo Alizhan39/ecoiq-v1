@@ -1,0 +1,11 @@
+{% load wagtailcore_tags %}
+<div class="kpi-card kpi-card--{{ value.colour }}">
+  <div class="kpi-val">{{ value.value }}{% if value.unit %}<span class="kpi-unit"> {{ value.unit }}</span>{% endif %}</div>
+  <div class="kpi-label">{{ value.label }}</div>
+  {% if value.trend %}
+    <div class="kpi-trend kpi-trend--{{ value.trend }}">
+      {% if value.trend == 'up' %}↑ Improving{% elif value.trend == 'down' %}↓ Declining{% else %}→ Stable{% endif %}
+    </div>
+  {% endif %}
+  {% if value.description %}<div class="kpi-desc">{{ value.description }}</div>{% endif %}
+</div>

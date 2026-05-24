@@ -1,0 +1,56 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }}{% endblock %}
+{% block nav_pages %}class="active"{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div style="background:linear-gradient(135deg,#1b4332 0%,#2d6a4f 60%,#40916c 100%);color:#fff;padding:4rem 2rem 3rem;text-align:center;">
+  <div style="max-width:720px;margin:0 auto;">
+    <h1 style="font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-0.04em;margin-bottom:0.75rem;">
+      {{ page.title }}
+    </h1>
+    {% if page.intro %}
+    <div style="font-size:1rem;color:rgba(255,255,255,.8);line-height:1.75;margin-bottom:2rem;">
+      {{ page.intro|richtext }}
+    </div>
+    {% endif %}
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="/league/" style="display:inline-block;background:#00c896;color:#0d2017;font-weight:800;padding:0.8rem 1.8rem;border-radius:8px;text-decoration:none;font-size:0.95rem;">
+        🏆 View League Ranking
+      </a>
+      <a href="/request-access/" style="display:inline-block;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);font-weight:600;padding:0.8rem 1.8rem;border-radius:8px;text-decoration:none;font-size:0.95rem;">
+        Request Access
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Top league companies mini-table -->
+{% if top_companies %}
+<div style="background:#fff;border-bottom:1px solid #e5ebe8;padding:1.5rem 2rem;">
+  <div style="max-width:860px;margin:0 auto;">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6b7c72;margin-bottom:1rem;">Top Companies This Month</div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+      {% for co in top_companies %}
+      <a href="/league/{{ co.slug }}/" style="flex:1;min-width:180px;padding:0.85rem 1rem;border:1px solid #e5ebe8;border-radius:10px;text-decoration:none;color:inherit;transition:border-color 0.15s;" onmouseover="this.style.borderColor='#40916c'" onmouseout="this.style.borderColor='#e5ebe8'">
+        <div style="font-weight:700;font-size:0.9rem;">{{ co.name }}</div>
+        <div style="font-size:0.72rem;color:#6b7c72;margin-top:0.1rem;">{{ co.get_sector_display }}</div>
+        <div style="font-size:1.4rem;font-weight:900;color:#2d6a4f;letter-spacing:-0.05em;margin-top:0.35rem;">{{ co.ecoiq_score }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Body blocks -->
+<div class="cms-container">
+  {% for block in page.body %}
+    {% include_block block %}
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,23 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--co2">
+  <h3 class="cms-block__title">{{ value.title }}</h3>
+  <div class="co2-grid">
+    <div class="co2-stat">
+      <div class="co2-num">{{ value.annual_reduction_tonnes|floatformat:0 }}t</div>
+      <div class="co2-lbl">CO₂ reduced per year</div>
+    </div>
+    <div class="co2-stat">
+      <div class="co2-num">{{ value.reduction_percent }}%</div>
+      <div class="co2-lbl">vs {{ value.baseline_year }} baseline</div>
+    </div>
+    {% if value.verified %}
+    <div class="co2-stat">
+      <div class="co2-num" style="color:#2d6a4f;">✓</div>
+      <div class="co2-lbl">Independently verified</div>
+    </div>
+    {% endif %}
+  </div>
+  {% if value.methodology %}
+    <p class="co2-method"><em>Methodology:</em> {{ value.methodology }}</p>
+  {% endif %}
+</div>

@@ -1,0 +1,10 @@
+{% load wagtailimages_tags %}
+<div class="cms-block cms-block--image {% if value.full_width %}cms-block--full-width{% endif %}">
+  {% image value.image width-1200 as img %}
+  <figure>
+    <img src="{{ img.url }}" alt="{{ value.image.title }}" style="width:100%;border-radius:10px;">
+    {% if value.caption %}
+      <figcaption style="text-align:center;font-size:0.8rem;color:#888;margin-top:0.5rem;">{{ value.caption }}</figcaption>
+    {% endif %}
+  </figure>
+</div>

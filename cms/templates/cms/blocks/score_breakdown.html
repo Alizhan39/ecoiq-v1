@@ -1,0 +1,63 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--score-breakdown">
+  <h3 class="cms-block__title">{{ value.title }}</h3>
+  {% if company %}
+    <div class="sd-hero" style="border-left: 4px solid {{ tier.colour }};">
+      <div class="sd-score" style="color: {{ tier.colour }};">{{ company.ecoiq_score }}</div>
+      <div class="sd-tier" style="color: {{ tier.colour }};">{{ tier.label }}</div>
+      <div class="sd-rank">{% if company.rank %}Rank #{{ company.rank }} · {% endif %}{{ company.get_sector_display }}</div>
+    </div>
+
+    {% if value.show_pillar_bars and pillars %}
+    <div class="sd-pillars">
+      {% for p in pillars %}
+      <div class="sd-pillar-row">
+        <div class="sd-pillar-top">
+          <span class="sd-pillar-name">{{ p.name }} <small style="color:#888;">×{{ p.weight }}%</small></span>
+          <span class="sd-pillar-score">{{ p.score }}</span>
+        </div>
+        <div class="sd-track"><div class="sd-fill" style="width:{{ p.score }}%"></div></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if value.show_trend_chart and history_labels %}
+    <div style="margin-top:1.5rem;">
+      <canvas id="sdChart-{{ value.company_slug }}" style="height:140px;"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+    (function(){
+      const ctx = document.getElementById('sdChart-{{ value.company_slug }}').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: {{ history_labels|safe }},
+          datasets: [{
+            label: 'EcoIQ Score',
+            data: {{ history_scores|safe }},
+            borderColor: '{{ tier.colour }}',
+            backgroundColor: '{{ tier.colour }}22',
+            borderWidth: 2, pointRadius: 3, fill: true, tension: 0.35,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, ticks: { font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    })();
+    </script>
+    {% endif %}
+  {% else %}
+    <p style="color:#888;font-style:italic;">
+      No league company found for slug "{{ value.company_slug }}".
+      Run <code>python manage.py seed_league</code> or check the slug.
+    </p>
+  {% endif %}
+</div>

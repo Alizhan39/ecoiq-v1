@@ -1,0 +1,53 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }}{% endblock %}
+{% block nav_pages %}class="active"{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div style="background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;padding:2.5rem 2rem;">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,.5);margin-bottom:0.5rem;">
+      <a href="/pages/home/" style="color:rgba(255,255,255,.6);text-decoration:none;">EcoIQ CMS</a> /
+    </div>
+    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;letter-spacing:-0.03em;">{{ page.title }}</h1>
+    {% if page.intro %}
+    <div style="color:rgba(255,255,255,.75);margin-top:0.5rem;font-size:0.9rem;">{{ page.intro|richtext }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="cms-container--wide">
+
+  <!-- Live league table (mirrors /league/ but with CMS profile links) -->
+  {% if companies %}
+  <div style="margin-bottom:1.5rem;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6b7c72;">
+    {{ companies|length }} companies · sorted by EcoIQ score
+  </div>
+
+  {% for co in companies %}
+  <div style="background:#fff;border:1px solid #e5ebe8;border-radius:10px;padding:1rem 1.25rem;margin-bottom:0.6rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <div style="font-size:1.2rem;font-weight:800;color:#40916c;width:2rem;text-align:center;">{{ co.rank|default:"—" }}</div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-weight:700;font-size:0.95rem;">{{ co.name }}</div>
+      <div style="font-size:0.75rem;color:#6b7c72;">{{ co.get_sector_display }}{% if co.city %} · {{ co.city }}{% endif %}{% if co.verified %} · ✓{% endif %}</div>
+    </div>
+    <div>
+      <div style="font-size:1.5rem;font-weight:900;letter-spacing:-0.05em;color:{{ co.tier.colour }};">{{ co.ecoiq_score }}</div>
+      <div style="font-size:0.68rem;font-weight:700;color:{{ co.tier.colour }};">{{ co.tier.label }}</div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <a href="/league/{{ co.slug }}/" style="font-size:0.8rem;font-weight:600;color:#2d6a4f;text-decoration:none;padding:0.35rem 0.8rem;border:1px solid #2d6a4f;border-radius:6px;white-space:nowrap;">
+        View Profile →
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p style="color:#888;">No companies yet. Run <code>python manage.py seed_league</code></p>
+  {% endif %}
+
+</div>
+{% endblock %}

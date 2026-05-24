@@ -1,0 +1,36 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--comparison">
+  <h3 class="cms-block__title">{{ value.title }}</h3>
+  {% if companies %}
+  <div style="overflow-x:auto;">
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>EcoIQ</th>
+          <th>Загрязнение</th>
+          <th>Снижение</th>
+          <th>Инвестиции</th>
+          <th>Прозрачность</th>
+          <th>Сообщество</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for co in companies %}
+        <tr>
+          <td><strong>{{ co.name }}</strong><br><small style="color:#888;">{{ co.get_sector_display }}</small></td>
+          <td><span style="color:{{ co.tier.colour }};font-weight:800;font-size:1.1rem;">{{ co.ecoiq_score }}</span></td>
+          <td>{{ co.score_pollution_footprint }}</td>
+          <td>{{ co.score_reduction_progress }}</td>
+          <td>{{ co.score_investment }}</td>
+          <td>{{ co.score_transparency }}</td>
+          <td>{{ co.score_community_impact }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:#888;font-style:italic;">No companies found. Check slugs in the block editor.</p>
+  {% endif %}
+</div>

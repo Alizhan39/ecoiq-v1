@@ -1,0 +1,46 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }}{% endblock %}
+{% block nav_pages %}class="active"{% endblock %}
+
+{% block content %}
+<div style="background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;padding:2.5rem 2rem;">
+  <div style="max-width:860px;margin:0 auto;">
+    <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,.5);margin-bottom:0.5rem;">
+      <a href="/pages/home/" style="color:rgba(255,255,255,.6);text-decoration:none;">EcoIQ</a> /
+    </div>
+    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:0.5rem;">{{ page.title }}</h1>
+    {% if page.intro %}
+    <div style="color:rgba(255,255,255,.75);font-size:0.9rem;line-height:1.65;max-width:620px;">{{ page.intro|richtext }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Formula summary card -->
+<div style="max-width:860px;margin:2rem auto 0;padding:0 1.5rem;">
+  <div style="background:#fff;border:1px solid #e5ebe8;border-radius:12px;padding:1.5rem;margin-bottom:2rem;">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#6b7c72;margin-bottom:1rem;">EcoIQ Score Formula</div>
+    <div style="font-size:1rem;font-weight:600;color:#1a2c23;line-height:2;">
+      EcoIQ = Pollution Footprint × <strong style="color:#2d6a4f;">35%</strong>
+            + Reduction Progress × <strong style="color:#2d6a4f;">25%</strong>
+            + Investment × <strong style="color:#2d6a4f;">20%</strong>
+            + Transparency × <strong style="color:#2d6a4f;">10%</strong>
+            + Community Impact × <strong style="color:#2d6a4f;">10%</strong>
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <span style="font-size:0.72rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:20px;background:#d8f3dc;color:#2d6a4f;">85–100 · Restorative Leader</span>
+      <span style="font-size:0.72rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:20px;background:#d8f3dc;color:#40916c;">70–84 · Transition Leader</span>
+      <span style="font-size:0.72rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:20px;background:#d8f3dc;color:#52b788;">55–69 · Improving</span>
+      <span style="font-size:0.72rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:20px;background:#fce9d4;color:#c47a1e;">40–54 · High Impact</span>
+      <span style="font-size:0.72rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:20px;background:#ffe0e0;color:#c62828;">0–39 · Major Polluter</span>
+    </div>
+  </div>
+</div>
+
+<div class="cms-container">
+  {% for block in page.body %}
+    {% include_block block %}
+  {% endfor %}
+</div>
+{% endblock %}

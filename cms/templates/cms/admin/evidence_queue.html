@@ -1,0 +1,62 @@
+{% load i18n %}
+<style>
+.eq-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+.eq-counts  { display:flex; gap:0.5rem; }
+.eq-badge   { font-size:0.68rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:10px; }
+.eq-badge--pending  { background:#fff3cd; color:#7a5c00; }
+.eq-badge--verified { background:#d8f3dc; color:#2d6a4f; }
+.eq-row { display:flex; align-items:flex-start; gap:0.6rem; padding:0.6rem 0; border-bottom:1px solid #f0f0f0; }
+.eq-row:last-child { border-bottom:none; }
+.eq-icon { width:28px; height:28px; border-radius:6px; background:#f8faf9; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0; }
+.eq-info { flex:1; }
+.eq-title { font-weight:600; font-size:0.82rem; }
+.eq-meta  { font-size:0.72rem; color:#888; margin-top:0.1rem; }
+.eq-action { font-size:0.72rem; font-weight:600; color:#2d6a4f; text-decoration:none; }
+</style>
+
+<div class="eq-header">
+  <h2 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#555;">
+    📋 Evidence Verification Queue
+  </h2>
+  <div class="eq-counts">
+    <span class="eq-badge eq-badge--pending">{{ pending_count }} pending</span>
+    <span class="eq-badge eq-badge--verified">{{ verified_count }} verified</span>
+  </div>
+</div>
+
+{% if pending_evidence %}
+{% for ev in pending_evidence %}
+<div class="eq-row">
+  <div class="eq-icon">
+    {% if ev.doc_type == 'audit_report' %}📋
+    {% elif ev.doc_type == 'government_report' %}🏛
+    {% elif ev.doc_type == 'satellite' %}🛰
+    {% elif ev.doc_type == 'photo' %}📷
+    {% elif ev.doc_type == 'engineering_audit' %}🔬
+    {% else %}📁{% endif %}
+  </div>
+  <div class="eq-info">
+    <div class="eq-title">{{ ev.title|truncatechars:55 }}</div>
+    <div class="eq-meta">
+      {{ ev.company.name }}{% if ev.project %} · {{ ev.project.name|truncatechars:30 }}{% endif %}
+    </div>
+  </div>
+  <a href="/admin/league/evidence/{{ ev.pk }}/change/" class="eq-action">Review →</a>
+</div>
+{% endfor %}
+
+{% if pending_count > 8 %}
+<div style="margin-top:0.75rem;font-size:0.78rem;color:#888;text-align:center;">
+  +{{ pending_count|add:"-8" }} more pending · <a href="/admin/league/evidence/?verification_status__exact=pending" style="color:#2d6a4f;">View all</a>
+</div>
+{% endif %}
+
+{% else %}
+<p style="color:#888;font-size:0.85rem;font-style:italic;padding:0.5rem 0;">
+  ✓ No pending evidence — all documents reviewed.
+</p>
+{% endif %}
+
+<div style="margin-top:0.75rem;">
+  <a href="/admin/league/evidence/" style="font-size:0.78rem;font-weight:600;color:#555;text-decoration:none;padding:0.3rem 0.75rem;border:1px solid #ccc;border-radius:5px;">All evidence</a>
+</div>

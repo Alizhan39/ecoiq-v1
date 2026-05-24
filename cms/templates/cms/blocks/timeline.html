@@ -1,0 +1,18 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--timeline">
+  <h3 class="cms-block__title">{{ value.title }}</h3>
+  <div class="timeline-track">
+    {% for event in value.events %}
+    <div class="timeline-event tl-status--{{ event.status }}">
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <div class="tl-year">{{ event.year }}</div>
+        <div class="tl-title">{{ event.title }}</div>
+        <div class="tl-desc">{{ event.description }}</div>
+        {% if event.investment %}<div class="tl-inv">{{ event.investment }}</div>{% endif %}
+        <span class="tl-status-badge tl-status-badge--{{ event.status }}">{{ event.get_status_display }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>

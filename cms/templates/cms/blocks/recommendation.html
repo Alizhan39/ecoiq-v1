@@ -1,0 +1,25 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--recommendation rec-priority--{{ value.priority }}">
+  <div class="rec-header">
+    <h3 class="rec-title">{{ value.title }}</h3>
+    <span class="rec-badge rec-badge--{{ value.priority }}">
+      {% if value.priority == 'high' %}🔴 High Priority
+      {% elif value.priority == 'medium' %}🟡 Medium Priority
+      {% else %}🟢 Low Priority{% endif %}
+    </span>
+  </div>
+  <div class="rec-body">{{ value.description }}</div>
+  {% if value.investment_range or value.expected_impact or value.timeline %}
+  <div class="rec-meta-grid">
+    {% if value.investment_range %}
+      <div class="rec-meta-item"><span class="rec-meta-lbl">Investment</span><span>{{ value.investment_range }}</span></div>
+    {% endif %}
+    {% if value.expected_impact %}
+      <div class="rec-meta-item"><span class="rec-meta-lbl">Expected impact</span><span>{{ value.expected_impact }}</span></div>
+    {% endif %}
+    {% if value.timeline %}
+      <div class="rec-meta-item"><span class="rec-meta-lbl">Timeline</span><span>{{ value.timeline }}</span></div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

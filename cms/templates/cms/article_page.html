@@ -1,0 +1,40 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }}{% endblock %}
+{% block nav_pages %}class="active"{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div style="background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;padding:2.5rem 2rem;">
+  <div style="max-width:860px;margin:0 auto;">
+    <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,.5);margin-bottom:0.75rem;">
+      <a href="/pages/home/" style="color:rgba(255,255,255,.6);text-decoration:none;">EcoIQ</a> / Insights
+    </div>
+    {% if page.published_date %}
+    <div style="font-size:0.78rem;color:rgba(255,255,255,.55);margin-bottom:0.5rem;">
+      {{ page.published_date|date:"j F Y" }}{% if page.author %} · {{ page.author }}{% endif %}
+    </div>
+    {% endif %}
+    <h1 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:0.5rem;">{{ page.title }}</h1>
+    {% if page.intro %}
+    <p style="font-size:1rem;color:rgba(255,255,255,.75);line-height:1.65;max-width:640px;">{{ page.intro }}</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if page.featured_image %}
+<div style="max-width:860px;margin:2rem auto 0;padding:0 1.5rem;">
+  {% image page.featured_image width-1200 as fi %}
+  <img src="{{ fi.url }}" alt="{{ page.title }}" style="width:100%;border-radius:12px;">
+</div>
+{% endif %}
+
+<div class="cms-container">
+  {% for block in page.body %}
+    {% include_block block %}
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,11 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--cta">
+  {% if value.text %}<p class="cta-text">{{ value.text }}</p>{% endif %}
+  {% if value.url %}
+    <a href="{{ value.url }}" class="cta-btn cta-btn--{{ value.style }}">{{ value.button_label }}</a>
+  {% elif value.page %}
+    <a href="{{ value.page.url }}" class="cta-btn cta-btn--{{ value.style }}">{{ value.button_label }}</a>
+  {% else %}
+    <a href="#" class="cta-btn cta-btn--{{ value.style }}">{{ value.button_label }}</a>
+  {% endif %}
+</div>

@@ -1,0 +1,39 @@
+{% load wagtailcore_tags wagtaildocs_tags %}
+<div class="cms-block cms-block--evidence">
+  <h3 class="cms-block__title">{{ value.title }}</h3>
+  <div class="evidence-list">
+    {% for item in value.items %}
+    <div class="ev-row">
+      <div class="ev-icon">
+        {% if item.doc_type == 'audit_report' %}📋
+        {% elif item.doc_type == 'government_report' %}🏛
+        {% elif item.doc_type == 'satellite' %}🛰
+        {% elif item.doc_type == 'photo' %}📷
+        {% elif item.doc_type == 'invoice' %}📄
+        {% elif item.doc_type == 'permit' %}🔏
+        {% elif item.doc_type == 'engineering_audit' %}🔬
+        {% else %}📁{% endif %}
+      </div>
+      <div class="ev-info">
+        <div class="ev-title">
+          {% if item.document %}
+            <a href="{% wagtail_document_url item.document %}" target="_blank" rel="noopener">{{ item.title }}</a>
+          {% elif item.url %}
+            <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
+          {% else %}
+            {{ item.title }}
+          {% endif %}
+        </div>
+        <div class="ev-meta">
+          {{ item.get_doc_type_display }}{% if item.issuer %} · {{ item.issuer }}{% endif %}{% if item.year %} · {{ item.year }}{% endif %}
+        </div>
+      </div>
+      <span class="ev-badge ev-badge--{{ item.verification_status }}">
+        {% if item.verification_status == 'verified' %}✓ Verified
+        {% elif item.verification_status == 'rejected' %}✗ Rejected
+        {% else %}Pending{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</div>

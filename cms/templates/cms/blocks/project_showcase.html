@@ -1,0 +1,38 @@
+{% load wagtailcore_tags wagtailimages_tags %}
+<div class="cms-block cms-block--project">
+  <div class="proj-header">
+    <div>
+      <span class="proj-type-badge">{{ value.get_project_type_display }}</span>
+      <h3 class="proj-title">{{ value.title }}</h3>
+      {% if value.location %}<div class="proj-location">📍 {{ value.location }}</div>{% endif %}
+    </div>
+    <span class="status-pill status-{{ value.status }}">{{ value.get_status_display }}</span>
+  </div>
+
+  {% if value.image %}
+  <div class="proj-image">
+    {% image value.image width-800 as img %}
+    <img src="{{ img.url }}" alt="{{ value.title }}" style="width:100%;border-radius:8px;margin-bottom:1rem;">
+  </div>
+  {% endif %}
+
+  <div class="proj-body">{{ value.description }}</div>
+
+  <div class="proj-kpis">
+    {% if value.investment_usd %}
+      <span class="proj-kpi">💰 ${{ value.investment_usd|floatformat:0 }}</span>
+    {% endif %}
+    {% if value.co2_tonnes %}
+      <span class="proj-kpi">🌿 {{ value.co2_tonnes }}t CO₂/yr</span>
+    {% endif %}
+    {% if value.households_helped %}
+      <span class="proj-kpi">🏠 {{ value.households_helped }} households</span>
+    {% endif %}
+    {% if value.pm25_kg %}
+      <span class="proj-kpi">💨 {{ value.pm25_kg }}kg PM2.5/yr</span>
+    {% endif %}
+    {% if value.verified %}
+      <span class="proj-kpi proj-kpi--verified">✓ Verified</span>
+    {% endif %}
+  </div>
+</div>

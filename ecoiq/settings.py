@@ -68,10 +68,29 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Wagtail
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.contrib.table_block',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail',
+    'modelcluster',
+    'taggit',
+
+    # Project apps
     'core',
     'audit',
     'leads',
     'league',
+    'cms',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -85,6 +104,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',  # must be last
 ]
 
 ROOT_URLCONF = 'ecoiq.urls'
@@ -157,6 +177,19 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
+# ── Wagtail ────────────────────────────────────────────────────────────────────
+
+WAGTAIL_SITE_NAME = 'EcoIQ'
+WAGTAILADMIN_BASE_URL = os.environ.get('SITE_URL', 'https://ecoiq.uk')
+WAGTAIL_ENABLE_UPDATE_CHECK = False     # don't ping wagtail.io in production
+WAGTAILSEARCH_BACKENDS = {
+    'default': {
+        'BACKEND': 'wagtail.search.backends.database',
+    }
+}
+# All new StreamFields use JSON storage (Wagtail 7.x default)
+WAGTAIL_USE_JSON_FIELD = True
 
 # ── Site URL (used for og:image and share links) ──────────────────────────────
 SITE_URL = os.environ.get('SITE_URL', 'https://ecoiq.uk')
