@@ -1,0 +1,77 @@
+<!-- ══════════════════════════════════════════════════════
+     SECTION 04 · CTA
+══════════════════════════════════════════════════════ -->
+<section id="cta" class="relative py-28 lg:py-40 border-t border-white/[.045] overflow-hidden">
+
+  <!-- Background grid -->
+  <div class="absolute inset-0 grid-bg opacity-60 pointer-events-none"></div>
+
+  <!-- Ambient glow -->
+  <div class="orb w-[800px] h-[800px] bg-emerald-500 opacity-[.055]
+              top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+
+  <div class="relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
+
+    <!-- Pill badge -->
+    <div class="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-[12px]
+                text-slate-400 mb-10 reveal"
+         style="border-color: rgba(16,185,129,.18);">
+      <span class="w-[7px] h-[7px] rounded-full bg-emerald-500 shrink-0"
+            style="animation: pulse 2s ease-in-out infinite;"></span>
+      Accepting pilot partners — limited availability
+    </div>
+
+    <!-- Headline -->
+    <h2 class="text-[2.5rem] sm:text-5xl lg:text-[3.25rem] font-black text-white
+               leading-[1.07] tracking-[-0.02em] mb-6 reveal" style="transition-delay: .07s;">
+      Request access to<br>
+      <span class="gradient-word">EcoIQ v1.</span>
+    </h2>
+
+    <!-- Subtext -->
+    <p class="text-slate-400 text-[1.05rem] leading-[1.78] max-w-xl mx-auto mb-10
+              reveal" style="transition-delay: .13s;">
+      EcoIQ is currently in pilot-ready development. We are onboarding founding
+      design partners from heavy industry to co-develop the platform's analytical
+      capabilities alongside real facility data.
+    </p>
+
+    <!-- CTA buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12
+                reveal" style="transition-delay: .18s;">
+      <a href="/audit/new/"
+         class="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400
+                text-black font-bold text-[15px] px-7 py-3.5 rounded-xl glow-emerald
+                transition-colors w-full sm:w-auto">
+        Request platform access
+        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 16 16">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="/audit/"
+         class="inline-flex items-center justify-center gap-2 glass text-slate-300
+                font-semibold text-[15px] px-7 py-3.5 rounded-xl
+                hover:border-emerald-500/30 hover:text-white glass-lift
+                w-full sm:w-auto">
+        Book a strategic conversation
+      </a>
+    </div>
+
+    <!-- Industries served -->
+    <div class="reveal" style="transition-delay: .23s;">
+      <p class="text-[11.5px] text-slate-600 mb-4 uppercase tracking-widest font-semibold">
+        Designed for
+      </p>
+      <div class="flex flex-wrap justify-center gap-2">
+        {% for sector in cta_sectors %}
+        <span class="text-[12px] text-slate-500 px-3 py-1 rounded-full"
+              style="background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);">
+          {{ sector }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</section>

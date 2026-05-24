@@ -32,8 +32,17 @@ INDUSTRIES = [
 ]
 
 
+CTA_SECTORS = [
+    'Oil & Gas', 'Manufacturing', 'Automotive', 'Chemicals',
+    'Pharma', 'Logistics', 'Utilities', 'Metals & Mining',
+]
+
+
 def landing(request):
-    return render(request, 'landing.html', {'industries': INDUSTRIES})
+    return render(request, 'landing.html', {
+        'industries':  INDUSTRIES,
+        'cta_sectors': CTA_SECTORS,
+    })
 
 
 def index(request):

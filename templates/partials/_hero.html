@@ -1,0 +1,168 @@
+<!-- ══════════════════════════════════════════════════════
+     SECTION 01 · HERO
+══════════════════════════════════════════════════════ -->
+<section id="platform" class="relative grid-bg min-h-screen flex flex-col justify-center pt-[62px] overflow-hidden">
+
+  <!-- Ambient orbs -->
+  <div class="orb w-[700px] h-[700px] bg-emerald-500 opacity-[.055] -top-40 -right-52"></div>
+  <div class="orb w-[450px] h-[450px] bg-teal-400   opacity-[.04]  bottom-10 -left-40"></div>
+
+  <div class="max-w-6xl mx-auto w-full px-5 sm:px-8 py-20 lg:py-28 grid lg:grid-cols-2 gap-14 xl:gap-20 items-center">
+
+    <!-- ── Left copy ──────────────────────────────── -->
+    <div class="reveal">
+
+      <span class="eyebrow mb-5 block">AI-Assisted Industrial Platform · Pilot-Ready</span>
+
+      <h1 class="text-[2.75rem] sm:text-5xl lg:text-[3.35rem] xl:text-[3.75rem]
+                 font-black leading-[1.07] tracking-[-0.02em] text-white mb-6">
+        Ethical intelligence<br>
+        for industrial<br>
+        <span class="gradient-word">modernization.</span>
+      </h1>
+
+      <p class="text-[1.05rem] text-slate-400 leading-[1.78] max-w-[500px] mb-10">
+        AI-assisted diagnostics, sustainability analysis, and operational
+        modernization insights for industrial facilities.
+      </p>
+
+      <!-- CTAs -->
+      <div class="flex flex-wrap gap-3 mb-11">
+        <a href="/audit/new/"
+           class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400
+                  text-black font-bold text-[15px] px-6 py-3 rounded-xl glow-emerald transition-colors">
+          Request platform access
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 16 16">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="#cta"
+           class="inline-flex items-center gap-2 glass text-slate-300 font-semibold
+                  text-[15px] px-6 py-3 rounded-xl hover:border-emerald-500/30
+                  hover:text-white glass-lift">
+          Become a design partner
+        </a>
+      </div>
+
+      <!-- Trust signal -->
+      <div class="flex items-center gap-2 text-[12px] text-slate-500">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" style="animation: pulse 2.5s ease-in-out infinite;
+             box-shadow: 0 0 0 0 rgba(16,185,129,.5);
+             animation: ping 2.5s cubic-bezier(0,0,.2,1) infinite;"></span>
+        Pilot-stage platform · Numbers shown are illustrative · No credit card required
+      </div>
+    </div>
+
+    <!-- ── Right: diagnostic terminal ────────────── -->
+    <div class="reveal hidden lg:block" style="transition-delay: .18s;">
+      <div class="relative">
+
+        <!-- Glow halo -->
+        <div class="absolute inset-0 rounded-3xl pointer-events-none"
+             style="background: radial-gradient(ellipse at 60% 40%, rgba(16,185,129,.1) 0%, transparent 70%);
+                    transform: scale(1.08); filter: blur(24px);"></div>
+
+        <!-- Terminal card -->
+        <div class="relative glass rounded-2xl overflow-hidden"
+             style="border-color: rgba(255,255,255,.1); box-shadow: 0 32px 80px rgba(0,0,0,.55);">
+
+          <!-- Title bar -->
+          <div class="flex items-center gap-2 px-4 py-[11px] border-b border-white/[.055]"
+               style="background: rgba(255,255,255,.02);">
+            <div class="flex gap-1.5">
+              <div class="w-[9px] h-[9px] rounded-full bg-red-500/60"></div>
+              <div class="w-[9px] h-[9px] rounded-full bg-yellow-500/60"></div>
+              <div class="w-[9px] h-[9px] rounded-full bg-emerald-500/60"></div>
+            </div>
+            <span class="ml-2.5 font-mono text-[10px] text-slate-500 tracking-wide">
+              ecoiq — illustrative_analysis.py
+            </span>
+            <span class="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-emerald-500/75">
+              <span class="w-[7px] h-[7px] rounded-full bg-emerald-500 inline-block"
+                    style="animation: pulse 2s ease-in-out infinite;"></span>
+              RUNNING
+            </span>
+          </div>
+
+          <!-- Terminal output -->
+          <div class="p-5 font-mono text-[11.5px] space-y-2.5 text-slate-500 leading-relaxed">
+
+            <div class="text-slate-600">$ ecoiq run-diagnostic --facility "Refinery Unit 3"</div>
+            <div class="text-emerald-500/70">✓  Document extraction complete · 312 pages indexed</div>
+            <div class="text-emerald-500/70">✓  Questionnaire responses loaded · 12 / 12</div>
+            <div class="text-slate-600 pb-1">Running AI analysis pass 2 / 2…</div>
+
+            <!-- Finding block -->
+            <div class="rounded-xl p-4 space-y-3"
+                 style="background: rgba(255,255,255,.022); border: 1px solid rgba(255,255,255,.065);">
+
+              <!-- Header -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="sev-high text-[10px] font-bold px-2 py-[3px] rounded-[5px] tracking-widest uppercase">
+                  HIGH
+                </span>
+                <span class="text-slate-200 font-semibold text-[12.5px] tracking-tight">
+                  CDU Heat Exchanger Fouling
+                </span>
+              </div>
+
+              <!-- Root cause -->
+              <p class="text-slate-400 text-[11px] leading-relaxed">
+                <span class="text-slate-600 uppercase tracking-wider text-[9.5px] mr-1">Root cause ·</span>
+                3-year maintenance backlog. No predictive monitoring active on 8 critical heat exchangers.
+              </p>
+
+              <!-- Metrics grid -->
+              <div class="grid grid-cols-3 gap-2">
+                <div class="rounded-lg p-3 text-center"
+                     style="background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.14);">
+                  <div class="text-red-400 font-black font-mono" style="font-size:15px; line-height:1;">~$480K</div>
+                  <div class="text-[9px] text-slate-600 uppercase tracking-wide mt-1">Proj. loss/yr</div>
+                  <div class="text-[8.5px] text-slate-700 mt-0.5">illustrative</div>
+                </div>
+                <div class="rounded-lg p-3 text-center"
+                     style="background: rgba(16,185,129,.06); border: 1px solid rgba(16,185,129,.14);">
+                  <div class="text-emerald-400 font-black font-mono" style="font-size:15px; line-height:1;">+14%</div>
+                  <div class="text-[9px] text-slate-600 uppercase tracking-wide mt-1">Efficiency</div>
+                  <div class="text-[8.5px] text-slate-700 mt-0.5">if addressed</div>
+                </div>
+                <div class="rounded-lg p-3 text-center"
+                     style="background: rgba(20,184,166,.06); border: 1px solid rgba(20,184,166,.14);">
+                  <div class="text-teal-400 font-black font-mono" style="font-size:14px; line-height:1;">1,240t</div>
+                  <div class="text-[9px] text-slate-600 uppercase tracking-wide mt-1">CO₂e excess</div>
+                  <div class="text-[8.5px] text-slate-700 mt-0.5">above baseline</div>
+                </div>
+              </div>
+
+              <!-- Action -->
+              <div class="space-y-1">
+                <div class="text-[9.5px] text-slate-600 uppercase tracking-widest">Suggested modernization action</div>
+                <p class="text-slate-400 text-[11px] leading-relaxed">
+                  Schedule emergency tube-side cleaning Q3. Integrate OPC-UA sensor feed for automated fouling detection. Estimated payback 8–11 months.
+                </p>
+              </div>
+            </div>
+
+            <!-- Footer line -->
+            <div class="flex items-center justify-between text-[10.5px] pt-0.5">
+              <span class="text-slate-600">8 findings identified · analysis complete</span>
+              <span class="text-emerald-500 font-medium">→ view full report</span>
+            </div>
+            <!-- Cursor -->
+            <div class="flex gap-1 text-[11px]">
+              <span class="text-slate-700">$</span>
+              <span class="text-slate-600 cursor">▋</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom fade into next section -->
+  <div class="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+       style="background: linear-gradient(to bottom, transparent, #06080e);"></div>
+</section>

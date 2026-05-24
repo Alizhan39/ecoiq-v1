@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="EcoIQ: AI-powered industrial facility audits. Diagnose energy waste, predict failures, and generate ROI-backed modernisation plans — in minutes." />
-  <title>EcoIQ — Industrial AI for Facility Modernisation</title>
+  <meta name="description" content="AI-assisted diagnostics, sustainability analysis, and operational modernization insights for industrial facilities." />
+  <title>EcoIQ — Ethical Intelligence for Industrial Modernization</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -12,926 +12,260 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
-          },
-          colors: {
-            eco: '#0fdb8e',
-          },
-          animation: {
-            'fade-up': 'fadeUp .6s ease both',
-            'pulse-slow': 'pulse 3s ease-in-out infinite',
-            'border-spin': 'borderSpin 4s linear infinite',
-          },
-          keyframes: {
-            fadeUp: {
-              '0%':   { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
-            },
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'ui-monospace', 'monospace'],
           },
         }
       }
     }
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <style>
-    /* ── Base ──────────────────────────────────────────────── */
+    /* ── Reset ────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
-    body { background: #04090f; font-family: 'Inter', system-ui, sans-serif; }
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: #04090f; }
-    ::-webkit-scrollbar-thumb { background: #1c3048; border-radius: 99px; }
+    html { color-scheme: dark; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #06080e; }
+    ::-webkit-scrollbar-thumb { background: #1c2333; border-radius: 99px; }
 
-    /* ── Grid overlay ──────────────────────────────────────── */
+    /* ── Grid overlay ─────────────────────────────── */
     .grid-bg {
       background-image:
-        linear-gradient(rgba(15,219,142,.028) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,219,142,.028) 1px, transparent 1px);
-      background-size: 72px 72px;
+        linear-gradient(rgba(16, 185, 129, .02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, .02) 1px, transparent 1px);
+      background-size: 64px 64px;
     }
 
-    /* ── Glow orbs ─────────────────────────────────────────── */
-    .orb {
-      position: absolute; border-radius: 50%;
-      pointer-events: none; filter: blur(80px);
-    }
-
-    /* ── Glass card ────────────────────────────────────────── */
+    /* ── Glassmorphism ────────────────────────────── */
     .glass {
-      background: rgba(255,255,255,.035);
-      border: 1px solid rgba(255,255,255,.07);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, .032);
+      border: 1px solid rgba(255, 255, 255, .065);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
-    .glass-hover { transition: all .25s ease; }
-    .glass-hover:hover {
-      background: rgba(15,219,142,.07);
-      border-color: rgba(15,219,142,.25);
+    .glass-lift {
+      transition: background .2s ease, border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+    .glass-lift:hover {
+      background: rgba(16, 185, 129, .045);
+      border-color: rgba(16, 185, 129, .2);
       transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(16, 185, 129, .08);
     }
 
-    /* ── Eco accent ────────────────────────────────────────── */
-    .text-eco   { color: #0fdb8e; }
-    .border-eco { border-color: #0fdb8e; }
-    .bg-eco     { background: #0fdb8e; }
+    /* ── Ambient orbs ─────────────────────────────── */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(100px);
+    }
 
-    /* ── Severity badges ───────────────────────────────────── */
-    .sev-critical { background:rgba(239,68,68,.12);  color:#f87171; border:1px solid rgba(239,68,68,.3);  }
-    .sev-high     { background:rgba(245,158,11,.12); color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
-    .sev-medium   { background:rgba(99,102,241,.12); color:#a5b4fc; border:1px solid rgba(99,102,241,.3); }
+    /* ── Emerald glow on button ───────────────────── */
+    .glow-emerald {
+      box-shadow: 0 0 24px rgba(16, 185, 129, .3), 0 0 56px rgba(16, 185, 129, .1);
+      transition: box-shadow .2s ease, background .2s ease;
+    }
+    .glow-emerald:hover {
+      box-shadow: 0 0 32px rgba(16, 185, 129, .45), 0 0 80px rgba(16, 185, 129, .15);
+    }
 
-    /* ── Section label ─────────────────────────────────────── */
+    /* ── Eyebrow label ────────────────────────────── */
     .eyebrow {
-      font-size: .67rem; letter-spacing: .2em; text-transform: uppercase;
-      font-weight: 700; color: #0fdb8e;
+      display: inline-block;
+      font-size: .67rem;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: #10b981;
     }
 
-    /* ── Animated progress bar ─────────────────────────────── */
-    .bar-fill {
-      height: 100%; border-radius: 99px;
-      background: linear-gradient(90deg, #0fdb8e, #4ade80);
-      width: 0; transition: width 1.4s cubic-bezier(.4,0,.2,1);
-    }
-
-    /* ── Counter ───────────────────────────────────────────── */
-    .counting { font-variant-numeric: tabular-nums; }
-
-    /* ── Terminal card ─────────────────────────────────────── */
-    .terminal-dot { width:10px; height:10px; border-radius:50%; }
-
-    /* ── Nav blur ──────────────────────────────────────────── */
-    .nav-blur {
-      background: rgba(4,9,15,.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,.05);
-    }
-
-    /* ── Gradient text ─────────────────────────────────────── */
-    .gradient-text {
-      background: linear-gradient(135deg, #fff 30%, #0fdb8e 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    /* ── Gradient headline ────────────────────────── */
+    .gradient-word {
+      background: linear-gradient(105deg, #10b981 0%, #34d399 45%, #fff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    /* ── Reveal on scroll ──────────────────────────────────── */
-    .reveal { opacity:0; transform:translateY(28px); transition: opacity .6s ease, transform .6s ease; }
-    .reveal.visible { opacity:1; transform:none; }
+    /* ── Severity badges ──────────────────────────── */
+    .sev-critical {
+      background: rgba(239, 68, 68, .1);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, .25);
+    }
+    .sev-high {
+      background: rgba(245, 158, 11, .1);
+      color: #fde68a;
+      border: 1px solid rgba(245, 158, 11, .25);
+    }
+
+    /* ── Terminal cursor blink ────────────────────── */
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .cursor { animation: blink 1.1s step-end infinite; }
+
+    /* ── Progress bar ─────────────────────────────── */
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #10b981, #34d399);
+      width: 0;
+      transition: width 1.5s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* ── Scroll reveal ────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.in { opacity: 1; transform: none; }
   </style>
 </head>
 
-<body class="text-slate-200 antialiased overflow-x-hidden">
+<body class="bg-[#06080e] text-slate-200 font-sans antialiased overflow-x-hidden">
 
-<!-- ════════════════════════════════════════════════════════
-     NAV
-═════════════════════════════════════════════════════════ -->
-<nav class="nav-blur fixed top-0 inset-x-0 z-50">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between gap-6">
+  <!-- ══════════════════════════════════════════════
+       NAV
+  ══════════════════════════════════════════════ -->
+  <header class="fixed top-0 inset-x-0 z-50"
+          style="background: rgba(6,8,14,.88); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,.05);">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 h-[62px] flex items-center justify-between gap-6">
 
-    <!-- Logo -->
-    <a href="/" class="flex items-center gap-2.5 shrink-0">
-      <div class="w-8 h-8 rounded-lg bg-eco flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" class="w-4.5 h-4.5" style="width:18px;height:18px;">
-          <path d="M12 3C7 3 3 7 3 12c0 2.5 1 4.8 2.6 6.4L12 21l6.4-2.6A9 9 0 0 0 21 12c0-5-4-9-9-9z" fill="#04090f"/>
-          <path d="M12 7v5l3 3" stroke="#04090f" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <span class="font-bold text-white text-lg tracking-tight">EcoIQ</span>
-    </a>
-
-    <!-- Desktop links -->
-    <div class="hidden md:flex items-center gap-7 text-sm font-medium text-slate-400">
-      <a href="#how-it-works" class="hover:text-white transition-colors">How it works</a>
-      <a href="#industries"   class="hover:text-white transition-colors">Industries</a>
-      <a href="#findings"     class="hover:text-white transition-colors">AI Findings</a>
-      <a href="#savings"      class="hover:text-white transition-colors">Case Studies</a>
-    </div>
-
-    <!-- CTAs -->
-    <div class="flex items-center gap-3">
-      <a href="/audit/" class="hidden sm:inline-flex text-sm text-slate-400 hover:text-white transition-colors">Dashboard</a>
-      <a href="/audit/new/"
-         class="inline-flex items-center gap-1.5 text-sm font-semibold bg-eco text-[#04090f] px-4 py-2 rounded-lg hover:brightness-110 transition-all">
-        Start Audit
-        <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
-          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-2.5 shrink-0 group">
+        <div class="w-[30px] h-[30px] rounded-[7px] bg-emerald-500 flex items-center justify-center
+                    transition-all duration-200 group-hover:shadow-[0_0_14px_rgba(16,185,129,.6)]">
+          <svg viewBox="0 0 20 20" fill="none" style="width:15px;height:15px;">
+            <path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/>
+            <circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/>
+          </svg>
+        </div>
+        <span class="font-black text-white tracking-tight" style="font-size:15px;">EcoIQ</span>
       </a>
-      <!-- Mobile menu button -->
-      <button id="menu-btn" class="md:hidden p-2 rounded-lg hover:bg-white/5 transition" aria-label="Menu">
-        <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-      </button>
-    </div>
-  </div>
 
-  <!-- Mobile menu -->
-  <div id="mobile-menu" class="hidden md:hidden border-t border-white/5 px-5 py-4 space-y-3">
-    <a href="#how-it-works" class="block text-sm text-slate-400 hover:text-white py-1">How it works</a>
-    <a href="#industries"   class="block text-sm text-slate-400 hover:text-white py-1">Industries</a>
-    <a href="#findings"     class="block text-sm text-slate-400 hover:text-white py-1">AI Findings</a>
-    <a href="#savings"      class="block text-sm text-slate-400 hover:text-white py-1">Case Studies</a>
-    <a href="/audit/new/"   class="block text-sm font-semibold text-eco py-1">Start Free Audit →</a>
-  </div>
-</nav>
+      <!-- Desktop nav links -->
+      <nav class="hidden md:flex items-center gap-7">
+        <a href="#platform"     class="text-[13px] font-medium text-slate-400 hover:text-white transition-colors duration-150">Platform</a>
+        <a href="#how-it-works" class="text-[13px] font-medium text-slate-400 hover:text-white transition-colors duration-150">How It Works</a>
+        <a href="#findings"     class="text-[13px] font-medium text-slate-400 hover:text-white transition-colors duration-150">AI Findings</a>
+      </nav>
 
-
-<!-- ════════════════════════════════════════════════════════
-     01 · HERO
-═════════════════════════════════════════════════════════ -->
-<section class="relative grid-bg min-h-screen flex flex-col justify-center pt-16 overflow-hidden">
-
-  <!-- Glow orbs -->
-  <div class="orb w-[700px] h-[700px] bg-[#0fdb8e] opacity-[.06] top-[-200px] right-[-200px]"></div>
-  <div class="orb w-[500px] h-[500px] bg-[#4f8ef7] opacity-[.05] bottom-[-100px] left-[-150px]"></div>
-
-  <div class="max-w-7xl mx-auto px-5 sm:px-8 py-20 lg:py-28 grid lg:grid-cols-2 gap-16 items-center">
-
-    <!-- Left copy -->
-    <div>
-      <div class="eyebrow mb-5">AI-Powered Industrial Intelligence</div>
-
-      <h1 class="text-5xl sm:text-6xl lg:text-[4.25rem] font-black leading-[1.05] tracking-tight mb-6">
-        <span class="gradient-text">Turn operational</span><br>
-        waste into<br>
-        <span class="text-eco">measurable ROI.</span>
-      </h1>
-
-      <p class="text-slate-400 text-lg leading-relaxed max-w-xl mb-10">
-        EcoIQ runs deep AI diagnostics on industrial facilities — identifying energy losses, maintenance failures, and modernisation opportunities with concrete financial estimates and a phased action plan.
-      </p>
-
-      <!-- CTAs -->
-      <div class="flex flex-wrap gap-4 mb-14">
+      <!-- Right -->
+      <div class="flex items-center gap-3">
+        <a href="/audit/" class="hidden sm:block text-[13px] font-medium text-slate-500 hover:text-slate-300 transition-colors">
+          Dashboard
+        </a>
         <a href="/audit/new/"
-           class="inline-flex items-center gap-2 bg-eco text-[#04090f] font-bold px-7 py-3.5 rounded-xl text-base hover:brightness-110 transition-all shadow-[0_0_30px_rgba(15,219,142,0.25)]">
-          Start Free Audit
-          <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+           class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-[13px] px-4 py-2 rounded-lg glow-emerald transition-colors">
+          Request Access
         </a>
-        <a href="#how-it-works"
-           class="inline-flex items-center gap-2 glass text-slate-300 font-semibold px-7 py-3.5 rounded-xl text-base hover:text-white hover:border-white/20 transition-all">
-          See how it works
-        </a>
-      </div>
-
-      <!-- Stats row -->
-      <div class="flex flex-wrap gap-x-10 gap-y-5">
-        <div>
-          <div class="text-3xl font-black text-white counting" data-target="32" data-suffix="%">0%</div>
-          <div class="text-xs text-slate-500 mt-1 uppercase tracking-widest">avg energy reduction</div>
-        </div>
-        <div class="pl-10 border-l border-white/10">
-          <div class="text-3xl font-black text-white">$1.8M</div>
-          <div class="text-xs text-slate-500 mt-1 uppercase tracking-widest">avg annual savings</div>
-        </div>
-        <div class="pl-10 border-l border-white/10">
-          <div class="text-3xl font-black text-white counting" data-target="14" data-suffix=" mo">0 mo</div>
-          <div class="text-xs text-slate-500 mt-1 uppercase tracking-widest">avg payback period</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right: terminal card -->
-    <div class="relative hidden lg:block">
-      <!-- Subtle glow behind card -->
-      <div class="absolute inset-0 bg-eco/5 rounded-3xl blur-2xl scale-105"></div>
-
-      <div class="relative glass rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-        <!-- Terminal title bar -->
-        <div class="flex items-center gap-2 px-5 py-3.5 border-b border-white/8 bg-white/[.025]">
-          <div class="terminal-dot bg-red-500/70"></div>
-          <div class="terminal-dot bg-yellow-500/70"></div>
-          <div class="terminal-dot bg-green-500/70"></div>
-          <span class="ml-3 text-xs text-slate-500 font-mono">ecoiq — diagnostic_output.json</span>
-        </div>
-
-        <!-- Content -->
-        <div class="p-6 font-mono text-sm space-y-5">
-
-          <!-- Finding header -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="sev-critical text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Critical</span>
-            <span class="text-xs px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20 uppercase tracking-wider">Energy</span>
-            <span class="text-slate-300 font-semibold text-[.85rem] ml-1">CDU Furnace Stack Exceedance</span>
-          </div>
-
-          <!-- Description -->
-          <p class="text-slate-400 text-xs leading-relaxed font-sans">
-            Stack temperature on CDU F-101 running at <span class="text-white">380°C</span> vs design of <span class="text-white">310°C</span>, indicating severe fouling in the convection section. Burning an excess <span class="text-red-400 font-semibold">$74K/month</span> in natural gas.
-          </p>
-
-          <!-- Root cause -->
-          <div class="bg-white/[.03] rounded-lg p-3.5 space-y-1.5">
-            <div class="text-[.65rem] uppercase tracking-widest text-slate-500">Root Cause</div>
-            <div class="text-slate-300 text-xs font-sans leading-relaxed">No automated excess O₂ trim control. Convection section fouling undetected since 2021 inspection.</div>
-          </div>
-
-          <!-- Metrics row -->
-          <div class="grid grid-cols-3 gap-3">
-            <div class="bg-red-500/[.08] rounded-lg p-3 text-center">
-              <div class="text-red-400 font-black text-lg">$890K</div>
-              <div class="text-[.6rem] text-slate-500 mt-0.5 uppercase tracking-wide">Annual Loss</div>
-            </div>
-            <div class="bg-eco/[.06] rounded-lg p-3 text-center">
-              <div class="text-eco font-black text-lg">+18%</div>
-              <div class="text-[.6rem] text-slate-500 mt-0.5 uppercase tracking-wide">Efficiency Gain</div>
-            </div>
-            <div class="bg-blue-500/[.08] rounded-lg p-3 text-center">
-              <div class="text-blue-300 font-black text-lg">6 mo</div>
-              <div class="text-[.6rem] text-slate-500 mt-0.5 uppercase tracking-wide">Payback</div>
-            </div>
-          </div>
-
-          <!-- Recommended action -->
-          <div class="flex items-start gap-2.5 text-xs font-sans">
-            <span class="text-eco mt-0.5 shrink-0">→</span>
-            <span class="text-slate-400">Emergency decoking scheduled Q3, pair with O₂ trim PLC upgrade and automated stack temperature alarming.</span>
-          </div>
-
-          <!-- Fake progress bar -->
-          <div class="pt-1">
-            <div class="flex justify-between text-[.65rem] text-slate-500 mb-2">
-              <span>Analysing 7 additional findings…</span>
-              <span class="text-eco">92%</span>
-            </div>
-            <div class="h-1 bg-white/5 rounded-full overflow-hidden">
-              <div class="bar-fill" style="--target-width:92%"></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Scroll indicator -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-600 animate-bounce">
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-    </svg>
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════
-     02 · HOW IT WORKS
-═════════════════════════════════════════════════════════ -->
-<section id="how-it-works" class="relative py-24 lg:py-32 border-t border-white/5">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8">
-
-    <div class="text-center mb-16 reveal">
-      <div class="eyebrow mb-4">What EcoIQ Does</div>
-      <h2 class="text-4xl sm:text-5xl font-black text-white leading-tight">From documents to<br><span class="text-eco">action plan</span> in minutes.</h2>
-      <p class="text-slate-400 mt-4 max-w-xl mx-auto text-base leading-relaxed">
-        Two sequential AI calls transform raw facility data into a board-ready modernisation report with full financial modelling.
-      </p>
-    </div>
-
-    <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
-
-      <!-- Step 1 -->
-      <div class="glass glass-hover rounded-2xl p-8 reveal" style="transition-delay:.05s">
-        <div class="w-12 h-12 rounded-xl bg-eco/10 border border-eco/20 flex items-center justify-center mb-6">
-          <svg class="w-6 h-6 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        <!-- Mobile hamburger -->
+        <button id="burger" class="md:hidden p-1.5 rounded-lg hover:bg-white/5 transition" aria-label="Menu">
+          <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
-        </div>
-        <div class="text-[.65rem] uppercase tracking-widest text-slate-500 mb-2">Step 01</div>
-        <h3 class="text-xl font-bold text-white mb-3">Upload &amp; Profile</h3>
-        <p class="text-slate-400 text-sm leading-relaxed">
-          Upload facility documents — energy bills, maintenance logs, P&IDs, audit reports. Describe the site: sector, age, headcount, revenue. Answer an optional operations questionnaire.
-        </p>
-      </div>
-
-      <!-- Step 2 -->
-      <div class="glass glass-hover rounded-2xl p-8 reveal" style="transition-delay:.12s">
-        <div class="w-12 h-12 rounded-xl bg-eco/10 border border-eco/20 flex items-center justify-center mb-6">
-          <svg class="w-6 h-6 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <div class="text-[.65rem] uppercase tracking-widest text-slate-500 mb-2">Step 02</div>
-        <h3 class="text-xl font-bold text-white mb-3">AI Diagnostic</h3>
-        <p class="text-slate-400 text-sm leading-relaxed">
-          Call 1: Claude analyses the facility against 25 years of industrial engineering knowledge. Surfaces 6–10 specific findings with root causes, loss estimates, and sustainability impact.
-        </p>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="glass glass-hover rounded-2xl p-8 reveal" style="transition-delay:.2s">
-        <div class="w-12 h-12 rounded-xl bg-eco/10 border border-eco/20 flex items-center justify-center mb-6">
-          <svg class="w-6 h-6 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
-        </div>
-        <div class="text-[.65rem] uppercase tracking-widest text-slate-500 mb-2">Step 03</div>
-        <h3 class="text-xl font-bold text-white mb-3">Roadmap &amp; ROI</h3>
-        <p class="text-slate-400 text-sm leading-relaxed">
-          Call 2: Generates prioritised recommendations, NPV-backed ROI for each, a phased 36-month implementation roadmap, and before/after projections across energy, maintenance, and safety.
-        </p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════
-     03 · INDUSTRIES
-═════════════════════════════════════════════════════════ -->
-<section id="industries" class="py-24 lg:py-32 border-t border-white/5">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8">
-
-    <div class="text-center mb-14 reveal">
-      <div class="eyebrow mb-4">Industries</div>
-      <h2 class="text-4xl sm:text-5xl font-black text-white leading-tight">Built for <span class="text-eco">heavy industry.</span></h2>
-      <p class="text-slate-400 mt-4 max-w-lg mx-auto text-base">EcoIQ is calibrated for the operational complexity of capital-intensive, high-emissions industrial environments.</p>
-    </div>
-
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 reveal">
-
-      {% for icon, name, desc in industries %}
-      <div class="glass glass-hover rounded-xl p-5 flex flex-col gap-3">
-        <div class="text-2xl">{{ icon }}</div>
-        <div>
-          <div class="text-sm font-semibold text-white leading-snug">{{ name }}</div>
-          <div class="text-xs text-slate-500 mt-1 leading-relaxed">{{ desc }}</div>
-        </div>
-      </div>
-      {% endfor %}
-
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════
-     04 · AI-POWERED FINDINGS
-═════════════════════════════════════════════════════════ -->
-<section id="findings" class="py-24 lg:py-32 border-t border-white/5 relative overflow-hidden">
-
-  <div class="orb w-[600px] h-[600px] bg-[#0fdb8e] opacity-[.04] top-1/2 -translate-y-1/2 right-[-200px]"></div>
-
-  <div class="max-w-7xl mx-auto px-5 sm:px-8">
-    <div class="grid lg:grid-cols-2 gap-16 items-center">
-
-      <!-- Left copy -->
-      <div class="reveal">
-        <div class="eyebrow mb-4">AI-Powered Findings</div>
-        <h2 class="text-4xl sm:text-5xl font-black text-white leading-tight mb-6">
-          8-field diagnostic.<br><span class="text-eco">Zero guesswork.</span>
-        </h2>
-        <p class="text-slate-400 text-base leading-relaxed mb-8">
-          Every finding includes the exact financial loss, root cause, recommended action, efficiency gain, and sustainability impact. No vague observations — only evidence-based, quantified analysis.
-        </p>
-
-        <div class="space-y-4">
-          <div class="flex items-start gap-4">
-            <div class="w-8 h-8 rounded-lg bg-eco/10 border border-eco/20 flex items-center justify-center shrink-0 mt-0.5">
-              <svg class="w-4 h-4 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
-            </div>
-            <div>
-              <div class="text-sm font-semibold text-white mb-0.5">Financially quantified</div>
-              <div class="text-sm text-slate-400">Every finding is paired with an estimated annual loss in USD — ordered by financial impact.</div>
-            </div>
-          </div>
-          <div class="flex items-start gap-4">
-            <div class="w-8 h-8 rounded-lg bg-eco/10 border border-eco/20 flex items-center justify-center shrink-0 mt-0.5">
-              <svg class="w-4 h-4 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
-            </div>
-            <div>
-              <div class="text-sm font-semibold text-white mb-0.5">Root cause analysis</div>
-              <div class="text-sm text-slate-400">Systemic causes, not symptoms. Pinpoints why the problem exists so actions actually stick.</div>
-            </div>
-          </div>
-          <div class="flex items-start gap-4">
-            <div class="w-8 h-8 rounded-lg bg-eco/10 border border-eco/20 flex items-center justify-center shrink-0 mt-0.5">
-              <svg class="w-4 h-4 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
-            </div>
-            <div>
-              <div class="text-sm font-semibold text-white mb-0.5">Carbon &amp; sustainability impact</div>
-              <div class="text-sm text-slate-400">Each finding maps to its CO₂, energy, or waste implication — feeding your ESG reporting directly.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: two stacked finding cards -->
-      <div class="space-y-4 reveal" style="transition-delay:.1s">
-
-        <!-- Finding 1 -->
-        <div class="glass rounded-2xl p-6 border-l-4 border-l-red-500">
-          <div class="flex items-center gap-2 mb-3 flex-wrap">
-            <span class="sev-critical text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Critical</span>
-            <span class="text-xs px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 uppercase tracking-wider font-mono">Energy</span>
-            <span class="ml-auto text-red-400 font-black font-mono">−$1.2M/yr</span>
-          </div>
-          <div class="font-semibold text-white text-base mb-2">Unmetered Steam Trap Losses — Distribution Header</div>
-          <p class="text-slate-400 text-sm leading-relaxed mb-3">23% of steam traps across the facility are failed-open, venting live steam directly to atmosphere. Equivalent to burning 4,800 tonnes of natural gas annually with no process benefit.</p>
-          <div class="flex flex-wrap gap-2 text-xs font-mono">
-            <span class="bg-white/5 px-2.5 py-1 rounded text-slate-400">Root: No CMMS trap inspection programme</span>
-            <span class="bg-eco/8 px-2.5 py-1 rounded text-eco">+22% steam efficiency</span>
-          </div>
-        </div>
-
-        <!-- Finding 2 -->
-        <div class="glass rounded-2xl p-6 border-l-4 border-l-amber-500">
-          <div class="flex items-center gap-2 mb-3 flex-wrap">
-            <span class="sev-high text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">High</span>
-            <span class="text-xs px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20 uppercase tracking-wider font-mono">Maintenance</span>
-            <span class="ml-auto text-amber-400 font-black font-mono">−$680K/yr</span>
-          </div>
-          <div class="font-semibold text-white text-base mb-2">Reactive-Only Pump Maintenance — 47 Critical Units</div>
-          <p class="text-slate-400 text-sm leading-relaxed mb-3">Pump seal failures account for 35% of unplanned downtime. No vibration monitoring on 29 of 47 rotating machines. Mean time to repair averages 6.2 hours per incident.</p>
-          <div class="flex flex-wrap gap-2 text-xs font-mono">
-            <span class="bg-white/5 px-2.5 py-1 rounded text-slate-400">Root: No predictive monitoring baseline</span>
-            <span class="bg-eco/8 px-2.5 py-1 rounded text-eco">−64% unplanned downtime</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════
-     05 · KPI DASHBOARD
-═════════════════════════════════════════════════════════ -->
-<section id="kpis" class="py-24 lg:py-32 border-t border-white/5">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8">
-
-    <div class="text-center mb-16 reveal">
-      <div class="eyebrow mb-4">Proven Results</div>
-      <h2 class="text-4xl sm:text-5xl font-black text-white leading-tight">Real outcomes.<br><span class="text-eco">Measurable returns.</span></h2>
-    </div>
-
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal">
-
-      <div class="glass rounded-2xl p-8 text-center">
-        <div class="text-5xl font-black text-eco mb-2 counting" data-target="32" data-suffix="%">0%</div>
-        <div class="text-white font-semibold mb-2">Energy Reduction</div>
-        <div class="text-slate-500 text-sm leading-relaxed">Average facility-wide energy consumption reduction after Phase 1 implementation.</div>
-        <div class="mt-5 h-1 bg-white/5 rounded-full overflow-hidden">
-          <div class="bar-fill" style="--target-width:32%"></div>
-        </div>
-      </div>
-
-      <div class="glass rounded-2xl p-8 text-center">
-        <div class="text-5xl font-black text-eco mb-2">$1.8M</div>
-        <div class="text-white font-semibold mb-2">Annual Savings</div>
-        <div class="text-slate-500 text-sm leading-relaxed">Average total annual savings identified across all recommendation categories.</div>
-        <div class="mt-5 h-1 bg-white/5 rounded-full overflow-hidden">
-          <div class="bar-fill" style="--target-width:72%"></div>
-        </div>
-      </div>
-
-      <div class="glass rounded-2xl p-8 text-center">
-        <div class="text-5xl font-black text-eco mb-2 counting" data-target="14" data-suffix=" mo">0 mo</div>
-        <div class="text-white font-semibold mb-2">Payback Period</div>
-        <div class="text-slate-500 text-sm leading-relaxed">Average months to full return on investment across recommended upgrades.</div>
-        <div class="mt-5 h-1 bg-white/5 rounded-full overflow-hidden">
-          <div class="bar-fill" style="--target-width:55%"></div>
-        </div>
-      </div>
-
-      <div class="glass rounded-2xl p-8 text-center">
-        <div class="text-5xl font-black text-eco mb-2 counting" data-target="71" data-suffix="→89">0</div>
-        <div class="text-white font-semibold mb-2">Efficiency Score</div>
-        <div class="text-slate-500 text-sm leading-relaxed">Typical shift in facility OEE score from diagnostic baseline to modernised state.</div>
-        <div class="mt-5 h-1 bg-white/5 rounded-full overflow-hidden">
-          <div class="bar-fill" style="--target-width:89%"></div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Projected improvement bars -->
-    <div class="mt-10 glass rounded-2xl p-8 reveal">
-      <div class="text-sm text-slate-400 uppercase tracking-widest mb-8 font-semibold">Average Facility-Wide Projected Improvements</div>
-      <div class="grid sm:grid-cols-2 gap-x-12 gap-y-7">
-
-        <div>
-          <div class="flex justify-between text-sm mb-2">
-            <span class="text-white font-medium">⚡ Energy Consumption</span>
-            <span class="text-eco font-bold font-mono counting" data-target="32" data-suffix="% reduction">0%</span>
-          </div>
-          <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div class="bar-fill bg-gradient-to-r from-eco to-green-400" style="--target-width:32%"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-sm mb-2">
-            <span class="text-white font-medium">🔧 Unplanned Downtime</span>
-            <span class="text-eco font-bold font-mono counting" data-target="68" data-suffix="% reduction">0%</span>
-          </div>
-          <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div class="bar-fill bg-gradient-to-r from-eco to-green-400" style="--target-width:68%"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-sm mb-2">
-            <span class="text-white font-medium">⚙️ Production Efficiency</span>
-            <span class="text-eco font-bold font-mono counting" data-target="28" data-suffix="% increase">0%</span>
-          </div>
-          <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div class="bar-fill bg-gradient-to-r from-eco to-green-400" style="--target-width:28%"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-sm mb-2">
-            <span class="text-white font-medium">🌿 CO₂ Emissions</span>
-            <span class="text-eco font-bold font-mono counting" data-target="35" data-suffix="% reduction">0%</span>
-          </div>
-          <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div class="bar-fill bg-gradient-to-r from-eco to-green-400" style="--target-width:35%"></div>
-          </div>
-        </div>
-
+        </button>
       </div>
     </div>
 
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════
-     06 · EXAMPLE SAVINGS
-═════════════════════════════════════════════════════════ -->
-<section id="savings" class="py-24 lg:py-32 border-t border-white/5 relative overflow-hidden">
-
-  <div class="orb w-[500px] h-[500px] bg-[#4f8ef7] opacity-[.04] bottom-0 right-1/3"></div>
-
-  <div class="max-w-7xl mx-auto px-5 sm:px-8">
-
-    <div class="text-center mb-16 reveal">
-      <div class="eyebrow mb-4">Case Studies</div>
-      <h2 class="text-4xl sm:text-5xl font-black text-white leading-tight">Example audit<br><span class="text-eco">outcomes.</span></h2>
-      <p class="text-slate-400 mt-4 max-w-xl mx-auto text-base">These are representative results from EcoIQ diagnostic sessions across three facility types.</p>
+    <!-- Mobile drawer -->
+    <div id="mobile-nav" class="hidden md:hidden border-t border-white/5 px-5 py-4 space-y-1">
+      <a href="#platform"     class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">Platform</a>
+      <a href="#how-it-works" class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">How It Works</a>
+      <a href="#findings"     class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">AI Findings</a>
+      <a href="/audit/"       class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">Dashboard</a>
     </div>
+  </header>
 
-    <div class="grid lg:grid-cols-3 gap-7 reveal">
+  <!-- ══════════════════════════════════════════════
+       SECTIONS
+  ══════════════════════════════════════════════ -->
+  {% include "partials/_hero.html" %}
+  {% include "partials/_how_it_works.html" %}
+  {% include "partials/_findings.html" %}
+  {% include "partials/_cta.html" %}
 
-      <!-- Refinery -->
-      <div class="glass glass-hover rounded-2xl p-8">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl">🏭</div>
-          <div>
-            <div class="text-[.65rem] uppercase tracking-widest text-slate-500">Oil &amp; Gas / Refining</div>
-            <div class="text-sm font-semibold text-white">Gulf Coast Petroleum Refinery</div>
-          </div>
+  <!-- ══════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════ -->
+  <footer class="border-t border-white/[.045] py-9">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-5 h-5 rounded-[4px] bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <span class="text-emerald-400 font-black" style="font-size:9px;">E</span>
         </div>
-
-        <div class="space-y-3 mb-6">
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Efficiency score</span>
-            <span class="text-white font-semibold font-mono">44 <span class="text-slate-500">→</span> <span class="text-eco">78</span></span>
-          </div>
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Annual savings</span>
-            <span class="text-eco font-bold font-mono text-lg">$2.4M</span>
-          </div>
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Investment required</span>
-            <span class="text-white font-semibold font-mono">$3.8M</span>
-          </div>
-          <div class="flex justify-between items-center py-2.5">
-            <span class="text-sm text-slate-400">Payback period</span>
-            <span class="text-white font-semibold font-mono">19 months</span>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <div class="text-[.65rem] uppercase tracking-widest text-slate-500 mb-3">Top findings</div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>CDU furnace stack exceedance — $890K/yr
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>Failed-open steam traps — $1.2M/yr
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>Routine flaring recoverable gas — $310K/yr
-          </div>
-        </div>
+        <span class="text-slate-600 text-[12px]">© 2025 EcoIQ · Pilot-ready AI platform for industrial modernization</span>
       </div>
-
-      <!-- Warehouse -->
-      <div class="glass glass-hover rounded-2xl p-8">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-xl">📦</div>
-          <div>
-            <div class="text-[.65rem] uppercase tracking-widest text-slate-500">Logistics &amp; Warehousing</div>
-            <div class="text-sm font-semibold text-white">Midlands Distribution Centre</div>
-          </div>
-        </div>
-
-        <div class="space-y-3 mb-6">
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Efficiency score</span>
-            <span class="text-white font-semibold font-mono">58 <span class="text-slate-500">→</span> <span class="text-eco">82</span></span>
-          </div>
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Annual savings</span>
-            <span class="text-eco font-bold font-mono text-lg">$680K</span>
-          </div>
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Investment required</span>
-            <span class="text-white font-semibold font-mono">$920K</span>
-          </div>
-          <div class="flex justify-between items-center py-2.5">
-            <span class="text-sm text-slate-400">Payback period</span>
-            <span class="text-white font-semibold font-mono">16 months</span>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <div class="text-[.65rem] uppercase tracking-widest text-slate-500 mb-3">Top findings</div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>Refrigeration COP 1.8 vs benchmark 2.8 — $290K/yr
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>T8 fluorescent lighting, no sensing — $180K/yr
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></span>42% labour turnover cost — $1.1M/yr
-          </div>
-        </div>
-      </div>
-
-      <!-- Auto plant -->
-      <div class="glass glass-hover rounded-2xl p-8">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-11 h-11 rounded-xl bg-eco/10 border border-eco/20 flex items-center justify-center text-xl">🚗</div>
-          <div>
-            <div class="text-[.65rem] uppercase tracking-widest text-slate-500">Automotive</div>
-            <div class="text-sm font-semibold text-white">Silesian Auto Components Plant</div>
-          </div>
-        </div>
-
-        <div class="space-y-3 mb-6">
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Efficiency score</span>
-            <span class="text-white font-semibold font-mono">51 <span class="text-slate-500">→</span> <span class="text-eco">80</span></span>
-          </div>
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Annual savings</span>
-            <span class="text-eco font-bold font-mono text-lg">$1.6M</span>
-          </div>
-          <div class="flex justify-between items-center py-2.5 border-b border-white/5">
-            <span class="text-sm text-slate-400">Investment required</span>
-            <span class="text-white font-semibold font-mono">$2.1M</span>
-          </div>
-          <div class="flex justify-between items-center py-2.5">
-            <span class="text-sm text-slate-400">Payback period</span>
-            <span class="text-white font-semibold font-mono">16 months</span>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <div class="text-[.65rem] uppercase tracking-widest text-slate-500 mb-3">Top findings</div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>OEE 67% vs 85% benchmark — $740K/yr
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>Compressed air system leakage 28% — $420K/yr
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>Ageing PLC I/O failures — $390K/yr downtime
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════
-     07 · CTA
-═════════════════════════════════════════════════════════ -->
-<section id="cta" class="py-24 lg:py-36 border-t border-white/5 relative overflow-hidden">
-
-  <div class="orb w-[800px] h-[800px] bg-[#0fdb8e] opacity-[.05] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-  <div class="grid-bg absolute inset-0 opacity-50"></div>
-
-  <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
-
-    <div class="reveal">
-      <div class="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs text-slate-400 mb-8 border border-white/8">
-        <span class="w-2 h-2 rounded-full bg-eco animate-pulse-slow"></span>
-        AI analysis runs in 3–5 minutes · No credit card required
-      </div>
-
-      <h2 class="text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[1.02] tracking-tight mb-6">
-        Your facility is losing<br>money <span class="text-eco">right now.</span>
-      </h2>
-
-      <p class="text-slate-400 text-lg leading-relaxed max-w-xl mx-auto mb-12">
-        Upload your facility documents, answer 12 questions about operations, and receive a full AI diagnostic with quantified findings, ROI-ranked recommendations, and a 36-month implementation roadmap.
-      </p>
-
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-        <a href="/audit/new/"
-           class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-eco text-[#04090f] font-bold px-8 py-4 rounded-xl text-base hover:brightness-110 transition-all shadow-[0_0_50px_rgba(15,219,142,0.3)] text-center">
-          Start Free Audit
-          <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-        <a href="/audit/"
-           class="w-full sm:w-auto inline-flex items-center justify-center gap-2 glass text-slate-300 font-semibold px-8 py-4 rounded-xl text-base hover:text-white hover:border-white/20 transition-all">
-          View Dashboard
-        </a>
-      </div>
-
-      <!-- Trust signals -->
-      <div class="flex flex-wrap justify-center gap-x-8 gap-y-3 text-xs text-slate-500">
-        <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
-          No document storage
-        </div>
-        <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
-          Powered by Claude AI
-        </div>
-        <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
-          PDF export included
-        </div>
-        <div class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-eco" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
-          Results in 3–5 minutes
-        </div>
+      <div class="flex items-center gap-5 text-[12px] text-slate-600">
+        <a href="/audit/" class="hover:text-slate-400 transition-colors">Industrial Audit</a>
+        <a href="/esg/"   class="hover:text-slate-400 transition-colors">ESG Assessment</a>
+        <a href="/admin/" class="hover:text-slate-400 transition-colors">Admin</a>
       </div>
     </div>
+  </footer>
 
-  </div>
-</section>
+  <!-- ══════════════════════════════════════════════
+       JAVASCRIPT
+  ══════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    'use strict';
 
-
-<!-- ════════════════════════════════════════════════════════
-     FOOTER
-═════════════════════════════════════════════════════════ -->
-<footer class="border-t border-white/5 py-10">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-    <div class="flex items-center gap-2.5">
-      <div class="w-6 h-6 rounded bg-eco/15 flex items-center justify-center">
-        <span class="text-eco text-xs font-black">E</span>
-      </div>
-      <span class="text-sm text-slate-500">EcoIQ v1 — Industrial AI Platform</span>
-    </div>
-    <div class="flex items-center gap-6 text-xs text-slate-600">
-      <a href="/audit/" class="hover:text-slate-400 transition-colors">Audit Dashboard</a>
-      <a href="/esg/"   class="hover:text-slate-400 transition-colors">ESG Assessment</a>
-      <a href="/admin/" class="hover:text-slate-400 transition-colors">Admin</a>
-    </div>
-  </div>
-</footer>
-
-
-<!-- ════════════════════════════════════════════════════════
-     JS — mobile menu · counters · scroll reveals · bars
-═════════════════════════════════════════════════════════ -->
-<script>
-(function () {
-  'use strict';
-
-  /* ── Mobile menu ─────────────────────────────── */
-  var btn  = document.getElementById('menu-btn');
-  var menu = document.getElementById('mobile-menu');
-  btn.addEventListener('click', function () {
-    menu.classList.toggle('hidden');
-  });
-  menu.querySelectorAll('a').forEach(function (a) {
-    a.addEventListener('click', function () { menu.classList.add('hidden'); });
-  });
-
-  /* ── Intersection observer helper ─────────────── */
-  function onVisible(els, cb, opts) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { if (e.isIntersecting) { cb(e.target); io.unobserve(e.target); } });
-    }, opts || { threshold: 0.15 });
-    els.forEach(function (el) { io.observe(el); });
-  }
-
-  /* ── Scroll reveal ───────────────────────────── */
-  onVisible(document.querySelectorAll('.reveal'), function (el) {
-    el.classList.add('visible');
-  }, { threshold: 0.1 });
-
-  /* ── Counter animation ───────────────────────── */
-  function animateCounter(el) {
-    var target = parseInt(el.dataset.target, 10);
-    var suffix = el.dataset.suffix || '';
-    var start  = 0;
-    var dur    = 1600;
-    var t0     = null;
-    function step(ts) {
-      if (!t0) t0 = ts;
-      var prog = Math.min((ts - t0) / dur, 1);
-      var val  = Math.round(prog * prog * target); // ease-in quadratic
-      el.textContent = val + suffix;
-      if (prog < 1) requestAnimationFrame(step);
-      else el.textContent = target + suffix;
-    }
-    requestAnimationFrame(step);
-  }
-  onVisible(document.querySelectorAll('.counting'), function (el) {
-    animateCounter(el);
-  });
-
-  /* ── Animate progress bars ───────────────────── */
-  onVisible(document.querySelectorAll('.bar-fill'), function (el) {
-    var target = el.style.getPropertyValue('--target-width');
-    // Override the bg gradient only for the hero bar
-    if (!el.classList.contains('bg-gradient-to-r')) {
-      el.style.background = 'linear-gradient(90deg,#0fdb8e,#4ade80)';
-    }
-    setTimeout(function () { el.style.width = target; }, 100);
-  });
-
-  /* ── Hero bar triggers immediately ──────────── */
-  document.querySelectorAll('.progress-fill').forEach(function (el) {
-    setTimeout(function () { el.classList.add('animate'); }, 800);
-  });
-
-  /* ── Smooth scroll for nav links ─────────────── */
-  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
-    a.addEventListener('click', function (e) {
-      var id = a.getAttribute('href').slice(1);
-      var target = document.getElementById(id);
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+    /* ── Mobile nav ─────────────────────────────── */
+    var burger = document.getElementById('burger');
+    var mobileNav = document.getElementById('mobile-nav');
+    burger.addEventListener('click', function () { mobileNav.classList.toggle('hidden'); });
+    mobileNav.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () { mobileNav.classList.add('hidden'); });
     });
-  });
 
-})();
-</script>
+    /* ── Smooth scroll for anchor links ─────────── */
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var target = document.getElementById(a.getAttribute('href').slice(1));
+        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+
+    /* ── IntersectionObserver helper ────────────── */
+    function onVisible(selector, callback, options) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) { callback(entry.target); io.unobserve(entry.target); }
+        });
+      }, options || { threshold: 0.12 });
+      document.querySelectorAll(selector).forEach(function (el) { io.observe(el); });
+    }
+
+    /* ── Scroll-reveal ───────────────────────────── */
+    onVisible('.reveal', function (el) { el.classList.add('in'); });
+
+    /* ── Animated counters ───────────────────────── */
+    onVisible('[data-count]', function (el) {
+      var end    = parseInt(el.dataset.count, 10);
+      var suffix = el.dataset.suffix || '';
+      var dur    = 1400;
+      var start  = null;
+      (function tick(ts) {
+        if (!start) start = ts;
+        var p = Math.min((ts - start) / dur, 1);
+        el.textContent = Math.round(p * p * end) + suffix;   /* ease-in quad */
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = end + suffix;
+      })(performance.now());
+    });
+
+    /* ── Progress bars ───────────────────────────── */
+    onVisible('.bar-fill', function (el) {
+      setTimeout(function () { el.style.width = el.dataset.w || '0%'; }, 60);
+    });
+
+  }());
+  </script>
 
 </body>
 </html>
