@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+{# EcoIQ PDF Report — WeasyPrint A4, no JavaScript #}
+{% load humanize %}
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoIQ Report — {{ company.name }}</title>
+<style>
+
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════ */
+:root {
+  --green:      #2d6a4f;
+  --teal:       #40916c;
+  --mint:       #52b788;
+  --lime:       #95d5b2;
+  --cream:      #f8faf9;
+  --border:     #d6e4dc;
+  --text:       #1a2c23;
+  --muted:      #5a6e63;
+  --accent:     #00c896;
+  --dark:       #0f1f17;
+  --white:      #ffffff;
+
+  --tier-color: {{ tier_color }};
+}
+
+/* ═══════════════════════════════════════════════════════
+   PAGE SETUP
+═══════════════════════════════════════════════════════ */
+@page {
+  size: A4;
+  margin: 18mm 16mm 24mm 16mm;
+  @bottom-left {
+    content: "EcoIQ Environmental Intelligence — Confidential";
+    font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-size: 7pt;
+    color: #8fa899;
+    border-top: 0.4pt solid #d6e4dc;
+    padding-top: 3mm;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-size: 7pt;
+    color: #8fa899;
+    border-top: 0.4pt solid #d6e4dc;
+    padding-top: 3mm;
+  }
+}
+
+/* Cover page — no page numbers, full-bleed dark bg */
+@page cover-page {
+  size: A4;
+  margin: 0;
+  @bottom-left  { content: ""; border: none; }
+  @bottom-right { content: ""; border: none; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+  font-size: 9.5pt;
+  color: var(--text);
+  line-height: 1.55;
+  background: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════════════════ */
+h1 { font-size: 22pt; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+h2 { font-size: 13pt; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+h3 { font-size: 10pt; font-weight: 700; margin-bottom: 6px; }
+p  { margin-bottom: 7px; }
+
+.section-label {
+  font-size: 6.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT HELPERS
+═══════════════════════════════════════════════════════ */
+.row   { display: flex; gap: 16px; }
+.col   { flex: 1; }
+.col-2 { flex: 2; }
+.col-3 { flex: 3; }
+.mt-8  { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mb-4  { margin-bottom: 4px; }
+.mb-8  { margin-bottom: 8px; }
+
+/* ═══════════════════════════════════════════════════════
+   PAGE BREAKS
+═══════════════════════════════════════════════════════ */
+.page-break  { page-break-before: always; }
+.avoid-break { page-break-inside: avoid; }
+
+/* ═══════════════════════════════════════════════════════
+   ①  COVER PAGE
+═══════════════════════════════════════════════════════ */
+.cover {
+  page: cover-page;
+  page-break-after: always;
+  width: 210mm;
+  height: 297mm;
+  background: var(--dark);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative diagonal stripe */
+.cover::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0;
+  width: 90mm;
+  height: 297mm;
+  background: linear-gradient(160deg, #1b4332 0%, #163527 100%);
+  clip-path: polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.cover-inner {
+  position: relative;
+  z-index: 1;
+  padding: 22mm 18mm;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Brand mark */
+.cover-brand {
+  font-size: 11pt;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  margin-bottom: 4mm;
+}
+.cover-brand span { color: rgba(255,255,255,.5); font-weight: 400; margin-left: 6px; }
+
+/* Accent rule */
+.cover-rule {
+  width: 48px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  margin-bottom: 10mm;
+}
+
+.cover-report-type {
+  font-size: 7pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  margin-bottom: 5mm;
+}
+
+.cover-company-name {
+  font-size: 26pt;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  max-width: 130mm;
+  margin-bottom: 3mm;
+}
+
+.cover-meta {
+  font-size: 9pt;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 14mm;
+}
+
+/* Score ring area */
+.cover-score-block {
+  display: flex;
+  align-items: center;
+  gap: 14mm;
+  margin-bottom: auto;
+}
+
+.cover-score-ring { width: 52mm; }
+
+.cover-score-aside {
+  flex: 1;
+}
+
+.cover-score-num {
+  font-size: 38pt;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.cover-score-denom {
+  font-size: 14pt;
+  color: rgba(255,255,255,.35);
+  font-weight: 400;
+}
+
+.cover-tier {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: var(--tier-color);
+  color: #fff;
+}
+
+/* KPI strip on cover */
+.cover-kpis {
+  display: flex;
+  gap: 10mm;
+  margin-top: 14mm;
+  padding-top: 8mm;
+  border-top: 0.5pt solid rgba(255,255,255,.1);
+}
+.cover-kpi .kval {
+  font-size: 14pt;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
+}
+.cover-kpi .klbl {
+  font-size: 6.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,.4);
+  margin-top: 1px;
+}
+
+/* Cover footer */
+.cover-footer {
+  margin-top: 10mm;
+  padding-top: 5mm;
+  border-top: 0.5pt solid rgba(255,255,255,.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.cover-footer .date {
+  font-size: 7.5pt;
+  color: rgba(255,255,255,.35);
+}
+.cover-footer .verified-badge {
+  font-size: 7pt;
+  font-weight: 700;
+  color: var(--accent);
+  border: 0.5pt solid var(--accent);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.cover-footer .demo-badge {
+  font-size: 7pt;
+  font-weight: 700;
+  color: rgba(255,255,255,.35);
+  border: 0.5pt solid rgba(255,255,255,.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════════════ */
+.section-header {
+  border-left: 3px solid var(--teal);
+  padding-left: 10px;
+  margin-bottom: 14px;
+}
+.section-header h2 { color: var(--green); margin-bottom: 2px; }
+.section-header p  { font-size: 8.5pt; color: var(--muted); margin-bottom: 0; }
+
+/* ═══════════════════════════════════════════════════════
+   ② EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════ */
+.exec-top {
+  background: var(--cream);
+  border: 0.5pt solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.exec-kpis {
+  display: flex;
+  gap: 0;
+}
+.exec-kpi {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  border-right: 0.5pt solid var(--border);
+}
+.exec-kpi:last-child { border-right: none; }
+.exec-kpi .kv {
+  font-size: 16pt;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.04em;
+}
+.exec-kpi .kl {
+  font-size: 6.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.exec-grid {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+}
+.exec-desc-box { flex: 2; }
+.exec-findings  { flex: 3; }
+
+.findings-list {
+  list-style: none;
+  padding: 0;
+}
+.findings-list li {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 0.4pt solid var(--border);
+  font-size: 8.5pt;
+  line-height: 1.45;
+}
+.findings-list li:last-child { border-bottom: none; }
+.fi-icon { flex-shrink: 0; width: 16px; text-align: center; }
+.fi-label { color: var(--muted); font-weight: 700; min-width: 90px; }
+.fi-val   { color: var(--text); }
+
+/* ═══════════════════════════════════════════════════════
+   ③ SCORE INTELLIGENCE  (Radar + Pillar bars)
+═══════════════════════════════════════════════════════ */
+.score-page {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.radar-wrap { flex: 0 0 70mm; }
+.pillar-wrap { flex: 1; }
+
+.pillar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+  page-break-inside: avoid;
+}
+.pillar-name {
+  width: 80px;
+  font-size: 7.5pt;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.pillar-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #e5ebe8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pillar-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--teal);
+}
+.pillar-score {
+  width: 28px;
+  text-align: right;
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: var(--green);
+}
+.pillar-weight {
+  width: 26px;
+  text-align: right;
+  font-size: 7pt;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.formula-box {
+  margin-top: 16px;
+  padding: 8px 12px;
+  background: var(--cream);
+  border: 0.5pt solid var(--border);
+  border-radius: 5px;
+  font-size: 7.5pt;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.formula-box strong { color: var(--green); }
+
+/* Pillar detail table */
+.pillar-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+  margin-top: 12px;
+}
+.pillar-table th {
+  text-align: left;
+  padding: 5px 8px;
+  background: var(--cream);
+  border: 0.4pt solid var(--border);
+  font-weight: 700;
+  color: var(--green);
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.pillar-table td {
+  padding: 6px 8px;
+  border: 0.4pt solid var(--border);
+  vertical-align: top;
+}
+.pillar-table tr:nth-child(even) td { background: var(--cream); }
+.score-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 8pt;
+  color: #fff;
+  background: var(--teal);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ④  TREND CHART
+═══════════════════════════════════════════════════════ */
+.trend-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.trend-stat {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--cream);
+  border: 0.5pt solid var(--border);
+  border-radius: 5px;
+  text-align: center;
+}
+.trend-stat .tv {
+  font-size: 14pt;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.04em;
+}
+.trend-stat .tl {
+  font-size: 6.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.trend-up   { color: #27ae60 !important; }
+.trend-down { color: #e63946 !important; }
+
+.sparkline-wrap {
+  border: 0.5pt solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  padding: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ⑤  CO₂ IMPACT
+═══════════════════════════════════════════════════════ */
+.co2-strip {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.co2-box {
+  flex: 1;
+  padding: 12px;
+  background: var(--green);
+  color: #fff;
+  border-radius: 6px;
+  text-align: center;
+}
+.co2-box .cv {
+  font-size: 16pt;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.co2-box .cl {
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  margin-top: 3px;
+}
+.co2-box.light { background: var(--cream); border: 0.5pt solid var(--border); }
+.co2-box.light .cv { color: var(--green); }
+.co2-box.light .cl { color: var(--muted); opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════
+   ⑥  PROJECTS TABLE
+═══════════════════════════════════════════════════════ */
+.projects-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+}
+.projects-table th {
+  text-align: left;
+  padding: 5px 7px;
+  background: var(--green);
+  color: #fff;
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.projects-table td {
+  padding: 6px 7px;
+  border-bottom: 0.4pt solid var(--border);
+  vertical-align: top;
+}
+.projects-table tr:nth-child(even) td { background: var(--cream); }
+.projects-table tr:last-child td     { border-bottom: none; }
+
+.status-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 6.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.status-completed { background: #d8f3dc; color: #2d6a4f; }
+.status-active    { background: #d6eaf8; color: #1a5276; }
+.status-planned   { background: #fef9e7; color: #9a7d0a; }
+.status-cancelled { background: #f9ebea; color: #922b21; }
+
+/* ═══════════════════════════════════════════════════════
+   ⑦  INVESTMENT
+═══════════════════════════════════════════════════════ */
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+}
+.inv-table th {
+  text-align: left;
+  padding: 5px 7px;
+  background: var(--cream);
+  border: 0.4pt solid var(--border);
+  font-weight: 700;
+  color: var(--green);
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.inv-table td {
+  padding: 6px 7px;
+  border: 0.4pt solid var(--border);
+  vertical-align: middle;
+}
+.inv-table tr:nth-child(even) td { background: var(--cream); }
+
+.inv-bar-wrap {
+  width: 80px;
+  height: 6px;
+  background: #e5ebe8;
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+.inv-bar-fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ⑧  ROADMAP
+═══════════════════════════════════════════════════════ */
+.roadmap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+}
+.roadmap-table th {
+  text-align: left;
+  padding: 5px 7px;
+  background: var(--green);
+  color: #fff;
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.roadmap-table td {
+  padding: 6px 7px;
+  border-bottom: 0.4pt solid var(--border);
+  vertical-align: top;
+}
+.roadmap-table tr:nth-child(even) td { background: var(--cream); }
+.roadmap-table tr:last-child td { border-bottom: none; }
+
+/* ═══════════════════════════════════════════════════════
+   ⑨  AI RECOMMENDATIONS
+═══════════════════════════════════════════════════════ */
+.rec-card {
+  border: 0.5pt solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  page-break-inside: avoid;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.rec-card.critical { border-left: 3px solid #e63946; }
+.rec-card.high     { border-left: 3px solid #f4a261; }
+.rec-card.medium   { border-left: 3px solid var(--teal); }
+
+.rec-icon {
+  font-size: 16pt;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+.rec-body { flex: 1; }
+.rec-title {
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.rec-impact {
+  display: inline-block;
+  padding: 1px 8px;
+  background: #d8f3dc;
+  color: var(--green);
+  border-radius: 10px;
+  font-size: 7pt;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.rec-rationale {
+  font-size: 8pt;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.priority-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 6.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+}
+.p-critical { background: #ffe0e3; color: #c0392b; }
+.p-high     { background: #fce9d4; color: #d35400; }
+.p-medium   { background: #d8f3dc; color: #2d6a4f; }
+
+.rec-disclaimer {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #fef9e7;
+  border: 0.5pt solid #f4e3a0;
+  border-radius: 5px;
+  font-size: 7.5pt;
+  color: #7d6608;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ⑩  SDG GRID
+═══════════════════════════════════════════════════════ */
+.sdg-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.sdg-tile {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7pt;
+  font-weight: 700;
+  color: #fff;
+}
+.sdg-inactive {
+  filter: grayscale(1);
+  opacity: 0.22;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ⑪  EVIDENCE APPENDIX
+═══════════════════════════════════════════════════════ */
+.ev-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+}
+.ev-table th {
+  text-align: left;
+  padding: 4px 7px;
+  background: var(--cream);
+  border: 0.4pt solid var(--border);
+  font-weight: 700;
+  color: var(--green);
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.ev-table td {
+  padding: 5px 7px;
+  border: 0.4pt solid var(--border);
+  vertical-align: top;
+}
+.ev-table tr:nth-child(even) td { background: var(--cream); }
+
+.ev-status-v { color: #2d6a4f; font-weight: 700; }
+.ev-status-p { color: #9a7d0a; font-weight: 700; }
+.ev-status-r { color: #922b21; font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+{# ═══════════════════════════════════════════
+   PAGE 1 — COVER
+════════════════════════════════════════════ #}
+<div class="cover">
+  <div class="cover-inner">
+
+    <div class="cover-brand">
+      EcoIQ<span>Environmental Intelligence Platform</span>
+    </div>
+    <div class="cover-rule"></div>
+
+    <div class="cover-report-type">EcoIQ Environmental Audit Report</div>
+
+    <div class="cover-company-name">{{ company.name }}</div>
+    <div class="cover-meta">
+      {{ company.get_sector_display }}{% if company.city %} · {{ company.city }}{% endif %} · {{ company.country }}
+      {% if company.verified %} · ✓ Independently Verified{% endif %}
+    </div>
+
+    <div class="cover-score-block">
+
+      {# SVG Score Ring #}
+      <div class="cover-score-ring">
+        <svg viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background ring -->
+          <circle cx="65" cy="65" r="52"
+            fill="none" stroke="rgba(255,255,255,.1)" stroke-width="10"/>
+          <!-- Score arc -->
+          <circle cx="65" cy="65" r="52"
+            fill="none"
+            stroke="{{ tier_color }}"
+            stroke-width="10"
+            stroke-linecap="round"
+            stroke-dasharray="{{ score_arc }} 327"
+            transform="rotate(-90 65 65)"/>
+          <!-- Inner circle -->
+          <circle cx="65" cy="65" r="43" fill="rgba(255,255,255,.04)"/>
+          <!-- Score text -->
+          <text x="65" y="62" text-anchor="middle"
+            font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+            font-size="22" font-weight="700" fill="{{ tier_color }}">{{ score|floatformat:1 }}</text>
+          <text x="65" y="77" text-anchor="middle"
+            font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+            font-size="8" fill="rgba(255,255,255,.4)" letter-spacing="2">EcoIQ</text>
+        </svg>
+      </div>
+
+      <div class="cover-score-aside">
+        <div class="cover-score-num">
+          {{ score|floatformat:1 }}<span class="cover-score-denom"> / 100</span>
+        </div>
+        <div class="cover-tier">{{ tier_label }}</div>
+        <div style="margin-top:10px; font-size:8pt; color:rgba(255,255,255,.4); line-height:1.6;">
+          Score formula:<br>
+          Pollution ×35% · Reduction ×25%<br>
+          Investment ×20% · Transparency ×10%<br>
+          Community ×10%
+        </div>
+      </div>
+    </div>
+
+    {# KPI strip #}
+    <div class="cover-kpis">
+      <div class="cover-kpi">
+        <div class="kval">{{ co2_total|intword }}</div>
+        <div class="klbl">CO₂ t/yr Reduced</div>
+      </div>
+      <div class="cover-kpi">
+        <div class="kval">${{ total_inv_m }}M</div>
+        <div class="klbl">Clean Investment</div>
+      </div>
+      <div class="cover-kpi">
+        <div class="kval">{{ all_projects|length }}</div>
+        <div class="klbl">Projects</div>
+      </div>
+      <div class="cover-kpi">
+        <div class="kval">{{ ev_verified }}</div>
+        <div class="klbl">Verified Docs</div>
+      </div>
+    </div>
+
+    {# Footer #}
+    <div class="cover-footer">
+      <div class="date">Report date: {{ report_date|date:"F j, Y" }}</div>
+      {% if company.verified %}
+        <div class="verified-badge">✓ Independently Verified</div>
+      {% else %}
+        <div class="demo-badge">Demo Data — Not Audited</div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════
+   PAGE 2 — EXECUTIVE SUMMARY
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 1</div>
+    <h2>Executive Summary</h2>
+    <p>Consolidated EcoIQ assessment — {{ company.name }} — {{ report_date|date:"F Y" }}</p>
+  </div>
+
+  {# KPI strip #}
+  <div class="exec-top">
+    <div class="exec-kpis">
+      <div class="exec-kpi">
+        <div class="kv" style="color:{{ tier_color }};">{{ score|floatformat:1 }}</div>
+        <div class="kl">EcoIQ Score</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">{{ tier_label }}</div>
+        <div class="kl">Tier Classification</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">{{ co2_total|intword }}</div>
+        <div class="kl">CO₂ t/yr Reduced</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">${{ total_inv_m }}M</div>
+        <div class="kl">Total Clean Invest.</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">{{ projects_completed|length }}</div>
+        <div class="kl">Completed Projects</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">{{ ev_verified }}</div>
+        <div class="kl">Verified Documents</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="exec-grid">
+
+    {# Company description #}
+    <div class="exec-desc-box avoid-break">
+      <h3>About the Company</h3>
+      <p style="font-size:8.5pt; color:var(--muted); line-height:1.6;">
+        {% if company.description %}
+          {{ company.description|truncatewords:90 }}
+        {% else %}
+          {{ company.name }} is a {{ company.get_sector_display|lower }} company based in
+          {{ company.city }}{% if company.country %}, {{ company.country }}{% endif %}.
+        {% endif %}
+      </p>
+
+      {% if company.founded_year or company.employee_count or company.annual_revenue_usd %}
+      <table style="width:100%; font-size:8pt; border-collapse:collapse; margin-top:10px;">
+        {% if company.founded_year %}
+        <tr>
+          <td style="padding:3px 0; color:var(--muted); width:48%;">Founded</td>
+          <td style="padding:3px 0; font-weight:600;">{{ company.founded_year }}</td>
+        </tr>
+        {% endif %}
+        {% if company.employee_count %}
+        <tr>
+          <td style="padding:3px 0; color:var(--muted);">Employees</td>
+          <td style="padding:3px 0; font-weight:600;">{{ company.employee_count|intword }}</td>
+        </tr>
+        {% endif %}
+        {% if company.annual_revenue_usd %}
+        <tr>
+          <td style="padding:3px 0; color:var(--muted);">Annual Revenue</td>
+          <td style="padding:3px 0; font-weight:600;">${{ company.annual_revenue_usd|intword }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="padding:3px 0; color:var(--muted);">Sector</td>
+          <td style="padding:3px 0; font-weight:600;">{{ company.get_sector_display }}</td>
+        </tr>
+      </table>
+      {% endif %}
+    </div>
+
+    {# Key findings #}
+    <div class="exec-findings avoid-break">
+      <h3>Key Findings</h3>
+      <ul class="findings-list">
+        <li>
+          <span class="fi-icon">📊</span>
+          <span class="fi-label">EcoIQ Score</span>
+          <span class="fi-val">
+            <strong>{{ score|floatformat:1 }}</strong> / 100
+            — {{ tier_label }}. The score reflects weighted performance across 5 environmental pillars.
+          </span>
+        </li>
+        <li>
+          <span class="fi-icon">🌫️</span>
+          <span class="fi-label">Pollution Footprint</span>
+          <span class="fi-val">
+            Score {{ company.score_pollution_footprint }}/100 (weight 35%).
+            {% if company.score_pollution_footprint >= 70 %}Strong emissions management.
+            {% elif company.score_pollution_footprint >= 50 %}Moderate — improvement room exists.
+            {% else %}Below threshold — emissions management needs urgent attention.
+            {% endif %}
+          </span>
+        </li>
+        <li>
+          <span class="fi-icon">📉</span>
+          <span class="fi-label">Reduction Progress</span>
+          <span class="fi-val">
+            Score {{ company.score_reduction_progress }}/100 (weight 25%).
+            {% if trend_delta > 0 %}5-year trend: +{{ trend_delta }} pts upward trajectory.
+            {% elif trend_delta < 0 %}5-year trend: {{ trend_delta }} pts downward — requires intervention.
+            {% else %}Score stable over observation period.
+            {% endif %}
+          </span>
+        </li>
+        <li>
+          <span class="fi-icon">💰</span>
+          <span class="fi-label">Investment</span>
+          <span class="fi-val">
+            Score {{ company.score_investment }}/100 (weight 20%).
+            ${{ total_inv_m }}M total clean investment across {{ all_projects|length }} projects.
+          </span>
+        </li>
+        <li>
+          <span class="fi-icon">📋</span>
+          <span class="fi-label">Transparency</span>
+          <span class="fi-val">
+            Score {{ company.score_transparency }}/100 (weight 10%).
+            {{ ev_verified }} verified documents, {{ ev_pending }} pending review.
+          </span>
+        </li>
+        <li>
+          <span class="fi-icon">🏘️</span>
+          <span class="fi-label">Community</span>
+          <span class="fi-val">
+            Score {{ company.score_community_impact }}/100 (weight 10%).
+            {{ co2_total|intword }} tonnes CO₂ reduced annually, equivalent to
+            {{ co2_cars|intword }} cars off the road.
+          </span>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+
+</div>{# end page 2 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 3 — SCORE INTELLIGENCE
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 2</div>
+    <h2>EcoIQ Score Intelligence</h2>
+    <p>Five-pillar breakdown — weighted composite score analysis</p>
+  </div>
+
+  <div class="score-page">
+
+    {# Radar chart — pure SVG, no JavaScript #}
+    <div class="radar-wrap">
+      <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;">
+
+        {# Grid rings (20 / 40 / 60 / 80 / 100%) #}
+        {% for ring in radar_rings %}
+        <polygon points="{{ ring }}"
+          fill="none" stroke="#d6e4dc" stroke-width="0.8"/>
+        {% endfor %}
+
+        {# Axis spokes #}
+        {% for ax in radar_axes %}
+        <line x1="{{ radar_cx }}" y1="{{ radar_cy }}"
+              x2="{{ ax.x2 }}" y2="{{ ax.y2 }}"
+              stroke="#d6e4dc" stroke-width="0.8"/>
+        {% endfor %}
+
+        {# Axis percentage labels — grid ring values #}
+        <text x="140" y="117" text-anchor="middle" font-size="6.5" fill="#aab8b2">20</text>
+        <text x="140" y="104" text-anchor="middle" font-size="6.5" fill="#aab8b2">40</text>
+        <text x="140" y="91"  text-anchor="middle" font-size="6.5" fill="#aab8b2">60</text>
+        <text x="140" y="78"  text-anchor="middle" font-size="6.5" fill="#aab8b2">80</text>
+
+        {# Data polygon #}
+        <polygon points="{{ radar_data }}"
+          fill="{{ tier_color }}29"
+          stroke="{{ tier_color }}"
+          stroke-width="2"
+          stroke-linejoin="round"/>
+
+        {# Axis labels #}
+        {% for lbl in radar_labels %}
+        <text x="{{ lbl.x }}" y="{{ lbl.y }}"
+          text-anchor="{{ lbl.anchor }}"
+          dominant-baseline="middle"
+          font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+          font-size="8.5" font-weight="600"
+          fill="#2d6a4f">{{ lbl.label }}</text>
+        {% endfor %}
+
+        {# Data point dots #}
+        {% for p in pillars %}
+        {# We'll just show the polygon without individual dots in WeasyPrint for simplicity #}
+        {% endfor %}
+
+        {# Centre dot #}
+        <circle cx="140" cy="140" r="3" fill="{{ tier_color }}"/>
+
+      </svg>
+
+      <p style="text-align:center; font-size:7pt; color:var(--muted); margin-top:4px;">
+        5-Pillar Performance Radar
+      </p>
+    </div>
+
+    {# Pillar score bars #}
+    <div class="pillar-wrap">
+
+      <h3 style="margin-bottom:12px;">Pillar Score Breakdown</h3>
+
+      {% for p in pillars %}
+      <div class="pillar-row">
+        <div class="pillar-name">{{ p.full }}</div>
+        <div class="pillar-bar-bg">
+          <div class="pillar-bar-fill"
+            style="width:{{ p.score }}%;
+              background:{% if p.score >= 70 %}#40916c{% elif p.score >= 50 %}#52b788{% elif p.score >= 35 %}#f4a261{% else %}#e63946{% endif %};">
+          </div>
+        </div>
+        <div class="pillar-score"
+          style="color:{% if p.score >= 70 %}#2d6a4f{% elif p.score >= 50 %}#40916c{% elif p.score >= 35 %}#c87941{% else %}#c0392b{% endif %};">
+          {{ p.score }}
+        </div>
+        <div class="pillar-weight">×{{ p.weight }}%</div>
+      </div>
+      {% endfor %}
+
+      <div class="formula-box" style="margin-top:14px;">
+        <strong>EcoIQ Score Formula</strong><br>
+        = Pollution×35% + Reduction×25% + Investment×20% + Transparency×10% + Community×10%<br>
+        = ({{ company.score_pollution_footprint }}×0.35)
+        + ({{ company.score_reduction_progress }}×0.25)
+        + ({{ company.score_investment }}×0.20)
+        + ({{ company.score_transparency }}×0.10)
+        + ({{ company.score_community_impact }}×0.10)
+        = <strong style="color:{{ tier_color }};">{{ score|floatformat:1 }}</strong>
+      </div>
+
+    </div>
+  </div>
+
+  {# Pillar detail table #}
+  <div class="mt-16 avoid-break">
+    <h3 class="mb-8">Pillar Scoring Detail</h3>
+    <table class="pillar-table">
+      <thead>
+        <tr>
+          <th style="width:22%;">Pillar</th>
+          <th style="width:10%;">Weight</th>
+          <th style="width:10%;">Score</th>
+          <th style="width:10%;">Contribution</th>
+          <th>Assessment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pillars %}
+        <tr>
+          <td><strong>{{ p.full }}</strong></td>
+          <td>{{ p.weight }}%</td>
+          <td>
+            <span class="score-chip"
+              style="background:{% if p.score >= 70 %}#40916c{% elif p.score >= 50 %}#52b788{% elif p.score >= 35 %}#f4a261{% else %}#e63946{% endif %};">
+              {{ p.score }}
+            </span>
+          </td>
+          <td>{{ p.score|floatformat:0 }}×{{ p.weight }}% = {{ p.score|floatformat:0 }}×0.{{ p.weight|stringformat:"02d" }}</td>
+          <td style="font-size:7.5pt; color:var(--muted);">
+            {% if p.score >= 85 %}Excellent — industry-leading performance in this pillar.
+            {% elif p.score >= 70 %}Good — above sector median, continued improvement advised.
+            {% elif p.score >= 55 %}Moderate — below target; structured improvement plan recommended.
+            {% elif p.score >= 40 %}Weak — significant gaps; priority intervention required.
+            {% else %}Critical — immediate corrective action necessary to meet regulatory minimums.
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>{# end page 3 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 4 — EMISSIONS TREND
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 3</div>
+    <h2>5-Year Emissions Trend</h2>
+    <p>60-month EcoIQ score trajectory — {{ trend_label }}</p>
+  </div>
+
+  {# Trend summary stats #}
+  <div class="trend-summary avoid-break">
+    <div class="trend-stat">
+      <div class="tv">{{ trend_start|floatformat:1 }}</div>
+      <div class="tl">Start Score</div>
+    </div>
+    <div class="trend-stat">
+      <div class="tv" style="color:{{ tier_color }};">{{ trend_end|floatformat:1 }}</div>
+      <div class="tl">Current Score</div>
+    </div>
+    <div class="trend-stat">
+      <div class="tv {% if trend_delta > 0 %}trend-up{% elif trend_delta < 0 %}trend-down{% endif %}">
+        {% if trend_delta > 0 %}+{% endif %}{{ trend_delta|floatformat:1 }}
+      </div>
+      <div class="tl">5-Year Change</div>
+    </div>
+    <div class="trend-stat">
+      <div class="tv" style="color:{{ tier_color }};">{{ tier_label }}</div>
+      <div class="tl">Current Tier</div>
+    </div>
+  </div>
+
+  {# Sparkline SVG chart #}
+  {% if sparkline_pts %}
+  <div class="sparkline-wrap avoid-break" style="margin-top:12px;">
+    <svg viewBox="0 0 {{ spk_w }} {{ spk_h }}" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%; display:block;">
+
+      {# Tier band backgrounds #}
+      {% for band in tier_bands %}
+      <rect x="{{ spk_pad }}" y="{{ band.y }}"
+            width="440" height="{{ band.h }}"
+            fill="{{ band.color }}" opacity="0.8"/>
+      <text x="{{ band.lx }}" y="{{ band.ly }}"
+            text-anchor="end"
+            dominant-baseline="middle"
+            font-family="Helvetica Neue, Arial, sans-serif"
+            font-size="6.5" fill="#8fa899">{{ band.label }}</text>
+      {% endfor %}
+
+      {# Filled area under sparkline #}
+      <polygon points="{{ sparkline_fill }}"
+        fill="{{ tier_color }}" opacity="0.08"/>
+
+      {# Trend line #}
+      <polyline points="{{ sparkline_pts }}"
+        fill="none"
+        stroke="{{ tier_color }}"
+        stroke-width="2"
+        stroke-linejoin="round"
+        stroke-linecap="round"/>
+
+      {# Start and end score dots #}
+      {# The first and last points of sparkline_pts — approximated #}
+      <text x="{{ spk_pad }}" y="108"
+        font-family="Helvetica Neue, Arial, sans-serif"
+        font-size="7" fill="#8fa899">{{ trend_label }}</text>
+
+    </svg>
+  </div>
+  {% endif %}
+
+  {# Trend interpretation #}
+  <div class="mt-12 avoid-break">
+    <h3 class="mb-8">Trend Interpretation</h3>
+    <table style="width:100%; border-collapse:collapse; font-size:8.5pt;">
+      <tr>
+        <td style="padding:6px 10px; background:var(--cream); border:0.4pt solid var(--border); width:35%;">
+          <strong>Trajectory</strong>
+        </td>
+        <td style="padding:6px 10px; border:0.4pt solid var(--border);">
+          {% if trend_delta > 5 %}
+            Significant positive trajectory over 5 years (+{{ trend_delta|floatformat:1 }} pts).
+            Indicates sustained investment in environmental improvement.
+          {% elif trend_delta > 0 %}
+            Modest positive trend (+{{ trend_delta|floatformat:1 }} pts over 5 years).
+            Improvements are occurring but acceleration is recommended.
+          {% elif trend_delta < -5 %}
+            Negative trajectory ({{ trend_delta|floatformat:1 }} pts decline).
+            Environmental performance has materially deteriorated. Immediate review required.
+          {% elif trend_delta < 0 %}
+            Slight decline ({{ trend_delta|floatformat:1 }} pts).
+            Minor regression — monitoring required to prevent further deterioration.
+          {% else %}
+            Stable performance over the observation period.
+            While stability is noted, proactive improvement is still expected by 2030 targets.
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:6px 10px; background:var(--cream); border:0.4pt solid var(--border);">
+          <strong>Tier Progression</strong>
+        </td>
+        <td style="padding:6px 10px; border:0.4pt solid var(--border);">
+          Current tier: <strong>{{ tier_label }}</strong>.
+          {% if score < 85 %}
+          Next tier milestone:
+          {% if score < 40 %}reach 40 pts (High Impact / Weak Repair)
+          {% elif score < 55 %}reach 55 pts (Improving but Polluting)
+          {% elif score < 70 %}reach 70 pts (Transition Leader)
+          {% else %}reach 85 pts (Restorative Leader)
+          {% endif %}
+          — requires approximately
+          {% if score < 40 %}{{ score|floatformat:0 }} → 40
+          {% elif score < 55 %}{{ score|floatformat:0 }} → 55
+          {% elif score < 70 %}{{ score|floatformat:0 }} → 70
+          {% else %}{{ score|floatformat:0 }} → 85
+          {% endif %} additional composite points.
+          {% else %}
+          Company has achieved the highest EcoIQ tier — Restorative Leader. Focus: maintain and expand.
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:6px 10px; background:var(--cream); border:0.4pt solid var(--border);">
+          <strong>Data Coverage</strong>
+        </td>
+        <td style="padding:6px 10px; border:0.4pt solid var(--border);">
+          {{ history_labels|length }} monthly data points covering {{ trend_label }}.
+          All pillar scores are tracked at monthly cadence; composite score is computed monthly.
+        </td>
+      </tr>
+    </table>
+  </div>
+
+</div>{# end page 4 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 5 — CO₂ & ENVIRONMENTAL IMPACT
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 4</div>
+    <h2>Environmental Impact Analysis</h2>
+    <p>CO₂ reduction, pollution footprint, and community benefit metrics</p>
+  </div>
+
+  {# CO₂ strip #}
+  <div class="co2-strip avoid-break">
+    <div class="co2-box">
+      <div class="cv">{{ co2_total|intword }}</div>
+      <div class="cl">Total CO₂ t/yr Reduced</div>
+    </div>
+    <div class="co2-box" style="background:#40916c;">
+      <div class="cv">{{ co2_completed|intword }}</div>
+      <div class="cl">From Completed Projects</div>
+    </div>
+    <div class="co2-box" style="background:#52b788;">
+      <div class="cv">{{ co2_active|intword }}</div>
+      <div class="cl">From Active Projects</div>
+    </div>
+    <div class="co2-box light">
+      <div class="cv">{{ co2_planned|intword }}</div>
+      <div class="cl">Planned (Pipeline)</div>
+    </div>
+  </div>
+
+  <div class="row mt-12 avoid-break">
+    <div class="col">
+      <div style="padding:12px; background:var(--cream); border:0.5pt solid var(--border); border-radius:6px; text-align:center;">
+        <div style="font-size:14pt; font-weight:700; color:var(--green);">{{ co2_cars|intword }}</div>
+        <div style="font-size:7pt; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-top:2px;">Equivalent Cars Removed</div>
+        <div style="font-size:7pt; color:var(--muted); margin-top:4px;">(@ 4.6 t CO₂/vehicle/year)</div>
+      </div>
+    </div>
+    <div class="col">
+      <div style="padding:12px; background:var(--cream); border:0.5pt solid var(--border); border-radius:6px; text-align:center;">
+        <div style="font-size:14pt; font-weight:700; color:var(--green);">{{ co2_trees|intword }}</div>
+        <div style="font-size:7pt; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-top:2px;">Tree-Year Equivalents</div>
+        <div style="font-size:7pt; color:var(--muted); margin-top:4px;">(1t CO₂ ≈ 45 tree-years)</div>
+      </div>
+    </div>
+    <div class="col">
+      <div style="padding:12px; background:var(--cream); border:0.5pt solid var(--border); border-radius:6px; text-align:center;">
+        <div style="font-size:14pt; font-weight:700; color:var(--green);">{{ projects_completed|length }}</div>
+        <div style="font-size:7pt; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-top:2px;">Completed Projects</div>
+        <div style="font-size:7pt; color:var(--muted); margin-top:4px;">of {{ all_projects|length }} total</div>
+      </div>
+    </div>
+  </div>
+
+  {# Pollution footprint analysis #}
+  <div class="mt-16">
+    <h3 class="mb-8">Pollution Burden Analysis</h3>
+    <table style="width:100%; border-collapse:collapse; font-size:8.5pt;">
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); width:30%; font-weight:700;">
+          Pollution Footprint Score
+        </td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">
+          <span class="score-chip" style="background:{% if company.score_pollution_footprint >= 70 %}#40916c{% elif company.score_pollution_footprint >= 50 %}#52b788{% elif company.score_pollution_footprint >= 35 %}#f4a261{% else %}#e63946{% endif %};">
+            {{ company.score_pollution_footprint }}/100
+          </span>
+          &nbsp; (Score ≥70 = Good, 50–69 = Moderate, 35–49 = Concerning, &lt;35 = Critical)
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">
+          Reduction Progress Score
+        </td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">
+          <span class="score-chip" style="background:{% if company.score_reduction_progress >= 70 %}#40916c{% elif company.score_reduction_progress >= 50 %}#52b788{% elif company.score_reduction_progress >= 35 %}#f4a261{% else %}#e63946{% endif %};">
+            {{ company.score_reduction_progress }}/100
+          </span>
+          &nbsp; Year-on-year improvement rate vs sector benchmark.
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">
+          Annual CO₂ Avoided
+        </td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">
+          {{ co2_total|intword }} t/yr (completed + active projects).
+          Pipeline adds a further {{ co2_planned|intword }} t/yr when operational.
+        </td>
+      </tr>
+      {% if all_projects %}
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">
+          Project Coverage
+        </td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">
+          {{ all_projects|length }} projects across
+          {% with types=all_projects|length %}{{ types }}{% endwith %}
+          initiatives. Types:
+          {% for p in all_projects %}{{ p.type_meta.label }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+</div>{# end page 5 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 6 — KEY PROJECTS
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 5</div>
+    <h2>Key Environmental Projects</h2>
+    <p>{{ all_projects|length }} initiatives — {{ projects_completed|length }} completed · {{ projects_active|length }} active · {{ projects_planned|length }} planned</p>
+  </div>
+
+  {% if all_projects %}
+  <table class="projects-table">
+    <thead>
+      <tr>
+        <th style="width:26%;">Project Name</th>
+        <th style="width:16%;">Type</th>
+        <th style="width:11%;">Status</th>
+        <th style="width:13%;">Investment</th>
+        <th style="width:13%;">CO₂ t/yr</th>
+        <th style="width:12%;">Households</th>
+        <th style="width:9%;">Start</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in all_projects %}
+      <tr>
+        <td>
+          <strong>{{ p.name }}</strong>
+          {% if p.verified %}<br><span style="font-size:6.5pt; color:#2d6a4f;">✓ Verified</span>{% endif %}
+        </td>
+        <td style="font-size:7.5pt;">{{ p.type_meta.label }}</td>
+        <td>
+          <span class="status-pill status-{{ p.status }}">{{ p.status }}</span>
+        </td>
+        <td>
+          {% if p.investment_usd %}${{ p.investment_usd|intword }}{% else %}—{% endif %}
+        </td>
+        <td>
+          {% if p.co2_reduction_tonnes %}{{ p.co2_reduction_tonnes|intcomma }}{% else %}—{% endif %}
+        </td>
+        <td>
+          {% if p.households_helped %}{{ p.households_helped|intcomma }}{% else %}—{% endif %}
+        </td>
+        <td style="font-size:7.5pt;">
+          {% if p.start_date %}{{ p.start_date|date:"M Y" }}{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);">No projects on record.</p>
+  {% endif %}
+
+</div>{# end page 6 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 7 — INVESTMENT EFFICIENCY
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 6</div>
+    <h2>Investment Efficiency</h2>
+    <p>Clean investment portfolio — cost-per-tonne analysis and capital allocation</p>
+  </div>
+
+  {# Summary #}
+  <div class="exec-top avoid-break">
+    <div class="exec-kpis">
+      <div class="exec-kpi">
+        <div class="kv">${{ total_inv_m }}M</div>
+        <div class="kl">Total Investment</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">{{ all_projects|length }}</div>
+        <div class="kl">Projects</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">{{ company.score_investment }}</div>
+        <div class="kl">Investment Score</div>
+      </div>
+      <div class="exec-kpi">
+        <div class="kv">
+          {% if co2_total and total_inv_usd %}
+            ${{ total_inv_usd|default:0 }}
+          {% else %}—{% endif %}
+        </div>
+        <div class="kl">Total USD Deployed</div>
+      </div>
+    </div>
+  </div>
+
+  {# Top investments table with inline bar #}
+  {% if inv_projects %}
+  <div class="mt-12">
+    <h3 class="mb-8">Top Projects by Investment</h3>
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th style="width:30%;">Project</th>
+          <th style="width:12%;">Type</th>
+          <th style="width:10%;">Status</th>
+          <th style="width:14%;">Investment</th>
+          <th style="width:20%;">Share of Portfolio</th>
+          <th style="width:14%;">CO₂ t/yr</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in inv_projects %}
+        <tr>
+          <td><strong>{{ p.name|truncatechars:35 }}</strong></td>
+          <td style="font-size:7.5pt;">{{ p.type_meta.label }}</td>
+          <td><span class="status-pill status-{{ p.status }}">{{ p.status }}</span></td>
+          <td style="font-weight:600;">${{ p.investment_usd|intword }}</td>
+          <td>
+            {% if total_inv_usd %}
+              {% widthratio p.investment_usd total_inv_usd 100 as pct %}
+              <div class="inv-bar-wrap">
+                <div class="inv-bar-fill" style="width:{{ pct }}%;"></div>
+              </div>
+              <span style="font-size:7.5pt; color:var(--muted); margin-left:4px;">{{ pct }}%</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{% if p.co2_reduction_tonnes %}{{ p.co2_reduction_tonnes|intcomma }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Cost-per-tonne #}
+  {% if co2_total and total_inv_usd %}
+  <div class="mt-12 avoid-break">
+    <h3 class="mb-8">Cost Efficiency Metrics</h3>
+    <table style="width:100%; border-collapse:collapse; font-size:8.5pt;">
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); width:40%; font-weight:700;">
+          Avg. Cost per Tonne CO₂ Avoided
+        </td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">
+          {% widthratio total_inv_usd co2_total 1 as cost_per_t %}
+          ${{ cost_per_t|floatformat:0 }} / tonne CO₂
+          &nbsp;(lower = more efficient; global benchmark: $40–$80/t for industrial mitigation)
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">
+          Investment Score Commentary
+        </td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">
+          {% if company.score_investment >= 70 %}
+            Strong investment intensity — above sector median. Capital is being deployed effectively.
+          {% elif company.score_investment >= 50 %}
+            Moderate investment level. Increasing capex commitment would move the score toward Transition Leader threshold.
+          {% else %}
+            Below-threshold investment intensity. MSCI benchmark requires ≥1% of annual revenue; current deployment appears lower.
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+
+</div>{# end page 7 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 8 — MODERNIZATION ROADMAP
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 7</div>
+    <h2>Modernization Roadmap</h2>
+    <p>Full project timeline — planned, active, and completed initiatives</p>
+  </div>
+
+  {% if roadmap_projects %}
+  <table class="roadmap-table">
+    <thead>
+      <tr>
+        <th style="width:26%;">Project</th>
+        <th style="width:16%;">Type</th>
+        <th style="width:10%;">Status</th>
+        <th style="width:11%;">Start</th>
+        <th style="width:11%;">Completion</th>
+        <th style="width:13%;">Investment</th>
+        <th style="width:13%;">CO₂ Impact</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in roadmap_projects %}
+      <tr>
+        <td>
+          <strong>{{ p.name|truncatechars:35 }}</strong>
+          {% if p.location %}<br><span style="font-size:6.5pt; color:var(--muted);">📍 {{ p.location|truncatechars:30 }}</span>{% endif %}
+        </td>
+        <td style="font-size:7.5pt;">{{ p.type_meta.label }}</td>
+        <td><span class="status-pill status-{{ p.status }}">{{ p.status }}</span></td>
+        <td style="font-size:7.5pt;">{% if p.start_date %}{{ p.start_date|date:"M Y" }}{% else %}—{% endif %}</td>
+        <td style="font-size:7.5pt;">{% if p.completion_date %}{{ p.completion_date|date:"M Y" }}{% else %}Ongoing{% endif %}</td>
+        <td style="font-size:7.5pt;">{% if p.investment_usd %}${{ p.investment_usd|intword }}{% else %}—{% endif %}</td>
+        <td style="font-size:7.5pt;">{% if p.co2_reduction_tonnes %}{{ p.co2_reduction_tonnes|intcomma }} t/yr{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);">No roadmap projects on record.</p>
+  {% endif %}
+
+</div>{# end page 8 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 9 — AI RECOMMENDATIONS
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 8</div>
+    <h2>Priority Recommendations</h2>
+    <p>AI-assisted gap analysis — based on pillar scores and evidence base</p>
+  </div>
+
+  {% if recommendations %}
+    {% for rec in recommendations %}
+    <div class="rec-card {{ rec.priority }} avoid-break">
+      <div class="rec-icon">{{ rec.icon }}</div>
+      <div class="rec-body">
+        <div>
+          <span class="priority-chip p-{{ rec.priority }}">{{ rec.priority_label }}</span>
+        </div>
+        <div class="rec-title">{{ rec.title }}</div>
+        <div class="rec-impact">{{ rec.impact }}</div>
+        <div class="rec-rationale">{{ rec.rationale }}</div>
+        {% if rec.sdgs %}
+        <div style="margin-top:6px; font-size:7.5pt; color:var(--muted);">
+          Aligned SDGs:
+          {% for sdg in rec.sdgs %}
+          <span style="display:inline-block; padding:1px 6px; border-radius:3px;
+            background:{{ sdg.color }}; color:#fff; font-size:6.5pt; font-weight:700; margin-left:3px;">
+            SDG {{ sdg.num }}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <p style="color:var(--muted); padding:12px;">
+    No critical recommendations — company scores above threshold on all pillars.
+  </p>
+  {% endif %}
+
+  <div class="rec-disclaimer">
+    <strong>Note:</strong> These recommendations are generated by EcoIQ's AI gap-analysis engine using pillar score thresholds
+    and publicly available evidence. They are indicative only and do not constitute formal environmental or legal advice.
+    Full due diligence by qualified environmental consultants is recommended before implementation.
+  </div>
+
+</div>{# end page 9 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 10 — SDG ALIGNMENT
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Section 9</div>
+    <h2>UN Sustainable Development Goal Alignment</h2>
+    <p>SDG mapping across {{ all_projects|length }} environmental projects — {{ sdg_active|length }} goals addressed</p>
+  </div>
+
+  <div class="sdg-grid avoid-break">
+    {% for sdg in sdg_grid %}
+    <div class="sdg-tile {% if not sdg.active %}sdg-inactive{% endif %}"
+         style="background:{{ sdg.color }};"
+         title="SDG {{ sdg.num }}: {{ sdg.label }}">
+      {{ sdg.num }}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:8px; font-size:7.5pt; color:var(--muted);">
+    <strong>Active SDGs</strong> (coloured) are those directly addressed by at least one project.
+    Greyed tiles are not yet covered by current project portfolio.
+  </div>
+
+  {# SDG detail list #}
+  <div class="mt-12">
+    <table style="width:100%; border-collapse:collapse; font-size:8pt;">
+      <thead>
+        <tr>
+          <th style="padding:5px 8px; background:var(--cream); border:0.4pt solid var(--border); width:8%; color:var(--green); font-size:7.5pt; text-transform:uppercase; letter-spacing:0.07em;">#</th>
+          <th style="padding:5px 8px; background:var(--cream); border:0.4pt solid var(--border); color:var(--green); font-size:7.5pt; text-transform:uppercase; letter-spacing:0.07em;">Goal</th>
+          <th style="padding:5px 8px; background:var(--cream); border:0.4pt solid var(--border); width:15%; color:var(--green); font-size:7.5pt; text-transform:uppercase; letter-spacing:0.07em;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sdg in sdg_grid %}
+        {% if sdg.active %}
+        <tr>
+          <td style="padding:5px 8px; border:0.4pt solid var(--border); text-align:center;">
+            <span style="display:inline-block; width:20px; height:20px; border-radius:3px;
+              background:{{ sdg.color }}; color:#fff; font-size:7.5pt; font-weight:700;
+              text-align:center; line-height:20px;">{{ sdg.num }}</span>
+          </td>
+          <td style="padding:5px 8px; border:0.4pt solid var(--border); font-weight:600;">{{ sdg.label }}</td>
+          <td style="padding:5px 8px; border:0.4pt solid var(--border);">
+            <span style="color:#2d6a4f; font-weight:700; font-size:7.5pt;">✓ Addressed</span>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>{# end page 10 #}
+
+{# ═══════════════════════════════════════════
+   PAGE 11 — EVIDENCE APPENDIX
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Appendix A</div>
+    <h2>Evidence & Verification Register</h2>
+    <p>{{ evidence|length }} documents — {{ ev_verified }} verified · {{ ev_pending }} pending · {{ ev_rejected }} rejected</p>
+  </div>
+
+  {# Summary chips #}
+  <div style="display:flex; gap:10px; margin-bottom:12px;">
+    <div style="padding:8px 14px; background:#d8f3dc; border-radius:5px; text-align:center;">
+      <div style="font-size:13pt; font-weight:700; color:#2d6a4f;">{{ ev_verified }}</div>
+      <div style="font-size:6.5pt; text-transform:uppercase; letter-spacing:0.1em; color:#2d6a4f; margin-top:1px;">Verified</div>
+    </div>
+    <div style="padding:8px 14px; background:#fef9e7; border-radius:5px; text-align:center;">
+      <div style="font-size:13pt; font-weight:700; color:#9a7d0a;">{{ ev_pending }}</div>
+      <div style="font-size:6.5pt; text-transform:uppercase; letter-spacing:0.1em; color:#9a7d0a; margin-top:1px;">Pending</div>
+    </div>
+    <div style="padding:8px 14px; background:#f9ebea; border-radius:5px; text-align:center;">
+      <div style="font-size:13pt; font-weight:700; color:#922b21;">{{ ev_rejected }}</div>
+      <div style="font-size:6.5pt; text-transform:uppercase; letter-spacing:0.1em; color:#922b21; margin-top:1px;">Rejected</div>
+    </div>
+  </div>
+
+  {% if evidence %}
+  <table class="ev-table">
+    <thead>
+      <tr>
+        <th style="width:30%;">Document Title</th>
+        <th style="width:16%;">Type</th>
+        <th style="width:14%;">Issuer</th>
+        <th style="width:10%;">Date</th>
+        <th style="width:10%;">Status</th>
+        <th style="width:20%;">Project</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ev in evidence %}
+      <tr>
+        <td><strong>{{ ev.title|truncatechars:40 }}</strong></td>
+        <td style="font-size:7.5pt;">{{ ev.get_doc_type_display }}</td>
+        <td style="font-size:7.5pt;">{{ ev.issuer|default:"—"|truncatechars:20 }}</td>
+        <td style="font-size:7.5pt;">{% if ev.date_issued %}{{ ev.date_issued|date:"M Y" }}{% else %}—{% endif %}</td>
+        <td>
+          {% if ev.verification_status == 'verified' %}
+            <span class="ev-status-v">✓ Verified</span>
+          {% elif ev.verification_status == 'pending' %}
+            <span class="ev-status-p">⏳ Pending</span>
+          {% else %}
+            <span class="ev-status-r">✗ Rejected</span>
+          {% endif %}
+        </td>
+        <td style="font-size:7.5pt; color:var(--muted);">
+          {% if ev.project %}{{ ev.project.name|truncatechars:30 }}{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);">No evidence documents on record.</p>
+  {% endif %}
+
+</div>{# end page 11 #}
+
+{# ═══════════════════════════════════════════
+   FINAL PAGE — METHODOLOGY & DISCLAIMER
+════════════════════════════════════════════ #}
+<div class="page-break">
+
+  <div class="section-header">
+    <div class="section-label">Appendix B</div>
+    <h2>Scoring Methodology</h2>
+    <p>How EcoIQ scores are computed and what they measure</p>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; font-size:8.5pt; margin-bottom:16px;">
+    <thead>
+      <tr>
+        <th style="padding:6px 10px; background:var(--green); color:#fff; font-size:7pt; text-transform:uppercase; letter-spacing:0.08em; width:22%;">Pillar</th>
+        <th style="padding:6px 10px; background:var(--green); color:#fff; font-size:7pt; text-transform:uppercase; letter-spacing:0.08em; width:10%;">Weight</th>
+        <th style="padding:6px 10px; background:var(--green); color:#fff; font-size:7pt; text-transform:uppercase; letter-spacing:0.08em;">What It Measures</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border); font-weight:700;">Pollution Footprint</td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border); text-align:center; font-weight:700;">35%</td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">Total greenhouse gas emissions, PM2.5, NOx, SOx relative to sector benchmarks. Lower absolute pollution = higher score.</td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">Reduction Progress</td>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); text-align:center; font-weight:700;">25%</td>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border);">Year-on-year decline in emissions intensity. Captures the rate of improvement — essential for Paris Agreement alignment.</td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border); font-weight:700;">Investment</td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border); text-align:center; font-weight:700;">20%</td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">Environmental capex as % of annual revenue, including clean energy, efficiency upgrades, and remediation. MSCI benchmark: ≥1% for "credible commitment".</td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">Transparency</td>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border); text-align:center; font-weight:700;">10%</td>
+        <td style="padding:7px 10px; background:var(--cream); border:0.4pt solid var(--border);">Quality of public environmental disclosures. Covers GRI alignment, CDP filings, third-party assurance, and public audit availability.</td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border); font-weight:700;">Community Impact</td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border); text-align:center; font-weight:700;">10%</td>
+        <td style="padding:7px 10px; border:0.4pt solid var(--border);">Measurable benefit to communities: households with clean heating access, air quality improvement, water safety, employment in clean economy.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="mb-8">Tier Classification</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:8.5pt; margin-bottom:16px;">
+    <thead>
+      <tr>
+        <th style="padding:5px 8px; background:var(--cream); border:0.4pt solid var(--border); width:15%; color:var(--green); font-size:7.5pt;">Score Range</th>
+        <th style="padding:5px 8px; background:var(--cream); border:0.4pt solid var(--border); width:25%; color:var(--green); font-size:7.5pt;">Tier</th>
+        <th style="padding:5px 8px; background:var(--cream); border:0.4pt solid var(--border); color:var(--green); font-size:7.5pt;">Meaning</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-weight:700; color:#2d6a4f;">85–100</td>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-weight:700;">Restorative Leader</td>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-size:7.5pt;">Net-positive impact — actively restoring ecosystems beyond compliance.</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700; color:#40916c;">70–84</td>
+        <td style="padding:6px 8px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">Transition Leader</td>
+        <td style="padding:6px 8px; background:var(--cream); border:0.4pt solid var(--border); font-size:7.5pt;">On a credible Paris-aligned trajectory with demonstrated investment.</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-weight:700; color:#52b788;">55–69</td>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-weight:700;">Improving but Polluting</td>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-size:7.5pt;">Positive trend but material pollution burden remains. Structural improvement needed.</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700; color:#c87941;">40–54</td>
+        <td style="padding:6px 8px; background:var(--cream); border:0.4pt solid var(--border); font-weight:700;">High Impact / Weak Repair</td>
+        <td style="padding:6px 8px; background:var(--cream); border:0.4pt solid var(--border); font-size:7.5pt;">High pollution footprint with insufficient remediation investment. Regulatory risk elevated.</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-weight:700; color:#c0392b;">0–39</td>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-weight:700;">Major Polluter</td>
+        <td style="padding:6px 8px; border:0.4pt solid var(--border); font-size:7.5pt;">Among the highest-impact emitters with minimal evidence of remediation. Immediate action required.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="padding:10px 14px; background:var(--cream); border:0.5pt solid var(--border); border-radius:5px; font-size:7.5pt; color:var(--muted); line-height:1.65; margin-top:8px;">
+    <strong style="color:var(--green);">Disclaimer.</strong>
+    This report is generated by the EcoIQ Environmental Intelligence Platform using publicly available data, government records,
+    and company-submitted evidence. All scores, tiers, and recommendations are indicative. EcoIQ does not guarantee the completeness
+    or accuracy of underlying data. This document is for informational purposes only and does not constitute investment, legal, or
+    environmental compliance advice. For regulatory purposes, engage a certified environmental auditor.
+    <br><br>
+    Data period: {{ trend_label }}. Generated: {{ report_date|date:"F j, Y" }}.
+    Company: {{ company.name }}.
+  </div>
+
+</div>{# end methodology page #}
+
+</body>
+</html>

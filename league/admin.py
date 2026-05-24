@@ -2,7 +2,11 @@
 EcoIQ Good Deeds League — Django Admin.
 Russian-labelled sections per design spec.
 """
+import zipfile
+import io
+
 from django.contrib import admin
+from django.http import HttpResponse
 from django.utils.html import format_html
 from django.db.models import Count, Sum
 
@@ -43,6 +47,47 @@ def _ecoiq_chip(score):
 def action_rerank(modeladmin, request, queryset):
     rerank_all()
     modeladmin.message_user(request, 'Рейтинг пересчитан.')
+
+
+@admin.action(description='📄 Скачать PDF-отчёт (ZIP если несколько)')
+def action_export_pdf(modeladmin, request, queryset):
+    """
+    Export EcoIQ PDF report(s).
+    - 1 company selected  → stream the PDF directly.
+    - Multiple companies  → bundle all PDFs into a ZIP.
+    """
+    from .pdf_report import generate_pdf_report
+
+    companies = list(
+        queryset.prefetch_related('projects', 'evidence', 'history')
+    )
+
+    if len(companies) == 1:
+        co  = companies[0]
+        pdf = generate_pdf_report(co)
+        fname = f"ecoiq-report-{co.slug}-{co.ecoiq_score}.pdf"
+        resp = HttpResponse(pdf, content_type='application/pdf')
+        resp['Content-Disposition'] = f'attachment; filename="{fname}"'
+        return resp
+
+    # Multiple: pack into ZIP
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for co in companies:
+            try:
+                pdf   = generate_pdf_report(co)
+                fname = f"ecoiq-report-{co.slug}-{co.ecoiq_score}.pdf"
+                zf.writestr(fname, pdf)
+            except Exception as exc:
+                modeladmin.message_user(
+                    request,
+                    f'⚠ Ошибка для {co.name}: {exc}',
+                    level='warning',
+                )
+    buf.seek(0)
+    resp = HttpResponse(buf.read(), content_type='application/zip')
+    resp['Content-Disposition'] = 'attachment; filename="ecoiq-reports.zip"'
+    return resp
 
 
 # ── Inlines ───────────────────────────────────────────────────────────────────
@@ -86,7 +131,7 @@ class CompanyAdmin(admin.ModelAdmin):
     search_fields = ('name', 'city', 'description')
     prepopulated_fields = {'slug': ('name',)}
     ordering      = ('rank', '-ecoiq_score')
-    actions       = [action_rerank]
+    actions       = [action_rerank, action_export_pdf]
     inlines       = [ProjectInline, EvidenceInline, ScoreHistoryInline]
 
     fieldsets = (

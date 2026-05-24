@@ -565,6 +565,24 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
     </div>
   </div>
 
+  <!-- PDF download + back link -->
+  <div style="margin: 1rem 0 0; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+    <a href="{% url 'league:report_pdf' company.slug %}"
+       style="display:inline-flex; align-items:center; gap:0.4rem;
+              background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+              color:#fff; text-decoration:none; padding:0.45rem 1rem;
+              border-radius:6px; font-size:0.8rem; font-weight:600;
+              transition:background 0.15s;"
+       onmouseover="this.style.background='rgba(255,255,255,.22)'"
+       onmouseout="this.style.background='rgba(255,255,255,.12)'">
+      📄 Download PDF Report
+    </a>
+    <a href="/league/"
+       style="color:rgba(255,255,255,.5); font-size:0.78rem; text-decoration:none;">
+      ← Back to Leaderboard
+    </a>
+  </div>
+
   <!-- Terminal KPI strip inside cover (flush bottom) -->
   <div class="kpi-strip" style="margin: 1.5rem -2rem 0; padding: 0 2rem;">
     <div class="kpi-strip-inner" style="padding: 0;">

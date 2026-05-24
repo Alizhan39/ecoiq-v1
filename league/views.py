@@ -5,6 +5,7 @@ EcoIQ Good Deeds League — public views.
 /league/<slug>/           → company ESG intelligence profile (public)
 """
 import json
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 
 from .models import Company, EnvironmentalProject, SECTOR_CHOICES
@@ -345,3 +346,25 @@ def company_profile(request, slug):
         'project_type_meta': PROJECT_TYPE_META,
     }
     return render(request, 'league/company.html', ctx)
+
+
+# ── PDF Report ─────────────────────────────────────────────────────────────────
+
+def report_pdf(request, slug):
+    """
+    Stream a premium A4 PDF report for the given company.
+    Generated synchronously via WeasyPrint — suitable for Render free tier.
+    """
+    from .pdf_report import generate_pdf_report
+
+    company = get_object_or_404(
+        Company.objects.prefetch_related('projects', 'evidence', 'history'),
+        slug=slug,
+    )
+
+    pdf_bytes = generate_pdf_report(company)
+    filename  = f"ecoiq-report-{company.slug}-{company.ecoiq_score}.pdf"
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
