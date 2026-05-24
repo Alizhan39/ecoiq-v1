@@ -22,14 +22,21 @@ services:
       - key: DEBUG
         value: "False"
 
-      # IMPORTANT: update these to your actual Render URL after first deploy
-      # Format: "ecoiq.onrender.com"  (no https://, space-separated if multiple)
+      # Wildcard allows all hosts — safe behind Render's reverse proxy.
+      # For tighter control replace with: "ecoiq.onrender.com ecoiq.uk www.ecoiq.uk"
+      # Comma-separated also works: "ecoiq.onrender.com,ecoiq.uk,www.ecoiq.uk"
       - key: ALLOWED_HOSTS
-        value: "ecoiq.onrender.com"
+        value: "*"
 
-      # Format: "https://ecoiq.onrender.com"  (with https://)
+      # Full HTTPS origins — comma or space separated. No wildcards here.
+      # Add every domain that will send POST requests (login, forms).
+      # Example: "https://ecoiq.onrender.com,https://ecoiq.uk,https://www.ecoiq.uk"
       - key: CSRF_TRUSTED_ORIGINS
-        value: "https://ecoiq.onrender.com"
+        value: "https://ecoiq.onrender.com,https://ecoiq.uk,https://www.ecoiq.uk"
+
+      # Public URL used in og:image and share links
+      - key: SITE_URL
+        value: "https://ecoiq.uk"
 
       # Set this manually in the Render dashboard — never commit the real key
       - key: ANTHROPIC_API_KEY

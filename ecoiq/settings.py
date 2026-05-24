@@ -16,14 +16,48 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# Space-separated list: "myapp.onrender.com localhost"
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split()
 
-# Required for Render/Railway HTTPS reverse proxy
-CSRF_TRUSTED_ORIGINS = [
-    h.strip() for h in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split()
-    if h.strip()
-]
+def _parse_env_list(key: str, default: str = '') -> list:
+    """
+    Parse an env var that may be comma- OR space-separated, or both.
+    Also strips surrounding and inner quote characters that some platforms
+    (Render dashboard, shell quoting) accidentally include in the value.
+
+    Examples that all work:
+        ALLOWED_HOSTS=*
+        ALLOWED_HOSTS=ecoiq.uk
+        ALLOWED_HOSTS=ecoiq.uk www.ecoiq.uk ecoiq.onrender.com
+        ALLOWED_HOSTS=ecoiq.uk,www.ecoiq.uk,ecoiq.onrender.com
+        ALLOWED_HOSTS=ecoiq.uk, www.ecoiq.uk          (comma + space)
+        ALLOWED_HOSTS="ecoiq.uk www.ecoiq.uk"          (quoted)
+    """
+    raw = os.environ.get(key, default)
+    # Strip outer quotes the whole string might be wrapped in
+    raw = raw.strip().strip('"').strip("'")
+    # Normalise: commas → spaces, then split on any whitespace
+    parts = raw.replace(',', ' ').split()
+    # Strip residual inner quotes from individual values
+    return [p.strip('"').strip("'") for p in parts if p.strip('"').strip("'")]
+
+
+# Accepts: "ecoiq.uk", "ecoiq.uk www.ecoiq.uk", "ecoiq.uk,www.ecoiq.uk", "*"
+ALLOWED_HOSTS = _parse_env_list('ALLOWED_HOSTS', 'localhost 127.0.0.1')
+
+# Accepts: "https://ecoiq.uk", "https://ecoiq.uk,https://www.ecoiq.uk",
+#           "https://ecoiq.uk https://www.ecoiq.uk", "https://*.ecoiq.uk"
+# Note: bare "https://*" is not valid in Django — use explicit origins or "https://*.domain.com"
+CSRF_TRUSTED_ORIGINS = _parse_env_list('CSRF_TRUSTED_ORIGINS', '')
+
+# Log at startup so Gunicorn logs show exactly what Django parsed
+# (helps diagnose future 400s without needing a shell)
+import sys as _sys
+print(
+    f"[ecoiq] ALLOWED_HOSTS={ALLOWED_HOSTS}  "
+    f"CSRF_TRUSTED_ORIGINS={CSRF_TRUSTED_ORIGINS}  "
+    f"DEBUG={DEBUG}",
+    file=_sys.stderr,
+    flush=True,
+)
 
 # ── Applications ──────────────────────────────────────────────────────────────
 
