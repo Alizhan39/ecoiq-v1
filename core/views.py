@@ -18,6 +18,23 @@ PILLARS = [
     ('Innovation',  '#ede9fe'),
 ]
 
+INDUSTRIES = [
+    ('🛢️',  'Oil & Gas / Refining',        'Refineries, upstream, LNG'),
+    ('⚙️',  'Manufacturing',               'General heavy industry'),
+    ('🚗',  'Automotive',                  'Assembly, stamping, casting'),
+    ('🧪',  'Chemicals',                   'Petrochemicals, polymers'),
+    ('⚡',  'Utilities & Energy',          'Power gen, grid ops'),
+    ('💊',  'Pharmaceuticals',             'API, fill-finish, biotech'),
+    ('🥫',  'Food & Beverage',             'Processing, packaging'),
+    ('📦',  'Logistics',                   'Warehousing, distribution'),
+    ('⛏️',  'Metals & Mining',             'Smelting, rolling, extraction'),
+    ('🏗️',  'Infrastructure',              'Cement, glass, building mat.'),
+]
+
+
+def landing(request):
+    return render(request, 'landing.html', {'industries': INDUSTRIES})
+
 
 def index(request):
     assessments = Assessment.objects.all()
