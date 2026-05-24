@@ -1,0 +1,31 @@
+New EcoIQ access request
+========================
+
+Submitted: {{ instance.created_at|date:"d M Y, H:i" }} UTC
+
+CONTACT
+-------
+Name:       {{ instance.full_name }}
+Company:    {{ instance.company }}
+Email:      {{ instance.work_email }}
+
+PROFILE
+-------
+Industry:      {{ instance.get_industry_display }}
+Facility type: {{ instance.facility_type }}
+Company size:  {{ instance.get_company_size_display }}
+
+OPERATIONAL CHALLENGE
+---------------------
+{{ instance.challenge }}
+
+{% if instance.message %}
+ADDITIONAL CONTEXT
+------------------
+{{ instance.message }}
+{% endif %}
+
+─────────────────────────────────────────
+Review & update status in the admin panel:
+{{ admin_url }}
+─────────────────────────────────────────

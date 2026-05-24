@@ -1,0 +1,32 @@
+Hi {{ instance.full_name }},
+
+Thank you for requesting access to EcoIQ.
+
+We've received your submission and our team will review your profile
+within 48 hours. If your operational context is a good fit for our
+current pilot programme, we'll reach out to schedule a 30-minute
+discovery call.
+
+YOUR SUBMISSION SUMMARY
+-----------------------
+Company:       {{ instance.company }}
+Industry:      {{ instance.get_industry_display }}
+Facility type: {{ instance.facility_type }}
+Company size:  {{ instance.get_company_size_display }}
+
+Challenge you described:
+{{ instance.challenge }}
+
+─────────────────────────────────────────
+In the meantime, if you have any questions feel free to reply to this
+email or reach us directly at hello@ecoiq.uk.
+
+We look forward to speaking with you.
+
+The EcoIQ Team
+hello@ecoiq.uk
+─────────────────────────────────────────
+
+EcoIQ provides AI-assisted industrial audit and operational intelligence.
+Financial projections and KPI estimates are illustrative in nature and
+should be validated against your operational data before acting on them.

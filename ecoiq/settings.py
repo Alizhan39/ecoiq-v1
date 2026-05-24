@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'audit',
+    'leads',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -117,6 +118,19 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
+# ── Email ─────────────────────────────────────────────────────────────────────
+# Dev default: print to console. Production: set EMAIL_* vars in Render dashboard.
+
+EMAIL_BACKEND      = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST         = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT         = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS      = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER    = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
+LEAD_NOTIFY_EMAIL  = os.environ.get('LEAD_NOTIFY_EMAIL', 'hello@ecoiq.uk')
+CALENDLY_URL       = os.environ.get('CALENDLY_URL', '')
 
 # Max upload size: 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
