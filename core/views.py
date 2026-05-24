@@ -45,11 +45,20 @@ def landing(request):
     })
 
 
+HOW_IT_WORKS = [
+    ('Upload a document',    'PDF or plain-text company report — or skip and answer the questionnaire directly.'),
+    ('Answer 10 questions',  'Two questions per pillar (Environment, Social, Governance, Ethics, Innovation).'),
+    ('AI generates findings', 'Claude analyses your responses and scores each pillar 0–100 with detailed notes.'),
+    ('Download your report', 'View the HTML report or save as PDF — ready for board, investor, or audit use.'),
+]
+
+
 def index(request):
     assessments = Assessment.objects.all()
     return render(request, 'core/index.html', {
         'pillars':     PILLARS,
         'assessments': assessments,
+        'steps':       HOW_IT_WORKS,
     })
 
 

@@ -53,16 +53,30 @@
 {% block content %}
 
 {# ── Header ─────────────────────────────────────────────────────────── #}
-<div class="card">
-  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.4rem; flex-wrap:wrap;">
-    <h1 style="flex:1; min-width:0;">{{ assessment.company_name }}</h1>
-    <span class="badge badge-{{ assessment.status }}">{{ assessment.get_status_display }}</span>
+<div class="card" style="background:#1b4332; color:#fff; border-radius:10px;">
+  <div style="display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-bottom:0.6rem;">
+    <div style="flex:1; min-width:0;">
+      <div style="font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:#a8d5b5; margin-bottom:0.35rem;">EcoIQ Assessment</div>
+      <h1 style="color:#fff; font-size:1.65rem; margin-bottom:0.2rem;">{{ assessment.company_name }}</h1>
+      <p style="color:#a8d5b5; font-size:0.83rem; margin:0;">
+        Created {{ assessment.created_at|date:"d M Y" }}
+        &nbsp;·&nbsp;
+        Assessment #{{ assessment.pk }}
+      </p>
+    </div>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; padding-top:0.1rem;">
+      <span class="badge badge-{{ assessment.status }}">{{ assessment.get_status_display }}</span>
+      {% if assessment.status == 'complete' %}
+      <a href="{% url 'report' assessment.pk %}" class="btn btn-primary" style="font-size:0.85rem; padding:0.45rem 1rem; background:#d8f3dc; color:#1b4332;">
+        View Full Report →
+      </a>
+      {% endif %}
+    </div>
   </div>
-  <p style="color:#888; font-size:0.88rem;">Created {{ assessment.created_at|date:"d M Y, H:i" }}</p>
   {% if assessment.notes %}
-  <blockquote style="border-left:3px solid #2d6a4f; margin:1rem 0 0; padding:0.5rem 1rem; color:#555; font-style:italic; font-size:0.92rem;">
+  <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:rgba(255,255,255,.07); border-radius:6px; font-size:0.83rem; color:#c8e6d0; line-height:1.6;">
     {{ assessment.notes }}
-  </blockquote>
+  </div>
   {% endif %}
 </div>
 
@@ -109,8 +123,8 @@
 {# ── AI Summary ──────────────────────────────────────────────────────── #}
 {% if assessment.finding.summary %}
 <div class="card">
-  <h2>Summary</h2>
-  <div style="line-height:1.75; color:#333; white-space:pre-line;">{{ assessment.finding.summary }}</div>
+  <h2>Executive Summary</h2>
+  <div style="line-height:1.8; color:#333; font-size:0.95rem;">{{ assessment.finding.summary|linebreaks }}</div>
 </div>
 {% endif %}
 

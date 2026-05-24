@@ -66,8 +66,9 @@
       color: #a8d5b5;
       margin-bottom: 0.5rem;
     }
-    .cover-company { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; }
-    .cover-meta    { font-size: 0.85rem; color: #a8d5b5; }
+    .cover-company { font-size: 2rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .cover-notes   { font-size: 0.82rem; color: #c8e6d0; line-height: 1.55; margin-bottom: 0.6rem; max-width: 540px; }
+    .cover-meta    { font-size: 0.82rem; color: #a8d5b5; }
 
     .overall-badge {
       float: right;
@@ -117,11 +118,28 @@
     }
 
     /* ── Summary ─────────────────────────────────────────────────── */
-    .summary-text {
-      color: #333;
-      line-height: 1.8;
-      white-space: pre-line;
+    .summary-text { color: #333; line-height: 1.85; }
+    .summary-text p { margin-bottom: 1.1rem; }
+    .summary-text p:last-child { margin-bottom: 0; }
+
+    /* ── Priority actions callout ────────────────────────────────── */
+    .priority-box {
+      background: #f0faf4;
+      border: 1px solid #b7e4c7;
+      border-left: 4px solid #2d6a4f;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin-top: 1.25rem;
     }
+    .priority-box h4 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #2d6a4f;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .priority-box p { margin: 0; color: #2d4a3a; font-size: 0.88rem; line-height: 1.65; }
 
     /* ── Pillar rows ─────────────────────────────────────────────── */
     .pillar-row {
@@ -223,10 +241,15 @@
     </div>
     <div class="cover-eyebrow">EcoIQ Ethical Intelligence Report</div>
     <div class="cover-company">{{ assessment.company_name }}</div>
+    {% if assessment.notes %}
+    <div class="cover-notes">{{ assessment.notes }}</div>
+    {% endif %}
     <div class="cover-meta">
       Generated {{ assessment.updated_at|date:"d F Y" }}
       &nbsp;·&nbsp;
       Assessment #{{ assessment.pk }}
+      &nbsp;·&nbsp;
+      EcoIQ v1
     </div>
   </div>
 
@@ -282,17 +305,20 @@
   {% if finding.summary %}
   <div class="section">
     <div class="section-title">Executive Summary</div>
-    <div class="summary-text">{{ finding.summary }}</div>
+    <div class="summary-text">{{ finding.summary|linebreaks }}</div>
   </div>
   {% endif %}
 
   <!-- Pillar analysis -->
   <div class="section">
-    <div class="section-title">Pillar Analysis</div>
+    <div class="section-title">Pillar Analysis &amp; Questionnaire Responses</div>
     {% for pillar in pillars %}
     <div class="pillar-row">
       <div class="pillar-header" style="background:{{ pillar.color }};">
         <span class="pillar-name">{{ pillar.name }}</span>
+        <span style="font-size:0.72rem; color:#555; margin-right:auto; padding-left:0.6rem;">
+          {% if pillar.score >= 81 %}Exemplary{% elif pillar.score >= 61 %}Good{% elif pillar.score >= 41 %}Developing{% elif pillar.score >= 21 %}Minimal{% else %}Critical Gap{% endif %}
+        </span>
         <span class="pillar-score">{{ pillar.score }}<span style="font-size:0.7rem;font-weight:400;color:#666;">/100</span></span>
       </div>
       <div class="pillar-body">
@@ -315,6 +341,17 @@
       </div>
     </div>
     {% endfor %}
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="section" style="background:#fafafa;">
+    <p style="font-size:0.75rem; color:#999; line-height:1.6;">
+      <strong style="color:#888;">Illustrative Analysis Disclaimer:</strong>
+      Financial projections, estimated savings, efficiency gains, and emissions reduction figures
+      presented in this report are AI-assisted and illustrative in nature. They are derived from
+      questionnaire responses and should be independently validated against operational data before
+      informing capital allocation or strategic decisions. EcoIQ v1 — Ethical Intelligence Platform.
+    </p>
   </div>
 
   <!-- Footer -->

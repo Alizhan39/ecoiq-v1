@@ -1,72 +1,227 @@
 {% extends "base.html" %}
 
-{% block title %}EcoIQ — Ethical Intelligence Platform{% endblock %}
+{% block title %}EcoIQ — Assessments{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Assessment cards ────────────────────────────────────────────── */
+  .assessment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .a-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow .15s;
+  }
+  .a-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+
+  .a-card-header {
+    background: #1b4332;
+    padding: 1.1rem 1.25rem 0.9rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .a-card-name {
+    flex: 1;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.35;
+    min-width: 0;
+  }
+  .a-card-overall {
+    flex-shrink: 0;
+    background: #2d6a4f;
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    text-align: center;
+  }
+  .a-card-overall .val { font-size: 1.35rem; font-weight: 800; color: #fff; line-height: 1; }
+  .a-card-overall .lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: #a8d5b5; }
+
+  .a-card-body { padding: 1rem 1.25rem; flex: 1; }
+
+  .score-mini-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .score-mini {
+    flex: 1;
+    min-width: 40px;
+    border-radius: 5px;
+    padding: 0.35rem 0.2rem;
+    text-align: center;
+  }
+  .score-mini .v { font-size: 0.95rem; font-weight: 700; color: #1b4332; line-height: 1; }
+  .score-mini .l { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em; color: #666; }
+
+  .a-card-meta {
+    font-size: 0.78rem;
+    color: #999;
+    margin-bottom: 0.85rem;
+    line-height: 1.45;
+  }
+  .a-card-notes {
+    font-size: 0.78rem;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 0.85rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .a-card-actions {
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    gap: 0.5rem;
+    background: #fafafa;
+  }
+  .a-card-actions .btn { font-size: 0.82rem; padding: 0.4rem 0.9rem; }
+
+  /* ── Pillar legend strip ─────────────────────────────────────────── */
+  .pillar-legend {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .pillar-chip {
+    border-radius: 20px;
+    padding: 0.25rem 0.8rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #1b4332;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-  <h1>EcoIQ</h1>
-  <p style="color:#555; margin-bottom:1.5rem; font-size:1.05rem;">
-    Ethical Intelligence Platform — assess your organisation's impact across
-    Environment, Social, Governance, Ethics, and Innovation.
-  </p>
 
-  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:2rem;">
-    {% for pillar, color in pillars %}
-    <div style="background:{{ color }}; border-radius:8px; padding:1rem; text-align:center;">
-      <div style="font-size:1.5rem; font-weight:600;">{{ pillar|first }}</div>
-      <div style="font-size:0.85rem; margin-top:0.25rem; color:#333;">{{ pillar }}</div>
-    </div>
-    {% endfor %}
+<!-- Header -->
+<div class="card" style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; padding:1.5rem 2rem;">
+  <div style="flex:1; min-width:0;">
+    <h1 style="margin-bottom:0.2rem;">EcoIQ Assessments</h1>
+    <p style="color:#888; font-size:0.88rem; margin:0;">
+      AI-assisted ethical intelligence across Environment · Social · Governance · Ethics · Innovation
+    </p>
   </div>
+  <a href="{% url 'upload' %}" class="btn btn-primary">+ New Assessment</a>
+</div>
 
-  <a href="{% url 'upload' %}" class="btn btn-primary">+ Start New Assessment</a>
+<!-- Pillar legend -->
+<div class="pillar-legend" style="padding:0 0 0.25rem;">
+  <span class="pillar-chip" style="background:#d8f3dc;">Environment</span>
+  <span class="pillar-chip" style="background:#dde5f4;">Social</span>
+  <span class="pillar-chip" style="background:#fef9c3;">Governance</span>
+  <span class="pillar-chip" style="background:#fce7f3;">Ethics</span>
+  <span class="pillar-chip" style="background:#ede9fe;">Innovation</span>
 </div>
 
 {% if assessments %}
-<div class="card">
-  <h2>Assessments</h2>
-  <table style="width:100%; border-collapse:collapse; font-size:0.95rem;">
-    <thead>
-      <tr style="border-bottom:2px solid #e9ecef; text-align:left;">
-        <th style="padding:0.5rem 0.75rem;">Company</th>
-        <th style="padding:0.5rem 0.75rem;">Status</th>
-        <th style="padding:0.5rem 0.75rem;">Created</th>
-        <th style="padding:0.5rem 0.75rem;">Overall</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for a in assessments %}
-      <tr style="border-bottom:1px solid #f0f0f0;">
-        <td style="padding:0.6rem 0.75rem; font-weight:500;">{{ a.company_name }}</td>
-        <td style="padding:0.6rem 0.75rem;">
-          <span class="badge badge-{{ a.status }}">{{ a.get_status_display }}</span>
-        </td>
-        <td style="padding:0.6rem 0.75rem; color:#666;">{{ a.created_at|date:"d M Y" }}</td>
-        <td style="padding:0.6rem 0.75rem;">
-          {% if a.finding %}{{ a.finding.score_overall }}/100{% else %}—{% endif %}
-        </td>
-        <td style="padding:0.6rem 0.75rem;">
-          <a href="{% url 'assessment_detail' a.pk %}" class="btn btn-secondary" style="padding:0.3rem 0.8rem; font-size:0.85rem;">View</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="assessment-grid">
+  {% for a in assessments %}
+  <div class="a-card">
+    <div class="a-card-header">
+      <div class="a-card-name">{{ a.company_name }}</div>
+      {% if a.finding %}
+      <div class="a-card-overall">
+        <div class="val">{{ a.finding.score_overall }}</div>
+        <div class="lbl">Overall</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="a-card-body">
+      <!-- Pillar mini scores -->
+      {% if a.finding %}
+      <div class="score-mini-row">
+        <div class="score-mini" style="background:#d8f3dc;">
+          <div class="v">{{ a.finding.score_environment }}</div>
+          <div class="l">Env</div>
+        </div>
+        <div class="score-mini" style="background:#dde5f4;">
+          <div class="v">{{ a.finding.score_social }}</div>
+          <div class="l">Soc</div>
+        </div>
+        <div class="score-mini" style="background:#fef9c3;">
+          <div class="v">{{ a.finding.score_governance }}</div>
+          <div class="l">Gov</div>
+        </div>
+        <div class="score-mini" style="background:#fce7f3;">
+          <div class="v">{{ a.finding.score_ethics }}</div>
+          <div class="l">Eth</div>
+        </div>
+        <div class="score-mini" style="background:#ede9fe;">
+          <div class="v">{{ a.finding.score_innovation }}</div>
+          <div class="l">Inn</div>
+        </div>
+      </div>
+      {% else %}
+      <div style="height:2rem; display:flex; align-items:center;">
+        <span class="badge badge-{{ a.status }}">{{ a.get_status_display }}</span>
+      </div>
+      {% endif %}
+
+      {% if a.notes %}
+      <div class="a-card-notes">{{ a.notes }}</div>
+      {% endif %}
+
+      <div class="a-card-meta">
+        Created {{ a.created_at|date:"d M Y" }}
+        {% if a.finding %}
+        &nbsp;·&nbsp;
+        <span class="badge badge-complete" style="font-size:0.7rem; padding:0.15rem 0.5rem;">Complete</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="a-card-actions">
+      {% if a.status == 'complete' %}
+        <a href="{% url 'report' a.pk %}" class="btn btn-primary">View Report</a>
+        <a href="{% url 'assessment_detail' a.pk %}" class="btn btn-secondary">Detail</a>
+      {% else %}
+        <a href="{% url 'assessment_detail' a.pk %}" class="btn btn-primary">Continue →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
+
 {% else %}
 <div class="card" style="text-align:center; color:#777; padding:3rem;">
-  No assessments yet. <a href="{% url 'upload' %}">Start your first one.</a>
+  <p style="font-size:1.05rem; margin-bottom:1rem;">No assessments yet.</p>
+  <a href="{% url 'upload' %}" class="btn btn-primary">Start your first assessment →</a>
 </div>
 {% endif %}
 
+<!-- How it works -->
 <div class="card">
   <h2>How it works</h2>
-  <ol style="padding-left:1.2rem; line-height:2.2;">
-    <li>Upload a company document (PDF or plain text)</li>
-    <li>Answer the guided EcoIQ questionnaire</li>
-    <li>Receive AI-generated findings and KPI scores</li>
-    <li>Download your HTML or PDF report</li>
-  </ol>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-top:0.5rem;">
+    {% for step, desc in steps %}
+    <div style="display:flex; gap:0.75rem; align-items:flex-start;">
+      <span style="background:#1b4332; color:#d8f3dc; width:1.8rem; height:1.8rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; flex-shrink:0; margin-top:0.1rem;">{{ forloop.counter }}</span>
+      <div>
+        <div style="font-weight:600; font-size:0.88rem; margin-bottom:0.2rem; color:#1b4332;">{{ step }}</div>
+        <div style="font-size:0.8rem; color:#777; line-height:1.45;">{{ desc }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
+
 {% endblock %}
