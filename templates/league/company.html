@@ -3,530 +3,1372 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ company.name }} — EcoIQ Good Deeds League</title>
+  <title>{{ company.name }} — EcoIQ ESG Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% load humanize %}
 
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset & variables ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --green:    #2d6a4f;
-      --teal:     #40916c;
-      --light-bg: #f8faf9;
-      --card-bg:  #ffffff;
-      --border:   #e5ebe8;
-      --text:     #1a2c23;
-      --muted:    #6b7c72;
-      --accent:   #00c896;
-    }
+:root {
+  --green-900: #0d1f16;
+  --green-800: #1b4332;
+  --green-700: #2d6a4f;
+  --green-600: #40916c;
+  --green-500: #52b788;
+  --green-300: #95d5b2;
+  --green-200: #d8f3dc;
+  --green-100: #f0f7f2;
+  --accent:    #00e89a;
 
-    body { font-family: 'Inter', sans-serif; background: var(--light-bg); color: var(--text); }
+  --bg:       #f2f5f3;
+  --card:     #ffffff;
+  --border:   #dce5de;
+  --border-2: #e8eee9;
+  --text:     #111b14;
+  --muted:    #5c7063;
+  --muted-2:  #8da394;
 
-    /* ── Nav ─────────────────────────────────────────────────────────────── */
-    .topnav {
-      background: var(--green);
-      padding: 0.85rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
-    .topnav a { color: #fff; text-decoration: none; font-size: 0.88rem; }
-    .topnav .brand { font-weight: 800; font-size: 1.1rem; }
-    .topnav .brand span { color: var(--accent); }
-    .topnav .nav-links { margin-left: auto; display: flex; gap: 1rem; }
-    .topnav .nav-links a {
-      color: rgba(255,255,255,.75);
-      font-size: 0.85rem;
-      padding: 0.3rem 0.7rem;
-      border-radius: 5px;
-    }
-    .topnav .nav-links a:hover { background: rgba(255,255,255,.12); color: #fff; }
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --sans: 'Inter', -apple-system, sans-serif;
 
-    /* ── Cover strip ─────────────────────────────────────────────────────── */
-    .cover {
-      background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 60%, #40916c 100%);
-      color: #fff;
-      padding: 2.5rem 2rem;
-    }
-    .cover-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
-    .cover-text { flex: 1; min-width: 280px; }
-    .breadcrumb { font-size: 0.78rem; color: rgba(255,255,255,.6); margin-bottom: 0.75rem; }
-    .breadcrumb a { color: rgba(255,255,255,.7); text-decoration: none; }
-    .breadcrumb a:hover { color: #fff; }
-    .cover-text h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.3rem; }
-    .cover-text .meta { font-size: 0.85rem; color: rgba(255,255,255,.7); margin-bottom: 1rem; }
-    .cover-text .desc { font-size: 0.9rem; color: rgba(255,255,255,.8); line-height: 1.6; max-width: 580px; }
+  --tier-restorative: #2d6a4f;
+  --tier-transition:  #40916c;
+  --tier-improving:   #52b788;
+  --tier-high-impact: #e07b39;
+  --tier-polluter:    #d93025;
 
-    /* Score hero */
-    .score-hero {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.25);
-      border-radius: 16px;
-      padding: 1.5rem 2rem;
-      text-align: center;
-      min-width: 200px;
-    }
-    .score-hero .big-score {
-      font-size: 4rem;
-      font-weight: 900;
-      letter-spacing: -0.05em;
-      line-height: 1;
-    }
-    .score-hero .tier-label {
-      display: inline-block;
-      margin-top: 0.5rem;
-      padding: 0.25rem 0.85rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      background: rgba(255,255,255,.2);
-      color: #fff;
-    }
-    .score-hero .rank-line { font-size: 0.78rem; color: rgba(255,255,255,.6); margin-top: 0.5rem; }
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 18px;
 
-    /* ── Main grid ───────────────────────────────────────────────────────── */
-    .page { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow:    0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+}
 
-    .two-col { display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items: start; }
-    @media (max-width: 820px) { .two-col { grid-template-columns: 1fr; } }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.5; }
 
-    /* ── Card ────────────────────────────────────────────────────────────── */
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .card h2 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 1.25rem;
-    }
+/* ── Typography helpers ──────────────────────────────────────────────────── */
+.mono { font-family: var(--mono); }
+.label {
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .09em; color: var(--muted);
+}
+.section-title {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .09em; color: var(--muted);
+}
 
-    /* ── Pillar bars ─────────────────────────────────────────────────────── */
-    .pillar-list { display: flex; flex-direction: column; gap: 1rem; }
-    .pillar-row { display: flex; flex-direction: column; gap: 0.35rem; }
-    .pillar-top { display: flex; justify-content: space-between; align-items: baseline; }
-    .pillar-name { font-size: 0.88rem; font-weight: 600; }
-    .pillar-meta { font-size: 0.73rem; color: var(--muted); }
-    .pillar-score-num { font-size: 1.1rem; font-weight: 800; }
-    .track {
-      height: 8px;
-      border-radius: 4px;
-      background: var(--border);
-      overflow: hidden;
-    }
-    .fill {
-      height: 100%;
-      border-radius: 4px;
-      background: linear-gradient(90deg, var(--green), var(--teal));
-      transition: width 0.8s ease;
-    }
+/* ── Nav ─────────────────────────────────────────────────────────────────── */
+.topnav {
+  background: var(--green-800);
+  padding: .85rem 2rem;
+  display: flex; align-items: center; gap: 1.5rem;
+  position: sticky; top: 0; z-index: 200;
+}
+.topnav a { color: #fff; text-decoration: none; font-size: .88rem; }
+.topnav .brand { font-weight: 900; font-size: 1.1rem; letter-spacing: -.02em; }
+.topnav .brand span { color: var(--accent); }
+.topnav .nav-links { margin-left: auto; display: flex; gap: .5rem; align-items: center; }
+.topnav .nav-links a {
+  color: rgba(255,255,255,.7); font-size: .82rem;
+  padding: .3rem .75rem; border-radius: 6px; transition: all .15s;
+}
+.topnav .nav-links a:hover { background: rgba(255,255,255,.12); color: #fff; }
 
-    /* ── KPI stat boxes ──────────────────────────────────────────────────── */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-    }
-    .kpi-box {
-      background: var(--light-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem;
-    }
-    .kpi-box .kval { font-size: 1.4rem; font-weight: 800; color: var(--green); letter-spacing: -0.04em; }
-    .kpi-box .klbl { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; text-transform: uppercase; letter-spacing: 0.05em; }
+/* ── Hero cover ──────────────────────────────────────────────────────────── */
+.cover {
+  background: linear-gradient(140deg, #060e09 0%, var(--green-900) 30%, var(--green-800) 70%, #1e5437 100%);
+  color: #fff;
+  padding: 2.5rem 2rem 0;
+}
+.cover-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;
+}
+@media (max-width: 780px) { .cover-inner { grid-template-columns: 1fr; } }
 
-    /* ── Projects ────────────────────────────────────────────────────────── */
-    .project-card {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.1rem;
-      margin-bottom: 0.75rem;
-    }
-    .project-card:last-child { margin-bottom: 0; }
-    .proj-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .proj-name { font-weight: 700; font-size: 0.95rem; }
-    .proj-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.55; margin-bottom: 0.6rem; }
-    .proj-kpis { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-    .proj-kpi {
-      font-size: 0.75rem;
-      background: #f0f7f4;
-      color: var(--green);
-      padding: 0.2rem 0.55rem;
-      border-radius: 5px;
-      font-weight: 600;
-    }
+.breadcrumb { font-size: .75rem; color: rgba(255,255,255,.45); margin-bottom: .75rem; }
+.breadcrumb a { color: rgba(255,255,255,.55); text-decoration: none; }
+.breadcrumb a:hover { color: #fff; }
+.breadcrumb span { margin: 0 .35rem; }
 
-    /* Status badge */
-    .status-pill {
-      display: inline-block;
-      padding: 0.15rem 0.6rem;
-      border-radius: 20px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .status-completed  { background: #d8f3dc; color: #2d6a4f; }
-    .status-active     { background: #d0f0ff; color: #0077b6; }
-    .status-planned    { background: #f2f2f2; color: #555; }
-    .status-cancelled  { background: #ffe0e0; color: #c62828; }
+.cover h1 {
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 900; letter-spacing: -.04em; line-height: 1.1;
+  margin-bottom: .5rem;
+}
 
-    /* ── Evidence ────────────────────────────────────────────────────────── */
-    .evidence-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .evidence-row:last-child { border-bottom: none; }
-    .ev-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      background: #f0f7f4;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-    .ev-info { flex: 1; }
-    .ev-title { font-weight: 600; font-size: 0.85rem; }
-    .ev-meta  { font-size: 0.73rem; color: var(--muted); margin-top: 0.1rem; }
-    .ev-badge {
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 0.15rem 0.5rem;
-      border-radius: 10px;
-      flex-shrink: 0;
-    }
-    .ev-verified  { background: #d8f3dc; color: #2d6a4f; }
-    .ev-pending   { background: #fff3cd; color: #7a5c00; }
-    .ev-rejected  { background: #ffe0e0; color: #c62828; }
+.cover-meta {
+  display: flex; flex-wrap: wrap; gap: .5rem;
+  align-items: center; margin-bottom: 1rem;
+}
+.cover-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+  border-radius: 20px; padding: .2rem .65rem;
+  font-size: .75rem; color: rgba(255,255,255,.85);
+}
+.cover-chip.verified { background: rgba(0,232,154,.15); border-color: rgba(0,232,154,.35); color: var(--accent); }
 
-    /* ── Trend chart ─────────────────────────────────────────────────────── */
-    .chart-wrap { height: 180px; }
+.cover-desc {
+  font-size: .88rem; color: rgba(255,255,255,.7); line-height: 1.65;
+  max-width: 600px; margin-bottom: 1.5rem;
+}
 
-    /* ── Info table ──────────────────────────────────────────────────────── */
-    .info-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .info-table td { padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
-    .info-table td:first-child { color: var(--muted); width: 50%; }
-    .info-table td:last-child { font-weight: 600; text-align: right; }
-    .info-table tr:last-child td { border-bottom: none; }
-  </style>
+/* Score panel */
+.score-panel {
+  text-align: center; padding: 1.5rem 1.75rem;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px);
+  min-width: 200px;
+}
+.score-ring-wrap { position: relative; display: inline-block; }
+.score-ring-wrap .big-score {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.score-number {
+  font-family: var(--mono); font-size: 2.6rem; font-weight: 700;
+  line-height: 1; letter-spacing: -.05em;
+}
+.score-label { font-size: .65rem; color: rgba(255,255,255,.5); margin-top: .15rem; text-transform: uppercase; letter-spacing: .08em; }
+.tier-pill {
+  display: inline-block; margin-top: .75rem;
+  padding: .25rem .9rem; border-radius: 20px; border: 1px solid rgba(255,255,255,.25);
+  font-size: .72rem; font-weight: 700; color: #fff;
+}
+.rank-line { font-size: .72rem; color: rgba(255,255,255,.45); margin-top: .4rem; font-family: var(--mono); }
+
+/* ── Terminal KPI strip ──────────────────────────────────────────────────── */
+.kpi-strip {
+  background: #0a1510;
+  border-top: 1px solid rgba(0,232,154,.15);
+  border-bottom: 1px solid rgba(0,232,154,.1);
+}
+.kpi-strip-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  padding: .1rem 2rem;
+}
+@media (max-width: 900px) { .kpi-strip-inner { grid-template-columns: repeat(3, 1fr); } }
+.kpi-chip {
+  padding: .85rem .75rem;
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+.kpi-chip:last-child { border-right: none; }
+.kpi-chip .kv {
+  font-family: var(--mono); font-size: 1.25rem; font-weight: 600;
+  color: var(--accent); letter-spacing: -.04em; line-height: 1;
+}
+.kpi-chip .kl {
+  font-size: .65rem; text-transform: uppercase; letter-spacing: .08em;
+  color: rgba(255,255,255,.35); margin-top: .2rem;
+}
+
+/* ── Section navigation ─────────────────────────────────────────────────── */
+.sec-nav {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  position: sticky; top: 57px; z-index: 100;
+}
+.sec-nav-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 2rem;
+  display: flex; gap: 0; overflow-x: auto;
+}
+.snav {
+  padding: .75rem 1rem; font-size: .8rem; font-weight: 500;
+  color: var(--muted); text-decoration: none; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: all .15s;
+}
+.snav:hover { color: var(--green-700); }
+.snav.active { color: var(--green-700); border-bottom-color: var(--green-700); font-weight: 600; }
+
+/* ── Page layout ─────────────────────────────────────────────────────────── */
+.page { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+.two-col { display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items: start; }
+@media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── Section card ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  margin-bottom: 1.25rem; overflow: hidden;
+}
+.card-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .875rem 1.25rem;
+  border-bottom: 1px solid var(--border-2);
+}
+.card-hd-left { display: flex; align-items: center; gap: .5rem; }
+.card-hd-icon { font-size: 1rem; }
+.card-bd { padding: 1.25rem; }
+.card-bd.flush { padding: 0; }
+
+/* ── Score intelligence grid ─────────────────────────────────────────────── */
+.score-intel { display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; align-items: center; }
+@media (max-width: 640px) { .score-intel { grid-template-columns: 1fr; } }
+.radar-wrap { height: 220px; position: relative; }
+
+.pillar-list { display: flex; flex-direction: column; gap: .9rem; }
+.pillar-row { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: center; }
+.pillar-info { display: flex; flex-direction: column; gap: .3rem; }
+.pillar-name-row { display: flex; align-items: baseline; gap: .4rem; }
+.pillar-nm { font-size: .83rem; font-weight: 600; }
+.pillar-wt { font-size: .68rem; color: var(--muted-2); }
+.ptrack { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.pfill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green-700), var(--green-500)); transition: width 1s ease; }
+.pillar-score { font-family: var(--mono); font-size: 1.2rem; font-weight: 700; color: var(--green-700); min-width: 2.5rem; text-align: right; }
+
+/* ── Trend chart ─────────────────────────────────────────────────────────── */
+.trend-wrap { height: 220px; }
+
+/* Tier legend bar */
+.tier-legend { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.tier-dot { display: flex; align-items: center; gap: .3rem; font-size: .72rem; color: var(--muted); }
+.tier-dot-swatch { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ── CO₂ counter ─────────────────────────────────────────────────────────── */
+.co2-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+@media (max-width: 600px) { .co2-grid { grid-template-columns: 1fr 1fr; } }
+.co2-box {
+  background: var(--green-100); border: 1px solid var(--green-200);
+  border-radius: var(--radius-sm); padding: 1rem;
+}
+.co2-box.primary { background: var(--green-800); border-color: var(--green-700); }
+.co2-box .co2-val {
+  font-family: var(--mono); font-size: 1.6rem; font-weight: 700;
+  color: var(--green-700); letter-spacing: -.04em; line-height: 1;
+}
+.co2-box.primary .co2-val { color: var(--accent); font-size: 2rem; }
+.co2-box .co2-lbl {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); margin-top: .3rem;
+}
+.co2-box.primary .co2-lbl { color: rgba(255,255,255,.5); }
+.co2-equiv { display: flex; gap: 1.5rem; flex-wrap: wrap; padding-top: .75rem; border-top: 1px solid var(--border); }
+.equiv-item { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted); }
+.equiv-item strong { color: var(--text); font-family: var(--mono); }
+
+/* ── Project cards ───────────────────────────────────────────────────────── */
+.proj-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: .85rem;
+  transition: box-shadow .15s, transform .15s;
+}
+.proj-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.proj-card:last-child { margin-bottom: 0; }
+.proj-card-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .65rem 1rem;
+  color: #fff;
+}
+.proj-type-badge {
+  display: flex; align-items: center; gap: .35rem;
+  font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  opacity: .9;
+}
+.status-pill {
+  font-size: .65rem; font-weight: 700; padding: .2rem .6rem;
+  border-radius: 20px; white-space: nowrap;
+  background: rgba(255,255,255,.2); color: #fff; border: 1px solid rgba(255,255,255,.3);
+}
+.proj-card-body { padding: .9rem 1rem; }
+.proj-name { font-weight: 700; font-size: .93rem; margin-bottom: .25rem; }
+.proj-location { font-size: .75rem; color: var(--muted); margin-bottom: .65rem; display: flex; align-items: center; gap: .3rem; }
+.proj-desc { font-size: .8rem; color: var(--muted); line-height: 1.6; margin-bottom: .75rem; }
+
+.proj-metrics { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+.metric-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: .25rem .6rem;
+  font-size: .72rem; font-weight: 600; color: var(--text);
+  font-family: var(--mono);
+}
+.metric-chip .mc-icon { font-size: .85em; }
+
+/* Before/after */
+.before-after {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
+  background: var(--bg); border-radius: var(--radius-sm);
+  padding: .75rem; border: 1px solid var(--border);
+}
+.ba-side .ba-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .2rem; }
+.ba-side .ba-val { font-family: var(--mono); font-size: .95rem; font-weight: 700; }
+.ba-before .ba-val { color: var(--tier-polluter); }
+.ba-after  .ba-val { color: var(--tier-restorative); }
+.ba-divider { border: none; border-left: 1px solid var(--border); height: 100%; }
+
+/* Project timeline bar */
+.proj-timeline { margin-top: .75rem; }
+.proj-tl-label { font-size: .68rem; color: var(--muted); margin-bottom: .3rem; display: flex; justify-content: space-between; }
+.proj-tl-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.proj-tl-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green-600), var(--green-400, #74c69d)); }
+
+/* ── Investment analysis chart ───────────────────────────────────────────── */
+.inv-chart-wrap { height: 220px; }
+
+/* ── SDG grid ────────────────────────────────────────────────────────────── */
+.sdg-grid {
+  display: grid; grid-template-columns: repeat(9, 1fr); gap: .4rem;
+}
+@media (max-width: 600px) { .sdg-grid { grid-template-columns: repeat(6, 1fr); } }
+.sdg-tile {
+  aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .15rem;
+  cursor: default; transition: transform .15s; position: relative;
+  overflow: hidden;
+}
+.sdg-tile:hover { transform: scale(1.06); z-index: 2; }
+.sdg-tile.inactive { filter: saturate(0) opacity(.25); }
+.sdg-tile .sdg-num {
+  font-family: var(--mono); font-size: .8rem; font-weight: 700; color: #fff; line-height: 1;
+}
+.sdg-tile .sdg-lbl {
+  font-size: .5rem; font-weight: 600; color: rgba(255,255,255,.85);
+  text-align: center; line-height: 1.2; padding: 0 2px;
+}
+.sdg-active-count {
+  font-family: var(--mono); font-size: 1.5rem; font-weight: 700;
+  color: var(--green-700); margin-right: .25rem;
+}
+
+/* ── AI Recommendations ──────────────────────────────────────────────────── */
+.ai-banner {
+  display: flex; align-items: center; gap: .75rem;
+  background: linear-gradient(120deg, #0d1f16, #1b4332);
+  border-radius: var(--radius-sm); padding: .875rem 1rem;
+  margin-bottom: 1rem;
+}
+.ai-banner-icon { font-size: 1.5rem; }
+.ai-banner-text { flex: 1; }
+.ai-banner-title { font-weight: 700; font-size: .88rem; color: #fff; }
+.ai-banner-sub { font-size: .72rem; color: rgba(255,255,255,.45); margin-top: .1rem; }
+.ai-demo-badge {
+  background: rgba(0,232,154,.15); border: 1px solid rgba(0,232,154,.3);
+  color: var(--accent); font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; padding: .2rem .6rem; border-radius: 20px; white-space: nowrap;
+}
+
+.rec-card {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden; margin-bottom: .75rem;
+}
+.rec-card:last-child { margin-bottom: 0; }
+.rec-hd { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; border-bottom: 1px solid var(--border); }
+.rec-icon { font-size: 1.3rem; }
+.rec-title { font-weight: 700; font-size: .88rem; flex: 1; }
+.priority-badge {
+  font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; padding: .18rem .55rem; border-radius: 20px;
+}
+.priority-critical { background: #fce8e8; color: #c62828; }
+.priority-high     { background: #fef3e2; color: #e65100; }
+.priority-medium   { background: #fff9c4; color: #f57f17; }
+.priority-low      { background: var(--green-200); color: var(--green-800); }
+.rec-bd { padding: .75rem 1rem; font-size: .81rem; color: var(--muted); line-height: 1.6; }
+.rec-impact {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: var(--green-100); border: 1px solid var(--green-200);
+  border-radius: 6px; padding: .2rem .6rem;
+  font-size: .72rem; font-weight: 600; color: var(--green-700); font-family: var(--mono);
+  margin-bottom: .5rem;
+}
+.rec-sdgs { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .5rem; }
+.rec-sdg-badge {
+  font-size: .65rem; font-weight: 700; padding: .15rem .5rem;
+  border-radius: 4px; color: #fff;
+}
+
+/* ── Evidence ────────────────────────────────────────────────────────────── */
+.ev-summary { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.ev-sum-chip {
+  display: flex; align-items: center; gap: .3rem;
+  font-size: .75rem; font-weight: 700;
+  padding: .3rem .75rem; border-radius: 20px;
+}
+.ev-sum-verified { background: var(--green-200); color: var(--green-800); }
+.ev-sum-pending  { background: #fff3cd; color: #7a5c00; }
+.ev-sum-rejected { background: #ffe0e0; color: #c62828; }
+
+.ev-row {
+  display: flex; align-items: flex-start; gap: .75rem;
+  padding: .75rem 0; border-bottom: 1px solid var(--border-2);
+}
+.ev-row:last-child { border-bottom: none; }
+.ev-icon-box {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--bg); display: flex; align-items: center;
+  justify-content: center; font-size: 1.05rem; flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.ev-info { flex: 1; min-width: 0; }
+.ev-title { font-weight: 600; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-meta  { font-size: .7rem; color: var(--muted); margin-top: .1rem; }
+.ev-badge { font-size: .65rem; font-weight: 700; padding: .15rem .5rem; border-radius: 20px; flex-shrink: 0; }
+.ev-verified { background: var(--green-200); color: var(--green-800); }
+.ev-pending  { background: #fff3cd; color: #7a5c00; }
+.ev-rejected { background: #ffe0e0; color: #c62828; }
+
+/* ── Methane map placeholder ─────────────────────────────────────────────── */
+.methane-map {
+  border-radius: var(--radius-sm); overflow: hidden;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(45,106,79,.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(64,145,108,.12) 0%, transparent 45%),
+    linear-gradient(160deg, #0d2018 0%, #0f2b1e 40%, #122514 100%);
+  border: 1px solid rgba(0,232,154,.12);
+  position: relative;
+  height: 200px;
+}
+.map-overlay {
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 30 Q15 15 30 30 Q45 45 60 30' fill='none' stroke='rgba(45,106,79,.08)' stroke-width='1'/%3E%3Cpath d='M0 45 Q15 30 30 45 Q45 60 60 45' fill='none' stroke='rgba(45,106,79,.06)' stroke-width='1'/%3E%3C/svg%3E");
+}
+.map-dots-layer { position: absolute; inset: 0; }
+.leak-dot {
+  position: absolute; cursor: default;
+}
+.leak-pulse {
+  width: 10px; height: 10px; border-radius: 50%;
+  position: relative;
+}
+.leak-pulse::before, .leak-pulse::after {
+  content: ''; position: absolute; inset: -4px;
+  border-radius: 50%; border: 2px solid currentColor;
+  animation: pulse-ring 2s ease-out infinite;
+}
+.leak-pulse::after { animation-delay: .75s; }
+@keyframes pulse-ring { 0% { transform: scale(.7); opacity: .8; } 100% { transform: scale(2.2); opacity: 0; } }
+.leak-label {
+  font-size: .58rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; margin-top: .2rem; text-align: center; white-space: nowrap;
+}
+.map-badge {
+  position: absolute; bottom: .75rem; left: .75rem;
+  background: rgba(0,0,0,.6); border: 1px solid rgba(0,232,154,.2);
+  border-radius: 6px; padding: .4rem .75rem;
+  font-size: .7rem; color: rgba(255,255,255,.7);
+}
+.map-badge strong { color: var(--accent); }
+.map-corner-tag {
+  position: absolute; top: .75rem; right: .75rem;
+  background: rgba(0,232,154,.12); border: 1px solid rgba(0,232,154,.25);
+  border-radius: 20px; padding: .2rem .65rem;
+  font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--accent);
+}
+
+/* ── Roadmap timeline ────────────────────────────────────────────────────── */
+.roadmap { display: flex; flex-direction: column; gap: .6rem; }
+.roadmap-item {
+  display: flex; align-items: flex-start; gap: .75rem;
+}
+.rm-connector { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: .15rem; }
+.rm-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid;
+}
+.rm-dot.completed { background: var(--green-700); border-color: var(--green-700); }
+.rm-dot.active    { background: var(--green-500); border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(82,183,136,.25); }
+.rm-dot.planned   { background: transparent; border-color: var(--muted-2); }
+.rm-line { flex: 1; width: 2px; background: var(--border-2); margin: 2px 0; min-height: 16px; }
+.rm-info { flex: 1; padding-bottom: .5rem; }
+.rm-year { font-family: var(--mono); font-size: .68rem; color: var(--muted); font-weight: 600; }
+.rm-name { font-size: .8rem; font-weight: 600; line-height: 1.35; }
+.rm-type { font-size: .68rem; color: var(--muted); }
+
+/* ── Transparency history timeline ───────────────────────────────────────── */
+.tl-year-group { margin-bottom: .75rem; }
+.tl-year-hd { font-family: var(--mono); font-size: .7rem; font-weight: 700; color: var(--muted); margin-bottom: .4rem; padding-left: 1.25rem; position: relative; }
+.tl-year-hd::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 10px; height: 2px; background: var(--green-600); }
+.tl-item { display: flex; align-items: flex-start; gap: .5rem; padding: .35rem 0 .35rem 1.25rem; border-left: 2px solid var(--border-2); margin-left: 5px; }
+.tl-item:last-child { border-left: 2px solid transparent; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .25rem; margin-left: -1.35rem; }
+.tl-content { flex: 1; }
+.tl-title { font-size: .77rem; font-weight: 600; line-height: 1.35; }
+.tl-meta  { font-size: .68rem; color: var(--muted); margin-top: .1rem; }
+
+/* ── Company factsheet ───────────────────────────────────────────────────── */
+.fact-table { width: 100%; border-collapse: collapse; }
+.fact-table td { padding: .55rem 0; border-bottom: 1px solid var(--border-2); vertical-align: top; }
+.fact-table tr:last-child td { border-bottom: none; }
+.fact-table .ft-key { font-size: .78rem; color: var(--muted); width: 45%; }
+.fact-table .ft-val { font-size: .82rem; font-weight: 600; text-align: right; }
+
+/* ── Utility ─────────────────────────────────────────────────────────────── */
+.gap { margin-bottom: 1.25rem; }
+</style>
 </head>
 <body>
 
-<!-- Nav -->
+<!-- ── Top nav ────────────────────────────────────────────────────────────── -->
 <nav class="topnav">
   <a href="/" class="brand">Eco<span>IQ</span></a>
   <div class="nav-links">
     <a href="/league/">🏆 League</a>
     <a href="/audit/">Industrial Audit</a>
-    <a href="/esg/">ESG</a>
     <a href="/admin/">Admin</a>
   </div>
 </nav>
 
-<!-- Cover -->
+<!-- ── Hero cover ─────────────────────────────────────────────────────────── -->
 <div class="cover">
   <div class="cover-inner">
-    <div class="cover-text">
+    <div>
       <div class="breadcrumb">
-        <a href="/league/">Good Deeds League</a> / {{ company.name }}
+        <a href="/league/">Good Deeds League</a>
+        <span>/</span>
+        {{ company.name }}
       </div>
       <h1>{{ company.name }}</h1>
-      <div class="meta">
-        {{ company.get_sector_display }}
-        {% if company.city %} · {{ company.city }}, {{ company.country }}{% endif %}
-        {% if company.founded_year %} · Основана в {{ company.founded_year }}{% endif %}
-        {% if company.verified %} · <span style="color:#00e89a;">✓ Данные верифицированы</span>{% endif %}
+      <div class="cover-meta">
+        <span class="cover-chip">{{ company.get_sector_display }}</span>
+        {% if company.city %}<span class="cover-chip">📍 {{ company.city }}, {{ company.country }}</span>{% endif %}
+        {% if company.founded_year %}<span class="cover-chip">Est. {{ company.founded_year }}</span>{% endif %}
+        {% if company.is_public %}<span class="cover-chip">📈 Public</span>{% endif %}
+        {% if company.verified %}<span class="cover-chip verified">✓ Data Verified</span>{% endif %}
       </div>
-      {% if company.description %}
-        <p class="desc">{{ company.description }}</p>
-      {% endif %}
+      {% if company.description %}<p class="cover-desc">{{ company.description }}</p>{% endif %}
     </div>
 
-    <div class="score-hero">
-      <div class="big-score" style="color:{{ tier.colour }};">{{ company.ecoiq_score }}</div>
-      <div class="tier-label">{{ tier.label }}</div>
-      {% if company.rank %}<div class="rank-line">Rank #{{ company.rank }} in league</div>{% endif %}
+    <!-- Score ring -->
+    <div class="score-panel">
+      <div class="score-ring-wrap">
+        <svg viewBox="0 0 130 130" width="140" height="140">
+          <!-- Background ring -->
+          <circle cx="65" cy="65" r="52" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>
+          <!-- Score arc -->
+          <circle cx="65" cy="65" r="52" fill="none"
+                  stroke="{{ tier.colour }}" stroke-width="10"
+                  stroke-dasharray="{{ score_arc }} 327"
+                  stroke-linecap="round"
+                  transform="rotate(-90 65 65)"
+                  style="transition: stroke-dasharray 1.2s ease;"/>
+        </svg>
+        <div class="big-score">
+          <span class="score-number mono" style="color:{{ tier.colour }};">{{ company.ecoiq_score }}</span>
+          <span class="score-label">EcoIQ</span>
+        </div>
+      </div>
+      <div class="tier-pill" style="border-color:{{ tier.colour }}33;">{{ tier.label }}</div>
+      {% if company.rank %}<div class="rank-line"># {{ company.rank }} in league</div>{% endif %}
+    </div>
+  </div>
+
+  <!-- Terminal KPI strip inside cover (flush bottom) -->
+  <div class="kpi-strip" style="margin: 1.5rem -2rem 0; padding: 0 2rem;">
+    <div class="kpi-strip-inner" style="padding: 0;">
+      <div class="kpi-chip">
+        <div class="kv">{% if co2_total %}{{ co2_total|floatformat:0 }}t{% else %}—{% endif %}</div>
+        <div class="kl">CO₂ Avoided / yr</div>
+      </div>
+      <div class="kpi-chip">
+        <div class="kv">${{ company.total_investment_usd|intword }}</div>
+        <div class="kl">Total Invested</div>
+      </div>
+      <div class="kpi-chip">
+        <div class="kv">{% if company.total_households_helped %}{{ company.total_households_helped|floatformat:0 }}{% else %}—{% endif %}</div>
+        <div class="kl">Households Helped</div>
+      </div>
+      <div class="kpi-chip">
+        <div class="kv">{{ all_projects|length }}</div>
+        <div class="kl">Projects</div>
+      </div>
+      <div class="kpi-chip">
+        <div class="kv">{{ ev_verified }}/{{ evidence|length }}</div>
+        <div class="kl">Evidence Verified</div>
+      </div>
+      <div class="kpi-chip">
+        <div class="kv">{% if company.rank %}#{{ company.rank }}{% else %}—{% endif %}</div>
+        <div class="kl">League Rank</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Page body -->
+<!-- ── Section nav ─────────────────────────────────────────────────────────── -->
+<nav class="sec-nav">
+  <div class="sec-nav-inner">
+    <a href="#overview"        class="snav active">Score</a>
+    <a href="#trends"          class="snav">Trends</a>
+    <a href="#co2"             class="snav">CO₂</a>
+    <a href="#projects"        class="snav">Projects</a>
+    <a href="#investment"      class="snav">Investment</a>
+    <a href="#sdg"             class="snav">SDGs</a>
+    <a href="#recommendations" class="snav">AI Recs</a>
+  </div>
+</nav>
+
+<!-- ── Main page body ─────────────────────────────────────────────────────── -->
 <div class="page">
   <div class="two-col">
 
-    <!-- Left column -->
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         LEFT — main intelligence panels
+         ═══════════════════════════════════════════════════════════════════════ -->
     <div>
 
-      <!-- Pillar breakdown -->
-      <div class="card">
-        <h2>Оценки по направлениям</h2>
-        <div class="pillar-list">
-          {% for p in pillars %}
-          <div class="pillar-row">
-            <div class="pillar-top">
-              <div>
-                <span class="pillar-name">{{ p.name_ru }}</span>
-                <span class="pillar-meta"> · вес {{ p.weight }}%</span>
+      <!-- ── Section: Score Intelligence ──────────────────────────────────── -->
+      <section id="overview">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-hd-left">
+              <span class="card-hd-icon">🎯</span>
+              <span class="section-title">Score Intelligence</span>
+            </div>
+            <span class="label">EcoIQ Formula = Pollution×35% + Reduction×25% + Investment×20% + Transparency×10% + Community×10%</span>
+          </div>
+          <div class="card-bd">
+            <div class="score-intel">
+              <!-- Radar chart -->
+              <div class="radar-wrap">
+                <canvas id="radarChart"></canvas>
               </div>
-              <span class="pillar-score-num" style="color:var(--teal);">{{ p.score }}</span>
+              <!-- Pillar breakdown bars -->
+              <div class="pillar-list">
+                {% for p in pillars %}
+                <div class="pillar-row">
+                  <div class="pillar-info">
+                    <div class="pillar-name-row">
+                      <span class="pillar-nm">{{ p.name_ru }}</span>
+                      <span class="pillar-wt">× {{ p.weight }}%</span>
+                    </div>
+                    <div class="ptrack">
+                      <div class="pfill" style="width:{{ p.score }}%"></div>
+                    </div>
+                  </div>
+                  <span class="pillar-score">{{ p.score }}</span>
+                </div>
+                {% endfor %}
+                <div style="padding-top:.5rem; border-top:1px solid var(--border-2); display:flex; justify-content:space-between; align-items:baseline;">
+                  <span class="label">EcoIQ Total</span>
+                  <span class="mono" style="font-size:1.5rem; font-weight:800; color:{{ tier.colour }};">{{ company.ecoiq_score }}</span>
+                </div>
+              </div>
             </div>
-            <div class="track">
-              <div class="fill" style="width:{{ p.score }}%"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section: 5-Year Emissions Trend ──────────────────────────────── -->
+      <section id="trends">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-hd-left">
+              <span class="card-hd-icon">📈</span>
+              <span class="section-title">5-Year EcoIQ Trend</span>
             </div>
+            <span class="label" style="font-size:.65rem;">60-month historical · all pillars</span>
+          </div>
+          <div class="card-bd">
+            <div class="tier-legend">
+              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#2d6a4f"></div>85+ Restorative</div>
+              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#40916c"></div>70–84 Transition</div>
+              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#52b788"></div>55–69 Improving</div>
+              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#e07b39"></div>40–54 High Impact</div>
+              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#d93025"></div>&lt;40 Polluter</div>
+            </div>
+            <div class="trend-wrap"><canvas id="trendChart"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section: CO₂ Intelligence ──────────────────────────────────────── -->
+      <section id="co2">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-hd-left">
+              <span class="card-hd-icon">🌿</span>
+              <span class="section-title">CO₂ Avoided Intelligence</span>
+            </div>
+          </div>
+          <div class="card-bd">
+            <div class="co2-grid">
+              <div class="co2-box primary">
+                <div class="co2-val" id="co2Counter">{{ co2_total|default:0 }}</div>
+                <div class="co2-lbl">tonnes CO₂ / yr avoided<br><span style="font-size:.6rem;opacity:.5;">(completed + active projects)</span></div>
+              </div>
+              <div class="co2-box">
+                <div class="co2-val">{{ co2_completed|default:"—" }}</div>
+                <div class="co2-lbl">Completed projects</div>
+              </div>
+              <div class="co2-box">
+                <div class="co2-val">{{ co2_active|default:"—" }}{% if co2_planned %}<br><span style="font-size:.85em; color:var(--muted-2);">+{{ co2_planned }} planned</span>{% endif %}</div>
+                <div class="co2-lbl">Active projects</div>
+              </div>
+            </div>
+            {% if co2_total %}
+            <div class="co2-equiv">
+              {% if co2_cars_equiv %}
+              <div class="equiv-item">🚗 Equivalent to removing <strong>{{ co2_cars_equiv|floatformat:0 }}</strong> cars from roads per year</div>
+              {% endif %}
+              {% if co2_trees_equiv %}
+              <div class="equiv-item">🌳 Equal to planting <strong>{{ co2_trees_equiv|floatformat:0 }}</strong> trees annually</div>
+              {% endif %}
+            </div>
+            {% else %}
+            <p style="font-size:.82rem; color:var(--muted); font-style:italic;">No CO₂ reduction data available for completed projects.</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section: Projects ──────────────────────────────────────────────── -->
+      <section id="projects">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-hd-left">
+              <span class="card-hd-icon">🔨</span>
+              <span class="section-title">Environmental Projects</span>
+            </div>
+            <div style="display:flex; gap:.4rem;">
+              {% if projects_completed %}<span class="ev-sum-chip ev-sum-verified">{{ projects_completed|length }} completed</span>{% endif %}
+              {% if projects_active %}<span class="ev-sum-chip ev-sum-pending">{{ projects_active|length }} active</span>{% endif %}
+              {% if projects_planned %}<span style="font-size:.72rem; color:var(--muted);">{{ projects_planned|length }} planned</span>{% endif %}
+            </div>
+          </div>
+          <div class="card-bd">
+            {% for proj in all_projects %}
+            <div class="proj-card">
+              <!-- Coloured type header -->
+              <div class="proj-card-hd" style="background:{{ proj.type_meta.accent }};">
+                <div class="proj-type-badge">
+                  <span>{{ proj.type_meta.icon }}</span>
+                  <span>{{ proj.type_meta.label }}</span>
+                </div>
+                <span class="status-pill">{{ proj.get_status_display }}</span>
+              </div>
+              <div class="proj-card-body">
+                <div class="proj-name">{{ proj.name }}</div>
+                {% if proj.location %}
+                <div class="proj-location">📍 {{ proj.location }}</div>
+                {% endif %}
+                {% if proj.description %}
+                <p class="proj-desc">{{ proj.description|truncatechars:240 }}</p>
+                {% endif %}
+
+                <!-- Metric chips -->
+                <div class="proj-metrics">
+                  {% if proj.investment_usd %}
+                  <span class="metric-chip"><span class="mc-icon">💰</span> ${{ proj.investment_usd|intword }}</span>
+                  {% endif %}
+                  {% if proj.co2_reduction_tonnes %}
+                  <span class="metric-chip"><span class="mc-icon">🌿</span> {{ proj.co2_reduction_tonnes|floatformat:0 }} t CO₂/yr</span>
+                  {% endif %}
+                  {% if proj.pm25_reduction_kg %}
+                  <span class="metric-chip"><span class="mc-icon">💨</span> {{ proj.pm25_reduction_kg|intword }} kg PM2.5</span>
+                  {% endif %}
+                  {% if proj.households_helped %}
+                  <span class="metric-chip"><span class="mc-icon">🏠</span> {{ proj.households_helped|floatformat:0 }} households</span>
+                  {% endif %}
+                  {% if proj.verified %}
+                  <span class="metric-chip" style="background:var(--green-100);border-color:var(--green-200);color:var(--green-800);">✓ Verified</span>
+                  {% endif %}
+                </div>
+
+                <!-- Before/after metrics for projects with measurable data -->
+                {% if proj.status == 'completed' and proj.pm25_reduction_kg %}
+                <div class="before-after">
+                  <div class="ba-side ba-before">
+                    <div class="ba-label">Before</div>
+                    <div class="ba-val">PM2.5 Elevated</div>
+                  </div>
+                  <hr class="ba-divider">
+                  <div class="ba-side ba-after">
+                    <div class="ba-label">After</div>
+                    <div class="ba-val">−{{ proj.pm25_reduction_kg|intword }} kg/yr</div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Project timeline bar -->
+                {% if proj.start_date %}
+                <div class="proj-timeline">
+                  <div class="proj-tl-label">
+                    <span>{{ proj.start_date|date:"Y" }}</span>
+                    <span>{% if proj.completion_date %}{{ proj.completion_date|date:"Y" }}{% elif proj.status == 'active' %}Ongoing{% else %}Planned{% endif %}</span>
+                  </div>
+                  <div class="proj-tl-track">
+                    <div class="proj-tl-fill" style="width:{% if proj.status == 'completed' %}100{% elif proj.status == 'active' %}60{% else %}5{% endif %}%"></div>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% empty %}
+            <p style="color:var(--muted);font-style:italic;font-size:.85rem;">No projects recorded yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section: Investment Analysis ───────────────────────────────────── -->
+      {% if inv_amounts != '[]' %}
+      <section id="investment">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-hd-left">
+              <span class="card-hd-icon">💹</span>
+              <span class="section-title">Investment Analysis</span>
+            </div>
+            <span class="label">USD millions · ■ Completed ■ Active ■ Planned</span>
+          </div>
+          <div class="card-bd">
+            <div class="inv-chart-wrap"><canvas id="invChart"></canvas></div>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- ── Section: SDG Alignment ──────────────────────────────────────────── -->
+      <section id="sdg">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-hd-left">
+              <span class="card-hd-icon">🌐</span>
+              <span class="section-title">UN SDG Alignment</span>
+            </div>
+            <span>
+              <span class="sdg-active-count">{{ sdg_grid|length }}</span>
+              <span class="label">goals tracked · </span>
+              <span class="sdg-active-count" style="font-size:1.1rem;">{% with act=0 %}{% for s in sdg_grid %}{% if s.active %}{% with act=act|add:1 %}{% endwith %}{% endif %}{% endfor %}{% endwith %}
+              {% for s in sdg_grid %}{% if s.active %}&#8203;{% endif %}{% endfor %}</span>
+              <span class="label">active</span>
+            </span>
+          </div>
+          <div class="card-bd">
+            <div class="sdg-grid">
+              {% for sdg in sdg_grid %}
+              <div class="sdg-tile {% if not sdg.active %}inactive{% endif %}"
+                   style="background:{{ sdg.color }};"
+                   title="SDG {{ sdg.num }}: {{ sdg.label }}{% if sdg.active %} ✓ Active{% endif %}">
+                <span class="sdg-num">{{ sdg.num }}</span>
+                <span class="sdg-lbl">{{ sdg.label }}</span>
+                {% if sdg.active %}<span style="font-size:.5rem;color:rgba(255,255,255,.85);font-weight:700;">✓</span>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            <p style="margin-top:.75rem; font-size:.75rem; color:var(--muted);">
+              SDG alignment is inferred from project types. Greyscale tiles = not directly covered by known projects.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section: AI Recommendations ────────────────────────────────────── -->
+      <section id="recommendations">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-hd-left">
+              <span class="card-hd-icon">🤖</span>
+              <span class="section-title">AI Intelligence</span>
+            </div>
+            <span class="ai-demo-badge">Demo · Phase 4 Preview</span>
+          </div>
+          <div class="card-bd">
+            <div class="ai-banner">
+              <div class="ai-banner-icon">🤖</div>
+              <div class="ai-banner-text">
+                <div class="ai-banner-title">Anthropic Claude ESG Recommendations</div>
+                <div class="ai-banner-sub">Generated from pillar gap analysis · Scores, rationale and SDG mapping auto-updated on each rescore · Phase 4 implementation uses live Anthropic API</div>
+              </div>
+            </div>
+            {% if recommendations %}
+              {% for rec in recommendations %}
+              <div class="rec-card">
+                <div class="rec-hd">
+                  <span class="rec-icon">{{ rec.icon }}</span>
+                  <span class="rec-title">{{ rec.title }}</span>
+                  <span class="priority-badge priority-{{ rec.priority }}">{{ rec.priority_label }}</span>
+                </div>
+                <div class="rec-bd">
+                  <div class="rec-impact">📈 {{ rec.impact }}</div>
+                  <p>{{ rec.rationale }}</p>
+                  {% if rec.sdgs %}
+                  <div class="rec-sdgs">
+                    {% for s in rec.sdgs %}
+                    <span class="rec-sdg-badge" style="background:{{ s.color }};">SDG {{ s.num }}</span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <p style="color:var(--muted);font-style:italic;font-size:.85rem;">All pillar scores above threshold — no critical recommendations.</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /left main -->
+
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         RIGHT — sidebar panels
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div>
+
+      <!-- ── Evidence Verification ────────────────────────────────────────── -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">📋</span>
+            <span class="section-title">Evidence &amp; Verification</span>
+          </div>
+        </div>
+        <div class="card-bd">
+          {% if evidence %}
+          <div class="ev-summary">
+            {% if ev_verified %}<span class="ev-sum-chip ev-sum-verified">✓ {{ ev_verified }} Verified</span>{% endif %}
+            {% if ev_pending  %}<span class="ev-sum-chip ev-sum-pending">⏳ {{ ev_pending }} Pending</span>{% endif %}
+            {% if ev_rejected %}<span class="ev-sum-chip ev-sum-rejected">✗ {{ ev_rejected }} Rejected</span>{% endif %}
+          </div>
+          {% for ev in evidence %}
+          <div class="ev-row">
+            <div class="ev-icon-box">
+              {% if ev.doc_type == 'audit_report' %}📋
+              {% elif ev.doc_type == 'government_report' %}🏛
+              {% elif ev.doc_type == 'photo' %}📷
+              {% elif ev.doc_type == 'satellite' %}🛰
+              {% elif ev.doc_type == 'engineering_audit' %}🔬
+              {% elif ev.doc_type == 'invoice' %}📄
+              {% elif ev.doc_type == 'permit' %}🔏
+              {% else %}📁{% endif %}
+            </div>
+            <div class="ev-info">
+              {% if ev.url %}
+                <div class="ev-title"><a href="{{ ev.url }}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;">{{ ev.title|truncatechars:55 }}</a></div>
+              {% else %}
+                <div class="ev-title">{{ ev.title|truncatechars:55 }}</div>
+              {% endif %}
+              <div class="ev-meta">
+                {{ ev.get_doc_type_display }}
+                {% if ev.issuer %} · {{ ev.issuer|truncatechars:30 }}{% endif %}
+                {% if ev.date_issued %} · {{ ev.date_issued|date:"Y" }}{% endif %}
+              </div>
+            </div>
+            <span class="ev-badge ev-{{ ev.verification_status }}">
+              {% if ev.verification_status == 'verified' %}✓
+              {% elif ev.verification_status == 'rejected' %}✗
+              {% else %}⏳{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p style="color:var(--muted);font-style:italic;font-size:.82rem;">No evidence documents uploaded yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ── Methane Leakage Map Placeholder ─────────────────────────────── -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🛰</span>
+            <span class="section-title">Methane Leakage Detection</span>
+          </div>
+          <span class="ai-demo-badge">Phase 4</span>
+        </div>
+        <div class="card-bd" style="padding:.75rem;">
+          <div class="methane-map">
+            <div class="map-overlay"></div>
+            <div class="map-dots-layer">
+              <!-- Simulated LDAR detection points -->
+              <div class="leak-dot" style="top:28%;left:38%;">
+                <div class="leak-pulse" style="background:#f39c12;color:#f39c12;"></div>
+                <div class="leak-label" style="color:#f39c12;font-size:.52rem;">Valve cluster</div>
+              </div>
+              <div class="leak-dot" style="top:55%;left:62%;">
+                <div class="leak-pulse" style="background:#00e89a;color:#00e89a;"></div>
+                <div class="leak-label" style="color:#00e89a;font-size:.52rem;">LDAR monitored</div>
+              </div>
+              <div class="leak-dot" style="top:42%;left:75%;">
+                <div class="leak-pulse" style="background:#d93025;color:#d93025;"></div>
+                <div class="leak-label" style="color:#d93025;font-size:.52rem;">Active repair</div>
+              </div>
+              <div class="leak-dot" style="top:70%;left:28%;">
+                <div class="leak-pulse" style="background:#00e89a;color:#00e89a;"></div>
+                <div class="leak-label" style="color:#00e89a;font-size:.52rem;">Clear</div>
+              </div>
+            </div>
+            <div class="map-badge"><strong>GHGSat</strong> · Satellite survey placeholder</div>
+            <div class="map-corner-tag">Preview</div>
+          </div>
+          <p style="font-size:.72rem; color:var(--muted); margin-top:.6rem; line-height:1.5;">
+            Phase 4 will integrate GHGSat / Sentinel-5P satellite methane data with LDAR drone survey results to provide facility-level leak mapping.
+          </p>
+        </div>
+      </div>
+
+      <!-- ── Modernization Roadmap ────────────────────────────────────────── -->
+      {% if roadmap_projects %}
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🗺</span>
+            <span class="section-title">Modernization Roadmap</span>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div class="roadmap">
+            {% for proj in roadmap_projects %}
+            <div class="roadmap-item">
+              <div class="rm-connector">
+                <div class="rm-dot {{ proj.status }}"></div>
+                {% if not forloop.last %}<div class="rm-line"></div>{% endif %}
+              </div>
+              <div class="rm-info">
+                <div class="rm-year">{{ proj.start_date|date:"Y" }}{% if proj.completion_date %} – {{ proj.completion_date|date:"Y" }}{% elif proj.status == 'active' %} – ongoing{% endif %}</div>
+                <div class="rm-name">{{ proj.name|truncatechars:48 }}</div>
+                <div class="rm-type">{{ proj.type_meta.icon }} {{ proj.type_meta.label }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ── Transparency History ─────────────────────────────────────────── -->
+      {% if transparency_history %}
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">📅</span>
+            <span class="section-title">Transparency History</span>
+          </div>
+        </div>
+        <div class="card-bd">
+          {% for year, evs in transparency_history %}
+          <div class="tl-year-group">
+            <div class="tl-year-hd">{{ year }}</div>
+            {% for ev in evs %}
+            <div class="tl-item">
+              <div class="tl-dot"
+                   style="background:{% if ev.verification_status == 'verified' %}var(--green-600){% elif ev.verification_status == 'rejected' %}#d93025{% else %}#e0a800{% endif %}">
+              </div>
+              <div class="tl-content">
+                <div class="tl-title">{{ ev.title|truncatechars:50 }}</div>
+                <div class="tl-meta">
+                  {{ ev.get_doc_type_display }}
+                  {% if ev.issuer %} · {{ ev.issuer|truncatechars:25 }}{% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
           </div>
           {% endfor %}
         </div>
       </div>
-
-      <!-- KPIs -->
-      <div class="card">
-        <h2>Ключевые показатели (KPI)</h2>
-        <div class="kpi-grid">
-          <div class="kpi-box">
-            <div class="kval">{{ company.total_co2_reduced|default:"—" }}t</div>
-            <div class="klbl">CO₂ сокращено / год</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kval">
-              {% if company.total_investment_usd %}
-                ${{ company.total_investment_usd|floatformat:0 }}
-              {% else %}—{% endif %}
-            </div>
-            <div class="klbl">Инвестировано ($)</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kval">{{ company.total_households_helped|default:"—" }}</div>
-            <div class="klbl">Домохозяйств помогли</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kval">{{ company.projects.count }}</div>
-            <div class="klbl">Всего проектов</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Completed projects -->
-      {% if projects_completed %}
-      <div class="card">
-        <h2>Завершённые проекты</h2>
-        {% for proj in projects_completed %}
-        <div class="project-card">
-          <div class="proj-header">
-            <span class="proj-name">{{ proj.name }}</span>
-            <span class="status-pill status-completed">Завершён</span>
-          </div>
-          {% if proj.location %}
-            <div style="font-size:0.75rem; color:var(--muted); margin-bottom:0.4rem;">📍 {{ proj.location }}</div>
-          {% endif %}
-          {% if proj.description %}
-            <p class="proj-desc">{{ proj.description|truncatechars:220 }}</p>
-          {% endif %}
-          <div class="proj-kpis">
-            {% if proj.investment_usd %}
-              <span class="proj-kpi">💰 ${{ proj.investment_usd|floatformat:0 }}</span>
-            {% endif %}
-            {% if proj.co2_reduction_tonnes %}
-              <span class="proj-kpi">🌿 {{ proj.co2_reduction_tonnes }}t CO₂/yr</span>
-            {% endif %}
-            {% if proj.households_helped %}
-              <span class="proj-kpi">🏠 {{ proj.households_helped }} домохозяйств</span>
-            {% endif %}
-            {% if proj.pm25_reduction_kg %}
-              <span class="proj-kpi">💨 {{ proj.pm25_reduction_kg }}kg PM2.5</span>
-            {% endif %}
-            {% if proj.verified %}
-              <span class="proj-kpi">✓ Верифицирован</span>
-            {% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
       {% endif %}
 
-      <!-- Active / planned projects -->
-      {% if projects_active %}
+      <!-- ── Company Factsheet ────────────────────────────────────────────── -->
       <div class="card">
-        <h2>Активные и планируемые проекты</h2>
-        {% for proj in projects_active %}
-        <div class="project-card">
-          <div class="proj-header">
-            <span class="proj-name">{{ proj.name }}</span>
-            <span class="status-pill status-{{ proj.status }}">{{ proj.get_status_display }}</span>
-          </div>
-          {% if proj.location %}
-            <div style="font-size:0.75rem; color:var(--muted); margin-bottom:0.4rem;">📍 {{ proj.location }}</div>
-          {% endif %}
-          {% if proj.description %}
-            <p class="proj-desc">{{ proj.description|truncatechars:220 }}</p>
-          {% endif %}
-          <div class="proj-kpis">
-            {% if proj.investment_usd %}
-              <span class="proj-kpi">💰 ${{ proj.investment_usd|floatformat:0 }}</span>
-            {% endif %}
-            {% if proj.co2_reduction_tonnes %}
-              <span class="proj-kpi">🌿 {{ proj.co2_reduction_tonnes }}t CO₂/yr</span>
-            {% endif %}
-            {% if proj.households_helped %}
-              <span class="proj-kpi">🏠 {{ proj.households_helped }} домохозяйств</span>
-            {% endif %}
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🏢</span>
+            <span class="section-title">Company Factsheet</span>
           </div>
         </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-    </div><!-- /left col -->
-
-    <!-- Right column -->
-    <div>
-
-      <!-- Score trend -->
-      {% if history_scores %}
-      <div class="card">
-        <h2>Динамика EcoIQ Score</h2>
-        <div class="chart-wrap">
-          <canvas id="trendChart"></canvas>
+        <div class="card-bd">
+          <table class="fact-table">
+            {% if company.country %}<tr><td class="ft-key">Country</td><td class="ft-val">{{ company.country }}</td></tr>{% endif %}
+            {% if company.city    %}<tr><td class="ft-key">Headquarters</td><td class="ft-val">{{ company.city }}</td></tr>{% endif %}
+            {% if company.founded_year %}<tr><td class="ft-key">Founded</td><td class="ft-val mono">{{ company.founded_year }}</td></tr>{% endif %}
+            {% if company.employee_count %}<tr><td class="ft-key">Employees</td><td class="ft-val mono">{{ company.employee_count|floatformat:0 }}</td></tr>{% endif %}
+            {% if company.annual_revenue_usd %}<tr><td class="ft-key">Revenue (approx.)</td><td class="ft-val mono">${{ company.annual_revenue_usd|intword }}</td></tr>{% endif %}
+            <tr><td class="ft-key">Sector</td><td class="ft-val">{{ company.get_sector_display }}</td></tr>
+            <tr><td class="ft-key">Listed</td><td class="ft-val">{% if company.is_public %}Public{% else %}Private{% endif %}</td></tr>
+            <tr><td class="ft-key">Data Verification</td><td class="ft-val">{% if company.verified %}<span style="color:var(--green-700);">✓ Verified</span>{% else %}<span style="color:var(--muted);">Pending</span>{% endif %}</td></tr>
+            {% if company.website %}<tr><td class="ft-key">Website</td><td class="ft-val"><a href="{{ company.website }}" target="_blank" rel="noopener" style="color:var(--green-700);font-size:.78rem;">{{ company.website|truncatechars:28 }}</a></td></tr>{% endif %}
+          </table>
         </div>
       </div>
-      {% endif %}
-
-      <!-- Company info -->
-      <div class="card">
-        <h2>О компании</h2>
-        <table class="info-table">
-          {% if company.country %}
-          <tr><td>Страна</td><td>{{ company.country }}</td></tr>
-          {% endif %}
-          {% if company.city %}
-          <tr><td>Город</td><td>{{ company.city }}</td></tr>
-          {% endif %}
-          {% if company.founded_year %}
-          <tr><td>Основана</td><td>{{ company.founded_year }}</td></tr>
-          {% endif %}
-          {% if company.employee_count %}
-          <tr><td>Сотрудников</td><td>{{ company.employee_count|floatformat:0 }}</td></tr>
-          {% endif %}
-          {% if company.is_public %}
-          <tr><td>Статус</td><td>Публичная компания</td></tr>
-          {% endif %}
-          {% if company.website %}
-          <tr>
-            <td>Сайт</td>
-            <td><a href="{{ company.website }}" target="_blank" rel="noopener" style="color:var(--teal);">{{ company.website|truncatechars:30 }}</a></td>
-          </tr>
-          {% endif %}
-          <tr><td>Верификация</td><td>{% if company.verified %}✓ Данные верифицированы{% else %}На проверке{% endif %}</td></tr>
-        </table>
-      </div>
-
-      <!-- Evidence / documents -->
-      {% if evidence %}
-      <div class="card">
-        <h2>Документы и доказательства</h2>
-        {% for ev in evidence %}
-        <div class="evidence-row">
-          <div class="ev-icon">
-            {% if ev.doc_type == 'audit_report' %}📋
-            {% elif ev.doc_type == 'government_report' %}🏛
-            {% elif ev.doc_type == 'photo' %}📷
-            {% elif ev.doc_type == 'satellite' %}🛰
-            {% elif ev.doc_type == 'invoice' %}📄
-            {% elif ev.doc_type == 'permit' %}🔏
-            {% elif ev.doc_type == 'engineering_audit' %}🔬
-            {% else %}📁{% endif %}
-          </div>
-          <div class="ev-info">
-            {% if ev.url %}
-              <div class="ev-title"><a href="{{ ev.url }}" target="_blank" rel="noopener" style="color:var(--text); text-decoration:none;">{{ ev.title }}</a></div>
-            {% else %}
-              <div class="ev-title">{{ ev.title }}</div>
-            {% endif %}
-            <div class="ev-meta">
-              {{ ev.get_doc_type_display }}
-              {% if ev.issuer %} · {{ ev.issuer }}{% endif %}
-              {% if ev.date_issued %} · {{ ev.date_issued|date:"Y" }}{% endif %}
-            </div>
-          </div>
-          <span class="ev-badge ev-{{ ev.verification_status }}">
-            {% if ev.verification_status == 'verified' %}✓ Verified
-            {% elif ev.verification_status == 'rejected' %}✗ Rejected
-            {% else %}Pending{% endif %}
-          </span>
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
 
       <!-- Back link -->
-      <a href="/league/" style="display:inline-block; color:var(--teal); font-size:0.85rem; font-weight:600; text-decoration:none;">
-        ← Назад к рейтингу
+      <a href="/league/" style="display:inline-flex;align-items:center;gap:.4rem;color:var(--green-700);font-size:.82rem;font-weight:600;text-decoration:none;padding:.5rem 0;">
+        ← Back to League
       </a>
 
-    </div><!-- /right col -->
+    </div><!-- /sidebar -->
   </div><!-- /two-col -->
 </div><!-- /page -->
 
-{% if history_scores %}
+
+<!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
 <script>
-const labels = {{ history_labels|safe }};
-const scores = {{ history_scores|safe }};
-const ctx = document.getElementById('trendChart').getContext('2d');
-new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels,
-    datasets: [{
-      label: 'EcoIQ Score',
-      data: scores,
-      borderColor: '#2d6a4f',
-      backgroundColor: 'rgba(45,106,79,.08)',
-      borderWidth: 2.5,
-      pointRadius: 4,
-      pointBackgroundColor: '#40916c',
-      fill: true,
-      tension: 0.35,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        min: 0, max: 100,
-        grid: { color: '#e5ebe8' },
-        ticks: { font: { size: 10 }, color: '#6b7c72' },
-      },
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 10 }, color: '#6b7c72' },
-      }
+const TIER_COLOR = "{{ tier.colour }}";
+
+/* ── Radar chart ───────────────────────────────────────────────────────────── */
+(function(){
+  const ctx = document.getElementById('radarChart');
+  if (!ctx) return;
+  const labels = {{ radar_labels|safe }};
+  const scores = {{ radar_scores|safe }};
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [{
+        data: scores,
+        backgroundColor: TIER_COLOR + '28',
+        borderColor: TIER_COLOR,
+        borderWidth: 2.5,
+        pointBackgroundColor: TIER_COLOR,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1.5,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
     },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => ` EcoIQ ${ctx.parsed.y}`
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, display: false },
+          grid: { color: 'rgba(0,0,0,.07)' },
+          angleLines: { color: 'rgba(0,0,0,.1)' },
+          pointLabels: {
+            font: { size: 10, family: 'Inter', weight: '600' },
+            color: '#5c7063',
+          },
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: c => ` ${c.label}: ${c.parsed.r} / 100` }
         }
       }
     }
-  }
-});
+  });
+})();
+
+/* ── 5-year trend chart ────────────────────────────────────────────────────── */
+(function(){
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+  const labels   = {{ hist_labels|safe }};
+  const scores   = {{ hist_scores|safe }};
+  const pollData = {{ hist_pollution|safe }};
+  const redData  = {{ hist_reduction|safe }};
+
+  // Tier zone plugin (coloured horizontal bands)
+  const tierBands = {
+    id: 'tierBands',
+    beforeDraw(chart) {
+      const {ctx: c, chartArea, scales} = chart;
+      if (!chartArea) return;
+      const yScale = scales.y;
+      const zones = [
+        [85, 100, 'rgba(45,106,79,.06)'],
+        [70, 85,  'rgba(64,145,108,.05)'],
+        [55, 70,  'rgba(82,183,136,.04)'],
+        [40, 55,  'rgba(224,123,57,.04)'],
+        [0,  40,  'rgba(217,48,37,.04)'],
+      ];
+      zones.forEach(([lo, hi, color]) => {
+        c.fillStyle = color;
+        const y1 = yScale.getPixelForValue(hi);
+        const y2 = yScale.getPixelForValue(lo);
+        c.fillRect(chartArea.left, Math.min(y1,y2), chartArea.width, Math.abs(y2-y1));
+      });
+    }
+  };
+
+  new Chart(ctx, {
+    type: 'line',
+    plugins: [tierBands],
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'EcoIQ Score',
+          data: scores,
+          borderColor: TIER_COLOR,
+          backgroundColor: TIER_COLOR + '14',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: TIER_COLOR,
+          fill: true,
+          tension: 0.35,
+          order: 1,
+        },
+        {
+          label: 'Pollution',
+          data: pollData,
+          borderColor: 'rgba(100,160,120,.5)',
+          borderWidth: 1,
+          pointRadius: 0,
+          borderDash: [4, 3],
+          fill: false,
+          tension: 0.3,
+          order: 2,
+        },
+        {
+          label: 'Reduction',
+          data: redData,
+          borderColor: 'rgba(64,145,108,.4)',
+          borderWidth: 1,
+          pointRadius: 0,
+          borderDash: [2, 4],
+          fill: false,
+          tension: 0.3,
+          order: 3,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(0,0,0,.05)' },
+          ticks: { font: { size: 10 }, color: '#8da394', stepSize: 20 },
+          border: { display: false },
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { size: 9 }, color: '#8da394',
+            maxTicksLimit: 12,
+            callback: (_, i) => { const l = labels[i]; return l && l.endsWith('-01') ? l.slice(0,4) : ''; }
+          },
+          border: { display: false },
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          align: 'end',
+          labels: { boxWidth: 16, font: { size: 10 }, color: '#8da394', padding: 12 }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(10,20,14,.92)',
+          titleColor: '#fff',
+          bodyColor: 'rgba(255,255,255,.7)',
+          borderColor: 'rgba(255,255,255,.1)',
+          borderWidth: 1,
+          padding: 10,
+        }
+      }
+    }
+  });
+})();
+
+/* ── Investment chart ──────────────────────────────────────────────────────── */
+(function(){
+  const ctx = document.getElementById('invChart');
+  if (!ctx) return;
+  const labels     = {{ inv_labels|safe }};
+  const amounts    = {{ inv_amounts|safe }};
+  const cumulative = {{ inv_cumulative|safe }};
+  const colors     = {{ inv_colors|safe }};
+  if (!labels.length) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Investment ($M)',
+          data: amounts,
+          backgroundColor: colors,
+          borderRadius: 4,
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Cumulative ($M)',
+          data: cumulative,
+          borderColor: '#1b4332',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#1b4332',
+          tension: 0.3,
+          yAxisID: 'yCum',
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 9 }, color: '#8da394', maxRotation: 30 }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,.05)' },
+          ticks: { font: { size: 10 }, color: '#8da394', callback: v => '$'+v+'M' },
+          title: { display: true, text: 'Project ($M)', font: { size: 10 }, color: '#8da394' }
+        },
+        yCum: {
+          position: 'right',
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#1b4332', callback: v => '$'+v+'M' },
+          title: { display: true, text: 'Cumulative', font: { size: 10 }, color: '#1b4332' }
+        }
+      },
+      plugins: {
+        legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 14, font: { size: 10 }, padding: 10 } },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: $${c.parsed.y}M` } }
+      }
+    }
+  });
+})();
+
+/* ── CO₂ counter animation ─────────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('co2Counter');
+  if (!el) return;
+  const target = parseInt(el.textContent.replace(/,/g,'')) || 0;
+  if (!target) return;
+  let current = 0;
+  const duration = 1800;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = Math.round(current).toLocaleString();
+    if (current >= target) clearInterval(timer);
+  }, 16);
+})();
+
+/* ── Section nav scroll spy ────────────────────────────────────────────────── */
+(function(){
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.snav');
+  if (!sections.length) return;
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.snav[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.35 });
+  sections.forEach(s => observer.observe(s));
+})();
 </script>
-{% endif %}
 
 </body>
 </html>
