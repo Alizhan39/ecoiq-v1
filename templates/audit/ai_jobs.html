@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoIQ AI Findings Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #2d6a4f; --teal: #40916c; --mint: #52b788;
+      --bg: #f8faf9; --card: #fff; --border: #e5ebe8;
+      --text: #1a2c23; --muted: #5a6e63; --accent: #00c896;
+      --dark: #0f1f17;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Nav */
+    .topnav { background: var(--dark); padding: 0.85rem 2rem; display: flex; align-items: center; gap: 1.5rem; }
+    .topnav a { color: rgba(255,255,255,.7); text-decoration: none; font-size: 0.85rem; }
+    .topnav .brand { font-weight: 800; font-size: 1.1rem; color: var(--accent); letter-spacing: -0.02em; }
+    .topnav .brand span { color: rgba(255,255,255,.4); font-weight: 400; font-size: 0.85rem; margin-left: 6px; }
+    .topnav .nav-links { margin-left: auto; display: flex; gap: 1rem; }
+    .topnav .nav-links a { padding: 0.3rem 0.7rem; border-radius: 5px; transition: background 0.15s; color: rgba(255,255,255,.65); }
+    .topnav .nav-links a:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .topnav .nav-links a.active { background: rgba(255,255,255,.15); color: #fff; font-weight: 600; }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #0d1e16 0%, #1b4332 60%, #2d6a4f 100%); padding: 2.5rem 2rem; }
+    .hero-inner { max-width: 1200px; margin: 0 auto; }
+    .hero h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; margin-bottom: 0.4rem; }
+    .hero h1 span { color: var(--accent); }
+    .hero p { color: rgba(255,255,255,.6); font-size: 0.9rem; max-width: 560px; }
+
+    /* Messages */
+    .messages { max-width: 1200px; margin: 1rem auto 0; padding: 0 1.5rem; }
+    .msg { padding: 0.7rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; }
+    .msg.success { background: #d8f3dc; color: #1b4332; border: 1px solid #95d5b2; }
+    .msg.error   { background: #ffe0e3; color: #922b21; border: 1px solid #f1aeb5; }
+    .msg.warning { background: #fef9e7; color: #7d6608; border: 1px solid #f4e3a0; }
+    .msg.info    { background: #d6eaf8; color: #1a5276; border: 1px solid #93c6e0; }
+
+    /* Container */
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* Upload card */
+    .upload-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .upload-card h2 { font-size: 1rem; font-weight: 700; color: var(--green); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .upload-form { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 200px; }
+    .form-group label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .form-group input[type="file"], .form-group select {
+      padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+      font-family: inherit; font-size: 0.875rem; background: var(--bg); color: var(--text); width: 100%;
+    }
+    .form-group input[type="file"]:focus, .form-group select:focus {
+      outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(64,145,108,.15);
+    }
+    .btn-primary {
+      background: var(--green); color: #fff; border: none; padding: 0.55rem 1.25rem;
+      border-radius: 6px; font-family: inherit; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--teal); }
+    .btn-sm {
+      display: inline-block; padding: 0.3rem 0.75rem; border-radius: 5px;
+      font-size: 0.78rem; font-weight: 600; text-decoration: none; cursor: pointer;
+      border: none; font-family: inherit; transition: all 0.15s;
+    }
+    .btn-analyze { background: var(--green); color: #fff; }
+    .btn-analyze:hover { background: var(--teal); }
+    .btn-outline { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+    .btn-outline:hover { background: var(--teal); color: #fff; }
+
+    /* Jobs table */
+    .jobs-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .jobs-header h2 { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .job-count { font-size: 0.78rem; color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 10px; }
+
+    .job-table { width: 100%; border-collapse: collapse; }
+    .job-table th {
+      text-align: left; padding: 0.5rem 0.75rem; font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+      border-bottom: 2px solid var(--border); background: var(--bg);
+    }
+    .job-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .job-table tr:hover td { background: #f0f8f4; }
+    .job-table tr:last-child td { border-bottom: none; }
+
+    .filename { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text); font-weight: 600; }
+    .company-link { font-size: 0.8rem; color: var(--teal); font-weight: 500; }
+
+    .status-pill {
+      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 10px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .status-pending    { background: #fef9e7; color: #9a7d0a; }
+    .status-processing { background: #f5eef8; color: #7d3c98; }
+    .status-completed  { background: #d8f3dc; color: #2d6a4f; }
+    .status-failed     { background: #ffe0e3; color: #922b21; }
+
+    .finding-chips { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .chip { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 8px; font-size: 0.7rem; font-weight: 600; }
+    .chip-approved { background: #d8f3dc; color: #2d6a4f; }
+    .chip-pending  { background: #fef9e7; color: #9a7d0a; }
+    .chip-rejected { background: #ffe0e3; color: #922b21; }
+
+    .gw-badge { font-size: 0.72rem; font-weight: 700; }
+    .gw-low      { color: #2d6a4f; }
+    .gw-medium   { color: #c87941; }
+    .gw-high     { color: #c0392b; }
+    .gw-critical { color: #7b241c; }
+
+    .empty { text-align: center; padding: 3rem; color: var(--muted); }
+    .empty p { font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/" class="brand">EcoIQ <span>AI Findings Engine</span></a>
+  <div class="nav-links">
+    <a href="/audit/ai/" class="active">🤖 AI Analysis</a>
+    <a href="/audit/">Industrial Audit</a>
+    <a href="/league/">League</a>
+    <a href="/admin/">Admin</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>AI <span>Findings Engine</span></h1>
+    <p>Upload ESG reports, sustainability disclosures, or audit PDFs. The AI extracts pollution metrics, investments, projects, and greenwashing signals — then routes findings to your review queue.</p>
+  </div>
+</div>
+
+{% if messages %}
+<div class="messages">
+  {% for msg in messages %}
+  <div class="msg {{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="container">
+
+  <!-- Upload form -->
+  <div class="upload-card">
+    <h2>📄 Upload Document for Analysis</h2>
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+      {% csrf_token %}
+      <div class="form-group" style="flex:2;">
+        <label>PDF Document</label>
+        <input type="file" name="pdf_file" accept=".pdf" required>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Link to Company (optional)</label>
+        <select name="company_id">
+          <option value="">— Select company —</option>
+          {% for co in companies %}
+          <option value="{{ co.pk }}">{{ co.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn-primary">⬆ Upload PDF</button>
+    </form>
+    <p style="font-size:0.75rem; color:var(--muted); margin-top:0.75rem;">
+      Supported: ESG reports, sustainability disclosures, government environmental audits, engineering reports (PDF, max 10 MB).
+      AI analysis uses Claude {{ "claude-opus-4-5"|default:"claude-opus-4-5" }} via Anthropic API.
+    </p>
+  </div>
+
+  <!-- Job queue -->
+  <div class="jobs-header">
+    <h2>Analysis Queue</h2>
+    <span class="job-count">{{ jobs|length }} job{{ jobs|length|pluralize }}</span>
+  </div>
+
+  {% if jobs %}
+  <table class="job-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Document</th>
+        <th>Company</th>
+        <th>Status</th>
+        <th>Findings</th>
+        <th>Greenwash Risk</th>
+        <th>Submitted</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td style="color:var(--muted); font-size:0.78rem;">{{ job.pk }}</td>
+        <td>
+          <a href="{% url 'ai_job_detail' job.pk %}" style="text-decoration:none;">
+            <div class="filename">{{ job.original_filename|truncatechars:40 }}</div>
+          </a>
+          {% if job.detected_company_name %}
+          <div style="font-size:0.72rem; color:var(--muted); margin-top:0.15rem;">
+            Detected: {{ job.detected_company_name }}
+            {% if job.detected_year %}({{ job.detected_year }}){% endif %}
+          </div>
+          {% endif %}
+        </td>
+        <td>
+          {% if job.company %}
+            <a href="{% url 'league:company' job.company.slug %}" class="company-link" target="_blank">
+              {{ job.company.name }}
+            </a>
+          {% else %}
+            <span style="color:var(--muted); font-size:0.78rem;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="status-pill status-{{ job.status }}">{{ job.get_status_display }}</span>
+          {% if job.status == 'failed' and job.error_message %}
+          <div style="font-size:0.7rem; color:#c0392b; margin-top:0.2rem; max-width:150px;">{{ job.error_message|truncatechars:80 }}</div>
+          {% endif %}
+        </td>
+        <td>
+          {% if job.status == 'completed' %}
+          <div class="finding-chips">
+            {% with approved=job.findings.all %}
+            {% with appr_count=job.approved_count pend_count=job.pending_count total=job.finding_count %}
+            {% if appr_count %}<span class="chip chip-approved">{{ appr_count }} approved</span>{% endif %}
+            {% if pend_count  %}<span class="chip chip-pending">{{ pend_count }} pending</span>{% endif %}
+            {% if not appr_count and not pend_count %}<span class="chip chip-rejected">{{ total }} rejected</span>{% endif %}
+            {% endwith %}{% endwith %}
+          </div>
+          {% else %}
+            <span style="color:var(--muted); font-size:0.78rem;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% try %}{% endtry %}
+          {% if job.status == 'completed' %}—{% else %}—{% endif %}
+        </td>
+        <td style="font-size:0.78rem; color:var(--muted);">
+          {{ job.created_at|date:"M j, Y" }}<br>
+          <span style="font-size:0.7rem;">{{ job.created_at|date:"H:i" }}</span>
+        </td>
+        <td>
+          <div style="display:flex; gap:0.4rem;">
+            <a href="{% url 'ai_job_detail' job.pk %}" class="btn-sm btn-outline">Review</a>
+            {% if job.status != 'completed' and job.status != 'processing' %}
+            <form method="post" action="{% url 'ai_job_run' job.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn-sm btn-analyze">▶ Analyse</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <p>📭 No analysis jobs yet. Upload your first ESG document above.</p>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>

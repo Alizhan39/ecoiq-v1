@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+{% load humanize %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Review — {{ job.original_filename }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #2d6a4f; --teal: #40916c; --mint: #52b788;
+      --bg: #f8faf9; --card: #fff; --border: #e5ebe8;
+      --text: #1a2c23; --muted: #5a6e63; --accent: #00c896;
+      --dark: #0f1f17;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Nav */
+    .topnav { background: var(--dark); padding: 0.85rem 2rem; display: flex; align-items: center; gap: 1.5rem; }
+    .topnav a { color: rgba(255,255,255,.7); text-decoration: none; font-size: 0.85rem; }
+    .topnav .brand { font-weight: 800; font-size: 1.1rem; color: var(--accent); letter-spacing: -0.02em; }
+    .topnav .brand span { color: rgba(255,255,255,.4); font-weight: 400; font-size: 0.85rem; margin-left: 6px; }
+    .topnav .nav-links { margin-left: auto; display: flex; gap: 1rem; }
+    .topnav .nav-links a { padding: 0.3rem 0.7rem; border-radius: 5px; color: rgba(255,255,255,.65); transition: background 0.15s; }
+    .topnav .nav-links a:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+    /* Messages */
+    .messages { max-width: 1200px; margin: 1rem auto 0; padding: 0 1.5rem; }
+    .msg { padding: 0.7rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; }
+    .msg.success { background: #d8f3dc; color: #1b4332; border: 1px solid #95d5b2; }
+    .msg.error   { background: #ffe0e3; color: #922b21; border: 1px solid #f1aeb5; }
+    .msg.warning { background: #fef9e7; color: #7d6608; border: 1px solid #f4e3a0; }
+    .msg.info    { background: #d6eaf8; color: #1a5276; border: 1px solid #93c6e0; }
+
+    /* Layout */
+    .page { max-width: 1200px; margin: 0 auto; padding: 1.5rem; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; }
+    .main { min-width: 0; }
+    .sidebar { }
+
+    /* Job header */
+    .job-header {
+      background: linear-gradient(135deg, #0d1e16 0%, #1b4332 100%);
+      padding: 1.25rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;
+    }
+    .job-header .jh-top { display: flex; align-items: flex-start; gap: 1rem; }
+    .job-header .jh-icon { font-size: 2rem; flex-shrink: 0; margin-top: 2px; }
+    .job-header .jh-info { flex: 1; }
+    .job-header .filename { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #fff; font-weight: 600; margin-bottom: 0.35rem; }
+    .job-header .jh-meta { font-size: 0.78rem; color: rgba(255,255,255,.55); }
+    .job-header .jh-meta span { margin-right: 1rem; }
+    .job-status { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+    .status-pending    { background: #fef9e7; color: #9a7d0a; }
+    .status-processing { background: #f5eef8; color: #7d3c98; }
+    .status-completed  { background: #d8f3dc; color: #2d6a4f; }
+    .status-failed     { background: #ffe0e3; color: #922b21; }
+
+    .stats-row { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    .stat-chip { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 0.5rem 0.85rem; }
+    .stat-chip .sv { font-size: 1.2rem; font-weight: 700; color: var(--accent); letter-spacing: -0.03em; }
+    .stat-chip .sl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,.5); margin-top: 1px; }
+
+    /* Action bar */
+    .action-bar { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .action-bar .label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 1rem; border-radius: 6px; font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all 0.15s; }
+    .btn-green  { background: var(--green); color: #fff; }
+    .btn-green:hover  { background: var(--teal); }
+    .btn-red    { background: #c0392b; color: #fff; }
+    .btn-red:hover    { background: #922b21; }
+    .btn-orange { background: #c87941; color: #fff; }
+    .btn-ghost  { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+    .btn-ghost:hover  { background: var(--teal); color: #fff; }
+    .btn-dark   { background: var(--dark); color: #fff; }
+    .btn-dark:hover   { background: #1b4332; }
+    .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.75rem; }
+
+    /* Section header */
+    .sec-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .sec-head h2 { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+    .sec-icon { font-size: 1.2rem; }
+    .sec-badge { padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.68rem; font-weight: 700; }
+
+    /* Executive summary */
+    .exec-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; }
+    .exec-card .exec-text { font-size: 0.875rem; color: var(--muted); line-height: 1.7; }
+    .exec-card .dq-note { font-size: 0.82rem; color: #7d6608; background: #fef9e7; border: 1px solid #f4e3a0; border-radius: 6px; padding: 0.65rem 0.9rem; margin-top: 0.75rem; }
+
+    /* Findings group */
+    .group-block { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 1.25rem; overflow: hidden; }
+    .group-head { padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.6rem; border-bottom: 1px solid var(--border); }
+    .group-head h3 { font-size: 0.88rem; font-weight: 700; flex: 1; }
+    .group-count { font-size: 0.72rem; color: var(--muted); }
+
+    /* Individual finding card */
+    .finding-card { border-bottom: 1px solid var(--border); padding: 0.9rem 1.25rem; }
+    .finding-card:last-child { border-bottom: none; }
+    .finding-card.approved { border-left: 3px solid var(--teal); }
+    .finding-card.rejected { border-left: 3px solid #c0392b; opacity: 0.65; }
+    .finding-card.applied  { border-left: 3px solid #2980b9; }
+    .finding-card.pending  { border-left: 3px solid #f4a261; }
+
+    .finding-top { display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .finding-type-badge { flex-shrink: 0; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .finding-title { font-size: 0.875rem; font-weight: 700; color: var(--text); flex: 1; }
+
+    .confidence-bar-wrap { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .confidence-label { font-size: 0.68rem; color: var(--muted); width: 50px; flex-shrink: 0; }
+    .confidence-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .confidence-fill { height: 100%; border-radius: 3px; }
+    .confidence-pct { font-size: 0.72rem; font-weight: 700; width: 32px; text-align: right; flex-shrink: 0; }
+
+    .finding-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.55; margin-bottom: 0.5rem; }
+
+    /* Source quote — extraction highlighting */
+    .source-quote {
+      background: #f0f8f4; border-left: 3px solid var(--mint); border-radius: 0 6px 6px 0;
+      padding: 0.6rem 0.9rem; margin-bottom: 0.5rem;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; line-height: 1.6;
+      color: #2d4a3e;
+    }
+    .source-quote .source-label { font-family: 'Inter', sans-serif; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--teal); margin-bottom: 0.3rem; }
+    .source-location { font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--muted); font-style: italic; margin-top: 0.25rem; }
+
+    /* Finding metrics */
+    .finding-metrics { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+    .metric-chip { padding: 0.2rem 0.6rem; border-radius: 8px; font-size: 0.72rem; font-weight: 600; background: #e8f5ef; color: var(--green); }
+
+    /* Greenwashing signal */
+    .gw-card { background: #ffe0e0; border-left: 3px solid #e63946; border-radius: 6px; padding: 0.6rem 0.9rem; margin-bottom: 0.5rem; }
+    .gw-card .gw-type { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #c0392b; margin-bottom: 0.2rem; }
+    .gw-sev-critical { background: #ffe0e3; border-color: #c0392b; }
+    .gw-sev-high     { background: #fce9d4; border-color: #c87941; border-left-color: #c87941; }
+    .gw-sev-medium   { background: #fef9e7; border-color: #9a7d0a; border-left-color: #9a7d0a; }
+    .gw-sev-low      { background: #f0f8f4; border-color: var(--teal); border-left-color: var(--teal); }
+
+    /* Review form */
+    .review-form { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+    .review-form textarea { flex: 1; min-width: 200px; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 5px; font-family: inherit; font-size: 0.78rem; resize: vertical; min-height: 38px; }
+    .review-form textarea:focus { outline: none; border-color: var(--teal); }
+    .review-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+    .status-pill {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .pill-approved { background: #d8f3dc; color: #2d6a4f; }
+    .pill-rejected { background: #ffe0e3; color: #922b21; }
+    .pill-applied  { background: #d6eaf8; color: #1a5276; }
+    .pill-pending  { background: #fef9e7; color: #9a7d0a; }
+
+    /* Score estimate card */
+    .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 1.25rem; overflow: hidden; }
+    .score-card .sc-head { background: linear-gradient(135deg, var(--dark) 0%, #1b4332 100%); padding: 0.9rem 1.25rem; }
+    .score-card .sc-head h3 { font-size: 0.9rem; font-weight: 700; color: #fff; }
+    .score-card .sc-head .ecoiq-num { font-size: 2rem; font-weight: 800; color: var(--accent); letter-spacing: -0.05em; }
+
+    .score-pillars { padding: 1rem 1.25rem; }
+    .pillar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+    .pillar-name { width: 90px; font-size: 0.75rem; font-weight: 600; color: var(--muted); flex-shrink: 0; }
+    .pillar-bar-bg { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .pillar-bar-fill { height: 100%; border-radius: 4px; }
+    .pillar-score-val { width: 28px; text-align: right; font-size: 0.8rem; font-weight: 700; color: var(--green); flex-shrink: 0; }
+
+    /* Greenwash risk card */
+    .gw-risk-card { border-radius: 8px; padding: 1rem; margin: 0.75rem 1.25rem; }
+    .gw-risk-low      { background: #d8f3dc; border: 1px solid #95d5b2; }
+    .gw-risk-medium   { background: #fef9e7; border: 1px solid #f4e3a0; }
+    .gw-risk-high     { background: #fce9d4; border: 1px solid #f5c6a0; }
+    .gw-risk-critical { background: #ffe0e3; border: 1px solid #f1aeb5; }
+
+    /* Sidebar */
+    .sidebar-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; margin-bottom: 1.25rem; }
+    .sidebar-card h3 { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em; }
+    .sidebar-row { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+    .sidebar-row:last-child { border-bottom: none; }
+    .sidebar-row .sk { color: var(--muted); }
+    .sidebar-row .sv { font-weight: 600; color: var(--text); text-align: right; max-width: 55%; }
+
+    .apply-btn { width: 100%; justify-content: center; margin-top: 0.75rem; }
+
+    /* Data gaps */
+    .gap-list { list-style: none; }
+    .gap-list li { font-size: 0.78rem; color: #7d6608; padding: 0.25rem 0; display: flex; align-items: flex-start; gap: 0.4rem; }
+    .gap-list li::before { content: '⚠'; flex-shrink: 0; }
+
+    /* GW signals list */
+    .signal-list { list-style: none; }
+    .signal-list li { font-size: 0.78rem; color: #c0392b; padding: 0.2rem 0; display: flex; gap: 0.4rem; }
+    .signal-list li::before { content: '→'; flex-shrink: 0; }
+
+    /* Tokens display */
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Error block */
+    .error-block { background: #ffe0e3; border: 1px solid #f1aeb5; border-radius: 8px; padding: 1rem; color: #922b21; font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/" class="brand">EcoIQ <span>AI Findings Engine</span></a>
+  <div class="nav-links">
+    <a href="/audit/ai/">← Jobs Queue</a>
+    <a href="/league/">League</a>
+    <a href="/admin/">Admin</a>
+  </div>
+</nav>
+
+{% if messages %}
+<div class="messages">
+  {% for msg in messages %}
+  <div class="msg {{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="page">
+<div class="main">
+
+  <!-- Job header -->
+  <div class="job-header">
+    <div class="jh-top">
+      <div class="jh-icon">📄</div>
+      <div class="jh-info">
+        <div class="filename">{{ job.original_filename }}</div>
+        <div class="jh-meta" style="margin-top:0.3rem;">
+          <span class="job-status status-{{ job.status }}">{{ job.get_status_display }}</span>
+          {% if job.detected_company_name %}
+          <span style="margin-left:0.75rem;">🏭 {{ job.detected_company_name }}</span>
+          {% endif %}
+          {% if job.detected_year %}
+          <span>📅 {{ job.detected_year }}</span>
+          {% endif %}
+          {% if job.detected_doc_type %}
+          <span>📋 {{ job.detected_doc_type|title|cut:"_" }}</span>
+          {% endif %}
+        </div>
+        {% if job.completed_at %}
+        <div class="jh-meta" style="margin-top:0.3rem;">
+          Completed {{ job.completed_at|date:"M j, Y H:i" }} ·
+          {{ job.pages_analyzed }} pages ·
+          {{ job.chars_analyzed|intcomma }} chars ·
+          <span class="mono">{{ job.input_tokens|intcomma }}+{{ job.output_tokens|intcomma }} tokens</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if job.status == 'completed' %}
+    <div class="stats-row">
+      <div class="stat-chip">
+        <div class="sv">{{ total }}</div>
+        <div class="sl">Total Findings</div>
+      </div>
+      <div class="stat-chip">
+        <div class="sv" style="color:#52b788;">{{ approved_count }}</div>
+        <div class="sl">Approved</div>
+      </div>
+      <div class="stat-chip">
+        <div class="sv" style="color:#f4a261;">{{ pending_count }}</div>
+        <div class="sl">Pending</div>
+      </div>
+      <div class="stat-chip">
+        <div class="sv" style="color:#e63946;">{{ rejected_count }}</div>
+        <div class="sl">Rejected</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if job.status == 'failed' and job.error_message %}
+    <div style="margin-top:0.75rem; padding:0.65rem 0.9rem; background:rgba(230,57,70,.15); border:1px solid rgba(230,57,70,.3); border-radius:6px; color:#ffc2c5; font-size:0.8rem;">
+      ⚠ {{ job.error_message }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    {% if job.status != 'completed' and job.status != 'processing' %}
+    <form method="post" action="{% url 'ai_job_run' job.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-dark">▶ Run AI Analysis</button>
+    </form>
+    {% elif job.status == 'processing' %}
+    <span class="btn btn-ghost" style="cursor:default;">⟳ Processing… refresh to check status</span>
+    {% endif %}
+
+    {% if job.status == 'completed' and pending_count > 0 %}
+    <form method="post" action="{% url 'ai_bulk_action' job.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="approve_all">
+      <button type="submit" class="btn btn-green">✓ Approve All Pending ({{ pending_count }})</button>
+    </form>
+
+    <form method="post" action="{% url 'ai_bulk_action' job.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reject_all">
+      <input type="hidden" name="types" value="greenwashing">
+      <button type="submit" class="btn btn-ghost" style="font-size:0.78rem;">✗ Reject All Greenwashing</button>
+    </form>
+    {% endif %}
+
+    {% if job.status == 'completed' %}
+    <form method="post" action="{% url 'ai_job_run' job.pk %}" style="margin-left:auto;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost btn-sm" onclick="return confirm('Re-run analysis? This will delete existing findings.')">↺ Re-analyse</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if job.status == 'failed' %}
+  <div class="error-block">
+    <strong>Analysis Failed.</strong> {{ job.error_message }}
+    <br><br>
+    <form method="post" action="{% url 'ai_job_run' job.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-red btn-sm">↺ Retry Analysis</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Executive Summary -->
+  {% if job.executive_summary %}
+  <div class="exec-card">
+    <div class="sec-head" style="margin-bottom:0.75rem;">
+      <span class="sec-icon">📊</span>
+      <h2>Executive Summary</h2>
+    </div>
+    <div class="exec-text">{{ job.executive_summary|linebreaksbr }}</div>
+    {% if job.data_quality_notes %}
+    <div class="dq-note">
+      <strong>📋 Data Quality:</strong> {{ job.data_quality_notes }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Score Estimate -->
+  {% if score_estimate %}
+  <div class="score-card">
+    <div class="sc-head">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <h3>AI Score Estimate</h3>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,.5); margin-top:2px;">
+            Confidence: {{ score_estimate.confidence|floatformat:0 }}%
+            {% if score_estimate.approved %}
+            · <span style="color:var(--accent);">✓ Approved{% if score_estimate.approved_by %} by {{ score_estimate.approved_by.username }}{% endif %}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="text-align:right;">
+          {% if score_estimate.est_ecoiq %}
+          <div class="ecoiq-num">{{ score_estimate.est_ecoiq|floatformat:1 }}</div>
+          <div style="font-size:0.65rem; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:0.1em;">EcoIQ / 100</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="score-pillars">
+
+      <!-- Pillar bars -->
+      {% if score_estimate.est_pollution is not None %}
+      <div class="pillar-row">
+        <span class="pillar-name">Pollution</span>
+        <div class="pillar-bar-bg"><div class="pillar-bar-fill" style="width:{{ score_estimate.est_pollution }}%; background:#40916c;"></div></div>
+        <span class="pillar-score-val">{{ score_estimate.est_pollution }}</span>
+      </div>
+      <div class="pillar-row">
+        <span class="pillar-name">Reduction</span>
+        <div class="pillar-bar-bg"><div class="pillar-bar-fill" style="width:{% if score_estimate.est_reduction %}{{ score_estimate.est_reduction }}{% else %}0{% endif %}%; background:#52b788;"></div></div>
+        <span class="pillar-score-val">{{ score_estimate.est_reduction|default:"?" }}</span>
+      </div>
+      <div class="pillar-row">
+        <span class="pillar-name">Investment</span>
+        <div class="pillar-bar-bg"><div class="pillar-bar-fill" style="width:{% if score_estimate.est_investment %}{{ score_estimate.est_investment }}{% else %}0{% endif %}%; background:#27ae60;"></div></div>
+        <span class="pillar-score-val">{{ score_estimate.est_investment|default:"?" }}</span>
+      </div>
+      <div class="pillar-row">
+        <span class="pillar-name">Transparency</span>
+        <div class="pillar-bar-bg"><div class="pillar-bar-fill" style="width:{% if score_estimate.est_transparency %}{{ score_estimate.est_transparency }}{% else %}0{% endif %}%; background:#2980b9;"></div></div>
+        <span class="pillar-score-val">{{ score_estimate.est_transparency|default:"?" }}</span>
+      </div>
+      <div class="pillar-row">
+        <span class="pillar-name">Community</span>
+        <div class="pillar-bar-bg"><div class="pillar-bar-fill" style="width:{% if score_estimate.est_community %}{{ score_estimate.est_community }}{% else %}0{% endif %}%; background:#8e44ad;"></div></div>
+        <span class="pillar-score-val">{{ score_estimate.est_community|default:"?" }}</span>
+      </div>
+      {% endif %}
+
+      {% if score_estimate.reasoning %}
+      <div style="margin-top:0.75rem; padding:0.65rem 0.9rem; background:var(--bg); border-radius:6px; font-size:0.78rem; color:var(--muted); line-height:1.6;">
+        <strong style="color:var(--text);">AI Reasoning:</strong><br>
+        {{ score_estimate.reasoning }}
+      </div>
+      {% endif %}
+
+      {% if score_estimate.data_gaps %}
+      <div style="margin-top:0.75rem;">
+        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:0.35rem;">Data Gaps Detected</div>
+        <ul class="gap-list">
+          {% for gap in score_estimate.data_gaps %}
+          <li>{{ gap }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Greenwashing risk block -->
+      {% if score_estimate.greenwashing_level %}
+      <div class="gw-risk-card gw-risk-{{ score_estimate.greenwashing_level }}" style="margin: 0.75rem 0 0;">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+          <span style="font-size:1.1rem;">
+            {% if score_estimate.greenwashing_level == 'low' %}🟢
+            {% elif score_estimate.greenwashing_level == 'medium' %}🟡
+            {% elif score_estimate.greenwashing_level == 'high' %}🟠
+            {% else %}🔴{% endif %}
+          </span>
+          <strong>Greenwashing Risk: {{ score_estimate.greenwashing_level|title }}</strong>
+          {% if score_estimate.greenwashing_score %}
+          <span style="font-size:0.72rem; color:var(--muted);">Score: {{ score_estimate.greenwashing_score }}/100</span>
+          {% endif %}
+        </div>
+        {% if score_estimate.greenwashing_verdict %}
+        <div style="font-size:0.8rem; line-height:1.55; margin-bottom:0.5rem;">{{ score_estimate.greenwashing_verdict }}</div>
+        {% endif %}
+        {% if score_estimate.greenwashing_signals %}
+        <ul class="signal-list">
+          {% for sig in score_estimate.greenwashing_signals %}
+          <li>{{ sig }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Approve/revoke score -->
+      <div style="margin-top:0.9rem; padding-top:0.75rem; border-top:1px solid var(--border); display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+        {% if not score_estimate.approved %}
+        <form method="post" action="{% url 'ai_score_action' job.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve">
+          <button type="submit" class="btn btn-green btn-sm">✓ Approve Score Estimate</button>
+        </form>
+        {% else %}
+        <span class="pill-approved status-pill" style="font-size:0.78rem; padding:0.3rem 0.75rem;">✓ Score Approved</span>
+        <form method="post" action="{% url 'ai_score_action' job.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="revoke">
+          <button type="submit" class="btn btn-ghost btn-sm">Revoke</button>
+        </form>
+        {% endif %}
+        <span style="font-size:0.72rem; color:var(--muted); margin-left:auto;">Approving the score estimate will apply it when you click "Apply to Company" below.</span>
+      </div>
+
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Findings by group -->
+  {% for group in grouped %}
+  <div class="group-block">
+    <div class="group-head" style="background: {{ group.color }}18; border-bottom: 2px solid {{ group.color }}30;">
+      <span class="sec-icon">{{ group.icon }}</span>
+      <h3>{{ group.label }}</h3>
+      <span class="group-count">
+        {{ group.findings|length }} finding{{ group.findings|length|pluralize }}
+        · <span style="color:#2d6a4f; font-weight:700;">{{ group.approved }} ✓</span>
+        · <span style="color:#9a7d0a;">{{ group.pending }} ⏳</span>
+        {% if group.rejected > 0 %}· <span style="color:#c0392b;">{{ group.rejected }} ✗</span>{% endif %}
+      </span>
+    </div>
+
+    {% for finding in group.findings %}
+    <div class="finding-card {{ finding.status }}" id="f{{ finding.pk }}">
+
+      <div class="finding-top">
+        <span class="finding-type-badge">{{ finding.get_finding_type_display }}</span>
+        <span class="finding-title">{{ finding.title }}</span>
+        <span class="status-pill pill-{{ finding.status }}">{{ finding.get_status_display }}</span>
+      </div>
+
+      <!-- Confidence bar -->
+      <div class="confidence-bar-wrap">
+        <span class="confidence-label">Confidence</span>
+        <div class="confidence-bar">
+          <div class="confidence-fill"
+            style="width:{{ finding.confidence_pct }}%;
+              background:{% if finding.confidence_score >= 0.85 %}#40916c{% elif finding.confidence_score >= 0.6 %}#f4a261{% else %}#e63946{% endif %};">
+          </div>
+        </div>
+        <span class="confidence-pct"
+          style="color:{% if finding.confidence_score >= 0.85 %}#2d6a4f{% elif finding.confidence_score >= 0.6 %}#c87941{% else %}#c0392b{% endif %};">
+          {{ finding.confidence_pct }}%
+        </span>
+      </div>
+
+      <!-- Numeric metrics if present -->
+      {% if finding.numeric_value or finding.year %}
+      <div class="finding-metrics">
+        {% if finding.numeric_value %}
+        <span class="metric-chip">📊 {{ finding.numeric_value|floatformat:2 }} {{ finding.unit }}</span>
+        {% endif %}
+        {% if finding.year %}
+        <span class="metric-chip">📅 {{ finding.year }}</span>
+        {% endif %}
+        {% if finding.extra_data.project_type %}
+        <span class="metric-chip">🔨 {{ finding.extra_data.project_type|title|cut:"_" }}</span>
+        {% endif %}
+        {% if finding.extra_data.investment_usd %}
+        <span class="metric-chip" style="background:#e8f0fe; color:#1a5276;">💰 ${{ finding.extra_data.investment_usd|floatformat:0|intcomma }}</span>
+        {% endif %}
+        {% if finding.extra_data.severity %}
+        <span class="metric-chip"
+          style="{% if finding.extra_data.severity == 'critical' %}background:#ffe0e3; color:#922b21;{% elif finding.extra_data.severity == 'high' %}background:#fce9d4; color:#c87941;{% else %}background:#fef9e7; color:#9a7d0a;{% endif %}">
+          ⚠ {{ finding.extra_data.severity|title }}
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Description -->
+      {% if finding.description %}
+      <div class="finding-desc">{{ finding.description|truncatechars:300 }}</div>
+      {% endif %}
+
+      <!-- Source quote (extraction highlighting) -->
+      {% if finding.source_quote %}
+      <div class="source-quote">
+        <div class="source-label">
+          🔍 Source Extraction
+          {% if finding.source_location %} · {{ finding.source_location }}{% endif %}
+        </div>
+        "{{ finding.source_quote|truncatechars:400 }}"
+      </div>
+      {% endif %}
+
+      <!-- Analyst note (if exists) -->
+      {% if finding.analyst_notes %}
+      <div style="font-size:0.78rem; color:#1a5276; background:#d6eaf8; border-radius:5px; padding:0.5rem 0.75rem; margin-bottom:0.5rem;">
+        💬 <strong>Analyst note:</strong> {{ finding.analyst_notes }}
+      </div>
+      {% endif %}
+
+      <!-- Review form (only for pending/approved/rejected — not applied) -->
+      {% if finding.status != 'applied' %}
+      <form method="post" action="{% url 'ai_finding_action' finding.pk %}">
+        {% csrf_token %}
+        <div class="review-form">
+          <textarea name="analyst_notes" placeholder="Optional analyst note…">{{ finding.analyst_notes }}</textarea>
+          <div class="review-actions">
+            {% if finding.status != 'approved' %}
+            <button type="submit" name="action" value="approve" class="btn btn-green btn-sm">✓ Approve</button>
+            {% endif %}
+            {% if finding.status != 'rejected' %}
+            <button type="submit" name="action" value="reject" class="btn btn-red btn-sm">✗ Reject</button>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+      {% endif %}
+
+      {% if finding.reviewed_by %}
+      <div style="font-size:0.68rem; color:var(--muted); margin-top:0.4rem;">
+        Reviewed by {{ finding.reviewed_by.username }} · {{ finding.reviewed_at|date:"M j, Y H:i" }}
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  {% if job.status == 'pending' %}
+  <div style="text-align:center; padding:3rem; color:var(--muted);">
+    <p style="font-size:0.95rem; margin-bottom:1rem;">Document uploaded and ready for AI analysis.</p>
+    <form method="post" action="{% url 'ai_job_run' job.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-dark" style="font-size:1rem; padding:0.75rem 2rem;">▶ Run AI Analysis</button>
+    </form>
+    <p style="font-size:0.78rem; margin-top:0.75rem; color:var(--muted);">Analysis takes 15–60 seconds depending on document length.</p>
+  </div>
+  {% endif %}
+
+</div>{# end .main #}
+
+<!-- Sidebar -->
+<div class="sidebar">
+
+  <!-- Job metadata -->
+  <div class="sidebar-card">
+    <h3>Job Info</h3>
+    <div class="sidebar-row"><span class="sk">Job ID</span><span class="sv mono">#{{ job.pk }}</span></div>
+    <div class="sidebar-row"><span class="sk">Status</span><span class="sv"><span class="job-status status-{{ job.status }}">{{ job.get_status_display }}</span></span></div>
+    <div class="sidebar-row"><span class="sk">Submitted</span><span class="sv">{{ job.created_at|date:"M j, Y H:i" }}</span></div>
+    {% if job.submitted_by %}
+    <div class="sidebar-row"><span class="sk">By</span><span class="sv">{{ job.submitted_by.username }}</span></div>
+    {% endif %}
+    {% if job.pages_analyzed %}
+    <div class="sidebar-row"><span class="sk">Pages</span><span class="sv">{{ job.pages_analyzed }}</span></div>
+    {% endif %}
+    {% if job.model_used %}
+    <div class="sidebar-row"><span class="sk">AI Model</span><span class="sv mono" style="font-size:0.68rem;">{{ job.model_used }}</span></div>
+    {% endif %}
+    {% if job.input_tokens %}
+    <div class="sidebar-row">
+      <span class="sk">Tokens</span>
+      <span class="sv mono">{{ job.input_tokens|intcomma }}+{{ job.output_tokens|intcomma }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Company link -->
+  <div class="sidebar-card">
+    <h3>Linked Company</h3>
+    {% if job.company %}
+    <div style="margin-bottom:0.75rem;">
+      <a href="{% url 'league:company' job.company.slug %}" style="font-weight:700; color:var(--teal); text-decoration:none; font-size:0.9rem;">
+        {{ job.company.name }}
+      </a>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">
+        EcoIQ: {{ job.company.ecoiq_score }} · {{ job.company.get_sector_display }}
+      </div>
+    </div>
+    {% else %}
+    <div style="font-size:0.8rem; color:var(--muted); margin-bottom:0.75rem;">No company linked yet.</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'ai_job_set_company' job.pk %}">
+      {% csrf_token %}
+      <select name="company_id" style="width:100%; padding:0.4rem 0.6rem; border:1px solid var(--border); border-radius:5px; font-family:inherit; font-size:0.8rem; margin-bottom:0.5rem; background:var(--bg);">
+        <option value="">— No company —</option>
+        {% for co in companies %}
+        <option value="{{ co.pk }}" {% if job.company_id == co.pk %}selected{% endif %}>{{ co.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-ghost" style="width:100%; justify-content:center; font-size:0.8rem;">Save Link</button>
+    </form>
+  </div>
+
+  <!-- Apply findings -->
+  {% if job.status == 'completed' %}
+  <div class="sidebar-card" style="border:2px solid {% if approved_count > 0 %}var(--teal){% else %}var(--border){% endif %};">
+    <h3>Apply to Company</h3>
+
+    {% if approved_count > 0 %}
+    <div style="font-size:0.78rem; color:var(--muted); margin-bottom:0.75rem; line-height:1.5;">
+      <strong>{{ approved_count }}</strong> approved finding{{ approved_count|pluralize }} ready.
+      {% if score_estimate.approved %}✓ Score estimate will also be applied.{% endif %}
+    </div>
+
+    <form method="post" action="{% url 'ai_job_apply' job.pk %}">
+      {% csrf_token %}
+      <select name="company_id" style="width:100%; padding:0.4rem 0.6rem; border:1px solid var(--border); border-radius:5px; font-family:inherit; font-size:0.8rem; margin-bottom:0.6rem; background:var(--bg);">
+        <option value="">— Select company —</option>
+        {% for co in companies %}
+        <option value="{{ co.pk }}" {% if job.company_id == co.pk %}selected{% endif %}>{{ co.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-green apply-btn"
+        onclick="return confirm('Apply {{ approved_count }} findings to the selected company? This will create projects and evidence records.')">
+        → Apply {{ approved_count }} Finding{{ approved_count|pluralize }}
+      </button>
+    </form>
+
+    <div style="font-size:0.7rem; color:var(--muted); margin-top:0.6rem; line-height:1.5;">
+      Creates projects, evidence records, and optionally updates company scores.
+    </div>
+    {% else %}
+    <div style="font-size:0.78rem; color:var(--muted);">
+      No approved findings yet. Review findings above and approve the ones you want to apply.
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Analyst notes -->
+  <div class="sidebar-card">
+    <h3>Analyst Notes</h3>
+    <form method="post" action="/audit/ai/{{ job.pk }}/note/" id="note-form">
+      {% csrf_token %}
+      <textarea name="analyst_notes" rows="4"
+        style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:5px; font-family:inherit; font-size:0.78rem; resize:vertical;"
+        placeholder="Add notes about this document or analysis…">{{ job.analyst_notes }}</textarea>
+    </form>
+    <div style="font-size:0.7rem; color:var(--muted); margin-top:0.4rem;">Notes are stored with the job for reference.</div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="sidebar-card">
+    <h3>Quick Links</h3>
+    <a href="/admin/audit/aianalysisjob/{{ job.pk }}/change/" target="_blank" class="btn btn-ghost" style="width:100%; justify-content:center; margin-bottom:0.5rem; font-size:0.78rem;">⚙ Django Admin (full edit)</a>
+    <a href="{% url 'ai_jobs' %}" class="btn btn-ghost" style="width:100%; justify-content:center; font-size:0.78rem;">← Back to Queue</a>
+  </div>
+
+</div>
+</div>{# end .page #}
+
+<script>
+// Auto-save analyst notes on sidebar form change (debounced)
+(function() {
+  const form = document.getElementById('note-form');
+  if (!form) return;
+  let timer;
+  form.querySelector('textarea').addEventListener('input', function() {
+    clearTimeout(timer);
+    timer = setTimeout(function() {
+      // Simple POST via fetch — no full page reload
+      const fd = new FormData(form);
+      fetch('/audit/ai/{{ job.pk }}/note/', { method: 'POST', body: fd })
+        .catch(() => {});  // silent fail — not critical
+    }, 1500);
+  });
+})();
+</script>
+
+</body>
+</html>

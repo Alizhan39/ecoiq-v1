@@ -179,6 +179,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
+# AI Findings Engine — model selection (override in .env if needed)
+ECOIQ_AI_MODEL = os.environ.get('ECOIQ_AI_MODEL', 'claude-opus-4-5')
+
 # ── Wagtail ────────────────────────────────────────────────────────────────────
 
 WAGTAIL_SITE_NAME = 'EcoIQ'

@@ -6,7 +6,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
 
-from .models import AuditSession, AuditResponse, Finding, Recommendation, ActionPlan, AuditReport
+from .models import (
+    AuditSession, AuditResponse, Finding, Recommendation, ActionPlan, AuditReport,
+    AIAnalysisJob, AIFinding, AIScoreEstimate,
+)
 from .forms import AuditSessionForm
 from .questions import QUESTIONS, grouped as grouped_questions
 from .ai import run_full_analysis
@@ -287,3 +290,307 @@ def report_pdf(request, pk):
         else:
             messages.error(request, f'PDF generation failed: {exc}')
         return redirect('audit_report', pk=pk)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AI FINDINGS ENGINE VIEWS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def ai_jobs(request):
+    """
+    Job queue + upload form.
+    GET  → list all jobs
+    POST → create a new job from uploaded PDF
+    """
+    from league.models import Company
+
+    if request.method == 'POST':
+        pdf = request.FILES.get('pdf_file')
+        if not pdf:
+            messages.error(request, 'Please select a PDF file to upload.')
+            return redirect('ai_jobs')
+
+        if not pdf.name.lower().endswith('.pdf'):
+            messages.error(request, 'Only PDF files are accepted.')
+            return redirect('ai_jobs')
+
+        company_id = request.POST.get('company_id') or None
+        company    = None
+        if company_id:
+            try:
+                company = Company.objects.get(pk=company_id)
+            except Company.DoesNotExist:
+                pass
+
+        job = AIAnalysisJob.objects.create(
+            pdf_file=pdf,
+            original_filename=pdf.name[:255],
+            company=company,
+            submitted_by=request.user,
+        )
+        messages.success(request, f'"{pdf.name}" uploaded. Click Analyse to start.')
+        return redirect('ai_job_detail', pk=job.pk)
+
+    jobs      = AIAnalysisJob.objects.select_related('company', 'submitted_by') \
+                                      .prefetch_related('findings')
+    companies = Company.objects.all().order_by('name')
+    return render(request, 'audit/ai_jobs.html', {
+        'jobs': jobs, 'companies': companies,
+    })
+
+
+@login_required
+def ai_job_detail(request, pk):
+    """Review findings for one job."""
+    from league.models import Company
+
+    job      = get_object_or_404(AIAnalysisJob, pk=pk)
+    findings = job.findings.all()
+    score_estimate = getattr(job, 'score_estimate', None)
+    companies      = Company.objects.all().order_by('name')
+
+    # Group findings by type for the template
+    GROUPS = [
+        ('Pollution Metrics', [
+            'co2_metric','methane_metric','pm25_metric','so2_metric',
+            'nox_metric','water_metric','waste_metric','pollution_other',
+        ], '🌫️', '#e63946'),
+        ('Projects & Investments', [
+            'project','coal_replacement','investment',
+        ], '🔨', '#40916c'),
+        ('Greenwashing Signals', ['greenwashing'], '⚠️', '#f4a261'),
+        ('Transparency', ['transparency'], '📋', '#2980b9'),
+        ('Recommendations', ['recommendation'], '💡', '#8e44ad'),
+        ('Other', ['other'], '📌', '#7f8c8d'),
+    ]
+
+    grouped = []
+    for label, types, icon, color in GROUPS:
+        group_findings = [f for f in findings if f.finding_type in types]
+        if group_findings:
+            grouped.append({
+                'label': label, 'icon': icon, 'color': color,
+                'findings': group_findings,
+                'pending':  sum(1 for f in group_findings if f.status == 'pending'),
+                'approved': sum(1 for f in group_findings if f.status == 'approved'),
+                'rejected': sum(1 for f in group_findings if f.status == 'rejected'),
+            })
+
+    return render(request, 'audit/ai_job_detail.html', {
+        'job':            job,
+        'findings':       findings,
+        'grouped':        grouped,
+        'score_estimate': score_estimate,
+        'companies':      companies,
+        'total':          findings.count(),
+        'pending_count':  findings.filter(status='pending').count(),
+        'approved_count': findings.filter(status='approved').count(),
+        'rejected_count': findings.filter(status='rejected').count(),
+    })
+
+
+@login_required
+def ai_job_run(request, pk):
+    """POST → trigger AI analysis synchronously."""
+    if request.method != 'POST':
+        return redirect('ai_job_detail', pk=pk)
+
+    job = get_object_or_404(AIAnalysisJob, pk=pk)
+
+    if job.status == 'processing':
+        messages.warning(request, 'Analysis is already running.')
+        return redirect('ai_job_detail', pk=pk)
+
+    try:
+        from .ai_engine import run_ai_analysis
+        run_ai_analysis(job)
+        messages.success(
+            request,
+            f'Analysis complete — {job.finding_count} findings extracted '
+            f'({job.input_tokens + job.output_tokens:,} tokens used).'
+        )
+    except Exception as exc:
+        job.status        = 'failed'
+        job.error_message = str(exc)
+        job.save(update_fields=['status', 'error_message'])
+        messages.error(request, f'Analysis failed: {exc}')
+
+    return redirect('ai_job_detail', pk=pk)
+
+
+@login_required
+def ai_finding_action(request, pk):
+    """POST: approve or reject a single AIFinding, optionally add analyst note."""
+    from django.utils import timezone as tz
+
+    if request.method != 'POST':
+        return redirect('ai_jobs')
+
+    finding = get_object_or_404(AIFinding, pk=pk)
+    action  = request.POST.get('action')  # 'approve' | 'reject'
+    note    = request.POST.get('analyst_notes', '').strip()
+
+    if action in ('approve', 'reject'):
+        finding.status      = 'approved' if action == 'approve' else 'rejected'
+        finding.reviewed_by = request.user
+        finding.reviewed_at = tz.now()
+        if note:
+            finding.analyst_notes = note
+        finding.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'analyst_notes'])
+        messages.success(request, f'Finding {finding.status}.')
+
+    return redirect('ai_job_detail', pk=finding.job_id)
+
+
+@login_required
+def ai_bulk_action(request, pk):
+    """POST: approve-all or reject-all pending findings for a job."""
+    if request.method != 'POST':
+        return redirect('ai_job_detail', pk=pk)
+
+    from django.utils import timezone as tz
+
+    job    = get_object_or_404(AIAnalysisJob, pk=pk)
+    action = request.POST.get('action')  # 'approve_all' | 'reject_all'
+
+    if action == 'approve_all':
+        count = job.findings.filter(status='pending').update(
+            status='approved',
+            reviewed_by=request.user,
+            reviewed_at=tz.now(),
+        )
+        messages.success(request, f'{count} findings approved.')
+
+    elif action == 'reject_all':
+        types = request.POST.getlist('types') or None
+        qs    = job.findings.filter(status='pending')
+        if types:
+            qs = qs.filter(finding_type__in=types)
+        count = qs.update(
+            status='rejected',
+            reviewed_by=request.user,
+            reviewed_at=tz.now(),
+        )
+        messages.success(request, f'{count} findings rejected.')
+
+    return redirect('ai_job_detail', pk=pk)
+
+
+@login_required
+def ai_score_action(request, pk):
+    """POST: approve or reset score estimate."""
+    from django.utils import timezone as tz
+
+    if request.method != 'POST':
+        return redirect('ai_job_detail', pk=pk)
+
+    job = get_object_or_404(AIAnalysisJob, pk=pk)
+    se  = get_object_or_404(AIScoreEstimate, job=job)
+
+    action = request.POST.get('action')  # 'approve' | 'revoke'
+    note   = request.POST.get('analyst_notes', '').strip()
+
+    if action == 'approve':
+        se.approved    = True
+        se.approved_by = request.user
+        if note:
+            se.analyst_notes = note
+        se.save(update_fields=['approved', 'approved_by', 'analyst_notes'])
+        messages.success(request, 'Score estimate approved.')
+
+    elif action == 'revoke':
+        se.approved    = False
+        se.approved_by = None
+        se.save(update_fields=['approved', 'approved_by'])
+        messages.info(request, 'Score estimate approval revoked.')
+
+    return redirect('ai_job_detail', pk=pk)
+
+
+@login_required
+def ai_job_apply(request, pk):
+    """POST: apply all approved findings to the linked company."""
+    if request.method != 'POST':
+        return redirect('ai_job_detail', pk=pk)
+
+    from league.models import Company
+    from .ai_engine import apply_approved_findings
+
+    job = get_object_or_404(AIAnalysisJob, pk=pk)
+
+    # Allow overriding company from POST
+    company_id = request.POST.get('company_id') or None
+    if company_id:
+        try:
+            job.company = Company.objects.get(pk=company_id)
+            job.save(update_fields=['company'])
+        except Company.DoesNotExist:
+            messages.error(request, 'Selected company not found.')
+            return redirect('ai_job_detail', pk=pk)
+
+    if not job.company:
+        messages.error(request, 'Please link a company before applying findings.')
+        return redirect('ai_job_detail', pk=pk)
+
+    approved = job.findings.filter(status='approved').count()
+    if approved == 0:
+        messages.warning(request, 'No approved findings to apply. Approve some findings first.')
+        return redirect('ai_job_detail', pk=pk)
+
+    try:
+        result = apply_approved_findings(job, job.company)
+        parts  = [
+            f"{result['projects_created']} project(s) created",
+            f"{result['evidence_created']} evidence record(s) created",
+        ]
+        if result['score_applied']:
+            parts.append('company scores updated from AI estimate')
+        if result['errors']:
+            messages.warning(request, 'Applied with warnings: ' + '; '.join(result['errors']))
+        messages.success(
+            request,
+            f'Applied to {job.company.name}: {", ".join(parts)}.'
+        )
+    except Exception as exc:
+        messages.error(request, f'Apply failed: {exc}')
+
+    return redirect('ai_job_detail', pk=pk)
+
+
+@login_required
+def ai_job_save_note(request, pk):
+    """POST: save analyst note on a job (used by sidebar auto-save)."""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    job = get_object_or_404(AIAnalysisJob, pk=pk)
+    note = request.POST.get('analyst_notes', '')
+    job.analyst_notes = note
+    job.save(update_fields=['analyst_notes'])
+    return JsonResponse({'ok': True})
+
+
+@login_required
+def ai_job_set_company(request, pk):
+    """POST: set or change the company linked to a job."""
+    if request.method != 'POST':
+        return redirect('ai_job_detail', pk=pk)
+
+    from league.models import Company
+
+    job        = get_object_or_404(AIAnalysisJob, pk=pk)
+    company_id = request.POST.get('company_id') or None
+
+    if company_id:
+        try:
+            job.company = Company.objects.get(pk=company_id)
+        except Company.DoesNotExist:
+            messages.error(request, 'Company not found.')
+            return redirect('ai_job_detail', pk=pk)
+    else:
+        job.company = None
+
+    job.save(update_fields=['company'])
+    messages.success(request, f'Job linked to {job.company.name}.' if job.company else 'Company link removed.')
+    return redirect('ai_job_detail', pk=pk)
