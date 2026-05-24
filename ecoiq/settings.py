@@ -14,7 +14,7 @@ SECRET_KEY = os.environ.get(
     'django-insecure-dev-only-CHANGE-IN-PRODUCTION',
 )
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Space-separated list: "myapp.onrender.com localhost"
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split()

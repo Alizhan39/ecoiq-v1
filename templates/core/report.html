@@ -330,8 +330,9 @@ function copyShareLink() {
                  stroke-width="2"
                  stroke-linejoin="round"/>
         <!-- Score dots -->
-        {% for pillar in pillars %}
-        {# Recalculate dot positions inline via template — done server-side in view context #}
+        {% for dx,dy,dscore in radar_dots %}
+        <circle cx="{{ dx }}" cy="{{ dy }}" r="4"
+                fill="#2d6a4f" stroke="#fff" stroke-width="1.5"/>
         {% endfor %}
         <!-- Labels -->
         {% for lx,ly,lbl in radar_labels %}

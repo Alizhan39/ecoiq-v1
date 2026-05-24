@@ -2,6 +2,7 @@ import math
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
 
@@ -14,6 +15,7 @@ from core.utils import extract_text  # reuse existing PDF extractor
 
 # ── Index ─────────────────────────────────────────────────────────────────────
 
+@login_required
 def index(request):
     sessions = AuditSession.objects.select_related('report').all()
     return render(request, 'audit/index.html', {'sessions': sessions})
@@ -21,6 +23,7 @@ def index(request):
 
 # ── Upload / create session ───────────────────────────────────────────────────
 
+@login_required
 def upload(request):
     if request.method == 'POST':
         form = AuditSessionForm(request.POST, request.FILES)
@@ -44,6 +47,7 @@ def upload(request):
 
 # ── Questionnaire ─────────────────────────────────────────────────────────────
 
+@login_required
 def questionnaire(request, pk):
     session = get_object_or_404(AuditSession, pk=pk)
     saved   = {r.question_key: r.answer for r in session.responses.all()}
@@ -88,6 +92,7 @@ def questionnaire(request, pk):
 
 # ── Analysis trigger ──────────────────────────────────────────────────────────
 
+@login_required
 def analyse(request, pk):
     session = get_object_or_404(AuditSession, pk=pk)
 
@@ -103,7 +108,7 @@ def analyse(request, pk):
             return redirect('audit_detail', pk=pk)
         except ValueError as exc:
             messages.error(request, str(exc))
-            session.status = 'processing'
+            session.status = 'ready'   # reset so the user can retry
             session.save(update_fields=['status', 'updated_at'])
             return redirect('audit_detail', pk=pk)
         except Exception as exc:
@@ -117,6 +122,7 @@ def analyse(request, pk):
 
 # ── Detail / dashboard ────────────────────────────────────────────────────────
 
+@login_required
 def detail(request, pk):
     session  = get_object_or_404(AuditSession, pk=pk)
     report   = getattr(session, 'report', None)
@@ -246,12 +252,14 @@ def _report_context(session):
     }
 
 
+@login_required
 def report(request, pk):
     session = get_object_or_404(AuditSession, pk=pk)
     ctx = _report_context(session)
     return render(request, 'audit/report.html', ctx)
 
 
+@login_required
 def report_pdf(request, pk):
     session = get_object_or_404(AuditSession, pk=pk)
     ctx = _report_context(session)

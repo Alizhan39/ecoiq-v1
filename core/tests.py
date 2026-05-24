@@ -217,7 +217,7 @@ class ReportContextBuilderTests(TestCase):
         from .views import _build_report_ctx
         ctx = _build_report_ctx(self.assessment)
         for key in ('assessment', 'finding', 'pillars',
-                    'radar_polygon', 'radar_grid', 'radar_axes', 'radar_labels'):
+                    'radar_polygon', 'radar_grid', 'radar_axes', 'radar_labels', 'radar_dots'):
             self.assertIn(key, ctx, msg=f"Missing key: {key}")
 
     def test_five_pillars_returned(self):
@@ -234,3 +234,50 @@ class ReportContextBuilderTests(TestCase):
         polygon = ctx['radar_polygon']
         self.assertIsInstance(polygon, str)
         self.assertEqual(len(polygon.split(' ')), 5)   # 5 vertices
+
+    def test_radar_dots_five_points(self):
+        from .views import _build_report_ctx
+        ctx = _build_report_ctx(self.assessment)
+        dots = ctx['radar_dots']
+        self.assertEqual(len(dots), 5)
+        for x, y, score in dots:
+            self.assertIsInstance(x, float)
+            self.assertIsInstance(y, float)
+            self.assertGreaterEqual(score, 0)
+            self.assertLessEqual(score, 100)
+
+
+# ── Audit auth enforcement ────────────────────────────────────────────────────
+
+class AuditAuthTests(TestCase):
+    """All audit views must redirect anonymous users to /login/"""
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def _assert_login_redirect(self, url):
+        r = self.c.get(url)
+        self.assertEqual(r.status_code, 302,
+                         msg=f"{url} should redirect anon to login, got {r.status_code}")
+        self.assertIn('/login/', r['Location'])
+
+    def test_audit_index_requires_login(self):
+        self._assert_login_redirect('/audit/')
+
+    def test_audit_upload_requires_login(self):
+        self._assert_login_redirect('/audit/new/')
+
+    def test_audit_detail_requires_login(self):
+        self._assert_login_redirect('/audit/999/')
+
+    def test_audit_questionnaire_requires_login(self):
+        self._assert_login_redirect('/audit/999/questionnaire/')
+
+    def test_audit_analyse_requires_login(self):
+        self._assert_login_redirect('/audit/999/analyse/')
+
+    def test_audit_report_requires_login(self):
+        self._assert_login_redirect('/audit/999/report/')
+
+    def test_audit_report_pdf_requires_login(self):
+        self._assert_login_redirect('/audit/999/report/pdf/')

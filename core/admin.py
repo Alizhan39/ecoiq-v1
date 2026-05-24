@@ -43,7 +43,7 @@ class FindingInline(admin.StackedInline):
     fields  = (
         ('score_environment', 'score_social', 'score_governance',
          'score_ethics', 'score_innovation', 'score_overall'),
-        'summary', 'pillar_notes',
+        'summary', 'pillar_notes', 'created_at',
     )
     readonly_fields = ('created_at',)
 

@@ -170,6 +170,11 @@ def upload(request):
                     assessment.extracted_text = extract_text(assessment.uploaded_file)
                 except Exception:
                     assessment.extracted_text = ''
+                    messages.warning(
+                        request,
+                        'Could not extract text from the uploaded file — '
+                        'please describe the facility fully in your questionnaire answers.',
+                    )
             assessment.status = Assessment.STATUS_READY
             assessment.save()
             messages.success(request, f'Document uploaded for "{assessment.company_name}". Now complete the questionnaire.')
@@ -362,6 +367,19 @@ def _radar_labels(cx=150, cy=150, r=110, offset=22):
     return result
 
 
+def _radar_dots(scores_dict, cx=150, cy=150, r=110):
+    """Return list of (x, y, score) for filled circles at each pillar vertex."""
+    keys = ['environment', 'social', 'governance', 'ethics', 'innovation']
+    dots = []
+    for i, key in enumerate(keys):
+        angle_rad = math.radians(270 + i * 72)
+        score = scores_dict.get(key, 0) / 100
+        x = cx + r * score * math.cos(angle_rad)
+        y = cy + r * score * math.sin(angle_rad)
+        dots.append((round(x, 1), round(y, 1), scores_dict.get(key, 0)))
+    return dots
+
+
 def _build_report_ctx(assessment):
     """Shared context builder for report() and share_report()."""
     f = assessment.finding
@@ -407,6 +425,7 @@ def _build_report_ctx(assessment):
         'radar_grid':    _radar_grid(),
         'radar_axes':    _radar_axes(),
         'radar_labels':  _radar_labels(),
+        'radar_dots':    _radar_dots(scores_dict),
     }
 
 
@@ -446,6 +465,23 @@ def report_pdf(request, pk):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
+    except ImportError:
+        messages.error(
+            request,
+            'PDF export is not available — WeasyPrint is not installed. '
+            'Use Print → Save as PDF in your browser instead.',
+        )
+    except OSError as exc:
+        # Cairo/Pango system libraries missing (common on cloud free tiers)
+        if 'cairo' in str(exc).lower() or 'pango' in str(exc).lower():
+            messages.error(
+                request,
+                'PDF export is unavailable in this environment (Cairo/Pango missing). '
+                'Use Print → Save as PDF in your browser instead.',
+            )
+        else:
+            messages.error(request, f'PDF generation failed: {exc}')
     except Exception as exc:
         messages.error(request, f'PDF generation failed: {exc}')
-        return redirect('report', pk=pk)
+
+    return redirect('report', pk=pk)
