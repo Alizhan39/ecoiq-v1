@@ -1,0 +1,85 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<style>
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .dash-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .dash-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); border-color: #1b4332; }
+  .dash-card .dc-val { font-size: 2rem; font-weight: 800; color: #2d6a4f; letter-spacing: -0.04em; }
+  .dash-card .dc-lbl { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-top: 0.2rem; }
+
+  .quick-links { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  .ql {
+    display: inline-block;
+    padding: 0.5rem 1.1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: #1b4332;
+    color: #fff;
+    transition: background 0.15s;
+  }
+  .ql:hover { background: #2d6a4f; }
+  .ql.secondary { background: #e9ecef; color: #333; }
+  .ql.secondary:hover { background: #dee2e6; }
+
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888;
+    margin-bottom: 0.75rem;
+  }
+</style>
+
+<div class="section-title">Панель управления</div>
+
+<!-- Quick links -->
+<div class="quick-links">
+  <a href="/league/" class="ql">🏆 Открыть рейтинг</a>
+  <a href="/league/admin/league/company/add/" class="ql secondary">+ Добавить компанию</a>
+  <a href="/admin/league/environmentalproject/add/" class="ql secondary">+ Добавить проект</a>
+  <a href="/admin/league/evidence/add/" class="ql secondary">+ Загрузить документ</a>
+  <a href="/audit/" class="ql secondary">Industrial Audit</a>
+  <a href="/esg/" class="ql secondary">ESG Assessments</a>
+</div>
+
+<!-- Standard app/model list from Django admin -->
+{% if app_list %}
+  {% for app in app_list %}
+    <div class="section-title" style="margin-top:1rem;">{{ app.name }}</div>
+    <div class="dash-grid">
+      {% for model in app.models %}
+        <a href="{{ model.admin_url }}" class="dash-card">
+          <div class="dc-lbl">{{ model.name }}</div>
+          <div style="margin-top:0.25rem; font-size:0.8rem; color:#555;">
+            {% if model.add_url %}
+              <a href="{{ model.add_url }}" style="color:#2d6a4f; font-weight:600;">+ {% trans "Add" %}</a>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% endfor %}
+{% else %}
+  <p>{% trans "You don't have permission to view or edit anything." %}</p>
+{% endif %}
+
+{% endblock %}

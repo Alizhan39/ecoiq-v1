@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'core',
     'audit',
     'leads',
+    'league',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

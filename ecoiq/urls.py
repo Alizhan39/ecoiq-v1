@@ -14,4 +14,5 @@ urlpatterns = [
     path('', include('core.urls')),
     path('audit/', include('audit.urls')),
     path('request-access/', include('leads.urls', namespace='leads')),
+    path('league/', include('league.urls', namespace='league')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
