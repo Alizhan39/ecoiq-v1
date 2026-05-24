@@ -1,6 +1,7 @@
 import math
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
 
@@ -124,6 +125,7 @@ CTA_TRUST_SIGNALS = [
 
 
 def landing(request):
+    from django.conf import settings as _s
     return render(request, 'landing.html', {
         'industries':              INDUSTRIES,
         'cta_sectors':             CTA_SECTORS,
@@ -135,6 +137,7 @@ def landing(request):
         'step3_items':             HOW_IT_STEP3,
         'frameworks':              FRAMEWORKS,
         'cta_trust_signals':       CTA_TRUST_SIGNALS,
+        'site_url':                _s.SITE_URL,
     })
 
 
@@ -146,6 +149,7 @@ HOW_IT_WORKS = [
 ]
 
 
+@login_required
 def index(request):
     assessments = Assessment.objects.all()
     return render(request, 'core/index.html', {
@@ -155,6 +159,7 @@ def index(request):
     })
 
 
+@login_required
 def upload(request):
     if request.method == 'POST':
         form = AssessmentUploadForm(request.POST, request.FILES)
@@ -175,6 +180,7 @@ def upload(request):
     return render(request, 'core/upload.html', {'form': form})
 
 
+@login_required
 def questionnaire(request, pk):
     assessment = get_object_or_404(Assessment, pk=pk)
 
@@ -230,6 +236,7 @@ def questionnaire(request, pk):
     })
 
 
+@login_required
 def run_analysis(request, pk):
     assessment = get_object_or_404(Assessment, pk=pk)
 
@@ -266,6 +273,7 @@ def run_analysis(request, pk):
     return render(request, 'core/run_analysis.html', {'assessment': assessment})
 
 
+@login_required
 def assessment_detail(request, pk):
     assessment = get_object_or_404(Assessment, pk=pk)
     scores = []
@@ -354,11 +362,8 @@ def _radar_labels(cx=150, cy=150, r=110, offset=22):
     return result
 
 
-def report(request, pk):
-    assessment = get_object_or_404(Assessment, pk=pk)
-    if not hasattr(assessment, 'finding'):
-        raise Http404("No findings yet for this assessment.")
-
+def _build_report_ctx(assessment):
+    """Shared context builder for report() and share_report()."""
     f = assessment.finding
     scores_dict = {
         'environment': f.score_environment,
@@ -368,8 +373,6 @@ def report(request, pk):
         'innovation':  f.score_innovation,
     }
     notes = f.pillar_notes or {}
-
-    # Build per-pillar rows: (label, score, color, note, answered questions)
     pillar_map = {
         'Environment': ('#d8f3dc', scores_dict['environment'], notes.get('environment', '')),
         'Social':      ('#dde5f4', scores_dict['social'],      notes.get('social', '')),
@@ -377,7 +380,6 @@ def report(request, pk):
         'Ethics':      ('#fce7f3', scores_dict['ethics'],      notes.get('ethics', '')),
         'Innovation':  ('#ede9fe', scores_dict['innovation'],  notes.get('innovation', '')),
     }
-
     saved_answers = {r.question_key: r.answer for r in assessment.responses.all()}
     raw_groups    = grouped_questions()
     q_number      = 1
@@ -397,8 +399,7 @@ def report(request, pk):
             'note':      note,
             'questions': qs,
         })
-
-    ctx = {
+    return {
         'assessment':    assessment,
         'finding':       f,
         'pillars':       pillars,
@@ -407,55 +408,34 @@ def report(request, pk):
         'radar_axes':    _radar_axes(),
         'radar_labels':  _radar_labels(),
     }
+
+
+@login_required
+def report(request, pk):
+    assessment = get_object_or_404(Assessment, pk=pk)
+    if not hasattr(assessment, 'finding'):
+        raise Http404("No findings yet for this assessment.")
+    ctx = _build_report_ctx(assessment)
     return render(request, 'core/report.html', ctx)
 
 
+def share_report(request, token):
+    """Public read-only report via share token. No login required."""
+    assessment = get_object_or_404(Assessment, share_token=token)
+    if not hasattr(assessment, 'finding'):
+        raise Http404("Report not available.")
+    ctx = _build_report_ctx(assessment)
+    ctx['shared'] = True   # hides internal toolbar buttons in template
+    return render(request, 'core/report.html', ctx)
+
+
+@login_required
 def report_pdf(request, pk):
     assessment = get_object_or_404(Assessment, pk=pk)
     if not hasattr(assessment, 'finding'):
         raise Http404("No findings yet for this assessment.")
 
-    # Reuse the same context-building logic as report()
-    f = assessment.finding
-    scores_dict = {
-        'environment': f.score_environment,
-        'social':      f.score_social,
-        'governance':  f.score_governance,
-        'ethics':      f.score_ethics,
-        'innovation':  f.score_innovation,
-    }
-    notes     = f.pillar_notes or {}
-    pillar_map = {
-        'Environment': ('#d8f3dc', scores_dict['environment'], notes.get('environment', '')),
-        'Social':      ('#dde5f4', scores_dict['social'],      notes.get('social', '')),
-        'Governance':  ('#fef9c3', scores_dict['governance'],  notes.get('governance', '')),
-        'Ethics':      ('#fce7f3', scores_dict['ethics'],      notes.get('ethics', '')),
-        'Innovation':  ('#ede9fe', scores_dict['innovation'],  notes.get('innovation', '')),
-    }
-    saved_answers = {r.question_key: r.answer for r in assessment.responses.all()}
-    raw_groups    = grouped_questions()
-    q_number      = 1
-    pillars       = []
-    for pillar_name, data in raw_groups.items():
-        color, score, note = pillar_map[pillar_name]
-        qs = []
-        for key, text, _ in data['questions']:
-            answer = saved_answers.get(key, '').strip()
-            if answer:
-                qs.append({'number': q_number, 'text': text, 'answer': answer})
-            q_number += 1
-        pillars.append({'name': pillar_name, 'color': color, 'score': score,
-                        'note': note, 'questions': qs})
-
-    ctx = {
-        'assessment':    assessment,
-        'finding':       f,
-        'pillars':       pillars,
-        'radar_polygon': _radar_polygon(scores_dict),
-        'radar_grid':    _radar_grid(),
-        'radar_axes':    _radar_axes(),
-        'radar_labels':  _radar_labels(),
-    }
+    ctx = _build_report_ctx(assessment)
 
     try:
         import weasyprint

@@ -85,6 +85,10 @@ DATABASES = {
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
+LOGIN_URL             = '/login/'
+LOGIN_REDIRECT_URL    = '/esg/'
+LOGOUT_REDIRECT_URL   = '/'
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -119,6 +123,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
+# ── Site URL (used for og:image and share links) ──────────────────────────────
+SITE_URL = os.environ.get('SITE_URL', 'https://ecoiq.uk')
+
 # ── Email ─────────────────────────────────────────────────────────────────────
 # Dev default: print to console. Production: set EMAIL_* vars in Render dashboard.
 
@@ -131,6 +138,17 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
 LEAD_NOTIFY_EMAIL  = os.environ.get('LEAD_NOTIFY_EMAIL', 'hello@ecoiq.uk')
 CALENDLY_URL       = os.environ.get('CALENDLY_URL', '')
+
+# Warn at startup if SMTP is configured but credentials are missing
+_smtp_backend = 'django.core.mail.backends.smtp.EmailBackend'
+if EMAIL_BACKEND == _smtp_backend and not EMAIL_HOST_USER:
+    import warnings
+    warnings.warn(
+        "EMAIL_BACKEND is set to SMTP but EMAIL_HOST_USER is empty. "
+        "Emails will fail. Set EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in your environment.",
+        RuntimeWarning,
+        stacklevel=1,
+    )
 
 # Max upload size: 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024

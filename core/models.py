@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 
 
@@ -20,6 +21,7 @@ class Assessment(models.Model):
     created_at   = models.DateTimeField(auto_now_add=True)
     updated_at   = models.DateTimeField(auto_now=True)
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    share_token    = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     uploaded_file = models.FileField(upload_to='uploads/', blank=True, null=True)
     extracted_text = models.TextField(blank=True)
     notes        = models.TextField(blank=True)

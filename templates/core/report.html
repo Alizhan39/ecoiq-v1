@@ -199,6 +199,23 @@
       align-items: center;
     }
 
+    /* ── Mobile layout ──────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      body { font-size: 13px; }
+      .screen-bar { padding: 0.6rem 1rem; flex-wrap: wrap; gap: 0.5rem; }
+      .screen-bar span { order: -1; width: 100%; font-size: 0.75rem; }
+      .screen-bar .spacer { display: none; }
+      .report-page { margin: 0.5rem; border-radius: 6px; }
+      .cover { padding: 1.5rem 1.25rem 1.25rem; }
+      .cover-company { font-size: 1.4rem; }
+      .overall-badge { float: none; display: inline-block; margin-bottom: 0.75rem; }
+      .section { padding: 1.25rem 1.25rem; }
+      .score-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+      .pillar-header { flex-wrap: wrap; gap: 0.4rem; }
+      .pillar-header .pillar-score { min-width: auto; }
+      .report-footer { flex-direction: column; gap: 0.4rem; padding: 1rem 1.25rem; text-align: center; }
+    }
+
     /* ── Print styles ────────────────────────────────────────────── */
     @media print {
       body { background: #fff; font-size: 12px; }
@@ -223,12 +240,36 @@
 
 <!-- ── Screen-only toolbar ──────────────────────────────────────────── -->
 <div class="screen-bar">
+  {% if not shared %}
   <a href="{% url 'assessment_detail' assessment.pk %}" class="btn-back">← Back</a>
+  {% else %}
+  <a href="/" class="btn-back">← EcoIQ</a>
+  {% endif %}
   <span class="spacer"></span>
   <span>{{ assessment.company_name }}</span>
+  {% if not shared %}
+  <button class="btn-share" onclick="copyShareLink()" title="Copy public share link"
+          style="background:#2d6a4f;color:#d8f3dc;border:1px solid #d8f3dc44;">
+    Share ↗
+  </button>
   <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
   <a href="{% url 'report_pdf' assessment.pk %}" class="btn-pdf">Download PDF ↓</a>
+  {% else %}
+  <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+  {% endif %}
 </div>
+
+<script>
+function copyShareLink() {
+  var url = '{{ request.scheme }}://{{ request.get_host }}{% url "share_report" assessment.share_token %}';
+  navigator.clipboard.writeText(url).then(function() {
+    var btn = document.querySelector('.btn-share');
+    if (btn) { btn.textContent = 'Copied ✓'; setTimeout(function(){ btn.textContent = 'Share ↗'; }, 2000); }
+  }).catch(function() {
+    prompt('Copy this link:', url);
+  });
+}
+</script>
 
 <!-- ── Report page ───────────────────────────────────────────────────── -->
 <div class="report-page">
