@@ -1,5 +1,6 @@
 import math
 import logging
+import traceback as _traceback
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,6 +15,8 @@ from .forms import AuditSessionForm
 from .questions import QUESTIONS, grouped as grouped_questions
 from .ai import run_full_analysis
 from core.utils import extract_text  # reuse existing PDF extractor
+
+_log = logging.getLogger(__name__)
 
 
 # ── Index ─────────────────────────────────────────────────────────────────────
@@ -303,6 +306,20 @@ def ai_jobs(request):
     GET  → list all jobs
     POST → create a new job from uploaded PDF
     """
+    # ── TEMPORARY DEBUG LOGGING — remove after production traceback captured ──
+    try:
+        return _ai_jobs_inner(request)
+    except Exception as _exc:
+        _log.error(
+            'ai_jobs 500 — exception type: %s | message: %s\n%s',
+            type(_exc).__name__,
+            _exc,
+            _traceback.format_exc(),
+        )
+        raise
+
+
+def _ai_jobs_inner(request):
     from league.models import Company
 
     if request.method == 'POST':
