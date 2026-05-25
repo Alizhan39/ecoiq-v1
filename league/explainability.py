@@ -379,7 +379,7 @@ def _explain_pollution(company, ctx: Dict) -> Dict:
                 confidence=0.78, score_impact=-3.0,
             ))
 
-    return _pillar_result('pollution', 'Pollution Footprint', 'Загрязнение',
+    return _pillar_result('pollution', 'Pollution Footprint', 'Pollution',
                           35, score, '#ef4444', factors, d3m, d12m)
 
 
@@ -542,7 +542,7 @@ def _explain_reduction(company, ctx: Dict) -> Dict:
                 quote=f.source_quote[:120] if f.source_quote else '',
             ))
 
-    return _pillar_result('reduction', 'Reduction Progress', 'Снижение',
+    return _pillar_result('reduction', 'Reduction Progress', 'Reduction',
                           25, score, '#22c55e', factors, d3m, d12m)
 
 
@@ -671,7 +671,7 @@ def _explain_investment(company, ctx: Dict) -> Dict:
             confidence=0.75, score_impact=-3.0,
         ))
 
-    return _pillar_result('investment', 'Investment', 'Инвестиции',
+    return _pillar_result('investment', 'Investment', 'Investment',
                           20, score, '#3b82f6', factors, d3m, d12m)
 
 
@@ -804,7 +804,7 @@ def _explain_transparency(company, ctx: Dict) -> Dict:
                 quote=f.source_quote[:120] if f.source_quote else '',
             ))
 
-    return _pillar_result('transparency', 'Transparency', 'Прозрачность',
+    return _pillar_result('transparency', 'Transparency', 'Transparency',
                           10, score, '#f59e0b', factors, d3m, d12m)
 
 
@@ -929,7 +929,7 @@ def _explain_community(company, ctx: Dict) -> Dict:
             confidence=0.76, score_impact=-3.0,
         ))
 
-    return _pillar_result('community', 'Community Impact', 'Сообщество',
+    return _pillar_result('community', 'Community Impact', 'Community',
                           10, score, '#8b5cf6', factors, d3m, d12m)
 
 

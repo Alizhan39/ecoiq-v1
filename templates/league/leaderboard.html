@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EcoIQ Good Deeds League — Рейтинг компаний</title>
+  <title>EcoIQ Good Deeds League — Company Rankings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -301,19 +301,19 @@
     <div class="stats-bar">
       <div class="stat-card">
         <div class="val">{{ company_count }}</div>
-        <div class="lbl">Компаний</div>
+        <div class="lbl">Companies</div>
       </div>
       <div class="stat-card">
         <div class="val">{{ total_co2|floatformat:0 }}t</div>
-        <div class="lbl">CO₂ сокращено / год</div>
+        <div class="lbl">CO₂ Reduced / yr</div>
       </div>
       <div class="stat-card">
         <div class="val">${{ total_inv_m }}M</div>
-        <div class="lbl">Инвестировано</div>
+        <div class="lbl">Invested</div>
       </div>
       <div class="stat-card">
         <div class="val">{{ total_hh }}</div>
-        <div class="lbl">Домохозяйств охвачено</div>
+        <div class="lbl">Households Reached</div>
       </div>
     </div>
   </div>
@@ -355,13 +355,13 @@
   <div class="league-table">
     <div class="league-header">
       <div>#</div>
-      <div>Компания</div>
+      <div>Company</div>
       <div>EcoIQ</div>
-      <div>Загрязнение</div>
-      <div>Снижение</div>
-      <div>Инвестиции</div>
-      <div>Прозрачность</div>
-      <div>Сообщество</div>
+      <div>Pollution</div>
+      <div>Reduction</div>
+      <div>Investment</div>
+      <div>Transparency</div>
+      <div>Community</div>
     </div>
 
     {% if companies %}
@@ -419,15 +419,15 @@
       {% endfor %}
     {% else %}
       <div class="empty">
-        <p>Нет данных для выбранной отрасли.</p>
+        <p>No data for the selected sector.</p>
       </div>
     {% endif %}
   </div>
 
   <!-- Formula footnote -->
   <p style="margin-top:2rem; font-size:0.75rem; color:var(--muted); line-height:1.6;">
-    <strong>Формула EcoIQ Score</strong> = Загрязнение × 35% + Снижение × 25% + Инвестиции × 20% + Прозрачность × 10% + Сообщество × 10%<br>
-    Все оценки 0–100. Данные основаны на публичных аудиторских отчётах, правительственных данных и верифицированных проектах.
+    <strong>EcoIQ Score formula</strong> = Pollution × 35% + Reduction × 25% + Investment × 20% + Transparency × 10% + Community × 10%<br>
+    All scores 0–100. Data sourced from public audit reports, government filings, and verified projects.
   </p>
 
   <!-- ── Analytics Dashboard ──────────────────────────────────────────────── -->

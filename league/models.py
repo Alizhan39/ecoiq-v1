@@ -123,8 +123,8 @@ class Company(models.Model):
 
     class Meta:
         ordering  = ['-ecoiq_score', 'name']
-        verbose_name        = 'Компания'
-        verbose_name_plural = 'Компании'
+        verbose_name        = 'Company'
+        verbose_name_plural = 'Companies'
 
     def __str__(self):
         return self.name
@@ -223,8 +223,8 @@ class EnvironmentalProject(models.Model):
 
     class Meta:
         ordering = ['-start_date', 'name']
-        verbose_name        = 'Проект'
-        verbose_name_plural = 'Проекты'
+        verbose_name        = 'Project'
+        verbose_name_plural = 'Projects'
 
     def __str__(self):
         return f'{self.company.name} — {self.name}'
@@ -255,8 +255,8 @@ class Evidence(models.Model):
 
     class Meta:
         ordering = ['-date_issued', 'title']
-        verbose_name        = 'Документ'
-        verbose_name_plural = 'Документы'
+        verbose_name        = 'Document'
+        verbose_name_plural = 'Documents'
 
     def __str__(self):
         return f'{self.company.name} — {self.title}'
@@ -280,8 +280,8 @@ class ScoreHistory(models.Model):
     class Meta:
         unique_together = ('company', 'date')
         ordering = ['date']
-        verbose_name        = 'История рейтинга'
-        verbose_name_plural = 'История рейтингов'
+        verbose_name        = 'Score History'
+        verbose_name_plural = 'Score Histories'
 
     def __str__(self):
         return f'{self.company.name} — {self.date} ({self.ecoiq_score})'

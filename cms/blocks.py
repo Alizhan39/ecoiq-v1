@@ -137,11 +137,11 @@ class ScoreBreakdownBlock(StructBlock):
                 ctx['company'] = company
                 ctx['tier']    = get_tier(float(company.ecoiq_score))
                 ctx['pillars'] = [
-                    {'name': 'Загрязнение',  'score': company.score_pollution_footprint, 'weight': 35},
-                    {'name': 'Снижение',     'score': company.score_reduction_progress,  'weight': 25},
-                    {'name': 'Инвестиции',   'score': company.score_investment,           'weight': 20},
-                    {'name': 'Прозрачность', 'score': company.score_transparency,         'weight': 10},
-                    {'name': 'Сообщество',   'score': company.score_community_impact,     'weight': 10},
+                    {'name': 'Pollution',    'score': company.score_pollution_footprint, 'weight': 35},
+                    {'name': 'Reduction',    'score': company.score_reduction_progress,  'weight': 25},
+                    {'name': 'Investment',   'score': company.score_investment,           'weight': 20},
+                    {'name': 'Transparency', 'score': company.score_transparency,         'weight': 10},
+                    {'name': 'Community',    'score': company.score_community_impact,     'weight': 10},
                 ]
                 history = company.history.order_by('date')[:12]
                 ctx['history_labels'] = [str(h.date) for h in history]

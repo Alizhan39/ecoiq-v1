@@ -218,7 +218,7 @@ def leaderboard(request):
     return render(request, 'league/leaderboard.html', {
         'companies':         companies,
         'sector':            sector,
-        'sector_choices':    [('all', 'Все отрасли')] + list(SECTOR_CHOICES),
+        'sector_choices':    [('all', 'All Sectors')] + list(SECTOR_CHOICES),
         'total_co2':         total_co2,
         'total_inv_m':       round(total_inv / 1_000_000) if total_inv else 0,
         'total_hh':          total_hh,
@@ -251,11 +251,11 @@ def company_profile(request, slug):
 
     # ── Pillars ───────────────────────────────────────────────────────────────
     pillars = [
-        {'key': 'pollution',    'name': 'Pollution Footprint', 'name_ru': 'Загрязнение',  'weight': 35, 'score': company.score_pollution_footprint,  'color': '#ef4444'},
-        {'key': 'reduction',    'name': 'Reduction Progress',  'name_ru': 'Снижение',     'weight': 25, 'score': company.score_reduction_progress,   'color': '#22c55e'},
-        {'key': 'investment',   'name': 'Investment',          'name_ru': 'Инвестиции',   'weight': 20, 'score': company.score_investment,           'color': '#3b82f6'},
-        {'key': 'transparency', 'name': 'Transparency',        'name_ru': 'Прозрачность', 'weight': 10, 'score': company.score_transparency,         'color': '#f59e0b'},
-        {'key': 'community',    'name': 'Community Impact',    'name_ru': 'Сообщество',   'weight': 10, 'score': company.score_community_impact,     'color': '#8b5cf6'},
+        {'key': 'pollution',    'name': 'Pollution Footprint', 'name_ru': 'Pollution',    'weight': 35, 'score': company.score_pollution_footprint,  'color': '#ef4444'},
+        {'key': 'reduction',    'name': 'Reduction Progress',  'name_ru': 'Reduction',    'weight': 25, 'score': company.score_reduction_progress,   'color': '#22c55e'},
+        {'key': 'investment',   'name': 'Investment',          'name_ru': 'Investment',   'weight': 20, 'score': company.score_investment,           'color': '#3b82f6'},
+        {'key': 'transparency', 'name': 'Transparency',        'name_ru': 'Transparency', 'weight': 10, 'score': company.score_transparency,         'color': '#f59e0b'},
+        {'key': 'community',    'name': 'Community Impact',    'name_ru': 'Community',    'weight': 10, 'score': company.score_community_impact,     'color': '#8b5cf6'},
     ]
 
     # ── Score history ─────────────────────────────────────────────────────────

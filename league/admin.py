@@ -43,13 +43,13 @@ def _ecoiq_chip(score):
 
 # ── Admin actions ─────────────────────────────────────────────────────────────
 
-@admin.action(description='Пересчитать рейтинг всех компаний')
+@admin.action(description='Recalculate rankings for all companies')
 def action_rerank(modeladmin, request, queryset):
     rerank_all()
-    modeladmin.message_user(request, 'Рейтинг пересчитан.')
+    modeladmin.message_user(request, 'Rankings recalculated.')
 
 
-@admin.action(description='📄 Скачать PDF-отчёт (ZIP если несколько)')
+@admin.action(description='📄 Download PDF report (ZIP if multiple)')
 def action_export_pdf(modeladmin, request, queryset):
     """
     Export EcoIQ PDF report(s).
@@ -81,7 +81,7 @@ def action_export_pdf(modeladmin, request, queryset):
             except Exception as exc:
                 modeladmin.message_user(
                     request,
-                    f'⚠ Ошибка для {co.name}: {exc}',
+                    f'⚠ Error for {co.name}: {exc}',
                     level='warning',
                 )
     buf.seek(0)
@@ -135,24 +135,24 @@ class CompanyAdmin(admin.ModelAdmin):
     inlines       = [ProjectInline, EvidenceInline, ScoreHistoryInline]
 
     fieldsets = (
-        ('Компания', {
+        ('Company', {
             'fields': ('name', 'slug', 'sector', 'country', 'city', 'founded_year',
                        'website', 'logo_url', 'description'),
         }),
-        ('Масштаб', {
+        ('Scale', {
             'fields': ('employee_count', 'annual_revenue_usd', 'is_public'),
         }),
-        ('Оценки (0–100)', {
+        ('Scores (0–100)', {
             'fields': (
                 ('score_pollution_footprint', 'score_reduction_progress'),
                 ('score_investment', 'score_transparency', 'score_community_impact'),
             ),
             'description': (
-                'Итоговый EcoIQ = Загрязнение×35% + Снижение×25% + '
-                'Инвестиции×20% + Прозрачность×10% + Сообщество×10%'
+                'EcoIQ total = Pollution×35% + Reduction×25% + '
+                'Investment×20% + Transparency×10% + Community×10%'
             ),
         }),
-        ('Рейтинг', {
+        ('Ranking', {
             'fields': ('ecoiq_score', 'rank', 'verified', 'is_featured'),
         }),
     )
@@ -171,23 +171,23 @@ class CompanyAdmin(admin.ModelAdmin):
     def ecoiq_badge(self, obj):
         return _ecoiq_chip(obj.ecoiq_score)
 
-    @admin.display(description='Загрязн.', ordering='score_pollution_footprint')
+    @admin.display(description='Pollution', ordering='score_pollution_footprint')
     def poll_badge(self, obj):
         return _score_chip(obj.score_pollution_footprint)
 
-    @admin.display(description='Снижение', ordering='score_reduction_progress')
+    @admin.display(description='Reduction', ordering='score_reduction_progress')
     def red_badge(self, obj):
         return _score_chip(obj.score_reduction_progress)
 
-    @admin.display(description='Инвест.', ordering='score_investment')
+    @admin.display(description='Investment', ordering='score_investment')
     def inv_badge(self, obj):
         return _score_chip(obj.score_investment)
 
-    @admin.display(description='Прозрачн.', ordering='score_transparency')
+    @admin.display(description='Transparency', ordering='score_transparency')
     def trans_badge(self, obj):
         return _score_chip(obj.score_transparency)
 
-    @admin.display(description='Сообщ.', ordering='score_community_impact')
+    @admin.display(description='Community', ordering='score_community_impact')
     def comm_badge(self, obj):
         return _score_chip(obj.score_community_impact)
 
@@ -195,7 +195,7 @@ class CompanyAdmin(admin.ModelAdmin):
     def verified_icon(self, obj):
         return obj.verified
 
-    @admin.display(description='Проекты')
+    @admin.display(description='Projects')
     def projects_count(self, obj):
         return obj._projects
 
@@ -213,10 +213,10 @@ class ProjectAdmin(admin.ModelAdmin):
     date_hierarchy = 'start_date'
 
     fieldsets = (
-        ('Проект', {
+        ('Project', {
             'fields': ('company', 'name', 'project_type', 'status', 'location', 'description'),
         }),
-        ('Даты', {
+        ('Dates', {
             'fields': ('start_date', 'completion_date'),
         }),
         ('KPI', {
@@ -225,7 +225,7 @@ class ProjectAdmin(admin.ModelAdmin):
                 ('pm25_reduction_kg', 'households_helped'),
             ),
         }),
-        ('Верификация', {
+        ('Verification', {
             'fields': ('verified',),
         }),
     )
@@ -242,13 +242,13 @@ class EvidenceAdmin(admin.ModelAdmin):
     ordering      = ('-date_issued',)
 
     fieldsets = (
-        ('Документ', {
+        ('Document', {
             'fields': ('company', 'project', 'doc_type', 'title'),
         }),
-        ('Файл / Ссылка', {
+        ('File / URL', {
             'fields': ('file', 'url'),
         }),
-        ('Мета', {
+        ('Meta', {
             'fields': ('date_issued', 'issuer', 'verification_status', 'notes'),
         }),
     )

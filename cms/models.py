@@ -158,11 +158,11 @@ class CompanyPage(Page):
 
                 # Pillar breakdown
                 ctx['pillars'] = [
-                    {'name': 'Загрязнение',  'score': company.score_pollution_footprint, 'weight': 35},
-                    {'name': 'Снижение',     'score': company.score_reduction_progress,  'weight': 25},
-                    {'name': 'Инвестиции',   'score': company.score_investment,           'weight': 20},
-                    {'name': 'Прозрачность', 'score': company.score_transparency,         'weight': 10},
-                    {'name': 'Сообщество',   'score': company.score_community_impact,     'weight': 10},
+                    {'name': 'Pollution',    'score': company.score_pollution_footprint, 'weight': 35},
+                    {'name': 'Reduction',    'score': company.score_reduction_progress,  'weight': 25},
+                    {'name': 'Investment',   'score': company.score_investment,           'weight': 20},
+                    {'name': 'Transparency', 'score': company.score_transparency,         'weight': 10},
+                    {'name': 'Community',    'score': company.score_community_impact,     'weight': 10},
                 ]
 
                 # Trend chart data (6 months)

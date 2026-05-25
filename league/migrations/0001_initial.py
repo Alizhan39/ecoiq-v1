@@ -42,8 +42,8 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Компания',
-                'verbose_name_plural': 'Компании',
+                'verbose_name': 'Company',
+                'verbose_name_plural': 'Companies',
                 'ordering': ['-ecoiq_score', 'name'],
             },
         ),
@@ -68,8 +68,8 @@ class Migration(migrations.Migration):
                 ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='projects', to='league.company')),
             ],
             options={
-                'verbose_name': 'Проект',
-                'verbose_name_plural': 'Проекты',
+                'verbose_name': 'Project',
+                'verbose_name_plural': 'Projects',
                 'ordering': ['-start_date', 'name'],
             },
         ),
@@ -90,8 +90,8 @@ class Migration(migrations.Migration):
                 ('project', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='evidence', to='league.environmentalproject')),
             ],
             options={
-                'verbose_name': 'Документ',
-                'verbose_name_plural': 'Документы',
+                'verbose_name': 'Document',
+                'verbose_name_plural': 'Documents',
                 'ordering': ['-date_issued', 'title'],
             },
         ),
@@ -110,8 +110,8 @@ class Migration(migrations.Migration):
                 ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='history', to='league.company')),
             ],
             options={
-                'verbose_name': 'История рейтинга',
-                'verbose_name_plural': 'История рейтингов',
+                'verbose_name': 'Score History',
+                'verbose_name_plural': 'Score Histories',
                 'ordering': ['date'],
                 'unique_together': {('company', 'date')},
             },
