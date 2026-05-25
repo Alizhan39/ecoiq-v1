@@ -227,7 +227,62 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
 .pillar-score { font-family: var(--mono); font-size: 1.2rem; font-weight: 700; color: var(--green-700); min-width: 2.5rem; text-align: right; }
 
 /* ── Trend chart ─────────────────────────────────────────────────────────── */
-.trend-wrap { height: 220px; }
+.trend-wrap { height: 240px; }
+
+/* ── Analytics dark card (Bloomberg / Palantir style) ─────────────────────── */
+.analytics-dark-card {
+  background: linear-gradient(145deg, #0a1510 0%, #0f1f17 50%, #091410 100%);
+  border: 1px solid rgba(0,232,154,.14);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(0,232,154,.06);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+.analytics-dark-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,232,154,.4), transparent);
+}
+.adc-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1.25rem; gap: 1rem;
+}
+.adc-header-left { display: flex; align-items: flex-start; gap: .75rem; }
+.adc-icon { font-size: 1.4rem; margin-top: .1rem; }
+.adc-title {
+  font-size: .95rem; font-weight: 800; color: #fff;
+  letter-spacing: -.02em; line-height: 1.2;
+}
+.adc-sub { font-size: .68rem; color: rgba(255,255,255,.38); margin-top: .2rem; letter-spacing: .03em; }
+.adc-badge {
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em;
+  color: #00e89a; border: 1px solid rgba(0,232,154,.3);
+  border-radius: 4px; padding: .2rem .55rem;
+  background: rgba(0,232,154,.06); white-space: nowrap; margin-top: .15rem;
+}
+.adc-kpi-row {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: .75rem; margin-bottom: 1.25rem;
+}
+@media (max-width: 700px) { .adc-kpi-row { grid-template-columns: repeat(3, 1fr); } }
+.adc-kpi {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 8px; padding: .75rem .75rem .5rem;
+}
+.adc-kpi-val {
+  font-family: var(--mono); font-size: 1.55rem; font-weight: 700;
+  letter-spacing: -.04em; line-height: 1;
+}
+.adc-kpi-lbl {
+  font-size: .62rem; color: rgba(255,255,255,.38);
+  text-transform: uppercase; letter-spacing: .07em; margin: .25rem 0 .35rem;
+}
+.sparkline-canvas { width: 100% !important; height: 36px !important; display: block; }
+.adc-chart-wrap { height: 260px; position: relative; }
 
 /* Tier legend bar */
 .tier-legend { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
@@ -619,6 +674,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
   <div class="sec-nav-inner">
     <a href="#overview"        class="snav active">Score</a>
     <a href="#trends"          class="snav">Trends</a>
+    <a href="#pillar-trends"   class="snav">Analytics</a>
     <a href="#co2"             class="snav">CO₂</a>
     <a href="#projects"        class="snav">Projects</a>
     <a href="#investment"      class="snav">Investment</a>
@@ -678,7 +734,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
         </div>
       </section>
 
-      <!-- ── Section: 5-Year Emissions Trend ──────────────────────────────── -->
+      <!-- ── Section: 5-Year EcoIQ Trend ─────────────────────────────────── -->
       <section id="trends">
         <div class="card">
           <div class="card-hd">
@@ -686,7 +742,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
               <span class="card-hd-icon">📈</span>
               <span class="section-title">5-Year EcoIQ Trend</span>
             </div>
-            <span class="label" style="font-size:.65rem;">60-month historical · all pillars</span>
+            <span class="label" style="font-size:.65rem;">60-month historical · composite score</span>
           </div>
           <div class="card-bd">
             <div class="tier-legend">
@@ -697,6 +753,52 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
               <div class="tier-dot"><div class="tier-dot-swatch" style="background:#d93025"></div>&lt;40 Polluter</div>
             </div>
             <div class="trend-wrap"><canvas id="trendChart"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section: Multi-Pillar Intelligence ───────────────────────────── -->
+      <section id="pillar-trends">
+        <div class="analytics-dark-card">
+          <div class="adc-header">
+            <div class="adc-header-left">
+              <span class="adc-icon">⚡</span>
+              <div>
+                <div class="adc-title">Multi-Pillar Intelligence</div>
+                <div class="adc-sub">All 5 ESG pillars · 60-month trajectory · weighted composite</div>
+              </div>
+            </div>
+            <div class="adc-badge">LIVE DATA</div>
+          </div>
+          <div class="adc-kpi-row">
+            <div class="adc-kpi">
+              <div class="adc-kpi-val" style="color:#ef4444;">{{ company.score_pollution_footprint }}</div>
+              <div class="adc-kpi-lbl">Pollution</div>
+              <canvas class="sparkline-canvas" id="spk-pollution"></canvas>
+            </div>
+            <div class="adc-kpi">
+              <div class="adc-kpi-val" style="color:#22c55e;">{{ company.score_reduction_progress }}</div>
+              <div class="adc-kpi-lbl">Reduction</div>
+              <canvas class="sparkline-canvas" id="spk-reduction"></canvas>
+            </div>
+            <div class="adc-kpi">
+              <div class="adc-kpi-val" style="color:#3b82f6;">{{ company.score_investment }}</div>
+              <div class="adc-kpi-lbl">Investment</div>
+              <canvas class="sparkline-canvas" id="spk-investment"></canvas>
+            </div>
+            <div class="adc-kpi">
+              <div class="adc-kpi-val" style="color:#f59e0b;">{{ company.score_transparency }}</div>
+              <div class="adc-kpi-lbl">Transparency</div>
+              <canvas class="sparkline-canvas" id="spk-transparency"></canvas>
+            </div>
+            <div class="adc-kpi">
+              <div class="adc-kpi-val" style="color:#8b5cf6;">{{ company.score_community_impact }}</div>
+              <div class="adc-kpi-lbl">Community</div>
+              <canvas class="sparkline-canvas" id="spk-community"></canvas>
+            </div>
+          </div>
+          <div class="adc-chart-wrap">
+            <canvas id="allPillarsChart"></canvas>
           </div>
         </div>
       </section>
@@ -1128,87 +1230,112 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
 <script>
 const TIER_COLOR = "{{ tier.colour }}";
 
+/* ── Shared chart defaults ─────────────────────────────────────────────────── */
+Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
+Chart.defaults.animation = { duration: 1100, easing: 'easeInOutCubic' };
+
+/* Gradient helper */
+function mkGrad(canvasEl, stops) {
+  const g = canvasEl.getContext('2d').createLinearGradient(0, 0, 0, canvasEl.clientHeight || 300);
+  stops.forEach(([offset, color]) => g.addColorStop(offset, color));
+  return g;
+}
+
+/* Premium tooltip config */
+const TOOLTIP = {
+  backgroundColor: 'rgba(7,14,10,.94)',
+  titleColor: '#fff',
+  bodyColor: 'rgba(255,255,255,.65)',
+  borderColor: 'rgba(0,232,154,.2)',
+  borderWidth: 1,
+  padding: 12,
+  cornerRadius: 8,
+  displayColors: true,
+  boxPadding: 4,
+};
+
+/* Tier band plugin */
+function tierBandPlugin(alpha = 1) {
+  return {
+    id: 'tierBands',
+    beforeDraw(chart) {
+      const {ctx: c, chartArea, scales} = chart;
+      if (!chartArea) return;
+      const y = scales.y;
+      [
+        [85,100,'rgba(45,106,79,'],
+        [70, 85,'rgba(64,145,108,'],
+        [55, 70,'rgba(82,183,136,'],
+        [40, 55,'rgba(224,123,57,'],
+        [0,  40,'rgba(217,48,37,'],
+      ].forEach(([lo,hi,base]) => {
+        c.fillStyle = base + (0.055 * alpha) + ')';
+        const y1 = y.getPixelForValue(hi), y2 = y.getPixelForValue(lo);
+        c.fillRect(chartArea.left, Math.min(y1,y2), chartArea.width, Math.abs(y2-y1));
+      });
+    }
+  };
+}
+
 /* ── Radar chart ───────────────────────────────────────────────────────────── */
 (function(){
-  const ctx = document.getElementById('radarChart');
-  if (!ctx) return;
+  const el = document.getElementById('radarChart');
+  if (!el) return;
   const labels = {{ radar_labels|safe }};
   const scores = {{ radar_scores|safe }};
-  new Chart(ctx, {
+  new Chart(el, {
     type: 'radar',
     data: {
       labels,
       datasets: [{
         data: scores,
-        backgroundColor: TIER_COLOR + '28',
+        backgroundColor: TIER_COLOR + '22',
         borderColor: TIER_COLOR,
         borderWidth: 2.5,
         pointBackgroundColor: TIER_COLOR,
         pointBorderColor: '#fff',
-        pointBorderWidth: 1.5,
+        pointBorderWidth: 2,
         pointRadius: 5,
-        pointHoverRadius: 7,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: TIER_COLOR,
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1400, easing: 'easeInOutBack' },
       scales: {
         r: {
           min: 0, max: 100,
-          ticks: { stepSize: 25, display: false },
-          grid: { color: 'rgba(0,0,0,.07)' },
-          angleLines: { color: 'rgba(0,0,0,.1)' },
+          ticks: { stepSize: 25, display: false, backdropColor: 'transparent' },
+          grid: { color: 'rgba(0,0,0,.08)', lineWidth: 1 },
+          angleLines: { color: 'rgba(0,0,0,.08)' },
           pointLabels: {
-            font: { size: 10, family: 'Inter', weight: '600' },
+            font: { size: 10, family: 'Inter', weight: '700' },
             color: '#5c7063',
           },
         }
       },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: { label: c => ` ${c.label}: ${c.parsed.r} / 100` }
-        }
+        tooltip: { ...TOOLTIP, callbacks: { label: c => ` ${c.label}: ${c.parsed.r} / 100` } }
       }
     }
   });
 })();
 
-/* ── 5-year trend chart ────────────────────────────────────────────────────── */
+/* ── 5-year EcoIQ trend ────────────────────────────────────────────────────── */
 (function(){
-  const ctx = document.getElementById('trendChart');
-  if (!ctx) return;
+  const el = document.getElementById('trendChart');
+  if (!el) return;
   const labels   = {{ hist_labels|safe }};
   const scores   = {{ hist_scores|safe }};
   const pollData = {{ hist_pollution|safe }};
   const redData  = {{ hist_reduction|safe }};
 
-  // Tier zone plugin (coloured horizontal bands)
-  const tierBands = {
-    id: 'tierBands',
-    beforeDraw(chart) {
-      const {ctx: c, chartArea, scales} = chart;
-      if (!chartArea) return;
-      const yScale = scales.y;
-      const zones = [
-        [85, 100, 'rgba(45,106,79,.06)'],
-        [70, 85,  'rgba(64,145,108,.05)'],
-        [55, 70,  'rgba(82,183,136,.04)'],
-        [40, 55,  'rgba(224,123,57,.04)'],
-        [0,  40,  'rgba(217,48,37,.04)'],
-      ];
-      zones.forEach(([lo, hi, color]) => {
-        c.fillStyle = color;
-        const y1 = yScale.getPixelForValue(hi);
-        const y2 = yScale.getPixelForValue(lo);
-        c.fillRect(chartArea.left, Math.min(y1,y2), chartArea.width, Math.abs(y2-y1));
-      });
-    }
-  };
-
-  new Chart(ctx, {
+  new Chart(el, {
     type: 'line',
-    plugins: [tierBands],
+    plugins: [tierBandPlugin()],
     data: {
       labels,
       datasets: [
@@ -1216,36 +1343,31 @@ const TIER_COLOR = "{{ tier.colour }}";
           label: 'EcoIQ Score',
           data: scores,
           borderColor: TIER_COLOR,
-          backgroundColor: TIER_COLOR + '14',
-          borderWidth: 2.5,
-          pointRadius: 0,
-          pointHoverRadius: 5,
+          backgroundColor: (ctx) => {
+            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+            g.addColorStop(0, TIER_COLOR + '30');
+            g.addColorStop(1, TIER_COLOR + '00');
+            return g;
+          },
+          borderWidth: 3,
+          pointRadius: 0, pointHoverRadius: 6,
           pointHoverBackgroundColor: TIER_COLOR,
-          fill: true,
-          tension: 0.35,
-          order: 1,
+          pointHoverBorderColor: '#fff',
+          fill: true, tension: 0.4, order: 1,
         },
         {
           label: 'Pollution',
           data: pollData,
-          borderColor: 'rgba(100,160,120,.5)',
-          borderWidth: 1,
-          pointRadius: 0,
-          borderDash: [4, 3],
-          fill: false,
-          tension: 0.3,
-          order: 2,
+          borderColor: '#ef4444',
+          borderWidth: 1.5, pointRadius: 0, borderDash: [4,3],
+          fill: false, tension: 0.3, order: 2,
         },
         {
           label: 'Reduction',
           data: redData,
-          borderColor: 'rgba(64,145,108,.4)',
-          borderWidth: 1,
-          pointRadius: 0,
-          borderDash: [2, 4],
-          fill: false,
-          tension: 0.3,
-          order: 3,
+          borderColor: '#22c55e',
+          borderWidth: 1.5, pointRadius: 0, borderDash: [2,4],
+          fill: false, tension: 0.3, order: 3,
         },
       ]
     },
@@ -1255,15 +1377,14 @@ const TIER_COLOR = "{{ tier.colour }}";
       scales: {
         y: {
           min: 0, max: 100,
-          grid: { color: 'rgba(0,0,0,.05)' },
-          ticks: { font: { size: 10 }, color: '#8da394', stepSize: 20 },
+          grid: { color: 'rgba(0,0,0,.05)', drawTicks: false },
+          ticks: { font: { size: 10 }, color: '#8da394', stepSize: 20, padding: 6 },
           border: { display: false },
         },
         x: {
           grid: { display: false },
           ticks: {
-            font: { size: 9 }, color: '#8da394',
-            maxTicksLimit: 12,
+            font: { size: 9 }, color: '#8da394', maxTicksLimit: 10,
             callback: (_, i) => { const l = labels[i]; return l && l.endsWith('-01') ? l.slice(0,4) : ''; }
           },
           border: { display: false },
@@ -1271,35 +1392,145 @@ const TIER_COLOR = "{{ tier.colour }}";
       },
       plugins: {
         legend: {
-          display: true,
-          position: 'top',
-          align: 'end',
-          labels: { boxWidth: 16, font: { size: 10 }, color: '#8da394', padding: 12 }
+          display: true, position: 'top', align: 'end',
+          labels: { boxWidth: 14, font: { size: 10 }, color: '#8da394', padding: 14, usePointStyle: true }
         },
-        tooltip: {
-          backgroundColor: 'rgba(10,20,14,.92)',
-          titleColor: '#fff',
-          bodyColor: 'rgba(255,255,255,.7)',
-          borderColor: 'rgba(255,255,255,.1)',
-          borderWidth: 1,
-          padding: 10,
-        }
+        tooltip: TOOLTIP,
       }
     }
   });
 })();
 
+/* ── All-pillars dark analytics chart ──────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('allPillarsChart');
+  if (!el) return;
+  const labels   = {{ hist_labels|safe }};
+  const scores   = {{ hist_scores|safe }};
+  const poll     = {{ hist_pollution|safe }};
+  const red      = {{ hist_reduction|safe }};
+  const inv      = {{ hist_invest|safe }};
+  const trans    = {{ hist_transparency|safe }};
+  const comm     = {{ hist_community|safe }};
+
+  const pillars = [
+    { label:'EcoIQ Score',    data:scores, color:'#00e89a', width:2.5, fill:true  },
+    { label:'Pollution',      data:poll,   color:'#ef4444', width:1.5, fill:false },
+    { label:'Reduction',      data:red,    color:'#22c55e', width:1.5, fill:false },
+    { label:'Investment',     data:inv,    color:'#3b82f6', width:1.5, fill:false },
+    { label:'Transparency',   data:trans,  color:'#f59e0b', width:1,   fill:false },
+    { label:'Community',      data:comm,   color:'#8b5cf6', width:1,   fill:false },
+  ];
+
+  const datasets = pillars.map(p => ({
+    label: p.label,
+    data: p.data,
+    borderColor: p.color,
+    backgroundColor: p.fill
+      ? (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+          g.addColorStop(0, p.color + '28');
+          g.addColorStop(1, p.color + '00');
+          return g;
+        }
+      : 'transparent',
+    borderWidth: p.width,
+    pointRadius: 0, pointHoverRadius: 5,
+    pointHoverBackgroundColor: p.color,
+    pointHoverBorderColor: '#fff',
+    fill: p.fill, tension: 0.38,
+  }));
+
+  new Chart(el, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      animation: { duration: 1500, easing: 'easeInOutQuart',
+        onComplete() { this._animated = true; }
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(255,255,255,.06)', drawTicks: false },
+          ticks: { font:{size:10}, color:'rgba(255,255,255,.35)', stepSize:20, padding:8 },
+          border: { display: false },
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            font:{size:9}, color:'rgba(255,255,255,.28)', maxTicksLimit:10,
+            callback: (_,i) => { const l=labels[i]; return l&&l.endsWith('-01')?l.slice(0,4):''; }
+          },
+          border: { display: false },
+        }
+      },
+      plugins: {
+        legend: {
+          display: true, position: 'top', align: 'end',
+          labels: {
+            boxWidth:12, font:{size:10}, color:'rgba(255,255,255,.55)',
+            padding:14, usePointStyle:true
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(5,10,8,.96)',
+          titleColor: '#00e89a',
+          bodyColor: 'rgba(255,255,255,.7)',
+          borderColor: 'rgba(0,232,154,.25)',
+          borderWidth: 1, padding: 12, cornerRadius: 8,
+          displayColors: true, boxPadding: 4,
+        },
+      }
+    }
+  });
+
+  /* Sparklines */
+  const sparkConfigs = [
+    { id:'spk-pollution',   data:poll,  color:'#ef4444' },
+    { id:'spk-reduction',   data:red,   color:'#22c55e' },
+    { id:'spk-investment',  data:inv,   color:'#3b82f6' },
+    { id:'spk-transparency',data:trans, color:'#f59e0b' },
+    { id:'spk-community',   data:comm,  color:'#8b5cf6' },
+  ];
+  sparkConfigs.forEach(({ id, data, color }) => {
+    const spk = document.getElementById(id);
+    if (!spk || !data.length) return;
+    const recent = data.slice(-24);
+    new Chart(spk, {
+      type: 'line',
+      data: {
+        labels: recent.map((_,i) => i),
+        datasets: [{ data: recent, borderColor: color, borderWidth: 1.5,
+          backgroundColor: color + '18', fill: true, tension: 0.4,
+          pointRadius: 0 }]
+      },
+      options: {
+        responsive: false, maintainAspectRatio: false,
+        animation: { duration: 1000, delay: (ctx) => ctx.dataIndex * 8 },
+        scales: { x:{display:false}, y:{display:false, min:0, max:100} },
+        plugins: { legend:{display:false}, tooltip:{enabled:false} },
+      }
+    });
+  });
+})();
+
 /* ── Investment chart ──────────────────────────────────────────────────────── */
 (function(){
-  const ctx = document.getElementById('invChart');
-  if (!ctx) return;
+  const el = document.getElementById('invChart');
+  if (!el) return;
   const labels     = {{ inv_labels|safe }};
   const amounts    = {{ inv_amounts|safe }};
   const cumulative = {{ inv_cumulative|safe }};
   const colors     = {{ inv_colors|safe }};
   if (!labels.length) return;
 
-  new Chart(ctx, {
+  const upgColors = colors.map(c =>
+    c === '#2d6a4f' ? '#00e89a' : c === '#40916c' ? '#3b82f6' : '#8da394'
+  );
+
+  new Chart(el, {
     type: 'bar',
     data: {
       labels,
@@ -1308,21 +1539,25 @@ const TIER_COLOR = "{{ tier.colour }}";
           type: 'bar',
           label: 'Investment ($M)',
           data: amounts,
-          backgroundColor: colors,
-          borderRadius: 4,
+          backgroundColor: upgColors,
+          borderRadius: 6,
+          borderSkipped: false,
           order: 2,
         },
         {
           type: 'line',
           label: 'Cumulative ($M)',
           data: cumulative,
-          borderColor: '#1b4332',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: '#1b4332',
-          tension: 0.3,
+          borderColor: '#00e89a',
+          backgroundColor: 'rgba(0,232,154,.08)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#00e89a',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1.5,
+          tension: 0.35,
           yAxisID: 'yCum',
+          fill: true,
           order: 1,
         }
       ]
@@ -1332,23 +1567,24 @@ const TIER_COLOR = "{{ tier.colour }}";
       scales: {
         x: {
           grid: { display: false },
-          ticks: { font: { size: 9 }, color: '#8da394', maxRotation: 30 }
+          ticks: { font:{size:9}, color:'#8da394', maxRotation: 30 }
         },
         y: {
-          grid: { color: 'rgba(0,0,0,.05)' },
-          ticks: { font: { size: 10 }, color: '#8da394', callback: v => '$'+v+'M' },
-          title: { display: true, text: 'Project ($M)', font: { size: 10 }, color: '#8da394' }
+          grid: { color: 'rgba(0,0,0,.05)', drawTicks: false },
+          ticks: { font:{size:10}, color:'#8da394', callback: v=>'$'+v+'M', padding:6 },
+          border: { display: false },
         },
         yCum: {
           position: 'right',
           grid: { display: false },
-          ticks: { font: { size: 10 }, color: '#1b4332', callback: v => '$'+v+'M' },
-          title: { display: true, text: 'Cumulative', font: { size: 10 }, color: '#1b4332' }
+          ticks: { font:{size:10}, color:'#00c896', callback: v=>'$'+v+'M' },
+          border: { display: false },
         }
       },
       plugins: {
-        legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 14, font: { size: 10 }, padding: 10 } },
-        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: $${c.parsed.y}M` } }
+        legend: { display:true, position:'top', align:'end',
+          labels:{boxWidth:14, font:{size:10}, padding:10, usePointStyle:true} },
+        tooltip: { ...TOOLTIP, callbacks: { label: c => ` ${c.dataset.label}: $${c.parsed.y}M` } }
       }
     }
   });
@@ -1361,8 +1597,7 @@ const TIER_COLOR = "{{ tier.colour }}";
   const target = parseInt(el.textContent.replace(/,/g,'')) || 0;
   if (!target) return;
   let current = 0;
-  const duration = 1800;
-  const step = target / (duration / 16);
+  const step = target / (1800 / 16);
   const timer = setInterval(() => {
     current = Math.min(current + step, target);
     el.textContent = Math.round(current).toLocaleString();
@@ -1383,7 +1618,7 @@ const TIER_COLOR = "{{ tier.colour }}";
         if (active) active.classList.add('active');
       }
     });
-  }, { threshold: 0.35 });
+  }, { threshold: 0.3 });
   sections.forEach(s => observer.observe(s));
 })();
 </script>

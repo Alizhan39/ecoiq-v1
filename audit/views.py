@@ -1,6 +1,5 @@
 import math
 import logging
-import traceback as _traceback
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -15,8 +14,6 @@ from .forms import AuditSessionForm
 from .questions import QUESTIONS, grouped as grouped_questions
 from .ai import run_full_analysis
 from core.utils import extract_text  # reuse existing PDF extractor
-
-_log = logging.getLogger(__name__)
 
 
 # ── Index ─────────────────────────────────────────────────────────────────────
@@ -306,20 +303,6 @@ def ai_jobs(request):
     GET  → list all jobs
     POST → create a new job from uploaded PDF
     """
-    # ── TEMPORARY DEBUG LOGGING — remove after production traceback captured ──
-    try:
-        return _ai_jobs_inner(request)
-    except Exception as _exc:
-        _log.error(
-            'ai_jobs 500 — exception type: %s | message: %s\n%s',
-            type(_exc).__name__,
-            _exc,
-            _traceback.format_exc(),
-        )
-        raise
-
-
-def _ai_jobs_inner(request):
     from league.models import Company
 
     if request.method == 'POST':
@@ -394,16 +377,37 @@ def ai_job_detail(request, pk):
                 'rejected': sum(1 for f in group_findings if f.status == 'rejected'),
             })
 
+    import json as _json
+    # Chart data for analytics panel
+    findings_chart = _json.dumps([
+        {'label': g['label'], 'count': len(g['findings']), 'color': g['color']}
+        for g in grouped
+    ])
+    score_chart = _json.dumps({
+        'pillars':    ['Pollution', 'Reduction', 'Investment', 'Transparency', 'Community'],
+        'estimated':  [
+            score_estimate.est_pollution    if score_estimate else None,
+            score_estimate.est_reduction    if score_estimate else None,
+            score_estimate.est_investment   if score_estimate else None,
+            score_estimate.est_transparency if score_estimate else None,
+            score_estimate.est_community    if score_estimate else None,
+        ],
+        'benchmark':  [60, 60, 60, 60, 60],
+        'gw_score':   score_estimate.greenwashing_score if score_estimate else None,
+    } if score_estimate else {})
+
     return render(request, 'audit/ai_job_detail.html', {
-        'job':            job,
-        'findings':       findings,
-        'grouped':        grouped,
-        'score_estimate': score_estimate,
-        'companies':      companies,
-        'total':          findings.count(),
-        'pending_count':  findings.filter(status='pending').count(),
-        'approved_count': findings.filter(status='approved').count(),
-        'rejected_count': findings.filter(status='rejected').count(),
+        'job':             job,
+        'findings':        findings,
+        'grouped':         grouped,
+        'score_estimate':  score_estimate,
+        'companies':       companies,
+        'total':           findings.count(),
+        'pending_count':   findings.filter(status='pending').count(),
+        'approved_count':  findings.filter(status='approved').count(),
+        'rejected_count':  findings.filter(status='rejected').count(),
+        'findings_chart':  findings_chart,
+        'score_chart':     score_chart,
     })
 
 

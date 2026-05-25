@@ -6,6 +6,7 @@
   <title>EcoIQ Good Deeds League — Рейтинг компаний</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -429,6 +430,269 @@
     Все оценки 0–100. Данные основаны на публичных аудиторских отчётах, правительственных данных и верифицированных проектах.
   </p>
 
+  <!-- ── Analytics Dashboard ──────────────────────────────────────────────── -->
+  <div class="analytics-panel">
+    <div class="ap-header">
+      <div class="ap-title-group">
+        <span class="ap-icon">📊</span>
+        <div>
+          <div class="ap-title">League Analytics</div>
+          <div class="ap-sub">Sector benchmarks · Company comparison · Score distribution</div>
+        </div>
+      </div>
+      <span class="ap-badge">LIVE</span>
+    </div>
+
+    <div class="ap-grid">
+      <!-- Sector benchmark -->
+      <div class="ap-card">
+        <div class="ap-card-hd">Sector Average EcoIQ</div>
+        <div class="ap-chart-wrap" style="height:240px;">
+          <canvas id="sectorChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Pillar stacked comparison -->
+      <div class="ap-card">
+        <div class="ap-card-hd">Company Score Comparison</div>
+        <div class="ap-chart-wrap" style="height:240px;">
+          <canvas id="comparisonChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-width pillar breakdown -->
+    <div class="ap-card" style="margin-top:1rem;">
+      <div class="ap-card-hd">ESG Pillar Breakdown — All Companies</div>
+      <div class="ap-chart-wrap" style="height:260px;">
+        <canvas id="pillarsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<style>
+/* ── Analytics panel ─────────────────────────────────────────────────────── */
+.analytics-panel {
+  margin-top: 3rem;
+  background: linear-gradient(145deg, #07110d, #0d1f16, #0a1510);
+  border: 1px solid rgba(0,200,150,.13);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,.3), inset 0 1px 0 rgba(0,200,150,.07);
+  position: relative; overflow: hidden;
+}
+.analytics-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,232,154,.45), transparent);
+}
+.ap-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.ap-title-group { display: flex; align-items: flex-start; gap: .75rem; }
+.ap-icon { font-size: 1.3rem; }
+.ap-title { font-size: .92rem; font-weight: 800; color: #fff; letter-spacing: -.02em; }
+.ap-sub { font-size: .67rem; color: rgba(255,255,255,.35); margin-top: .2rem; letter-spacing: .03em; }
+.ap-badge {
+  font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+  color: #00e89a; border: 1px solid rgba(0,232,154,.3); border-radius: 4px;
+  padding: .2rem .55rem; background: rgba(0,232,154,.07); margin-top: .1rem;
+}
+.ap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 720px) { .ap-grid { grid-template-columns: 1fr; } }
+.ap-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px; padding: 1rem 1rem .75rem;
+}
+.ap-card-hd {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: rgba(255,255,255,.38); margin-bottom: .75rem;
+}
+.ap-chart-wrap { position: relative; }
+</style>
+
+<script>
+Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
+const _TOOLTIP = {
+  backgroundColor:'rgba(5,10,8,.96)',
+  titleColor:'#fff', bodyColor:'rgba(255,255,255,.65)',
+  borderColor:'rgba(0,232,154,.22)', borderWidth:1,
+  padding:10, cornerRadius:8, displayColors:true, boxPadding:3,
+};
+
+/* Tier colour helper */
+function tierColor(t) {
+  return {restorative:'#2d6a4f',transition:'#40916c',improving:'#52b788',
+    'high-impact':'#e07b39',polluter:'#d93025'}[t] || '#40916c';
+}
+
+const _sectors  = {{ chart_sectors|safe }};
+const _companies = {{ chart_companies|safe }};
+
+/* ── Sector benchmark chart ────────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('sectorChart');
+  if (!el || !_sectors.length) return;
+  const labels = _sectors.map(s => `${s.label} (${s.count})`);
+  const avgs   = _sectors.map(s => s.avg);
+  const bgColors = avgs.map(v =>
+    v >= 85 ? 'rgba(45,106,79,.85)'  : v >= 70 ? 'rgba(64,145,108,.85)' :
+    v >= 55 ? 'rgba(82,183,136,.85)' : v >= 40 ? 'rgba(224,123,57,.85)' :
+    'rgba(217,48,37,.85)'
+  );
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Avg EcoIQ',
+        data: avgs,
+        backgroundColor: bgColors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1200, easing: 'easeInOutQuart' },
+      scales: {
+        x: {
+          min: 0, max: 100,
+          grid: { color:'rgba(255,255,255,.06)', drawTicks:false },
+          ticks: { color:'rgba(255,255,255,.35)', font:{size:10}, padding:6 },
+          border: { display:false },
+        },
+        y: {
+          grid: { display:false },
+          ticks: { color:'rgba(255,255,255,.55)', font:{size:10}, padding:6 },
+          border: { display:false },
+        }
+      },
+      plugins: {
+        legend: { display:false },
+        tooltip: { ..._TOOLTIP, callbacks: { label: c => ` EcoIQ avg: ${c.parsed.x}` } }
+      }
+    }
+  });
+})();
+
+/* ── Company comparison chart ──────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('comparisonChart');
+  if (!el || !_companies.length) return;
+  const sorted = [..._companies].sort((a,b) => b.score - a.score);
+  const labels = sorted.map(c => c.name);
+  const scores = sorted.map(c => c.score);
+  const bgColors = sorted.map(c => tierColor(c.tier) + 'cc');
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'EcoIQ Score',
+        data: scores,
+        backgroundColor: bgColors,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1300, easing: 'easeInOutCubic',
+        delay: (ctx) => ctx.dataIndex * 35 },
+      scales: {
+        x: {
+          min: 0, max: 100,
+          grid: { color:'rgba(255,255,255,.06)', drawTicks:false },
+          ticks: { color:'rgba(255,255,255,.35)', font:{size:10}, padding:6 },
+          border: { display:false },
+        },
+        y: {
+          grid: { display:false },
+          ticks: { color:'rgba(255,255,255,.55)', font:{size:10}, padding:6 },
+          border: { display:false },
+        }
+      },
+      plugins: {
+        legend: { display:false },
+        tooltip: { ..._TOOLTIP, callbacks: { label: c => ` EcoIQ: ${c.parsed.x}` } }
+      }
+    }
+  });
+})();
+
+/* ── Stacked pillar breakdown ──────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('pillarsChart');
+  if (!el || !_companies.length) return;
+  const sorted = [..._companies].sort((a,b) => b.score - a.score);
+  const labels = sorted.map(c => c.name);
+  const pillars = [
+    { key:'pollution',    label:'Pollution (×35%)',    color:'rgba(239,68,68,.8)'  },
+    { key:'reduction',    label:'Reduction (×25%)',    color:'rgba(34,197,94,.8)'  },
+    { key:'investment',   label:'Investment (×20%)',   color:'rgba(59,130,246,.8)' },
+    { key:'transparency', label:'Transparency (×10%)', color:'rgba(245,158,11,.8)' },
+    { key:'community',    label:'Community (×10%)',    color:'rgba(139,92,246,.8)' },
+  ];
+  const weights = [0.35, 0.25, 0.20, 0.10, 0.10];
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: pillars.map((p, i) => ({
+        label: p.label,
+        data: sorted.map(c => +(c[p.key] * weights[i]).toFixed(1)),
+        backgroundColor: p.color,
+        borderRadius: i === pillars.length-1 ? 4 : 0,
+        borderSkipped: false,
+        stack: 'score',
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1400, easing: 'easeInOutQuart',
+        delay: (ctx) => ctx.dataIndex * 30 },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display:false },
+          ticks: { color:'rgba(255,255,255,.45)', font:{size:9}, maxRotation:30 },
+          border: { display:false },
+        },
+        y: {
+          stacked: true,
+          grid: { color:'rgba(255,255,255,.06)', drawTicks:false },
+          ticks: { color:'rgba(255,255,255,.35)', font:{size:10}, padding:6 },
+          border: { display:false },
+          max: 100,
+        }
+      },
+      plugins: {
+        legend: {
+          display: true, position:'top', align:'end',
+          labels: { boxWidth:12, font:{size:10}, color:'rgba(255,255,255,.5)',
+                    padding:12, usePointStyle:true }
+        },
+        tooltip: {
+          ..._TOOLTIP,
+          callbacks: {
+            footer: (items) => {
+              const total = items.reduce((s,i)=>s+i.parsed.y,0);
+              return `Total EcoIQ: ${total.toFixed(1)}`;
+            }
+          }
+        }
+      }
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

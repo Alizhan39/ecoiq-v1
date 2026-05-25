@@ -184,14 +184,47 @@ def leaderboard(request):
     total_inv = sum(c.total_investment_usd for c in all_cos)
     total_hh  = sum(c.total_households_helped for c in all_cos)
 
+    # ── Analytics chart data ──────────────────────────────────────────────────
+    SECTOR_LABEL = dict(SECTOR_CHOICES)
+    from collections import defaultdict
+    _sector_scores = defaultdict(list)
+    for co in all_cos:
+        _sector_scores[co.sector].append(float(co.ecoiq_score))
+
+    chart_sectors = json.dumps(sorted([
+        {
+            'label': SECTOR_LABEL.get(s, s.replace('_', ' ').title()),
+            'avg':   round(sum(v) / len(v), 1),
+            'count': len(v),
+        }
+        for s, v in _sector_scores.items()
+    ], key=lambda x: x['avg'], reverse=True))
+
+    _all_ranked = list(all_cos.order_by('rank', '-ecoiq_score')[:15])
+    chart_companies = json.dumps([
+        {
+            'name':         co.name[:22] + ('…' if len(co.name) > 22 else ''),
+            'score':        float(co.ecoiq_score),
+            'pollution':    co.score_pollution_footprint,
+            'reduction':    co.score_reduction_progress,
+            'investment':   co.score_investment,
+            'transparency': co.score_transparency,
+            'community':    co.score_community_impact,
+            'tier':         get_tier(float(co.ecoiq_score)).css,
+        }
+        for co in _all_ranked
+    ])
+
     return render(request, 'league/leaderboard.html', {
-        'companies':      companies,
-        'sector':         sector,
-        'sector_choices': [('all', 'Все отрасли')] + list(SECTOR_CHOICES),
-        'total_co2':      total_co2,
-        'total_inv_m':    round(total_inv / 1_000_000) if total_inv else 0,
-        'total_hh':       total_hh,
-        'company_count':  Company.objects.count(),
+        'companies':         companies,
+        'sector':            sector,
+        'sector_choices':    [('all', 'Все отрасли')] + list(SECTOR_CHOICES),
+        'total_co2':         total_co2,
+        'total_inv_m':       round(total_inv / 1_000_000) if total_inv else 0,
+        'total_hh':          total_hh,
+        'company_count':     Company.objects.count(),
+        'chart_sectors':     chart_sectors,
+        'chart_companies':   chart_companies,
     })
 
 
@@ -227,9 +260,11 @@ def company_profile(request, slug):
     history_qs        = list(company.history.order_by('date'))
     history_labels    = [str(h.date)[:7] for h in history_qs]   # "YYYY-MM"
     history_scores    = [float(h.ecoiq_score) for h in history_qs]
-    history_pollution = [h.score_pollution_footprint for h in history_qs]
-    history_reduction = [h.score_reduction_progress  for h in history_qs]
-    history_invest    = [h.score_investment           for h in history_qs]
+    history_pollution     = [h.score_pollution_footprint for h in history_qs]
+    history_reduction     = [h.score_reduction_progress  for h in history_qs]
+    history_invest        = [h.score_investment           for h in history_qs]
+    history_transparency  = [h.score_transparency         for h in history_qs]
+    history_community     = [h.score_community_impact     for h in history_qs]
 
     # ── CO₂ analytics ─────────────────────────────────────────────────────────
     co2_completed = sum(p.co2_reduction_tonnes or 0 for p in projects_completed)
@@ -316,11 +351,13 @@ def company_profile(request, slug):
         # Chart JSON
         'radar_labels':    json.dumps([p['name'] for p in pillars]),
         'radar_scores':    json.dumps([p['score'] for p in pillars]),
-        'hist_labels':     json.dumps(history_labels),
-        'hist_scores':     json.dumps(history_scores),
-        'hist_pollution':  json.dumps(history_pollution),
-        'hist_reduction':  json.dumps(history_reduction),
-        'hist_invest':     json.dumps(history_invest),
+        'hist_labels':        json.dumps(history_labels),
+        'hist_scores':        json.dumps(history_scores),
+        'hist_pollution':     json.dumps(history_pollution),
+        'hist_reduction':     json.dumps(history_reduction),
+        'hist_invest':        json.dumps(history_invest),
+        'hist_transparency':  json.dumps(history_transparency),
+        'hist_community':     json.dumps(history_community),
         'inv_labels':      inv_labels,
         'inv_amounts':     inv_amounts,
         'inv_cumulative':  inv_cumulative,

@@ -7,6 +7,7 @@
   <title>AI Review — {{ job.original_filename }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -466,6 +467,50 @@
   </div>
   {% endif %}
 
+  <!-- ── Analytics panel ───────────────────────────────────────────────────── -->
+  {% if grouped %}
+  <div class="ai-analytics-panel" style="margin-bottom:1.5rem;">
+    <div class="ai-ap-header">
+      <span class="ai-ap-icon">📊</span>
+      <div>
+        <div class="ai-ap-title">Findings Intelligence</div>
+        <div class="ai-ap-sub">Distribution · Score estimate · Greenwash risk</div>
+      </div>
+    </div>
+    <div class="ai-ap-grid">
+      <div class="ai-ap-card">
+        <div class="ai-ap-card-hd">Findings by Category</div>
+        <div style="height:200px; position:relative;">
+          <canvas id="findingsDonut"></canvas>
+        </div>
+      </div>
+      <div class="ai-ap-card">
+        <div class="ai-ap-card-hd">AI Score Estimate vs Benchmark</div>
+        <div style="height:200px; position:relative;">
+          <canvas id="pillarsEstChart"></canvas>
+        </div>
+      </div>
+      {% if score_estimate and score_estimate.greenwashing_score %}
+      <div class="ai-ap-card">
+        <div class="ai-ap-card-hd">Greenwash Risk Gauge</div>
+        <div style="height:200px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+          <canvas id="gwGauge" style="max-width:220px; max-height:130px;"></canvas>
+          <div style="margin-top:.5rem; text-align:center;">
+            <div style="font-size:1.6rem; font-weight:800; font-family:'JetBrains Mono',monospace;
+              color:{% if score_estimate.greenwashing_level == 'low' %}#22c55e{% elif score_estimate.greenwashing_level == 'medium' %}#f59e0b{% elif score_estimate.greenwashing_level == 'high' %}#f97316{% else %}#ef4444{% endif %};">
+              {{ score_estimate.greenwashing_score }}<span style="font-size:.9rem; opacity:.6;">/100</span>
+            </div>
+            <div style="font-size:.68rem; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.06em;">
+              {{ score_estimate.greenwashing_level|title }} Risk
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Findings by group -->
   {% for group in grouped %}
   <div class="group-block">
@@ -705,7 +750,172 @@
 </div>
 </div>{# end .page #}
 
+<style>
+/* ── Analyst analytics panel ──────────────────────────────────────────────── */
+.ai-analytics-panel {
+  background: linear-gradient(145deg, #0a1510, #0d1f17, #091410);
+  border: 1px solid rgba(0,200,150,.14);
+  border-radius: 14px; padding: 1.25rem;
+  box-shadow: 0 6px 32px rgba(0,0,0,.3), inset 0 1px 0 rgba(0,200,150,.06);
+  position: relative; overflow: hidden;
+}
+.ai-analytics-panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background: linear-gradient(90deg,transparent,rgba(0,232,154,.4),transparent);
+}
+.ai-ap-header { display:flex; align-items:flex-start; gap:.6rem; margin-bottom:1rem; }
+.ai-ap-icon { font-size:1.2rem; }
+.ai-ap-title { font-size:.88rem; font-weight:800; color:#fff; letter-spacing:-.02em; }
+.ai-ap-sub { font-size:.65rem; color:rgba(255,255,255,.35); margin-top:.15rem; letter-spacing:.03em; }
+.ai-ap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .85rem;
+}
+.ai-ap-card {
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 9px; padding: .85rem .85rem .65rem;
+}
+.ai-ap-card-hd {
+  font-size:.65rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.08em; color:rgba(255,255,255,.38); margin-bottom:.65rem;
+}
+</style>
+
 <script>
+Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
+const _AItooltip = {
+  backgroundColor:'rgba(5,10,8,.96)', titleColor:'#fff',
+  bodyColor:'rgba(255,255,255,.65)', borderColor:'rgba(0,232,154,.22)',
+  borderWidth:1, padding:10, cornerRadius:8, displayColors:true, boxPadding:3,
+};
+
+/* ── Findings donut ──────────────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('findingsDonut');
+  if (!el) return;
+  const data = {{ findings_chart|safe }};
+  if (!data.length) return;
+  new Chart(el, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.label),
+      datasets: [{
+        data: data.map(d => d.count),
+        backgroundColor: data.map(d => d.color + 'cc'),
+        borderColor: data.map(d => d.color),
+        borderWidth: 1.5,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      animation: { duration: 1200, easing:'easeInOutQuart',
+        animateRotate:true, animateScale:true },
+      plugins: {
+        legend: {
+          display: true, position:'right',
+          labels: { boxWidth:10, font:{size:10}, color:'rgba(255,255,255,.55)',
+                    padding:8, usePointStyle:true }
+        },
+        tooltip: _AItooltip,
+      }
+    }
+  });
+})();
+
+/* ── Pillar estimate vs benchmark ────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('pillarsEstChart');
+  if (!el) return;
+  const raw = {{ score_chart|safe }};
+  if (!raw || !raw.pillars) return;
+  const est = raw.estimated || [];
+  const bench = raw.benchmark || [60,60,60,60,60];
+  const labels = raw.pillars || [];
+  const pillarColors = ['#ef4444','#22c55e','#3b82f6','#f59e0b','#8b5cf6'];
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'AI Estimate',
+          data: est,
+          backgroundColor: pillarColors.map(c => c + 'bb'),
+          borderColor: pillarColors,
+          borderWidth: 1.5,
+          borderRadius: 5, borderSkipped: false,
+        },
+        {
+          label: 'Benchmark (60)',
+          data: bench,
+          type: 'line',
+          borderColor: 'rgba(255,255,255,.25)',
+          borderDash: [5,4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration:1100, easing:'easeInOutCubic',
+        delay: (ctx) => ctx.dataIndex * 60 },
+      scales: {
+        y: {
+          min:0, max:100,
+          grid: { color:'rgba(255,255,255,.07)', drawTicks:false },
+          ticks: { color:'rgba(255,255,255,.35)', font:{size:10}, padding:6 },
+          border: { display:false },
+        },
+        x: {
+          grid: { display:false },
+          ticks: { color:'rgba(255,255,255,.5)', font:{size:9}, maxRotation:20 },
+          border: { display:false },
+        }
+      },
+      plugins: {
+        legend: { display:true, position:'top', align:'end',
+          labels:{boxWidth:10, font:{size:10}, color:'rgba(255,255,255,.45)',
+                  padding:10, usePointStyle:true} },
+        tooltip: _AItooltip,
+      }
+    }
+  });
+})();
+
+/* ── Greenwash gauge (doughnut half-dial) ────────────────────────────────── */
+(function(){
+  const el = document.getElementById('gwGauge');
+  if (!el) return;
+  const raw = {{ score_chart|safe }};
+  if (!raw || raw.gw_score == null) return;
+  const score = raw.gw_score;
+  const color = score >= 70 ? '#ef4444' : score >= 40 ? '#f97316' : score >= 20 ? '#f59e0b' : '#22c55e';
+  new Chart(el, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [score, 100 - score],
+        backgroundColor: [color + 'dd', 'rgba(255,255,255,.07)'],
+        borderColor: [color, 'transparent'],
+        borderWidth: [2, 0],
+        hoverOffset: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      rotation: -90, circumference: 180, cutout: '72%',
+      animation: { duration:1000, easing:'easeInOutCubic' },
+      plugins: { legend:{display:false}, tooltip:{enabled:false} }
+    }
+  });
+})();
+
 // Auto-save analyst notes on sidebar form change (debounced)
 (function() {
   const form = document.getElementById('note-form');
