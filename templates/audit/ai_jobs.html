@@ -238,10 +238,7 @@
             <span style="color:var(--muted); font-size:0.78rem;">—</span>
           {% endif %}
         </td>
-        <td>
-          {% try %}{% endtry %}
-          {% if job.status == 'completed' %}—{% else %}—{% endif %}
-        </td>
+        <td>—</td>
         <td style="font-size:0.78rem; color:var(--muted);">
           {{ job.created_at|date:"M j, Y" }}<br>
           <span style="font-size:0.7rem;">{{ job.created_at|date:"H:i" }}</span>
