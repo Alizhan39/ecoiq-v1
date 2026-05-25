@@ -216,6 +216,60 @@
       .report-footer { flex-direction: column; gap: 0.4rem; padding: 1rem 1.25rem; text-align: center; }
     }
 
+    /* ── Analytics panel ─────────────────────────────────────────── */
+    .analytics-section {
+      background: linear-gradient(160deg, #071510 0%, #0a1f18 50%, #071510 100%);
+      border-top: 1px solid rgba(0,232,154,.10);
+      border-bottom: 1px solid rgba(0,232,154,.10);
+      padding: 1.75rem 2.5rem;
+    }
+    .analytics-section .section-title {
+      color: rgba(0,232,154,.7);
+    }
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .a-card {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(0,232,154,.12);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .a-card-title {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: rgba(0,232,154,.6);
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+    }
+    .a-card canvas { display: block; width: 100% !important; }
+    .a-gauge-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 0.5rem 0;
+    }
+    .a-gauge-stat {
+      text-align: center;
+    }
+    .a-gauge-stat .val {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #00e89a;
+      line-height: 1;
+    }
+    .a-gauge-stat .lbl {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,.45);
+      margin-top: 0.2rem;
+    }
     /* ── Print styles ────────────────────────────────────────────── */
     @media print {
       body { background: #fff; font-size: 12px; }
@@ -231,10 +285,12 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+      .analytics-section { display: none; }
       .section { page-break-inside: avoid; }
       .pillar-row { page-break-inside: avoid; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -345,6 +401,39 @@ function copyShareLink() {
     </div>
   </div>
 
+  <!-- Analytics Panel -->
+  {% if chart_pillars %}
+  <div class="analytics-section">
+    <div class="section-title">Score Analytics</div>
+    <div class="analytics-grid">
+      <!-- Pillar bar chart -->
+      <div class="a-card">
+        <div class="a-card-title">Pillar Scores vs Benchmark</div>
+        <canvas id="rptBarChart" height="180"></canvas>
+      </div>
+      <!-- Overall gauge + stats -->
+      <div class="a-card">
+        <div class="a-card-title">Overall Score</div>
+        <div style="position:relative; max-width:240px; margin:0 auto;">
+          <canvas id="rptGauge" height="130"></canvas>
+          <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;">
+            <div style="font-size:2.1rem;font-weight:900;color:#00e89a;line-height:1;">{{ finding.score_overall }}</div>
+            <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.4);">Overall</div>
+          </div>
+        </div>
+        <div class="a-gauge-row" style="margin-top:0.5rem;">
+          {% for pillar in pillars %}
+          <div class="a-gauge-stat">
+            <div class="val" style="font-size:1.1rem;color:rgba(255,255,255,.9);">{{ pillar.score }}</div>
+            <div class="lbl" style="font-size:0.55rem;">{{ pillar.name|slice:":3" }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Summary -->
   {% if finding.summary %}
   <div class="section">
@@ -405,5 +494,107 @@ function copyShareLink() {
   </div>
 
 </div>
+
+{% if chart_pillars %}
+<script>
+(function(){
+  'use strict';
+  var _d = {{ chart_pillars|safe }};
+  var _TOOLTIP = {
+    backgroundColor: 'rgba(5,20,14,.95)',
+    titleColor: '#00e89a',
+    bodyColor: 'rgba(255,255,255,.82)',
+    borderColor: 'rgba(0,232,154,.2)',
+    borderWidth: 1,
+    padding: 10,
+    cornerRadius: 7,
+    displayColors: true,
+  };
+
+  /* ── Pillar horizontal bar ───────────────────────────────────── */
+  var bCtx = document.getElementById('rptBarChart').getContext('2d');
+  new Chart(bCtx, {
+    type: 'bar',
+    data: {
+      labels: _d.labels,
+      datasets: [
+        {
+          label: 'Score',
+          data:  _d.scores,
+          backgroundColor: _d.colors.map(function(c){ return c + 'cc'; }),
+          borderColor:     _d.colors,
+          borderWidth: 1.5,
+          borderRadius: 5,
+          barThickness: 22,
+        },
+        {
+          label: 'Benchmark',
+          data:  _d.labels.map(function(){ return _d.benchmark; }),
+          type: 'line',
+          borderColor: 'rgba(239,68,68,.65)',
+          borderDash: [5,4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      animation: { duration: 900, easing: 'easeInOutCubic',
+        delay: function(ctx){ return ctx.datasetIndex === 0 ? ctx.dataIndex * 60 : 0; } },
+      plugins: {
+        legend: { display: false },
+        tooltip: Object.assign({}, _TOOLTIP, {
+          callbacks: {
+            label: function(ctx){
+              if(ctx.datasetIndex===1) return ' Benchmark: ' + ctx.raw;
+              return ' Score: ' + ctx.raw + '/100';
+            }
+          }
+        })
+      },
+      scales: {
+        x: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(255,255,255,.05)' },
+          ticks: { color: 'rgba(255,255,255,.4)', font: { size: 10 }, callback: function(v){ return v; } },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: 'rgba(255,255,255,.7)', font: { size: 11, weight: '600' } },
+        }
+      }
+    }
+  });
+
+  /* ── Overall half-dial gauge ─────────────────────────────────── */
+  var gCtx = document.getElementById('rptGauge').getContext('2d');
+  var score = _d.overall;
+  var _gaugeColor = score >= 81 ? '#22c55e' : score >= 61 ? '#00e89a' : score >= 41 ? '#f59e0b' : score >= 21 ? '#f97316' : '#ef4444';
+  new Chart(gCtx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [score, 100 - score],
+        backgroundColor: [_gaugeColor + 'cc', 'rgba(255,255,255,.07)'],
+        borderColor:     [_gaugeColor, 'transparent'],
+        borderWidth: [1.5, 0],
+        borderRadius: [6, 0],
+      }]
+    },
+    options: {
+      rotation: -90,
+      circumference: 180,
+      cutout: '72%',
+      animation: { duration: 1000, easing: 'easeInOutCubic' },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    }
+  });
+})();
+</script>
+{% endif %}
 </body>
 </html>

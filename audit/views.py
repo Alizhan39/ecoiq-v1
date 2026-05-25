@@ -1,3 +1,4 @@
+import json as _json
 import math
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
@@ -238,20 +239,63 @@ def _report_context(session):
         {'label': 'Emissions Reduction',   'pct': rep.emissions_reduction_pct,    'sign': '–', 'icon': '🌿', 'color': '#16a34a'},
     ]
 
+    # ── Chart.js JSON ────────────────────────────────────────────────────
+    # Projected improvements radar / bar
+    chart_projections = _json.dumps({
+        'labels': [p['label'] for p in projections],
+        'pcts':   [float(p['pct']) for p in projections],
+        'colors': [p['color'] for p in projections],
+    })
+
+    # Phase investment vs savings grouped bar
+    chart_phases = _json.dumps({
+        'labels':      [f'Phase {ph.phase}: {ph.label[:24]}' for ph in phases],
+        'investments': [float(ph.investment) for ph in phases],
+        'savings':     [float(ph.savings)    for ph in phases],
+    }) if phases else _json.dumps({'labels': [], 'investments': [], 'savings': []})
+
+    # Top-8 recommendations savings bar
+    chart_recs = _json.dumps([
+        {
+            'label':   r.title[:30] + ('…' if len(r.title) > 30 else ''),
+            'savings': float(r.savings_usd),
+            'cost':    float(r.cost_usd),
+            'roi':     r.roi_months,
+            'score':   r.computed_score,
+        }
+        for r in recs[:8]
+    ])
+
+    # Findings severity distribution
+    from collections import Counter
+    sev_counts = Counter(f.severity for f in findings)
+    _sev_order  = ['Critical', 'High', 'Medium', 'Low']
+    _sev_colors = {'Critical': '#dc2626', 'High': '#f97316', 'Medium': '#f59e0b', 'Low': '#22c55e'}
+    chart_severity = _json.dumps({
+        'labels': [s for s in _sev_order if s in sev_counts],
+        'counts': [sev_counts[s] for s in _sev_order if s in sev_counts],
+        'colors': [_sev_colors[s] for s in _sev_order if s in sev_counts],
+    })
+    # ─────────────────────────────────────────────────────────────────────
+
     return {
-        'session':        session,
-        'report':         rep,
-        'findings':       findings,
-        'recs':           recs,
-        'phases':         phases,
-        'ba_rows':        ba_rows,
-        'gauges':         gauges,
-        'eff_now':        eff_now,
-        'eff_proj':       eff_proj,
-        'projections':    projections,
-        'area_colors':    AREA_COLORS,
-        'priority_badge': PRIORITY_BADGE,
-        'quick_wins':     [r for r in recs if r.is_quick_win],
+        'session':           session,
+        'report':            rep,
+        'findings':          findings,
+        'recs':              recs,
+        'phases':            phases,
+        'ba_rows':           ba_rows,
+        'gauges':            gauges,
+        'eff_now':           eff_now,
+        'eff_proj':          eff_proj,
+        'projections':       projections,
+        'area_colors':       AREA_COLORS,
+        'priority_badge':    PRIORITY_BADGE,
+        'quick_wins':        [r for r in recs if r.is_quick_win],
+        'chart_projections': chart_projections,
+        'chart_phases':      chart_phases,
+        'chart_recs':        chart_recs,
+        'chart_severity':    chart_severity,
     }
 
 

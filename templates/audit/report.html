@@ -161,18 +161,34 @@
                 font-size:.75rem}
     .rep-footer strong{color:#d8f3dc}
 
+    /* ── Analytics panel ──────────────────────────────────── */
+    .ap{background:linear-gradient(160deg,#071510 0%,#0a1f18 50%,#071510 100%);
+        border-top:1px solid rgba(0,232,154,.10);
+        border-bottom:1px solid rgba(0,232,154,.10);
+        padding:1.75rem 2.5rem}
+    .ap .sec-title{color:rgba(0,232,154,.7);margin-bottom:1.1rem}
+    .ap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
+    .ap-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-top:1.1rem}
+    .ac{background:rgba(255,255,255,.03);border:1px solid rgba(0,232,154,.12);
+        border-radius:10px;padding:.9rem 1rem}
+    .ac-title{font-size:.58rem;text-transform:uppercase;letter-spacing:.13em;
+              color:rgba(0,232,154,.6);font-weight:700;margin-bottom:.75rem}
+    .ac canvas{display:block;width:100%!important}
+
     /* ── Print ─────────────────────────────────────────────── */
     @media print{
       body{background:#fff;font-size:11px}
       .toolbar{display:none!important}
       .page{margin:0;max-width:100%;box-shadow:none;border-radius:0}
       .cover,.proj-card,.phase,.rep-footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .ap{display:none}
       .sec{page-break-inside:avoid}
       .rec,.finding,.phase{page-break-inside:avoid}
       .roadmap-grid{grid-template-columns:repeat(3,1fr)}
       .proj-grid{grid-template-columns:repeat(2,1fr)}
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -273,6 +289,40 @@
     </div>
   </div>
   {% endif %}
+
+  <!-- ── Analytics ─────────────────────────────────────── -->
+  <div class="ap">
+    <div class="sec-header">
+      <span class="sec-num" style="background:rgba(0,232,154,.12);border-color:rgba(0,232,154,.25);color:#00e89a;">AI</span>
+      <span class="sec-title">Diagnostic Analytics</span>
+    </div>
+    <div class="ap-grid">
+      <!-- Projected improvements radar -->
+      <div class="ac">
+        <div class="ac-title">Projected Improvements (%)</div>
+        <canvas id="projChart" height="170"></canvas>
+      </div>
+      <!-- Findings severity -->
+      <div class="ac">
+        <div class="ac-title">Findings by Severity</div>
+        <canvas id="sevChart" height="170"></canvas>
+      </div>
+      <!-- Top recommendations savings -->
+      <div class="ac">
+        <div class="ac-title">Top Savings Opportunities</div>
+        <canvas id="recsChart" height="170"></canvas>
+      </div>
+    </div>
+    {% if chart_phases and phases %}
+    <div class="ap-grid-2">
+      <!-- Phase investment vs savings -->
+      <div class="ac" style="grid-column:1/-1;">
+        <div class="ac-title">Implementation Phases — Investment vs Annual Savings</div>
+        <canvas id="phasesChart" height="110"></canvas>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 
   <!-- ── 03 Before / After ─────────────────────────────── -->
   {% if ba_rows %}
@@ -423,5 +473,179 @@
   </div>
 
 </div>
+
+<script>
+(function(){
+  'use strict';
+  var _TOOLTIP = {
+    backgroundColor:'rgba(5,20,14,.95)',
+    titleColor:'#00e89a',
+    bodyColor:'rgba(255,255,255,.82)',
+    borderColor:'rgba(0,232,154,.2)',
+    borderWidth:1,
+    padding:10,
+    cornerRadius:7,
+  };
+
+  /* ── Projected improvements bar ──────────────────────────────── */
+  var _proj = {{ chart_projections|safe }};
+  if(_proj.labels && _proj.labels.length){
+    var pCtx = document.getElementById('projChart');
+    if(pCtx){
+      new Chart(pCtx.getContext('2d'), {
+        type:'bar',
+        data:{
+          labels:_proj.labels,
+          datasets:[{
+            label:'Projected (%)',
+            data:_proj.pcts,
+            backgroundColor:_proj.colors.map(function(c){return c+'cc';}),
+            borderColor:_proj.colors,
+            borderWidth:1.5,
+            borderRadius:5,
+          }]
+        },
+        options:{
+          responsive:true,
+          animation:{duration:900,easing:'easeInOutCubic',
+            delay:function(ctx){return ctx.dataIndex*80;}},
+          plugins:{legend:{display:false},tooltip:Object.assign({},_TOOLTIP)},
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,.05)'},
+               ticks:{color:'rgba(255,255,255,.55)',font:{size:9}}},
+            y:{min:0,max:100,grid:{color:'rgba(255,255,255,.05)'},
+               ticks:{color:'rgba(255,255,255,.4)',font:{size:9},
+                      callback:function(v){return v+'%';}}}
+          }
+        }
+      });
+    }
+  }
+
+  /* ── Severity doughnut ──────────────────────────────────────── */
+  var _sev = {{ chart_severity|safe }};
+  if(_sev.labels && _sev.labels.length){
+    var sCtx = document.getElementById('sevChart');
+    if(sCtx){
+      new Chart(sCtx.getContext('2d'), {
+        type:'doughnut',
+        data:{
+          labels:_sev.labels,
+          datasets:[{
+            data:_sev.counts,
+            backgroundColor:_sev.colors.map(function(c){return c+'bb';}),
+            borderColor:_sev.colors,
+            borderWidth:1.5,
+            hoverBorderWidth:2.5,
+          }]
+        },
+        options:{
+          responsive:true,
+          cutout:'58%',
+          animation:{duration:900,easing:'easeInOutCubic'},
+          plugins:{
+            legend:{
+              position:'right',
+              labels:{color:'rgba(255,255,255,.7)',font:{size:11},
+                      padding:10,boxWidth:12,boxHeight:12,borderRadius:3}
+            },
+            tooltip:Object.assign({},_TOOLTIP,{
+              callbacks:{label:function(ctx){
+                return ' '+ctx.label+': '+ctx.raw+' findings';
+              }}
+            })
+          }
+        }
+      });
+    }
+  }
+
+  /* ── Top recommendations bar ────────────────────────────────── */
+  var _recs = {{ chart_recs|safe }};
+  if(_recs.length){
+    var rCtx = document.getElementById('recsChart');
+    if(rCtx){
+      new Chart(rCtx.getContext('2d'), {
+        type:'bar',
+        data:{
+          labels:_recs.map(function(r){return r.label;}),
+          datasets:[{
+            label:'Annual Savings ($)',
+            data:_recs.map(function(r){return r.savings;}),
+            backgroundColor:'rgba(34,197,94,.65)',
+            borderColor:'#22c55e',
+            borderWidth:1.5,
+            borderRadius:4,
+          }]
+        },
+        options:{
+          indexAxis:'y',
+          responsive:true,
+          animation:{duration:900,easing:'easeInOutCubic',
+            delay:function(ctx){return ctx.dataIndex*50;}},
+          plugins:{legend:{display:false},tooltip:Object.assign({},_TOOLTIP,{
+            callbacks:{label:function(ctx){
+              var r=_recs[ctx.dataIndex];
+              return [' Savings: $'+ctx.raw.toLocaleString(),
+                      ' Investment: $'+r.cost.toLocaleString(),
+                      ' Payback: '+r.roi+' months'];
+            }}
+          })},
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,.05)'},
+               ticks:{color:'rgba(255,255,255,.4)',font:{size:9},
+                      callback:function(v){return '$'+Math.round(v/1000)+'k';}}},
+            y:{grid:{display:false},
+               ticks:{color:'rgba(255,255,255,.65)',font:{size:9}}}
+          }
+        }
+      });
+    }
+  }
+
+  /* ── Phase investment vs savings grouped bar ─────────────────── */
+  var _ph = {{ chart_phases|safe }};
+  if(_ph.labels && _ph.labels.length){
+    var phCtx = document.getElementById('phasesChart');
+    if(phCtx){
+      new Chart(phCtx.getContext('2d'), {
+        type:'bar',
+        data:{
+          labels:_ph.labels,
+          datasets:[
+            {label:'Investment',data:_ph.investments,
+             backgroundColor:'rgba(239,68,68,.6)',borderColor:'#ef4444',
+             borderWidth:1.5,borderRadius:4},
+            {label:'Annual Savings',data:_ph.savings,
+             backgroundColor:'rgba(34,197,94,.65)',borderColor:'#22c55e',
+             borderWidth:1.5,borderRadius:4},
+          ]
+        },
+        options:{
+          responsive:true,
+          animation:{duration:900,easing:'easeInOutCubic',
+            delay:function(ctx){return ctx.datasetIndex*120+ctx.dataIndex*60;}},
+          plugins:{
+            legend:{labels:{color:'rgba(255,255,255,.7)',font:{size:11},
+                            padding:14,boxWidth:12,boxHeight:12}},
+            tooltip:Object.assign({},_TOOLTIP,{
+              callbacks:{label:function(ctx){
+                return ' '+ctx.dataset.label+': $'+ctx.raw.toLocaleString();
+              }}
+            })
+          },
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,.05)'},
+               ticks:{color:'rgba(255,255,255,.55)',font:{size:10}}},
+            y:{grid:{color:'rgba(255,255,255,.05)'},
+               ticks:{color:'rgba(255,255,255,.4)',font:{size:9},
+                      callback:function(v){return '$'+Math.round(v/1000)+'k';}}}
+          }
+        }
+      });
+    }
+  }
+})();
+</script>
 </body>
 </html>

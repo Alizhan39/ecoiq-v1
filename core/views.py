@@ -1,3 +1,4 @@
+import json as _json
 import math
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -417,6 +418,16 @@ def _build_report_ctx(assessment):
             'note':      note,
             'questions': qs,
         })
+    # Chart.js data —  pillar scores vs benchmark
+    _pillar_accent = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6']
+    chart_pillars = _json.dumps({
+        'labels':    [p['name'] for p in pillars],
+        'scores':    [p['score'] for p in pillars],
+        'colors':    _pillar_accent,
+        'benchmark': 60,
+        'overall':   float(f.score_overall),
+    })
+
     return {
         'assessment':    assessment,
         'finding':       f,
@@ -426,6 +437,7 @@ def _build_report_ctx(assessment):
         'radar_axes':    _radar_axes(),
         'radar_labels':  _radar_labels(),
         'radar_dots':    _radar_dots(scores_dict),
+        'chart_pillars': chart_pillars,
     }
 
 
