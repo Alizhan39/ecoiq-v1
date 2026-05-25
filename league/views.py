@@ -520,6 +520,13 @@ def company_profile(request, slug):
 
         'project_type_meta': PROJECT_TYPE_META,
     }
+    # ── Explainability engine ──────────────────────────────────────────────────
+    try:
+        from league.explainability import explain_company as _explain_co
+        ctx['explanations'] = _explain_co(company, ctx)
+    except Exception:
+        ctx['explanations'] = []
+
     return render(request, 'league/company.html', ctx)
 
 

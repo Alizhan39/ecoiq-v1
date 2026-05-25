@@ -481,6 +481,73 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:
   .disclosure-grid{grid-template-columns:1fr}
   .term-main{padding:.75rem 0 0}
 }
+
+/* ── Explainability Engine ───────────────────────────────────────────────── */
+.xpl-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:.45rem;margin-bottom:1.1rem}
+@media(max-width:600px){.xpl-strip{grid-template-columns:repeat(3,1fr)}}
+.xpl-strip-item{display:flex;flex-direction:column;align-items:center;gap:.22rem;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:.55rem .3rem;transition:border-color .15s;text-decoration:none}
+.xpl-strip-item:hover{border-color:rgba(0,232,154,.3)}
+.xpl-strip-score{font-family:var(--mono);font-size:1.3rem;font-weight:800;line-height:1}
+.xpl-strip-name{font-size:.58rem;color:rgba(255,255,255,.38);text-align:center;line-height:1.3}
+.xpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+@media(max-width:760px){.xpl-grid{grid-template-columns:1fr}}
+.xpl-grid > .xpl-card:nth-child(5):last-child{grid-column:1/-1}
+.xpl-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;overflow:hidden}
+.xpl-card-top{padding:.85rem 1rem .7rem;border-bottom:1px solid rgba(255,255,255,.07)}
+.xpl-card-body{padding:.7rem .9rem}
+.xpl-pillar-hd{display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.45rem}
+.xpl-pillar-name{font-size:.9rem;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.1}
+.xpl-pillar-sub{font-size:.62rem;color:rgba(255,255,255,.28);margin-top:.12rem;line-height:1.3}
+.xpl-score-ring{font-family:var(--mono);font-size:1.7rem;font-weight:800;line-height:1;
+  margin-left:auto;flex-shrink:0}
+.xpl-meta-row{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}
+.xpl-trend-badge{display:inline-flex;align-items:center;gap:.22rem;font-size:.63rem;
+  font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:.15rem .5rem;
+  border-radius:20px;white-space:nowrap}
+.trend-improving{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.28)}
+.trend-declining{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.28)}
+.trend-stable{background:rgba(255,255,255,.08);color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.1)}
+.trend-unknown{background:rgba(255,255,255,.05);color:rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.07)}
+.xpl-conf-wrap{display:flex;align-items:center;gap:.35rem;flex:1;min-width:0}
+.xpl-conf-track{flex:1;height:3px;background:rgba(255,255,255,.1);border-radius:2px;max-width:60px}
+.xpl-conf-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,rgba(0,232,154,.5),rgba(0,232,154,.88))}
+.xpl-conf-lbl{font-size:.6rem;font-family:var(--mono);color:rgba(255,255,255,.3);white-space:nowrap}
+.xpl-group{margin-bottom:.55rem}
+.xpl-group:last-child{margin-bottom:0}
+.xpl-group-hd{display:flex;align-items:center;gap:.3rem;font-size:.59rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.09em;padding:.22rem 0;margin-bottom:.22rem}
+.xpl-factor{padding:.48rem .62rem;border-radius:6px;margin-bottom:.28rem;
+  border-left:2px solid transparent}
+.xpl-factor:last-child{margin-bottom:0}
+.xpl-factor.cat-driver{background:rgba(34,197,94,.07);border-left-color:rgba(34,197,94,.4)}
+.xpl-factor.cat-penalty{background:rgba(239,68,68,.07);border-left-color:rgba(239,68,68,.4)}
+.xpl-factor.cat-missing{background:rgba(156,163,175,.06);border-left-color:rgba(156,163,175,.28)}
+.xpl-factor.cat-risk{background:rgba(249,115,22,.07);border-left-color:rgba(249,115,22,.38)}
+.xpl-ftext{font-size:.79rem;font-weight:600;color:rgba(255,255,255,.85);line-height:1.3}
+.xpl-frat{font-size:.71rem;color:rgba(255,255,255,.38);line-height:1.55;margin-top:.1rem}
+.xpl-frow{display:flex;align-items:center;gap:.42rem;margin-top:.2rem;flex-wrap:wrap}
+.xpl-sev{font-size:.57rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  padding:.1rem .42rem;border-radius:3px;white-space:nowrap}
+.sev-critical{background:rgba(239,68,68,.22);color:#f87171}
+.sev-high{background:rgba(249,115,22,.18);color:#fb923c}
+.sev-medium{background:rgba(234,179,8,.15);color:#fbbf24}
+.sev-low{background:rgba(156,163,175,.13);color:#9ca3af}
+.sev-positive{background:rgba(34,197,94,.14);color:#4ade80}
+.xpl-impact{font-size:.62rem;font-family:var(--mono);font-weight:700}
+.xpl-impact-pos{color:#4ade80}
+.xpl-impact-neg{color:#f87171}
+.xpl-src{font-size:.61rem;color:rgba(255,255,255,.22);white-space:nowrap}
+.xpl-fconf{display:flex;align-items:center;gap:.28rem;margin-left:auto}
+.xpl-fconf-track{width:36px;height:2px;background:rgba(255,255,255,.1);border-radius:1px}
+.xpl-fconf-fill{height:100%;border-radius:1px}
+.xpl-quote{font-size:.69rem;color:rgba(255,255,255,.28);font-style:italic;
+  padding:.28rem .5rem;border-left:2px solid rgba(0,232,154,.2);
+  margin-top:.3rem;line-height:1.5}
+.xpl-nodata{font-size:.79rem;color:rgba(255,255,255,.28);font-style:italic;
+  text-align:center;padding:.9rem 0}
 </style>
 </head>
 <body>
@@ -608,6 +675,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:
       <a href="#trends"       class="snav"><span class="snav-dot"></span>Trends</a>
       <a href="#emissions"    class="snav"><span class="snav-dot"></span>Emissions</a>
       <a href="#analytics"    class="snav"><span class="snav-dot"></span>Analytics</a>
+      {% if explanations %}<a href="#explainability" class="snav"><span class="snav-dot" style="background:#00e89a;opacity:.75"></span>Explain</a>{% endif %}
       <a href="#benchmark"    class="snav"><span class="snav-dot"></span>Benchmark</a>
     </div>
     <div class="snav-section">
@@ -752,6 +820,194 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:
         <div class="adc-wrap chart-h260"><canvas id="allPillarsChart"></canvas></div>
       </div>
     </section>
+
+    <!-- ── Score Explainability Engine ──────────────────────────────────── -->
+    {% if explanations %}
+    <section id="explainability">
+      <div class="adc">
+        <div class="adc-hd">
+          <div class="adc-hd-left">
+            <span class="adc-icon">🧠</span>
+            <div>
+              <div class="adc-title">Score Explainability Engine</div>
+              <div class="adc-sub">Per-pillar drivers · penalties · disclosure gaps · risk signals · 12-month trend</div>
+            </div>
+          </div>
+          <div class="adc-tag">ANALYTICAL</div>
+        </div>
+
+        <!-- 5-pillar summary strip ─────────────────────────────────────────── -->
+        <div class="xpl-strip">
+          {% for xp in explanations %}
+          <a href="#xpl-{{ xp.key }}" class="xpl-strip-item">
+            <div class="xpl-strip-score" style="color:{{ xp.color }}">{{ xp.score }}</div>
+            <div class="xpl-strip-name">{{ xp.name_ru }}</div>
+            <div class="xpl-trend-badge trend-{{ xp.trend }}">
+              {% if xp.trend == 'improving' %}▲{% elif xp.trend == 'declining' %}▼{% else %}→{% endif %}
+              {{ xp.trend }}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+
+        <!-- Per-pillar analyst cards ────────────────────────────────────────── -->
+        <div class="xpl-grid">
+          {% for xp in explanations %}
+          <div class="xpl-card" id="xpl-{{ xp.key }}" style="border-top:2px solid {{ xp.color }}22;">
+            <!-- Card header -->
+            <div class="xpl-card-top" style="border-left:3px solid {{ xp.color }};">
+              <div class="xpl-pillar-hd">
+                <div style="flex:1;min-width:0">
+                  <div class="xpl-pillar-name">{{ xp.name }}</div>
+                  <div class="xpl-pillar-sub">
+                    Weight ×{{ xp.weight }}%
+                    {% if xp.drivers %} · {{ xp.drivers|length }} driver{% if xp.drivers|length != 1 %}s{% endif %}{% endif %}
+                    {% if xp.penalties %} · {{ xp.penalties|length }} penalt{% if xp.penalties|length != 1 %}ies{% else %}y{% endif %}{% endif %}
+                    {% if xp.missing %} · {{ xp.missing|length }} gap{% if xp.missing|length != 1 %}s{% endif %}{% endif %}
+                  </div>
+                </div>
+                <div class="xpl-score-ring" style="color:{{ xp.color }};">{{ xp.score }}</div>
+              </div>
+              <div class="xpl-meta-row">
+                <!-- Trend badge with 12m delta -->
+                <div class="xpl-trend-badge trend-{{ xp.trend }}">
+                  {% if xp.trend == 'improving' %}▲{% elif xp.trend == 'declining' %}▼{% else %}→{% endif %}
+                  {{ xp.trend }}
+                  {% if xp.delta_12m is not None %}
+                    {% if xp.delta_12m > 0 %}(+{{ xp.delta_12m }}){% elif xp.delta_12m < 0 %}({{ xp.delta_12m }}){% endif %}
+                  {% endif %}
+                </div>
+                <!-- Overall confidence bar -->
+                <div class="xpl-conf-wrap">
+                  <div class="xpl-conf-track">
+                    <div class="xpl-conf-fill" style="width:{{ xp.confidence_pct }}%"></div>
+                  </div>
+                  <span class="xpl-conf-lbl">{{ xp.confidence_pct }}% conf.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card body: factor groups -->
+            <div class="xpl-card-body">
+              {% if not xp.has_data %}
+              <div class="xpl-nodata">No explainability data available for this pillar.</div>
+              {% else %}
+
+              <!-- ✅ Positive Drivers -->
+              {% if xp.drivers %}
+              <div class="xpl-group">
+                <div class="xpl-group-hd" style="color:rgba(74,222,128,.65);">✅ Positive Drivers</div>
+                {% for fac in xp.drivers %}
+                <div class="xpl-factor cat-driver">
+                  <div class="xpl-ftext">{{ fac.text }}</div>
+                  {% if fac.rationale %}<div class="xpl-frat">{{ fac.rationale|truncatechars:200 }}</div>{% endif %}
+                  <div class="xpl-frow">
+                    <span class="xpl-sev sev-{{ fac.severity }}">{{ fac.severity }}</span>
+                    {% if fac.score_impact > 0 %}
+                    <span class="xpl-impact xpl-impact-pos">+{{ fac.score_impact|floatformat:1 }}pts</span>
+                    {% endif %}
+                    <span class="xpl-src">{{ fac.source_label }}</span>
+                    {% if fac.year %}<span class="xpl-src">· {{ fac.year }}</span>{% endif %}
+                    <div class="xpl-fconf">
+                      <div class="xpl-fconf-track">
+                        <div class="xpl-fconf-fill" style="width:{{ fac.confidence_pct }}%;background:#4ade80;"></div>
+                      </div>
+                      <span class="xpl-conf-lbl">{{ fac.confidence_pct }}%</span>
+                    </div>
+                  </div>
+                  {% if fac.quote %}<div class="xpl-quote">"{{ fac.quote }}"</div>{% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- ⚠ Penalties -->
+              {% if xp.penalties %}
+              <div class="xpl-group">
+                <div class="xpl-group-hd" style="color:rgba(248,113,113,.65);">⚠ Penalties</div>
+                {% for fac in xp.penalties %}
+                <div class="xpl-factor cat-penalty">
+                  <div class="xpl-ftext">{{ fac.text }}</div>
+                  {% if fac.rationale %}<div class="xpl-frat">{{ fac.rationale|truncatechars:200 }}</div>{% endif %}
+                  <div class="xpl-frow">
+                    <span class="xpl-sev sev-{{ fac.severity }}">{{ fac.severity }}</span>
+                    {% if fac.score_impact < 0 %}
+                    <span class="xpl-impact xpl-impact-neg">{{ fac.score_impact|floatformat:1 }}pts</span>
+                    {% endif %}
+                    <span class="xpl-src">{{ fac.source_label }}</span>
+                    {% if fac.year %}<span class="xpl-src">· {{ fac.year }}</span>{% endif %}
+                    <div class="xpl-fconf">
+                      <div class="xpl-fconf-track">
+                        <div class="xpl-fconf-fill" style="width:{{ fac.confidence_pct }}%;background:#f87171;"></div>
+                      </div>
+                      <span class="xpl-conf-lbl">{{ fac.confidence_pct }}%</span>
+                    </div>
+                  </div>
+                  {% if fac.quote %}<div class="xpl-quote">"{{ fac.quote }}"</div>{% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- ❓ Missing Disclosures -->
+              {% if xp.missing %}
+              <div class="xpl-group">
+                <div class="xpl-group-hd" style="color:rgba(156,163,175,.55);">❓ Missing Disclosures</div>
+                {% for fac in xp.missing %}
+                <div class="xpl-factor cat-missing">
+                  <div class="xpl-ftext">{{ fac.text }}</div>
+                  {% if fac.rationale %}<div class="xpl-frat">{{ fac.rationale|truncatechars:200 }}</div>{% endif %}
+                  <div class="xpl-frow">
+                    <span class="xpl-sev sev-{{ fac.severity }}">{{ fac.severity }}</span>
+                    {% if fac.score_impact < 0 %}
+                    <span class="xpl-impact xpl-impact-neg">{{ fac.score_impact|floatformat:1 }}pts</span>
+                    {% endif %}
+                    <span class="xpl-src">{{ fac.source_label }}</span>
+                    <div class="xpl-fconf">
+                      <div class="xpl-fconf-track">
+                        <div class="xpl-fconf-fill" style="width:{{ fac.confidence_pct }}%;background:#9ca3af;"></div>
+                      </div>
+                      <span class="xpl-conf-lbl">{{ fac.confidence_pct }}%</span>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- 🔴 Risk Signals -->
+              {% if xp.risks %}
+              <div class="xpl-group">
+                <div class="xpl-group-hd" style="color:rgba(251,146,60,.65);">🔴 Risk Signals</div>
+                {% for fac in xp.risks %}
+                <div class="xpl-factor cat-risk">
+                  <div class="xpl-ftext">{{ fac.text }}</div>
+                  {% if fac.rationale %}<div class="xpl-frat">{{ fac.rationale|truncatechars:200 }}</div>{% endif %}
+                  <div class="xpl-frow">
+                    <span class="xpl-sev sev-{{ fac.severity }}">{{ fac.severity }}</span>
+                    <span class="xpl-src">{{ fac.source_label }}</span>
+                    {% if fac.year %}<span class="xpl-src">· {{ fac.year }}</span>{% endif %}
+                    <div class="xpl-fconf">
+                      <div class="xpl-fconf-track">
+                        <div class="xpl-fconf-fill" style="width:{{ fac.confidence_pct }}%;background:#fb923c;"></div>
+                      </div>
+                      <span class="xpl-conf-lbl">{{ fac.confidence_pct }}%</span>
+                    </div>
+                  </div>
+                  {% if fac.quote %}<div class="xpl-quote">"{{ fac.quote }}"</div>{% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              {% endif %}{# has_data #}
+            </div>{# xpl-card-body #}
+          </div>{# xpl-card #}
+          {% endfor %}
+        </div>{# xpl-grid #}
+      </div>{# adc #}
+    </section>
+    {% endif %}
 
     <!-- ── Benchmark vs Sector Peers ─────────────────────────────────────── -->
     <section id="benchmark">
