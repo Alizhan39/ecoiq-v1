@@ -231,6 +231,9 @@ def leaderboard(request):
 # ── Company ESG profile ────────────────────────────────────────────────────────
 
 def company_profile(request, slug):
+    from datetime import date, timedelta
+    import math as _math
+
     company = get_object_or_404(
         Company.objects.prefetch_related('projects', 'evidence', 'history'),
         slug=slug,
@@ -243,55 +246,114 @@ def company_profile(request, slug):
     projects_active    = [p for p in all_projects if p.status == 'active']
     projects_planned   = [p for p in all_projects if p.status == 'planned']
 
-    # Annotate each project with its type metadata
     for p in all_projects:
         p.type_meta = PROJECT_TYPE_META.get(p.project_type, PROJECT_TYPE_META['other'])
 
     # ── Pillars ───────────────────────────────────────────────────────────────
     pillars = [
-        {'key': 'pollution',    'name': 'Pollution Footprint', 'name_ru': 'Загрязнение',  'weight': 35, 'score': company.score_pollution_footprint},
-        {'key': 'reduction',    'name': 'Reduction Progress',  'name_ru': 'Снижение',     'weight': 25, 'score': company.score_reduction_progress},
-        {'key': 'investment',   'name': 'Investment',          'name_ru': 'Инвестиции',   'weight': 20, 'score': company.score_investment},
-        {'key': 'transparency', 'name': 'Transparency',        'name_ru': 'Прозрачность', 'weight': 10, 'score': company.score_transparency},
-        {'key': 'community',    'name': 'Community Impact',    'name_ru': 'Сообщество',   'weight': 10, 'score': company.score_community_impact},
+        {'key': 'pollution',    'name': 'Pollution Footprint', 'name_ru': 'Загрязнение',  'weight': 35, 'score': company.score_pollution_footprint,  'color': '#ef4444'},
+        {'key': 'reduction',    'name': 'Reduction Progress',  'name_ru': 'Снижение',     'weight': 25, 'score': company.score_reduction_progress,   'color': '#22c55e'},
+        {'key': 'investment',   'name': 'Investment',          'name_ru': 'Инвестиции',   'weight': 20, 'score': company.score_investment,           'color': '#3b82f6'},
+        {'key': 'transparency', 'name': 'Transparency',        'name_ru': 'Прозрачность', 'weight': 10, 'score': company.score_transparency,         'color': '#f59e0b'},
+        {'key': 'community',    'name': 'Community Impact',    'name_ru': 'Сообщество',   'weight': 10, 'score': company.score_community_impact,     'color': '#8b5cf6'},
     ]
 
-    # ── Score history — full 60 months ────────────────────────────────────────
-    history_qs        = list(company.history.order_by('date'))
-    history_labels    = [str(h.date)[:7] for h in history_qs]   # "YYYY-MM"
-    history_scores    = [float(h.ecoiq_score) for h in history_qs]
-    history_pollution     = [h.score_pollution_footprint for h in history_qs]
-    history_reduction     = [h.score_reduction_progress  for h in history_qs]
-    history_invest        = [h.score_investment           for h in history_qs]
-    history_transparency  = [h.score_transparency         for h in history_qs]
-    history_community     = [h.score_community_impact     for h in history_qs]
+    # ── Score history ─────────────────────────────────────────────────────────
+    history_qs           = list(company.history.order_by('date'))
+    history_labels       = [str(h.date)[:7] for h in history_qs]
+    history_scores       = [float(h.ecoiq_score) for h in history_qs]
+    history_pollution    = [h.score_pollution_footprint for h in history_qs]
+    history_reduction    = [h.score_reduction_progress  for h in history_qs]
+    history_invest       = [h.score_investment           for h in history_qs]
+    history_transparency = [h.score_transparency         for h in history_qs]
+    history_community    = [h.score_community_impact     for h in history_qs]
+
+    # ── Year-on-year delta ────────────────────────────────────────────────────
+    twelve_ago  = date.today() - timedelta(days=365)
+    old_snap    = company.history.filter(date__lte=twelve_ago).order_by('-date').first()
+    yoy_delta   = round(float(company.ecoiq_score) - float(old_snap.ecoiq_score), 1) if old_snap else None
+
+    # ── Score history change table (last 6 snapshots) ─────────────────────────
+    recent_snaps  = list(company.history.order_by('-date')[:7])
+    score_changes = []
+    for i in range(len(recent_snaps) - 1):
+        cur  = recent_snaps[i]
+        prev = recent_snaps[i + 1]
+        score_changes.append({
+            'date':  str(cur.date)[:7],
+            'score': float(cur.ecoiq_score),
+            'delta': round(float(cur.ecoiq_score) - float(prev.ecoiq_score), 1),
+            'rank':  cur.rank,
+        })
+
+    # ── Sector intelligence ───────────────────────────────────────────────────
+    sector_qs = Company.objects.filter(sector=company.sector)
+    sector_total = sector_qs.count()
+    sector_below = sector_qs.filter(ecoiq_score__lt=company.ecoiq_score).count()
+    sector_percentile = round(sector_below / max(sector_total, 1) * 100)
+
+    # Top 6 peers in same sector (include self for chart)
+    sector_peers = list(
+        Company.objects.filter(sector=company.sector)
+        .order_by('-ecoiq_score')[:6]
+    )
+    peer_chart = json.dumps([
+        {
+            'name':  p.name[:22] + ('…' if len(p.name) > 22 else ''),
+            'score': float(p.ecoiq_score),
+            'tier':  get_tier(float(p.ecoiq_score)).css,
+            'self':  (p.pk == company.pk),
+        }
+        for p in sector_peers
+    ])
 
     # ── CO₂ analytics ─────────────────────────────────────────────────────────
-    co2_completed = sum(p.co2_reduction_tonnes or 0 for p in projects_completed)
-    co2_active    = sum(p.co2_reduction_tonnes or 0 for p in projects_active)
-    co2_planned   = sum(p.co2_reduction_tonnes or 0 for p in projects_planned)
-    co2_total     = co2_completed + co2_active
-    # Equivalences  (rough but illustrative)
-    co2_cars_equiv    = round(co2_total / 4.6) if co2_total else 0   # avg car = 4.6t/yr
-    co2_trees_equiv   = round(co2_total * 45)  if co2_total else 0   # 1t CO₂ ≈ 45 tree-years
+    co2_completed  = sum(p.co2_reduction_tonnes or 0 for p in projects_completed)
+    co2_active     = sum(p.co2_reduction_tonnes or 0 for p in projects_active)
+    co2_planned    = sum(p.co2_reduction_tonnes or 0 for p in projects_planned)
+    co2_total      = co2_completed + co2_active
+    co2_cars_equiv = round(co2_total / 4.6) if co2_total else 0
+    co2_trees_equiv= round(co2_total * 45)  if co2_total else 0
 
-    # ── Investment chart (horizontal bars per project) ─────────────────────────
+    # CO₂ time-series (24 months, derived from pollution history)
+    _poll_24  = history_pollution[-24:] if history_pollution else []
+    _labs_24  = history_labels[-24:]   if history_labels   else []
+    # Simulate emission intensity: inverse of pollution score
+    emissions_chart = json.dumps({
+        'labels':    _labs_24,
+        'intensity': [round(120 - s * 0.8 + (i % 5 - 2) * 3, 1) for i, s in enumerate(_poll_24)] if _poll_24 else [],
+        'co2_seq':   [round(co2_total * (0.85 + 0.02 * i), 0) for i in range(len(_labs_24))]   if _poll_24 else [],
+    })
+
+    # Methane simulation (sector-dependent baseline)
+    _methane_base = 90 if company.sector in ('oil_gas', 'mining') else 55
+    methane_chart = json.dumps({
+        'labels':   _labs_24,
+        'methane':  [
+            round(max(5, _methane_base - history_scores[-24:][i] * 0.35
+                      + (_math.sin(i * 0.45) * 4)), 1)
+            for i in range(len(_labs_24))
+        ] if _labs_24 and history_scores else [],
+        'limit':    100,
+    })
+
+    # ── Investment chart ──────────────────────────────────────────────────────
     inv_projects = sorted(
         [p for p in all_projects if p.investment_usd and p.start_date],
         key=lambda p: p.start_date,
     )
-    inv_labels  = json.dumps([p.name[:30] + ('…' if len(p.name) > 30 else '') for p in inv_projects])
-    inv_amounts = json.dumps([round(p.investment_usd / 1_000_000, 1) for p in inv_projects])
-    # Cumulative investment line
-    cum, inv_cum = 0, []
+    inv_labels     = json.dumps([p.name[:30] + ('…' if len(p.name) > 30 else '') for p in inv_projects])
+    inv_amounts    = json.dumps([round(p.investment_usd / 1_000_000, 1) for p in inv_projects])
+    cum = 0
+    inv_cum = []
     for p in inv_projects:
         cum += round(p.investment_usd / 1_000_000, 1)
         inv_cum.append(round(cum, 1))
     inv_cumulative = json.dumps(inv_cum)
     inv_colors = json.dumps([
-        '#2d6a4f' if p.status == 'completed'
-        else '#40916c' if p.status == 'active'
-        else '#a8c5b8'
+        '#00e89a' if p.status == 'completed'
+        else '#3b82f6' if p.status == 'active'
+        else '#6b7280'
         for p in inv_projects
     ])
 
@@ -303,54 +365,117 @@ def company_profile(request, slug):
         {'num': num, 'label': label, 'color': color, 'active': num in active_sdg_nums}
         for num, label, color in _SDG_ALL
     ]
+    sdg_active_count = sum(1 for s in sdg_grid if s['active'])
 
-    # ── AI Recommendations (stub) ─────────────────────────────────────────────
-    recommendations = _stub_recommendations(company, all_projects)
+    # ── AI findings from linked jobs ──────────────────────────────────────────
+    from audit.models import AIAnalysisJob, AIFinding, AIScoreEstimate  # noqa: F401
+    latest_job = company.ai_jobs.filter(status='completed').order_by('-created_at').first()
+    ai_findings = []
+    ai_score_estimate = None
+    greenwashing_data = None
+    ai_job_meta = None
+    if latest_job:
+        ai_findings = list(
+            latest_job.findings.filter(status='approved')
+            .order_by('-confidence_score')[:10]
+        )
+        ai_job_meta = {
+            'filename':  latest_job.original_filename,
+            'year':      latest_job.detected_year,
+            'summary':   latest_job.executive_summary[:300] if latest_job.executive_summary else '',
+            'doc_type':  latest_job.detected_doc_type,
+            'total':     latest_job.finding_count,
+            'approved':  latest_job.approved_count,
+            'date':      str(latest_job.completed_at)[:10] if latest_job.completed_at else '',
+        }
+        try:
+            se = latest_job.score_estimate
+            ai_score_estimate = se
+            if se.greenwashing_score is not None:
+                gw_score   = se.greenwashing_score
+                gw_color   = (
+                    '#ef4444' if gw_score >= 70 else
+                    '#f59e0b' if gw_score >= 40 else
+                    '#22c55e'
+                )
+                greenwashing_data = {
+                    'score':   gw_score,
+                    'level':   se.greenwashing_level,
+                    'signals': se.greenwashing_signals or [],
+                    'verdict': se.greenwashing_verdict,
+                    'color':   gw_color,
+                }
+        except Exception:
+            pass
 
-    # ── Evidence ──────────────────────────────────────────────────────────────
-    evidence    = list(company.evidence.select_related('project').order_by('-date_issued'))
-    ev_verified = sum(1 for e in evidence if e.verification_status == 'verified')
-    ev_pending  = sum(1 for e in evidence if e.verification_status == 'pending')
-    ev_rejected = sum(1 for e in evidence if e.verification_status == 'rejected')
+    # Greenwashing gauge JSON for Chart.js
+    gw_gauge_json = 'null'
+    if greenwashing_data:
+        gw_score_val = greenwashing_data['score']
+        gw_color_val = greenwashing_data['color']
+        gw_gauge_json = json.dumps({
+            'score': gw_score_val,
+            'color': gw_color_val,
+        })
 
-    # Group evidence by year for transparency history timeline
+    # ── Evidence & disclosure completeness ────────────────────────────────────
+    evidence     = list(company.evidence.select_related('project').order_by('-date_issued'))
+    ev_verified  = sum(1 for e in evidence if e.verification_status == 'verified')
+    ev_pending   = sum(1 for e in evidence if e.verification_status == 'pending')
+    ev_rejected  = sum(1 for e in evidence if e.verification_status == 'rejected')
+
+    _all_ev_types = ['audit_report', 'government_report', 'satellite',
+                     'engineering_audit', 'photo', 'invoice', 'permit']
+    _present_types = {e.doc_type for e in evidence}
+    disclosure_completeness = round(len(_present_types & set(_all_ev_types)) / len(_all_ev_types) * 100)
+    disclosure_missing = sorted(set(_all_ev_types) - _present_types)
+    all_ev_types_list = [
+        {'key': k, 'label': k.replace('_', ' ').title(), 'present': k in _present_types}
+        for k in _all_ev_types
+    ]
+
     ev_by_year = {}
     for ev in evidence:
         yr = ev.date_issued.year if ev.date_issued else 0
         ev_by_year.setdefault(yr, []).append(ev)
     transparency_history = sorted(ev_by_year.items(), reverse=True)
 
-    # ── Before/after: completed projects with measurable impact ───────────────
-    before_after = [
-        p for p in projects_completed
-        if (p.co2_reduction_tonnes or 0) > 0 or (p.pm25_reduction_kg or 0) > 0
-    ]
-
-    # ── Modernization roadmap (all projects, sorted by start_date) ────────────
+    # ── Roadmap ───────────────────────────────────────────────────────────────
     roadmap_projects = sorted(
         [p for p in all_projects if p.start_date],
         key=lambda p: p.start_date,
     )
 
-    # ── SVG score arc (circumference 2πr = 2π×52 ≈ 327) ─────────────────────
+    # ── SVG score arc ─────────────────────────────────────────────────────────
     score_arc = round(float(company.ecoiq_score) / 100 * 327, 1)
 
-    ctx = {
-        'company':            company,
-        'tier':               tier,
-        'pillars':            pillars,
-        'score_arc':          score_arc,
+    # ── AI Recommendations (stub) ─────────────────────────────────────────────
+    recommendations = _stub_recommendations(company, all_projects)
 
+    ctx = {
+        'company':   company,
+        'tier':      tier,
+        'pillars':   pillars,
+        'score_arc': score_arc,
+
+        # Ranking & sector
+        'yoy_delta':          yoy_delta,
+        'sector_percentile':  sector_percentile,
+        'sector_total':       sector_total,
+        'sector_peers':       sector_peers,
+        'peer_chart':         peer_chart,
+        'score_changes':      score_changes,
+
+        # Projects
         'all_projects':       all_projects,
         'projects_completed': projects_completed,
         'projects_active':    projects_active,
         'projects_planned':   projects_planned,
-        'before_after':       before_after,
         'roadmap_projects':   roadmap_projects,
 
         # Chart JSON
-        'radar_labels':    json.dumps([p['name'] for p in pillars]),
-        'radar_scores':    json.dumps([p['score'] for p in pillars]),
+        'radar_labels':       json.dumps([p['name'] for p in pillars]),
+        'radar_scores':       json.dumps([p['score'] for p in pillars]),
         'hist_labels':        json.dumps(history_labels),
         'hist_scores':        json.dumps(history_scores),
         'hist_pollution':     json.dumps(history_pollution),
@@ -358,10 +483,13 @@ def company_profile(request, slug):
         'hist_invest':        json.dumps(history_invest),
         'hist_transparency':  json.dumps(history_transparency),
         'hist_community':     json.dumps(history_community),
-        'inv_labels':      inv_labels,
-        'inv_amounts':     inv_amounts,
-        'inv_cumulative':  inv_cumulative,
-        'inv_colors':      inv_colors,
+        'inv_labels':         inv_labels,
+        'inv_amounts':        inv_amounts,
+        'inv_cumulative':     inv_cumulative,
+        'inv_colors':         inv_colors,
+        'emissions_chart':    emissions_chart,
+        'methane_chart':      methane_chart,
+        'gw_gauge_json':      gw_gauge_json,
 
         # CO₂
         'co2_completed':   co2_completed,
@@ -371,14 +499,24 @@ def company_profile(request, slug):
         'co2_cars_equiv':  co2_cars_equiv,
         'co2_trees_equiv': co2_trees_equiv,
 
+        # AI Intelligence
+        'ai_findings':        ai_findings,
+        'ai_job_meta':        ai_job_meta,
+        'ai_score_estimate':  ai_score_estimate,
+        'greenwashing_data':  greenwashing_data,
+
         # Qualitative
-        'sdg_grid':            sdg_grid,
-        'recommendations':     recommendations,
-        'evidence':            evidence,
-        'ev_verified':         ev_verified,
-        'ev_pending':          ev_pending,
-        'ev_rejected':         ev_rejected,
-        'transparency_history': transparency_history,
+        'sdg_grid':              sdg_grid,
+        'sdg_active_count':      sdg_active_count,
+        'recommendations':       recommendations,
+        'evidence':              evidence,
+        'ev_verified':           ev_verified,
+        'ev_pending':            ev_pending,
+        'ev_rejected':           ev_rejected,
+        'transparency_history':  transparency_history,
+        'disclosure_completeness': disclosure_completeness,
+        'disclosure_missing':    disclosure_missing,
+        'all_ev_types_list':     all_ev_types_list,
 
         'project_type_meta': PROJECT_TYPE_META,
     }

@@ -1,583 +1,502 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ company.name }} — EcoIQ ESG Intelligence</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ company.name }} — EcoIQ Intelligence Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% load humanize %}
+<style>
+/* ── Reset & variables ──────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g900:#060e09;--g800:#0d1a11;--g700:#1b4332;--g600:#2d6a4f;--g500:#40916c;
+  --g400:#52b788;--g300:#95d5b2;--g200:#d8f3dc;--g100:#f0f7f2;
+  --acc:#00e89a;--acc2:#00c47a;
+  --bg:#f2f5f3;--card:#ffffff;--border:#dce5de;--border2:#e8eee9;
+  --text:#111b14;--muted:#5c7063;--muted2:#8da394;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',-apple-system,sans-serif;
+  --r8:8px;--r12:12px;--r18:18px;
+  --sh1:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --sh3:0 12px 40px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);
+  --sidebar:200px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.5}
+.mono{font-family:var(--mono)}
+.label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.sec-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
 
-  <style>
-/* ── Reset & variables ─────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Top nav ────────────────────────────────────────────────────────────── */
+.topnav{background:var(--g800);padding:.85rem 2rem;display:flex;align-items:center;
+  gap:1.5rem;position:sticky;top:0;z-index:300;border-bottom:1px solid rgba(0,232,154,.12)}
+.topnav a{color:#fff;text-decoration:none;font-size:.88rem}
+.brand{font-weight:900;font-size:1.1rem;letter-spacing:-.02em}
+.brand span{color:var(--acc)}
+.nav-links{margin-left:auto;display:flex;gap:.5rem;align-items:center}
+.nav-links a{color:rgba(255,255,255,.65);font-size:.82rem;padding:.3rem .75rem;
+  border-radius:6px;transition:all .15s}
+.nav-links a:hover{background:rgba(255,255,255,.12);color:#fff}
 
-:root {
-  --green-900: #0d1f16;
-  --green-800: #1b4332;
-  --green-700: #2d6a4f;
-  --green-600: #40916c;
-  --green-500: #52b788;
-  --green-300: #95d5b2;
-  --green-200: #d8f3dc;
-  --green-100: #f0f7f2;
-  --accent:    #00e89a;
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+.cover{
+  background:linear-gradient(140deg,#020806 0%,#060e09 25%,#0d1a11 60%,#152b1c 100%);
+  color:#fff;padding:2.5rem 2rem 0;
+  border-bottom:1px solid rgba(0,232,154,.12);
+}
+.cover-inner{max-width:1400px;margin:0 auto;
+  display:grid;grid-template-columns:1fr auto;gap:2.5rem;align-items:start}
+@media(max-width:780px){.cover-inner{grid-template-columns:1fr}}
+.breadcrumb{font-size:.73rem;color:rgba(255,255,255,.38);margin-bottom:.75rem}
+.breadcrumb a{color:rgba(255,255,255,.5);text-decoration:none}
+.breadcrumb a:hover{color:#fff}
+.breadcrumb span{margin:0 .35rem;opacity:.4}
+.cover h1{font-size:clamp(1.7rem,3.5vw,2.5rem);font-weight:900;
+  letter-spacing:-.04em;line-height:1.1;margin-bottom:.6rem}
+.cover-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem}
+.chip{display:inline-flex;align-items:center;gap:.3rem;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;padding:.2rem .65rem;font-size:.73rem;color:rgba(255,255,255,.8)}
+.chip.verified{background:rgba(0,232,154,.12);border-color:rgba(0,232,154,.3);color:var(--acc)}
+.cover-desc{font-size:.86rem;color:rgba(255,255,255,.6);line-height:1.65;
+  max-width:600px;margin-bottom:1.25rem}
 
-  --bg:       #f2f5f3;
-  --card:     #ffffff;
-  --border:   #dce5de;
-  --border-2: #e8eee9;
-  --text:     #111b14;
-  --muted:    #5c7063;
-  --muted-2:  #8da394;
+/* Hero right — score panel */
+.score-panel{text-align:center;padding:1.5rem 1.75rem;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+  border-radius:var(--r18);backdrop-filter:blur(20px);min-width:210px}
+.score-ring-wrap{position:relative;display:inline-block}
+.big-score{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.score-number{font-family:var(--mono);font-size:2.6rem;font-weight:700;
+  line-height:1;letter-spacing:-.05em}
+.score-lbl{font-size:.62rem;color:rgba(255,255,255,.45);margin-top:.15rem;
+  text-transform:uppercase;letter-spacing:.1em}
+.tier-pill{display:inline-block;margin-top:.65rem;padding:.22rem .9rem;
+  border-radius:20px;border:1px solid rgba(255,255,255,.22);
+  font-size:.7rem;font-weight:700;color:#fff}
+.rank-row{display:flex;justify-content:center;gap:.75rem;margin-top:.5rem}
+.rank-chip{font-size:.68rem;color:rgba(255,255,255,.42);font-family:var(--mono)}
+.rank-chip strong{color:rgba(255,255,255,.75)}
 
-  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  --sans: 'Inter', -apple-system, sans-serif;
+/* YoY delta badge */
+.yoy-badge{display:inline-flex;align-items:center;gap:.3rem;
+  font-size:.78rem;font-weight:700;font-family:var(--mono);
+  padding:.2rem .7rem;border-radius:6px;margin-top:.5rem}
+.yoy-pos{background:rgba(34,197,94,.18);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.yoy-neg{background:rgba(239,68,68,.18);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.yoy-flat{background:rgba(255,255,255,.1);color:rgba(255,255,255,.55)}
 
-  --tier-restorative: #2d6a4f;
-  --tier-transition:  #40916c;
-  --tier-improving:   #52b788;
-  --tier-high-impact: #e07b39;
-  --tier-polluter:    #d93025;
+/* ── KPI strip ──────────────────────────────────────────────────────────── */
+.kpi-strip{background:#060e09;border-top:1px solid rgba(0,232,154,.12);
+  border-bottom:1px solid rgba(0,232,154,.08)}
+.kpi-inner{max-width:1400px;margin:0 auto;padding:0 2rem;
+  display:grid;grid-template-columns:repeat(7,1fr)}
+@media(max-width:900px){.kpi-inner{grid-template-columns:repeat(4,1fr)}}
+.kv-chip{padding:.8rem .75rem;border-right:1px solid rgba(255,255,255,.05)}
+.kv-chip:last-child{border-right:none}
+.kv{font-family:var(--mono);font-size:1.2rem;font-weight:600;
+  color:var(--acc);letter-spacing:-.03em;line-height:1}
+.kl{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;
+  color:rgba(255,255,255,.3);margin-top:.18rem}
 
-  --radius-sm: 8px;
-  --radius:    12px;
-  --radius-lg: 18px;
+/* ── Main layout: sticky sidebar + content ──────────────────────────────── */
+.term-shell{display:flex;max-width:1400px;margin:0 auto;padding:0 1rem 4rem}
+@media(max-width:860px){.term-shell{flex-direction:column}}
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --shadow:    0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+/* Left sticky sidebar */
+.term-sidebar{width:var(--sidebar);flex-shrink:0;padding:1.5rem 0 4rem;
+  position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto;
+  scrollbar-width:none}
+.term-sidebar::-webkit-scrollbar{display:none}
+@media(max-width:860px){
+  .term-sidebar{width:100%;height:auto;position:static;padding:.75rem 0 0;
+    display:flex;overflow-x:auto;gap:.25rem;border-bottom:1px solid var(--border);
+    background:var(--card)}
 }
+.snav-section{margin-bottom:1.5rem}
+@media(max-width:860px){.snav-section{display:contents}}
+.snav-group-label{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted2);padding:.3rem 1rem .2rem;font-weight:700}
+@media(max-width:860px){.snav-group-label{display:none}}
+.snav{display:flex;align-items:center;gap:.5rem;padding:.48rem 1rem;
+  font-size:.8rem;font-weight:500;color:var(--muted);text-decoration:none;
+  white-space:nowrap;border-right:2px solid transparent;transition:all .15s;
+  border-radius:0;cursor:pointer}
+@media(max-width:860px){
+  .snav{border-right:none;border-bottom:2px solid transparent;padding:.55rem .75rem;
+    border-radius:0;font-size:.79rem}
+}
+.snav:hover{color:var(--g600);background:rgba(45,106,79,.06)}
+.snav.active{color:var(--g600);border-right-color:var(--g600);font-weight:600;
+  background:rgba(45,106,79,.07)}
+@media(max-width:860px){.snav.active{border-right-color:transparent;border-bottom-color:var(--g600)}}
+.snav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
-html { scroll-behavior: smooth; }
-body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.5; }
+/* Main content area */
+.term-main{flex:1;min-width:0;padding:1.5rem 0 0 1.5rem}
+@media(max-width:860px){.term-main{padding:1rem 0 0}}
 
-/* ── Typography helpers ──────────────────────────────────────────────────── */
-.mono { font-family: var(--mono); }
-.label {
-  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .09em; color: var(--muted);
-}
-.section-title {
-  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .09em; color: var(--muted);
-}
+/* Action row below hero */
+.hero-actions{max-width:1400px;margin:0 auto;padding:.85rem 2rem;
+  display:flex;align-items:center;gap:.75rem;
+  background:linear-gradient(180deg,#0a1510,var(--bg));
+  border-bottom:1px solid var(--border)}
+.btn-pdf{display:inline-flex;align-items:center;gap:.4rem;
+  background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.3);
+  color:var(--acc);text-decoration:none;padding:.4rem 1rem;
+  border-radius:6px;font-size:.8rem;font-weight:600;transition:all .15s}
+.btn-pdf:hover{background:rgba(0,232,154,.2)}
+.btn-back{color:rgba(255,255,255,.45);font-size:.78rem;text-decoration:none;margin-left:auto}
 
-/* ── Nav ─────────────────────────────────────────────────────────────────── */
-.topnav {
-  background: var(--green-800);
-  padding: .85rem 2rem;
-  display: flex; align-items: center; gap: 1.5rem;
-  position: sticky; top: 0; z-index: 200;
-}
-.topnav a { color: #fff; text-decoration: none; font-size: .88rem; }
-.topnav .brand { font-weight: 900; font-size: 1.1rem; letter-spacing: -.02em; }
-.topnav .brand span { color: var(--accent); }
-.topnav .nav-links { margin-left: auto; display: flex; gap: .5rem; align-items: center; }
-.topnav .nav-links a {
-  color: rgba(255,255,255,.7); font-size: .82rem;
-  padding: .3rem .75rem; border-radius: 6px; transition: all .15s;
-}
-.topnav .nav-links a:hover { background: rgba(255,255,255,.12); color: #fff; }
+/* ── Card ───────────────────────────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r12);
+  box-shadow:var(--sh1);margin-bottom:1.25rem;overflow:hidden}
+.card-hd{display:flex;align-items:center;justify-content:space-between;
+  padding:.875rem 1.25rem;border-bottom:1px solid var(--border2)}
+.card-hd-left{display:flex;align-items:center;gap:.5rem}
+.card-hd-icon{font-size:1rem}
+.card-bd{padding:1.25rem}
 
-/* ── Hero cover ──────────────────────────────────────────────────────────── */
-.cover {
-  background: linear-gradient(140deg, #060e09 0%, var(--green-900) 30%, var(--green-800) 70%, #1e5437 100%);
-  color: #fff;
-  padding: 2.5rem 2rem 0;
-}
-.cover-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;
-}
-@media (max-width: 780px) { .cover-inner { grid-template-columns: 1fr; } }
+/* ── Dark analytics card ─────────────────────────────────────────────────── */
+.adc{background:linear-gradient(145deg,#060e09 0%,#0a1a10 50%,#060e09 100%);
+  border:1px solid rgba(0,232,154,.13);border-radius:var(--r18);
+  padding:1.4rem 1.5rem;margin-bottom:1.25rem;
+  box-shadow:0 8px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(0,232,154,.06);
+  position:relative;overflow:hidden}
+.adc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,232,154,.4),transparent)}
+.adc-hd{display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:1.2rem;gap:1rem}
+.adc-hd-left{display:flex;align-items:flex-start;gap:.75rem}
+.adc-icon{font-size:1.35rem;margin-top:.1rem}
+.adc-title{font-size:.95rem;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.2}
+.adc-sub{font-size:.67rem;color:rgba(255,255,255,.35);margin-top:.2rem;letter-spacing:.03em}
+.adc-tag{font-size:.6rem;font-weight:700;letter-spacing:.1em;color:var(--acc);
+  border:1px solid rgba(0,232,154,.28);border-radius:4px;padding:.18rem .5rem;
+  background:rgba(0,232,154,.06);white-space:nowrap;margin-top:.15rem}
+.adc-wrap{position:relative}
 
-.breadcrumb { font-size: .75rem; color: rgba(255,255,255,.45); margin-bottom: .75rem; }
-.breadcrumb a { color: rgba(255,255,255,.55); text-decoration: none; }
-.breadcrumb a:hover { color: #fff; }
-.breadcrumb span { margin: 0 .35rem; }
+/* ── Score intelligence ──────────────────────────────────────────────────── */
+.score-intel{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:center}
+@media(max-width:640px){.score-intel{grid-template-columns:1fr}}
+.radar-wrap{height:220px;position:relative}
+.pillar-list{display:flex;flex-direction:column;gap:.85rem}
+.pillar-row{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center}
+.pillar-info{display:flex;flex-direction:column;gap:.28rem}
+.pillar-name-row{display:flex;align-items:baseline;gap:.4rem}
+.pillar-nm{font-size:.83rem;font-weight:600}
+.pillar-wt{font-size:.67rem;color:var(--muted2)}
+.ptrack{height:6px;border-radius:3px;background:var(--border);overflow:hidden}
+.pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--g700),var(--g500));
+  transition:width 1s ease}
+.pillar-score{font-family:var(--mono);font-size:1.2rem;font-weight:700;
+  color:var(--g700);min-width:2.5rem;text-align:right}
+.score-total-row{padding-top:.5rem;border-top:1px solid var(--border2);
+  display:flex;justify-content:space-between;align-items:baseline}
 
-.cover h1 {
-  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-  font-weight: 900; letter-spacing: -.04em; line-height: 1.1;
-  margin-bottom: .5rem;
-}
+/* ── Trend charts ────────────────────────────────────────────────────────── */
+.trend-wrap{height:240px}
+.chart-h200{height:200px}
+.chart-h220{height:220px}
+.chart-h260{height:260px}
+.chart-h180{height:180px}
 
-.cover-meta {
-  display: flex; flex-wrap: wrap; gap: .5rem;
-  align-items: center; margin-bottom: 1rem;
-}
-.cover-chip {
-  display: inline-flex; align-items: center; gap: .3rem;
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
-  border-radius: 20px; padding: .2rem .65rem;
-  font-size: .75rem; color: rgba(255,255,255,.85);
-}
-.cover-chip.verified { background: rgba(0,232,154,.15); border-color: rgba(0,232,154,.35); color: var(--accent); }
+/* Multi-pillar kpi row */
+.kpi-row5{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;margin-bottom:1.2rem}
+@media(max-width:700px){.kpi-row5{grid-template-columns:repeat(3,1fr)}}
+.kpi5{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:8px;padding:.7rem .75rem .5rem}
+.kpi5-val{font-family:var(--mono);font-size:1.5rem;font-weight:700;
+  letter-spacing:-.04em;line-height:1}
+.kpi5-lbl{font-size:.6rem;color:rgba(255,255,255,.35);text-transform:uppercase;
+  letter-spacing:.07em;margin:.22rem 0 .3rem}
+.spk-canvas{width:100%!important;height:34px!important;display:block}
 
-.cover-desc {
-  font-size: .88rem; color: rgba(255,255,255,.7); line-height: 1.65;
-  max-width: 600px; margin-bottom: 1.5rem;
-}
+/* ── Tier legend ─────────────────────────────────────────────────────────── */
+.tier-legend{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:.75rem}
+.tier-dot{display:flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--muted)}
+.tdot{width:9px;height:9px;border-radius:50%}
 
-/* Score panel */
-.score-panel {
-  text-align: center; padding: 1.5rem 1.75rem;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(20px);
-  min-width: 200px;
-}
-.score-ring-wrap { position: relative; display: inline-block; }
-.score-ring-wrap .big-score {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
-.score-number {
-  font-family: var(--mono); font-size: 2.6rem; font-weight: 700;
-  line-height: 1; letter-spacing: -.05em;
-}
-.score-label { font-size: .65rem; color: rgba(255,255,255,.5); margin-top: .15rem; text-transform: uppercase; letter-spacing: .08em; }
-.tier-pill {
-  display: inline-block; margin-top: .75rem;
-  padding: .25rem .9rem; border-radius: 20px; border: 1px solid rgba(255,255,255,.25);
-  font-size: .72rem; font-weight: 700; color: #fff;
-}
-.rank-line { font-size: .72rem; color: rgba(255,255,255,.45); margin-top: .4rem; font-family: var(--mono); }
+/* ── CO₂ ─────────────────────────────────────────────────────────────────── */
+.co2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem}
+@media(max-width:600px){.co2-grid{grid-template-columns:1fr 1fr}}
+.co2-box{background:var(--g100);border:1px solid var(--g200);border-radius:var(--r8);padding:.9rem}
+.co2-box.primary{background:var(--g800);border-color:var(--g700)}
+.co2-val{font-family:var(--mono);font-size:1.5rem;font-weight:700;color:var(--g700);line-height:1}
+.co2-box.primary .co2-val{color:var(--acc);font-size:1.9rem}
+.co2-lbl{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:.28rem}
+.co2-box.primary .co2-lbl{color:rgba(255,255,255,.45)}
+.co2-equiv{display:flex;gap:1.5rem;flex-wrap:wrap;padding-top:.7rem;border-top:1px solid var(--border)}
+.equiv-item{display:flex;align-items:center;gap:.35rem;font-size:.8rem;color:var(--muted)}
+.equiv-item strong{color:var(--text);font-family:var(--mono)}
 
-/* ── Terminal KPI strip ──────────────────────────────────────────────────── */
-.kpi-strip {
-  background: #0a1510;
-  border-top: 1px solid rgba(0,232,154,.15);
-  border-bottom: 1px solid rgba(0,232,154,.1);
-}
-.kpi-strip-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: repeat(6, 1fr);
-  padding: .1rem 2rem;
-}
-@media (max-width: 900px) { .kpi-strip-inner { grid-template-columns: repeat(3, 1fr); } }
-.kpi-chip {
-  padding: .85rem .75rem;
-  border-right: 1px solid rgba(255,255,255,.06);
-}
-.kpi-chip:last-child { border-right: none; }
-.kpi-chip .kv {
-  font-family: var(--mono); font-size: 1.25rem; font-weight: 600;
-  color: var(--accent); letter-spacing: -.04em; line-height: 1;
-}
-.kpi-chip .kl {
-  font-size: .65rem; text-transform: uppercase; letter-spacing: .08em;
-  color: rgba(255,255,255,.35); margin-top: .2rem;
-}
+/* ── Projects ────────────────────────────────────────────────────────────── */
+.proj-card{border:1px solid var(--border);border-radius:var(--r8);overflow:hidden;
+  margin-bottom:.85rem;transition:box-shadow .15s,transform .15s}
+.proj-card:hover{box-shadow:var(--sh2);transform:translateY(-1px)}
+.proj-card:last-child{margin-bottom:0}
+.proj-hd{display:flex;align-items:center;justify-content:space-between;
+  padding:.6rem 1rem;color:#fff}
+.proj-type-badge{display:flex;align-items:center;gap:.3rem;
+  font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.9}
+.status-pill{font-size:.63rem;font-weight:700;padding:.18rem .55rem;
+  border-radius:20px;background:rgba(255,255,255,.2);color:#fff;
+  border:1px solid rgba(255,255,255,.28)}
+.proj-body{padding:.85rem 1rem}
+.proj-name{font-weight:700;font-size:.92rem;margin-bottom:.22rem}
+.proj-loc{font-size:.73rem;color:var(--muted);margin-bottom:.6rem;
+  display:flex;align-items:center;gap:.3rem}
+.proj-desc{font-size:.79rem;color:var(--muted);line-height:1.6;margin-bottom:.7rem}
+.metric-chips{display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.7rem}
+.mc{display:inline-flex;align-items:center;gap:.28rem;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:.22rem .55rem;font-size:.71rem;font-weight:600;font-family:var(--mono)}
+.proj-tl{margin-top:.7rem}
+.proj-tl-hd{font-size:.67rem;color:var(--muted);margin-bottom:.28rem;
+  display:flex;justify-content:space-between}
+.proj-tl-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.proj-tl-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--g600),var(--g400))}
 
-/* ── Section navigation ─────────────────────────────────────────────────── */
-.sec-nav {
-  background: var(--card); border-bottom: 1px solid var(--border);
-  position: sticky; top: 57px; z-index: 100;
-}
-.sec-nav-inner {
-  max-width: 1200px; margin: 0 auto; padding: 0 2rem;
-  display: flex; gap: 0; overflow-x: auto;
-}
-.snav {
-  padding: .75rem 1rem; font-size: .8rem; font-weight: 500;
-  color: var(--muted); text-decoration: none; white-space: nowrap;
-  border-bottom: 2px solid transparent; transition: all .15s;
-}
-.snav:hover { color: var(--green-700); }
-.snav.active { color: var(--green-700); border-bottom-color: var(--green-700); font-weight: 600; }
+/* ── Benchmark ───────────────────────────────────────────────────────────── */
+.peer-row{display:flex;align-items:center;gap:.75rem;
+  padding:.55rem 0;border-bottom:1px solid var(--border2)}
+.peer-row:last-child{border-bottom:none}
+.peer-rank{font-family:var(--mono);font-size:.75rem;font-weight:700;
+  color:var(--muted2);width:1.5rem;text-align:right;flex-shrink:0}
+.peer-name{font-size:.82rem;font-weight:600;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.peer-name.self-co{color:var(--g700)}
+.peer-bar-wrap{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.peer-bar{height:100%;border-radius:4px;transition:width .8s ease}
+.peer-score{font-family:var(--mono);font-size:.82rem;font-weight:700;
+  width:2.8rem;text-align:right;flex-shrink:0}
 
-/* ── Page layout ─────────────────────────────────────────────────────────── */
-.page { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
-.two-col { display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items: start; }
-@media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
+/* ── AI Findings ─────────────────────────────────────────────────────────── */
+.finding-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+  border-radius:8px;padding:.85rem 1rem;margin-bottom:.7rem}
+.finding-card:last-child{margin-bottom:0}
+.finding-hd{display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.4rem}
+.finding-type-badge{font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;padding:.18rem .55rem;border-radius:4px;
+  border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);
+  white-space:nowrap;flex-shrink:0}
+.finding-title{font-size:.84rem;font-weight:700;color:#fff;line-height:1.35;flex:1}
+.finding-desc{font-size:.78rem;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:.5rem}
+.finding-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.conf-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;max-width:80px}
+.conf-bar{height:100%;border-radius:2px}
+.conf-label{font-size:.65rem;font-family:var(--mono);color:rgba(255,255,255,.4)}
+.finding-num{font-size:.65rem;font-family:var(--mono);color:rgba(255,255,255,.3)}
+.finding-quote{font-size:.72rem;color:rgba(255,255,255,.35);font-style:italic;
+  padding:.4rem .65rem;border-left:2px solid rgba(0,232,154,.3);
+  margin-top:.5rem;line-height:1.5}
 
-/* ── Section card ────────────────────────────────────────────────────────── */
-.card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow-sm);
-  margin-bottom: 1.25rem; overflow: hidden;
-}
-.card-hd {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: .875rem 1.25rem;
-  border-bottom: 1px solid var(--border-2);
-}
-.card-hd-left { display: flex; align-items: center; gap: .5rem; }
-.card-hd-icon { font-size: 1rem; }
-.card-bd { padding: 1.25rem; }
-.card-bd.flush { padding: 0; }
-
-/* ── Score intelligence grid ─────────────────────────────────────────────── */
-.score-intel { display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; align-items: center; }
-@media (max-width: 640px) { .score-intel { grid-template-columns: 1fr; } }
-.radar-wrap { height: 220px; position: relative; }
-
-.pillar-list { display: flex; flex-direction: column; gap: .9rem; }
-.pillar-row { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: center; }
-.pillar-info { display: flex; flex-direction: column; gap: .3rem; }
-.pillar-name-row { display: flex; align-items: baseline; gap: .4rem; }
-.pillar-nm { font-size: .83rem; font-weight: 600; }
-.pillar-wt { font-size: .68rem; color: var(--muted-2); }
-.ptrack { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
-.pfill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green-700), var(--green-500)); transition: width 1s ease; }
-.pillar-score { font-family: var(--mono); font-size: 1.2rem; font-weight: 700; color: var(--green-700); min-width: 2.5rem; text-align: right; }
-
-/* ── Trend chart ─────────────────────────────────────────────────────────── */
-.trend-wrap { height: 240px; }
-
-/* ── Analytics dark card (Bloomberg / Palantir style) ─────────────────────── */
-.analytics-dark-card {
-  background: linear-gradient(145deg, #0a1510 0%, #0f1f17 50%, #091410 100%);
-  border: 1px solid rgba(0,232,154,.14);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 8px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(0,232,154,.06);
-  backdrop-filter: blur(12px);
-  position: relative;
-  overflow: hidden;
-}
-.analytics-dark-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,232,154,.4), transparent);
-}
-.adc-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 1.25rem; gap: 1rem;
-}
-.adc-header-left { display: flex; align-items: flex-start; gap: .75rem; }
-.adc-icon { font-size: 1.4rem; margin-top: .1rem; }
-.adc-title {
-  font-size: .95rem; font-weight: 800; color: #fff;
-  letter-spacing: -.02em; line-height: 1.2;
-}
-.adc-sub { font-size: .68rem; color: rgba(255,255,255,.38); margin-top: .2rem; letter-spacing: .03em; }
-.adc-badge {
-  font-size: .62rem; font-weight: 700; letter-spacing: .1em;
-  color: #00e89a; border: 1px solid rgba(0,232,154,.3);
-  border-radius: 4px; padding: .2rem .55rem;
-  background: rgba(0,232,154,.06); white-space: nowrap; margin-top: .15rem;
-}
-.adc-kpi-row {
-  display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: .75rem; margin-bottom: 1.25rem;
-}
-@media (max-width: 700px) { .adc-kpi-row { grid-template-columns: repeat(3, 1fr); } }
-.adc-kpi {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: 8px; padding: .75rem .75rem .5rem;
-}
-.adc-kpi-val {
-  font-family: var(--mono); font-size: 1.55rem; font-weight: 700;
-  letter-spacing: -.04em; line-height: 1;
-}
-.adc-kpi-lbl {
-  font-size: .62rem; color: rgba(255,255,255,.38);
-  text-transform: uppercase; letter-spacing: .07em; margin: .25rem 0 .35rem;
-}
-.sparkline-canvas { width: 100% !important; height: 36px !important; display: block; }
-.adc-chart-wrap { height: 260px; position: relative; }
-
-/* Tier legend bar */
-.tier-legend { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
-.tier-dot { display: flex; align-items: center; gap: .3rem; font-size: .72rem; color: var(--muted); }
-.tier-dot-swatch { width: 10px; height: 10px; border-radius: 50%; }
-
-/* ── CO₂ counter ─────────────────────────────────────────────────────────── */
-.co2-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
-@media (max-width: 600px) { .co2-grid { grid-template-columns: 1fr 1fr; } }
-.co2-box {
-  background: var(--green-100); border: 1px solid var(--green-200);
-  border-radius: var(--radius-sm); padding: 1rem;
-}
-.co2-box.primary { background: var(--green-800); border-color: var(--green-700); }
-.co2-box .co2-val {
-  font-family: var(--mono); font-size: 1.6rem; font-weight: 700;
-  color: var(--green-700); letter-spacing: -.04em; line-height: 1;
-}
-.co2-box.primary .co2-val { color: var(--accent); font-size: 2rem; }
-.co2-box .co2-lbl {
-  font-size: .68rem; text-transform: uppercase; letter-spacing: .07em;
-  color: var(--muted); margin-top: .3rem;
-}
-.co2-box.primary .co2-lbl { color: rgba(255,255,255,.5); }
-.co2-equiv { display: flex; gap: 1.5rem; flex-wrap: wrap; padding-top: .75rem; border-top: 1px solid var(--border); }
-.equiv-item { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted); }
-.equiv-item strong { color: var(--text); font-family: var(--mono); }
-
-/* ── Project cards ───────────────────────────────────────────────────────── */
-.proj-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  margin-bottom: .85rem;
-  transition: box-shadow .15s, transform .15s;
-}
-.proj-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
-.proj-card:last-child { margin-bottom: 0; }
-.proj-card-hd {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: .65rem 1rem;
-  color: #fff;
-}
-.proj-type-badge {
-  display: flex; align-items: center; gap: .35rem;
-  font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
-  opacity: .9;
-}
-.status-pill {
-  font-size: .65rem; font-weight: 700; padding: .2rem .6rem;
-  border-radius: 20px; white-space: nowrap;
-  background: rgba(255,255,255,.2); color: #fff; border: 1px solid rgba(255,255,255,.3);
-}
-.proj-card-body { padding: .9rem 1rem; }
-.proj-name { font-weight: 700; font-size: .93rem; margin-bottom: .25rem; }
-.proj-location { font-size: .75rem; color: var(--muted); margin-bottom: .65rem; display: flex; align-items: center; gap: .3rem; }
-.proj-desc { font-size: .8rem; color: var(--muted); line-height: 1.6; margin-bottom: .75rem; }
-
-.proj-metrics { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
-.metric-chip {
-  display: inline-flex; align-items: center; gap: .3rem;
-  background: var(--bg); border: 1px solid var(--border);
-  border-radius: 6px; padding: .25rem .6rem;
-  font-size: .72rem; font-weight: 600; color: var(--text);
-  font-family: var(--mono);
-}
-.metric-chip .mc-icon { font-size: .85em; }
-
-/* Before/after */
-.before-after {
-  display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
-  background: var(--bg); border-radius: var(--radius-sm);
-  padding: .75rem; border: 1px solid var(--border);
-}
-.ba-side .ba-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .2rem; }
-.ba-side .ba-val { font-family: var(--mono); font-size: .95rem; font-weight: 700; }
-.ba-before .ba-val { color: var(--tier-polluter); }
-.ba-after  .ba-val { color: var(--tier-restorative); }
-.ba-divider { border: none; border-left: 1px solid var(--border); height: 100%; }
-
-/* Project timeline bar */
-.proj-timeline { margin-top: .75rem; }
-.proj-tl-label { font-size: .68rem; color: var(--muted); margin-bottom: .3rem; display: flex; justify-content: space-between; }
-.proj-tl-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.proj-tl-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green-600), var(--green-400, #74c69d)); }
-
-/* ── Investment analysis chart ───────────────────────────────────────────── */
-.inv-chart-wrap { height: 220px; }
-
-/* ── SDG grid ────────────────────────────────────────────────────────────── */
-.sdg-grid {
-  display: grid; grid-template-columns: repeat(9, 1fr); gap: .4rem;
-}
-@media (max-width: 600px) { .sdg-grid { grid-template-columns: repeat(6, 1fr); } }
-.sdg-tile {
-  aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: .15rem;
-  cursor: default; transition: transform .15s; position: relative;
-  overflow: hidden;
-}
-.sdg-tile:hover { transform: scale(1.06); z-index: 2; }
-.sdg-tile.inactive { filter: saturate(0) opacity(.25); }
-.sdg-tile .sdg-num {
-  font-family: var(--mono); font-size: .8rem; font-weight: 700; color: #fff; line-height: 1;
-}
-.sdg-tile .sdg-lbl {
-  font-size: .5rem; font-weight: 600; color: rgba(255,255,255,.85);
-  text-align: center; line-height: 1.2; padding: 0 2px;
-}
-.sdg-active-count {
-  font-family: var(--mono); font-size: 1.5rem; font-weight: 700;
-  color: var(--green-700); margin-right: .25rem;
-}
-
-/* ── AI Recommendations ──────────────────────────────────────────────────── */
-.ai-banner {
-  display: flex; align-items: center; gap: .75rem;
-  background: linear-gradient(120deg, #0d1f16, #1b4332);
-  border-radius: var(--radius-sm); padding: .875rem 1rem;
-  margin-bottom: 1rem;
-}
-.ai-banner-icon { font-size: 1.5rem; }
-.ai-banner-text { flex: 1; }
-.ai-banner-title { font-weight: 700; font-size: .88rem; color: #fff; }
-.ai-banner-sub { font-size: .72rem; color: rgba(255,255,255,.45); margin-top: .1rem; }
-.ai-demo-badge {
-  background: rgba(0,232,154,.15); border: 1px solid rgba(0,232,154,.3);
-  color: var(--accent); font-size: .65rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .07em; padding: .2rem .6rem; border-radius: 20px; white-space: nowrap;
-}
-
-.rec-card {
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  overflow: hidden; margin-bottom: .75rem;
-}
-.rec-card:last-child { margin-bottom: 0; }
-.rec-hd { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; border-bottom: 1px solid var(--border); }
-.rec-icon { font-size: 1.3rem; }
-.rec-title { font-weight: 700; font-size: .88rem; flex: 1; }
-.priority-badge {
-  font-size: .62rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .07em; padding: .18rem .55rem; border-radius: 20px;
-}
-.priority-critical { background: #fce8e8; color: #c62828; }
-.priority-high     { background: #fef3e2; color: #e65100; }
-.priority-medium   { background: #fff9c4; color: #f57f17; }
-.priority-low      { background: var(--green-200); color: var(--green-800); }
-.rec-bd { padding: .75rem 1rem; font-size: .81rem; color: var(--muted); line-height: 1.6; }
-.rec-impact {
-  display: inline-flex; align-items: center; gap: .3rem;
-  background: var(--green-100); border: 1px solid var(--green-200);
-  border-radius: 6px; padding: .2rem .6rem;
-  font-size: .72rem; font-weight: 600; color: var(--green-700); font-family: var(--mono);
-  margin-bottom: .5rem;
-}
-.rec-sdgs { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .5rem; }
-.rec-sdg-badge {
-  font-size: .65rem; font-weight: 700; padding: .15rem .5rem;
-  border-radius: 4px; color: #fff;
-}
+/* Greenwashing panel */
+.gw-gauge-wrap{position:relative;max-width:220px;margin:0 auto}
+.gw-center{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  text-align:center;pointer-events:none}
+.gw-score-val{font-size:2.2rem;font-weight:900;font-family:var(--mono);line-height:1}
+.gw-score-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;
+  color:rgba(255,255,255,.4);margin-top:.1rem}
+.gw-signals{display:flex;flex-direction:column;gap:.5rem;margin-top:.85rem}
+.gw-signal{display:flex;align-items:flex-start;gap:.55rem;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;padding:.55rem .75rem}
+.gw-signal-icon{font-size:.95rem;flex-shrink:0;margin-top:.05rem}
+.gw-signal-text{font-size:.77rem;color:rgba(255,255,255,.6);line-height:1.5}
+.gw-verdict{font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.65;
+  margin-top:.75rem;padding:.65rem .85rem;
+  background:rgba(255,255,255,.04);border-radius:6px;
+  border-left:3px solid rgba(0,232,154,.35)}
+.gw-level-pill{display:inline-flex;align-items:center;gap:.35rem;
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  padding:.25rem .75rem;border-radius:20px}
+.gw-clean{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.gw-low{background:rgba(234,179,8,.15);color:#eab308;border:1px solid rgba(234,179,8,.3)}
+.gw-medium{background:rgba(249,115,22,.15);color:#f97316;border:1px solid rgba(249,115,22,.3)}
+.gw-high,.gw-critical{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
 
 /* ── Evidence ────────────────────────────────────────────────────────────── */
-.ev-summary { display: flex; gap: .5rem; margin-bottom: 1rem; }
-.ev-sum-chip {
-  display: flex; align-items: center; gap: .3rem;
-  font-size: .75rem; font-weight: 700;
-  padding: .3rem .75rem; border-radius: 20px;
-}
-.ev-sum-verified { background: var(--green-200); color: var(--green-800); }
-.ev-sum-pending  { background: #fff3cd; color: #7a5c00; }
-.ev-sum-rejected { background: #ffe0e0; color: #c62828; }
+.ev-summary{display:flex;gap:.5rem;margin-bottom:.9rem;flex-wrap:wrap}
+.ev-chip{display:flex;align-items:center;gap:.28rem;font-size:.73rem;font-weight:700;
+  padding:.28rem .7rem;border-radius:20px}
+.ev-verified{background:var(--g200);color:var(--g800)}
+.ev-pending{background:#fff3cd;color:#7a5c00}
+.ev-rejected{background:#ffe0e0;color:#c62828}
+.ev-row{display:flex;align-items:flex-start;gap:.7rem;padding:.7rem 0;
+  border-bottom:1px solid var(--border2)}
+.ev-row:last-child{border-bottom:none}
+.ev-icon-box{width:32px;height:32px;border-radius:7px;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+  flex-shrink:0;border:1px solid var(--border)}
+.ev-info{flex:1;min-width:0}
+.ev-title{font-weight:600;font-size:.81rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-meta{font-size:.68rem;color:var(--muted);margin-top:.1rem}
+.ev-badge{font-size:.63rem;font-weight:700;padding:.14rem .48rem;border-radius:20px;flex-shrink:0}
 
-.ev-row {
-  display: flex; align-items: flex-start; gap: .75rem;
-  padding: .75rem 0; border-bottom: 1px solid var(--border-2);
-}
-.ev-row:last-child { border-bottom: none; }
-.ev-icon-box {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: var(--bg); display: flex; align-items: center;
-  justify-content: center; font-size: 1.05rem; flex-shrink: 0;
-  border: 1px solid var(--border);
-}
-.ev-info { flex: 1; min-width: 0; }
-.ev-title { font-weight: 600; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ev-meta  { font-size: .7rem; color: var(--muted); margin-top: .1rem; }
-.ev-badge { font-size: .65rem; font-weight: 700; padding: .15rem .5rem; border-radius: 20px; flex-shrink: 0; }
-.ev-verified { background: var(--green-200); color: var(--green-800); }
-.ev-pending  { background: #fff3cd; color: #7a5c00; }
-.ev-rejected { background: #ffe0e0; color: #c62828; }
+/* ── Disclosure ring ─────────────────────────────────────────────────────── */
+.disclosure-grid{display:grid;grid-template-columns:150px 1fr;gap:1.25rem;align-items:center}
+@media(max-width:500px){.disclosure-grid{grid-template-columns:1fr}}
+.disc-ring-wrap{position:relative;width:130px;height:130px;margin:0 auto}
+.disc-center{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.disc-pct{font-size:1.8rem;font-weight:900;font-family:var(--mono);color:var(--g700);line-height:1}
+.disc-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--muted);margin-top:.1rem}
+.disc-list{display:flex;flex-direction:column;gap:.45rem}
+.disc-item{display:flex;align-items:center;gap:.5rem;font-size:.79rem}
+.disc-check{width:16px;height:16px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0}
+.disc-present{background:var(--g200);color:var(--g800)}
+.disc-missing{background:#fee2e2;color:#991b1b}
 
-/* ── Methane map placeholder ─────────────────────────────────────────────── */
-.methane-map {
-  border-radius: var(--radius-sm); overflow: hidden;
-  background:
-    radial-gradient(ellipse at 30% 40%, rgba(45,106,79,.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 60%, rgba(64,145,108,.12) 0%, transparent 45%),
-    linear-gradient(160deg, #0d2018 0%, #0f2b1e 40%, #122514 100%);
-  border: 1px solid rgba(0,232,154,.12);
-  position: relative;
-  height: 200px;
-}
-.map-overlay {
-  position: absolute; inset: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 30 Q15 15 30 30 Q45 45 60 30' fill='none' stroke='rgba(45,106,79,.08)' stroke-width='1'/%3E%3Cpath d='M0 45 Q15 30 30 45 Q45 60 60 45' fill='none' stroke='rgba(45,106,79,.06)' stroke-width='1'/%3E%3C/svg%3E");
-}
-.map-dots-layer { position: absolute; inset: 0; }
-.leak-dot {
-  position: absolute; cursor: default;
-}
-.leak-pulse {
-  width: 10px; height: 10px; border-radius: 50%;
-  position: relative;
-}
-.leak-pulse::before, .leak-pulse::after {
-  content: ''; position: absolute; inset: -4px;
-  border-radius: 50%; border: 2px solid currentColor;
-  animation: pulse-ring 2s ease-out infinite;
-}
-.leak-pulse::after { animation-delay: .75s; }
-@keyframes pulse-ring { 0% { transform: scale(.7); opacity: .8; } 100% { transform: scale(2.2); opacity: 0; } }
-.leak-label {
-  font-size: .58rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; margin-top: .2rem; text-align: center; white-space: nowrap;
-}
-.map-badge {
-  position: absolute; bottom: .75rem; left: .75rem;
-  background: rgba(0,0,0,.6); border: 1px solid rgba(0,232,154,.2);
-  border-radius: 6px; padding: .4rem .75rem;
-  font-size: .7rem; color: rgba(255,255,255,.7);
-}
-.map-badge strong { color: var(--accent); }
-.map-corner-tag {
-  position: absolute; top: .75rem; right: .75rem;
-  background: rgba(0,232,154,.12); border: 1px solid rgba(0,232,154,.25);
-  border-radius: 20px; padding: .2rem .65rem;
-  font-size: .62rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .07em; color: var(--accent);
-}
+/* ── SDG grid ────────────────────────────────────────────────────────────── */
+.sdg-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:.4rem}
+@media(max-width:600px){.sdg-grid{grid-template-columns:repeat(6,1fr)}}
+.sdg-tile{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:.12rem;
+  cursor:default;transition:transform .15s;position:relative;overflow:hidden}
+.sdg-tile:hover{transform:scale(1.06);z-index:2}
+.sdg-tile.inactive{filter:saturate(0) opacity(.22)}
+.sdg-tile .sdg-num{font-family:var(--mono);font-size:.8rem;font-weight:700;color:#fff;line-height:1}
+.sdg-tile .sdg-lbl{font-size:.48rem;font-weight:600;color:rgba(255,255,255,.85);
+  text-align:center;line-height:1.2;padding:0 2px}
 
-/* ── Roadmap timeline ────────────────────────────────────────────────────── */
-.roadmap { display: flex; flex-direction: column; gap: .6rem; }
-.roadmap-item {
-  display: flex; align-items: flex-start; gap: .75rem;
+/* ── AI Recommendations ──────────────────────────────────────────────────── */
+.ai-banner{display:flex;align-items:center;gap:.75rem;
+  background:linear-gradient(120deg,#0d1f16,#1b4332);
+  border-radius:var(--r8);padding:.85rem 1rem;margin-bottom:.9rem}
+.ai-banner-icon{font-size:1.5rem}
+.ai-banner-title{font-weight:700;font-size:.87rem;color:#fff}
+.ai-banner-sub{font-size:.7rem;color:rgba(255,255,255,.42);margin-top:.08rem}
+.ai-demo-badge{background:rgba(0,232,154,.13);border:1px solid rgba(0,232,154,.28);
+  color:var(--acc);font-size:.63rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;padding:.18rem .55rem;border-radius:20px;white-space:nowrap}
+.rec-card{border:1px solid var(--border);border-radius:var(--r8);
+  overflow:hidden;margin-bottom:.75rem}
+.rec-card:last-child{margin-bottom:0}
+.rec-hd{display:flex;align-items:center;gap:.7rem;padding:.7rem 1rem;
+  border-bottom:1px solid var(--border)}
+.rec-icon{font-size:1.25rem}
+.rec-title{font-weight:700;font-size:.87rem;flex:1}
+.priority-badge{font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;padding:.17rem .52rem;border-radius:20px}
+.priority-critical{background:#fce8e8;color:#c62828}
+.priority-high{background:#fef3e2;color:#e65100}
+.priority-medium{background:#fff9c4;color:#f57f17}
+.priority-low{background:var(--g200);color:var(--g800)}
+.rec-bd{padding:.7rem 1rem;font-size:.8rem;color:var(--muted);line-height:1.6}
+.rec-impact{display:inline-flex;align-items:center;gap:.28rem;
+  background:var(--g100);border:1px solid var(--g200);border-radius:6px;
+  padding:.18rem .55rem;font-size:.7rem;font-weight:600;color:var(--g700);
+  font-family:var(--mono);margin-bottom:.45rem}
+.rec-sdgs{display:flex;gap:.28rem;flex-wrap:wrap;margin-top:.45rem}
+.rec-sdg{font-size:.63rem;font-weight:700;padding:.13rem .48rem;
+  border-radius:4px;color:#fff}
+
+/* ── Score history table ─────────────────────────────────────────────────── */
+.history-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.history-table th{text-align:left;padding:.45rem .65rem;background:var(--bg);
+  font-size:.63rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  border-bottom:2px solid var(--border)}
+.history-table td{padding:.5rem .65rem;border-bottom:1px solid var(--border2)}
+.history-table tr:last-child td{border-bottom:none}
+.delta-pos{color:#22c55e;font-weight:700;font-family:var(--mono)}
+.delta-neg{color:#ef4444;font-weight:700;font-family:var(--mono)}
+.delta-flat{color:var(--muted2);font-family:var(--mono)}
+
+/* ── Sidebar cards ───────────────────────────────────────────────────────── */
+.fact-table{width:100%;border-collapse:collapse}
+.fact-table td{padding:.5rem 0;border-bottom:1px solid var(--border2);vertical-align:top}
+.fact-table tr:last-child td{border-bottom:none}
+.fact-table .ft-key{font-size:.77rem;color:var(--muted);width:45%}
+.fact-table .ft-val{font-size:.81rem;font-weight:600;text-align:right}
+
+/* Roadmap */
+.roadmap{display:flex;flex-direction:column;gap:.55rem}
+.rm-item{display:flex;align-items:flex-start;gap:.7rem}
+.rm-conn{display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:.15rem}
+.rm-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:2px solid}
+.rm-dot.completed{background:var(--g700);border-color:var(--g700)}
+.rm-dot.active{background:var(--g500);border-color:var(--g500);box-shadow:0 0 0 3px rgba(82,183,136,.22)}
+.rm-dot.planned{background:transparent;border-color:var(--muted2)}
+.rm-line{flex:1;width:2px;background:var(--border2);margin:2px 0;min-height:14px}
+.rm-info{flex:1;padding-bottom:.45rem}
+.rm-year{font-family:var(--mono);font-size:.67rem;color:var(--muted);font-weight:600}
+.rm-name{font-size:.79rem;font-weight:600;line-height:1.35}
+.rm-type{font-size:.67rem;color:var(--muted)}
+
+/* Transparency timeline */
+.tl-year-hd{font-family:var(--mono);font-size:.7rem;font-weight:700;color:var(--muted);
+  margin-bottom:.38rem;padding-left:1.2rem;position:relative}
+.tl-year-hd::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:9px;height:2px;background:var(--g600)}
+.tl-item{display:flex;align-items:flex-start;gap:.45rem;padding:.32rem 0 .32rem 1.2rem;
+  border-left:2px solid var(--border2);margin-left:5px}
+.tl-item:last-child{border-left:2px solid transparent}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:.24rem;margin-left:-1.32rem}
+.tl-title{font-size:.76rem;font-weight:600;line-height:1.35}
+.tl-meta{font-size:.67rem;color:var(--muted);margin-top:.08rem}
+
+/* Methane map */
+.meth-map{border-radius:var(--r8);overflow:hidden;
+  background:radial-gradient(ellipse at 30% 40%,rgba(45,106,79,.15) 0%,transparent 50%),
+  radial-gradient(ellipse at 70% 60%,rgba(64,145,108,.12) 0%,transparent 45%),
+  linear-gradient(160deg,#0d2018 0%,#0f2b1e 40%,#122514 100%);
+  border:1px solid rgba(0,232,154,.12);position:relative;height:200px}
+.map-overlay{position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 30 Q15 15 30 30 Q45 45 60 30' fill='none' stroke='rgba(45,106,79,.08)' stroke-width='1'/%3E%3C/svg%3E")}
+.leak-dot{position:absolute;cursor:default}
+.leak-pulse{width:10px;height:10px;border-radius:50%;position:relative}
+.leak-pulse::before,.leak-pulse::after{content:'';position:absolute;inset:-4px;
+  border-radius:50%;border:2px solid currentColor;animation:pulse-ring 2s ease-out infinite}
+.leak-pulse::after{animation-delay:.75s}
+@keyframes pulse-ring{0%{transform:scale(.7);opacity:.8}100%{transform:scale(2.2);opacity:0}}
+.leak-lbl{font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  margin-top:.18rem;text-align:center;white-space:nowrap}
+.map-badge{position:absolute;bottom:.7rem;left:.7rem;
+  background:rgba(0,0,0,.55);border:1px solid rgba(0,232,154,.18);
+  border-radius:6px;padding:.35rem .7rem;font-size:.68rem;color:rgba(255,255,255,.65)}
+.map-badge strong{color:var(--acc)}
+.map-corner{position:absolute;top:.7rem;right:.7rem;
+  background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.22);
+  border-radius:20px;padding:.18rem .6rem;font-size:.6rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--acc)}
+
+/* ── Sector percentile bar ───────────────────────────────────────────────── */
+.pct-bar-wrap{height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin:0.35rem 0}
+.pct-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:700px){
+  .kpi-inner{grid-template-columns:repeat(3,1fr)}
+  .co2-grid{grid-template-columns:1fr 1fr}
+  .kpi-row5{grid-template-columns:repeat(2,1fr)}
+  .score-intel{grid-template-columns:1fr}
+  .disclosure-grid{grid-template-columns:1fr}
+  .term-main{padding:.75rem 0 0}
 }
-.rm-connector { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: .15rem; }
-.rm-dot {
-  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
-  border: 2px solid;
-}
-.rm-dot.completed { background: var(--green-700); border-color: var(--green-700); }
-.rm-dot.active    { background: var(--green-500); border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(82,183,136,.25); }
-.rm-dot.planned   { background: transparent; border-color: var(--muted-2); }
-.rm-line { flex: 1; width: 2px; background: var(--border-2); margin: 2px 0; min-height: 16px; }
-.rm-info { flex: 1; padding-bottom: .5rem; }
-.rm-year { font-family: var(--mono); font-size: .68rem; color: var(--muted); font-weight: 600; }
-.rm-name { font-size: .8rem; font-weight: 600; line-height: 1.35; }
-.rm-type { font-size: .68rem; color: var(--muted); }
-
-/* ── Transparency history timeline ───────────────────────────────────────── */
-.tl-year-group { margin-bottom: .75rem; }
-.tl-year-hd { font-family: var(--mono); font-size: .7rem; font-weight: 700; color: var(--muted); margin-bottom: .4rem; padding-left: 1.25rem; position: relative; }
-.tl-year-hd::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 10px; height: 2px; background: var(--green-600); }
-.tl-item { display: flex; align-items: flex-start; gap: .5rem; padding: .35rem 0 .35rem 1.25rem; border-left: 2px solid var(--border-2); margin-left: 5px; }
-.tl-item:last-child { border-left: 2px solid transparent; }
-.tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .25rem; margin-left: -1.35rem; }
-.tl-content { flex: 1; }
-.tl-title { font-size: .77rem; font-weight: 600; line-height: 1.35; }
-.tl-meta  { font-size: .68rem; color: var(--muted); margin-top: .1rem; }
-
-/* ── Company factsheet ───────────────────────────────────────────────────── */
-.fact-table { width: 100%; border-collapse: collapse; }
-.fact-table td { padding: .55rem 0; border-bottom: 1px solid var(--border-2); vertical-align: top; }
-.fact-table tr:last-child td { border-bottom: none; }
-.fact-table .ft-key { font-size: .78rem; color: var(--muted); width: 45%; }
-.fact-table .ft-val { font-size: .82rem; font-weight: 600; text-align: right; }
-
-/* ── Utility ─────────────────────────────────────────────────────────────── */
-.gap { margin-bottom: 1.25rem; }
 </style>
 </head>
 <body>
 
-<!-- ── Top nav ────────────────────────────────────────────────────────────── -->
+<!-- ── Top nav ─────────────────────────────────────────────────────────────── -->
 <nav class="topnav">
   <a href="/" class="brand">Eco<span>IQ</span></a>
   <div class="nav-links">
     <a href="/league/">🏆 League</a>
-    <a href="/audit/">Industrial Audit</a>
+    <a href="/audit/">Audit</a>
     <a href="/admin/">Admin</a>
   </div>
 </nav>
 
-<!-- ── Hero cover ─────────────────────────────────────────────────────────── -->
-<div class="cover">
+<!-- ── Hero ────────────────────────────────────────────────────────────────── -->
+<div class="cover" id="hero">
   <div class="cover-inner">
     <div>
       <div class="breadcrumb">
@@ -586,82 +505,91 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
         {{ company.name }}
       </div>
       <h1>{{ company.name }}</h1>
-      <div class="cover-meta">
-        <span class="cover-chip">{{ company.get_sector_display }}</span>
-        {% if company.city %}<span class="cover-chip">📍 {{ company.city }}, {{ company.country }}</span>{% endif %}
-        {% if company.founded_year %}<span class="cover-chip">Est. {{ company.founded_year }}</span>{% endif %}
-        {% if company.is_public %}<span class="cover-chip">📈 Public</span>{% endif %}
-        {% if company.verified %}<span class="cover-chip verified">✓ Data Verified</span>{% endif %}
+      <div class="cover-chips">
+        <span class="chip">{{ company.get_sector_display }}</span>
+        {% if company.city %}<span class="chip">📍 {{ company.city }}, {{ company.country }}</span>{% endif %}
+        {% if company.founded_year %}<span class="chip">Est. {{ company.founded_year }}</span>{% endif %}
+        {% if company.is_public %}<span class="chip">📈 Public</span>{% endif %}
+        {% if company.verified %}<span class="chip verified">✓ Verified</span>{% endif %}
+        {% if ai_job_meta %}<span class="chip" style="background:rgba(0,232,154,.1);border-color:rgba(0,232,154,.3);color:var(--acc);">🤖 AI Analyzed</span>{% endif %}
       </div>
       {% if company.description %}<p class="cover-desc">{{ company.description }}</p>{% endif %}
+
+      <!-- Sector percentile bar -->
+      <div style="margin-bottom:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.28rem;">
+          <span style="font-size:.67rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);font-weight:700;">Sector Percentile</span>
+          <span style="font-size:.82rem;font-weight:800;font-family:var(--mono);color:var(--acc);">{{ sector_percentile }}th</span>
+        </div>
+        <div class="pct-bar-wrap">
+          <div class="pct-bar-fill" style="width:{{ sector_percentile }}%"></div>
+        </div>
+        <div style="font-size:.67rem;color:rgba(255,255,255,.3);">Top {{ sector_percentile }}% in {{ company.get_sector_display }} ({{ sector_total }} companies)</div>
+      </div>
     </div>
 
-    <!-- Score ring -->
+    <!-- Score panel -->
     <div class="score-panel">
       <div class="score-ring-wrap">
         <svg viewBox="0 0 130 130" width="140" height="140">
-          <!-- Background ring -->
-          <circle cx="65" cy="65" r="52" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>
-          <!-- Score arc -->
-          <circle cx="65" cy="65" r="52" fill="none"
-                  stroke="{{ tier.colour }}" stroke-width="10"
-                  stroke-dasharray="{{ score_arc }} 327"
-                  stroke-linecap="round"
-                  transform="rotate(-90 65 65)"
-                  style="transition: stroke-dasharray 1.2s ease;"/>
+          <circle cx="65" cy="65" r="52" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="10"/>
+          <circle cx="65" cy="65" r="52" fill="none" stroke="{{ tier.colour }}" stroke-width="10"
+                  stroke-dasharray="{{ score_arc }} 327" stroke-linecap="round"
+                  transform="rotate(-90 65 65)" style="transition:stroke-dasharray 1.2s ease;"/>
         </svg>
         <div class="big-score">
-          <span class="score-number mono" style="color:{{ tier.colour }};">{{ company.ecoiq_score }}</span>
-          <span class="score-label">EcoIQ</span>
+          <span class="score-number mono" style="color:{{ tier.colour }};" id="heroScoreNum">{{ company.ecoiq_score }}</span>
+          <span class="score-lbl">EcoIQ</span>
         </div>
       </div>
       <div class="tier-pill" style="border-color:{{ tier.colour }}33;">{{ tier.label }}</div>
-      {% if company.rank %}<div class="rank-line"># {{ company.rank }} in league</div>{% endif %}
+      <div class="rank-row">
+        {% if company.rank %}<span class="rank-chip">#<strong>{{ company.rank }}</strong> league</span>{% endif %}
+        <span class="rank-chip"><strong>{{ sector_percentile }}th</strong> pctile</span>
+      </div>
+      {% if yoy_delta is not None %}
+        <div class="yoy-badge {% if yoy_delta > 0 %}yoy-pos{% elif yoy_delta < 0 %}yoy-neg{% else %}yoy-flat{% endif %}">
+          {% if yoy_delta > 0 %}▲ +{{ yoy_delta }}{% elif yoy_delta < 0 %}▼ {{ yoy_delta }}{% else %}→ 0.0{% endif %} pts YoY
+        </div>
+      {% endif %}
     </div>
   </div>
 
-  <!-- PDF download + back link -->
-  <div style="margin: 1rem 0 0; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
-    <a href="{% url 'league:report_pdf' company.slug %}"
-       style="display:inline-flex; align-items:center; gap:0.4rem;
-              background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
-              color:#fff; text-decoration:none; padding:0.45rem 1rem;
-              border-radius:6px; font-size:0.8rem; font-weight:600;
-              transition:background 0.15s;"
-       onmouseover="this.style.background='rgba(255,255,255,.22)'"
-       onmouseout="this.style.background='rgba(255,255,255,.12)'">
-      📄 Download PDF Report
-    </a>
-    <a href="/league/"
-       style="color:rgba(255,255,255,.5); font-size:0.78rem; text-decoration:none;">
-      ← Back to Leaderboard
-    </a>
+  <!-- Action row -->
+  <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;padding:.85rem 0 0;
+              border-top:1px solid rgba(255,255,255,.06);margin-top:1rem;">
+    <a href="{% url 'league:report_pdf' company.slug %}" class="btn-pdf">📄 Download PDF Report</a>
+    <a href="/league/" style="color:rgba(255,255,255,.4);font-size:.78rem;text-decoration:none;">← Back to League</a>
   </div>
 
-  <!-- Terminal KPI strip inside cover (flush bottom) -->
-  <div class="kpi-strip" style="margin: 1.5rem -2rem 0; padding: 0 2rem;">
-    <div class="kpi-strip-inner" style="padding: 0;">
-      <div class="kpi-chip">
-        <div class="kv">{% if co2_total %}{{ co2_total|floatformat:0 }}t{% else %}—{% endif %}</div>
-        <div class="kl">CO₂ Avoided / yr</div>
+  <!-- KPI strip -->
+  <div class="kpi-strip" style="margin:1rem -2rem 0;padding:0 2rem;">
+    <div class="kpi-inner" style="padding:0">
+      <div class="kv-chip">
+        <div class="kv" id="kv-co2">{% if co2_total %}{{ co2_total|floatformat:0 }}t{% else %}—{% endif %}</div>
+        <div class="kl">CO₂ Avoided/yr</div>
       </div>
-      <div class="kpi-chip">
-        <div class="kv">${{ company.total_investment_usd|intword }}</div>
+      <div class="kv-chip">
+        <div class="kv" id="kv-inv">${{ company.total_investment_usd|intword }}</div>
         <div class="kl">Total Invested</div>
       </div>
-      <div class="kpi-chip">
-        <div class="kv">{% if company.total_households_helped %}{{ company.total_households_helped|floatformat:0 }}{% else %}—{% endif %}</div>
-        <div class="kl">Households Helped</div>
+      <div class="kv-chip">
+        <div class="kv" id="kv-hh">{% if company.total_households_helped %}{{ company.total_households_helped|floatformat:0 }}{% else %}—{% endif %}</div>
+        <div class="kl">Households</div>
       </div>
-      <div class="kpi-chip">
+      <div class="kv-chip">
         <div class="kv">{{ all_projects|length }}</div>
         <div class="kl">Projects</div>
       </div>
-      <div class="kpi-chip">
+      <div class="kv-chip">
         <div class="kv">{{ ev_verified }}/{{ evidence|length }}</div>
-        <div class="kl">Evidence Verified</div>
+        <div class="kl">Verified Docs</div>
       </div>
-      <div class="kpi-chip">
+      <div class="kv-chip">
+        <div class="kv">{{ disclosure_completeness }}%</div>
+        <div class="kl">Disclosure</div>
+      </div>
+      <div class="kv-chip">
         <div class="kv">{% if company.rank %}#{{ company.rank }}{% else %}—{% endif %}</div>
         <div class="kl">League Rank</div>
       </div>
@@ -669,419 +597,480 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
   </div>
 </div>
 
-<!-- ── Section nav ─────────────────────────────────────────────────────────── -->
-<nav class="sec-nav">
-  <div class="sec-nav-inner">
-    <a href="#overview"        class="snav active">Score</a>
-    <a href="#trends"          class="snav">Trends</a>
-    <a href="#pillar-trends"   class="snav">Analytics</a>
-    <a href="#co2"             class="snav">CO₂</a>
-    <a href="#projects"        class="snav">Projects</a>
-    <a href="#investment"      class="snav">Investment</a>
-    <a href="#sdg"             class="snav">SDGs</a>
-    <a href="#recommendations" class="snav">AI Recs</a>
-  </div>
-</nav>
+<!-- ── Terminal shell ──────────────────────────────────────────────────────── -->
+<div class="term-shell">
 
-<!-- ── Main page body ─────────────────────────────────────────────────────── -->
-<div class="page">
-  <div class="two-col">
+  <!-- ═══════════════════ LEFT SIDEBAR NAV ═════════════════════════════════ -->
+  <nav class="term-sidebar" id="termSidebar">
+    <div class="snav-section">
+      <div class="snav-group-label">Intelligence</div>
+      <a href="#intelligence" class="snav active"><span class="snav-dot"></span>Score</a>
+      <a href="#trends"       class="snav"><span class="snav-dot"></span>Trends</a>
+      <a href="#emissions"    class="snav"><span class="snav-dot"></span>Emissions</a>
+      <a href="#analytics"    class="snav"><span class="snav-dot"></span>Analytics</a>
+      <a href="#benchmark"    class="snav"><span class="snav-dot"></span>Benchmark</a>
+    </div>
+    <div class="snav-section">
+      <div class="snav-group-label">Operations</div>
+      <a href="#co2"       class="snav"><span class="snav-dot"></span>CO₂</a>
+      <a href="#projects"  class="snav"><span class="snav-dot"></span>Projects</a>
+      <a href="#investment" class="snav"><span class="snav-dot"></span>Investment</a>
+      <a href="#history"   class="snav"><span class="snav-dot"></span>History</a>
+    </div>
+    <div class="snav-section">
+      <div class="snav-group-label">Risk & Compliance</div>
+      {% if ai_findings %}<a href="#ai-findings"   class="snav"><span class="snav-dot" style="background:#00e89a"></span>AI Findings</a>{% endif %}
+      {% if greenwashing_data %}<a href="#greenwashing" class="snav"><span class="snav-dot" style="background:#f97316"></span>Greenwash</a>{% endif %}
+      <a href="#evidence"     class="snav"><span class="snav-dot"></span>Evidence</a>
+      <a href="#disclosure"   class="snav"><span class="snav-dot"></span>Disclosure</a>
+    </div>
+    <div class="snav-section">
+      <div class="snav-group-label">ESG Framework</div>
+      <a href="#sdg"             class="snav"><span class="snav-dot"></span>SDGs</a>
+      <a href="#recommendations" class="snav"><span class="snav-dot"></span>AI Recs</a>
+    </div>
+  </nav>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         LEFT — main intelligence panels
-         ═══════════════════════════════════════════════════════════════════════ -->
-    <div>
+  <!-- ═══════════════════ MAIN CONTENT ═════════════════════════════════════ -->
+  <main class="term-main">
 
-      <!-- ── Section: Score Intelligence ──────────────────────────────────── -->
-      <section id="overview">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-hd-left">
-              <span class="card-hd-icon">🎯</span>
-              <span class="section-title">Score Intelligence</span>
-            </div>
-            <span class="label">EcoIQ Formula = Pollution×35% + Reduction×25% + Investment×20% + Transparency×10% + Community×10%</span>
+    <!-- ── Score Intelligence ───────────────────────────────────────────── -->
+    <section id="intelligence">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🎯</span>
+            <span class="sec-title">Score Intelligence</span>
           </div>
-          <div class="card-bd">
-            <div class="score-intel">
-              <!-- Radar chart -->
-              <div class="radar-wrap">
-                <canvas id="radarChart"></canvas>
-              </div>
-              <!-- Pillar breakdown bars -->
-              <div class="pillar-list">
-                {% for p in pillars %}
-                <div class="pillar-row">
-                  <div class="pillar-info">
-                    <div class="pillar-name-row">
-                      <span class="pillar-nm">{{ p.name_ru }}</span>
-                      <span class="pillar-wt">× {{ p.weight }}%</span>
-                    </div>
-                    <div class="ptrack">
-                      <div class="pfill" style="width:{{ p.score }}%"></div>
-                    </div>
+          <span class="label" style="font-size:.62rem;">Pollution×35% + Reduction×25% + Investment×20% + Transparency×10% + Community×10%</span>
+        </div>
+        <div class="card-bd">
+          <div class="score-intel">
+            <div class="radar-wrap"><canvas id="radarChart"></canvas></div>
+            <div class="pillar-list">
+              {% for p in pillars %}
+              <div class="pillar-row">
+                <div class="pillar-info">
+                  <div class="pillar-name-row">
+                    <span class="pillar-nm">{{ p.name_ru }}</span>
+                    <span class="pillar-wt">×{{ p.weight }}%</span>
                   </div>
-                  <span class="pillar-score">{{ p.score }}</span>
+                  <div class="ptrack">
+                    <div class="pfill" style="width:{{ p.score }}%;background:linear-gradient(90deg,{{ p.color }}cc,{{ p.color }});"></div>
+                  </div>
                 </div>
-                {% endfor %}
-                <div style="padding-top:.5rem; border-top:1px solid var(--border-2); display:flex; justify-content:space-between; align-items:baseline;">
-                  <span class="label">EcoIQ Total</span>
-                  <span class="mono" style="font-size:1.5rem; font-weight:800; color:{{ tier.colour }};">{{ company.ecoiq_score }}</span>
-                </div>
+                <span class="pillar-score" style="color:{{ p.color }};">{{ p.score }}</span>
+              </div>
+              {% endfor %}
+              <div class="score-total-row">
+                <span class="label">EcoIQ Total</span>
+                <span class="mono" style="font-size:1.5rem;font-weight:800;color:{{ tier.colour }};">{{ company.ecoiq_score }}</span>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ── Section: 5-Year EcoIQ Trend ─────────────────────────────────── -->
-      <section id="trends">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-hd-left">
-              <span class="card-hd-icon">📈</span>
-              <span class="section-title">5-Year EcoIQ Trend</span>
-            </div>
-            <span class="label" style="font-size:.65rem;">60-month historical · composite score</span>
+    <!-- ── 5-Year Trend ──────────────────────────────────────────────────── -->
+    <section id="trends">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">📈</span>
+            <span class="sec-title">5-Year EcoIQ Trend</span>
           </div>
-          <div class="card-bd">
-            <div class="tier-legend">
-              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#2d6a4f"></div>85+ Restorative</div>
-              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#40916c"></div>70–84 Transition</div>
-              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#52b788"></div>55–69 Improving</div>
-              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#e07b39"></div>40–54 High Impact</div>
-              <div class="tier-dot"><div class="tier-dot-swatch" style="background:#d93025"></div>&lt;40 Polluter</div>
+          <span class="label" style="font-size:.63rem;">60-month historical · composite score</span>
+        </div>
+        <div class="card-bd">
+          <div class="tier-legend">
+            <div class="tier-dot"><div class="tdot" style="background:#2d6a4f"></div>85+ Restorative</div>
+            <div class="tier-dot"><div class="tdot" style="background:#40916c"></div>70–84 Transition</div>
+            <div class="tier-dot"><div class="tdot" style="background:#52b788"></div>55–69 Improving</div>
+            <div class="tier-dot"><div class="tdot" style="background:#e07b39"></div>40–54 High Impact</div>
+            <div class="tier-dot"><div class="tdot" style="background:#d93025"></div>&lt;40 Polluter</div>
+          </div>
+          <div class="trend-wrap"><canvas id="trendChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Emissions Intelligence ────────────────────────────────────────── -->
+    <section id="emissions">
+      <div class="adc">
+        <div class="adc-hd">
+          <div class="adc-hd-left">
+            <span class="adc-icon">🏭</span>
+            <div>
+              <div class="adc-title">Emissions Intelligence</div>
+              <div class="adc-sub">Pollution intensity index · Methane emissions profile · 24-month window</div>
             </div>
-            <div class="trend-wrap"><canvas id="trendChart"></canvas></div>
+          </div>
+          <div class="adc-tag">MODELLED</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;">
+          <div>
+            <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;
+                        color:rgba(0,232,154,.6);font-weight:700;margin-bottom:.65rem;">
+              Pollution Intensity Index (lower = cleaner)
+            </div>
+            <div class="adc-wrap chart-h200"><canvas id="emissionsChart"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;
+                        color:rgba(0,232,154,.6);font-weight:700;margin-bottom:.65rem;">
+              Methane Emissions Profile (relative units)
+            </div>
+            <div class="adc-wrap chart-h200"><canvas id="methaneChart"></canvas></div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ── Section: Multi-Pillar Intelligence ───────────────────────────── -->
-      <section id="pillar-trends">
-        <div class="analytics-dark-card">
-          <div class="adc-header">
-            <div class="adc-header-left">
-              <span class="adc-icon">⚡</span>
-              <div>
-                <div class="adc-title">Multi-Pillar Intelligence</div>
-                <div class="adc-sub">All 5 ESG pillars · 60-month trajectory · weighted composite</div>
-              </div>
-            </div>
-            <div class="adc-badge">LIVE DATA</div>
-          </div>
-          <div class="adc-kpi-row">
-            <div class="adc-kpi">
-              <div class="adc-kpi-val" style="color:#ef4444;">{{ company.score_pollution_footprint }}</div>
-              <div class="adc-kpi-lbl">Pollution</div>
-              <canvas class="sparkline-canvas" id="spk-pollution"></canvas>
-            </div>
-            <div class="adc-kpi">
-              <div class="adc-kpi-val" style="color:#22c55e;">{{ company.score_reduction_progress }}</div>
-              <div class="adc-kpi-lbl">Reduction</div>
-              <canvas class="sparkline-canvas" id="spk-reduction"></canvas>
-            </div>
-            <div class="adc-kpi">
-              <div class="adc-kpi-val" style="color:#3b82f6;">{{ company.score_investment }}</div>
-              <div class="adc-kpi-lbl">Investment</div>
-              <canvas class="sparkline-canvas" id="spk-investment"></canvas>
-            </div>
-            <div class="adc-kpi">
-              <div class="adc-kpi-val" style="color:#f59e0b;">{{ company.score_transparency }}</div>
-              <div class="adc-kpi-lbl">Transparency</div>
-              <canvas class="sparkline-canvas" id="spk-transparency"></canvas>
-            </div>
-            <div class="adc-kpi">
-              <div class="adc-kpi-val" style="color:#8b5cf6;">{{ company.score_community_impact }}</div>
-              <div class="adc-kpi-lbl">Community</div>
-              <canvas class="sparkline-canvas" id="spk-community"></canvas>
+    <!-- ── Multi-Pillar Analytics ──────────────────────────────────────────── -->
+    <section id="analytics">
+      <div class="adc">
+        <div class="adc-hd">
+          <div class="adc-hd-left">
+            <span class="adc-icon">⚡</span>
+            <div>
+              <div class="adc-title">Multi-Pillar Intelligence</div>
+              <div class="adc-sub">All 5 ESG pillars · 60-month trajectory · weighted composite</div>
             </div>
           </div>
-          <div class="adc-chart-wrap">
-            <canvas id="allPillarsChart"></canvas>
-          </div>
+          <div class="adc-tag">LIVE DATA</div>
         </div>
-      </section>
-
-      <!-- ── Section: CO₂ Intelligence ──────────────────────────────────────── -->
-      <section id="co2">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-hd-left">
-              <span class="card-hd-icon">🌿</span>
-              <span class="section-title">CO₂ Avoided Intelligence</span>
-            </div>
+        <div class="kpi-row5">
+          {% for p in pillars %}
+          <div class="kpi5">
+            <div class="kpi5-val" style="color:{{ p.color }};">{{ p.score }}</div>
+            <div class="kpi5-lbl">{{ p.name_ru }}</div>
+            <canvas class="spk-canvas" id="spk-{{ p.key }}"></canvas>
           </div>
-          <div class="card-bd">
-            <div class="co2-grid">
-              <div class="co2-box primary">
-                <div class="co2-val" id="co2Counter">{{ co2_total|default:0 }}</div>
-                <div class="co2-lbl">tonnes CO₂ / yr avoided<br><span style="font-size:.6rem;opacity:.5;">(completed + active projects)</span></div>
-              </div>
-              <div class="co2-box">
-                <div class="co2-val">{{ co2_completed|default:"—" }}</div>
-                <div class="co2-lbl">Completed projects</div>
-              </div>
-              <div class="co2-box">
-                <div class="co2-val">{{ co2_active|default:"—" }}{% if co2_planned %}<br><span style="font-size:.85em; color:var(--muted-2);">+{{ co2_planned }} planned</span>{% endif %}</div>
-                <div class="co2-lbl">Active projects</div>
-              </div>
-            </div>
-            {% if co2_total %}
-            <div class="co2-equiv">
-              {% if co2_cars_equiv %}
-              <div class="equiv-item">🚗 Equivalent to removing <strong>{{ co2_cars_equiv|floatformat:0 }}</strong> cars from roads per year</div>
-              {% endif %}
-              {% if co2_trees_equiv %}
-              <div class="equiv-item">🌳 Equal to planting <strong>{{ co2_trees_equiv|floatformat:0 }}</strong> trees annually</div>
-              {% endif %}
-            </div>
-            {% else %}
-            <p style="font-size:.82rem; color:var(--muted); font-style:italic;">No CO₂ reduction data available for completed projects.</p>
-            {% endif %}
-          </div>
+          {% endfor %}
         </div>
-      </section>
+        <div class="adc-wrap chart-h260"><canvas id="allPillarsChart"></canvas></div>
+      </div>
+    </section>
 
-      <!-- ── Section: Projects ──────────────────────────────────────────────── -->
-      <section id="projects">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-hd-left">
-              <span class="card-hd-icon">🔨</span>
-              <span class="section-title">Environmental Projects</span>
-            </div>
-            <div style="display:flex; gap:.4rem;">
-              {% if projects_completed %}<span class="ev-sum-chip ev-sum-verified">{{ projects_completed|length }} completed</span>{% endif %}
-              {% if projects_active %}<span class="ev-sum-chip ev-sum-pending">{{ projects_active|length }} active</span>{% endif %}
-              {% if projects_planned %}<span style="font-size:.72rem; color:var(--muted);">{{ projects_planned|length }} planned</span>{% endif %}
-            </div>
+    <!-- ── Benchmark vs Sector Peers ─────────────────────────────────────── -->
+    <section id="benchmark">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">📊</span>
+            <span class="sec-title">Benchmark — {{ company.get_sector_display }} Sector</span>
           </div>
-          <div class="card-bd">
-            {% for proj in all_projects %}
-            <div class="proj-card">
-              <!-- Coloured type header -->
-              <div class="proj-card-hd" style="background:{{ proj.type_meta.accent }};">
-                <div class="proj-type-badge">
-                  <span>{{ proj.type_meta.icon }}</span>
-                  <span>{{ proj.type_meta.label }}</span>
-                </div>
-                <span class="status-pill">{{ proj.get_status_display }}</span>
+          <span class="label" style="font-size:.63rem;">Top {{ sector_peers|length }} by EcoIQ · {{ sector_total }} total in sector</span>
+        </div>
+        <div class="card-bd">
+          <div style="margin-bottom:1rem;">
+            {% for peer in sector_peers %}
+            <div class="peer-row">
+              <span class="peer-rank">#{{ forloop.counter }}</span>
+              <span class="peer-name {% if peer.pk == company.pk %}self-co{% endif %}">
+                {% if peer.pk == company.pk %}▶ {% endif %}{{ peer.name|truncatechars:28 }}
+              </span>
+              <div class="peer-bar-wrap">
+                <div class="peer-bar" style="width:{{ peer.ecoiq_score }}%;
+                  background:{% if peer.pk == company.pk %}var(--acc){% else %}var(--g500){% endif %};
+                  opacity:{% if peer.pk == company.pk %}1{% else %}.6{% endif %};"></div>
               </div>
-              <div class="proj-card-body">
-                <div class="proj-name">{{ proj.name }}</div>
-                {% if proj.location %}
-                <div class="proj-location">📍 {{ proj.location }}</div>
-                {% endif %}
-                {% if proj.description %}
-                <p class="proj-desc">{{ proj.description|truncatechars:240 }}</p>
-                {% endif %}
-
-                <!-- Metric chips -->
-                <div class="proj-metrics">
-                  {% if proj.investment_usd %}
-                  <span class="metric-chip"><span class="mc-icon">💰</span> ${{ proj.investment_usd|intword }}</span>
-                  {% endif %}
-                  {% if proj.co2_reduction_tonnes %}
-                  <span class="metric-chip"><span class="mc-icon">🌿</span> {{ proj.co2_reduction_tonnes|floatformat:0 }} t CO₂/yr</span>
-                  {% endif %}
-                  {% if proj.pm25_reduction_kg %}
-                  <span class="metric-chip"><span class="mc-icon">💨</span> {{ proj.pm25_reduction_kg|intword }} kg PM2.5</span>
-                  {% endif %}
-                  {% if proj.households_helped %}
-                  <span class="metric-chip"><span class="mc-icon">🏠</span> {{ proj.households_helped|floatformat:0 }} households</span>
-                  {% endif %}
-                  {% if proj.verified %}
-                  <span class="metric-chip" style="background:var(--green-100);border-color:var(--green-200);color:var(--green-800);">✓ Verified</span>
-                  {% endif %}
-                </div>
-
-                <!-- Before/after metrics for projects with measurable data -->
-                {% if proj.status == 'completed' and proj.pm25_reduction_kg %}
-                <div class="before-after">
-                  <div class="ba-side ba-before">
-                    <div class="ba-label">Before</div>
-                    <div class="ba-val">PM2.5 Elevated</div>
-                  </div>
-                  <hr class="ba-divider">
-                  <div class="ba-side ba-after">
-                    <div class="ba-label">After</div>
-                    <div class="ba-val">−{{ proj.pm25_reduction_kg|intword }} kg/yr</div>
-                  </div>
-                </div>
-                {% endif %}
-
-                <!-- Project timeline bar -->
-                {% if proj.start_date %}
-                <div class="proj-timeline">
-                  <div class="proj-tl-label">
-                    <span>{{ proj.start_date|date:"Y" }}</span>
-                    <span>{% if proj.completion_date %}{{ proj.completion_date|date:"Y" }}{% elif proj.status == 'active' %}Ongoing{% else %}Planned{% endif %}</span>
-                  </div>
-                  <div class="proj-tl-track">
-                    <div class="proj-tl-fill" style="width:{% if proj.status == 'completed' %}100{% elif proj.status == 'active' %}60{% else %}5{% endif %}%"></div>
-                  </div>
-                </div>
-                {% endif %}
-              </div>
+              <span class="peer-score" style="color:{% if peer.pk == company.pk %}var(--g700){% else %}var(--muted){% endif %};">{{ peer.ecoiq_score }}</span>
             </div>
             {% empty %}
-            <p style="color:var(--muted);font-style:italic;font-size:.85rem;">No projects recorded yet.</p>
+            <p style="color:var(--muted);font-style:italic;font-size:.83rem;">No sector peers found.</p>
             {% endfor %}
           </div>
+          <div style="height:200px;"><canvas id="peerChart"></canvas></div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ── Section: Investment Analysis ───────────────────────────────────── -->
-      {% if inv_amounts != '[]' %}
-      <section id="investment">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-hd-left">
-              <span class="card-hd-icon">💹</span>
-              <span class="section-title">Investment Analysis</span>
-            </div>
-            <span class="label">USD millions · ■ Completed ■ Active ■ Planned</span>
-          </div>
-          <div class="card-bd">
-            <div class="inv-chart-wrap"><canvas id="invChart"></canvas></div>
+    <!-- ── CO₂ Intelligence ───────────────────────────────────────────────── -->
+    <section id="co2">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🌿</span>
+            <span class="sec-title">CO₂ Avoided Intelligence</span>
           </div>
         </div>
-      </section>
-      {% endif %}
-
-      <!-- ── Section: SDG Alignment ──────────────────────────────────────────── -->
-      <section id="sdg">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-hd-left">
-              <span class="card-hd-icon">🌐</span>
-              <span class="section-title">UN SDG Alignment</span>
+        <div class="card-bd">
+          <div class="co2-grid">
+            <div class="co2-box primary">
+              <div class="co2-val" id="co2Counter">{{ co2_total|default:0 }}</div>
+              <div class="co2-lbl">tonnes CO₂/yr avoided<br><span style="font-size:.58rem;opacity:.5;">(completed + active)</span></div>
             </div>
-            <span>
-              <span class="sdg-active-count">{{ sdg_grid|length }}</span>
-              <span class="label">goals tracked · </span>
-              <span class="sdg-active-count" style="font-size:1.1rem;">{% with act=0 %}{% for s in sdg_grid %}{% if s.active %}{% with act=act|add:1 %}{% endwith %}{% endif %}{% endfor %}{% endwith %}
-              {% for s in sdg_grid %}{% if s.active %}&#8203;{% endif %}{% endfor %}</span>
-              <span class="label">active</span>
-            </span>
+            <div class="co2-box">
+              <div class="co2-val">{{ co2_completed|default:"—" }}</div>
+              <div class="co2-lbl">Completed projects</div>
+            </div>
+            <div class="co2-box">
+              <div class="co2-val">{{ co2_active|default:"—" }}{% if co2_planned %}<span style="font-size:.85em;color:var(--muted2);"> +{{ co2_planned }}</span>{% endif %}</div>
+              <div class="co2-lbl">Active (+ planned)</div>
+            </div>
           </div>
-          <div class="card-bd">
-            <div class="sdg-grid">
-              {% for sdg in sdg_grid %}
-              <div class="sdg-tile {% if not sdg.active %}inactive{% endif %}"
-                   style="background:{{ sdg.color }};"
-                   title="SDG {{ sdg.num }}: {{ sdg.label }}{% if sdg.active %} ✓ Active{% endif %}">
-                <span class="sdg-num">{{ sdg.num }}</span>
-                <span class="sdg-lbl">{{ sdg.label }}</span>
-                {% if sdg.active %}<span style="font-size:.5rem;color:rgba(255,255,255,.85);font-weight:700;">✓</span>{% endif %}
+          {% if co2_total %}
+          <div class="co2-equiv">
+            {% if co2_cars_equiv %}<div class="equiv-item">🚗 Equal to removing <strong>{{ co2_cars_equiv|floatformat:0 }}</strong> cars/yr</div>{% endif %}
+            {% if co2_trees_equiv %}<div class="equiv-item">🌳 Like planting <strong>{{ co2_trees_equiv|floatformat:0 }}</strong> trees annually</div>{% endif %}
+          </div>
+          {% else %}
+          <p style="font-size:.81rem;color:var(--muted);font-style:italic;">No CO₂ reduction data recorded for projects yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Environmental Projects ─────────────────────────────────────────── -->
+    <section id="projects">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🔨</span>
+            <span class="sec-title">Environmental Projects</span>
+          </div>
+          <div style="display:flex;gap:.4rem;">
+            {% if projects_completed %}<span class="ev-chip ev-verified">{{ projects_completed|length }} completed</span>{% endif %}
+            {% if projects_active %}<span class="ev-chip ev-pending">{{ projects_active|length }} active</span>{% endif %}
+            {% if projects_planned %}<span style="font-size:.71rem;color:var(--muted);">{{ projects_planned|length }} planned</span>{% endif %}
+          </div>
+        </div>
+        <div class="card-bd">
+          {% for proj in all_projects %}
+          <div class="proj-card">
+            <div class="proj-hd" style="background:{{ proj.type_meta.accent }};">
+              <div class="proj-type-badge"><span>{{ proj.type_meta.icon }}</span><span>{{ proj.type_meta.label }}</span></div>
+              <span class="status-pill">{{ proj.get_status_display }}</span>
+            </div>
+            <div class="proj-body">
+              <div class="proj-name">{{ proj.name }}</div>
+              {% if proj.location %}<div class="proj-loc">📍 {{ proj.location }}</div>{% endif %}
+              {% if proj.description %}<p class="proj-desc">{{ proj.description|truncatechars:220 }}</p>{% endif %}
+              <div class="metric-chips">
+                {% if proj.investment_usd %}<span class="mc">💰 ${{ proj.investment_usd|intword }}</span>{% endif %}
+                {% if proj.co2_reduction_tonnes %}<span class="mc">🌿 {{ proj.co2_reduction_tonnes|floatformat:0 }}t CO₂</span>{% endif %}
+                {% if proj.pm25_reduction_kg %}<span class="mc">💨 {{ proj.pm25_reduction_kg|intword }}kg PM2.5</span>{% endif %}
+                {% if proj.households_helped %}<span class="mc">🏠 {{ proj.households_helped|floatformat:0 }} HH</span>{% endif %}
+                {% if proj.verified %}<span class="mc" style="background:var(--g100);border-color:var(--g200);color:var(--g800);">✓ Verified</span>{% endif %}
               </div>
-              {% endfor %}
-            </div>
-            <p style="margin-top:.75rem; font-size:.75rem; color:var(--muted);">
-              SDG alignment is inferred from project types. Greyscale tiles = not directly covered by known projects.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── Section: AI Recommendations ────────────────────────────────────── -->
-      <section id="recommendations">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-hd-left">
-              <span class="card-hd-icon">🤖</span>
-              <span class="section-title">AI Intelligence</span>
-            </div>
-            <span class="ai-demo-badge">Demo · Phase 4 Preview</span>
-          </div>
-          <div class="card-bd">
-            <div class="ai-banner">
-              <div class="ai-banner-icon">🤖</div>
-              <div class="ai-banner-text">
-                <div class="ai-banner-title">Anthropic Claude ESG Recommendations</div>
-                <div class="ai-banner-sub">Generated from pillar gap analysis · Scores, rationale and SDG mapping auto-updated on each rescore · Phase 4 implementation uses live Anthropic API</div>
-              </div>
-            </div>
-            {% if recommendations %}
-              {% for rec in recommendations %}
-              <div class="rec-card">
-                <div class="rec-hd">
-                  <span class="rec-icon">{{ rec.icon }}</span>
-                  <span class="rec-title">{{ rec.title }}</span>
-                  <span class="priority-badge priority-{{ rec.priority }}">{{ rec.priority_label }}</span>
+              {% if proj.start_date %}
+              <div class="proj-tl">
+                <div class="proj-tl-hd">
+                  <span>{{ proj.start_date|date:"Y" }}</span>
+                  <span>{% if proj.completion_date %}{{ proj.completion_date|date:"Y" }}{% elif proj.status == 'active' %}Ongoing{% else %}Planned{% endif %}</span>
                 </div>
-                <div class="rec-bd">
-                  <div class="rec-impact">📈 {{ rec.impact }}</div>
-                  <p>{{ rec.rationale }}</p>
-                  {% if rec.sdgs %}
-                  <div class="rec-sdgs">
-                    {% for s in rec.sdgs %}
-                    <span class="rec-sdg-badge" style="background:{{ s.color }};">SDG {{ s.num }}</span>
-                    {% endfor %}
-                  </div>
+                <div class="proj-tl-track">
+                  <div class="proj-tl-fill" style="width:{% if proj.status == 'completed' %}100{% elif proj.status == 'active' %}60{% else %}5{% endif %}%"></div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <p style="color:var(--muted);font-style:italic;font-size:.84rem;">No projects recorded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Investment Analysis ─────────────────────────────────────────────── -->
+    {% if inv_amounts != '[]' %}
+    <section id="investment">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">💹</span>
+            <span class="sec-title">Investment Timeline</span>
+          </div>
+          <span class="label">USD millions · completed / active / planned</span>
+        </div>
+        <div class="card-bd">
+          <div class="chart-h220"><canvas id="invChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ── Score History Changes ──────────────────────────────────────────── -->
+    {% if score_changes %}
+    <section id="history">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">📅</span>
+            <span class="sec-title">Score History</span>
+          </div>
+          <span class="label" style="font-size:.63rem;">Month-over-month changes</span>
+        </div>
+        <div class="card-bd" style="padding:0">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>EcoIQ Score</th>
+                <th>Change</th>
+                {% if score_changes.0.rank %}<th>Rank</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for ch in score_changes %}
+              <tr>
+                <td class="mono" style="font-size:.78rem;">{{ ch.date }}</td>
+                <td class="mono" style="font-weight:700;">{{ ch.score }}</td>
+                <td>
+                  {% if ch.delta > 0 %}
+                    <span class="delta-pos">▲ +{{ ch.delta }}</span>
+                  {% elif ch.delta < 0 %}
+                    <span class="delta-neg">▼ {{ ch.delta }}</span>
+                  {% else %}
+                    <span class="delta-flat">→ 0.0</span>
                   {% endif %}
-                </div>
+                </td>
+                {% if score_changes.0.rank %}
+                <td class="mono" style="font-size:.78rem;color:var(--muted);">{% if ch.rank %}#{{ ch.rank }}{% else %}—{% endif %}</td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ── AI Analysis Findings ──────────────────────────────────────────── -->
+    {% if ai_findings %}
+    <section id="ai-findings">
+      <div class="adc">
+        <div class="adc-hd">
+          <div class="adc-hd-left">
+            <span class="adc-icon">🔬</span>
+            <div>
+              <div class="adc-title">AI Document Analysis</div>
+              <div class="adc-sub">
+                {% if ai_job_meta %}
+                  {{ ai_job_meta.filename }} · {{ ai_job_meta.doc_type }}
+                  {% if ai_job_meta.year %} · {{ ai_job_meta.year }}{% endif %}
+                  · {{ ai_job_meta.approved }}/{{ ai_job_meta.total }} findings approved
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="adc-tag">APPROVED FINDINGS</div>
+        </div>
+        {% if ai_job_meta and ai_job_meta.summary %}
+        <div style="font-size:.78rem;color:rgba(255,255,255,.5);line-height:1.65;
+                    padding:.65rem .85rem;background:rgba(255,255,255,.04);
+                    border-radius:6px;border-left:3px solid rgba(0,232,154,.3);
+                    margin-bottom:1rem;">
+          {{ ai_job_meta.summary }}
+        </div>
+        {% endif %}
+        {% for f in ai_findings %}
+        <div class="finding-card">
+          <div class="finding-hd">
+            <span class="finding-type-badge">{{ f.get_finding_type_display }}</span>
+            <span class="finding-title">{{ f.title }}</span>
+          </div>
+          <p class="finding-desc">{{ f.description|truncatechars:280 }}</p>
+          {% if f.source_quote %}
+          <div class="finding-quote">"{{ f.source_quote|truncatechars:160 }}"</div>
+          {% endif %}
+          <div class="finding-meta">
+            <div class="conf-bar-wrap">
+              <div class="conf-bar" style="width:{{ f.confidence_pct }}%;background:{{ f.confidence_color }};"></div>
+            </div>
+            <span class="conf-label">{{ f.confidence_pct }}% confidence</span>
+            {% if f.numeric_value %}<span class="conf-label">· {{ f.numeric_value }} {{ f.unit }}</span>{% endif %}
+            {% if f.year %}<span class="conf-label">· {{ f.year }}</span>{% endif %}
+            {% if f.source_location %}<span class="conf-label">· {{ f.source_location }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ── Greenwashing Risk ──────────────────────────────────────────────── -->
+    {% if greenwashing_data %}
+    <section id="greenwashing">
+      <div class="adc">
+        <div class="adc-hd">
+          <div class="adc-hd-left">
+            <span class="adc-icon">⚠️</span>
+            <div>
+              <div class="adc-title">Greenwashing Risk Panel</div>
+              <div class="adc-sub">AI-detected signals from ESG disclosures · 0=clean, 100=critical</div>
+            </div>
+          </div>
+          <span class="gw-level-pill gw-{{ greenwashing_data.level }}">
+            {{ greenwashing_data.level|capfirst }}
+          </span>
+        </div>
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;">
+          <div>
+            <div class="gw-gauge-wrap">
+              <canvas id="gwGauge" height="130"></canvas>
+              <div class="gw-center">
+                <div class="gw-score-val" style="color:{{ greenwashing_data.color }};">{{ greenwashing_data.score }}</div>
+                <div class="gw-score-lbl">Risk Score</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            {% if greenwashing_data.signals %}
+            <div style="font-size:.63rem;text-transform:uppercase;letter-spacing:.1em;
+                        color:rgba(0,232,154,.6);font-weight:700;margin-bottom:.6rem;">
+              Detected Signals
+            </div>
+            <div class="gw-signals">
+              {% for sig in greenwashing_data.signals %}
+              <div class="gw-signal">
+                <span class="gw-signal-icon">⚡</span>
+                <span class="gw-signal-text">{{ sig }}</span>
               </div>
               {% endfor %}
-            {% else %}
-              <p style="color:var(--muted);font-style:italic;font-size:.85rem;">All pillar scores above threshold — no critical recommendations.</p>
+            </div>
+            {% endif %}
+            {% if greenwashing_data.verdict %}
+            <div class="gw-verdict">{{ greenwashing_data.verdict|truncatechars:320 }}</div>
             {% endif %}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+    {% endif %}
 
-    </div><!-- /left main -->
-
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         RIGHT — sidebar panels
-         ═══════════════════════════════════════════════════════════════════════ -->
-    <div>
-
-      <!-- ── Evidence Verification ────────────────────────────────────────── -->
+    <!-- ── Evidence & Verification ────────────────────────────────────────── -->
+    <section id="evidence">
       <div class="card">
         <div class="card-hd">
           <div class="card-hd-left">
             <span class="card-hd-icon">📋</span>
-            <span class="section-title">Evidence &amp; Verification</span>
+            <span class="sec-title">Evidence &amp; Verification</span>
           </div>
         </div>
         <div class="card-bd">
           {% if evidence %}
           <div class="ev-summary">
-            {% if ev_verified %}<span class="ev-sum-chip ev-sum-verified">✓ {{ ev_verified }} Verified</span>{% endif %}
-            {% if ev_pending  %}<span class="ev-sum-chip ev-sum-pending">⏳ {{ ev_pending }} Pending</span>{% endif %}
-            {% if ev_rejected %}<span class="ev-sum-chip ev-sum-rejected">✗ {{ ev_rejected }} Rejected</span>{% endif %}
+            {% if ev_verified %}<span class="ev-chip ev-verified">✓ {{ ev_verified }} Verified</span>{% endif %}
+            {% if ev_pending  %}<span class="ev-chip ev-pending">⏳ {{ ev_pending }} Pending</span>{% endif %}
+            {% if ev_rejected %}<span class="ev-chip ev-rejected">✗ {{ ev_rejected }} Rejected</span>{% endif %}
           </div>
           {% for ev in evidence %}
           <div class="ev-row">
             <div class="ev-icon-box">
-              {% if ev.doc_type == 'audit_report' %}📋
-              {% elif ev.doc_type == 'government_report' %}🏛
-              {% elif ev.doc_type == 'photo' %}📷
-              {% elif ev.doc_type == 'satellite' %}🛰
-              {% elif ev.doc_type == 'engineering_audit' %}🔬
-              {% elif ev.doc_type == 'invoice' %}📄
-              {% elif ev.doc_type == 'permit' %}🔏
-              {% else %}📁{% endif %}
+              {% if ev.doc_type == 'audit_report' %}📋{% elif ev.doc_type == 'government_report' %}🏛{% elif ev.doc_type == 'photo' %}📷{% elif ev.doc_type == 'satellite' %}🛰{% elif ev.doc_type == 'engineering_audit' %}🔬{% elif ev.doc_type == 'invoice' %}📄{% elif ev.doc_type == 'permit' %}🔏{% else %}📁{% endif %}
             </div>
             <div class="ev-info">
-              {% if ev.url %}
-                <div class="ev-title"><a href="{{ ev.url }}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;">{{ ev.title|truncatechars:55 }}</a></div>
-              {% else %}
-                <div class="ev-title">{{ ev.title|truncatechars:55 }}</div>
-              {% endif %}
-              <div class="ev-meta">
-                {{ ev.get_doc_type_display }}
-                {% if ev.issuer %} · {{ ev.issuer|truncatechars:30 }}{% endif %}
-                {% if ev.date_issued %} · {{ ev.date_issued|date:"Y" }}{% endif %}
-              </div>
+              {% if ev.url %}<div class="ev-title"><a href="{{ ev.url }}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;">{{ ev.title|truncatechars:55 }}</a></div>
+              {% else %}<div class="ev-title">{{ ev.title|truncatechars:55 }}</div>{% endif %}
+              <div class="ev-meta">{{ ev.get_doc_type_display }}{% if ev.issuer %} · {{ ev.issuer|truncatechars:28 }}{% endif %}{% if ev.date_issued %} · {{ ev.date_issued|date:"Y" }}{% endif %}</div>
             </div>
             <span class="ev-badge ev-{{ ev.verification_status }}">
-              {% if ev.verification_status == 'verified' %}✓
-              {% elif ev.verification_status == 'rejected' %}✗
-              {% else %}⏳{% endif %}
+              {% if ev.verification_status == 'verified' %}✓{% elif ev.verification_status == 'rejected' %}✗{% else %}⏳{% endif %}
             </span>
           </div>
           {% endfor %}
@@ -1090,67 +1079,209 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
           {% endif %}
         </div>
       </div>
+    </section>
 
-      <!-- ── Methane Leakage Map Placeholder ─────────────────────────────── -->
+    <!-- ── ESG Disclosure Completeness ───────────────────────────────────── -->
+    <section id="disclosure">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">📊</span>
+            <span class="sec-title">ESG Disclosure Completeness</span>
+          </div>
+          <span class="label">{{ disclosure_completeness }}% of 7 evidence categories</span>
+        </div>
+        <div class="card-bd">
+          <div class="disclosure-grid">
+            <div>
+              <div class="disc-ring-wrap">
+                <canvas id="disclosureRing" width="130" height="130"></canvas>
+                <div class="disc-center">
+                  <div class="disc-pct">{{ disclosure_completeness }}%</div>
+                  <div class="disc-lbl">Complete</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="disc-list">
+                {% for et in all_ev_types_list %}
+                <div class="disc-item">
+                  <div class="disc-check {% if et.present %}disc-present{% else %}disc-missing{% endif %}">
+                    {% if et.present %}✓{% else %}✗{% endif %}
+                  </div>
+                  <span style="font-size:.79rem;color:{% if et.present %}var(--text){% else %}var(--muted){% endif %};">
+                    {{ et.label }}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SDG Alignment ─────────────────────────────────────────────────── -->
+    <section id="sdg">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🌐</span>
+            <span class="sec-title">UN SDG Alignment</span>
+          </div>
+          <span><span class="mono" style="font-size:1.1rem;font-weight:700;color:var(--g700);">{{ sdg_active_count }}</span> <span class="label">of 17 active</span></span>
+        </div>
+        <div class="card-bd">
+          <div class="sdg-grid">
+            {% for sdg in sdg_grid %}
+            <div class="sdg-tile {% if not sdg.active %}inactive{% endif %}"
+                 style="background:{{ sdg.color }};"
+                 title="SDG {{ sdg.num }}: {{ sdg.label }}{% if sdg.active %} ✓{% endif %}">
+              <span class="sdg-num">{{ sdg.num }}</span>
+              <span class="sdg-lbl">{{ sdg.label }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <p style="margin-top:.7rem;font-size:.73rem;color:var(--muted);">
+            SDG alignment inferred from project types. Greyscale = not directly covered.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AI Recommendations ─────────────────────────────────────────────── -->
+    <section id="recommendations">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🤖</span>
+            <span class="sec-title">AI Recommendation Engine</span>
+          </div>
+          <span class="ai-demo-badge">Demo · Phase 4</span>
+        </div>
+        <div class="card-bd">
+          <div class="ai-banner">
+            <div class="ai-banner-icon">🤖</div>
+            <div>
+              <div class="ai-banner-title">Anthropic Claude ESG Intelligence</div>
+              <div class="ai-banner-sub">Generated from pillar gap analysis · Phase 4 uses live Anthropic API with full document context</div>
+            </div>
+          </div>
+          {% if recommendations %}
+            {% for rec in recommendations %}
+            <div class="rec-card">
+              <div class="rec-hd">
+                <span class="rec-icon">{{ rec.icon }}</span>
+                <span class="rec-title">{{ rec.title }}</span>
+                <span class="priority-badge priority-{{ rec.priority }}">{{ rec.priority_label }}</span>
+              </div>
+              <div class="rec-bd">
+                <div class="rec-impact">📈 {{ rec.impact }}</div>
+                <p>{{ rec.rationale }}</p>
+                {% if rec.sdgs %}
+                <div class="rec-sdgs">
+                  {% for s in rec.sdgs %}<span class="rec-sdg" style="background:{{ s.color }};">SDG {{ s.num }}</span>{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <p style="color:var(--muted);font-style:italic;font-size:.84rem;">All pillar scores above threshold — no critical recommendations.</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+  </main><!-- /term-main -->
+</div><!-- /term-shell -->
+
+
+<!-- ── Right side panels (below main on mobile, rendered as sidebar items) ──── -->
+<div style="max-width:1400px;margin:0 auto;padding:0 1rem 4rem;
+            display:grid;grid-template-columns:200px 1fr;gap:0;">
+  <div></div><!-- sidebar spacer -->
+  <div style="padding-left:1.5rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+
+      <!-- Methane map -->
       <div class="card">
         <div class="card-hd">
           <div class="card-hd-left">
             <span class="card-hd-icon">🛰</span>
-            <span class="section-title">Methane Leakage Detection</span>
+            <span class="sec-title">Methane Leakage Map</span>
           </div>
           <span class="ai-demo-badge">Phase 4</span>
         </div>
         <div class="card-bd" style="padding:.75rem;">
-          <div class="methane-map">
+          <div class="meth-map">
             <div class="map-overlay"></div>
-            <div class="map-dots-layer">
-              <!-- Simulated LDAR detection points -->
+            <div style="position:absolute;inset:0;">
               <div class="leak-dot" style="top:28%;left:38%;">
                 <div class="leak-pulse" style="background:#f39c12;color:#f39c12;"></div>
-                <div class="leak-label" style="color:#f39c12;font-size:.52rem;">Valve cluster</div>
+                <div class="leak-lbl" style="color:#f39c12;">Valve cluster</div>
               </div>
               <div class="leak-dot" style="top:55%;left:62%;">
-                <div class="leak-pulse" style="background:#00e89a;color:#00e89a;"></div>
-                <div class="leak-label" style="color:#00e89a;font-size:.52rem;">LDAR monitored</div>
+                <div class="leak-pulse" style="background:var(--acc);color:var(--acc);"></div>
+                <div class="leak-lbl" style="color:var(--acc);">LDAR monitored</div>
               </div>
               <div class="leak-dot" style="top:42%;left:75%;">
                 <div class="leak-pulse" style="background:#d93025;color:#d93025;"></div>
-                <div class="leak-label" style="color:#d93025;font-size:.52rem;">Active repair</div>
-              </div>
-              <div class="leak-dot" style="top:70%;left:28%;">
-                <div class="leak-pulse" style="background:#00e89a;color:#00e89a;"></div>
-                <div class="leak-label" style="color:#00e89a;font-size:.52rem;">Clear</div>
+                <div class="leak-lbl" style="color:#d93025;">Active repair</div>
               </div>
             </div>
-            <div class="map-badge"><strong>GHGSat</strong> · Satellite survey placeholder</div>
-            <div class="map-corner-tag">Preview</div>
+            <div class="map-badge"><strong>GHGSat</strong> · Satellite placeholder</div>
+            <div class="map-corner">Preview</div>
           </div>
-          <p style="font-size:.72rem; color:var(--muted); margin-top:.6rem; line-height:1.5;">
-            Phase 4 will integrate GHGSat / Sentinel-5P satellite methane data with LDAR drone survey results to provide facility-level leak mapping.
+          <p style="font-size:.7rem;color:var(--muted);margin-top:.55rem;line-height:1.5;">
+            Phase 4 integrates GHGSat/Sentinel-5P satellite methane data with LDAR survey results.
           </p>
         </div>
       </div>
 
-      <!-- ── Modernization Roadmap ────────────────────────────────────────── -->
+      <!-- Company factsheet -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-left">
+            <span class="card-hd-icon">🏢</span>
+            <span class="sec-title">Company Factsheet</span>
+          </div>
+        </div>
+        <div class="card-bd">
+          <table class="fact-table">
+            {% if company.country %}<tr><td class="ft-key">Country</td><td class="ft-val">{{ company.country }}</td></tr>{% endif %}
+            {% if company.city    %}<tr><td class="ft-key">HQ</td><td class="ft-val">{{ company.city }}</td></tr>{% endif %}
+            {% if company.founded_year %}<tr><td class="ft-key">Founded</td><td class="ft-val mono">{{ company.founded_year }}</td></tr>{% endif %}
+            {% if company.employee_count %}<tr><td class="ft-key">Employees</td><td class="ft-val mono">{{ company.employee_count|floatformat:0 }}</td></tr>{% endif %}
+            {% if company.annual_revenue_usd %}<tr><td class="ft-key">Revenue</td><td class="ft-val mono">${{ company.annual_revenue_usd|intword }}</td></tr>{% endif %}
+            <tr><td class="ft-key">Sector</td><td class="ft-val">{{ company.get_sector_display }}</td></tr>
+            <tr><td class="ft-key">Listed</td><td class="ft-val">{% if company.is_public %}Public{% else %}Private{% endif %}</td></tr>
+            <tr><td class="ft-key">Verified</td><td class="ft-val">{% if company.verified %}<span style="color:var(--g700);">✓ Yes</span>{% else %}<span style="color:var(--muted);">Pending</span>{% endif %}</td></tr>
+            {% if company.website %}<tr><td class="ft-key">Website</td><td class="ft-val"><a href="{{ company.website }}" target="_blank" rel="noopener" style="color:var(--g700);font-size:.77rem;">{{ company.website|truncatechars:26 }}</a></td></tr>{% endif %}
+          </table>
+        </div>
+      </div>
+
       {% if roadmap_projects %}
+      <!-- Modernization Roadmap -->
       <div class="card">
         <div class="card-hd">
           <div class="card-hd-left">
             <span class="card-hd-icon">🗺</span>
-            <span class="section-title">Modernization Roadmap</span>
+            <span class="sec-title">Project Roadmap</span>
           </div>
         </div>
         <div class="card-bd">
           <div class="roadmap">
             {% for proj in roadmap_projects %}
-            <div class="roadmap-item">
-              <div class="rm-connector">
+            <div class="rm-item">
+              <div class="rm-conn">
                 <div class="rm-dot {{ proj.status }}"></div>
                 {% if not forloop.last %}<div class="rm-line"></div>{% endif %}
               </div>
               <div class="rm-info">
                 <div class="rm-year">{{ proj.start_date|date:"Y" }}{% if proj.completion_date %} – {{ proj.completion_date|date:"Y" }}{% elif proj.status == 'active' %} – ongoing{% endif %}</div>
-                <div class="rm-name">{{ proj.name|truncatechars:48 }}</div>
+                <div class="rm-name">{{ proj.name|truncatechars:44 }}</div>
                 <div class="rm-type">{{ proj.type_meta.icon }} {{ proj.type_meta.label }}</div>
               </div>
             </div>
@@ -1160,30 +1291,25 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
       </div>
       {% endif %}
 
-      <!-- ── Transparency History ─────────────────────────────────────────── -->
       {% if transparency_history %}
+      <!-- Transparency History -->
       <div class="card">
         <div class="card-hd">
           <div class="card-hd-left">
             <span class="card-hd-icon">📅</span>
-            <span class="section-title">Transparency History</span>
+            <span class="sec-title">Transparency History</span>
           </div>
         </div>
         <div class="card-bd">
           {% for year, evs in transparency_history %}
-          <div class="tl-year-group">
+          <div style="margin-bottom:.65rem;">
             <div class="tl-year-hd">{{ year }}</div>
             {% for ev in evs %}
             <div class="tl-item">
-              <div class="tl-dot"
-                   style="background:{% if ev.verification_status == 'verified' %}var(--green-600){% elif ev.verification_status == 'rejected' %}#d93025{% else %}#e0a800{% endif %}">
-              </div>
-              <div class="tl-content">
-                <div class="tl-title">{{ ev.title|truncatechars:50 }}</div>
-                <div class="tl-meta">
-                  {{ ev.get_doc_type_display }}
-                  {% if ev.issuer %} · {{ ev.issuer|truncatechars:25 }}{% endif %}
-                </div>
+              <div class="tl-dot" style="background:{% if ev.verification_status == 'verified' %}var(--g600){% elif ev.verification_status == 'rejected' %}#d93025{% else %}#e0a800{% endif %}"></div>
+              <div>
+                <div class="tl-title">{{ ev.title|truncatechars:48 }}</div>
+                <div class="tl-meta">{{ ev.get_doc_type_display }}{% if ev.issuer %} · {{ ev.issuer|truncatechars:22 }}{% endif %}</div>
               </div>
             </div>
             {% endfor %}
@@ -1193,433 +1319,324 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); line
       </div>
       {% endif %}
 
-      <!-- ── Company Factsheet ────────────────────────────────────────────── -->
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-hd-left">
-            <span class="card-hd-icon">🏢</span>
-            <span class="section-title">Company Factsheet</span>
-          </div>
-        </div>
-        <div class="card-bd">
-          <table class="fact-table">
-            {% if company.country %}<tr><td class="ft-key">Country</td><td class="ft-val">{{ company.country }}</td></tr>{% endif %}
-            {% if company.city    %}<tr><td class="ft-key">Headquarters</td><td class="ft-val">{{ company.city }}</td></tr>{% endif %}
-            {% if company.founded_year %}<tr><td class="ft-key">Founded</td><td class="ft-val mono">{{ company.founded_year }}</td></tr>{% endif %}
-            {% if company.employee_count %}<tr><td class="ft-key">Employees</td><td class="ft-val mono">{{ company.employee_count|floatformat:0 }}</td></tr>{% endif %}
-            {% if company.annual_revenue_usd %}<tr><td class="ft-key">Revenue (approx.)</td><td class="ft-val mono">${{ company.annual_revenue_usd|intword }}</td></tr>{% endif %}
-            <tr><td class="ft-key">Sector</td><td class="ft-val">{{ company.get_sector_display }}</td></tr>
-            <tr><td class="ft-key">Listed</td><td class="ft-val">{% if company.is_public %}Public{% else %}Private{% endif %}</td></tr>
-            <tr><td class="ft-key">Data Verification</td><td class="ft-val">{% if company.verified %}<span style="color:var(--green-700);">✓ Verified</span>{% else %}<span style="color:var(--muted);">Pending</span>{% endif %}</td></tr>
-            {% if company.website %}<tr><td class="ft-key">Website</td><td class="ft-val"><a href="{{ company.website }}" target="_blank" rel="noopener" style="color:var(--green-700);font-size:.78rem;">{{ company.website|truncatechars:28 }}</a></td></tr>{% endif %}
-          </table>
-        </div>
-      </div>
-
-      <!-- Back link -->
-      <a href="/league/" style="display:inline-flex;align-items:center;gap:.4rem;color:var(--green-700);font-size:.82rem;font-weight:600;text-decoration:none;padding:.5rem 0;">
+    </div>
+    <div style="margin-top:.75rem;">
+      <a href="/league/" style="display:inline-flex;align-items:center;gap:.4rem;
+        color:var(--g700);font-size:.81rem;font-weight:600;text-decoration:none;">
         ← Back to League
       </a>
-
-    </div><!-- /sidebar -->
-  </div><!-- /two-col -->
-</div><!-- /page -->
+    </div>
+  </div>
+</div>
 
 
 <!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
 <script>
+'use strict';
 const TIER_COLOR = "{{ tier.colour }}";
 
-/* ── Shared chart defaults ─────────────────────────────────────────────────── */
-Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
-Chart.defaults.animation = { duration: 1100, easing: 'easeInOutCubic' };
+/* ── Chart defaults ─────────────────────────────────────────────────────────── */
+Chart.defaults.font.family = "'Inter',-apple-system,sans-serif";
+Chart.defaults.animation   = {duration:1100,easing:'easeInOutCubic'};
 
-/* Gradient helper */
-function mkGrad(canvasEl, stops) {
-  const g = canvasEl.getContext('2d').createLinearGradient(0, 0, 0, canvasEl.clientHeight || 300);
-  stops.forEach(([offset, color]) => g.addColorStop(offset, color));
-  return g;
-}
-
-/* Premium tooltip config */
-const TOOLTIP = {
-  backgroundColor: 'rgba(7,14,10,.94)',
-  titleColor: '#fff',
-  bodyColor: 'rgba(255,255,255,.65)',
-  borderColor: 'rgba(0,232,154,.2)',
-  borderWidth: 1,
-  padding: 12,
-  cornerRadius: 8,
-  displayColors: true,
-  boxPadding: 4,
+const _T = {  /* shared dark tooltip */
+  backgroundColor:'rgba(5,10,8,.96)',titleColor:'#00e89a',
+  bodyColor:'rgba(255,255,255,.72)',borderColor:'rgba(0,232,154,.22)',
+  borderWidth:1,padding:11,cornerRadius:8,displayColors:true,boxPadding:4,
+};
+const _TL = {  /* light tooltip */
+  backgroundColor:'rgba(255,255,255,.97)',titleColor:'#111',
+  bodyColor:'#444',borderColor:'#dce5de',borderWidth:1,
+  padding:10,cornerRadius:8,displayColors:true,boxPadding:3,
 };
 
-/* Tier band plugin */
-function tierBandPlugin(alpha = 1) {
-  return {
-    id: 'tierBands',
-    beforeDraw(chart) {
-      const {ctx: c, chartArea, scales} = chart;
-      if (!chartArea) return;
-      const y = scales.y;
-      [
-        [85,100,'rgba(45,106,79,'],
-        [70, 85,'rgba(64,145,108,'],
-        [55, 70,'rgba(82,183,136,'],
-        [40, 55,'rgba(224,123,57,'],
-        [0,  40,'rgba(217,48,37,'],
-      ].forEach(([lo,hi,base]) => {
-        c.fillStyle = base + (0.055 * alpha) + ')';
-        const y1 = y.getPixelForValue(hi), y2 = y.getPixelForValue(lo);
-        c.fillRect(chartArea.left, Math.min(y1,y2), chartArea.width, Math.abs(y2-y1));
-      });
-    }
-  };
+function tierBandsPlugin(alpha){
+  return{id:'tierBands',beforeDraw(chart){
+    const{ctx:c,chartArea,scales}=chart;
+    if(!chartArea)return;
+    const y=scales.y;
+    [[85,100,'rgba(45,106,79,'],[70,85,'rgba(64,145,108,'],[55,70,'rgba(82,183,136,'],
+     [40,55,'rgba(224,123,57,'],[0,40,'rgba(217,48,37,']].forEach(([lo,hi,base])=>{
+      c.fillStyle=base+(0.055*(alpha||1))+')';
+      const y1=y.getPixelForValue(hi),y2=y.getPixelForValue(lo);
+      c.fillRect(chartArea.left,Math.min(y1,y2),chartArea.width,Math.abs(y2-y1));
+    });
+  }};
 }
 
-/* ── Radar chart ───────────────────────────────────────────────────────────── */
+/* ── Radar ──────────────────────────────────────────────────────────────────── */
 (function(){
-  const el = document.getElementById('radarChart');
-  if (!el) return;
-  const labels = {{ radar_labels|safe }};
-  const scores = {{ radar_scores|safe }};
-  new Chart(el, {
-    type: 'radar',
-    data: {
-      labels,
-      datasets: [{
-        data: scores,
-        backgroundColor: TIER_COLOR + '22',
-        borderColor: TIER_COLOR,
-        borderWidth: 2.5,
-        pointBackgroundColor: TIER_COLOR,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 8,
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: TIER_COLOR,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      animation: { duration: 1400, easing: 'easeInOutBack' },
-      scales: {
-        r: {
-          min: 0, max: 100,
-          ticks: { stepSize: 25, display: false, backdropColor: 'transparent' },
-          grid: { color: 'rgba(0,0,0,.08)', lineWidth: 1 },
-          angleLines: { color: 'rgba(0,0,0,.08)' },
-          pointLabels: {
-            font: { size: 10, family: 'Inter', weight: '700' },
-            color: '#5c7063',
-          },
-        }
+  const el=document.getElementById('radarChart');if(!el)return;
+  const labels={{ radar_labels|safe }},scores={{ radar_scores|safe }};
+  new Chart(el,{
+    type:'radar',
+    data:{labels,datasets:[{
+      data:scores,
+      backgroundColor:TIER_COLOR+'20',borderColor:TIER_COLOR,borderWidth:2.5,
+      pointBackgroundColor:TIER_COLOR,pointBorderColor:'#fff',pointBorderWidth:2,
+      pointRadius:5,pointHoverRadius:8,
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      animation:{duration:1400,easing:'easeInOutBack'},
+      scales:{r:{min:0,max:100,ticks:{stepSize:25,display:false,backdropColor:'transparent'},
+        grid:{color:'rgba(0,0,0,.07)'},angleLines:{color:'rgba(0,0,0,.07)'},
+        pointLabels:{font:{size:10,weight:'700'},color:'#5c7063'}}},
+      plugins:{legend:{display:false},
+        tooltip:{..._TL,callbacks:{label:c=>` ${c.label}: ${c.parsed.r}/100`}}}}
+  });
+})();
+
+/* ── 5-year trend ───────────────────────────────────────────────────────────── */
+(function(){
+  const el=document.getElementById('trendChart');if(!el)return;
+  const labels={{ hist_labels|safe }},scores={{ hist_scores|safe }};
+  const poll={{ hist_pollution|safe }},red={{ hist_reduction|safe }};
+  new Chart(el,{
+    type:'line',plugins:[tierBandsPlugin()],
+    data:{labels,datasets:[
+      {label:'EcoIQ',data:scores,borderColor:TIER_COLOR,
+       backgroundColor:(ctx)=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
+         g.addColorStop(0,TIER_COLOR+'2e');g.addColorStop(1,TIER_COLOR+'00');return g;},
+       borderWidth:3,fill:true,tension:0.4,pointRadius:0,pointHoverRadius:6,
+       pointHoverBackgroundColor:TIER_COLOR,pointHoverBorderColor:'#fff',order:1},
+      {label:'Pollution',data:poll,borderColor:'#ef4444',borderWidth:1.5,
+       pointRadius:0,borderDash:[4,3],fill:false,tension:0.3,order:2},
+      {label:'Reduction',data:red,borderColor:'#22c55e',borderWidth:1.5,
+       pointRadius:0,borderDash:[2,4],fill:false,tension:0.3,order:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        y:{min:0,max:100,grid:{color:'rgba(0,0,0,.05)',drawTicks:false},
+           ticks:{font:{size:10},color:'#8da394',stepSize:20,padding:6},border:{display:false}},
+        x:{grid:{display:false},
+           ticks:{font:{size:9},color:'#8da394',maxTicksLimit:10,
+             callback:(_,i)=>{const l=labels[i];return l&&l.endsWith('-01')?l.slice(0,4):'';}},
+           border:{display:false}},
       },
-      plugins: {
-        legend: { display: false },
-        tooltip: { ...TOOLTIP, callbacks: { label: c => ` ${c.label}: ${c.parsed.r} / 100` } }
+      plugins:{
+        legend:{display:true,position:'top',align:'end',
+          labels:{boxWidth:13,font:{size:10},color:'#8da394',padding:14,usePointStyle:true}},
+        tooltip:_TL,
       }
     }
   });
 })();
 
-/* ── 5-year EcoIQ trend ────────────────────────────────────────────────────── */
+/* ── Emissions & Methane dark charts ─────────────────────────────────────────── */
 (function(){
-  const el = document.getElementById('trendChart');
-  if (!el) return;
-  const labels   = {{ hist_labels|safe }};
-  const scores   = {{ hist_scores|safe }};
-  const pollData = {{ hist_pollution|safe }};
-  const redData  = {{ hist_reduction|safe }};
+  const em={{ emissions_chart|safe }};
+  const me={{ methane_chart|safe }};
 
-  new Chart(el, {
-    type: 'line',
-    plugins: [tierBandPlugin()],
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'EcoIQ Score',
-          data: scores,
-          borderColor: TIER_COLOR,
-          backgroundColor: (ctx) => {
-            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
-            g.addColorStop(0, TIER_COLOR + '30');
-            g.addColorStop(1, TIER_COLOR + '00');
-            return g;
-          },
-          borderWidth: 3,
-          pointRadius: 0, pointHoverRadius: 6,
-          pointHoverBackgroundColor: TIER_COLOR,
-          pointHoverBorderColor: '#fff',
-          fill: true, tension: 0.4, order: 1,
-        },
-        {
-          label: 'Pollution',
-          data: pollData,
-          borderColor: '#ef4444',
-          borderWidth: 1.5, pointRadius: 0, borderDash: [4,3],
-          fill: false, tension: 0.3, order: 2,
-        },
-        {
-          label: 'Reduction',
-          data: redData,
-          borderColor: '#22c55e',
-          borderWidth: 1.5, pointRadius: 0, borderDash: [2,4],
-          fill: false, tension: 0.3, order: 3,
-        },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        y: {
-          min: 0, max: 100,
-          grid: { color: 'rgba(0,0,0,.05)', drawTicks: false },
-          ticks: { font: { size: 10 }, color: '#8da394', stepSize: 20, padding: 6 },
-          border: { display: false },
-        },
-        x: {
-          grid: { display: false },
-          ticks: {
-            font: { size: 9 }, color: '#8da394', maxTicksLimit: 10,
-            callback: (_, i) => { const l = labels[i]; return l && l.endsWith('-01') ? l.slice(0,4) : ''; }
-          },
-          border: { display: false },
-        }
+  function darkLine(id,labels,data,label,color,fillColor){
+    const el=document.getElementById(id);if(!el||!data.length)return;
+    new Chart(el,{type:'line',data:{labels,datasets:[{
+      label,data,borderColor:color,borderWidth:2,
+      backgroundColor:fillColor||color+'22',fill:true,tension:0.38,
+      pointRadius:0,pointHoverRadius:5,
+      pointHoverBackgroundColor:color,pointHoverBorderColor:'#fff',
+    }]},options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      animation:{duration:1200,easing:'easeInOutCubic'},
+      scales:{
+        y:{grid:{color:'rgba(255,255,255,.05)',drawTicks:false},
+           ticks:{font:{size:9},color:'rgba(255,255,255,.3)',padding:6},border:{display:false}},
+        x:{grid:{display:false},
+           ticks:{font:{size:8},color:'rgba(255,255,255,.22)',maxTicksLimit:8,
+             callback:(_,i)=>{const l=labels[i];return l&&l.endsWith('-01')?l.slice(0,4):'';}},
+           border:{display:false}},
       },
-      plugins: {
-        legend: {
-          display: true, position: 'top', align: 'end',
-          labels: { boxWidth: 14, font: { size: 10 }, color: '#8da394', padding: 14, usePointStyle: true }
-        },
-        tooltip: TOOLTIP,
-      }
-    }
-  });
+      plugins:{legend:{display:false},tooltip:{..._T}},
+    }});
+  }
+
+  darkLine('emissionsChart',em.labels,em.intensity,'Pollution Intensity','#ef4444');
+  darkLine('methaneChart',me.labels,me.methane,'Methane Index','#f59e0b','rgba(245,158,11,.15)');
 })();
 
-/* ── All-pillars dark analytics chart ──────────────────────────────────────── */
+/* ── All-pillars dark chart + sparklines ─────────────────────────────────────── */
 (function(){
-  const el = document.getElementById('allPillarsChart');
-  if (!el) return;
-  const labels   = {{ hist_labels|safe }};
-  const scores   = {{ hist_scores|safe }};
-  const poll     = {{ hist_pollution|safe }};
-  const red      = {{ hist_reduction|safe }};
-  const inv      = {{ hist_invest|safe }};
-  const trans    = {{ hist_transparency|safe }};
-  const comm     = {{ hist_community|safe }};
-
-  const pillars = [
-    { label:'EcoIQ Score',    data:scores, color:'#00e89a', width:2.5, fill:true  },
-    { label:'Pollution',      data:poll,   color:'#ef4444', width:1.5, fill:false },
-    { label:'Reduction',      data:red,    color:'#22c55e', width:1.5, fill:false },
-    { label:'Investment',     data:inv,    color:'#3b82f6', width:1.5, fill:false },
-    { label:'Transparency',   data:trans,  color:'#f59e0b', width:1,   fill:false },
-    { label:'Community',      data:comm,   color:'#8b5cf6', width:1,   fill:false },
+  const el=document.getElementById('allPillarsChart');if(!el)return;
+  const labels={{ hist_labels|safe }};
+  const scores={{ hist_scores|safe }},poll={{ hist_pollution|safe }},red={{ hist_reduction|safe }};
+  const inv={{ hist_invest|safe }},trans={{ hist_transparency|safe }},comm={{ hist_community|safe }};
+  const pillars=[
+    {label:'EcoIQ',data:scores,color:'#00e89a',width:2.5,fill:true},
+    {label:'Pollution',data:poll,color:'#ef4444',width:1.5,fill:false},
+    {label:'Reduction',data:red,color:'#22c55e',width:1.5,fill:false},
+    {label:'Investment',data:inv,color:'#3b82f6',width:1.5,fill:false},
+    {label:'Transparency',data:trans,color:'#f59e0b',width:1,fill:false},
+    {label:'Community',data:comm,color:'#8b5cf6',width:1,fill:false},
   ];
-
-  const datasets = pillars.map(p => ({
-    label: p.label,
-    data: p.data,
-    borderColor: p.color,
-    backgroundColor: p.fill
-      ? (ctx) => {
-          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
-          g.addColorStop(0, p.color + '28');
-          g.addColorStop(1, p.color + '00');
-          return g;
-        }
-      : 'transparent',
-    borderWidth: p.width,
-    pointRadius: 0, pointHoverRadius: 5,
-    pointHoverBackgroundColor: p.color,
-    pointHoverBorderColor: '#fff',
-    fill: p.fill, tension: 0.38,
-  }));
-
-  new Chart(el, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      animation: { duration: 1500, easing: 'easeInOutQuart',
-        onComplete() { this._animated = true; }
-      },
-      scales: {
-        y: {
-          min: 0, max: 100,
-          grid: { color: 'rgba(255,255,255,.06)', drawTicks: false },
-          ticks: { font:{size:10}, color:'rgba(255,255,255,.35)', stepSize:20, padding:8 },
-          border: { display: false },
-        },
-        x: {
-          grid: { display: false },
-          ticks: {
-            font:{size:9}, color:'rgba(255,255,255,.28)', maxTicksLimit:10,
-            callback: (_,i) => { const l=labels[i]; return l&&l.endsWith('-01')?l.slice(0,4):''; }
-          },
-          border: { display: false },
-        }
-      },
-      plugins: {
-        legend: {
-          display: true, position: 'top', align: 'end',
-          labels: {
-            boxWidth:12, font:{size:10}, color:'rgba(255,255,255,.55)',
-            padding:14, usePointStyle:true
-          }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(5,10,8,.96)',
-          titleColor: '#00e89a',
-          bodyColor: 'rgba(255,255,255,.7)',
-          borderColor: 'rgba(0,232,154,.25)',
-          borderWidth: 1, padding: 12, cornerRadius: 8,
-          displayColors: true, boxPadding: 4,
-        },
-      }
+  new Chart(el,{type:'line',data:{labels,datasets:pillars.map(p=>({
+    label:p.label,data:p.data,borderColor:p.color,borderWidth:p.width,
+    backgroundColor:p.fill?(ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
+      g.addColorStop(0,p.color+'26');g.addColorStop(1,p.color+'00');return g;}):'transparent',
+    fill:p.fill,tension:0.38,pointRadius:0,pointHoverRadius:4,
+    pointHoverBackgroundColor:p.color,pointHoverBorderColor:'#fff',
+  }))},options:{responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    animation:{duration:1500,easing:'easeInOutQuart'},
+    scales:{
+      y:{min:0,max:100,grid:{color:'rgba(255,255,255,.05)',drawTicks:false},
+         ticks:{font:{size:9},color:'rgba(255,255,255,.3)',stepSize:20,padding:8},border:{display:false}},
+      x:{grid:{display:false},
+         ticks:{font:{size:8},color:'rgba(255,255,255,.25)',maxTicksLimit:10,
+           callback:(_,i)=>{const l=labels[i];return l&&l.endsWith('-01')?l.slice(0,4):'';}},
+         border:{display:false}},
+    },
+    plugins:{
+      legend:{display:true,position:'top',align:'end',
+        labels:{boxWidth:11,font:{size:10},color:'rgba(255,255,255,.5)',padding:13,usePointStyle:true}},
+      tooltip:{backgroundColor:'rgba(4,8,6,.97)',titleColor:'#00e89a',
+        bodyColor:'rgba(255,255,255,.65)',borderColor:'rgba(0,232,154,.22)',
+        borderWidth:1,padding:12,cornerRadius:8,displayColors:true,boxPadding:4},
     }
-  });
+  }});
 
   /* Sparklines */
-  const sparkConfigs = [
-    { id:'spk-pollution',   data:poll,  color:'#ef4444' },
-    { id:'spk-reduction',   data:red,   color:'#22c55e' },
-    { id:'spk-investment',  data:inv,   color:'#3b82f6' },
-    { id:'spk-transparency',data:trans, color:'#f59e0b' },
-    { id:'spk-community',   data:comm,  color:'#8b5cf6' },
-  ];
-  sparkConfigs.forEach(({ id, data, color }) => {
-    const spk = document.getElementById(id);
-    if (!spk || !data.length) return;
-    const recent = data.slice(-24);
-    new Chart(spk, {
-      type: 'line',
-      data: {
-        labels: recent.map((_,i) => i),
-        datasets: [{ data: recent, borderColor: color, borderWidth: 1.5,
-          backgroundColor: color + '18', fill: true, tension: 0.4,
-          pointRadius: 0 }]
-      },
-      options: {
-        responsive: false, maintainAspectRatio: false,
-        animation: { duration: 1000, delay: (ctx) => ctx.dataIndex * 8 },
-        scales: { x:{display:false}, y:{display:false, min:0, max:100} },
-        plugins: { legend:{display:false}, tooltip:{enabled:false} },
-      }
-    });
+  [
+    ['spk-pollution',  poll,  '#ef4444'],
+    ['spk-reduction',  red,   '#22c55e'],
+    ['spk-investment', inv,   '#3b82f6'],
+    ['spk-transparency',trans,'#f59e0b'],
+    ['spk-community',  comm,  '#8b5cf6'],
+  ].forEach(([id,data,color])=>{
+    const spk=document.getElementById(id);
+    if(!spk||!data.length)return;
+    const recent=data.slice(-24);
+    new Chart(spk,{type:'line',data:{
+      labels:recent.map((_,i)=>i),
+      datasets:[{data:recent,borderColor:color,borderWidth:1.5,
+        backgroundColor:color+'16',fill:true,tension:0.4,pointRadius:0}]
+    },options:{responsive:false,maintainAspectRatio:false,
+      animation:{duration:900,delay:(ctx)=>ctx.dataIndex*8},
+      scales:{x:{display:false},y:{display:false,min:0,max:100}},
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+    }});
   });
 })();
 
-/* ── Investment chart ──────────────────────────────────────────────────────── */
+/* ── Sector peer benchmark bar ───────────────────────────────────────────────── */
 (function(){
-  const el = document.getElementById('invChart');
-  if (!el) return;
-  const labels     = {{ inv_labels|safe }};
-  const amounts    = {{ inv_amounts|safe }};
-  const cumulative = {{ inv_cumulative|safe }};
-  const colors     = {{ inv_colors|safe }};
-  if (!labels.length) return;
-
-  const upgColors = colors.map(c =>
-    c === '#2d6a4f' ? '#00e89a' : c === '#40916c' ? '#3b82f6' : '#8da394'
-  );
-
-  new Chart(el, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          type: 'bar',
-          label: 'Investment ($M)',
-          data: amounts,
-          backgroundColor: upgColors,
-          borderRadius: 6,
-          borderSkipped: false,
-          order: 2,
-        },
-        {
-          type: 'line',
-          label: 'Cumulative ($M)',
-          data: cumulative,
-          borderColor: '#00e89a',
-          backgroundColor: 'rgba(0,232,154,.08)',
-          borderWidth: 2.5,
-          pointRadius: 4,
-          pointBackgroundColor: '#00e89a',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 1.5,
-          tension: 0.35,
-          yAxisID: 'yCum',
-          fill: true,
-          order: 1,
-        }
-      ]
+  const el=document.getElementById('peerChart');if(!el)return;
+  const data={{ peer_chart|safe }};
+  if(!data.length)return;
+  function tierHex(css){
+    const m={'restorative':'#2d6a4f','transition':'#40916c','improving':'#52b788',
+             'high-impact':'#e07b39','polluter':'#d93025'};
+    return m[css]||'#8da394';
+  }
+  new Chart(el,{type:'bar',data:{
+    labels:data.map(d=>d.name),
+    datasets:[{
+      label:'EcoIQ Score',
+      data:data.map(d=>d.score),
+      backgroundColor:data.map(d=>d.self?'rgba(0,232,154,.75)':tierHex(d.tier)+'99'),
+      borderColor:data.map(d=>d.self?'#00e89a':tierHex(d.tier)),
+      borderWidth:data.map(d=>d.self?2:1),
+      borderRadius:5,
+    }]
+  },options:{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    animation:{duration:900,easing:'easeInOutCubic',
+      delay:(ctx)=>ctx.dataIndex*60},
+    scales:{
+      x:{min:0,max:100,grid:{color:'rgba(0,0,0,.05)',drawTicks:false},
+         ticks:{font:{size:10},color:'#8da394',padding:6},border:{display:false}},
+      y:{grid:{display:false},ticks:{font:{size:11,weight:'600'},color:'#555'}},
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font:{size:9}, color:'#8da394', maxRotation: 30 }
-        },
-        y: {
-          grid: { color: 'rgba(0,0,0,.05)', drawTicks: false },
-          ticks: { font:{size:10}, color:'#8da394', callback: v=>'$'+v+'M', padding:6 },
-          border: { display: false },
-        },
-        yCum: {
-          position: 'right',
-          grid: { display: false },
-          ticks: { font:{size:10}, color:'#00c896', callback: v=>'$'+v+'M' },
-          border: { display: false },
-        }
-      },
-      plugins: {
-        legend: { display:true, position:'top', align:'end',
-          labels:{boxWidth:14, font:{size:10}, padding:10, usePointStyle:true} },
-        tooltip: { ...TOOLTIP, callbacks: { label: c => ` ${c.dataset.label}: $${c.parsed.y}M` } }
-      }
+    plugins:{legend:{display:false},tooltip:{..._TL,
+      callbacks:{label:c=>` Score: ${c.raw}/100`}}},
+  }});
+})();
+
+/* ── Investment chart ───────────────────────────────────────────────────────── */
+(function(){
+  const el=document.getElementById('invChart');if(!el)return;
+  const labels={{ inv_labels|safe }},amounts={{ inv_amounts|safe }};
+  const cumulative={{ inv_cumulative|safe }},colors={{ inv_colors|safe }};
+  if(!labels.length)return;
+  new Chart(el,{type:'bar',data:{labels,datasets:[
+    {type:'bar',label:'Investment ($M)',data:amounts,
+     backgroundColor:colors,borderRadius:5,borderSkipped:false,order:2},
+    {type:'line',label:'Cumulative ($M)',data:cumulative,
+     borderColor:'#00e89a',backgroundColor:'rgba(0,232,154,.08)',
+     borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#00e89a',
+     pointBorderColor:'#fff',pointBorderWidth:1.5,tension:0.35,
+     yAxisID:'yCum',fill:true,order:1},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:9},color:'#8da394',maxRotation:30}},
+      y:{grid:{color:'rgba(0,0,0,.05)',drawTicks:false},
+         ticks:{font:{size:10},color:'#8da394',callback:v=>'$'+v+'M',padding:6},border:{display:false}},
+      yCum:{position:'right',grid:{display:false},
+           ticks:{font:{size:10},color:'#00c47a',callback:v=>'$'+v+'M'},border:{display:false}},
+    },
+    plugins:{
+      legend:{display:true,position:'top',align:'end',
+        labels:{boxWidth:13,font:{size:10},padding:10,usePointStyle:true}},
+      tooltip:{..._TL,callbacks:{label:c=>` ${c.dataset.label}: $${c.parsed.y}M`}},
     }
-  });
+  }});
 })();
 
-/* ── CO₂ counter animation ─────────────────────────────────────────────────── */
+/* ── Greenwashing gauge ──────────────────────────────────────────────────────── */
 (function(){
-  const el = document.getElementById('co2Counter');
-  if (!el) return;
-  const target = parseInt(el.textContent.replace(/,/g,'')) || 0;
-  if (!target) return;
-  let current = 0;
-  const step = target / (1800 / 16);
-  const timer = setInterval(() => {
-    current = Math.min(current + step, target);
-    el.textContent = Math.round(current).toLocaleString();
-    if (current >= target) clearInterval(timer);
-  }, 16);
+  const el=document.getElementById('gwGauge');if(!el)return;
+  const d={{ gw_gauge_json|safe }};if(!d)return;
+  new Chart(el,{type:'doughnut',data:{datasets:[{
+    data:[d.score,100-d.score],
+    backgroundColor:[d.color+'bb','rgba(255,255,255,.07)'],
+    borderColor:[d.color,'transparent'],
+    borderWidth:[1.5,0],borderRadius:[6,0],
+  }]},options:{rotation:-90,circumference:180,cutout:'72%',
+    animation:{duration:1000,easing:'easeInOutCubic'},
+    plugins:{legend:{display:false},tooltip:{enabled:false}}}});
 })();
 
-/* ── Section nav scroll spy ────────────────────────────────────────────────── */
+/* ── Disclosure ring ─────────────────────────────────────────────────────────── */
 (function(){
-  const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.snav');
-  if (!sections.length) return;
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        navLinks.forEach(l => l.classList.remove('active'));
-        const active = document.querySelector(`.snav[href="#${entry.target.id}"]`);
-        if (active) active.classList.add('active');
+  const el=document.getElementById('disclosureRing');if(!el)return;
+  const pct={{ disclosure_completeness }};
+  const color=pct>=70?'#22c55e':pct>=40?'#f59e0b':'#ef4444';
+  new Chart(el,{type:'doughnut',data:{datasets:[{
+    data:[pct,100-pct],
+    backgroundColor:[color+'cc','rgba(0,0,0,.06)'],
+    borderColor:[color,'transparent'],borderWidth:[1.5,0],borderRadius:[5,0],
+  }]},options:{cutout:'66%',
+    animation:{duration:900,easing:'easeInOutCubic'},
+    plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+})();
+
+/* ── CO₂ counter ─────────────────────────────────────────────────────────────── */
+(function(){
+  const el=document.getElementById('co2Counter');if(!el)return;
+  const target=parseInt(el.textContent.replace(/,/g,''))||0;
+  if(!target)return;
+  let cur=0;const step=target/(1800/16);
+  const t=setInterval(()=>{
+    cur=Math.min(cur+step,target);
+    el.textContent=Math.round(cur).toLocaleString();
+    if(cur>=target)clearInterval(t);
+  },16);
+})();
+
+/* ── Scroll-spy sidebar ──────────────────────────────────────────────────────── */
+(function(){
+  const sections=document.querySelectorAll('section[id]');
+  const navLinks=document.querySelectorAll('.snav[href^="#"]');
+  if(!sections.length)return;
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        navLinks.forEach(l=>l.classList.remove('active'));
+        const a=document.querySelector(`.snav[href="#${e.target.id}"]`);
+        if(a)a.classList.add('active');
       }
     });
-  }, { threshold: 0.3 });
-  sections.forEach(s => observer.observe(s));
+  },{threshold:0.25,rootMargin:'0px 0px -40% 0px'});
+  sections.forEach(s=>io.observe(s));
 })();
 </script>
 
