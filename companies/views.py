@@ -427,6 +427,9 @@ def company_detail(request, slug):
     # Sources
     sources = profile.cited_sources.all()[:8]
 
+    # Score evolution snapshots
+    score_snapshots = list(profile.score_snapshots.order_by('date')[:8])
+
     # ── Intelligence layer ─────────────────────────────────────────────────────
     harm_signals       = _get_harm_signals(profile)
     ai_confidence      = _get_ai_confidence(profile)
@@ -457,6 +460,8 @@ def company_detail(request, slug):
         'disclaimer_full':       DISCLAIMER_FULL,
         'disclaimer_light':      DISCLAIMER_LIGHT,
         'moral_display':         profile.moral_label_display,
+        # Score evolution
+        'score_snapshots':       score_snapshots,
         # Intelligence layer
         'harm_signals':          harm_signals,
         'ai_confidence':         ai_confidence,

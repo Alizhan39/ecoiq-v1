@@ -532,3 +532,260 @@ def report_pdf(request, pk):
         messages.error(request, f'PDF generation failed: {exc}')
 
     return redirect('report', pk=pk)
+
+
+# ── Methodology page ───────────────────────────────────────────────────────────
+
+def methodology(request):
+    """
+    /methodology/ — EcoIQ Ethical Intelligence Framework documentation.
+    Public, no auth required. Institutional-grade methodology explanation.
+    """
+    from django.conf import settings as _s
+
+    pillars = [
+        {
+            'icon': '🌍', 'label': 'Public Benefit', 'weight': '25%',
+            'color': '#00e89a',
+            'desc': 'Measures the company\'s positive contribution to employment quality, '
+                    'regional development, infrastructure, and national economic value.',
+            'sub_dimensions': [
+                ('Employment Quality',      'Jobs created, wage levels, labour standards, workforce development'),
+                ('Regional Development',    'Investment in local infrastructure, supply chains, community projects'),
+                ('Infrastructure Impact',   'Contribution to public goods — roads, utilities, digital access'),
+                ('National Value',          'Export contribution, IP development, industrial self-sufficiency'),
+            ],
+        },
+        {
+            'icon': '♻️', 'label': 'Environmental Stewardship', 'weight': '25%',
+            'color': '#06b6d4',
+            'desc': 'Evaluates environmental responsibility across pollution intensity, '
+                    'waste management, water stewardship, and biodiversity preservation.',
+            'sub_dimensions': [
+                ('Pollution Intensity',     'Emissions intensity, air quality impact, proximity to communities'),
+                ('Waste Management',        'Waste reduction rates, circular economy adoption, hazardous disposal'),
+                ('Water Stewardship',       'Water consumption efficiency, contamination risk, watershed impact'),
+                ('Biodiversity',            'Land use impact, habitat protection, ecological restoration'),
+            ],
+        },
+        {
+            'icon': '⚡', 'label': 'Responsible Modernization', 'weight': '20%',
+            'color': '#58a6ff',
+            'desc': 'Assesses the company\'s transition readiness — energy transformation, '
+                    'digital capability, infrastructure investment, and long-term resilience.',
+            'sub_dimensions': [
+                ('Energy Transition',       'Clean energy share, decarbonisation targets, transition investment'),
+                ('Digitalization',          'Technology integration, automation quality, data infrastructure'),
+                ('Infrastructure Upgrade',  'Capital expenditure in modernization, equipment quality'),
+                ('Future Readiness',        'R&D investment, talent development, innovation pipeline'),
+            ],
+        },
+        {
+            'icon': '🔍', 'label': 'Transparent Governance', 'weight': '15%',
+            'color': '#a855f7',
+            'desc': 'Evaluates reporting quality, audit independence, and procurement '
+                    'transparency as prerequisites for institutional trust.',
+            'sub_dimensions': [
+                ('Reporting Quality',       'Depth and frequency of ESG/sustainability disclosures'),
+                ('Audit Standards',         'Independence of audit, compliance with international standards'),
+                ('Procurement Transparency','Public procurement integrity, supply chain disclosure'),
+            ],
+        },
+        {
+            'icon': '⚖️', 'label': 'Anti-Corruption', 'weight': '10%',
+            'color': '#f4a261',
+            'desc': 'Scores governance integrity through anti-corruption practices, '
+                    'ethical procurement, and institutional accountability structures.',
+            'sub_dimensions': [
+                ('AC Practices',            'Anti-bribery systems (ISO 37001), whistleblower protections'),
+                ('Ethical Procurement',     'Conflict-of-interest controls, supplier code of conduct'),
+            ],
+        },
+        {
+            'icon': '✦', 'label': 'Ethical Alignment', 'weight': '5%',
+            'color': '#e879f9',
+            'desc': 'Captures long-term ethical value creation, controversy management, '
+                    'and multi-stakeholder trust as a composite signal.',
+            'sub_dimensions': [
+                ('Controversy Management',  'Response quality to controversies, reputational risk controls'),
+                ('Long-Term Value',         'Alignment between short-term returns and long-term societal impact'),
+            ],
+        },
+    ]
+
+    formula_categories = [
+        {
+            'icon': '🌿', 'label': 'Environmental Balance',
+            'color': '#06b6d4',
+            'desc': 'Formulas measuring ecological impact, emissions, resource use, and restoration.',
+            'formulas': [
+                'Pollution Intensity Index',
+                'Emissions per Revenue Ratio',
+                'Waste-to-Value Conversion Rate',
+                'Water Footprint Efficiency',
+                'Biodiversity Impact Score',
+                'Ecological Restoration Progress',
+            ],
+        },
+        {
+            'icon': '⚡', 'label': 'Industrial Efficiency',
+            'color': '#58a6ff',
+            'desc': 'Formulas measuring energy modernization, technology adoption, and operational resilience.',
+            'formulas': [
+                'Renewable Energy Integration Rate',
+                'Digitalization Maturity Index',
+                'Capital Expenditure Quality Score',
+                'Infrastructure Upgrade Velocity',
+                'Future Readiness Composite',
+            ],
+        },
+        {
+            'icon': '🔍', 'label': 'Transparency & Governance',
+            'color': '#a855f7',
+            'desc': 'Formulas assessing disclosure quality, audit independence, and accountability structures.',
+            'formulas': [
+                'Reporting Comprehensiveness Score',
+                'Audit Independence Index',
+                'Procurement Transparency Ratio',
+                'Board Accountability Composite',
+            ],
+        },
+        {
+            'icon': '🌍', 'label': 'Public Benefit',
+            'color': '#00e89a',
+            'desc': 'Formulas quantifying employment quality, community investment, and economic contribution.',
+            'formulas': [
+                'Employment Quality Index',
+                'Regional Development Coefficient',
+                'Infrastructure Investment Ratio',
+                'National Value Creation Score',
+                'Community Benefit Composite',
+            ],
+        },
+        {
+            'icon': '♻️', 'label': 'Restoration & Regeneration',
+            'color': '#22c55e',
+            'desc': 'Formulas tracking restoration trajectories, circular economy adoption, and ecological return.',
+            'formulas': [
+                'Circular Economy Adoption Score',
+                'Land Restoration Progress Index',
+                'Net Positive Impact Indicator',
+            ],
+        },
+        {
+            'icon': '📈', 'label': 'Long-Term Sustainability',
+            'color': '#f4a261',
+            'desc': 'Formulas evaluating technology investment, resilience, and multi-decade viability.',
+            'formulas': [
+                'Long-Term Resilience Index',
+                'Technology Investment Depth',
+                'R&D Quality Coefficient',
+                'Workforce Development Score',
+            ],
+        },
+        {
+            'icon': '⚖️', 'label': 'Ethical Capital Allocation',
+            'color': '#e879f9',
+            'desc': 'Formulas measuring alignment between capital deployment, ethical standards, and societal return.',
+            'formulas': [
+                'Anti-Corruption Control Quality',
+                'Profit-to-Public-Benefit Ratio',
+                'Controversy Risk Adjusted Score',
+                'Ethical Alignment Composite',
+                'Stakeholder Trust Index',
+            ],
+        },
+    ]
+
+    principles = [
+        {
+            'icon': '🌱', 'label': 'Stewardship Intelligence',
+            'color': '#00e89a',
+            'desc': 'EcoIQ measures the long-term custodianship of industrial resources, '
+                    'communities, and ecosystems — not just short-term financial extraction. '
+                    'A steward company builds enduring value while preserving the conditions '
+                    'that enable future generations to thrive.',
+        },
+        {
+            'icon': '⚖️', 'label': 'Balanced Value Creation',
+            'color': '#58a6ff',
+            'desc': 'Responsible industrial systems distribute value across shareholders, '
+                    'workers, communities, and the environment. EcoIQ penalises capital '
+                    'structures that maximise short-term extraction at the expense of '
+                    'long-term systemic health.',
+        },
+        {
+            'icon': '🔍', 'label': 'Accountability & Transparency',
+            'color': '#a855f7',
+            'desc': 'Governance quality and public reporting are prerequisites for institutional '
+                    'trust. Companies that disclose meaningfully — and back disclosures with '
+                    'independent verification — demonstrate the structural integrity that '
+                    'responsible capital requires.',
+        },
+        {
+            'icon': '🛡️', 'label': 'Harm Reduction',
+            'color': '#f4a261',
+            'desc': 'Systemic harm is penalised, not merely noted. Pollution severity, '
+                    'transparency deficits, controversy risk, and profit extraction without '
+                    'reinvestment reduce EcoIQ scores directly — creating a clear incentive '
+                    'structure for harm reduction over time.',
+        },
+        {
+            'icon': '📈', 'label': 'Restorative Progress',
+            'color': '#06b6d4',
+            'desc': 'EcoIQ rewards improvement trajectories, not just current state. '
+                    'A company that begins polluting at high levels but commits to '
+                    'measurable reduction should be recognised for its transition journey — '
+                    'not permanently classified by a historical baseline.',
+        },
+        {
+            'icon': '⚙️', 'label': 'Responsible Modernization',
+            'color': '#e879f9',
+            'desc': 'Technology transition is a core competency of industrial resilience. '
+                    'Companies investing in energy transformation, digital capability, '
+                    'and future readiness are better positioned to remain viable, '
+                    'competitive, and socially legitimate over a 20-year horizon.',
+        },
+    ]
+
+    harm_signals = [
+        ('Severe Pollution',        '−15 pts', 'Critical environmental harm — maximum penalty tier'),
+        ('High Pollution',          '−8 pts',  'Significant emissions or environmental impact'),
+        ('High Controversy Risk',   '−5 pts',  'Controversy score ≥ 70 with documented harm signals'),
+        ('Transparency Deficit',    '−5 pts',  'Transparency score < 30 — governance opacity risk'),
+        ('Profit Extraction',       '−5 pts',  'High extraction without proportionate public benefit'),
+        ('Transition Gap',          '−3 pts',  'High pollution combined with low modernization score'),
+    ]
+
+    score_tiers = [
+        ('85–100', 'Regenerative Leader',       '#00e89a',
+         'Industry-leading stewardship. Strong public benefit, low pollution, high modernization, transparent governance.'),
+        ('70–84',  'Responsible Builder',        '#58a6ff',
+         'Solid performance across pillars with active improvement trajectory. ESG-fund eligible.'),
+        ('60–69',  'Public-Benefit Oriented',    '#8b5cf6',
+         'Meaningful public contribution with gaps in environmental or modernization dimensions.'),
+        ('50–59',  'Transitional Company',       '#f4a261',
+         'In transition — visible effort but material gaps remain. Eligible for just-transition financing.'),
+        ('30–49',  'Profit-First Operator',      '#e63946',
+         'Prioritises extraction over long-term sustainability. Requires structured transition plan.'),
+        ('0–29',   'Extractive / Harmful',       '#b91c1c',
+         'Significant harm signals with limited public benefit reinvestment. High risk for responsible capital.'),
+    ]
+
+    not_items = [
+        'ESG policing or activist scoring',
+        'Corporate shaming or blame attribution',
+        'A static label with no path to improvement',
+        'A compliance checkbox with no actionable output',
+        'A substitute for full due diligence or audit',
+    ]
+
+    return render(request, 'methodology.html', {
+        'pillars':             pillars,
+        'formula_categories':  formula_categories,
+        'principles':          principles,
+        'harm_signals':        harm_signals,
+        'score_tiers':         score_tiers,
+        'not_items':           not_items,
+        'site_url':            _s.SITE_URL,
+    })

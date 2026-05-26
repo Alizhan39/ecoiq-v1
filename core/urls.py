@@ -20,4 +20,7 @@ urlpatterns = [
 
     # Public share link — no auth required
     path('share/<uuid:token>/',                      views.share_report,      name='share_report'),
+
+    # EcoIQ Methodology — public Ethical Intelligence Framework page
+    path('methodology/',                             views.methodology,        name='methodology'),
 ]

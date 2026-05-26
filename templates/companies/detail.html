@@ -650,6 +650,102 @@ a{color:inherit;text-decoration:none}
 <div class="alert-strip alert-warn">⚠ <strong>Profit Extraction Risk:</strong> High extraction indicators with limited public benefit reinvestment detected.</div>
 {% endif %}
 
+<!-- ── Transition Journey ─────────────────────────────────────────── -->
+<div class="intel-panel" style="margin-bottom:1.4rem">
+  <div class="panel-header" style="color:var(--accent)">
+    ⚡ EcoIQ Transition Journey
+    <div class="ph-right">
+      <span class="ai-conf-pill">Current → Opportunity → Target</span>
+    </div>
+  </div>
+  <div class="panel-body" style="padding:.9rem 1.1rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.85rem">
+
+      <!-- Current State -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.9rem;border-top:2px solid {{ profile.moral_label_color }}">
+        <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem">Current State</div>
+        <div style="font-size:1.5rem;font-weight:900;color:{{ profile.moral_label_color }};font-variant-numeric:tabular-nums;line-height:1">{{ profile.ecoiq_total_score|floatformat:1 }}</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">EcoIQ Score</div>
+        <div style="font-size:.7rem;font-weight:700;color:{{ profile.moral_label_color }};margin-top:.45rem">{{ profile.moral_label_display }}</div>
+        <div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:.5rem;overflow:hidden">
+          <div style="height:100%;width:{{ profile.ecoiq_total_score }}%;background:{{ profile.moral_label_color }};border-radius:2px"></div>
+        </div>
+      </div>
+
+      <!-- Key Weaknesses -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.9rem;border-top:2px solid var(--warn)">
+        <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem">Key Gaps</div>
+        <div style="display:flex;flex-direction:column;gap:.35rem">
+          {% if profile.environmental_responsibility_score < 60 %}
+          <div style="font-size:.68rem;color:var(--warn);display:flex;gap:.4rem;align-items:center">
+            <span style="width:5px;height:5px;border-radius:50%;background:var(--warn);flex-shrink:0"></span>
+            Environmental ({{ profile.environmental_responsibility_score|floatformat:0 }})
+          </div>
+          {% endif %}
+          {% if profile.modernization_score < 60 %}
+          <div style="font-size:.68rem;color:var(--warn);display:flex;gap:.4rem;align-items:center">
+            <span style="width:5px;height:5px;border-radius:50%;background:var(--warn);flex-shrink:0"></span>
+            Modernization ({{ profile.modernization_score|floatformat:0 }})
+          </div>
+          {% endif %}
+          {% if profile.public_benefit_score < 60 %}
+          <div style="font-size:.68rem;color:var(--warn);display:flex;gap:.4rem;align-items:center">
+            <span style="width:5px;height:5px;border-radius:50%;background:var(--warn);flex-shrink:0"></span>
+            Public Benefit ({{ profile.public_benefit_score|floatformat:0 }})
+          </div>
+          {% endif %}
+          {% if profile.transparency_anti_corruption_score < 60 %}
+          <div style="font-size:.68rem;color:var(--warn);display:flex;gap:.4rem;align-items:center">
+            <span style="width:5px;height:5px;border-radius:50%;background:var(--warn);flex-shrink:0"></span>
+            Governance ({{ profile.transparency_anti_corruption_score|floatformat:0 }})
+          </div>
+          {% endif %}
+          {% if profile.environmental_responsibility_score >= 60 and profile.modernization_score >= 60 and profile.public_benefit_score >= 60 and profile.transparency_anti_corruption_score >= 60 %}
+          <div style="font-size:.72rem;color:var(--accent)">✓ All major pillars strong</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Top Opportunity -->
+      {% if path_actions %}
+      {% with top=path_actions.0 %}
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.9rem;border-top:2px solid var(--info)">
+        <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem">Top Opportunity</div>
+        <div style="font-size:.65rem;font-weight:800;color:var(--accent);background:rgba(0,232,154,.1);border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:.4rem">+{{ top.potential_gain|floatformat:0 }} pts potential</div>
+        <div style="font-size:.75rem;font-weight:700;margin-bottom:.2rem;line-height:1.3">{{ top.title }}</div>
+        <div style="font-size:.65rem;color:var(--muted2);line-height:1.5">{{ top.description|truncatechars:90 }}</div>
+      </div>
+      {% endwith %}
+      {% endif %}
+
+      <!-- Next Tier Target -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.9rem;border-top:2px solid var(--accent)">
+        <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem">Next Tier Target</div>
+        {% if profile.ecoiq_total_score < 50 %}
+          <div style="font-size:1.1rem;font-weight:800;color:#f4a261;line-height:1">50+</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Target: Transitional Company</div>
+          <div style="font-size:.7rem;color:var(--muted2);margin-top:.4rem">Gap: {{ profile.path_to_100_gap|floatformat:0 }} pts to 50</div>
+        {% elif profile.ecoiq_total_score < 60 %}
+          <div style="font-size:1.1rem;font-weight:800;color:#8b5cf6;line-height:1">60+</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Target: Public-Benefit Oriented</div>
+          <div style="font-size:.7rem;color:var(--muted2);margin-top:.4rem">Gap: {{ 60|floatformat:0|add:"" }} - {{ profile.ecoiq_total_score|floatformat:0 }} = {% widthratio profile.ecoiq_total_score 1 1 %} pts</div>
+        {% elif profile.ecoiq_total_score < 70 %}
+          <div style="font-size:1.1rem;font-weight:800;color:#58a6ff;line-height:1">70+</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Target: Responsible Builder</div>
+        {% elif profile.ecoiq_total_score < 85 %}
+          <div style="font-size:1.1rem;font-weight:800;color:#00e89a;line-height:1">85+</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Target: Regenerative Leader</div>
+        {% else %}
+          <div style="font-size:1.1rem;font-weight:800;color:#00e89a;line-height:1">✓</div>
+          <div style="font-size:.65rem;color:var(--accent);margin-top:.15rem">Regenerative Leader achieved</div>
+        {% endif %}
+        <a href="{% url 'transition:dashboard' company.slug %}" style="font-size:.65rem;color:var(--accent);font-weight:700;display:inline-block;margin-top:.55rem">View Full Roadmap →</a>
+      </div>
+
+    </div><!-- /grid -->
+  </div>
+</div>
+
 <!-- ── Main layout ────────────────────────────────────────────────── -->
 <div class="page-layout">
 
@@ -1057,6 +1153,27 @@ a{color:inherit;text-decoration:none}
         </div>
         {% endfor %}
         <a href="{% url 'transition:financing' %}" style="font-size:.68rem;color:var(--accent);display:inline-block;margin-top:.75rem;font-weight:600">All Opportunities →</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Score Evolution History -->
+    {% if score_snapshots %}
+    <div class="intel-panel" style="margin-bottom:1.2rem">
+      <div class="panel-header">📈 Score Evolution History</div>
+      <div class="panel-body" style="padding:.6rem .9rem">
+        {% for snap in score_snapshots %}
+        <div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:.62rem;color:var(--muted);min-width:48px;flex-shrink:0">{{ snap.date|date:"M 'y" }}</div>
+          <div style="flex:1;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:{{ snap.total_score }}%;background:{{ snap.tier_color }};border-radius:2px"></div>
+          </div>
+          <div style="font-size:.7rem;font-weight:800;color:{{ snap.tier_color }};min-width:32px;text-align:right;font-variant-numeric:tabular-nums">{{ snap.total_score|floatformat:1 }}</div>
+        </div>
+        {% endfor %}
+        <div style="font-size:.6rem;color:var(--muted);margin-top:.5rem;line-height:1.5">
+          {{ score_snapshots|length }} recorded snapshot{{ score_snapshots|length|pluralize }} · <a href="/methodology/#transition" style="color:var(--accent)">How scoring works →</a>
+        </div>
       </div>
     </div>
     {% endif %}

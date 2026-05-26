@@ -1,0 +1,774 @@
+{% extends "base.html" %}
+
+{% block title %}EcoIQ Methodology — Ethical Intelligence Framework{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   EcoIQ METHODOLOGY — Institutional Design System
+   Clean, academic, investor-ready documentation aesthetic
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2230;
+  --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12); --border3:rgba(255,255,255,.18);
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+  --info:#58a6ff; --purple:#a855f7; --cyan:#06b6d4;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --radius:10px; --radius-sm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ── Command bar ─────────────────────────────────────────────────── */
+.cmd-bar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(7,11,15,.97);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.75rem;
+  padding:.55rem 1.5rem;
+  font-size:.72rem;
+}
+.cmd-brand{font-weight:800;font-size:.88rem;color:var(--accent);letter-spacing:-.01em}
+.cmd-sep{color:var(--border2);margin:0 .1rem}
+.cmd-bc{color:var(--muted);display:flex;align-items:center;gap:.35rem}
+.cmd-bc a{color:var(--muted);transition:color .15s}
+.cmd-bc a:hover{color:var(--accent)}
+.cmd-links{display:flex;gap:.4rem;margin-left:auto;align-items:center}
+.cmd-btn{
+  font-size:.69rem;font-weight:600;padding:.28rem .8rem;border-radius:5px;
+  border:1px solid var(--border);color:var(--muted);transition:all .15s;
+}
+.cmd-btn:hover{border-color:var(--border2);color:var(--text)}
+.cmd-btn.accent{background:var(--accent);color:#0a0f14;border-color:var(--accent)}
+
+/* ── Page wrap ───────────────────────────────────────────────────── */
+.page{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 6rem}
+
+/* ── Document header ─────────────────────────────────────────────── */
+.doc-header{
+  border-bottom:1px solid var(--border2);
+  padding-bottom:2rem;margin-bottom:3rem;
+}
+.doc-eyebrow{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;
+  color:var(--accent);margin-bottom:.6rem;display:flex;align-items:center;gap:.6rem;
+}
+.doc-eyebrow::after{content:'';flex:1;height:1px;background:rgba(0,232,154,.15);max-width:200px}
+.doc-title{
+  font-size:clamp(2rem,4vw,3rem);font-weight:900;letter-spacing:-.04em;
+  line-height:1.05;margin-bottom:1rem;
+  background:linear-gradient(135deg,#fff 40%,rgba(255,255,255,.55));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.doc-subtitle{
+  font-size:1rem;color:var(--muted2);line-height:1.7;max-width:700px;
+  margin-bottom:1.5rem;
+}
+.doc-meta{
+  display:flex;gap:2rem;flex-wrap:wrap;
+}
+.doc-meta-item{display:flex;flex-direction:column;gap:.2rem}
+.doc-meta-label{font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.doc-meta-val{font-size:.8rem;font-weight:600;color:var(--muted2)}
+
+/* ── Table of contents ───────────────────────────────────────────── */
+.toc{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.25rem 1.5rem;margin-bottom:3rem;
+}
+.toc-title{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);margin-bottom:.85rem}
+.toc-list{list-style:none;display:flex;flex-direction:column;gap:.35rem}
+.toc-list li{display:flex;align-items:center;gap:.7rem}
+.toc-num{font-size:.62rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.5rem}
+.toc-list a{font-size:.82rem;color:var(--muted2);transition:color .15s}
+.toc-list a:hover{color:var(--accent)}
+
+/* ── Section structure ───────────────────────────────────────────── */
+.section{margin-bottom:4rem}
+.section-anchor{display:block;position:relative;top:-70px;visibility:hidden}
+.sec-eyebrow{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--accent);margin-bottom:.5rem;
+}
+.sec-title{
+  font-size:clamp(1.35rem,2.5vw,1.85rem);font-weight:800;letter-spacing:-.03em;
+  margin-bottom:.75rem;line-height:1.2;
+}
+.sec-lead{
+  font-size:.9rem;color:var(--muted2);line-height:1.75;max-width:760px;
+  margin-bottom:1.75rem;
+}
+.sec-divider{height:1px;background:var(--border);margin-bottom:2rem}
+
+/* ── Principles grid ─────────────────────────────────────────────── */
+.principles-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:1rem;
+}
+.principle-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem;
+  transition:border-color .2s;
+  position:relative;overflow:hidden;
+}
+.principle-card:hover{border-color:var(--border2)}
+.principle-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--pc),transparent 70%);
+}
+.pc-top{display:flex;align-items:center;gap:.65rem;margin-bottom:.65rem}
+.pc-icon{font-size:1.25rem}
+.pc-label{font-size:.78rem;font-weight:700;color:var(--pc)}
+.pc-desc{font-size:.78rem;color:var(--muted2);line-height:1.7}
+
+/* ── 6-Pillar cards ─────────────────────────────────────────────── */
+.pillar-list{display:flex;flex-direction:column;gap:1.1rem}
+.pillar-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  transition:border-color .2s;
+}
+.pillar-card:hover{border-color:var(--border2)}
+.pillar-header{
+  display:flex;align-items:center;gap:.85rem;
+  padding:1rem 1.25rem;border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.pillar-icon{font-size:1.35rem;flex-shrink:0}
+.pillar-name{flex:1}
+.pillar-label{font-size:.88rem;font-weight:700;margin-bottom:.15rem}
+.pillar-desc-short{font-size:.72rem;color:var(--muted2);line-height:1.5}
+.pillar-weight{
+  font-size:.72rem;font-weight:800;padding:.25rem .65rem;border-radius:5px;
+  background:var(--bg3);color:var(--muted2);flex-shrink:0;
+  border:1px solid var(--border);
+}
+.pillar-body{padding:1rem 1.25rem}
+.sub-dim-list{list-style:none;display:flex;flex-direction:column;gap:.55rem}
+.sub-dim-item{
+  display:flex;gap:.75rem;font-size:.78rem;
+  padding:.5rem .75rem;border-radius:6px;
+  background:var(--bg3);
+}
+.sub-dim-name{font-weight:600;color:var(--muted2);min-width:165px;flex-shrink:0}
+.sub-dim-detail{color:var(--muted);line-height:1.5}
+
+/* ── Score formula categories ────────────────────────────────────── */
+.formula-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:1rem;
+}
+.formula-cat{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.1rem;
+}
+.formula-cat-top{display:flex;align-items:center;gap:.65rem;margin-bottom:.55rem}
+.fc-icon{font-size:1.1rem}
+.fc-label{font-size:.78rem;font-weight:700}
+.fc-desc{font-size:.7rem;color:var(--muted2);line-height:1.55;margin-bottom:.75rem}
+.fc-list{list-style:none;display:flex;flex-direction:column;gap:.3rem}
+.fc-list li{
+  font-size:.68rem;color:var(--muted);
+  padding:.28rem .5rem;border-radius:4px;
+  background:rgba(255,255,255,.02);
+  border-left:2px solid var(--fc-color);
+}
+
+/* ── Harm signal table ───────────────────────────────────────────── */
+.harm-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.harm-table th{
+  font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  padding:.55rem .9rem;text-align:left;border-bottom:1px solid var(--border2);
+  background:var(--bg2);
+}
+.harm-table td{
+  padding:.65rem .9rem;border-bottom:1px solid var(--border);
+  vertical-align:top;
+}
+.harm-table tr:last-child td{border-bottom:none}
+.harm-penalty{font-weight:800;color:var(--danger);font-variant-numeric:tabular-nums}
+
+/* ── Score tiers table ───────────────────────────────────────────── */
+.tier-list{display:flex;flex-direction:column;gap:.65rem}
+.tier-row{
+  display:grid;grid-template-columns:70px 1fr 3fr;
+  gap:1rem;align-items:start;
+  padding:.9rem 1rem;background:var(--bg2);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+}
+.tier-range{font-size:.78rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--muted2)}
+.tier-label{font-size:.78rem;font-weight:700}
+.tier-desc{font-size:.75rem;color:var(--muted2);line-height:1.6}
+
+/* ── Scoring formula block ───────────────────────────────────────── */
+.formula-block{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);
+  padding:1.25rem 1.5rem;margin-bottom:1rem;
+  font-family:'SF Mono','Fira Code','Courier New',monospace;
+}
+.formula-block h4{font-family:var(--font);font-size:.8rem;font-weight:700;color:var(--muted2);
+  margin-bottom:.6rem;font-family:inherit}
+.formula-line{font-size:.82rem;color:var(--accent);line-height:1.9}
+.formula-note{font-size:.7rem;color:var(--muted);margin-top:.5rem;font-family:var(--font);
+  border-top:1px solid var(--border);padding-top:.5rem;line-height:1.6}
+
+/* ── Philosophy quote block ──────────────────────────────────────── */
+.philosophy-block{
+  background:linear-gradient(135deg,rgba(0,232,154,.04),transparent);
+  border:1px solid rgba(0,232,154,.18);border-radius:var(--radius);
+  padding:1.75rem 2rem;margin:2rem 0;
+  position:relative;overflow:hidden;
+}
+.philosophy-block::before{
+  content:'"';font-size:8rem;font-weight:900;color:rgba(0,232,154,.06);
+  position:absolute;top:-1.5rem;left:1rem;line-height:1;font-family:Georgia,serif;
+  pointer-events:none;
+}
+.philosophy-text{
+  font-size:1rem;color:var(--text);line-height:1.8;max-width:760px;
+  font-style:italic;position:relative;z-index:1;
+}
+.philosophy-attr{font-size:.72rem;color:var(--muted2);margin-top:.75rem;font-style:normal;
+  font-weight:600;position:relative;z-index:1}
+
+/* ── Transition journey diagram ──────────────────────────────────── */
+.journey-steps{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:.75rem;
+}
+.journey-step{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:.9rem 1rem;text-align:center;position:relative;
+}
+.journey-step::after{
+  content:'→';position:absolute;right:-1.1rem;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:.85rem;z-index:1;
+}
+.journey-step:last-child::after{display:none}
+.js-num{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);margin-bottom:.4rem;
+}
+.js-label{font-size:.78rem;font-weight:700;margin-bottom:.2rem}
+.js-detail{font-size:.65rem;color:var(--muted2);line-height:1.5}
+
+/* ── Use case grid ───────────────────────────────────────────────── */
+.usecase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+.usecase-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.1rem;transition:border-color .2s;
+}
+.usecase-card:hover{border-color:var(--border2)}
+.uc-icon{font-size:1.5rem;margin-bottom:.55rem}
+.uc-label{font-size:.82rem;font-weight:700;margin-bottom:.35rem;color:var(--muted2)}
+.uc-desc{font-size:.72rem;color:var(--muted);line-height:1.6}
+
+/* ── CTA footer ──────────────────────────────────────────────────── */
+.doc-cta{
+  background:linear-gradient(135deg,rgba(0,232,154,.05),transparent);
+  border:1px solid rgba(0,232,154,.15);border-radius:14px;
+  padding:2.5rem;text-align:center;margin-top:3rem;
+}
+.doc-cta h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.6rem}
+.doc-cta p{font-size:.9rem;color:var(--muted2);max-width:500px;margin:0 auto 1.5rem}
+.cta-buttons{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.cta-primary{
+  background:var(--accent);color:#0a0f14;font-weight:700;font-size:.85rem;
+  padding:.65rem 1.5rem;border-radius:7px;border:none;transition:all .15s;
+}
+.cta-primary:hover{background:#00c882}
+.cta-secondary{
+  background:transparent;color:var(--muted2);font-weight:600;font-size:.85rem;
+  padding:.65rem 1.5rem;border-radius:7px;
+  border:1px solid var(--border2);transition:all .15s;
+}
+.cta-secondary:hover{border-color:var(--border3);color:var(--text)}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .tier-row{grid-template-columns:1fr}
+  .sub-dim-name{min-width:auto}
+  .journey-step::after{display:none}
+  .formula-grid{grid-template-columns:1fr}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Command bar -->
+<div class="cmd-bar">
+  <span class="cmd-brand">EcoIQ</span>
+  <span class="cmd-sep">|</span>
+  <div class="cmd-bc">
+    <a href="/">Home</a>
+    <span>›</span>
+    <span style="color:var(--muted2)">Methodology</span>
+  </div>
+  <div class="cmd-links">
+    <a href="{% url 'companies:directory' %}" class="cmd-btn">🌍 Rankings</a>
+    <a href="{% url 'countries:directory' %}" class="cmd-btn">🗺 Countries</a>
+    <a href="{% url 'transition:index' %}" class="cmd-btn">⚡ Transition</a>
+    <a href="{% url 'companies:directory' %}" class="cmd-btn accent">View Rankings →</a>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ── Document Header ───────────────────────────────────────────── -->
+<div class="doc-header">
+  <div class="doc-eyebrow">EcoIQ Framework Documentation</div>
+  <h1 class="doc-title">Ethical Intelligence<br>Methodology</h1>
+  <p class="doc-subtitle">
+    EcoIQ is a climate and industrial intelligence scoring system that converts publicly
+    available evidence — annual reports, sustainability disclosures, regulatory filings,
+    and AI-assisted analysis — into a composite 0–100 score measuring long-term stewardship,
+    public benefit, and responsible modernization.
+  </p>
+  <div class="doc-meta">
+    <div class="doc-meta-item">
+      <span class="doc-meta-label">Framework Version</span>
+      <span class="doc-meta-val">EcoIQ 1.0</span>
+    </div>
+    <div class="doc-meta-item">
+      <span class="doc-meta-label">Scoring Dimensions</span>
+      <span class="doc-meta-val">6 Pillars · 33 Sub-Indicators</span>
+    </div>
+    <div class="doc-meta-item">
+      <span class="doc-meta-label">Score Range</span>
+      <span class="doc-meta-val">0 – 100 (Harm Penalty up to −30 pts)</span>
+    </div>
+    <div class="doc-meta-item">
+      <span class="doc-meta-label">Data Sources</span>
+      <span class="doc-meta-val">Public Reports · AI Analysis · Evidence Citations</span>
+    </div>
+    <div class="doc-meta-item">
+      <span class="doc-meta-label">Intended Users</span>
+      <span class="doc-meta-val">Investors · Governments · Companies · Climate Programmes</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Table of Contents ──────────────────────────────────────────── -->
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ul class="toc-list">
+    <li><span class="toc-num">1</span><a href="#principles">Ethical Intelligence Principles</a></li>
+    <li><span class="toc-num">2</span><a href="#philosophy">Improvement, Not Punishment</a></li>
+    <li><span class="toc-num">3</span><a href="#pillars">6-Pillar Scoring Framework</a></li>
+    <li><span class="toc-num">4</span><a href="#formula">Scoring Formula</a></li>
+    <li><span class="toc-num">5</span><a href="#harm">Harm Penalty System</a></li>
+    <li><span class="toc-num">6</span><a href="#tiers">Score Interpretation Tiers</a></li>
+    <li><span class="toc-num">7</span><a href="#formulas">Formula Category System</a></li>
+    <li><span class="toc-num">8</span><a href="#transition">Transition Intelligence</a></li>
+    <li><span class="toc-num">9</span><a href="#usecases">Institutional Use Cases</a></li>
+  </ul>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     1. ETHICAL INTELLIGENCE PRINCIPLES
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="principles-section">
+  <a class="section-anchor" id="principles"></a>
+  <div class="sec-eyebrow">01 — Foundation</div>
+  <h2 class="sec-title">Ethical Intelligence Principles</h2>
+  <p class="sec-lead">
+    EcoIQ is built on six core principles drawn from systems thinking in industrial
+    stewardship, long-term resilience theory, and evidence-based governance frameworks.
+    These principles govern how scores are weighted, how harm is penalised,
+    and how improvement trajectories are recognised.
+  </p>
+
+  <div class="principles-grid">
+    {% for p in principles %}
+    <div class="principle-card" style="--pc:{{ p.color }}">
+      <div class="pc-top">
+        <span class="pc-icon">{{ p.icon }}</span>
+        <span class="pc-label">{{ p.label }}</span>
+      </div>
+      <p class="pc-desc">{{ p.desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     2. IMPROVEMENT PHILOSOPHY
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="philosophy-section">
+  <a class="section-anchor" id="philosophy"></a>
+  <div class="sec-eyebrow">02 — Philosophy</div>
+  <h2 class="sec-title">Improvement, Not Punishment</h2>
+  <p class="sec-lead">
+    EcoIQ is not an ESG policing tool. It is a transition intelligence system designed
+    to help industrial companies understand where they stand, what holds them back,
+    and how to unlock the financing and credibility that responsible modernization enables.
+  </p>
+
+  <div class="philosophy-block">
+    <p class="philosophy-text">
+      The distinction between short-term extraction and long-term value creation
+      is not a moral judgement — it is a systems intelligence observation.
+      Companies that extract without reinvesting become structurally fragile.
+      Those that steward their industrial base, workforce, and environment
+      build the durable resilience that sovereign capital requires.
+    </p>
+    <p class="philosophy-attr">— EcoIQ Framework, Transition Intelligence Principles</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.5rem">
+    <div style="background:rgba(230,57,70,.04);border:1px solid rgba(230,57,70,.15);border-radius:var(--radius);padding:1.25rem">
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--danger);margin-bottom:.75rem">EcoIQ is NOT</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:.45rem">
+        {% for item in not_items %}
+        <li style="font-size:.78rem;color:var(--muted2);display:flex;gap:.5rem;align-items:flex-start">
+          <span style="color:var(--danger);font-size:.8rem;margin-top:.05em">✕</span>
+          {{ item }}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div style="background:rgba(0,232,154,.04);border:1px solid rgba(0,232,154,.15);border-radius:var(--radius);padding:1.25rem">
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:.75rem">EcoIQ IS</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:.45rem">
+        <li style="font-size:.78rem;color:var(--muted2);display:flex;gap:.5rem;align-items:flex-start">
+          <span style="color:var(--accent);font-size:.8rem;margin-top:.05em">✓</span>A transition intelligence system with actionable roadmaps
+        </li>
+        <li style="font-size:.78rem;color:var(--muted2);display:flex;gap:.5rem;align-items:flex-start">
+          <span style="color:var(--accent);font-size:.8rem;margin-top:.05em">✓</span>A financing eligibility tool for climate and development capital
+        </li>
+        <li style="font-size:.78rem;color:var(--muted2);display:flex;gap:.5rem;align-items:flex-start">
+          <span style="color:var(--accent);font-size:.8rem;margin-top:.05em">✓</span>A credibility framework for investor-company dialogue
+        </li>
+        <li style="font-size:.78rem;color:var(--muted2);display:flex;gap:.5rem;align-items:flex-start">
+          <span style="color:var(--accent);font-size:.8rem;margin-top:.05em">✓</span>A score evolution tracker rewarding improvement over time
+        </li>
+        <li style="font-size:.78rem;color:var(--muted2);display:flex;gap:.5rem;align-items:flex-start">
+          <span style="color:var(--accent);font-size:.8rem;margin-top:.05em">✓</span>A signal generator for sovereign funds and development banks
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. 6-PILLAR FRAMEWORK
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="pillars-section">
+  <a class="section-anchor" id="pillars"></a>
+  <div class="sec-eyebrow">03 — Scoring Dimensions</div>
+  <h2 class="sec-title">6-Pillar Scoring Framework</h2>
+  <p class="sec-lead">
+    EcoIQ scores are calculated across six weighted pillars, each decomposed into
+    measurable sub-dimensions. Weights reflect the relative importance of each
+    dimension for long-term industrial resilience and public benefit creation.
+  </p>
+
+  <div class="pillar-list">
+    {% for p in pillars %}
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <span class="pillar-icon">{{ p.icon }}</span>
+        <div class="pillar-name">
+          <div class="pillar-label" style="color:{{ p.color }}">{{ p.label }}</div>
+          <div class="pillar-desc-short">{{ p.desc }}</div>
+        </div>
+        <span class="pillar-weight" style="color:{{ p.color }};border-color:{{ p.color }}33">{{ p.weight }}</span>
+      </div>
+      <div class="pillar-body">
+        <ul class="sub-dim-list">
+          {% for name, detail in p.sub_dimensions %}
+          <li class="sub-dim-item">
+            <span class="sub-dim-name" style="color:{{ p.color }}">{{ name }}</span>
+            <span class="sub-dim-detail">{{ detail }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. SCORING FORMULA
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="formula-section">
+  <a class="section-anchor" id="formula"></a>
+  <div class="sec-eyebrow">04 — Computation</div>
+  <h2 class="sec-title">Scoring Formula</h2>
+  <p class="sec-lead">
+    EcoIQ Total Score is a weighted composite of six pillar scores, reduced by
+    a harm penalty. All pillar scores are independently calculated on a 0–100 scale
+    from their respective sub-dimension averages.
+  </p>
+
+  <div class="formula-block">
+    <h4>EcoIQ Total Score Formula</h4>
+    <div class="formula-line">
+      EcoIQ<sub>total</sub> = <br>
+      &nbsp;&nbsp;( Public Benefit × 0.25 ) +<br>
+      &nbsp;&nbsp;( Environmental Stewardship × 0.25 ) +<br>
+      &nbsp;&nbsp;( Responsible Modernization × 0.20 ) +<br>
+      &nbsp;&nbsp;( Transparent Governance × 0.15 ) +<br>
+      &nbsp;&nbsp;( Anti-Corruption × 0.10 ) +<br>
+      &nbsp;&nbsp;( Ethical Alignment × 0.05 )<br>
+      &nbsp;&nbsp;<span style="color:var(--danger)">− Harm Penalty</span>
+    </div>
+    <div class="formula-note">
+      All pillar values are in the range [0, 100]. The Harm Penalty is computed
+      independently from pollution severity, controversy risk, transparency deficit,
+      and profit extraction signals (maximum −30 points). The Total Score is clamped
+      to [0, 100]. The Profit Extraction Risk Score is a standalone risk indicator
+      and does NOT reduce the total EcoIQ score.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     5. HARM PENALTY SYSTEM
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="harm-section">
+  <a class="section-anchor" id="harm"></a>
+  <div class="sec-eyebrow">05 — Risk Signals</div>
+  <h2 class="sec-title">Harm Penalty System</h2>
+  <p class="sec-lead">
+    Systemic harm is penalised by direct score reduction — not merely flagged.
+    The Harm Penalty system creates an explicit incentive structure for harm
+    reduction, as improvements in each signal directly increase the total score.
+  </p>
+
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+    <table class="harm-table">
+      <thead>
+        <tr>
+          <th>Signal</th>
+          <th>Penalty</th>
+          <th>Trigger Condition</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for signal, penalty, condition in harm_signals %}
+        <tr>
+          <td style="color:var(--muted2);font-weight:600">{{ signal }}</td>
+          <td class="harm-penalty">{{ penalty }}</td>
+          <td style="color:var(--muted);font-size:.77rem">{{ condition }}</td>
+        </tr>
+        {% endfor %}
+        <tr style="background:rgba(0,232,154,.02)">
+          <td style="color:var(--muted2);font-weight:800">Maximum Total Penalty</td>
+          <td class="harm-penalty">−30 pts</td>
+          <td style="color:var(--muted);font-size:.77rem">All signals at critical tier simultaneously</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     6. SCORE TIERS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="tiers-section">
+  <a class="section-anchor" id="tiers"></a>
+  <div class="sec-eyebrow">06 — Interpretation</div>
+  <h2 class="sec-title">Score Interpretation Tiers</h2>
+  <p class="sec-lead">
+    EcoIQ scores map to six institutional tiers, each reflecting a distinct
+    level of industrial stewardship, transparency, and transition readiness.
+    Tiers determine financing eligibility, investor screening status, and
+    recommended engagement type.
+  </p>
+
+  <div class="tier-list">
+    {% for range, label, color, desc in score_tiers %}
+    <div class="tier-row" style="border-left:3px solid {{ color }}">
+      <div class="tier-range" style="color:{{ color }}">{{ range }}</div>
+      <div class="tier-label" style="color:{{ color }}">{{ label }}</div>
+      <div class="tier-desc">{{ desc }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     7. FORMULA CATEGORIES
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="formulas-section">
+  <a class="section-anchor" id="formulas"></a>
+  <div class="sec-eyebrow">07 — Analytical Engine</div>
+  <h2 class="sec-title">Formula Category System</h2>
+  <p class="sec-lead">
+    EcoIQ's 33 scoring formulas are organised into seven thematic categories,
+    each mapping to a distinct area of industrial and ethical intelligence.
+    This structure enables modular analysis — individual categories can be
+    weighted differently for sector-specific or programme-specific assessments.
+  </p>
+
+  <div class="formula-grid">
+    {% for cat in formula_categories %}
+    <div class="formula-cat" style="border-top:2px solid {{ cat.color }}">
+      <div class="formula-cat-top">
+        <span class="fc-icon">{{ cat.icon }}</span>
+        <span class="fc-label" style="color:{{ cat.color }}">{{ cat.label }}</span>
+      </div>
+      <p class="fc-desc">{{ cat.desc }}</p>
+      <ul class="fc-list" style="--fc-color:{{ cat.color }}">
+        {% for formula in cat.formulas %}
+        <li>{{ formula }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     8. TRANSITION INTELLIGENCE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="transition-section">
+  <a class="section-anchor" id="transition"></a>
+  <div class="sec-eyebrow">08 — Transition Engine</div>
+  <h2 class="sec-title">Transition Intelligence</h2>
+  <p class="sec-lead">
+    EcoIQ includes a Transition Intelligence layer that converts a company's
+    current score into an actionable improvement roadmap. This layer identifies
+    the highest-leverage opportunities, models the score impact of each action,
+    and maps companies to relevant financing mechanisms.
+  </p>
+
+  <div class="journey-steps">
+    <div class="journey-step">
+      <div class="js-num">Step 01</div>
+      <div class="js-label" style="color:var(--accent)">Evidence Ingestion</div>
+      <div class="js-detail">Annual reports, sustainability disclosures, regulatory filings analysed by AI</div>
+    </div>
+    <div class="journey-step">
+      <div class="js-num">Step 02</div>
+      <div class="js-label" style="color:var(--info)">Gap Analysis</div>
+      <div class="js-detail">Current score compared against next tier — lowest-performing pillars identified</div>
+    </div>
+    <div class="journey-step">
+      <div class="js-num">Step 03</div>
+      <div class="js-label" style="color:var(--purple)">Action Roadmap</div>
+      <div class="js-detail">Prioritised actions ranked by score impact, with institutional implementation guidance</div>
+    </div>
+    <div class="journey-step">
+      <div class="js-num">Step 04</div>
+      <div class="js-label" style="color:var(--warn)">Financing Match</div>
+      <div class="js-detail">Indicative eligibility across Green Bond, ESG Fund, MDB, JETP, and GCF frameworks</div>
+    </div>
+    <div class="journey-step">
+      <div class="js-num">Step 05</div>
+      <div class="js-label" style="color:var(--accent)">Score Evolution</div>
+      <div class="js-detail">Milestones tracked over time — improvement trajectory visible to investors and programmes</div>
+    </div>
+  </div>
+
+  <div style="margin-top:1.75rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem">
+    <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.75rem">Financing Mechanisms — Indicative Eligibility Thresholds</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.65rem">
+      <div style="background:var(--bg3);border:1px solid rgba(0,232,154,.15);border-radius:7px;padding:.75rem">
+        <div style="font-size:.65rem;font-weight:700;color:#00e89a;margin-bottom:.2rem">Green Bond</div>
+        <div style="font-size:.68rem;color:var(--muted)">Score ≥ 70 · Low/Medium Pollution</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid rgba(88,166,255,.15);border-radius:7px;padding:.75rem">
+        <div style="font-size:.65rem;font-weight:700;color:#58a6ff;margin-bottom:.2rem">ESG Fund Screening</div>
+        <div style="font-size:.68rem;color:var(--muted)">Score ≥ 60 · Transparency ≥ 50</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid rgba(139,92,246,.15);border-radius:7px;padding:.75rem">
+        <div style="font-size:.65rem;font-weight:700;color:#8b5cf6;margin-bottom:.2rem">IFC / EBRD / ADB</div>
+        <div style="font-size:.68rem;color:var(--muted)">Score ≥ 65 · Governance ≥ 50</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid rgba(6,182,212,.15);border-radius:7px;padding:.75rem">
+        <div style="font-size:.65rem;font-weight:700;color:#06b6d4;margin-bottom:.2rem">Climate Finance / GCF</div>
+        <div style="font-size:.68rem;color:var(--muted)">Energy Transition Score ≥ 60</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid rgba(244,162,97,.15);border-radius:7px;padding:.75rem">
+        <div style="font-size:.65rem;font-weight:700;color:#f4a261;margin-bottom:.2rem">Just Transition / JETP</div>
+        <div style="font-size:.68rem;color:var(--muted)">Score 50–65 · High Pollution sectors</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     9. INSTITUTIONAL USE CASES
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="usecases-section">
+  <a class="section-anchor" id="usecases"></a>
+  <div class="sec-eyebrow">09 — Applications</div>
+  <h2 class="sec-title">Institutional Use Cases</h2>
+  <p class="sec-lead">
+    EcoIQ is designed for institutional users who need evidence-based intelligence
+    for climate investment, industrial policy, and transition finance decisions.
+  </p>
+
+  <div class="usecase-grid">
+    <div class="usecase-card" style="border-top:2px solid var(--accent)">
+      <div class="uc-icon">🏦</div>
+      <div class="uc-label" style="color:var(--accent)">Sovereign & Climate Funds</div>
+      <p class="uc-desc">Screen industrial portfolios for transition readiness. Identify financing-eligible companies before capital deployment. Track portfolio score evolution over time.</p>
+    </div>
+    <div class="usecase-card" style="border-top:2px solid var(--info)">
+      <div class="uc-icon">🏛️</div>
+      <div class="uc-label" style="color:var(--info)">Development Banks</div>
+      <p class="uc-desc">Use EcoIQ as a pre-screening signal for IFC, EBRD, and ADB programmes. Assess governance and transparency before full due diligence begins.</p>
+    </div>
+    <div class="usecase-card" style="border-top:2px solid var(--purple)">
+      <div class="uc-icon">🏗️</div>
+      <div class="uc-label" style="color:var(--purple)">Industrial Ministries</div>
+      <p class="uc-desc">Map national industrial sectors by transition readiness. Identify companies requiring structured transition support versus those ready for commercial financing.</p>
+    </div>
+    <div class="usecase-card" style="border-top:2px solid var(--warn)">
+      <div class="uc-icon">📊</div>
+      <div class="uc-label" style="color:var(--warn)">ESG Investors</div>
+      <p class="uc-desc">Supplement existing ESG screens with EcoIQ's harm-penalty system and transition readiness signals. Filter for companies with upward score trajectories.</p>
+    </div>
+    <div class="usecase-card" style="border-top:2px solid var(--cyan)">
+      <div class="uc-icon">🌿</div>
+      <div class="uc-label" style="color:var(--cyan)">Climate Programmes</div>
+      <p class="uc-desc">Identify Just Transition-eligible industrial companies. Prioritise programme interventions using EcoIQ gap analysis and action roadmaps.</p>
+    </div>
+    <div class="usecase-card" style="border-top:2px solid #e879f9">
+      <div class="uc-icon">🏭</div>
+      <div class="uc-label" style="color:#e879f9">Industrial Companies</div>
+      <p class="uc-desc">Understand your current EcoIQ position relative to peers. Access a prioritised path-to-100 improvement roadmap. Strengthen credibility with investors and lenders.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── CTA footer ─────────────────────────────────────────────────── -->
+<div class="doc-cta">
+  <h2>Explore the Intelligence Platform</h2>
+  <p>See EcoIQ scores, transition readiness signals, and financing eligibility across 38 companies and 11 countries.</p>
+  <div class="cta-buttons">
+    <a href="{% url 'companies:directory' %}" class="cta-primary">View Company Rankings →</a>
+    <a href="{% url 'countries:directory' %}" class="cta-secondary">Country Intelligence →</a>
+    <a href="mailto:hello@ecoiq.uk?subject=EcoIQ%20Framework%20Enquiry" class="cta-secondary">Contact Us →</a>
+  </div>
+</div>
+
+<!-- Disclaimer -->
+<div style="margin-top:2rem;padding:.9rem 1.1rem;background:rgba(88,166,255,.04);border:1px solid rgba(88,166,255,.1);border-radius:var(--radius);font-size:.7rem;color:var(--muted2);line-height:1.7">
+  ⓘ EcoIQ scores are computed from publicly available information and AI-assisted analysis.
+  They are indicative and designed to support transparency, modernization, and responsible investment dialogue.
+  They do not constitute investment advice, audit opinions, or regulatory assessments.
+  All scores are updated as new information becomes available.
+</div>
+
+</div><!-- /page -->
+
+{% endblock %}

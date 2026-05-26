@@ -12,7 +12,8 @@ from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils.html import format_html, mark_safe
 
-from .models import CompanyProfile, CompanyGuidanceVideo, CompanySource
+from .models import (CompanyProfile, CompanyGuidanceVideo, CompanySource,
+                     CompanyScoreSnapshot)
 
 logger = logging.getLogger(__name__)
 
@@ -573,3 +574,54 @@ class CompanySourceAdmin(admin.ModelAdmin):
     def url_link(self, obj):
         return format_html('<a href="{}" target="_blank">↗ Open</a>', obj.url)
     url_link.short_description = 'Link'
+
+
+# ── CompanyScoreSnapshot Admin ─────────────────────────────────────────────────
+
+class CompanyScoreSnapshotInline(admin.TabularInline):
+    model      = CompanyScoreSnapshot
+    extra      = 0
+    fields     = ('date', 'trigger', 'total_score', 'moral_label', 'notes')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(CompanyScoreSnapshot)
+class CompanyScoreSnapshotAdmin(admin.ModelAdmin):
+    list_display  = ('company_name', 'total_score_display', 'tier_label',
+                     'trigger', 'date', 'notes_short')
+    list_filter   = ('trigger',)
+    search_fields = ('profile__company__name',)
+    ordering      = ('-date',)
+    readonly_fields = ('created_at',)
+    actions       = ['action_snapshot_selected']
+
+    def company_name(self, obj):
+        return obj.profile.company.name
+    company_name.short_description = 'Company'
+
+    def total_score_display(self, obj):
+        color = obj.tier_color
+        return format_html(
+            '<strong style="color:{}">{}</strong>', color, f'{obj.total_score:.1f}'
+        )
+    total_score_display.short_description = 'EcoIQ Score'
+
+    def tier_label(self, obj):
+        return obj.tier_label
+    tier_label.short_description = 'Tier'
+
+    def notes_short(self, obj):
+        return (obj.notes[:60] + '…') if len(obj.notes) > 60 else obj.notes
+    notes_short.short_description = 'Notes'
+
+    def action_snapshot_selected(self, request, queryset):
+        """Re-snapshot selected companies from their current live profile scores."""
+        ok = 0
+        for snap in queryset:
+            CompanyScoreSnapshot.create_from_profile(
+                snap.profile, trigger='manual',
+                notes='Re-snapshotted via admin action',
+            )
+            ok += 1
+        self.message_user(request, f'✓ Created {ok} new snapshots from current live scores.')
+    action_snapshot_selected.short_description = '📸 Re-snapshot (new record from current live scores)'

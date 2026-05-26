@@ -215,10 +215,10 @@ a{color:inherit;text-decoration:none;}
 <div class="cmd-bar">
   <span class="cmd-title">🌍 EcoIQ Intelligence</span>
   <div class="cmd-links">
-    <a href="{% url 'league:leaderboard' %}" class="cmd-btn">🏆 League</a>
+    <a href="/" class="cmd-btn">🏠 Home</a>
     <a href="{% url 'countries:directory' %}" class="cmd-btn">🗺 Countries</a>
+    <a href="/methodology/" class="cmd-btn">📐 Methodology</a>
     <a href="{% url 'transition:index' %}" class="cmd-btn">⚡ Transition</a>
-    <a href="{% url 'intelligence:hub' %}" class="cmd-btn">🤖 AI Hub</a>
     {% if request.user.is_staff %}
     <a href="{% url 'admin:companies_companyprofile_changelist' %}" class="cmd-btn primary">Admin</a>
     {% endif %}

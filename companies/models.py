@@ -404,3 +404,101 @@ class CompanySource(models.Model):
 
     def __str__(self):
         return f'{self.company.company.name} — {self.title}'
+
+
+# ── CompanyScoreSnapshot ───────────────────────────────────────────────────────
+
+SNAPSHOT_TRIGGER_CHOICES = [
+    ('manual',        'Manual (Admin)'),
+    ('annual_review', 'Annual Review'),
+    ('report_update', 'New Report / Evidence'),
+    ('verification',  'Profile Verification'),
+    ('transition',    'Transition Milestone'),
+    ('seed',          'Initial Seed Score'),
+]
+
+
+class CompanyScoreSnapshot(models.Model):
+    """
+    Point-in-time EcoIQ score record for a company.
+    Tracks score progression over time — the foundation for
+    'Transition Journey' and 'Score Evolution' views.
+
+    Snapshots are created manually by admin or via management command.
+    They are NEVER auto-generated on every save (stable, low-noise).
+    """
+    profile   = models.ForeignKey(
+        CompanyProfile, on_delete=models.CASCADE,
+        related_name='score_snapshots',
+    )
+    date      = models.DateField(help_text='Date this score was recorded / effective from')
+    trigger   = models.CharField(
+        max_length=30, choices=SNAPSHOT_TRIGGER_CHOICES, default='manual',
+    )
+
+    # Full pillar snapshot at time of recording
+    total_score                    = models.FloatField()
+    public_benefit_score           = models.FloatField(default=50.0)
+    environmental_score            = models.FloatField(default=50.0)
+    modernization_score            = models.FloatField(default=50.0)
+    governance_score               = models.FloatField(default=50.0)
+    anti_corruption_score          = models.FloatField(default=50.0)
+    ethical_alignment_score        = models.FloatField(default=50.0)
+    harm_penalty                   = models.FloatField(default=0.0)
+
+    moral_label = models.CharField(max_length=40, blank=True)
+    notes       = models.TextField(blank=True,
+                                   help_text='Context — event, data source, milestone')
+
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering            = ['-date']
+        verbose_name        = 'Score Snapshot'
+        verbose_name_plural = 'Score Snapshots'
+
+    def __str__(self):
+        return (
+            f'{self.profile.company.name} — '
+            f'{self.total_score:.1f} on {self.date}'
+        )
+
+    @property
+    def tier_label(self):
+        s = self.total_score
+        if s >= 85: return 'Regenerative Leader'
+        if s >= 70: return 'Responsible Builder'
+        if s >= 60: return 'Public-Benefit Oriented'
+        if s >= 50: return 'Transitional Company'
+        if s >= 30: return 'Profit-First Operator'
+        return 'Extractive / Harmful'
+
+    @property
+    def tier_color(self):
+        s = self.total_score
+        if s >= 85: return '#00e89a'
+        if s >= 70: return '#58a6ff'
+        if s >= 60: return '#8b5cf6'
+        if s >= 50: return '#f4a261'
+        if s >= 30: return '#e63946'
+        return '#b91c1c'
+
+    @classmethod
+    def create_from_profile(cls, profile, trigger='manual', notes=''):
+        """Convenience factory — take current scores from a live profile."""
+        import datetime
+        return cls.objects.create(
+            profile                  = profile,
+            date                     = datetime.date.today(),
+            trigger                  = trigger,
+            total_score              = profile.ecoiq_total_score,
+            public_benefit_score     = profile.public_benefit_score,
+            environmental_score      = profile.environmental_responsibility_score,
+            modernization_score      = profile.modernization_score,
+            governance_score         = profile.transparency_anti_corruption_score,
+            anti_corruption_score    = profile.anti_corruption_score,
+            ethical_alignment_score  = profile.ethical_alignment_score,
+            harm_penalty             = profile.harm_penalty,
+            moral_label              = profile.moral_label,
+            notes                    = notes,
+        )
