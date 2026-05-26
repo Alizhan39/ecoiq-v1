@@ -12,68 +12,92 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --green:    #2d6a4f;
-      --teal:     #40916c;
-      --mint:     #52b788;
-      --light-bg: #f8faf9;
-      --card-bg:  #ffffff;
-      --border:   #e5ebe8;
-      --text:     #1a2c23;
-      --muted:    #6b7c72;
-      --accent:   #00c896;
-
-      /* tier colours */
-      --c-restorative: #2d6a4f;
-      --c-transition:  #40916c;
-      --c-improving:   #52b788;
+      /* Bloomberg / Palantir dark palette */
+      --bg:      #070b0f;
+      --bg2:     #0d1117;
+      --bg3:     #161b22;
+      --bg4:     #1a2030;
+      --border:  rgba(255,255,255,.07);
+      --border2: rgba(255,255,255,.13);
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --muted2:  #94a3b8;
+      --accent:  #00e89a;
+      --warn:    #f4a261;
+      --danger:  #e63946;
+      --info:    #58a6ff;
+      --purple:  #a855f7;
+      /* legacy compat */
+      --green:    #00e89a;
+      --teal:     #00e89a;
+      --mint:     #00c882;
+      --light-bg: #070b0f;
+      --card-bg:  #0d1117;
+      --muted-old:#64748b;
+      --c-restorative: #00e89a;
+      --c-transition:  #58a6ff;
+      --c-improving:   #8b5cf6;
       --c-high-impact: #f4a261;
       --c-polluter:    #e63946;
     }
 
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--light-bg);
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
     }
 
     /* ── Top nav ─────────────────────────────────────────────────────────── */
     .topnav {
-      background: var(--green);
-      padding: 0.85rem 2rem;
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7,11,15,.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.55rem 2rem;
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 1rem;
     }
-    .topnav a { color: #fff; text-decoration: none; font-size: 0.88rem; }
-    .topnav .brand { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
+    .topnav a { color: var(--muted2); text-decoration: none; font-size: 0.82rem; transition: color .15s; }
+    .topnav a:hover { color: var(--text); }
+    .topnav .brand { font-weight: 800; font-size: 1rem; letter-spacing: -0.02em; color: var(--text); }
     .topnav .brand span { color: var(--accent); }
-    .topnav .nav-links { margin-left: auto; display: flex; gap: 1.25rem; align-items: center; }
+    .topnav .nav-links { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
     .topnav .nav-links a {
-      color: rgba(255,255,255,.75);
-      font-size: 0.85rem;
-      padding: 0.3rem 0.7rem;
-      border-radius: 5px;
-      transition: background 0.15s;
+      font-size: 0.72rem; font-weight: 600;
+      padding: 0.3rem 0.85rem; border-radius: 5px;
+      border: 1px solid var(--border); color: var(--muted);
+      transition: all 0.15s;
     }
-    .topnav .nav-links a:hover { background: rgba(255,255,255,.12); color: #fff; }
-    .topnav .nav-links a.active { background: rgba(255,255,255,.2); color: #fff; font-weight: 600; }
+    .topnav .nav-links a:hover { border-color: var(--border2); color: var(--text); }
+    .topnav .nav-links a.active { background: var(--accent); color: #0d1117; border-color: var(--accent); }
 
     /* ── Hero banner ─────────────────────────────────────────────────────── */
     .hero {
-      background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%);
-      color: #fff;
-      padding: 3rem 2rem 2.5rem;
+      background: linear-gradient(135deg, #0a1628 0%, #0d1a2e 60%, #091420 100%);
+      border-bottom: 1px solid var(--border2);
+      padding: 2.5rem 2rem 2rem;
+      position: relative; overflow: hidden;
     }
-    .hero-inner { max-width: 1200px; margin: 0 auto; }
+    .hero::before {
+      content:''; position:absolute; top:-80px; right:-80px;
+      width:350px; height:350px;
+      background:radial-gradient(circle,rgba(0,232,154,.07) 0%,transparent 70%);
+      pointer-events:none;
+    }
+    .hero-inner { max-width: 1200px; margin: 0 auto; position: relative; }
+    .hero-eyebrow {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .14em; color: var(--accent); margin-bottom: .5rem;
+    }
     .hero h1 {
-      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-size: clamp(1.5rem, 2.5vw, 2rem);
       font-weight: 800;
       letter-spacing: -0.03em;
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
     }
-    .hero h1 span { color: var(--accent); }
-    .hero p { color: rgba(255,255,255,.75); font-size: 1rem; max-width: 600px; margin-bottom: 2rem; }
+    .hero p { color: var(--muted2); font-size: .9rem; max-width: 620px; margin-bottom: 2rem; line-height: 1.6; }
 
     /* ── Stats bar ───────────────────────────────────────────────────────── */
     .stats-bar {
@@ -82,97 +106,101 @@
       gap: 1rem;
     }
     .stat-card {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1rem 1.25rem;
     }
     .stat-card .val {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 800;
-      color: #fff;
+      color: var(--accent);
       letter-spacing: -0.04em;
     }
     .stat-card .lbl {
-      font-size: 0.72rem;
-      color: rgba(255,255,255,.65);
+      font-size: 0.65rem;
+      color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       margin-top: 0.15rem;
     }
 
     /* ── Container ───────────────────────────────────────────────────────── */
-    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
 
     /* ── Filters ─────────────────────────────────────────────────────────── */
     .filter-row {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.45rem;
       margin-bottom: 1.5rem;
       flex-wrap: wrap;
     }
     .filter-row a {
       display: inline-block;
-      padding: 0.35rem 0.9rem;
-      border-radius: 20px;
+      padding: 0.3rem 0.8rem;
+      border-radius: 6px;
       border: 1px solid var(--border);
-      font-size: 0.8rem;
-      font-weight: 500;
+      font-size: 0.72rem;
+      font-weight: 600;
       color: var(--muted);
       text-decoration: none;
-      background: var(--card-bg);
+      background: var(--bg2);
       transition: all 0.15s;
     }
-    .filter-row a:hover { border-color: var(--teal); color: var(--teal); }
+    .filter-row a:hover { border-color: var(--border2); color: var(--text); }
     .filter-row a.active {
-      background: var(--teal);
-      color: #fff;
-      border-color: var(--teal);
+      background: var(--accent);
+      color: #0d1117;
+      border-color: var(--accent);
     }
 
+    /* ── Table wrapper (horizontal scroll on small screens) ──────────────── */
+    .table-wrap { overflow-x: auto; }
+
     /* ── Leaderboard table ───────────────────────────────────────────────── */
-    .league-table { width: 100%; }
+    .league-table { width: 100%; min-width: 1100px; }
 
     .league-header {
       display: grid;
-      grid-template-columns: 3rem 1fr 9rem 8rem 8rem 8rem 8rem 8rem;
-      gap: 0.75rem;
-      padding: 0.5rem 1rem;
-      font-size: 0.7rem;
+      grid-template-columns: 2.5rem 1fr 7rem 7rem 7.5rem 9rem 6rem 5rem 5rem 5rem 5rem 7rem 2.5rem 5.5rem;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.6rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.09em;
       color: var(--muted);
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border2);
+      margin-bottom: 0.35rem;
     }
 
     .league-row {
       display: grid;
-      grid-template-columns: 3rem 1fr 9rem 8rem 8rem 8rem 8rem 8rem;
-      gap: 0.75rem;
+      grid-template-columns: 2.5rem 1fr 7rem 7rem 7.5rem 9rem 6rem 5rem 5rem 5rem 5rem 7rem 2.5rem 5.5rem;
+      gap: 0.5rem;
       align-items: center;
-      background: var(--card-bg);
+      background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 0.6rem;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.4rem;
       text-decoration: none;
       color: var(--text);
       transition: all 0.15s;
     }
     .league-row:hover {
-      border-color: var(--teal);
-      box-shadow: 0 4px 16px rgba(45,106,79,.12);
+      border-color: rgba(0,232,154,.25);
+      background: rgba(0,232,154,.02);
       transform: translateY(-1px);
     }
 
     .rank-num {
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       font-weight: 800;
-      color: var(--teal);
+      color: var(--muted);
       text-align: center;
+      font-variant-numeric: tabular-nums;
     }
     .rank-num.top1 { color: #d4a017; }
     .rank-num.top2 { color: #9ea0a5; }
@@ -180,11 +208,12 @@
 
     .company-info .co-name {
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.88rem;
       color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .company-info .co-meta {
-      font-size: 0.75rem;
+      font-size: 0.65rem;
       color: var(--muted);
       margin-top: 0.1rem;
     }
@@ -194,18 +223,19 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 0.25rem;
+      gap: 0.2rem;
     }
     .ecoiq-num {
-      font-size: 1.4rem;
+      font-size: 1.25rem;
       font-weight: 800;
       letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
     }
     .tier-badge {
-      font-size: 0.65rem;
+      font-size: 0.58rem;
       font-weight: 700;
-      padding: 0.15rem 0.5rem;
-      border-radius: 20px;
+      padding: 0.12rem 0.45rem;
+      border-radius: 4px;
       white-space: nowrap;
     }
 
@@ -213,23 +243,55 @@
     .pillar-cell {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.2rem;
     }
     .pillar-score {
-      font-size: 1rem;
+      font-size: 0.88rem;
       font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
     .pillar-bar {
-      height: 4px;
+      height: 3px;
       border-radius: 2px;
-      background: var(--border);
+      background: rgba(255,255,255,.06);
       overflow: hidden;
     }
     .pillar-bar-fill {
       height: 100%;
       border-radius: 2px;
-      background: var(--teal);
+      background: var(--accent);
+      opacity: .8;
     }
+
+    /* Moral label cell */
+    .moral-cell { font-size: 0.65rem; font-weight: 700; line-height: 1.4; }
+
+    /* Pollution level cell */
+    .poll-badge {
+      font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; padding: 2px 6px; border-radius: 4px;
+    }
+    .poll-low    { background:rgba(0,232,154,.12);  color:var(--accent); }
+    .poll-medium { background:rgba(244,162,97,.12); color:var(--warn); }
+    .poll-high   { background:rgba(230,57,70,.12);  color:var(--danger); }
+    .poll-severe { background:rgba(185,28,28,.2);   color:#ff6b6b; }
+
+    /* Funding cell */
+    .fund-cell { font-size: 0.62rem; font-weight: 600; color: var(--muted2); }
+
+    /* Verified cell */
+    .verif-cell { font-size: .75rem; text-align: center; }
+
+    /* Profile link cell */
+    .profile-link-cell a {
+      font-size: 0.62rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 4px;
+      background: rgba(0,232,154,.08); color: var(--accent);
+      border: 1px solid rgba(0,232,154,.2);
+      text-decoration: none; white-space: nowrap;
+      transition: all .15s;
+    }
+    .profile-link-cell a:hover { background: rgba(0,232,154,.18); }
 
     /* Tier colour map */
     .tier-restorative { color: var(--c-restorative); }
@@ -238,11 +300,11 @@
     .tier-high-impact  { color: var(--c-high-impact); }
     .tier-polluter     { color: var(--c-polluter); }
 
-    .badge-restorative { background: #d8f3dc; color: var(--c-restorative); }
-    .badge-transition  { background: #d8f3dc; color: var(--c-transition); }
-    .badge-improving   { background: #d8f3dc; color: var(--c-improving); }
-    .badge-high-impact { background: #fce9d4; color: var(--c-high-impact); }
-    .badge-polluter    { background: #ffe0e0; color: var(--c-polluter); }
+    .badge-restorative { background: rgba(0,232,154,.12);  color: var(--c-restorative); }
+    .badge-transition  { background: rgba(88,166,255,.12); color: var(--c-transition); }
+    .badge-improving   { background: rgba(139,92,246,.12); color: var(--c-improving); }
+    .badge-high-impact { background: rgba(244,162,97,.12); color: var(--c-high-impact); }
+    .badge-polluter    { background: rgba(230,57,70,.12);  color: var(--c-polluter); }
 
     /* Legend */
     .legend {
@@ -267,14 +329,19 @@
     /* Empty state */
     .empty { text-align: center; padding: 3rem; color: var(--muted); }
 
+    /* Section heading */
+    .section-hdr {
+      font-size: .6rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .12em; color: var(--muted);
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border); padding-bottom: .5rem;
+      margin-bottom: 1rem;
+    }
+
     /* Responsive */
-    @media (max-width: 900px) {
+    @media (max-width: 1100px) {
       .league-header { display: none; }
-      .league-row {
-        grid-template-columns: 2.5rem 1fr auto;
-        grid-template-rows: auto auto;
-      }
-      .league-row > :nth-child(n+4) { display: none; }
+      .table-wrap { overflow-x: auto; }
     }
   </style>
 </head>
@@ -285,9 +352,10 @@
   <a href="/" class="brand">Eco<span>IQ</span></a>
   <div class="nav-links">
     <a href="/league/" class="active">🏆 League</a>
+    <a href="/companies/">🌍 Companies</a>
+    <a href="/countries/">🗺 Countries</a>
     <a href="/audit/">Industrial Audit</a>
-    <a href="/audit/ai/">🤖 AI Engine</a>
-    <a href="/esg/">ESG</a>
+    <a href="/transition/">⚡ Transition</a>
     <a href="/admin/">Admin</a>
   </div>
 </nav>
@@ -295,25 +363,26 @@
 <!-- Hero -->
 <div class="hero">
   <div class="hero-inner">
-    <h1>EcoIQ <span>Good Deeds League</span></h1>
-    <p>Real environmental intelligence — ranked by measurable impact, not promises. Every score is built from audited projects and verified evidence.</p>
+    <div class="hero-eyebrow">EcoIQ Global Benchmark</div>
+    <h1>EcoIQ Global Company League</h1>
+    <p>A public, AI-assisted benchmark showing how global companies compare on ethical impact, environmental stewardship, responsible modernization, transparency, and long-term value creation for people and planet.</p>
 
     <div class="stats-bar">
       <div class="stat-card">
         <div class="val">{{ company_count }}</div>
-        <div class="lbl">Companies</div>
+        <div class="lbl">Companies Rated</div>
       </div>
       <div class="stat-card">
-        <div class="val">{{ total_co2|floatformat:0 }}t</div>
+        <div class="val">{{ total_co2|floatformat:0|default:"—" }}t</div>
         <div class="lbl">CO₂ Reduced / yr</div>
       </div>
       <div class="stat-card">
-        <div class="val">${{ total_inv_m }}M</div>
+        <div class="val">${{ total_inv_m|default:"—" }}M</div>
         <div class="lbl">Invested</div>
       </div>
       <div class="stat-card">
-        <div class="val">{{ total_hh }}</div>
-        <div class="lbl">Households Reached</div>
+        <div class="val">6</div>
+        <div class="lbl">Ethical Pillars</div>
       </div>
     </div>
   </div>
@@ -332,102 +401,227 @@
     {% endfor %}
   </div>
 
-  <!-- Legend -->
-  <div class="legend">
+  <!-- Legend / label key -->
+  <div class="legend" style="margin-bottom:1.25rem;">
     <div class="legend-item">
-      <div class="legend-dot" style="background:#2d6a4f"></div> 85+ Restorative Leader
+      <div class="legend-dot" style="background:#00e89a"></div> 85+ Regenerative Leader
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#40916c"></div> 70–84 Transition Leader
+      <div class="legend-dot" style="background:#58a6ff"></div> 70–84 Responsible Builder
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#52b788"></div> 55–69 Improving but Polluting
+      <div class="legend-dot" style="background:#8b5cf6"></div> 60–69 Public-Benefit Oriented
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#f4a261"></div> 40–54 High Impact / Weak Repair
+      <div class="legend-dot" style="background:#f4a261"></div> 50–59 Transitional Company
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#e63946"></div> 0–39 Major Polluter
+      <div class="legend-dot" style="background:#e63946"></div> 0–49 Profit-First / Extractive
     </div>
   </div>
 
-  <!-- Table header -->
+  <!-- Table -->
+  <div class="section-hdr">
+    <span>Global Company Rankings</span>
+    <span>Sorted by EcoIQ Score ↓</span>
+  </div>
+  <div class="table-wrap">
   <div class="league-table">
     <div class="league-header">
       <div>#</div>
       <div>Company</div>
-      <div>EcoIQ</div>
+      <div>Country</div>
+      <div>Sector</div>
+      <div>EcoIQ Score</div>
+      <div>Moral Label</div>
       <div>Pollution</div>
-      <div>Reduction</div>
-      <div>Investment</div>
-      <div>Transparency</div>
-      <div>Community</div>
+      <div>Public</div>
+      <div>Environ.</div>
+      <div>Modern.</div>
+      <div>Transp.</div>
+      <div>Funding</div>
+      <div>✓</div>
+      <div>Profile</div>
     </div>
 
     {% if companies %}
       {% for co in companies %}
-        <a href="{% url 'league:company' co.slug %}" class="league-row">
+      {% with p=co.ecoiq_profile %}
+        <div class="league-row">
 
           <!-- Rank -->
           <div class="rank-num {% if co.rank == 1 %}top1{% elif co.rank == 2 %}top2{% elif co.rank == 3 %}top3{% endif %}">
-            {{ co.rank|default:"—" }}
+            {% if co.rank == 1 %}🥇{% elif co.rank == 2 %}🥈{% elif co.rank == 3 %}🥉{% else %}{{ co.rank|default:forloop.counter }}{% endif %}
           </div>
 
-          <!-- Company name -->
+          <!-- Company -->
           <div class="company-info">
-            <div class="co-name">{{ co.name }}</div>
-            <div class="co-meta">{{ co.get_sector_display }} · {{ co.city }}{% if co.verified %} · ✓ Verified{% endif %}</div>
+            <a href="{% url 'league:company' co.slug %}" style="text-decoration:none;">
+              <div class="co-name">{{ co.name }}</div>
+            </a>
+            <div class="co-meta">{{ co.city }}</div>
           </div>
 
-          <!-- EcoIQ score -->
+          <!-- Country -->
+          <div style="font-size:.75rem;color:var(--muted2);">
+            {{ co.country|default:"—" }}
+          </div>
+
+          <!-- Sector -->
+          <div style="font-size:.68rem;color:var(--muted);">
+            {{ co.get_sector_display }}
+          </div>
+
+          <!-- EcoIQ Score -->
           <div class="ecoiq-cell">
-            <span class="ecoiq-num tier-{{ co.tier.css }}">{{ co.ecoiq_score }}</span>
-            <span class="tier-badge badge-{{ co.tier.css }}">{{ co.tier.label }}</span>
+            {% if p %}
+              <span class="ecoiq-num" style="color:
+                {% if p.ecoiq_total_score >= 70 %}var(--accent)
+                {% elif p.ecoiq_total_score >= 50 %}var(--warn)
+                {% else %}var(--danger){% endif %};">
+                {{ p.ecoiq_total_score|floatformat:1 }}
+              </span>
+              <span style="font-size:.55rem;color:var(--muted);">6-pillar · /100</span>
+            {% else %}
+              <span class="ecoiq-num tier-{{ co.tier.css }}">{{ co.ecoiq_score }}</span>
+              <span class="tier-badge badge-{{ co.tier.css }}">{{ co.tier.label }}</span>
+            {% endif %}
           </div>
 
-          <!-- Pillar: Pollution -->
+          <!-- Moral Label -->
+          <div class="moral-cell">
+            {% if p %}
+              <span style="color:{{ p.moral_label_color }};">{{ p.moral_label_display }}</span>
+            {% else %}
+              <span style="color:var(--muted);">{{ co.tier.label }}</span>
+            {% endif %}
+          </div>
+
+          <!-- Pollution Level -->
+          <div>
+            {% if p %}
+              {% if p.pollution_level == 'low' %}
+                <span class="poll-badge poll-low">Low</span>
+              {% elif p.pollution_level == 'medium' %}
+                <span class="poll-badge poll-medium">Medium</span>
+              {% elif p.pollution_level == 'high' %}
+                <span class="poll-badge poll-high">High</span>
+              {% elif p.pollution_level == 'severe' %}
+                <span class="poll-badge poll-severe">⚠ Severe</span>
+              {% endif %}
+            {% else %}
+              <span style="color:var(--muted);font-size:.65rem;">—</span>
+            {% endif %}
+          </div>
+
+          <!-- Public Benefit -->
           <div class="pillar-cell">
-            <span class="pillar-score">{{ co.score_pollution_footprint }}</span>
-            <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_pollution_footprint }}%"></div></div>
+            {% if p %}
+              <span class="pillar-score" style="color:{% if p.public_benefit_score >= 70 %}var(--accent){% elif p.public_benefit_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};">
+                {{ p.public_benefit_score|floatformat:0 }}
+              </span>
+              <div class="pillar-bar">
+                <div class="pillar-bar-fill" style="width:{{ p.public_benefit_score }}%;background:{% if p.public_benefit_score >= 70 %}var(--accent){% elif p.public_benefit_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};"></div>
+              </div>
+            {% else %}
+              <span class="pillar-score">{{ co.score_community_impact }}</span>
+              <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_community_impact }}%"></div></div>
+            {% endif %}
           </div>
 
-          <!-- Pillar: Reduction -->
+          <!-- Environmental -->
           <div class="pillar-cell">
-            <span class="pillar-score">{{ co.score_reduction_progress }}</span>
-            <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_reduction_progress }}%"></div></div>
+            {% if p %}
+              <span class="pillar-score" style="color:{% if p.environmental_responsibility_score >= 70 %}var(--accent){% elif p.environmental_responsibility_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};">
+                {{ p.environmental_responsibility_score|floatformat:0 }}
+              </span>
+              <div class="pillar-bar">
+                <div class="pillar-bar-fill" style="width:{{ p.environmental_responsibility_score }}%;background:{% if p.environmental_responsibility_score >= 70 %}var(--accent){% elif p.environmental_responsibility_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};"></div>
+              </div>
+            {% else %}
+              <span class="pillar-score">{{ co.score_pollution_footprint }}</span>
+              <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_pollution_footprint }}%"></div></div>
+            {% endif %}
           </div>
 
-          <!-- Pillar: Investment -->
+          <!-- Modernization -->
           <div class="pillar-cell">
-            <span class="pillar-score">{{ co.score_investment }}</span>
-            <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_investment }}%"></div></div>
+            {% if p %}
+              <span class="pillar-score" style="color:{% if p.modernization_score >= 70 %}var(--accent){% elif p.modernization_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};">
+                {{ p.modernization_score|floatformat:0 }}
+              </span>
+              <div class="pillar-bar">
+                <div class="pillar-bar-fill" style="width:{{ p.modernization_score }}%;background:{% if p.modernization_score >= 70 %}var(--accent){% elif p.modernization_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};"></div>
+              </div>
+            {% else %}
+              <span class="pillar-score">{{ co.score_investment }}</span>
+              <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_investment }}%"></div></div>
+            {% endif %}
           </div>
 
-          <!-- Pillar: Transparency -->
+          <!-- Transparency -->
           <div class="pillar-cell">
-            <span class="pillar-score">{{ co.score_transparency }}</span>
-            <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_transparency }}%"></div></div>
+            {% if p %}
+              <span class="pillar-score" style="color:{% if p.transparency_anti_corruption_score >= 70 %}var(--accent){% elif p.transparency_anti_corruption_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};">
+                {{ p.transparency_anti_corruption_score|floatformat:0 }}
+              </span>
+              <div class="pillar-bar">
+                <div class="pillar-bar-fill" style="width:{{ p.transparency_anti_corruption_score }}%;background:{% if p.transparency_anti_corruption_score >= 70 %}var(--accent){% elif p.transparency_anti_corruption_score >= 50 %}var(--warn){% else %}var(--danger){% endif %};"></div>
+              </div>
+            {% else %}
+              <span class="pillar-score">{{ co.score_transparency }}</span>
+              <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_transparency }}%"></div></div>
+            {% endif %}
           </div>
 
-          <!-- Pillar: Community -->
-          <div class="pillar-cell">
-            <span class="pillar-score">{{ co.score_community_impact }}</span>
-            <div class="pillar-bar"><div class="pillar-bar-fill" style="width:{{ co.score_community_impact }}%"></div></div>
+          <!-- Funding Status -->
+          <div class="fund-cell">
+            {% if p %}
+              {% if p.funding_status == 'not_seeking' %}—
+              {% elif p.funding_status == 'open_to_funding' %}
+                <span style="color:var(--warn);">Open to Funding</span>
+              {% elif p.funding_status == 'seeking_partners' %}
+                <span style="color:var(--info);">Seeking Partners</span>
+              {% elif p.funding_status == 'funded' %}
+                <span style="color:var(--accent);">Funded</span>
+              {% endif %}
+            {% else %}—{% endif %}
           </div>
 
-        </a>
+          <!-- Verified -->
+          <div class="verif-cell">
+            {% if p and p.is_verified %}
+              <span style="color:var(--accent);" title="Verified">✓</span>
+            {% else %}
+              <span style="color:var(--muted);" title="Unverified">·</span>
+            {% endif %}
+          </div>
+
+          <!-- Profile Link -->
+          <div class="profile-link-cell">
+            {% if p %}
+              <a href="{% url 'companies:detail' co.slug %}"
+                 onclick="event.stopPropagation();">
+                Profile ↗
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      {% endwith %}
       {% endfor %}
     {% else %}
       <div class="empty">
-        <p>No data for the selected sector.</p>
+        <p>No companies found for the selected sector.</p>
       </div>
     {% endif %}
   </div>
+  </div><!-- /table-wrap -->
 
-  <!-- Formula footnote -->
-  <p style="margin-top:2rem; font-size:0.75rem; color:var(--muted); line-height:1.6;">
-    <strong>EcoIQ Score formula</strong> = Pollution × 35% + Reduction × 25% + Investment × 20% + Transparency × 10% + Community × 10%<br>
-    All scores 0–100. Data sourced from public audit reports, government filings, and verified projects.
+  <!-- Footnote -->
+  <p style="margin-top:1.5rem;font-size:.68rem;color:var(--muted);line-height:1.7;">
+    <strong style="color:var(--muted2);">EcoIQ Score</strong> (6-pillar) = Public Benefit ×25% + Environmental ×25% + Modernization ×20% + Transparent Governance ×15% + Anti-Corruption ×10% + Ethical Alignment ×5% − Harm Penalty (≤30 pts) ·
+    All scores 0–100 · Indicative analysis based on publicly available data · EcoIQ is not a ratings agency
   </p>
 
   <!-- ── Analytics Dashboard ──────────────────────────────────────────────── -->

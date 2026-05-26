@@ -92,6 +92,11 @@ INSTALLED_APPS = [
     'leads',
     'league',
     'cms',
+    'ingestion',
+    'intelligence',
+    'transition',
+    'companies',
+    'countries',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Country Intelligence — EcoIQ Global Ethical Intelligence Platform</title>
+<style>
+:root {
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+  --info:#58a6ff; --purple:#8b5cf6;
+  --text:#e6edf3; --muted:#8b949e; --border:#21262d;
+  --radius:10px; --glass:rgba(255,255,255,.04);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── nav ── */
+.topnav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,11,15,.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  padding:.9rem 1.6rem;
+  display:flex;align-items:center;gap:1.5rem;
+}
+.topnav .brand{font-size:1.05rem;font-weight:700;color:var(--accent);text-decoration:none;letter-spacing:.5px}
+.topnav a{color:var(--muted);text-decoration:none;font-size:.87rem;transition:color .2s}
+.topnav a:hover{color:var(--text)}
+.topnav .sep{color:var(--border)}
+
+/* ── hero ── */
+.hero{
+  background:linear-gradient(135deg,#070b0f 0%,#0d1a2e 50%,#0a1f14 100%);
+  border-bottom:1px solid var(--border);
+  padding:3.5rem 2rem 3rem;
+  text-align:center;
+}
+.hero-eyebrow{
+  display:inline-block;
+  background:rgba(0,232,154,.12);
+  border:1px solid rgba(0,232,154,.3);
+  color:var(--accent);
+  font-size:.78rem;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:.35rem .9rem;border-radius:20px;
+  margin-bottom:1.2rem;
+}
+.hero h1{font-size:2.2rem;font-weight:700;line-height:1.25;margin-bottom:.8rem}
+.hero h1 em{color:var(--accent);font-style:normal}
+.hero p{color:var(--muted);max-width:650px;margin:0 auto;line-height:1.65;font-size:.95rem}
+
+/* ── filters ── */
+.filters-bar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:1rem 2rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;
+}
+.filter-group{display:flex;flex-direction:column;gap:.35rem}
+.filter-label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.filter-select{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;
+  padding:.45rem .75rem;font-size:.875rem;cursor:pointer;
+}
+.filter-select:focus{outline:none;border-color:var(--accent)}
+.filter-btn{
+  padding:.5rem 1.2rem;border-radius:6px;
+  background:var(--accent);color:#000;font-weight:600;
+  border:none;cursor:pointer;font-size:.875rem;align-self:flex-end;
+}
+
+/* ── grid ── */
+.main{max-width:1400px;margin:0 auto;padding:2rem 1.6rem}
+
+.stats-bar{
+  display:flex;gap:2rem;margin-bottom:2rem;
+  padding:1rem 1.4rem;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+}
+.stat{display:flex;flex-direction:column;gap:.2rem}
+.stat-val{font-size:1.3rem;font-weight:700;color:var(--accent)}
+.stat-lbl{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+
+.countries-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:1.4rem;
+}
+
+/* ── country card ── */
+.country-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  transition:border-color .2s,transform .15s;
+  cursor:pointer;
+  text-decoration:none;color:inherit;
+  display:block;
+}
+.country-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+
+.card-header{
+  padding:1.2rem 1.4rem 1rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:1rem;
+}
+.flag{font-size:2.2rem;line-height:1}
+.card-title{flex:1}
+.card-title h2{font-size:1.05rem;font-weight:600;margin-bottom:.3rem}
+.card-title .region{font-size:.75rem;color:var(--muted)}
+
+.ecoiq-score{
+  font-size:1.5rem;font-weight:700;color:var(--accent);
+  white-space:nowrap;text-align:right;
+}
+.ecoiq-score span{display:block;font-size:.68rem;color:var(--muted);font-weight:400;margin-top:.1rem}
+
+.card-body{padding:1rem 1.4rem}
+.card-scores{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem}
+.mini-score{display:flex;flex-direction:column;gap:.15rem}
+.mini-lbl{font-size:.68rem;color:var(--muted)}
+.mini-bar-wrap{height:3px;background:var(--bg3);border-radius:2px}
+.mini-bar{height:3px;border-radius:2px;background:var(--accent)}
+.mini-val{font-size:.72rem;color:var(--text)}
+
+.transition-badge{
+  display:inline-block;
+  padding:.25rem .7rem;border-radius:12px;
+  font-size:.72rem;font-weight:600;
+  border:1px solid currentColor;
+}
+
+.card-footer{
+  padding:.75rem 1.4rem;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.78rem;color:var(--muted);
+}
+.card-footer .co-count{color:var(--info)}
+.card-footer .view-link{color:var(--accent);font-weight:600}
+
+/* ── empty ── */
+.empty{text-align:center;padding:4rem 2rem;color:var(--muted)}
+.empty h3{color:var(--text);margin-bottom:.5rem}
+
+/* ── footer ── */
+footer{text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:3rem}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
+
+@media(max-width:600px){
+  .hero h1{font-size:1.5rem}
+  .countries-grid{grid-template-columns:1fr}
+  .stats-bar{gap:1rem;flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/" class="brand">EcoIQ</a>
+  <span class="sep">|</span>
+  <a href="/league/">League</a>
+  <a href="/companies/">Companies</a>
+  <a href="/countries/" style="color:var(--accent)">Countries</a>
+  <a href="/intelligence/">Intelligence</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">EcoIQ Country Intelligence</div>
+  <h1>National Ethical Industrial<br><em>Intelligence Profiles</em></h1>
+  <p>How ready is each country for the industrial transition? EcoIQ analyses policy environments, industrial sectors, pollution hotspots, and financing gaps — so investors, governments, and companies can act with context.</p>
+</section>
+
+<form method="get" action="">
+<div class="filters-bar">
+  <div class="filter-group">
+    <label class="filter-label">Region</label>
+    <select class="filter-select" name="region">
+      <option value="">All Regions</option>
+      {% for code,label in region_choices %}
+        <option value="{{ code }}" {% if region == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="filter-btn">Filter</button>
+  {% if region %}
+    <a href="?" style="align-self:flex-end;color:var(--muted);font-size:.82rem;padding:.5rem 0">Clear</a>
+  {% endif %}
+</div>
+</form>
+
+<main class="main">
+
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-val">{{ total_count }}</span><span class="stat-lbl">Countries Tracked</span></div>
+    <div class="stat"><span class="stat-val">{{ countries|length }}</span><span class="stat-lbl">Showing</span></div>
+    <div class="stat"><span class="stat-val" style="color:var(--warn)">Phase 2</span><span class="stat-lbl">Dataset Version</span></div>
+  </div>
+
+  {% if countries %}
+  <div class="countries-grid">
+    {% for c in countries %}
+    <a href="{% url 'countries:detail' c.slug %}" class="country-card">
+      <div class="card-header">
+        <div class="flag">{{ c.flag_emoji }}</div>
+        <div class="card-title">
+          <h2>{{ c.name }}</h2>
+          <div class="region">{{ c.get_region_display }}</div>
+        </div>
+        <div class="ecoiq-score">
+          {{ c.national_ecoiq_index|floatformat:1 }}
+          <span>National EcoIQ</span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="card-scores">
+          <div class="mini-score">
+            <span class="mini-lbl">Transition Readiness</span>
+            <div class="mini-bar-wrap"><div class="mini-bar" style="width:{{ c.transition_readiness_score }}%"></div></div>
+            <span class="mini-val">{{ c.transition_readiness_score|floatformat:0 }}/100</span>
+          </div>
+          <div class="mini-score">
+            <span class="mini-lbl">Investment Climate</span>
+            <div class="mini-bar-wrap"><div class="mini-bar" style="width:{{ c.investment_climate_score }}%;background:var(--info)"></div></div>
+            <span class="mini-val">{{ c.investment_climate_score|floatformat:0 }}/100</span>
+          </div>
+          <div class="mini-score">
+            <span class="mini-lbl">Policy Environment</span>
+            <div class="mini-bar-wrap"><div class="mini-bar" style="width:{{ c.policy_environment_score }}%;background:var(--purple)"></div></div>
+            <span class="mini-val">{{ c.policy_environment_score|floatformat:0 }}/100</span>
+          </div>
+          <div class="mini-score">
+            <span class="mini-lbl">Transparency</span>
+            <div class="mini-bar-wrap"><div class="mini-bar" style="width:{{ c.transparency_score }}%;background:var(--warn)"></div></div>
+            <span class="mini-val">{{ c.transparency_score|floatformat:0 }}/100</span>
+          </div>
+        </div>
+        <span class="transition-badge" style="color:{{ c.transition_label_color }};border-color:{{ c.transition_label_color }}">
+          {{ c.get_transition_readiness_label_display }}
+        </span>
+      </div>
+
+      <div class="card-footer">
+        <span class="co-count">{{ c.companies_tracked }} companies tracked</span>
+        <span class="view-link">View Intelligence →</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty">
+    <h3>No countries found</h3>
+    <p>Try clearing your filters.</p>
+  </div>
+  {% endif %}
+
+</main>
+
+<footer>
+  <p>EcoIQ Country Intelligence is AI-assisted and indicative. Not independently verified. <a href="/companies/">Companies</a> · <a href="/league/">League</a></p>
+</footer>
+
+</body>
+</html>

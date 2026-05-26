@@ -26,6 +26,21 @@ urlpatterns = [
     path('request-access/', include('leads.urls', namespace='leads')),
     path('league/', include('league.urls', namespace='league')),
 
+    # AI company ingestion
+    path('ingest/', include('ingestion.urls', namespace='ingestion')),
+
+    # Environmental Intelligence OS
+    path('intelligence/', include('intelligence.urls', namespace='intelligence')),
+
+    # Industrial Transition Engine
+    path('transition/', include('transition.urls', namespace='transition')),
+
+    # EcoIQ Company Intelligence
+    path('companies/', include('companies.urls', namespace='companies')),
+
+    # EcoIQ Country Intelligence
+    path('countries/', include('countries.urls', namespace='countries')),
+
     # Wagtail CMS pages served at /pages/ (safe — no conflict with existing routes)
     path('pages/', include(wagtail_urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

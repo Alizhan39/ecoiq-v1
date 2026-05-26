@@ -1,0 +1,860 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ company.name }} — EcoIQ Profile{% endblock %}
+
+{% block extra_head %}
+<style>
+:root {
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --bg4:#1a2030;
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.13);
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946; --info:#58a6ff;
+}
+*{box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+a{color:inherit;text-decoration:none;}
+
+/* ── Command bar ──────────────────────────────────────────── */
+.cmd-bar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,11,15,.96);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.75rem;
+  padding:.55rem 1.5rem;flex-wrap:wrap;
+}
+.cmd-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);}
+.cmd-breadcrumb{font-size:.78rem;color:var(--muted2);display:flex;align-items:center;gap:.4rem;}
+.cmd-breadcrumb a:hover{color:var(--accent);}
+.cmd-links{display:flex;gap:.5rem;margin-left:auto;}
+.cmd-btn{
+  font-size:.72rem;font-weight:600;padding:.3rem .85rem;border-radius:5px;
+  border:1px solid var(--border);color:var(--muted);transition:all .15s;
+}
+.cmd-btn:hover{border-color:var(--border2);color:var(--text);}
+.cmd-btn.accent{background:var(--accent);color:#0d1117;border-color:var(--accent);}
+.cmd-btn.accent:hover{background:#00c882;}
+
+/* ── Page layout ──────────────────────────────────────────── */
+.page{max-width:1200px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+.page-layout{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start;}
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.hero{
+  background:linear-gradient(135deg,#0a1628 0%,#0d1a2e 60%,#091420 100%);
+  border:1px solid var(--border2);border-radius:14px;
+  padding:2rem;margin-bottom:1.5rem;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-80px;right:-80px;width:300px;height:300px;
+  background:radial-gradient(circle,rgba(0,232,154,.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+{% if profile.is_verified %}
+.hero{border-color:rgba(0,232,154,.25);}
+.hero::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),transparent);
+}
+{% endif %}
+.hero-row{display:flex;align-items:flex-start;gap:1.25rem;flex-wrap:wrap;}
+.hero-logo{
+  width:64px;height:64px;border-radius:12px;flex-shrink:0;
+  background:var(--bg3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:2rem;
+  overflow:hidden;
+}
+.hero-logo img{width:100%;height:100%;object-fit:contain;}
+.hero-body{flex:1;min-width:0;}
+.hero-name{font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;letter-spacing:-.03em;margin-bottom:.3rem;}
+.hero-meta{font-size:.82rem;color:var(--muted2);display:flex;flex-wrap:wrap;gap:.5rem .9rem;margin-bottom:.75rem;}
+.hero-badges{display:flex;flex-wrap:wrap;gap:.5rem;}
+.hero-score-block{
+  text-align:center;flex-shrink:0;min-width:130px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;padding:1rem 1.25rem;
+}
+.score-big{
+  font-size:3rem;font-weight:900;font-variant-numeric:tabular-nums;
+  line-height:1;letter-spacing:-.03em;margin-bottom:.3rem;
+}
+.score-max{font-size:.75rem;color:var(--muted);font-weight:600;}
+.score-label-text{
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  margin-top:.5rem;padding:.25rem .6rem;border-radius:5px;display:inline-block;
+}
+
+/* ── Section heading ──────────────────────────────────────── */
+.section-head{
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);border-bottom:1px solid var(--border);
+  padding-bottom:.5rem;margin-bottom:1rem;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.section-head a{font-size:.65rem;color:var(--accent);text-transform:none;letter-spacing:0;}
+
+/* ── Panel ────────────────────────────────────────────────── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.25rem;}
+.panel-head{
+  background:var(--bg3);padding:.65rem 1.1rem;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.panel-body{padding:1.1rem;}
+
+/* ── Score cards grid ─────────────────────────────────────── */
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.5rem;}
+.score-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:1rem;transition:border-color .2s;
+}
+.score-card:hover{border-color:var(--border2);}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
+.sc-icon{font-size:1.1rem;}
+.sc-weight{font-size:.6rem;color:var(--muted);font-weight:600;text-transform:uppercase;}
+.sc-score{
+  font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;margin-bottom:.2rem;
+}
+.sc-label{font-size:.7rem;font-weight:600;margin-bottom:.4rem;}
+.sc-desc{font-size:.65rem;color:var(--muted);line-height:1.5;}
+.sc-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:.65rem;overflow:hidden;}
+.sc-bar-fill{height:100%;border-radius:2px;transition:width .4s;}
+
+/* ── Path to 100 actions ──────────────────────────────────── */
+.path-list{display:flex;flex-direction:column;gap:.65rem;}
+.path-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;display:flex;gap:.85rem;align-items:flex-start;
+}
+.path-gain{
+  font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--accent);flex-shrink:0;min-width:42px;text-align:center;
+  background:rgba(0,232,154,.08);border-radius:5px;padding:.3rem .4rem;
+}
+.path-body{flex:1;}
+.path-title{font-size:.8rem;font-weight:600;margin-bottom:.2rem;}
+.path-desc{font-size:.7rem;color:var(--muted2);line-height:1.5;}
+.path-pillar{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:.3rem;}
+
+/* ── AI content sections ──────────────────────────────────── */
+.ai-section{margin-bottom:1.25rem;}
+.ai-label{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--accent);margin-bottom:.4rem;display:flex;align-items:center;gap:.4rem;
+}
+.ai-label::after{content:'';flex:1;height:1px;background:rgba(0,232,154,.15);}
+.ai-text{font-size:.82rem;color:var(--muted2);line-height:1.7;}
+
+/* ── Recommendation list ──────────────────────────────────── */
+.rec-list{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
+.rec-list li{
+  font-size:.78rem;color:var(--muted2);line-height:1.55;
+  padding-left:1.1rem;position:relative;
+}
+.rec-list li::before{
+  content:'→';position:absolute;left:0;color:var(--accent);font-size:.7rem;
+  top:.05em;
+}
+
+/* ── Sidebar KPI cells ────────────────────────────────────── */
+.sidebar-kpi{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
+.kpi-cell{background:var(--bg2);padding:.8rem .9rem;}
+.kpi-val{font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums;}
+.kpi-lbl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:.15rem;}
+
+/* ── Warning strip ────────────────────────────────────────── */
+.warn-strip{
+  background:rgba(244,162,97,.06);border:1px solid rgba(244,162,97,.2);
+  border-radius:8px;padding:.7rem 1rem;font-size:.75rem;color:var(--warn);
+  display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;
+}
+.danger-strip{
+  background:rgba(230,57,70,.06);border:1px solid rgba(230,57,70,.2);
+  border-radius:8px;padding:.7rem 1rem;font-size:.75rem;color:var(--danger);
+  display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;
+}
+
+/* ── Video cards ──────────────────────────────────────────── */
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;}
+.video-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.9rem;transition:border-color .2s;
+}
+.video-card:hover{border-color:rgba(0,232,154,.25);}
+.video-type-tag{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  padding:2px 7px;border-radius:4px;background:rgba(0,232,154,.1);color:var(--accent);
+  display:inline-block;margin-bottom:.5rem;
+}
+.video-title{font-size:.8rem;font-weight:600;margin-bottom:.4rem;line-height:1.4;}
+.video-summary{font-size:.7rem;color:var(--muted2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* ── Transition roadmap card ──────────────────────────────── */
+.roadmap-card{
+  background:linear-gradient(135deg,rgba(0,232,154,.04),transparent);
+  border:1px solid rgba(0,232,154,.2);border-radius:10px;padding:1.1rem;
+}
+.roadmap-title{font-size:.88rem;font-weight:700;margin-bottom:.3rem;}
+.roadmap-meta{font-size:.7rem;color:var(--muted2);margin-bottom:.75rem;}
+.roadmap-phases{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem;}
+.phase-tag{
+  font-size:.65rem;padding:3px 9px;border-radius:4px;
+  background:rgba(88,166,255,.1);color:var(--info);font-weight:600;
+}
+.roadmap-link{
+  font-size:.72rem;font-weight:600;color:var(--accent);
+  border:1px solid rgba(0,232,154,.25);border-radius:5px;
+  padding:.3rem .7rem;display:inline-block;transition:all .15s;
+}
+.roadmap-link:hover{background:rgba(0,232,154,.08);}
+
+/* ── Financing matches ────────────────────────────────────── */
+.fin-list{display:flex;flex-direction:column;gap:.5rem;}
+.fin-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:7px;
+  padding:.7rem .9rem;display:flex;justify-content:space-between;align-items:center;
+}
+.fin-name{font-size:.78rem;font-weight:600;}
+.fin-meta{font-size:.65rem;color:var(--muted2);margin-top:.1rem;}
+.fin-score{
+  font-size:.75rem;font-weight:800;color:var(--accent);
+  background:rgba(0,232,154,.08);border-radius:5px;padding:.2rem .5rem;
+}
+
+/* ── Sources ──────────────────────────────────────────────── */
+.source-list{display:flex;flex-direction:column;gap:.4rem;}
+.source-item{
+  font-size:.73rem;display:flex;align-items:center;gap:.5rem;
+  padding:.4rem 0;border-bottom:1px solid var(--border);
+}
+.source-item:last-child{border-bottom:none;}
+.source-type-dot{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:var(--muted);
+}
+.source-link{color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.source-link:hover{color:var(--accent);}
+
+/* ── Badges ───────────────────────────────────────────────── */
+.badge{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;padding:3px 8px;border-radius:5px;white-space:nowrap;
+}
+.badge-green{background:rgba(0,232,154,.15);color:#00e89a;}
+.badge-blue{background:rgba(88,166,255,.15);color:#58a6ff;}
+.badge-orange{background:rgba(244,162,97,.15);color:#f4a261;}
+.badge-red{background:rgba(230,57,70,.15);color:#e63946;}
+.badge-purple{background:rgba(168,85,247,.15);color:#a855f7;}
+.badge-gray{background:rgba(100,116,139,.15);color:#94a3b8;}
+
+/* ── CTA row ──────────────────────────────────────────────── */
+.cta-row{
+  display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.1rem;
+}
+.cta-btn{
+  font-size:.72rem;font-weight:700;padding:.45rem 1rem;border-radius:6px;
+  border:1px solid;cursor:pointer;transition:all .15s;display:inline-flex;
+  align-items:center;gap:.4rem;text-decoration:none;
+}
+.cta-primary{
+  background:var(--accent);color:#0a0f14;border-color:var(--accent);
+}
+.cta-primary:hover{background:#00c882;border-color:#00c882;}
+.cta-secondary{
+  background:transparent;color:var(--info);border-color:rgba(88,166,255,.35);
+}
+.cta-secondary:hover{background:rgba(88,166,255,.08);}
+.cta-ghost{
+  background:transparent;color:var(--muted2);border-color:var(--border2);
+}
+.cta-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.25);}
+.cta-warn{
+  background:transparent;color:var(--warn);border-color:rgba(244,162,97,.3);
+}
+.cta-warn:hover{background:rgba(244,162,97,.08);}
+
+/* ── Disclaimer ───────────────────────────────────────────── */
+.disclaimer{
+  margin-top:2rem;padding:.85rem 1.1rem;
+  background:rgba(88,166,255,.04);border:1px solid rgba(88,166,255,.1);
+  border-radius:8px;font-size:.7rem;color:var(--muted2);line-height:1.65;
+}
+
+@media(max-width:900px){
+  .page-layout{grid-template-columns:1fr;}
+  .score-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  .hero-row{flex-direction:column;}
+  .score-grid{grid-template-columns:1fr;}
+  .hero-score-block{width:100%;text-align:left;display:flex;align-items:center;gap:1rem;}
+  .score-big{font-size:2.2rem;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Command bar -->
+<div class="cmd-bar">
+  <span class="cmd-title">🌍 EcoIQ</span>
+  <div class="cmd-breadcrumb">
+    <a href="{% url 'companies:directory' %}" style="color:var(--muted);">Directory</a>
+    <span style="color:var(--muted);">›</span>
+    <span style="color:var(--muted2);">{{ company.name }}</span>
+  </div>
+  <div class="cmd-links">
+    <a href="{% url 'league:leaderboard' %}" class="cmd-btn">🏆 League</a>
+    <a href="{% url 'countries:directory' %}" class="cmd-btn">🗺 Countries</a>
+    <a href="{% url 'transition:dashboard' company.slug %}" class="cmd-btn">⚡ Roadmap</a>
+    {% if request.user.is_staff %}
+    <a href="{% url 'admin:companies_companyprofile_change' profile.pk %}" class="cmd-btn accent">Edit</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ── Hero ───────────────────────────────────────────────── -->
+  <div class="hero">
+    <div class="hero-row">
+      <!-- Logo -->
+      <div class="hero-logo">
+        {% if company.logo_url %}
+        <img src="{{ company.logo_url }}" alt="{{ company.name }}" onerror="this.style.display='none'">
+        {% else %}
+        🏭
+        {% endif %}
+      </div>
+
+      <!-- Identity -->
+      <div class="hero-body">
+        <h1 class="hero-name">{{ company.name }}</h1>
+        <div class="hero-meta">
+          <span>{{ company.get_sector_display }}</span>
+          <span>·</span>
+          <span>{{ company.country }}</span>
+          {% if company.website %}
+          <span>·</span>
+          <a href="{{ company.website }}" target="_blank" rel="noopener" style="color:var(--accent);">↗ Website</a>
+          {% endif %}
+          {% if profile.ownership_type %}
+          <span>·</span>
+          <span>{{ profile.get_ownership_type_display }}</span>
+          {% endif %}
+        </div>
+        <div class="hero-badges">
+          <!-- Moral label -->
+          <span class="badge" style="background:{{ profile.moral_label_color }}22;color:{{ profile.moral_label_color }};">
+            {{ profile.moral_label_display }}
+          </span>
+          <!-- Pollution -->
+          {% if profile.pollution_level == 'low' %}
+            <span class="badge badge-green">Low Pollution</span>
+          {% elif profile.pollution_level == 'medium' %}
+            <span class="badge badge-orange">Moderate Pollution</span>
+          {% elif profile.pollution_level == 'high' %}
+            <span class="badge badge-red">High Pollution</span>
+          {% elif profile.pollution_level == 'severe' %}
+            <span class="badge badge-red">⚠ Severe Pollution</span>
+          {% endif %}
+          <!-- Verified -->
+          {% if profile.is_verified %}
+            <span class="badge badge-green">✓ Verified</span>
+          {% else %}
+            <span class="badge badge-gray">Unverified</span>
+          {% endif %}
+          <!-- Funding -->
+          {% if profile.funding_status == 'seeking' %}
+            <span class="badge badge-blue">Seeking Capital</span>
+          {% elif profile.funding_status == 'funded' %}
+            <span class="badge badge-green">Funded</span>
+          {% elif profile.funding_status == 'open_to_partners' %}
+            <span class="badge badge-purple">Open to Partners</span>
+          {% endif %}
+        </div>
+        {% if company.description %}
+        <p style="font-size:.82rem;color:var(--muted2);line-height:1.6;margin-top:.85rem;max-width:640px;">
+          {{ company.description }}
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- Score block -->
+      <div class="hero-score-block">
+        <div class="score-big" style="color:
+          {% if profile.ecoiq_total_score >= 70 %}var(--accent)
+          {% elif profile.ecoiq_total_score >= 50 %}var(--warn)
+          {% else %}var(--danger){% endif %};">
+          {{ profile.ecoiq_total_score|floatformat:1 }}
+        </div>
+        <div class="score-max">/ 100 EcoIQ</div>
+        <div class="score-label-text" style="
+          background:{{ profile.moral_label_color }}22;
+          color:{{ profile.moral_label_color }};">
+          {{ profile.moral_label_display }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CTA buttons ─────────────────────────────────────── -->
+  <div class="cta-row">
+    {% if not profile.is_verified %}
+    <a href="mailto:hello@ecoiq.org?subject=Claim%20Profile%3A%20{{ company.name|urlencode }}&body=Hello%20EcoIQ%20team%2C%0AI%20represent%20{{ company.name|urlencode }}%20and%20would%20like%20to%20claim%20this%20profile." class="cta-btn cta-primary">
+      🏷️ Claim This Profile
+    </a>
+    {% endif %}
+    <a href="mailto:hello@ecoiq.org?subject=Verify%20Data%3A%20{{ company.name|urlencode }}&body=Hello%20EcoIQ%20team%2C%0APlease%20initiate%20data%20verification%20for%20{{ company.name|urlencode }}." class="cta-btn cta-secondary">
+      ✓ Verify Company Data
+    </a>
+    {% if not profile.investor_visibility %}
+    <a href="mailto:hello@ecoiq.org?subject=Investor%20Visibility%3A%20{{ company.name|urlencode }}&body=Hello%20EcoIQ%20team%2C%0AWe%20would%20like%20to%20request%20investor%20visibility%20for%20{{ company.name|urlencode }}." class="cta-btn cta-warn">
+      📈 Request Investor Visibility
+    </a>
+    {% endif %}
+    <a href="mailto:hello@ecoiq.org?subject=Modernization%20Plan%3A%20{{ company.name|urlencode }}&body=Hello%20EcoIQ%20team%2C%0APlease%20prepare%20a%20full%20EcoIQ%20modernization%20plan%20for%20{{ company.name|urlencode }}." class="cta-btn cta-ghost">
+      🗺 Request Full Modernization Plan
+    </a>
+  </div>
+
+  <!-- Warnings -->
+  {% if profile.low_transparency_warning %}
+  <div class="warn-strip">
+    ⚠ <span><strong>Transparency Risk:</strong> This company's governance transparency score is low. Data gaps may affect the accuracy of this profile.</span>
+  </div>
+  {% endif %}
+  {% if profile.profit_extraction_warning %}
+  <div class="warn-strip">
+    ⚠ <span><strong>Profit Extraction Risk:</strong> Indicators suggest potential profit extraction with limited reinvestment in public benefit activities.</span>
+  </div>
+  {% endif %}
+
+  <!-- Main layout -->
+  <div class="page-layout">
+
+    <!-- ── Left column (main) ─────────────────────────────── -->
+    <div>
+
+      <!-- Pillar score cards -->
+      <div class="section-head">
+        EcoIQ Score Breakdown
+        <span>6 pillars · weighted formula</span>
+      </div>
+      <div class="score-grid">
+        {% for card in score_cards %}
+        <div class="score-card">
+          <div class="sc-top">
+            <span class="sc-icon">{{ card.icon }}</span>
+            <span class="sc-weight">{{ card.weight }}</span>
+          </div>
+          <div class="sc-score" style="color:
+            {% if card.score >= 70 %}var(--accent)
+            {% elif card.score >= 50 %}var(--warn)
+            {% else %}var(--danger){% endif %};">
+            {{ card.score|floatformat:1 }}
+          </div>
+          <div class="sc-label" style="color:var(--muted2);">{{ card.label }}</div>
+          <div class="sc-desc">{{ card.desc }}</div>
+          <div class="sc-bar">
+            <div class="sc-bar-fill" style="
+              width:{{ card.score }}%;
+              background:{% if card.score >= 70 %}var(--accent){% elif card.score >= 50 %}var(--warn){% else %}var(--danger){% endif %};
+              opacity:.8;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Harm penalty note -->
+      {% if profile.harm_penalty > 0 %}
+      <div class="danger-strip" style="margin-top:-.5rem;margin-bottom:1.25rem;">
+        ⚡ <span>
+          <strong>Harm Penalty Applied: −{{ profile.harm_penalty|floatformat:1 }} points.</strong>
+          Penalties reduce the total EcoIQ score for severe pollution, low transparency, or high controversy risk.
+          Reducing operational harms is the fastest path to score improvement.
+        </span>
+      </div>
+      {% endif %}
+
+      <!-- AI Summary -->
+      {% if profile.ai_summary %}
+      <div class="panel">
+        <div class="panel-head">🤖 AI Intelligence Summary</div>
+        <div class="panel-body">
+          <div class="ai-text">{{ profile.ai_summary }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- AI Modernization Report -->
+      {% if profile.ai_modernization_report %}
+      <div class="panel">
+        <div class="panel-head">⚡ Modernization Analysis</div>
+        <div class="panel-body">
+          <div class="ai-text">{{ profile.ai_modernization_report }}</div>
+          {% if profile.modernization_projects %}
+          <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border);">
+            <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Known Initiatives</div>
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem;">
+              {% for proj in profile.modernization_projects %}
+              <span style="font-size:.68rem;padding:3px 9px;border-radius:4px;background:rgba(88,166,255,.1);color:var(--info);">{{ proj }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Investment Opportunity -->
+      {% if profile.ai_investment_opportunity %}
+      <div class="panel">
+        <div class="panel-head">💼 Investment & Funding Opportunity</div>
+        <div class="panel-body">
+          <div class="ai-text">{{ profile.ai_investment_opportunity }}</div>
+          {% if profile.renewable_energy_share %}
+          <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:.6rem .9rem;">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--accent);">{{ profile.renewable_energy_share|floatformat:0 }}%</div>
+              <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">Renewable Energy</div>
+            </div>
+            {% if profile.estimated_emissions %}
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:.6rem .9rem;">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--warn);">{{ profile.estimated_emissions|intcomma }}</div>
+              <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">tCO₂ / yr</div>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Risk Notes -->
+      {% if profile.ai_risk_notes %}
+      <div class="panel">
+        <div class="panel-head" style="color:var(--warn);">⚠ Transparency & Risk Notes</div>
+        <div class="panel-body">
+          <div class="ai-text">{{ profile.ai_risk_notes }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- AI Recommendations -->
+      {% if profile.ai_recommendations %}
+      <div class="panel">
+        <div class="panel-head">✦ AI Recommendations</div>
+        <div class="panel-body">
+          <ul class="rec-list">
+            {% for rec in profile.ai_recommendations %}
+            <li>{{ rec }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Path to 100 -->
+      {% if path_actions %}
+      <div class="section-head" style="margin-top:1.75rem;">
+        Path to 100 EcoIQ
+        <span style="color:var(--accent);">Gap: {{ profile.path_to_100_gap|floatformat:1 }} points</span>
+      </div>
+      <div class="path-list">
+        {% for action in path_actions %}
+        <div class="path-item">
+          <div class="path-gain">
+            +{{ action.potential_gain|floatformat:0 }}
+          </div>
+          <div class="path-body">
+            <div class="path-title">{{ action.title }}</div>
+            <div class="path-desc">{{ action.description }}</div>
+            <div class="path-pillar">{{ action.pillar }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Guidance Videos -->
+      {% if videos %}
+      <div class="section-head" style="margin-top:1.75rem;">
+        EcoIQ Guidance Videos
+        <span>AI-generated transformation content</span>
+      </div>
+      <div class="video-grid">
+        {% for video in videos %}
+        <div class="video-card">
+          <div class="video-type-tag">{{ video.get_video_type_display }}</div>
+          {% if video.thumbnail %}<img src="{{ video.thumbnail }}" alt="" style="width:100%;border-radius:5px;margin-bottom:.5rem;aspect-ratio:16/9;object-fit:cover;">{% endif %}
+          <div class="video-title">{{ video.title }}</div>
+          {% if video.executive_summary %}
+          <div class="video-summary">{{ video.executive_summary }}</div>
+          {% endif %}
+          {% if video.current_score_snapshot and video.target_score %}
+          <div style="font-size:.65rem;color:var(--muted);margin-top:.5rem;">
+            {{ video.current_score_snapshot|floatformat:0 }} → {{ video.target_score|floatformat:0 }} EcoIQ target
+          </div>
+          {% endif %}
+          {% if video.video_url %}
+          <a href="{{ video.video_url }}" target="_blank" style="font-size:.7rem;color:var(--accent);margin-top:.5rem;display:inline-block;">▶ Watch Video →</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- AI Briefing -->
+      {% if briefing %}
+      <div class="panel" style="margin-top:1.5rem;">
+        <div class="panel-head">📋 Executive Intelligence Briefing</div>
+        <div class="panel-body">
+          {% if briefing.summary %}
+          <div class="ai-text">{{ briefing.summary|truncatechars:600 }}</div>
+          {% endif %}
+          <div style="margin-top:.75rem;">
+            <a href="{% url 'intelligence:briefing' company.slug %}" style="font-size:.72rem;color:var(--accent);font-weight:600;">
+              View Full Briefing →
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Sources -->
+      {% if sources %}
+      <div class="section-head" style="margin-top:1.75rem;">
+        Data Sources
+        <span>{{ sources|length }} cited</span>
+      </div>
+      <div class="source-list">
+        {% for src in sources %}
+        <div class="source-item">
+          <div class="source-type-dot" style="
+            background:{% if src.source_type == 'official' %}var(--accent)
+            {% elif src.source_type == 'news' %}var(--info)
+            {% elif src.source_type == 'ngo' %}var(--warn)
+            {% else %}var(--muted){% endif %};"></div>
+          {% if src.url %}
+          <a href="{{ src.url }}" target="_blank" rel="noopener" class="source-link">
+            {{ src.title|default:src.url|truncatechars:70 }}
+          </a>
+          {% else %}
+          <span class="source-link">{{ src.title|truncatechars:70 }}</span>
+          {% endif %}
+          {% if src.date_accessed %}
+          <span style="font-size:.62rem;color:var(--muted);flex-shrink:0;">{{ src.date_accessed|date:"Y" }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div><!-- /.main col -->
+
+    <!-- ── Right sidebar ───────────────────────────────────── -->
+    <div>
+
+      <!-- Company facts -->
+      <div class="panel" style="margin-bottom:1.25rem;">
+        <div class="panel-head">Company Facts</div>
+        <div class="sidebar-kpi">
+          {% if company.annual_revenue_usd %}
+          <div class="kpi-cell" style="grid-column:span 2;">
+            <div class="kpi-val" style="font-size:.95rem;">
+              ${{ company.annual_revenue_usd|intcomma }}
+            </div>
+            <div class="kpi-lbl">Annual Revenue (USD)</div>
+          </div>
+          {% endif %}
+          {% if company.employee_count %}
+          <div class="kpi-cell">
+            <div class="kpi-val">{{ company.employee_count|intcomma }}</div>
+            <div class="kpi-lbl">Employees</div>
+          </div>
+          {% endif %}
+          <div class="kpi-cell">
+            <div class="kpi-val" style="color:
+              {% if profile.ecoiq_total_score >= 70 %}var(--accent)
+              {% elif profile.ecoiq_total_score >= 50 %}var(--warn)
+              {% else %}var(--danger){% endif %};">
+              {{ profile.ecoiq_total_score|floatformat:1 }}
+            </div>
+            <div class="kpi-lbl">EcoIQ Score</div>
+          </div>
+          {% if profile.harm_penalty > 0 %}
+          <div class="kpi-cell">
+            <div class="kpi-val" style="color:var(--danger);">−{{ profile.harm_penalty|floatformat:1 }}</div>
+            <div class="kpi-lbl">Harm Penalty</div>
+          </div>
+          {% endif %}
+          {% if profile.estimated_emissions %}
+          <div class="kpi-cell">
+            <div class="kpi-val" style="font-size:.88rem;color:var(--warn);">{{ profile.estimated_emissions|intcomma }}</div>
+            <div class="kpi-lbl">tCO₂ / yr</div>
+          </div>
+          {% endif %}
+          {% if profile.renewable_energy_share %}
+          <div class="kpi-cell">
+            <div class="kpi-val" style="color:var(--accent);">{{ profile.renewable_energy_share|floatformat:0 }}%</div>
+            <div class="kpi-lbl">Renewable Energy</div>
+          </div>
+          {% endif %}
+        </div>
+        <!-- Extra facts -->
+        <div style="padding:.85rem 1rem;font-size:.75rem;color:var(--muted2);display:flex;flex-direction:column;gap:.4rem;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--muted);">Ownership</span>
+            <span>{{ profile.get_ownership_type_display|default:"—" }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--muted);">Funding</span>
+            <span>{{ profile.get_funding_status_display|default:"—" }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--muted);">Pollution Level</span>
+            <span style="color:{{ profile.pollution_color }};">{{ profile.get_pollution_level_display }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--muted);">Tier</span>
+            <span>{{ profile.get_subscription_tier_display }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--muted);">Profile Updated</span>
+            <span>{{ profile.updated_at|date:"M Y" }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profit extraction risk note -->
+      {% if profile.profit_extraction_risk_score %}
+      <div class="panel" style="margin-bottom:1.25rem;">
+        <div class="panel-head">Profit Extraction Risk</div>
+        <div style="padding:.9rem 1rem;">
+          <div style="font-size:1.4rem;font-weight:800;color:
+            {% if profile.profit_extraction_risk_score >= 60 %}var(--danger)
+            {% elif profile.profit_extraction_risk_score >= 40 %}var(--warn)
+            {% else %}var(--accent){% endif %};">
+            {{ profile.profit_extraction_risk_score|floatformat:1 }}
+            <span style="font-size:.7rem;font-weight:400;color:var(--muted);">/ 100 risk</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted2);line-height:1.55;margin-top:.5rem;">
+            This indicator measures risk of capital being extracted without proportionate reinvestment in public benefit.
+            <strong style="color:var(--muted2);">It does not increase the EcoIQ score.</strong>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Transition roadmap -->
+      {% if has_roadmap and active_roadmap %}
+      <div class="panel" style="margin-bottom:1.25rem;">
+        <div class="panel-head" style="color:var(--accent);">⚡ Transition Roadmap</div>
+        <div style="padding:.9rem 1rem;">
+          <div class="roadmap-card">
+            <div class="roadmap-title">{{ active_roadmap.title|truncatechars:60 }}</div>
+            <div class="roadmap-meta">
+              {{ active_roadmap.get_roadmap_type_display }} ·
+              {{ active_roadmap.phases.count }} phases ·
+              Status: {{ active_roadmap.get_status_display }}
+            </div>
+            {% if active_roadmap.phases.all %}
+            <div class="roadmap-phases">
+              {% for phase in active_roadmap.phases.all|slice:":4" %}
+              <span class="phase-tag">{{ phase.title|truncatechars:25 }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <a href="{% url 'transition:dashboard' company.slug %}" class="roadmap-link">
+              View Full Roadmap →
+            </a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="panel" style="margin-bottom:1.25rem;">
+        <div class="panel-head">⚡ Transition Roadmap</div>
+        <div style="padding:1rem;text-align:center;">
+          <div style="font-size:.75rem;color:var(--muted2);margin-bottom:.75rem;line-height:1.55;">
+            No roadmap generated yet. AI roadmaps map the path from current EcoIQ to full responsible modernization.
+          </div>
+          <a href="{% url 'transition:dashboard' company.slug %}" style="font-size:.72rem;font-weight:600;color:var(--accent);border:1px solid rgba(0,232,154,.25);border-radius:5px;padding:.3rem .7rem;">
+            Generate Roadmap →
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Financing matches -->
+      {% if financing_matches %}
+      <div class="panel" style="margin-bottom:1.25rem;">
+        <div class="panel-head">💰 Financing Matches</div>
+        <div style="padding:.85rem 1rem;">
+          <div class="fin-list">
+            {% for match in financing_matches %}
+            <div class="fin-item">
+              <div>
+                <div class="fin-name">{{ match.opportunity.institution_name }}</div>
+                <div class="fin-meta">{{ match.opportunity.programme_name|truncatechars:40 }}</div>
+              </div>
+              <div class="fin-score">{{ match.match_score|floatformat:0 }}%</div>
+            </div>
+            {% endfor %}
+          </div>
+          <a href="{% url 'transition:financing' %}" style="font-size:.7rem;color:var(--accent);display:inline-block;margin-top:.75rem;font-weight:600;">
+            View All Opportunities →
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Score methodology note -->
+      <div class="panel">
+        <div class="panel-head">EcoIQ Methodology</div>
+        <div style="padding:.9rem 1rem;font-size:.72rem;color:var(--muted2);line-height:1.65;">
+          <div style="display:flex;flex-direction:column;gap:.35rem;">
+            <div style="display:flex;justify-content:space-between;">
+              <span>Public Benefit</span><span style="color:var(--muted);">× 25%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>Environmental</span><span style="color:var(--muted);">× 25%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>Modernization</span><span style="color:var(--muted);">× 20%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>Transparency</span><span style="color:var(--muted);">× 15%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>Anti-Corruption</span><span style="color:var(--muted);">× 10%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>Ethical Alignment</span><span style="color:var(--muted);">× 5%</span>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:.35rem;display:flex;justify-content:space-between;color:var(--danger);">
+              <span>Harm Penalty</span><span>− up to 30 pts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.sidebar -->
+
+  </div><!-- /.page-layout -->
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    ⓘ <strong>{{ disclaimer_full }}</strong><br>
+    {{ disclaimer_light }}
+    {% if not profile.is_verified %}
+    This profile has <strong>not been verified</strong> by the company. Data is based on publicly available sources and AI analysis.
+    {% else %}
+    <strong>✓ This profile has been verified by the company.</strong>
+    {% endif %}
+  </div>
+
+</div><!-- /.page -->
+{% endblock %}

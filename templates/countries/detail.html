@@ -1,0 +1,415 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ country.name }} Country Intelligence — EcoIQ</title>
+<style>
+:root {
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+  --info:#58a6ff; --purple:#8b5cf6;
+  --text:#e6edf3; --muted:#8b949e; --border:#21262d;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.topnav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,11,15,.96);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);padding:.9rem 1.6rem;
+  display:flex;align-items:center;gap:1.5rem;
+}
+.topnav .brand{font-size:1.05rem;font-weight:700;color:var(--accent);text-decoration:none;letter-spacing:.5px}
+.topnav a{color:var(--muted);text-decoration:none;font-size:.87rem;transition:color .2s}
+.topnav a:hover{color:var(--text)}
+.topnav .sep{color:var(--border)}
+
+/* ── hero ── */
+.hero{
+  background:linear-gradient(135deg,#070b0f 0%,#0d1a2e 50%,#0a1f14 100%);
+  border-bottom:1px solid var(--border);
+  padding:3rem 2rem 2.5rem;
+}
+.hero-inner{max-width:1100px;margin:0 auto;display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap}
+.hero-flag{font-size:4rem;line-height:1;flex-shrink:0}
+.hero-text{flex:1;min-width:280px}
+.hero-eyebrow{
+  display:inline-block;
+  background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.3);
+  color:var(--accent);font-size:.75rem;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:.3rem .8rem;border-radius:20px;margin-bottom:.8rem;
+}
+.hero-text h1{font-size:2rem;font-weight:700;margin-bottom:.5rem}
+.hero-text .subtitle{color:var(--muted);font-size:.95rem;line-height:1.6;max-width:600px}
+
+.hero-score-panel{
+  background:rgba(0,232,154,.06);border:1px solid rgba(0,232,154,.2);
+  border-radius:var(--radius);padding:1.4rem 1.8rem;
+  min-width:200px;text-align:center;flex-shrink:0;
+}
+.big-score{font-size:3.5rem;font-weight:800;color:var(--accent);line-height:1}
+.score-label{font-size:.78rem;color:var(--muted);margin-top:.3rem}
+.transition-badge{
+  display:inline-block;margin-top:.8rem;
+  padding:.35rem .9rem;border-radius:14px;
+  font-size:.78rem;font-weight:600;border:1px solid currentColor;
+}
+
+/* ── main layout ── */
+.page{max-width:1100px;margin:0 auto;padding:2rem 1.6rem}
+.two-col{display:grid;grid-template-columns:2fr 1fr;gap:1.6rem;align-items:start}
+
+/* ── section ── */
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem 1.6rem;margin-bottom:1.4rem}
+.section-title{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.section-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px;flex-shrink:0}
+
+/* ── score cards ── */
+.score-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem}
+.score-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.score-card .sc-icon{font-size:1.4rem;margin-bottom:.4rem}
+.score-card .sc-label{font-size:.75rem;color:var(--muted);margin-bottom:.5rem}
+.score-card .sc-val{font-size:1.4rem;font-weight:700;color:var(--accent);margin-bottom:.4rem}
+.score-card .sc-bar-bg{height:4px;background:rgba(255,255,255,.06);border-radius:2px}
+.score-card .sc-bar{height:4px;border-radius:2px;background:var(--accent)}
+.score-card .sc-desc{font-size:.7rem;color:var(--muted);margin-top:.4rem;line-height:1.4}
+
+/* ── stat row ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.8rem;margin-bottom:1.4rem}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem}
+.stat-box .sb-val{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.stat-box .sb-lbl{font-size:.7rem;color:var(--muted)}
+
+/* ── AI content ── */
+.ai-text{font-size:.875rem;color:var(--muted);line-height:1.7;white-space:pre-line}
+.ai-disclaimer{
+  font-size:.7rem;color:rgba(139,148,158,.6);
+  border-top:1px solid var(--border);margin-top:1rem;padding-top:.6rem;
+  font-style:italic;
+}
+
+/* ── sectors list ── */
+.sector-row{
+  display:flex;align-items:center;gap:.8rem;
+  padding:.6rem 0;border-bottom:1px solid var(--border);
+}
+.sector-row:last-child{border-bottom:none}
+.sector-name{flex:1;font-size:.87rem}
+.sector-score{font-size:.87rem;font-weight:600;color:var(--accent);min-width:40px;text-align:right}
+.poll-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.poll-low{background:var(--accent)}
+.poll-medium{background:var(--warn)}
+.poll-high{background:var(--danger)}
+.poll-severe{background:#b91c1c}
+
+/* ── hotspot ── */
+.hotspot{
+  padding:.8rem 1rem;margin-bottom:.7rem;
+  background:rgba(230,57,70,.06);border:1px solid rgba(230,57,70,.2);
+  border-radius:8px;
+}
+.hotspot.severe{background:rgba(185,28,28,.08);border-color:rgba(185,28,28,.3)}
+.hotspot .hs-name{font-size:.87rem;font-weight:600;color:var(--danger);margin-bottom:.25rem}
+.hotspot.severe .hs-name{color:#f97316}
+.hotspot .hs-desc{font-size:.78rem;color:var(--muted);line-height:1.5}
+
+/* ── financing gaps ── */
+.gap-item{padding:.8rem 0;border-bottom:1px solid var(--border)}
+.gap-item:last-child{border-bottom:none}
+.gap-sector{font-size:.87rem;font-weight:600;margin-bottom:.25rem}
+.gap-amount{font-size:.78rem;color:var(--info);margin-bottom:.2rem}
+.gap-opp{font-size:.75rem;color:var(--muted)}
+
+/* ── policy ── */
+.policy-item{padding:.75rem 0;border-bottom:1px solid var(--border)}
+.policy-item:last-child{border-bottom:none}
+.policy-title{font-size:.87rem;font-weight:600;margin-bottom:.2rem}
+.policy-desc{font-size:.78rem;color:var(--muted);margin-bottom:.3rem}
+.policy-meta{font-size:.72rem;color:var(--muted)}
+.policy-year{color:var(--accent)}
+.policy-status{color:var(--info)}
+
+/* ── company table ── */
+.co-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.co-table th{text-align:left;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.7px;padding:.6rem .8rem;border-bottom:1px solid var(--border)}
+.co-table td{padding:.6rem .8rem;border-bottom:1px solid var(--border)}
+.co-table tr:last-child td{border-bottom:none}
+.co-table a{color:var(--info);text-decoration:none}
+.co-table a:hover{color:var(--accent)}
+.co-score{color:var(--accent);font-weight:600}
+
+/* ── CTA ── */
+.cta-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.cta-btn{
+  padding:.55rem 1.1rem;border-radius:7px;
+  font-size:.84rem;font-weight:600;
+  text-decoration:none;display:inline-block;
+  transition:opacity .2s;border:none;cursor:pointer;
+}
+.cta-btn:hover{opacity:.85}
+.cta-primary{background:var(--accent);color:#000}
+.cta-secondary{background:rgba(88,166,255,.15);border:1px solid var(--info);color:var(--info)}
+
+/* ── footer ── */
+footer{text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:3rem}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
+
+@media(max-width:800px){
+  .two-col{grid-template-columns:1fr}
+  .hero-inner{flex-direction:column;gap:1.5rem}
+  .hero-score-panel{min-width:auto;width:100%}
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/" class="brand">EcoIQ</a>
+  <span class="sep">|</span>
+  <a href="/league/">League</a>
+  <a href="/companies/">Companies</a>
+  <a href="/countries/">Countries</a>
+  <a href="/intelligence/">Intelligence</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-flag">{{ country.flag_emoji }}</div>
+    <div class="hero-text">
+      <div class="hero-eyebrow">EcoIQ Country Intelligence</div>
+      <h1>{{ country.name }}</h1>
+      <p class="subtitle">{{ country.get_region_display }} · {{ country.companies_tracked }} companies tracked · EcoIQ indicative intelligence</p>
+    </div>
+    <div class="hero-score-panel">
+      <div class="big-score">{{ country.national_ecoiq_index|floatformat:1 }}</div>
+      <div class="score-label">National EcoIQ Index</div>
+      <div class="transition-badge" style="color:{{ country.transition_label_color }};border-color:{{ country.transition_label_color }}">
+        {{ country.get_transition_readiness_label_display }}
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="page">
+
+  <!-- CTA Row -->
+  <div class="cta-row">
+    <a href="mailto:hello@ecoiq.org?subject=Country%20Intelligence%3A%20{{ country.name }}" class="cta-btn cta-primary">📊 Request Full Intelligence Report</a>
+    <a href="mailto:hello@ecoiq.org?subject=Investor%20Briefing%3A%20{{ country.name }}" class="cta-btn cta-secondary">💼 Investor Briefing</a>
+  </div>
+
+  <!-- Macro stats -->
+  <div class="stat-row">
+    {% if country.gdp_usd %}
+    <div class="stat-box">
+      <div class="sb-val">${{ country.gdp_usd|floatformat:0 }}</div>
+      <div class="sb-lbl">GDP (USD)</div>
+    </div>
+    {% endif %}
+    {% if country.co2_megatonnes %}
+    <div class="stat-box">
+      <div class="sb-val" style="color:var(--danger)">{{ country.co2_megatonnes|floatformat:0 }} Mt</div>
+      <div class="sb-lbl">Annual CO₂</div>
+    </div>
+    {% endif %}
+    {% if country.renewable_energy_share %}
+    <div class="stat-box">
+      <div class="sb-val" style="color:var(--accent)">{{ country.renewable_energy_share|floatformat:0 }}%</div>
+      <div class="sb-lbl">Renewable Energy</div>
+    </div>
+    {% endif %}
+    {% if country.fossil_fuel_dependency %}
+    <div class="stat-box">
+      <div class="sb-val" style="color:var(--warn)">{{ country.fossil_fuel_dependency|floatformat:0 }}%</div>
+      <div class="sb-lbl">Fossil Fuel Dependency</div>
+    </div>
+    {% endif %}
+    {% if country.industrial_gdp_share %}
+    <div class="stat-box">
+      <div class="sb-val">{{ country.industrial_gdp_share|floatformat:0 }}%</div>
+      <div class="sb-lbl">Industrial GDP Share</div>
+    </div>
+    {% endif %}
+    {% if country.estimated_transition_gap_usd %}
+    <div class="stat-box">
+      <div class="sb-val" style="color:var(--info)">${{ country.estimated_transition_gap_usd|floatformat:0 }}</div>
+      <div class="sb-lbl">Transition Finance Gap (USD)</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="two-col">
+    <!-- LEFT COLUMN -->
+    <div>
+
+      <!-- Score Cards -->
+      <div class="section">
+        <div class="section-title">EcoIQ Intelligence Dimensions</div>
+        <div class="score-cards">
+          {% for card in score_cards %}
+          <div class="score-card">
+            <div class="sc-icon">{{ card.icon }}</div>
+            <div class="sc-label">{{ card.label }}</div>
+            <div class="sc-val">{{ card.score|floatformat:0 }}</div>
+            <div class="sc-bar-bg"><div class="sc-bar" style="width:{{ card.score }}%"></div></div>
+            <div class="sc-desc">{{ card.desc }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- AI Overview -->
+      {% if country.ai_overview %}
+      <div class="section">
+        <div class="section-title">Country Overview</div>
+        <p class="ai-text">{{ country.ai_overview }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Transition Narrative -->
+      {% if country.ai_transition_narrative %}
+      <div class="section">
+        <div class="section-title">Transition Narrative</div>
+        <p class="ai-text">{{ country.ai_transition_narrative }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Risk Summary -->
+      {% if country.ai_risk_summary %}
+      <div class="section">
+        <div class="section-title">⚠ Risk Summary</div>
+        <p class="ai-text">{{ country.ai_risk_summary }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Investment Thesis -->
+      {% if country.ai_investment_thesis %}
+      <div class="section">
+        <div class="section-title">💰 Investment Thesis</div>
+        <p class="ai-text">{{ country.ai_investment_thesis }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Companies -->
+      {% if companies %}
+      <div class="section">
+        <div class="section-title">EcoIQ-Tracked Companies</div>
+        <table class="co-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Sector</th>
+              <th>EcoIQ</th>
+              <th>Moral Label</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in companies %}
+            <tr>
+              <td><a href="{% url 'companies:detail' p.company.slug %}">{{ p.company.name }}</a></td>
+              <td style="color:var(--muted)">{{ p.company.sector }}</td>
+              <td class="co-score">{{ p.ecoiq_total_score|floatformat:1 }}</td>
+              <td style="color:{{ p.moral_label_color }};font-size:.78rem">{{ p.moral_label_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p style="margin-top:.8rem"><a href="/companies/?country={{ country.name }}" style="color:var(--info);font-size:.8rem">View all {{ country.name }} companies →</a></p>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+
+      <!-- Industrial Sectors -->
+      {% if country.industrial_sectors %}
+      <div class="section">
+        <div class="section-title">Industrial Sectors</div>
+        {% for s in country.industrial_sectors %}
+        <div class="sector-row">
+          <div class="poll-dot
+            {% if s.pollution_level == 'low' %}poll-low
+            {% elif s.pollution_level == 'medium' %}poll-medium
+            {% elif s.pollution_level == 'high' %}poll-high
+            {% else %}poll-severe{% endif %}">
+          </div>
+          <span class="sector-name">{{ s.name }}</span>
+          <span class="sector-score">{{ s.ecoiq_score }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Pollution Hotspots -->
+      {% if country.pollution_hotspots %}
+      <div class="section">
+        <div class="section-title">⚠ Pollution Hotspots</div>
+        {% for h in country.pollution_hotspots %}
+        <div class="hotspot {% if h.severity == 'severe' %}severe{% endif %}">
+          <div class="hs-name">{{ h.name }}</div>
+          <div class="hs-desc">{{ h.description }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Financing Gaps -->
+      {% if country.financing_gaps %}
+      <div class="section">
+        <div class="section-title">💰 Financing Gaps</div>
+        {% for g in country.financing_gaps %}
+        <div class="gap-item">
+          <div class="gap-sector">{{ g.sector }}</div>
+          {% if g.gap_usd %}
+          <div class="gap-amount">Gap: ${{ g.gap_usd|floatformat:0 }}</div>
+          {% endif %}
+          <div class="gap-opp">{{ g.opportunity }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Policy Highlights -->
+      {% if country.policy_highlights %}
+      <div class="section">
+        <div class="section-title">Policy Highlights</div>
+        {% for p in country.policy_highlights %}
+        <div class="policy-item">
+          <div class="policy-title">{{ p.title }}</div>
+          <div class="policy-desc">{{ p.description }}</div>
+          <div class="policy-meta">
+            <span class="policy-year">{{ p.year }}</span>
+            {% if p.status %} · <span class="policy-status">{{ p.status }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <div class="ai-disclaimer">
+    EcoIQ Country Intelligence is AI-generated based on publicly available data. It has not been independently verified.
+    All scores are indicative and designed to support dialogue on industrial transition and ethical investment.
+    Not to be used as sole basis for investment decisions.
+  </div>
+
+</main>
+
+<footer>
+  <a href="/countries/">← All Countries</a> &nbsp;·&nbsp;
+  <a href="/companies/">Companies</a> &nbsp;·&nbsp;
+  <a href="/league/">EcoIQ League</a>
+</footer>
+
+</body>
+</html>
