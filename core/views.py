@@ -127,7 +127,42 @@ CTA_TRUST_SIGNALS = [
 
 def landing(request):
     from django.conf import settings as _s
+
+    # Live platform data for homepage
+    top_companies = []
+    company_count = 0
+    country_count = 0
+    try:
+        from companies.models import CompanyProfile
+        from countries.models import CountryProfile
+        top_companies = list(
+            CompanyProfile.objects
+            .filter(status__in=('public', 'verified'))
+            .select_related('company')
+            .order_by('-ecoiq_total_score')[:8]
+        )
+        company_count = CompanyProfile.objects.filter(status__in=('public', 'verified')).count()
+        country_count = CountryProfile.objects.filter(is_published=True).count()
+    except Exception:
+        pass  # DB may not be ready (first migration)
+
+    pillars_meta = [
+        {'icon': '🌍', 'label': 'Public Benefit',              'desc': 'Employment quality, regional development, community investment, national value', 'weight': '25%'},
+        {'icon': '♻️', 'label': 'Environmental Stewardship',   'desc': 'Pollution intensity, waste management, water stewardship, biodiversity',          'weight': '25%'},
+        {'icon': '⚡', 'label': 'Responsible Modernization',   'desc': 'Energy transition, digitalization, infrastructure upgrades, future readiness',     'weight': '20%'},
+        {'icon': '🔍', 'label': 'Transparent Governance',      'desc': 'Reporting quality, audit standards, procurement transparency',                    'weight': '15%'},
+        {'icon': '⚖️', 'label': 'Anti-Corruption',            'desc': 'Governance integrity, ethical procurement, institutional accountability',           'weight': '10%'},
+        {'icon': '✦',  'label': 'Ethical Alignment',           'desc': 'Long-term value creation, controversy management, stakeholder trust',              'weight': '5%'},
+    ]
+
     return render(request, 'landing.html', {
+        # Live data
+        'top_companies':  top_companies,
+        'company_count':  company_count or 38,
+        'country_count':  country_count or 11,
+        'pillars_meta':   pillars_meta,
+        'audience_labels': ['Investors', 'Governments', 'Companies', 'Climate Programmes', 'Development Banks'],
+        # Legacy context kept for any remaining partial usage
         'industries':              INDUSTRIES,
         'cta_sectors':             CTA_SECTORS,
         'capability_chips':        CAPABILITY_CHIPS,

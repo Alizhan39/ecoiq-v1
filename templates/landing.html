@@ -1,370 +1,565 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="EcoIQ is a pilot-ready AI platform delivering operational diagnostics, sustainability analysis, and modernization intelligence for industrial facilities." />
-  <meta name="keywords" content="industrial AI, ESG analytics, operational diagnostics, industrial modernization, sustainability intelligence, energy efficiency, pilot platform" />
-
-  <!-- Open Graph -->
-  <meta property="og:title"       content="EcoIQ — Ethical Intelligence for Industrial Modernization" />
-  <meta property="og:description" content="AI-assisted operational diagnostics, sustainability scoring, and modernization roadmaps for heavy industry. Pilot-ready." />
+  <meta name="description" content="EcoIQ is an AI climate intelligence platform that ranks companies by climate score, surfaces transition risks, and generates evidence-based action roadmaps for investors, governments, and climate programmes." />
+  <meta property="og:title"       content="EcoIQ — AI Climate Intelligence Platform" />
+  <meta property="og:description" content="Company climate rankings, transition risk signals, and AI-generated action roadmaps. Built for investors, governments, and the net-zero economy." />
   <meta property="og:type"        content="website" />
   <meta property="og:url"         content="{{ site_url }}/" />
-  <meta property="og:image"       content="{{ site_url }}/static/img/og-card.svg" />
-  <meta property="og:image:width"  content="1200" />
-  <meta property="og:image:height" content="630" />
   <meta property="og:site_name"   content="EcoIQ" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:title"       content="EcoIQ — Industrial Modernization Intelligence" />
-  <meta name="twitter:description" content="AI diagnostics. ESG scoring. Operational roadmaps. Pilot-ready industrial intelligence platform." />
-  <meta name="twitter:image"       content="{{ site_url }}/static/img/og-card.svg" />
-
-  <title>EcoIQ — Ethical Intelligence for Industrial Modernization</title>
+  <meta name="twitter:card"       content="summary_large_image" />
+  <title>EcoIQ — AI Climate Intelligence Platform</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            mono: ['"JetBrains Mono"', '"Fira Code"', 'ui-monospace', 'monospace'],
-          },
-        }
-      }
+      theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] } } }
     }
   </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <style>
-    /* ── Reset ────────────────────────────────────── */
+    :root {
+      --bg:    #06080e;
+      --bg2:   #0d1117;
+      --bg3:   #161b22;
+      --acc:   #00e89a;
+      --warn:  #f4a261;
+      --danger:#e63946;
+      --info:  #58a6ff;
+    }
     *, *::before, *::after { box-sizing: border-box; }
-    html { color-scheme: dark; }
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    body { background: var(--bg); color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #06080e; }
     ::-webkit-scrollbar-thumb { background: #1c2333; border-radius: 99px; }
 
-    /* ── Grid overlay ─────────────────────────────── */
+    /* Glassmorphism */
+    .glass { background: rgba(255,255,255,.032); border: 1px solid rgba(255,255,255,.07); backdrop-filter: blur(14px); }
+
+    /* Grid background */
     .grid-bg {
       background-image:
-        linear-gradient(rgba(16, 185, 129, .02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(16, 185, 129, .02) 1px, transparent 1px);
-      background-size: 64px 64px;
+        linear-gradient(rgba(0,232,154,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,232,154,.018) 1px, transparent 1px);
+      background-size: 56px 56px;
     }
 
-    /* ── Glassmorphism ────────────────────────────── */
-    .glass {
-      background: rgba(255, 255, 255, .032);
-      border: 1px solid rgba(255, 255, 255, .065);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-    }
-    .glass-lift {
-      transition: background .2s ease, border-color .2s ease, transform .2s ease, box-shadow .2s ease;
-    }
-    .glass-lift:hover {
-      background: rgba(16, 185, 129, .045);
-      border-color: rgba(16, 185, 129, .2);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 40px rgba(16, 185, 129, .08);
-    }
+    /* Glow */
+    .glow-acc { box-shadow: 0 0 22px rgba(0,232,154,.3), 0 0 50px rgba(0,232,154,.1); }
+    .glow-acc:hover { box-shadow: 0 0 30px rgba(0,232,154,.45), 0 0 70px rgba(0,232,154,.15); }
 
-    /* ── Ambient orbs ─────────────────────────────── */
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      filter: blur(100px);
-    }
+    /* Ambient orb */
+    .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(90px); }
 
-    /* ── Emerald glow on button ───────────────────── */
-    .glow-emerald {
-      box-shadow: 0 0 24px rgba(16, 185, 129, .3), 0 0 56px rgba(16, 185, 129, .1);
-      transition: box-shadow .2s ease, background .2s ease;
-    }
-    .glow-emerald:hover {
-      box-shadow: 0 0 32px rgba(16, 185, 129, .45), 0 0 80px rgba(16, 185, 129, .15);
-    }
+    /* Score ring colours */
+    .score-hi  { color: var(--acc); }
+    .score-mid { color: var(--info); }
+    .score-lo  { color: var(--warn); }
+    .score-bad { color: var(--danger); }
 
-    /* ── Eyebrow label ────────────────────────────── */
-    .eyebrow {
-      display: inline-block;
-      font-size: .67rem;
-      font-weight: 700;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      color: #10b981;
-    }
+    /* Card hover */
+    .card-hover { transition: border-color .2s, transform .2s, box-shadow .2s; }
+    .card-hover:hover { border-color: rgba(0,232,154,.25) !important; transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,.4); }
 
-    /* ── Gradient headline ────────────────────────── */
-    .gradient-word {
-      background: linear-gradient(105deg, #10b981 0%, #34d399 45%, #fff 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* ── Severity badges ──────────────────────────── */
-    .sev-critical {
-      background: rgba(239, 68, 68, .1);
-      color: #fca5a5;
-      border: 1px solid rgba(239, 68, 68, .25);
-    }
-    .sev-high {
-      background: rgba(245, 158, 11, .1);
-      color: #fde68a;
-      border: 1px solid rgba(245, 158, 11, .25);
-    }
-
-    /* ── Terminal cursor blink ────────────────────── */
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-    .cursor { animation: blink 1.1s step-end infinite; }
-
-    /* ── Progress bar ─────────────────────────────── */
-    .bar-fill {
-      height: 100%;
-      border-radius: 99px;
-      background: linear-gradient(90deg, #10b981, #34d399);
-      width: 0;
-      transition: width 1.5s cubic-bezier(.4, 0, .2, 1);
-    }
-
-    /* ── Scroll reveal ────────────────────────────── */
-    .reveal {
-      opacity: 0;
-      transform: translateY(22px);
-      transition: opacity .6s ease, transform .6s ease;
-    }
+    /* Reveal animation */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .55s ease, transform .55s ease; }
     .reveal.in { opacity: 1; transform: none; }
+
+    /* Moral label colours */
+    .lbl-regenerative { background: rgba(0,232,154,.1); color: var(--acc); border: 1px solid rgba(0,232,154,.25); }
+    .lbl-responsible   { background: rgba(88,166,255,.1); color: var(--info); border: 1px solid rgba(88,166,255,.25); }
+    .lbl-benefit       { background: rgba(168,85,247,.1); color: #a855f7; border: 1px solid rgba(168,85,247,.25); }
+    .lbl-transitional  { background: rgba(244,162,97,.1); color: var(--warn); border: 1px solid rgba(244,162,97,.25); }
+    .lbl-profit        { background: rgba(230,57,70,.1); color: var(--danger); border: 1px solid rgba(230,57,70,.25); }
+    .lbl-extractive    { background: rgba(185,28,28,.12); color: #f97316; border: 1px solid rgba(185,28,28,.3); }
+
+    /* Section chip */
+    .chip { display: inline-flex; align-items: center; gap: .4rem; background: rgba(0,232,154,.07); border: 1px solid rgba(0,232,154,.2); color: var(--acc); font-size: .68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: .28rem .75rem; border-radius: 20px; }
+
+    @media (max-width: 640px) { .hide-sm { display: none !important; } }
   </style>
 </head>
 
-<body class="bg-[#06080e] text-slate-200 font-sans antialiased overflow-x-hidden">
+<body>
 
-  <!-- ══════════════════════════════════════════════
-       NAV
-  ══════════════════════════════════════════════ -->
-  <header class="fixed top-0 inset-x-0 z-50"
-          style="background: rgba(6,8,14,.88); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,.05);">
-    <div class="max-w-6xl mx-auto px-5 sm:px-8 h-[62px] flex items-center justify-between gap-6">
+<!-- ═══════════════════════════════════ NAV ═══════════════════════════════════ -->
+<header style="position:sticky;top:0;z-index:100;background:rgba(6,8,14,.92);border-bottom:1px solid rgba(255,255,255,.05);backdrop-filter:blur(18px);">
+  <div style="max-width:1120px;margin:0 auto;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;">
 
-      <!-- Logo -->
-      <a href="/" class="flex items-center gap-2.5 shrink-0 group">
-        <div class="w-[30px] h-[30px] rounded-[7px] bg-emerald-500 flex items-center justify-center
-                    transition-all duration-200 group-hover:shadow-[0_0_14px_rgba(16,185,129,.6)]">
-          <svg viewBox="0 0 20 20" fill="none" style="width:15px;height:15px;">
-            <path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/>
-            <circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/>
-          </svg>
-        </div>
-        <span class="font-black text-white tracking-tight" style="font-size:15px;">EcoIQ</span>
-      </a>
-
-      <!-- Desktop nav links -->
-      <nav class="hidden md:flex items-center gap-7">
-        <a href="#platform"     class="text-[13px] font-medium text-slate-400 hover:text-white transition-colors duration-150">Platform</a>
-        <a href="#how-it-works" class="text-[13px] font-medium text-slate-400 hover:text-white transition-colors duration-150">How It Works</a>
-        <a href="#findings"     class="text-[13px] font-medium text-slate-400 hover:text-white transition-colors duration-150">AI Findings</a>
-      </nav>
-
-      <!-- Right -->
-      <div class="flex items-center gap-3">
-        <a href="/league/" class="hidden sm:block text-[13px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">
-          🏆 League
-        </a>
-        <a href="/audit/" class="hidden sm:block text-[13px] font-medium text-slate-500 hover:text-slate-300 transition-colors">
-          Dashboard
-        </a>
-        <a href="/request-access/"
-           class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-[13px] px-4 py-2 rounded-lg glow-emerald transition-colors">
-          Request Access
-        </a>
-        <!-- Mobile hamburger -->
-        <button id="burger" class="md:hidden p-1.5 rounded-lg hover:bg-white/5 transition" aria-label="Menu">
-          <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
+    <!-- Brand -->
+    <a href="/" style="display:flex;align-items:center;gap:.6rem;text-decoration:none;flex-shrink:0;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 20 20" fill="none" style="width:13px;height:13px;">
+          <path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/>
+          <circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/>
+        </svg>
       </div>
-    </div>
+      <span style="font-weight:800;color:#fff;font-size:.95rem;letter-spacing:.3px;">EcoIQ</span>
+    </a>
 
-    <!-- Mobile drawer -->
-    <div id="mobile-nav" class="hidden md:hidden border-t border-white/5 px-5 py-4 space-y-1">
-      <a href="#platform"     class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">Platform</a>
-      <a href="#how-it-works" class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">How It Works</a>
-      <a href="#findings"     class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">AI Findings</a>
-      <a href="/audit/"       class="block py-2 text-[13px] text-slate-400 hover:text-white transition-colors">Dashboard</a>
-    </div>
-  </header>
+    <!-- Desktop nav -->
+    <nav style="display:flex;align-items:center;gap:1.6rem;" class="hide-sm">
+      <a href="/companies/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Rankings</a>
+      <a href="/countries/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Countries</a>
+      <a href="/intelligence/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Intelligence</a>
+      <a href="/league/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">League</a>
+    </nav>
 
-  <!-- ══════════════════════════════════════════════
-       SECTIONS
-  ══════════════════════════════════════════════ -->
-  {% include "partials/_hero.html" %}
-  {% include "partials/_proof_band.html" %}
-  {% include "partials/_how_it_works.html" %}
-  {% include "partials/_findings.html" %}
-  {% include "partials/_industries.html" %}
-  {% include "partials/_design_partner.html" %}
-  {% include "partials/_cta.html" %}
-
-  <!-- ══════════════════════════════════════════════
-       GOOD DEEDS LEAGUE TEASER
-  ══════════════════════════════════════════════ -->
-  <div style="background:linear-gradient(135deg,#0d2017 0%,#1b4332 60%,#2d6a4f 100%); padding:4rem 1.5rem; text-align:center;">
-    <div style="max-width:680px; margin:0 auto;">
-      <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(0,200,150,.12); border:1px solid rgba(0,200,150,.25); border-radius:20px; padding:0.3rem 0.9rem; font-size:0.75rem; font-weight:700; color:#00e89a; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:1.25rem;">
-        🏆 New
-      </div>
-      <h2 style="font-family:'Inter',sans-serif; font-size:clamp(1.6rem,3vw,2.2rem); font-weight:800; color:#fff; letter-spacing:-0.03em; margin-bottom:0.75rem;">
-        EcoIQ Good Deeds League
-      </h2>
-      <p style="color:rgba(255,255,255,.65); font-size:0.95rem; line-height:1.7; margin-bottom:2rem;">
-        Real environmental intelligence — companies ranked by measurable impact, not greenwashing promises.
-        Every score built from audited projects and verified evidence.
-      </p>
-      <div style="display:flex; justify-content:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:2.5rem;">
-        <div style="text-align:center;">
-          <div style="font-size:1.8rem; font-weight:900; color:#00e89a; letter-spacing:-0.05em;">4</div>
-          <div style="font-size:0.7rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:0.06em;">Companies</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:1.8rem; font-weight:900; color:#00e89a; letter-spacing:-0.05em;">2.3M t</div>
-          <div style="font-size:0.7rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:0.06em;">CO₂ Reduced</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:1.8rem; font-weight:900; color:#00e89a; letter-spacing:-0.05em;">$3B+</div>
-          <div style="font-size:0.7rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:0.06em;">Invested</div>
-        </div>
-      </div>
-      <a href="/league/" style="display:inline-block; background:#00c896; color:#0d2017; font-weight:800; font-size:0.95rem; padding:0.85rem 2rem; border-radius:10px; text-decoration:none; letter-spacing:-0.01em; transition:background 0.15s;">
+    <!-- CTA -->
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <a href="mailto:hello@ecoiq.uk" class="hide-sm" style="font-size:.83rem;color:#64748b;text-decoration:none;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#64748b'">Contact</a>
+      <a href="/companies/" style="background:var(--acc);color:#000;font-weight:700;font-size:.83rem;padding:.45rem 1rem;border-radius:7px;text-decoration:none;white-space:nowrap;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
         View Rankings →
       </a>
     </div>
   </div>
+</header>
 
-  <!-- ══════════════════════════════════════════════
-       FOOTER
-  ══════════════════════════════════════════════ -->
-  <footer class="border-t border-white/[.045] pt-12 pb-8">
-    <div class="max-w-6xl mx-auto px-5 sm:px-8">
 
-      <!-- Footer top row -->
-      <div class="grid sm:grid-cols-3 gap-8 mb-10">
+<!-- ═══════════════════════════════════ HERO ══════════════════════════════════ -->
+<section class="grid-bg" style="position:relative;overflow:hidden;padding:5rem 1.5rem 4rem;">
 
-        <!-- Brand -->
-        <div>
-          <div class="flex items-center gap-2.5 mb-4">
-            <div class="w-[28px] h-[28px] rounded-[6px] bg-emerald-500 flex items-center justify-center">
-              <svg viewBox="0 0 20 20" fill="none" style="width:13px;height:13px;">
-                <path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/>
-                <circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/>
-              </svg>
-            </div>
-            <span class="font-black text-white" style="font-size:14px;">EcoIQ</span>
-          </div>
-          <p class="text-slate-600 text-[12px] leading-[1.7]">
-            AI-assisted operational diagnostics and sustainability intelligence for industrial facilities.
-            Pilot-ready platform, built for heavy industry.
-          </p>
-        </div>
+  <!-- Ambient orbs -->
+  <div class="orb" style="width:600px;height:600px;background:rgba(0,232,154,1);opacity:.04;top:-150px;right:-100px;"></div>
+  <div class="orb" style="width:400px;height:400px;background:rgba(88,166,255,1);opacity:.03;bottom:0;left:-80px;"></div>
 
-        <!-- Platform links -->
-        <div>
-          <div class="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Platform</div>
-          <div class="space-y-2 text-[12px] text-slate-500">
-            <a href="/request-access/" class="block hover:text-slate-300 transition-colors">Request Pilot Access</a>
-            <a href="/esg/"            class="block hover:text-slate-300 transition-colors">ESG Assessment</a>
-            <a href="/audit/"          class="block hover:text-slate-300 transition-colors">Industrial Audit</a>
-            <a href="/admin/"          class="block hover:text-slate-300 transition-colors">Admin Portal</a>
-          </div>
-        </div>
+  <div style="max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:3rem;align-items:center;position:relative;">
 
-        <!-- Contact -->
-        <div>
-          <div class="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Contact</div>
-          <div class="space-y-2 text-[12px] text-slate-500">
-            <a href="mailto:hello@ecoiq.uk" class="block hover:text-slate-300 transition-colors">hello@ecoiq.uk</a>
-            <span class="block">Design Partner enquiries welcome</span>
-          </div>
-        </div>
+    <!-- LEFT: copy -->
+    <div class="reveal">
+      <div class="chip" style="margin-bottom:1.2rem;">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s ease-in-out infinite;"></span>
+        AI Climate Intelligence Platform
       </div>
 
-      <!-- Divider -->
-      <div class="border-t border-white/[.04] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <span class="text-slate-700 text-[11px]">© {% now "Y" %} EcoIQ · All rights reserved</span>
-        <p class="text-slate-700 text-[11px] text-center sm:text-right max-w-md leading-[1.6]">
-          All financial projections and KPI estimates produced by EcoIQ are AI-assisted and illustrative.
-          Not investment advice. Figures should be validated by qualified engineers before capital commitment.
-        </p>
+      <h1 style="font-size:clamp(2.2rem,4.5vw,3.4rem);font-weight:900;line-height:1.08;letter-spacing:-.03em;color:#fff;margin-bottom:1.1rem;">
+        Climate scores.<br>
+        Transition signals.<br>
+        <span style="background:linear-gradient(105deg,#00e89a,#34d399 45%,#fff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+          Action roadmaps.
+        </span>
+      </h1>
+
+      <p style="font-size:1.05rem;color:#94a3b8;line-height:1.75;max-width:520px;margin-bottom:1.8rem;">
+        EcoIQ turns public reports and evidence into climate intelligence —
+        ranking companies by their real transition readiness, surfacing hidden
+        risks, and generating credible action roadmaps for the net-zero economy.
+      </p>
+
+      <!-- Audience tags -->
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:2rem;">
+        {% for label in audience_labels %}
+        <span style="font-size:.76rem;font-weight:500;color:#64748b;padding:.3rem .7rem;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);">{{ label }}</span>
+        {% endfor %}
+      </div>
+
+      <!-- CTAs -->
+      <div style="display:flex;gap:.9rem;flex-wrap:wrap;margin-bottom:2rem;">
+        <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.95rem;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;" class="glow-acc">
+          Explore Rankings
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="/countries/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:var(--info);font-weight:600;font-size:.95rem;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;">
+          Country Intelligence
+        </a>
+      </div>
+
+      <!-- Proof stats -->
+      <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:1.5rem;font-weight:900;color:var(--acc);line-height:1;">{{ company_count }}</div>
+          <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Companies Ranked</div>
+        </div>
+        <div>
+          <div style="font-size:1.5rem;font-weight:900;color:var(--info);line-height:1;">{{ country_count }}</div>
+          <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Countries Covered</div>
+        </div>
+        <div>
+          <div style="font-size:1.5rem;font-weight:900;color:#a855f7;line-height:1;">6</div>
+          <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Scoring Pillars</div>
+        </div>
+        <div>
+          <div style="font-size:1.5rem;font-weight:900;color:#f4a261;line-height:1;">AI</div>
+          <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Evidence-Based</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: live mini-rankings widget -->
+    <div class="reveal hide-sm" style="transition-delay:.15s;">
+      <div style="background:var(--bg2);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.5);">
+
+        <!-- Widget header -->
+        <div style="padding:.8rem 1rem;background:rgba(0,232,154,.05);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:1px;text-transform:uppercase;">Top Ranked Companies</span>
+          <a href="/companies/" style="font-size:.72rem;color:#475569;text-decoration:none;">View all →</a>
+        </div>
+
+        <!-- Company rows -->
+        {% if top_companies %}
+        {% for p in top_companies %}
+        <a href="{% url 'companies:detail' p.company.slug %}" style="display:flex;align-items:center;gap:.85rem;padding:.8rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-decoration:none;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='transparent'">
+          <!-- Rank -->
+          <div style="font-size:.72rem;font-weight:700;color:#334155;min-width:18px;text-align:center;">{{ forloop.counter }}</div>
+          <!-- Score ring -->
+          <div style="width:38px;height:38px;border-radius:50%;border:2px solid {{ p.moral_label_color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,.3);">
+            <span style="font-size:.68rem;font-weight:800;color:{{ p.moral_label_color }};">{{ p.ecoiq_total_score|floatformat:0 }}</span>
+          </div>
+          <!-- Company info -->
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.83rem;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.company.name }}</div>
+            <div style="font-size:.72rem;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.company.sector }} · {{ p.company.country }}</div>
+          </div>
+          <!-- Label badge -->
+          <div style="font-size:.6rem;font-weight:700;padding:.2rem .45rem;border-radius:5px;white-space:nowrap;
+            {% if p.moral_label == 'regenerative_leader' %}background:rgba(0,232,154,.12);color:var(--acc);border:1px solid rgba(0,232,154,.25);
+            {% elif p.moral_label == 'responsible_builder' %}background:rgba(88,166,255,.1);color:var(--info);border:1px solid rgba(88,166,255,.22);
+            {% elif p.moral_label == 'public_benefit_oriented' %}background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.22);
+            {% elif p.moral_label == 'transitional_company' %}background:rgba(244,162,97,.1);color:var(--warn);border:1px solid rgba(244,162,97,.22);
+            {% else %}background:rgba(230,57,70,.1);color:var(--danger);border:1px solid rgba(230,57,70,.22);{% endif %}
+            ">
+            {% if p.moral_label == 'regenerative_leader' %}Regenerative
+            {% elif p.moral_label == 'responsible_builder' %}Responsible
+            {% elif p.moral_label == 'public_benefit_oriented' %}Public Benefit
+            {% elif p.moral_label == 'transitional_company' %}Transitional
+            {% else %}{{ p.moral_label_display|truncatechars:12 }}{% endif %}
+          </div>
+        </a>
+        {% endfor %}
+        {% else %}
+        <div style="padding:2rem;text-align:center;color:#475569;font-size:.85rem;">
+          Rankings loading…
+        </div>
+        {% endif %}
+
+        <div style="padding:.7rem 1rem;background:rgba(0,232,154,.03);">
+          <a href="/companies/" style="font-size:.78rem;font-weight:600;color:var(--acc);text-decoration:none;">View full rankings with filters →</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════ BAND ════════════════════════════════════ -->
+<div style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.015);padding:.85rem 1.5rem;">
+  <div style="max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap;">
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:.8px;text-transform:uppercase;">{{ company_count }} Companies</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Globally tracked &amp; scored</div>
+    </div>
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--info);letter-spacing:.8px;text-transform:uppercase;">{{ country_count }} Countries</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">National intelligence profiles</div>
+    </div>
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:#a855f7;letter-spacing:.8px;text-transform:uppercase;">6-Pillar Methodology</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Public Benefit · Environment · Modernization + more</div>
+    </div>
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--warn);letter-spacing:.8px;text-transform:uppercase;">AI + Evidence</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Public reports, filings &amp; disclosures</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════ HOW IT WORKS ═══════════════════════════ -->
+<section style="padding:5rem 1.5rem;">
+  <div style="max-width:1120px;margin:0 auto;">
+
+    <div style="text-align:center;margin-bottom:3rem;" class="reveal">
+      <div class="chip" style="margin-bottom:.9rem;">Methodology</div>
+      <h2 style="font-size:clamp(1.7rem,3vw,2.3rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem;">
+        From public evidence to climate intelligence
+      </h2>
+      <p style="color:#64748b;font-size:.95rem;max-width:520px;margin:0 auto;line-height:1.7;">
+        EcoIQ reads annual reports, sustainability disclosures, and regulatory filings —
+        then applies a consistent 6-pillar framework to score and rank every company.
+      </p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;">
+
+      <!-- Step 1 -->
+      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.0s;">
+        <div style="font-size:1.6rem;margin-bottom:.75rem;">📄</div>
+        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 1</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Evidence Ingestion</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Annual reports, sustainability filings, regulatory disclosures, and public databases are ingested and indexed for each company.</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.08s;">
+        <div style="font-size:1.6rem;margin-bottom:.75rem;">🧠</div>
+        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 2</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">AI Analysis</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Claude AI analyses each evidence source across six pillars — assigning scores, identifying risks, and flagging hidden harm signals.</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.16s;">
+        <div style="font-size:1.6rem;margin-bottom:.75rem;">📊</div>
+        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 3</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Climate Score</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">A composite EcoIQ score (0–100) is calculated with weighted pillars and a harm penalty for pollution, controversy, and governance failures.</p>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.24s;">
+        <div style="font-size:1.6rem;margin-bottom:.75rem;">🗺</div>
+        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 4</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Action Roadmap</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Each company profile includes a personalised path-to-100 roadmap with financing options, modernisation priorities, and transition milestones.</p>
       </div>
 
     </div>
-  </footer>
+  </div>
+</section>
 
-  <!-- ══════════════════════════════════════════════
-       JAVASCRIPT
-  ══════════════════════════════════════════════ -->
-  <script>
-  (function () {
-    'use strict';
 
-    /* ── Mobile nav ─────────────────────────────── */
-    var burger = document.getElementById('burger');
-    var mobileNav = document.getElementById('mobile-nav');
-    burger.addEventListener('click', function () { mobileNav.classList.toggle('hidden'); });
-    mobileNav.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', function () { mobileNav.classList.add('hidden'); });
-    });
+<!-- ════════════════════════════════ WHO IT'S FOR ════════════════════════════ -->
+<section style="padding:4rem 1.5rem 5rem;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);">
+  <div style="max-width:1120px;margin:0 auto;">
 
-    /* ── Smooth scroll for anchor links ─────────── */
-    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
-      a.addEventListener('click', function (e) {
-        var target = document.getElementById(a.getAttribute('href').slice(1));
-        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-      });
-    });
+    <div style="text-align:center;margin-bottom:3rem;" class="reveal">
+      <div class="chip" style="margin-bottom:.9rem;">For Whom</div>
+      <h2 style="font-size:clamp(1.7rem,3vw,2.3rem);font-weight:800;color:#fff;letter-spacing:-.03em;">
+        Intelligence for every part of the transition
+      </h2>
+    </div>
 
-    /* ── IntersectionObserver helper ────────────── */
-    function onVisible(selector, callback, options) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) { callback(entry.target); io.unobserve(entry.target); }
-        });
-      }, options || { threshold: 0.12 });
-      document.querySelectorAll(selector).forEach(function (el) { io.observe(el); });
-    }
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.1rem;">
 
-    /* ── Scroll-reveal ───────────────────────────── */
-    onVisible('.reveal', function (el) { el.classList.add('in'); });
+      <!-- Investors -->
+      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;">
+        <div style="width:40px;height:40px;border-radius:9px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">💼</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Investors &amp; Fund Managers</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Screen portfolios for climate transition risk. Identify companies with high EcoIQ scores for ESG-aligned allocations. Assess financing eligibility across Green Bond, ESG, and IFC frameworks.</p>
+        <a href="/companies/" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:var(--acc);text-decoration:none;">View Rankings →</a>
+      </div>
 
-    /* ── Animated counters ───────────────────────── */
-    onVisible('[data-count]', function (el) {
-      var end    = parseInt(el.dataset.count, 10);
-      var suffix = el.dataset.suffix || '';
-      var dur    = 1400;
-      var start  = null;
-      (function tick(ts) {
-        if (!start) start = ts;
-        var p = Math.min((ts - start) / dur, 1);
-        el.textContent = Math.round(p * p * end) + suffix;   /* ease-in quad */
-        if (p < 1) requestAnimationFrame(tick);
-        else el.textContent = end + suffix;
-      })(performance.now());
-    });
+      <!-- Governments -->
+      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;transition-delay:.06s;">
+        <div style="width:40px;height:40px;border-radius:9px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">🏛</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Governments &amp; Regulators</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Benchmark industrial sectors against international climate standards. Understand national transition readiness. Identify pollution hotspots, financing gaps, and policy priorities at country level.</p>
+        <a href="/countries/" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:var(--info);text-decoration:none;">Country Intelligence →</a>
+      </div>
 
-    /* ── Progress bars ───────────────────────────── */
-    onVisible('.bar-fill', function (el) {
-      setTimeout(function () { el.style.width = el.dataset.w || '0%'; }, 60);
-    });
+      <!-- Companies -->
+      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;transition-delay:.12s;">
+        <div style="width:40px;height:40px;border-radius:9px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">🏭</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Companies &amp; Operators</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Understand your EcoIQ climate position relative to peers. Access a clear path-to-100 improvement roadmap. Demonstrate transparency to investors, lenders, and regulators.</p>
+        <a href="mailto:hello@ecoiq.uk?subject=Company%20Intelligence%20Request" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:#a855f7;text-decoration:none;">Request Profile →</a>
+      </div>
 
-  }());
-  </script>
+      <!-- Climate Programmes -->
+      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;transition-delay:.18s;">
+        <div style="width:40px;height:40px;border-radius:9px;background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">🌍</div>
+        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Climate &amp; Transition Programmes</div>
+        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Identify companies ready for transition finance, Just Transition support, and Green Bond issuance. EcoIQ provides indicative eligibility across IFC, EBRD, ADB, and GCF frameworks.</p>
+        <a href="/intelligence/" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:var(--warn);text-decoration:none;">Intelligence Hub →</a>
+      </div>
 
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════ RANKINGS PREVIEW ════════════════════════ -->
+{% if top_companies %}
+<section style="padding:5rem 1.5rem;">
+  <div style="max-width:1120px;margin:0 auto;">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;" class="reveal">
+      <div>
+        <div class="chip" style="margin-bottom:.8rem;">Live Rankings</div>
+        <h2 style="font-size:clamp(1.5rem,2.5vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;">Top-ranked companies by EcoIQ score</h2>
+      </div>
+      <a href="/companies/" style="font-size:.84rem;font-weight:600;color:var(--acc);text-decoration:none;white-space:nowrap;">View all {{ company_count }} companies →</a>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
+      {% for p in top_companies %}
+      <a href="{% url 'companies:detail' p.company.slug %}" class="card-hover reveal" style="display:block;text-decoration:none;background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.2rem;">
+
+        <!-- Header row -->
+        <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:.9rem;">
+          <!-- Score circle -->
+          <div style="width:48px;height:48px;border-radius:50%;border:2px solid {{ p.moral_label_color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,.4);">
+            <span style="font-size:.8rem;font-weight:800;color:{{ p.moral_label_color }};">{{ p.ecoiq_total_score|floatformat:0 }}</span>
+          </div>
+          <!-- Name + country -->
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.company.name }}</div>
+            <div style="font-size:.74rem;color:#475569;margin-top:.1rem;">{{ p.company.country }}</div>
+          </div>
+          <!-- Rank -->
+          <div style="font-size:.72rem;font-weight:700;color:#334155;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:.2rem .45rem;border-radius:5px;">#{{ forloop.counter }}</div>
+        </div>
+
+        <!-- Sector -->
+        <div style="font-size:.75rem;color:#475569;margin-bottom:.65rem;">
+          <span style="color:#64748b;font-weight:500;">{{ p.company.sector }}</span>
+        </div>
+
+        <!-- Moral label badge -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+          <span style="font-size:.68rem;font-weight:700;padding:.22rem .6rem;border-radius:6px;
+            {% if p.moral_label == 'regenerative_leader' %}background:rgba(0,232,154,.1);color:var(--acc);border:1px solid rgba(0,232,154,.2);
+            {% elif p.moral_label == 'responsible_builder' %}background:rgba(88,166,255,.1);color:var(--info);border:1px solid rgba(88,166,255,.2);
+            {% elif p.moral_label == 'public_benefit_oriented' %}background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.2);
+            {% elif p.moral_label == 'transitional_company' %}background:rgba(244,162,97,.1);color:var(--warn);border:1px solid rgba(244,162,97,.2);
+            {% elif p.moral_label == 'profit_first_operator' %}background:rgba(230,57,70,.1);color:var(--danger);border:1px solid rgba(230,57,70,.2);
+            {% else %}background:rgba(185,28,28,.12);color:#f97316;border:1px solid rgba(185,28,28,.25);{% endif %}
+            ">{{ p.moral_label_display }}</span>
+
+          <!-- Pollution signal -->
+          <span style="font-size:.67rem;color:#334155;">
+            {% if p.pollution_level == 'low' %}<span style="color:var(--acc);">● Low pollution</span>
+            {% elif p.pollution_level == 'medium' %}<span style="color:var(--warn);">● Med pollution</span>
+            {% elif p.pollution_level == 'high' %}<span style="color:var(--danger);">● High pollution</span>
+            {% else %}<span style="color:#b91c1c;">● Severe</span>{% endif %}
+          </span>
+        </div>
+
+        <!-- Score bar -->
+        <div style="margin-top:.85rem;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;">
+          <div style="height:3px;background:{{ p.moral_label_color }};border-radius:2px;width:{{ p.ecoiq_total_score }}%;"></div>
+        </div>
+
+      </a>
+      {% endfor %}
+    </div>
+
+    <div style="text-align:center;margin-top:2.5rem;">
+      <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.2);color:var(--acc);font-weight:600;font-size:.9rem;padding:.7rem 1.6rem;border-radius:8px;text-decoration:none;">
+        View full rankings with filters &amp; country intelligence →
+      </a>
+    </div>
+
+  </div>
+</section>
+{% endif %}
+
+
+<!-- ════════════════════════════════ METHODOLOGY ═════════════════════════════ -->
+<section style="padding:4rem 1.5rem;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);">
+  <div style="max-width:900px;margin:0 auto;">
+
+    <div style="text-align:center;margin-bottom:2.5rem;" class="reveal">
+      <div class="chip" style="margin-bottom:.9rem;">Scoring Framework</div>
+      <h2 style="font-size:clamp(1.5rem,2.5vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem;">The EcoIQ 6-Pillar Methodology</h2>
+      <p style="color:#64748b;font-size:.9rem;max-width:500px;margin:0 auto;line-height:1.7;">
+        Every company is scored across six dimensions. A harm penalty (up to –30 pts) is applied for severe pollution, governance failures, and profit extraction without proportionate public benefit.
+      </p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.9rem;">
+      {% for pillar in pillars_meta %}
+      <div class="reveal" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:1rem 1.1rem;display:flex;align-items:flex-start;gap:.75rem;">
+        <div style="font-size:1.2rem;flex-shrink:0;margin-top:.1rem;">{{ pillar.icon }}</div>
+        <div>
+          <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.2rem;">{{ pillar.label }}</div>
+          <div style="font-size:.72rem;color:#475569;line-height:1.55;">{{ pillar.desc }}</div>
+          <div style="font-size:.68rem;color:var(--acc);font-weight:700;margin-top:.3rem;">Weight: {{ pillar.weight }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════ CTA ════════════════════════════════════ -->
+<section style="padding:5rem 1.5rem;position:relative;overflow:hidden;">
+  <div class="orb" style="width:500px;height:500px;background:rgba(0,232,154,1);opacity:.04;top:-100px;left:50%;transform:translateX(-50%);"></div>
+  <div style="max-width:680px;margin:0 auto;text-align:center;position:relative;" class="reveal">
+    <div class="chip" style="margin-bottom:1rem;">Get Started</div>
+    <h2 style="font-size:clamp(1.7rem,3vw,2.4rem);font-weight:900;color:#fff;letter-spacing:-.03em;margin-bottom:.9rem;">
+      Ready to explore the intelligence?
+    </h2>
+    <p style="color:#64748b;font-size:.95rem;line-height:1.75;max-width:480px;margin:0 auto 2rem;">
+      Browse the live rankings, explore country intelligence, or get in touch
+      to discuss custom intelligence reports for your portfolio or programme.
+    </p>
+    <div style="display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap;">
+      <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.95rem;padding:.75rem 1.5rem;border-radius:8px;text-decoration:none;" class="glow-acc">
+        Explore Rankings →
+      </a>
+      <a href="mailto:hello@ecoiq.uk?subject=EcoIQ%20Intelligence%20Enquiry" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:600;font-size:.95rem;padding:.75rem 1.5rem;border-radius:8px;text-decoration:none;">
+        Contact Us
+      </a>
+    </div>
+    <p style="margin-top:1.5rem;font-size:.75rem;color:#334155;">
+      All scores are indicative and AI-assisted. Not investment advice.
+    </p>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════ FOOTER ═════════════════════════════════ -->
+<footer style="border-top:1px solid rgba(255,255,255,.05);padding:2.5rem 1.5rem 2rem;">
+  <div style="max-width:1120px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;margin-bottom:2rem;" class="hide-sm">
+
+      <div>
+        <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.9rem;">
+          <div style="width:24px;height:24px;border-radius:6px;background:var(--acc);display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 20 20" fill="none" style="width:11px;height:11px;"><path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/><circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/></svg>
+          </div>
+          <span style="font-weight:800;color:#fff;font-size:.9rem;">EcoIQ</span>
+        </div>
+        <p style="font-size:.78rem;color:#334155;line-height:1.65;">AI climate intelligence platform. Rankings, risk signals, and transition roadmaps for the net-zero economy.</p>
+      </div>
+
+      <div>
+        <div style="font-size:.68rem;color:#334155;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:.7rem;">Platform</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <a href="/companies/" style="font-size:.8rem;color:#475569;text-decoration:none;">Rankings</a>
+          <a href="/countries/" style="font-size:.8rem;color:#475569;text-decoration:none;">Country Intelligence</a>
+          <a href="/intelligence/" style="font-size:.8rem;color:#475569;text-decoration:none;">Intelligence Hub</a>
+          <a href="/league/" style="font-size:.8rem;color:#475569;text-decoration:none;">EcoIQ League</a>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:.68rem;color:#334155;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:.7rem;">Contact</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <a href="mailto:hello@ecoiq.uk" style="font-size:.8rem;color:#475569;text-decoration:none;">hello@ecoiq.uk</a>
+          <a href="/admin/" style="font-size:.8rem;color:#475569;text-decoration:none;">Admin Portal</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="border-top:1px solid rgba(255,255,255,.04);padding-top:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+      <span style="font-size:.72rem;color:#1e293b;">© {% now "Y" %} EcoIQ. All rights reserved.</span>
+      <span style="font-size:.72rem;color:#1e293b;text-align:right;">All scores are AI-assisted and indicative. Not investment advice.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Reveal on scroll
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+}());
+</script>
 </body>
 </html>

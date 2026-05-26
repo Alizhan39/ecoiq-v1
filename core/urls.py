@@ -1,9 +1,13 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 
 urlpatterns = [
     # Landing page — public homepage
     path('',                                        views.landing,           name='home'),
+
+    # /rankings/ → canonical company rankings (alias for /companies/)
+    path('rankings/', RedirectView.as_view(url='/companies/', permanent=False), name='rankings'),
 
     # ESG Assessment app
     path('esg/',                                    views.index,             name='index'),
