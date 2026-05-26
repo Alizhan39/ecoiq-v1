@@ -574,6 +574,18 @@ a{color:inherit;text-decoration:none}
         −{{ profile.harm_penalty|floatformat:1 }} harm penalty
       </div>
       {% endif %}
+      <!-- Transition readiness tier -->
+      <div style="margin-top:.5rem;text-align:center">
+        {% if profile.ecoiq_total_score >= 80 %}
+          <span style="font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:12px;background:rgba(0,232,154,.12);color:#00e89a;border:1px solid rgba(0,232,154,.2)">🌟 Climate Leader</span>
+        {% elif profile.ecoiq_total_score >= 65 %}
+          <span style="font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:12px;background:rgba(88,166,255,.12);color:#58a6ff;border:1px solid rgba(88,166,255,.2)">📈 On Track</span>
+        {% elif profile.high_transition_need %}
+          <span style="font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:12px;background:rgba(244,162,97,.12);color:#f4a261;border:1px solid rgba(244,162,97,.2)">⚡ Urgent Transition</span>
+        {% else %}
+          <span style="font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:12px;background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)">🔄 In Transition</span>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
@@ -582,13 +594,13 @@ a{color:inherit;text-decoration:none}
 <div class="intel-strip">
   <div class="intel-item">
     <div class="intel-dot" style="background:{% if profile.is_verified %}var(--accent){% else %}var(--warn){% endif %}"></div>
-    <span class="intel-label">Status</span>
-    <span class="intel-val">{% if profile.is_verified %}Verified{% else %}Unverified — AI Analysis{% endif %}</span>
+    <span class="intel-label">Profile</span>
+    <span class="intel-val">{% if profile.is_verified %}Verified{% else %}AI Analysis{% endif %}</span>
   </div>
   <span class="intel-sep">|</span>
   <div class="intel-item">
-    <span class="intel-label">Updated</span>
-    <span class="intel-val">{{ profile.updated_at|date:"N Y" }}</span>
+    <span class="intel-label">Climate Risk</span>
+    <span class="intel-val" style="color:{{ profile.pollution_color }}">{{ profile.get_pollution_level_display }} Pollution</span>
   </div>
   <span class="intel-sep">|</span>
   <div class="intel-item">
@@ -599,11 +611,18 @@ a{color:inherit;text-decoration:none}
   </div>
   <span class="intel-sep">|</span>
   <div class="intel-item">
+    <span class="intel-label">Modernization</span>
+    <span class="intel-val" style="color:{% if profile.modernization_score >= 70 %}var(--accent){% elif profile.modernization_score >= 50 %}var(--warn){% else %}var(--danger){% endif %}">
+      {{ profile.modernization_score|floatformat:0 }}/100
+    </span>
+  </div>
+  <span class="intel-sep">|</span>
+  <div class="intel-item">
     <span class="intel-label">Sector</span>
     <span class="intel-val">{{ company.get_sector_display }}</span>
   </div>
   <div class="intel-conf">
-    <span class="intel-label">Intelligence Quality</span>
+    <span class="intel-label">Data Quality</span>
     <div class="conf-bar-bg">
       <div class="conf-bar-fill" id="conf-bar" style="width:0%"></div>
     </div>

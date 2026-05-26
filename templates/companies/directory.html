@@ -357,26 +357,28 @@ a{color:inherit;text-decoration:none;}
           <div class="card-name">{{ co.name }}</div>
           <div class="card-meta">{{ co.get_sector_display }} · {{ co.country }}</div>
           <div class="card-badges">
-            <!-- Pollution badge -->
+            <!-- Transition readiness — primary climate signal -->
+            {% if profile.ecoiq_total_score >= 80 %}
+              <span class="badge badge-green">🌟 Climate Leader</span>
+            {% elif profile.ecoiq_total_score >= 65 %}
+              <span class="badge badge-blue">📈 On Track</span>
+            {% elif profile.high_transition_need %}
+              <span class="badge badge-orange">⚡ Urgent Transition</span>
+            {% else %}
+              <span class="badge badge-gray">🔄 In Transition</span>
+            {% endif %}
+            <!-- Pollution / climate risk -->
             {% if profile.pollution_level == 'low' %}
-              <span class="badge badge-green">Low Pollution</span>
+              <span class="badge badge-green">Low Risk</span>
             {% elif profile.pollution_level == 'medium' %}
-              <span class="badge badge-orange">Med Pollution</span>
+              <span class="badge badge-orange">Moderate Risk</span>
             {% elif profile.pollution_level == 'high' %}
-              <span class="badge badge-red">High Pollution</span>
+              <span class="badge badge-red">High Risk</span>
             {% elif profile.pollution_level == 'severe' %}
-              <span class="badge badge-red">⚠ Severe Pollution</span>
+              <span class="badge badge-red">⚠ Critical Risk</span>
             {% endif %}
-            <!-- Verified badge -->
-            {% if profile.is_verified %}
-              <span class="badge badge-green">✓ Verified</span>
-            {% endif %}
-            <!-- Funding badge -->
-            {% if profile.funding_status == 'seeking' %}
-              <span class="badge badge-blue">Seeking Capital</span>
-            {% elif profile.funding_status == 'funded' %}
-              <span class="badge badge-teal">Funded</span>
-            {% endif %}
+            <!-- Verified -->
+            {% if profile.is_verified %}<span class="badge badge-teal">✓ Verified</span>{% endif %}
           </div>
         </div>
       </div>
@@ -444,9 +446,10 @@ a{color:inherit;text-decoration:none;}
 
       <!-- Card footer -->
       <div class="card-footer">
-        <span>
-          {% if co.employees %}{{ co.employees|intcomma }} employees{% endif %}
-          {% if co.annual_revenue_usd %} · ${{ co.annual_revenue_usd|intcomma }}{% endif %}
+        <span style="display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:.65rem;font-weight:800;color:var(--muted);background:rgba(255,255,255,.05);padding:1px 6px;border-radius:4px;font-variant-numeric:tabular-nums">#{{ forloop.counter }}</span>
+          {% if co.country %}<span>{{ co.country }}</span>{% endif %}
+          {% if co.get_sector_display %}<span>· {{ co.get_sector_display }}</span>{% endif %}
         </span>
         <span class="card-view-btn">View Profile →</span>
       </div>
