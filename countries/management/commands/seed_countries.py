@@ -803,6 +803,114 @@ COUNTRIES = [
         ],
     },
 
+    # ── Turkey ──────────────────────────────────────────────────────────────────
+    {
+        'name': 'Turkey',
+        'iso_code': 'TR',
+        'flag_emoji': '🇹🇷',
+        'region': 'middle_east',
+        'is_published': True,
+        'featured': False,
+        'national_ecoiq_index': 38.5,
+        'transition_readiness_score': 42.0,
+        'policy_environment_score': 44.0,
+        'investment_climate_score': 52.0,
+        'transparency_score': 40.0,
+        'industrial_modernization_score': 50.0,
+        'transition_readiness_label': 'developing',
+        'gdp_usd': 1_108_000_000_000,
+        'industrial_gdp_share': 28.3,
+        'co2_megatonnes': 523.0,
+        'renewable_energy_share': 42.0,
+        'fossil_fuel_dependency': 68.0,
+        'companies_tracked': 0,
+        'estimated_transition_gap_usd': 55_000_000_000,
+        'green_finance_available_usd': 8_000_000_000,
+        'ai_overview': (
+            f"{AI_DISCLAIMER}\n\n"
+            "Turkey is a uniquely positioned economy bridging European and Middle Eastern "
+            "industrial systems. With a population of 85 million and a rapidly growing "
+            "industrial base, the country is the second-largest steel producer in Europe, "
+            "a major automotive manufacturer, and an increasingly important hub for "
+            "defence, technology, and construction exports.\n\n"
+            "Turkey's energy profile is paradoxical: 42% renewable electricity generation "
+            "(primarily hydro, with fast-growing solar and wind) coexists with heavy "
+            "dependence on imported fossil fuels for industry and heating. The country "
+            "ratified the Paris Agreement only in 2021, making it a late entrant to "
+            "international climate frameworks, but has since accelerated renewable deployment "
+            "significantly. EcoIQ currently tracks no Turkish-domiciled companies in its "
+            "initial dataset, reflecting limited English-language corporate disclosure standards. "
+            "Key sectors — steel, cement, textiles, automotive — represent significant "
+            "transition finance opportunities."
+        ),
+        'ai_transition_narrative': (
+            f"{AI_DISCLAIMER}\n\n"
+            "Turkey's transition story is anchored in its exceptional renewable energy "
+            "resource base. The country has outstanding solar irradiance across Anatolia, "
+            "strong Aegean and Black Sea wind corridors, and the largest hydropower capacity "
+            "in its region. Installed solar capacity tripled between 2019–2023, and onshore "
+            "wind deployment accelerated under the YEKA (Renewable Energy Resource Area) "
+            "auction mechanism.\n\n"
+            "The key tension is industrial: Turkey's steel and cement sectors are among "
+            "the most carbon-intensive per unit of output globally, yet also among the most "
+            "competitive manufacturers for European and Gulf markets. The EU's Carbon Border "
+            "Adjustment Mechanism (CBAM, effective 2026) creates a powerful incentive for "
+            "Turkish industrial decarbonisation — steel and cement face direct tariff "
+            "exposure. This represents the most significant near-term driver of industrial "
+            "transition investment in Turkey."
+        ),
+        'ai_risk_summary': (
+            f"{AI_DISCLAIMER}\n\n"
+            "Primary risks: (1) Currency and macroeconomic volatility — Turkish lira "
+            "depreciation creates long-duration investment risk for foreign capital; "
+            "(2) Governance and rule-of-law concerns — Transparency International ranks "
+            "Turkey 115th globally, creating contract and regulatory risk; (3) Coal "
+            "dependency — Turkey approved new coal plants while committing to net zero "
+            "by 2053, creating stranded asset risk; (4) CBAM exposure — EU export "
+            "competitiveness in steel and cement at risk without decarbonisation investment; "
+            "(5) Political risk — limited institutional independence affects investment "
+            "structuring for long-duration assets."
+        ),
+        'ai_investment_thesis': (
+            f"{AI_DISCLAIMER}\n\n"
+            "Turkey's investment thesis rests on the CBAM-driven industrial modernisation "
+            "opportunity and its exceptional renewable resource base. Priority investment "
+            "areas: (1) Green steel — hydrogen-based direct reduction to preserve EU market "
+            "access; (2) Utility-scale solar (best-in-class irradiance, low land cost); "
+            "(3) Offshore wind — Black Sea and Aegean expansion under YEKA; (4) Industrial "
+            "energy efficiency — cement, ceramics, glass decarbonisation with EBRD support; "
+            "(5) EV supply chain — growing automotive manufacturing base and proximity to "
+            "European OEMs. EBRD and IFC both active in country. Requires currency risk "
+            "hedging and governance diligence for institutional allocation."
+        ),
+        'industrial_sectors': [
+            {'name': 'Steel / Iron', 'ecoiq_score': 32.0, 'pollution_level': 'high', 'transition_status': 'developing'},
+            {'name': 'Cement / Construction Materials', 'ecoiq_score': 28.0, 'pollution_level': 'high', 'transition_status': 'lagging'},
+            {'name': 'Automotive Manufacturing', 'ecoiq_score': 52.0, 'pollution_level': 'medium', 'transition_status': 'advancing'},
+            {'name': 'Textiles / Apparel', 'ecoiq_score': 46.0, 'pollution_level': 'medium', 'transition_status': 'developing'},
+            {'name': 'Renewable Energy', 'ecoiq_score': 68.0, 'pollution_level': 'low', 'transition_status': 'advancing'},
+            {'name': 'Defence / Aerospace', 'ecoiq_score': 44.0, 'pollution_level': 'medium', 'transition_status': 'developing'},
+        ],
+        'pollution_hotspots': [
+            {'name': 'Karabük Steel Complex', 'description': 'Major integrated steel plant with significant air and water pollution — CBAM exposure', 'severity': 'high'},
+            {'name': 'Aliağa Industrial Zone (Izmir)', 'description': 'Iron/steel, petrochemicals, and ship-breaking — persistent air and marine pollution', 'severity': 'high'},
+            {'name': 'Zonguldak Coal Mining Region', 'description': 'Black Sea coal mining and legacy thermal power — high particulate and SO₂ emissions', 'severity': 'high'},
+            {'name': 'Marmara Sea Mucilage Zone', 'description': 'Industrial and agricultural run-off has caused recurring mucilage blooms threatening marine ecosystem', 'severity': 'severe'},
+        ],
+        'financing_gaps': [
+            {'sector': 'Green Steel (CBAM Compliance)', 'gap_usd': 18_000_000_000, 'opportunity': 'DRI-EAF conversion and hydrogen infrastructure to maintain EU market access'},
+            {'sector': 'Offshore Wind (Black Sea / Aegean)', 'gap_usd': 15_000_000_000, 'opportunity': 'YEKA offshore auction program — 5 GW pipeline'},
+            {'sector': 'Industrial Energy Efficiency', 'gap_usd': 12_000_000_000, 'opportunity': 'Cement, ceramics, glass decarbonisation with EBRD/IFC co-financing'},
+            {'sector': 'EV Manufacturing Supply Chain', 'gap_usd': 8_000_000_000, 'opportunity': 'Battery and EV component manufacturing for OEM supply chains'},
+        ],
+        'policy_highlights': [
+            {'title': 'Paris Agreement Ratification', 'description': 'Turkey ratified the Paris Agreement and committed to net zero by 2053', 'year': 2021, 'status': 'active'},
+            {'title': 'YEKA Renewable Auctions', 'description': 'Renewable Energy Resource Area program — large-scale wind and solar tendering', 'year': 2017, 'status': 'active'},
+            {'title': 'National Climate Strategy 2053', 'description': 'Net zero by 2053, 100% renewable electricity by 2035 target', 'year': 2022, 'status': 'active'},
+            {'title': 'CBAM Adaptation', 'description': 'EU Carbon Border Adjustment Mechanism creates mandatory decarbonisation pressure on steel, cement', 'year': 2023, 'status': 'critical deadline 2026'},
+        ],
+    },
+
     # ── Denmark ─────────────────────────────────────────────────────────────────
     {
         'name': 'Denmark',

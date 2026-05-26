@@ -1,4 +1,4 @@
-{% load static %}
+{% load static humanize %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,410 +6,905 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ country.name }} Country Intelligence — EcoIQ</title>
 <style>
+/* ── EcoIQ Institutional Design System ── */
 :root {
-  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22;
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2230;
+  --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12); --border3:rgba(255,255,255,.18);
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
   --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
-  --info:#58a6ff; --purple:#8b5cf6;
-  --text:#e6edf3; --muted:#8b949e; --border:#21262d;
+  --info:#58a6ff; --purple:#a855f7; --cyan:#06b6d4;
   --radius:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6}
+a{text-decoration:none}
 
+/* ── Topnav ── */
 .topnav{
-  position:sticky;top:0;z-index:100;
+  position:sticky;top:0;z-index:200;
   background:rgba(7,11,15,.96);border-bottom:1px solid var(--border);
-  backdrop-filter:blur(12px);padding:.9rem 1.6rem;
-  display:flex;align-items:center;gap:1.5rem;
+  backdrop-filter:blur(16px);padding:.75rem 1.6rem;
+  display:flex;align-items:center;gap:1.2rem;
 }
-.topnav .brand{font-size:1.05rem;font-weight:700;color:var(--accent);text-decoration:none;letter-spacing:.5px}
-.topnav a{color:var(--muted);text-decoration:none;font-size:.87rem;transition:color .2s}
-.topnav a:hover{color:var(--text)}
-.topnav .sep{color:var(--border)}
+.topnav .brand{font-size:1rem;font-weight:800;color:var(--accent);letter-spacing:.5px}
+.topnav a{color:var(--muted2);font-size:.84rem;transition:color .2s}
+.topnav a:hover,.topnav a.active{color:var(--text)}
+.nav-sep{color:var(--border2);user-select:none}
 
-/* ── hero ── */
+/* ── Hero ── */
 .hero{
-  background:linear-gradient(135deg,#070b0f 0%,#0d1a2e 50%,#0a1f14 100%);
+  background:linear-gradient(160deg,#070b0f 0%,#0a1520 35%,#0d1a0f 70%,#070b0f 100%);
   border-bottom:1px solid var(--border);
-  padding:3rem 2rem 2.5rem;
+  padding:2.8rem 2rem 2.2rem;
+  position:relative;overflow:hidden;
 }
-.hero-inner{max-width:1100px;margin:0 auto;display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap}
-.hero-flag{font-size:4rem;line-height:1;flex-shrink:0}
-.hero-text{flex:1;min-width:280px}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 900px 400px at 70% 50%,rgba(0,232,154,.04) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{max-width:1140px;margin:0 auto;display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;position:relative}
+
+.hero-left{flex:1;min-width:300px;display:flex;gap:1.4rem;align-items:flex-start}
+.hero-flag{font-size:3.8rem;line-height:1;flex-shrink:0;filter:drop-shadow(0 0 20px rgba(0,232,154,.2))}
+.hero-text{flex:1}
 .hero-eyebrow{
-  display:inline-block;
-  background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.3);
-  color:var(--accent);font-size:.75rem;font-weight:600;
-  letter-spacing:1.5px;text-transform:uppercase;
-  padding:.3rem .8rem;border-radius:20px;margin-bottom:.8rem;
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.22);
+  color:var(--accent);font-size:.73rem;font-weight:700;
+  letter-spacing:1.8px;text-transform:uppercase;
+  padding:.28rem .8rem;border-radius:20px;margin-bottom:.7rem;
 }
-.hero-text h1{font-size:2rem;font-weight:700;margin-bottom:.5rem}
-.hero-text .subtitle{color:var(--muted);font-size:.95rem;line-height:1.6;max-width:600px}
+.hero-text h1{font-size:2.1rem;font-weight:800;letter-spacing:-.5px;margin-bottom:.35rem;line-height:1.15}
+.hero-sub{color:var(--muted2);font-size:.88rem;display:flex;flex-wrap:wrap;gap:.5rem .8rem;align-items:center}
+.hero-sub .dot{color:var(--border3)}
 
+/* Score panel */
 .hero-score-panel{
-  background:rgba(0,232,154,.06);border:1px solid rgba(0,232,154,.2);
-  border-radius:var(--radius);padding:1.4rem 1.8rem;
-  min-width:200px;text-align:center;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;gap:.8rem;
+  flex-shrink:0;
 }
-.big-score{font-size:3.5rem;font-weight:800;color:var(--accent);line-height:1}
-.score-label{font-size:.78rem;color:var(--muted);margin-top:.3rem}
+.score-ring-wrap{position:relative;width:120px;height:120px}
+.score-ring-wrap svg{width:120px;height:120px}
+.ring-track{fill:none;stroke:rgba(255,255,255,.05);stroke-width:8}
+.ring-progress{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;
+  transform:rotate(-90deg);transform-origin:60px 60px;
+  transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);
+  filter:drop-shadow(0 0 8px rgba(0,232,154,.5));}
+.ring-glow{fill:none;stroke:rgba(0,232,154,.2);stroke-width:14;stroke-linecap:round;
+  transform:rotate(-90deg);transform-origin:60px 60px;}
+.ring-label{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;
+}
+.ring-val{font-size:1.55rem;font-weight:800;color:var(--accent);line-height:1}
+.ring-unit{font-size:.65rem;color:var(--muted2);margin-top:2px;letter-spacing:.5px}
 .transition-badge{
-  display:inline-block;margin-top:.8rem;
-  padding:.35rem .9rem;border-radius:14px;
-  font-size:.78rem;font-weight:600;border:1px solid currentColor;
+  display:inline-block;
+  padding:.32rem .9rem;border-radius:14px;
+  font-size:.75rem;font-weight:700;border:1px solid currentColor;
+  text-align:center;
 }
 
-/* ── main layout ── */
-.page{max-width:1100px;margin:0 auto;padding:2rem 1.6rem}
-.two-col{display:grid;grid-template-columns:2fr 1fr;gap:1.6rem;align-items:start}
+/* ── Intelligence Strip ── */
+.intel-strip{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:.65rem 1.6rem;
+  display:flex;align-items:center;gap:1.6rem;flex-wrap:wrap;
+}
+.intel-strip-inner{max-width:1140px;margin:0 auto;width:100%;display:flex;align-items:center;gap:1.6rem;flex-wrap:wrap}
+.is-item{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:var(--muted2)}
+.is-item strong{color:var(--text)}
+.is-sep{width:1px;height:16px;background:var(--border2);flex-shrink:0}
 
-/* ── section ── */
-.section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem 1.6rem;margin-bottom:1.4rem}
-.section-title{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.conf-wrap{display:flex;align-items:center;gap:.6rem}
+.conf-bar-bg{width:80px;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.conf-bar{height:5px;background:linear-gradient(90deg,var(--info),var(--accent));border-radius:3px;width:0;transition:width 1s ease .5s}
+.conf-label{font-size:.72rem;color:var(--muted2);font-weight:600}
+
+/* ── Page layout ── */
+.page{max-width:1140px;margin:0 auto;padding:1.8rem 1.6rem}
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:1.6rem;align-items:start}
+
+/* ── Section ── */
+.section{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.4rem 1.6rem;margin-bottom:1.4rem;
+  transition:border-color .25s;
+}
+.section:hover{border-color:var(--border2)}
+.section-title{
+  font-size:.75rem;font-weight:700;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1.2px;margin-bottom:1rem;
+  display:flex;align-items:center;gap:.55rem;
+}
 .section-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.section-title .st-right{margin-left:auto;font-weight:400;letter-spacing:0;text-transform:none;font-size:.72rem}
 
-/* ── score cards ── */
-.score-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem}
-.score-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem}
-.score-card .sc-icon{font-size:1.4rem;margin-bottom:.4rem}
-.score-card .sc-label{font-size:.75rem;color:var(--muted);margin-bottom:.5rem}
-.score-card .sc-val{font-size:1.4rem;font-weight:700;color:var(--accent);margin-bottom:.4rem}
-.score-card .sc-bar-bg{height:4px;background:rgba(255,255,255,.06);border-radius:2px}
-.score-card .sc-bar{height:4px;border-radius:2px;background:var(--accent)}
-.score-card .sc-desc{font-size:.7rem;color:var(--muted);margin-top:.4rem;line-height:1.4}
+/* ── Macro Stats ── */
+.macro-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:.9rem;margin-bottom:1.6rem}
+.macro-stat{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1rem 1.1rem;transition:border-color .2s,transform .2s;
+  cursor:default;
+}
+.macro-stat:hover{border-color:var(--border2);transform:translateY(-1px)}
+.ms-val{font-size:1.25rem;font-weight:800;line-height:1.15;margin-bottom:.22rem}
+.ms-lbl{font-size:.7rem;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.ms-bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:.55rem;overflow:hidden}
+.ms-bar-fill{height:3px;border-radius:2px}
 
-/* ── stat row ── */
-.stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.8rem;margin-bottom:1.4rem}
-.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem}
-.stat-box .sb-val{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
-.stat-box .sb-lbl{font-size:.7rem;color:var(--muted)}
+/* ── Score Cards Grid ── */
+.score-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem}
+.score-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:9px;
+  padding:1.1rem;transition:border-color .2s,transform .2s;
+  cursor:default;
+}
+.score-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.sc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.sc-icon{font-size:1.25rem}
+.sc-val{font-size:1.5rem;font-weight:800}
+.sc-label{font-size:.73rem;color:var(--muted2);margin-bottom:.55rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+.sc-bar-bg{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.sc-bar-fill{height:5px;border-radius:3px;width:0;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.sc-desc{font-size:.71rem;color:var(--muted);margin-top:.55rem;line-height:1.5}
 
-/* ── AI content ── */
-.ai-text{font-size:.875rem;color:var(--muted);line-height:1.7;white-space:pre-line}
+/* ── Energy Mix ── */
+.energy-mix-bars{margin-top:.8rem}
+.em-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem}
+.em-label{font-size:.77rem;color:var(--muted2);min-width:140px;flex-shrink:0}
+.em-bar-track{flex:1;height:10px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden}
+.em-bar-fill{height:10px;border-radius:5px;width:0;transition:width 1.1s ease .3s}
+.em-pct{font-size:.77rem;font-weight:700;min-width:36px;text-align:right}
+.em-note{font-size:.71rem;color:var(--muted);margin-top:.6rem;font-style:italic}
+
+/* ── AI Panels ── */
+.ai-panel{margin-bottom:1.4rem}
+.ai-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.9rem;
+}
+.ai-conf-pill{
+  background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);
+  color:var(--info);font-size:.68rem;font-weight:600;
+  padding:.2rem .65rem;border-radius:12px;letter-spacing:.3px;
+  white-space:nowrap;
+}
+.ai-text{font-size:.875rem;color:var(--muted2);line-height:1.75;white-space:pre-line}
 .ai-disclaimer{
-  font-size:.7rem;color:rgba(139,148,158,.6);
-  border-top:1px solid var(--border);margin-top:1rem;padding-top:.6rem;
+  font-size:.7rem;color:rgba(148,163,184,.5);
+  border-top:1px solid var(--border);margin-top:.9rem;padding-top:.6rem;
   font-style:italic;
 }
 
-/* ── sectors list ── */
+/* ── Sectors ── */
 .sector-row{
   display:flex;align-items:center;gap:.8rem;
-  padding:.6rem 0;border-bottom:1px solid var(--border);
+  padding:.65rem 0;border-bottom:1px solid var(--border);
 }
 .sector-row:last-child{border-bottom:none}
-.sector-name{flex:1;font-size:.87rem}
-.sector-score{font-size:.87rem;font-weight:600;color:var(--accent);min-width:40px;text-align:right}
-.poll-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.poll-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .poll-low{background:var(--accent)}
 .poll-medium{background:var(--warn)}
 .poll-high{background:var(--danger)}
 .poll-severe{background:#b91c1c}
-
-/* ── hotspot ── */
-.hotspot{
-  padding:.8rem 1rem;margin-bottom:.7rem;
-  background:rgba(230,57,70,.06);border:1px solid rgba(230,57,70,.2);
-  border-radius:8px;
+.sector-name{flex:1;font-size:.85rem}
+.sector-bar-wrap{width:70px;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;flex-shrink:0}
+.sector-bar-fill{height:5px;border-radius:3px;background:var(--accent);width:0;transition:width 1s ease .4s}
+.sector-score{font-size:.85rem;font-weight:700;color:var(--accent);min-width:32px;text-align:right}
+.sector-status{
+  font-size:.65rem;padding:.15rem .5rem;border-radius:8px;
+  font-weight:600;white-space:nowrap;
 }
-.hotspot.severe{background:rgba(185,28,28,.08);border-color:rgba(185,28,28,.3)}
-.hotspot .hs-name{font-size:.87rem;font-weight:600;color:var(--danger);margin-bottom:.25rem}
-.hotspot.severe .hs-name{color:#f97316}
-.hotspot .hs-desc{font-size:.78rem;color:var(--muted);line-height:1.5}
+.status-leading{background:rgba(0,232,154,.12);color:var(--accent);border:1px solid rgba(0,232,154,.25)}
+.status-advancing{background:rgba(88,166,255,.1);color:var(--info);border:1px solid rgba(88,166,255,.22)}
+.status-developing{background:rgba(244,162,97,.1);color:var(--warn);border:1px solid rgba(244,162,97,.22)}
+.status-lagging{background:rgba(230,57,70,.1);color:var(--danger);border:1px solid rgba(230,57,70,.22)}
+.status-critical{background:rgba(185,28,28,.15);color:#f97316;border:1px solid rgba(185,28,28,.3)}
 
-/* ── financing gaps ── */
-.gap-item{padding:.8rem 0;border-bottom:1px solid var(--border)}
-.gap-item:last-child{border-bottom:none}
-.gap-sector{font-size:.87rem;font-weight:600;margin-bottom:.25rem}
-.gap-amount{font-size:.78rem;color:var(--info);margin-bottom:.2rem}
-.gap-opp{font-size:.75rem;color:var(--muted)}
+/* ── Hotspots ── */
+.hotspot-matrix{display:flex;flex-direction:column;gap:.7rem}
+.hotspot-card{
+  padding:.85rem 1rem;border-radius:8px;
+  border-left:3px solid;
+}
+.hc-severe{background:rgba(185,28,28,.07);border-color:#b91c1c}
+.hc-high{background:rgba(230,57,70,.06);border-color:var(--danger)}
+.hc-medium{background:rgba(244,162,97,.06);border-color:var(--warn)}
+.hc-low{background:rgba(0,232,154,.05);border-color:var(--accent)}
+.hs-name{font-size:.85rem;font-weight:700;margin-bottom:.25rem}
+.hc-severe .hs-name{color:#f97316}
+.hc-high .hs-name{color:var(--danger)}
+.hc-medium .hs-name{color:var(--warn)}
+.hc-low .hs-name{color:var(--accent)}
+.hs-desc{font-size:.77rem;color:var(--muted2);line-height:1.5}
+.hs-badge{
+  display:inline-block;margin-bottom:.4rem;
+  font-size:.63rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  padding:.15rem .5rem;border-radius:6px;
+}
+.badge-severe{background:rgba(185,28,28,.2);color:#f97316}
+.badge-high{background:rgba(230,57,70,.15);color:var(--danger)}
+.badge-medium{background:rgba(244,162,97,.12);color:var(--warn)}
+.badge-low{background:rgba(0,232,154,.1);color:var(--accent)}
 
-/* ── policy ── */
-.policy-item{padding:.75rem 0;border-bottom:1px solid var(--border)}
+/* ── Financing Gaps ── */
+.gap-card{
+  padding:.9rem 1rem;border-radius:8px;
+  background:rgba(88,166,255,.04);border:1px solid var(--border);
+  margin-bottom:.75rem;transition:border-color .2s;
+}
+.gap-card:hover{border-color:var(--border2)}
+.gap-card:last-child{margin-bottom:0}
+.gap-sector{font-size:.87rem;font-weight:700;margin-bottom:.25rem}
+.gap-amount{
+  font-size:.78rem;color:var(--info);margin-bottom:.3rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.gap-amount::before{content:'$';opacity:.6}
+.gap-opp{font-size:.76rem;color:var(--muted2);line-height:1.5}
+
+/* ── Policy Calendar ── */
+.policy-item{
+  padding:.8rem 0;border-bottom:1px solid var(--border);
+  display:flex;gap:.8rem;align-items:flex-start;
+}
 .policy-item:last-child{border-bottom:none}
-.policy-title{font-size:.87rem;font-weight:600;margin-bottom:.2rem}
-.policy-desc{font-size:.78rem;color:var(--muted);margin-bottom:.3rem}
-.policy-meta{font-size:.72rem;color:var(--muted)}
-.policy-year{color:var(--accent)}
-.policy-status{color:var(--info)}
-
-/* ── company table ── */
-.co-table{width:100%;border-collapse:collapse;font-size:.83rem}
-.co-table th{text-align:left;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.7px;padding:.6rem .8rem;border-bottom:1px solid var(--border)}
-.co-table td{padding:.6rem .8rem;border-bottom:1px solid var(--border)}
-.co-table tr:last-child td{border-bottom:none}
-.co-table a{color:var(--info);text-decoration:none}
-.co-table a:hover{color:var(--accent)}
-.co-score{color:var(--accent);font-weight:600}
-
-/* ── CTA ── */
-.cta-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
-.cta-btn{
-  padding:.55rem 1.1rem;border-radius:7px;
-  font-size:.84rem;font-weight:600;
-  text-decoration:none;display:inline-block;
-  transition:opacity .2s;border:none;cursor:pointer;
+.policy-year-badge{
+  background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);
+  color:var(--accent);font-size:.7rem;font-weight:700;
+  padding:.25rem .55rem;border-radius:6px;white-space:nowrap;flex-shrink:0;margin-top:.1rem;
 }
-.cta-btn:hover{opacity:.85}
-.cta-primary{background:var(--accent);color:#000}
-.cta-secondary{background:rgba(88,166,255,.15);border:1px solid var(--info);color:var(--info)}
+.policy-body{flex:1}
+.policy-title{font-size:.85rem;font-weight:600;margin-bottom:.2rem}
+.policy-desc{font-size:.77rem;color:var(--muted2);line-height:1.5;margin-bottom:.25rem}
+.policy-status-badge{
+  display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:.15rem .5rem;border-radius:6px;
+  background:rgba(88,166,255,.1);color:var(--info);border:1px solid rgba(88,166,255,.22);
+}
 
-/* ── footer ── */
-footer{text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:3rem}
-footer a{color:var(--muted);text-decoration:none}
+/* ── Dev Bank Compatibility ── */
+.devbank-card{
+  padding:.9rem 1rem;border-radius:8px;
+  border:1px solid var(--border);background:var(--bg3);
+  margin-bottom:.75rem;display:flex;gap:.75rem;align-items:flex-start;
+  transition:border-color .2s;
+}
+.devbank-card:last-child{margin-bottom:0}
+.devbank-card:hover{border-color:var(--border2)}
+.db-icon{width:36px;height:36px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-top:.1rem}
+.db-body{flex:1;min-width:0}
+.db-name{font-size:.85rem;font-weight:700;margin-bottom:.1rem}
+.db-mandate{font-size:.72rem;color:var(--muted);margin-bottom:.35rem}
+.db-detail{font-size:.76rem;color:var(--muted2);line-height:1.5}
+.db-status-badge{
+  margin-top:.4rem;display:inline-block;
+  font-size:.65rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  padding:.18rem .55rem;border-radius:8px;
+}
+.db-eligible{background:rgba(0,232,154,.12);color:var(--accent);border:1px solid rgba(0,232,154,.25)}
+.db-partial{background:rgba(244,162,97,.1);color:var(--warn);border:1px solid rgba(244,162,97,.22)}
+.db-conditional{background:rgba(230,57,70,.1);color:var(--danger);border:1px solid rgba(230,57,70,.22)}
+
+/* ── Corruption Exposure ── */
+.corruption-panel{
+  padding:1rem;border-radius:8px;
+  border:1px solid var(--border);background:var(--bg3);
+  margin-bottom:1.4rem;
+}
+.corr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem}
+.corr-level{font-size:1.1rem;font-weight:800}
+.corr-score{font-size:.78rem;color:var(--muted2)}
+.corr-bar-bg{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-bottom:.6rem}
+.corr-bar-fill{height:8px;border-radius:4px;width:0;transition:width 1.1s ease .4s}
+.corr-detail{font-size:.78rem;color:var(--muted2);line-height:1.5}
+
+/* ── Companies Table ── */
+.co-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.co-table th{
+  text-align:left;color:var(--muted);
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;
+  padding:.55rem .7rem;border-bottom:1px solid var(--border);
+}
+.co-table td{padding:.6rem .7rem;border-bottom:1px solid var(--border)}
+.co-table tr:last-child td{border-bottom:none}
+.co-table tr:hover td{background:rgba(255,255,255,.02)}
+.co-table a{color:var(--info)}
+.co-table a:hover{color:var(--accent)}
+.co-score{color:var(--accent);font-weight:700}
+
+/* ── CTA Row ── */
+.cta-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.6rem}
+.cta-btn{
+  padding:.55rem 1.1rem;border-radius:8px;
+  font-size:.83rem;font-weight:600;
+  text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;
+  transition:opacity .2s,transform .2s;border:none;cursor:pointer;
+}
+.cta-btn:hover{opacity:.85;transform:translateY(-1px)}
+.cta-primary{background:var(--accent);color:#000}
+.cta-secondary{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);color:var(--info)}
+
+/* ── Footer ── */
+footer{
+  text-align:center;padding:2rem;color:var(--muted);
+  font-size:.79rem;border-top:1px solid var(--border);margin-top:3rem;
+}
+footer a{color:var(--muted);transition:color .2s}
 footer a:hover{color:var(--accent)}
 
-@media(max-width:800px){
+/* ── Responsive ── */
+@media(max-width:900px){
   .two-col{grid-template-columns:1fr}
   .hero-inner{flex-direction:column;gap:1.5rem}
-  .hero-score-panel{min-width:auto;width:100%}
+  .hero-score-panel{align-items:flex-start;flex-direction:row;gap:1.2rem}
+  .macro-grid{grid-template-columns:repeat(3,1fr)}
+  .score-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .macro-grid{grid-template-columns:repeat(2,1fr)}
+  .score-grid{grid-template-columns:1fr}
+  .intel-strip-inner{gap:1rem}
+  .is-sep{display:none}
 }
 </style>
 </head>
 <body>
 
+<!-- NAV -->
 <nav class="topnav">
   <a href="/" class="brand">EcoIQ</a>
-  <span class="sep">|</span>
+  <span class="nav-sep">|</span>
   <a href="/league/">League</a>
   <a href="/companies/">Companies</a>
-  <a href="/countries/">Countries</a>
+  <a href="/countries/" class="active">Countries</a>
   <a href="/intelligence/">Intelligence</a>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-flag">{{ country.flag_emoji }}</div>
-    <div class="hero-text">
-      <div class="hero-eyebrow">EcoIQ Country Intelligence</div>
-      <h1>{{ country.name }}</h1>
-      <p class="subtitle">{{ country.get_region_display }} · {{ country.companies_tracked }} companies tracked · EcoIQ indicative intelligence</p>
+
+    <div class="hero-left">
+      <div class="hero-flag">{{ country.flag_emoji }}</div>
+      <div class="hero-text">
+        <div class="hero-eyebrow">
+          <span>🌐</span> EcoIQ Country Intelligence
+        </div>
+        <h1>{{ country.name }}</h1>
+        <div class="hero-sub">
+          <span>{{ country.get_region_display }}</span>
+          <span class="dot">·</span>
+          <span>{{ country.companies_tracked }} companies tracked</span>
+          {% if country.iso_code %}
+          <span class="dot">·</span>
+          <span>ISO {{ country.iso_code }}</span>
+          {% endif %}
+          <span class="dot">·</span>
+          <span>Indicative intelligence</span>
+        </div>
+      </div>
     </div>
+
     <div class="hero-score-panel">
-      <div class="big-score">{{ country.national_ecoiq_index|floatformat:1 }}</div>
-      <div class="score-label">National EcoIQ Index</div>
-      <div class="transition-badge" style="color:{{ country.transition_label_color }};border-color:{{ country.transition_label_color }}">
+      <!-- Animated score ring -->
+      <div class="score-ring-wrap">
+        <svg viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="50"/>
+          <circle class="ring-glow" cx="60" cy="60" r="50"
+            stroke-dasharray="314.16"
+            stroke-dashoffset="314.16"
+            id="ringGlow"/>
+          <circle class="ring-progress" cx="60" cy="60" r="50"
+            stroke-dasharray="314.16"
+            stroke-dashoffset="314.16"
+            id="ringProgress"/>
+        </svg>
+        <div class="ring-label">
+          <div class="ring-val" id="scoreCounter">0</div>
+          <div class="ring-unit">EcoIQ</div>
+        </div>
+      </div>
+      <div class="transition-badge"
+           style="color:{{ country.transition_label_color }};border-color:{{ country.transition_label_color }}">
         {{ country.get_transition_readiness_label_display }}
       </div>
     </div>
+
   </div>
 </section>
+
+<!-- INTELLIGENCE STRIP -->
+<div class="intel-strip">
+  <div class="intel-strip-inner">
+    <div class="is-item">
+      🌍 <strong>{{ country.get_region_display }}</strong>
+    </div>
+    <div class="is-sep"></div>
+    <div class="is-item">
+      🏭 <strong>{{ country.companies_tracked }}</strong>&nbsp;companies
+    </div>
+    {% if country.co2_megatonnes %}
+    <div class="is-sep"></div>
+    <div class="is-item">
+      🌫 CO₂&nbsp;<strong style="color:var(--danger)">{{ country.co2_megatonnes|floatformat:0 }} Mt/yr</strong>
+    </div>
+    {% endif %}
+    {% if country.renewable_energy_share %}
+    <div class="is-sep"></div>
+    <div class="is-item">
+      ♻ Renewables&nbsp;<strong style="color:var(--accent)">{{ country.renewable_energy_share|floatformat:0 }}%</strong>
+    </div>
+    {% endif %}
+    <div class="is-sep"></div>
+    <div class="is-item conf-wrap">
+      <span>AI Intelligence</span>
+      <div class="conf-bar-bg">
+        <div class="conf-bar" id="confBar"></div>
+      </div>
+      <span class="conf-label">{{ ai_confidence }}%</span>
+    </div>
+  </div>
+</div>
 
 <main class="page">
 
   <!-- CTA Row -->
   <div class="cta-row">
-    <a href="mailto:hello@ecoiq.org?subject=Country%20Intelligence%3A%20{{ country.name }}" class="cta-btn cta-primary">📊 Request Full Intelligence Report</a>
-    <a href="mailto:hello@ecoiq.org?subject=Investor%20Briefing%3A%20{{ country.name }}" class="cta-btn cta-secondary">💼 Investor Briefing</a>
+    <a href="mailto:hello@ecoiq.org?subject=Country%20Intelligence%3A%20{{ country.name }}" class="cta-btn cta-primary">
+      📊 Request Full Intelligence Report
+    </a>
+    <a href="mailto:hello@ecoiq.org?subject=Investor%20Briefing%3A%20{{ country.name }}" class="cta-btn cta-secondary">
+      💼 Investor Briefing
+    </a>
+    <a href="{% url 'countries:directory' %}" class="cta-btn cta-secondary">
+      ← All Countries
+    </a>
   </div>
 
-  <!-- Macro stats -->
-  <div class="stat-row">
+  <!-- MACRO STATS -->
+  <div class="macro-grid">
     {% if country.gdp_usd %}
-    <div class="stat-box">
-      <div class="sb-val">${{ country.gdp_usd|floatformat:0 }}</div>
-      <div class="sb-lbl">GDP (USD)</div>
+    <div class="macro-stat">
+      <div class="ms-val">${{ country.gdp_usd|intword }}</div>
+      <div class="ms-lbl">GDP (USD)</div>
+      <div class="ms-bar"><div class="ms-bar-fill" style="background:var(--info);width:{{ country.investment_climate_score }}%"></div></div>
     </div>
     {% endif %}
     {% if country.co2_megatonnes %}
-    <div class="stat-box">
-      <div class="sb-val" style="color:var(--danger)">{{ country.co2_megatonnes|floatformat:0 }} Mt</div>
-      <div class="sb-lbl">Annual CO₂</div>
+    <div class="macro-stat">
+      <div class="ms-val" style="color:var(--danger)">{{ country.co2_megatonnes|floatformat:0 }} Mt</div>
+      <div class="ms-lbl">Annual CO₂</div>
+      <div class="ms-bar"><div class="ms-bar-fill" style="background:var(--danger);width:{% if country.co2_megatonnes > 5000 %}100{% elif country.co2_megatonnes > 1000 %}75{% elif country.co2_megatonnes > 400 %}50{% else %}25{% endif %}%"></div></div>
     </div>
     {% endif %}
     {% if country.renewable_energy_share %}
-    <div class="stat-box">
-      <div class="sb-val" style="color:var(--accent)">{{ country.renewable_energy_share|floatformat:0 }}%</div>
-      <div class="sb-lbl">Renewable Energy</div>
+    <div class="macro-stat">
+      <div class="ms-val" style="color:var(--accent)">{{ country.renewable_energy_share|floatformat:0 }}%</div>
+      <div class="ms-lbl">Renewable Energy</div>
+      <div class="ms-bar"><div class="ms-bar-fill" style="background:var(--accent);width:{{ country.renewable_energy_share }}%"></div></div>
     </div>
     {% endif %}
     {% if country.fossil_fuel_dependency %}
-    <div class="stat-box">
-      <div class="sb-val" style="color:var(--warn)">{{ country.fossil_fuel_dependency|floatformat:0 }}%</div>
-      <div class="sb-lbl">Fossil Fuel Dependency</div>
+    <div class="macro-stat">
+      <div class="ms-val" style="color:var(--warn)">{{ country.fossil_fuel_dependency|floatformat:0 }}%</div>
+      <div class="ms-lbl">Fossil Dependency</div>
+      <div class="ms-bar"><div class="ms-bar-fill" style="background:var(--warn);width:{{ country.fossil_fuel_dependency }}%"></div></div>
     </div>
     {% endif %}
     {% if country.industrial_gdp_share %}
-    <div class="stat-box">
-      <div class="sb-val">{{ country.industrial_gdp_share|floatformat:0 }}%</div>
-      <div class="sb-lbl">Industrial GDP Share</div>
+    <div class="macro-stat">
+      <div class="ms-val">{{ country.industrial_gdp_share|floatformat:1 }}%</div>
+      <div class="ms-lbl">Industrial GDP Share</div>
+      <div class="ms-bar"><div class="ms-bar-fill" style="background:var(--purple);width:{{ country.industrial_gdp_share }}%"></div></div>
     </div>
     {% endif %}
     {% if country.estimated_transition_gap_usd %}
-    <div class="stat-box">
-      <div class="sb-val" style="color:var(--info)">${{ country.estimated_transition_gap_usd|floatformat:0 }}</div>
-      <div class="sb-lbl">Transition Finance Gap (USD)</div>
+    <div class="macro-stat">
+      <div class="ms-val" style="color:var(--cyan)">${{ country.estimated_transition_gap_usd|intword }}</div>
+      <div class="ms-lbl">Transition Finance Gap</div>
+      <div class="ms-bar"><div class="ms-bar-fill" style="background:var(--cyan);width:60%"></div></div>
     </div>
     {% endif %}
   </div>
 
   <div class="two-col">
-    <!-- LEFT COLUMN -->
-    <div>
+  <!-- ═══════════════════════════════════ LEFT COLUMN ═══════════════════════ -->
+  <div>
 
-      <!-- Score Cards -->
-      <div class="section">
-        <div class="section-title">EcoIQ Intelligence Dimensions</div>
-        <div class="score-cards">
-          {% for card in score_cards %}
-          <div class="score-card">
-            <div class="sc-icon">{{ card.icon }}</div>
-            <div class="sc-label">{{ card.label }}</div>
-            <div class="sc-val">{{ card.score|floatformat:0 }}</div>
-            <div class="sc-bar-bg"><div class="sc-bar" style="width:{{ card.score }}%"></div></div>
-            <div class="sc-desc">{{ card.desc }}</div>
+    <!-- 5-DIMENSION SCORES -->
+    <div class="section">
+      <div class="section-title">
+        National Intelligence Dimensions
+        <span class="st-right">5 dimensions · AI-scored</span>
+      </div>
+      <div class="score-grid">
+        {% for card in score_cards %}
+        <div class="score-card">
+          <div class="sc-header">
+            <span class="sc-icon">{{ card.icon }}</span>
+            <span class="sc-val" style="color:{{ card.color }}">{{ card.score|floatformat:0 }}</span>
           </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- AI Overview -->
-      {% if country.ai_overview %}
-      <div class="section">
-        <div class="section-title">Country Overview</div>
-        <p class="ai-text">{{ country.ai_overview }}</p>
-      </div>
-      {% endif %}
-
-      <!-- Transition Narrative -->
-      {% if country.ai_transition_narrative %}
-      <div class="section">
-        <div class="section-title">Transition Narrative</div>
-        <p class="ai-text">{{ country.ai_transition_narrative }}</p>
-      </div>
-      {% endif %}
-
-      <!-- Risk Summary -->
-      {% if country.ai_risk_summary %}
-      <div class="section">
-        <div class="section-title">⚠ Risk Summary</div>
-        <p class="ai-text">{{ country.ai_risk_summary }}</p>
-      </div>
-      {% endif %}
-
-      <!-- Investment Thesis -->
-      {% if country.ai_investment_thesis %}
-      <div class="section">
-        <div class="section-title">💰 Investment Thesis</div>
-        <p class="ai-text">{{ country.ai_investment_thesis }}</p>
-      </div>
-      {% endif %}
-
-      <!-- Companies -->
-      {% if companies %}
-      <div class="section">
-        <div class="section-title">EcoIQ-Tracked Companies</div>
-        <table class="co-table">
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Sector</th>
-              <th>EcoIQ</th>
-              <th>Moral Label</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in companies %}
-            <tr>
-              <td><a href="{% url 'companies:detail' p.company.slug %}">{{ p.company.name }}</a></td>
-              <td style="color:var(--muted)">{{ p.company.sector }}</td>
-              <td class="co-score">{{ p.ecoiq_total_score|floatformat:1 }}</td>
-              <td style="color:{{ p.moral_label_color }};font-size:.78rem">{{ p.moral_label_display }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <p style="margin-top:.8rem"><a href="/companies/?country={{ country.name }}" style="color:var(--info);font-size:.8rem">View all {{ country.name }} companies →</a></p>
-      </div>
-      {% endif %}
-
-    </div>
-
-    <!-- RIGHT COLUMN -->
-    <div>
-
-      <!-- Industrial Sectors -->
-      {% if country.industrial_sectors %}
-      <div class="section">
-        <div class="section-title">Industrial Sectors</div>
-        {% for s in country.industrial_sectors %}
-        <div class="sector-row">
-          <div class="poll-dot
-            {% if s.pollution_level == 'low' %}poll-low
-            {% elif s.pollution_level == 'medium' %}poll-medium
-            {% elif s.pollution_level == 'high' %}poll-high
-            {% else %}poll-severe{% endif %}">
+          <div class="sc-label">{{ card.label }}</div>
+          <div class="sc-bar-bg">
+            <div class="sc-bar-fill score-bar" style="background:{{ card.color }}" data-target="{{ card.score }}"></div>
           </div>
-          <span class="sector-name">{{ s.name }}</span>
-          <span class="sector-score">{{ s.ecoiq_score }}</span>
+          <div class="sc-desc">{{ card.desc }}</div>
         </div>
         {% endfor %}
       </div>
-      {% endif %}
+    </div>
 
-      <!-- Pollution Hotspots -->
-      {% if country.pollution_hotspots %}
-      <div class="section">
-        <div class="section-title">⚠ Pollution Hotspots</div>
+    <!-- ENERGY MIX ANALYSIS -->
+    {% if country.renewable_energy_share or country.fossil_fuel_dependency %}
+    <div class="section">
+      <div class="section-title">
+        Energy Mix Analysis
+        <span class="st-right">Electricity generation · Indicative</span>
+      </div>
+      <div class="energy-mix-bars">
+        {% if country.renewable_energy_share %}
+        <div class="em-row">
+          <div class="em-label">♻ Renewable Energy</div>
+          <div class="em-bar-track">
+            <div class="em-bar-fill energy-bar" style="background:var(--accent)" data-target="{{ country.renewable_energy_share }}"></div>
+          </div>
+          <div class="em-pct" style="color:var(--accent)">{{ country.renewable_energy_share|floatformat:0 }}%</div>
+        </div>
+        {% endif %}
+        {% if country.fossil_fuel_dependency %}
+        <div class="em-row">
+          <div class="em-label">🛢 Fossil Fuel Dependency</div>
+          <div class="em-bar-track">
+            <div class="em-bar-fill energy-bar" style="background:var(--warn)" data-target="{{ country.fossil_fuel_dependency }}"></div>
+          </div>
+          <div class="em-pct" style="color:var(--warn)">{{ country.fossil_fuel_dependency|floatformat:0 }}%</div>
+        </div>
+        {% endif %}
+        {% if country.renewable_energy_share and country.fossil_fuel_dependency %}
+        {% with transition_progress=country.renewable_energy_share %}
+        <div class="em-row">
+          <div class="em-label">📊 Clean Energy Progress</div>
+          <div class="em-bar-track" style="background:rgba(255,255,255,.04)">
+            <div style="height:10px;border-radius:5px;background:linear-gradient(90deg,var(--accent),#00b37a);width:{{ transition_progress }}%;transition:width 1.3s ease .6s" class="energy-bar-static"></div>
+          </div>
+          <div class="em-pct" style="color:var(--muted2)">{{ transition_progress|floatformat:0 }}%</div>
+        </div>
+        {% endwith %}
+        <div class="em-note">
+          Note: Fossil fuel dependency reflects primary energy (including heat and transport), while renewable energy share reflects electricity generation. The gap between these figures represents the broader economy's decarbonisation challenge.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- AI OVERVIEW -->
+    {% if country.ai_overview %}
+    <div class="section ai-panel">
+      <div class="ai-header">
+        <div class="section-title" style="margin-bottom:0">Country Overview</div>
+        <div class="ai-conf-pill">AI-Generated · {{ ai_confidence }}% confidence</div>
+      </div>
+      <p class="ai-text">{{ country.ai_overview }}</p>
+    </div>
+    {% endif %}
+
+    <!-- TRANSITION NARRATIVE -->
+    {% if country.ai_transition_narrative %}
+    <div class="section ai-panel">
+      <div class="ai-header">
+        <div class="section-title" style="margin-bottom:0">⚡ Transition Narrative</div>
+        <div class="ai-conf-pill">AI-Generated · {{ ai_confidence }}% confidence</div>
+      </div>
+      <p class="ai-text">{{ country.ai_transition_narrative }}</p>
+    </div>
+    {% endif %}
+
+    <!-- RISK SUMMARY -->
+    {% if country.ai_risk_summary %}
+    <div class="section ai-panel">
+      <div class="ai-header">
+        <div class="section-title" style="margin-bottom:0">⚠ Risk Summary</div>
+        <div class="ai-conf-pill" style="background:rgba(230,57,70,.08);border-color:rgba(230,57,70,.2);color:var(--danger)">AI-Generated · Indicative</div>
+      </div>
+      <p class="ai-text">{{ country.ai_risk_summary }}</p>
+    </div>
+    {% endif %}
+
+    <!-- INVESTMENT THESIS -->
+    {% if country.ai_investment_thesis %}
+    <div class="section ai-panel">
+      <div class="ai-header">
+        <div class="section-title" style="margin-bottom:0">💰 Investment Thesis</div>
+        <div class="ai-conf-pill" style="background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.22);color:var(--purple)">AI-Generated · Not investment advice</div>
+      </div>
+      <p class="ai-text">{{ country.ai_investment_thesis }}</p>
+      <div class="ai-disclaimer">
+        EcoIQ intelligence is AI-generated based on publicly available data. Not independently verified. Not to be used as the sole basis for investment decisions.
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- TRACKED COMPANIES -->
+    {% if companies %}
+    <div class="section">
+      <div class="section-title">
+        EcoIQ-Tracked Companies
+        <span class="st-right">{{ companies|length }} profiles · scored</span>
+      </div>
+      <table class="co-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Sector</th>
+            <th>EcoIQ</th>
+            <th>Moral Label</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in companies %}
+          <tr>
+            <td><a href="{% url 'companies:detail' p.company.slug %}">{{ p.company.name }}</a></td>
+            <td style="color:var(--muted2)">{{ p.company.sector }}</td>
+            <td class="co-score">{{ p.ecoiq_total_score|floatformat:1 }}</td>
+            <td style="color:{{ p.moral_label_color }};font-size:.77rem">{{ p.moral_label_display }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p style="margin-top:.85rem">
+        <a href="/companies/?country={{ country.name }}" style="color:var(--info);font-size:.79rem">
+          View all {{ country.name }} companies →
+        </a>
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+  <!-- ═══════════════════════════════ RIGHT SIDEBAR ═══════════════════════ -->
+  <div>
+
+    <!-- CORRUPTION EXPOSURE -->
+    {% if corruption_exposure %}
+    <div class="section">
+      <div class="section-title">Corruption Exposure Indicator</div>
+      <div class="corruption-panel">
+        <div class="corr-header">
+          <span class="corr-level" style="color:{{ corruption_exposure.color }}">{{ corruption_exposure.level }} Risk</span>
+          <span class="corr-score">{{ corruption_exposure.score }}/100 exposure</span>
+        </div>
+        <div class="corr-bar-bg">
+          <div class="corr-bar-fill" style="background:{{ corruption_exposure.color }}" data-target="{{ corruption_exposure.score }}" id="corrBar"></div>
+        </div>
+        <div class="corr-detail">{{ corruption_exposure.detail }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- DEVELOPMENT BANK COMPATIBILITY -->
+    {% if dev_bank_compat %}
+    <div class="section">
+      <div class="section-title">Development Bank Compatibility</div>
+      {% for db in dev_bank_compat %}
+      <div class="devbank-card">
+        <div class="db-icon" style="background:rgba({{ db.color|slice:'1:' }},0.1)">🏦</div>
+        <div class="db-body">
+          <div class="db-name">{{ db.name }}</div>
+          <div class="db-mandate">{{ db.mandate }}</div>
+          <div class="db-detail">{{ db.detail }}</div>
+          <div class="db-status-badge db-{{ db.status }}">
+            {% if db.status == 'eligible' %}✓ Eligible
+            {% elif db.status == 'partial' %}◑ Partial
+            {% else %}⚠ Conditional{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <p style="font-size:.7rem;color:var(--muted);margin-top:.7rem;font-style:italic">
+        Compatibility assessments are indicative only. Actual eligibility depends on specific project criteria and due diligence.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- INDUSTRIAL SECTORS -->
+    {% if country.industrial_sectors %}
+    <div class="section">
+      <div class="section-title">Industrial Sectors</div>
+      {% for s in country.industrial_sectors %}
+      <div class="sector-row">
+        <div class="poll-dot
+          {% if s.pollution_level == 'low' %}poll-low
+          {% elif s.pollution_level == 'medium' %}poll-medium
+          {% elif s.pollution_level == 'high' %}poll-high
+          {% else %}poll-severe{% endif %}">
+        </div>
+        <span class="sector-name">{{ s.name }}</span>
+        <div class="sector-bar-wrap">
+          <div class="sector-bar-fill sector-bar" data-target="{{ s.ecoiq_score }}"></div>
+        </div>
+        <span class="sector-score">{{ s.ecoiq_score }}</span>
+        {% if s.transition_status %}
+        <span class="sector-status status-{{ s.transition_status }}">{{ s.transition_status }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <div style="margin-top:.8rem;font-size:.7rem;color:var(--muted);display:flex;gap:.8rem;flex-wrap:wrap">
+        <span><span style="color:var(--accent)">●</span> Low pollution</span>
+        <span><span style="color:var(--warn)">●</span> Medium</span>
+        <span><span style="color:var(--danger)">●</span> High</span>
+        <span><span style="color:#b91c1c">●</span> Severe</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- POLLUTION HOTSPOT MATRIX -->
+    {% if country.pollution_hotspots %}
+    <div class="section">
+      <div class="section-title">Pollution Hotspot Matrix</div>
+      <div class="hotspot-matrix">
         {% for h in country.pollution_hotspots %}
-        <div class="hotspot {% if h.severity == 'severe' %}severe{% endif %}">
+        <div class="hotspot-card hc-{{ h.severity|default:'medium' }}">
+          <div class="hs-badge badge-{{ h.severity|default:'medium' }}">{{ h.severity|default:'medium'|upper }}</div>
           <div class="hs-name">{{ h.name }}</div>
           <div class="hs-desc">{{ h.description }}</div>
         </div>
         {% endfor %}
       </div>
-      {% endif %}
+    </div>
+    {% endif %}
 
-      <!-- Financing Gaps -->
-      {% if country.financing_gaps %}
-      <div class="section">
-        <div class="section-title">💰 Financing Gaps</div>
-        {% for g in country.financing_gaps %}
-        <div class="gap-item">
-          <div class="gap-sector">{{ g.sector }}</div>
-          {% if g.gap_usd %}
-          <div class="gap-amount">Gap: ${{ g.gap_usd|floatformat:0 }}</div>
-          {% endif %}
-          <div class="gap-opp">{{ g.opportunity }}</div>
-        </div>
-        {% endfor %}
+    <!-- FINANCING GAPS -->
+    {% if country.financing_gaps %}
+    <div class="section">
+      <div class="section-title">
+        Financing Gap Tracker
+        {% if country.estimated_transition_gap_usd %}
+        <span class="st-right" style="color:var(--cyan)">${{ country.estimated_transition_gap_usd|intword }} total</span>
+        {% endif %}
       </div>
-      {% endif %}
+      {% for g in country.financing_gaps %}
+      <div class="gap-card">
+        <div class="gap-sector">{{ g.sector }}</div>
+        {% if g.gap_usd %}
+        <div class="gap-amount">{{ g.gap_usd|intword }}</div>
+        {% endif %}
+        <div class="gap-opp">{{ g.opportunity }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
-      <!-- Policy Highlights -->
-      {% if country.policy_highlights %}
-      <div class="section">
-        <div class="section-title">Policy Highlights</div>
-        {% for p in country.policy_highlights %}
-        <div class="policy-item">
+    <!-- POLICY CALENDAR -->
+    {% if country.policy_highlights %}
+    <div class="section">
+      <div class="section-title">Policy Calendar</div>
+      {% for p in country.policy_highlights %}
+      <div class="policy-item">
+        <div class="policy-year-badge">{{ p.year }}</div>
+        <div class="policy-body">
           <div class="policy-title">{{ p.title }}</div>
           <div class="policy-desc">{{ p.description }}</div>
-          <div class="policy-meta">
-            <span class="policy-year">{{ p.year }}</span>
-            {% if p.status %} · <span class="policy-status">{{ p.status }}</span>{% endif %}
+          {% if p.status %}
+          <div class="policy-status-badge">{{ p.status }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- GREEN FINANCE AVAILABLE -->
+    {% if country.green_finance_available_usd %}
+    <div class="section">
+      <div class="section-title">Green Finance Available</div>
+      <div style="text-align:center;padding:.8rem 0">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent)">${{ country.green_finance_available_usd|intword }}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Indicative available capital from DFIs, green bonds, and climate funds</div>
+        {% if country.estimated_transition_gap_usd %}
+        {% with coverage=country.green_finance_available_usd|floatformat:0 %}
+        <div style="margin-top:.9rem">
+          <div style="font-size:.72rem;color:var(--muted2);margin-bottom:.4rem">Financing Coverage</div>
+          <div style="height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden">
+            <div style="height:8px;border-radius:4px;background:linear-gradient(90deg,var(--accent),#00b37a);transition:width 1s ease .8s"
+                 class="coverage-bar"
+                 data-pct="{% widthratio country.green_finance_available_usd country.estimated_transition_gap_usd 100 %}">
+            </div>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted2);margin-top:.3rem">
+            {% widthratio country.green_finance_available_usd country.estimated_transition_gap_usd 100 %}% of transition gap covered
           </div>
         </div>
-        {% endfor %}
+        {% endwith %}
+        {% endif %}
       </div>
-      {% endif %}
-
     </div>
-  </div>
+    {% endif %}
 
-  <div class="ai-disclaimer">
-    EcoIQ Country Intelligence is AI-generated based on publicly available data. It has not been independently verified.
-    All scores are indicative and designed to support dialogue on industrial transition and ethical investment.
-    Not to be used as sole basis for investment decisions.
   </div>
+  </div><!-- /two-col -->
 
 </main>
 
 <footer>
-  <a href="/countries/">← All Countries</a> &nbsp;·&nbsp;
+  <a href="{% url 'countries:directory' %}">← All Countries</a> &nbsp;·&nbsp;
   <a href="/companies/">Companies</a> &nbsp;·&nbsp;
   <a href="/league/">EcoIQ League</a>
+  <br><br>
+  <span style="color:var(--muted)">
+    EcoIQ Country Intelligence is AI-generated based on publicly available data.
+    Not independently verified. All scores are indicative.
+    Not to be used as the sole basis for investment decisions.
+  </span>
 </footer>
+
+<script>
+(function(){
+  // ── Animated score ring ───────────────────────────────────────────────────
+  const TARGET  = {{ country.national_ecoiq_index|floatformat:1 }};
+  const ARC_LEN = 314.16; // circumference r=50
+
+  const ringProg = document.getElementById('ringProgress');
+  const ringGlow = document.getElementById('ringGlow');
+  const counter  = document.getElementById('scoreCounter');
+  const confBar  = document.getElementById('confBar');
+
+  function easeOut(t){ return 1 - Math.pow(1 - t, 3) }
+
+  let start = null;
+  const DURATION = 1500;
+
+  function animateRing(ts){
+    if(!start) start = ts;
+    const t = Math.min((ts - start) / DURATION, 1);
+    const ease = easeOut(t);
+    const val = TARGET * ease;
+    const offset = ARC_LEN * (1 - val / 100);
+    ringProg.style.strokeDashoffset = offset;
+    ringGlow.style.strokeDashoffset = offset;
+    counter.textContent = val.toFixed(1);
+    if(t < 1) requestAnimationFrame(animateRing);
+  }
+  requestAnimationFrame(animateRing);
+
+  // ── AI confidence bar ─────────────────────────────────────────────────────
+  setTimeout(function(){
+    if(confBar) confBar.style.width = '{{ ai_confidence }}%';
+  }, 500);
+
+  // ── Score + energy bars (IntersectionObserver) ────────────────────────────
+  const io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      const el = e.target;
+      const tgt = parseFloat(el.dataset.target || 0);
+      el.style.width = tgt + '%';
+      io.unobserve(el);
+    });
+  }, {threshold: 0.2});
+
+  document.querySelectorAll('.score-bar, .energy-bar, .sector-bar').forEach(function(el){
+    io.observe(el);
+  });
+
+  // ── Corruption bar ────────────────────────────────────────────────────────
+  setTimeout(function(){
+    const cb = document.getElementById('corrBar');
+    if(cb) cb.style.width = (cb.dataset.target || 0) + '%';
+  }, 600);
+
+  // ── Coverage bars ─────────────────────────────────────────────────────────
+  setTimeout(function(){
+    document.querySelectorAll('.coverage-bar').forEach(function(el){
+      const pct = Math.min(parseFloat(el.dataset.pct || 0), 100);
+      el.style.width = pct + '%';
+    });
+  }, 900);
+
+})();
+</script>
 
 </body>
 </html>
