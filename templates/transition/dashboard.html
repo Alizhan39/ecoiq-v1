@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ company.name }} — Transition Dashboard — EcoIQ{% endblock %}
+
+{% block extra_head %}
+<style>
+:root { --bg:#070b0f;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#e2e8f0;--muted:#64748b;--accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff; }
+* { box-sizing:border-box; }
+body { background:var(--bg);color:var(--text); }
+.page { max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem; }
+.bc { font-size:.75rem;color:var(--muted);margin-bottom:1.5rem; }
+.bc a { color:var(--muted);text-decoration:none; }
+
+/* Company strip */
+.co-strip { background:#0d1117;border:1px solid var(--border2);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap; }
+.co-name { font-size:1.2rem;font-weight:800; }
+.co-meta { font-size:.8rem;color:var(--muted); }
+.co-score { font-size:2.2rem;font-weight:900;font-variant-numeric:tabular-nums;margin-left:auto; }
+
+/* KPI strip */
+.kpi-strip { display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem; }
+.kpi-cell { background:#0d1117;padding:.8rem 1.1rem; }
+.kpi-val  { font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums; }
+.kpi-lbl  { font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:.1rem; }
+
+/* Grid */
+.grid-2 { display:grid;grid-template-columns:1fr 340px;gap:1.5rem; }
+
+/* Panel */
+.panel { background:#0d1117;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem; }
+.panel-head { background:#161b22;padding:.65rem 1.1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; }
+
+/* Generate form */
+.gen-card { background:#0d1117;border:1px solid var(--border2);border-radius:10px;padding:1.5rem;margin-bottom:1.5rem; }
+.gen-title { font-size:1rem;font-weight:700;margin-bottom:.4rem; }
+.gen-desc { font-size:.85rem;color:var(--muted);margin-bottom:1rem; }
+.gen-select { background:#161b22;border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:.5rem .75rem;font-size:.85rem;width:100%;margin-bottom:.75rem; }
+.gen-btn { background:var(--accent);color:#0d1117;border:none;border-radius:8px;padding:.75rem 2rem;font-size:.9rem;font-weight:800;cursor:pointer;width:100%; }
+.gen-btn:hover { opacity:.9; }
+
+/* Roadmap list */
+.rm-card { background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.25rem;margin-bottom:.75rem; }
+.rm-header { display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem; }
+.rm-type { font-size:.65rem;padding:2px 8px;border-radius:4px;font-weight:700;flex-shrink:0; }
+.rm-title { font-size:.9rem;font-weight:700; }
+.rm-summary { font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:.75rem; }
+.rm-metrics { display:flex;gap:1.5rem;flex-wrap:wrap; }
+.rm-metric { }
+.rm-metric-val { font-size:.95rem;font-weight:700;font-variant-numeric:tabular-nums; }
+.rm-metric-lbl { font-size:.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em; }
+
+/* Phase Gantt */
+.gantt { overflow-x:auto;margin:.75rem 0; }
+.gantt-bar { height:24px;border-radius:4px;display:inline-block;position:relative;min-width:20px; }
+.gantt-row { display:flex;align-items:center;gap:.5rem;margin:.25rem 0;font-size:.75rem; }
+.gantt-label { min-width:120px;color:var(--muted); }
+
+/* Tech recs */
+.tech-card { padding:.65rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:.75rem;align-items:flex-start; }
+.tech-cat { font-size:.65rem;padding:2px 6px;border-radius:4px;font-weight:700;flex-shrink:0;margin-top:.1rem;background:rgba(88,166,255,.15);color:var(--info); }
+.tech-body { flex:1;min-width:0; }
+.tech-name { font-size:.82rem;font-weight:600; }
+.tech-meta { font-size:.68rem;color:var(--muted); }
+
+/* Financing matches */
+.fin-match { padding:.65rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:.6rem;align-items:flex-start; }
+.fin-score { font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0; }
+.fin-body { flex:1;min-width:0; }
+.fin-name { font-size:.82rem;font-weight:600; }
+.fin-meta { font-size:.68rem;color:var(--muted); }
+
+/* Facilities */
+.fac-item { padding:.55rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);font-size:.8rem;display:flex;justify-content:space-between;align-items:center; }
+.fac-status { font-size:.65rem;padding:2px 6px;border-radius:4px;font-weight:700; }
+
+/* Error banner */
+.err-banner { background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:.75rem 1.1rem;margin-bottom:1.5rem;font-size:.82rem;color:var(--danger); }
+
+@media (max-width:800px) { .grid-2{grid-template-columns:1fr;} .kpi-strip{grid-template-columns:repeat(2,1fr);} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="bc">
+    <a href="{% url 'transition:index' %}">Transition Engine</a> ›
+    <a href="{% url 'league:company' company.slug %}">{{ company.name }}</a> ›
+    Transition Dashboard
+  </div>
+
+  {% if error %}
+  <div class="err-banner">⚠ Roadmap generation failed: {{ error }}</div>
+  {% endif %}
+
+  <!-- Company strip -->
+  <div class="co-strip">
+    <div>
+      <div class="co-name">{{ company.name }}</div>
+      <div class="co-meta">{{ company.get_sector_display }} · {{ company.country }}</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div class="co-score" style="color:{% if company.ecoiq_score >= 70 %}var(--accent){% elif company.ecoiq_score >= 40 %}var(--warn){% else %}var(--danger){% endif %};">
+        {{ company.ecoiq_score }}
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);">Current EcoIQ Score</div>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-cell">
+      <div class="kpi-val" style="color:var(--info);">{{ roadmaps|length }}</div>
+      <div class="kpi-lbl">Roadmaps</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val" style="color:var(--warn);">
+        {% if total_capex %}${{ total_capex|intcomma|truncatechars:12 }}{% else %}—{% endif %}
+      </div>
+      <div class="kpi-lbl">Est. Total Capex</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val" style="color:var(--accent);">
+        {% if co2_potential %}{{ co2_potential|intcomma }}{% else %}—{% endif %}
+      </div>
+      <div class="kpi-lbl">CO₂ Reduction (t/yr)</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val">{{ facilities|length }}</div>
+      <div class="kpi-lbl">Facilities</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Main column: roadmaps -->
+    <div>
+
+      <!-- Active / Latest Roadmap -->
+      {% if active_roadmap %}
+      <div class="panel">
+        <div class="panel-head">
+          Active Roadmap
+          <a href="{% url 'transition:roadmap' company.slug active_roadmap.pk %}" style="color:var(--accent);font-size:.7rem;font-weight:600;text-decoration:none;letter-spacing:0;text-transform:none;">Full Detail →</a>
+        </div>
+        <div style="padding:1.1rem 1.25rem;">
+          <div class="rm-header">
+            <span class="rm-type" style="
+              {% if active_roadmap.roadmap_type == 'coal_gas' %}background:#f4a26122;color:#f4a261;
+              {% elif active_roadmap.roadmap_type in 'methane,flare' %}background:#e6394622;color:#e63946;
+              {% elif active_roadmap.roadmap_type in 'renewable,electrification,circular' %}background:#00e89a22;color:#00e89a;
+              {% else %}background:#58a6ff22;color:#58a6ff;{% endif %}
+            ">{{ active_roadmap.get_roadmap_type_display }}</span>
+            <span style="font-size:.72rem;color:var(--muted);">{{ active_roadmap.created_at|date:"M d Y" }}</span>
+          </div>
+          <div class="rm-title">{{ active_roadmap.title }}</div>
+          {% if active_roadmap.executive_summary %}
+          <div class="rm-summary" style="margin-top:.5rem;">{{ active_roadmap.executive_summary|truncatechars:280 }}</div>
+          {% endif %}
+          <div class="rm-metrics">
+            {% if active_roadmap.total_capex_usd %}
+            <div class="rm-metric">
+              <div class="rm-metric-val" style="color:var(--warn);">${{ active_roadmap.total_capex_usd|intcomma }}</div>
+              <div class="rm-metric-lbl">Total Capex</div>
+            </div>
+            {% endif %}
+            {% if active_roadmap.payback_years %}
+            <div class="rm-metric">
+              <div class="rm-metric-val" style="color:{{ active_roadmap.roi_color }};">{{ active_roadmap.payback_years|floatformat:1 }}yr</div>
+              <div class="rm-metric-lbl">Payback Period</div>
+            </div>
+            {% endif %}
+            {% if active_roadmap.co2_reduction_tonnes %}
+            <div class="rm-metric">
+              <div class="rm-metric-val" style="color:var(--accent);">{{ active_roadmap.co2_reduction_tonnes|intcomma }}</div>
+              <div class="rm-metric-lbl">tCO₂ Reduction/yr</div>
+            </div>
+            {% endif %}
+            {% if active_roadmap.projected_ecoiq_delta %}
+            <div class="rm-metric">
+              <div class="rm-metric-val" style="color:var(--accent);">+{{ active_roadmap.projected_ecoiq_delta|floatformat:1 }}</div>
+              <div class="rm-metric-lbl">Projected EcoIQ Gain</div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Phase Timeline (mini Gantt) -->
+          {% with phases=active_roadmap.phases.all %}
+          {% if phases %}
+          <div style="margin-top:1rem;">
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">Phase Timeline</div>
+            {% for ph in phases %}
+            <div class="gantt-row">
+              <div class="gantt-label">{{ ph.name|truncatechars:18 }}</div>
+              <div style="flex:1;background:rgba(255,255,255,.04);border-radius:4px;height:18px;position:relative;overflow:hidden;">
+                <div style="
+                  position:absolute;left:0;top:0;height:100%;
+                  width:{{ ph.duration_months|add:0 }}%;
+                  background:{% cycle '#00e89a' '#58a6ff' '#f4a261' '#e63946' '#888' %};
+                  opacity:.6;border-radius:4px;min-width:8px;
+                "></div>
+              </div>
+              <div style="min-width:60px;text-align:right;font-size:.7rem;color:var(--muted);">{{ ph.duration_months }}mo</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- All Roadmaps -->
+      {% if roadmaps|length > 1 %}
+      <div class="panel">
+        <div class="panel-head">All Roadmaps <span>{{ roadmaps|length }}</span></div>
+        {% for rm in roadmaps %}
+        {% if not forloop.first %}
+        <div style="padding:.65rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:.82rem;font-weight:600;">{{ rm.title|truncatechars:55 }}</div>
+            <div style="font-size:.68rem;color:var(--muted);">{{ rm.get_roadmap_type_display }} · {{ rm.created_at|date:"M d Y" }}</div>
+          </div>
+          <a href="{% url 'transition:roadmap' company.slug rm.pk %}" style="font-size:.72rem;color:var(--accent);text-decoration:none;font-weight:600;flex-shrink:0;margin-left:1rem;">View →</a>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Facilities -->
+      {% if facilities %}
+      <div class="panel">
+        <div class="panel-head">Industrial Facilities <span>{{ facilities|length }}</span></div>
+        {% for fac in facilities %}
+        <div class="fac-item">
+          <div>
+            <div style="font-weight:600;">{{ fac.name }}</div>
+            <div style="font-size:.68rem;color:var(--muted);">{{ fac.get_facility_type_display }} · {{ fac.get_primary_fuel_display }} · {{ fac.location|default:fac.country }}</div>
+          </div>
+          <div style="text-align:right;">
+            {% if fac.capacity_mw %}<div style="font-size:.78rem;">{{ fac.capacity_mw }} MW</div>{% endif %}
+            {% if fac.annual_co2_tonnes %}<div style="font-size:.68rem;color:var(--danger);">{{ fac.annual_co2_tonnes|intcomma }} tCO₂</div>{% endif %}
+            <span class="fac-status" style="
+              {% if fac.operational_status == 'operating' %}background:#00e89a22;color:#00e89a;
+              {% elif fac.operational_status == 'decommission' %}background:#e6394622;color:#e63946;
+              {% else %}background:#88888822;color:#888;{% endif %}
+            ">{{ fac.get_operational_status_display }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right column -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <!-- Generate New Roadmap -->
+      <div class="gen-card">
+        <div class="gen-title">Generate Transition Roadmap</div>
+        <div class="gen-desc">
+          AI will analyse {{ company.name }}'s EcoIQ scores, projects, and findings to
+          generate a phased industrial transition plan with financing matches.
+        </div>
+        <form method="post" action="{% url 'transition:generate' company.slug %}">
+          {% csrf_token %}
+          <select name="roadmap_type" class="gen-select">
+            {% for code, label in roadmap_types %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="gen-btn">
+            {% if roadmaps %}↻ Generate New Roadmap{% else %}Generate Roadmap →{% endif %}
+          </button>
+        </form>
+      </div>
+
+      <!-- Financing Matches (from active roadmap) -->
+      {% if active_roadmap %}
+      {% with matches=active_roadmap.financing_matches.all %}
+      {% if matches %}
+      <div class="panel">
+        <div class="panel-head">
+          Financing Matches
+          <span>{{ matches|length }}</span>
+        </div>
+        {% for m in matches|slice:":6" %}
+        <div class="fin-match">
+          <span class="fin-score" style="
+            {% if m.match_score >= 0.7 %}background:#00e89a22;color:#00e89a;
+            {% elif m.match_score >= 0.4 %}background:#f4a26122;color:#f4a261;
+            {% else %}background:#88888822;color:#888;{% endif %}
+          ">{{ m.match_score|floatformat:0 }}%</span>
+          <div class="fin-body">
+            <div class="fin-name">{{ m.opportunity.institution_name }}</div>
+            <div class="fin-meta">
+              {{ m.opportunity.get_source_type_display }} ·
+              {{ m.opportunity.get_instrument_display }}
+              {% if m.suggested_amount_usd %} · ${{ m.suggested_amount_usd|intcomma }}{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% if matches|length > 6 %}
+        <div style="padding:.65rem 1.1rem;font-size:.72rem;color:var(--muted);">
+          +{{ matches|length|add:"-6" }} more —
+          <a href="{% url 'transition:roadmap' company.slug active_roadmap.pk %}" style="color:var(--accent);">view full roadmap</a>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% endwith %}
+      {% endif %}
+
+      <!-- Technology Recommendations -->
+      {% if tech_recs or active_roadmap.tech_recs.all %}
+      {% with recs=active_roadmap.tech_recs.all|default:tech_recs %}
+      <div class="panel">
+        <div class="panel-head">Technology Recommendations</div>
+        {% for rec in recs|slice:":6" %}
+        <div class="tech-card">
+          <span class="tech-cat">{{ rec.get_category_display|truncatechars:14 }}</span>
+          <div class="tech-body">
+            <div class="tech-name">{{ rec.technology_name }}</div>
+            <div class="tech-meta">
+              {% if rec.provider_name %}{{ rec.provider_name }} · {% endif %}
+              {{ rec.capex_range_label }}
+              {% if rec.co2_reduction_pct %} · {{ rec.co2_reduction_pct|floatformat:0 }}% CO₂ reduction{% endif %}
+            </div>
+          </div>
+          <span style="font-size:.7rem;color:{% if rec.maturity == 'proven' %}var(--accent){% elif rec.maturity == 'commercial' %}var(--info){% else %}var(--warn){% endif %};">{{ rec.get_maturity_display }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endwith %}
+      {% endif %}
+
+      <!-- Links -->
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        <a href="{% url 'league:company' company.slug %}" style="display:block;padding:.6rem 1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--text);text-decoration:none;text-align:center;">
+          📊 Company Profile →
+        </a>
+        <a href="{% url 'intelligence:briefing' company.slug %}" style="display:block;padding:.6rem 1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--text);text-decoration:none;text-align:center;">
+          📋 AI Executive Brief →
+        </a>
+        <a href="{% url 'transition:financing' %}" style="display:block;padding:.6rem 1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--text);text-decoration:none;text-align:center;">
+          🏦 Financing Directory →
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

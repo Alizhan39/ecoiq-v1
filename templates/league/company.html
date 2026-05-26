@@ -697,6 +697,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:
       <a href="#sdg"             class="snav"><span class="snav-dot"></span>SDGs</a>
       <a href="#recommendations" class="snav"><span class="snav-dot"></span>AI Recs</a>
     </div>
+    <div class="snav-section" style="border-top:1px solid rgba(255,255,255,.07);padding-top:.75rem;margin-top:.5rem;">
+      <div class="snav-group-label">Transition</div>
+      <a href="{% url 'transition:dashboard' company.slug %}" class="snav" style="color:#00e89a;">
+        <span class="snav-dot" style="background:#00e89a;opacity:.9;"></span>Roadmap
+      </a>
+      <a href="{% url 'intelligence:briefing' company.slug %}" class="snav">
+        <span class="snav-dot"></span>AI Brief
+      </a>
+    </div>
   </nav>
 
   <!-- ═══════════════════ MAIN CONTENT ═════════════════════════════════════ -->

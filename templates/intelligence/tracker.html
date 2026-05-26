@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ meta.label }} — EcoIQ Intelligence{% endblock %}
+
+{% block extra_head %}
+<style>
+:root { --bg:#070b0f;--surface:rgba(255,255,255,.025);--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#e2e8f0;--muted:#64748b;--accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff; }
+* { box-sizing:border-box; }
+body { background:var(--bg);color:var(--text); }
+.page { max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem; }
+.bc { font-size:.75rem;color:var(--muted);margin-bottom:1.5rem; }
+.bc a { color:var(--muted);text-decoration:none; }
+
+/* Module switcher */
+.mod-bar { display:flex;gap:0;overflow-x:auto;margin-bottom:2rem;border:1px solid var(--border);border-radius:10px;overflow:hidden; }
+.mod-btn {
+  flex:1;min-width:100px;
+  padding:.6rem .5rem;text-align:center;
+  background:#0d1117;color:var(--muted);
+  text-decoration:none;font-size:.72rem;font-weight:600;
+  border-right:1px solid var(--border);
+  transition:background .15s,color .15s;
+}
+.mod-btn:last-child { border-right:none; }
+.mod-btn:hover, .mod-btn.active { background:rgba(255,255,255,.05);color:var(--text); }
+.mod-btn.active { border-bottom:2px solid; }
+
+/* Hero */
+.hero {
+  background:#0d1117;border:1px solid var(--border2);border-radius:12px;
+  padding:1.5rem 2rem;margin-bottom:2rem;
+  display:flex;gap:1.5rem;align-items:flex-start;
+}
+.hero-icon { font-size:2.5rem; }
+.hero-title { font-size:1.4rem;font-weight:800;margin:0 0 .3rem; }
+.hero-desc  { font-size:.85rem;color:var(--muted);margin-bottom:.75rem; }
+.hero-kpis  { display:flex;gap:1.5rem;flex-wrap:wrap; }
+.hkpi { }
+.hkpi-val   { font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums; }
+.hkpi-label { font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em; }
+
+/* Grid */
+.grid-2 { display:grid;grid-template-columns:1fr 360px;gap:1.5rem; }
+.panel { background:#0d1117;border:1px solid var(--border);border-radius:10px;overflow:hidden; }
+.panel-head { background:#161b22;padding:.65rem 1.1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; }
+
+/* Company table */
+.co-table { width:100%;border-collapse:collapse;font-size:.8rem; }
+.co-table th { text-align:left;padding:.4rem .75rem;font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border); }
+.co-table td { padding:.45rem .75rem;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle; }
+.co-table tr:hover td { background:var(--surface); }
+
+/* Signal list */
+.sig-item { padding:.65rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:.6rem;align-items:flex-start; }
+.sig-pol { font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:6px;flex-shrink:0;margin-top:.1rem; }
+.sig-body { flex:1;min-width:0; }
+.sig-title { font-size:.8rem;font-weight:600; }
+.sig-meta  { font-size:.68rem;color:var(--muted);margin-top:.1rem; }
+
+@media (max-width:800px) { .grid-2 { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="bc">
+    <a href="{% url 'intelligence:hub' %}">Intelligence Hub</a> › Strategic Trackers › {{ meta.label }}
+  </div>
+
+  <!-- Module switcher -->
+  <div class="mod-bar">
+    {% for mod_key, mod_meta in all_modules.items %}
+    <a href="{% url 'intelligence:tracker' mod_key %}"
+       class="mod-btn {% if mod_key == module %}active{% endif %}"
+       style="{% if mod_key == module %}border-bottom-color:{{ meta.accent }};color:var(--text);{% endif %}">
+      {{ mod_meta.icon }} {{ mod_meta.label|truncatechars:14 }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-icon" style="color:{{ meta.accent }};">{{ meta.icon }}</div>
+    <div style="flex:1;">
+      <div class="hero-title">{{ meta.label }}</div>
+      <div class="hero-desc">{{ meta.desc }}</div>
+      <div class="hero-kpis">
+        <div class="hkpi">
+          <div class="hkpi-val" style="color:{{ meta.accent }};">{{ sector_companies|length }}</div>
+          <div class="hkpi-label">Companies monitored</div>
+        </div>
+        <div class="hkpi">
+          <div class="hkpi-val">{{ sector_avg }}</div>
+          <div class="hkpi-label">Sector avg EcoIQ</div>
+        </div>
+        <div class="hkpi">
+          <div class="hkpi-val" style="color:var(--accent);">{{ positive_signals }}</div>
+          <div class="hkpi-label">Positive signals</div>
+        </div>
+        <div class="hkpi">
+          <div class="hkpi-val" style="color:var(--danger);">{{ risk_signals }}</div>
+          <div class="hkpi-label">Risk signals</div>
+        </div>
+        <div class="hkpi">
+          <div class="hkpi-val" style="color:var(--warn);">{{ module_alerts|length }}</div>
+          <div class="hkpi-label">Active alerts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Main: company table -->
+    <div class="panel">
+      <div class="panel-head">
+        Monitored Companies
+        <span style="font-weight:400;letter-spacing:0;text-transform:none;">{{ meta.sectors|join:", " }}</span>
+      </div>
+      <table class="co-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Company</th><th>EcoIQ</th>
+            <th>Signals</th><th>Alerts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for co in sector_companies %}
+          <tr>
+            <td style="color:var(--muted);font-size:.72rem;">{{ co.rank|default:"—" }}</td>
+            <td>
+              <a href="{% url 'league:company' co.slug %}" style="color:var(--text);text-decoration:none;font-weight:600;">
+                {{ co.name }}
+              </a>
+              <div style="font-size:.68rem;color:var(--muted);">{{ co.country }}</div>
+            </td>
+            <td>
+              <span style="font-weight:800;font-variant-numeric:tabular-nums;
+                color:{% if co.ecoiq_score >= 70 %}var(--accent){% elif co.ecoiq_score >= 40 %}var(--warn){% else %}var(--danger){% endif %};">
+                {{ co.ecoiq_score }}
+              </span>
+            </td>
+            <td style="font-size:.78rem;">
+              {% with sigs=co.signals.all %}
+              <span style="color:var(--accent);">{{ sigs.filter.count|default:"0" }}</span>
+              {% endwith %}
+            </td>
+            <td style="font-size:.78rem;">
+              <span style="color:{% if co.alerts.exists %}var(--warn){% else %}var(--muted){% endif %};">
+                {{ co.alerts.filter.count|default:"0" }}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="color:var(--muted);padding:2rem;text-align:center;">
+            No companies in this module's sectors yet. <a href="{% url 'ingestion:index' %}" style="color:var(--accent);">Ingest one →</a>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right: signals + alerts -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <!-- Signals -->
+      <div class="panel">
+        <div class="panel-head">
+          Strategic Signals
+          <span style="font-weight:400;letter-spacing:0;text-transform:none;">{{ module_signals|length }}</span>
+        </div>
+        {% for sig in module_signals %}
+        <div class="sig-item">
+          <span class="sig-pol"
+                style="background:{{ sig.polarity_color }}22;color:{{ sig.polarity_color }};">
+            {{ sig.polarity|upper|slice:":4" }}
+          </span>
+          <div class="sig-body">
+            <div class="sig-title">{{ sig.title|truncatechars:60 }}</div>
+            <div class="sig-meta">
+              <a href="{% url 'league:company' sig.company.slug %}" style="color:var(--info);text-decoration:none;">
+                {{ sig.company.name }}
+              </a>
+              {% if sig.metric_value %} · {{ sig.metric_value }} {{ sig.metric_unit }}{% endif %}
+              {% if sig.year %} · {{ sig.year }}{% endif %}
+              · {{ sig.confidence|floatformat:0 }}% conf
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="padding:1.5rem 1.1rem;color:var(--muted);font-size:.8rem;text-align:center;">
+          No signals yet. Run <code>manage.py monitor_companies --step signals</code>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Alerts for this module -->
+      <div class="panel">
+        <div class="panel-head">
+          Module Alerts
+          <span style="font-weight:400;letter-spacing:0;text-transform:none;">{{ module_alerts|length }}</span>
+        </div>
+        {% for a in module_alerts %}
+        <div class="sig-item">
+          <span class="sig-pol"
+                style="background:{{ a.severity_color }}22;color:{{ a.severity_color }};">
+            {{ a.severity|upper|slice:":4" }}
+          </span>
+          <div class="sig-body">
+            <div class="sig-title">{{ a.alert_icon }} {{ a.title|truncatechars:55 }}</div>
+            <div class="sig-meta">
+              {% if a.company %}{{ a.company.name }} · {% endif %}
+              {{ a.created_at|date:"M d" }}
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="padding:1.5rem 1.1rem;color:var(--muted);font-size:.8rem;text-align:center;">
+          No alerts for this module.
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

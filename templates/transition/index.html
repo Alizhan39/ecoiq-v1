@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Industrial Transition Engine — EcoIQ{% endblock %}
+
+{% block extra_head %}
+<style>
+:root { --bg:#070b0f;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#e2e8f0;--muted:#64748b;--accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff; }
+* { box-sizing:border-box; }
+body { background:var(--bg);color:var(--text); }
+.page { max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem; }
+
+/* Command bar */
+.cmd-bar {
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,11,15,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:1rem;
+  padding:.6rem 1.5rem;margin:0 -1.5rem 2rem;
+}
+.cmd-bar-title { font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted); }
+.cmd-links { display:flex;gap:.5rem;margin-left:auto; }
+.cmd-btn {
+  font-size:.72rem;font-weight:600;padding:.35rem .9rem;border-radius:5px;
+  text-decoration:none;border:1px solid var(--border);color:var(--muted);
+  transition:all .15s;
+}
+.cmd-btn:hover { border-color:var(--border2);color:var(--text); }
+.cmd-btn.primary { background:var(--accent);color:#0d1117;border-color:var(--accent); }
+
+/* KPI strip */
+.kpi-strip { display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:2rem; }
+.kpi-cell { background:#0d1117;padding:.9rem 1.25rem; }
+.kpi-val  { font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums; }
+.kpi-lbl  { font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:.2rem; }
+
+/* Hero section */
+.hero-section { background:#0d1117;border:1px solid var(--border2);border-radius:12px;padding:2rem;margin-bottom:2rem; }
+.hero-icon { font-size:3rem;margin-bottom:.75rem; }
+.hero-title { font-size:1.5rem;font-weight:800;margin-bottom:.5rem; }
+.hero-desc { font-size:.9rem;color:var(--muted);max-width:640px;line-height:1.6; }
+
+/* Grid layout */
+.grid-2 { display:grid;grid-template-columns:1fr 360px;gap:1.5rem; }
+
+/* Panel */
+.panel { background:#0d1117;border:1px solid var(--border);border-radius:10px;overflow:hidden; }
+.panel-head { background:#161b22;padding:.65rem 1.1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; }
+
+/* Company table */
+.co-table { width:100%;border-collapse:collapse;font-size:.8rem; }
+.co-table th { text-align:left;padding:.4rem .75rem;font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border); }
+.co-table td { padding:.45rem .75rem;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle; }
+.co-table tr:hover td { background:rgba(255,255,255,.02); }
+
+/* Roadmap type tags */
+.type-tag { font-size:.65rem;padding:2px 7px;border-radius:4px;font-weight:700; }
+
+/* Recent roadmaps */
+.rm-item { padding:.65rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:.75rem;align-items:center; }
+.rm-item:last-child { border-bottom:none; }
+.rm-type { font-size:.65rem;padding:2px 7px;border-radius:4px;font-weight:700;flex-shrink:0; }
+.rm-body { flex:1;min-width:0; }
+.rm-title { font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.rm-meta  { font-size:.68rem;color:var(--muted);margin-top:.1rem; }
+
+/* Financing categories */
+.fin-types { display:flex;flex-direction:column;gap:.5rem; }
+.fin-type-row { display:flex;justify-content:space-between;align-items:center;padding:.5rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);font-size:.8rem; }
+.fin-badge { font-size:.7rem;padding:2px 8px;border-radius:4px;font-weight:700; }
+
+@media (max-width:800px) { .grid-2{grid-template-columns:1fr;} .kpi-strip{grid-template-columns:repeat(2,1fr);} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="position:sticky;top:0;z-index:100;background:rgba(7,11,15,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem;padding:.6rem 1.5rem;margin-bottom:0;">
+  <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);">⚡ Industrial Transition Engine</span>
+  <div style="display:flex;gap:.5rem;margin-left:auto;">
+    <a href="{% url 'intelligence:hub' %}" class="cmd-btn">← Intelligence Hub</a>
+    <a href="{% url 'transition:financing' %}" class="cmd-btn">🏦 Financing Directory</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-cell">
+      <div class="kpi-val" style="color:var(--accent);">{{ companies|length }}</div>
+      <div class="kpi-lbl">Companies Tracked</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val" style="color:var(--info);">{{ total_roadmaps }}</div>
+      <div class="kpi-lbl">Roadmaps Generated</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val" style="color:var(--warn);">{{ total_financing }}</div>
+      <div class="kpi-lbl">Financing Instruments</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val">{{ roadmap_types|length }}</div>
+      <div class="kpi-lbl">Transition Pathways</div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero-section">
+    <div class="hero-icon">🏭</div>
+    <div class="hero-title">Industrial Transition Operating System</div>
+    <div class="hero-desc">
+      AI-generated transition roadmaps, financing matching, and technology recommendations
+      for industrial decarbonisation. From coal-to-gas and methane reduction to full
+      industrial electrification — EcoIQ maps the pathway and connects the capital.
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Main: company table -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          Companies
+          <a href="{% url 'ingestion:index' %}" style="font-size:.7rem;color:var(--accent);font-weight:600;text-decoration:none;letter-spacing:0;text-transform:none;">+ Ingest New →</a>
+        </div>
+        <table class="co-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Sector</th>
+              <th>EcoIQ</th>
+              <th>Roadmaps</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for co in companies %}
+            <tr>
+              <td>
+                <a href="{% url 'transition:dashboard' co.slug %}" style="color:var(--text);text-decoration:none;font-weight:600;">
+                  {{ co.name }}
+                </a>
+                <div style="font-size:.68rem;color:var(--muted);">{{ co.country }}</div>
+              </td>
+              <td style="font-size:.75rem;color:var(--muted);">{{ co.get_sector_display }}</td>
+              <td>
+                <span style="font-weight:800;font-variant-numeric:tabular-nums;
+                  color:{% if co.ecoiq_score >= 70 %}var(--accent){% elif co.ecoiq_score >= 40 %}var(--warn){% else %}var(--danger){% endif %};">
+                  {{ co.ecoiq_score }}
+                </span>
+              </td>
+              <td style="font-size:.75rem;color:var(--muted);">
+                {{ co.roadmaps.count }}
+              </td>
+              <td>
+                <a href="{% url 'transition:dashboard' co.slug %}" style="font-size:.72rem;color:var(--accent);text-decoration:none;font-weight:600;">
+                  Analyse →
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" style="padding:2rem;text-align:center;color:var(--muted);">
+                No companies yet. <a href="{% url 'ingestion:index' %}" style="color:var(--accent);">Ingest your first company →</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <!-- Recent Roadmaps -->
+      <div class="panel">
+        <div class="panel-head">
+          Recent Roadmaps
+          <span>{{ total_roadmaps }}</span>
+        </div>
+        {% for rm in recent_roadmaps %}
+        {% with rt=rm.roadmap_type %}
+        <div class="rm-item">
+          <span class="rm-type" style="
+            {% if rt == 'coal_gas' %}background:#f4a26122;color:#f4a261;
+            {% elif rt == 'methane' or rt == 'flare' %}background:#e6394622;color:#e63946;
+            {% elif rt == 'renewable' or rt == 'electrification' %}background:#00e89a22;color:#00e89a;
+            {% else %}background:#58a6ff22;color:#58a6ff;{% endif %}
+          ">{{ rm.get_roadmap_type_display|truncatechars:14 }}</span>
+          <div class="rm-body">
+            <div class="rm-title">
+              <a href="{% url 'transition:roadmap' rm.company.slug rm.pk %}" style="color:var(--text);text-decoration:none;">
+                {{ rm.company.name }}
+              </a>
+            </div>
+            <div class="rm-meta">
+              {{ rm.created_at|date:"M d Y" }}
+              {% if rm.total_capex_usd %} · ${{ rm.total_capex_usd|intcomma }} capex{% endif %}
+            </div>
+          </div>
+          <span style="font-size:.72rem;color:{% if rm.roi_label == 'Strong' %}var(--accent){% elif rm.roi_label == 'Viable' %}var(--warn){% else %}var(--muted){% endif %};">
+            {{ rm.roi_label }}
+          </span>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <div style="padding:1.5rem 1.1rem;color:var(--muted);font-size:.8rem;text-align:center;">
+          No roadmaps yet — generate one from a company dashboard.
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Financing Overview -->
+      <div class="panel">
+        <div class="panel-head">
+          Financing Directory
+          <a href="{% url 'transition:financing' %}" style="font-size:.7rem;color:var(--accent);font-weight:600;text-decoration:none;letter-spacing:0;text-transform:none;">View All →</a>
+        </div>
+        <div style="padding:.75rem 1.1rem;">
+          <div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+            <span>Development Finance Institutions</span>
+            <span style="color:var(--info);font-weight:700;">{{ total_financing }}</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);padding:.75rem 0 .25rem;">
+            26 real institutions seeded including AIIB, EBRD, ADB, IFC, GCF, CIF, EIB and more.
+          </div>
+          <a href="{% url 'transition:financing' %}" style="display:block;margin-top:.75rem;background:var(--accent);color:#0d1117;border-radius:6px;padding:.5rem 1rem;font-size:.8rem;font-weight:700;text-decoration:none;text-align:center;">
+            Browse Financing Opportunities →
+          </a>
+        </div>
+      </div>
+
+      <!-- Roadmap Types -->
+      <div class="panel">
+        <div class="panel-head">Transition Pathways</div>
+        {% for code, label in roadmap_types %}
+        <div style="padding:.45rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);font-size:.8rem;display:flex;align-items:center;gap:.5rem;">
+          <span style="
+            {% if 'Coal' in label or 'Flare' in label or 'Methane' in label %}color:var(--warn);
+            {% elif 'Renew' in label or 'Electr' in label or 'Circular' in label %}color:var(--accent);
+            {% else %}color:var(--info);{% endif %}
+            font-size:.8rem;">●</span>
+          {{ label }}
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Intelligence Hub — EcoIQ OS{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ─── Design system ──────────────────────────────────────────────────────── */
+:root {
+  --bg:        #070b0f;
+  --surface:   rgba(255,255,255,0.025);
+  --surface2:  rgba(255,255,255,0.05);
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #e2e8f0;
+  --muted:     #64748b;
+  --accent:    #00e89a;
+  --warn:      #f4a261;
+  --danger:    #e63946;
+  --info:      #58a6ff;
+  --purple:    #8b5cf6;
+  --tnum:      "tnum" 1;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+
+/* ─── Top command bar ─────────────────────────────────────────────────────── */
+.cmd-bar {
+  background: #0d1117;
+  border-bottom: 1px solid var(--border2);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  height: 48px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.cmd-brand {
+  font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.cmd-pulse {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(0,232,154,.4); }
+  50%      { opacity:.6; box-shadow: 0 0 0 6px rgba(0,232,154,0); }
+}
+.cmd-nav { display: flex; gap: 0; }
+.cmd-nav a {
+  padding: 0 1rem;
+  height: 48px; line-height: 48px;
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--muted); text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.cmd-nav a:hover, .cmd-nav a.active {
+  color: var(--text); border-color: var(--accent);
+}
+.cmd-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
+.cmd-clock { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; font-family: monospace; }
+.alert-badge {
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.7rem; font-weight: 800;
+  padding: 2px 7px; border-radius: 10px;
+}
+.alert-badge.zero { background: var(--muted); }
+
+/* ─── KPI strip ───────────────────────────────────────────────────────────── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border2);
+}
+.kpi {
+  background: #0d1117;
+  padding: 0.85rem 1.25rem;
+  display: flex; flex-direction: column;
+}
+.kpi-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 0.3rem; }
+.kpi-val { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--text); }
+.kpi-val.green  { color: var(--accent); }
+.kpi-val.danger { color: var(--danger); }
+.kpi-val.warn   { color: var(--warn); }
+.kpi-sub { font-size: 0.68rem; color: var(--muted); margin-top: 0.15rem; }
+
+/* ─── Main grid ───────────────────────────────────────────────────────────── */
+.hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  grid-template-rows: auto;
+  gap: 1px;
+  background: var(--border);
+  min-height: calc(100vh - 48px - 70px);
+}
+.hub-main  { display: flex; flex-direction: column; gap: 1px; background: var(--border); }
+.hub-right { display: flex; flex-direction: column; gap: 1px; background: var(--border); }
+
+/* ─── Panel card ──────────────────────────────────────────────────────────── */
+.panel {
+  background: #0d1117;
+  padding: 0;
+  overflow: hidden;
+}
+.panel-head {
+  background: #161b22;
+  padding: 0.6rem 1.1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.panel-meta { font-size: 0.68rem; color: var(--muted); }
+.panel-body { padding: 0.75rem 1.1rem; }
+
+/* ─── Company table ───────────────────────────────────────────────────────── */
+.co-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.co-table th {
+  text-align: left; padding: 0.4rem 0.6rem;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.co-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  vertical-align: middle;
+}
+.co-table tr:hover td { background: rgba(255,255,255,.02); }
+.co-table tr:last-child td { border-bottom: none; }
+
+.rank-num { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.72rem; }
+.co-name { font-weight: 600; color: var(--text); }
+.co-name a { color: inherit; text-decoration: none; }
+.co-name a:hover { color: var(--accent); }
+.co-country { font-size: 0.72rem; color: var(--muted); }
+.score-pill {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.score-bar-wrap { width: 60px; display: inline-block; vertical-align: middle; }
+.score-bar-track { background: rgba(255,255,255,.06); border-radius: 3px; height: 3px; }
+.score-bar-fill  { height: 3px; border-radius: 3px; transition: width .6s ease; }
+
+.move-badge {
+  font-size: 0.68rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  padding: 1px 5px; border-radius: 4px;
+}
+.move-up   { background: rgba(0,232,154,.15); color: var(--accent); }
+.move-down { background: rgba(230,57,70,.15);  color: var(--danger); }
+.move-flat { color: var(--muted); }
+
+/* ─── Sector heatmap ──────────────────────────────────────────────────────── */
+.sector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 1px; background: var(--border);
+}
+.sector-cell {
+  background: #0d1117;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+.sector-cell:hover { background: var(--surface2); }
+.sc-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 0.25rem; }
+.sc-score {
+  font-size: 1.5rem; font-weight: 800;
+  letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+}
+.sc-meta  { font-size: 0.68rem; color: var(--muted); margin-top: 0.15rem; }
+.sc-bar-track { background: rgba(255,255,255,.06); border-radius: 2px; height: 2px; margin-top: 0.4rem; overflow: hidden; }
+.sc-bar-fill  { height: 2px; border-radius: 2px; }
+
+/* ─── Alert feed ──────────────────────────────────────────────────────────── */
+.alert-feed { overflow-y: auto; max-height: 400px; }
+.alert-item {
+  display: flex; gap: 0.6rem;
+  padding: 0.65rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  transition: background .12s;
+  cursor: pointer;
+}
+.alert-item:hover { background: var(--surface); }
+.alert-icon { font-size: 1rem; flex-shrink: 0; width: 1.4rem; text-align: center; margin-top: 0.05rem; }
+.alert-body { flex: 1; min-width: 0; }
+.alert-title { font-size: 0.78rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+.alert-meta  { font-size: 0.66rem; color: var(--muted); margin-top: 0.15rem; }
+.alert-sev   { font-size: 0.62rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; flex-shrink: 0; }
+
+/* ─── Mover rows ──────────────────────────────────────────────────────────── */
+.mover-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.5rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.mover-rank { font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; width: 2.5rem; text-align: right; }
+.mover-name { font-size: 0.8rem; font-weight: 600; flex: 1; }
+.mover-name a { color: var(--text); text-decoration: none; }
+.mover-name a:hover { color: var(--accent); }
+.mover-mv { font-size: 0.75rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ─── Country table ───────────────────────────────────────────────────────── */
+.country-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.country-table th {
+  text-align: left; padding: 0.4rem 0.75rem;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.country-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,.03); }
+.country-table tr:hover td { background: var(--surface); }
+
+/* ─── Signal feed ─────────────────────────────────────────────────────────── */
+.signal-item {
+  display: flex; gap: 0.5rem; align-items: flex-start;
+  padding: 0.55rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.sig-module {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 2px 5px; border-radius: 4px;
+  background: rgba(255,255,255,.06); color: var(--muted);
+  white-space: nowrap; flex-shrink: 0;
+}
+.sig-body { flex: 1; min-width: 0; }
+.sig-title { font-size: 0.76rem; font-weight: 600; color: var(--text); }
+.sig-co    { font-size: 0.66rem; color: var(--muted); }
+
+/* ─── Chart containers ────────────────────────────────────────────────────── */
+.chart-wrap { padding: 0.75rem 1.1rem; }
+.chart-canvas { width: 100% !important; height: 180px !important; }
+
+/* ─── Nav tabs ────────────────────────────────────────────────────────────── */
+.mod-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border-top: 1px solid var(--border);
+}
+.mod-card {
+  background: #0d1117;
+  padding: 0.85rem 1rem;
+  text-decoration: none;
+  transition: background .15s;
+  display: block;
+}
+.mod-card:hover { background: var(--surface2); }
+.mod-icon  { font-size: 1.2rem; margin-bottom: 0.3rem; }
+.mod-label { font-size: 0.72rem; font-weight: 700; color: var(--text); }
+.mod-desc  { font-size: 0.64rem; color: var(--muted); margin-top: 0.15rem; line-height: 1.4; }
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hub-grid { grid-template-columns: 1fr; }
+  .hub-right { order: -1; }
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Command bar -->
+<div class="cmd-bar">
+  <div class="cmd-brand">
+    <span class="cmd-pulse"></span>
+    EcoIQ OS
+  </div>
+  <nav class="cmd-nav">
+    <a href="{% url 'intelligence:hub' %}" class="active">Hub</a>
+    <a href="{% url 'intelligence:alerts' %}">Alerts</a>
+    <a href="{% url 'intelligence:compare' %}">Compare</a>
+    <a href="{% url 'intelligence:tracker' 'methane' %}">Trackers</a>
+    <a href="{% url 'league:leaderboard' %}">Rankings</a>
+    <a href="{% url 'ingestion:index' %}">Ingest</a>
+  </nav>
+  <div class="cmd-right">
+    <span class="cmd-clock" id="cmdClock"></span>
+    <a href="{% url 'intelligence:alerts' %}?unread=1" style="text-decoration:none;">
+      <span class="alert-badge {% if not critical_alerts %}zero{% endif %}">
+        {% if critical_alerts %}🔴 {{ critical_alerts }}{% else %}{{ unread_alerts }} alerts{% endif %}
+      </span>
+    </a>
+  </div>
+</div>
+
+<!-- KPI strip -->
+<div class="kpi-strip">
+  <div class="kpi">
+    <span class="kpi-label">Companies Tracked</span>
+    <span class="kpi-val">{{ company_count }}</span>
+    <span class="kpi-sub">{{ verified_count }} verified</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">CO₂ Reduced / yr</span>
+    <span class="kpi-val green">{{ total_co2|intcomma }}</span>
+    <span class="kpi-sub">tonnes annually</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Environmental Investment</span>
+    <span class="kpi-val">${{ total_inv_m|intcomma }}M</span>
+    <span class="kpi-sub">documented capex</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Households Helped</span>
+    <span class="kpi-val">{{ total_hh|intcomma }}</span>
+    <span class="kpi-sub">direct beneficiaries</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Active Alerts</span>
+    <span class="kpi-val {% if critical_alerts %}danger{% elif unread_alerts %}warn{% endif %}">
+      {{ unread_alerts }}
+    </span>
+    <span class="kpi-sub">{% if critical_alerts %}{{ critical_alerts }} critical{% else %}unread{% endif %}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Countries</span>
+    <span class="kpi-val">{{ countries|length }}</span>
+    <span class="kpi-sub">national profiles</span>
+  </div>
+</div>
+
+<!-- Main grid -->
+<div class="hub-grid">
+
+  <!-- Left / main column -->
+  <div class="hub-main">
+
+    <!-- Rankings table -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Live Rankings</span>
+        <a href="{% url 'league:leaderboard' %}" style="font-size:.72rem;color:var(--info);text-decoration:none;">View full leaderboard →</a>
+      </div>
+      <table class="co-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th>Company</th>
+            <th>Country</th>
+            <th>Sector</th>
+            <th>EcoIQ</th>
+            <th>30d Move</th>
+            <th style="width:70px;">Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for co in all_companies %}
+          <tr>
+            <td class="rank-num">{{ co.rank|default:"—" }}</td>
+            <td class="co-name">
+              <a href="{% url 'league:company' co.slug %}">{{ co.name }}</a>
+              {% if co.verified %}<span style="color:var(--accent);font-size:.65rem;margin-left:3px;">✓</span>{% endif %}
+            </td>
+            <td class="co-country">{{ co.country }}</td>
+            <td class="co-country">{{ co.get_sector_display }}</td>
+            <td>
+              <span class="score-pill" style="background:{{ co.ecoiq_score|stringformat:'d' }};">
+                {{ co.ecoiq_score }}
+              </span>
+            </td>
+            <td>
+              {% comment %}rank movement would need history{% endcomment %}
+              <span class="move-flat">—</span>
+            </td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar-track">
+                  <div class="score-bar-fill"
+                       style="width:{{ co.ecoiq_score }}%;background:#00e89a;"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" style="color:var(--muted);padding:1.5rem;text-align:center;">No companies. <a href="{% url 'ingestion:index' %}" style="color:var(--accent);">Ingest one →</a></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Sector heatmap -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Sector Intelligence Heatmap</span>
+        <span class="panel-meta">avg EcoIQ by sector</span>
+      </div>
+      <div class="sector-grid">
+        {% for s in sector_grid %}
+        <a href="{% url 'league:leaderboard' %}?sector={{ s.code }}" style="text-decoration:none;">
+          <div class="sector-cell">
+            <div class="sc-label">{{ s.label }}</div>
+            <div class="sc-score" style="color:{{ s.color }};">{{ s.avg_score }}</div>
+            <div class="sc-meta">{{ s.count }} co. · ${{ s.inv_m }}M</div>
+            <div class="sc-bar-track">
+              <div class="sc-bar-fill" style="width:{{ s.avg_score }}%;background:{{ s.color }};"></div>
+            </div>
+          </div>
+        </a>
+        {% empty %}
+        <div style="padding:1rem;color:var(--muted);font-size:.8rem;grid-column:1/-1;">No sector data available.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Score distribution + bubble chart -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Score Distribution</span>
+        <span class="panel-meta">all {{ company_count }} companies</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="histChart" class="chart-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Country intelligence table -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">National Intelligence</span>
+        <span class="panel-meta">{{ countries|length }} countries</span>
+      </div>
+      <div style="overflow-x:auto;">
+      <table class="country-table">
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th>National EcoIQ</th>
+            <th>Companies</th>
+            <th>Trend</th>
+            <th>CO₂ Reduced</th>
+            <th>Reporting %</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ci in countries %}
+          <tr>
+            <td>
+              <span style="font-weight:600;">{{ ci.flag_emoji }} {{ ci.country_name }}</span>
+              <div style="font-size:.67rem;color:var(--muted);">{{ ci.region }}</div>
+            </td>
+            <td>
+              <span class="score-pill" style="background:{% if ci.national_ecoiq_score >= 70 %}#2d6a4f{% elif ci.national_ecoiq_score >= 40 %}#f4a261{% else %}#e63946{% endif %};">
+                {{ ci.national_ecoiq_score }}
+              </span>
+            </td>
+            <td style="font-variant-numeric:tabular-nums;">{{ ci.company_count }}</td>
+            <td>
+              <span style="color:{{ ci.trend_color }};font-weight:700;font-size:.8rem;">
+                {{ ci.trend_symbol }}
+                {% if ci.trend_delta != 0 %}{{ ci.trend_delta }}{% endif %}
+              </span>
+            </td>
+            <td style="font-variant-numeric:tabular-nums;font-size:.78rem;">
+              {{ ci.total_co2_reduction_tonnes|intcomma }} t
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.4rem;">
+                <div style="width:40px;background:rgba(255,255,255,.06);border-radius:2px;height:3px;">
+                  <div style="width:{{ ci.reporting_pct }}%;background:var(--accent);height:3px;border-radius:2px;"></div>
+                </div>
+                <span style="font-size:.72rem;color:var(--muted);">{{ ci.reporting_pct|floatformat:0 }}%</span>
+              </div>
+            </td>
+            <td>
+              <a href="{% url 'intelligence:country' ci.country_code %}"
+                 style="font-size:.72rem;color:var(--info);text-decoration:none;">→</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" style="color:var(--muted);padding:1rem;text-align:center;">
+            No country data. Run <code>manage.py monitor_companies --step country</code>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- Strategic module nav -->
+    <div class="panel" style="padding:0;">
+      <div class="panel-head">
+        <span class="panel-title">Strategic Intelligence Modules</span>
+      </div>
+      <div class="mod-grid">
+        <a href="{% url 'intelligence:tracker' 'methane' %}" class="mod-card">
+          <div class="mod-icon">☁️</div>
+          <div class="mod-label">Methane Leakage</div>
+          <div class="mod-desc">Oil & gas, mining methane signals</div>
+        </a>
+        <a href="{% url 'intelligence:tracker' 'coal_transition' %}" class="mod-card">
+          <div class="mod-icon">⚡</div>
+          <div class="mod-label">Coal Transition</div>
+          <div class="mod-desc">Coal-to-gas replacement tracker</div>
+        </a>
+        <a href="{% url 'intelligence:tracker' 'water_restoration' %}" class="mod-card">
+          <div class="mod-icon">💧</div>
+          <div class="mod-label">Water Restoration</div>
+          <div class="mod-desc">Industrial water pollution monitor</div>
+        </a>
+        <a href="{% url 'intelligence:tracker' 'flare_reduction' %}" class="mod-card">
+          <div class="mod-icon">🔥</div>
+          <div class="mod-label">Flare Reduction</div>
+          <div class="mod-desc">Gas flaring commitment tracking</div>
+        </a>
+        <a href="{% url 'intelligence:tracker' 'modernisation' %}" class="mod-card">
+          <div class="mod-icon">🏭</div>
+          <div class="mod-label">Modernisation</div>
+          <div class="mod-desc">Industrial facility upgrade tracker</div>
+        </a>
+        <a href="{% url 'intelligence:tracker' 'ethical_investment' %}" class="mod-card">
+          <div class="mod-icon">📊</div>
+          <div class="mod-label">Ethical Investment</div>
+          <div class="mod-desc">ESG credibility & greenwashing</div>
+        </a>
+        <a href="{% url 'transition:index' %}" class="mod-card" style="border-color:rgba(0,232,154,.2);background:rgba(0,232,154,.04);">
+          <div class="mod-icon">⚡</div>
+          <div class="mod-label" style="color:var(--accent);">Transition Engine</div>
+          <div class="mod-desc">AI roadmaps & capital matching</div>
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /hub-main -->
+
+  <!-- Right sidebar -->
+  <div class="hub-right">
+
+    <!-- Alert feed -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Live Alerts</span>
+        <a href="{% url 'intelligence:alerts' %}" style="font-size:.7rem;color:var(--info);text-decoration:none;">All alerts →</a>
+      </div>
+      <div class="alert-feed" id="alertFeed">
+        {% for a in recent_alerts %}
+        <div class="alert-item" onclick="window.location='{% url 'intelligence:alerts' %}'">
+          <div class="alert-icon">{{ a.alert_icon }}</div>
+          <div class="alert-body">
+            <div class="alert-title">{{ a.title }}</div>
+            <div class="alert-meta">
+              {% if a.company %}{{ a.company.name }} · {% endif %}
+              {{ a.created_at|date:"M d, H:i" }}
+            </div>
+          </div>
+          <span class="alert-sev"
+                style="background:{{ a.severity_color }}22;color:{{ a.severity_color }};">
+            {{ a.severity|upper|slice:":3" }}
+          </span>
+        </div>
+        {% empty %}
+        <div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.82rem;">
+          <div style="font-size:1.5rem;margin-bottom:.5rem;">✓</div>
+          No active alerts
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Rank movers -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">30-Day Movers</span>
+        <span class="panel-meta">rank change</span>
+      </div>
+      {% if movers_gainers %}
+      <div style="padding:.4rem 1.1rem;font-size:.62rem;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);">▲ Gainers</div>
+      {% for m in movers_gainers %}
+      <div class="mover-row">
+        <div class="mover-rank">#{{ m.new_rank }}</div>
+        <div class="mover-name"><a href="{% url 'league:company' m.company.slug %}">{{ m.company.name }}</a></div>
+        <span class="mover-mv move-up">▲{{ m.movement }}</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% if movers_losers %}
+      <div style="padding:.4rem 1.1rem;font-size:.62rem;letter-spacing:.07em;text-transform:uppercase;color:var(--danger);">▼ Losers</div>
+      {% for m in movers_losers %}
+      <div class="mover-row">
+        <div class="mover-rank">#{{ m.new_rank }}</div>
+        <div class="mover-name"><a href="{% url 'league:company' m.company.slug %}">{{ m.company.name }}</a></div>
+        <span class="mover-mv move-down">▼{{ m.movement|cut:"-" }}</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% if not movers_gainers and not movers_losers %}
+      <div style="padding:1rem 1.1rem;color:var(--muted);font-size:.8rem;">No significant rank changes in the last 30 days.</div>
+      {% endif %}
+    </div>
+
+    <!-- Strategic signals -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Strategic Signals</span>
+        <span class="panel-meta">latest {{ signals|length }}</span>
+      </div>
+      {% for sig in signals %}
+      <div class="signal-item">
+        <span class="sig-module">{{ sig.get_module_display|truncatechars:12 }}</span>
+        <div class="sig-body">
+          <div class="sig-title" style="color:{{ sig.polarity_color }};">{{ sig.title|truncatechars:55 }}</div>
+          <div class="sig-co">{{ sig.company.name }}</div>
+        </div>
+      </div>
+      {% empty %}
+      <div style="padding:1rem 1.1rem;color:var(--muted);font-size:.8rem;">
+        No signals yet. Run <code>manage.py monitor_companies --step signals</code>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Recent ingestion jobs -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Recent Ingestions</span>
+        <a href="{% url 'ingestion:index' %}" style="font-size:.7rem;color:var(--info);text-decoration:none;">Ingest →</a>
+      </div>
+      {% for job in recent_jobs %}
+      <div style="padding:.5rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:.75rem;align-items:center;">
+        <span style="font-size:.7rem;padding:1px 6px;border-radius:8px;font-weight:700;font-family:monospace;
+              background:{% if job.status == 'done' %}rgba(0,232,154,.15){% elif job.status == 'failed' %}rgba(230,57,70,.15){% else %}rgba(244,162,97,.15){% endif %};
+              color:{% if job.status == 'done' %}var(--accent){% elif job.status == 'failed' %}var(--danger){% else %}var(--warn){% endif %};">
+          {{ job.status|upper }}
+        </span>
+        <span style="font-size:.8rem;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {{ job.company_name }}
+        </span>
+        <span style="font-size:.68rem;color:var(--muted);">{{ job.created_at|date:"M d" }}</span>
+      </div>
+      {% empty %}
+      <div style="padding:1rem 1.1rem;color:var(--muted);font-size:.8rem;">No ingestion jobs yet.</div>
+      {% endfor %}
+    </div>
+
+  </div><!-- /hub-right -->
+
+</div><!-- /hub-grid -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Live clock
+(function tick() {
+  const el = document.getElementById('cmdClock');
+  if (el) el.textContent = new Date().toUTCString().slice(17, 25) + ' UTC';
+  setTimeout(tick, 1000);
+})();
+
+// Score distribution histogram
+const histData = {{ hist_json }};
+new Chart(document.getElementById('histChart'), {
+  type: 'bar',
+  data: {
+    labels: histData.labels,
+    datasets: [{
+      data: histData.counts,
+      backgroundColor: histData.labels.map((_, i) => {
+        const score = i * 10 + 5;
+        return score >= 70 ? '#2d6a4f66' : score >= 40 ? '#f4a26166' : '#e6394666';
+      }),
+      borderColor: histData.labels.map((_, i) => {
+        const score = i * 10 + 5;
+        return score >= 70 ? '#2d6a4f' : score >= 40 ? '#f4a261' : '#e63946';
+      }),
+      borderWidth: 1,
+      borderRadius: 3,
+    }],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0d1117',
+        borderColor: 'rgba(255,255,255,.1)',
+        borderWidth: 1,
+        titleColor: '#e2e8f0',
+        bodyColor: '#64748b',
+        callbacks: {
+          title: (items) => `EcoIQ ${items[0].label}`,
+          label: (item) => ` ${item.raw} companies`,
+        },
+      },
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+      y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 } }, beginAtZero: true },
+    },
+  },
+});
+
+// Score pill colouring (post-render)
+document.querySelectorAll('.score-pill').forEach(el => {
+  const s = parseFloat(el.textContent);
+  el.style.background = s >= 70 ? '#2d6a4f' : s >= 55 ? '#40916c' : s >= 40 ? '#f4a261' : '#e63946';
+});
+</script>
+{% endblock %}

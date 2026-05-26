@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ opp.institution_name }} — EcoIQ Financing{% endblock %}
+
+{% block extra_head %}
+<style>
+:root { --bg:#070b0f;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#e2e8f0;--muted:#64748b;--accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff; }
+* { box-sizing:border-box; }
+body { background:var(--bg);color:var(--text); }
+.page { max-width:820px;margin:0 auto;padding:2rem 1.5rem 4rem; }
+.bc { font-size:.75rem;color:var(--muted);margin-bottom:1.5rem; }
+.bc a { color:var(--muted);text-decoration:none; }
+.panel { background:#0d1117;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem; }
+.panel-head { background:#161b22;padding:.65rem 1.1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border); }
+.detail-row { display:flex;padding:.55rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);font-size:.82rem; }
+.detail-row:last-child { border-bottom:none; }
+.detail-lbl { min-width:180px;color:var(--muted);flex-shrink:0; }
+.detail-val { flex:1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="bc">
+    <a href="{% url 'transition:index' %}">Transition Engine</a> ›
+    <a href="{% url 'transition:financing' %}">Financing Directory</a> ›
+    {{ opp.institution_name }}
+  </div>
+
+  <!-- Header -->
+  <div style="background:#0d1117;border:1px solid var(--border2);border-radius:12px;padding:1.5rem 2rem;margin-bottom:1.5rem;">
+    {% if opp.acronym %}
+    <div style="font-size:.65rem;padding:3px 10px;border-radius:4px;font-weight:800;display:inline-block;margin-bottom:.75rem;background:{{ opp.brand_colour }}22;color:{{ opp.brand_colour }};">
+      {{ opp.acronym }}
+    </div>
+    {% endif %}
+    <div style="font-size:1.4rem;font-weight:800;">{{ opp.institution_name }}</div>
+    {% if opp.programme_name %}
+    <div style="font-size:.9rem;color:var(--muted);margin-top:.25rem;">{{ opp.programme_name }}</div>
+    {% endif %}
+    <div style="font-size:.8rem;color:{{ opp.brand_colour }};margin-top:.5rem;">
+      {{ opp.get_source_type_display }} · {{ opp.get_instrument_display }}
+    </div>
+    {% if opp.description %}
+    <div style="font-size:.88rem;color:var(--muted);margin-top:.75rem;line-height:1.65;max-width:620px;">{{ opp.description }}</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Financing Terms</div>
+    <div class="detail-row"><div class="detail-lbl">Ticket Size</div><div class="detail-val" style="color:var(--warn);font-weight:700;">{{ opp.ticket_range_label }}</div></div>
+    <div class="detail-row">
+      <div class="detail-lbl">Interest Rate</div>
+      <div class="detail-val">
+        {% if opp.typical_interest_rate == 0 %}
+        <span style="color:var(--accent);font-weight:700;">Grant (no repayment)</span>
+        {% elif opp.typical_interest_rate %}
+        {{ opp.typical_interest_rate }}% p.a.
+        {% else %}—{% endif %}
+      </div>
+    </div>
+    <div class="detail-row"><div class="detail-lbl">Tenor</div><div class="detail-val">{% if opp.typical_tenor_years %}{{ opp.typical_tenor_years|floatformat:0 }} years{% else %}—{% endif %}</div></div>
+    <div class="detail-row"><div class="detail-lbl">Grace Period</div><div class="detail-val">{% if opp.grace_period_years %}{{ opp.grace_period_years|floatformat:0 }} years{% else %}—{% endif %}</div></div>
+    <div class="detail-row"><div class="detail-lbl">Co-financing Required</div><div class="detail-val">{% if opp.co_financing_required %}Yes — {% if opp.co_financing_pct %}{{ opp.co_financing_pct|floatformat:0 }}% from borrower{% endif %}{% else %}No{% endif %}</div></div>
+    <div class="detail-row"><div class="detail-lbl">Typical Timeline</div><div class="detail-val">{% if opp.typical_timeline_days %}{{ opp.typical_timeline_days }} days to first disbursement{% else %}—{% endif %}</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Eligibility</div>
+    <div class="detail-row"><div class="detail-lbl">Focus Areas</div><div class="detail-val">{% if opp.focus_areas %}{{ opp.focus_areas|join:", " }}{% else %}General{% endif %}</div></div>
+    <div class="detail-row"><div class="detail-lbl">Eligible Countries</div><div class="detail-val">{% if opp.eligible_countries %}{{ opp.eligible_countries|join:", " }}{% else %}Global{% endif %}</div></div>
+    <div class="detail-row"><div class="detail-lbl">Eligible Regions</div><div class="detail-val">{% if opp.eligible_regions %}{{ opp.eligible_regions|join:", " }}{% else %}Global{% endif %}</div></div>
+    <div class="detail-row"><div class="detail-lbl">Eligible Sectors</div><div class="detail-val">{% if opp.eligible_sectors %}{{ opp.eligible_sectors|join:", " }}{% else %}All sectors{% endif %}</div></div>
+    {% if opp.eligibility_criteria %}
+    <div class="detail-row"><div class="detail-lbl">Key Criteria</div><div class="detail-val" style="color:var(--muted);">{{ opp.eligibility_criteria }}</div></div>
+    {% endif %}
+  </div>
+
+  {% if opp.application_process %}
+  <div class="panel">
+    <div class="panel-head">Application Process</div>
+    <div style="padding:1rem 1.1rem;font-size:.82rem;color:var(--muted);line-height:1.6;">{{ opp.application_process }}</div>
+  </div>
+  {% endif %}
+
+  {% if recent_matches %}
+  <div class="panel">
+    <div class="panel-head">Companies Matched to This Instrument</div>
+    {% for m in recent_matches %}
+    <div style="padding:.6rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;justify-content:space-between;align-items:center;font-size:.82rem;">
+      <div>
+        <a href="{% url 'transition:dashboard' m.roadmap.company.slug %}" style="color:var(--text);font-weight:600;text-decoration:none;">
+          {{ m.roadmap.company.name }}
+        </a>
+        <div style="font-size:.68rem;color:var(--muted);">{{ m.roadmap.title|truncatechars:60 }}</div>
+      </div>
+      <span style="color:var(--accent);font-weight:700;">{{ m.match_score|floatformat:0 }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="display:flex;gap:.75rem;">
+    <a href="{% url 'transition:financing' %}" style="display:block;flex:1;padding:.6rem 1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--text);text-decoration:none;text-align:center;">
+      ← Back to Directory
+    </a>
+    {% if opp.url %}
+    <a href="{{ opp.url }}" target="_blank" rel="noopener" style="display:block;flex:1;padding:.6rem 1rem;background:var(--accent);border-radius:8px;font-size:.8rem;color:#0d1117;text-decoration:none;text-align:center;font-weight:700;">
+      ↗ Official Website
+    </a>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -175,9 +175,21 @@ def leaderboard(request):
 
     companies = list(qs.order_by('rank', '-ecoiq_score', 'name'))
 
-    # Annotate with tier — no leading underscore (Django template blocks those)
+    # Annotate with tier + EcoIQ Intelligence profile if available
+    _profile_map = {}
+    try:
+        from companies.models import CompanyProfile
+        for p in CompanyProfile.objects.filter(
+            company__in=[c.pk for c in companies],
+            status__in=('public', 'verified'),
+        ).select_related('company'):
+            _profile_map[p.company_id] = p
+    except Exception:
+        pass
+
     for co in companies:
         co.tier = get_tier(float(co.ecoiq_score))
+        co.ecoiq_profile = _profile_map.get(co.pk)
 
     all_cos   = Company.objects.prefetch_related('projects')
     total_co2 = sum(c.total_co2_reduced for c in all_cos)

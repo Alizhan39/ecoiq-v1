@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Company Comparison — EcoIQ Intelligence{% endblock %}
+
+{% block extra_head %}
+<style>
+:root {
+  --bg:#070b0f;--surface:rgba(255,255,255,.025);--border:rgba(255,255,255,.07);
+  --border2:rgba(255,255,255,.12);--text:#e2e8f0;--muted:#64748b;
+  --accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff;
+}
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); }
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.bc { font-size:.75rem;color:var(--muted);margin-bottom:1.5rem; }
+.bc a { color:var(--muted);text-decoration:none; }
+.bc a:hover { color:var(--accent); }
+
+/* Selector */
+.selector-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+.co-select {
+  background: #0d1117;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: .6rem .9rem;
+  color: var(--text);
+  font-size: .85rem;
+  width: 100%;
+}
+.co-select:focus { outline: none; border-color: var(--accent); }
+.compare-btn {
+  background: var(--accent); color: #0d1117;
+  border: none; border-radius: 8px;
+  padding: .6rem 1.4rem;
+  font-size: .85rem; font-weight: 800; cursor: pointer;
+}
+.compare-btn:hover { opacity: .9; }
+
+/* Company comparison columns */
+.cmp-header {
+  display: grid;
+  grid-template-columns: 180px repeat({{ companies|length }}, 1fr);
+  gap: 1px; background: var(--border);
+  border-radius: 10px 10px 0 0; overflow: hidden;
+  border: 1px solid var(--border);
+  border-bottom: none;
+}
+.cmp-row {
+  display: grid;
+  grid-template-columns: 180px repeat({{ companies|length }}, 1fr);
+  gap: 1px; background: var(--border);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.cmp-row:last-child {
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+}
+.cmp-cell {
+  background: #0d1117; padding: .75rem 1rem;
+}
+.cmp-cell.head { background: #161b22; }
+.cmp-cell.label { background: #0a0d11; font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); display: flex; align-items: center; }
+
+/* Company header */
+.co-head { text-align: center; }
+.co-head-name { font-weight: 800; font-size: .9rem; }
+.co-head-sub  { font-size: .7rem; color: var(--muted); margin-top: .2rem; }
+.co-score-big {
+  font-size: 2.5rem; font-weight: 900; letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums; text-align: center; margin-top: .5rem;
+}
+
+/* Pillar bar comparison */
+.bar-cell { display: flex; align-items: center; gap: .5rem; }
+.bar-num  { font-size: .9rem; font-weight: 800; font-variant-numeric: tabular-nums; width: 2.5rem; }
+.bar-track { flex: 1; background: rgba(255,255,255,.06); border-radius: 4px; height: 6px; }
+.bar-fill  { height: 6px; border-radius: 4px; transition: width .6s ease; }
+
+/* Chart containers */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+.panel { background: #0d1117; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.panel-head { background: #161b22; padding: .65rem 1.1rem; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); }
+.chart-wrap { padding: .85rem 1.1rem; }
+
+/* Legend dots */
+.legend { display: flex; gap: 1rem; flex-wrap: wrap; padding: .5rem 1.1rem; }
+.legend-item { display: flex; align-items: center; gap: .3rem; font-size: .72rem; color: var(--muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+@media (max-width: 800px) {
+  .chart-grid { grid-template-columns: 1fr; }
+  .cmp-header, .cmp-row { grid-template-columns: 120px repeat({{ companies|length }}, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="bc">
+    <a href="{% url 'intelligence:hub' %}">Intelligence Hub</a> › Company Comparison
+  </div>
+
+  <h1 style="font-size:1.4rem;font-weight:800;margin:0 0 1.5rem;">Company Comparison Engine</h1>
+
+  <!-- Selector form -->
+  <form method="get" style="margin-bottom:2rem;">
+    <div class="selector-row">
+      {% for i in "1234" %}
+      <select name="co" class="co-select">
+        <option value="">— Select company {{ forloop.counter }} —</option>
+        {% for co in all_companies %}
+        <option value="{{ co.slug }}"
+          {% if co.slug in selected_slugs %}selected{% endif %}>
+          {{ co.name }}{% if co.country %} ({{ co.country }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      {% endfor %}
+      <button type="submit" class="compare-btn">Compare →</button>
+    </div>
+  </form>
+
+  {% if companies %}
+
+  <!-- Comparison grid -->
+  <div class="cmp-header">
+    <div class="cmp-cell head" style="background:#0a0d11;"></div>
+    {% for co in companies %}
+    <div class="cmp-cell head co-head">
+      <div class="co-head-name">{{ co.name }}</div>
+      <div class="co-head-sub">{{ co.get_sector_display }} · {{ co.country }}</div>
+      <div class="co-score-big"
+           style="color:{% if co.ecoiq_score >= 70 %}#00e89a{% elif co.ecoiq_score >= 55 %}#40916c{% elif co.ecoiq_score >= 40 %}#f4a261{% else %}#e63946{% endif %};">
+        {{ co.ecoiq_score }}
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);text-align:center;">EcoIQ · Rank #{{ co.rank|default:"—" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% for pillar in pillar_comparison %}
+  <div class="cmp-row">
+    <div class="cmp-cell label">{{ pillar.label }}</div>
+    {% for score in pillar.scores %}
+    <div class="cmp-cell">
+      <div class="bar-cell">
+        <span class="bar-num"
+              style="color:{% if score >= 70 %}#00e89a{% elif score >= 40 %}#f4a261{% else %}#e63946{% endif %};">
+          {{ score }}
+        </span>
+        <div class="bar-track">
+          <div class="bar-fill"
+               style="width:{{ score }}%;
+                      background:{% if score >= 70 %}#00e89a{% elif score >= 40 %}#f4a261{% else %}#e63946{% endif %};
+                      {% if score == pillar.max %}box-shadow:0 0 6px rgba(0,232,154,.4);{% endif %}">
+          </div>
+        </div>
+        {% if score == pillar.max %}<span style="font-size:.6rem;color:var(--accent);">▲</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <!-- Additional rows -->
+  <div class="cmp-row">
+    <div class="cmp-cell label">Verified</div>
+    {% for co in companies %}
+    <div class="cmp-cell">
+      {% if co.verified %}
+        <span style="color:var(--accent);font-weight:700;">✓ Yes</span>
+      {% else %}
+        <span style="color:var(--muted);">No</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="cmp-row">
+    <div class="cmp-cell label">Projects</div>
+    {% for co in companies %}
+    <div class="cmp-cell" style="font-weight:700;font-variant-numeric:tabular-nums;">
+      {{ co.projects.count }}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="cmp-row" style="border-radius:0 0 10px 10px;overflow:hidden;">
+    <div class="cmp-cell label">Tier</div>
+    {% for co in companies %}
+    <div class="cmp-cell">
+      <span style="font-size:.75rem;font-weight:700;color:{{ co.tier.colour }};">
+        {{ co.tier.label }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-grid">
+    <!-- Radar overlay -->
+    <div class="panel">
+      <div class="panel-head">Pillar Radar Comparison</div>
+      <div class="legend" id="radarLegend"></div>
+      <div class="chart-wrap">
+        <canvas id="radarChart" style="height:280px;"></canvas>
+      </div>
+    </div>
+
+    <!-- Score history overlay -->
+    <div class="panel">
+      <div class="panel-head">Score History Overlay</div>
+      <div class="legend" id="histLegend"></div>
+      <div class="chart-wrap">
+        <canvas id="histChart" style="height:280px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div style="text-align:center;padding:4rem 2rem;color:var(--muted);">
+    <div style="font-size:2rem;margin-bottom:1rem;">⚖️</div>
+    <div style="font-size:1rem;font-weight:600;margin-bottom:.5rem;">Select companies to compare</div>
+    <div style="font-size:.85rem;">Choose 2–4 companies from the dropdowns above and click Compare.</div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% if companies %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const RADAR_DATA = {{ radar_datasets }};
+const HIST_DATA  = {{ history_json }};
+
+const COLORS = ['#00e89a','#58a6ff','#f4a261','#8b5cf6'];
+
+// Radar
+const radarLegend = document.getElementById('radarLegend');
+const radarDatasets = RADAR_DATA.map((d, i) => {
+  const c = d.color || COLORS[i % COLORS.length];
+  radarLegend.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${c};"></div>${d.label}</div>`;
+  return {
+    label: d.label,
+    data: d.data,
+    borderColor: c,
+    backgroundColor: c + '18',
+    borderWidth: 1.5,
+    pointRadius: 3,
+    pointBackgroundColor: c,
+  };
+});
+
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Pollution','Reduction','Investment','Transparency','Community'],
+    datasets: radarDatasets,
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      r: {
+        min: 0, max: 100,
+        grid: { color: 'rgba(255,255,255,.07)' },
+        ticks: { color: '#64748b', font: { size: 9 }, backdropColor: 'transparent' },
+        pointLabels: { color: '#94a3b8', font: { size: 10 } },
+      },
+    },
+  },
+});
+
+// History
+const histLegend = document.getElementById('histLegend');
+const histDatasets = Object.entries(HIST_DATA).map(([slug, d], i) => {
+  const c = d.color || COLORS[i % COLORS.length];
+  histLegend.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${c};"></div>${d.name}</div>`;
+  return {
+    label: d.name,
+    data: d.scores,
+    labels: d.labels,
+    borderColor: c,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    tension: 0.4,
+    pointRadius: 2,
+    pointBackgroundColor: c,
+  };
+});
+
+// Merge all labels
+const allLabels = [...new Set(
+  Object.values(HIST_DATA).flatMap(d => d.labels)
+)].sort();
+
+new Chart(document.getElementById('histChart'), {
+  type: 'line',
+  data: {
+    labels: allLabels,
+    datasets: histDatasets.map((ds, i) => {
+      const slugLabels = Object.values(HIST_DATA)[i].labels;
+      const slugScores = Object.values(HIST_DATA)[i].scores;
+      return {
+        ...ds,
+        data: allLabels.map(l => {
+          const idx = slugLabels.indexOf(l);
+          return idx >= 0 ? slugScores[idx] : null;
+        }),
+        spanGaps: true,
+      };
+    }),
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: '#0d1117', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+      titleColor: '#e2e8f0', bodyColor: '#64748b',
+    }},
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 }, maxTicksLimit: 8 } },
+      y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 } }, min: 0, max: 100 },
+    },
+  },
+});
+</script>
+{% endif %}
+{% endblock %}

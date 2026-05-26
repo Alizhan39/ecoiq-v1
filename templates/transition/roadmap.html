@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ roadmap.title }} — EcoIQ Transition{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root { --bg:#070b0f;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#e2e8f0;--muted:#64748b;--accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff; }
+* { box-sizing:border-box; }
+body { background:var(--bg);color:var(--text); }
+.page { max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem; }
+.bc { font-size:.75rem;color:var(--muted);margin-bottom:1.5rem; }
+.bc a { color:var(--muted);text-decoration:none; }
+
+/* Roadmap hero */
+.rm-hero { background:#0d1117;border:1px solid var(--border2);border-radius:12px;padding:1.5rem 2rem;margin-bottom:1.5rem; }
+.rm-type-badge { font-size:.65rem;padding:3px 10px;border-radius:20px;font-weight:700;display:inline-block;margin-bottom:.75rem; }
+.rm-title { font-size:1.4rem;font-weight:800;margin-bottom:.5rem; }
+.rm-summary { font-size:.88rem;color:var(--muted);line-height:1.65;max-width:720px; }
+
+/* Metrics grid */
+.metrics-grid { display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem; }
+.metric-cell { background:#0d1117;padding:.8rem 1rem;text-align:center; }
+.metric-val  { font-size:1.1rem;font-weight:800;font-variant-numeric:tabular-nums; }
+.metric-lbl  { font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem; }
+
+/* Grid layout */
+.grid-main { display:grid;grid-template-columns:1fr 320px;gap:1.5rem; }
+
+/* Panel */
+.panel { background:#0d1117;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem; }
+.panel-head { background:#161b22;padding:.65rem 1.1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; }
+
+/* Phase cards */
+.phase-card { padding:1.1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.04); }
+.phase-card:last-child { border-bottom:none; }
+.phase-header { display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem; }
+.phase-num { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;flex-shrink:0; }
+.phase-name { font-size:.92rem;font-weight:700; }
+.phase-dur  { font-size:.72rem;color:var(--muted);margin-left:auto; }
+.phase-desc { font-size:.82rem;color:var(--muted);line-height:1.5;margin-bottom:.75rem; }
+.phase-cols { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
+.phase-list-title { font-size:.63rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.4rem;font-weight:700; }
+.phase-list-item { font-size:.78rem;padding:.2rem 0;color:#c9d1d9;line-height:1.4; }
+.phase-list-item::before { content:'› ';opacity:.5; }
+.phase-metrics { display:flex;gap:1rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,.05); }
+.ph-metric-val { font-size:.88rem;font-weight:700;font-variant-numeric:tabular-nums; }
+.ph-metric-lbl { font-size:.62rem;color:var(--muted); }
+
+/* Gantt chart */
+.gantt-wrap { padding:1rem 1.25rem;overflow-x:auto; }
+.gantt-row { display:flex;align-items:center;gap:.6rem;margin:.3rem 0; }
+.gantt-label { min-width:130px;font-size:.75rem;color:var(--muted); }
+.gantt-track { flex:1;height:20px;background:rgba(255,255,255,.04);border-radius:4px;position:relative;overflow:hidden; }
+.gantt-fill  { height:100%;border-radius:4px;opacity:.7;transition:width .3s; }
+.gantt-dur   { min-width:44px;text-align:right;font-size:.7rem;color:var(--muted); }
+
+/* Financing matches */
+.fin-card { padding:.75rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03); }
+.fin-card:last-child { border-bottom:none; }
+.fin-header { display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem; }
+.fin-score-bar { height:4px;border-radius:2px;background:var(--border);margin:-.3rem 0 .5rem; }
+.fin-score-fill { height:4px;border-radius:2px; }
+.fin-inst { font-size:.85rem;font-weight:700; }
+.fin-prog { font-size:.7rem;color:var(--muted); }
+.fin-rationale { font-size:.75rem;color:var(--muted);line-height:1.5;margin-top:.3rem; }
+.fin-terms { display:flex;gap:1rem;margin-top:.4rem;flex-wrap:wrap; }
+.fin-term { font-size:.68rem;color:var(--muted); }
+.fin-term span { color:var(--text);font-weight:600; }
+
+/* Tech recs */
+.tech-row { padding:.65rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:.75rem;align-items:flex-start; }
+.tech-row:last-child { border-bottom:none; }
+.tech-cat { font-size:.63rem;padding:2px 6px;border-radius:4px;font-weight:700;flex-shrink:0;background:rgba(88,166,255,.1);color:var(--info); }
+.tech-body { flex:1;min-width:0; }
+.tech-name { font-size:.82rem;font-weight:700; }
+.tech-desc { font-size:.72rem;color:var(--muted);line-height:1.4;margin:.2rem 0; }
+.tech-metrics { display:flex;gap:.75rem;flex-wrap:wrap;font-size:.68rem;color:var(--muted); }
+
+/* JSON lists */
+.list-items { padding:.75rem 1.25rem; }
+.list-item { padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:.82rem;line-height:1.5; }
+.list-item:last-child { border-bottom:none; }
+.list-item::before { content:'› ';opacity:.5; }
+
+@media (max-width:800px) { .grid-main{grid-template-columns:1fr;} .metrics-grid{grid-template-columns:repeat(3,1fr);} .phase-cols{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="bc">
+    <a href="{% url 'transition:index' %}">Transition Engine</a> ›
+    <a href="{% url 'transition:dashboard' company.slug %}">{{ company.name }}</a> ›
+    Roadmap
+  </div>
+
+  <!-- Roadmap Hero -->
+  <div class="rm-hero">
+    <div class="rm-type-badge" style="
+      {% if roadmap.roadmap_type == 'coal_gas' %}background:#f4a26122;color:#f4a261;
+      {% elif roadmap.roadmap_type in 'methane,flare' %}background:#e6394622;color:#e63946;
+      {% elif roadmap.roadmap_type in 'renewable,electrification' %}background:#00e89a22;color:#00e89a;
+      {% else %}background:#58a6ff22;color:#58a6ff;{% endif %}
+    ">{{ roadmap.get_roadmap_type_display }}</div>
+    <div class="rm-title">{{ roadmap.title }}</div>
+    {% if roadmap.executive_summary %}
+    <div class="rm-summary" style="margin-top:.5rem;">{{ roadmap.executive_summary }}</div>
+    {% endif %}
+    <div style="margin-top:.75rem;font-size:.72rem;color:var(--muted);">
+      Generated {{ roadmap.created_at|date:"M d Y, H:i" }} UTC · {{ roadmap.model_used }}
+      · {{ roadmap.token_count|intcomma }} tokens
+      · Confidence {{ roadmap.confidence|floatformat:0 }}%
+      · Data quality: {{ roadmap.get_data_quality_display }}
+    </div>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="metrics-grid">
+    <div class="metric-cell">
+      <div class="metric-val" style="color:var(--warn);">
+        {% if roadmap.total_capex_usd %}${{ roadmap.total_capex_usd|intcomma }}{% else %}—{% endif %}
+      </div>
+      <div class="metric-lbl">Total Capex</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" style="color:var(--accent);">
+        {% if roadmap.annual_opex_savings_usd %}${{ roadmap.annual_opex_savings_usd|intcomma }}{% else %}—{% endif %}
+      </div>
+      <div class="metric-lbl">Annual OpEx Savings</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" style="color:{{ roadmap.roi_color }};">
+        {% if roadmap.payback_years %}{{ roadmap.payback_years|floatformat:1 }} yr{% else %}—{% endif %}
+      </div>
+      <div class="metric-lbl">Payback Period</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val">
+        {% if roadmap.irr_pct %}{{ roadmap.irr_pct|floatformat:1 }}%{% else %}—{% endif %}
+      </div>
+      <div class="metric-lbl">IRR</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" style="color:var(--accent);">
+        {% if roadmap.co2_reduction_tonnes %}{{ roadmap.co2_reduction_tonnes|intcomma }}{% else %}—{% endif %}
+      </div>
+      <div class="metric-lbl">CO₂ Reduction t/yr</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" style="color:var(--accent);">
+        {% if roadmap.projected_ecoiq_delta %}+{{ roadmap.projected_ecoiq_delta|floatformat:1 }}{% else %}—{% endif %}
+      </div>
+      <div class="metric-lbl">EcoIQ Score Gain</div>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <!-- Left: Phases + details -->
+    <div>
+
+      <!-- Gantt Timeline -->
+      {% if phases %}
+      <div class="panel">
+        <div class="panel-head">Phase Timeline</div>
+        <div class="gantt-wrap">
+          {% for ph in phases %}
+          <div class="gantt-row">
+            <div class="gantt-label">
+              <span style="font-weight:700;margin-right:.3rem;">{{ ph.number }}.</span>
+              {{ ph.name|truncatechars:20 }}
+            </div>
+            <div class="gantt-track">
+              <div class="gantt-fill" style="
+                width:{% widthratio ph.duration_months roadmap.total_duration_months|default:1 100 %}%;
+                background:{% cycle '#00e89a' '#58a6ff' '#f4a261' '#e63946' '#8b5cf6' %};
+              "></div>
+            </div>
+            <div class="gantt-dur">{{ ph.duration_months }}mo</div>
+          </div>
+          {% endfor %}
+          <div style="text-align:right;font-size:.7rem;color:var(--muted);margin-top:.5rem;">
+            Total: {{ roadmap.total_duration_months }} months
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Phase Detail Cards -->
+      <div class="panel">
+        <div class="panel-head">Phases <span>{{ phases|length }}</span></div>
+        {% for ph in phases %}
+        <div class="phase-card">
+          <div class="phase-header">
+            <div class="phase-num" style="
+              background:{% cycle '#00e89a22' '#58a6ff22' '#f4a26122' '#e6394622' '#8b5cf622' %};
+              color:{% cycle '#00e89a' '#58a6ff' '#f4a261' '#e63946' '#8b5cf6' %};
+            ">{{ ph.number }}</div>
+            <div class="phase-name">{{ ph.name }}</div>
+            <div class="phase-dur">{{ ph.duration_months }} months</div>
+          </div>
+          {% if ph.description %}
+          <div class="phase-desc">{{ ph.description }}</div>
+          {% endif %}
+          <div class="phase-cols">
+            {% if ph.activities %}
+            <div>
+              <div class="phase-list-title">Activities</div>
+              {% for act in ph.activities %}
+              <div class="phase-list-item">{{ act }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if ph.milestones %}
+            <div>
+              <div class="phase-list-title">Milestones</div>
+              {% for ms in ph.milestones %}
+              <div class="phase-list-item">{{ ms }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% if ph.capex_usd or ph.co2_reduction_tonnes %}
+          <div class="phase-metrics">
+            {% if ph.capex_usd %}
+            <div>
+              <div class="ph-metric-val" style="color:var(--warn);">${{ ph.capex_usd|intcomma }}</div>
+              <div class="ph-metric-lbl">Phase Capex</div>
+            </div>
+            {% endif %}
+            {% if ph.opex_change_usd %}
+            <div>
+              <div class="ph-metric-val" style="color:var(--accent);">${{ ph.opex_change_usd|intcomma }}</div>
+              <div class="ph-metric-lbl">OpEx Change</div>
+            </div>
+            {% endif %}
+            {% if ph.co2_reduction_tonnes %}
+            <div>
+              <div class="ph-metric-val" style="color:var(--accent);">{{ ph.co2_reduction_tonnes|intcomma }}</div>
+              <div class="ph-metric-lbl">CO₂ Reduction t/yr</div>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Key Risks -->
+      {% if roadmap.risks_json %}
+      <div class="panel">
+        <div class="panel-head">Key Risks</div>
+        <div class="list-items">
+          {% for risk in roadmap.risks_json %}
+          <div class="list-item" style="color:#c9d1d9;">{{ risk }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Technology Options -->
+      {% if roadmap.technology_options_json %}
+      <div class="panel">
+        <div class="panel-head">Recommended Technology Options</div>
+        <div class="list-items">
+          {% for tech in roadmap.technology_options_json %}
+          <div class="list-item">{{ tech }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right: Financing + Tech Recs -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <!-- Current State Analysis -->
+      {% if current_state %}
+      <div class="panel">
+        <div class="panel-head">Current State Analysis</div>
+        <div style="padding:.75rem 1.1rem;">
+          {% if current_state.key_inefficiencies %}
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.4rem;">Key Inefficiencies</div>
+          {% for item in current_state.key_inefficiencies %}
+          <div style="font-size:.78rem;padding:.2rem 0;color:#c9d1d9;line-height:1.4;">› {{ item }}</div>
+          {% endfor %}
+          {% endif %}
+          {% if current_state.primary_risks %}
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:.75rem 0 .4rem;">Primary Risks</div>
+          {% for item in current_state.primary_risks %}
+          <div style="font-size:.78rem;padding:.2rem 0;color:var(--danger);line-height:1.4;">› {{ item }}</div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Target State -->
+      {% if target_state %}
+      <div class="panel">
+        <div class="panel-head">Target State</div>
+        <div style="padding:.75rem 1.1rem;">
+          {% if target_state.headline_outcome %}
+          <div style="font-size:.85rem;font-weight:600;color:var(--accent);margin-bottom:.75rem;">{{ target_state.headline_outcome }}</div>
+          {% endif %}
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+            {% if target_state.co2_reduction_pct %}
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:var(--accent);">{{ target_state.co2_reduction_pct|floatformat:0 }}%</div>
+              <div style="font-size:.62rem;color:var(--muted);">CO₂ Reduction</div>
+            </div>
+            {% endif %}
+            {% if target_state.ecoiq_score_gain %}
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:var(--accent);">+{{ target_state.ecoiq_score_gain|floatformat:0 }}</div>
+              <div style="font-size:.62rem;color:var(--muted);">EcoIQ Points</div>
+            </div>
+            {% endif %}
+            {% if target_state.timeframe_years %}
+            <div>
+              <div style="font-size:1rem;font-weight:800;">{{ target_state.timeframe_years }}yr</div>
+              <div style="font-size:.62rem;color:var(--muted);">Timeframe</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Financing Matches -->
+      {% if matches %}
+      <div class="panel">
+        <div class="panel-head">
+          Financing Matches
+          <span>{{ matches|length }}</span>
+        </div>
+        {% for m in matches|slice:":8" %}
+        <div class="fin-card">
+          <div class="fin-header">
+            <span style="font-size:.65rem;padding:2px 7px;border-radius:4px;font-weight:700;
+              {% if m.match_score >= 0.7 %}background:#00e89a22;color:#00e89a;
+              {% elif m.match_score >= 0.4 %}background:#f4a26122;color:#f4a261;
+              {% else %}background:#88888822;color:#888;{% endif %}
+            ">{{ m.match_score|floatformat:0 }}%</span>
+            <div class="fin-inst">{{ m.opportunity.institution_name }}</div>
+          </div>
+          {% if m.opportunity.programme_name %}
+          <div class="fin-prog">{{ m.opportunity.programme_name }}</div>
+          {% endif %}
+          <div class="fin-terms">
+            <div class="fin-term">Type: <span>{{ m.opportunity.get_source_type_display }}</span></div>
+            {% if m.opportunity.typical_interest_rate is not None %}
+            <div class="fin-term">Rate: <span>{% if m.opportunity.typical_interest_rate == 0 %}Grant{% else %}{{ m.opportunity.typical_interest_rate }}%{% endif %}</span></div>
+            {% endif %}
+            {% if m.suggested_amount_usd %}
+            <div class="fin-term">Est: <span>${{ m.suggested_amount_usd|intcomma }}</span></div>
+            {% endif %}
+          </div>
+          {% if m.match_rationale %}
+          <div class="fin-rationale">{{ m.match_rationale|truncatechars:140 }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <div style="padding:.65rem 1.1rem;">
+          <a href="{% url 'transition:financing' %}" style="font-size:.75rem;color:var(--accent);text-decoration:none;">Browse full financing directory →</a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Technology Recommendations -->
+      {% if tech_recs %}
+      <div class="panel">
+        <div class="panel-head">Technology Recommendations</div>
+        {% for rec in tech_recs %}
+        <div class="tech-row">
+          <span class="tech-cat">{{ rec.get_category_display|truncatechars:12 }}</span>
+          <div class="tech-body">
+            <div class="tech-name">{{ rec.technology_name }}</div>
+            {% if rec.description %}
+            <div class="tech-desc">{{ rec.description|truncatechars:100 }}</div>
+            {% endif %}
+            <div class="tech-metrics">
+              {% if rec.capex_low_usd %}
+              <span>{{ rec.capex_range_label }}</span>
+              {% endif %}
+              {% if rec.co2_reduction_pct %}
+              <span style="color:var(--accent);">{{ rec.co2_reduction_pct|floatformat:0 }}% CO₂↓</span>
+              {% endif %}
+              {% if rec.payback_years %}
+              <span>{{ rec.payback_years|floatformat:1 }}yr payback</span>
+              {% endif %}
+              <span style="color:{% if rec.maturity == 'proven' %}var(--accent){% elif rec.maturity == 'commercial' %}var(--info){% else %}var(--warn){% endif %};">{{ rec.get_maturity_display }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Recommended Financing Structures -->
+      {% if roadmap.recommended_structures_json %}
+      <div class="panel">
+        <div class="panel-head">Recommended Structures</div>
+        <div class="list-items">
+          {% for s in roadmap.recommended_structures_json %}
+          <div class="list-item" style="font-size:.78rem;color:#c9d1d9;">{{ s }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Back to dashboard -->
+      <a href="{% url 'transition:dashboard' company.slug %}" style="display:block;padding:.6rem 1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--text);text-decoration:none;text-align:center;">
+        ← Back to {{ company.name }} Dashboard
+      </a>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

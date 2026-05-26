@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.utils.html import format_html
 from django.db.models import Count, Sum
 
-from .models import Company, EnvironmentalProject, Evidence, ScoreHistory
+from .models import Company, EnvironmentalProject, Evidence, ScoreHistory, SectorRef, CountryRef
 from .scoring import get_tier, rerank_all
 
 
@@ -262,3 +262,20 @@ class ScoreHistoryAdmin(admin.ModelAdmin):
     list_filter   = ('company',)
     ordering      = ('-date', 'rank')
     date_hierarchy = 'date'
+
+
+# ── Reference tables ──────────────────────────────────────────────────────────
+
+@admin.register(SectorRef)
+class SectorRefAdmin(admin.ModelAdmin):
+    list_display  = ('code', 'display_name')
+    search_fields = ('code', 'display_name')
+    ordering      = ('display_name',)
+
+
+@admin.register(CountryRef)
+class CountryRefAdmin(admin.ModelAdmin):
+    list_display  = ('code', 'name', 'region')
+    search_fields = ('code', 'name', 'region')
+    list_filter   = ('region',)
+    ordering      = ('name',)

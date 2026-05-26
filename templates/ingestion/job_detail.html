@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Ingestion Job #{{ job.pk }} — {{ job.company_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.jd-page { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+/* Header */
+.jd-header { display: flex; align-items: flex-start; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+.jd-header-main { flex: 1; }
+.jd-title { font-size: 1.5rem; font-weight: 800; color: #f0f0f0; margin: 0 0 0.3rem; }
+.jd-sub   { color: #666; font-size: 0.85rem; }
+.jd-status-pill {
+  display: inline-block; padding: 4px 14px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 800; font-family: monospace;
+  text-transform: uppercase; margin-top: 0.5rem;
+}
+.sp-done   { background:#00e89a22; color:#00e89a; border:1px solid #00e89a44; }
+.sp-failed { background:#e6394622; color:#e63946; border:1px solid #e6394644; }
+.sp-other  { background:#f4a26122; color:#f4a261; border:1px solid #f4a26144; }
+
+/* Scores */
+.scores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.score-card {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+.sc-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #484f58; margin-bottom: 0.4rem; }
+.sc-val   { font-size: 1.8rem; font-weight: 800; color: #00e89a; letter-spacing: -0.04em; }
+.sc-conf  { font-size: 0.72rem; color: #484f58; margin-top: 0.2rem; }
+.sc-bar-track { background:#21262d; border-radius:4px; height:4px; margin-top:0.5rem; overflow:hidden; }
+.sc-bar-fill  { height:100%; border-radius:4px; background:linear-gradient(90deg,#00e89a,#40916c); }
+
+/* Section cards */
+.jd-card {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+.jd-card-header {
+  background: #161b22;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #8b949e;
+  border-bottom: 1px solid #21262d;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.jd-card-body { padding: 1.25rem; }
+
+/* Projects */
+.project-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #21262d;
+  align-items: start;
+}
+.project-row:last-child { border-bottom: none; }
+.proj-name  { font-weight: 600; color: #e6edf3; margin-bottom: 0.2rem; }
+.proj-meta  { font-size: 0.78rem; color: #666; }
+.proj-badge {
+  font-size: 0.68rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 8px; white-space: nowrap; font-family: monospace;
+}
+.pb-active    { background:#00e89a22; color:#00e89a; }
+.pb-planned   { background:#f4a26122; color:#f4a261; }
+.pb-completed { background:#40916c22; color:#40916c; }
+.pb-cancelled { background:#e6394622; color:#e63946; }
+
+/* Sources */
+.source-row {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  padding: 0.6rem 0; border-bottom: 1px solid #161b22;
+  font-size: 0.82rem;
+}
+.source-row:last-child { border-bottom: none; }
+.src-icon  { font-size: 1rem; flex-shrink: 0; width: 1.5rem; text-align: center; margin-top: 0.1rem; }
+.src-info  { flex: 1; min-width: 0; }
+.src-title { color: #58a6ff; text-decoration: none; display: block;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.src-title:hover { text-decoration: underline; }
+.src-meta  { color: #484f58; font-size: 0.73rem; margin-top: 0.1rem; }
+.src-conf  { font-size: 0.7rem; color: #40916c; white-space: nowrap; }
+
+/* Signals */
+.signal-list { list-style: none; padding: 0; margin: 0; }
+.signal-list li {
+  padding: 0.4rem 0; border-bottom: 1px solid #161b22;
+  color: #8b949e; font-size: 0.85rem;
+}
+.signal-list li:last-child { border-bottom: none; }
+.signal-list li::before { content: '• '; color: #484f58; }
+
+/* Error */
+.err-block {
+  background: #0d0608;
+  border: 1px solid #e6394644;
+  border-radius: 8px; padding: 1rem;
+  font-family: monospace; font-size: 0.78rem; color: #e63946;
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 300px; overflow-y: auto;
+}
+
+/* Action buttons */
+.jd-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.jd-btn {
+  background: #21262d; color: #e6edf3;
+  padding: 0.5rem 1.1rem; border-radius: 6px;
+  font-size: 0.85rem; font-weight: 600;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: background 0.15s;
+}
+.jd-btn:hover { background: #30363d; }
+.jd-btn.primary { background: #00e89a; color: #0d1117; }
+.jd-btn.primary:hover { background: #00d485; }
+
+/* KV table */
+.kv-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.kv-table td { padding: 0.45rem 0; vertical-align: top; }
+.kv-table td:first-child { color: #484f58; width: 40%; padding-right: 1rem; }
+.kv-table td:last-child  { color: #c9d1d9; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="jd-page">
+
+  <!-- Back + Actions -->
+  <div class="jd-actions">
+    <a href="{% url 'ingestion:index' %}" class="jd-btn">← Back to Ingestion</a>
+    {% if job.result_company %}
+      <a href="/league/{{ job.result_company.slug }}/" class="jd-btn primary">View Company Profile →</a>
+      <a href="/admin/league/company/{{ job.result_company.pk }}/change/" class="jd-btn">Edit in Admin</a>
+    {% endif %}
+  </div>
+
+  <!-- Header -->
+  <div class="jd-header">
+    <div class="jd-header-main">
+      <div class="jd-title">{{ job.company_name }}</div>
+      <div class="jd-sub">
+        Job #{{ job.pk }} ·
+        Started {{ job.created_at|date:"M d Y, H:i" }}
+        {% if job.duration_seconds %} · {{ job.duration_seconds }}s{% endif %}
+      </div>
+      <span class="jd-status-pill
+        {% if job.status == 'done' %}sp-done
+        {% elif job.status == 'failed' %}sp-failed
+        {% else %}sp-other{% endif %}">
+        {{ job.status }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Score summary (only when done) -->
+  {% if job.status == 'done' and score_result %}
+  <div class="scores-grid">
+    <div class="score-card">
+      <div class="sc-label">EcoIQ Score</div>
+      <div class="sc-val">{{ score_result.ecoiq_score }}</div>
+      <div class="sc-conf">
+        Confidence {{ score_result.overall_confidence|floatformat:0|default:"—" }}%
+      </div>
+    </div>
+    {% with sc=score_result pc=score_result.pillar_confidence %}
+    <div class="score-card">
+      <div class="sc-label">Pollution</div>
+      <div class="sc-val" style="font-size:1.4rem;">{{ sc.pollution_footprint }}</div>
+      <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ sc.pollution_footprint }}%"></div></div>
+      <div class="sc-conf">conf {{ pc.pollution|floatformat:0|default:"—" }}%</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-label">Reduction</div>
+      <div class="sc-val" style="font-size:1.4rem;">{{ sc.reduction_progress }}</div>
+      <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ sc.reduction_progress }}%"></div></div>
+      <div class="sc-conf">conf {{ pc.reduction|floatformat:0|default:"—" }}%</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-label">Investment</div>
+      <div class="sc-val" style="font-size:1.4rem;">{{ sc.investment }}</div>
+      <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ sc.investment }}%"></div></div>
+      <div class="sc-conf">conf {{ pc.investment|floatformat:0|default:"—" }}%</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-label">Transparency</div>
+      <div class="sc-val" style="font-size:1.4rem;">{{ sc.transparency }}</div>
+      <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ sc.transparency }}%"></div></div>
+      <div class="sc-conf">conf {{ pc.transparency|floatformat:0|default:"—" }}%</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-label">Community</div>
+      <div class="sc-val" style="font-size:1.4rem;">{{ sc.community_impact }}</div>
+      <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ sc.community_impact }}%"></div></div>
+      <div class="sc-conf">conf {{ pc.community|floatformat:0|default:"—" }}%</div>
+    </div>
+    {% endwith %}
+  </div>
+  {% endif %}
+
+  <!-- Error display -->
+  {% if job.status == 'failed' and job.error_message %}
+  <div class="jd-card">
+    <div class="jd-card-header">Error Details</div>
+    <div class="jd-card-body">
+      <div class="err-block">{{ job.error_message }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Company info -->
+  {% if search_result %}
+  <div class="jd-card">
+    <div class="jd-card-header">
+      Discovered Company Data
+      <span style="color:#484f58;font-weight:400;text-transform:none;letter-spacing:0;">
+        confidence {% widthratio search_result.data_confidence 1 100 %}%
+      </span>
+    </div>
+    <div class="jd-card-body">
+      <table class="kv-table">
+        <tr><td>Canonical Name</td><td>{{ search_result.canonical_name|default:"—" }}</td></tr>
+        <tr><td>Country</td><td>{{ search_result.country|default:"—" }}</td></tr>
+        <tr><td>City</td><td>{{ search_result.city|default:"—" }}</td></tr>
+        <tr><td>Sector</td><td>{{ search_result.sector|default:"—" }}</td></tr>
+        <tr><td>Website</td>
+          <td>
+            {% if search_result.website %}
+              <a href="{{ search_result.website }}" target="_blank" style="color:#58a6ff;">
+                {{ search_result.website }}
+              </a>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        <tr><td>Founded</td><td>{{ search_result.founded_year|default:"—" }}</td></tr>
+        <tr><td>Employees</td><td>{{ search_result.employee_count|intcomma|default:"—" }}</td></tr>
+        <tr><td>Revenue (USD)</td><td>
+          {% if search_result.annual_revenue_usd %}
+            ${{ search_result.annual_revenue_usd|intcomma }}
+          {% else %}—{% endif %}
+        </td></tr>
+        <tr><td>Description</td><td style="color:#8b949e;">{{ search_result.description|default:"—" }}</td></tr>
+      </table>
+
+      {% if search_result.environmental_highlights %}
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.06em;color:#484f58;margin-bottom:.5rem;">Environmental Highlights</div>
+        <ul class="signal-list">
+          {% for h in search_result.environmental_highlights %}
+          <li style="color:#52b788;">{{ h }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if search_result.environmental_concerns %}
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.06em;color:#484f58;margin-bottom:.5rem;">Environmental Concerns</div>
+        <ul class="signal-list">
+          {% for c in search_result.environmental_concerns %}
+          <li style="color:#f4a261;">{{ c }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Projects -->
+  {% if projects %}
+  <div class="jd-card">
+    <div class="jd-card-header">
+      Extracted Projects
+      <span style="color:#00e89a;font-weight:800;">{{ projects|length }}</span>
+    </div>
+    <div class="jd-card-body" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+      {% for p in projects %}
+      <div class="project-row">
+        <div>
+          <div class="proj-name">{{ p.name }}</div>
+          <div class="proj-meta">
+            {{ p.project_type }} ·
+            {% if p.location %}{{ p.location }} · {% endif %}
+            {% if p.start_year %}{{ p.start_year }}{% endif %}
+            {% if p.investment_usd %}
+              · ${{ p.investment_usd|intcomma }} invested
+            {% endif %}
+            {% if p.co2_reduction_tonnes %}
+              · {{ p.co2_reduction_tonnes|intcomma }} t CO₂/yr
+            {% endif %}
+            {% if p.households_helped %}
+              · {{ p.households_helped|intcomma }} households
+            {% endif %}
+          </div>
+          {% if p.description %}
+          <div style="margin-top:0.3rem;font-size:0.8rem;color:#666;">{{ p.description|truncatechars:160 }}</div>
+          {% endif %}
+        </div>
+        <span class="proj-badge pb-{{ p.status|default:'planned' }}">{{ p.status|default:"planned" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ESG Signals -->
+  {% if esg_signals %}
+  <div class="jd-card">
+    <div class="jd-card-header">ESG Signals</div>
+    <div class="jd-card-body">
+      <table class="kv-table">
+        <tr><td>ESG Report Found</td>
+          <td>{% if esg_signals.has_esg_report %}<span style="color:#00e89a;">✓ Yes</span>{% else %}No{% endif %}</td></tr>
+        <tr><td>Third-party Verified</td>
+          <td>{% if esg_signals.has_third_party_verification %}<span style="color:#00e89a;">✓ Yes</span>{% else %}No{% endif %}</td></tr>
+        <tr><td>ISO 14001 Certified</td>
+          <td>{% if esg_signals.iso14001_certified %}<span style="color:#00e89a;">✓ Yes</span>{% else %}No{% endif %}</td></tr>
+        <tr><td>Climate Targets Set</td>
+          <td>{% if esg_signals.targets_set %}<span style="color:#52b788;">✓ Yes</span>{% else %}No{% endif %}</td></tr>
+        {% if esg_signals.net_zero_target_year %}
+        <tr><td>Net Zero Target</td><td>{{ esg_signals.net_zero_target_year }}</td></tr>
+        {% endif %}
+      </table>
+
+      {% if esg_signals.community_programs %}
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.06em;color:#484f58;margin-bottom:.5rem;">Community Programs</div>
+        <ul class="signal-list">
+          {% for prog in esg_signals.community_programs %}
+          <li>{{ prog }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if esg_signals.incidents %}
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.06em;color:#e63946;margin-bottom:.5rem;">Incidents / Violations</div>
+        <ul class="signal-list">
+          {% for inc in esg_signals.incidents %}
+          <li style="color:#e63946;">{{ inc }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Greenwashing + Data Gaps -->
+  {% if gw_signals or data_gaps %}
+  <div class="jd-card">
+    <div class="jd-card-header">Data Quality</div>
+    <div class="jd-card-body">
+      {% if gw_signals %}
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.06em;color:#f4a261;margin-bottom:.5rem;">Greenwashing Signals</div>
+        <ul class="signal-list">
+          {% for g in gw_signals %}<li style="color:#f4a261;">{{ g }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if data_gaps %}
+      <div>
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.06em;color:#484f58;margin-bottom:.5rem;">Data Gaps</div>
+        <ul class="signal-list">
+          {% for gap in data_gaps %}<li>{{ gap }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Sources -->
+  {% if sources %}
+  <div class="jd-card">
+    <div class="jd-card-header">
+      Sources Investigated
+      <span style="color:#00e89a;font-weight:800;">{{ sources|length }}</span>
+    </div>
+    <div class="jd-card-body" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+      {% for src in sources %}
+      <div class="source-row">
+        <div class="src-icon">
+          {% if src.source_type == 'pdf' or src.source_type == 'esg_report' or src.source_type == 'annual_report' %}📄
+          {% elif src.source_type == 'government' %}🏛️
+          {% elif src.source_type == 'news' %}📰
+          {% else %}🌐{% endif %}
+        </div>
+        <div class="src-info">
+          <a class="src-title" href="{{ src.url }}" target="_blank">
+            {{ src.title|default:src.url|truncatechars:80 }}
+          </a>
+          <div class="src-meta">
+            {{ src.get_source_type_display }}
+            {% if src.downloaded %} · {{ src.content_chars|intcomma }} chars{% endif %}
+            {% if src.used_in_analysis %} · <span style="color:#40916c;">used in analysis</span>{% endif %}
+            {% if not src.downloaded %} · <span style="color:#484f58;">not downloaded</span>{% endif %}
+          </div>
+          {% if src.snippet %}
+          <div style="color:#484f58;font-size:0.75rem;margin-top:0.2rem;">{{ src.snippet|truncatechars:150 }}</div>
+          {% endif %}
+        </div>
+        <div class="src-conf">{{ src.confidence|floatformat:0 }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

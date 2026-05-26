@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class TransitionConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'transition'
+    verbose_name = 'Industrial Transition Engine'

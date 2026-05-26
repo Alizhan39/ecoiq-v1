@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ ci.country_name }} Intelligence — EcoIQ OS{% endblock %}
+
+{% block extra_head %}
+<style>
+:root {
+  --bg: #070b0f; --surface: rgba(255,255,255,.025); --surface2: rgba(255,255,255,.05);
+  --border: rgba(255,255,255,.07); --border2: rgba(255,255,255,.12);
+  --text: #e2e8f0; --muted: #64748b;
+  --accent: #00e89a; --warn: #f4a261; --danger: #e63946; --info: #58a6ff;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); }
+
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+/* Breadcrumb */
+.bc { font-size:.75rem; color:var(--muted); margin-bottom:1.5rem; }
+.bc a { color:var(--muted); text-decoration:none; }
+.bc a:hover { color:var(--accent); }
+
+/* Country hero */
+.hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 2rem;
+  background: #0d1117;
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  align-items: center;
+}
+.hero-flag { font-size: 3rem; }
+.hero-title { font-size: 1.6rem; font-weight: 800; margin: 0 0 .25rem; }
+.hero-sub   { font-size: .85rem; color: var(--muted); }
+.hero-score {
+  text-align: right;
+}
+.hero-score-val {
+  font-size: 3.5rem; font-weight: 900; letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.hero-score-label { font-size: .72rem; color: var(--muted); text-align: right; margin-top: .2rem; }
+.hero-trend {
+  font-size: 1rem; font-weight: 700; margin-top: .3rem; text-align: right;
+}
+
+/* Pillar grid */
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px; background: var(--border);
+  border-radius: 10px; overflow: hidden;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+}
+.pillar-cell {
+  background: #0d1117;
+  padding: .85rem 1rem;
+  text-align: center;
+}
+.pillar-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .3rem; }
+.pillar-score { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pillar-bar-track { background: rgba(255,255,255,.06); border-radius: 3px; height: 3px; margin-top: .4rem; }
+.pillar-bar-fill  { height: 3px; border-radius: 3px; background: var(--accent); }
+
+/* Main grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; margin-bottom: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+
+/* Panel */
+.panel { background: #0d1117; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.panel-head {
+  background: #161b22; padding: .65rem 1.1rem;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border); font-size: .7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
+}
+.panel-body { padding: 1rem 1.1rem; }
+
+/* Company table */
+.co-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.co-table th { text-align: left; padding: .4rem .6rem; font-size: .62rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+.co-table td { padding: .45rem .6rem; border-bottom: 1px solid rgba(255,255,255,.03); }
+.co-table tr:hover td { background: var(--surface); }
+
+/* Chart */
+.chart-wrap { padding: .85rem 1.1rem; }
+
+/* Signals */
+.sig-item { padding: .55rem 1.1rem; border-bottom: 1px solid rgba(255,255,255,.03); font-size: .8rem; }
+.sig-title { font-weight: 600; }
+.sig-co    { font-size: .68rem; color: var(--muted); margin-top: .1rem; }
+
+@media (max-width: 900px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .pillar-grid { grid-template-columns: repeat(3, 1fr); }
+  .grid-3 { grid-template-columns: 1fr; }
+  .hero { grid-template-columns: 1fr; text-align: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="bc">
+    <a href="{% url 'intelligence:hub' %}">Intelligence Hub</a> ›
+    National Intelligence › {{ ci.country_name }}
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-flag">{{ ci.flag_emoji|default:"🏴" }}</div>
+    <div>
+      <div class="hero-title">{{ ci.country_name }}</div>
+      <div class="hero-sub">
+        {{ ci.region|default:"—" }} ·
+        {{ ci.company_count }} companies tracked ·
+        {{ ci.verified_company_count }} verified ·
+        {{ ci.top_sector|default:"—"|upper }} leading sector
+      </div>
+      <div style="margin-top:.75rem;display:flex;gap:1.5rem;font-size:.82rem;">
+        <span style="color:var(--accent);">{{ ci.total_co2_reduction_tonnes|intcomma }} t CO₂/yr</span>
+        <span style="color:var(--info);">${{ ci.total_investment_usd|intcomma }} invested</span>
+        <span style="color:var(--muted);">{{ ci.total_households_helped|intcomma }} households</span>
+      </div>
+    </div>
+    <div class="hero-score">
+      <div class="hero-score-val"
+           style="color:{% if ci.national_ecoiq_score >= 70 %}#00e89a{% elif ci.national_ecoiq_score >= 40 %}#f4a261{% else %}#e63946{% endif %};">
+        {{ ci.national_ecoiq_score }}
+      </div>
+      <div class="hero-score-label">National EcoIQ</div>
+      <div class="hero-trend" style="color:{{ ci.trend_color }};">
+        {{ ci.trend_symbol }}
+        {% if ci.trend_delta %}{{ ci.trend_delta }}{% endif %}
+        <span style="font-size:.68rem;font-weight:400;color:var(--muted);">vs 6m ago</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pillar averages -->
+  <div class="pillar-grid">
+    <div class="pillar-cell">
+      <div class="pillar-label">Avg Pollution</div>
+      <div class="pillar-score" style="color:#ef4444;">{{ ci.avg_pollution }}</div>
+      <div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:{{ ci.avg_pollution }}%;background:#ef4444;"></div></div>
+    </div>
+    <div class="pillar-cell">
+      <div class="pillar-label">Avg Reduction</div>
+      <div class="pillar-score" style="color:#22c55e;">{{ ci.avg_reduction }}</div>
+      <div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:{{ ci.avg_reduction }}%;background:#22c55e;"></div></div>
+    </div>
+    <div class="pillar-cell">
+      <div class="pillar-label">Avg Investment</div>
+      <div class="pillar-score" style="color:var(--info);">{{ ci.avg_investment }}</div>
+      <div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:{{ ci.avg_investment }}%;background:var(--info);"></div></div>
+    </div>
+    <div class="pillar-cell">
+      <div class="pillar-label">Transparency</div>
+      <div class="pillar-score" style="color:#f59e0b;">{{ ci.avg_transparency }}</div>
+      <div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:{{ ci.avg_transparency }}%;background:#f59e0b;"></div></div>
+    </div>
+    <div class="pillar-cell">
+      <div class="pillar-label">Community</div>
+      <div class="pillar-score" style="color:#8b5cf6;">{{ ci.avg_community }}</div>
+      <div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:{{ ci.avg_community }}%;background:#8b5cf6;"></div></div>
+    </div>
+  </div>
+
+  <!-- Score timeline + radar -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head">National EcoIQ Timeline</div>
+      <div class="chart-wrap">
+        <canvas id="histChart" style="height:200px;"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Pillar Radar</div>
+      <div class="chart-wrap">
+        <canvas id="radarChart" style="height:200px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Company rankings + sector -->
+  <div class="grid-2" style="margin-bottom:1.5rem;">
+    <div class="panel">
+      <div class="panel-head">
+        Company Rankings
+        <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">{{ companies|length }} companies</span>
+      </div>
+      <table class="co-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Company</th><th>Sector</th><th>EcoIQ</th>
+            <th>Transparency</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for co in companies %}
+          <tr>
+            <td style="color:var(--muted);font-size:.72rem;">{{ co.rank|default:"—" }}</td>
+            <td style="font-weight:600;">
+              <a href="{% url 'league:company' co.slug %}" style="color:var(--text);text-decoration:none;">
+                {{ co.name }}{% if co.verified %} <span style="color:var(--accent);font-size:.65rem;">✓</span>{% endif %}
+              </a>
+            </td>
+            <td style="color:var(--muted);font-size:.75rem;">{{ co.get_sector_display }}</td>
+            <td>
+              <span style="font-weight:800;color:{% if co.ecoiq_score >= 70 %}var(--accent){% elif co.ecoiq_score >= 40 %}var(--warn){% else %}var(--danger){% endif %};">
+                {{ co.ecoiq_score }}
+              </span>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.4rem;">
+                <div style="width:50px;background:rgba(255,255,255,.06);border-radius:2px;height:3px;">
+                  <div style="width:{{ co.score_transparency }}%;background:#f59e0b;height:3px;border-radius:2px;"></div>
+                </div>
+                <span style="font-size:.7rem;color:var(--muted);">{{ co.score_transparency }}</span>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="color:var(--muted);padding:1.5rem;text-align:center;">No companies in {{ ci.country_name }}.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <!-- Sector breakdown -->
+      <div class="panel" style="margin-bottom:1rem;">
+        <div class="panel-head">Sector Distribution</div>
+        <div class="panel-body">
+          {% for s in sectors %}
+          <div style="margin-bottom:.75rem;">
+            <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.25rem;">
+              <span>{{ s.label }}</span>
+              <span style="color:var(--muted);">{{ s.count }} · avg {{ s.avg_score }}</span>
+            </div>
+            <div style="background:rgba(255,255,255,.06);border-radius:3px;height:4px;">
+              <div style="width:{{ s.avg_score }}%;height:4px;border-radius:3px;
+                background:{% if s.avg_score >= 70 %}var(--accent){% elif s.avg_score >= 40 %}var(--warn){% else %}var(--danger){% endif %};"></div>
+            </div>
+          </div>
+          {% empty %}
+          <div style="color:var(--muted);font-size:.8rem;">No sector data.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Country alerts -->
+      <div class="panel">
+        <div class="panel-head">
+          Country Alerts
+          <span style="font-weight:400;text-transform:none;letter-spacing:0;">{{ country_alerts|length }}</span>
+        </div>
+        {% for a in country_alerts %}
+        <div class="sig-item">
+          <div class="sig-title" style="color:{{ a.severity_color }};">
+            {{ a.alert_icon }} {{ a.title|truncatechars:60 }}
+          </div>
+          <div class="sig-co">{{ a.company.name|default:"" }} · {{ a.created_at|date:"M d" }}</div>
+        </div>
+        {% empty %}
+        <div style="padding:1rem 1.1rem;color:var(--muted);font-size:.8rem;">No alerts for {{ ci.country_name }}.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Executive briefings -->
+  {% if briefings %}
+  <div class="panel" style="margin-bottom:1.5rem;">
+    <div class="panel-head">Latest Executive Briefings</div>
+    <div class="panel-body">
+      {% for b in briefings %}
+      <div style="margin-bottom:1.5rem;{% if not forloop.last %}padding-bottom:1.5rem;border-bottom:1px solid var(--border);{% endif %}">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:.3rem;">{{ b.company.name }}</div>
+        <div style="font-size:.85rem;color:var(--text);margin-bottom:.5rem;">{{ b.headline }}</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">{{ b.body|truncatechars:300 }}</div>
+        <a href="{% url 'intelligence:briefing' b.company.slug %}"
+           style="font-size:.72rem;color:var(--info);text-decoration:none;margin-top:.4rem;display:inline-block;">
+          Read full briefing →
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const HIST_LABELS = {{ hist_labels }};
+const HIST_SCORES = {{ hist_scores }};
+const RADAR       = {{ radar_json }};
+const CO_CHART    = {{ company_chart }};
+
+const chartDefaults = {
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+    y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 } }, beginAtZero: false },
+  },
+};
+
+// History line chart
+if (HIST_LABELS.length) {
+  new Chart(document.getElementById('histChart'), {
+    type: 'line',
+    data: {
+      labels: HIST_LABELS,
+      datasets: [{
+        data: HIST_SCORES,
+        borderColor: '#00e89a',
+        backgroundColor: 'rgba(0,232,154,.08)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 2,
+      }],
+    },
+    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#0d1117', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+        titleColor: '#e2e8f0', bodyColor: '#64748b',
+      }},
+    },
+  });
+} else {
+  document.getElementById('histChart').parentElement.innerHTML =
+    '<div style="padding:2rem;text-align:center;color:#64748b;font-size:.8rem;">No score history for this country yet.</div>';
+}
+
+// Radar chart
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: RADAR.labels,
+    datasets: [{
+      data: RADAR.scores,
+      borderColor: '#00e89a',
+      backgroundColor: 'rgba(0,232,154,.1)',
+      borderWidth: 1.5,
+      pointRadius: 3,
+      pointBackgroundColor: '#00e89a',
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      r: {
+        min: 0, max: 100,
+        grid: { color: 'rgba(255,255,255,.08)' },
+        ticks: { color: '#64748b', font: { size: 9 }, backdropColor: 'transparent' },
+        pointLabels: { color: '#64748b', font: { size: 10 } },
+      },
+    },
+  },
+});
+</script>
+{% endblock %}

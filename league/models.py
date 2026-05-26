@@ -285,3 +285,35 @@ class ScoreHistory(models.Model):
 
     def __str__(self):
         return f'{self.company.name} — {self.date} ({self.ecoiq_score})'
+
+
+# ── Reference tables for ingestion ────────────────────────────────────────────
+
+class SectorRef(models.Model):
+    """Canonical sector list used by the AI ingestion pipeline."""
+    code         = models.SlugField(max_length=30, unique=True)
+    display_name = models.CharField(max_length=100)
+    description  = models.TextField(blank=True, help_text='AI prompt hint for sector classification')
+
+    class Meta:
+        ordering        = ['display_name']
+        verbose_name        = 'Sector'
+        verbose_name_plural = 'Sectors'
+
+    def __str__(self):
+        return self.display_name
+
+
+class CountryRef(models.Model):
+    """Canonical country list used by the AI ingestion pipeline."""
+    code   = models.CharField(max_length=3, unique=True, help_text='ISO-3166-1 alpha-2 or alpha-3')
+    name   = models.CharField(max_length=100)
+    region = models.CharField(max_length=100, blank=True, help_text='e.g. Central Asia, Europe')
+
+    class Meta:
+        ordering        = ['name']
+        verbose_name        = 'Country'
+        verbose_name_plural = 'Countries'
+
+    def __str__(self):
+        return self.name

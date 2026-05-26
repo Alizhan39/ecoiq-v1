@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Intelligence Alerts — EcoIQ OS{% endblock %}
+
+{% block extra_head %}
+<style>
+:root { --bg:#070b0f;--surface:rgba(255,255,255,.025);--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#e2e8f0;--muted:#64748b;--accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff; }
+* { box-sizing:border-box; }
+body { background:var(--bg);color:var(--text); }
+.page { max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem; }
+.bc { font-size:.75rem;color:var(--muted);margin-bottom:1.5rem; }
+.bc a { color:var(--muted);text-decoration:none; }
+.bc a:hover { color:var(--accent); }
+
+.header-row { display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap; }
+.header-row h1 { font-size:1.4rem;font-weight:800;margin:0; }
+
+/* KPI strip */
+.kpi-strip { display:flex;gap:1px;background:var(--border);border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:1.5rem; }
+.kpi { flex:1;background:#0d1117;padding:.75rem 1rem;text-align:center; }
+.kpi-val { font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums; }
+.kpi-label { font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted); }
+
+/* Filters */
+.filter-row { display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem; }
+.filter-pill {
+  padding:.3rem .85rem;border-radius:20px;font-size:.75rem;font-weight:600;
+  text-decoration:none;border:1px solid var(--border);color:var(--muted);
+  transition:all .15s;
+}
+.filter-pill:hover, .filter-pill.active { border-color:var(--accent);color:var(--accent);background:rgba(0,232,154,.08); }
+.filter-pill.danger.active { border-color:var(--danger);color:var(--danger);background:rgba(230,57,70,.08); }
+.filter-pill.warn.active { border-color:var(--warn);color:var(--warn);background:rgba(244,162,97,.08); }
+
+/* Alert cards */
+.alert-card {
+  background:#0d1117;border:1px solid var(--border);border-radius:10px;
+  padding:1rem 1.25rem;margin-bottom:.75rem;
+  display:flex;gap:1rem;align-items:flex-start;
+  transition:border-color .15s;
+  cursor:pointer;
+}
+.alert-card:hover { border-color:var(--border2); }
+.alert-card.unread { border-left:3px solid var(--accent); }
+.alert-card.sev-critical { border-left:3px solid var(--danger); }
+.alert-card.sev-high { border-left:3px solid var(--warn); }
+
+.ac-icon { font-size:1.4rem;flex-shrink:0;width:1.8rem;text-align:center; }
+.ac-body { flex:1;min-width:0; }
+.ac-title { font-weight:700;font-size:.9rem;margin-bottom:.3rem; }
+.ac-body-text { font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:.4rem; }
+.ac-meta { display:flex;gap:.75rem;flex-wrap:wrap;font-size:.72rem;color:var(--muted); }
+.ac-meta a { color:var(--info);text-decoration:none; }
+.ac-meta a:hover { text-decoration:underline; }
+.ac-right { text-align:right;flex-shrink:0; }
+.ac-sev {
+  display:inline-block;padding:2px 8px;border-radius:8px;
+  font-size:.68rem;font-weight:800;font-family:monospace;
+  text-transform:uppercase;margin-bottom:.3rem;
+}
+.ac-delta { font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums; }
+
+.mark-read-btn {
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:.4rem 1rem;border-radius:6px;font-size:.78rem;cursor:pointer;
+  text-decoration:none;
+}
+.mark-read-btn:hover { border-color:var(--border2);color:var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="bc"><a href="{% url 'intelligence:hub' %}">Intelligence Hub</a> › Alerts</div>
+
+  <div class="header-row">
+    <h1>Intelligence Alerts</h1>
+    {% if counts.unread %}
+    <a href="?mark_read=1" class="mark-read-btn">Mark all read</a>
+    {% endif %}
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-val">{{ counts.total }}</div>
+      <div class="kpi-label">Total Alerts</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val" style="color:var(--accent);">{{ counts.unread }}</div>
+      <div class="kpi-label">Unread</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val" style="color:var(--danger);">{{ counts.critical }}</div>
+      <div class="kpi-label">Critical</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val" style="color:var(--warn);">{{ counts.high }}</div>
+      <div class="kpi-label">High</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <a href="{% url 'intelligence:alerts' %}" class="filter-pill {% if not severity and not atype %}active{% endif %}">All</a>
+    <a href="?unread=1" class="filter-pill {% if unread == '1' %}active{% endif %}">Unread only</a>
+    <a href="?severity=critical" class="filter-pill danger {% if severity == 'critical' %}active{% endif %}">🔴 Critical</a>
+    <a href="?severity=high" class="filter-pill warn {% if severity == 'high' %}active{% endif %}">🟠 High</a>
+    <a href="?severity=medium" class="filter-pill {% if severity == 'medium' %}active{% endif %}">🟡 Medium</a>
+    <a href="?type=greenwashing" class="filter-pill {% if atype == 'greenwashing' %}active{% endif %}">⚠️ Greenwashing</a>
+    <a href="?type=score_drop" class="filter-pill {% if atype == 'score_drop' %}active{% endif %}">📉 Score Drop</a>
+    <a href="?type=transparency_loss" class="filter-pill {% if atype == 'transparency_loss' %}active{% endif %}">🔒 Transparency</a>
+    <a href="?type=monitor_change" class="filter-pill {% if atype == 'monitor_change' %}active{% endif %}">🔍 Monitor</a>
+  </div>
+
+  <!-- Alert list -->
+  {% for a in alert_list %}
+  <div class="alert-card {% if not a.is_read %}unread{% endif %} sev-{{ a.severity }}"
+       onclick="window.location='{% if a.company %}{% url 'league:company' a.company.slug %}{% else %}{% url 'intelligence:alerts' %}{% endif %}'">
+    <div class="ac-icon">{{ a.alert_icon }}</div>
+    <div class="ac-body">
+      <div class="ac-title">{{ a.title }}</div>
+      {% if a.body %}
+      <div class="ac-body-text">{{ a.body|truncatechars:200 }}</div>
+      {% endif %}
+      <div class="ac-meta">
+        {% if a.company %}
+          <a href="{% url 'league:company' a.company.slug %}" onclick="event.stopPropagation();">
+            {{ a.company.name }}
+          </a>
+        {% endif %}
+        <span>{{ a.get_alert_type_display }}</span>
+        <span>{{ a.created_at|timesince }} ago</span>
+        {% if not a.is_read %}<span style="color:var(--accent);">● Unread</span>{% endif %}
+      </div>
+    </div>
+    <div class="ac-right">
+      <div class="ac-sev"
+           style="background:{{ a.severity_color }}22;color:{{ a.severity_color }};">
+        {{ a.severity|upper }}
+      </div>
+      {% if a.metric_delta %}
+      <div class="ac-delta"
+           style="color:{% if a.metric_delta < 0 %}var(--danger){% else %}var(--accent){% endif %};">
+        {% if a.metric_delta > 0 %}+{% endif %}{{ a.metric_delta }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:4rem 2rem;color:var(--muted);">
+    <div style="font-size:2rem;margin-bottom:1rem;">✓</div>
+    <div style="font-size:1rem;font-weight:600;">No alerts match the current filter.</div>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

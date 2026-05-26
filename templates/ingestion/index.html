@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}AI Company Ingestion — EcoIQ{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.ing-page { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.ing-header { margin-bottom: 2.5rem; }
+.ing-header h1 {
+  font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em;
+  color: #f0f0f0; margin: 0 0 0.4rem;
+}
+.ing-header p { color: #aaa; font-size: 0.9rem; margin: 0; }
+
+/* ── Terminal card ───────────────────────────────────────────────────────── */
+.term-card {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 32px rgba(0,0,0,.4);
+}
+.term-titlebar {
+  background: #161b22;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #21262d;
+}
+.term-dot { width: 12px; height: 12px; border-radius: 50%; }
+.td-red    { background: #ff5f57; }
+.td-yellow { background: #febc2e; }
+.td-green  { background: #28c840; }
+.term-title { font-size: 0.75rem; color: #666; margin-left: 0.5rem; font-family: monospace; }
+.term-body { padding: 1.5rem; }
+
+/* ── Form ────────────────────────────────────────────────────────────────── */
+.ing-form { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.ing-input {
+  flex: 1; min-width: 240px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #e6edf3;
+  font-size: 1rem;
+  font-family: monospace;
+  transition: border-color 0.2s;
+}
+.ing-input:focus { outline: none; border-color: #00e89a; }
+.ing-input::placeholder { color: #484f58; }
+.ing-btn {
+  background: #00e89a;
+  color: #0d1117;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.ing-btn:hover { background: #00d485; }
+.ing-btn:active { transform: scale(0.98); }
+.ing-btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+
+/* ── Progress panel ─────────────────────────────────────────────────────── */
+.prog-panel { display: none; margin-top: 1.5rem; }
+.prog-panel.active { display: block; }
+
+.prog-bar-track {
+  background: #21262d;
+  border-radius: 6px;
+  height: 6px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+.prog-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e89a, #40916c);
+  border-radius: 6px;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+.prog-bar-fill.done { background: #00e89a; }
+.prog-bar-fill.failed { background: #e63946; }
+
+.prog-steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1rem;
+  font-size: 0.7rem;
+  font-family: monospace;
+}
+.prog-step {
+  flex: 1;
+  text-align: center;
+  padding: 0.3rem 0.2rem;
+  color: #484f58;
+  border-bottom: 2px solid #21262d;
+  transition: color 0.3s, border-color 0.3s;
+}
+.prog-step.active { color: #00e89a; border-color: #00e89a; }
+.prog-step.done   { color: #40916c; border-color: #40916c; }
+
+.prog-log {
+  background: #010409;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #7ee787;
+  min-height: 3rem;
+  line-height: 1.6;
+}
+.log-line { display: block; }
+.log-line::before { content: '› '; color: #00e89a; }
+.log-line.err { color: #e63946; }
+.log-line.err::before { content: '✗ '; }
+
+/* ── Result card ─────────────────────────────────────────────────────────── */
+.result-card {
+  display: none;
+  margin-top: 1.5rem;
+  background: #0d1117;
+  border: 1px solid #00e89a44;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+.result-card.active { display: block; }
+.result-title { font-size: 1rem; font-weight: 700; color: #00e89a; margin-bottom: 0.5rem; }
+.result-links { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+.result-link {
+  background: #00e89a;
+  color: #0d1117;
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.result-link.sec {
+  background: #21262d;
+  color: #e6edf3;
+}
+.result-link:hover { opacity: 0.9; }
+
+/* ── Recent jobs table ───────────────────────────────────────────────────── */
+.jobs-section { margin-top: 2.5rem; }
+.jobs-title {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #484f58; margin-bottom: 1rem;
+}
+.jobs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.jobs-table th {
+  text-align: left; padding: 0.5rem 0.75rem;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #484f58;
+  border-bottom: 1px solid #21262d;
+}
+.jobs-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #161b22;
+  color: #c9d1d9;
+  vertical-align: middle;
+}
+.jobs-table tr:last-child td { border-bottom: none; }
+.jobs-table tr:hover td { background: #161b22; }
+
+.status-pill {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 0.7rem; font-weight: 700;
+  font-family: monospace; text-transform: uppercase;
+}
+.sp-pending    { background:#21262d; color:#888; }
+.sp-searching,
+.sp-downloading,
+.sp-extracting,
+.sp-scoring,
+.sp-saving     { background:#f4a26122; color:#f4a261; }
+.sp-done       { background:#00e89a22; color:#00e89a; }
+.sp-failed     { background:#e6394622; color:#e63946; }
+
+/* ── Pipeline steps legend ───────────────────────────────────────────────── */
+.pipeline-legend {
+  display: flex; gap: 0; overflow: hidden;
+  border-radius: 8px; margin-bottom: 1.5rem;
+  border: 1px solid #21262d;
+}
+.pl-step {
+  flex: 1; text-align: center;
+  padding: 0.6rem 0.25rem;
+  background: #0d1117;
+  border-right: 1px solid #21262d;
+  font-size: 0.7rem; color: #484f58;
+}
+.pl-step:last-child { border-right: none; }
+.pl-num {
+  display: block; font-size: 1rem; font-weight: 800;
+  color: #00e89a; margin-bottom: 0.15rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ing-page">
+
+  <div class="ing-header">
+    <h1>⚡ AI Company Ingestion</h1>
+    <p>Enter a company name — EcoIQ searches the internet, downloads reports, extracts data, scores all 5 pillars, and saves everything automatically.</p>
+  </div>
+
+  <!-- Pipeline legend -->
+  <div class="pipeline-legend">
+    <div class="pl-step"><span class="pl-num">1</span>Search</div>
+    <div class="pl-step"><span class="pl-num">2</span>Download</div>
+    <div class="pl-step"><span class="pl-num">3</span>Extract</div>
+    <div class="pl-step"><span class="pl-num">4</span>Score</div>
+    <div class="pl-step"><span class="pl-num">5</span>Save</div>
+  </div>
+
+  <!-- Terminal input card -->
+  <div class="term-card">
+    <div class="term-titlebar">
+      <span class="term-dot td-red"></span>
+      <span class="term-dot td-yellow"></span>
+      <span class="term-dot td-green"></span>
+      <span class="term-title">ecoiq ingestion pipeline</span>
+    </div>
+    <div class="term-body">
+      <form id="ingForm" class="ing-form">
+        {% csrf_token %}
+        <input
+          type="text"
+          id="companyInput"
+          name="company_name"
+          class="ing-input"
+          placeholder="Company name, e.g. QazaqGaz, Kazatomprom…"
+          required
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button type="submit" class="ing-btn" id="startBtn">
+          ▶ Run Pipeline
+        </button>
+      </form>
+
+      <!-- Progress -->
+      <div class="prog-panel" id="progPanel">
+        <div class="prog-steps" id="progSteps">
+          <div class="prog-step" data-step="searching">Search</div>
+          <div class="prog-step" data-step="downloading">Download</div>
+          <div class="prog-step" data-step="extracting">Extract</div>
+          <div class="prog-step" data-step="scoring">Score</div>
+          <div class="prog-step" data-step="saving">Save</div>
+        </div>
+        <div class="prog-bar-track">
+          <div class="prog-bar-fill" id="progBar"></div>
+        </div>
+        <div class="prog-log" id="progLog">
+          <span class="log-line">Pipeline initialising…</span>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="result-card" id="resultCard">
+        <div class="result-title" id="resultTitle">✓ Ingestion complete</div>
+        <div id="resultBody" style="color:#aaa;font-size:0.85rem;"></div>
+        <div class="result-links" id="resultLinks"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent jobs -->
+  {% if recent_jobs %}
+  <div class="jobs-section">
+    <div class="jobs-title">Recent Jobs</div>
+    <div class="term-card" style="padding:0;">
+      <table class="jobs-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Company</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th>Result</th>
+            <th>Started</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in recent_jobs %}
+          <tr>
+            <td style="color:#484f58;">{{ job.pk }}</td>
+            <td>
+              <a href="{% url 'ingestion:job_detail' job.pk %}"
+                 style="color:#58a6ff;text-decoration:none;">
+                {{ job.company_name }}
+              </a>
+            </td>
+            <td>
+              <span class="status-pill sp-{{ job.status }}">{{ job.status }}</span>
+            </td>
+            <td>
+              {% if job.status == 'done' %}
+                <span style="color:#00e89a;">100%</span>
+              {% elif job.status == 'failed' %}
+                <span style="color:#e63946;">failed</span>
+              {% else %}
+                {{ job.progress_pct }}%
+              {% endif %}
+            </td>
+            <td>
+              {% if job.result_company %}
+                <a href="/league/{{ job.result_company.slug }}/"
+                   style="color:#00e89a;text-decoration:none;font-weight:600;">
+                  {{ job.result_company.name }}
+                </a>
+              {% else %}—{% endif %}
+            </td>
+            <td style="color:#484f58;font-size:0.8rem;">
+              {{ job.created_at|date:"M d, H:i" }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+(function () {
+  const form      = document.getElementById('ingForm');
+  const btn       = document.getElementById('startBtn');
+  const panel     = document.getElementById('progPanel');
+  const bar       = document.getElementById('progBar');
+  const log       = document.getElementById('progLog');
+  const result    = document.getElementById('resultCard');
+  const steps     = document.querySelectorAll('.prog-step');
+  const STEP_ORDER= ['searching','downloading','extracting','scoring','saving'];
+
+  let pollTimer   = null;
+  let currentJobId= null;
+  let lastMsg     = '';
+
+  function csrfToken() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
+  }
+
+  function addLog(msg, isErr) {
+    const span = document.createElement('span');
+    span.className = 'log-line' + (isErr ? ' err' : '');
+    span.textContent = msg;
+    log.appendChild(span);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setStep(status) {
+    const idx = STEP_ORDER.indexOf(status);
+    steps.forEach((s, i) => {
+      s.classList.remove('active','done');
+      if (i < idx)       s.classList.add('done');
+      else if (i === idx) s.classList.add('active');
+    });
+  }
+
+  function poll() {
+    if (!currentJobId) return;
+    fetch(`/ingest/status/${currentJobId}/`)
+      .then(r => r.json())
+      .then(data => {
+        // Progress bar
+        bar.style.width = data.progress_pct + '%';
+
+        // Log new messages
+        if (data.progress_message && data.progress_message !== lastMsg) {
+          lastMsg = data.progress_message;
+          addLog(data.progress_message);
+        }
+
+        // Step highlights
+        setStep(data.status);
+
+        if (data.status === 'done') {
+          clearInterval(pollTimer);
+          bar.classList.add('done');
+          steps.forEach(s => s.classList.add('done'));
+
+          // Show result card
+          result.classList.add('active');
+          document.getElementById('resultTitle').textContent =
+            '✓ ' + (data.result_company || 'Company') + ' ingested successfully';
+          document.getElementById('resultBody').textContent =
+            `EcoIQ pipeline completed in ${data.duration ? data.duration + 's' : 'a few seconds'}.`;
+
+          const links = document.getElementById('resultLinks');
+          if (data.result_url) {
+            links.innerHTML = `
+              <a href="${data.result_url}" class="result-link">View Company Profile →</a>
+              <a href="/ingest/job/${currentJobId}/" class="result-link sec">Job Details</a>
+              <a href="/ingest/" class="result-link sec" onclick="location.reload();return false;">Run Another</a>
+            `;
+          }
+          btn.disabled = false;
+          btn.textContent = '▶ Run Pipeline';
+
+        } else if (data.status === 'failed') {
+          clearInterval(pollTimer);
+          bar.classList.add('failed');
+          bar.style.width = '100%';
+          addLog(data.error ? data.error.split('\n')[0] : 'Pipeline failed.', true);
+
+          result.classList.add('active');
+          result.style.borderColor = '#e6394644';
+          document.getElementById('resultTitle').style.color = '#e63946';
+          document.getElementById('resultTitle').textContent = '✗ Pipeline failed';
+          document.getElementById('resultBody').textContent =
+            data.error ? data.error.substring(0, 300) : 'An error occurred.';
+          document.getElementById('resultLinks').innerHTML =
+            `<a href="/ingest/job/${currentJobId}/" class="result-link sec">View Error Details</a>`;
+          btn.disabled = false;
+          btn.textContent = '▶ Run Pipeline';
+        }
+      })
+      .catch(() => { /* network blip, keep polling */ });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = document.getElementById('companyInput').value.trim();
+    if (!name) return;
+
+    // Reset UI
+    btn.disabled = true;
+    btn.textContent = '⏳ Running…';
+    log.innerHTML = '';
+    bar.style.width = '2%';
+    bar.classList.remove('done','failed');
+    steps.forEach(s => s.classList.remove('active','done'));
+    result.classList.remove('active');
+    result.style.borderColor = '';
+    document.getElementById('resultTitle').style.color = '';
+    panel.classList.add('active');
+    lastMsg = '';
+    addLog(`Starting pipeline for "${name}"…`);
+
+    const fd = new FormData(form);
+    fetch('/ingest/start/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken()},
+      body: fd,
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        addLog(data.error, true);
+        btn.disabled = false;
+        btn.textContent = '▶ Run Pipeline';
+        return;
+      }
+      currentJobId = data.job_id;
+      addLog(`Job #${data.job_id} created. Polling status…`);
+      clearInterval(pollTimer);
+      pollTimer = setInterval(poll, 2000);
+    })
+    .catch(err => {
+      addLog('Network error: ' + err, true);
+      btn.disabled = false;
+      btn.textContent = '▶ Run Pipeline';
+    });
+  });
+})();
+</script>
+{% endblock %}
