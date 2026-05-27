@@ -1,0 +1,393 @@
+{# ── EcoIQ Financing Intelligence — Readiness Panel ──────────────────────────
+   Include in company detail page.
+   Context variables required:
+     financing_profile  CompanyFinancingProfile instance (or None)
+#}
+{% if financing_profile %}
+<section class="fin-readiness-panel" aria-labelledby="fin-readiness-heading">
+
+  <div class="frp-header">
+    <div>
+      <h2 class="frp-title" id="fin-readiness-heading">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="vertical-align:-2px;margin-right:5px;">
+          <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M6 7V5a6 6 0 0 1 12 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="12" cy="14" r="2" fill="currentColor"/>
+        </svg>
+        Financing Intelligence
+      </h2>
+      <p class="frp-sub">Transition finance readiness assessment. Indicative only — not investment advice.</p>
+    </div>
+    <div class="frp-tier-badge" style="--tier-c:{{ financing_profile.readiness_tier_color }}">
+      {{ financing_profile.readiness_tier_display }}
+      <span class="frp-big-score">{{ financing_profile.financing_readiness|floatformat:0 }}</span>
+    </div>
+  </div>
+
+  {# ── Readiness meters ── #}
+  <div class="frp-meters">
+
+    <div class="frp-meter">
+      <div class="frm-top">
+        <span class="frm-label">Modernization</span>
+        <span class="frm-val" style="color:#58a6ff">{{ financing_profile.modernization_readiness|floatformat:0 }}</span>
+      </div>
+      <div class="frm-track"><div class="frm-fill" style="width:{{ financing_profile.modernization_readiness|floatformat:0 }}%;background:#58a6ff"></div></div>
+      <div class="frm-desc">Industrial transition preparedness</div>
+    </div>
+
+    <div class="frp-meter">
+      <div class="frm-top">
+        <span class="frm-label">Transparency</span>
+        <span class="frm-val" style="color:#8b5cf6">{{ financing_profile.transparency_readiness|floatformat:0 }}</span>
+      </div>
+      <div class="frm-track"><div class="frm-fill" style="width:{{ financing_profile.transparency_readiness|floatformat:0 }}%;background:#8b5cf6"></div></div>
+      <div class="frm-desc">Disclosure quality for DFI compliance</div>
+    </div>
+
+    <div class="frp-meter">
+      <div class="frm-top">
+        <span class="frm-label">Climate Transition</span>
+        <span class="frm-val" style="color:#00e89a">{{ financing_profile.climate_readiness|floatformat:0 }}</span>
+      </div>
+      <div class="frm-track"><div class="frm-fill" style="width:{{ financing_profile.climate_readiness|floatformat:0 }}%;background:#00e89a"></div></div>
+      <div class="frm-desc">Environmental commitment trajectory</div>
+    </div>
+
+    <div class="frp-meter">
+      <div class="frm-top">
+        <span class="frm-label">Governance</span>
+        <span class="frm-val" style="color:#f4a261">{{ financing_profile.governance_readiness|floatformat:0 }}</span>
+      </div>
+      <div class="frm-track"><div class="frm-fill" style="width:{{ financing_profile.governance_readiness|floatformat:0 }}%;background:#f4a261"></div></div>
+      <div class="frm-desc">Anti-corruption and accountability</div>
+    </div>
+
+    <div class="frp-meter">
+      <div class="frm-top">
+        <span class="frm-label">Evidence Quality</span>
+        <span class="frm-val" style="color:rgba(255,255,255,.5)">{{ financing_profile.evidence_completeness|floatformat:0 }}</span>
+      </div>
+      <div class="frm-track"><div class="frm-fill" style="width:{{ financing_profile.evidence_completeness|floatformat:0 }}%;background:rgba(255,255,255,.3)"></div></div>
+      <div class="frm-desc">Data completeness for due diligence</div>
+    </div>
+
+  </div>
+
+  {# ── Intelligence row: capex + urgency ── #}
+  <div class="frp-intel-row">
+
+    <div class="frp-intel-card">
+      <div class="fic-label">Estimated Transition Capex</div>
+      <div class="fic-val">{{ financing_profile.capex_range_label }}</div>
+      <div class="fic-note">Priority modernization investment range</div>
+    </div>
+
+    <div class="frp-intel-card">
+      <div class="fic-label">Estimated Annual Impact</div>
+      <div class="fic-val" style="color:#58a6ff">{{ financing_profile.impact_label }}</div>
+      <div class="fic-note">Savings / benefit at full implementation</div>
+    </div>
+
+    <div class="frp-intel-card">
+      <div class="fic-label">Funding Urgency</div>
+      <div class="fic-val" style="color:{{ financing_profile.urgency_color }}">{{ financing_profile.get_funding_urgency_display }}</div>
+      <div class="fic-note">Based on pollution level and modernization gap</div>
+    </div>
+
+    <div class="frp-intel-card">
+      <div class="fic-label">Matched Pathways</div>
+      <div class="fic-val" style="color:#00e89a">{{ financing_profile.match_count }}</div>
+      <div class="fic-note">Out of 38 tracked instruments</div>
+    </div>
+
+  </div>
+
+  {# ── Missing requirements ── #}
+  {% if financing_profile.missing_requirements %}
+  <div class="frp-missing">
+    <div class="frp-missing-title">
+      <svg width="12" height="12" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="9" stroke="#f4a261" stroke-width="1.8"/>
+        <line x1="10" y1="5" x2="10" y2="11" stroke="#f4a261" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="10" cy="14.5" r="1.2" fill="#f4a261"/>
+      </svg>
+      Gaps Preventing Optimal Financing Readiness
+    </div>
+    <div class="frp-missing-list">
+      {% for req in financing_profile.missing_requirements %}
+      <div class="frp-req frp-req-{{ req.priority|default:'medium' }}">
+        <div class="frp-req-left">
+          <span class="frp-req-dot"></span>
+          <div>
+            <div class="frp-req-label">{{ req.label }}</div>
+            <div class="frp-req-detail">{{ req.detail }}</div>
+          </div>
+        </div>
+        <div class="frp-req-impact">−{{ req.impact }} pts</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Next actions ── #}
+  {% if financing_profile.next_actions %}
+  <div class="frp-actions">
+    <div class="frp-actions-title">Recommended Next Steps</div>
+    <ol class="frp-action-list">
+      {% for action in financing_profile.next_actions %}
+      <li>{{ action }}</li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
+  <div class="frp-footer">
+    <span>EcoIQ Financing Intelligence — computed from public data · Analyst review required before application</span>
+  </div>
+
+</section>
+
+<style>
+/* ── Financing Readiness Panel ────────────────────────────────────────────────*/
+.fin-readiness-panel {
+  background: var(--bg2, #0d1117);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.frp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.frp-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+  margin: 0 0 .3rem;
+  letter-spacing: -.02em;
+}
+.frp-sub {
+  font-size: .75rem;
+  color: rgba(255,255,255,.4);
+  margin: 0;
+}
+
+.frp-tier-badge {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--tier-c, #888);
+  border-radius: 8px;
+  padding: .4rem .9rem;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--tier-c, #888);
+  white-space: nowrap;
+}
+.frp-big-score {
+  font-size: 1.1rem;
+  font-weight: 900;
+  font-family: monospace;
+  color: var(--tier-c, #888);
+}
+
+/* ── Meters ── */
+.frp-meters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: .85rem;
+  margin-bottom: 1.25rem;
+}
+
+.frp-meter {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  padding: .85rem 1rem;
+}
+
+.frm-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: .4rem;
+}
+.frm-label {
+  font-size: .7rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.6);
+}
+.frm-val {
+  font-size: 1rem;
+  font-weight: 800;
+  font-family: monospace;
+  letter-spacing: -.02em;
+}
+.frm-track {
+  height: 4px;
+  background: rgba(255,255,255,.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: .4rem;
+}
+.frm-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .6s ease;
+}
+.frm-desc {
+  font-size: .62rem;
+  color: rgba(255,255,255,.3);
+  line-height: 1.4;
+}
+
+/* ── Intelligence cards row ── */
+.frp-intel-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+
+.frp-intel-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  padding: .8rem 1rem;
+}
+.fic-label {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.35);
+  margin-bottom: .35rem;
+}
+.fic-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: rgba(255,255,255,.85);
+  font-family: monospace;
+  margin-bottom: .2rem;
+  letter-spacing: -.02em;
+}
+.fic-note {
+  font-size: .6rem;
+  color: rgba(255,255,255,.3);
+  line-height: 1.4;
+}
+
+/* ── Missing requirements ── */
+.frp-missing {
+  background: rgba(244,162,97,.04);
+  border: 1px solid rgba(244,162,97,.15);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+.frp-missing-title {
+  font-size: .68rem;
+  font-weight: 700;
+  color: rgba(244,162,97,.8);
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.frp-missing-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.frp-req {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.frp-req:last-child { border-bottom: none; }
+.frp-req-left {
+  display: flex;
+  gap: .6rem;
+  align-items: flex-start;
+  flex: 1;
+}
+.frp-req-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.frp-req-critical .frp-req-dot { background: #e63946; }
+.frp-req-high .frp-req-dot     { background: #f4a261; }
+.frp-req-medium .frp-req-dot   { background: #8b949e; }
+.frp-req-label {
+  font-size: .75rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.8);
+  margin-bottom: .1rem;
+}
+.frp-req-detail {
+  font-size: .68rem;
+  color: rgba(255,255,255,.4);
+  line-height: 1.45;
+}
+.frp-req-impact {
+  font-size: .68rem;
+  font-weight: 700;
+  color: rgba(230,57,70,.7);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+/* ── Next actions ── */
+.frp-actions {
+  margin-bottom: 1rem;
+}
+.frp-actions-title {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: rgba(0,232,154,.7);
+  margin-bottom: .5rem;
+}
+.frp-action-list {
+  list-style: decimal;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+.frp-action-list li {
+  font-size: .75rem;
+  color: rgba(255,255,255,.5);
+  line-height: 1.55;
+}
+
+/* ── Footer ── */
+.frp-footer {
+  font-size: .68rem;
+  color: rgba(255,255,255,.22);
+  border-top: 1px solid rgba(255,255,255,.05);
+  padding-top: .65rem;
+  margin-top: .5rem;
+}
+</style>
+{% endif %}

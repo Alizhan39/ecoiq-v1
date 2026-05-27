@@ -453,6 +453,24 @@ def company_detail(request, slug):
     except Exception:
         pass
 
+    # ── Financing Intelligence layer ────────────────────────────────────────────
+    financing_profile       = None
+    fin_matches             = []
+    financing_eligible_count = 0
+    financing_likely_count   = 0
+    financing_total_count    = 0
+    try:
+        from financing.matching import get_or_compute as fin_compute
+        financing_profile = fin_compute(profile)
+        if financing_profile:
+            qs = profile.financing_matches.select_related('opportunity').order_by('-match_score')
+            financing_total_count    = qs.count()
+            financing_eligible_count = qs.filter(match_tier='eligible').count()
+            financing_likely_count   = qs.filter(match_tier='likely').count()
+            fin_matches              = list(qs[:6])
+    except Exception:
+        pass
+
     return render(request, 'companies/detail.html', {
         'company':               company,
         'profile':               profile,
@@ -477,4 +495,10 @@ def company_detail(request, slug):
         'radar_scores':          radar_scores,
         # Ethical Intelligence layer
         'ethics_profile':        ethics_profile,
+        # Financing Intelligence layer
+        'financing_profile':          financing_profile,
+        'financing_matches':          fin_matches,
+        'financing_eligible_count':   financing_eligible_count,
+        'financing_likely_count':     financing_likely_count,
+        'financing_total_count':      financing_total_count,
     })

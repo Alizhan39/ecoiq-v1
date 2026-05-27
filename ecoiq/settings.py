@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'companies',
     'countries',
     'ethics',
+    'financing',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
