@@ -15,6 +15,7 @@
   --info:#58a6ff; --purple:#a855f7; --cyan:#06b6d4;
   --radius:10px;
 }
+html{scroll-behavior:smooth;scroll-padding-top:62px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6}
 a{text-decoration:none}
@@ -438,6 +439,39 @@ details.inv-card[open] .mod-chevron{transform:rotate(-180deg)}
 .mod-tag-ecoiq-strategic {background:rgba(168,85,247,.09);color:var(--purple); border:1px solid rgba(168,85,247,.18)}
 .mod-tag-ecoiq-important {background:rgba(0,232,154,.07); color:var(--accent); border:1px solid rgba(0,232,154,.15)}
 
+/* ── CTA extras ── */
+.cta-disabled{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  color:rgba(255,255,255,.2);cursor:not-allowed;pointer-events:none;
+}
+.cta-disabled:hover{opacity:1;transform:none}
+.cta-soon{
+  font-size:.57rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  background:rgba(244,162,97,.14);color:var(--warn);
+  border:1px solid rgba(244,162,97,.22);border-radius:4px;padding:.1rem .38rem;
+}
+/* ── Request Intelligence Report block ── */
+.report-request{
+  background:linear-gradient(135deg,rgba(0,232,154,.05) 0%,rgba(88,166,255,.04) 100%);
+  border:1px solid rgba(0,232,154,.15);border-radius:10px;
+  padding:1.4rem 1.6rem;margin-bottom:1.4rem;
+}
+.rrb-title{
+  font-size:1rem;font-weight:700;color:var(--text);
+  margin-bottom:.4rem;letter-spacing:-.01em;
+}
+.rrb-text{
+  font-size:.82rem;color:var(--muted2);line-height:1.72;margin-bottom:.95rem;
+}
+.rrb-btn{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:var(--accent);color:#000;
+  font-size:.83rem;font-weight:700;padding:.55rem 1.2rem;border-radius:8px;
+  text-decoration:none;transition:opacity .2s,transform .2s;
+}
+.rrb-btn:hover{opacity:.85;transform:translateY(-1px)}
+.rrb-note{font-size:.7rem;color:rgba(148,163,184,.45);margin-top:.7rem;font-style:italic}
+
 /* ── Footer ── */
 footer{
   text-align:center;padding:2rem;color:var(--muted);
@@ -564,15 +598,18 @@ footer a:hover{color:var(--accent)}
 
   <!-- CTA Row -->
   <div class="cta-row">
-    <a href="mailto:hello@ecoiq.org?subject=Country%20Intelligence%3A%20{{ country.name }}" class="cta-btn cta-primary">
+    <a href="#request-intelligence-report" class="cta-btn cta-primary">
       📊 Request Full Intelligence Report
     </a>
-    <a href="mailto:hello@ecoiq.org?subject=Investor%20Briefing%3A%20{{ country.name }}" class="cta-btn cta-secondary">
-      💼 Investor Briefing
+    <a href="#investment-opportunities" class="cta-btn cta-secondary">
+      💼 View Investment Opportunities
     </a>
     <a href="{% url 'countries:directory' %}" class="cta-btn cta-secondary">
-      ← All Countries
+      🌍 Compare Countries
     </a>
+    <span class="cta-btn cta-disabled">
+      ✦ Generate Investor Briefing&ensp;<span class="cta-soon">Soon</span>
+    </span>
   </div>
 
   <!-- MACRO STATS -->
@@ -795,7 +832,7 @@ footer a:hover{color:var(--accent)}
 
     <!-- PRIORITY INVESTMENT OPPORTUNITIES -->
     {% if investment_opportunities %}
-    <div class="section">
+    <div class="section" id="investment-opportunities">
       <div class="section-title">
         💼 Priority Investment Opportunities
         <span class="st-right">{{ investment_opportunities|length }} opportunities · AI-assisted · expand for thesis</span>
@@ -845,6 +882,23 @@ footer a:hover{color:var(--accent)}
       </div>
     </div>
     {% endif %}
+
+    <!-- REQUEST FULL INTELLIGENCE REPORT -->
+    <div class="report-request" id="request-intelligence-report">
+      <div class="rrb-title">📊 Request Full Intelligence Report</div>
+      <p class="rrb-text">
+        EcoIQ can prepare a deeper country intelligence briefing covering transition risks,
+        investment opportunities, modernization priorities, financing pathways and evidence confidence.
+      </p>
+      <a href="mailto:hello@ecoiq.uk?subject=EcoIQ%20Country%20Intelligence%20Report%20Request%3A%20{{ country.name|urlencode }}"
+         class="rrb-btn">
+        Contact EcoIQ →
+      </a>
+      <p class="rrb-note">
+        Responses are typically provided within 2 business days.
+        All intelligence is indicative and AI-assisted — analyst review is included.
+      </p>
+    </div>
 
     <!-- TRACKED COMPANIES -->
     {% if companies %}
