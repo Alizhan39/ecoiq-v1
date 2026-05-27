@@ -607,9 +607,15 @@ footer a:hover{color:var(--accent)}
     <a href="{% url 'countries:directory' %}" class="cta-btn cta-secondary">
       🌍 Compare Countries
     </a>
+    {% if has_briefing %}
+    <a href="{% url 'countries:briefing' country.slug %}" class="cta-btn cta-primary">
+      ✦ Generate Investor Briefing
+    </a>
+    {% else %}
     <span class="cta-btn cta-disabled">
       ✦ Generate Investor Briefing&ensp;<span class="cta-soon">Soon</span>
     </span>
+    {% endif %}
   </div>
 
   <!-- MACRO STATS -->

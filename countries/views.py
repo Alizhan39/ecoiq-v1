@@ -9,6 +9,7 @@ from django.shortcuts import render, get_object_or_404
 from countries.models import CountryProfile, REGION_CHOICES
 from countries.modernisation_data import get_actions as get_modernisation_actions
 from countries.investment_data import get_opportunities as get_investment_opportunities
+from countries.briefing_data import get_briefing_content, has_briefing
 from companies.models import CompanyProfile
 
 
@@ -274,7 +275,7 @@ def country_detail(request, slug):
         round(country.industrial_modernization_score, 1),
     ]
 
-    modernisation_actions   = get_modernisation_actions(slug)
+    modernisation_actions    = get_modernisation_actions(slug)
     investment_opportunities = get_investment_opportunities(slug)
 
     return render(request, 'countries/detail.html', {
@@ -287,4 +288,64 @@ def country_detail(request, slug):
         'radar_scores':             radar_scores,
         'modernisation_actions':    modernisation_actions,
         'investment_opportunities': investment_opportunities,
+        'has_briefing':             has_briefing(slug),
+    })
+
+
+def country_briefing(request, slug):
+    """
+    /countries/<slug>/briefing/ — investor intelligence memo.
+    Works for all published countries; richest for those in briefing_data.py.
+    """
+    country = get_object_or_404(CountryProfile, slug=slug, is_published=True)
+
+    briefing          = get_briefing_content(slug)
+    dev_bank_compat   = _get_dev_bank_compat(country)
+    corruption_exp    = _get_corruption_exposure(country)
+    ai_confidence     = _get_country_ai_confidence(country)
+    mod_actions       = get_modernisation_actions(slug)
+    inv_opportunities = get_investment_opportunities(slug)
+
+    # Macro indicator cards for the briefing (matches detail page order)
+    macro_indicators = []
+    if country.gdp_usd:
+        macro_indicators.append({
+            'label': 'GDP (USD)', 'value': f'${country.gdp_usd:,.0f}',
+            'color': '#58a6ff', 'note': 'Annual GDP',
+        })
+    if country.co2_megatonnes:
+        macro_indicators.append({
+            'label': 'Annual CO₂', 'value': f'{country.co2_megatonnes:,.0f} Mt',
+            'color': '#e63946', 'note': 'Megatonnes per year',
+        })
+    if country.renewable_energy_share is not None:
+        macro_indicators.append({
+            'label': 'Renewable Energy', 'value': f'{country.renewable_energy_share:.0f}%',
+            'color': '#00e89a', 'note': 'Of electricity generation',
+        })
+    if country.fossil_fuel_dependency is not None:
+        macro_indicators.append({
+            'label': 'Fossil Dependency', 'value': f'{country.fossil_fuel_dependency:.0f}%',
+            'color': '#f4a261', 'note': 'Of primary energy',
+        })
+    if country.industrial_gdp_share is not None:
+        macro_indicators.append({
+            'label': 'Industrial GDP', 'value': f'{country.industrial_gdp_share:.1f}%',
+            'color': '#a855f7', 'note': 'Share of GDP',
+        })
+    if country.estimated_transition_gap_usd:
+        macro_indicators.append({
+            'label': 'Transition Finance Gap', 'value': f'${country.estimated_transition_gap_usd:,.0f}',
+            'color': '#06b6d4', 'note': 'Indicative estimate',
+        })
+
+    return render(request, 'countries/briefing.html', {
+        'country':           country,
+        'briefing':          briefing,
+        'dev_bank_compat':   dev_bank_compat,
+        'corruption_exp':    corruption_exp,
+        'ai_confidence':     ai_confidence,
+        'mod_actions':       mod_actions,
+        'inv_opportunities': inv_opportunities,
+        'macro_indicators':  macro_indicators,
     })

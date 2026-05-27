@@ -1,0 +1,657 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ country.name }} Investor Intelligence Briefing — EcoIQ</title>
+<style>
+/* ── EcoIQ Investor Briefing ─────────────────────────────────────────────────*/
+:root{
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2230;
+  --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12); --border3:rgba(255,255,255,.18);
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+  --info:#58a6ff; --purple:#a855f7; --cyan:#06b6d4;
+  --radius:10px;
+}
+html{scroll-behavior:smooth}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{text-decoration:none;color:inherit}
+
+/* ── Top bar ── */
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(7,11,15,.97);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(14px);
+  display:flex;align-items:center;gap:1rem;
+  padding:.6rem 1.6rem;font-size:.78rem;flex-wrap:wrap;
+}
+.topbar-brand{font-weight:800;color:var(--accent);font-size:.92rem;letter-spacing:.3px;flex-shrink:0}
+.topbar-sep{color:var(--border2);margin:0 .1rem;flex-shrink:0}
+.topbar-label{color:var(--muted2);font-size:.75rem;flex:1}
+.topbar-actions{display:flex;gap:.5rem;margin-left:auto;align-items:center;flex-wrap:wrap}
+.tb-btn{
+  font-size:.69rem;font-weight:600;padding:.28rem .8rem;border-radius:5px;
+  border:1px solid var(--border);color:var(--muted);white-space:nowrap;
+  transition:all .15s;cursor:pointer;
+}
+.tb-btn:hover{border-color:var(--border2);color:var(--text)}
+.tb-btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.tb-btn-primary:hover{background:#00c882;color:#000}
+.tb-btn-disabled{color:rgba(255,255,255,.2);border-color:rgba(255,255,255,.06);cursor:not-allowed;pointer-events:none}
+.tb-soon{font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  background:rgba(244,162,97,.14);color:var(--warn);border:1px solid rgba(244,162,97,.22);
+  border-radius:3px;padding:.08rem .35rem;margin-left:.3rem}
+.tb-back{font-size:.69rem;color:var(--muted);display:flex;align-items:center;gap:.3rem}
+.tb-back:hover{color:var(--accent)}
+
+/* ── Memo header ── */
+.memo-header{
+  background:linear-gradient(135deg,#080e1a 0%,#0b1628 55%,#081420 100%);
+  border-bottom:1px solid var(--border2);
+  padding:2.4rem 2rem 2rem;position:relative;overflow:hidden;
+}
+.memo-header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 800px 350px at 75% 40%,rgba(0,232,154,.05),transparent 65%),
+             radial-gradient(ellipse 400px 200px at 10% 80%,rgba(88,166,255,.04),transparent 60%);
+  pointer-events:none;
+}
+.memo-header-inner{max-width:900px;margin:0 auto;position:relative}
+.memo-eyebrow{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.2);
+  color:var(--accent);font-size:.68rem;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;padding:.25rem .75rem;border-radius:20px;margin-bottom:.9rem;
+}
+.memo-flag{font-size:3rem;line-height:1;margin-bottom:.6rem;filter:drop-shadow(0 0 16px rgba(0,232,154,.18))}
+.memo-country{font-size:2.2rem;font-weight:800;letter-spacing:-.5px;margin-bottom:.3rem;line-height:1.1}
+.memo-meta{font-size:.8rem;color:var(--muted2);display:flex;flex-wrap:wrap;gap:.3rem .7rem;margin-bottom:1.2rem;align-items:center}
+.memo-dot{color:var(--border3)}
+.memo-score-strip{
+  display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:8px;padding:.7rem 1rem;margin-top:.5rem;
+}
+.mss-item{text-align:center;min-width:70px}
+.mss-val{font-size:1.1rem;font-weight:800;font-family:monospace;line-height:1}
+.mss-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:.2rem}
+.mss-div{width:1px;height:32px;background:var(--border);flex-shrink:0}
+.memo-conf{
+  font-size:.65rem;color:var(--muted);margin-left:auto;font-style:italic;
+}
+
+/* ── Page body ── */
+.brief-page{max-width:900px;margin:0 auto;padding:2rem 1.5rem 5rem}
+
+/* ── Section ── */
+.brief-section{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.5rem 1.6rem;margin-bottom:1.4rem;
+}
+.brief-section:hover{border-color:var(--border2)}
+.brief-sec-header{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem}
+.brief-sec-num{
+  font-size:.65rem;font-weight:800;font-family:monospace;
+  color:var(--accent);letter-spacing:.5px;flex-shrink:0;
+}
+.brief-sec-title{
+  font-size:.8rem;font-weight:700;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1.1px;
+}
+.brief-sec-title::before{
+  content:'';display:inline-block;width:3px;height:12px;background:var(--accent);
+  border-radius:2px;margin-right:.5rem;vertical-align:-2px;
+}
+.brief-sec-badge{
+  margin-left:auto;font-size:.62rem;font-weight:600;color:rgba(255,255,255,.3);
+  background:rgba(255,255,255,.04);border-radius:8px;padding:2px 8px;
+}
+
+/* ── Executive summary ── */
+.exec-text{
+  font-size:.875rem;color:var(--muted2);line-height:1.8;white-space:pre-line;
+}
+
+/* ── Macro indicator cards ── */
+.macro-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;
+}
+.macro-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.9rem 1rem;text-align:left;
+}
+.mc-val{font-size:1.15rem;font-weight:800;font-family:monospace;letter-spacing:-.02em;margin-bottom:.18rem}
+.mc-lbl{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.mc-note{font-size:.62rem;color:rgba(148,163,184,.4);margin-top:.2rem}
+
+/* ── Risk list ── */
+.risk-list{display:flex;flex-direction:column;gap:.65rem}
+.risk-card{
+  padding:.85rem 1rem;border-radius:8px;
+  border-left:3px solid;display:flex;gap:.75rem;align-items:flex-start;
+}
+.risk-card-critical{background:rgba(230,57,70,.05); border-color:var(--danger)}
+.risk-card-high    {background:rgba(244,162,97,.04); border-color:var(--warn)}
+.risk-card-medium  {background:rgba(88,166,255,.04); border-color:var(--info)}
+.risk-card-low     {background:rgba(0,232,154,.04);  border-color:var(--accent)}
+.risk-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;flex-wrap:wrap}
+.risk-title{font-size:.85rem;font-weight:700}
+.risk-card-critical .risk-title{color:var(--danger)}
+.risk-card-high     .risk-title{color:var(--warn)}
+.risk-card-medium   .risk-title{color:var(--info)}
+.risk-tag{
+  font-size:.6rem;font-weight:600;letter-spacing:.4px;text-transform:uppercase;
+  padding:.12rem .45rem;border-radius:4px;white-space:nowrap;
+}
+.rtag-critical{background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.25)}
+.rtag-high    {background:rgba(244,162,97,.12);color:var(--warn);  border:1px solid rgba(244,162,97,.22)}
+.rtag-medium  {background:rgba(88,166,255,.1); color:var(--info);  border:1px solid rgba(88,166,255,.2)}
+.rtag-sector  {background:rgba(255,255,255,.05);color:var(--muted2);border:1px solid rgba(255,255,255,.1)}
+.risk-detail  {font-size:.78rem;color:var(--muted2);line-height:1.6}
+
+/* ── Hotspot cards ── */
+.hotspot-list{display:flex;flex-direction:column;gap:.55rem}
+.hs-card{
+  padding:.75rem 1rem;border-radius:8px;border-left:3px solid;
+}
+.hs-severe{background:rgba(185,28,28,.06); border-color:#b91c1c}
+.hs-high  {background:rgba(230,57,70,.05); border-color:var(--danger)}
+.hs-medium{background:rgba(244,162,97,.04);border-color:var(--warn)}
+.hs-low   {background:rgba(0,232,154,.04); border-color:var(--accent)}
+.hs-badge{
+  display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.7px;
+  text-transform:uppercase;padding:.12rem .45rem;border-radius:5px;margin-bottom:.3rem;
+}
+.bsevere{background:rgba(185,28,28,.18);color:#f97316}
+.bhigh  {background:rgba(230,57,70,.14); color:var(--danger)}
+.bmedium{background:rgba(244,162,97,.12);color:var(--warn)}
+.blow   {background:rgba(0,232,154,.1);  color:var(--accent)}
+.hs-name{font-size:.84rem;font-weight:700;margin-bottom:.2rem}
+.hs-severe .hs-name{color:#f97316}
+.hs-high   .hs-name{color:var(--danger)}
+.hs-medium .hs-name{color:var(--warn)}
+.hs-low    .hs-name{color:var(--accent)}
+.hs-desc{font-size:.76rem;color:var(--muted2);line-height:1.55}
+
+/* ── Sector rows ── */
+.sector-row{display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border)}
+.sector-row:last-child{border-bottom:none}
+.sector-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sector-name{flex:1;font-size:.84rem}
+.sector-score{font-size:.84rem;font-weight:700;color:var(--accent);min-width:30px;text-align:right}
+.sector-tag{
+  font-size:.62rem;font-weight:600;padding:.12rem .45rem;border-radius:5px;
+}
+.stag-leading   {background:rgba(0,232,154,.1);  color:var(--accent); border:1px solid rgba(0,232,154,.2)}
+.stag-advancing {background:rgba(88,166,255,.1);  color:var(--info);   border:1px solid rgba(88,166,255,.2)}
+.stag-developing{background:rgba(244,162,97,.1);  color:var(--warn);   border:1px solid rgba(244,162,97,.2)}
+.stag-lagging   {background:rgba(230,57,70,.1);   color:var(--danger); border:1px solid rgba(230,57,70,.2)}
+.stag-critical  {background:rgba(185,28,28,.14);  color:#f97316;       border:1px solid rgba(185,28,28,.25)}
+
+/* ── Mod actions (flat, no expand in briefing) ── */
+.action-list{display:flex;flex-direction:column;gap:.55rem}
+.action-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-left:3px solid transparent;border-radius:8px;
+  padding:.85rem 1rem;
+}
+.action-card-critical{border-left-color:var(--danger)}
+.action-card-high    {border-left-color:var(--warn)}
+.action-card-medium  {border-left-color:var(--info)}
+.action-title{font-size:.84rem;font-weight:700;margin-bottom:.25rem}
+.action-desc {font-size:.76rem;color:var(--muted2);line-height:1.55;margin-bottom:.45rem}
+.action-tags {display:flex;flex-wrap:wrap;gap:.3rem}
+.a-tag{font-size:.59rem;font-weight:600;letter-spacing:.35px;padding:.14rem .45rem;border-radius:5px;white-space:nowrap}
+.a-tag-sector  {background:rgba(88,166,255,.1); color:var(--info);   border:1px solid rgba(88,166,255,.18)}
+.a-tag-critical{background:rgba(230,57,70,.1);  color:var(--danger); border:1px solid rgba(230,57,70,.2)}
+.a-tag-high    {background:rgba(244,162,97,.1); color:var(--warn);   border:1px solid rgba(244,162,97,.18)}
+.a-tag-medium  {background:rgba(88,166,255,.08);color:var(--info);   border:1px solid rgba(88,166,255,.15)}
+.a-tag-finance {background:rgba(168,85,247,.08);color:var(--purple); border:1px solid rgba(168,85,247,.16)}
+
+/* ── Investment opportunities (flat) ── */
+.opp-list{display:flex;flex-direction:column;gap:.55rem}
+.opp-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-left:3px solid transparent;border-radius:8px;
+  padding:.85rem 1rem;
+}
+.opp-card-critical{border-left-color:var(--danger)}
+.opp-card-high    {border-left-color:var(--warn)}
+.opp-card-medium  {border-left-color:var(--info)}
+.opp-title{font-size:.84rem;font-weight:700;margin-bottom:.35rem}
+.opp-thesis{font-size:.76rem;color:var(--muted2);line-height:1.6;margin-bottom:.45rem}
+.opp-row{
+  display:grid;grid-template-columns:110px 1fr;gap:.3rem .6rem;
+  padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:baseline;
+}
+.opp-row:last-child{border-bottom:none}
+.opp-key{font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.opp-val{font-size:.75rem;color:var(--muted2);line-height:1.55}
+.opp-tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.45rem}
+.o-tag{font-size:.59rem;font-weight:600;letter-spacing:.35px;padding:.14rem .45rem;border-radius:5px;white-space:nowrap}
+.o-tag-sector    {background:rgba(88,166,255,.1);  color:var(--info);   border:1px solid rgba(88,166,255,.18)}
+.o-tag-critical  {background:rgba(230,57,70,.1);   color:var(--danger); border:1px solid rgba(230,57,70,.2)}
+.o-tag-high      {background:rgba(244,162,97,.1);  color:var(--warn);   border:1px solid rgba(244,162,97,.18)}
+.o-tag-medium    {background:rgba(88,166,255,.08); color:var(--info);   border:1px solid rgba(88,166,255,.15)}
+.o-tag-risk-high {background:rgba(230,57,70,.08);  color:var(--danger); border:1px solid rgba(230,57,70,.16)}
+.o-tag-risk-med  {background:rgba(100,116,139,.1); color:var(--muted2); border:1px solid rgba(100,116,139,.18)}
+.o-tag-risk-low  {background:rgba(0,232,154,.07);  color:var(--accent); border:1px solid rgba(0,232,154,.14)}
+.o-tag-ecoiq-c   {background:rgba(230,57,70,.1);   color:var(--danger); border:1px solid rgba(230,57,70,.2)}
+.o-tag-ecoiq-s   {background:rgba(168,85,247,.09); color:var(--purple); border:1px solid rgba(168,85,247,.16)}
+.o-tag-ecoiq-i   {background:rgba(0,232,154,.07);  color:var(--accent); border:1px solid rgba(0,232,154,.14)}
+
+/* ── Dev bank cards ── */
+.db-list{display:flex;flex-direction:column;gap:.55rem}
+.db-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;display:flex;gap:.75rem;align-items:flex-start;
+}
+.db-icon{
+  width:34px;height:34px;border-radius:6px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+}
+.db-body{flex:1;min-width:0}
+.db-name{font-size:.84rem;font-weight:700;margin-bottom:.1rem}
+.db-mandate{font-size:.7rem;color:var(--muted);margin-bottom:.3rem}
+.db-detail{font-size:.75rem;color:var(--muted2);line-height:1.55;margin-bottom:.35rem}
+.db-badge{
+  display:inline-block;font-size:.62rem;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;padding:.15rem .5rem;border-radius:6px;
+}
+.db-eligible   {background:rgba(0,232,154,.1); color:var(--accent);border:1px solid rgba(0,232,154,.22)}
+.db-partial    {background:rgba(244,162,97,.1);color:var(--warn);  border:1px solid rgba(244,162,97,.2)}
+.db-conditional{background:rgba(230,57,70,.1); color:var(--danger);border:1px solid rgba(230,57,70,.2)}
+
+/* ── Governance warnings ── */
+.gov-list{display:flex;flex-direction:column;gap:.55rem}
+.gov-card{
+  padding:.8rem 1rem;border-radius:8px;
+  border-left:3px solid;
+}
+.gov-card-high   {background:rgba(230,57,70,.05); border-color:var(--danger)}
+.gov-card-medium {background:rgba(244,162,97,.04);border-color:var(--warn)}
+.gov-title{font-size:.84rem;font-weight:700;margin-bottom:.25rem}
+.gov-card-high   .gov-title{color:var(--danger)}
+.gov-card-medium .gov-title{color:var(--warn)}
+.gov-detail{font-size:.76rem;color:var(--muted2);line-height:1.6}
+
+/* ── Corruption meter ── */
+.corr-block{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem;
+}
+.corr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem}
+.corr-level{font-size:1rem;font-weight:800}
+.corr-score{font-size:.75rem;color:var(--muted2)}
+.corr-bar-bg{height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-bottom:.5rem}
+.corr-bar-fill{height:7px;border-radius:4px}
+.corr-detail{font-size:.76rem;color:var(--muted2);line-height:1.55}
+
+/* ── Disclaimer ── */
+.disclaimer-block{
+  background:rgba(244,162,97,.04);border:1px solid rgba(244,162,97,.15);
+  border-radius:8px;padding:1rem 1.2rem;
+}
+.disclaimer-text{font-size:.77rem;color:rgba(148,163,184,.6);line-height:1.7;font-style:italic}
+.disclaimer-title{
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+  color:rgba(244,162,97,.7);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;
+}
+
+/* ── Footer ── */
+.brief-footer{
+  max-width:900px;margin:0 auto;padding:1.5rem 1.5rem 2.5rem;
+  font-size:.72rem;color:var(--muted);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+}
+.brief-footer a{color:var(--muted);transition:color .15s}
+.brief-footer a:hover{color:var(--accent)}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .macro-grid{grid-template-columns:repeat(2,1fr)}
+  .brief-page{padding:1.5rem 1rem 4rem}
+  .memo-header{padding:1.8rem 1.2rem 1.5rem}
+  .opp-row{grid-template-columns:1fr;gap:.1rem}
+  .topbar-actions{gap:.4rem}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span class="topbar-brand">EcoIQ</span>
+  <span class="topbar-sep">|</span>
+  <span class="topbar-label">Investor Intelligence Briefing · {{ country.name }}</span>
+  <div class="topbar-actions">
+    <a href="{% url 'countries:detail' country.slug %}" class="tb-btn tb-back">← Country Page</a>
+    <a href="mailto:hello@ecoiq.uk?subject=EcoIQ%20Kazakhstan%20Investor%20Briefing%20Request"
+       class="tb-btn tb-btn-primary">📩 Request Full Report</a>
+    <span class="tb-btn tb-btn-disabled">
+      ⬇ Download Briefing<span class="tb-soon">Soon</span>
+    </span>
+  </div>
+</div>
+
+<!-- MEMO HEADER -->
+<header class="memo-header">
+  <div class="memo-header-inner">
+    <div class="memo-eyebrow">🌐 EcoIQ · Investor Intelligence Briefing · Indicative</div>
+    <div class="memo-flag">{{ country.flag_emoji }}</div>
+    <h1 class="memo-country">{{ country.name }}</h1>
+    <div class="memo-meta">
+      <span>{{ country.get_region_display }}</span>
+      <span class="memo-dot">·</span>
+      <span>{{ country.companies_tracked }} companies tracked</span>
+      {% if country.iso_code %}
+      <span class="memo-dot">·</span>
+      <span>ISO {{ country.iso_code }}</span>
+      {% endif %}
+      <span class="memo-dot">·</span>
+      <span>AI Intelligence · {{ ai_confidence }}% confidence</span>
+    </div>
+
+    <div class="memo-score-strip">
+      <div class="mss-item">
+        <div class="mss-val" style="color:var(--accent)">{{ country.national_ecoiq_index|floatformat:1 }}</div>
+        <div class="mss-lbl">EcoIQ Index</div>
+      </div>
+      <div class="mss-div"></div>
+      <div class="mss-item">
+        <div class="mss-val" style="color:#58a6ff">{{ country.transition_readiness_score|floatformat:0 }}</div>
+        <div class="mss-lbl">Transition</div>
+      </div>
+      <div class="mss-div"></div>
+      <div class="mss-item">
+        <div class="mss-val" style="color:#06b6d4">{{ country.transparency_score|floatformat:0 }}</div>
+        <div class="mss-lbl">Transparency</div>
+      </div>
+      <div class="mss-div"></div>
+      <div class="mss-item">
+        <div class="mss-val" style="color:#a855f7">{{ country.investment_climate_score|floatformat:0 }}</div>
+        <div class="mss-lbl">Inv. Climate</div>
+      </div>
+      <div class="mss-div"></div>
+      <div class="mss-item">
+        <div class="mss-val" style="color:#f4a261">{{ country.industrial_modernization_score|floatformat:0 }}</div>
+        <div class="mss-lbl">Modernisation</div>
+      </div>
+      <div class="mss-div"></div>
+      <div class="mss-item">
+        <div class="mss-val" style="color:#00e89a">{{ country.policy_environment_score|floatformat:0 }}</div>
+        <div class="mss-lbl">Policy</div>
+      </div>
+      <div class="memo-conf">Indicative · Not investment advice</div>
+    </div>
+  </div>
+</header>
+
+<main class="brief-page">
+
+  {# 01 ── Executive Summary ───────────────────────────────────────────────── #}
+  {% if briefing.executive_summary %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">01</span>
+      <span class="brief-sec-title">Executive Summary</span>
+      <span class="brief-sec-badge">AI-assisted</span>
+    </div>
+    <p class="exec-text">{{ briefing.executive_summary }}</p>
+  </div>
+  {% endif %}
+
+  {# 02 ── Key Macro Indicators ────────────────────────────────────────────── #}
+  {% if macro_indicators %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">02</span>
+      <span class="brief-sec-title">Key Macro Indicators</span>
+    </div>
+    <div class="macro-grid">
+      {% for m in macro_indicators %}
+      <div class="macro-card">
+        <div class="mc-val" style="color:{{ m.color }}">{{ m.value }}</div>
+        <div class="mc-lbl">{{ m.label }}</div>
+        <div class="mc-note">{{ m.note }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# 03 ── Transition Risks ─────────────────────────────────────────────────── #}
+  {% if briefing.transition_risks %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">03</span>
+      <span class="brief-sec-title">Transition Risks</span>
+      <span class="brief-sec-badge">{{ briefing.transition_risks|length }} identified</span>
+    </div>
+    <div class="risk-list">
+      {% for risk in briefing.transition_risks %}
+      <div class="risk-card risk-card-{{ risk.severity }}">
+        <div style="flex:1">
+          <div class="risk-header">
+            <span class="risk-title">{{ risk.title }}</span>
+            <span class="risk-tag rtag-{{ risk.severity }}">{{ risk.severity|title }}</span>
+            {% if risk.sector %}
+            <span class="risk-tag rtag-sector">{{ risk.sector }}</span>
+            {% endif %}
+          </div>
+          <div class="risk-detail">{{ risk.detail }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# 04 ── Pollution Hotspots ──────────────────────────────────────────────── #}
+  {% if country.pollution_hotspots %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">04</span>
+      <span class="brief-sec-title">Pollution Hotspots</span>
+      <span class="brief-sec-badge">{{ country.pollution_hotspots|length }} sites</span>
+    </div>
+    <div class="hotspot-list">
+      {% for h in country.pollution_hotspots %}
+      <div class="hs-card hs-{{ h.severity|default:'medium' }}">
+        <div class="hs-badge b{{ h.severity|default:'medium' }}">{{ h.severity|default:'medium'|upper }}</div>
+        <div class="hs-name">{{ h.name }}</div>
+        <div class="hs-desc">{{ h.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# 05 ── Priority Sectors ────────────────────────────────────────────────── #}
+  {% if country.industrial_sectors %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">05</span>
+      <span class="brief-sec-title">Priority Sectors</span>
+    </div>
+    {% for s in country.industrial_sectors %}
+    <div class="sector-row">
+      <div class="sector-dot" style="background:{% if s.pollution_level == 'low' %}var(--accent){% elif s.pollution_level == 'medium' %}var(--warn){% elif s.pollution_level == 'high' %}var(--danger){% else %}#b91c1c{% endif %}"></div>
+      <span class="sector-name">{{ s.name }}</span>
+      {% if s.transition_status %}
+      <span class="sector-tag stag-{{ s.transition_status }}">{{ s.transition_status }}</span>
+      {% endif %}
+      <span class="sector-score">{{ s.ecoiq_score }}</span>
+    </div>
+    {% endfor %}
+    <div style="margin-top:.7rem;font-size:.67rem;color:var(--muted);display:flex;gap:.75rem;flex-wrap:wrap">
+      <span><span style="color:var(--accent)">●</span> Low pollution</span>
+      <span><span style="color:var(--warn)">●</span> Medium</span>
+      <span><span style="color:var(--danger)">●</span> High</span>
+      <span><span style="color:#b91c1c">●</span> Severe</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {# 06 ── Recommended Modernisation Actions ───────────────────────────────── #}
+  {% if mod_actions %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">06</span>
+      <span class="brief-sec-title">Recommended Modernisation Actions</span>
+      <span class="brief-sec-badge">{{ mod_actions|length }} actions</span>
+    </div>
+    <div class="action-list">
+      {% for a in mod_actions %}
+      <div class="action-card action-card-{{ a.impact_level }}">
+        <div class="action-title">{{ a.title }}</div>
+        <div class="action-desc">{{ a.description }}</div>
+        <div class="action-tags">
+          <span class="a-tag a-tag-sector">{{ a.sector }}</span>
+          <span class="a-tag a-tag-{{ a.impact_level }}">{{ a.impact_level|title }} Impact</span>
+          <span class="a-tag a-tag-finance">{{ a.finance_relevance }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# 07 ── Priority Investment Opportunities ───────────────────────────────── #}
+  {% if inv_opportunities %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">07</span>
+      <span class="brief-sec-title">Priority Investment Opportunities</span>
+      <span class="brief-sec-badge">{{ inv_opportunities|length }} opportunities</span>
+    </div>
+    <div class="opp-list">
+      {% for o in inv_opportunities %}
+      <div class="opp-card opp-card-{{ o.impact_level }}">
+        <div class="opp-title">{{ o.title }}</div>
+        <div class="opp-tags">
+          <span class="o-tag o-tag-sector">{{ o.sector }}</span>
+          <span class="o-tag o-tag-{{ o.impact_level }}">{{ o.impact_level|title }} Impact</span>
+          <span class="o-tag o-tag-risk-{% if o.risk_level == 'medium' %}med{% else %}{{ o.risk_level }}{% endif %}">{{ o.risk_level|title }} Risk</span>
+          <span class="o-tag {% if o.ecoiq_priority == 'critical' %}o-tag-ecoiq-c{% elif o.ecoiq_priority == 'strategic' %}o-tag-ecoiq-s{% else %}o-tag-ecoiq-i{% endif %}">EcoIQ: {{ o.ecoiq_priority|title }}</span>
+        </div>
+        <div class="opp-thesis">{{ o.thesis }}</div>
+        <div class="opp-row">
+          <div class="opp-key">Stakeholders</div>
+          <div class="opp-val">{{ o.stakeholders }}</div>
+        </div>
+        <div class="opp-row">
+          <div class="opp-key">Finance Route</div>
+          <div class="opp-val">{{ o.finance_route }}</div>
+        </div>
+        <div class="opp-row">
+          <div class="opp-key">Strategic Note</div>
+          <div class="opp-val">{{ o.strategic_relevance }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# 08 ── Development Bank Compatibility ──────────────────────────────────── #}
+  {% if dev_bank_compat %}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">08</span>
+      <span class="brief-sec-title">Development Bank Compatibility</span>
+      <span class="brief-sec-badge">Indicative only</span>
+    </div>
+    <div class="db-list">
+      {% for db in dev_bank_compat %}
+      <div class="db-card">
+        <div class="db-icon" style="background:rgba(255,255,255,.04)">🏦</div>
+        <div class="db-body">
+          <div class="db-name">{{ db.name }}</div>
+          <div class="db-mandate">{{ db.mandate }}</div>
+          <div class="db-detail">{{ db.detail }}</div>
+          <span class="db-badge db-{{ db.status }}">
+            {% if db.status == 'eligible' %}✓ Eligible
+            {% elif db.status == 'partial' %}◑ Partial
+            {% else %}⚠ Conditional{% endif %}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p style="font-size:.68rem;color:var(--muted);margin-top:.75rem;font-style:italic">
+      Compatibility assessments are indicative and based on EcoIQ scores and regional mandates.
+      Actual eligibility depends on project-specific criteria and institutional due diligence.
+    </p>
+  </div>
+  {% endif %}
+
+  {# 09 ── Governance and Due Diligence ────────────────────────────────────── #}
+  <div class="brief-section">
+    <div class="brief-sec-header">
+      <span class="brief-sec-num">09</span>
+      <span class="brief-sec-title">Governance &amp; Due Diligence</span>
+    </div>
+
+    {% if corruption_exp %}
+    <div class="corr-block" style="margin-bottom:1rem">
+      <div class="corr-row">
+        <span class="corr-level" style="color:{{ corruption_exp.color }}">{{ corruption_exp.level }} Corruption Risk</span>
+        <span class="corr-score">{{ corruption_exp.score }}/100 exposure index</span>
+      </div>
+      <div class="corr-bar-bg">
+        <div class="corr-bar-fill" style="background:{{ corruption_exp.color }};width:{{ corruption_exp.score }}%"></div>
+      </div>
+      <div class="corr-detail">{{ corruption_exp.detail }}</div>
+    </div>
+    {% endif %}
+
+    {% if briefing.governance_warnings %}
+    <div class="gov-list">
+      {% for w in briefing.governance_warnings %}
+      <div class="gov-card gov-card-{{ w.severity }}">
+        <div class="gov-title">{{ w.title }}</div>
+        <div class="gov-detail">{{ w.detail }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# 10 ── Disclaimer ──────────────────────────────────────────────────────── #}
+  <div class="brief-section disclaimer-block">
+    <div class="brief-sec-header" style="margin-bottom:.6rem">
+      <span class="brief-sec-num">10</span>
+      <span class="brief-sec-title">Disclaimer</span>
+    </div>
+    <p class="disclaimer-text">
+      This briefing is AI-assisted and indicative only. It does not constitute financial advice,
+      investment advice, legal advice or a verified investment opportunity. Scores and assessments
+      are based on publicly available data and EcoIQ's analytical methodology. All data is
+      indicative and has not been independently verified. Project-level feasibility studies,
+      stakeholder consultation and due diligence are required before any investment or financing
+      decision. EcoIQ is a climate transition intelligence platform — not a regulated financial
+      institution or investment adviser.
+    </p>
+  </div>
+
+</main>
+
+<footer class="brief-footer">
+  <span>EcoIQ Country Intelligence · {{ country.name }} · Investor Briefing</span>
+  <a href="{% url 'countries:detail' country.slug %}">← Country Overview</a>
+  <a href="{% url 'countries:directory' %}">All Countries</a>
+  <a href="mailto:hello@ecoiq.uk?subject=EcoIQ%20Kazakhstan%20Investor%20Briefing%20Request">Contact EcoIQ</a>
+  <span style="margin-left:auto;font-style:italic">Indicative · Not investment advice</span>
+</footer>
+
+</body>
+</html>
