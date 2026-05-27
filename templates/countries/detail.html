@@ -328,59 +328,88 @@ a{text-decoration:none}
 .cta-secondary{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);color:var(--info)}
 
 /* ── Modernisation Actions ── */
-.mod-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:.85rem;
-}
-.mod-card{
+.mod-list{display:flex;flex-direction:column;gap:.65rem}
+
+/* <details> card */
+details.mod-card{
   background:var(--bg3);
   border:1px solid var(--border);
-  border-left:3px solid;
+  border-left:3px solid transparent;
   border-radius:9px;
-  padding:1rem 1.1rem;
-  transition:border-color .2s,transform .2s;
-  display:flex;flex-direction:column;gap:.5rem;
+  overflow:hidden;
+  transition:border-color .2s;
 }
-.mod-card:hover{border-color:var(--border2);transform:translateY(-1px)}
-.mod-card-critical{border-left-color:var(--danger)}
-.mod-card-high    {border-left-color:var(--warn)}
-.mod-card-medium  {border-left-color:var(--info)}
+details.mod-card:hover{border-color:var(--border2)}
+details.mod-card-critical{border-left-color:var(--danger)}
+details.mod-card-high    {border-left-color:var(--warn)}
+details.mod-card-medium  {border-left-color:var(--info)}
+
+/* Summary (always-visible compact row) */
+details.mod-card > summary{
+  list-style:none;padding:.9rem 1.1rem;
+  cursor:pointer;user-select:none;outline:none;
+}
+details.mod-card > summary::-webkit-details-marker{display:none}
+details.mod-card > summary:hover{background:rgba(255,255,255,.018)}
+
+.mod-summary-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:.75rem;margin-bottom:.35rem;
+}
 .mod-card-title{
-  font-size:.85rem;font-weight:700;
-  color:var(--text);line-height:1.35;
+  font-size:.87rem;font-weight:700;color:var(--text);
+  line-height:1.35;flex:1;
 }
-.mod-card-desc{
-  font-size:.77rem;color:var(--muted2);line-height:1.55;flex:1;
+.mod-chevron{
+  font-size:.75rem;color:var(--muted);flex-shrink:0;margin-top:.15rem;
+  display:inline-block;transition:transform .22s ease;
 }
-.mod-card-footer{
-  display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.2rem;
-  align-items:center;
-}
+details.mod-card[open] .mod-chevron{transform:rotate(-180deg)}
+
+.mod-card-desc{font-size:.78rem;color:var(--muted2);line-height:1.55;margin-bottom:.55rem}
+
+.mod-card-tags{display:flex;flex-wrap:wrap;gap:.3rem}
 .mod-tag{
-  font-size:.62rem;font-weight:600;letter-spacing:.4px;
-  padding:.18rem .55rem;border-radius:6px;white-space:nowrap;
+  font-size:.61rem;font-weight:600;letter-spacing:.4px;
+  padding:.17rem .5rem;border-radius:6px;white-space:nowrap;
 }
-.mod-tag-sector{
-  background:rgba(88,166,255,.1);color:var(--info);
-  border:1px solid rgba(88,166,255,.2);
+.mod-tag-sector  {background:rgba(88,166,255,.1);  color:var(--info);   border:1px solid rgba(88,166,255,.2)}
+.mod-tag-critical{background:rgba(230,57,70,.1);   color:var(--danger); border:1px solid rgba(230,57,70,.22)}
+.mod-tag-high    {background:rgba(244,162,97,.1);  color:var(--warn);   border:1px solid rgba(244,162,97,.2)}
+.mod-tag-medium  {background:rgba(88,166,255,.08); color:var(--info);   border:1px solid rgba(88,166,255,.18)}
+.mod-tag-finance {background:rgba(168,85,247,.08); color:var(--purple); border:1px solid rgba(168,85,247,.18)}
+.mod-tag-status  {background:rgba(0,232,154,.07);  color:var(--accent); border:1px solid rgba(0,232,154,.18)}
+
+/* Expanded intelligence panel */
+.mod-intel{
+  border-top:1px solid var(--border);
+  padding:.75rem 1.1rem .85rem;
 }
-.mod-tag-critical{background:rgba(230,57,70,.12);color:var(--danger);border:1px solid rgba(230,57,70,.25)}
-.mod-tag-high    {background:rgba(244,162,97,.1); color:var(--warn); border:1px solid rgba(244,162,97,.22)}
-.mod-tag-medium  {background:rgba(88,166,255,.1); color:var(--info); border:1px solid rgba(88,166,255,.22)}
-.mod-tag-finance{
-  background:rgba(168,85,247,.08);color:var(--purple);
-  border:1px solid rgba(168,85,247,.2);
+.mod-intel-row{
+  display:grid;grid-template-columns:130px 1fr;
+  gap:.45rem .75rem;
+  padding:.55rem 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  align-items:baseline;
 }
-.mod-tag-status{
-  background:rgba(0,232,154,.08);color:var(--accent);
-  border:1px solid rgba(0,232,154,.2);
-  margin-left:auto;
+.mod-intel-row:last-child{border-bottom:none}
+.mod-intel-label{
+  font-size:.67rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.55px;
+  line-height:1.4;padding-top:.05rem;
 }
+.mod-intel-val{font-size:.8rem;color:var(--muted2);line-height:1.65}
+
 .mod-disclaimer{
-  font-size:.7rem;color:rgba(148,163,184,.45);
-  border-top:1px solid var(--border);margin-top:.9rem;padding-top:.65rem;
+  font-size:.7rem;color:rgba(148,163,184,.42);
+  border-top:1px solid var(--border);
+  margin-top:.85rem;padding-top:.6rem;
   font-style:italic;line-height:1.55;
+}
+
+@media(max-width:600px){
+  .mod-intel-row{grid-template-columns:1fr;gap:.15rem}
+  .mod-intel-label{font-size:.63rem;margin-bottom:.05rem}
 }
 
 /* ── Footer ── */
@@ -689,20 +718,47 @@ footer a:hover{color:var(--accent)}
     <div class="section">
       <div class="section-title">
         🏗 Recommended Modernisation Actions
-        <span class="st-right">{{ modernisation_actions|length }} actions · AI-assisted</span>
+        <span class="st-right">{{ modernisation_actions|length }} actions · AI-assisted · expand for intelligence</span>
       </div>
-      <div class="mod-grid">
+      <div class="mod-list">
         {% for action in modernisation_actions %}
-        <div class="mod-card mod-card-{{ action.impact }}">
-          <div class="mod-card-title">{{ action.title }}</div>
-          <div class="mod-card-desc">{{ action.description }}</div>
-          <div class="mod-card-footer">
-            <span class="mod-tag mod-tag-sector">{{ action.sector }}</span>
-            <span class="mod-tag mod-tag-{{ action.impact }}">{{ action.impact|title }} Impact</span>
-            <span class="mod-tag mod-tag-finance">{{ action.finance }}</span>
-            <span class="mod-tag mod-tag-status">Recommended</span>
+        <details class="mod-card mod-card-{{ action.impact_level }}">
+          <summary>
+            <div class="mod-summary-top">
+              <span class="mod-card-title">{{ action.title }}</span>
+              <span class="mod-chevron" aria-hidden="true">▾</span>
+            </div>
+            <p class="mod-card-desc">{{ action.description }}</p>
+            <div class="mod-card-tags">
+              <span class="mod-tag mod-tag-sector">{{ action.sector }}</span>
+              <span class="mod-tag mod-tag-{{ action.impact_level }}">{{ action.impact_level|title }} Impact</span>
+              <span class="mod-tag mod-tag-finance">{{ action.finance_relevance }}</span>
+              <span class="mod-tag mod-tag-status">{{ action.status }}</span>
+            </div>
+          </summary>
+          <div class="mod-intel">
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">⚠ Problem</div>
+              <div class="mod-intel-val">{{ action.problem }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">⚡ Opportunity</div>
+              <div class="mod-intel-val">{{ action.opportunity }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">👥 Stakeholders</div>
+              <div class="mod-intel-val">{{ action.stakeholders }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">🏦 Finance Route</div>
+              <div class="mod-intel-val">{{ action.finance_route }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">📊 EcoIQ Rationale</div>
+              <div class="mod-intel-val">{{ action.ecoiq_rationale }}</div>
+            </div>
           </div>
-        </div>
+        </details>
         {% endfor %}
       </div>
       <div class="mod-disclaimer">
