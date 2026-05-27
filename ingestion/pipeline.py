@@ -817,6 +817,13 @@ Rules:
             # Compute 6-pillar composite + moral label via scoring engine
             profile_rescore(profile)
 
+            # Compute Ethical Intelligence layer (NEI / TSS / RVI) — non-fatal
+            try:
+                from ethics.scoring import compute_and_save as ethics_compute
+                ethics_compute(profile)
+            except Exception as e_exc:
+                log.debug('[job %s] Ethics scoring skipped: %s', self.job_pk, e_exc)
+
             _progress(self.job_pk, 95,
                       f'{"Created" if profile_created else "Updated"} EcoIQ profile: '
                       f'score {profile.ecoiq_total_score:.1f} — {profile.moral_label}')

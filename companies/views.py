@@ -445,6 +445,14 @@ def company_detail(request, slug):
         round(profile.ethical_alignment_score, 1),
     ]
 
+    # ── Ethical Intelligence layer (NEI / TSS / RVI) ───────────────────────────
+    ethics_profile = None
+    try:
+        from ethics.scoring import get_or_compute
+        ethics_profile = get_or_compute(profile)
+    except Exception:
+        pass
+
     return render(request, 'companies/detail.html', {
         'company':               company,
         'profile':               profile,
@@ -467,4 +475,6 @@ def company_detail(request, slug):
         'ai_confidence':         ai_confidence,
         'financing_eligibility': financing_eligibility,
         'radar_scores':          radar_scores,
+        # Ethical Intelligence layer
+        'ethics_profile':        ethics_profile,
     })

@@ -1,0 +1,235 @@
+{# ── EcoIQ Improvement Roadmap Panel ───────────────────────────────────────────
+   Include in company detail page below ethics master scores.
+   Context variables required:
+     ethics_profile  CompanyEthicsProfile instance (or None)
+#}
+{% if ethics_profile and ethics_profile.milestones.exists %}
+<section class="roadmap-panel" aria-labelledby="roadmap-heading">
+
+  <div class="roadmap-header">
+    <h2 class="roadmap-title" id="roadmap-heading">
+      Improvement Roadmap
+      <span class="roadmap-count">{{ ethics_profile.milestones.count }} actions</span>
+    </h2>
+    {% if ethics_profile.expected_score_improvement %}
+    <div class="roadmap-potential">
+      <span class="rp-label">Potential EcoIQ gain</span>
+      <span class="rp-val">+{{ ethics_profile.expected_score_improvement|floatformat:1 }}</span>
+      <span class="rp-note">pts (top 3 actions)</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="roadmap-list">
+    {% for m in ethics_profile.milestones.all %}
+    <div class="roadmap-item ri-{{ m.status }}">
+
+      <div class="ri-priority">
+        <span class="ri-num">{{ forloop.counter }}</span>
+      </div>
+
+      <div class="ri-body">
+        <div class="ri-title-row">
+          <span class="ri-title">{{ m.title }}</span>
+          <span class="ri-status-badge" style="color:{{ m.status_color }};">{{ m.get_status_display }}</span>
+        </div>
+        {% if m.description %}
+        <div class="ri-desc">{{ m.description }}</div>
+        {% endif %}
+        <div class="ri-meta">
+          {% if m.pillar %}<span class="ri-tag">{{ m.pillar }}</span>{% endif %}
+          <span class="ri-tag" style="color:{{ m.effort_color }};">{{ m.get_effort_level_display }} effort</span>
+          <span class="ri-tag">{{ m.timeline_months }}mo</span>
+          {% if m.kpi_metric %}<span class="ri-kpi">KPI: {{ m.kpi_metric }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="ri-gain">
+        <span class="ri-gain-val">+{{ m.expected_score_gain|floatformat:1 }}</span>
+        <span class="ri-gain-label">pts</span>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="roadmap-footer">
+    <span>EcoIQ improvement roadmap — AI-assisted. Requires analyst review before acting.</span>
+  </div>
+
+</section>
+
+<style>
+/* ── Roadmap Panel ──────────────────────────────────────────────────────────── */
+.roadmap-panel {
+  background: var(--bg2, #0d1117);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.roadmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.roadmap-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  letter-spacing: -0.02em;
+}
+
+.roadmap-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.3);
+  background: rgba(255,255,255,.05);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.roadmap-potential {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.rp-label { font-size: 0.72rem; color: rgba(255,255,255,.4); }
+.rp-val   { font-size: 1.1rem; font-weight: 800; color: #00e89a; font-family: monospace; }
+.rp-note  { font-size: 0.68rem; color: rgba(255,255,255,.3); }
+
+/* ── Roadmap Items ──────────────────────────────────────────────────────────── */
+.roadmap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.roadmap-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.roadmap-item:last-child { border-bottom: none; }
+
+.ri-priority {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ri-num {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: rgba(255,255,255,.5);
+  font-family: monospace;
+}
+
+.ri-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ri-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.ri-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.88);
+  line-height: 1.3;
+}
+
+.ri-status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ri-desc {
+  font-size: 0.76rem;
+  color: rgba(255,255,255,.45);
+  line-height: 1.5;
+  margin-bottom: 0.4rem;
+}
+
+.ri-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.ri-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.35);
+  background: rgba(255,255,255,.05);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.ri-kpi {
+  font-size: 0.65rem;
+  color: rgba(88,166,255,.6);
+  font-family: monospace;
+}
+
+.ri-gain {
+  flex-shrink: 0;
+  text-align: center;
+  min-width: 50px;
+}
+.ri-gain-val {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #00e89a;
+  font-family: monospace;
+  letter-spacing: -0.03em;
+}
+.ri-gain-label {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,.3);
+}
+
+/* Status variants */
+.ri-in_progress .ri-num  { color: #f4a261; }
+.ri-completed   .ri-num  { color: #00e89a; }
+.ri-completed             { opacity: 0.65; }
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+.roadmap-footer {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,.25);
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,.04);
+  margin-top: 0.5rem;
+}
+</style>
+{% endif %}

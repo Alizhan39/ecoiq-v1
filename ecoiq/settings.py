@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     'transition',
     'companies',
     'countries',
+    'ethics',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
