@@ -10,6 +10,97 @@ from countries.models import CountryProfile, REGION_CHOICES
 from companies.models import CompanyProfile
 
 
+# ── Static modernisation actions (per-country, until DB model exists) ───────────
+# Keyed by country slug. Move to a DB model / admin later.
+
+_MODERNISATION_ACTIONS = {
+    'kazakhstan': [
+        {
+            'title':       'Reduce methane leakage in oil & gas',
+            'description': (
+                'Detect and reduce methane emissions across upstream oil and gas operations '
+                'through monitoring, leak detection, repair programmes and better reporting.'
+            ),
+            'sector':      'Oil & Gas',
+            'impact':      'critical',
+            'finance':     'Development bank + private capital',
+        },
+        {
+            'title':       'Modernise coal power plants and district heating',
+            'description': (
+                'Upgrade ageing coal power and heating infrastructure, reduce pollution '
+                'intensity, improve efficiency and prepare high-emission regions for '
+                'cleaner energy transition.'
+            ),
+            'sector':      'Coal Power / Heating',
+            'impact':      'critical',
+            'finance':     'Development bank + government',
+        },
+        {
+            'title':       'Expand solar and wind with battery storage',
+            'description': (
+                'Scale utility solar, wind and battery storage to reduce fossil dependency '
+                'and improve grid flexibility.'
+            ),
+            'sector':      'Renewable Energy',
+            'impact':      'high',
+            'finance':     'Private capital + development bank',
+        },
+        {
+            'title':       'Improve environmental monitoring around mining sites',
+            'description': (
+                'Deploy stronger monitoring of air, water, soil and tailings risks around '
+                'mining and industrial hotspots.'
+            ),
+            'sector':      'Mining',
+            'impact':      'high',
+            'finance':     'Government + development bank',
+        },
+        {
+            'title':       'Develop critical minerals processing with clean energy',
+            'description': (
+                'Move beyond raw extraction by developing cleaner processing capacity for '
+                'lithium, cobalt, copper and rare earths using low-carbon power.'
+            ),
+            'sector':      'Critical Minerals',
+            'impact':      'high',
+            'finance':     'Private capital + blended finance',
+        },
+        {
+            'title':       'Strengthen anti-corruption and procurement transparency',
+            'description': (
+                'Improve procurement transparency, contract disclosure, beneficial ownership '
+                'checks and independent project oversight to reduce governance risk.'
+            ),
+            'sector':      'Governance',
+            'impact':      'critical',
+            'finance':     'Development bank + government',
+        },
+        {
+            'title':       'Create green industrial zones',
+            'description': (
+                'Develop industrial zones powered by cleaner energy, efficient infrastructure '
+                'and circular economy principles to attract manufacturing and export-oriented '
+                'investment.'
+            ),
+            'sector':      'Industrial Policy',
+            'impact':      'high',
+            'finance':     'Government + private capital',
+        },
+        {
+            'title':       'Support worker reskilling in fossil-fuel regions',
+            'description': (
+                'Build reskilling programmes for workers in coal, oil, gas and heavy industry '
+                'regions to support a just transition.'
+            ),
+            'sector':      'Workforce / Just Transition',
+            'impact':      'medium',
+            'finance':     'Development bank + government',
+        },
+    ],
+}
+
+
 # ── Helpers ─────────────────────────────────────────────────────────────────────
 
 def _get_dev_bank_compat(country):
@@ -272,12 +363,15 @@ def country_detail(request, slug):
         round(country.industrial_modernization_score, 1),
     ]
 
+    modernisation_actions = _MODERNISATION_ACTIONS.get(slug, [])
+
     return render(request, 'countries/detail.html', {
-        'country':             country,
-        'companies':           companies,
-        'score_cards':         score_cards,
-        'dev_bank_compat':     dev_bank_compat,
-        'ai_confidence':       ai_confidence,
-        'corruption_exposure': corruption_exposure,
-        'radar_scores':        radar_scores,
+        'country':               country,
+        'companies':             companies,
+        'score_cards':           score_cards,
+        'dev_bank_compat':       dev_bank_compat,
+        'ai_confidence':         ai_confidence,
+        'corruption_exposure':   corruption_exposure,
+        'radar_scores':          radar_scores,
+        'modernisation_actions': modernisation_actions,
     })

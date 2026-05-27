@@ -327,6 +327,62 @@ a{text-decoration:none}
 .cta-primary{background:var(--accent);color:#000}
 .cta-secondary{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);color:var(--info)}
 
+/* ── Modernisation Actions ── */
+.mod-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:.85rem;
+}
+.mod-card{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-left:3px solid;
+  border-radius:9px;
+  padding:1rem 1.1rem;
+  transition:border-color .2s,transform .2s;
+  display:flex;flex-direction:column;gap:.5rem;
+}
+.mod-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.mod-card-critical{border-left-color:var(--danger)}
+.mod-card-high    {border-left-color:var(--warn)}
+.mod-card-medium  {border-left-color:var(--info)}
+.mod-card-title{
+  font-size:.85rem;font-weight:700;
+  color:var(--text);line-height:1.35;
+}
+.mod-card-desc{
+  font-size:.77rem;color:var(--muted2);line-height:1.55;flex:1;
+}
+.mod-card-footer{
+  display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.2rem;
+  align-items:center;
+}
+.mod-tag{
+  font-size:.62rem;font-weight:600;letter-spacing:.4px;
+  padding:.18rem .55rem;border-radius:6px;white-space:nowrap;
+}
+.mod-tag-sector{
+  background:rgba(88,166,255,.1);color:var(--info);
+  border:1px solid rgba(88,166,255,.2);
+}
+.mod-tag-critical{background:rgba(230,57,70,.12);color:var(--danger);border:1px solid rgba(230,57,70,.25)}
+.mod-tag-high    {background:rgba(244,162,97,.1); color:var(--warn); border:1px solid rgba(244,162,97,.22)}
+.mod-tag-medium  {background:rgba(88,166,255,.1); color:var(--info); border:1px solid rgba(88,166,255,.22)}
+.mod-tag-finance{
+  background:rgba(168,85,247,.08);color:var(--purple);
+  border:1px solid rgba(168,85,247,.2);
+}
+.mod-tag-status{
+  background:rgba(0,232,154,.08);color:var(--accent);
+  border:1px solid rgba(0,232,154,.2);
+  margin-left:auto;
+}
+.mod-disclaimer{
+  font-size:.7rem;color:rgba(148,163,184,.45);
+  border-top:1px solid var(--border);margin-top:.9rem;padding-top:.65rem;
+  font-style:italic;line-height:1.55;
+}
+
 /* ── Footer ── */
 footer{
   text-align:center;padding:2rem;color:var(--muted);
@@ -624,6 +680,33 @@ footer a:hover{color:var(--accent)}
       <p class="ai-text">{{ country.ai_investment_thesis }}</p>
       <div class="ai-disclaimer">
         EcoIQ intelligence is AI-generated based on publicly available data. Not independently verified. Not to be used as the sole basis for investment decisions.
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- RECOMMENDED MODERNISATION ACTIONS -->
+    {% if modernisation_actions %}
+    <div class="section">
+      <div class="section-title">
+        🏗 Recommended Modernisation Actions
+        <span class="st-right">{{ modernisation_actions|length }} actions · AI-assisted</span>
+      </div>
+      <div class="mod-grid">
+        {% for action in modernisation_actions %}
+        <div class="mod-card mod-card-{{ action.impact }}">
+          <div class="mod-card-title">{{ action.title }}</div>
+          <div class="mod-card-desc">{{ action.description }}</div>
+          <div class="mod-card-footer">
+            <span class="mod-tag mod-tag-sector">{{ action.sector }}</span>
+            <span class="mod-tag mod-tag-{{ action.impact }}">{{ action.impact|title }} Impact</span>
+            <span class="mod-tag mod-tag-finance">{{ action.finance }}</span>
+            <span class="mod-tag mod-tag-status">Recommended</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mod-disclaimer">
+        Recommended actions are AI-assisted and indicative only. Actual project design requires technical feasibility studies, stakeholder consultation and due diligence.
       </div>
     </div>
     {% endif %}
