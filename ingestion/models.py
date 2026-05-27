@@ -35,6 +35,7 @@ class IngestionJob(models.Model):
     ]
 
     company_name   = models.CharField(max_length=255, help_text='User-supplied name to look up')
+    url            = models.URLField(blank=True, help_text='Optional: company website or document URL to seed the search')
     status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     progress_pct   = models.PositiveSmallIntegerField(default=0, help_text='0-100')
     progress_message = models.CharField(max_length=500, blank=True)

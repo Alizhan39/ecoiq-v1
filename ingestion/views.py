@@ -32,7 +32,9 @@ def start(request):
     if not company_name:
         return JsonResponse({'error': 'Company name is required.'}, status=400)
 
-    job = IngestionJob.objects.create(company_name=company_name)
+    url = request.POST.get('url', '').strip()
+
+    job = IngestionJob.objects.create(company_name=company_name, url=url)
     run_pipeline_in_thread(job.pk)
 
     return JsonResponse({'job_id': job.pk})
@@ -47,9 +49,9 @@ def status(request, job_id: int):
     if job.result_company_id:
         from django.urls import reverse
         try:
-            result_url = reverse('league:company', args=[job.result_company.slug])
+            result_url = reverse('companies:detail', args=[job.result_company.slug])
         except Exception:
-            result_url = f'/league/{job.result_company.slug}/'
+            result_url = f'/companies/{job.result_company.slug}/'
 
     return JsonResponse({
         'status':           job.status,

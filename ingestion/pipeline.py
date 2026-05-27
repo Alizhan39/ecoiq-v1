@@ -141,8 +141,9 @@ class IngestionPipeline:
     """
 
     def __init__(self, job_pk: int):
-        self.job_pk       = job_pk
-        self.company_name = ''      # filled in run()
+        self.job_pk        = job_pk
+        self.company_name  = ''      # filled in run()
+        self.company_url   = ''      # optional seed URL, filled in run()
         self._search_data: dict  = {}
         self._sources: list[dict]= []   # [{url, source_type, title, snippet, content, confidence}]
         self._extraction: dict   = {}
@@ -155,6 +156,7 @@ class IngestionPipeline:
         try:
             job = IngestionJob.objects.get(pk=self.job_pk)
             self.company_name = job.company_name
+            self.company_url  = job.url or ''
             _update_job(self.job_pk,
                         status=IngestionJob.STATUS_SEARCHING,
                         started_at=timezone.now(),
@@ -191,9 +193,14 @@ class IngestionPipeline:
                     progress_pct=5,
                     progress_message='Searching the internet for company data…')
 
+        url_hint = (
+            f'\nSeed URL provided by researcher (start here): {self.company_url}\n'
+            if self.company_url else ''
+        )
+
         prompt = f"""You are an environmental research assistant helping build an ESG database.
 
-Research the company: "{self.company_name}"
+Research the company: "{self.company_name}"{url_hint}
 
 Use web search to find:
 1. Official company website and basic facts (country, sector, founded year, employee count, revenue)
@@ -668,11 +675,154 @@ Rules:
             )
             company.refresh_from_db()
 
-        # Recompute & save ecoiq_score
+        # Recompute & save ecoiq_score on league.Company
         company.ecoiq_score = company.compute_score()
         company.save(update_fields=['ecoiq_score'])
 
         _progress(self.job_pk, 90, f'{"Created" if created else "Updated"} company: {company.name}')
+
+        # ── CompanyProfile (EcoIQ 6-pillar layer) ────────────────────────────
+        # Map old 5-pillar AI scores → CompanyProfile sub-fields, then
+        # call recalculate_and_save() to derive correct pillar composites.
+
+        try:
+            from companies.models import CompanyProfile
+            from companies.scoring import recalculate_and_save as profile_rescore
+
+            poll = sc['pollution_footprint']   # env stewardship signal
+            red  = sc['reduction_progress']    # modernization signal
+            inv  = sc['investment']            # public benefit signal
+            trans = sc['transparency']         # governance signal
+            comm  = sc['community_impact']     # ethical alignment signal
+
+            # Pollution level from score bucket
+            if poll >= 75:
+                pollution_level = 'low'
+            elif poll >= 50:
+                pollution_level = 'medium'
+            elif poll >= 30:
+                pollution_level = 'high'
+            else:
+                pollution_level = 'severe'
+
+            # Annual report / ESG report URLs from search data
+            annual_report_url = next(
+                (s['url'] for s in sd.get('report_urls', [])
+                 if s.get('type') == 'annual_report'),
+                '',
+            )
+            esg_report_url = next(
+                (s['url'] for s in sd.get('report_urls', [])
+                 if s.get('type') == 'esg_report'),
+                '',
+            )
+
+            # Public sources list
+            public_sources = [
+                {'url': s['url'], 'title': s.get('title', ''), 'type': s.get('source_type', 'web')}
+                for s in self._sources if s.get('url')
+            ][:20]
+
+            # AI-generated text fields
+            desc = sd.get('description', '')
+            highlights = sd.get('environmental_highlights', [])
+            concerns   = sd.get('environmental_concerns', [])
+            reasoning  = sc.get('reasoning', {})
+
+            ai_summary_parts = []
+            if desc:
+                ai_summary_parts.append(desc)
+            if highlights:
+                ai_summary_parts.append(
+                    'Environmental highlights: ' + '; '.join(highlights[:4])
+                )
+            ai_summary = '\n\n'.join(ai_summary_parts)
+
+            gw_signals = ex.get('greenwashing_signals', [])
+            data_gaps  = ex.get('data_gaps', [])
+
+            ai_risk_parts = []
+            if concerns:
+                ai_risk_parts.append('Environmental concerns:\n' + '\n'.join(f'• {c}' for c in concerns))
+            if gw_signals:
+                ai_risk_parts.append('Transparency signals:\n' + '\n'.join(f'• {g}' for g in gw_signals))
+            ai_risk_notes = '\n\n'.join(ai_risk_parts)
+
+            ai_recommendations = []
+            for gap in data_gaps:
+                ai_recommendations.append({'action': 'Close data gap', 'detail': gap})
+            for pillar_key, rationale in reasoning.items():
+                if rationale:
+                    ai_recommendations.append({
+                        'action': f'Improve {pillar_key.replace("_", " ").title()}',
+                        'detail': rationale,
+                    })
+
+            profile_data = dict(
+                # Environmental (pollution_footprint → env sub-fields)
+                pollution_level           = pollution_level,
+                pollution_notes           = reasoning.get('pollution_footprint', ''),
+                waste_management_score    = float(poll),
+                water_impact_score        = float(poll),
+                biodiversity_impact_score = float(poll),
+
+                # Modernization (reduction_progress → modernization sub-fields)
+                energy_transition_score      = float(red),
+                digitalization_score         = float(red),
+                infrastructure_upgrade_score = float(red),
+                future_readiness_score       = float(red),
+
+                # Public Benefit (investment → public-benefit sub-fields)
+                jobs_created_score               = float(inv),
+                regional_development_score       = float(inv),
+                infrastructure_contribution_score= float(inv),
+                national_value_score             = float(inv),
+
+                # Transparency & governance (transparency → governance sub-fields)
+                transparency_score_detail      = float(trans),
+                audit_quality_score            = float(trans),
+                procurement_transparency_score = float(trans),
+                anti_corruption_score          = float(trans),
+
+                # Ethical alignment (community_impact → controversy inverse)
+                controversy_risk_score = float(max(0, 100 - comm)),
+
+                # Financials
+                annual_revenue = revenue,
+                employees      = emp_count,
+
+                # Source documents
+                annual_report_url         = (annual_report_url or '')[:200],
+                sustainability_report_url  = (esg_report_url or '')[:200],
+                public_sources            = public_sources,
+
+                # AI content
+                ai_summary          = ai_summary[:5000],
+                ai_risk_notes       = ai_risk_notes[:5000],
+                ai_recommendations  = ai_recommendations,
+
+                # Visibility
+                status = 'public',
+            )
+
+            profile, profile_created = CompanyProfile.objects.get_or_create(
+                company=company,
+                defaults=profile_data,
+            )
+            if not profile_created:
+                for field, value in profile_data.items():
+                    setattr(profile, field, value)
+                profile.save()
+
+            # Compute 6-pillar composite + moral label via scoring engine
+            profile_rescore(profile)
+
+            _progress(self.job_pk, 95,
+                      f'{"Created" if profile_created else "Updated"} EcoIQ profile: '
+                      f'score {profile.ecoiq_total_score:.1f} — {profile.moral_label}')
+
+        except Exception as exc:
+            log.warning('[job %s] CompanyProfile save failed (non-fatal): %s', self.job_pk, exc)
 
         # ── Projects ─────────────────────────────────────────────────────────
         from league.models import PROJECT_TYPE_CHOICES
@@ -691,10 +841,10 @@ Rules:
             start_y = p.get('start_year')
             start_d = date(int(start_y), 1, 1) if start_y else None
 
-            inv = self._safe_int(p.get('investment_usd'))
-            co2 = self._safe_int(p.get('co2_reduction_tonnes'))
-            pm25= self._safe_int(p.get('pm25_reduction_kg'))
-            hh  = self._safe_int(p.get('households_helped'))
+            inv_amt = self._safe_int(p.get('investment_usd'))
+            co2     = self._safe_int(p.get('co2_reduction_tonnes'))
+            pm25    = self._safe_int(p.get('pm25_reduction_kg'))
+            hh      = self._safe_int(p.get('households_helped'))
 
             proj, _ = EnvironmentalProject.objects.get_or_create(
                 company=company,
@@ -703,7 +853,7 @@ Rules:
                     'project_type':       pt,
                     'status':             status,
                     'start_date':         start_d,
-                    'investment_usd':     inv,
+                    'investment_usd':     inv_amt,
                     'co2_reduction_tonnes': co2,
                     'pm25_reduction_kg':  pm25,
                     'households_helped':  hh,
@@ -728,7 +878,7 @@ Rules:
                 )
             projects_saved += 1
 
-        _progress(self.job_pk, 93, f'Saved {projects_saved} projects.')
+        _progress(self.job_pk, 96, f'Saved {projects_saved} projects.')
 
         # ── Evidence from report URLs ─────────────────────────────────────────
         for src in self._sources:
@@ -774,7 +924,6 @@ Rules:
             from audit.models import AIAnalysisJob, AIFinding, AIScoreEstimate
 
             # pdf_file is required by model but we have no PDF — pass empty str
-            # (FileField stores a string path; ORM-level create accepts '' safely)
             ai_job = AIAnalysisJob.objects.create(
                 company=company,
                 pdf_file='',
@@ -807,7 +956,7 @@ Rules:
                     pillar_key.replace('_footprint','').replace('_progress','')
                              .replace('_impact',''),
                     50,
-                ) / 100.0  # pillar_confidence is now 0-100 pct; AIFinding needs 0-1
+                ) / 100.0
                 pillar_label = pillar_key.replace('_', ' ').title()
                 AIFinding.objects.create(
                     job=ai_job,
@@ -818,7 +967,6 @@ Rules:
                     status='pending',
                 )
 
-            # ESG signals as findings
             for incident in signals.get('incidents', []):
                 AIFinding.objects.create(
                     job=ai_job,
@@ -839,7 +987,6 @@ Rules:
                     status='pending',
                 )
 
-            # Score estimate
             AIScoreEstimate.objects.create(
                 job=ai_job,
                 est_pollution=sc['pollution_footprint'],
@@ -851,7 +998,7 @@ Rules:
                 reasoning=json.dumps(reasoning, ensure_ascii=False)[:5000],
                 data_gaps=ex.get('data_gaps', []),
                 greenwashing_signals=ex.get('greenwashing_signals', []),
-                confidence=sc['overall_confidence'] / 100.0,  # AIScoreEstimate expects 0-1
+                confidence=sc['overall_confidence'] / 100.0,
             )
 
         except Exception as exc:
