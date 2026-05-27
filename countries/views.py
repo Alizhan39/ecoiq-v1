@@ -10,6 +10,7 @@ from countries.models import CountryProfile, REGION_CHOICES
 from countries.modernisation_data import get_actions as get_modernisation_actions
 from countries.investment_data import get_opportunities as get_investment_opportunities
 from countries.briefing_data import get_briefing_content, has_briefing
+from countries.roadmap_data import get_roadmap
 from companies.models import CompanyProfile
 
 
@@ -277,6 +278,7 @@ def country_detail(request, slug):
 
     modernisation_actions    = get_modernisation_actions(slug)
     investment_opportunities = get_investment_opportunities(slug)
+    roadmap                  = get_roadmap(slug)
 
     return render(request, 'countries/detail.html', {
         'country':                  country,
@@ -289,6 +291,7 @@ def country_detail(request, slug):
         'modernisation_actions':    modernisation_actions,
         'investment_opportunities': investment_opportunities,
         'has_briefing':             has_briefing(slug),
+        'roadmap':                  roadmap,
     })
 
 
