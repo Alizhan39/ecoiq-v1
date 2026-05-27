@@ -321,31 +321,36 @@ td, th { border-color: var(--eiq-border) !important; }
 
 @hooks.register('insert_global_admin_js')
 def ecoiq_admin_js():
-    """Adds EcoIQ branding badge and keyboard shortcut hints to Wagtail admin."""
+    """EcoIQ admin: brand mark injection, entrance animations."""
     return mark_safe("""
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    /* ── EcoIQ brand badge in header ── */
+
+    /* ── Inject EcoIQ mark in sidebar top ── */
+    const sidebarBrand = document.querySelector('.sidebar__brand, .sidebar-nav__logo, [data-sidebar-theme]');
+    if (sidebarBrand && !document.querySelector('.ecoiq-mark')) {
+        const markWrap = document.createElement('div');
+        markWrap.className = 'ecoiq-mark';
+        markWrap.style.cssText = 'display:flex;align-items:center;gap:8px;padding:0 12px 12px;margin-top:-4px;';
+        markWrap.innerHTML = `
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="8" fill="#070b0f"/>
+              <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2.2" stroke-linejoin="round"/>
+              <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.5" stroke-linejoin="round"/>
+              <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+            </svg>
+            <span style="font-size:13px;font-weight:800;letter-spacing:-.02em;color:rgba(255,255,255,.88);">Eco<span style="color:#00e89a;">IQ</span></span>
+            <span style="font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-left:2px;">CMS</span>
+        `;
+        sidebarBrand.parentNode.insertBefore(markWrap, sidebarBrand);
+    }
+
+    /* ── EcoIQ badge in top header ── */
     const title = document.querySelector('.w-header__title, .header__title');
     if (title && !document.querySelector('.ecoiq-badge')) {
         const badge = document.createElement('span');
         badge.className = 'ecoiq-badge';
-        badge.style.cssText = [
-            'display:inline-flex',
-            'align-items:center',
-            'gap:4px',
-            'margin-left:10px',
-            'font-size:10px',
-            'font-weight:700',
-            'letter-spacing:.06em',
-            'text-transform:uppercase',
-            'color:#00e89a',
-            'opacity:.8',
-            'border:1px solid rgba(0,232,154,.3)',
-            'border-radius:4px',
-            'padding:1px 6px',
-            'vertical-align:middle',
-        ].join(';');
+        badge.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-left:10px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#00e89a;opacity:.8;border:1px solid rgba(0,232,154,.3);border-radius:4px;padding:1px 6px;vertical-align:middle;';
         badge.textContent = 'Intelligence CMS';
         title.appendChild(badge);
     }

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <!--
+    EcoIQ Favicon — simplified for small-size rendering
+    Optimised for 16×16 to 64×64 display sizes
+  -->
+
+  <!-- Dark background -->
+  <rect width="40" height="40" rx="9" fill="#070b0f"/>
+
+  <!-- Hexagon — slightly thicker stroke for small-size clarity -->
+  <!-- pointy-top, center (20,20), radius 16 -->
+  <!-- top(20,4) tr(33.9,12) br(33.9,28) bot(20,36) bl(6.1,28) tl(6.1,12) -->
+  <polygon
+    points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12"
+    fill="none"
+    stroke="#00e89a"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+
+  <!-- Inner triangle (radius 9, center 20,20) -->
+  <!-- top(20,11) br(27.8,24.5) bl(12.2,24.5) -->
+  <polygon
+    points="20,11 27.8,24.5 12.2,24.5"
+    fill="rgba(0,232,154,0.08)"
+    stroke="#00e89a"
+    stroke-width="1.4"
+    stroke-linejoin="round"
+  />
+
+  <!-- Center node — slightly larger for favicon visibility -->
+  <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+</svg>

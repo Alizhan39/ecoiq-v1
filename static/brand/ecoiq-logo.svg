@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" role="img" aria-label="EcoIQ">
+  <title>EcoIQ — Ethical Intelligence Platform</title>
+  <!--
+    EcoIQ Horizontal Logo
+    Left: icon mark at 40×40 (y-centered in 60px height, y=10)
+    Right: wordmark "EcoIQ" — Eco in white, IQ in accent green
+  -->
+
+  <!-- ── Icon mark ── -->
+  <rect x="0" y="10" width="40" height="40" rx="9" fill="#070b0f"/>
+
+  <!-- Hexagon (scaled to fit 40×40 at offset 0,10) -->
+  <!-- Original 100×100 scale: divide by 2.5, offset y by 10 -->
+  <!-- top(20,14) top-right(33.8,22) bottom-right(33.8,38)
+       bottom(20,46) bottom-left(6.2,38) top-left(6.2,22) -->
+  <polygon
+    points="20,14 33.8,22 33.8,38 20,46 6.2,38 6.2,22"
+    fill="none" stroke="#00e89a" stroke-width="1.1" stroke-linejoin="round"
+  />
+
+  <!-- Inner triangle (scaled, center 20,30) -->
+  <!-- Original center (50,50) → (20,30). radius 22→8.8 -->
+  <!-- top(20,21.2) bot-right(27.6,36.4) bot-left(12.4,36.4) -->
+  <polygon
+    points="20,21.2 27.6,36.4 12.4,36.4"
+    fill="rgba(0,232,154,0.055)" stroke="#00e89a" stroke-width="0.8" stroke-linejoin="round" opacity="0.9"
+  />
+
+  <!-- Center dot -->
+  <circle cx="20" cy="30" r="2.2" fill="#00e89a"/>
+
+  <!-- Accent vertex dots -->
+  <circle cx="20"  cy="14" r="0.8" fill="#00e89a" opacity="0.5"/>
+  <circle cx="6.2" cy="38" r="0.8" fill="#00e89a" opacity="0.5"/>
+  <circle cx="33.8" cy="38" r="0.8" fill="#00e89a" opacity="0.5"/>
+
+  <!-- ── Wordmark ── -->
+  <text
+    x="50" y="40"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="26"
+    font-weight="800"
+    letter-spacing="-0.5"
+    fill="#ffffff"
+  >Eco</text>
+  <text
+    x="99" y="40"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="26"
+    font-weight="800"
+    letter-spacing="-0.5"
+    fill="#00e89a"
+  >IQ</text>
+
+  <!-- Tagline (optional — comment out if not needed) -->
+  <text
+    x="50" y="53"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="7.5"
+    font-weight="500"
+    letter-spacing="0.8"
+    fill="rgba(255,255,255,0.38)"
+    text-transform="uppercase"
+  >ETHICAL INTELLIGENCE</text>
+</svg>

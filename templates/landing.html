@@ -13,6 +13,11 @@
   <meta name="twitter:card"       content="summary_large_image" />
   <title>EcoIQ — AI Climate Intelligence Platform</title>
 
+  <!-- Favicon & brand -->
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <link rel="apple-touch-icon" href="{% static 'brand/ecoiq-icon.svg' %}">
+  <meta name="theme-color" content="#070b0f">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -92,14 +97,18 @@
   <div style="max-width:1120px;margin:0 auto;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;">
 
     <!-- Brand -->
-    <a href="/" style="display:flex;align-items:center;gap:.6rem;text-decoration:none;flex-shrink:0;">
-      <div style="width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;">
-        <svg viewBox="0 0 20 20" fill="none" style="width:13px;height:13px;">
-          <path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/>
-          <circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/>
-        </svg>
-      </div>
-      <span style="font-weight:800;color:#fff;font-size:.95rem;letter-spacing:.3px;">EcoIQ</span>
+    <a href="/" style="display:flex;align-items:center;gap:.55rem;text-decoration:none;flex-shrink:0;" aria-label="EcoIQ Home">
+      <!-- EcoIQ Lattice mark -->
+      <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="9" fill="#070b0f"/>
+        <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2" stroke-linejoin="round"/>
+        <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.4" stroke-linejoin="round"/>
+        <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+        <circle cx="20" cy="4"  r="1.2" fill="#00e89a" opacity=".45"/>
+        <circle cx="6.1" cy="28" r="1.2" fill="#00e89a" opacity=".45"/>
+        <circle cx="33.9" cy="28" r="1.2" fill="#00e89a" opacity=".45"/>
+      </svg>
+      <span style="font-weight:800;color:#fff;font-size:.95rem;letter-spacing:-.02em;">Eco<span style="color:var(--acc);">IQ</span></span>
     </a>
 
     <!-- Desktop nav -->
@@ -520,11 +529,15 @@
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;margin-bottom:2rem;" class="hide-sm">
 
       <div>
-        <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.9rem;">
-          <div style="width:24px;height:24px;border-radius:6px;background:var(--acc);display:flex;align-items:center;justify-content:center;">
-            <svg viewBox="0 0 20 20" fill="none" style="width:11px;height:11px;"><path d="M10 2 L4.5 6.5 V12.5 L10 17 L15.5 12.5 V6.5 Z" fill="rgba(0,0,0,.75)"/><circle cx="10" cy="10" r="2.2" fill="rgba(0,0,0,.85)"/></svg>
-          </div>
-          <span style="font-weight:800;color:#fff;font-size:.9rem;">EcoIQ</span>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;">
+          <!-- EcoIQ mark — footer size -->
+          <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="40" height="40" rx="9" fill="#070b0f"/>
+            <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2.2" stroke-linejoin="round"/>
+            <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+          </svg>
+          <span style="font-weight:800;color:#fff;font-size:.88rem;letter-spacing:-.02em;">Eco<span style="color:var(--acc);">IQ</span></span>
         </div>
         <p style="font-size:.78rem;color:#334155;line-height:1.65;">AI climate intelligence platform. Rankings, risk signals, and transition roadmaps for the net-zero economy.</p>
       </div>

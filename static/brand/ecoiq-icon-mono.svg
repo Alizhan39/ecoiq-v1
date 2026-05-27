@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="EcoIQ">
+  <title>EcoIQ</title>
+  <!-- EcoIQ Icon — Monochrome white (for dark backgrounds, no container) -->
+
+  <!-- Outer hexagon -->
+  <polygon
+    points="50,10 84.6,30 84.6,70 50,90 15.4,70 15.4,30"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+
+  <!-- Inner triangle -->
+  <polygon
+    points="50,28 69,61 31,61"
+    fill="rgba(255,255,255,0.06)"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linejoin="round"
+    opacity="0.85"
+  />
+
+  <!-- Center dot -->
+  <circle cx="50" cy="50" r="5.5" fill="currentColor"/>
+
+  <!-- Accent vertex dots -->
+  <circle cx="50"   cy="10" r="2" fill="currentColor" opacity="0.5"/>
+  <circle cx="15.4" cy="70" r="2" fill="currentColor" opacity="0.5"/>
+  <circle cx="84.6" cy="70" r="2" fill="currentColor" opacity="0.5"/>
+</svg>
