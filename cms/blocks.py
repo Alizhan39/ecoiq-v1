@@ -2,9 +2,12 @@
 EcoIQ CMS — StreamField block library.
 
 Blocks are grouped by concern:
-  Metrics  — KPI, CO₂, score breakdown, company comparison
+  Hero     — full-width page hero section
+  Metrics  — KPI, CO₂, score breakdown, company comparison, metric grid
+  Score    — pillar explanation
+  Spotlights — company spotlight, country intelligence
   Projects — project showcase, timeline
-  Evidence — evidence carousel
+  Evidence — evidence carousel, evidence source citation
   Editorial — recommendation, rich text, image, CTA
 """
 from wagtail.blocks import (
@@ -78,6 +81,29 @@ DOC_TYPE_CHOICES = [
 RICH_TEXT_FEATURES = ['h2', 'h3', 'bold', 'italic', 'ol', 'ul', 'link', 'blockquote']
 
 
+# ── Hero block ─────────────────────────────────────────────────────────────────
+
+class HeroBlock(StructBlock):
+    """Full-width institutional hero section — dark, branded, investor-grade."""
+    headline            = CharBlock(max_length=255, help_text='Main headline text')
+    subtitle            = TextBlock(required=False, help_text='Supporting paragraph')
+    badge               = CharBlock(max_length=80, required=False, help_text='Small label above headline, e.g. "New Report"')
+    cta_primary_label   = CharBlock(max_length=80, required=False, default='View Rankings')
+    cta_primary_url     = URLBlock(required=False)
+    cta_secondary_label = CharBlock(max_length=80, required=False)
+    cta_secondary_url   = URLBlock(required=False)
+    background_style    = ChoiceBlock(choices=[
+        ('dark',  'Dark institutional (default)'),
+        ('teal',  'Teal gradient'),
+        ('light', 'Light / white'),
+    ], default='dark')
+
+    class Meta:
+        icon     = 'title'
+        label    = 'Hero Section'
+        template = 'cms/blocks/hero.html'
+
+
 # ── Metrics blocks ─────────────────────────────────────────────────────────────
 
 class KPICardBlock(StructBlock):
@@ -93,6 +119,17 @@ class KPICardBlock(StructBlock):
         icon     = 'pick'
         label    = 'KPI Card'
         template = 'cms/blocks/kpi_card.html'
+
+
+class MetricGridBlock(StructBlock):
+    """Grid of KPI metric cards — ideal for stats bands and highlights."""
+    title   = CharBlock(max_length=255, required=False, default='Key Metrics')
+    metrics = ListBlock(KPICardBlock())
+
+    class Meta:
+        icon     = 'list-ul'
+        label    = 'Metric Grid'
+        template = 'cms/blocks/metric_grid.html'
 
 
 class CO2MetricsBlock(StructBlock):
@@ -182,6 +219,77 @@ class ComparisonTableBlock(StructBlock):
         return ctx
 
 
+# ── Score explanation block ────────────────────────────────────────────────────
+
+class ScoreExplanationBlock(StructBlock):
+    """Explains one EcoIQ scoring pillar — icon, weight, and description."""
+    pillar_name = CharBlock(max_length=100, help_text='Pillar name, e.g. "Environmental Stewardship"')
+    icon        = CharBlock(max_length=10, required=False, help_text='Emoji or short icon character')
+    weight      = IntegerBlock(help_text='Weight as an integer percentage, e.g. 25')
+    description = TextBlock(help_text='Plain-language explanation of what this pillar measures')
+
+    class Meta:
+        icon     = 'tasks'
+        label    = 'Score Pillar Explanation'
+        template = 'cms/blocks/score_explanation.html'
+
+
+# ── Spotlight blocks ───────────────────────────────────────────────────────────
+
+class CompanySpotlightBlock(StructBlock):
+    """
+    Embeds a live company intelligence card from companies.CompanyProfile.
+    Falls back gracefully if no matching profile exists.
+    """
+    company_slug = CharBlock(max_length=255, help_text='Slug from companies.CompanyProfile')
+    headline     = CharBlock(max_length=255, required=False, help_text='Optional editorial headline override')
+    summary      = TextBlock(required=False, help_text='Optional editorial summary override')
+
+    class Meta:
+        icon     = 'group'
+        label    = 'Company Spotlight'
+        template = 'cms/blocks/company_spotlight.html'
+
+    def get_context(self, value, parent_context=None):
+        ctx = super().get_context(value, parent_context=parent_context)
+        slug = value.get('company_slug', '').strip()
+        ctx['profile'] = None
+        if slug:
+            try:
+                from companies.models import CompanyProfile
+                ctx['profile'] = CompanyProfile.objects.get(slug=slug)
+            except Exception:
+                pass
+        return ctx
+
+
+class CountryIntelligenceBlock(StructBlock):
+    """
+    Embeds a live country intelligence card from countries.CountryProfile.
+    Falls back gracefully if no matching profile exists.
+    """
+    country_code = CharBlock(max_length=4, help_text='ISO 2-letter country code, e.g. KZ')
+    headline     = CharBlock(max_length=255, required=False, help_text='Optional editorial headline')
+    summary      = TextBlock(required=False, help_text='Optional editorial summary')
+
+    class Meta:
+        icon     = 'site'
+        label    = 'Country Intelligence'
+        template = 'cms/blocks/country_intelligence.html'
+
+    def get_context(self, value, parent_context=None):
+        ctx = super().get_context(value, parent_context=parent_context)
+        code = value.get('country_code', '').strip().upper()
+        ctx['country'] = None
+        if code:
+            try:
+                from countries.models import CountryProfile
+                ctx['country'] = CountryProfile.objects.get(iso_code=code)
+            except Exception:
+                pass
+        return ctx
+
+
 # ── Project blocks ─────────────────────────────────────────────────────────────
 
 class ProjectShowcaseBlock(StructBlock):
@@ -223,7 +331,7 @@ class TimelineBlock(StructBlock):
         template = 'cms/blocks/timeline.html'
 
 
-# ── Evidence block ─────────────────────────────────────────────────────────────
+# ── Evidence blocks ────────────────────────────────────────────────────────────
 
 class EvidenceItemBlock(StructBlock):
     title               = CharBlock(max_length=255)
@@ -249,6 +357,19 @@ class EvidenceCarouselBlock(StructBlock):
         icon     = 'folder-open-inverse'
         label    = 'Evidence Carousel'
         template = 'cms/blocks/evidence_carousel.html'
+
+
+class EvidenceSourceBlock(StructBlock):
+    """Inline citation / source reference — lighter-weight than EvidenceCarousel."""
+    title       = CharBlock(max_length=255)
+    source_url  = URLBlock(required=False, help_text='Public URL for this source')
+    year        = IntegerBlock(required=False)
+    description = TextBlock(required=False, help_text='Brief context about this source')
+
+    class Meta:
+        icon     = 'doc-empty'
+        label    = 'Evidence Source'
+        template = 'cms/blocks/evidence_source.html'
 
 
 # ── Editorial blocks ───────────────────────────────────────────────────────────
@@ -307,9 +428,90 @@ class CallToActionBlock(StructBlock):
 
 # ── Composite StreamBlocks for each page type ──────────────────────────────────
 
+class HomePageBody(StreamBlock):
+    """Used by the CMS HomePage — broad editorial toolkit."""
+    hero                 = HeroBlock()
+    rich_text            = RichTextSectionBlock()
+    kpi_card             = KPICardBlock()
+    metric_grid          = MetricGridBlock()
+    company_spotlight    = CompanySpotlightBlock()
+    country_intelligence = CountryIntelligenceBlock()
+    cta                  = CallToActionBlock()
+    image                = ImageBlock()
+
+    class Meta:
+        icon = 'placeholder'
+
+
+class ArticlePageBody(StreamBlock):
+    """Used by ArticlePage and MethodologyPage."""
+    rich_text      = RichTextSectionBlock()
+    image          = ImageBlock()
+    kpi_card       = KPICardBlock()
+    evidence_source = EvidenceSourceBlock()
+    cta            = CallToActionBlock()
+
+    class Meta:
+        icon = 'placeholder'
+
+
+class InsightPageBody(StreamBlock):
+    """Used by InsightArticlePage — full intelligence editorial toolkit."""
+    hero                 = HeroBlock()
+    rich_text            = RichTextSectionBlock()
+    image                = ImageBlock()
+    kpi_card             = KPICardBlock()
+    metric_grid          = MetricGridBlock()
+    score_explanation    = ScoreExplanationBlock()
+    company_spotlight    = CompanySpotlightBlock()
+    country_intelligence = CountryIntelligenceBlock()
+    evidence_source      = EvidenceSourceBlock()
+    evidence_carousel    = EvidenceCarouselBlock()
+    recommendation       = RecommendationBlock()
+    timeline             = TimelineBlock()
+    project_showcase     = ProjectShowcaseBlock()
+    cta                  = CallToActionBlock()
+
+    class Meta:
+        icon = 'placeholder'
+
+
+class ReportPageBody(StreamBlock):
+    """Used by ReportLibraryPage — download-oriented research reports."""
+    hero            = HeroBlock()
+    rich_text       = RichTextSectionBlock()
+    image           = ImageBlock()
+    kpi_card        = KPICardBlock()
+    metric_grid     = MetricGridBlock()
+    evidence_source = EvidenceSourceBlock()
+    cta             = CallToActionBlock()
+
+    class Meta:
+        icon = 'placeholder'
+
+
+class CaseStudyPageBody(StreamBlock):
+    """Used by CaseStudyPage — narrative + data for a company or project."""
+    hero                 = HeroBlock()
+    rich_text            = RichTextSectionBlock()
+    image                = ImageBlock()
+    kpi_card             = KPICardBlock()
+    metric_grid          = MetricGridBlock()
+    company_spotlight    = CompanySpotlightBlock()
+    evidence_source      = EvidenceSourceBlock()
+    timeline             = TimelineBlock()
+    recommendation       = RecommendationBlock()
+    cta                  = CallToActionBlock()
+
+    class Meta:
+        icon = 'placeholder'
+
+
 class CompanyPageBody(StreamBlock):
+    """Used by CompanyPage (editorial layer around a league company)."""
     rich_text         = RichTextSectionBlock()
     kpi_card          = KPICardBlock()
+    metric_grid       = MetricGridBlock()
     co2_metrics       = CO2MetricsBlock()
     project_showcase  = ProjectShowcaseBlock()
     evidence_carousel = EvidenceCarouselBlock()
@@ -317,28 +519,9 @@ class CompanyPageBody(StreamBlock):
     timeline          = TimelineBlock()
     score_breakdown   = ScoreBreakdownBlock()
     comparison_table  = ComparisonTableBlock()
+    evidence_source   = EvidenceSourceBlock()
     cta               = CallToActionBlock()
     image             = ImageBlock()
-
-    class Meta:
-        icon = 'placeholder'
-
-
-class ArticlePageBody(StreamBlock):
-    rich_text = RichTextSectionBlock()
-    image     = ImageBlock()
-    kpi_card  = KPICardBlock()
-    cta       = CallToActionBlock()
-
-    class Meta:
-        icon = 'placeholder'
-
-
-class HomePageBody(StreamBlock):
-    rich_text = RichTextSectionBlock()
-    kpi_card  = KPICardBlock()
-    cta       = CallToActionBlock()
-    image     = ImageBlock()
 
     class Meta:
         icon = 'placeholder'

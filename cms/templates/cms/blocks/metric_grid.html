@@ -1,0 +1,21 @@
+{% load wagtailcore_tags %}
+<div class="cms-block">
+  {% if value.title %}
+  <div class="cms-block__title">{{ value.title }}</div>
+  {% endif %}
+  <div class="metric-grid">
+    {% for metric in value.metrics %}
+    <div class="kpi-card kpi-card--{{ metric.colour }}">
+      <div class="kpi-val">{{ metric.value }}</div>
+      {% if metric.unit %}<div class="kpi-unit">{{ metric.unit }}</div>{% endif %}
+      <div class="kpi-label">{{ metric.label }}</div>
+      {% if metric.trend %}
+      <div class="kpi-trend kpi-trend--{{ metric.trend }}">
+        {% if metric.trend == 'up' %}↑ Improving{% elif metric.trend == 'down' %}↓ Declining{% else %}→ Stable{% endif %}
+      </div>
+      {% endif %}
+      {% if metric.description %}<div class="kpi-desc">{{ metric.description }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>

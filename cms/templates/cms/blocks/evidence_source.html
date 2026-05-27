@@ -1,0 +1,20 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--evidence-source">
+  <div class="ev-src-icon">📎</div>
+  <div style="flex:1;">
+    <div class="ev-src-title">
+      {% if value.source_url %}
+      <a href="{{ value.source_url }}" target="_blank" rel="noopener">{{ value.title }}</a>
+      {% else %}
+      {{ value.title }}
+      {% endif %}
+    </div>
+    <div class="ev-src-meta">
+      Source{% if value.year %} · {{ value.year }}{% endif %}
+      {% if value.source_url %} · <a href="{{ value.source_url }}" target="_blank" rel="noopener" style="color:var(--info);text-decoration:none;">View document ↗</a>{% endif %}
+    </div>
+    {% if value.description %}
+    <div class="ev-src-desc">{{ value.description }}</div>
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,20 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--country-intelligence">
+  <div class="ci-flag">🌍</div>
+  <div style="flex:1;">
+    {% if country %}
+    <div class="ci-country">{{ value.headline|default:country.name }}</div>
+    <div class="ci-code">{{ country.iso_code }} · Country Intelligence</div>
+    {% if value.summary %}
+    <div class="ci-summary">{{ value.summary }}</div>
+    {% elif country.summary %}
+    <div class="ci-summary">{{ country.summary|truncatewords:35 }}</div>
+    {% endif %}
+    <a href="/countries/{{ country.iso_code|lower }}/" class="ci-link">View country intelligence →</a>
+    {% else %}
+    <div class="ci-country">{{ value.headline|default:value.country_code }}</div>
+    <div class="ci-code">{{ value.country_code }} · Country Intelligence</div>
+    {% if value.summary %}<div class="ci-summary">{{ value.summary }}</div>{% endif %}
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,77 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }} — Case Study{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="cms-page-hero">
+  <div class="cms-page-hero__inner">
+    <div class="cms-page-hero__breadcrumb">
+      <a href="/">EcoIQ</a> /
+      <a href="/pages/">Knowledge Base</a> /
+      <span style="color:var(--acc);font-weight:600;">Case Studies</span>
+    </div>
+
+    <div class="cms-meta">
+      <span class="cms-meta__cat">Case Study</span>
+      {% if page.category %}
+      <span class="cms-meta__dot"></span>
+      <span>{{ page.category }}</span>
+      {% endif %}
+      {% if page.company_name %}
+      <span class="cms-meta__dot"></span>
+      <span>{{ page.company_name }}</span>
+      {% endif %}
+      {% if page.published_date %}
+      <span class="cms-meta__dot"></span>
+      <span>{{ page.published_date|date:"j F Y" }}</span>
+      {% endif %}
+    </div>
+
+    <h1 class="cms-page-hero__title">{{ page.title }}</h1>
+  </div>
+</div>
+
+{% if page.featured_image %}
+<div style="max-width:860px;margin:2rem auto 0;padding:0 1.5rem;">
+  {% image page.featured_image width-1200 as fi %}
+  <img src="{{ fi.url }}" alt="{{ page.title }}"
+    style="width:100%;border-radius:10px;border:1px solid var(--border);">
+</div>
+{% endif %}
+
+<!-- Challenge / Solution / Outcomes narrative grid -->
+{% if page.challenge or page.solution or page.outcomes %}
+<div style="max-width:860px;margin:2rem auto 0;padding:0 1.5rem;">
+  <div class="case-narrative">
+    {% if page.challenge %}
+    <div class="case-narrative__card" style="border-top:2px solid var(--danger);">
+      <div class="case-narrative__label">🎯 Challenge</div>
+      <div class="case-narrative__text">{{ page.challenge }}</div>
+    </div>
+    {% endif %}
+    {% if page.solution %}
+    <div class="case-narrative__card" style="border-top:2px solid var(--info);">
+      <div class="case-narrative__label">🔬 Solution</div>
+      <div class="case-narrative__text">{{ page.solution }}</div>
+    </div>
+    {% endif %}
+    {% if page.outcomes %}
+    <div class="case-narrative__card" style="border-top:2px solid var(--acc);">
+      <div class="case-narrative__label">📈 Outcomes</div>
+      <div class="case-narrative__text">{{ page.outcomes }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="cms-container">
+  {% for block in page.body %}
+    {% include_block block %}
+  {% endfor %}
+</div>
+
+{% endblock %}

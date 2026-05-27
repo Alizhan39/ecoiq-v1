@@ -1,0 +1,57 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }}{% endblock %}
+{% block nav_companies %}{% endblock %}
+
+{% block content %}
+
+<!-- Page hero -->
+<div class="cms-page-hero">
+  <div class="cms-page-hero__inner">
+    <div class="cms-page-hero__breadcrumb">
+      <a href="/">EcoIQ</a> /
+      <a href="/pages/">Knowledge Base</a> /
+      {% if page.category %}<span style="color:var(--acc);font-weight:600;">{{ page.get_category_display }}</span>{% endif %}
+    </div>
+
+    <div class="cms-meta">
+      {% if page.category %}
+      <span class="cms-meta__cat">{{ page.get_category_display }}</span>
+      <span class="cms-meta__dot"></span>
+      {% endif %}
+      {% if page.published_date %}
+      <span>{{ page.published_date|date:"j F Y" }}</span>
+      {% endif %}
+      {% if page.author %}
+      <span class="cms-meta__dot"></span>
+      <span>{{ page.author }}</span>
+      {% endif %}
+      {% if page.reading_time %}
+      <span class="cms-meta__dot"></span>
+      <span class="cms-meta__read">🕐 {{ page.reading_time }} min read</span>
+      {% endif %}
+    </div>
+
+    <h1 class="cms-page-hero__title">{{ page.title }}</h1>
+    {% if page.intro %}
+    <p class="cms-page-hero__intro">{{ page.intro }}</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if page.featured_image %}
+<div style="max-width:860px;margin:2rem auto 0;padding:0 1.5rem;">
+  {% image page.featured_image width-1200 as fi %}
+  <img src="{{ fi.url }}" alt="{{ page.title }}"
+    style="width:100%;border-radius:10px;border:1px solid var(--border);">
+</div>
+{% endif %}
+
+<div class="cms-container">
+  {% for block in page.body %}
+    {% include_block block %}
+  {% endfor %}
+</div>
+
+{% endblock %}

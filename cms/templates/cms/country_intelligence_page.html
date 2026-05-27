@@ -1,0 +1,80 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }} — Country Intelligence{% endblock %}
+
+{% block content %}
+
+<!-- Country hero -->
+<div class="cms-page-hero">
+  <div class="cms-page-hero__inner">
+    <div class="cms-page-hero__breadcrumb">
+      <a href="/">EcoIQ</a> /
+      <a href="/countries/">Countries</a> /
+      <span style="color:var(--acc);font-weight:600;">
+        {% if country %}{{ country.name }}{% else %}{{ page.country_code }}{% endif %}
+      </span>
+    </div>
+
+    <div class="cms-meta">
+      <span class="cms-meta__cat">Country Intelligence</span>
+      {% if page.country_code %}
+      <span class="cms-meta__dot"></span>
+      <span>{{ page.country_code|upper }}</span>
+      {% endif %}
+    </div>
+
+    <h1 class="cms-page-hero__title">{{ page.title }}</h1>
+    {% if page.intro %}
+    <p class="cms-page-hero__intro">{{ page.intro }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Live country data strip (if linked) -->
+{% if country %}
+<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 2rem;">
+  <div style="max-width:1120px;margin:0 auto;display:flex;gap:2rem;align-items:center;flex-wrap:wrap;">
+    <div>
+      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-lo);margin-bottom:.2rem;">EcoIQ National Score</div>
+      <div style="font-size:1.6rem;font-weight:900;letter-spacing:-.05em;color:var(--acc);">
+        {% if country.ecoiq_score %}{{ country.ecoiq_score|floatformat:0 }}{% else %}—{% endif %}
+      </div>
+    </div>
+    {% if country.overall_rank %}
+    <div>
+      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-lo);margin-bottom:.2rem;">Global Rank</div>
+      <div style="font-size:1.6rem;font-weight:900;letter-spacing:-.05em;color:var(--text);">#{{ country.overall_rank }}</div>
+    </div>
+    {% endif %}
+    {% if country.co2_per_capita %}
+    <div>
+      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-lo);margin-bottom:.2rem;">CO₂ / capita</div>
+      <div style="font-size:1.3rem;font-weight:800;color:var(--text);">{{ country.co2_per_capita|floatformat:1 }}t</div>
+    </div>
+    {% endif %}
+    <div style="margin-left:auto;">
+      <a href="/countries/{{ country.iso_code|lower }}/"
+         style="font-size:.82rem;color:var(--acc);text-decoration:none;font-weight:600;border:1px solid rgba(0,232,154,.3);border-radius:6px;padding:.4rem 1rem;">
+        Full Country Profile →
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if page.featured_image %}
+<div style="max-width:860px;margin:2rem auto 0;padding:0 1.5rem;">
+  {% image page.featured_image width-1200 as fi %}
+  <img src="{{ fi.url }}" alt="{{ page.title }}"
+    style="width:100%;border-radius:10px;border:1px solid var(--border);">
+</div>
+{% endif %}
+
+<div class="cms-container">
+  {% for block in page.body %}
+    {% include_block block %}
+  {% endfor %}
+</div>
+
+{% endblock %}

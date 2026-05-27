@@ -1,0 +1,27 @@
+{% load wagtailcore_tags %}
+<div class="cms-hero cms-hero--{{ value.background_style }}">
+  {% if value.badge %}
+  <div class="cms-hero__badge">{{ value.badge }}</div>
+  {% endif %}
+
+  <h2 class="cms-hero__title">{{ value.headline }}</h2>
+
+  {% if value.subtitle %}
+  <p class="cms-hero__subtitle">{{ value.subtitle }}</p>
+  {% endif %}
+
+  {% if value.cta_primary_label or value.cta_secondary_label %}
+  <div class="cms-hero__ctas">
+    {% if value.cta_primary_label and value.cta_primary_url %}
+    <a href="{{ value.cta_primary_url }}" class="cms-hero__cta-primary">
+      {{ value.cta_primary_label }} →
+    </a>
+    {% endif %}
+    {% if value.cta_secondary_label and value.cta_secondary_url %}
+    <a href="{{ value.cta_secondary_url }}" class="cms-hero__cta-secondary">
+      {{ value.cta_secondary_label }}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

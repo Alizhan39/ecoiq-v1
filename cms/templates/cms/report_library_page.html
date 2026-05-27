@@ -1,0 +1,31 @@
+{% extends "cms/_cms_base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block content %}
+
+<div class="cms-page-hero">
+  <div class="cms-page-hero__inner">
+    <div class="cms-page-hero__breadcrumb">
+      <a href="/">EcoIQ</a> /
+      <a href="/pages/">Knowledge Base</a> /
+      <span style="color:var(--acc);font-weight:600;">Reports</span>
+    </div>
+    <div class="cms-meta">
+      <span class="cms-meta__cat">Report Library</span>
+    </div>
+    <h1 class="cms-page-hero__title">{{ page.title }}</h1>
+    {% if page.intro %}
+    <p class="cms-page-hero__intro">{{ page.intro }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="cms-container">
+  {% for block in page.body %}
+    {% include_block block %}
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,11 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--score-explanation">
+  {% if value.icon %}
+  <div class="score-exp-icon">{{ value.icon }}</div>
+  {% endif %}
+  <div>
+    <div class="score-exp-weight">{{ value.weight }}% weight</div>
+    <div class="score-exp-name">{{ value.pillar_name }}</div>
+    <div class="score-exp-desc">{{ value.description }}</div>
+  </div>
+</div>

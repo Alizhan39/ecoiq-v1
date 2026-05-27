@@ -1,0 +1,40 @@
+{% load wagtailcore_tags %}
+<div class="cms-block cms-block--company-spotlight">
+  {% if profile %}
+  <div class="cs-avatar">
+    {{ profile.name|slice:":2"|upper }}
+  </div>
+  <div style="flex:1;">
+    <div class="cs-name">{{ value.headline|default:profile.name }}</div>
+    <div class="cs-sector">{{ profile.sector|default:"" }}{% if profile.country %} · {{ profile.country }}{% endif %}</div>
+    {% if profile.ecoiq_score is not None %}
+    <div style="margin-top:.6rem;display:flex;gap:1.25rem;align-items:baseline;">
+      <div>
+        <div class="cs-score">{{ profile.ecoiq_score|floatformat:0 }}</div>
+        <div class="cs-label">EcoIQ Score</div>
+      </div>
+      {% if profile.moral_label %}
+      <div>
+        <div style="font-size:.78rem;font-weight:700;color:var(--acc);">{{ profile.moral_label }}</div>
+        <div class="cs-label">Ethical Tier</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if value.summary %}
+    <div class="cs-summary">{{ value.summary }}</div>
+    {% elif profile.description %}
+    <div class="cs-summary">{{ profile.description|truncatewords:30 }}</div>
+    {% endif %}
+    <a href="/companies/{{ profile.slug }}/" class="cs-link">View full intelligence profile →</a>
+  </div>
+  {% else %}
+  <!-- Company not found in database — shows placeholder -->
+  <div class="cs-avatar">?</div>
+  <div>
+    <div class="cs-name">{{ value.headline|default:"Company not found" }}</div>
+    <div class="cs-sector">Slug: {{ value.company_slug }}</div>
+    {% if value.summary %}<div class="cs-summary">{{ value.summary }}</div>{% endif %}
+  </div>
+  {% endif %}
+</div>
