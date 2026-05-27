@@ -8,6 +8,7 @@ from django.shortcuts import render, get_object_or_404
 
 from countries.models import CountryProfile, REGION_CHOICES
 from countries.modernisation_data import get_actions as get_modernisation_actions
+from countries.investment_data import get_opportunities as get_investment_opportunities
 from companies.models import CompanyProfile
 
 
@@ -273,15 +274,17 @@ def country_detail(request, slug):
         round(country.industrial_modernization_score, 1),
     ]
 
-    modernisation_actions = get_modernisation_actions(slug)
+    modernisation_actions   = get_modernisation_actions(slug)
+    investment_opportunities = get_investment_opportunities(slug)
 
     return render(request, 'countries/detail.html', {
-        'country':               country,
-        'companies':             companies,
-        'score_cards':           score_cards,
-        'dev_bank_compat':       dev_bank_compat,
-        'ai_confidence':         ai_confidence,
-        'corruption_exposure':   corruption_exposure,
-        'radar_scores':          radar_scores,
-        'modernisation_actions': modernisation_actions,
+        'country':                  country,
+        'companies':                companies,
+        'score_cards':              score_cards,
+        'dev_bank_compat':          dev_bank_compat,
+        'ai_confidence':            ai_confidence,
+        'corruption_exposure':      corruption_exposure,
+        'radar_scores':             radar_scores,
+        'modernisation_actions':    modernisation_actions,
+        'investment_opportunities': investment_opportunities,
     })

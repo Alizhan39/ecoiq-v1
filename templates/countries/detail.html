@@ -412,6 +412,32 @@ details.mod-card[open] .mod-chevron{transform:rotate(-180deg)}
   .mod-intel-label{font-size:.63rem;margin-bottom:.05rem}
 }
 
+/* ── Investment Opportunities (reuses .mod-* inner classes) ── */
+.inv-list{display:flex;flex-direction:column;gap:.65rem}
+details.inv-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-left:3px solid transparent;border-radius:9px;
+  overflow:hidden;transition:border-color .2s;
+}
+details.inv-card:hover{border-color:var(--border2)}
+details.inv-card-critical{border-left-color:var(--danger)}
+details.inv-card-high    {border-left-color:var(--warn)}
+details.inv-card-medium  {border-left-color:var(--info)}
+details.inv-card > summary{
+  list-style:none;padding:.9rem 1.1rem;
+  cursor:pointer;user-select:none;outline:none;
+}
+details.inv-card > summary::-webkit-details-marker{display:none}
+details.inv-card > summary:hover{background:rgba(255,255,255,.018)}
+details.inv-card[open] .mod-chevron{transform:rotate(-180deg)}
+/* Additional badge variants */
+.mod-tag-risk-high   {background:rgba(230,57,70,.08); color:var(--danger); border:1px solid rgba(230,57,70,.18)}
+.mod-tag-risk-medium {background:rgba(100,116,139,.1);color:var(--muted2);border:1px solid rgba(100,116,139,.18)}
+.mod-tag-risk-low    {background:rgba(0,232,154,.07); color:var(--accent); border:1px solid rgba(0,232,154,.15)}
+.mod-tag-ecoiq-critical  {background:rgba(230,57,70,.1);  color:var(--danger); border:1px solid rgba(230,57,70,.2)}
+.mod-tag-ecoiq-strategic {background:rgba(168,85,247,.09);color:var(--purple); border:1px solid rgba(168,85,247,.18)}
+.mod-tag-ecoiq-important {background:rgba(0,232,154,.07); color:var(--accent); border:1px solid rgba(0,232,154,.15)}
+
 /* ── Footer ── */
 footer{
   text-align:center;padding:2rem;color:var(--muted);
@@ -763,6 +789,59 @@ footer a:hover{color:var(--accent)}
       </div>
       <div class="mod-disclaimer">
         Recommended actions are AI-assisted and indicative only. Actual project design requires technical feasibility studies, stakeholder consultation and due diligence.
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- PRIORITY INVESTMENT OPPORTUNITIES -->
+    {% if investment_opportunities %}
+    <div class="section">
+      <div class="section-title">
+        💼 Priority Investment Opportunities
+        <span class="st-right">{{ investment_opportunities|length }} opportunities · AI-assisted · expand for thesis</span>
+      </div>
+      <div class="inv-list">
+        {% for opp in investment_opportunities %}
+        <details class="inv-card inv-card-{{ opp.impact_level }}">
+          <summary>
+            <div class="mod-summary-top">
+              <span class="mod-card-title">{{ opp.title }}</span>
+              <span class="mod-chevron" aria-hidden="true">▾</span>
+            </div>
+            <div class="mod-card-tags">
+              <span class="mod-tag mod-tag-sector">{{ opp.sector }}</span>
+              <span class="mod-tag mod-tag-{{ opp.impact_level }}">{{ opp.impact_level|title }} Impact</span>
+              <span class="mod-tag mod-tag-risk-{{ opp.risk_level }}">{{ opp.risk_level|title }} Risk</span>
+              <span class="mod-tag mod-tag-ecoiq-{{ opp.ecoiq_priority }}">EcoIQ: {{ opp.ecoiq_priority|title }}</span>
+            </div>
+          </summary>
+          <div class="mod-intel">
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">💡 Investment Thesis</div>
+              <div class="mod-intel-val">{{ opp.thesis }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">👥 Stakeholders</div>
+              <div class="mod-intel-val">{{ opp.stakeholders }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">🏦 Finance Route</div>
+              <div class="mod-intel-val">{{ opp.finance_route }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">📊 EcoIQ Rationale</div>
+              <div class="mod-intel-val">{{ opp.rationale }}</div>
+            </div>
+            <div class="mod-intel-row">
+              <div class="mod-intel-label">🌐 Strategic Relevance</div>
+              <div class="mod-intel-val">{{ opp.strategic_relevance }}</div>
+            </div>
+          </div>
+        </details>
+        {% endfor %}
+      </div>
+      <div class="mod-disclaimer">
+        Investment opportunities are AI-assisted and indicative only. They do not represent financial advice, securities recommendations or verified deal opportunities. Project-level due diligence is required.
       </div>
     </div>
     {% endif %}
