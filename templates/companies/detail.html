@@ -461,6 +461,152 @@ a{color:inherit;text-decoration:none}
 .harm-grid{animation-delay:.1s}
 .page-layout{animation:fadeInUp .3s ease .12s both}
 
+/* ── Improvement Pathway ───────────────────────────────────────────── */
+
+/* Score trajectory bar */
+.imp-trajectory{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:.9rem 1.1rem;margin-bottom:1.1rem;
+}
+.imp-traj-title{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);margin-bottom:.75rem;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.imp-traj-label-strip{
+  display:flex;justify-content:space-between;margin-bottom:.3rem;
+  font-size:.62rem;color:var(--muted);font-variant-numeric:tabular-nums;
+}
+.imp-traj-bar-wrap{
+  position:relative;height:18px;background:rgba(255,255,255,.04);
+  border-radius:9px;overflow:hidden;margin-bottom:.5rem;
+}
+/* potential range fill (behind current marker) */
+.imp-traj-range{
+  position:absolute;top:0;bottom:0;
+  background:linear-gradient(90deg,rgba(0,232,154,.12),rgba(0,232,154,.22));
+  border-radius:9px;
+}
+/* current score fill */
+.imp-traj-current{
+  position:absolute;top:0;bottom:0;left:0;
+  background:linear-gradient(90deg,var(--accent),#00c882);
+  border-radius:9px;
+  box-shadow:0 0 10px rgba(0,232,154,.3);
+}
+/* current score dot marker */
+.imp-traj-dot{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:8px;height:8px;border-radius:50%;
+  background:#fff;box-shadow:0 0 0 2px var(--accent);
+  z-index:2;
+}
+.imp-traj-legend{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;font-size:.67rem;color:var(--muted2);
+  margin-top:.4rem;
+}
+.imp-traj-legend-dot{
+  display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;
+}
+.imp-traj-numbers{
+  display:flex;gap:1.1rem;flex-wrap:wrap;
+  font-size:.72rem;margin-top:.35rem;font-variant-numeric:tabular-nums;
+}
+.imp-traj-now{color:var(--accent);font-weight:700}
+.imp-traj-pot{color:var(--muted2)}
+.imp-traj-arrow{color:var(--muted);margin:0 .1rem}
+
+/* Milestone list */
+.imp-list{display:flex;flex-direction:column;gap:.6rem}
+
+details.imp-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-left:3px solid transparent;border-radius:8px;overflow:hidden;
+  transition:border-color .2s;
+}
+details.imp-card:hover{border-color:var(--border2)}
+/* status-driven left border */
+details.imp-card-not_started {border-left-color:var(--danger)}
+details.imp-card-in_progress {border-left-color:var(--warn)}
+details.imp-card-achievable  {border-left-color:var(--info)}
+details.imp-card-advanced    {border-left-color:var(--accent)}
+
+details.imp-card > summary{
+  list-style:none;padding:.75rem .95rem;
+  cursor:pointer;user-select:none;outline:none;
+}
+details.imp-card > summary::-webkit-details-marker{display:none}
+details.imp-card > summary:hover{background:rgba(255,255,255,.018)}
+details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
+
+.imp-sum-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:.6rem;margin-bottom:.3rem;
+}
+.imp-card-title{
+  font-size:.84rem;font-weight:700;color:var(--text);line-height:1.35;flex:1;
+}
+.imp-chevron{
+  font-size:.72rem;color:var(--muted);flex-shrink:0;margin-top:.1rem;
+  display:inline-block;transition:transform .22s ease;
+}
+.imp-card-tags{display:flex;flex-wrap:wrap;gap:.28rem;margin-top:.25rem}
+.imp-tag{
+  font-size:.59rem;font-weight:600;letter-spacing:.35px;
+  padding:.14rem .44rem;border-radius:5px;white-space:nowrap;
+}
+/* Status tags */
+.imp-tag-not_started {background:rgba(230,57,70,.1); color:var(--danger); border:1px solid rgba(230,57,70,.22)}
+.imp-tag-in_progress {background:rgba(244,162,97,.1); color:var(--warn);   border:1px solid rgba(244,162,97,.2)}
+.imp-tag-achievable  {background:rgba(88,166,255,.09);color:var(--info);   border:1px solid rgba(88,166,255,.18)}
+.imp-tag-advanced    {background:rgba(0,232,154,.08); color:var(--accent); border:1px solid rgba(0,232,154,.18)}
+/* Difficulty tags */
+.imp-tag-diff-low    {background:rgba(0,232,154,.06); color:var(--accent); border:1px solid rgba(0,232,154,.14)}
+.imp-tag-diff-medium {background:rgba(244,162,97,.07);color:var(--warn);   border:1px solid rgba(244,162,97,.15)}
+.imp-tag-diff-high   {background:rgba(230,57,70,.07); color:var(--danger); border:1px solid rgba(230,57,70,.14)}
+/* Uplift badge */
+.imp-uplift{
+  display:inline-flex;align-items:center;
+  background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.18);
+  color:var(--accent);font-size:.67rem;font-weight:700;
+  padding:.14rem .48rem;border-radius:5px;white-space:nowrap;flex-shrink:0;
+}
+
+/* Expanded intel panel */
+.imp-intel{border-top:1px solid var(--border);padding:.65rem .95rem .75rem}
+.imp-intel-row{
+  display:grid;grid-template-columns:140px 1fr;
+  gap:.35rem .65rem;padding:.45rem 0;
+  border-bottom:1px solid rgba(255,255,255,.04);align-items:baseline;
+}
+.imp-intel-row:last-child{border-bottom:none}
+.imp-intel-label{
+  font-size:.62rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;line-height:1.4;
+}
+.imp-intel-val{font-size:.76rem;color:var(--muted2);line-height:1.6}
+.imp-intel-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.15rem}
+.imp-intel-list li{font-size:.74rem;color:var(--muted2);line-height:1.5;padding-left:.8rem;position:relative}
+.imp-intel-list li::before{
+  content:'›';position:absolute;left:0;
+  color:var(--accent);font-weight:700;font-size:.72rem;
+}
+.imp-finance-list{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.1rem}
+.imp-finance-tag{
+  font-size:.61rem;font-weight:600;
+  background:rgba(168,85,247,.08);color:#c084fc;
+  border:1px solid rgba(168,85,247,.16);
+  padding:.11rem .4rem;border-radius:4px;
+}
+
+/* Pathway disclaimer */
+.imp-disclaimer{
+  font-size:.67rem;color:rgba(148,163,184,.42);
+  border-top:1px solid var(--border);
+  margin-top:.8rem;padding-top:.55rem;
+  font-style:italic;line-height:1.55;
+}
+
 /* ── Responsive ───────────────────────────────────────────────────── */
 @media(max-width:1040px){
   .page-layout{grid-template-columns:1fr}
@@ -471,6 +617,8 @@ a{color:inherit;text-decoration:none}
   .score-cluster{flex-direction:row;justify-content:flex-start}
   .score-grid{grid-template-columns:1fr}
   .cmd-links a[href*="Roadmap"]{display:none}
+  .imp-intel-row{grid-template-columns:1fr;gap:.1rem}
+  .imp-intel-label{margin-bottom:.05rem}
 }
 </style>
 {% endblock %}
@@ -952,6 +1100,102 @@ a{color:inherit;text-decoration:none}
       {% endfor %}
     </div>
     {% endif %}
+
+    <!-- ── IMPROVEMENT PATHWAY ─────────────────────────────────────── -->
+    {% if improvement_pathway and improvement_pathway.milestones %}
+    {% with pw=improvement_pathway traj=improvement_pathway.trajectory %}
+    <div class="sec-head" style="margin-top:2rem" id="improvement-pathway">
+      ✦ Improvement Pathway
+      <span class="sec-note">{{ pw.milestones|length }} milestones · AI-assisted · indicative only</span>
+    </div>
+
+    {# ── Score Trajectory ── #}
+    <div class="imp-trajectory">
+      <div class="imp-traj-title">
+        <span>Potential EcoIQ Improvement Trajectory</span>
+        <span style="color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0">
+          +{{ traj.uplift_low }}–{{ traj.uplift_high }} pts estimated uplift
+        </span>
+      </div>
+      <div class="imp-traj-bar-wrap">
+        {# potential high range (background fill) #}
+        <div class="imp-traj-range" style="left:0;width:{{ traj.high_pct }}%"></div>
+        {# current score (foreground fill) #}
+        <div class="imp-traj-current" style="width:{{ traj.current_pct }}%"></div>
+        {# marker dot at current score #}
+        <div class="imp-traj-dot" style="left:calc({{ traj.current_pct }}% - 4px)"></div>
+      </div>
+      <div class="imp-traj-numbers">
+        <span class="imp-traj-now">{{ traj.current }} now</span>
+        <span class="imp-traj-arrow">→</span>
+        <span class="imp-traj-pot">{{ traj.potential_low }}–{{ traj.potential_high }} potential</span>
+        <span style="color:var(--muted);font-size:.67rem;margin-left:auto">{{ traj.gap_to_100 }} pts gap to 100</span>
+      </div>
+      <div class="imp-traj-legend">
+        <span><span class="imp-traj-legend-dot" style="background:var(--accent)"></span>Current score</span>
+        <span><span class="imp-traj-legend-dot" style="background:rgba(0,232,154,.2)"></span>Potential range (staged implementation)</span>
+      </div>
+    </div>
+
+    {# ── Milestone Cards ── #}
+    <div class="imp-list">
+      {% for ms in pw.milestones %}
+      <details class="imp-card imp-card-{{ ms.status }}">
+        <summary>
+          <div class="imp-sum-top">
+            <span class="imp-card-title">{{ ms.title }}</span>
+            <span class="imp-uplift">+{{ ms.uplift_low }}–{{ ms.uplift_high }} pts</span>
+          </div>
+          <div class="imp-card-tags">
+            <span class="imp-tag imp-tag-{{ ms.status }}">{{ ms.status_label }}</span>
+            <span class="imp-tag imp-tag-diff-{{ ms.difficulty }}">{{ ms.difficulty|title }} effort</span>
+            <span class="imp-tag" style="background:rgba(100,116,139,.09);color:var(--muted2);border:1px solid rgba(100,116,139,.16)">⏱ {{ ms.timeline }}</span>
+            <span class="imp-chevron" aria-hidden="true">▾</span>
+          </div>
+        </summary>
+
+        <div class="imp-intel">
+          <div class="imp-intel-row">
+            <div class="imp-intel-label">Why It Matters</div>
+            <div class="imp-intel-val">{{ ms.why_it_matters }}</div>
+          </div>
+          <div class="imp-intel-row">
+            <div class="imp-intel-label">KPI Improvements</div>
+            <div class="imp-intel-val">
+              <ul class="imp-intel-list">
+                {% for kpi in ms.kpi_improvements %}
+                <li>{{ kpi }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          <div class="imp-intel-row">
+            <div class="imp-intel-label">Finance Compatibility</div>
+            <div class="imp-intel-val">
+              <div class="imp-finance-list">
+                {% for f in ms.finance_compat %}
+                <span class="imp-finance-tag">{{ f }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="imp-intel-row">
+            <div class="imp-intel-label">Public Benefit</div>
+            <div class="imp-intel-val">{{ ms.public_benefit }}</div>
+          </div>
+          <div class="imp-intel-row">
+            <div class="imp-intel-label">Governance Requirements</div>
+            <div class="imp-intel-val">{{ ms.governance_reqs }}</div>
+          </div>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <div class="imp-disclaimer">ⓘ {{ pw.disclaimer }}</div>
+    {% endwith %}
+    {% endif %}
+    <!-- ── END IMPROVEMENT PATHWAY ──────────────────────────────────── -->
 
     <!-- Guidance Videos -->
     {% if videos %}

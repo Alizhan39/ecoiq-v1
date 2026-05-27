@@ -8,6 +8,7 @@ from django.shortcuts import render, get_object_or_404
 
 from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_CHOICES
 from companies.scoring import get_path_to_100_actions
+from companies.improvement_data import get_improvement_pathway
 from league.models import Company, SECTOR_CHOICES
 
 
@@ -471,6 +472,9 @@ def company_detail(request, slug):
     except Exception:
         pass
 
+    # ── Improvement Pathway ─────────────────────────────────────────────────────
+    improvement_pathway = get_improvement_pathway(profile)
+
     return render(request, 'companies/detail.html', {
         'company':               company,
         'profile':               profile,
@@ -501,4 +505,6 @@ def company_detail(request, slug):
         'financing_eligible_count':   financing_eligible_count,
         'financing_likely_count':     financing_likely_count,
         'financing_total_count':      financing_total_count,
+        # Improvement Pathway
+        'improvement_pathway':        improvement_pathway,
     })
