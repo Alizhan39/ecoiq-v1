@@ -236,6 +236,104 @@ def _get_financing_eligibility(profile):
     return items
 
 
+def _get_institutional_signals(profile):
+    """
+    Compute 6 institutional intelligence signals for a company profile.
+    Each signal: {label, value, level, description}
+    level: 'good' | 'moderate' | 'elevated' | 'critical'
+
+    Used to render the Institutional Signals strip on company profile pages.
+    All outputs are indicative.
+    """
+    def _clamp(v): return max(0.0, min(100.0, float(v or 0)))
+
+    signals = []
+
+    # 1. Governance Risk — transparency + anti-corruption
+    gov = (_clamp(profile.transparency_score_detail) + _clamp(profile.anti_corruption_score)) / 2
+    if gov >= 68:
+        signals.append({'label': 'Governance Risk',        'value': 'Low Risk',    'level': 'good'})
+    elif gov >= 50:
+        signals.append({'label': 'Governance Risk',        'value': 'Moderate',    'level': 'moderate'})
+    elif gov >= 34:
+        signals.append({'label': 'Governance Risk',        'value': 'Elevated',    'level': 'elevated'})
+    else:
+        signals.append({'label': 'Governance Risk',        'value': 'High Risk',   'level': 'critical'})
+
+    # 2. Transition Readiness — energy + future + modernization
+    trans = (_clamp(profile.energy_transition_score)
+             + _clamp(profile.future_readiness_score)
+             + _clamp(profile.modernization_score)) / 3
+    if trans >= 68:
+        signals.append({'label': 'Transition Readiness',   'value': 'Leading',     'level': 'good'})
+    elif trans >= 52:
+        signals.append({'label': 'Transition Readiness',   'value': 'Advancing',   'level': 'moderate'})
+    elif trans >= 37:
+        signals.append({'label': 'Transition Readiness',   'value': 'Developing',  'level': 'elevated'})
+    else:
+        signals.append({'label': 'Transition Readiness',   'value': 'Early Stage', 'level': 'critical'})
+
+    # 3. Financing Compatibility — overall score adjusted for pollution
+    pol_adj = {'low': 0, 'medium': 4, 'high': 14, 'severe': 24}.get(profile.pollution_level, 0)
+    fin = max(0, _clamp(profile.ecoiq_total_score) - pol_adj)
+    if fin >= 64:
+        signals.append({'label': 'Financing Compatibility', 'value': 'Strong',     'level': 'good'})
+    elif fin >= 44:
+        signals.append({'label': 'Financing Compatibility', 'value': 'Eligible',   'level': 'moderate'})
+    elif fin >= 28:
+        signals.append({'label': 'Financing Compatibility', 'value': 'Partial',    'level': 'elevated'})
+    else:
+        signals.append({'label': 'Financing Compatibility', 'value': 'Limited',    'level': 'critical'})
+
+    # 4. Transparency Quality — transparency detail + audit
+    transp = (_clamp(profile.transparency_score_detail) + _clamp(profile.audit_quality_score)) / 2
+    if transp >= 70:
+        signals.append({'label': 'Transparency Quality',   'value': 'Institutional','level': 'good'})
+    elif transp >= 54:
+        signals.append({'label': 'Transparency Quality',   'value': 'Strong',      'level': 'moderate'})
+    elif transp >= 38:
+        signals.append({'label': 'Transparency Quality',   'value': 'Moderate',    'level': 'elevated'})
+    else:
+        signals.append({'label': 'Transparency Quality',   'value': 'Poor',        'level': 'critical'})
+
+    # 5. Industrial Complexity — driven by pollution level classification
+    ic_map = {
+        'severe': ('Critical',  'critical'),
+        'high':   ('Complex',   'elevated'),
+        'medium': ('Moderate',  'moderate'),
+        'low':    ('Standard',  'good'),
+    }
+    ic_val, ic_level = ic_map.get(profile.pollution_level, ('Standard', 'good'))
+    signals.append({'label': 'Industrial Complexity',      'value': ic_val,         'level': ic_level})
+
+    # 6. Public Benefit Alignment — public_benefit_score
+    pb = _clamp(profile.public_benefit_score)
+    if pb >= 70:
+        signals.append({'label': 'Public Benefit Alignment','value': 'Exemplary',  'level': 'good'})
+    elif pb >= 54:
+        signals.append({'label': 'Public Benefit Alignment','value': 'Aligned',    'level': 'moderate'})
+    elif pb >= 38:
+        signals.append({'label': 'Public Benefit Alignment','value': 'Partial',    'level': 'elevated'})
+    else:
+        signals.append({'label': 'Public Benefit Alignment','value': 'Developing', 'level': 'critical'})
+
+    return signals
+
+
+def _get_confidence_label(ai_confidence: int, is_verified: bool) -> str:
+    """
+    Map an integer confidence score to a standardized confidence label class.
+    Returns CSS class suffix: 'low' | 'medium' | 'high' | 'verified'
+    """
+    if is_verified:
+        return 'verified'
+    if ai_confidence >= 75:
+        return 'high'
+    if ai_confidence >= 45:
+        return 'medium'
+    return 'low'
+
+
 # ── Company Directory ──────────────────────────────────────────────────────────
 
 def directory(request):
@@ -475,6 +573,10 @@ def company_detail(request, slug):
     # ── Improvement Pathway ─────────────────────────────────────────────────────
     improvement_pathway = get_improvement_pathway(profile)
 
+    # ── Institutional Intelligence Signals ──────────────────────────────────────
+    institutional_signals = _get_institutional_signals(profile)
+    confidence_label      = _get_confidence_label(ai_confidence, profile.is_verified)
+
     return render(request, 'companies/detail.html', {
         'company':               company,
         'profile':               profile,
@@ -507,4 +609,7 @@ def company_detail(request, slug):
         'financing_total_count':      financing_total_count,
         # Improvement Pathway
         'improvement_pathway':        improvement_pathway,
+        # Institutional Intelligence layer
+        'institutional_signals':      institutional_signals,
+        'confidence_label':           confidence_label,
     })

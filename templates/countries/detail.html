@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ country.name }} Country Intelligence — EcoIQ</title>
+<link rel="stylesheet" href="{% static 'css/ecoiq-institutional.css' %}">
 <style>
 /* ── EcoIQ Institutional Design System ── */
 :root {
@@ -163,9 +164,10 @@ a{text-decoration:none}
 /* ── AI Panels ── */
 .ai-panel{margin-bottom:1.4rem}
 .ai-header{
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
   margin-bottom:.9rem;
 }
+/* Legacy pill — kept for backward compat but prefer .iq-label/.iq-conf */
 .ai-conf-pill{
   background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);
   color:var(--info);font-size:.68rem;font-weight:600;
@@ -173,11 +175,13 @@ a{text-decoration:none}
   white-space:nowrap;
 }
 .ai-text{font-size:.875rem;color:var(--muted2);line-height:1.75;white-space:pre-line}
-.ai-disclaimer{
-  font-size:.7rem;color:rgba(148,163,184,.5);
+/* Standardized disclaimer (supersedes .ai-disclaimer) */
+.iq-disclaimer{
+  font-size:.7rem;color:rgba(148,163,184,.45);
   border-top:1px solid var(--border);margin-top:.9rem;padding-top:.6rem;
-  font-style:italic;
+  font-style:italic;line-height:1.55;
 }
+.ai-disclaimer{font-size:.7rem;color:rgba(148,163,184,.5);border-top:1px solid var(--border);margin-top:.9rem;padding-top:.6rem;font-style:italic}
 
 /* ── Sectors ── */
 .sector-row{
@@ -693,12 +697,17 @@ footer a:hover{color:var(--accent)}
     </div>
     {% endif %}
     <div class="is-sep"></div>
+    <div class="is-item">
+      <span class="iq-label iq-label-ai">AI-Assisted</span>
+    </div>
+    <div class="is-sep"></div>
     <div class="is-item conf-wrap">
-      <span>AI Intelligence</span>
       <div class="conf-bar-bg">
         <div class="conf-bar" id="confBar"></div>
       </div>
-      <span class="conf-label">{{ ai_confidence }}%</span>
+      <span class="iq-conf {% if ai_confidence >= 75 %}iq-conf-high{% elif ai_confidence >= 45 %}iq-conf-medium{% else %}iq-conf-low{% endif %}">
+        {% if ai_confidence >= 75 %}High Confidence{% elif ai_confidence >= 45 %}Medium Confidence{% else %}Low Confidence{% endif %}
+      </span>
     </div>
   </div>
 </div>
@@ -848,8 +857,11 @@ footer a:hover{color:var(--accent)}
     {% if country.ai_overview %}
     <div class="section ai-panel">
       <div class="ai-header">
-        <div class="section-title" style="margin-bottom:0">Country Overview</div>
-        <div class="ai-conf-pill">AI-Generated · {{ ai_confidence }}% confidence</div>
+        <div class="section-title" style="margin-bottom:0">◆ Country Overview</div>
+        <span class="iq-label iq-label-ai">AI-Assisted</span>
+        <span class="iq-conf {% if ai_confidence >= 75 %}iq-conf-high{% elif ai_confidence >= 45 %}iq-conf-medium{% else %}iq-conf-low{% endif %}">
+          {% if ai_confidence >= 75 %}High Confidence{% elif ai_confidence >= 45 %}Medium Confidence{% else %}Low Confidence{% endif %}
+        </span>
       </div>
       <p class="ai-text">{{ country.ai_overview }}</p>
     </div>
@@ -860,7 +872,8 @@ footer a:hover{color:var(--accent)}
     <div class="section ai-panel">
       <div class="ai-header">
         <div class="section-title" style="margin-bottom:0">⚡ Transition Narrative</div>
-        <div class="ai-conf-pill">AI-Generated · {{ ai_confidence }}% confidence</div>
+        <span class="iq-label iq-label-ai">AI-Assisted</span>
+        <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
       </div>
       <p class="ai-text">{{ country.ai_transition_narrative }}</p>
     </div>
@@ -871,7 +884,8 @@ footer a:hover{color:var(--accent)}
     <div class="section ai-panel">
       <div class="ai-header">
         <div class="section-title" style="margin-bottom:0">⚠ Risk Summary</div>
-        <div class="ai-conf-pill" style="background:rgba(230,57,70,.08);border-color:rgba(230,57,70,.2);color:var(--danger)">AI-Generated · Indicative</div>
+        <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
+        <span class="iq-label iq-label-review">Requires Human Review</span>
       </div>
       <p class="ai-text">{{ country.ai_risk_summary }}</p>
     </div>
@@ -882,11 +896,12 @@ footer a:hover{color:var(--accent)}
     <div class="section ai-panel">
       <div class="ai-header">
         <div class="section-title" style="margin-bottom:0">💰 Investment Thesis</div>
-        <div class="ai-conf-pill" style="background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.22);color:var(--purple)">AI-Generated · Not investment advice</div>
+        <span class="iq-label iq-label-institutional">Institutional Analysis</span>
+        <span class="iq-label iq-label-review">Requires Human Review</span>
       </div>
       <p class="ai-text">{{ country.ai_investment_thesis }}</p>
-      <div class="ai-disclaimer">
-        EcoIQ intelligence is AI-generated based on publicly available data. Not independently verified. Not to be used as the sole basis for investment decisions.
+      <div class="iq-disclaimer">
+        EcoIQ intelligence is AI-assisted from publicly available data. Not independently verified. Not to be used as the sole basis for investment decisions.
       </div>
     </div>
     {% endif %}
@@ -896,7 +911,11 @@ footer a:hover{color:var(--accent)}
     <div class="section">
       <div class="section-title">
         🏗 Recommended Modernisation Actions
-        <span class="st-right">{{ modernisation_actions|length }} actions · AI-assisted · expand for intelligence</span>
+        <span class="st-right" style="display:flex;align-items:center;gap:.4rem">
+          {{ modernisation_actions|length }} actions
+          <span class="iq-label iq-label-ai">AI-Assisted</span>
+          <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
+        </span>
       </div>
       <div class="mod-list">
         {% for action in modernisation_actions %}
@@ -950,7 +969,11 @@ footer a:hover{color:var(--accent)}
     <div class="section" id="investment-opportunities">
       <div class="section-title">
         💼 Priority Investment Opportunities
-        <span class="st-right">{{ investment_opportunities|length }} opportunities · AI-assisted · expand for thesis</span>
+        <span class="st-right" style="display:flex;align-items:center;gap:.4rem">
+          {{ investment_opportunities|length }} opportunities
+          <span class="iq-label iq-label-ai">AI-Assisted</span>
+          <span class="iq-label iq-label-review">Requires Human Review</span>
+        </span>
       </div>
       <div class="inv-list">
         {% for opp in investment_opportunities %}
@@ -1003,7 +1026,10 @@ footer a:hover{color:var(--accent)}
     <div class="section roadmap-section" id="transition-roadmap">
       <div class="section-title">
         🗺 Path to 100: National Transition Roadmap
-        <span class="st-right">{{ roadmap.phases|length }} phases · AI-assisted · indicative only</span>
+        <span class="st-right" style="display:flex;align-items:center;gap:.4rem">
+          {{ roadmap.phases|length }} phases
+          <span class="iq-label iq-label-institutional">Institutional Analysis</span>
+        </span>
       </div>
       <div class="roadmap-list">
         {% for phase in roadmap.phases %}

@@ -746,17 +746,22 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
   </div>
 </div>
 
-<!-- ── Intelligence Status Strip ──────────────────────────────────── -->
-<div class="intel-strip">
+<!-- ── Institutional Signals Strip ─────────────────────────────────── -->
+<div class="isig-strip">
+  {% for sig in institutional_signals %}
+  <div class="isig-cell isig-cell-{{ sig.level }}">
+    <div class="isig-label">{{ sig.label }}</div>
+    <div class="isig-value isig-value-{{ sig.level }}">{{ sig.value }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Status / Confidence Row ─────────────────────────────────────── -->
+<div class="intel-strip" style="margin-bottom:.9rem">
   <div class="intel-item">
     <div class="intel-dot" style="background:{% if profile.is_verified %}var(--accent){% else %}var(--warn){% endif %}"></div>
     <span class="intel-label">Profile</span>
-    <span class="intel-val">{% if profile.is_verified %}Verified{% else %}AI Analysis{% endif %}</span>
-  </div>
-  <span class="intel-sep">|</span>
-  <div class="intel-item">
-    <span class="intel-label">Climate Risk</span>
-    <span class="intel-val" style="color:{{ profile.pollution_color }}">{{ profile.get_pollution_level_display }} Pollution</span>
+    <span class="intel-val">{% if profile.is_verified %}Verified Data{% else %}AI-Assisted{% endif %}</span>
   </div>
   <span class="intel-sep">|</span>
   <div class="intel-item">
@@ -767,22 +772,25 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
   </div>
   <span class="intel-sep">|</span>
   <div class="intel-item">
-    <span class="intel-label">Modernization</span>
-    <span class="intel-val" style="color:{% if profile.modernization_score >= 70 %}var(--accent){% elif profile.modernization_score >= 50 %}var(--warn){% else %}var(--danger){% endif %}">
-      {{ profile.modernization_score|floatformat:0 }}/100
-    </span>
-  </div>
-  <span class="intel-sep">|</span>
-  <div class="intel-item">
     <span class="intel-label">Sector</span>
     <span class="intel-val">{{ company.get_sector_display }}</span>
   </div>
+  <span class="intel-sep">|</span>
+  <div class="intel-item">
+    <span class="intel-label">Country</span>
+    <span class="intel-val">{{ company.country }}</span>
+  </div>
   <div class="intel-conf">
-    <span class="intel-label">Data Quality</span>
+    <span class="intel-label">Intelligence Quality</span>
     <div class="conf-bar-bg">
       <div class="conf-bar-fill" id="conf-bar" style="width:0%"></div>
     </div>
-    <span class="intel-val" style="color:var(--accent)">{{ ai_confidence }}%</span>
+    <span class="iq-conf iq-conf-{{ confidence_label }}" style="margin-left:.35rem">
+      {% if confidence_label == 'verified' %}Verified Source-Backed
+      {% elif confidence_label == 'high' %}High Confidence
+      {% elif confidence_label == 'medium' %}Medium Confidence
+      {% else %}Low Confidence{% endif %}
+    </span>
   </div>
 </div>
 
@@ -947,6 +955,51 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
       {% endfor %}
     </div>
 
+    {# ── Scoring Methodology Reference ───────────────────────────── #}
+    <details class="meth-exp">
+      <summary>
+        <span class="meth-sum-label">⊡ EcoIQ Scoring Methodology — How This Score Works</span>
+        <span class="meth-chevron">▾</span>
+      </summary>
+      <div class="meth-body">
+        <div class="meth-item">
+          <div class="meth-item-label">Score Range</div>
+          <div class="meth-item-val"><strong>0–100</strong> — higher indicates stronger public benefit, environmental stewardship and governance quality.</div>
+        </div>
+        <div class="meth-item">
+          <div class="meth-item-label">Public Benefit (25%)</div>
+          <div class="meth-item-val">Employment quality, regional development, infrastructure contribution, national value creation.</div>
+        </div>
+        <div class="meth-item">
+          <div class="meth-item-label">Environmental Stewardship (25%)</div>
+          <div class="meth-item-val">Pollution intensity, waste management, water stewardship, biodiversity impact.</div>
+        </div>
+        <div class="meth-item">
+          <div class="meth-item-label">Responsible Modernization (20%)</div>
+          <div class="meth-item-val">Energy transition progress, digitalization, infrastructure upgrades, future readiness.</div>
+        </div>
+        <div class="meth-item">
+          <div class="meth-item-label">Transparent Governance (15%)</div>
+          <div class="meth-item-val">Reporting quality, audit standards, procurement transparency.</div>
+        </div>
+        <div class="meth-item">
+          <div class="meth-item-label">Anti-Corruption (10%) + Ethical Alignment (5%)</div>
+          <div class="meth-item-val">Anti-bribery practices, controversy management, long-term ethical positioning.</div>
+        </div>
+        <div class="meth-item">
+          <div class="meth-item-label">Harm Penalties</div>
+          <div class="meth-item-val">Deducted for severe pollution, high controversy, transparency deficit, or unmitigated transition risk.</div>
+        </div>
+        <div class="meth-item">
+          <div class="meth-item-label">Data Sources</div>
+          <div class="meth-item-val">Public annual reports, sustainability disclosures, regulatory filings, news analysis. AI-assisted extraction.</div>
+        </div>
+        <div class="meth-caveat">
+          All scores are indicative and AI-assisted from publicly available sources. They have not been independently verified unless marked Verified. Not investment or legal advice. Scores may be updated as new data becomes available.
+        </div>
+      </div>
+    </details>
+
     {# ── Ethical Intelligence Analysis (NEI / TSS / RVI) ────────── #}
     {% include 'ethics/_master_scores.html' %}
     {% include 'ethics/_improvement_roadmap.html' %}
@@ -984,9 +1037,15 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     {% if profile.ai_summary %}
     <div class="intel-panel">
       <div class="panel-header">
-        🤖 AI Intelligence Summary
+        ◆ Intelligence Summary
         <div class="ph-right">
-          <span class="ai-conf-pill">AI-Generated · {{ ai_confidence }}% confidence</span>
+          <span class="iq-label iq-label-ai">AI-Assisted</span>
+          <span class="iq-conf iq-conf-{{ confidence_label }}">
+            {% if confidence_label == 'verified' %}Verified Source-Backed
+            {% elif confidence_label == 'high' %}High Confidence
+            {% elif confidence_label == 'medium' %}Medium Confidence
+            {% else %}Low Confidence{% endif %}
+          </span>
         </div>
       </div>
       <div class="panel-body">
@@ -1001,7 +1060,8 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
       <div class="panel-header">
         ⚡ Modernization Intelligence
         <div class="ph-right">
-          <span class="ai-conf-pill">AI Analysis</span>
+          <span class="iq-label iq-label-ai">AI-Assisted</span>
+          <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
         </div>
       </div>
       <div class="panel-body">
@@ -1043,9 +1103,10 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     {% if profile.ai_investment_opportunity %}
     <div class="intel-panel">
       <div class="panel-header">
-        💼 Investment & Financing Intelligence
+        💼 Investment &amp; Financing Intelligence
         <div class="ph-right">
-          <span class="ai-conf-pill">AI Analysis</span>
+          <span class="iq-label iq-label-ai">AI-Assisted</span>
+          <span class="iq-label iq-label-review">Requires Human Review</span>
         </div>
       </div>
       <div class="panel-body">
@@ -1058,9 +1119,10 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     {% if profile.ai_risk_notes %}
     <div class="intel-panel">
       <div class="panel-header" style="color:var(--warn)">
-        ⚠ Risk & Transparency Intelligence
+        ⚠ Risk &amp; Transparency Intelligence
         <div class="ph-right">
-          <span class="ai-conf-pill">AI Risk Assessment</span>
+          <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
+          <span class="iq-label iq-label-review">Requires Human Review</span>
         </div>
       </div>
       <div class="panel-body">
@@ -1072,7 +1134,12 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     <!-- AI Recommendations -->
     {% if profile.ai_recommendations %}
     <div class="intel-panel">
-      <div class="panel-header">✦ AI Strategic Recommendations</div>
+      <div class="panel-header">
+        ✦ Strategic Recommendations
+        <div class="ph-right">
+          <span class="iq-label iq-label-institutional">Institutional Analysis</span>
+        </div>
+      </div>
       <div class="panel-body">
         <ul class="rec-list">
           {% for rec in profile.ai_recommendations %}

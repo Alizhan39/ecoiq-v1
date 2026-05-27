@@ -1,0 +1,482 @@
+/*
+ * EcoIQ Institutional Design System — Shared Components
+ * Bloomberg Terminal × Palantir × BlackRock Aladdin aesthetic
+ *
+ * Loaded globally via base.html and linked from standalone country templates.
+ * Augments per-page inline styles — does not replace them.
+ *
+ * Components:
+ *   .iq-label         — standardized AI/data label pills
+ *   .iq-conf          — confidence badge system
+ *   .isig-strip       — institutional signals strip
+ *   .meth-exp         — methodology expandable block
+ *   .iq-metric        — inline metric display card
+ *   .iq-divider       — section divider with label
+ *   Typography fixes and spacing baseline
+ */
+
+/* ── Design tokens (supplement per-page :root) ─────────────────────── */
+:root {
+  --iq-bg:    #070b0f;
+  --iq-bg2:   #0d1117;
+  --iq-bg3:   #161b22;
+  --iq-border: rgba(255,255,255,.06);
+  --iq-border2:rgba(255,255,255,.12);
+  --iq-text:   #e2e8f0;
+  --iq-muted:  #64748b;
+  --iq-muted2: #94a3b8;
+  --iq-accent: #00e89a;
+  --iq-warn:   #f4a261;
+  --iq-danger: #e63946;
+  --iq-info:   #58a6ff;
+  --iq-purple: #a855f7;
+  --iq-cyan:   #06b6d4;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   1. STANDARDIZED AI / DATA LABEL PILLS
+   Use these everywhere instead of ad-hoc .ai-conf-pill overrides.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.iq-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .575rem;
+  font-weight: 700;
+  letter-spacing: .45px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 8px;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+/* AI-Assisted — default green accent */
+.iq-label-ai {
+  background: rgba(0,232,154,.08);
+  color: #00e89a;
+  border: 1px solid rgba(0,232,154,.2);
+}
+.iq-label-ai::before { content: '✦ '; font-size: .52rem; }
+
+/* Indicative Intelligence — amber */
+.iq-label-indicative {
+  background: rgba(244,162,97,.07);
+  color: #f4a261;
+  border: 1px solid rgba(244,162,97,.18);
+}
+.iq-label-indicative::before { content: '◈ '; font-size: .52rem; }
+
+/* Requires Human Review — blue */
+.iq-label-review {
+  background: rgba(88,166,255,.07);
+  color: #58a6ff;
+  border: 1px solid rgba(88,166,255,.18);
+}
+.iq-label-review::before { content: '⊡ '; font-size: .52rem; }
+
+/* Institutional Analysis — purple */
+.iq-label-institutional {
+  background: rgba(168,85,247,.07);
+  color: #a855f7;
+  border: 1px solid rgba(168,85,247,.18);
+}
+.iq-label-institutional::before { content: '◆ '; font-size: .52rem; }
+
+/* Source-Backed — cyan (for verified data) */
+.iq-label-sourced {
+  background: rgba(6,182,212,.07);
+  color: #06b6d4;
+  border: 1px solid rgba(6,182,212,.18);
+}
+.iq-label-sourced::before { content: '✓ '; font-size: .55rem; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. CONFIDENCE BADGE SYSTEM
+   .iq-conf-low | .iq-conf-medium | .iq-conf-high | .iq-conf-verified
+   ══════════════════════════════════════════════════════════════════════ */
+
+.iq-conf {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .575rem;
+  font-weight: 700;
+  letter-spacing: .4px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.iq-conf::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.iq-conf-low {
+  background: rgba(230,57,70,.07);
+  color: #e63946;
+  border: 1px solid rgba(230,57,70,.2);
+}
+.iq-conf-low::before { background: #e63946; }
+
+.iq-conf-medium {
+  background: rgba(244,162,97,.07);
+  color: #f4a261;
+  border: 1px solid rgba(244,162,97,.18);
+}
+.iq-conf-medium::before { background: #f4a261; }
+
+.iq-conf-high {
+  background: rgba(0,232,154,.07);
+  color: #00e89a;
+  border: 1px solid rgba(0,232,154,.18);
+}
+.iq-conf-high::before { background: #00e89a; }
+
+.iq-conf-verified {
+  background: rgba(88,166,255,.07);
+  color: #58a6ff;
+  border: 1px solid rgba(88,166,255,.18);
+}
+.iq-conf-verified::before { background: #58a6ff; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. INSTITUTIONAL SIGNALS STRIP
+   A row of 6 compact signal cells.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.isig-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  background: var(--iq-bg2, #0d1117);
+  border: 1px solid var(--iq-border, rgba(255,255,255,.06));
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.2rem;
+}
+
+.isig-cell {
+  flex: 1;
+  min-width: 130px;
+  padding: .65rem .85rem;
+  border-right: 1px solid var(--iq-border, rgba(255,255,255,.06));
+  position: relative;
+  transition: background .15s;
+}
+.isig-cell:last-child { border-right: none; }
+.isig-cell:hover { background: rgba(255,255,255,.018); }
+
+/* Top accent line driven by signal level */
+.isig-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 0;
+}
+.isig-cell-good::before     { background: #00e89a; }
+.isig-cell-moderate::before { background: #58a6ff; }
+.isig-cell-elevated::before { background: #f4a261; }
+.isig-cell-critical::before { background: #e63946; }
+
+.isig-label {
+  font-size: .57rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .65px;
+  color: var(--iq-muted, #64748b);
+  margin-bottom: .28rem;
+  line-height: 1.3;
+}
+
+.isig-value {
+  font-size: .79rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.01em;
+}
+
+.isig-value-good     { color: #00e89a; }
+.isig-value-moderate { color: #58a6ff; }
+.isig-value-elevated { color: #f4a261; }
+.isig-value-critical { color: #e63946; }
+
+@media (max-width: 700px) {
+  .isig-strip { flex-direction: column; border-radius: 8px; }
+  .isig-cell  { border-right: none; border-bottom: 1px solid var(--iq-border, rgba(255,255,255,.06)); }
+  .isig-cell:last-child { border-bottom: none; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. METHODOLOGY EXPANDABLE BLOCK
+   Small <details> block explaining scoring methodology.
+   ══════════════════════════════════════════════════════════════════════ */
+
+details.meth-exp {
+  background: var(--iq-bg2, #0d1117);
+  border: 1px solid var(--iq-border, rgba(255,255,255,.06));
+  border-left: 3px solid rgba(88,166,255,.3);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.2rem;
+  transition: border-color .2s;
+}
+details.meth-exp:hover { border-color: rgba(255,255,255,.1); }
+details.meth-exp[open] .meth-chevron { transform: rotate(-180deg); }
+
+details.meth-exp > summary {
+  list-style: none;
+  padding: .55rem .9rem;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+details.meth-exp > summary::-webkit-details-marker { display: none; }
+details.meth-exp > summary:hover { background: rgba(255,255,255,.015); }
+
+.meth-sum-label {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--iq-muted, #64748b);
+  flex: 1;
+}
+.meth-chevron {
+  font-size: .65rem;
+  color: var(--iq-muted, #64748b);
+  display: inline-block;
+  transition: transform .22s ease;
+}
+
+.meth-body {
+  border-top: 1px solid var(--iq-border, rgba(255,255,255,.06));
+  padding: .8rem .9rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: .6rem .9rem;
+}
+
+.meth-item { }
+.meth-item-label {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--iq-muted, #64748b);
+  margin-bottom: .18rem;
+}
+.meth-item-val {
+  font-size: .74rem;
+  color: var(--iq-muted2, #94a3b8);
+  line-height: 1.55;
+}
+.meth-item-val strong { color: var(--iq-text, #e2e8f0); font-weight: 600; }
+
+.meth-caveat {
+  grid-column: 1 / -1;
+  font-size: .67rem;
+  color: rgba(148,163,184,.45);
+  font-style: italic;
+  line-height: 1.55;
+  padding-top: .5rem;
+  border-top: 1px solid rgba(255,255,255,.04);
+  margin-top: .2rem;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INLINE METRIC DISPLAY CARDS
+   Compact KPI/stat cards used across intelligence sections.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.iq-metrics-row {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin: .85rem 0;
+}
+
+.iq-metric {
+  background: var(--iq-bg3, #161b22);
+  border: 1px solid var(--iq-border, rgba(255,255,255,.06));
+  border-radius: 7px;
+  padding: .55rem .85rem;
+  min-width: 100px;
+  flex: 1;
+}
+
+.iq-metric-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  margin-bottom: .12rem;
+}
+
+.iq-metric-label {
+  font-size: .56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--iq-muted, #64748b);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   6. SECTION DIVIDER
+   Thin ruled divider with centred label — used between major sections.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.iq-divider {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: 1.6rem 0 1.2rem;
+  color: var(--iq-muted, #64748b);
+}
+.iq-divider::before,
+.iq-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--iq-border, rgba(255,255,255,.06));
+}
+.iq-divider-label {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  white-space: nowrap;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   7. FINANCE COMPATIBILITY COMPACT CARDS
+   Reusable grid of DFI/capital source compatibility indicators.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.fcp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: .55rem;
+  margin-bottom: .8rem;
+}
+
+.fcp-card {
+  background: var(--iq-bg3, #161b22);
+  border: 1px solid var(--iq-border, rgba(255,255,255,.06));
+  border-radius: 7px;
+  padding: .65rem .8rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  transition: border-color .15s;
+}
+.fcp-card:hover { border-color: rgba(255,255,255,.11); }
+
+.fcp-name {
+  font-size: .71rem;
+  font-weight: 700;
+  color: var(--iq-text, #e2e8f0);
+  line-height: 1.3;
+}
+
+.fcp-mandate {
+  font-size: .6rem;
+  color: var(--iq-muted, #64748b);
+  line-height: 1.4;
+}
+
+.fcp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .59rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  align-self: flex-start;
+  margin-top: .1rem;
+}
+.fcp-status::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fcp-eligible   { background:rgba(0,232,154,.08);  color:#00e89a; border:1px solid rgba(0,232,154,.2); }
+.fcp-eligible::before   { background:#00e89a; }
+.fcp-partial    { background:rgba(244,162,97,.08); color:#f4a261; border:1px solid rgba(244,162,97,.18); }
+.fcp-partial::before    { background:#f4a261; }
+.fcp-conditional{ background:rgba(230,57,70,.07);  color:#e63946; border:1px solid rgba(230,57,70,.18); }
+.fcp-conditional::before{ background:#e63946; }
+
+.fcp-caveat {
+  font-size: .67rem;
+  color: rgba(148,163,184,.42);
+  font-style: italic;
+  line-height: 1.5;
+  padding-top: .5rem;
+  border-top: 1px solid rgba(255,255,255,.04);
+  margin-top: .3rem;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   8. TYPOGRAPHY REFINEMENTS
+   Applied globally — improves readability of AI text blocks and labels.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* AI content blocks */
+.ai-text {
+  font-size: .82rem;
+  line-height: 1.75;
+  color: var(--iq-muted2, #94a3b8);
+  letter-spacing: .01em;
+}
+
+/* Consistent panel header */
+.panel-header {
+  font-size: .61rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .09em !important;
+}
+
+/* Section head tightened spacing */
+.sec-head {
+  margin-bottom: .85rem !important;
+}
+
+/* Standardize disclaimer blocks site-wide */
+.iq-disclaimer {
+  font-size: .67rem;
+  color: rgba(148,163,184,.42);
+  font-style: italic;
+  line-height: 1.6;
+  padding: .55rem .7rem;
+  border-top: 1px solid rgba(255,255,255,.04);
+  margin-top: .85rem;
+}
+
+/* Better number formatting */
+.iq-number {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}

@@ -1,10 +1,11 @@
-{% load humanize %}
+{% load static humanize %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ country.name }} Investor Intelligence Briefing — EcoIQ</title>
+<link rel="stylesheet" href="{% static 'css/ecoiq-institutional.css' %}">
 <style>
 /* ── EcoIQ Investor Briefing ─────────────────────────────────────────────────*/
 :root{
@@ -97,7 +98,7 @@ a{text-decoration:none;color:inherit}
   padding:1.5rem 1.6rem;margin-bottom:1.4rem;
 }
 .brief-section:hover{border-color:var(--border2)}
-.brief-sec-header{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem}
+.brief-sec-header{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem}
 .brief-sec-num{
   font-size:.65rem;font-weight:800;font-family:monospace;
   color:var(--accent);letter-spacing:.5px;flex-shrink:0;
@@ -357,7 +358,10 @@ a{text-decoration:none;color:inherit}
       <span>ISO {{ country.iso_code }}</span>
       {% endif %}
       <span class="memo-dot">·</span>
-      <span>AI Intelligence · {{ ai_confidence }}% confidence</span>
+      <span class="iq-conf {% if ai_confidence >= 75 %}iq-conf-high{% elif ai_confidence >= 45 %}iq-conf-medium{% else %}iq-conf-low{% endif %}">
+        {% if ai_confidence >= 75 %}High Confidence{% elif ai_confidence >= 45 %}Medium Confidence{% else %}Low Confidence{% endif %}
+      </span>
+      <span class="iq-label iq-label-ai">AI-Assisted</span>
     </div>
 
     <div class="memo-score-strip">
@@ -403,7 +407,8 @@ a{text-decoration:none;color:inherit}
     <div class="brief-sec-header">
       <span class="brief-sec-num">01</span>
       <span class="brief-sec-title">Executive Summary</span>
-      <span class="brief-sec-badge">AI-assisted</span>
+      <span class="iq-label iq-label-ai">AI-Assisted</span>
+      <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
     </div>
     <p class="exec-text">{{ briefing.executive_summary }}</p>
   </div>
@@ -435,6 +440,7 @@ a{text-decoration:none;color:inherit}
       <span class="brief-sec-num">03</span>
       <span class="brief-sec-title">Transition Risks</span>
       <span class="brief-sec-badge">{{ briefing.transition_risks|length }} identified</span>
+      <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
     </div>
     <div class="risk-list">
       {% for risk in briefing.transition_risks %}
@@ -508,6 +514,7 @@ a{text-decoration:none;color:inherit}
       <span class="brief-sec-num">06</span>
       <span class="brief-sec-title">Recommended Modernisation Actions</span>
       <span class="brief-sec-badge">{{ mod_actions|length }} actions</span>
+      <span class="iq-label iq-label-ai">AI-Assisted</span>
     </div>
     <div class="action-list">
       {% for a in mod_actions %}
@@ -568,7 +575,8 @@ a{text-decoration:none;color:inherit}
     <div class="brief-sec-header">
       <span class="brief-sec-num">08</span>
       <span class="brief-sec-title">Development Bank Compatibility</span>
-      <span class="brief-sec-badge">Indicative only</span>
+      <span class="iq-label iq-label-institutional">Institutional Analysis</span>
+      <span class="iq-label iq-label-review">Requires Human Review</span>
     </div>
     <div class="db-list">
       {% for db in dev_bank_compat %}
