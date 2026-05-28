@@ -593,6 +593,98 @@ footer{
 footer a{color:var(--muted);transition:color .2s}
 footer a:hover{color:var(--accent)}
 
+/* ── Section Navigation Bar ────────────────────────────────────── */
+.sec-nav{
+  display:flex;
+  background:var(--bg2);border:1px solid var(--border);border-radius:9px;
+  overflow-x:auto;scrollbar-width:none;
+  margin-bottom:1.1rem;
+  -webkit-overflow-scrolling:touch;
+}
+.sec-nav::-webkit-scrollbar{display:none}
+.sec-nav-item{
+  flex-shrink:0;
+  padding:.52rem .9rem;
+  font-size:.69rem;font-weight:600;letter-spacing:.3px;
+  color:var(--muted);
+  border-right:1px solid var(--border);
+  text-decoration:none;white-space:nowrap;
+  transition:color .15s,background .15s;
+  display:flex;align-items:center;gap:.35rem;
+}
+.sec-nav-item:last-child{border-right:none}
+.sec-nav-item:hover{color:var(--text);background:rgba(255,255,255,.025)}
+.sec-nav-item-roadmap{color:var(--accent);border-left:2px solid rgba(0,232,154,.25)}
+.sec-nav-item-briefing{color:var(--info)}
+.sec-nav-item-roadmap:hover{color:#00ffb0;background:rgba(0,232,154,.04)}
+.sec-nav-item-briefing:hover{color:#7dbfff;background:rgba(88,166,255,.04)}
+
+/* ── Roadmap Preview Card ─────────────────────────────────────── */
+.rm-preview{
+  background:linear-gradient(135deg,rgba(0,232,154,.07) 0%,rgba(88,166,255,.04) 100%);
+  border:1px solid rgba(0,232,154,.18);border-radius:10px;
+  padding:.85rem 1.1rem;
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+  margin-bottom:1.3rem;
+  position:relative;overflow:hidden;
+}
+.rm-preview::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 120% at 0% 50%,rgba(0,232,154,.04),transparent 70%);
+  pointer-events:none;
+}
+.rm-preview-icon{
+  font-size:1.6rem;flex-shrink:0;
+  filter:drop-shadow(0 0 12px rgba(0,232,154,.35));
+}
+.rm-preview-body{flex:1;min-width:180px;position:relative}
+.rm-preview-title{
+  font-size:.84rem;font-weight:700;color:var(--text);
+  margin-bottom:.2rem;letter-spacing:-.01em;
+}
+.rm-preview-sub{
+  font-size:.74rem;color:var(--muted2);line-height:1.5;
+}
+.rm-preview-traj{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.18);
+  color:var(--accent);font-size:.73rem;font-weight:700;
+  padding:.2rem .6rem;border-radius:6px;margin-top:.35rem;
+}
+.rm-preview-btn{
+  flex-shrink:0;
+  background:var(--accent);color:#000;
+  font-size:.77rem;font-weight:700;padding:.42rem 1rem;border-radius:7px;
+  text-decoration:none;transition:opacity .2s,transform .2s;
+  white-space:nowrap;position:relative;
+}
+.rm-preview-btn:hover{opacity:.85;transform:translateY(-1px)}
+
+/* ── Visual Divider before Roadmap ─────────────────────────────── */
+.rm-section-divider{
+  display:flex;align-items:center;gap:.85rem;
+  margin:2.2rem 0 1.5rem;
+}
+.rm-section-divider::before,.rm-section-divider::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,232,154,.25),transparent);
+}
+.rm-section-divider-label{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--accent);white-space:nowrap;
+  display:flex;align-items:center;gap:.4rem;
+}
+.rm-section-divider-label::before{
+  content:'◆';font-size:.5rem;
+}
+
+/* ── Roadmap CTA button variant ─────────────────────────────────── */
+.cta-roadmap{
+  background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.3);
+  color:var(--accent);
+}
+.cta-roadmap:hover{background:rgba(0,232,154,.16);border-color:rgba(0,232,154,.45)}
+
 /* ── Responsive ── */
 @media(max-width:900px){
   .two-col{grid-template-columns:1fr}
@@ -606,6 +698,8 @@ footer a:hover{color:var(--accent)}
   .score-grid{grid-template-columns:1fr}
   .intel-strip-inner{gap:1rem}
   .is-sep{display:none}
+  .rm-preview{flex-direction:column;align-items:flex-start}
+  .rm-preview-btn{width:100%;text-align:center;justify-content:center;display:flex}
 }
 </style>
 </head>
@@ -714,7 +808,32 @@ footer a:hover{color:var(--accent)}
 
 <main class="page">
 
-  <!-- CTA Row -->
+  <!-- ── SECTION NAVIGATION BAR ──────────────────────────────────── -->
+  <nav class="sec-nav" aria-label="Page sections">
+    {% if country.ai_overview %}
+    <a href="#overview"            class="sec-nav-item">◆ Overview</a>
+    {% endif %}
+    {% if country.ai_risk_summary %}
+    <a href="#risks"               class="sec-nav-item">⚠ Risks</a>
+    {% endif %}
+    {% if country.ai_investment_thesis %}
+    <a href="#investment-thesis"   class="sec-nav-item">💰 Investment Thesis</a>
+    {% endif %}
+    {% if modernisation_actions %}
+    <a href="#modernisation"       class="sec-nav-item">🏗 Modernisation</a>
+    {% endif %}
+    {% if investment_opportunities %}
+    <a href="#investment-opportunities" class="sec-nav-item">💼 Opportunities</a>
+    {% endif %}
+    {% if roadmap and roadmap.phases %}
+    <a href="#roadmap"             class="sec-nav-item sec-nav-item-roadmap">🗺 Path to 100</a>
+    {% endif %}
+    {% if has_briefing %}
+    <a href="{% url 'countries:briefing' country.slug %}" class="sec-nav-item sec-nav-item-briefing">✦ Investor Briefing</a>
+    {% endif %}
+  </nav>
+
+  <!-- ── CTA Row ─────────────────────────────────────────────────── -->
   <div class="cta-row">
     <a href="#request-intelligence-report" class="cta-btn cta-primary">
       📊 Request Full Intelligence Report
@@ -722,6 +841,11 @@ footer a:hover{color:var(--accent)}
     <a href="#investment-opportunities" class="cta-btn cta-secondary">
       💼 View Investment Opportunities
     </a>
+    {% if roadmap and roadmap.phases %}
+    <a href="#roadmap" class="cta-btn cta-roadmap">
+      🗺 Path to 100
+    </a>
+    {% endif %}
     <a href="{% url 'countries:directory' %}" class="cta-btn cta-secondary">
       🌍 Compare Countries
     </a>
@@ -735,6 +859,28 @@ footer a:hover{color:var(--accent)}
     </span>
     {% endif %}
   </div>
+
+  <!-- ── ROADMAP PREVIEW CARD ─────────────────────────────────────── -->
+  {% if roadmap and roadmap.phases %}
+  {% with sc=roadmap.summary_card %}
+  <div class="rm-preview">
+    <div class="rm-preview-icon">🗺</div>
+    <div class="rm-preview-body">
+      <div class="rm-preview-title">Path to 100: National Transition Roadmap</div>
+      <div class="rm-preview-sub">
+        {{ roadmap.phases|length }}-phase staged pathway ·
+        AI-assisted strategic guidance · indicative only
+      </div>
+      {% if sc %}
+      <div class="rm-preview-traj">
+        📈 {{ country.national_ecoiq_index|floatformat:1 }} → 80–90+ estimated
+      </div>
+      {% endif %}
+    </div>
+    <a href="#roadmap" class="rm-preview-btn">View Roadmap →</a>
+  </div>
+  {% endwith %}
+  {% endif %}
 
   <!-- MACRO STATS -->
   <div class="macro-grid">
@@ -855,7 +1001,7 @@ footer a:hover{color:var(--accent)}
 
     <!-- AI OVERVIEW -->
     {% if country.ai_overview %}
-    <div class="section ai-panel">
+    <div class="section ai-panel" id="overview">
       <div class="ai-header">
         <div class="section-title" style="margin-bottom:0">◆ Country Overview</div>
         <span class="iq-label iq-label-ai">AI-Assisted</span>
@@ -881,7 +1027,7 @@ footer a:hover{color:var(--accent)}
 
     <!-- RISK SUMMARY -->
     {% if country.ai_risk_summary %}
-    <div class="section ai-panel">
+    <div class="section ai-panel" id="risks">
       <div class="ai-header">
         <div class="section-title" style="margin-bottom:0">⚠ Risk Summary</div>
         <span class="iq-label iq-label-indicative">Indicative Intelligence</span>
@@ -893,7 +1039,7 @@ footer a:hover{color:var(--accent)}
 
     <!-- INVESTMENT THESIS -->
     {% if country.ai_investment_thesis %}
-    <div class="section ai-panel">
+    <div class="section ai-panel" id="investment-thesis">
       <div class="ai-header">
         <div class="section-title" style="margin-bottom:0">💰 Investment Thesis</div>
         <span class="iq-label iq-label-institutional">Institutional Analysis</span>
@@ -908,7 +1054,7 @@ footer a:hover{color:var(--accent)}
 
     <!-- RECOMMENDED MODERNISATION ACTIONS -->
     {% if modernisation_actions %}
-    <div class="section">
+    <div class="section" id="modernisation">
       <div class="section-title">
         🏗 Recommended Modernisation Actions
         <span class="st-right" style="display:flex;align-items:center;gap:.4rem">
@@ -1023,7 +1169,10 @@ footer a:hover{color:var(--accent)}
 
     <!-- PATH TO 100: NATIONAL TRANSITION ROADMAP -->
     {% if roadmap and roadmap.phases %}
-    <div class="section roadmap-section" id="transition-roadmap">
+    <div class="rm-section-divider">
+      <span class="rm-section-divider-label">National Transition Strategy</span>
+    </div>
+    <div class="section roadmap-section" id="roadmap">
       <div class="section-title">
         🗺 Path to 100: National Transition Roadmap
         <span class="st-right" style="display:flex;align-items:center;gap:.4rem">
