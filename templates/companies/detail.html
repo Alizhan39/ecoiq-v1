@@ -802,7 +802,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
 <!-- ── CTA Row ────────────────────────────────────────────────────── -->
 <div class="cta-row">
   {% if not profile.is_verified %}
-  <a href="mailto:alizhan@ecoiq.uk?subject=Claim%20Profile%3A%20{{ company.name|urlencode }}" class="cta-btn cta-primary">🏷 Claim Profile</a>
+  <a href="{% url 'leads:claim_profile_page' %}?company={{ company.slug }}" class="cta-btn cta-primary">🏷 Claim Profile</a>
   {% endif %}
   <a href="mailto:alizhan@ecoiq.uk?subject=Verify%20Data%3A%20{{ company.name|urlencode }}" class="cta-btn cta-secondary">✓ Verify Company Data</a>
   {% if not profile.investor_visibility %}
