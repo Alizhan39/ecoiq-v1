@@ -1,4 +1,6 @@
+import random
 from django.db import models
+from django.utils import timezone
 
 
 INDUSTRY_CHOICES = [
@@ -64,3 +66,91 @@ class AccessRequest(models.Model):
 
     def __str__(self):
         return f'{self.full_name} — {self.company} ({self.get_status_display()})'
+
+
+# ── ProfileClaim ──────────────────────────────────────────────────────────────
+
+CLAIM_STATUS_CHOICES = [
+    ('pending',   'Pending Review'),
+    ('approved',  'Approved'),
+    ('rejected',  'Rejected'),
+    ('duplicate', 'Duplicate'),
+]
+
+
+def _generate_claim_ref():
+    """Return a unique CLM-YYYYMMDD-XXXX reference string."""
+    today  = timezone.now().strftime('%Y%m%d')
+    suffix = ''.join(random.choices('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', k=4))
+    return f'CLM-{today}-{suffix}'
+
+
+class ProfileClaim(models.Model):
+    """
+    Submitted when a company representative wants to claim / manage their
+    EcoIQ profile.  Auto-generates a unique CLM-YYYYMMDD-XXXX reference on save.
+    """
+
+    # Auto-generated reference — shown to claimant and used in admin/email
+    ref = models.CharField(
+        max_length=20, unique=True, editable=False, db_index=True,
+        help_text='Auto-generated claim reference (CLM-YYYYMMDD-XXXX)',
+    )
+
+    # Which EcoIQ company profile is being claimed
+    company_slug = models.CharField(
+        max_length=200, db_index=True, blank=True,
+        help_text='Slug of the EcoIQ company profile being claimed',
+    )
+    company_name_reported = models.CharField(
+        max_length=200, blank=True,
+        help_text='Company name as entered by the claimant',
+    )
+
+    # Claimant contact details
+    full_name  = models.CharField(max_length=200)
+    work_email = models.EmailField(db_index=True)
+    job_title  = models.CharField(max_length=200)
+    phone      = models.CharField(max_length=50, blank=True)
+
+    # Justification / context
+    message = models.TextField(
+        blank=True,
+        help_text='Why the claimant is entitled to manage this profile',
+    )
+
+    # Security
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    # CRM pipeline
+    status = models.CharField(
+        max_length=20, choices=CLAIM_STATUS_CHOICES, default='pending',
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text='Internal notes — not visible to the claimant',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering            = ['-created_at']
+        verbose_name        = 'Profile Claim'
+        verbose_name_plural = 'Profile Claims'
+
+    def __str__(self):
+        target = self.company_name_reported or self.company_slug or '(unknown company)'
+        return f'{self.ref} — {self.full_name} → {target} [{self.get_status_display()}]'
+
+    def save(self, *args, **kwargs):
+        if not self.ref:
+            # Retry on the unlikely event of a collision
+            for _ in range(5):
+                candidate = _generate_claim_ref()
+                if not ProfileClaim.objects.filter(ref=candidate).exists():
+                    self.ref = candidate
+                    break
+            else:                     # pragma: no cover
+                self.ref = _generate_claim_ref()
+        super().save(*args, **kwargs)
