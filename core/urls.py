@@ -26,4 +26,7 @@ urlpatterns = [
 
     # EcoIQ Pricing — plan comparison, billing toggle, FAQ
     path('pricing/',                                 views.pricing,            name='pricing'),
+
+    # EcoIQ API Documentation — v1 endpoints, auth, rate limits, SDK quick-start
+    path('api-docs/',                                views.api_docs,           name='api_docs'),
 ]

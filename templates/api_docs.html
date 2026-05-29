@@ -1,0 +1,1063 @@
+{% extends "base.html" %}
+
+{% block title %}EcoIQ API Documentation — Climate Intelligence Endpoints{% endblock %}
+{% block meta_description %}<meta name="description" content="EcoIQ REST API documentation. 6 endpoints for company scores, country profiles, portfolio screening and financing compatibility. Bearer auth, JSON responses, rate-limited by plan.">{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   EcoIQ API DOCUMENTATION — Developer-grade reference
+   Bloomberg Terminal × Stripe Docs × Palantir aesthetic
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2230;
+  --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12); --border3:rgba(255,255,255,.18);
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+  --info:#58a6ff; --purple:#a855f7; --cyan:#06b6d4;
+  --green:#4ade80; --orange:#fb923c;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'SF Mono','Fira Code','Fira Mono','Roboto Mono',monospace;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ── Command bar ─────────────────────────────────────────────────── */
+.cmd-bar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(7,11,15,.97);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.75rem;
+  padding:.55rem 1.5rem;flex-wrap:wrap;
+}
+.cmd-brand{font-weight:800;font-size:.88rem;color:var(--accent);letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem}
+.cmd-sep{color:var(--border2)}
+.cmd-bc{color:var(--muted);font-size:.78rem;display:flex;align-items:center;gap:.4rem}
+.cmd-bc a{color:var(--muted);transition:color .15s}
+.cmd-bc a:hover{color:var(--accent)}
+.cmd-links{display:flex;gap:.4rem;margin-left:auto;align-items:center}
+.cmd-btn{
+  font-size:.69rem;font-weight:600;padding:.28rem .8rem;border-radius:5px;
+  border:1px solid var(--border);color:var(--muted);
+  transition:all .15s;white-space:nowrap;
+}
+.cmd-btn:hover{border-color:var(--border2);color:var(--text)}
+.cmd-btn.accent{background:var(--accent);color:#0a0f14;border-color:var(--accent);font-weight:700}
+.cmd-btn.accent:hover{background:#00c882}
+
+/* ── Layout: sidebar + content ───────────────────────────────────── */
+.doc-layout{
+  display:grid;
+  grid-template-columns:240px 1fr;
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 1.5rem;
+  gap:0;
+  min-height:calc(100vh - 42px);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+.sidebar{
+  border-right:1px solid var(--border);
+  padding:2rem 0;
+  position:sticky;
+  top:42px;
+  height:calc(100vh - 42px);
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border2) transparent;
+}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.sb-section{margin-bottom:1.6rem}
+.sb-title{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--muted);padding:.4rem 1.2rem .4rem;margin-bottom:.25rem;
+}
+.sb-link{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.38rem 1.2rem;font-size:.78rem;color:var(--muted2);
+  transition:color .15s,background .15s;cursor:pointer;
+}
+.sb-link:hover{color:var(--text);background:rgba(255,255,255,.025)}
+.sb-link.active{color:var(--accent);background:rgba(0,232,154,.06);border-right:2px solid var(--accent)}
+.sb-method{
+  font-size:.55rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:.12rem .35rem;border-radius:4px;flex-shrink:0;font-family:var(--mono);
+}
+.method-get  {background:rgba(0,232,154,.12);color:var(--accent)}
+.method-post {background:rgba(88,166,255,.12);color:var(--info)}
+.method-del  {background:rgba(230,57,70,.12); color:var(--danger)}
+
+/* ── Main content ────────────────────────────────────────────────── */
+.doc-content{
+  padding:2.5rem 2rem 5rem;
+  max-width:860px;
+}
+
+/* ── Hero ────────────────────────────────────────────────────────── */
+.doc-hero{margin-bottom:3rem}
+.doc-eyebrow{
+  display:inline-flex;align-items:center;gap:.45rem;
+  background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.22);
+  color:var(--accent);font-size:.7rem;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:.25rem .8rem;border-radius:20px;margin-bottom:1rem;
+}
+.doc-title{font-size:clamp(1.6rem,3vw,2.3rem);font-weight:800;letter-spacing:-.04em;line-height:1.1;margin-bottom:.65rem}
+.doc-sub{font-size:.9rem;color:var(--muted2);line-height:1.7;max-width:640px;margin-bottom:1.5rem}
+
+/* ── Version / status strip ──────────────────────────────────────── */
+.api-strip{
+  display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:.65rem 1rem;font-size:.75rem;
+}
+.api-strip-item{display:flex;align-items:center;gap:.35rem;color:var(--muted2)}
+.api-strip-sep{color:var(--border2)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);flex-shrink:0}
+
+/* ── Section headings ────────────────────────────────────────────── */
+.doc-section{margin-bottom:3.5rem;scroll-margin-top:60px}
+.doc-section-title{
+  font-size:1.1rem;font-weight:800;letter-spacing:-.025em;
+  margin-bottom:.5rem;padding-bottom:.6rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.6rem;
+}
+.doc-section-title .anchor{
+  font-size:.65rem;color:var(--muted);opacity:0;transition:opacity .15s;
+  font-weight:400;font-family:var(--mono);
+}
+.doc-section-title:hover .anchor{opacity:1}
+.doc-sub-title{font-size:.88rem;font-weight:700;color:var(--muted2);margin-bottom:.55rem;margin-top:1.4rem;letter-spacing:-.01em}
+.doc-para{font-size:.84rem;color:var(--muted2);line-height:1.8;margin-bottom:1rem}
+.doc-para a{color:var(--accent)}
+.doc-para a:hover{text-decoration:underline}
+
+/* ── Inline code ─────────────────────────────────────────────────── */
+code{
+  font-family:var(--mono);font-size:.82em;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  padding:.1rem .35rem;border-radius:4px;color:var(--accent);
+}
+
+/* ── Code blocks ─────────────────────────────────────────────────── */
+.code-block{
+  background:#010409;border:1px solid var(--border2);border-radius:9px;
+  overflow:hidden;margin:1rem 0;font-family:var(--mono);
+}
+.code-header{
+  display:flex;align-items:center;gap:.6rem;
+  background:var(--bg3);border-bottom:1px solid var(--border);
+  padding:.5rem .85rem;
+}
+.code-lang{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.code-label{font-size:.68rem;color:var(--muted);flex:1}
+.code-copy{
+  font-size:.65rem;font-weight:600;color:var(--muted);border:none;background:none;
+  cursor:pointer;padding:.15rem .4rem;border-radius:4px;transition:all .15s;
+}
+.code-copy:hover{color:var(--accent);background:rgba(0,232,154,.08)}
+.code-body{padding:.9rem 1rem;overflow-x:auto;font-size:.78rem;line-height:1.75}
+.code-body::-webkit-scrollbar{height:4px}
+.code-body::-webkit-scrollbar-thumb{background:var(--border2)}
+
+/* Syntax tokens */
+.tok-key   {color:#79c0ff}   /* JSON keys / curl flags */
+.tok-str   {color:#a5d6ff}   /* strings */
+.tok-num   {color:#f2cc60}   /* numbers */
+.tok-bool  {color:#ff9e64}   /* true / false / null */
+.tok-cmt   {color:var(--muted)}  /* comments */
+.tok-met   {color:var(--accent)} /* HTTP method */
+.tok-url   {color:#d2a8ff}   /* URL paths */
+.tok-hdr   {color:#ffa657}   /* header names */
+.tok-py-kw {color:#ff7b72}   /* python keywords */
+.tok-py-fn {color:#d2a8ff}   /* python functions */
+.tok-py-str{color:#a5d6ff}   /* python strings */
+.tok-py-cm {color:var(--muted)} /* python comments */
+
+/* ── Tab switcher ────────────────────────────────────────────────── */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab-btn{
+  font-size:.72rem;font-weight:600;padding:.45rem .9rem;
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;
+}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-btn:hover{color:var(--text)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Endpoint card ───────────────────────────────────────────────── */
+.endpoint-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  margin-bottom:2.5rem;overflow:hidden;
+}
+.endpoint-header{
+  display:flex;align-items:flex-start;gap:1rem;
+  padding:1.1rem 1.3rem;border-bottom:1px solid var(--border);flex-wrap:wrap;
+}
+.endpoint-method{
+  font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:.3rem .7rem;border-radius:6px;flex-shrink:0;margin-top:.05rem;
+}
+.endpoint-path{
+  font-family:var(--mono);font-size:.92rem;font-weight:600;color:var(--text);flex:1;
+  word-break:break-all;line-height:1.4;
+}
+.endpoint-path .param{color:var(--warn)}
+.endpoint-desc{font-size:.79rem;color:var(--muted2);line-height:1.55;margin-top:.15rem;flex-basis:100%}
+.endpoint-meta{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
+.endpoint-tag{
+  font-size:.6rem;font-weight:600;letter-spacing:.4px;text-transform:uppercase;
+  padding:.15rem .5rem;border-radius:5px;
+}
+.tag-auth   {background:rgba(244,162,97,.1);color:var(--warn);border:1px solid rgba(244,162,97,.2)}
+.tag-plan   {background:rgba(88,166,255,.1);color:var(--info);border:1px solid rgba(88,166,255,.2)}
+.tag-public {background:rgba(0,232,154,.1);color:var(--accent);border:1px solid rgba(0,232,154,.2)}
+.tag-beta   {background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.2)}
+.endpoint-body{padding:1.1rem 1.3rem}
+
+/* ── Params table ────────────────────────────────────────────────── */
+.params-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:1rem}
+.params-table th{
+  text-align:left;padding:.45rem .7rem;
+  font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--muted);border-bottom:1px solid var(--border);
+}
+.params-table td{padding:.55rem .7rem;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top}
+.params-table tr:last-child td{border-bottom:none}
+.param-name{font-family:var(--mono);color:var(--accent);font-size:.78rem}
+.param-type{font-family:var(--mono);color:var(--info);font-size:.72rem}
+.param-req {color:var(--danger);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.param-opt {color:var(--muted);font-size:.65rem;font-weight:600}
+.param-desc{color:var(--muted2);line-height:1.5;font-size:.77rem}
+
+/* ── Response schema ─────────────────────────────────────────────── */
+.resp-field{display:flex;gap:.6rem;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.03);align-items:flex-start}
+.resp-field:last-child{border-bottom:none}
+.rf-name{font-family:var(--mono);color:var(--accent);font-size:.77rem;min-width:160px;flex-shrink:0}
+.rf-type{font-family:var(--mono);color:var(--info);font-size:.7rem;min-width:64px;flex-shrink:0}
+.rf-desc{font-size:.76rem;color:var(--muted2);line-height:1.55;flex:1}
+
+/* ── Rate limit table ────────────────────────────────────────────── */
+.rate-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.rate-table th{
+  text-align:left;padding:.6rem .9rem;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--muted);background:var(--bg3);border-bottom:1px solid var(--border2);
+}
+.rate-table td{padding:.65rem .9rem;border-bottom:1px solid var(--border)}
+.rate-table tr:last-child td{border-bottom:none}
+.rate-table .plan-name-cell{font-weight:700;color:var(--text)}
+.rate-tier-free {color:var(--muted2)}
+.rate-tier-pro  {color:var(--accent)}
+.rate-tier-inst {color:var(--info)}
+.rate-tier-ent  {color:var(--purple)}
+
+/* ── Error code table ────────────────────────────────────────────── */
+.err-table{width:100%;border-collapse:collapse;font-size:.79rem}
+.err-table th{
+  text-align:left;padding:.5rem .8rem;
+  font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--muted);border-bottom:1px solid var(--border2);
+}
+.err-table td{padding:.6rem .8rem;border-bottom:1px solid var(--border);vertical-align:top}
+.err-table tr:last-child td{border-bottom:none}
+.err-code{font-family:var(--mono);font-weight:700}
+.err-4xx{color:var(--warn)}
+.err-5xx{color:var(--danger)}
+.err-2xx{color:var(--accent)}
+
+/* ── Changelog ───────────────────────────────────────────────────── */
+.changelog-item{
+  display:flex;gap:1rem;padding:.75rem 0;
+  border-bottom:1px solid var(--border);align-items:flex-start;
+}
+.changelog-item:last-child{border-bottom:none}
+.cl-date{font-family:var(--mono);font-size:.72rem;color:var(--muted);min-width:80px;flex-shrink:0;margin-top:.1rem}
+.cl-badge{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  padding:.12rem .45rem;border-radius:4px;flex-shrink:0;margin-top:.1rem;
+}
+.cl-new  {background:rgba(0,232,154,.12);color:var(--accent)}
+.cl-fix  {background:rgba(88,166,255,.12);color:var(--info)}
+.cl-dep  {background:rgba(230,57,70,.1); color:var(--danger)}
+.cl-text {font-size:.78rem;color:var(--muted2);line-height:1.6;flex:1}
+
+/* ── Alert boxes ─────────────────────────────────────────────────── */
+.alert{
+  display:flex;gap:.7rem;padding:.8rem 1rem;border-radius:8px;
+  margin:1rem 0;font-size:.79rem;line-height:1.65;
+}
+.alert-warn {background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.2);color:var(--muted2)}
+.alert-info {background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.18);color:var(--muted2)}
+.alert-accent{background:rgba(0,232,154,.06);border:1px solid rgba(0,232,154,.18);color:var(--muted2)}
+.alert-icon{flex-shrink:0;font-size:.95rem}
+
+/* ── SDK buttons ─────────────────────────────────────────────────── */
+.sdk-grid{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+.sdk-card{
+  display:flex;align-items:center;gap:.55rem;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.6rem .9rem;font-size:.77rem;color:var(--muted2);
+  transition:all .15s;
+}
+.sdk-card:hover{border-color:var(--border2);color:var(--text)}
+.sdk-icon{font-size:1rem;flex-shrink:0}
+.sdk-status{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:.1rem .35rem;border-radius:3px}
+.sdk-available{background:rgba(0,232,154,.1);color:var(--accent)}
+.sdk-soon{background:rgba(244,162,97,.1);color:var(--warn)}
+
+/* ── CTA footer ──────────────────────────────────────────────────── */
+.doc-cta{
+  background:linear-gradient(135deg,rgba(0,232,154,.06) 0%,rgba(88,166,255,.03) 100%);
+  border:1px solid rgba(0,232,154,.15);border-radius:12px;
+  padding:2rem 1.8rem;text-align:center;margin-top:3rem;
+}
+.doc-cta-title{font-size:1.1rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.45rem}
+.doc-cta-sub{font-size:.82rem;color:var(--muted2);line-height:1.65;margin-bottom:1.2rem}
+.doc-cta-btns{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+.btn-acc{
+  background:var(--accent);color:#0a0f14;font-size:.83rem;font-weight:700;
+  padding:.6rem 1.4rem;border-radius:8px;display:inline-flex;align-items:center;gap:.4rem;transition:all .2s;
+}
+.btn-acc:hover{background:#00c882;transform:translateY(-1px)}
+.btn-ghost{
+  background:var(--bg2);border:1px solid var(--border2);color:var(--muted2);
+  font-size:.83rem;font-weight:600;padding:.6rem 1.4rem;border-radius:8px;
+  display:inline-flex;align-items:center;gap:.4rem;transition:all .2s;
+}
+.btn-ghost:hover{border-color:var(--border3);color:var(--text)}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .doc-layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .doc-content{padding:1.5rem 1rem 4rem}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Command bar ───────────────────────────────────────────────── -->
+<div class="cmd-bar">
+  <a href="/" class="cmd-brand">
+    <svg width="18" height="18" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <rect width="40" height="40" rx="9" fill="#070b0f"/>
+      <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2" stroke-linejoin="round"/>
+      <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.4" stroke-linejoin="round"/>
+      <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+    </svg>
+    EcoIQ
+  </a>
+  <span class="cmd-sep">›</span>
+  <span class="cmd-bc">API Documentation</span>
+  <div class="cmd-links">
+    <a href="{% url 'companies:directory' %}" class="cmd-btn">🌍 Rankings</a>
+    <a href="{% url 'pricing' %}" class="cmd-btn">💳 Pricing</a>
+    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+API+Access" class="cmd-btn accent">Request Access →</a>
+  </div>
+</div>
+
+<!-- ── Two-column layout ─────────────────────────────────────────── -->
+<div class="doc-layout">
+
+<!-- ── Sidebar nav ──────────────────────────────────────────────── -->
+<nav class="sidebar" aria-label="API documentation sections">
+  <div class="sb-section">
+    <div class="sb-title">Getting Started</div>
+    <a href="#overview"      class="sb-link active">Overview</a>
+    <a href="#authentication" class="sb-link">Authentication</a>
+    <a href="#rate-limits"   class="sb-link">Rate Limits</a>
+    <a href="#base-url"      class="sb-link">Base URL & Versioning</a>
+    <a href="#errors"        class="sb-link">Error Codes</a>
+    <a href="#sdks"          class="sb-link">SDKs & Libraries</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-title">Endpoints</div>
+    <a href="#ep-companies-list"   class="sb-link"><span class="sb-method method-get">GET</span>Companies List</a>
+    <a href="#ep-company-detail"   class="sb-link"><span class="sb-method method-get">GET</span>Company Profile</a>
+    <a href="#ep-countries-list"   class="sb-link"><span class="sb-method method-get">GET</span>Countries List</a>
+    <a href="#ep-country-detail"   class="sb-link"><span class="sb-method method-get">GET</span>Country Profile</a>
+    <a href="#ep-portfolio"        class="sb-link"><span class="sb-method method-post">POST</span>Portfolio Screen</a>
+    <a href="#ep-financing"        class="sb-link"><span class="sb-method method-get">GET</span>Financing Signals</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-title">Reference</div>
+    <a href="#score-schema"  class="sb-link">Score Schema</a>
+    <a href="#changelog"     class="sb-link">Changelog</a>
+  </div>
+</nav>
+
+<!-- ── Main content ─────────────────────────────────────────────── -->
+<main class="doc-content">
+
+  <!-- ── Hero ─────────────────────────────────────────────────── -->
+  <div class="doc-hero" id="overview">
+    <div class="doc-eyebrow">◆ Developer Reference · v1</div>
+    <h1 class="doc-title">EcoIQ REST API</h1>
+    <p class="doc-sub">
+      Programmatic access to EcoIQ's climate intelligence — company scores, country profiles,
+      portfolio screening, and financing compatibility signals. All endpoints return JSON.
+      Authentication via Bearer token.
+    </p>
+    <div class="api-strip">
+      <div class="api-strip-item">
+        <span class="status-dot"></span>
+        <strong style="color:var(--accent)">All systems operational</strong>
+      </div>
+      <span class="api-strip-sep">·</span>
+      <div class="api-strip-item">Version <code>v1</code></div>
+      <span class="api-strip-sep">·</span>
+      <div class="api-strip-item">Base URL <code>https://api.ecoiq.uk/v1/</code></div>
+      <span class="api-strip-sep">·</span>
+      <div class="api-strip-item">Format <code>application/json</code></div>
+    </div>
+  </div>
+
+  <!-- ── Authentication ──────────────────────────────────────── -->
+  <section class="doc-section" id="authentication">
+    <h2 class="doc-section-title">Authentication <a href="#authentication" class="anchor">#</a></h2>
+    <p class="doc-para">
+      All API requests (except the public company list) require a Bearer token in the
+      <code>Authorization</code> header. Tokens are issued per plan and rotate annually.
+      To request a token, email <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+API+Token+Request">alizhan@ecoiq.uk</a>
+      with your plan name and intended use case.
+    </p>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">⚠</span>
+      <span>Never expose your API token in client-side code, public repositories, or shared documents.
+      Rotate immediately at <a href="mailto:alizhan@ecoiq.uk" style="color:var(--warn)">alizhan@ecoiq.uk</a> if compromised.</span>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">HTTP</span>
+        <span class="code-label">Authorization header — all authenticated requests</span>
+        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+      </div>
+      <div class="code-body"><pre><span class="tok-hdr">Authorization</span>: Bearer <span class="tok-str">eiq_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+<span class="tok-hdr">Content-Type</span>: application/json
+<span class="tok-hdr">Accept</span>: application/json</pre></div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">cURL</span>
+        <span class="code-label">Authenticated request example</span>
+        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+      </div>
+      <div class="code-body"><pre><span class="tok-py-kw">curl</span> -X GET <span class="tok-str">"https://api.ecoiq.uk/v1/companies/schneider-electric/"</span> \
+  -H <span class="tok-str">"Authorization: Bearer eiq_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"</span> \
+  -H <span class="tok-str">"Accept: application/json"</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ── Rate Limits ─────────────────────────────────────────── -->
+  <section class="doc-section" id="rate-limits">
+    <h2 class="doc-section-title">Rate Limits <a href="#rate-limits" class="anchor">#</a></h2>
+    <p class="doc-para">
+      Rate limits are enforced per API token, per calendar month. When you exceed your monthly limit,
+      subsequent requests return <code>429 Too Many Requests</code> with a
+      <code>X-RateLimit-Reset</code> header indicating UTC reset time.
+    </p>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:1rem 0">
+      <table class="rate-table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Monthly calls</th>
+            <th>Calls / second</th>
+            <th>Concurrent</th>
+            <th>Endpoints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="plan-name-cell rate-tier-free">Explorer</td>
+            <td>—</td><td>—</td><td>—</td>
+            <td style="color:var(--muted);font-size:.74rem">Public list only</td>
+          </tr>
+          <tr>
+            <td class="plan-name-cell rate-tier-pro">Analyst</td>
+            <td>1,000</td><td>2 req/s</td><td>2</td>
+            <td style="color:var(--muted);font-size:.74rem">All except portfolio</td>
+          </tr>
+          <tr>
+            <td class="plan-name-cell rate-tier-inst">Institutional</td>
+            <td>10,000</td><td>10 req/s</td><td>5</td>
+            <td style="color:var(--muted);font-size:.74rem">All endpoints</td>
+          </tr>
+          <tr>
+            <td class="plan-name-cell rate-tier-ent">Enterprise</td>
+            <td>Unlimited</td><td>50 req/s</td><td>20</td>
+            <td style="color:var(--muted);font-size:.74rem">All + custom</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="doc-sub-title">Rate limit headers</p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">HTTP</span>
+        <span class="code-label">Response headers on every request</span>
+      </div>
+      <div class="code-body"><pre><span class="tok-hdr">X-RateLimit-Limit</span>: 10000
+<span class="tok-hdr">X-RateLimit-Remaining</span>: 9847
+<span class="tok-hdr">X-RateLimit-Reset</span>: 2026-06-01T00:00:00Z
+<span class="tok-hdr">X-RateLimit-Plan</span>: institutional</pre></div>
+    </div>
+  </section>
+
+  <!-- ── Base URL ────────────────────────────────────────────── -->
+  <section class="doc-section" id="base-url">
+    <h2 class="doc-section-title">Base URL &amp; Versioning <a href="#base-url" class="anchor">#</a></h2>
+    <p class="doc-para">
+      All endpoints are versioned under <code>/v1/</code>. The version prefix will remain stable
+      for at least 24 months after any deprecation notice. Breaking changes trigger a new version.
+    </p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">URL</span></div>
+      <div class="code-body"><pre><span class="tok-url">https://api.ecoiq.uk/v1/</span>
+
+<span class="tok-cmt"># Current stable version</span>
+<span class="tok-url">https://api.ecoiq.uk/v1/companies/</span>
+<span class="tok-url">https://api.ecoiq.uk/v1/countries/</span>
+
+<span class="tok-cmt"># Future version (not yet live)</span>
+<span class="tok-url">https://api.ecoiq.uk/v2/</span></pre></div>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">ℹ</span>
+      <span>The EcoIQ API is currently in <strong style="color:var(--info)">early access</strong>.
+      Request a token and provide feedback — endpoint schemas may evolve before GA.
+      All token holders receive 30-day advance notice of breaking changes.</span>
+    </div>
+  </section>
+
+  <!-- ── Errors ──────────────────────────────────────────────── -->
+  <section class="doc-section" id="errors">
+    <h2 class="doc-section-title">Error Codes <a href="#errors" class="anchor">#</a></h2>
+    <p class="doc-para">
+      EcoIQ API errors return a consistent JSON body alongside the HTTP status code.
+      All errors include a machine-readable <code>code</code> and a human-readable <code>message</code>.
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JSON</span>
+        <span class="code-label">Error response shape</span>
+      </div>
+      <div class="code-body"><pre>{
+  <span class="tok-key">"error"</span>: {
+    <span class="tok-key">"code"</span>:    <span class="tok-str">"rate_limit_exceeded"</span>,
+    <span class="tok-key">"message"</span>: <span class="tok-str">"Monthly API quota exhausted. Resets 2026-06-01T00:00:00Z."</span>,
+    <span class="tok-key">"status"</span>:  <span class="tok-num">429</span>,
+    <span class="tok-key">"docs"</span>:   <span class="tok-str">"https://ecoiq.uk/api-docs/#rate-limits"</span>
+  }
+}</pre></div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:1rem 0">
+      <table class="err-table">
+        <thead><tr><th>Status</th><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="err-code err-2xx">200</td><td><code>ok</code></td><td style="color:var(--muted2)">Request succeeded</td></tr>
+          <tr><td class="err-code err-4xx">400</td><td><code>invalid_params</code></td><td style="color:var(--muted2)">Missing or malformed query parameters</td></tr>
+          <tr><td class="err-code err-4xx">401</td><td><code>unauthorized</code></td><td style="color:var(--muted2)">Missing or invalid Bearer token</td></tr>
+          <tr><td class="err-code err-4xx">403</td><td><code>plan_restricted</code></td><td style="color:var(--muted2)">Endpoint requires a higher plan tier</td></tr>
+          <tr><td class="err-code err-4xx">404</td><td><code>not_found</code></td><td style="color:var(--muted2)">Company or country slug not found</td></tr>
+          <tr><td class="err-code err-4xx">422</td><td><code>validation_error</code></td><td style="color:var(--muted2)">POST body failed validation (see <code>errors</code> array)</td></tr>
+          <tr><td class="err-code err-4xx">429</td><td><code>rate_limit_exceeded</code></td><td style="color:var(--muted2)">Monthly or per-second rate limit hit</td></tr>
+          <tr><td class="err-code err-5xx">500</td><td><code>internal_error</code></td><td style="color:var(--muted2)">Unexpected server error — contact support</td></tr>
+          <tr><td class="err-code err-5xx">503</td><td><code>service_unavailable</code></td><td style="color:var(--muted2)">Planned maintenance — check status page</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SDKs ────────────────────────────────────────────────── -->
+  <section class="doc-section" id="sdks">
+    <h2 class="doc-section-title">SDKs &amp; Libraries <a href="#sdks" class="anchor">#</a></h2>
+    <p class="doc-para">Official SDKs are in development. In the meantime, use any HTTP client with the examples below.</p>
+    <div class="sdk-grid">
+      <div class="sdk-card"><span class="sdk-icon">🐍</span>Python SDK<span class="sdk-status sdk-soon">Soon</span></div>
+      <div class="sdk-card"><span class="sdk-icon">📦</span>Node.js SDK<span class="sdk-status sdk-soon">Soon</span></div>
+      <div class="sdk-card"><span class="sdk-icon">🦀</span>Rust crate<span class="sdk-status sdk-soon">Planned</span></div>
+      <div class="sdk-card"><span class="sdk-icon">📊</span>Excel Add-in<span class="sdk-status sdk-soon">Planned</span></div>
+    </div>
+
+    <p class="doc-sub-title">Python — requests library</p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Python</span>
+        <span class="code-label">Quick-start helper</span>
+        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+      </div>
+      <div class="code-body"><pre><span class="tok-py-kw">import</span> requests
+
+<span class="tok-py-kw">class</span> <span class="tok-py-fn">EcoIQClient</span>:
+    BASE = <span class="tok-py-str">"https://api.ecoiq.uk/v1"</span>
+
+    <span class="tok-py-kw">def</span> <span class="tok-py-fn">__init__</span>(<span class="tok-py-kw">self</span>, token):
+        <span class="tok-py-kw">self</span>.session = requests.Session()
+        <span class="tok-py-kw">self</span>.session.headers.update({
+            <span class="tok-py-str">"Authorization"</span>: <span class="tok-py-str">f"Bearer {token}"</span>,
+            <span class="tok-py-str">"Accept"</span>: <span class="tok-py-str">"application/json"</span>,
+        })
+
+    <span class="tok-py-kw">def</span> <span class="tok-py-fn">companies</span>(<span class="tok-py-kw">self</span>, sector=<span class="tok-bool">None</span>, min_score=<span class="tok-bool">None</span>):
+        params = {}
+        <span class="tok-py-kw">if</span> sector:    params[<span class="tok-py-str">"sector"</span>]    = sector
+        <span class="tok-py-kw">if</span> min_score: params[<span class="tok-py-str">"min_score"</span>] = min_score
+        <span class="tok-py-kw">return self</span>.session.get(<span class="tok-py-str">f"{self.BASE}/companies/"</span>, params=params).json()
+
+    <span class="tok-py-kw">def</span> <span class="tok-py-fn">company</span>(<span class="tok-py-kw">self</span>, slug):
+        <span class="tok-py-kw">return self</span>.session.get(<span class="tok-py-str">f"{self.BASE}/companies/{slug}/"</span>).json()
+
+    <span class="tok-py-kw">def</span> <span class="tok-py-fn">financing</span>(<span class="tok-py-kw">self</span>, slug):
+        <span class="tok-py-kw">return self</span>.session.get(<span class="tok-py-str">f"{self.BASE}/financing/{slug}/"</span>).json()
+
+<span class="tok-py-cm"># Usage</span>
+client = <span class="tok-py-fn">EcoIQClient</span>(<span class="tok-py-str">"eiq_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"</span>)
+profile = client.<span class="tok-py-fn">company</span>(<span class="tok-py-str">"schneider-electric"</span>)
+<span class="tok-py-kw">print</span>(profile[<span class="tok-py-str">"ecoiq_score"</span>])  <span class="tok-py-cm"># 85.2</span></pre></div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════
+       ENDPOINTS
+       ════════════════════════════════════════════════════════════ -->
+
+  <h2 class="doc-section-title" style="margin-bottom:1.5rem;font-size:1.3rem">Endpoint Reference</h2>
+
+  <!-- ── Endpoint 1: Companies List ────────────────────────── -->
+  <div class="endpoint-card" id="ep-companies-list">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/v1/companies/</div>
+        <div class="endpoint-desc">Return paginated company rankings with top-level EcoIQ scores, sector, and country. Publicly accessible without authentication; full 6-pillar breakdown requires Analyst plan.</div>
+        <div class="endpoint-meta">
+          <span class="endpoint-tag tag-public">Public (top-level)</span>
+          <span class="endpoint-tag tag-auth">Auth: Analyst+ for full detail</span>
+        </div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <p class="doc-sub-title">Query parameters</p>
+      <table class="params-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">sector</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Filter by sector slug. E.g. <code>oil_gas</code>, <code>mining</code>, <code>manufacturing</code>, <code>energy</code>.</td></tr>
+          <tr><td class="param-name">country</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Filter by country name or ISO code. E.g. <code>KZ</code> for Kazakhstan.</td></tr>
+          <tr><td class="param-name">min_score</td><td class="param-type">float</td><td class="param-opt">optional</td><td class="param-desc">Return only companies with EcoIQ ≥ this value. Range: <code>0–100</code>.</td></tr>
+          <tr><td class="param-name">max_score</td><td class="param-type">float</td><td class="param-opt">optional</td><td class="param-desc">Return only companies with EcoIQ ≤ this value.</td></tr>
+          <tr><td class="param-name">page</td><td class="param-type">integer</td><td class="param-opt">optional</td><td class="param-desc">Page number (default: <code>1</code>, page size: <code>50</code>).</td></tr>
+          <tr><td class="param-name">ordering</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Sort field. Options: <code>-ecoiq_score</code> (default), <code>name</code>, <code>rank</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <p class="doc-sub-title">Response</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">JSON</span><span class="code-label">200 OK</span></div>
+        <div class="code-body"><pre>{
+  <span class="tok-key">"count"</span>:    <span class="tok-num">42</span>,
+  <span class="tok-key">"page"</span>:     <span class="tok-num">1</span>,
+  <span class="tok-key">"pages"</span>:    <span class="tok-num">1</span>,
+  <span class="tok-key">"results"</span>: [
+    {
+      <span class="tok-key">"slug"</span>:         <span class="tok-str">"schneider-electric"</span>,
+      <span class="tok-key">"name"</span>:         <span class="tok-str">"Schneider Electric"</span>,
+      <span class="tok-key">"sector"</span>:       <span class="tok-str">"manufacturing"</span>,
+      <span class="tok-key">"country"</span>:      <span class="tok-str">"France"</span>,
+      <span class="tok-key">"ecoiq_score"</span>:  <span class="tok-num">85.2</span>,
+      <span class="tok-key">"rank"</span>:         <span class="tok-num">1</span>,
+      <span class="tok-key">"moral_label"</span>:  <span class="tok-str">"Transitional Leader"</span>,
+      <span class="tok-key">"profile_url"</span>:  <span class="tok-str">"https://ecoiq.uk/companies/schneider-electric/"</span>
+    }
+  ]
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Endpoint 2: Company Profile ───────────────────────── -->
+  <div class="endpoint-card" id="ep-company-detail">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/v1/companies/<span class="param">{slug}</span>/</div>
+        <div class="endpoint-desc">Full EcoIQ intelligence profile for a single company — 6-pillar scores, institutional signals, evidence coverage, improvement pathway summary, and harm flags.</div>
+        <div class="endpoint-meta">
+          <span class="endpoint-tag tag-auth">Auth: Bearer required</span>
+          <span class="endpoint-tag tag-plan">Analyst+ plan</span>
+        </div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <p class="doc-sub-title">Path parameters</p>
+      <table class="params-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">slug</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">URL-safe company identifier. Obtain from <code>/v1/companies/</code> list.</td></tr>
+        </tbody>
+      </table>
+
+      <p class="doc-sub-title">Response</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">JSON</span><span class="code-label">200 OK</span></div>
+        <div class="code-body"><pre>{
+  <span class="tok-key">"slug"</span>:          <span class="tok-str">"schneider-electric"</span>,
+  <span class="tok-key">"name"</span>:          <span class="tok-str">"Schneider Electric"</span>,
+  <span class="tok-key">"sector"</span>:        <span class="tok-str">"manufacturing"</span>,
+  <span class="tok-key">"country"</span>:       <span class="tok-str">"France"</span>,
+  <span class="tok-key">"ecoiq_score"</span>:   <span class="tok-num">85.2</span>,
+  <span class="tok-key">"moral_label"</span>:   <span class="tok-str">"Transitional Leader"</span>,
+  <span class="tok-key">"is_verified"</span>:   <span class="tok-bool">true</span>,
+  <span class="tok-key">"pillars"</span>: {
+    <span class="tok-key">"environmental_responsibility"</span>: <span class="tok-num">82.0</span>,
+    <span class="tok-key">"modernization"</span>:               <span class="tok-num">88.5</span>,
+    <span class="tok-key">"ethics_governance"</span>:           <span class="tok-num">79.0</span>,
+    <span class="tok-key">"public_benefit"</span>:              <span class="tok-num">85.0</span>,
+    <span class="tok-key">"future_readiness"</span>:            <span class="tok-num">90.0</span>,
+    <span class="tok-key">"harm_penalty"</span>:                <span class="tok-num">-4.3</span>
+  },
+  <span class="tok-key">"evidence_coverage"</span>:     <span class="tok-num">82</span>,  <span class="tok-cmt">// percent</span>
+  <span class="tok-key">"ai_confidence"</span>:         <span class="tok-num">78</span>,
+  <span class="tok-key">"confidence_label"</span>:      <span class="tok-str">"high"</span>,
+  <span class="tok-key">"institutional_signals"</span>: {
+    <span class="tok-key">"governance_risk"</span>:       <span class="tok-str">"low"</span>,
+    <span class="tok-key">"transition_readiness"</span>: <span class="tok-str">"high"</span>,
+    <span class="tok-key">"financing_compat"</span>:     <span class="tok-str">"strong"</span>,
+    <span class="tok-key">"transparency_quality"</span>: <span class="tok-str">"high"</span>
+  },
+  <span class="tok-key">"updated_at"</span>: <span class="tok-str">"2026-05-29"</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Endpoint 3: Countries List ────────────────────────── -->
+  <div class="endpoint-card" id="ep-countries-list">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/v1/countries/</div>
+        <div class="endpoint-desc">List all EcoIQ-tracked countries with national EcoIQ index, transition readiness label, macro stats, and tracked company count.</div>
+        <div class="endpoint-meta">
+          <span class="endpoint-tag tag-auth">Auth: Bearer required</span>
+          <span class="endpoint-tag tag-plan">Analyst+ plan</span>
+        </div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <p class="doc-sub-title">Query parameters</p>
+      <table class="params-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">region</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Filter by region slug: <code>central_asia</code>, <code>europe</code>, <code>south_asia</code>, etc.</td></tr>
+          <tr><td class="param-name">ordering</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc"><code>-national_ecoiq_index</code> (default), <code>name</code>, <code>co2_megatonnes</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <p class="doc-sub-title">Response</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">JSON</span><span class="code-label">200 OK</span></div>
+        <div class="code-body"><pre>{
+  <span class="tok-key">"count"</span>: <span class="tok-num">12</span>,
+  <span class="tok-key">"results"</span>: [
+    {
+      <span class="tok-key">"slug"</span>:                  <span class="tok-str">"kazakhstan"</span>,
+      <span class="tok-key">"name"</span>:                  <span class="tok-str">"Kazakhstan"</span>,
+      <span class="tok-key">"iso_code"</span>:              <span class="tok-str">"KZ"</span>,
+      <span class="tok-key">"region"</span>:                <span class="tok-str">"Central Asia"</span>,
+      <span class="tok-key">"national_ecoiq_index"</span>:  <span class="tok-num">34.2</span>,
+      <span class="tok-key">"transition_readiness"</span>:  <span class="tok-str">"High-Emission Transition"</span>,
+      <span class="tok-key">"companies_tracked"</span>:     <span class="tok-num">8</span>,
+      <span class="tok-key">"co2_megatonnes"</span>:        <span class="tok-num">264.0</span>,
+      <span class="tok-key">"renewable_pct"</span>:         <span class="tok-num">3.0</span>
+    }
+  ]
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Endpoint 4: Country Profile ───────────────────────── -->
+  <div class="endpoint-card" id="ep-country-detail">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/v1/countries/<span class="param">{slug}</span>/</div>
+        <div class="endpoint-desc">Full country intelligence profile — 5 dimension scores, energy mix, pollution hotspots, financing gaps, policy calendar, modernisation actions, and investment opportunities.</div>
+        <div class="endpoint-meta">
+          <span class="endpoint-tag tag-auth">Auth: Bearer required</span>
+          <span class="endpoint-tag tag-plan">Analyst+ plan</span>
+        </div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <p class="doc-sub-title">Response (abbreviated)</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">JSON</span><span class="code-label">200 OK</span></div>
+        <div class="code-body"><pre>{
+  <span class="tok-key">"slug"</span>:                 <span class="tok-str">"kazakhstan"</span>,
+  <span class="tok-key">"name"</span>:                 <span class="tok-str">"Kazakhstan"</span>,
+  <span class="tok-key">"national_ecoiq_index"</span>: <span class="tok-num">34.2</span>,
+  <span class="tok-key">"dimensions"</span>: {
+    <span class="tok-key">"transition_readiness"</span>: <span class="tok-num">38.0</span>,
+    <span class="tok-key">"environmental_policy"</span>: <span class="tok-num">29.0</span>,
+    <span class="tok-key">"investment_climate"</span>:   <span class="tok-num">42.0</span>,
+    <span class="tok-key">"modernization"</span>:        <span class="tok-num">31.0</span>,
+    <span class="tok-key">"public_benefit"</span>:       <span class="tok-num">36.0</span>
+  },
+  <span class="tok-key">"energy"</span>: {
+    <span class="tok-key">"renewable_pct"</span>:    <span class="tok-num">3.0</span>,
+    <span class="tok-key">"fossil_dep_pct"</span>:   <span class="tok-num">85.0</span>,
+    <span class="tok-key">"co2_megatonnes"</span>:   <span class="tok-num">264.0</span>
+  },
+  <span class="tok-key">"financing"</span>: {
+    <span class="tok-key">"transition_gap_usd"</span>: <span class="tok-num">50000000000</span>,
+    <span class="tok-key">"green_available_usd"</span>: <span class="tok-num">8000000000</span>
+  },
+  <span class="tok-key">"ai_confidence"</span>: <span class="tok-num">62</span>,
+  <span class="tok-key">"updated_at"</span>:   <span class="tok-str">"2026-05-29"</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Endpoint 5: Portfolio Screening ───────────────────── -->
+  <div class="endpoint-card" id="ep-portfolio">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/v1/portfolio/screen/</div>
+        <div class="endpoint-desc">Bulk-score up to 50 companies (Institutional) or unlimited (Enterprise) in a single request. Returns EcoIQ scores, pillar breakdowns, and financing compatibility for each slug.</div>
+        <div class="endpoint-meta">
+          <span class="endpoint-tag tag-auth">Auth: Bearer required</span>
+          <span class="endpoint-tag tag-plan">Institutional+ plan</span>
+          <span class="endpoint-tag tag-beta">Beta</span>
+        </div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <p class="doc-sub-title">Request body</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">JSON</span><span class="code-label">POST body</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+        <div class="code-body"><pre>{
+  <span class="tok-key">"slugs"</span>: [
+    <span class="tok-str">"schneider-electric"</span>,
+    <span class="tok-str">"kazakhmys"</span>,
+    <span class="tok-str">"samruk-energy"</span>
+  ],
+  <span class="tok-key">"include"</span>: [<span class="tok-str">"pillars"</span>, <span class="tok-str">"financing"</span>, <span class="tok-str">"signals"</span>]
+}</pre></div>
+      </div>
+
+      <p class="doc-sub-title">Response</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">JSON</span><span class="code-label">200 OK</span></div>
+        <div class="code-body"><pre>{
+  <span class="tok-key">"screened"</span>: <span class="tok-num">3</span>,
+  <span class="tok-key">"results"</span>: [
+    {
+      <span class="tok-key">"slug"</span>:         <span class="tok-str">"schneider-electric"</span>,
+      <span class="tok-key">"ecoiq_score"</span>:  <span class="tok-num">85.2</span>,
+      <span class="tok-key">"pillars"</span>: { <span class="tok-cmt">/* ... */</span> },
+      <span class="tok-key">"financing"</span>: {
+        <span class="tok-key">"green_bond"</span>:      <span class="tok-str">"eligible"</span>,
+        <span class="tok-key">"ifc_standards"</span>:   <span class="tok-str">"eligible"</span>,
+        <span class="tok-key">"adb_safeguards"</span>:  <span class="tok-str">"eligible"</span>
+      }
+    },
+    {
+      <span class="tok-key">"slug"</span>:         <span class="tok-str">"kazakhmys"</span>,
+      <span class="tok-key">"ecoiq_score"</span>:  <span class="tok-num">31.4</span>,
+      <span class="tok-key">"pillars"</span>: { <span class="tok-cmt">/* ... */</span> },
+      <span class="tok-key">"financing"</span>: {
+        <span class="tok-key">"green_bond"</span>:     <span class="tok-str">"not_eligible"</span>,
+        <span class="tok-key">"ifc_standards"</span>:  <span class="tok-str">"conditional"</span>,
+        <span class="tok-key">"adb_safeguards"</span>: <span class="tok-str">"conditional"</span>
+      }
+    }
+  ]
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Endpoint 6: Financing Signals ─────────────────────── -->
+  <div class="endpoint-card" id="ep-financing">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/v1/financing/<span class="param">{slug}</span>/</div>
+        <div class="endpoint-desc">Financing compatibility signals for a company — eligibility status against Green Bond Principles, IFC Performance Standards, ADB Safeguard Policy, EBRD Environmental Policy, and AIIB ESF.</div>
+        <div class="endpoint-meta">
+          <span class="endpoint-tag tag-auth">Auth: Bearer required</span>
+          <span class="endpoint-tag tag-plan">Institutional+ plan</span>
+        </div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <p class="doc-sub-title">Response</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">JSON</span><span class="code-label">200 OK</span></div>
+        <div class="code-body"><pre>{
+  <span class="tok-key">"slug"</span>:          <span class="tok-str">"schneider-electric"</span>,
+  <span class="tok-key">"ecoiq_score"</span>:   <span class="tok-num">85.2</span>,
+  <span class="tok-key">"instruments"</span>: {
+    <span class="tok-key">"green_bond_icma"</span>: {
+      <span class="tok-key">"status"</span>:   <span class="tok-str">"eligible"</span>,
+      <span class="tok-key">"score_threshold"</span>: <span class="tok-num">65</span>,
+      <span class="tok-key">"rationale"</span>: <span class="tok-str">"Score 85.2 exceeds 65-pt green bond threshold."</span>
+    },
+    <span class="tok-key">"ifc_performance_standards"</span>: {
+      <span class="tok-key">"status"</span>:    <span class="tok-str">"eligible"</span>,
+      <span class="tok-key">"rationale"</span>: <span class="tok-str">"Governance and env. scores meet IFC PS2/PS3 indicators."</span>
+    },
+    <span class="tok-key">"adb_safeguards"</span>: {
+      <span class="tok-key">"status"</span>:    <span class="tok-str">"eligible"</span>,
+      <span class="tok-key">"rationale"</span>: <span class="tok-str">"Environmental score 82 ≥ ADB Category B threshold."</span>
+    },
+    <span class="tok-key">"ebrd_ep"</span>: {
+      <span class="tok-key">"status"</span>:    <span class="tok-str">"eligible"</span>,
+      <span class="tok-key">"rationale"</span>: <span class="tok-str">"Transparency score meets EBRD disclosure requirements."</span>
+    },
+    <span class="tok-key">"aiib_esf"</span>: {
+      <span class="tok-key">"status"</span>:    <span class="tok-str">"eligible"</span>,
+      <span class="tok-key">"rationale"</span>: <span class="tok-str">"All pillar scores meet AIIB minimum thresholds."</span>
+    }
+  },
+  <span class="tok-key">"disclaimer"</span>: <span class="tok-str">"Indicative only. Project-level due diligence required."</span>,
+  <span class="tok-key">"updated_at"</span>: <span class="tok-str">"2026-05-29"</span>
+}</pre></div>
+      </div>
+
+      <div class="alert alert-accent">
+        <span class="alert-icon">◆</span>
+        <span>Financing compatibility is <strong style="color:var(--accent)">indicative intelligence</strong> derived from EcoIQ scores.
+        It is not a formal eligibility determination. Actual financing decisions require project-level environmental and social impact assessments.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Score Schema ─────────────────────────────────────── -->
+  <section class="doc-section" id="score-schema">
+    <h2 class="doc-section-title">Score Schema <a href="#score-schema" class="anchor">#</a></h2>
+    <p class="doc-para">
+      The EcoIQ score is a weighted composite (0–100) of six pillars with a harm penalty applied last.
+      All sub-scores are also 0–100 before weighting.
+    </p>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:1rem 1.2rem;margin:1rem 0">
+      <div class="resp-field"><span class="rf-name">ecoiq_score</span><span class="rf-type">float</span><span class="rf-desc">Composite score 0–100. 1 decimal place. Harm penalty already deducted.</span></div>
+      <div class="resp-field"><span class="rf-name">environmental_responsibility</span><span class="rf-type">float</span><span class="rf-desc">Weight 30%. Emissions, pollution, energy transition, climate risk management.</span></div>
+      <div class="resp-field"><span class="rf-name">modernization</span><span class="rf-type">float</span><span class="rf-desc">Weight 20%. Technology upgrade, clean capex, circular economy, R&D spend.</span></div>
+      <div class="resp-field"><span class="rf-name">ethics_governance</span><span class="rf-type">float</span><span class="rf-desc">Weight 15%. Anti-corruption, audit quality, transparency, board independence.</span></div>
+      <div class="resp-field"><span class="rf-name">public_benefit</span><span class="rf-type">float</span><span class="rf-desc">Weight 15%. Employment quality, community impact, regional development.</span></div>
+      <div class="resp-field"><span class="rf-name">future_readiness</span><span class="rf-type">float</span><span class="rf-desc">Weight 20%. Net-zero alignment, green bond eligibility, regulatory readiness.</span></div>
+      <div class="resp-field"><span class="rf-name">harm_penalty</span><span class="rf-type">float</span><span class="rf-desc">Negative value (0 to –30). Applied for severe pollution, governance failures, and public benefit extraction.</span></div>
+      <div class="resp-field"><span class="rf-name">evidence_coverage</span><span class="rf-type">integer</span><span class="rf-desc">0–100%. Percentage of scoring dimensions backed by verifiable public evidence.</span></div>
+      <div class="resp-field"><span class="rf-name">ai_confidence</span><span class="rf-type">integer</span><span class="rf-desc">0–100. EcoIQ AI confidence in the profile accuracy. Drives confidence label.</span></div>
+      <div class="resp-field"><span class="rf-name">confidence_label</span><span class="rf-type">string</span><span class="rf-desc">One of: <code>low</code>, <code>medium</code>, <code>high</code>, <code>verified</code>.</span></div>
+    </div>
+    <p class="doc-para">Full methodology: <a href="{% url 'methodology' %}">ecoiq.uk/methodology/ →</a></p>
+  </section>
+
+  <!-- ── Changelog ─────────────────────────────────────────── -->
+  <section class="doc-section" id="changelog">
+    <h2 class="doc-section-title">Changelog <a href="#changelog" class="anchor">#</a></h2>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:.8rem 1.2rem">
+      <div class="changelog-item">
+        <span class="cl-date">2026-05</span>
+        <span class="cl-badge cl-new">New</span>
+        <span class="cl-text">API v1 launched in early access. 6 endpoints: companies list, company profile, countries list, country profile, portfolio screening, financing signals.</span>
+      </div>
+      <div class="changelog-item">
+        <span class="cl-date">2026-05</span>
+        <span class="cl-badge cl-new">New</span>
+        <span class="cl-text"><code>POST /v1/portfolio/screen/</code> — bulk screening up to 50 companies per request for Institutional plans.</span>
+      </div>
+      <div class="changelog-item">
+        <span class="cl-date">2026-05</span>
+        <span class="cl-badge cl-new">New</span>
+        <span class="cl-text"><code>evidence_coverage</code> and <code>ai_confidence</code> fields added to company profile response.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ──────────────────────────────────────────────── -->
+  <div class="doc-cta">
+    <div class="doc-cta-title">Ready to integrate EcoIQ data?</div>
+    <p class="doc-cta-sub">
+      API access is available from the Analyst plan upward. Request a token and start building in minutes.
+    </p>
+    <div class="doc-cta-btns">
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+API+Token+Request" class="btn-acc">
+        🔑 Request API Token
+      </a>
+      <a href="{% url 'pricing' %}" class="btn-ghost">
+        💳 View Plans →
+      </a>
+    </div>
+  </div>
+
+</main>
+</div><!-- /doc-layout -->
+
+<script>
+(function(){
+  'use strict';
+
+  /* ── Copy button ──────────────────────────────────────────── */
+  window.copyCode = function(btn){
+    var pre = btn.closest('.code-block').querySelector('pre');
+    if(!pre) return;
+    // Strip HTML tags to get plain text
+    var text = pre.innerText || pre.textContent;
+    navigator.clipboard.writeText(text).then(function(){
+      var orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.style.color = 'var(--accent)';
+      setTimeout(function(){ btn.textContent = orig; btn.style.color = ''; }, 1800);
+    }).catch(function(){
+      btn.textContent = 'Failed';
+      setTimeout(function(){ btn.textContent = 'Copy'; }, 1800);
+    });
+  };
+
+  /* ── Sidebar active link on scroll ────────────────────────── */
+  var sections = document.querySelectorAll('[id]');
+  var sbLinks  = document.querySelectorAll('.sb-link[href^="#"]');
+  if(sections.length && sbLinks.length){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          sbLinks.forEach(function(l){ l.classList.remove('active') });
+          var a = document.querySelector('.sb-link[href="#' + e.target.id + '"]');
+          if(a) a.classList.add('active');
+        }
+      });
+    }, { threshold: 0.25, rootMargin: '0px 0px -55% 0px' });
+    sections.forEach(function(s){ io.observe(s) });
+  }
+
+})();
+</script>
+
+{% endblock %}

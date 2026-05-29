@@ -800,3 +800,14 @@ def pricing(request):
     table, FAQ, and CTAs.
     """
     return render(request, 'pricing.html')
+
+
+# ── API documentation page ───────────────────────────────────────────────────
+
+def api_docs(request):
+    """
+    /api-docs/ — EcoIQ REST API documentation page.
+    Public, no auth required. Documents all v1 endpoints, authentication,
+    rate limits, error codes, SDK quick-start, and score schema reference.
+    """
+    return render(request, 'api_docs.html')
