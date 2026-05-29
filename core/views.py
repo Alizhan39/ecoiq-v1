@@ -141,8 +141,24 @@ def landing(request):
             .select_related('company')
             .order_by('-ecoiq_total_score')[:8]
         )
-        company_count = CompanyProfile.objects.filter(status__in=('public', 'verified')).count()
-        country_count = CountryProfile.objects.filter(is_published=True).count()
+        _co = CompanyProfile.objects.filter(status__in=('public', 'verified')).count()
+        _ct = CountryProfile.objects.filter(is_published=True).count()
+        # Format as "400+", "200+" etc. for display
+        if _co >= 400:
+            company_count = '400+'
+        elif _co >= 200:
+            company_count = '200+'
+        elif _co >= 100:
+            company_count = '100+'
+        else:
+            company_count = _co or 38
+        # Use actual company-country diversity if CountryProfile count is low
+        from league.models import Company as _Co
+        _distinct_countries = _Co.objects.values('country').distinct().count()
+        country_count = (
+            f'{_ct}+' if _ct >= 15
+            else (f'{_distinct_countries}+' if _distinct_countries >= 15 else (_ct or 11))
+        )
     except Exception:
         pass  # DB may not be ready (first migration)
 
@@ -158,8 +174,8 @@ def landing(request):
     return render(request, 'landing.html', {
         # Live data
         'top_companies':  top_companies,
-        'company_count':  company_count or 38,
-        'country_count':  country_count or 11,
+        'company_count':  company_count,
+        'country_count':  country_count,
         'pillars_meta':   pillars_meta,
         'audience_labels': ['Investors', 'Governments', 'Companies', 'Climate Programmes', 'Development Banks'],
         # Legacy context kept for any remaining partial usage
