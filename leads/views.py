@@ -41,7 +41,7 @@ def _send_emails(instance, request):
     Both use plain-text templates. Failures are logged but never surface to the user.
     """
     try:
-        notify_email = getattr(settings, 'LEAD_NOTIFY_EMAIL', 'hello@ecoiq.uk')
+        notify_email = getattr(settings, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
         from_email   = getattr(settings, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
 
         # ── Team notification ─────────────────────────────────────────────────

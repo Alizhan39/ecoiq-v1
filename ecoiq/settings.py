@@ -215,7 +215,7 @@ EMAIL_USE_TLS      = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER    = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
-LEAD_NOTIFY_EMAIL  = os.environ.get('LEAD_NOTIFY_EMAIL', 'hello@ecoiq.uk')
+LEAD_NOTIFY_EMAIL  = os.environ.get('LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
 CALENDLY_URL       = os.environ.get('CALENDLY_URL', '')
 
 # Warn at startup if SMTP is configured but credentials are missing
