@@ -720,7 +720,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
             id="score-arc-glow" opacity=".15" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1) .05s"/>
         </svg>
         <div style="text-align:center">
-          <div class="score-num" id="score-counter" style="color:{{ profile.moral_label_color }}">0</div>
+          <div class="score-num" id="score-counter" data-target="{{ profile.ecoiq_total_score|floatformat:1 }}" style="color:{{ profile.moral_label_color }}">{{ profile.ecoiq_total_score|floatformat:1 }}</div>
           <div class="score-denom">/ 100</div>
         </div>
       </div>
@@ -797,13 +797,13 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
 <!-- ── CTA Row ────────────────────────────────────────────────────── -->
 <div class="cta-row">
   {% if not profile.is_verified %}
-  <a href="mailto:hello@ecoiq.org?subject=Claim%20Profile%3A%20{{ company.name|urlencode }}" class="cta-btn cta-primary">🏷 Claim Profile</a>
+  <a href="mailto:alizhan@ecoiq.uk?subject=Claim%20Profile%3A%20{{ company.name|urlencode }}" class="cta-btn cta-primary">🏷 Claim Profile</a>
   {% endif %}
-  <a href="mailto:hello@ecoiq.org?subject=Verify%20Data%3A%20{{ company.name|urlencode }}" class="cta-btn cta-secondary">✓ Verify Company Data</a>
+  <a href="mailto:alizhan@ecoiq.uk?subject=Verify%20Data%3A%20{{ company.name|urlencode }}" class="cta-btn cta-secondary">✓ Verify Company Data</a>
   {% if not profile.investor_visibility %}
-  <a href="mailto:hello@ecoiq.org?subject=Investor%20Visibility%3A%20{{ company.name|urlencode }}" class="cta-btn cta-warn">📈 Investor Visibility</a>
+  <a href="mailto:alizhan@ecoiq.uk?subject=Investor%20Visibility%3A%20{{ company.name|urlencode }}" class="cta-btn cta-warn">📈 Investor Visibility</a>
   {% endif %}
-  <a href="mailto:hello@ecoiq.org?subject=Modernization%20Plan%3A%20{{ company.name|urlencode }}" class="cta-btn cta-ghost">🗺 Request Modernization Plan</a>
+  <a href="mailto:alizhan@ecoiq.uk?subject=Modernization%20Plan%3A%20{{ company.name|urlencode }}" class="cta-btn cta-ghost">🗺 Request Modernization Plan</a>
 </div>
 
 <!-- Warnings -->
@@ -1554,11 +1554,11 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
   'use strict';
 
   /* ── Animated score counter ─────────────────────────────────── */
-  const TARGET  = {{ profile.ecoiq_total_score|floatformat:1 }};
+  const counter = document.getElementById('score-counter');
+  const TARGET  = parseFloat(counter ? counter.dataset.target : '{{ profile.ecoiq_total_score|floatformat:1 }}') || 0;
   const ARC_LEN = 339.29;
   const arc     = document.getElementById('score-arc');
   const glow    = document.getElementById('score-arc-glow');
-  const counter = document.getElementById('score-counter');
 
   function animateCounter(){
     const dur   = 1400;
