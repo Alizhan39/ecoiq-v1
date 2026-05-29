@@ -2,6 +2,7 @@
 {% load humanize %}
 
 {% block title %}{{ company.name }} — EcoIQ Intelligence Profile{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ company.name }} EcoIQ climate score: {{ profile.ecoiq_total_score|floatformat:1 }}/100. {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -782,11 +783,14 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     <span class="intel-val">{{ company.country }}</span>
   </div>
   <div class="intel-conf">
-    <span class="intel-label">Intelligence Quality</span>
+    <span class="intel-label"
+          title="Percentage of scoring dimensions supported by verified public evidence"
+          style="cursor:help;border-bottom:1px dotted currentColor">Evidence Coverage</span>
     <div class="conf-bar-bg">
       <div class="conf-bar-fill" id="conf-bar" style="width:0%"></div>
     </div>
-    <span class="iq-conf iq-conf-{{ confidence_label }}" style="margin-left:.35rem">
+    <span class="iq-conf iq-conf-{{ confidence_label }}" style="margin-left:.35rem"
+          title="Percentage of scoring dimensions supported by verified public evidence">
       {% if confidence_label == 'verified' %}Verified Source-Backed
       {% elif confidence_label == 'high' %}High Confidence
       {% elif confidence_label == 'medium' %}Medium Confidence
