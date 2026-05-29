@@ -482,7 +482,7 @@
               </span>
               <span style="font-size:.55rem;color:var(--muted);">6-pillar · /100</span>
             {% else %}
-              <span class="ecoiq-num tier-{{ co.tier.css }}">{{ co.ecoiq_score }}</span>
+              <span class="ecoiq-num tier-{{ co.tier.css }}">{{ co.ecoiq_score|floatformat:1 }}</span>
               <span class="tier-badge badge-{{ co.tier.css }}">{{ co.tier.label }}</span>
             {% endif %}
           </div>

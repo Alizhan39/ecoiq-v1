@@ -404,7 +404,7 @@ a{color:inherit;text-decoration:none;}
         ">
           <div class="score-ring-inner"
             style="color:{% if profile.ecoiq_total_score >= 70 %}var(--accent){% elif profile.ecoiq_total_score >= 50 %}var(--warn){% else %}var(--danger){% endif %}">
-            {{ profile.ecoiq_total_score|floatformat:0 }}
+            {{ profile.ecoiq_total_score|floatformat:1 }}
           </div>
         </div>
 

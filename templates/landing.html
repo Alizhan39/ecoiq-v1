@@ -217,7 +217,7 @@
           <div style="font-size:.72rem;font-weight:700;color:#334155;min-width:18px;text-align:center;">{{ forloop.counter }}</div>
           <!-- Score ring -->
           <div style="width:38px;height:38px;border-radius:50%;border:2px solid {{ p.moral_label_color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,.3);">
-            <span style="font-size:.68rem;font-weight:800;color:{{ p.moral_label_color }};">{{ p.ecoiq_total_score|floatformat:0 }}</span>
+            <span style="font-size:.68rem;font-weight:800;color:{{ p.moral_label_color }};">{{ p.ecoiq_total_score|floatformat:1 }}</span>
           </div>
           <!-- Company info -->
           <div style="flex:1;min-width:0;">
@@ -407,7 +407,7 @@
         <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:.9rem;">
           <!-- Score circle -->
           <div style="width:48px;height:48px;border-radius:50%;border:2px solid {{ p.moral_label_color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,.4);">
-            <span style="font-size:.8rem;font-weight:800;color:{{ p.moral_label_color }};">{{ p.ecoiq_total_score|floatformat:0 }}</span>
+            <span style="font-size:.8rem;font-weight:800;color:{{ p.moral_label_color }};">{{ p.ecoiq_total_score|floatformat:1 }}</span>
           </div>
           <!-- Name + country -->
           <div style="min-width:0;flex:1;">
