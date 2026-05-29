@@ -24,6 +24,9 @@ urlpatterns = [
     # EcoIQ Methodology — public Ethical Intelligence Framework page
     path('methodology/',                             views.methodology,        name='methodology'),
 
+    # EcoIQ About — founder story, mission, framework
+    path('about/',                                   views.about,              name='about'),
+
     # EcoIQ Pricing — plan comparison, billing toggle, FAQ
     path('pricing/',                                 views.pricing,            name='pricing'),
 

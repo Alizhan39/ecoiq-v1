@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About EcoIQ — Ethical Industrial Intelligence{% endblock %}
+{% block meta_description %}<meta name="description" content="EcoIQ is an AI-assisted ethical intelligence platform. We score companies on public benefit, environmental stewardship, responsible modernisation, governance, and long-term resilience.">{% endblock %}
+
+{% block extra_head %}
+<style>
+:root{
+  --bg:#070b0f;--bg2:#0d1117;--bg3:#161b22;
+  --accent:#00e89a;--warn:#f4a261;--danger:#e63946;
+  --info:#58a6ff;--purple:#8b5cf6;
+  --text:#e6edf3;--muted:#8b949e;--border:#21262d;
+  --radius:10px;
+}
+.about-page{max-width:900px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+
+/* ── Hero ── */
+.about-hero{
+  background:linear-gradient(135deg,#070b0f 0%,#0d1a2e 55%,#0a1f14 100%);
+  border:1px solid var(--border);border-radius:12px;
+  padding:3rem 2.5rem;margin-bottom:2.5rem;
+}
+.about-eyebrow{
+  display:inline-block;
+  background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.25);
+  color:var(--accent);font-size:.72rem;font-weight:600;
+  letter-spacing:1.4px;text-transform:uppercase;
+  padding:.3rem .85rem;border-radius:20px;margin-bottom:1.1rem;
+}
+.about-hero h1{
+  font-size:2.4rem;font-weight:800;line-height:1.2;
+  margin-bottom:.8rem;letter-spacing:-.03em;
+}
+.about-hero h1 em{color:var(--accent);font-style:normal}
+.about-hero p{color:var(--muted);max-width:640px;line-height:1.7;font-size:.95rem}
+
+/* ── Sections ── */
+.about-section{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:2rem;margin-bottom:1.5rem;
+}
+.about-section h2{
+  font-size:1.15rem;font-weight:700;color:var(--text);
+  margin-bottom:1rem;padding-bottom:.65rem;
+  border-bottom:1px solid var(--border);
+}
+.about-section h2 em{color:var(--accent);font-style:normal}
+.about-section p{color:var(--muted);line-height:1.7;font-size:.9rem;margin-bottom:.75rem}
+.about-section p:last-child{margin-bottom:0}
+
+/* ── Pillars grid ── */
+.pillars-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:1rem;margin-top:1.2rem;
+}
+.pillar-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:1rem;
+}
+.pillar-icon{font-size:1.5rem;margin-bottom:.4rem}
+.pillar-name{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:.3rem}
+.pillar-desc{font-size:.75rem;color:var(--muted);line-height:1.5}
+
+/* ── Founder card ── */
+.founder-card{
+  display:flex;gap:1.5rem;align-items:flex-start;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;padding:1.4rem;margin-top:1.2rem;
+}
+.founder-avatar{
+  width:64px;height:64px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(0,232,154,.2),rgba(88,166,255,.2));
+  border:2px solid rgba(0,232,154,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;
+}
+.founder-info h3{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.founder-info .role{font-size:.75rem;color:var(--accent);font-weight:600;margin-bottom:.5rem}
+.founder-info p{font-size:.82rem;color:var(--muted);line-height:1.6}
+.founder-info a{color:var(--accent);text-decoration:none;font-size:.8rem}
+.founder-info a:hover{text-decoration:underline}
+
+/* ── Principle boxes ── */
+.principles{display:flex;flex-direction:column;gap:.75rem;margin-top:1rem}
+.principle{
+  background:var(--bg3);border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:.85rem 1rem;
+}
+.principle strong{display:block;font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.principle span{font-size:.78rem;color:var(--muted);line-height:1.5}
+
+/* ── Stat row ── */
+.stat-row{
+  display:flex;gap:1.5rem;flex-wrap:wrap;
+  padding:1.2rem;background:var(--bg3);
+  border-radius:8px;margin-top:1.2rem;
+}
+.stat-item{display:flex;flex-direction:column;gap:.15rem;min-width:80px}
+.stat-item .sv{font-size:1.4rem;font-weight:800;color:var(--accent)}
+.stat-item .sl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+
+/* ── CTA ── */
+.cta-row-about{
+  display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem;
+}
+.cta-main{
+  padding:.65rem 1.5rem;background:var(--accent);color:#000;
+  border-radius:7px;font-weight:700;font-size:.88rem;text-decoration:none;
+  transition:background .2s;
+}
+.cta-main:hover{background:#00c882}
+.cta-sec{
+  padding:.65rem 1.5rem;
+  background:transparent;border:1px solid rgba(0,232,154,.3);
+  color:var(--accent);border-radius:7px;font-weight:600;font-size:.88rem;
+  text-decoration:none;transition:background .2s;
+}
+.cta-sec:hover{background:rgba(0,232,154,.08)}
+
+@media(max-width:600px){
+  .about-hero h1{font-size:1.7rem}
+  .founder-card{flex-direction:column}
+  .stat-row{gap:1rem}
+  .pillars-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-page">
+
+  <!-- Hero -->
+  <div class="about-hero">
+    <div class="about-eyebrow">About EcoIQ</div>
+    <h1>Ethical Intelligence<br>for the <em>Industrial Transition</em></h1>
+    <p>
+      EcoIQ is an AI-assisted platform that scores companies, industries, and countries
+      on their readiness for the ethical and environmental transition. We combine public
+      data, AI analysis, and a structured ethical framework to help investors, governments,
+      and companies act with clarity.
+    </p>
+    <div class="stat-row">
+      <div class="stat-item"><span class="sv">44+</span><span class="sl">Companies Rated</span></div>
+      <div class="stat-item"><span class="sv">6</span><span class="sl">Ethical Pillars</span></div>
+      <div class="stat-item"><span class="sv">30+</span><span class="sl">Countries Tracked</span></div>
+      <div class="stat-item"><span class="sv">100</span><span class="sl">Point Scale</span></div>
+    </div>
+  </div>
+
+  <!-- Our Mission -->
+  <div class="about-section">
+    <h2>Our <em>Mission</em></h2>
+    <p>
+      Heavy industry — oil & gas, manufacturing, chemicals, metals — accounts for the majority
+      of global emissions and employs hundreds of millions of people. These sectors cannot be
+      simply shut down. They must be transformed.
+    </p>
+    <p>
+      EcoIQ was built to accelerate that transformation by making ethical performance visible,
+      comparable, and actionable. We believe that transparency creates accountability, and that
+      accountability creates change.
+    </p>
+    <p>
+      Our mission is to provide the most rigorous, publicly available ethical intelligence on
+      industrial companies — so that capital flows to companies doing the hard work of genuine
+      modernisation, not just those best at greenwashing.
+    </p>
+  </div>
+
+  <!-- Scoring Framework -->
+  <div class="about-section">
+    <h2>The <em>EcoIQ Framework</em></h2>
+    <p>
+      Every EcoIQ score is built from six dimensions, each grounded in a different aspect of
+      long-term ethical value creation. The framework draws on principles of public stewardship,
+      responsible governance, and evidence-based improvement that have proven durable across
+      economies and cultures.
+    </p>
+
+    <div class="pillars-grid">
+      <div class="pillar-card">
+        <div class="pillar-icon">🌱</div>
+        <div class="pillar-name">Environmental Responsibility</div>
+        <div class="pillar-desc">Emissions reduction, pollution control, biodiversity impact, water stewardship</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">🤝</div>
+        <div class="pillar-name">Public Benefit</div>
+        <div class="pillar-desc">Community wellbeing, jobs quality, health outcomes, equitable access</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">⚙️</div>
+        <div class="pillar-name">Responsible Modernisation</div>
+        <div class="pillar-desc">Technology adoption, clean investment, workforce transition, R&D commitment</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">📋</div>
+        <div class="pillar-name">Governance & Transparency</div>
+        <div class="pillar-desc">Disclosure quality, board diversity, climate risk reporting, accountability mechanisms</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">🛡️</div>
+        <div class="pillar-name">Anti-Corruption</div>
+        <div class="pillar-desc">Lobbying transparency, regulatory compliance history, whistleblower protections</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">⚖️</div>
+        <div class="pillar-name">Ethical Alignment</div>
+        <div class="pillar-desc">Long-term value creation, harm avoidance, social contract with communities</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core Principles -->
+  <div class="about-section">
+    <h2>Our <em>Principles</em></h2>
+    <p>
+      EcoIQ's design is guided by five commitments we hold to be non-negotiable, regardless
+      of commercial pressure:
+    </p>
+    <div class="principles">
+      <div class="principle">
+        <strong>Protect Life</strong>
+        <span>We will not rate a company highly if it harms the health of workers, communities, or ecosystems. Harm signals reduce scores — there is no offset.</span>
+      </div>
+      <div class="principle">
+        <strong>Honest Evidence</strong>
+        <span>Every score dimension is sourced from verifiable public information. We flag confidence levels and distinguish AI-generated analysis from verified data.</span>
+      </div>
+      <div class="principle">
+        <strong>Long-term Resilience</strong>
+        <span>We reward companies building durable, sustainable businesses — not those optimising short-term profit at the expense of future generations.</span>
+      </div>
+      <div class="principle">
+        <strong>Public Benefit Priority</strong>
+        <span>Companies that serve communities well, create quality jobs, and contribute to societal progress are rewarded. Narrow profit maximisation is insufficient.</span>
+      </div>
+      <div class="principle">
+        <strong>No Greenwashing</strong>
+        <span>We penalise companies that make public commitments but fail to show evidence of action. Words without data do not improve scores.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Founder -->
+  <div class="about-section">
+    <h2>The <em>Founder</em></h2>
+    <p>
+      EcoIQ was founded in London to address a gap that became impossible to ignore:
+      the world's most polluting industries were being evaluated by financial metrics alone.
+      Transition was discussed in policy papers but rarely quantified at the company level.
+    </p>
+    <div class="founder-card">
+      <div class="founder-avatar">A</div>
+      <div class="founder-info">
+        <h3>Alizhan Tazabekov</h3>
+        <div class="role">Founder & Lead Analyst</div>
+        <p>
+          Alizhan built EcoIQ after recognising that industrial transition requires both
+          rigorous data and an ethical framework that goes beyond carbon accounting. The platform
+          combines his background in industrial systems analysis with a commitment to building
+          tools that serve the public interest — not just shareholders.
+        </p>
+        <a href="mailto:alizhan@ecoiq.uk">alizhan@ecoiq.uk</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- What We Are Not -->
+  <div class="about-section">
+    <h2>What EcoIQ Is <em>Not</em></h2>
+    <p>
+      <strong style="color:var(--text)">We are not an ESG rating agency.</strong>
+      Traditional ESG ratings serve financial disclosure. EcoIQ scores ethical performance and
+      industrial transition readiness. These are related but distinct.
+    </p>
+    <p>
+      <strong style="color:var(--text)">We are not a consultancy.</strong>
+      We do not accept payment from companies to improve their scores. All scoring is conducted
+      independently, based on publicly available evidence.
+    </p>
+    <p>
+      <strong style="color:var(--text)">We are not infallible.</strong>
+      EcoIQ scores are AI-assisted and indicative. They are built from public information, which
+      is often incomplete. We display confidence levels and encourage companies to submit
+      corrections through our profile claim process.
+    </p>
+  </div>
+
+  <!-- CTA -->
+  <div class="about-section" style="text-align:center">
+    <h2>Get Involved</h2>
+    <p>
+      Whether you are an investor seeking ethical context, a government designing transition
+      policy, or a company that wants to improve its profile — EcoIQ is built for you.
+    </p>
+    <div class="cta-row-about" style="justify-content:center">
+      <a href="/companies/" class="cta-main">View Rankings →</a>
+      <a href="/request-access/claim/" class="cta-sec">Claim Your Profile</a>
+      <a href="mailto:alizhan@ecoiq.uk" class="cta-sec">Contact Us</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

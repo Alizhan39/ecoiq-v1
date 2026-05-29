@@ -802,6 +802,17 @@ def pricing(request):
     return render(request, 'pricing.html')
 
 
+# ── About page ───────────────────────────────────────────────────────────────
+
+def about(request):
+    """
+    /about/ — EcoIQ About page.
+    Founder story, mission, 6-pillar framework, core principles, and CTAs.
+    Public, no auth required.
+    """
+    return render(request, 'about.html')
+
+
 # ── API documentation page ───────────────────────────────────────────────────
 
 def api_docs(request):
