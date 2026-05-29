@@ -789,3 +789,14 @@ def methodology(request):
         'not_items':           not_items,
         'site_url':            _s.SITE_URL,
     })
+
+
+# ── Pricing page ────────────────────────────────────────────────────────────────
+
+def pricing(request):
+    """
+    /pricing/ — EcoIQ plan comparison page.
+    Public, no auth required. 4-tier plan overview with billing toggle, comparison
+    table, FAQ, and CTAs.
+    """
+    return render(request, 'pricing.html')
