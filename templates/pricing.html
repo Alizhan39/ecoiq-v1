@@ -349,7 +349,7 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
     <div class="plan-tagline">Public rankings and country profiles. Free for individuals and journalists.</div>
     <div class="plan-price-block">
       <div class="plan-price" style="color:var(--muted2)">
-        <span class="currency">$</span>0<span class="period">/mo</span>
+        <span class="currency">£</span>0<span class="period">/mo</span>
       </div>
       <div class="plan-annual-note">&nbsp;</div>
     </div>
@@ -377,7 +377,7 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
     <div class="plan-tagline">For independent researchers, ESG analysts, and climate-focused funds.</div>
     <div class="plan-price-block">
       <div class="plan-price" style="color:var(--accent)">
-        <span class="currency">$</span><span class="price-monthly">49</span><span class="price-annual" style="display:none">39</span><span class="period">/mo</span>
+        <span class="currency">£</span><span class="price-monthly">49</span><span class="price-annual" style="display:none">39</span><span class="period">/mo</span>
       </div>
       <div class="plan-annual-note" id="analyst-note">&nbsp;</div>
     </div>
@@ -405,7 +405,7 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
     <div class="plan-tagline">For investment teams, development banks, and climate-aligned portfolio managers.</div>
     <div class="plan-price-block">
       <div class="plan-price" style="color:var(--info)">
-        <span class="currency">$</span><span class="price-monthly">299</span><span class="price-annual" style="display:none">239</span><span class="period">/mo</span>
+        <span class="currency">£</span><span class="price-monthly">299</span><span class="price-annual" style="display:none">239</span><span class="period">/mo</span>
       </div>
       <div class="plan-annual-note inst-note">&nbsp;</div>
     </div>
@@ -721,8 +721,8 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
       </summary>
       <div class="faq-body">
         Annual plans are billed once per year (12 months upfront) at a 20% discount versus the monthly rate.
-        Analyst annual: $39/mo × 12 = $468/yr (vs $588 monthly).
-        Institutional annual: $239/mo × 12 = $2,868/yr (vs $3,588 monthly).
+        Analyst annual: £39/mo × 12 = £468/yr (vs £588 monthly).
+        Institutional annual: £239/mo × 12 = £2,868/yr (vs £3,588 monthly).
         Annual plans are non-refundable after the 14-day trial period. Contact us to switch billing cycles.
       </div>
     </details>
@@ -846,10 +846,10 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
     // Update annual note beneath Analyst price
     var analystNote = document.getElementById('analyst-note');
     if(analystNote){
-      analystNote.textContent = mode === 'annual' ? 'Billed $468/yr · 2 months free' : ' ';
+      analystNote.textContent = mode === 'annual' ? 'Billed £468/yr · 2 months free' : ' ';
     }
     document.querySelectorAll('.inst-note').forEach(function(el){
-      el.textContent = mode === 'annual' ? 'Billed $2,868/yr · 2 months free' : ' ';
+      el.textContent = mode === 'annual' ? 'Billed £2,868/yr · 2 months free' : ' ';
     });
 
     // Show/hide annual-savings badge
