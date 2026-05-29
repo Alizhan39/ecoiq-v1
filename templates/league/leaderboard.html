@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+{% load humanize %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EcoIQ Good Deeds League — Company Rankings</title>
+  <meta name="description" content="EcoIQ Good Deeds League — ranked company ESG scores, climate action progress, and ethical intelligence profiles for the world's industrial companies.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -351,12 +352,10 @@
 <nav class="topnav">
   <a href="/" class="brand">Eco<span>IQ</span></a>
   <div class="nav-links">
-    <a href="/league/" class="active">🏆 League</a>
-    <a href="/companies/">🌍 Companies</a>
+    <a href="/companies/" class="active">🏆 Rankings</a>
     <a href="/countries/">🗺 Countries</a>
-    <a href="/audit/">Industrial Audit</a>
-    <a href="/transition/">⚡ Transition</a>
-    <a href="/admin/">Admin</a>
+    <a href="/methodology/">📐 Methodology</a>
+    <a href="mailto:alizhan@ecoiq.uk">Contact</a>
   </div>
 </nav>
 
@@ -373,11 +372,11 @@
         <div class="lbl">Companies Rated</div>
       </div>
       <div class="stat-card">
-        <div class="val">{{ total_co2|floatformat:0|default:"—" }}t</div>
+        <div class="val">{% if total_co2 %}{{ total_co2|intcomma }}t{% else %}—{% endif %}</div>
         <div class="lbl">CO₂ Reduced / yr</div>
       </div>
       <div class="stat-card">
-        <div class="val">${{ total_inv_m|default:"—" }}M</div>
+        <div class="val">{% if total_inv_m %}${{ total_inv_m|intcomma }}M{% else %}—{% endif %}</div>
         <div class="lbl">Invested</div>
       </div>
       <div class="stat-card">

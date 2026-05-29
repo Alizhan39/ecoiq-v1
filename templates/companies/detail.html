@@ -643,9 +643,10 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     <span style="color:var(--muted2)">{{ company.name }}</span>
   </div>
   <div class="cmd-links">
-    <a href="{% url 'league:leaderboard' %}" class="cmd-btn">🏆 League</a>
+    <a href="{% url 'companies:directory' %}" class="cmd-btn">🏆 Rankings</a>
     <a href="{% url 'countries:directory' %}" class="cmd-btn">🗺 Countries</a>
-    <a href="{% url 'transition:dashboard' company.slug %}" class="cmd-btn">⚡ Roadmap</a>
+    <a href="/methodology/" class="cmd-btn">📐 Methodology</a>
+    <a href="mailto:alizhan@ecoiq.uk" class="cmd-btn">Contact</a>
     {% if request.user.is_staff %}
     <a href="{% url 'admin:companies_companyprofile_change' profile.pk %}" class="cmd-btn accent">Edit Profile</a>
     {% endif %}
@@ -903,7 +904,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
           <div style="font-size:1.1rem;font-weight:800;color:#00e89a;line-height:1">✓</div>
           <div style="font-size:.65rem;color:var(--accent);margin-top:.15rem">Regenerative Leader achieved</div>
         {% endif %}
-        <a href="{% url 'transition:dashboard' company.slug %}" style="font-size:.65rem;color:var(--accent);font-weight:700;display:inline-block;margin-top:.55rem">View Full Roadmap →</a>
+        <a href="mailto:alizhan@ecoiq.uk?subject=Transition%20Roadmap%20Request%3A%20{{ company.name|urlencode }}" style="font-size:.65rem;color:var(--accent);font-weight:700;display:inline-block;margin-top:.55rem">Request Roadmap →</a>
       </div>
 
     </div><!-- /grid -->
@@ -1451,7 +1452,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
             {% endfor %}
           </div>
           {% endif %}
-          <a href="{% url 'transition:dashboard' company.slug %}" class="link-btn">View Full Roadmap →</a>
+          <a href="mailto:alizhan@ecoiq.uk?subject=Transition%20Roadmap%20Request%3A%20{{ company.name|urlencode }}" class="link-btn">Request Full Roadmap →</a>
         </div>
       </div>
     </div>
@@ -1460,7 +1461,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
       <div class="panel-header">⚡ Transition Roadmap</div>
       <div class="panel-body" style="text-align:center">
         <div style="font-size:.74rem;color:var(--muted2);margin-bottom:.75rem;line-height:1.6">AI roadmaps model the full path from current EcoIQ score to responsible modernization.</div>
-        <a href="{% url 'transition:dashboard' company.slug %}" class="link-btn">Generate Roadmap →</a>
+        <a href="mailto:alizhan@ecoiq.uk?subject=Transition%20Roadmap%20Request%3A%20{{ company.name|urlencode }}" class="link-btn">Request Roadmap →</a>
       </div>
     </div>
     {% endif %}
@@ -1479,7 +1480,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
           <div class="fin-match-score">{{ match.match_score|floatformat:0 }}%</div>
         </div>
         {% endfor %}
-        <a href="{% url 'transition:financing' %}" style="font-size:.68rem;color:var(--accent);display:inline-block;margin-top:.75rem;font-weight:600">All Opportunities →</a>
+        <a href="mailto:alizhan@ecoiq.uk?subject=Financing%20Opportunities%3A%20{{ company.name|urlencode }}" style="font-size:.68rem;color:var(--accent);display:inline-block;margin-top:.75rem;font-weight:600">Request All Opportunities →</a>
       </div>
     </div>
     {% endif %}

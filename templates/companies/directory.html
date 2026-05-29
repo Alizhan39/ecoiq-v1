@@ -2,6 +2,7 @@
 {% load humanize %}
 
 {% block title %}EcoIQ Company Intelligence — Directory{% endblock %}
+{% block meta_description %}<meta name="description" content="EcoIQ company rankings — AI-assisted ESG scores, climate transition readiness, and ethical intelligence profiles for global industrial companies.">{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -224,10 +225,9 @@ a{color:inherit;text-decoration:none;}
     <span class="cmd-title" style="font-weight:800;letter-spacing:-.02em;">Eco<span style="color:var(--accent);">IQ</span></span>
   </a>
   <div class="cmd-links">
-    <a href="/" class="cmd-btn">🏠 Home</a>
     <a href="{% url 'countries:directory' %}" class="cmd-btn">🗺 Countries</a>
     <a href="/methodology/" class="cmd-btn">📐 Methodology</a>
-    <a href="{% url 'transition:index' %}" class="cmd-btn">⚡ Transition</a>
+    <a href="mailto:alizhan@ecoiq.uk" class="cmd-btn">Contact</a>
     {% if request.user.is_staff %}
     <a href="{% url 'admin:companies_companyprofile_changelist' %}" class="cmd-btn primary">Admin</a>
     {% endif %}
