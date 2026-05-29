@@ -824,6 +824,20 @@ def api_docs(request):
     return render(request, 'api_docs.html')
 
 
+# ── Robots.txt ───────────────────────────────────────────────────────────────
+
+def robots_txt(request):
+    """
+    /robots.txt — Crawler directives for Google, Bing, etc.
+    Rendered from templates/robots.txt as plain text.
+    """
+    import os
+    path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates', 'robots.txt')
+    with open(path) as f:
+        content = f.read()
+    return HttpResponse(content, content_type='text/plain')
+
+
 # ── Register ─────────────────────────────────────────────────────────────────
 
 def register(request):

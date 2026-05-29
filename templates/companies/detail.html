@@ -3,8 +3,31 @@
 
 {% block title %}{{ company.name }} — EcoIQ Intelligence Profile{% endblock %}
 {% block meta_description %}<meta name="description" content="{{ company.name }} EcoIQ climate score: {{ profile.ecoiq_total_score|floatformat:1 }}/100. {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
+{% block og_title %}{{ company.name }} — EcoIQ Score {{ profile.ecoiq_total_score|default:0|floatformat:0 }}/100{% endblock %}
+{% block og_description %}{{ company.name }} ({{ company.sector }}{% if company.country %}, {{ company.country }}{% endif %}) — EcoIQ climate intelligence score: {{ profile.ecoiq_total_score|default:0|floatformat:1 }}/100. Tier: {{ profile.moral_label_display }}.{% endblock %}
 
 {% block extra_head %}
+<!-- JSON-LD structured data for Google -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "{{ company.name|escapejs }}",
+  "description": "{{ company.name|escapejs }} EcoIQ climate intelligence score: {{ profile.ecoiq_total_score|default:0|floatformat:1 }}/100. Tier: {{ profile.moral_label_display|escapejs }}.",
+  "url": "https://ecoiq.uk/companies/{{ company.slug }}/",
+  "sameAs": [],
+  "identifier": {
+    "@type": "PropertyValue",
+    "name": "EcoIQ Score",
+    "value": "{{ profile.ecoiq_total_score|default:0|floatformat:1 }}"
+  }{% if company.sector %},
+  "industry": "{{ company.sector|escapejs }}"{% endif %}{% if company.country %},
+  "location": {
+    "@type": "Place",
+    "addressCountry": "{{ company.country|escapejs }}"
+  }{% endif %}
+}
+</script>
 <style>
 /* ══════════════════════════════════════════════════════════════════
    EcoIQ INSTITUTIONAL DESIGN SYSTEM — Company Intelligence Profile

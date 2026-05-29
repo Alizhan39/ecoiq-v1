@@ -5,8 +5,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}EcoIQ{% endblock %}</title>
-  <meta name="description" content="EcoIQ — AI-assisted ethical intelligence platform for climate transition, ESG scoring, and industrial modernization.">
+  <meta name="description" content="{% block meta_description_content %}EcoIQ — AI-assisted ethical intelligence platform for climate transition, ESG scoring, and industrial modernization.{% endblock %}">
   {% block meta_description %}{% endblock %}
+
+  <!-- Canonical URL — prevents duplicate-content penalties -->
+  <link rel="canonical" href="https://ecoiq.uk{{ request.path }}">
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="EcoIQ">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ecoiq.uk{{ request.path }}">
+  <meta property="og:title" content="{% block og_title %}EcoIQ — Ethical Intelligence Platform{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}AI-powered climate intelligence: company rankings, ESG scores, transition roadmaps.{% endblock %}">
+  <meta property="og:image" content="https://ecoiq.uk/static/brand/ecoiq-og.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">

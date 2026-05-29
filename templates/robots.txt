@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /cms-admin/
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /register/
+Disallow: /esg/
+Disallow: /ingest/
+Disallow: /audit/
+Disallow: /transition/
+
+Sitemap: https://ecoiq.uk/sitemap.xml

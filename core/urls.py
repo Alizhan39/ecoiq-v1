@@ -41,4 +41,7 @@ urlpatterns = [
 
     # /claim/ → canonical claim-profile shortcut (leads app handles the form)
     path('claim/', RedirectView.as_view(url='/request-access/claim/', permanent=False), name='claim'),
+
+    # SEO — robots.txt served as plain text from templates/robots.txt
+    path('robots.txt', views.robots_txt, name='robots_txt'),
 ]
