@@ -1,0 +1,33 @@
+Hi {{ claim.full_name }},
+
+Thank you for submitting a claim for your company's EcoIQ profile.
+
+Your claim reference is: {{ claim.ref }}
+
+Please keep this reference number — you may need it if you follow up
+with us about your submission.
+
+WHAT HAPPENS NEXT
+-----------------
+Our team will review your claim within 2–3 business days. We may reach
+out to verify your authority to represent {{ claim.company_name_reported|default:claim.company_slug }}
+before granting access to manage the profile.
+
+YOUR SUBMISSION SUMMARY
+-----------------------
+Claim ref:     {{ claim.ref }}
+Company:       {{ claim.company_name_reported|default:claim.company_slug }}
+Your name:     {{ claim.full_name }}
+Your email:    {{ claim.work_email }}
+Your title:    {{ claim.job_title }}
+
+─────────────────────────────────────────
+If you have any questions, reply to this email or contact us at
+alizhan@ecoiq.uk quoting your claim reference {{ claim.ref }}.
+
+The EcoIQ Team
+alizhan@ecoiq.uk
+─────────────────────────────────────────
+
+EcoIQ — Ethical Intelligence Platform
+All scores are AI-assisted and indicative. Not investment advice.

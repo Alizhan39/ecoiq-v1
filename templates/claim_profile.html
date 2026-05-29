@@ -1,0 +1,463 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claim Your Company Profile — EcoIQ</title>
+<meta name="description" content="Claim your company's EcoIQ intelligence profile. Verify your data, add context, and connect with institutional investors and green finance partners.">
+<link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+<meta name="theme-color" content="#070b0f">
+<style>
+:root{
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+  --info:#58a6ff; --purple:#8b5cf6;
+  --text:#e6edf3; --muted:#8b949e; --border:#21262d;
+  --radius:10px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── nav ── */
+.topnav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,11,15,.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  padding:.9rem 1.6rem;
+  display:flex;align-items:center;gap:1.5rem;
+}
+.topnav .brand{font-size:1rem;font-weight:800;color:#fff;text-decoration:none;letter-spacing:-.02em}
+.topnav .brand em{color:var(--accent);font-style:normal}
+.topnav a{color:var(--muted);text-decoration:none;font-size:.87rem;transition:color .2s}
+.topnav a:hover{color:var(--text)}
+.topnav .sep{color:var(--border)}
+.topnav .cta-nav{
+  margin-left:auto;
+  padding:.4rem 1rem;border-radius:6px;
+  background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.3);
+  color:var(--accent);font-size:.82rem;font-weight:600;
+}
+.topnav .cta-nav:hover{background:rgba(0,232,154,.2);color:var(--accent)}
+
+/* ── layout ── */
+.page-wrap{max-width:700px;margin:0 auto;padding:3.5rem 1.6rem 4rem}
+
+/* ── breadcrumb ── */
+.breadcrumb{
+  font-size:.78rem;color:var(--muted);
+  margin-bottom:2rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.breadcrumb a{color:var(--muted);text-decoration:none}
+.breadcrumb a:hover{color:var(--accent)}
+.breadcrumb .sep{opacity:.4}
+
+/* ── page header ── */
+.page-eyebrow{
+  display:inline-block;
+  background:rgba(0,232,154,.1);
+  border:1px solid rgba(0,232,154,.25);
+  color:var(--accent);
+  font-size:.72rem;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
+  padding:.3rem .85rem;border-radius:20px;margin-bottom:1.1rem;
+}
+.page-title{font-size:1.9rem;font-weight:700;line-height:1.25;margin-bottom:.7rem}
+.page-title em{color:var(--accent);font-style:normal}
+.page-desc{color:var(--muted);line-height:1.65;font-size:.93rem;margin-bottom:.6rem}
+
+/* ── company badge ── */
+.company-badge{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:.5rem 1rem;
+  margin-bottom:2rem;font-size:.85rem;color:var(--text);
+}
+.company-badge .dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent);flex-shrink:0;
+}
+.company-badge strong{color:var(--accent)}
+
+/* ── form card ── */
+.form-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:2rem;
+  margin-bottom:1.5rem;
+}
+.form-card h2{
+  font-size:1rem;font-weight:600;color:var(--text);
+  margin-bottom:1.4rem;padding-bottom:.75rem;
+  border-bottom:1px solid var(--border);
+}
+
+/* ── form fields ── */
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.field-row.full{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:.35rem}
+.field label{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.field label .req{color:var(--accent)}
+
+.field input,
+.field textarea{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;
+  padding:.6rem .85rem;font-size:.875rem;
+  font-family:inherit;
+  transition:border-color .2s;
+  width:100%;
+}
+.field input:focus,
+.field textarea:focus{outline:none;border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:100px;line-height:1.55}
+.field .hint{font-size:.7rem;color:var(--muted);margin-top:.15rem}
+
+/* error state */
+.field.has-error input,
+.field.has-error textarea{border-color:var(--danger)}
+.field .field-error{font-size:.72rem;color:var(--danger);margin-top:.2rem;display:none}
+.field.has-error .field-error{display:block}
+
+/* honeypot */
+.hp{display:none!important;visibility:hidden}
+
+/* ── submit button ── */
+.submit-row{display:flex;align-items:center;gap:1rem;margin-top:1.5rem}
+.btn-submit{
+  padding:.7rem 2rem;
+  background:var(--accent);color:#000;
+  border:none;border-radius:7px;
+  font-size:.9rem;font-weight:700;cursor:pointer;
+  font-family:inherit;
+  transition:background .2s,opacity .2s;
+  display:flex;align-items:center;gap:.5rem;
+}
+.btn-submit:hover{background:#00c882}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+.submit-note{font-size:.72rem;color:var(--muted);line-height:1.5}
+
+/* ── alerts ── */
+.alert{
+  border-radius:8px;padding:1rem 1.2rem;font-size:.875rem;
+  margin-bottom:1rem;display:none;
+}
+.alert-error{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:#f87171}
+.alert-success{background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.25);color:var(--accent)}
+.alert.visible{display:block}
+
+/* ── success state ── */
+.success-panel{
+  background:var(--bg2);border:1px solid rgba(0,232,154,.3);
+  border-radius:var(--radius);padding:2.5rem;text-align:center;
+  display:none;
+}
+.success-panel.visible{display:block}
+.success-icon{font-size:2.5rem;margin-bottom:1rem}
+.success-panel h2{font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:.5rem}
+.success-panel p{color:var(--muted);font-size:.9rem;line-height:1.6;margin-bottom:.5rem}
+.success-ref{
+  display:inline-block;
+  background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.3);
+  color:var(--accent);font-size:.9rem;font-weight:700;
+  padding:.45rem 1.1rem;border-radius:20px;
+  margin:.75rem 0;letter-spacing:.5px;
+}
+.success-panel .back-link{
+  display:inline-block;margin-top:1rem;
+  color:var(--muted);font-size:.82rem;text-decoration:none;
+}
+.success-panel .back-link:hover{color:var(--accent)}
+
+/* ── trust strip ── */
+.trust-strip{
+  display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;
+  padding:1rem 1.4rem;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;margin-bottom:2rem;
+}
+.trust-item{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:var(--muted)}
+.trust-item .icon{font-size:1rem;opacity:.7}
+
+/* ── footer ── */
+footer{
+  text-align:center;padding:2rem;
+  color:var(--muted);font-size:.8rem;
+  border-top:1px solid var(--border);margin-top:3rem;
+}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
+
+@media(max-width:600px){
+  .field-row{grid-template-columns:1fr}
+  .page-title{font-size:1.5rem}
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <!-- EcoIQ wordmark -->
+  <a href="/" class="brand">Eco<em>IQ</em></a>
+  <span class="sep">|</span>
+  <a href="/companies/">Rankings</a>
+  <a href="/countries/">Countries</a>
+  <a href="/pricing/">Pricing</a>
+  <a href="mailto:alizhan@ecoiq.uk">Contact</a>
+  <a href="/request-access/" class="cta-nav">Request Access →</a>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="/">EcoIQ</a>
+    <span class="sep">›</span>
+    <a href="/companies/">Companies</a>
+    <span class="sep">›</span>
+    <span>Claim Profile</span>
+  </div>
+
+  <!-- Header -->
+  <div class="page-eyebrow">Profile Ownership</div>
+  <h1 class="page-title">Claim Your<br><em>Company Profile</em></h1>
+  <p class="page-desc">
+    Are you authorised to represent this company? Submit your claim and our team
+    will verify your authority, unlock editing access, and open your account for
+    investor and policy engagement.
+  </p>
+
+  {% if company_display %}
+  <div class="company-badge">
+    <span class="dot"></span>
+    Claiming profile for: <strong>{{ company_display }}</strong>
+  </div>
+  {% endif %}
+
+  <!-- Trust strip -->
+  <div class="trust-strip">
+    <div class="trust-item"><span class="icon">🔒</span> Data stays private until you approve</div>
+    <div class="trust-item"><span class="icon">⏱</span> Reviewed within 2–3 business days</div>
+    <div class="trust-item"><span class="icon">✉</span> Confirmation emailed immediately</div>
+    <div class="trust-item"><span class="icon">🆓</span> Free to claim</div>
+  </div>
+
+  <!-- Global error alert -->
+  <div class="alert alert-error" id="alert-error" role="alert"></div>
+
+  <!-- Form (hidden after success) -->
+  <form id="claim-form" novalidate>
+    {% csrf_token %}
+
+    <!-- Honeypot -->
+    <div class="hp" aria-hidden="true">
+      <input type="text" name="website" tabindex="-1" autocomplete="off">
+    </div>
+
+    <!-- Hidden: company slug pre-populated from query param -->
+    <input type="hidden" name="company_slug" value="{{ company_slug }}">
+
+    <!-- Section 1: Company -->
+    <div class="form-card">
+      <h2>Company Information</h2>
+
+      <div class="field-row">
+        <div class="field" id="f-company_name">
+          <label>Company Name <span class="req">*</span></label>
+          <input type="text" name="company_name"
+                 value="{{ company_display }}"
+                 {% if company_slug %}readonly style="opacity:.7;cursor:not-allowed"{% endif %}
+                 placeholder="Your company's legal name"
+                 autocomplete="organization">
+          <div class="field-error" id="e-company_name"></div>
+        </div>
+        <div class="field">
+          <label>EcoIQ Profile Slug</label>
+          <input type="text" name="company_slug_display"
+                 value="{{ company_slug }}"
+                 readonly style="opacity:.6;cursor:default"
+                 placeholder="auto-populated">
+          <span class="hint">Auto-populated from the company page you came from.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Your Details -->
+    <div class="form-card">
+      <h2>Your Details</h2>
+
+      <div class="field-row">
+        <div class="field" id="f-full_name">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" name="full_name" placeholder="Jane Smith"
+                 autocomplete="name">
+          <div class="field-error" id="e-full_name"></div>
+        </div>
+        <div class="field" id="f-job_title">
+          <label>Job Title <span class="req">*</span></label>
+          <input type="text" name="job_title" placeholder="Head of Sustainability"
+                 autocomplete="organization-title">
+          <div class="field-error" id="e-job_title"></div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="f-work_email">
+          <label>Work Email <span class="req">*</span></label>
+          <input type="email" name="work_email" placeholder="jane@yourcompany.com"
+                 autocomplete="work email">
+          <span class="hint">Use your company email — this is how we verify your authority.</span>
+          <div class="field-error" id="e-work_email"></div>
+        </div>
+        <div class="field">
+          <label>Phone (optional)</label>
+          <input type="tel" name="phone" placeholder="+44 7xxx xxxxxx"
+                 autocomplete="tel">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Justification -->
+    <div class="form-card">
+      <h2>Why Are You Claiming This Profile?</h2>
+
+      <div class="field-row full">
+        <div class="field">
+          <label>Message (optional)</label>
+          <textarea name="message"
+            placeholder="e.g. I am the Head of ESG at [Company] and am responsible for all climate-related disclosures. I'd like to ensure the data on our profile is accurate and add our verified emission reduction targets."></textarea>
+          <span class="hint">Optional but recommended — helps us verify and prioritise your claim.</span>
+        </div>
+      </div>
+
+      <div class="submit-row">
+        <button type="submit" class="btn-submit" id="btn-submit">
+          <span id="btn-text">🏷 Submit Claim</span>
+        </button>
+        <p class="submit-note">
+          By submitting, you confirm you are authorised to represent this company.<br>
+          We will respond within 2–3 business days.
+        </p>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- Success panel (shown after AJAX success) -->
+  <div class="success-panel" id="success-panel">
+    <div class="success-icon">✅</div>
+    <h2>Claim Submitted Successfully</h2>
+    <p>We've received your profile claim and will review it within 2–3 business days.</p>
+    <p>A confirmation has been sent to your work email address.</p>
+    <div class="success-ref" id="success-ref">CLM-…</div>
+    <p style="font-size:.78rem;color:var(--muted)">
+      Keep this reference — quote it if you follow up with us.
+    </p>
+    <a href="/companies/" class="back-link">← Back to Company Rankings</a>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<footer>
+  <p>EcoIQ — Ethical Intelligence Platform ·
+     <a href="/companies/">Rankings</a> ·
+     <a href="/countries/">Countries</a> ·
+     <a href="/pricing/">Pricing</a> ·
+     <a href="/api-docs/">API</a> ·
+     <a href="mailto:alizhan@ecoiq.uk">alizhan@ecoiq.uk</a>
+  </p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var form       = document.getElementById('claim-form');
+  var btnSubmit  = document.getElementById('btn-submit');
+  var btnText    = document.getElementById('btn-text');
+  var alertError = document.getElementById('alert-error');
+  var successPanel = document.getElementById('success-panel');
+  var successRef   = document.getElementById('success-ref');
+
+  // ── Field helpers ────────────────────────────────────────────────────────
+  function setError(fieldName, msg) {
+    var wrap = document.getElementById('f-' + fieldName);
+    var err  = document.getElementById('e-' + fieldName);
+    if (wrap) wrap.classList.add('has-error');
+    if (err)  { err.textContent = msg; }
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.field.has-error').forEach(function (el) {
+      el.classList.remove('has-error');
+    });
+    document.querySelectorAll('.field-error').forEach(function (el) {
+      el.textContent = '';
+    });
+    alertError.textContent = '';
+    alertError.classList.remove('visible');
+  }
+
+  // ── AJAX submit ──────────────────────────────────────────────────────────
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    btnSubmit.disabled = true;
+    btnText.textContent = '⏳ Submitting…';
+
+    var data = new FormData(form);
+
+    fetch('{% url "leads:claim_profile_submit" %}', {
+      method: 'POST',
+      body:   data,
+      headers: { 'X-CSRFToken': data.get('csrfmiddlewaretoken') },
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (json) {
+      if (json.success) {
+        // Hide form, show success
+        form.style.display = 'none';
+        alertError.classList.remove('visible');
+        successRef.textContent = json.ref || 'CLM-…';
+        successPanel.classList.add('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (json.errors) {
+        Object.keys(json.errors).forEach(function (field) {
+          setError(field, json.errors[field]);
+        });
+        btnSubmit.disabled = false;
+        btnText.textContent = '🏷 Submit Claim';
+      } else {
+        throw new Error(json.error || 'Unexpected error');
+      }
+    })
+    .catch(function (err) {
+      alertError.textContent = err.message || 'Something went wrong. Please try again or email alizhan@ecoiq.uk.';
+      alertError.classList.add('visible');
+      btnSubmit.disabled = false;
+      btnText.textContent = '🏷 Submit Claim';
+    });
+  });
+
+  // ── Live field validation ────────────────────────────────────────────────
+  ['full_name', 'job_title', 'work_email'].forEach(function (name) {
+    var input = form.querySelector('[name="' + name + '"]');
+    if (!input) return;
+    input.addEventListener('blur', function () {
+      var wrap = document.getElementById('f-' + name);
+      if (!input.value.trim()) {
+        if (wrap) wrap.classList.add('has-error');
+      } else {
+        if (wrap) wrap.classList.remove('has-error');
+        var err = document.getElementById('e-' + name);
+        if (err) err.textContent = '';
+      }
+    });
+  });
+
+}());
+</script>
+</body>
+</html>

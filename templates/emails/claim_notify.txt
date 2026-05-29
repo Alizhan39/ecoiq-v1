@@ -1,0 +1,28 @@
+New EcoIQ profile claim
+=======================
+
+Reference:  {{ claim.ref }}
+Submitted:  {{ claim.created_at|date:"d M Y, H:i" }} UTC
+
+COMPANY BEING CLAIMED
+---------------------
+EcoIQ slug:    {{ claim.company_slug|default:"(not provided)" }}
+Name reported: {{ claim.company_name_reported|default:"(not provided)" }}
+
+CLAIMANT
+--------
+Name:      {{ claim.full_name }}
+Email:     {{ claim.work_email }}
+Job title: {{ claim.job_title }}
+{% if claim.phone %}Phone:     {{ claim.phone }}{% endif %}
+
+{% if claim.message %}
+JUSTIFICATION / CONTEXT
+------------------------
+{{ claim.message }}
+{% endif %}
+
+─────────────────────────────────────────
+Review & update status in the admin panel:
+{{ admin_url }}
+─────────────────────────────────────────
