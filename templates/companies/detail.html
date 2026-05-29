@@ -1489,11 +1489,18 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     </div>
     {% endif %}
 
-    <!-- Score Evolution History -->
+    <!-- Score Evolution History — Chart.js trend chart -->
     {% if score_snapshots %}
     <div class="intel-panel" style="margin-bottom:1.2rem">
       <div class="panel-header">📈 Score Evolution History</div>
-      <div class="panel-body" style="padding:.6rem .9rem">
+      <div class="panel-body" style="padding:.75rem .9rem">
+        {% if score_snapshots|length >= 2 %}
+        <!-- Chart.js line chart when ≥ 2 snapshots -->
+        <div style="position:relative;height:140px;margin-bottom:.6rem">
+          <canvas id="scoreHistoryChart"></canvas>
+        </div>
+        {% else %}
+        <!-- Single snapshot: show as bar -->
         {% for snap in score_snapshots %}
         <div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--border)">
           <div style="font-size:.62rem;color:var(--muted);min-width:48px;flex-shrink:0">{{ snap.date|date:"M 'y" }}</div>
@@ -1503,8 +1510,10 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
           <div style="font-size:.7rem;font-weight:800;color:{{ snap.tier_color }};min-width:32px;text-align:right;font-variant-numeric:tabular-nums">{{ snap.total_score|floatformat:1 }}</div>
         </div>
         {% endfor %}
-        <div style="font-size:.6rem;color:var(--muted);margin-top:.5rem;line-height:1.5">
-          {{ score_snapshots|length }} recorded snapshot{{ score_snapshots|length|pluralize }} · <a href="/methodology/#transition" style="color:var(--accent)">How scoring works →</a>
+        {% endif %}
+        <div style="font-size:.6rem;color:var(--muted);margin-top:.45rem;line-height:1.5">
+          {{ score_snapshots|length }} recorded snapshot{{ score_snapshots|length|pluralize }} ·
+          <a href="/methodology/#transition" style="color:var(--accent)">How scoring works →</a>
         </div>
       </div>
     </div>
@@ -1625,5 +1634,68 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
 
 })();
 </script>
+
+{% if score_snapshots|length >= 2 %}
+<!-- Chart.js score history trend -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  var canvas = document.getElementById('scoreHistoryChart');
+  if (!canvas) return;
+
+  var labels = {{ history_labels }};
+  var scores = {{ history_scores }};
+  var accentColor = '{{ profile.moral_label_color }}' || '#00e89a';
+
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data:          scores,
+        borderColor:   accentColor,
+        backgroundColor: accentColor.replace(')', ', 0.12)').replace('rgb', 'rgba'),
+        borderWidth:   2,
+        pointRadius:   4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: accentColor,
+        tension:       0.35,
+        fill:          true,
+      }]
+    },
+    options: {
+      responsive:          true,
+      maintainAspectRatio: false,
+      animation:           { duration: 900, easing: 'easeInOutCubic' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d1117',
+          borderColor:     '#21262d',
+          borderWidth:     1,
+          titleColor:      '#8b949e',
+          bodyColor:       '#e6edf3',
+          callbacks: {
+            label: function(ctx){ return ' EcoIQ: ' + ctx.parsed.y.toFixed(1); }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid:  { color: 'rgba(255,255,255,.04)' },
+          ticks: { color: '#8b949e', font: { size: 9 } },
+        },
+        y: {
+          min:   0,
+          max:   100,
+          grid:  { color: 'rgba(255,255,255,.04)' },
+          ticks: { color: '#8b949e', font: { size: 9 }, maxTicksLimit: 5 },
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endif %}
 
 {% endblock %}

@@ -526,8 +526,11 @@ def company_detail(request, slug):
     # Sources
     sources = profile.cited_sources.all()[:8]
 
-    # Score evolution snapshots
+    # Score evolution snapshots — chronological for Chart.js
     score_snapshots = list(profile.score_snapshots.order_by('date')[:8])
+    import json as _json
+    history_labels = _json.dumps([s.date.strftime('%b %Y') for s in score_snapshots])
+    history_scores = _json.dumps([round(s.total_score, 1) for s in score_snapshots])
 
     # ── Intelligence layer ─────────────────────────────────────────────────────
     harm_signals       = _get_harm_signals(profile)
@@ -594,6 +597,8 @@ def company_detail(request, slug):
         'moral_display':         profile.moral_label_display,
         # Score evolution
         'score_snapshots':       score_snapshots,
+        'history_labels':        history_labels,
+        'history_scores':        history_scores,
         # Intelligence layer
         'harm_signals':          harm_signals,
         'ai_confidence':         ai_confidence,
