@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Create Account — EcoIQ{% endblock %}
+
+{% block content %}
+<style>
+  .auth-wrap{min-height:70vh;display:flex;align-items:center;justify-content:center;padding:3rem 1rem;}
+  .auth-card{background:#0d1117;border:1px solid #21262d;border-radius:14px;padding:2.5rem 2.2rem;width:100%;max-width:420px;}
+  .auth-logo{display:flex;align-items:center;gap:.5rem;margin-bottom:1.8rem;}
+  .auth-logo span{font-weight:800;color:#fff;font-size:1.05rem;letter-spacing:-.02em;}
+  .auth-logo em{color:#00e89a;font-style:normal;}
+  .auth-title{font-size:1.35rem;font-weight:700;color:#f0f6fc;margin:0 0 .35rem;}
+  .auth-sub{font-size:.83rem;color:#6e7681;margin:0 0 1.8rem;}
+  .auth-field{margin-bottom:1.1rem;}
+  .auth-field label{display:block;font-size:.78rem;color:#8b949e;font-weight:600;margin-bottom:.4rem;letter-spacing:.3px;}
+  .auth-field input{
+    width:100%;background:#010409;border:1px solid #30363d;border-radius:8px;
+    color:#f0f6fc;font-size:.9rem;padding:.65rem .85rem;box-sizing:border-box;
+    transition:border-color .2s;outline:none;
+  }
+  .auth-field input:focus{border-color:#00e89a;}
+  .auth-btn{
+    width:100%;background:#00e89a;color:#000;font-weight:700;font-size:.92rem;
+    border:none;border-radius:8px;padding:.75rem;cursor:pointer;transition:opacity .2s;
+    margin-top:.4rem;
+  }
+  .auth-btn:hover{opacity:.88;}
+  .auth-error{background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.35);
+    border-radius:8px;padding:.75rem 1rem;font-size:.82rem;color:#e63946;margin-bottom:1.1rem;}
+  .auth-footer{text-align:center;margin-top:1.4rem;font-size:.8rem;color:#6e7681;}
+  .auth-footer a{color:#58a6ff;text-decoration:none;}
+  .auth-footer a:hover{text-decoration:underline;}
+  .auth-divider{border:none;border-top:1px solid #21262d;margin:1.5rem 0;}
+  .auth-notice{background:rgba(0,232,154,.06);border:1px solid rgba(0,232,154,.15);
+    border-radius:8px;padding:.8rem 1rem;font-size:.79rem;color:#8b949e;margin-bottom:1.4rem;
+    line-height:1.55;}
+  .auth-notice strong{color:#00e89a;}
+</style>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="40" height="40" rx="9" fill="#070b0f"/>
+        <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2" stroke-linejoin="round"/>
+        <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.4" stroke-linejoin="round"/>
+        <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+      </svg>
+      <span>Eco<em>IQ</em></span>
+    </div>
+
+    <h1 class="auth-title">Create your account</h1>
+    <p class="auth-sub">Access company intelligence, rankings, and climate risk scores.</p>
+
+    <div class="auth-notice">
+      <strong>Institutional platform.</strong> EcoIQ is designed for analysts, investors, and policy professionals. Free Explorer access is available immediately on signup.
+    </div>
+
+    {% if error %}
+    <div class="auth-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/register/" autocomplete="off">
+      {% csrf_token %}
+      <div class="auth-field">
+        <label for="id_username">Username</label>
+        <input type="text" id="id_username" name="username" placeholder="e.g. j.smith" autocomplete="username" required>
+      </div>
+      <div class="auth-field">
+        <label for="id_password1">Password</label>
+        <input type="password" id="id_password1" name="password1" placeholder="Minimum 8 characters" autocomplete="new-password" required>
+      </div>
+      <div class="auth-field">
+        <label for="id_password2">Confirm password</label>
+        <input type="password" id="id_password2" name="password2" placeholder="Repeat password" autocomplete="new-password" required>
+      </div>
+      <button type="submit" class="auth-btn">Create account →</button>
+    </form>
+
+    <hr class="auth-divider">
+
+    <div class="auth-footer">
+      Already have an account? <a href="/login/">Sign in</a>
+    </div>
+    <div class="auth-footer" style="margin-top:.6rem;">
+      Want full Analyst access? <a href="/request-access/">Request access</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

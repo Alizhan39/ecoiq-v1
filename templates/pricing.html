@@ -311,9 +311,15 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
   <div class="cmd-links">
     <a href="{% url 'companies:directory' %}" class="cmd-btn">🌍 Rankings</a>
     <a href="{% url 'countries:directory' %}" class="cmd-btn">🗺 Countries</a>
+    <a href="{% url 'about' %}" class="cmd-btn">About</a>
     <a href="{% url 'methodology' %}" class="cmd-btn">Methodology</a>
     <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Pricing+Enquiry" class="cmd-btn">Contact</a>
-    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Demo+Request" class="cmd-btn accent">Book Demo →</a>
+    {% if request.user.is_authenticated %}
+    <a href="/dashboard/" class="cmd-btn accent">Dashboard →</a>
+    {% else %}
+    <a href="/register/" class="cmd-btn">Register</a>
+    <a href="/login/" class="cmd-btn accent">Sign In →</a>
+    {% endif %}
   </div>
 </div>
 

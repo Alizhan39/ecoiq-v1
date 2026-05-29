@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — EcoIQ{% endblock %}
+
+{% block content %}
+<style>
+  .dash-wrap{max-width:900px;margin:2.5rem auto;padding:0 1.25rem;}
+  .dash-header{margin-bottom:2rem;}
+  .dash-title{font-size:1.55rem;font-weight:700;color:#f0f6fc;margin:0 0 .4rem;}
+  .dash-sub{font-size:.88rem;color:#6e7681;}
+  .dash-sub strong{color:#8b949e;}
+  .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.1rem;margin-bottom:2rem;}
+  .dash-card{background:#0d1117;border:1px solid #21262d;border-radius:12px;padding:1.4rem 1.5rem;}
+  .dash-card-title{font-size:.72rem;color:#6e7681;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:.9rem;}
+  .dash-stat{font-size:2rem;font-weight:800;color:#f0f6fc;line-height:1;}
+  .dash-stat-label{font-size:.78rem;color:#6e7681;margin-top:.3rem;}
+  .dash-links{display:flex;flex-direction:column;gap:.5rem;}
+  .dash-link{display:flex;align-items:center;gap:.6rem;text-decoration:none;
+    color:#c9d1d9;font-size:.875rem;padding:.5rem .6rem;border-radius:7px;
+    transition:background .15s,color .15s;}
+  .dash-link:hover{background:#161b22;color:#f0f6fc;}
+  .dash-link-icon{font-size:1rem;width:1.5rem;text-align:center;flex-shrink:0;}
+  .dash-link-arrow{margin-left:auto;color:#30363d;font-size:.8rem;}
+  .dash-tier{display:inline-flex;align-items:center;gap:.45rem;
+    background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.25);
+    border-radius:20px;padding:.3rem .9rem;font-size:.78rem;color:#00e89a;font-weight:600;}
+  .dash-section-title{font-size:.72rem;color:#6e7681;text-transform:uppercase;letter-spacing:1px;
+    font-weight:600;margin:1.6rem 0 .8rem;}
+  .dash-alert{background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.2);
+    border-radius:10px;padding:1rem 1.2rem;font-size:.83rem;color:#58a6ff;line-height:1.55;margin-bottom:1.2rem;}
+  .dash-alert a{color:#58a6ff;font-weight:600;}
+</style>
+
+<div class="dash-wrap">
+  <!-- Header -->
+  <div class="dash-header">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap;">
+      <h1 class="dash-title">Welcome back, {{ user.username }}</h1>
+      <span class="dash-tier">🌿 Explorer</span>
+    </div>
+    <p class="dash-sub">Signed in as <strong>{{ user.username }}</strong>{% if user.email %} · {{ user.email }}{% endif %} · Last login: {{ user.last_login|date:"d M Y, H:i" }}</p>
+  </div>
+
+  <!-- Upgrade notice -->
+  <div class="dash-alert">
+    You're on the <strong>Explorer plan</strong> — free access to company rankings and country intelligence.
+    <a href="/pricing/">Upgrade to Analyst</a> to unlock PDF reports, AI briefings, and financing match data.
+  </div>
+
+  <!-- Quick stats -->
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-card-title">Account Status</div>
+      <div class="dash-stat">Active</div>
+      <div class="dash-stat-label">Explorer access · Free tier</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-title">Platform</div>
+      <div class="dash-stat">EcoIQ</div>
+      <div class="dash-stat-label">Ethical Intelligence v1</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-title">Member Since</div>
+      <div class="dash-stat" style="font-size:1.25rem;">{{ user.date_joined|date:"M Y" }}</div>
+      <div class="dash-stat-label">{{ user.date_joined|date:"d F Y" }}</div>
+    </div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="dash-card">
+    <div class="dash-card-title">Quick Access</div>
+    <div class="dash-links">
+      <a href="/companies/" class="dash-link">
+        <span class="dash-link-icon">🌍</span>
+        <span>Company Rankings</span>
+        <span class="dash-link-arrow">→</span>
+      </a>
+      <a href="/countries/" class="dash-link">
+        <span class="dash-link-icon">🗺</span>
+        <span>Country Intelligence</span>
+        <span class="dash-link-arrow">→</span>
+      </a>
+      <a href="/league/" class="dash-link">
+        <span class="dash-link-icon">🏆</span>
+        <span>EcoIQ League</span>
+        <span class="dash-link-arrow">→</span>
+      </a>
+      <a href="/methodology/" class="dash-link">
+        <span class="dash-link-icon">📐</span>
+        <span>Scoring Methodology</span>
+        <span class="dash-link-arrow">→</span>
+      </a>
+      <a href="/request-access/claim/" class="dash-link">
+        <span class="dash-link-icon">🏷</span>
+        <span>Claim a Company Profile</span>
+        <span class="dash-link-arrow">→</span>
+      </a>
+      <a href="/pricing/" class="dash-link" style="color:#00e89a;">
+        <span class="dash-link-icon">⚡</span>
+        <span>Upgrade to Analyst</span>
+        <span class="dash-link-arrow">→</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer actions -->
+  <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
+    <a href="/logout/" style="font-size:.82rem;color:#6e7681;text-decoration:none;padding:.5rem .9rem;border:1px solid #21262d;border-radius:7px;transition:color .2s;" onmouseover="this.style.color='#f0f6fc'" onmouseout="this.style.color='#6e7681'">Sign out</a>
+    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Account+Enquiry" style="font-size:.82rem;color:#6e7681;text-decoration:none;padding:.5rem .9rem;border:1px solid #21262d;border-radius:7px;transition:color .2s;" onmouseover="this.style.color='#f0f6fc'" onmouseout="this.style.color='#6e7681'">Contact Support</a>
+  </div>
+</div>
+{% endblock %}

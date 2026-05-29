@@ -111,8 +111,14 @@
       <a href="/methodology/">Methodology</a>
       <a href="/pricing/">Pricing</a>
       <a href="mailto:alizhan@ecoiq.uk" style="color:#d8f3dc;">Contact</a>
+      {% if request.user.is_authenticated %}
+      <a href="/dashboard/" style="color:#00e89a;font-weight:600;">Dashboard</a>
+      {% else %}
+      <a href="/register/">Register</a>
+      <a href="/login/" style="color:#00e89a;font-weight:600;">Sign In</a>
+      {% endif %}
       {% if request.user.is_staff %}
-      <a href="/ingest/" style="color:#00e89a;font-weight:700;">⚡ Ingest</a>
+      <a href="/ingest/" style="color:#f4a261;font-weight:700;">⚡ Ingest</a>
       <a href="/admin/" style="color:#94a3b8;font-size:.8rem;">Admin</a>
       {% endif %}
     </nav>
@@ -130,6 +136,12 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer>EcoIQ v1 — Ethical Intelligence Platform · <a href="/pricing/" style="color:#888;text-decoration:none;">Pricing</a> · <a href="/api-docs/" style="color:#888;text-decoration:none;">API</a> · <a href="/request-access/claim/" style="color:#888;text-decoration:none;">Claim Profile</a></footer>
+  <footer>EcoIQ v1 — Ethical Intelligence Platform
+    · <a href="/about/" style="color:#888;text-decoration:none;">About</a>
+    · <a href="/pricing/" style="color:#888;text-decoration:none;">Pricing</a>
+    · <a href="/api-docs/" style="color:#888;text-decoration:none;">API</a>
+    · <a href="/request-access/claim/" style="color:#888;text-decoration:none;">Claim Profile</a>
+    · <a href="mailto:alizhan@ecoiq.uk" style="color:#888;text-decoration:none;">alizhan@ecoiq.uk</a>
+  </footer>
 </body>
 </html>

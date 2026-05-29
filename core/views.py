@@ -822,3 +822,48 @@ def api_docs(request):
     rate limits, error codes, SDK quick-start, and score schema reference.
     """
     return render(request, 'api_docs.html')
+
+
+# ── Register ─────────────────────────────────────────────────────────────────
+
+def register(request):
+    """
+    /register/ — Account registration / access request.
+    Creates a new Django user account on POST; redirects authenticated users
+    to /dashboard/. Uses Django's built-in UserCreationForm.
+    """
+    from django.contrib.auth import login as auth_login
+    from django.contrib.auth.forms import UserCreationForm
+
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    error = None
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            auth_login(request, user)
+            return redirect('dashboard')
+        else:
+            # Collapse all form errors to a single readable string
+            error = ' '.join(
+                str(e)
+                for field_errors in form.errors.values()
+                for e in field_errors
+            )
+    return render(request, 'register.html', {'error': error})
+
+
+# ── Dashboard ────────────────────────────────────────────────────────────────
+
+def dashboard(request):
+    """
+    /dashboard/ — Authenticated user home.
+    Shows account info and quick-links to platform features.
+    Requires login; unauthenticated visitors are redirected to /login/.
+    """
+    from django.contrib.auth.decorators import login_required as _lr
+    if not request.user.is_authenticated:
+        return redirect(f'/login/?next=/dashboard/')
+    return render(request, 'dashboard.html', {'user': request.user})

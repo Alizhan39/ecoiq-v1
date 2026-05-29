@@ -32,4 +32,13 @@ urlpatterns = [
 
     # EcoIQ API Documentation — v1 endpoints, auth, rate limits, SDK quick-start
     path('api-docs/',                                views.api_docs,           name='api_docs'),
+
+    # EcoIQ Register — new account creation
+    path('register/',                                views.register,           name='register'),
+
+    # EcoIQ Dashboard — authenticated user home
+    path('dashboard/',                               views.dashboard,          name='dashboard'),
+
+    # /claim/ → canonical claim-profile shortcut (leads app handles the form)
+    path('claim/', RedirectView.as_view(url='/request-access/claim/', permanent=False), name='claim'),
 ]
