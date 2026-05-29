@@ -804,6 +804,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
   {% if not profile.is_verified %}
   <a href="{% url 'leads:claim_profile_page' %}?company={{ company.slug }}" class="cta-btn cta-primary">🏷 Claim Profile</a>
   {% endif %}
+  <a href="{% url 'companies:pdf_report' company.slug %}" class="cta-btn cta-secondary">📄 Download PDF Report</a>
   <a href="mailto:alizhan@ecoiq.uk?subject=Verify%20Data%3A%20{{ company.name|urlencode }}" class="cta-btn cta-secondary">✓ Verify Company Data</a>
   {% if not profile.investor_visibility %}
   <a href="mailto:alizhan@ecoiq.uk?subject=Investor%20Visibility%3A%20{{ company.name|urlencode }}" class="cta-btn cta-warn">📈 Investor Visibility</a>

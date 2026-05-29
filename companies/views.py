@@ -618,3 +618,164 @@ def company_detail(request, slug):
         'institutional_signals':      institutional_signals,
         'confidence_label':           confidence_label,
     })
+
+
+# ── PDF Report ─────────────────────────────────────────────────────────────────
+
+def _tier_label_from_score(score: float) -> str:
+    if score >= 85: return 'Regenerative Leader'
+    if score >= 70: return 'Responsible Builder'
+    if score >= 60: return 'Public-Benefit Oriented'
+    if score >= 50: return 'Transitional Company'
+    if score >= 30: return 'Profit-First Operator'
+    return 'Extractive / Harmful'
+
+
+def _tier_color_from_score(score: float) -> str:
+    if score >= 85: return '#00e89a'
+    if score >= 70: return '#58a6ff'
+    if score >= 60: return '#8b5cf6'
+    if score >= 50: return '#f4a261'
+    if score >= 30: return '#e63946'
+    return '#b91c1c'
+
+
+def company_pdf_report(request, slug):
+    """
+    GET /companies/<slug>/report.pdf
+    Generates a 3-page A4 WeasyPrint PDF intelligence report.
+    """
+    import weasyprint
+    from datetime import date
+    from django.template.loader import render_to_string
+    from django.http import HttpResponse
+
+    company = get_object_or_404(Company, slug=slug)
+    profile = get_object_or_404(CompanyProfile, company=company,
+                                status__in=('public', 'verified', 'draft'))
+
+    score = float(profile.ecoiq_total_score or 0)
+
+    # Score breakdown cards (reuse the same structure as company_detail)
+    score_cards = [
+        {
+            'label':  'Public Benefit',
+            'score':  profile.public_benefit_score,
+            'weight': '25%',
+            'icon':   '🌍',
+            'desc':   'Employment quality, regional development, community investment, national value',
+            'sub': [
+                {'label': 'Employment Quality',   'val': profile.jobs_created_score},
+                {'label': 'Regional Development', 'val': profile.regional_development_score},
+                {'label': 'Infrastructure',       'val': profile.infrastructure_contribution_score},
+                {'label': 'National Value',       'val': profile.national_value_score},
+            ],
+        },
+        {
+            'label':  'Environmental Stewardship',
+            'score':  profile.environmental_responsibility_score,
+            'weight': '25%',
+            'icon':   '♻️',
+            'desc':   'Pollution intensity, waste management, water stewardship, biodiversity',
+            'sub': [
+                {'label': 'Waste Management', 'val': profile.waste_management_score},
+                {'label': 'Water Stewardship', 'val': profile.water_impact_score},
+                {'label': 'Biodiversity',      'val': profile.biodiversity_impact_score},
+            ],
+        },
+        {
+            'label':  'Responsible Modernization',
+            'score':  profile.modernization_score,
+            'weight': '20%',
+            'icon':   '⚡',
+            'desc':   'Energy transition, digitalization, infrastructure upgrades, future readiness',
+            'sub': [
+                {'label': 'Energy Transition', 'val': profile.energy_transition_score},
+                {'label': 'Digitalization',    'val': profile.digitalization_score},
+                {'label': 'Infrastructure',    'val': profile.infrastructure_upgrade_score},
+                {'label': 'Future Readiness',  'val': profile.future_readiness_score},
+            ],
+        },
+        {
+            'label':  'Transparent Governance',
+            'score':  profile.transparency_anti_corruption_score,
+            'weight': '15%',
+            'icon':   '🔍',
+            'desc':   'Reporting quality, audit standards, procurement transparency',
+            'sub': [
+                {'label': 'Reporting Quality', 'val': profile.transparency_score_detail},
+                {'label': 'Audit Standards',   'val': profile.audit_quality_score},
+                {'label': 'Procurement',       'val': profile.procurement_transparency_score},
+            ],
+        },
+        {
+            'label':  'Anti-Corruption',
+            'score':  profile.anti_corruption_score,
+            'weight': '10%',
+            'icon':   '⚖️',
+            'desc':   'Anti-corruption practices, ethical procurement, governance integrity',
+            'sub': [
+                {'label': 'AC Practices', 'val': profile.anti_corruption_score},
+            ],
+        },
+        {
+            'label':  'Ethical Alignment',
+            'score':  profile.ethical_alignment_score,
+            'weight': '5%',
+            'icon':   '✦',
+            'desc':   'Long-term ethical value creation, controversy management, stakeholder trust',
+            'sub': [
+                {'label': 'Ethical Alignment', 'val': profile.ethical_alignment_score},
+            ],
+        },
+    ]
+
+    # Score evolution snapshots
+    score_snapshots = list(profile.score_snapshots.order_by('date')[:8])
+
+    # Intelligence signals
+    harm_signals  = _get_harm_signals(profile)
+    ai_confidence = _get_ai_confidence(profile)
+
+    # Financing matches
+    fin_matches = []
+    try:
+        qs = profile.financing_matches.select_related('opportunity').order_by('-match_score')
+        fin_matches = list(qs[:6])
+    except Exception:
+        pass
+
+    # Sources
+    sources = profile.cited_sources.all()[:8]
+
+    # Executive briefing for AI summary
+    briefing = None
+    try:
+        from intelligence.models import ExecutiveBriefing
+        briefing = ExecutiveBriefing.objects.filter(company=company).order_by('-created_at').first()
+    except Exception:
+        pass
+
+    context = {
+        'company':          company,
+        'profile':          profile,
+        'score_cards':      score_cards,
+        'score_snapshots':  score_snapshots,
+        'harm_signals':     harm_signals,
+        'ai_confidence':    ai_confidence,
+        'financing_matches': fin_matches,
+        'sources':          sources,
+        'briefing':         briefing,
+        'tier_label':       _tier_label_from_score(score),
+        'tier_color':       _tier_color_from_score(score),
+        'report_date':      date.today(),
+    }
+
+    base_url = request.build_absolute_uri('/')
+    html_str  = render_to_string('companies/report_pdf.html', context, request=request)
+    pdf_bytes = weasyprint.HTML(string=html_str, base_url=base_url).write_pdf()
+
+    filename = f"ecoiq-report-{company.slug}.pdf"
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

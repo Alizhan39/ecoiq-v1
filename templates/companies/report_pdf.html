@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+{# EcoIQ Company Intelligence Report — WeasyPrint A4 — companies app #}
+{% load humanize %}
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoIQ Intelligence Report — {{ company.name }}</title>
+<style>
+
+/* ══════════════════════════════════════════
+   PAGE SETUP
+══════════════════════════════════════════ */
+@page {
+  size: A4;
+  margin: 16mm 15mm 22mm 15mm;
+  @bottom-left {
+    content: "EcoIQ Ethical Intelligence Platform — ecoiq.uk";
+    font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-size: 6.5pt;
+    color: #8b949e;
+    border-top: 0.4pt solid #21262d;
+    padding-top: 3mm;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-size: 6.5pt;
+    color: #8b949e;
+    border-top: 0.4pt solid #21262d;
+    padding-top: 3mm;
+  }
+}
+@page cover {
+  size: A4;
+  margin: 0;
+  @bottom-left  { content: ""; border: none; }
+  @bottom-right { content: ""; border: none; }
+}
+
+/* ══════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+  font-size: 9pt;
+  color: #1a2c23;
+  line-height: 1.55;
+  background: #fff;
+}
+
+h1 { font-size: 20pt; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+h2 { font-size: 11pt; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 6pt; color: #0d1117; }
+h3 { font-size: 9pt;  font-weight: 700; margin-bottom: 4pt; }
+p  { margin-bottom: 6pt; color: #4a5568; }
+a  { color: #00c882; text-decoration: none; }
+
+/* ══════════════════════════════════════════
+   COVER PAGE
+══════════════════════════════════════════ */
+.cover {
+  page: cover;
+  page-break-after: always;
+  background: #070b0f;
+  color: #e6edf3;
+  padding: 24mm 20mm;
+  min-height: 297mm;
+  position: relative;
+}
+
+.cover-header {
+  display: flex;
+  align-items: center;
+  gap: 8pt;
+  margin-bottom: 30mm;
+}
+.cover-logo-box {
+  width: 26pt; height: 26pt;
+  background: #070b0f;
+  border: 1.5pt solid #00e89a;
+  border-radius: 5pt;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11pt; font-weight: 900; color: #00e89a;
+  letter-spacing: -0.04em;
+}
+.cover-brand {
+  font-size: 14pt; font-weight: 900; color: #fff; letter-spacing: -0.03em;
+}
+.cover-brand span { color: #00e89a; }
+
+.cover-tag {
+  display: inline-block;
+  background: rgba(0,232,154,.12);
+  border: 0.5pt solid rgba(0,232,154,.3);
+  color: #00e89a;
+  font-size: 6.5pt; font-weight: 700;
+  letter-spacing: 1.5pt; text-transform: uppercase;
+  padding: 3pt 8pt; border-radius: 20pt;
+  margin-bottom: 10pt;
+}
+
+.cover h1 { color: #e6edf3; margin-bottom: 4pt; }
+.cover-subtitle {
+  font-size: 11pt; color: #8b949e; margin-bottom: 20mm;
+}
+
+.cover-score-band {
+  display: flex;
+  align-items: center;
+  gap: 20pt;
+  background: rgba(255,255,255,.04);
+  border: 0.5pt solid rgba(255,255,255,.08);
+  border-radius: 8pt;
+  padding: 14pt 18pt;
+  margin-bottom: 16mm;
+}
+.cover-score-num {
+  font-size: 42pt; font-weight: 900; line-height: 1;
+  color: {{ tier_color }};
+  font-variant-numeric: tabular-nums;
+}
+.cover-score-denom {
+  font-size: 14pt; color: #8b949e; font-weight: 400;
+}
+.cover-score-right { }
+.cover-tier {
+  display: inline-block;
+  background: rgba(0,232,154,.1);
+  border: 0.5pt solid rgba(0,232,154,.25);
+  color: #00e89a;
+  font-size: 7pt; font-weight: 700;
+  letter-spacing: 1pt; text-transform: uppercase;
+  padding: 2.5pt 7pt; border-radius: 12pt;
+  margin-bottom: 4pt;
+}
+.cover-co-name {
+  font-size: 14pt; font-weight: 700; color: #e6edf3;
+  margin-bottom: 2pt;
+}
+.cover-meta {
+  font-size: 8pt; color: #8b949e;
+}
+
+.cover-pillars {
+  display: flex; gap: 8pt; flex-wrap: wrap; margin-bottom: 20mm;
+}
+.cover-pillar {
+  flex: 1; min-width: 80pt;
+  background: rgba(255,255,255,.04);
+  border: 0.5pt solid rgba(255,255,255,.08);
+  border-radius: 6pt; padding: 8pt 10pt;
+}
+.cp-label { font-size: 6pt; color: #8b949e; text-transform: uppercase; letter-spacing: 0.8pt; margin-bottom: 2pt; }
+.cp-score { font-size: 13pt; font-weight: 800; color: {{ tier_color }}; }
+.cp-bar-bg { height: 3pt; background: rgba(255,255,255,.07); border-radius: 2pt; margin-top: 3pt; }
+.cp-bar    { height: 3pt; background: {{ tier_color }}; border-radius: 2pt; }
+
+.cover-footer {
+  position: absolute; bottom: 12mm; left: 20mm; right: 20mm;
+  border-top: 0.5pt solid rgba(255,255,255,.08);
+  padding-top: 6pt;
+  display: flex; justify-content: space-between;
+}
+.cover-footer-l { font-size: 7pt; color: #8b949e; }
+.cover-footer-r { font-size: 7pt; color: #8b949e; }
+
+/* ══════════════════════════════════════════
+   BODY PAGE CHROME
+══════════════════════════════════════════ */
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1pt solid #e5ede9;
+  padding-bottom: 5pt; margin-bottom: 14pt;
+}
+.ph-left { font-size: 7pt; color: #8b949e; }
+.ph-right { font-size: 7pt; color: #00c882; font-weight: 700; }
+
+/* ══════════════════════════════════════════
+   SECTION HEADERS
+══════════════════════════════════════════ */
+.section-title {
+  font-size: 9pt; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1pt;
+  color: #2d6a4f;
+  border-left: 3pt solid #00c882;
+  padding-left: 7pt;
+  margin: 14pt 0 8pt 0;
+}
+
+/* ══════════════════════════════════════════
+   SCORE BREAKDOWN TABLE
+══════════════════════════════════════════ */
+.score-table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; }
+.score-table th {
+  font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8pt;
+  color: #8b949e; text-align: left; padding: 4pt 0; border-bottom: 0.5pt solid #e5ede9;
+}
+.score-table td { padding: 5pt 0; border-bottom: 0.4pt solid #f0f5f2; vertical-align: middle; }
+.score-table td:last-child { text-align: right; }
+.st-label { font-size: 8.5pt; font-weight: 600; color: #1a2c23; }
+.st-weight { font-size: 7pt; color: #8b949e; }
+.st-bar-bg { width: 110pt; height: 5pt; background: #f0f5f2; border-radius: 3pt; display: inline-block; }
+.st-bar    { height: 5pt; border-radius: 3pt; background: #00c882; display: block; }
+.st-val    { font-size: 9pt; font-weight: 800; color: {{ tier_color }}; min-width: 22pt; }
+
+/* ══════════════════════════════════════════
+   AI SUMMARY BLOCK
+══════════════════════════════════════════ */
+.ai-block {
+  background: #f8faf9;
+  border-left: 3pt solid #00c882;
+  border-radius: 0 5pt 5pt 0;
+  padding: 9pt 11pt;
+  margin-bottom: 10pt;
+}
+.ai-block-title {
+  font-size: 7pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1pt; color: #2d6a4f; margin-bottom: 4pt;
+}
+.ai-block p { font-size: 8.5pt; color: #4a5568; line-height: 1.6; margin: 0; }
+
+/* ══════════════════════════════════════════
+   KEY METRICS ROW
+══════════════════════════════════════════ */
+.kpi-row { display: flex; gap: 8pt; margin-bottom: 12pt; }
+.kpi-cell {
+  flex: 1;
+  background: #f8faf9; border: 0.5pt solid #e5ede9;
+  border-radius: 5pt; padding: 7pt 9pt;
+}
+.kpi-val { font-size: 14pt; font-weight: 800; color: #2d6a4f; line-height: 1; margin-bottom: 2pt; }
+.kpi-lbl { font-size: 6.5pt; color: #8b949e; text-transform: uppercase; letter-spacing: 0.8pt; }
+
+/* ══════════════════════════════════════════
+   HARM SIGNALS
+══════════════════════════════════════════ */
+.signal-row {
+  display: flex; align-items: flex-start; gap: 7pt;
+  padding: 6pt 0; border-bottom: 0.4pt solid #f0f5f2;
+}
+.signal-icon { font-size: 10pt; width: 14pt; flex-shrink: 0; }
+.signal-label { font-size: 8.5pt; font-weight: 700; color: #1a2c23; }
+.signal-desc  { font-size: 7.5pt; color: #8b949e; margin-top: 1pt; }
+.signal-sev   {
+  font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6pt;
+  padding: 2pt 6pt; border-radius: 8pt;
+  margin-left: auto; white-space: nowrap; flex-shrink: 0;
+}
+.sev-critical { background: #ffe0e0; color: #c0392b; }
+.sev-high     { background: #fde8d8; color: #c0552b; }
+.sev-medium   { background: #fef9e7; color: #9a7d0a; }
+.sev-low      { background: #e8f5e9; color: #2d6a4f; }
+
+/* ══════════════════════════════════════════
+   FINANCING TABLE
+══════════════════════════════════════════ */
+.fin-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.fin-table th {
+  font-size: 7pt; color: #8b949e; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.7pt; padding: 3pt 4pt; text-align: left;
+  border-bottom: 0.5pt solid #e5ede9;
+}
+.fin-table td { padding: 5pt 4pt; border-bottom: 0.3pt solid #f0f5f2; vertical-align: top; }
+.fin-name  { font-size: 8.5pt; font-weight: 600; color: #1a2c23; }
+.fin-type  { font-size: 7pt; color: #8b949e; }
+.fin-badge {
+  display: inline-block;
+  font-size: 6.5pt; font-weight: 700; padding: 2pt 6pt; border-radius: 8pt;
+}
+.fin-eligible { background: #d8f3dc; color: #1b4332; }
+.fin-likely   { background: #dde5f4; color: #1e3a5f; }
+.fin-unlikely { background: #f1f3f4; color: #5a6e63; }
+
+/* ══════════════════════════════════════════
+   SPARKLINE CHART
+══════════════════════════════════════════ */
+.sparkline-wrap {
+  background: #f8faf9; border: 0.5pt solid #e5ede9;
+  border-radius: 5pt; padding: 10pt;
+  margin-bottom: 10pt;
+}
+.spark-title { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8pt; color: #2d6a4f; margin-bottom: 6pt; }
+
+/* ══════════════════════════════════════════
+   DISCLAIMER
+══════════════════════════════════════════ */
+.disclaimer {
+  background: #f8faf9; border: 0.4pt solid #e5ede9;
+  border-radius: 4pt; padding: 7pt 9pt;
+  margin-top: 14pt;
+}
+.disclaimer p { font-size: 7pt; color: #8b949e; line-height: 1.5; margin: 0; }
+
+/* ══════════════════════════════════════════
+   SCORE HISTORY TABLE (small)
+══════════════════════════════════════════ */
+.hist-row {
+  display: flex; align-items: center; gap: 6pt;
+  padding: 3pt 0; border-bottom: 0.3pt solid #f0f5f2;
+}
+.hist-date { font-size: 7pt; color: #8b949e; min-width: 40pt; }
+.hist-bar-bg { flex: 1; height: 4pt; background: #f0f5f2; border-radius: 2pt; }
+.hist-bar { height: 4pt; border-radius: 2pt; }
+.hist-val { font-size: 8pt; font-weight: 800; color: {{ tier_color }}; min-width: 24pt; text-align: right; }
+
+.page-break { page-break-before: always; }
+
+/* Pillar colour helpers */
+.bar-env  { background: #00c882; }
+.bar-ben  { background: #58a6ff; }
+.bar-mod  { background: #8b5cf6; }
+.bar-gov  { background: #f4a261; }
+.bar-anti { background: #e63946; }
+.bar-eth  { background: #00e89a; }
+
+</style>
+</head>
+<body>
+
+{# ══════════════════════════════════════════ #}
+{#  COVER PAGE                               #}
+{# ══════════════════════════════════════════ #}
+<div class="cover">
+
+  <div class="cover-header">
+    <div class="cover-logo-box">E</div>
+    <div class="cover-brand">Eco<span>IQ</span></div>
+  </div>
+
+  <div class="cover-tag">Company Intelligence Report</div>
+  <h1>{{ company.name }}</h1>
+  <div class="cover-subtitle">
+    {{ company.get_sector_display }}{% if company.country %} · {{ company.country }}{% endif %}
+  </div>
+
+  <div class="cover-score-band">
+    <div>
+      <div class="cover-score-num">{{ profile.ecoiq_total_score|default:0|floatformat:1 }}</div>
+      <div class="cover-score-denom">/ 100</div>
+    </div>
+    <div class="cover-score-right">
+      <div class="cover-tier">{{ tier_label }}</div>
+      <div class="cover-co-name">EcoIQ Score</div>
+      <div class="cover-meta">
+        {{ company.get_sector_display }} ·
+        {% if company.country %}{{ company.country }} · {% endif %}
+        Ranked #{{ company.rank|default:"—" }} globally
+      </div>
+    </div>
+  </div>
+
+  <!-- Pillar preview on cover -->
+  <div class="cover-pillars">
+    {% for card in score_cards %}
+    <div class="cover-pillar">
+      <div class="cp-label">{{ card.label|truncatechars:14 }}</div>
+      <div class="cp-score">{{ card.score|floatformat:0 }}</div>
+      <div class="cp-bar-bg"><div class="cp-bar" style="width:{{ card.score }}%"></div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="cover-footer">
+    <div class="cover-footer-l">Generated {{ report_date }} · EcoIQ v1 · ecoiq.uk</div>
+    <div class="cover-footer-r">AI-assisted analysis · Not independently verified</div>
+  </div>
+
+</div>
+
+
+{# ══════════════════════════════════════════ #}
+{#  PAGE 2 — SCORE INTELLIGENCE              #}
+{# ══════════════════════════════════════════ #}
+
+<div class="page-header">
+  <div class="ph-left">{{ company.name }} — EcoIQ Intelligence Report</div>
+  <div class="ph-right">ecoiq.uk</div>
+</div>
+
+<!-- Key Metrics -->
+<div class="kpi-row">
+  <div class="kpi-cell">
+    <div class="kpi-val">{{ profile.ecoiq_total_score|default:0|floatformat:1 }}</div>
+    <div class="kpi-lbl">EcoIQ Score</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-val">{{ profile.evidence_score|default:0|floatformat:0 }}%</div>
+    <div class="kpi-lbl">Evidence Coverage</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-val">{% if profile.harm_penalty > 0 %}−{{ profile.harm_penalty|floatformat:1 }}{% else %}0{% endif %}</div>
+    <div class="kpi-lbl">Harm Penalty</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-val">{{ company.rank|default:"—" }}</div>
+    <div class="kpi-lbl">Global Rank</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-val">{{ ai_confidence|default:0 }}%</div>
+    <div class="kpi-lbl">AI Confidence</div>
+  </div>
+</div>
+
+<!-- Score Breakdown -->
+<div class="section-title">Score Breakdown — 6 Ethical Pillars</div>
+
+<table class="score-table">
+  <thead>
+    <tr>
+      <th style="width:40%">Pillar</th>
+      <th>Weight</th>
+      <th>Score Indicator</th>
+      <th>Score</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><div class="st-label">Environmental Responsibility</div></td>
+      <td><span class="st-weight">20%</span></td>
+      <td><span class="st-bar-bg"><span class="st-bar bar-env" style="width:{{ profile.environmental_responsibility_score|default:0 }}%"></span></span></td>
+      <td class="st-val">{{ profile.environmental_responsibility_score|default:0|floatformat:1 }}</td>
+    </tr>
+    <tr>
+      <td><div class="st-label">Public Benefit</div></td>
+      <td><span class="st-weight">20%</span></td>
+      <td><span class="st-bar-bg"><span class="st-bar bar-ben" style="width:{{ profile.public_benefit_score|default:0 }}%"></span></span></td>
+      <td class="st-val">{{ profile.public_benefit_score|default:0|floatformat:1 }}</td>
+    </tr>
+    <tr>
+      <td><div class="st-label">Responsible Modernisation</div></td>
+      <td><span class="st-weight">20%</span></td>
+      <td><span class="st-bar-bg"><span class="st-bar bar-mod" style="width:{{ profile.modernization_score|default:0 }}%"></span></span></td>
+      <td class="st-val">{{ profile.modernization_score|default:0|floatformat:1 }}</td>
+    </tr>
+    <tr>
+      <td><div class="st-label">Governance & Transparency</div></td>
+      <td><span class="st-weight">15%</span></td>
+      <td><span class="st-bar-bg"><span class="st-bar bar-gov" style="width:{{ profile.transparency_anti_corruption_score|default:0 }}%"></span></span></td>
+      <td class="st-val">{{ profile.transparency_anti_corruption_score|default:0|floatformat:1 }}</td>
+    </tr>
+    <tr>
+      <td><div class="st-label">Anti-Corruption</div></td>
+      <td><span class="st-weight">15%</span></td>
+      <td><span class="st-bar-bg"><span class="st-bar bar-anti" style="width:{{ profile.anti_corruption_score|default:0 }}%"></span></span></td>
+      <td class="st-val">{{ profile.anti_corruption_score|default:0|floatformat:1 }}</td>
+    </tr>
+    <tr>
+      <td><div class="st-label">Ethical Alignment</div></td>
+      <td><span class="st-weight">10%</span></td>
+      <td><span class="st-bar-bg"><span class="st-bar bar-eth" style="width:{{ profile.ethical_alignment_score|default:0 }}%"></span></span></td>
+      <td class="st-val">{{ profile.ethical_alignment_score|default:0|floatformat:1 }}</td>
+    </tr>
+    {% if profile.harm_penalty > 0 %}
+    <tr>
+      <td colspan="3"><div class="st-label" style="color:#e63946">Harm Penalty (deducted)</div></td>
+      <td class="st-val" style="color:#e63946">−{{ profile.harm_penalty|floatformat:1 }}</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>
+
+<!-- AI Summary -->
+{% if profile.ai_summary %}
+<div class="section-title">AI Intelligence Summary</div>
+<div class="ai-block">
+  <div class="ai-block-title">⬡ AI-Assisted Analysis</div>
+  <p>{{ profile.ai_summary }}</p>
+</div>
+{% endif %}
+
+{% if profile.ai_investment_opportunity %}
+<div class="ai-block">
+  <div class="ai-block-title">📈 Investment Opportunity</div>
+  <p>{{ profile.ai_investment_opportunity }}</p>
+</div>
+{% endif %}
+
+<!-- Score History -->
+{% if score_snapshots %}
+<div class="section-title">Score Evolution History</div>
+<div class="sparkline-wrap">
+  <div class="spark-title">18-Month Score Trend</div>
+  {% for snap in score_snapshots %}
+  <div class="hist-row">
+    <div class="hist-date">{{ snap.date|date:"M 'y" }}</div>
+    <div class="hist-bar-bg">
+      <div class="hist-bar" style="width:{{ snap.total_score }}%;background:{{ snap.tier_color }}"></div>
+    </div>
+    <div class="hist-val">{{ snap.total_score|floatformat:1 }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+
+{# ══════════════════════════════════════════ #}
+{#  PAGE 3 — RISK, FINANCING & DISCLAIMER    #}
+{# ══════════════════════════════════════════ #}
+<div class="page-break"></div>
+
+<div class="page-header">
+  <div class="ph-left">{{ company.name }} — Risk Intelligence &amp; Financing Eligibility</div>
+  <div class="ph-right">ecoiq.uk</div>
+</div>
+
+<!-- Harm Signals -->
+{% if harm_signals %}
+<div class="section-title">Risk &amp; Harm Signals</div>
+{% for sig in harm_signals %}
+<div class="signal-row">
+  <div class="signal-icon">
+    {% if sig.severity == 'critical' %}🔴{% elif sig.severity == 'high' %}🟠{% elif sig.severity == 'medium' %}🟡{% else %}🟢{% endif %}
+  </div>
+  <div>
+    <div class="signal-label">{{ sig.label }}</div>
+    {% if sig.description %}<div class="signal-desc">{{ sig.description }}</div>{% endif %}
+  </div>
+  <div class="signal-sev sev-{{ sig.severity }}">{{ sig.severity|upper }}</div>
+</div>
+{% endfor %}
+{% else %}
+<div class="section-title">Risk &amp; Harm Signals</div>
+<p style="font-size:8pt;color:#8b949e">No material harm signals identified based on available public data.</p>
+{% endif %}
+
+<!-- Financing Eligibility -->
+{% if financing_matches %}
+<div class="section-title">Financing Eligibility (Top Matches)</div>
+<table class="fin-table">
+  <thead>
+    <tr>
+      <th style="width:45%">Programme</th>
+      <th>Type</th>
+      <th>Match</th>
+      <th style="text-align:right">Score</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for fm in financing_matches %}
+    <tr>
+      <td>
+        <div class="fin-name">{{ fm.opportunity.name|truncatechars:40 }}</div>
+        {% if fm.opportunity.provider %}<div class="fin-type">{{ fm.opportunity.provider }}</div>{% endif %}
+      </td>
+      <td><span class="fin-type">{{ fm.opportunity.instrument_type|default:"—" }}</span></td>
+      <td>
+        <span class="fin-badge
+          {% if fm.match_tier == 'eligible' %}fin-eligible
+          {% elif fm.match_tier == 'likely' %}fin-likely
+          {% else %}fin-unlikely{% endif %}">
+          {{ fm.match_tier|title }}
+        </span>
+      </td>
+      <td style="text-align:right;font-weight:700;color:#2d6a4f;font-size:9pt">{{ fm.match_score|floatformat:0 }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- Modernisation Notes -->
+{% if profile.ai_modernization_report %}
+<div class="section-title">Modernisation Intelligence</div>
+<div class="ai-block">
+  <div class="ai-block-title">⚙ AI Modernisation Analysis</div>
+  <p>{{ profile.ai_modernization_report|truncatechars:800 }}</p>
+</div>
+{% endif %}
+
+<!-- Risk Notes -->
+{% if profile.ai_risk_notes %}
+<div class="section-title">Risk Assessment</div>
+<div class="ai-block">
+  <div class="ai-block-title">⚠ Risk Intelligence</div>
+  <p>{{ profile.ai_risk_notes|truncatechars:600 }}</p>
+</div>
+{% endif %}
+
+<!-- Sources -->
+{% if sources %}
+<div class="section-title">Evidence Sources</div>
+{% for src in sources %}
+<p style="font-size:7.5pt;color:#4a5568;margin-bottom:2pt">
+  • <strong>{{ src.title|truncatechars:60 }}</strong>
+  {% if src.source_type %}<span style="color:#8b949e"> · {{ src.source_type|title }}</span>{% endif %}
+  {% if src.date %}<span style="color:#8b949e"> · {{ src.date|date:"Y" }}</span>{% endif %}
+</p>
+{% endfor %}
+{% endif %}
+
+<!-- Disclaimer -->
+<div class="disclaimer">
+  <p><strong>Disclaimer:</strong>
+  This report is based on publicly available information and AI-assisted analysis conducted
+  by EcoIQ (ecoiq.uk). It has not been independently verified or endorsed by {{ company.name }}
+  unless explicitly marked as Verified. EcoIQ scores are indicative and designed to support
+  transparency, modernisation, and responsible investment dialogue. They do not constitute
+  investment advice, legal opinion, or a guarantee of company performance. © {{ report_date|date:"Y" }} EcoIQ.</p>
+</div>
+
+</body>
+</html>
