@@ -373,12 +373,12 @@
         <div class="lbl">Companies Rated</div>
       </div>
       <div class="stat-card">
-        <div class="val">{% if total_co2 %}{{ total_co2|intcomma }}t{% else %}—{% endif %}</div>
+        <div class="val">{% if total_co2 %}{{ total_co2|intcomma }}t{% else %}0t{% endif %}</div>
         <div class="lbl">CO₂ Reduced / yr</div>
       </div>
       <div class="stat-card">
-        <div class="val">{% if total_inv_m %}${{ total_inv_m|intcomma }}M{% else %}—{% endif %}</div>
-        <div class="lbl">Invested</div>
+        <div class="val">{% if total_inv_m %}£{{ total_inv_m|intcomma }}M{% else %}—{% endif %}</div>
+        <div class="lbl">Capital Invested</div>
       </div>
       <div class="stat-card">
         <div class="val">6</div>
