@@ -23,14 +23,10 @@ services:
         value: "False"
 
       # Wildcard allows all hosts — safe behind Render's reverse proxy.
-      # For tighter control replace with: "ecoiq.onrender.com ecoiq.uk www.ecoiq.uk"
-      # Comma-separated also works: "ecoiq.onrender.com,ecoiq.uk,www.ecoiq.uk"
       - key: ALLOWED_HOSTS
         value: "*"
 
-      # Full HTTPS origins — comma or space separated. No wildcards here.
-      # Add every domain that will send POST requests (login, forms).
-      # Example: "https://ecoiq.onrender.com,https://ecoiq.uk,https://www.ecoiq.uk"
+      # Full HTTPS origins — comma or space separated.
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://ecoiq.onrender.com,https://ecoiq.uk,https://www.ecoiq.uk"
 
@@ -38,8 +34,74 @@ services:
       - key: SITE_URL
         value: "https://ecoiq.uk"
 
-      # Set this manually in the Render dashboard — never commit the real key
+      # Set manually in the Render dashboard — never commit the real key
       - key: ANTHROPIC_API_KEY
+        sync: false
+
+      # Companies House UK — free key at developer.companieshouse.gov.uk
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
+
+  # ── Cron: Daily yFinance refresh (6:00 UTC) ────────────────────────────────
+  - type: cron
+    name: ecoiq-daily-yfinance
+    env: python
+    region: oregon
+    schedule: "0 6 * * *"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python manage.py run_ingestion --source=yfinance"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ecoiq-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+
+  # ── Cron: RSS signals every 4 hours ───────────────────────────────────────
+  - type: cron
+    name: ecoiq-rss-signals
+    env: python
+    region: oregon
+    schedule: "0 */4 * * *"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python manage.py run_ingestion --source=rss"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ecoiq-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+
+  # ── Cron: Full pipeline weekly (Sunday 02:00 UTC) ─────────────────────────
+  - type: cron
+    name: ecoiq-weekly-full-ingest
+    env: python
+    region: oregon
+    schedule: "0 2 * * 0"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python manage.py run_ingestion --source=all"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ecoiq-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: COMPANIES_HOUSE_API_KEY
         sync: false
 
 databases:

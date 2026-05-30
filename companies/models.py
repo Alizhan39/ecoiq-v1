@@ -502,3 +502,46 @@ class CompanyScoreSnapshot(models.Model):
             moral_label              = profile.moral_label,
             notes                    = notes,
         )
+
+
+# ── DataIngestionLog ──────────────────────────────────────────────────────────
+
+class DataIngestionLog(models.Model):
+    """
+    Audit trail for every automated data ingestion event.
+    Records what was fetched, from which source, which fields were updated,
+    and whether the operation succeeded.  Linked to league.Company so that
+    ingestion history is visible on any company detail page.
+    """
+    SOURCE_CHOICES = [
+        ('companies_house', 'Companies House UK'),
+        ('sec_edgar',       'SEC EDGAR US'),
+        ('cdp',             'CDP Climate Disclosure'),
+        ('yfinance',        'Yahoo Finance / Bloomberg'),
+        ('rss',             'Regulatory RSS Feed'),
+        ('manual',          'Manual Admin Entry'),
+    ]
+
+    # Nullable so we can log pipeline-level errors that aren't company-specific
+    company = models.ForeignKey(
+        'league.Company',
+        on_delete=models.CASCADE,
+        related_name='ingestion_logs',
+        null=True, blank=True,
+    )
+    source         = models.CharField(max_length=30, choices=SOURCE_CHOICES)
+    raw_data       = models.JSONField(default=dict, blank=True)
+    fields_updated = models.JSONField(default=list, blank=True)
+    success        = models.BooleanField(default=True)
+    error_msg      = models.TextField(blank=True)
+    ingested_at    = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering     = ['-ingested_at']
+        verbose_name = 'Data Ingestion Log'
+        verbose_name_plural = 'Data Ingestion Logs'
+
+    def __str__(self):
+        co = self.company.name if self.company_id else '(no company)'
+        ts = self.ingested_at.strftime('%Y-%m-%d') if self.ingested_at else '—'
+        return f'{self.get_source_display()} → {co} ({ts})'

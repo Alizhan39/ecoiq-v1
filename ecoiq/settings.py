@@ -219,6 +219,10 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.
 LEAD_NOTIFY_EMAIL  = os.environ.get('LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
 CALENDLY_URL       = os.environ.get('CALENDLY_URL', '')
 
+# ── Data ingestion API keys ───────────────────────────────────────────────────
+# Companies House (UK): free at developer.companieshouse.gov.uk
+COMPANIES_HOUSE_API_KEY = os.environ.get('COMPANIES_HOUSE_API_KEY', '')
+
 # Warn at startup if SMTP is configured but credentials are missing
 _smtp_backend = 'django.core.mail.backends.smtp.EmailBackend'
 if EMAIL_BACKEND == _smtp_backend and not EMAIL_HOST_USER:

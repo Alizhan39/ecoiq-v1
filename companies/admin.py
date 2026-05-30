@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils.html import format_html, mark_safe
 
 from .models import (CompanyProfile, CompanyGuidanceVideo, CompanySource,
-                     CompanyScoreSnapshot)
+                     CompanyScoreSnapshot, DataIngestionLog)
 
 logger = logging.getLogger(__name__)
 
@@ -625,3 +625,44 @@ class CompanyScoreSnapshotAdmin(admin.ModelAdmin):
             ok += 1
         self.message_user(request, f'✓ Created {ok} new snapshots from current live scores.')
     action_snapshot_selected.short_description = '📸 Re-snapshot (new record from current live scores)'
+
+
+# ── DataIngestionLog admin ────────────────────────────────────────────────────
+
+@admin.register(DataIngestionLog)
+class DataIngestionLogAdmin(admin.ModelAdmin):
+    list_display   = ['ingested_at', 'source_badge', 'company', 'fields_updated_short', 'success_badge']
+    list_filter    = ['source', 'success', 'ingested_at']
+    search_fields  = ['company__name', 'error_msg']
+    ordering       = ['-ingested_at']
+    date_hierarchy = 'ingested_at'
+    readonly_fields = ['raw_data', 'fields_updated', 'ingested_at', 'source', 'company', 'success', 'error_msg']
+
+    SOURCE_COLORS = {
+        'companies_house': ('#0c3a6b', '#dde5f4'),
+        'sec_edgar':       ('#1b4332', '#d8f3dc'),
+        'cdp':             ('#4a1d8a', '#ede9fe'),
+        'yfinance':        ('#854d0e', '#fef9c3'),
+        'rss':             ('#333',    '#e5e7eb'),
+        'manual':          ('#333',    '#f9fafb'),
+    }
+
+    @admin.display(description='Source', ordering='source')
+    def source_badge(self, obj):
+        fg, bg = self.SOURCE_COLORS.get(obj.source, ('#333', '#eee'))
+        return format_html(
+            '<span style="background:{};color:{};padding:2px 9px;border-radius:10px;'
+            'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',
+            bg, fg, obj.get_source_display()
+        )
+
+    @admin.display(description='Fields', ordering=None)
+    def fields_updated_short(self, obj):
+        fields = obj.fields_updated or []
+        if not fields:
+            return '—'
+        return ', '.join(fields[:4]) + ('…' if len(fields) > 4 else '')
+
+    @admin.display(description='OK', ordering='success', boolean=True)
+    def success_badge(self, obj):
+        return obj.success

@@ -1571,6 +1571,23 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
       </div>
     </div>
 
+    <!-- ── Data freshness indicator ─────────────────────── -->
+    {% with last_log=company.ingestion_logs.first %}
+    {% if last_log %}
+    <div style="margin-top:1rem;font-size:.7rem;color:#475569;
+      font-family:'IBM Plex Mono',monospace;
+      padding:.5rem .75rem;
+      background:#0a0f14;border:1px solid rgba(255,255,255,0.06);
+      border-radius:4px;display:flex;align-items:center;gap:.5rem">
+      <span style="color:#10b981;font-size:.65rem">●</span>
+      <span>
+        Data: {{ last_log.get_source_display }}
+        · {{ last_log.ingested_at|timesince }} ago
+      </span>
+    </div>
+    {% endif %}
+    {% endwith %}
+
   </div><!-- /sidebar -->
 
 </div><!-- /page-layout -->
