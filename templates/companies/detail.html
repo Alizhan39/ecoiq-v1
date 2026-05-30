@@ -672,7 +672,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     <a href="/about/" class="cmd-btn">About</a>
     <a href="/methodology/" class="cmd-btn">📐 Methodology</a>
     <a href="/pricing/" class="cmd-btn">Pricing</a>
-    <a href="mailto:alizhan@ecoiq.uk" class="cmd-btn">Contact</a>
+    <a href="{% url 'contact' %}" class="cmd-btn">Contact</a>
     {% if request.user.is_staff %}
     <a href="{% url 'admin:companies_companyprofile_change' profile.pk %}" class="cmd-btn accent">Edit Profile</a>
     {% endif %}

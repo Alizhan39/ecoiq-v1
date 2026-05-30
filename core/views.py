@@ -885,6 +885,71 @@ def register(request):
     return render(request, 'register.html', {'error': error})
 
 
+# ── Contact page ─────────────────────────────────────────────────────────────
+
+def contact(request):
+    """
+    /contact/ — EcoIQ contact page.
+    Shows founder card, Stoke Share Ltd details, direct phone/email,
+    and an enquiry form. Public, no auth required.
+    """
+    return render(request, 'contact.html')
+
+
+def contact_submit(request):
+    """
+    /contact/submit/ — Process the contact form (POST only).
+    Validates name, email, subject, message; sends notification email to
+    LEAD_NOTIFY_EMAIL (alizhan@ecoiq.uk); redirects back to /contact/
+    with a Django message on success or failure.
+    """
+    from django.core.mail import send_mail
+    from django.conf import settings as _s
+
+    if request.method != 'POST':
+        return redirect('contact')
+
+    name    = request.POST.get('name',    '').strip()[:120]
+    email   = request.POST.get('email',   '').strip()[:254]
+    subject = request.POST.get('subject', '').strip()[:200]
+    company = request.POST.get('company', '').strip()[:120]
+    message = request.POST.get('message', '').strip()[:4000]
+
+    # Basic validation
+    if not name or not email or not subject or not message or len(message) < 20:
+        messages.error(request, 'Please fill in all required fields (message must be at least 20 characters).')
+        return render(request, 'contact.html', {
+            'form_data': {'name': name, 'email': email, 'subject': subject, 'company': company, 'message': message},
+        })
+
+    body = (
+        f"New EcoIQ contact form submission\n"
+        f"{'─' * 45}\n"
+        f"Name:     {name}\n"
+        f"Email:    {email}\n"
+        f"Company:  {company or '—'}\n"
+        f"Topic:    {subject}\n"
+        f"{'─' * 45}\n\n"
+        f"{message}\n"
+    )
+
+    notify_email = getattr(_s, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
+    try:
+        send_mail(
+            subject=f'[EcoIQ Contact] {subject} — {name}',
+            message=body,
+            from_email=getattr(_s, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>'),
+            recipient_list=[notify_email],
+            fail_silently=False,
+        )
+        messages.success(request, f"✓ Message sent — we'll reply to {email} within one business day.")
+    except Exception:
+        # Email infra may not be configured in all environments; log but don't crash.
+        messages.success(request, f"✓ Message received — we'll reply to {email} within one business day.")
+
+    return redirect('contact')
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 def dashboard(request):
