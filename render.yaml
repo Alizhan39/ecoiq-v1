@@ -4,7 +4,7 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
     releaseCommand: python manage.py migrate && python manage.py add_400_companies
     startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
