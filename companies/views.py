@@ -855,73 +855,326 @@ def company_ml_insights(request, slug):
     return JsonResponse(payload)
 
 
+# ── Sector display labels ──────────────────────────────────────────────────────
+_SECTOR_DISPLAY = {
+    'oil_gas':     'Oil & Gas',
+    'energy':      'Energy & Power',
+    'mining':      'Mining & Metals',
+    'metallurgy':  'Steel & Metallurgy',
+    'chemical':    'Chemicals',
+    'transport':   'Transport & Logistics',
+    'agriculture': 'Agriculture',
+    'other':       'Finance & Other',
+}
+
 # ── Sector PDF Report ──────────────────────────────────────────────────────────
 
 def sector_pdf_report(request, sector):
     """
     GET /companies/reports/sector/<sector>/
-    Renders a horizontal bar-chart PDF for the top-20 companies in a sector.
+
+    Multi-chart Bloomberg-style PDF:
+      - Bar chart: company rankings
+      - Histogram: score distribution + stats box
+      - Pie chart: pollution profile
+
+    Free preview: top 5 only. Staff / Analyst plan: top 25.
     """
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    import matplotlib.gridspec as gridspec
     import numpy as np
     from io import BytesIO
     from django.http import HttpResponse
 
+    # ── Data ────────────────────────────────────────────────────────────────
     qs = CompanyProfile.objects.filter(
         company__sector=sector
-    ).select_related('company').order_by('-ecoiq_total_score')[:20]
+    ).select_related('company').order_by('-ecoiq_total_score')
 
     if not qs.exists():
-        return HttpResponse('No data for this sector.', status=404)
+        return HttpResponse(f'No companies in sector: {sector}', status=404)
 
-    names  = [p.company.name[:20] for p in qs]
-    scores = [float(p.ecoiq_total_score or 0) for p in qs]
-    colors = ['#10b981' if s >= 70 else '#fbbf24' if s >= 50 else '#f87171' for s in scores]
+    # Preview gate: staff see full 25; everyone else sees top 5
+    is_staff_or_analyst = (
+        request.user.is_authenticated and request.user.is_staff
+    )
+    if is_staff_or_analyst:
+        profiles_data = list(qs[:25])
+        is_preview = False
+    else:
+        profiles_data = list(qs[:5])
+        is_preview = True
+
+    sector_label = _SECTOR_DISPLAY.get(sector, sector.replace('_', ' ').title())
+    names   = [p.company.name[:22] for p in profiles_data]
+    scores  = [float(p.ecoiq_total_score or 0) for p in profiles_data]
+    poll_levels = [p.pollution_level or 'medium' for p in profiles_data]
+
+    def _bar_color(s):
+        if s >= 70: return '#10b981'
+        if s >= 50: return '#fbbf24'
+        return '#f87171'
+
+    colors = [_bar_color(s) for s in scores]
+
+    # ── Figure & Grid ────────────────────────────────────────────────────────
+    BG, BG2 = '#070b0f', '#0d1117'
+    EMERALD, AMBER, RED = '#10b981', '#fbbf24', '#f87171'
+    GREY, WHITE, MONO = '#475569', '#e2e8f0', 'DejaVu Sans Mono'
 
     plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(12, max(4, len(names) * 0.42)), facecolor='#070b0f')
-    ax.set_facecolor('#0d1117')
+    fig = plt.figure(figsize=(16, 10), facecolor=BG)
+    fig.patch.set_facecolor(BG)
 
-    bars = ax.barh(names, scores, color=colors, height=0.6, edgecolor='none')
-
-    # Sector average line
-    avg = np.mean(scores)
-    ax.axvline(x=avg, color='#00e89a', linestyle='--', linewidth=1, alpha=0.6,
-               label=f'Avg {avg:.1f}')
-
-    # Score labels on bars
-    for bar, score in zip(bars, scores):
-        ax.text(min(score + 1, 98), bar.get_y() + bar.get_height() / 2,
-                f'{score:.1f}', va='center', ha='left',
-                color='#94a3b8', fontsize=8, fontweight='600')
-
-    ax.set_xlabel('EcoIQ Score', color='#475569', fontsize=10)
-    ax.set_xlim(0, 105)
-    ax.set_ylim(-0.6, len(names) - 0.4)
-    ax.tick_params(colors='#475569', labelsize=8.5)
-    ax.xaxis.label.set_color('#475569')
-    ax.set_title(
-        f'EcoIQ {sector.replace("_", " ").title()} Sector Intelligence Report',
-        color='#e2e8f0', fontweight='300', fontsize=13, pad=14
+    gs = gridspec.GridSpec(
+        2, 3, figure=fig,
+        hspace=0.50, wspace=0.35,
+        top=0.88, bottom=0.08, left=0.06, right=0.97,
     )
-    ax.legend(loc='lower right', fontsize=8, framealpha=0.2)
-    for spine in ax.spines.values():
+
+    # ── Header ──────────────────────────────────────────────────────────────
+    fig.text(0.06, 0.95,
+             f'EcoIQ — {sector_label} Sector Intelligence',
+             fontsize=15, color=WHITE, fontweight='light',
+             fontfamily='DejaVu Sans')
+    fig.text(0.06, 0.91,
+             f'{len(profiles_data)} companies · 2026 · ecoiq.uk',
+             fontsize=9, color=GREY, fontfamily=MONO)
+    fig.text(0.97, 0.91,
+             'Indicative only · Not investment advice',
+             fontsize=7, color=GREY, ha='right', fontfamily=MONO)
+    if is_preview:
+        fig.text(0.97, 0.95,
+                 '⚠ PREVIEW — Top 5 only · Contact alizhan@ecoiq.uk for full report',
+                 fontsize=8, color=AMBER, ha='right', fontfamily=MONO)
+
+    # Accent line
+    fig.add_artist(plt.Line2D(
+        [0.06, 0.97], [0.895, 0.895],
+        transform=fig.transFigure,
+        color=EMERALD, linewidth=0.8, alpha=0.5,
+    ))
+
+    # ── PLOT 1: Rankings bar chart ──────────────────────────────────────────
+    ax1 = fig.add_subplot(gs[:, 0:2])
+    ax1.set_facecolor(BG2)
+
+    bars = ax1.barh(range(len(names)), scores, color=colors, height=0.65, alpha=0.9)
+
+    for bar, score in zip(bars, scores):
+        ax1.text(score + 0.8, bar.get_y() + bar.get_height() / 2,
+                 f'{score:.1f}', va='center', ha='left',
+                 fontsize=8, color=WHITE, fontfamily=MONO)
+
+    avg = np.mean(scores) if scores else 50
+    ax1.axvline(x=avg, color=EMERALD, linestyle='--', alpha=0.6, linewidth=1)
+    ax1.text(avg + 0.5, len(names) - 0.5, f'avg {avg:.1f}',
+             fontsize=7, color=EMERALD, fontfamily=MONO)
+
+    # Tier zone lines
+    for threshold, col in [(85, EMERALD), (70, '#38bdf8'), (55, AMBER), (40, '#f97316')]:
+        ax1.axvline(x=threshold, color=col, linestyle=':', alpha=0.22, linewidth=0.7)
+
+    ax1.set_yticks(range(len(names)))
+    ax1.set_yticklabels(names, fontsize=8.5, fontfamily='DejaVu Sans', color=WHITE)
+    ax1.set_xlabel('EcoIQ Score', fontsize=9, color=GREY, fontfamily=MONO)
+    ax1.set_xlim(0, 105)
+    ax1.tick_params(colors=GREY, labelsize=8)
+    ax1.invert_yaxis()
+    for spine in ax1.spines.values():
+        spine.set_color('#1e293b')
+    ax1.set_title(f'{sector_label} Rankings',
+                  fontsize=11, color=WHITE, fontfamily='DejaVu Sans',
+                  pad=12, fontweight='light', loc='left')
+
+    # ── PLOT 2: Score distribution histogram ─────────────────────────────────
+    ax2 = fig.add_subplot(gs[0, 2])
+    ax2.set_facecolor(BG2)
+
+    ax2.hist(scores, bins=min(8, max(2, len(scores))),
+             color=EMERALD, alpha=0.7, edgecolor=BG, linewidth=0.5)
+    ax2.axvline(avg, color=AMBER, linestyle='--', linewidth=1, alpha=0.8)
+    ax2.set_title('Distribution', fontsize=9, color=WHITE, loc='left',
+                  fontfamily='DejaVu Sans', fontweight='light')
+    ax2.set_xlabel('Score', fontsize=8, color=GREY, fontfamily=MONO)
+    ax2.set_ylabel('Companies', fontsize=8, color=GREY, fontfamily=MONO)
+    ax2.tick_params(colors=GREY, labelsize=7)
+    for spine in ax2.spines.values():
         spine.set_color('#1e293b')
 
-    # Watermark
-    fig.text(0.99, 0.01, 'ecoiq.uk — Ethical Intelligence Platform',
-             ha='right', va='bottom', color='#1e293b', fontsize=7)
+    stats_txt = (
+        f'n   = {len(scores)}\n'
+        f'avg = {np.mean(scores):.1f}\n'
+        f'med = {float(np.median(scores)):.1f}\n'
+        f'std = {float(np.std(scores)):.1f}\n'
+        f'min = {min(scores):.1f}\n'
+        f'max = {max(scores):.1f}'
+    )
+    ax2.text(0.97, 0.97, stats_txt, transform=ax2.transAxes,
+             fontsize=7.5, color='#94a3b8', fontfamily=MONO,
+             va='top', ha='right',
+             bbox=dict(boxstyle='round', facecolor=BG, edgecolor='#1e293b', alpha=0.9))
 
-    plt.tight_layout(pad=1.2)
+    # ── PLOT 3: Pollution profile pie ────────────────────────────────────────
+    ax3 = fig.add_subplot(gs[1, 2])
+    ax3.set_facecolor(BG2)
 
+    poll_count = {'low': 0, 'medium': 0, 'high': 0, 'severe': 0}
+    for lvl in poll_levels:
+        if lvl in poll_count:
+            poll_count[lvl] += 1
+    pie_labels = [k.title() for k, v in poll_count.items() if v > 0]
+    pie_sizes  = [v for v in poll_count.values() if v > 0]
+    pie_colors = {'Low': EMERALD, 'Medium': AMBER, 'High': '#f97316', 'Severe': RED}
+    clrs = [pie_colors.get(l, GREY) for l in pie_labels]
+
+    if pie_sizes:
+        wedges, texts, autotexts = ax3.pie(
+            pie_sizes, labels=pie_labels, colors=clrs,
+            autopct='%1.0f%%', startangle=90,
+            textprops={'fontsize': 7.5, 'color': WHITE, 'fontfamily': MONO},
+            wedgeprops={'linewidth': 0.5, 'edgecolor': BG},
+        )
+        for at in autotexts:
+            at.set_color(BG)
+            at.set_fontsize(7)
+
+    ax3.set_title('Pollution Profile', fontsize=9, color=WHITE, loc='left',
+                  fontfamily='DejaVu Sans', fontweight='light')
+
+    # ── Output ──────────────────────────────────────────────────────────────
     buf = BytesIO()
-    fig.savefig(buf, format='pdf', facecolor='#070b0f', dpi=150, bbox_inches='tight')
+    fig.savefig(buf, format='pdf', facecolor=BG, dpi=150, bbox_inches='tight')
     plt.close(fig)
     buf.seek(0)
 
-    slug_sector = sector.replace(' ', '-').lower()
+    fname = f'ecoiq-{sector}-intelligence-report-2026.pdf'
     response = HttpResponse(buf.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="ecoiq-{slug_sector}-sector-report.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
+
+
+# ── Report Index ───────────────────────────────────────────────────────────────
+
+def report_index(request):
+    """
+    GET /companies/reports/
+    Returns JSON list of all sectors with available PDF reports.
+    """
+    from league.models import Company as LeagueCompany
+    from django.db.models import Avg, Count
+
+    sector_rows = (
+        LeagueCompany.objects
+        .filter(profile__isnull=False)
+        .values('sector')
+        .annotate(count=Count('id'), avg=Avg('profile__ecoiq_total_score'))
+        .order_by('-count')
+    )
+
+    sector_data = []
+    for row in sector_rows:
+        s = row['sector'] or 'other'
+        sector_data.append({
+            'slug':      s,
+            'label':     _SECTOR_DISPLAY.get(s, s.replace('_', ' ').title()),
+            'count':     row['count'],
+            'avg_score': round(float(row['avg'] or 0), 1),
+            'pdf_url':   f'/companies/reports/sector/{s}/',
+        })
+
+    return JsonResponse({'sectors': sector_data, 'total': len(sector_data)})
+
+
+# ── Verified Certificate ───────────────────────────────────────────────────────
+
+def generate_certificate(request, slug):
+    """
+    GET /companies/<slug>/certificate/
+    Generate an EcoIQ Verified Intelligence Certificate for a verified company.
+
+    Returns an HTML page suitable for printing / PDF-saving.
+    For verified companies only.
+    """
+    import uuid
+    from datetime import datetime
+
+    profile  = get_object_or_404(CompanyProfile, company__slug=slug)
+    company  = profile.company
+
+    if not profile.is_verified:
+        return HttpResponse(
+            '<h2 style="font-family:sans-serif;color:#475569;padding:2rem">'
+            'Certificate not available — company profile has not been verified.<br>'
+            '<small>Contact <a href="mailto:alizhan@ecoiq.uk">alizhan@ecoiq.uk</a>'
+            ' to request verification.</small></h2>',
+            status=403,
+        )
+
+    cert_id  = f'ECOIQ-{slug[:6].upper()}-{uuid.uuid4().hex[:8].upper()}'
+    issued   = datetime.now().strftime('%d %B %Y')
+    score    = float(profile.ecoiq_total_score or 0)
+    tier     = profile.moral_label_display
+    color    = profile.moral_label_color
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoIQ Certificate — {company.name}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+  *{{box-sizing:border-box;margin:0;padding:0}}
+  body{{font-family:'Inter',sans-serif;background:#070b0f;color:#e2e8f0;
+        min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}}
+  .cert{{border:1.5px solid #10b981;border-radius:16px;padding:3rem 3.5rem;
+         max-width:680px;width:100%;background:linear-gradient(135deg,#080e1a,#0b1628);
+         box-shadow:0 0 80px rgba(16,185,129,.08)}}
+  .logo{{font-size:.8rem;color:#475569;margin-bottom:2rem;letter-spacing:.05em;
+         text-transform:uppercase}}
+  .cert-title{{font-size:1.6rem;font-weight:300;color:#10b981;margin-bottom:.4rem}}
+  .company-name{{font-size:1.25rem;font-weight:700;color:#e2e8f0;margin-bottom:1.5rem}}
+  .score-big{{font-size:5rem;font-weight:200;color:#10b981;line-height:1;
+              font-variant-numeric:tabular-nums}}
+  .score-sub{{font-size:.8rem;color:#475569;margin-top:.25rem;
+              text-transform:uppercase;letter-spacing:.1em}}
+  .tier-label{{font-size:.9rem;font-weight:700;margin-top:1rem;color:{color}}}
+  .meta{{font-size:.75rem;color:#475569;margin-top:.5rem}}
+  .divider{{border:none;border-top:1px solid #1e293b;margin:2rem 0}}
+  .cert-id{{font-family:'Courier New',monospace;font-size:.75rem;color:#475569;
+            line-height:1.9}}
+  .cert-id strong{{color:#64748b}}
+  .verify-note{{font-size:.7rem;color:#334155;margin-top:.8rem}}
+  @media print{{body{{background:#fff;color:#000}}
+    .cert{{border-color:#000;background:#fff;box-shadow:none}}
+    .score-big{{color:#000}}.cert-title{{color:#000}}}}
+</style>
+</head>
+<body>
+<div class="cert">
+  <div class="logo">EcoIQ Intelligence Platform · ecoiq.uk</div>
+  <div class="cert-title">Certificate of Ethical Intelligence</div>
+  <div class="company-name">{company.name}</div>
+  <div class="score-big">{score:.1f}</div>
+  <div class="score-sub">EcoIQ Score / 100</div>
+  <div class="tier-label">{tier} · {company.get_sector_display() if hasattr(company,'get_sector_display') else company.sector}</div>
+  <div class="meta">{company.country}</div>
+  <hr class="divider">
+  <div class="cert-id">
+    <strong>Certificate ID:</strong>  {cert_id}<br>
+    <strong>Issued:</strong>          {issued}<br>
+    <strong>Verify at:</strong>       ecoiq.uk/verify/{cert_id}<br>
+    <strong>Issuing entity:</strong>  Stoke Share Ltd · London, UK<br>
+    <strong>Standard:</strong>        EcoIQ Ethical Intelligence Framework v1.0
+  </div>
+  <div class="verify-note">
+    This certificate is indicative. Scores are AI-assisted from publicly available sources.
+    Actual eligibility for financing or procurement requires independent due diligence.
+  </div>
+</div>
+</body>
+</html>"""
+
+    return HttpResponse(html, content_type='text/html; charset=utf-8')

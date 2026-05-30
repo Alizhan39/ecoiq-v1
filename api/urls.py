@@ -26,5 +26,9 @@ urlpatterns = [
     path('countries/<slug:slug>/',                    views.CountryDetailView.as_view(),      name='country_detail'),
 
     # Search
-    path('search/',                                   views.search,               name='search'),
+    path('search/',                                   views.search,                         name='search'),
+    path('semantic-search/',                          views.semantic_search,                name='semantic_search'),
+
+    # Responsible Finance alignment score
+    path('companies/<slug:slug>/responsible-finance/', views.responsible_finance_detail,    name='responsible_finance'),
 ]

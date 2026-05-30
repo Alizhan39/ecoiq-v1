@@ -310,3 +310,125 @@ def search(request):
         'count':   len(serializer.data),
         'results': serializer.data,
     })
+
+
+# ── Semantic Search ───────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def semantic_search(request):
+    """
+    GET /api/v1/semantic-search/?q=<natural language query>&limit=10
+
+    With pgvector + sentence-transformers installed:
+      Performs true semantic vector search using all-MiniLM-L6-v2 embeddings.
+
+    Without (free-tier / no ML dependencies):
+      Falls back to keyword search across name, sector, country, search_text.
+
+    Returns ranked company list with similarity score.
+    """
+    query = request.query_params.get('q', '').strip()
+    limit = min(int(request.query_params.get('limit', 10)), 50)
+
+    if not query or len(query) < 2:
+        return Response({'error': 'q parameter required (min 2 chars)'}, status=400)
+
+    method = 'text'
+    companies = None
+
+    # ── Try semantic vector search ────────────────────────────────────────────
+    try:
+        from sentence_transformers import SentenceTransformer
+        from pgvector.django import L2Distance
+
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+        query_embedding = model.encode(query).tolist()
+
+        companies = Company.objects.filter(
+            embedding__isnull=False
+        ).order_by(
+            L2Distance('embedding', query_embedding)
+        ).select_related('profile')[:limit]
+        method = 'semantic'
+
+    except Exception:
+        pass
+
+    # ── Keyword fallback ──────────────────────────────────────────────────────
+    if companies is None:
+        words = query.lower().split()[:6]
+        q_filter = Q()
+        for word in words:
+            q_filter |= Q(name__icontains=word)
+            q_filter |= Q(sector__icontains=word)
+            q_filter |= Q(country__icontains=word)
+            q_filter |= Q(description__icontains=word)
+            q_filter |= Q(search_text__icontains=word)
+        companies = (
+            Company.objects
+            .filter(q_filter)
+            .select_related('profile')
+            .order_by('rank', '-ecoiq_score')[:limit]
+        )
+        method = 'text'
+
+    results = []
+    for c in companies:
+        profile = getattr(c, 'profile', None)
+        results.append({
+            'name':        c.name,
+            'slug':        c.slug,
+            'sector':      c.sector,
+            'country':     c.country,
+            'ecoiq_score': float(c.ecoiq_score),
+            'tier':        profile.moral_label_display if profile else '',
+            'url':         f'/companies/{c.slug}/',
+        })
+
+    return Response({
+        'query':  query,
+        'method': method,
+        'count':  len(results),
+        'results': results,
+    })
+
+
+# ── Responsible Finance Score ─────────────────────────────────────────────────
+
+@api_view(['GET'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def responsible_finance_detail(request, slug):
+    """
+    GET /api/v1/companies/<slug>/responsible-finance/
+
+    Returns Responsible Finance alignment score and dimension breakdown.
+    Based on five stewardship dimensions mapped to EcoIQ pillar scores.
+
+    All scores are indicative. Not investment advice.
+    """
+    from django.shortcuts import get_object_or_404
+    from companies.models import CompanyProfile
+    from ml.responsible_finance import compute_responsible_finance_score
+
+    company = get_object_or_404(Company, slug=slug)
+    try:
+        profile = company.profile
+    except Exception:
+        return Response({'error': 'No profile found for this company.'}, status=404)
+
+    result = compute_responsible_finance_score(profile)
+
+    return Response({
+        'company':  slug,
+        'name':     company.name,
+        'ecoiq_total_score': float(profile.ecoiq_total_score or 0),
+        **result,
+        '_note': (
+            'Responsible Finance scores are indicative. '
+            'Based on EcoIQ pillar scores mapped to five stewardship dimensions. '
+            'Not investment advice. Requires independent due diligence.'
+        ),
+    })

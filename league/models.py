@@ -144,6 +144,13 @@ class Company(models.Model):
         null=True, blank=True,
         help_text='When the ML pipeline last ran for this company')
 
+    # ── Semantic search ───────────────────────────────────────────────────────
+    search_text = models.TextField(
+        blank=True,
+        help_text='Pre-built rich text for keyword / semantic search (built by build_embeddings)'
+    )
+    # embedding field added dynamically when pgvector is installed (migration 0005)
+
     created_at  = models.DateTimeField(auto_now_add=True)
     updated_at  = models.DateTimeField(auto_now=True)
 
