@@ -751,7 +751,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
             id="score-arc-glow" opacity=".15" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1) .05s"/>
         </svg>
         <div style="text-align:center">
-          <div class="score-num" id="score-counter" data-target="{{ company.ecoiq_score|floatformat:1 }}" style="color:{{ profile.moral_label_color }}">{{ company.ecoiq_score|floatformat:1 }}</div>
+          <div class="score-num" id="score-counter" data-target="{{ profile.ecoiq_total_score|floatformat:1 }}" style="color:{{ profile.moral_label_color }}">{{ profile.ecoiq_total_score|floatformat:1 }}</div>
           <div class="score-denom">/ 100</div>
         </div>
       </div>
@@ -831,7 +831,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
 <!-- ── CTA Row ────────────────────────────────────────────────────── -->
 <div class="cta-row">
   {% if not profile.is_verified %}
-  <a href="{% url 'leads:claim_profile_page' %}?company={{ company.slug }}" class="cta-btn cta-primary">🏷 Claim Profile</a>
+  <a href="/claim/?company={{ company.slug }}" class="cta-btn cta-primary">🏷 Claim Profile</a>
   {% endif %}
   <a href="{% url 'companies:pdf_report' company.slug %}" class="cta-btn cta-secondary">📄 Download PDF Report</a>
   <a href="mailto:alizhan@ecoiq.uk?subject=Verify%20Data%3A%20{{ company.name|urlencode }}" class="cta-btn cta-secondary">✓ Verify Company Data</a>
@@ -1839,7 +1839,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
   /* ── Animated score counter ─────────────────────────────────── */
   const counter = document.getElementById('score-counter');
   const TARGET  = parseFloat(counter ? counter.dataset.target : '0')
-                  || {{ company.ecoiq_score|default:0 }};
+                  || {{ profile.ecoiq_total_score|default:company.ecoiq_score|default:0 }};
   const ARC_LEN = 339.29;
   const arc     = document.getElementById('score-arc');
   const glow    = document.getElementById('score-arc-glow');

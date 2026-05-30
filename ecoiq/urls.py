@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -32,6 +33,8 @@ urlpatterns = [
     path('', include('core.urls')),
     path('audit/', include('audit.urls')),
     path('request-access/', include('leads.urls', namespace='leads')),
+    # Short-form claim URL used in company detail CTAs
+    path('claim/', RedirectView.as_view(url='/request-access/claim/', query_string=True), name='claim_shortcut'),
     path('league/', include('league.urls', namespace='league')),
 
     # AI company ingestion
