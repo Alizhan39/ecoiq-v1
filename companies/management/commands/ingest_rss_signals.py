@@ -9,10 +9,16 @@ Usage:
     python manage.py ingest_rss_signals --days 3   # look back 3 days (default: 7)
 """
 import feedparser
+import re
 from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from companies.models import DataIngestionLog
+
+
+def _word_in(word: str, text: str) -> bool:
+    """Return True only if *word* appears as a whole word in *text*."""
+    return bool(re.search(r'\b' + re.escape(word) + r'\b', text))
 
 RSS_FEEDS = [
     # UK Regulatory
@@ -57,20 +63,34 @@ RSS_FEEDS = [
 ]
 
 HARM_KEYWORDS = [
-    # English
-    'fine', 'penalty', 'violation', 'spill', 'pollution', 'scandal',
-    'corruption', 'bribery', 'lawsuit', 'sued', 'greenwashing',
-    'emissions violation', 'safety breach', 'fraud', 'investigation',
-    'regulatory action', 'enforcement', 'conviction', 'sanction',
-    # Russian / Kazakh (transliteration)
-    'штраф', 'нарушение', 'загрязнение', 'коррупция',
+    # Specific legal/enforcement actions (not generic "investigation")
+    'fined', 'penalised', 'penalized', 'prosecution', 'convicted',
+    'pleaded guilty', 'guilty plea', 'ordered to pay', 'enforcement notice',
+    # Specific ESG / environmental
+    'oil spill', 'chemical spill', 'pollution incident', 'emissions breach',
+    'illegal dumping', 'environmental damage', 'toxic leak', 'sewage discharge',
+    'greenwashing', 'misleading climate', 'false green',
+    # Specific governance
+    'bribery', 'fraud charges', 'money laundering', 'sanctions breach',
+    'safety violation', 'workplace accident', 'fatality',
+    # Russian / Kazakh
+    'штраф', 'загрязнение', 'авария', 'коррупция',
 ]
 
 POSITIVE_KEYWORDS = [
-    'renewable', 'green bond', 'net zero', 'carbon neutral', 'sustainability',
-    'solar', 'wind power', 'decarbonization', 'ESG award', 'climate commitment',
-    'clean energy', 'zero emission', 'green hydrogen', 'carbon offset',
+    'renewable energy', 'green bond', 'net zero', 'carbon neutral',
+    'solar power', 'wind farm', 'decarbonization', 'decarbonisation',
+    'ESG award', 'climate commitment', 'clean energy transition',
+    'zero emission', 'green hydrogen', 'carbon offset',
+    'sustainability report', 'carbon removal',
 ]
+
+# Company first-words that are too generic to use for matching alone
+_SKIP_SINGLE_WORDS = frozenset([
+    'national', 'global', 'first', 'general', 'standard', 'eastern',
+    'western', 'north', 'south', 'central', 'united', 'american',
+    'british', 'royal', 'new', 'public', 'state', 'international',
+])
 
 
 class Command(BaseCommand):
@@ -105,16 +125,31 @@ class Command(BaseCommand):
                 content = f'{title} {summary}'
 
                 for co_data in companies:
-                    co_name    = co_data['name'].lower()
-                    # Match on first significant word (4+ chars) of company name
-                    words      = [w for w in co_name.split() if len(w) >= 4
-                                  and w not in ('group', 'plc', 'ltd', 'inc', 'corp')]
-                    if not words:
-                        continue
-                    first_word = words[0]
+                    co_name = co_data['name'].lower()
 
-                    if first_word not in content:
+                    # Build match tokens: significant words (5+ chars, not stopwords)
+                    stop = {'group', 'plc', 'ltd', 'inc', 'corp', 'company',
+                            'holdings', 'limited', 'the', 'and', 'of'}
+                    sig_words = [w for w in co_name.split()
+                                 if len(w) >= 5 and w not in stop]
+
+                    if not sig_words:
                         continue
+
+                    first_word = sig_words[0]
+
+                    # Skip generic first-words unless the company has a longer
+                    # unique name we can match on (require 2 sig words in content)
+                    if first_word in _SKIP_SINGLE_WORDS:
+                        if len(sig_words) < 2:
+                            continue
+                        # Need BOTH first and second significant word to match
+                        if not (_word_in(sig_words[0], content)
+                                and _word_in(sig_words[1], content)):
+                            continue
+                    else:
+                        if not _word_in(first_word, content):
+                            continue
 
                     harm_found     = any(kw in content for kw in HARM_KEYWORDS)
                     positive_found = any(kw in content for kw in POSITIVE_KEYWORDS)
