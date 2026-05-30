@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import AccessRequest, ProfileClaim
+from .models import AccessRequest, ProfileClaim, NewsletterSignup
 
 
 STATUS_COLOURS = {
@@ -122,3 +122,16 @@ class ProfileClaimAdmin(admin.ModelAdmin):
             'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',
             bg, fg, obj.get_status_display()
         )
+
+
+# ── NewsletterSignup admin ────────────────────────────────────────────────────
+
+@admin.register(NewsletterSignup)
+class NewsletterSignupAdmin(admin.ModelAdmin):
+    list_display   = ('email', 'name', 'organisation', 'interest', 'source', 'is_active', 'signed_up_at')
+    list_filter    = ('interest', 'is_active', 'signed_up_at')
+    search_fields  = ('email', 'name', 'organisation')
+    list_editable  = ('is_active',)
+    ordering       = ('-signed_up_at',)
+    date_hierarchy = 'signed_up_at'
+    readonly_fields = ('signed_up_at',)

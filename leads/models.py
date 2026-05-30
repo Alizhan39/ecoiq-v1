@@ -154,3 +154,37 @@ class ProfileClaim(models.Model):
             else:                     # pragma: no cover
                 self.ref = _generate_claim_ref()
         super().save(*args, **kwargs)
+
+
+# ── NewsletterSignup ──────────────────────────────────────────────────────────
+
+class NewsletterSignup(models.Model):
+    """
+    Stores email addresses (and optional metadata) collected via the
+    homepage popup and /newsletter/ page.  All signups are opt-in.
+    """
+    INTEREST_CHOICES = [
+        ('investor',   'Investor'),
+        ('company',    'Company'),
+        ('government', 'Government'),
+        ('researcher', 'Researcher'),
+        ('other',      'Other'),
+    ]
+
+    email        = models.EmailField(unique=True, db_index=True)
+    name         = models.CharField(max_length=200, blank=True)
+    organisation = models.CharField(max_length=200, blank=True)
+    interest     = models.CharField(
+        max_length=50, choices=INTEREST_CHOICES, default='other',
+    )
+    signed_up_at = models.DateTimeField(auto_now_add=True)
+    is_active    = models.BooleanField(default=True, help_text='Uncheck to unsubscribe without deleting the record.')
+    source       = models.CharField(max_length=100, blank=True, help_text='Where the signup originated — popup, /newsletter/, API, etc.')
+
+    class Meta:
+        ordering            = ['-signed_up_at']
+        verbose_name        = 'Newsletter Signup'
+        verbose_name_plural = 'Newsletter Signups'
+
+    def __str__(self):
+        return self.email

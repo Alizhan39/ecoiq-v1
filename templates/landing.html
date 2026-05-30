@@ -523,8 +523,8 @@
       <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.95rem;padding:.75rem 1.5rem;border-radius:8px;text-decoration:none;" class="glow-acc">
         Explore Rankings →
       </a>
-      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ%20Intelligence%20Enquiry" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:600;font-size:.95rem;padding:.75rem 1.5rem;border-radius:8px;text-decoration:none;">
-        Contact Us
+      <a href="/investors/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:600;font-size:.95rem;padding:.75rem 1.5rem;border-radius:8px;text-decoration:none;">
+        Investment Information →
       </a>
     </div>
     <p style="margin-top:1.5rem;font-size:.75rem;color:#334155;">
@@ -564,6 +564,8 @@
           <a href="/api-docs/" style="font-size:.8rem;color:#475569;text-decoration:none;">API</a>
           <a href="/register/" style="font-size:.8rem;color:#475569;text-decoration:none;">Register</a>
           <a href="/request-access/claim/" style="font-size:.8rem;color:#475569;text-decoration:none;">Claim Profile</a>
+          <a href="/investors/" style="font-size:.8rem;color:#475569;text-decoration:none;">For Investors</a>
+          <a href="/press/" style="font-size:.8rem;color:#475569;text-decoration:none;">Press &amp; Media</a>
         </div>
       </div>
 
@@ -591,6 +593,77 @@
   }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
 }());
+</script>
+
+<!-- ── Newsletter popup ───────────────────────────────────────────── -->
+<div id="newsletter-popup" style="
+  display:none;position:fixed;bottom:2rem;right:2rem;
+  background:#0d1117;border:1px solid rgba(16,185,129,0.3);
+  border-radius:6px;padding:1.5rem;width:320px;z-index:9999;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+  <button onclick="dismissNewsletter()"
+    style="position:absolute;top:10px;right:14px;background:none;border:none;
+    color:#475569;cursor:pointer;font-size:16px">✕</button>
+  <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:#10b981;font-weight:700;margin-bottom:8px">EcoIQ Intelligence</div>
+  <div style="font-size:15px;font-weight:700;color:#e6edf3;margin-bottom:6px">
+    Get weekly climate intelligence
+  </div>
+  <div style="font-size:12px;color:#94a3b8;margin-bottom:1rem;line-height:1.5">
+    Top movers, sector alerts, and transition signals from the EcoIQ platform. Free.
+  </div>
+  <form id="newsletter-form" style="display:flex;gap:6px">
+    {% csrf_token %}
+    <input type="email" name="email" placeholder="your@email.com"
+      style="flex:1;background:#111820;border:1px solid rgba(255,255,255,.13);
+      border-radius:3px;padding:8px 12px;font-size:12px;
+      color:#e2e8f0;outline:none;min-width:0;">
+    <button type="submit"
+      style="background:#10b981;color:#000;border:none;padding:8px 14px;
+      border-radius:3px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+      font-weight:700;cursor:pointer;white-space:nowrap">Subscribe</button>
+  </form>
+</div>
+
+<script>
+var popupShown = false;
+function showNewsletter() {
+  if (!popupShown && !localStorage.getItem('ecoiq_newsletter_dismissed')) {
+    document.getElementById('newsletter-popup').style.display = 'block';
+    popupShown = true;
+  }
+}
+setTimeout(showNewsletter, 30000);
+
+function dismissNewsletter() {
+  document.getElementById('newsletter-popup').style.display = 'none';
+  localStorage.setItem('ecoiq_newsletter_dismissed', '1');
+}
+
+document.getElementById('newsletter-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var email = this.querySelector('[name="email"]').value;
+  try {
+    var resp = await fetch('/newsletter/signup/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: email })
+    });
+    var data = await resp.json();
+    if (data.success) {
+      document.getElementById('newsletter-popup').innerHTML =
+        '<div style="padding:1.25rem;text-align:center;color:#10b981;font-size:13px;font-weight:700;">✓ Subscribed. Watch your inbox.</div>';
+      setTimeout(dismissNewsletter, 3000);
+    } else {
+      dismissNewsletter();
+    }
+  } catch(err) {
+    dismissNewsletter();
+  }
+});
 </script>
 </body>
 </html>

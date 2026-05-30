@@ -1,0 +1,360 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Investor Information — EcoIQ Climate Intelligence Platform</title>
+  <meta name="description" content="EcoIQ is seeking £150K–£300K pre-seed investment. 219+ companies scored, 25+ countries, £49–£50,000/mo pricing tiers. Climate intelligence meets ethical finance.">
+  <link rel="canonical" href="https://ecoiq.uk/investors/">
+  <meta property="og:title" content="Invest in EcoIQ — Climate Intelligence Platform">
+  <meta property="og:description" content="Pre-seed opportunity: AI-powered ESG intelligence platform scoring 219+ industrial companies. Seeking £150K–£300K.">
+  <meta property="og:url" content="https://ecoiq.uk/investors/">
+
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#070b0f;--surface:#0d1117;--surface2:#151b23;--border:#1e2733;--border2:#2a3441;
+      --accent:#00e89a;--warn:#f4a261;--danger:#e63946;--info:#58a6ff;
+      --muted:#4b5563;--muted2:#64748b;--text:#e6edf3;--text2:#94a3b8;
+    }
+    html{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+
+    /* Nav */
+    .cmd-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.25rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .cmd-title{font-size:.95rem;color:var(--text);font-weight:800;letter-spacing:-.02em}
+    .cmd-sep{color:var(--border2);font-size:1.1rem;margin:0 .1rem}
+    .cmd-bc{font-size:.8rem;color:var(--muted2)}
+    .cmd-links{display:flex;gap:.4rem;margin-left:auto;align-items:center}
+    .cmd-btn{font-size:.78rem;color:var(--text2);border:1px solid var(--border);background:transparent;padding:.35rem .75rem;border-radius:6px;text-decoration:none;transition:color .15s,border-color .15s;white-space:nowrap}
+    .cmd-btn:hover{border-color:var(--border2);color:var(--text)}
+    .cmd-btn.accent{background:var(--accent);color:#0a0f14;border-color:var(--accent);font-weight:700}
+
+    /* Layout */
+    .page{max-width:980px;margin:0 auto;padding:3rem 1.25rem 5rem}
+
+    /* Hero */
+    .hero{padding:4rem 1rem 3rem;text-align:center;border-bottom:1px solid var(--border);margin-bottom:3.5rem}
+    .hero-eyebrow{font-size:.68rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);margin-bottom:.75rem}
+    .hero h1{font-size:2.6rem;font-weight:900;line-height:1.12;letter-spacing:-.04em;margin-bottom:1rem}
+    .hero h1 span{color:var(--accent)}
+    .hero .sub{font-size:1.05rem;color:var(--text2);max-width:600px;margin:0 auto 2rem}
+    .hero-badges{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:2rem}
+    .badge{font-size:.72rem;font-weight:700;padding:.3rem .8rem;border-radius:20px;border:1px solid}
+    .badge-green{color:var(--accent);border-color:rgba(0,232,154,.3);background:rgba(0,232,154,.06)}
+    .badge-blue{color:var(--info);border-color:rgba(88,166,255,.3);background:rgba(88,166,255,.06)}
+    .badge-warn{color:var(--warn);border-color:rgba(244,162,97,.3);background:rgba(244,162,97,.06)}
+    .cta-row{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center}
+    .btn-primary{background:var(--accent);color:#0a0f14;font-weight:800;font-size:.88rem;padding:.75rem 1.6rem;border-radius:8px;border:none;cursor:pointer;transition:opacity .15s;text-decoration:none;display:inline-block}
+    .btn-primary:hover{opacity:.88}
+    .btn-sec{background:transparent;color:var(--text2);font-weight:600;font-size:.88rem;padding:.75rem 1.4rem;border-radius:8px;border:1px solid var(--border2);text-decoration:none;display:inline-block;transition:border-color .15s,color .15s}
+    .btn-sec:hover{border-color:var(--accent);color:var(--accent)}
+
+    /* Stat strip */
+    .stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:3.5rem}
+    @media(max-width:640px){.stat-strip{grid-template-columns:repeat(2,1fr)}}
+    .stat-cell{background:var(--surface);padding:1.35rem 1rem;text-align:center}
+    .stat-val{font-size:1.85rem;font-weight:900;line-height:1;margin-bottom:.3rem}
+    .stat-label{font-size:.72rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted2)}
+
+    /* Sections */
+    .section{margin-bottom:3.5rem}
+    .section-header{display:flex;align-items:baseline;gap:1rem;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+    .section-title{font-size:1.1rem;font-weight:800;letter-spacing:-.02em}
+    .section-num{font-size:.72rem;font-weight:700;color:var(--accent);letter-spacing:.8px}
+
+    /* Two-col */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    @media(max-width:640px){.two-col{grid-template-columns:1fr}}
+
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem}
+    .card h3{font-size:.9rem;font-weight:800;margin-bottom:.6rem}
+    .card p{font-size:.83rem;color:var(--text2);line-height:1.6}
+    .card.featured{border-color:rgba(0,232,154,.25);background:rgba(0,232,154,.03)}
+    .card.featured h3{color:var(--accent)}
+
+    /* Opportunity list */
+    .opp-list{display:flex;flex-direction:column;gap:.65rem}
+    .opp-row{display:flex;align-items:flex-start;gap:.75rem;font-size:.85rem;color:var(--text2)}
+    .opp-row .arrow{color:var(--accent);font-weight:700;flex-shrink:0;margin-top:.05rem}
+    .opp-row strong{color:var(--text)}
+
+    /* Pricing table */
+    .pricing-table{width:100%;border-collapse:collapse;font-size:.83rem}
+    .pricing-table th{text-align:left;font-size:.7rem;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted2);padding:.6rem .9rem;border-bottom:1px solid var(--border)}
+    .pricing-table td{padding:.7rem .9rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+    .pricing-table tr:last-child td{border-bottom:none}
+    .pricing-table td:first-child{color:var(--text);font-weight:600}
+    .pricing-table td .val{color:var(--accent);font-weight:700}
+
+    /* Use of funds */
+    .funds-bar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin:1rem 0}
+    .f1{background:var(--accent);width:40%}
+    .f2{background:var(--info);width:30%}
+    .f3{background:var(--warn);width:20%}
+    .f4{background:var(--muted);width:10%}
+    .funds-legend{display:flex;flex-wrap:wrap;gap:.75rem;font-size:.75rem}
+    .funds-legend span{display:flex;align-items:center;gap:.4rem;color:var(--text2)}
+    .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .dot-g{background:var(--accent)}
+    .dot-b{background:var(--info)}
+    .dot-w{background:var(--warn)}
+    .dot-m{background:var(--muted)}
+
+    /* Contact card */
+    .contact-box{background:var(--surface);border:1px solid rgba(0,232,154,.2);border-radius:12px;padding:2rem;text-align:center}
+    .contact-box h2{font-size:1.15rem;font-weight:800;margin-bottom:.4rem}
+    .contact-box p{font-size:.85rem;color:var(--text2);margin-bottom:1.5rem}
+    .contact-detail{font-size:.88rem;color:var(--text);font-weight:600;margin:.35rem 0}
+    .contact-detail a{color:var(--accent)}
+
+    /* Footer */
+    footer{text-align:center;padding:2.5rem 1rem;font-size:.75rem;color:var(--muted);border-top:1px solid var(--border)}
+    footer a{color:var(--muted2)}footer a:hover{color:var(--accent)}
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<div class="cmd-bar">
+  <a href="/" style="display:flex;align-items:center;gap:.45rem;text-decoration:none;flex-shrink:0;">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="40" height="40" rx="8" fill="#070b0f"/>
+      <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2.2" stroke-linejoin="round"/>
+      <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.5" stroke-linejoin="round"/>
+      <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+    </svg>
+    <span class="cmd-title">Eco<span style="color:var(--accent);">IQ</span></span>
+  </a>
+  <span class="cmd-sep">|</span>
+  <span class="cmd-bc">Investors</span>
+  <div class="cmd-links">
+    <a href="{% url 'companies:directory' %}" class="cmd-btn">🌍 Rankings</a>
+    <a href="{% url 'about' %}" class="cmd-btn">About</a>
+    <a href="{% url 'pricing' %}" class="cmd-btn">Pricing</a>
+    <a href="{% url 'contact' %}" class="cmd-btn">Contact</a>
+    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Investment+Enquiry" class="cmd-btn accent">Request Deck →</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">Pre-Seed Investment Opportunity</div>
+    <h1>Climate Intelligence<br>at <span>Institutional Scale</span></h1>
+    <p class="sub">EcoIQ is an AI-powered platform scoring 219+ industrial companies on climate transition readiness, public benefit, and responsible modernization — across 25+ countries.</p>
+    <div class="hero-badges">
+      <span class="badge badge-green">219+ Companies Scored</span>
+      <span class="badge badge-blue">25+ Countries</span>
+      <span class="badge badge-warn">Seeking £150K–£300K</span>
+      <span class="badge badge-green">Live Platform</span>
+    </div>
+    <div class="cta-row">
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Investment+Deck+Request" class="btn-primary">Request Investor Deck →</a>
+      <a href="https://ecoiq.uk/companies/" class="btn-sec">View Live Platform</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-strip">
+    <div class="stat-cell">
+      <div class="stat-val" style="color:var(--accent);">219+</div>
+      <div class="stat-label">Companies Ranked</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val" style="color:var(--info);">25+</div>
+      <div class="stat-label">Countries Covered</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val" style="color:var(--warn);">£300K</div>
+      <div class="stat-label">Pre-Seed Target</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val" style="color:var(--accent);">£4T+</div>
+      <div class="stat-label">Addressable Market</div>
+    </div>
+  </div>
+
+  <!-- 01 — The Problem -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">The Problem</h2>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <h3>No Unified ESG Intelligence Layer</h3>
+        <p>Institutional investors, development banks, and sovereign funds lack a single, AI-powered source of truth for climate and governance scoring across emerging and frontier markets — particularly Central Asia, the Gulf, and UK industrial sectors.</p>
+      </div>
+      <div class="card">
+        <h3>Existing Platforms Are Too Expensive or Too Slow</h3>
+        <p>Bloomberg ESG, MSCI, and Sustainalytics cost £50K–£500K/year per seat and cover large-cap equities only. Mid-market industrial companies — the real transition bottleneck — are entirely unscored.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 — The Solution -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">The Solution</h2>
+    </div>
+    <div class="card featured">
+      <h3>EcoIQ — Ethical Intelligence Platform</h3>
+      <p style="margin-bottom:1rem">EcoIQ uses AI to compile, score, and publish climate intelligence profiles for industrial companies. Each profile scores six pillars (Public Benefit, Environmental Stewardship, Responsible Modernization, Transparent Governance, Anti-Corruption, and Ethical Alignment) from publicly available data.</p>
+      <div class="opp-list">
+        <div class="opp-row"><span class="arrow">→</span><span><strong>No manual entry required</strong> — AI ingests sustainability reports, news, regulatory filings</span></div>
+        <div class="opp-row"><span class="arrow">→</span><span><strong>Publishable in hours</strong> — new company profiles can be added and scored in &lt; 1 day</span></div>
+        <div class="opp-row"><span class="arrow">→</span><span><strong>Defensible methodology</strong> — 6-pillar weighted scoring framework with public transparency</span></div>
+        <div class="opp-row"><span class="arrow">→</span><span><strong>Revenue from day one</strong> — companies pay £500–£50,000/mo to claim, verify, and improve profiles</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 — Market Opportunity -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Market Opportunity</h2>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <h3>ESG Data Market</h3>
+        <p>The global ESG data and ratings market is projected to reach <strong style="color:var(--text)">$2.1B by 2026</strong> (Bloomberg Intelligence). Mid-market and frontier market companies represent the fastest-growing underserved segment.</p>
+      </div>
+      <div class="card">
+        <h3>Ethical Finance</h3>
+        <p>The values-aligned and ethical finance sector manages <strong style="color:var(--text)">£4T+ in global assets</strong> — with institutional mandates increasingly requiring ESG-screened portfolios. EcoIQ's scoring framework is uniquely aligned with these due-diligence requirements.</p>
+      </div>
+      <div class="card">
+        <h3>Climate Transition Finance</h3>
+        <p>Development banks (EBRD, ADB, IFC) and sovereign wealth funds have committed <strong style="color:var(--text)">$100B+</strong> to emerging market climate transitions — all requiring company-level ESG data that currently doesn't exist at scale.</p>
+      </div>
+      <div class="card">
+        <h3>Central Asia + Gulf Focus</h3>
+        <p>Kazakhstan, Saudi Arabia, and Gulf states are undergoing rapid industrial transformation. <strong style="color:var(--text)">Zero institutional-grade ESG scoring</strong> exists for these markets. EcoIQ is already ranked 43 Kazakh and 40 Saudi companies.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 — Revenue Model -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Revenue Model</h2>
+    </div>
+    <div class="card">
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Customer</th>
+            <th>Price</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Profile Visibility</td>
+            <td>Scored companies</td>
+            <td><span class="val">£500/mo</span></td>
+            <td style="font-size:.78rem;">Claim + manage profile, verified badge</td>
+          </tr>
+          <tr>
+            <td>Score Improvement</td>
+            <td>Companies seeking upgrade</td>
+            <td><span class="val">£2,000/mo</span></td>
+            <td style="font-size:.78rem;">Advisory + monthly re-scoring</td>
+          </tr>
+          <tr>
+            <td>Investor Visibility</td>
+            <td>Companies seeking capital</td>
+            <td><span class="val">£5,000/mo</span></td>
+            <td style="font-size:.78rem;">Featured in investor briefings</td>
+          </tr>
+          <tr>
+            <td>Analyst Seat</td>
+            <td>Fund managers / advisors</td>
+            <td><span class="val">£49–£499/mo</span></td>
+            <td style="font-size:.78rem;">Full data access, API, exports</td>
+          </tr>
+          <tr>
+            <td>Enterprise / Institutional</td>
+            <td>Banks, DFIs, regulators</td>
+            <td><span class="val">£15K–£50K/mo</span></td>
+            <td style="font-size:.78rem;">White-label + bulk data licensing</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 05 — Use of Funds -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Use of Funds — £150K–£300K Pre-Seed</h2>
+    </div>
+    <div class="card">
+      <div class="funds-bar">
+        <div class="f1"></div><div class="f2"></div><div class="f3"></div><div class="f4"></div>
+      </div>
+      <div class="funds-legend">
+        <span><span class="dot dot-g"></span>40% — Product &amp; AI engineering (data pipeline, scoring v2)</span>
+        <span><span class="dot dot-b"></span>30% — Sales &amp; BD (first institutional clients, pilot contracts)</span>
+        <span><span class="dot dot-w"></span>20% — Ops &amp; compliance (FCA-readiness, data licensing)</span>
+        <span><span class="dot dot-m"></span>10% — Marketing &amp; brand (PR, conferences, investor comms)</span>
+      </div>
+      <p style="font-size:.8rem;color:var(--muted2);margin-top:1.25rem;">Target milestones post-raise: 3 paying institutional clients, 500+ companies ranked, Series A readiness within 18 months.</p>
+    </div>
+  </div>
+
+  <!-- 06 — Founder -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Founder</h2>
+    </div>
+    <div class="card" style="display:flex;gap:1.4rem;align-items:flex-start;">
+      <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#00e89a22,#58a6ff22);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;color:var(--accent);flex-shrink:0">AT</div>
+      <div>
+        <div style="font-size:1rem;font-weight:800;margin-bottom:.2rem">Alizhan Tazabekov</div>
+        <div style="font-size:.78rem;color:var(--muted2);margin-bottom:.7rem">Founder &amp; CEO, EcoIQ · Stoke Share Ltd</div>
+        <p style="font-size:.83rem;color:var(--text2);line-height:1.6">Background in sovereign finance and ESG research across Central Asia, the Gulf, and the UK. Built EcoIQ as the infrastructure layer missing from climate transition finance — a Bloomberg-grade intelligence platform for markets that institutional ESG firms ignore.</p>
+        <div style="margin-top:.85rem;font-size:.82rem;color:var(--text2)">
+          📧 <a href="mailto:alizhan@ecoiq.uk" style="color:var(--accent);font-weight:600">alizhan@ecoiq.uk</a>
+          &nbsp;·&nbsp;
+          📞 <a href="tel:+447566624220" style="color:var(--accent)">+44 7566 624 220</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="contact-box">
+    <h2>Ready to discuss?</h2>
+    <p>Request the full investor deck, financial model, and 20-minute intro call.</p>
+    <div class="contact-detail">📧 <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Investment+Enquiry">alizhan@ecoiq.uk</a></div>
+    <div class="contact-detail">📞 <a href="tel:+447566624220" style="color:var(--accent)">+44 7566 624 220</a></div>
+    <div style="margin-top:1.5rem">
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Investor+Deck+Request&body=Hi+Alizhan%2C%0A%0AI+would+like+to+request+the+EcoIQ+investor+deck+and+schedule+a+call.%0A%0AName%3A%0AOrganisation%3A%0ABest+time+to+call%3A" class="btn-primary">Request Deck + Schedule Call →</a>
+    </div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:1.25rem">This page is for information purposes only and does not constitute a financial promotion. EcoIQ is operated by Stoke Share Ltd (Reg. 16007341, England &amp; Wales).</p>
+  </div>
+
+</div>
+
+<footer>
+  EcoIQ — Ethical Intelligence Platform &nbsp;·&nbsp;
+  <a href="/companies/">Rankings</a> &nbsp;·&nbsp;
+  <a href="/about/">About</a> &nbsp;·&nbsp;
+  <a href="/pricing/">Pricing</a> &nbsp;·&nbsp;
+  <a href="/press/">Press</a> &nbsp;·&nbsp;
+  <a href="/contact/">Contact</a> &nbsp;·&nbsp;
+  Stoke Share Ltd · Reg. 16007341 · England &amp; Wales
+</footer>
+
+</body>
+</html>

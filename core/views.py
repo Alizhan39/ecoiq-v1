@@ -3,7 +3,7 @@ import math
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 
 from .models import Assessment, QuestionnaireResponse, Finding
@@ -883,6 +883,75 @@ def register(request):
                 for e in field_errors
             )
     return render(request, 'register.html', {'error': error})
+
+
+# ── Investors page ───────────────────────────────────────────────────────────
+
+def investors(request):
+    """
+    /investors/ — EcoIQ investor information page.
+    Pre-seed opportunity overview: stats, market, revenue model,
+    use of funds, founder, and contact CTA. Public, no auth required.
+    """
+    return render(request, 'investors.html')
+
+
+# ── Press / media page ────────────────────────────────────────────────────────
+
+def press(request):
+    """
+    /press/ — EcoIQ press & media resources page.
+    Press kit download links, key facts, approved boilerplate, and
+    media contact details. Public, no auth required.
+    """
+    return render(request, 'press.html')
+
+
+# ── Newsletter signup (AJAX endpoint) ────────────────────────────────────────
+
+def newsletter_signup(request):
+    """
+    /newsletter/signup/ — JSON endpoint for the homepage popup signup.
+    Accepts POST with JSON body {'email': '...'}.
+    Creates a NewsletterSignup record (idempotent — duplicate emails are silently ignored).
+    Sends a notification to alizhan@ecoiq.uk.
+    Returns {'success': True} on success.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
+    import json as _json
+    from django.core.mail import send_mail
+    from django.conf import settings as _s
+
+    try:
+        body  = _json.loads(request.body)
+        email = body.get('email', '').strip()[:254]
+    except (ValueError, AttributeError):
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    if not email or '@' not in email:
+        return JsonResponse({'success': False, 'error': 'Invalid email'}, status=400)
+
+    try:
+        from leads.models import NewsletterSignup
+        _, created = NewsletterSignup.objects.get_or_create(
+            email=email,
+            defaults={'source': 'homepage-popup'},
+        )
+        if created:
+            notify = getattr(_s, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
+            send_mail(
+                subject=f'[EcoIQ] Newsletter signup: {email}',
+                message=f'New newsletter subscriber: {email}\nSource: homepage popup',
+                from_email=getattr(_s, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>'),
+                recipient_list=[notify],
+                fail_silently=True,
+            )
+    except Exception:
+        pass  # never crash the user-facing response
+
+    return JsonResponse({'success': True})
 
 
 # ── Contact page ─────────────────────────────────────────────────────────────
