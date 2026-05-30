@@ -853,3 +853,75 @@ def company_ml_insights(request, slug):
             payload['error'] = f'prediction: {exc}'
 
     return JsonResponse(payload)
+
+
+# ── Sector PDF Report ──────────────────────────────────────────────────────────
+
+def sector_pdf_report(request, sector):
+    """
+    GET /companies/reports/sector/<sector>/
+    Renders a horizontal bar-chart PDF for the top-20 companies in a sector.
+    """
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from io import BytesIO
+    from django.http import HttpResponse
+
+    qs = CompanyProfile.objects.filter(
+        company__sector=sector
+    ).select_related('company').order_by('-ecoiq_total_score')[:20]
+
+    if not qs.exists():
+        return HttpResponse('No data for this sector.', status=404)
+
+    names  = [p.company.name[:20] for p in qs]
+    scores = [float(p.ecoiq_total_score or 0) for p in qs]
+    colors = ['#10b981' if s >= 70 else '#fbbf24' if s >= 50 else '#f87171' for s in scores]
+
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(12, max(4, len(names) * 0.42)), facecolor='#070b0f')
+    ax.set_facecolor('#0d1117')
+
+    bars = ax.barh(names, scores, color=colors, height=0.6, edgecolor='none')
+
+    # Sector average line
+    avg = np.mean(scores)
+    ax.axvline(x=avg, color='#00e89a', linestyle='--', linewidth=1, alpha=0.6,
+               label=f'Avg {avg:.1f}')
+
+    # Score labels on bars
+    for bar, score in zip(bars, scores):
+        ax.text(min(score + 1, 98), bar.get_y() + bar.get_height() / 2,
+                f'{score:.1f}', va='center', ha='left',
+                color='#94a3b8', fontsize=8, fontweight='600')
+
+    ax.set_xlabel('EcoIQ Score', color='#475569', fontsize=10)
+    ax.set_xlim(0, 105)
+    ax.set_ylim(-0.6, len(names) - 0.4)
+    ax.tick_params(colors='#475569', labelsize=8.5)
+    ax.xaxis.label.set_color('#475569')
+    ax.set_title(
+        f'EcoIQ {sector.replace("_", " ").title()} Sector Intelligence Report',
+        color='#e2e8f0', fontweight='300', fontsize=13, pad=14
+    )
+    ax.legend(loc='lower right', fontsize=8, framealpha=0.2)
+    for spine in ax.spines.values():
+        spine.set_color('#1e293b')
+
+    # Watermark
+    fig.text(0.99, 0.01, 'ecoiq.uk — Ethical Intelligence Platform',
+             ha='right', va='bottom', color='#1e293b', fontsize=7)
+
+    plt.tight_layout(pad=1.2)
+
+    buf = BytesIO()
+    fig.savefig(buf, format='pdf', facecolor='#070b0f', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+
+    slug_sector = sector.replace(' ', '-').lower()
+    response = HttpResponse(buf.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="ecoiq-{slug_sector}-sector-report.pdf"'
+    return response

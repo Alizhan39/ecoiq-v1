@@ -29,6 +29,10 @@
 }
 </script>
 <style>
+/* ── Override base template header/main — this page has its own cmd-bar ── */
+header { display: none !important; }
+main   { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+
 /* ══════════════════════════════════════════════════════════════════
    EcoIQ INSTITUTIONAL DESIGN SYSTEM — Company Intelligence Profile
    Bloomberg Terminal × Palantir Foundry × CB Insights aesthetic
@@ -747,7 +751,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
             id="score-arc-glow" opacity=".15" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1) .05s"/>
         </svg>
         <div style="text-align:center">
-          <div class="score-num" id="score-counter" data-target="{{ profile.ecoiq_total_score|default:0|floatformat:1 }}" style="color:{{ profile.moral_label_color }}">{{ profile.ecoiq_total_score|default:0|floatformat:1 }}</div>
+          <div class="score-num" id="score-counter" data-target="{{ company.ecoiq_score|floatformat:1 }}" style="color:{{ profile.moral_label_color }}">{{ company.ecoiq_score|floatformat:1 }}</div>
           <div class="score-denom">/ 100</div>
         </div>
       </div>
@@ -985,6 +989,164 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
       </div>
       {% endfor %}
     </div>
+
+    <!-- ── D3 Pillar Radar / Spider Chart ──────────────────────────── -->
+    <div class="intel-panel" style="margin-bottom:1.4rem" id="pillar-radar-panel">
+      <div class="panel-header">
+        ⬡ Pillar Intelligence Radar
+        <div class="ph-right">
+          <span class="ai-conf-pill">6 dimensions · weighted formula</span>
+        </div>
+      </div>
+      <div class="panel-body" style="display:flex;align-items:flex-start;gap:1.75rem;flex-wrap:wrap">
+        <!-- SVG canvas — D3 draws here -->
+        <svg id="spider-chart" width="280" height="280"
+             style="flex-shrink:0;border-radius:8px;background:#0d1117;display:block"
+             aria-label="Pillar spider chart for {{ company.name }}"></svg>
+
+        <!-- Legend: pillar bars + total badge -->
+        <div style="flex:1;min-width:170px;display:flex;flex-direction:column;gap:.55rem;align-self:center">
+          {% for card in score_cards %}
+          <div style="display:flex;align-items:center;gap:.65rem">
+            <span style="font-size:.9rem;flex-shrink:0">{{ card.icon }}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.67rem;font-weight:600;color:var(--muted2);margin-bottom:.22rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ card.label }}</div>
+              <div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
+                <div style="height:100%;width:{{ card.score }}%;
+                  background:{% if card.score >= 70 %}#10b981{% elif card.score >= 50 %}#f4a261{% else %}#e63946{% endif %};
+                  border-radius:2px;transition:width .8s ease"></div>
+              </div>
+            </div>
+            <span style="font-size:.8rem;font-weight:800;font-variant-numeric:tabular-nums;min-width:30px;text-align:right;
+              color:{% if card.score >= 70 %}#10b981{% elif card.score >= 50 %}#f4a261{% else %}#e63946{% endif %}">{{ card.score|floatformat:0 }}</span>
+          </div>
+          {% endfor %}
+
+          <!-- Total EcoIQ badge -->
+          <div style="margin-top:.6rem;padding:.7rem 1rem;background:rgba(16,185,129,.06);
+            border:1px solid rgba(16,185,129,.2);border-radius:8px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:900;color:#10b981;font-variant-numeric:tabular-nums;line-height:1">{{ company.ecoiq_score|floatformat:1 }}</div>
+            <div style="font-size:.6rem;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem">Total EcoIQ / 100</div>
+            <div style="font-size:.65rem;color:{{ profile.moral_label_color }};font-weight:700;margin-top:.3rem">{{ profile.moral_label_display }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D3 v7 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script>
+    (function () {
+      'use strict';
+      // Pillar data from Django context — use score_cards order
+      const pillars = [
+        {% for card in score_cards %}
+        { label: '{{ card.label|escapejs }}', value: parseFloat('{{ card.score|floatformat:1 }}') || 0 }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ];
+
+      const W = 280, H = 280, cx = W / 2, cy = H / 2;
+      const R = 90;   // outer ring radius (px)
+      const N = pillars.length;
+      const LEVELS = 4; // concentric grid rings
+
+      // Angle for axis i — start at top (−π/2)
+      const ax = i => (Math.PI * 2 * i / N) - Math.PI / 2;
+
+      const svg = d3.select('#spider-chart');
+
+      // Clip path so nothing bleeds outside the rounded SVG
+      svg.append('defs').append('clipPath').attr('id', 'radar-clip')
+        .append('rect').attr('width', W).attr('height', H).attr('rx', 8);
+      const g = svg.append('g')
+        .attr('transform', `translate(${cx},${cy})`)
+        .attr('clip-path', 'url(#radar-clip)');
+
+      // ── Concentric grid rings ────────────────────────────────────
+      for (let l = 1; l <= LEVELS; l++) {
+        const r = R * l / LEVELS;
+        const pts = d3.range(N).map(i => [r * Math.cos(ax(i)), r * Math.sin(ax(i))]);
+        g.append('polygon')
+          .attr('points', pts.map(([x,y]) => `${x},${y}`).join(' '))
+          .attr('fill', 'none')
+          .attr('stroke', l === LEVELS ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.055)')
+          .attr('stroke-width', 1);
+        // ring label (25, 50, 75, 100)
+        g.append('text')
+          .attr('x', 3).attr('y', -(r - 2))
+          .attr('fill', 'rgba(255,255,255,.18)')
+          .attr('font-size', 6.5).attr('font-family', 'monospace')
+          .text(Math.round(l / LEVELS * 100));
+      }
+
+      // ── Spoke axes ────────────────────────────────────────────────
+      d3.range(N).forEach(i => {
+        const [ex, ey] = [R * Math.cos(ax(i)), R * Math.sin(ax(i))];
+        g.append('line')
+          .attr('x1', 0).attr('y1', 0).attr('x2', ex).attr('y2', ey)
+          .attr('stroke', 'rgba(255,255,255,.1)').attr('stroke-width', 1);
+
+        // Axis label (shortened to avoid overflow)
+        const lx = (R + 15) * Math.cos(ax(i));
+        const ly = (R + 15) * Math.sin(ax(i));
+        const anchor = Math.abs(lx) < 6 ? 'middle' : lx > 0 ? 'start' : 'end';
+        const label  = pillars[i].label.replace('Ethical Alignment', 'Ethical').replace('Anti-Corruption', 'Anti-Corr.').replace('Environmental', 'Environ.').replace('Modernization', 'Modern.');
+        g.append('text')
+          .attr('x', lx).attr('y', ly)
+          .attr('text-anchor', anchor)
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', '#475569').attr('font-size', 8).attr('font-weight', 600)
+          .attr('font-family', 'Inter,system-ui,sans-serif')
+          .text(label);
+      });
+
+      // ── Data polygon (with entrance animation) ────────────────────
+      const dataPts = pillars.map((p, i) => {
+        const r = R * Math.min(Math.max(p.value, 0), 100) / 100;
+        return [r * Math.cos(ax(i)), r * Math.sin(ax(i))];
+      });
+
+      // Start polygon at centre for animation, then expand
+      const poly = g.append('polygon')
+        .attr('points', d3.range(N).map(() => '0,0').join(' '))
+        .attr('fill', 'rgba(16,185,129,.16)')
+        .attr('stroke', '#10b981')
+        .attr('stroke-width', 2)
+        .attr('stroke-linejoin', 'round');
+
+      setTimeout(() => {
+        poly.transition().duration(900).ease(d3.easeCubicOut)
+          .attr('points', dataPts.map(([x,y]) => `${x},${y}`).join(' '));
+      }, 200);
+
+      // Dots (appear after polygon expands)
+      dataPts.forEach(([x, y], i) => {
+        g.append('circle')
+          .attr('cx', 0).attr('cy', 0).attr('r', 3.5)
+          .attr('fill', '#10b981').attr('stroke', '#0d1117').attr('stroke-width', 1.5)
+          .attr('opacity', 0)
+          .transition().delay(1100 + i * 40).duration(200)
+          .attr('cx', x).attr('cy', y).attr('opacity', 1);
+      });
+
+      // ── Centre score readout ──────────────────────────────────────
+      g.append('text')
+        .attr('x', 0).attr('y', -7)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#10b981').attr('font-size', 16).attr('font-weight', 900)
+        .attr('font-family', 'Inter,system-ui,sans-serif')
+        .attr('font-variant-numeric', 'tabular-nums')
+        .text('{{ company.ecoiq_score|default:0|floatformat:1 }}');
+
+      g.append('text')
+        .attr('x', 0).attr('y', 9)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#334155').attr('font-size', 7)
+        .attr('font-family', 'Inter,system-ui,sans-serif')
+        .text('/100 EcoIQ');
+
+    })();
+    </script>
 
     {# ── Scoring Methodology Reference ───────────────────────────── #}
     <details class="meth-exp">
@@ -1676,10 +1838,8 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
 
   /* ── Animated score counter ─────────────────────────────────── */
   const counter = document.getElementById('score-counter');
-  const TARGET  = parseFloat(
-    counter ? (counter.dataset.target || counter.textContent)
-            : '{{ profile.ecoiq_total_score|default:0|floatformat:1 }}'
-  ) || 0;
+  const TARGET  = parseFloat(counter ? counter.dataset.target : '0')
+                  || {{ company.ecoiq_score|default:0 }};
   const ARC_LEN = 339.29;
   const arc     = document.getElementById('score-arc');
   const glow    = document.getElementById('score-arc-glow');
