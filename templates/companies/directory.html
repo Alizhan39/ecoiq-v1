@@ -18,23 +18,6 @@
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
 a{color:inherit;text-decoration:none;}
 
-/* ── Command bar ──────────────────────────────────────────── */
-.cmd-bar{
-  position:sticky;top:0;z-index:100;
-  background:rgba(7,11,15,.96);backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:1rem;
-  padding:.6rem 1.5rem;
-}
-.cmd-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);}
-.cmd-links{display:flex;gap:.5rem;margin-left:auto;}
-.cmd-btn{
-  font-size:.72rem;font-weight:600;padding:.3rem .85rem;border-radius:5px;
-  border:1px solid var(--border);color:var(--muted);transition:all .15s;
-}
-.cmd-btn:hover{border-color:var(--border2);color:var(--text);}
-.cmd-btn.primary{background:var(--accent);color:#0d1117;border-color:var(--accent);}
-
 /* ── Page wrap ────────────────────────────────────────────── */
 .page{max-width:1200px;margin:0 auto;padding:2rem 1.5rem 4rem;}
 
@@ -214,29 +197,6 @@ a{color:inherit;text-decoration:none;}
 {% endblock %}
 
 {% block content %}
-<!-- Command bar -->
-<div class="cmd-bar">
-  <!-- Brand mark -->
-  <a href="/" style="display:flex;align-items:center;gap:.45rem;text-decoration:none;flex-shrink:0;">
-    <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect width="40" height="40" rx="8" fill="#070b0f"/>
-      <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2.2" stroke-linejoin="round"/>
-      <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.5" stroke-linejoin="round"/>
-      <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
-    </svg>
-    <span class="cmd-title" style="font-weight:800;letter-spacing:-.02em;">Eco<span style="color:var(--accent);">IQ</span></span>
-  </a>
-  <div class="cmd-links">
-    <a href="{% url 'countries:directory' %}" class="cmd-btn">🗺 Countries</a>
-    <a href="/about/" class="cmd-btn">About</a>
-    <a href="/methodology/" class="cmd-btn">📐 Methodology</a>
-    <a href="/pricing/" class="cmd-btn">Pricing</a>
-    <a href="{% url 'contact' %}" class="cmd-btn">Contact</a>
-    {% if request.user.is_staff %}
-    <a href="{% url 'admin:companies_companyprofile_changelist' %}" class="cmd-btn primary">Admin</a>
-    {% endif %}
-  </div>
-</div>
 
 <div class="page">
 

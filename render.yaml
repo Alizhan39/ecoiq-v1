@@ -5,6 +5,13 @@ services:
     region: oregon          # or frankfurt for EU
     plan: free
     buildCommand: "./build.sh"
+    releaseCommand: |
+      python manage.py migrate --noinput
+      python manage.py add_400_companies
+      python manage.py seed_score_history
+      python manage.py train_ml_models --model=scoring --apply
+      python manage.py train_ml_models --model=clustering --apply
+      python manage.py train_ml_models --model=anomaly --apply
     startCommand: "gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 300 --log-file -"
     healthCheckPath: /
 
