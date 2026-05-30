@@ -87,6 +87,19 @@
     .chip { display: inline-flex; align-items: center; gap: .4rem; background: rgba(0,232,154,.07); border: 1px solid rgba(0,232,154,.2); color: var(--acc); font-size: .68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: .28rem .75rem; border-radius: 20px; }
 
     @media (max-width: 640px) { .hide-sm { display: none !important; } }
+
+    /* Audience pills */
+    .aud-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.12);
+      color: #94a3b8;
+      padding: 8px 16px; border-radius: 2px;
+      font-size: 12px; text-decoration: none;
+      font-family: 'SF Mono','Fira Code',monospace;
+      transition: all .15s; white-space: nowrap;
+    }
+    .aud-pill:hover { border-color: #10b981; color: #10b981; }
   </style>
 </head>
 
@@ -158,24 +171,22 @@
       </div>
 
       <h1 style="font-size:clamp(2.2rem,4.5vw,3.4rem);font-weight:900;line-height:1.08;letter-spacing:-.03em;color:#fff;margin-bottom:1.1rem;">
-        Climate scores.<br>
-        Transition signals.<br>
-        <span style="background:linear-gradient(105deg,#00e89a,#34d399 45%,#fff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-          Action roadmaps.
-        </span>
+        Is <em style="font-style:normal;color:#cbd5e1;">your company</em><br>
+        ready for the<br>
+        <em style="font-style:normal;background:linear-gradient(105deg,#00e89a,#34d399 45%,#6ee7b7 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">net-zero economy?</em>
       </h1>
 
-      <p style="font-size:1.05rem;color:#94a3b8;line-height:1.75;max-width:520px;margin-bottom:1.8rem;">
-        EcoIQ turns public reports and evidence into climate intelligence —
-        ranking companies by their real transition readiness, surfacing hidden
-        risks, and generating credible action roadmaps for the net-zero economy.
+      <p style="font-size:1.05rem;color:#94a3b8;line-height:1.75;max-width:520px;margin-bottom:1.4rem;">
+        EcoIQ scores 200+ industrial companies on climate transition
+        readiness — used by investors, development banks, and
+        sustainability teams to screen, benchmark and act.
       </p>
 
-      <!-- Audience tags -->
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:2rem;">
-        {% for label in audience_labels %}
-        <span style="font-size:.76rem;font-weight:500;color:#64748b;padding:.3rem .7rem;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);">{{ label }}</span>
-        {% endfor %}
+      <!-- Audience pills -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.8rem;">
+        <a href="/companies/" class="aud-pill">📊 I'm an Investor — screen companies</a>
+        <a href="/request-access/claim/" class="aud-pill">🏭 I'm a Company — claim my profile</a>
+        <a href="{% url 'contact' %}" class="aud-pill">🏛️ I'm a Government — country intelligence</a>
       </div>
 
       <!-- CTAs -->
@@ -188,6 +199,33 @@
           Country Intelligence
         </a>
       </div>
+
+      <!-- Live score comparison -->
+      <div style="display:flex;gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden;max-width:560px;margin-bottom:1.75rem;">
+
+        <a href="/companies/schneider-electric/" style="flex:1;background:#070b0f;padding:1rem 1.25rem;text-decoration:none;transition:background .15s;display:block;" onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='#070b0f'">
+          <div style="font-size:9px;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:4px">ENERGY · FRANCE</div>
+          <div style="font-size:13px;font-weight:500;color:#e2e8f0;margin-bottom:6px">Schneider Electric</div>
+          <div style="font-size:1.6rem;font-weight:300;color:#10b981;letter-spacing:-.02em;line-height:1">81.7</div>
+          <div style="font-size:9px;color:#10b981;font-family:'SF Mono',monospace;margin-top:3px">Regenerative Leader</div>
+        </a>
+
+        <a href="/companies/bp/" style="flex:1;background:#070b0f;padding:1rem 1.25rem;text-decoration:none;transition:background .15s;display:block;" onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='#070b0f'">
+          <div style="font-size:9px;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:4px">OIL &amp; GAS · UK</div>
+          <div style="font-size:13px;font-weight:500;color:#e2e8f0;margin-bottom:6px">BP</div>
+          <div style="font-size:1.6rem;font-weight:300;color:#fbbf24;letter-spacing:-.02em;line-height:1">28.2</div>
+          <div style="font-size:9px;color:#fbbf24;font-family:'SF Mono',monospace;margin-top:3px">Transitional</div>
+        </a>
+
+        <a href="/companies/saudi-aramco/" style="flex:1;background:#070b0f;padding:1rem 1.25rem;text-decoration:none;transition:background .15s;display:block;" onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='#070b0f'">
+          <div style="font-size:9px;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:4px">OIL &amp; GAS · SAUDI ARABIA</div>
+          <div style="font-size:13px;font-weight:500;color:#e2e8f0;margin-bottom:6px">Saudi Aramco</div>
+          <div style="font-size:1.6rem;font-weight:300;color:#f87171;letter-spacing:-.02em;line-height:1">18.4</div>
+          <div style="font-size:9px;color:#f87171;font-family:'SF Mono',monospace;margin-top:3px">Extractive Core</div>
+        </a>
+
+      </div>
+      <div style="font-size:10px;color:#334155;font-family:'SF Mono',monospace;margin-top:-1.4rem;margin-bottom:1.75rem">↑ Live scores · Updated monthly · Click any company →</div>
 
       <!-- Proof stats -->
       <div style="display:flex;gap:2rem;flex-wrap:wrap;">
@@ -294,105 +332,85 @@
 
 
 <!-- ════════════════════════════════ HOW IT WORKS ═══════════════════════════ -->
-<section style="padding:5rem 1.5rem;">
-  <div style="max-width:1120px;margin:0 auto;">
+<section style="max-width:1100px;margin:0 auto 4rem;padding:3rem 2rem 0">
 
-    <div style="text-align:center;margin-bottom:3rem;" class="reveal">
-      <div class="chip" style="margin-bottom:.9rem;">Methodology</div>
-      <h2 style="font-size:clamp(1.7rem,3vw,2.3rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem;">
-        From public evidence to climate intelligence
-      </h2>
-      <p style="color:#64748b;font-size:.95rem;max-width:520px;margin:0 auto;line-height:1.7;">
-        EcoIQ reads annual reports, sustainability disclosures, and regulatory filings —
-        then applies a consistent 6-pillar framework to score and rank every company.
-      </p>
+  <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
+    How it works
+    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
+  </div>
+
+  <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden">
+
+    <!-- Step 1 -->
+    <div style="background:#070b0f;padding:2rem">
+      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">01</div>
+      <div style="font-size:1.8rem;margin-bottom:1rem">📄</div>
+      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">We read the evidence</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6">Annual reports, sustainability disclosures, regulatory filings, CDP data — all public, all verified.</div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;">
-
-      <!-- Step 1 -->
-      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.0s;">
-        <div style="font-size:1.6rem;margin-bottom:.75rem;">📄</div>
-        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 1</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Evidence Ingestion</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Annual reports, sustainability filings, regulatory disclosures, and public databases are ingested and indexed for each company.</p>
-      </div>
-
-      <!-- Step 2 -->
-      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.08s;">
-        <div style="font-size:1.6rem;margin-bottom:.75rem;">🧠</div>
-        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 2</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">AI Analysis</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Claude AI analyses each evidence source across six pillars — assigning scores, identifying risks, and flagging hidden harm signals.</p>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.16s;">
-        <div style="font-size:1.6rem;margin-bottom:.75rem;">📊</div>
-        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 3</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Climate Score</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">A composite EcoIQ score (0–100) is calculated with weighted pillars and a harm penalty for pollution, controversy, and governance failures.</p>
-      </div>
-
-      <!-- Step 4 -->
-      <div class="reveal card-hover" style="background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.4rem;transition-delay:.24s;">
-        <div style="font-size:1.6rem;margin-bottom:.75rem;">🗺</div>
-        <div style="font-size:.7rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Step 4</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Action Roadmap</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Each company profile includes a personalised path-to-100 roadmap with financing options, modernisation priorities, and transition milestones.</p>
-      </div>
-
+    <!-- Step 2 -->
+    <div style="background:#070b0f;padding:2rem">
+      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">02</div>
+      <div style="font-size:1.8rem;margin-bottom:1rem">🤖</div>
+      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">AI scores each company</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6">6 pillars × ML model = EcoIQ score 0–100. Every score is explained. No black box.</div>
     </div>
+
+    <!-- Step 3 -->
+    <div style="background:#070b0f;padding:2rem">
+      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">03</div>
+      <div style="font-size:1.8rem;margin-bottom:1rem">💰</div>
+      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">You act on intelligence</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6">Investors screen portfolios. Companies improve scores. Banks unlock green financing. Governments track progress.</div>
+    </div>
+
+    <!-- Step 4 — Unique value prop -->
+    <div style="background:rgba(16,185,129,.04);padding:2rem;border-left:2px solid rgba(16,185,129,.25)">
+      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">04 — Unique</div>
+      <div style="font-size:1.8rem;margin-bottom:1rem">🌿</div>
+      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Ethical Finance Ready</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6">Built for responsible capital frameworks — green bonds, development bank criteria, and long-term stewardship-based allocation. Zero direct competitors at this depth.</div>
+    </div>
+
   </div>
 </section>
 
 
-<!-- ════════════════════════════════ WHO IT'S FOR ════════════════════════════ -->
-<section style="padding:4rem 1.5rem 5rem;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);">
-  <div style="max-width:1120px;margin:0 auto;">
+<!-- ════════════════════════════════ WHO USES ECOIQ ══════════════════════════ -->
+<section style="max-width:1100px;margin:0 auto 4rem;padding:0 2rem">
 
-    <div style="text-align:center;margin-bottom:3rem;" class="reveal">
-      <div class="chip" style="margin-bottom:.9rem;">For Whom</div>
-      <h2 style="font-size:clamp(1.7rem,3vw,2.3rem);font-weight:800;color:#fff;letter-spacing:-.03em;">
-        Intelligence for every part of the transition
-      </h2>
-    </div>
+  <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
+    Who uses EcoIQ
+    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
+  </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.1rem;">
+  <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem">
 
-      <!-- Investors -->
-      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;">
-        <div style="width:40px;height:40px;border-radius:9px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">💼</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Investors &amp; Fund Managers</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Screen portfolios for climate transition risk. Identify companies with high EcoIQ scores for ESG-aligned allocations. Assess financing eligibility across Green Bond, ESG, and IFC frameworks.</p>
-        <a href="/companies/" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:var(--acc);text-decoration:none;">View Rankings →</a>
-      </div>
+    <!-- Investors -->
+    <a href="/companies/" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:2rem;text-decoration:none;display:block;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
+      <div style="font-size:1.5rem;margin-bottom:1rem">📊</div>
+      <div style="font-size:15px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Investors &amp; Fund Managers</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:1rem">Screen 200+ companies by climate score. Filter by sector, country, pollution level. Identify which companies qualify for green financing.</div>
+      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace">Browse rankings →</div>
+    </a>
 
-      <!-- Governments -->
-      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;transition-delay:.06s;">
-        <div style="width:40px;height:40px;border-radius:9px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">🏛</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Governments &amp; Regulators</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Benchmark industrial sectors against international climate standards. Understand national transition readiness. Identify pollution hotspots, financing gaps, and policy priorities at country level.</p>
-        <a href="/countries/" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:var(--info);text-decoration:none;">Country Intelligence →</a>
-      </div>
+    <!-- Companies -->
+    <a href="/request-access/claim/" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:2rem;text-decoration:none;display:block;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
+      <div style="font-size:1.5rem;margin-bottom:1rem">🏭</div>
+      <div style="font-size:15px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Industrial Companies</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:1rem">Your company already has an EcoIQ profile. Claim it, improve your score, unlock access to IFC, EBRD and Green Bond financing.</div>
+      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace">Claim your profile →</div>
+    </a>
 
-      <!-- Companies -->
-      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;transition-delay:.12s;">
-        <div style="width:40px;height:40px;border-radius:9px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">🏭</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Companies &amp; Operators</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Understand your EcoIQ climate position relative to peers. Access a clear path-to-100 improvement roadmap. Demonstrate transparency to investors, lenders, and regulators.</p>
-        <a href="mailto:alizhan@ecoiq.uk?subject=Company%20Intelligence%20Request" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:#a855f7;text-decoration:none;">Request Profile →</a>
-      </div>
+    <!-- Governments -->
+    <a href="/countries/" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:2rem;text-decoration:none;display:block;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
+      <div style="font-size:1.5rem;margin-bottom:1rem">🌍</div>
+      <div style="font-size:15px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Governments &amp; Development Banks</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:1rem">Country-level climate intelligence across 25+ markets. Identify JETP-eligible companies. Track national industrial transition progress.</div>
+      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace">View country intelligence →</div>
+    </a>
 
-      <!-- Climate Programmes -->
-      <div class="reveal card-hover" style="background:#070b0f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.5rem;transition-delay:.18s;">
-        <div style="width:40px;height:40px;border-radius:9px;background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;">🌍</div>
-        <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;">Climate &amp; Transition Programmes</div>
-        <p style="font-size:.82rem;color:#64748b;line-height:1.65;">Identify companies ready for transition finance, Just Transition support, and Green Bond issuance. EcoIQ provides indicative eligibility across IFC, EBRD, ADB, and GCF frameworks.</p>
-        <a href="/intelligence/" style="display:inline-block;margin-top:.9rem;font-size:.78rem;font-weight:600;color:var(--warn);text-decoration:none;">Intelligence Hub →</a>
-      </div>
-
-    </div>
   </div>
 </section>
 
@@ -508,28 +526,36 @@
 
 
 <!-- ════════════════════════════════ CTA ════════════════════════════════════ -->
-<section style="padding:5rem 1.5rem;position:relative;overflow:hidden;">
-  <div class="orb" style="width:500px;height:500px;background:rgba(0,232,154,1);opacity:.04;top:-100px;left:50%;transform:translateX(-50%);"></div>
-  <div style="max-width:680px;margin:0 auto;text-align:center;position:relative;" class="reveal">
-    <div class="chip" style="margin-bottom:1rem;">Get Started</div>
-    <h2 style="font-size:clamp(1.7rem,3vw,2.4rem);font-weight:900;color:#fff;letter-spacing:-.03em;margin-bottom:.9rem;">
-      Ready to explore the intelligence?
+<section style="border-top:1px solid rgba(255,255,255,.07);padding:4rem 2rem;text-align:center;background:rgba(16,185,129,.04);position:relative;overflow:hidden;">
+  <div class="orb" style="width:400px;height:400px;background:rgba(0,232,154,1);opacity:.04;top:-100px;left:50%;transform:translateX(-50%);"></div>
+  <div style="max-width:600px;margin:0 auto;position:relative;" class="reveal">
+
+    <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#10b981;font-family:'SF Mono',monospace;margin-bottom:1rem">Get started</div>
+
+    <h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:300;letter-spacing:-.02em;margin-bottom:1rem;color:#e2e8f0;line-height:1.2">
+      See your company's<br>EcoIQ score right now
     </h2>
-    <p style="color:#64748b;font-size:.95rem;line-height:1.75;max-width:480px;margin:0 auto 2rem;">
-      Browse the live rankings, explore country intelligence, or get in touch
-      to discuss custom intelligence reports for your portfolio or programme.
+
+    <p style="font-size:14px;color:#64748b;margin-bottom:2rem;line-height:1.7">
+      200+ companies already have a profile. Search below or browse the full rankings.
     </p>
-    <div style="display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap;">
-      <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.95rem;padding:.75rem 1.5rem;border-radius:8px;text-decoration:none;" class="glow-acc">
-        Explore Rankings →
-      </a>
-      <a href="/investors/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:600;font-size:.95rem;padding:.75rem 1.5rem;border-radius:8px;text-decoration:none;">
-        Investment Information →
-      </a>
+
+    <!-- Inline search -->
+    <form action="/companies/" method="get" style="display:flex;gap:8px;max-width:420px;margin:0 auto 1.5rem">
+      <input type="text" name="q" placeholder="Search: Shell, KazMunayGas, BP…"
+        style="flex:1;background:#0d1117;border:1px solid rgba(255,255,255,.13);border-radius:3px;padding:11px 16px;font-size:13px;color:#e2e8f0;outline:none;min-width:0;font-family:inherit"
+        onfocus="this.style.borderColor='rgba(16,185,129,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.13)'">
+      <button type="submit" style="background:#10b981;color:#000;padding:11px 20px;border:none;border-radius:3px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:'SF Mono',monospace;font-weight:700;cursor:pointer;white-space:nowrap">
+        Search →
+      </button>
+    </form>
+
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a href="/companies/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">Browse all {{ company_count }}+ companies →</a>
+      <a href="/pricing/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">View pricing →</a>
     </div>
-    <p style="margin-top:1.5rem;font-size:.75rem;color:#334155;">
-      All scores are indicative and AI-assisted. Not investment advice.
-    </p>
+
+    <p style="margin-top:1.5rem;font-size:.72rem;color:#1e293b">All scores are indicative and AI-assisted. Not investment advice.</p>
   </div>
 </section>
 
