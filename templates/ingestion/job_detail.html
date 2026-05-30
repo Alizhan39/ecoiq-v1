@@ -141,7 +141,7 @@
     <a href="{% url 'ingestion:index' %}" class="jd-btn">← Back to Ingestion</a>
     {% if job.result_company %}
       <a href="{% url 'companies:detail' job.result_company.slug %}" class="jd-btn primary">View Company Profile →</a>
-      <a href="/admin/league/company/{{ job.result_company.pk }}/change/" class="jd-btn">Edit in Admin</a>
+      {% if request.user.is_staff %}<a href="/admin/league/company/{{ job.result_company.pk }}/change/" class="jd-btn">Edit in Admin</a>{% endif %}
     {% endif %}
   </div>
 

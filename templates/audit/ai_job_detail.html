@@ -211,7 +211,7 @@
   <div class="nav-links">
     <a href="/audit/ai/">← Jobs Queue</a>
     <a href="/league/">League</a>
-    <a href="/admin/">Admin</a>
+    {% if request.user.is_staff %}<a href="/admin/">Admin</a>{% endif %}
   </div>
 </nav>
 
@@ -743,7 +743,7 @@
   <!-- Quick links -->
   <div class="sidebar-card">
     <h3>Quick Links</h3>
-    <a href="/admin/audit/aianalysisjob/{{ job.pk }}/change/" target="_blank" class="btn btn-ghost" style="width:100%; justify-content:center; margin-bottom:0.5rem; font-size:0.78rem;">⚙ Django Admin (full edit)</a>
+    {% if request.user.is_staff %}<a href="/admin/audit/aianalysisjob/{{ job.pk }}/change/" target="_blank" class="btn btn-ghost" style="width:100%; justify-content:center; margin-bottom:0.5rem; font-size:0.78rem;">⚙ Django Admin (full edit)</a>{% endif %}
     <a href="{% url 'ai_jobs' %}" class="btn btn-ghost" style="width:100%; justify-content:center; font-size:0.78rem;">← Back to Queue</a>
   </div>
 

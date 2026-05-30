@@ -127,7 +127,7 @@
     <a href="/audit/ai/" class="active">🤖 AI Analysis</a>
     <a href="/audit/">Industrial Audit</a>
     <a href="/league/">League</a>
-    <a href="/admin/">Admin</a>
+    {% if request.user.is_staff %}<a href="/admin/">Admin</a>{% endif %}
   </div>
 </nav>
 
