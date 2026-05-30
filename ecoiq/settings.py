@@ -87,11 +87,15 @@ INSTALLED_APPS = [
     'modelcluster',
     'taggit',
 
+    # REST API
+    'rest_framework',
+
     # Project apps
     'core',
     'audit',
     'leads',
     'league',
+    'api',
     'cms',
     'ingestion',
     'intelligence',
@@ -251,3 +255,33 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD      = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# ── Django REST Framework ─────────────────────────────────────────────────────
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'api.authentication.APIKeyAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'api.throttles.APIKeyRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon':    '20/day',
+        'explorer':   '100/day',
+        'professional': '2000/day',
+        'enterprise':   '50000/day',
+    },
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    'DEFAULT_FILTER_BACKENDS': [
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+}

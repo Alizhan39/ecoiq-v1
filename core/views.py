@@ -885,6 +885,16 @@ def register(request):
     return render(request, 'register.html', {'error': error})
 
 
+# ── API docs page ────────────────────────────────────────────────────────────
+
+def api_docs(request):
+    """
+    /api/ — EcoIQ REST API developer documentation.
+    Static HTML docs page (no DRF dependency).
+    """
+    return render(request, 'api/docs.html')
+
+
 # ── Investors page ───────────────────────────────────────────────────────────
 
 def investors(request):

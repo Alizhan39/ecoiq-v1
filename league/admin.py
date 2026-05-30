@@ -123,9 +123,9 @@ class ScoreHistoryInline(admin.TabularInline):
 class CompanyAdmin(admin.ModelAdmin):
     list_display  = (
         'rank_col', 'name', 'sector', 'country',
-        'ecoiq_badge', 'poll_badge', 'red_badge', 'inv_badge',
+        'ecoiq_badge', 'ml_score_col', 'poll_badge', 'red_badge', 'inv_badge',
         'trans_badge', 'comm_badge',
-        'verified_icon', 'projects_count',
+        'cluster_col', 'anomaly_col', 'verified_icon', 'projects_count',
     )
     list_filter   = ('sector', 'country', 'verified', 'is_featured')
     search_fields = ('name', 'city', 'description')
@@ -155,8 +155,19 @@ class CompanyAdmin(admin.ModelAdmin):
         ('Ranking', {
             'fields': ('ecoiq_score', 'rank', 'verified', 'is_featured'),
         }),
+        ('ML Intelligence', {
+            'fields': (
+                ('ml_score', 'ml_score_confidence', 'ml_predicted_score_12m'),
+                ('ml_cluster', 'ml_cluster_label'),
+                ('anomaly_score', 'is_anomaly'),
+                'ml_last_run',
+            ),
+            'classes': ('collapse',),
+            'description': 'Machine learning outputs — updated by train_ml_models management command.',
+        }),
     )
-    readonly_fields = ('ecoiq_score',)
+    readonly_fields = ('ecoiq_score', 'ml_score', 'ml_score_confidence', 'ml_predicted_score_12m',
+                       'ml_cluster', 'ml_cluster_label', 'anomaly_score', 'is_anomaly', 'ml_last_run')
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -190,6 +201,40 @@ class CompanyAdmin(admin.ModelAdmin):
     @admin.display(description='Community', ordering='score_community_impact')
     def comm_badge(self, obj):
         return _score_chip(obj.score_community_impact)
+
+    @admin.display(description='ML', ordering='ml_score')
+    def ml_score_col(self, obj):
+        if obj.ml_score is None:
+            return format_html('<span style="color:#666">—</span>')
+        return format_html(
+            '<span style="color:#00e89a;font-weight:600">{}</span>',
+            obj.ml_score,
+        )
+
+    @admin.display(description='Cluster')
+    def cluster_col(self, obj):
+        label = obj.ml_cluster_label or ''
+        if not label:
+            return format_html('<span style="color:#666">—</span>')
+        color = {
+            'ESG Leader':         '#00e89a',
+            'Climate Transformer':'#58a6ff',
+            'Ethical Employer':   '#a78bfa',
+            'Governance Champion':'#34d399',
+            'Emerging Improver':  '#f4a261',
+            'High-Risk Laggard':  '#e63946',
+        }.get(label, '#94a3b8')
+        return format_html(
+            '<span style="color:{};font-size:.75rem">{}</span>', color, label,
+        )
+
+    @admin.display(description='⚠', boolean=False, ordering='is_anomaly')
+    def anomaly_col(self, obj):
+        if obj.is_anomaly:
+            return format_html('<span title="Anomaly detected" style="color:#f4a261">⚠</span>')
+        if obj.anomaly_score is not None:
+            return format_html('<span style="color:#334155">✓</span>')
+        return format_html('<span style="color:#334155">—</span>')
 
     @admin.display(description='✓', boolean=True, ordering='verified')
     def verified_icon(self, obj):
