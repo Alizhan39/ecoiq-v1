@@ -1588,6 +1588,70 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     {% endif %}
     {% endwith %}
 
+    <!-- ── ML Intelligence Panel ──────────────────────────── -->
+    {% if company.ml_score or company.ml_cluster_label or company.ml_predicted_score_12m %}
+    <div style="margin-top:1rem;background:#070d12;border:1px solid rgba(0,232,154,0.12);
+      border-radius:6px;padding:1rem;font-size:.75rem;font-family:'IBM Plex Mono',monospace;">
+
+      <div style="color:#00e89a;font-size:.65rem;letter-spacing:.08em;
+        text-transform:uppercase;margin-bottom:.75rem;display:flex;
+        align-items:center;gap:.4rem">
+        <span>⬡</span> ML Intelligence
+      </div>
+
+      {% if company.ml_score %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem">
+        <span style="color:#64748b">ML Score</span>
+        <span style="color:#e2e8f0;font-weight:600">{{ company.ml_score }}</span>
+      </div>
+      {% if company.ml_score_confidence %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem">
+        <span style="color:#64748b">Confidence</span>
+        <span style="color:#94a3b8">{{ company.ml_score_confidence|floatformat:0 }}%</span>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      {% if company.ml_predicted_score_12m %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem">
+        <span style="color:#64748b">12m Forecast</span>
+        <span style="{% if company.ml_predicted_score_12m >= company.ecoiq_score %}color:#00e89a{% else %}color:#f4a261{% endif %};font-weight:600">
+          {{ company.ml_predicted_score_12m }}
+          {% with delta=company.ml_predicted_score_12m|add:"-"|add:company.ecoiq_score %}{% endwith %}
+        </span>
+      </div>
+      {% endif %}
+
+      {% if company.ml_cluster_label %}
+      <div style="margin-top:.5rem;padding:.4rem .6rem;background:rgba(0,232,154,0.06);
+        border-left:2px solid rgba(0,232,154,0.3);border-radius:2px;color:#94a3b8">
+        Peer group: <span style="color:#e2e8f0">{{ company.ml_cluster_label }}</span>
+      </div>
+      {% endif %}
+
+      {% if company.is_anomaly %}
+      <div style="margin-top:.5rem;padding:.4rem .6rem;background:rgba(244,162,97,0.08);
+        border-left:2px solid #f4a261;border-radius:2px;color:#f4a261;font-size:.68rem">
+        ⚠ Anomaly detected — profile deviates significantly from peer set
+      </div>
+      {% endif %}
+
+      {% if company.ml_last_run %}
+      <div style="margin-top:.6rem;color:#334155;font-size:.65rem;text-align:right">
+        Model: {{ company.ml_last_run|timesince }} ago
+      </div>
+      {% endif %}
+
+      <div style="margin-top:.75rem;text-align:center">
+        <a href="{% url 'companies:ml_insights' company.slug %}"
+           style="color:#00e89a;font-size:.65rem;text-decoration:none;
+             opacity:.6;hover:opacity:1" target="_blank">
+          JSON insights ↗
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
   </div><!-- /sidebar -->
 
 </div><!-- /page-layout -->

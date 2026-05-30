@@ -104,6 +104,26 @@ services:
       - key: COMPANIES_HOUSE_API_KEY
         sync: false
 
+  # ── Cron: ML model retraining (Monday 03:00 UTC, after weekly ingest) ────
+  - type: cron
+    name: ecoiq-ml-retrain
+    env: python
+    region: oregon
+    schedule: "0 3 * * 1"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python manage.py train_ml_models --apply"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ecoiq-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+
 databases:
   - name: ecoiq-db
     databaseName: ecoiq

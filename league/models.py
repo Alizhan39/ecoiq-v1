@@ -118,6 +118,32 @@ class Company(models.Model):
     ecoiq_score = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
     rank        = models.PositiveIntegerField(null=True, blank=True)
 
+    # ── ML fields ────────────────────────────────────────────────────────────
+    ml_score                = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True,
+        help_text='GBR model-predicted EcoIQ score')
+    ml_score_confidence     = models.FloatField(
+        null=True, blank=True,
+        help_text='Model confidence (0–1); higher = more training data neighbours')
+    ml_predicted_score_12m  = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True,
+        help_text='12-month forward-projected score')
+    ml_cluster              = models.IntegerField(
+        null=True, blank=True,
+        help_text='K-Means cluster index')
+    ml_cluster_label        = models.CharField(
+        max_length=80, blank=True,
+        help_text='Human-readable cluster name')
+    anomaly_score           = models.FloatField(
+        null=True, blank=True,
+        help_text='Isolation Forest anomaly score; negative = more anomalous')
+    is_anomaly              = models.BooleanField(
+        default=False,
+        help_text='True if Isolation Forest flags this company as anomalous')
+    ml_last_run             = models.DateTimeField(
+        null=True, blank=True,
+        help_text='When the ML pipeline last ran for this company')
+
     created_at  = models.DateTimeField(auto_now_add=True)
     updated_at  = models.DateTimeField(auto_now=True)
 

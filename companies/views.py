@@ -5,6 +5,7 @@ EcoIQ Company Intelligence — Public Views.
 /companies/<slug>/    → full public company profile
 """
 from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
 
 from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_CHOICES
 from companies.scoring import get_path_to_100_actions
@@ -779,3 +780,76 @@ def company_pdf_report(request, slug):
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ── ML Insights endpoint ───────────────────────────────────────────────────────
+
+def company_ml_insights(request, slug):
+    """
+    JSON endpoint: /companies/<slug>/ml-insights.json
+
+    Returns ML scoring, anomaly detection, clustering, and 12m prediction
+    for a single company. Runs on-demand using saved model files; returns
+    graceful error payload if models aren't trained yet.
+    """
+    company = get_object_or_404(
+        __import__('league.models', fromlist=['Company']).Company,
+        slug=slug,
+    )
+
+    payload: dict = {
+        'company': company.name,
+        'slug':    slug,
+        'scoring':    None,
+        'anomaly':    None,
+        'cluster':    None,
+        'prediction': None,
+        'error':      None,
+    }
+
+    # ── Scoring ──────────────────────────────────────────────────────────
+    try:
+        from ml.scoring_model import EcoIQScoringModel
+        scorer = EcoIQScoringModel()
+        result = scorer.predict_company(company)
+        if result:
+            payload['scoring'] = result
+    except Exception as exc:
+        payload['error'] = f'scoring: {exc}'
+
+    # ── Anomaly ──────────────────────────────────────────────────────────
+    try:
+        from ml.anomaly_detection import AnomalyDetector
+        detector = AnomalyDetector()
+        result   = detector.score_company(company)
+        if result:
+            payload['anomaly'] = result
+    except Exception as exc:
+        if not payload['error']:
+            payload['error'] = f'anomaly: {exc}'
+
+    # ── Clustering ────────────────────────────────────────────────────────
+    try:
+        from ml.clustering import CompanyClusterer
+        clusterer = CompanyClusterer()
+        result    = clusterer.assign_company(company)
+        if result:
+            payload['cluster'] = result
+    except Exception as exc:
+        if not payload['error']:
+            payload['error'] = f'clustering: {exc}'
+
+    # ── 12-month prediction ───────────────────────────────────────────────
+    try:
+        from ml.prediction import predict_12m
+        pred = predict_12m(company)
+        if pred is not None:
+            payload['prediction'] = {
+                'score_12m': round(pred, 1),
+                'delta':     round(pred - float(company.ecoiq_score or 0), 1),
+            }
+    except Exception as exc:
+        if not payload['error']:
+            payload['error'] = f'prediction: {exc}'
+
+    return JsonResponse(payload)
