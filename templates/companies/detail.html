@@ -482,6 +482,14 @@ a{color:inherit;text-decoration:none}
 }
 .radar-svg{display:block;overflow:visible}
 
+/* ── D3 chart containers ──────────────────────────────────────────── */
+#harm-heatmap-wrap,#sankey-wrap{transition:opacity .3s ease}
+@media(max-width:480px){
+  #spider-chart{width:220px!important;height:220px!important}
+  #pillar-radar-panel .panel-body{flex-direction:column!important}
+  #sankey-panel .panel-body{padding:.5rem!important}
+}
+
 /* ── Animated counter ─────────────────────────────────────────────── */
 @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .hero-inner,.intel-strip,.score-grid,.harm-grid{animation:fadeInUp .35s ease both}
@@ -1025,7 +1033,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
           <!-- Total EcoIQ badge -->
           <div style="margin-top:.6rem;padding:.7rem 1rem;background:rgba(16,185,129,.06);
             border:1px solid rgba(16,185,129,.2);border-radius:8px;text-align:center">
-            <div style="font-size:1.6rem;font-weight:900;color:#10b981;font-variant-numeric:tabular-nums;line-height:1">{{ company.ecoiq_score|floatformat:1 }}</div>
+            <div style="font-size:1.6rem;font-weight:900;color:#10b981;font-variant-numeric:tabular-nums;line-height:1">{{ profile.ecoiq_total_score|floatformat:1 }}</div>
             <div style="font-size:.6rem;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem">Total EcoIQ / 100</div>
             <div style="font-size:.65rem;color:{{ profile.moral_label_color }};font-weight:700;margin-top:.3rem">{{ profile.moral_label_display }}</div>
           </div>
@@ -1136,7 +1144,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         .attr('fill', '#10b981').attr('font-size', 16).attr('font-weight', 900)
         .attr('font-family', 'Inter,system-ui,sans-serif')
         .attr('font-variant-numeric', 'tabular-nums')
-        .text('{{ company.ecoiq_score|default:0|floatformat:1 }}');
+        .text('{{ profile.ecoiq_total_score|default:0|floatformat:1 }}');
 
       g.append('text')
         .attr('x', 0).attr('y', 9)
@@ -1210,6 +1218,62 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         </div>
       </div>
       <div class="panel-body">
+        <!-- D3 Harm Signal Heatmap strip -->
+        <div id="harm-heatmap-wrap" style="margin-bottom:1rem;overflow:hidden">
+          <svg id="harm-heatmap" style="display:block;width:100%;overflow:visible"
+               aria-label="Harm signal severity heatmap"></svg>
+        </div>
+        <script>
+        (function(){
+          if (typeof d3 === 'undefined') return;
+          var sigs = [
+            {% for sig in harm_signals %}
+            { label: '{{ sig.label|escapejs }}', status: '{{ sig.status }}', penalty: {{ sig.penalty }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ];
+          var colMap = { clear:'#10b981', moderate:'#f4a261', elevated:'#f87171', critical:'#b91c1c' };
+          var n = sigs.length;
+          if (!n) return;
+          var wrap = document.getElementById('harm-heatmap-wrap');
+          var W = wrap ? (wrap.offsetWidth || 400) : 400;
+          var H = 58, pad = 5;
+          var cellW = (W - pad * (n + 1)) / n;
+          var svg = d3.select('#harm-heatmap').attr('viewBox','0 0 '+W+' '+H).attr('height',H);
+          sigs.forEach(function(sig, i) {
+            var x = pad + i * (cellW + pad);
+            var col = colMap[sig.status] || '#475569';
+            /* background rect */
+            svg.append('rect').attr('x',x).attr('y',6).attr('width',cellW).attr('height',36)
+              .attr('rx',5).attr('fill',col).attr('opacity',0.12);
+            /* top accent bar */
+            svg.append('rect').attr('x',x).attr('y',6).attr('width',cellW).attr('height',3)
+              .attr('rx',2).attr('fill',col);
+            /* label */
+            var short = sig.label.length > 13 ? sig.label.slice(0,11)+'…' : sig.label;
+            svg.append('text').attr('x',x+cellW/2).attr('y',27)
+              .attr('text-anchor','middle').attr('fill',col)
+              .attr('font-size',8).attr('font-weight',700)
+              .attr('font-family','Inter,system-ui,sans-serif').text(short);
+            /* penalty / OK */
+            svg.append('text').attr('x',x+cellW/2).attr('y',48)
+              .attr('text-anchor','middle')
+              .attr('fill', sig.penalty > 0 ? '#f87171' : '#10b981')
+              .attr('font-size',7.5).attr('font-family','Inter,system-ui,sans-serif')
+              .text(sig.penalty > 0 ? '−'+sig.penalty+' pts' : '✓ OK');
+          });
+          /* legend dots */
+          var legendItems = [{s:'clear',l:'OK'},{s:'moderate',l:'Watch'},{s:'elevated',l:'Risk'},{s:'critical',l:'Critical'}];
+          var lx = pad;
+          legendItems.forEach(function(item,i){
+            svg.append('circle').attr('cx',lx+4).attr('cy',H-4).attr('r',3)
+              .attr('fill', colMap[item.s]);
+            svg.append('text').attr('x',lx+10).attr('y',H-1)
+              .attr('fill','#475569').attr('font-size',6.5)
+              .attr('font-family','Inter,system-ui,sans-serif').text(item.l);
+            lx += 44;
+          });
+        })();
+        </script>
         <div class="harm-grid">
           {% for sig in harm_signals %}
           <div class="harm-cell {{ sig.status }}">
@@ -1608,6 +1672,110 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         </div>
       </div>
     </div>
+    {% endif %}
+
+    <!-- ── Financing Access Flow (D3 Sankey-style) ──────────────────── -->
+    {% if financing_eligibility %}
+    <div class="intel-panel" style="margin-bottom:1.2rem" id="sankey-panel">
+      <div class="panel-header">
+        ↗ Financing Access Flow
+        <div class="ph-right">
+          <span class="ai-conf-pill">Indicative · Not investment advice</span>
+        </div>
+      </div>
+      <div class="panel-body" style="padding:.75rem .9rem;overflow-x:auto">
+        <div id="sankey-wrap" style="width:100%;max-width:460px;margin:0 auto">
+          <svg id="sankey-chart" style="display:block;width:100%"
+               aria-label="Financing access flow for {{ company.name }}"></svg>
+        </div>
+      </div>
+    </div>
+    <script>
+    (function(){
+      if (typeof d3 === 'undefined') return;
+      var items = [
+        {% for f in financing_eligibility %}
+        { type:'{{ f.type|escapejs }}', inst:'{{ f.institution|escapejs }}', status:'{{ f.status }}', color:'{{ f.color }}' }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ];
+      if (!items.length) return;
+      var wrap = document.getElementById('sankey-wrap');
+      var W = Math.min(wrap ? (wrap.offsetWidth || 460) : 460, 460);
+      var rowH = 38, topPad = 14, btmPad = 10;
+      var H = items.length * rowH + topPad + btmPad;
+      var LX = 8, LW = 78, LH = Math.min(items.length * rowH * 0.7, 90);
+      var RX = W - 134, RW = 126, RH = rowH - 8;
+      var CX1 = LX + LW + (RX - LX - LW) * 0.38;
+      var CX2 = RX - (RX - LX - LW) * 0.38;
+      var strokeW = { eligible:5, partial:2.5, transition:2 };
+      var strokeOp = { eligible:0.65, partial:0.38, transition:0.25 };
+
+      var svg = d3.select('#sankey-chart')
+        .attr('viewBox','0 0 '+W+' '+H)
+        .attr('width', W).attr('height', H);
+
+      /* ── Source node (EcoIQ Score) ── */
+      var ly = H / 2 - LH / 2;
+      svg.append('rect').attr('x',LX).attr('y',ly)
+        .attr('width',LW).attr('height',LH).attr('rx',7)
+        .attr('fill','rgba(0,232,154,.09)').attr('stroke','#00e89a').attr('stroke-width',1.5);
+      svg.append('text').attr('x',LX+LW/2).attr('y',ly+LH/2-7)
+        .attr('text-anchor','middle').attr('fill','#00e89a')
+        .attr('font-size',15).attr('font-weight',900)
+        .attr('font-family','Inter,system-ui,sans-serif')
+        .attr('font-variant-numeric','tabular-nums')
+        .text('{{ profile.ecoiq_total_score|floatformat:0 }}');
+      svg.append('text').attr('x',LX+LW/2).attr('y',ly+LH/2+8)
+        .attr('text-anchor','middle').attr('fill','#334155')
+        .attr('font-size',7).attr('font-family','Inter,system-ui,sans-serif')
+        .text('EcoIQ Score');
+
+      /* ── Flow paths + target nodes ── */
+      items.forEach(function(f,i){
+        var ry = topPad + i * rowH;
+        var col = f.color || '#00e89a';
+        var sw  = strokeW[f.status]  || 2;
+        var op  = strokeOp[f.status] || 0.3;
+        var sy  = ly + LH / 2;
+        var ty  = ry + RH / 2;
+        /* bezier path */
+        svg.append('path')
+          .attr('d','M'+(LX+LW)+','+sy+' C'+CX1+','+sy+' '+CX2+','+ty+' '+RX+','+ty)
+          .attr('fill','none').attr('stroke',col)
+          .attr('stroke-width',sw).attr('opacity',op).attr('stroke-linecap','round');
+        /* target rect */
+        svg.append('rect').attr('x',RX).attr('y',ry)
+          .attr('width',RW).attr('height',RH).attr('rx',5)
+          .attr('fill','rgba(255,255,255,.025)')
+          .attr('stroke',col).attr('stroke-width',1).attr('stroke-opacity',0.45);
+        /* type */
+        svg.append('text').attr('x',RX+7).attr('y',ry+RH/2-4)
+          .attr('dominant-baseline','middle').attr('fill',col)
+          .attr('font-size',8).attr('font-weight',700)
+          .attr('font-family','Inter,system-ui,sans-serif').text(f.type);
+        /* institution (short) */
+        var instShort = f.inst.length > 22 ? f.inst.slice(0,20)+'…' : f.inst;
+        svg.append('text').attr('x',RX+7).attr('y',ry+RH/2+7)
+          .attr('dominant-baseline','middle').attr('fill','#475569')
+          .attr('font-size',6.5).attr('font-family','Inter,system-ui,sans-serif')
+          .text(instShort);
+        /* status badge dot */
+        svg.append('circle').attr('cx',RX+RW-9).attr('cy',ry+RH/2)
+          .attr('r',3.5).attr('fill',col).attr('opacity',0.7);
+      });
+
+      /* ── Legend ── */
+      var lx = LX;
+      [{s:'eligible',l:'Eligible'},{s:'partial',l:'Partial'},{s:'transition',l:'Transition'}]
+        .forEach(function(item){
+          var lc = {eligible:'#00e89a',partial:'#f4a261',transition:'#58a6ff'}[item.s];
+          svg.append('circle').attr('cx',lx+3).attr('cy',H-5).attr('r',3).attr('fill',lc).attr('opacity',.8);
+          svg.append('text').attr('x',lx+9).attr('y',H-1).attr('fill','#475569')
+            .attr('font-size',6.5).attr('font-family','Inter,system-ui,sans-serif').text(item.l);
+          lx += 58;
+        });
+    })();
+    </script>
     {% endif %}
 
     <!-- Profit Extraction Gauge -->
