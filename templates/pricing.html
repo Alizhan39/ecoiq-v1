@@ -279,16 +279,102 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
   line-height:1.65;padding-top:1.5rem;border-top:1px solid var(--border);
 }
 
+/* ── Company pricing section ─────────────────────────────────────── */
+.co-pricing-section{
+  background:linear-gradient(180deg,rgba(88,166,255,.04) 0%,transparent 60%);
+  border-top:1px solid rgba(88,166,255,.12);
+  border-radius:20px;
+  padding:4rem 2rem 3.5rem;
+  margin:3rem 0 2rem;
+}
+.co-pricing-header{text-align:center;margin-bottom:2.8rem}
+.co-pricing-eyebrow{
+  font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:#58a6ff;margin-bottom:.6rem;
+}
+.co-pricing-title{
+  font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;letter-spacing:-.03em;
+  color:#f0f6fc;margin-bottom:.75rem;
+}
+.co-pricing-sub{
+  font-size:.88rem;color:#6e7681;max-width:580px;margin:0 auto;line-height:1.65;
+}
+.co-plan-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:1.2rem;
+  margin-bottom:2rem;
+}
+.co-plan-card{
+  background:#0d1117;
+  border:1px solid #21262d;
+  border-radius:14px;
+  padding:1.8rem 1.6rem;
+  position:relative;
+  transition:border-color .2s,transform .2s;
+  display:flex;flex-direction:column;
+}
+.co-plan-card:hover{border-color:rgba(88,166,255,.35);transform:translateY(-3px)}
+.co-featured{
+  border-color:rgba(88,166,255,.4);
+  background:linear-gradient(160deg,rgba(88,166,255,.08) 0%,#0d1117 60%);
+}
+.co-featured-badge{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:#58a6ff;color:#0d1117;font-size:.65rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;padding:.2rem .75rem;
+  border-radius:20px;white-space:nowrap;
+}
+.co-ent{border-color:rgba(139,92,246,.3)}
+.co-ent:hover{border-color:rgba(139,92,246,.6)}
+.co-plan-icon{font-size:1.6rem;margin-bottom:.7rem}
+.co-plan-name{font-size:1.05rem;font-weight:800;color:#f0f6fc;margin-bottom:.5rem;letter-spacing:-.02em}
+.co-plan-price-block{margin-bottom:1.4rem}
+.co-plan-price{font-size:2.1rem;font-weight:900;color:#f0f6fc;line-height:1;letter-spacing:-.04em}
+.co-currency{font-size:1.1rem;font-weight:600;vertical-align:top;margin-top:.35rem;display:inline-block}
+.co-period{font-size:.75rem;font-weight:500;color:#6e7681;vertical-align:baseline;margin-left:.1rem}
+.co-plan-features{
+  list-style:none;padding:0;margin:0 0 1.5rem;
+  font-size:.8rem;color:#8b949e;display:flex;flex-direction:column;gap:.5rem;flex:1;
+}
+.co-plan-features li{display:flex;align-items:baseline;gap:.4rem}
+.co-plan-cta{
+  display:block;width:100%;text-align:center;padding:.7rem 1rem;
+  border-radius:9px;font-size:.84rem;font-weight:700;text-decoration:none;
+  transition:opacity .2s,transform .1s;margin-top:auto;
+}
+.co-plan-cta:hover{opacity:.87;transform:translateY(-1px)}
+.co-cta-vis{background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:#58a6ff}
+.co-cta-improve{background:#58a6ff;color:#0d1117}
+.co-cta-invest{background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.3);color:#00e89a}
+.co-cta-ent{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);color:#8b5cf6}
+.co-claim-strip{
+  background:#010409;border:1px solid #21262d;border-radius:12px;
+  padding:1.4rem 1.8rem;display:flex;align-items:center;justify-content:space-between;
+  gap:1.2rem;flex-wrap:wrap;
+}
+.co-claim-btn{
+  display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.1rem;
+  border-radius:9px;font-size:.82rem;font-weight:700;text-decoration:none;
+  transition:opacity .2s;white-space:nowrap;
+}
+.co-claim-btn:hover{opacity:.86}
+.co-claim-primary{background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:#58a6ff}
+.co-claim-secondary{background:#58a6ff;color:#0d1117}
+
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media(max-width:1024px){
   .plans-grid{grid-template-columns:repeat(2,1fr)}
+  .co-plan-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:640px){
   .plans-grid{grid-template-columns:1fr}
+  .co-plan-grid{grid-template-columns:1fr}
   .faq-grid{grid-template-columns:1fr}
   .compare-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .hero{padding:3.5rem 1rem 2.5rem}
   .trust-strip{gap:1.2rem}
+  .co-claim-strip{flex-direction:column;align-items:flex-start}
 }
 </style>
 {% endblock %}
@@ -800,6 +886,134 @@ details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
 
   </div>
 </div><!-- /faq-section -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     COMPANY-FACING PRICING — "Manage Your EcoIQ Profile"
+     ══════════════════════════════════════════════════════════════ -->
+<div class="co-pricing-section">
+
+  <div class="co-pricing-header">
+    <div class="co-pricing-eyebrow">For Companies</div>
+    <h2 class="co-pricing-title">Manage Your EcoIQ Profile</h2>
+    <p class="co-pricing-sub">
+      219 companies are already ranked on EcoIQ. If your company appears in our index,
+      claim your profile and take control of your climate intelligence story — before
+      investors and regulators do it for you.
+    </p>
+  </div>
+
+  <div class="co-plan-grid">
+
+    <!-- Tier 1 — Profile Visibility -->
+    <div class="co-plan-card">
+      <div class="co-plan-icon">🔍</div>
+      <div class="co-plan-name">Profile Visibility</div>
+      <div class="co-plan-price-block">
+        <div class="co-plan-price">
+          <span class="co-currency">£</span>500
+          <span class="co-period">/mo</span>
+        </div>
+      </div>
+      <ul class="co-plan-features">
+        <li>✓ Claim &amp; verify your company profile</li>
+        <li>✓ Update company description and data</li>
+        <li>✓ Priority listing in company directory</li>
+        <li>✓ "Verified" badge on your EcoIQ card</li>
+        <li>✓ Monthly score monitoring alerts</li>
+      </ul>
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Profile+Visibility+Plan"
+         class="co-plan-cta co-cta-vis">Get Profile Visibility →</a>
+    </div>
+
+    <!-- Tier 2 — Score Improvement -->
+    <div class="co-plan-card co-featured">
+      <div class="co-featured-badge">Most Popular</div>
+      <div class="co-plan-icon">📈</div>
+      <div class="co-plan-name">Score Improvement</div>
+      <div class="co-plan-price-block">
+        <div class="co-plan-price">
+          <span class="co-currency">£</span>2,000
+          <span class="co-period">/mo</span>
+        </div>
+      </div>
+      <ul class="co-plan-features">
+        <li>✓ Everything in Profile Visibility</li>
+        <li>✓ Expert EcoIQ score gap analysis</li>
+        <li>✓ Pillar-by-pillar improvement roadmap</li>
+        <li>✓ Monthly advisory call (60 min)</li>
+        <li>✓ Data submission portal access</li>
+        <li>✓ ESG data room preparation support</li>
+      </ul>
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Score+Improvement+Plan"
+         class="co-plan-cta co-cta-improve">Start Improving →</a>
+    </div>
+
+    <!-- Tier 3 — Investor Visibility -->
+    <div class="co-plan-card">
+      <div class="co-plan-icon">🏦</div>
+      <div class="co-plan-name">Investor Visibility</div>
+      <div class="co-plan-price-block">
+        <div class="co-plan-price">
+          <span class="co-currency">£</span>5,000
+          <span class="co-period">/mo</span>
+        </div>
+      </div>
+      <ul class="co-plan-features">
+        <li>✓ Everything in Score Improvement</li>
+        <li>✓ Featured placement in investor briefings</li>
+        <li>✓ Direct intro to EcoIQ investor network</li>
+        <li>✓ AI executive briefing document</li>
+        <li>✓ Green finance eligibility assessment</li>
+        <li>✓ Quarterly board-level ESG report</li>
+      </ul>
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Investor+Visibility+Plan"
+         class="co-plan-cta co-cta-invest">Get Investor Visibility →</a>
+    </div>
+
+    <!-- Tier 4 — Enterprise -->
+    <div class="co-plan-card co-ent">
+      <div class="co-plan-icon">🏛</div>
+      <div class="co-plan-name">Enterprise</div>
+      <div class="co-plan-price-block">
+        <div class="co-plan-price" style="font-size:1.5rem;">
+          £15,000<span class="co-period">–</span>£50,000<span class="co-period">/mo</span>
+        </div>
+      </div>
+      <ul class="co-plan-features">
+        <li>✓ Full ESG transformation programme</li>
+        <li>✓ Dedicated EcoIQ analyst team</li>
+        <li>✓ Board-level reporting &amp; governance support</li>
+        <li>✓ Regulatory compliance (SFDR, EU Taxonomy, ISSB)</li>
+        <li>✓ Custom financing introductions</li>
+        <li>✓ Annual investor day preparation</li>
+      </ul>
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Enterprise+Plan+Enquiry"
+         class="co-plan-cta co-cta-ent">Talk to Us →</a>
+    </div>
+
+  </div><!-- /co-plan-grid -->
+
+  <!-- Claim CTA strip -->
+  <div class="co-claim-strip">
+    <div>
+      <div style="font-weight:700;color:#f0f6fc;font-size:1rem;margin-bottom:.3rem;">
+        Is your company already ranked on EcoIQ?
+      </div>
+      <div style="font-size:.82rem;color:#6e7681;">
+        Find your company in our directory and start a claim — takes 2 minutes.
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <a href="{% url 'companies:directory' %}" class="co-claim-btn co-claim-primary">
+        🔍 Find My Company
+      </a>
+      <a href="{% url 'leads:claim_profile_page' %}" class="co-claim-btn co-claim-secondary">
+        🏷 Claim My Profile →
+      </a>
+    </div>
+  </div>
+
+</div><!-- /co-pricing-section -->
 
 <!-- ── Final CTA ─────────────────────────────────────────────────── -->
 <div class="final-cta">
