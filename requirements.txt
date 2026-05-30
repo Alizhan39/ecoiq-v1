@@ -27,7 +27,7 @@ scikit-learn>=1.3
 joblib>=1.3
 shap>=0.44
 matplotlib>=3.7
-reportlab>=4.0
+# reportlab not used — PDF export handled by matplotlib savefig(format='pdf')
 
 # ── Semantic search (optional — graceful fallback to keyword search) ──────────
 # Install locally: pip install pgvector sentence-transformers torch

@@ -8,6 +8,12 @@ CompanyProfile     Extended data layer linked OneToOne to league.Company.
 CompanyGuidanceVideo   AI-generated video scripts and Higgsfield prompts.
 
 CompanySource      Cited public sources for a company profile.
+
+NOTE: The `Company` model (industrial companies, league scores) lives in
+      league/models.py — NOT here.  Import it as:
+          from league.models import Company
+      This file exports: CompanyProfile, CompanyGuidanceVideo, CompanySource,
+      CompanyScoreSnapshot, DataIngestionLog.
 """
 from django.db import models
 from django.utils.text import slugify
