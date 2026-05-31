@@ -102,6 +102,58 @@
 .stat-item .sv{font-size:1.4rem;font-weight:800;color:var(--accent)}
 .stat-item .sl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
 
+/* ── Mizan Engine section ── */
+.mizan-section{
+  background:linear-gradient(135deg,#080e14 0%,#091510 100%);
+  border:1px solid rgba(0,232,154,.22);
+  border-radius:var(--radius);padding:2rem;margin-bottom:1.5rem;
+  position:relative;overflow:hidden;
+}
+.mizan-section::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:240px;height:240px;
+  background:radial-gradient(circle,rgba(0,232,154,.07),transparent 70%);
+  pointer-events:none;
+}
+.mizan-section h2{
+  font-size:1.15rem;font-weight:700;color:var(--text);
+  margin-bottom:1rem;padding-bottom:.65rem;
+  border-bottom:1px solid rgba(0,232,154,.15);
+  position:relative;
+}
+.mizan-section h2 em{color:var(--accent);font-style:normal}
+.mizan-section p{color:var(--muted);line-height:1.7;font-size:.9rem;margin-bottom:.75rem}
+.mizan-section p:last-of-type{margin-bottom:0}
+.mizan-eyebrow{
+  display:inline-block;
+  background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.2);
+  color:var(--accent);font-size:.68rem;font-weight:700;
+  letter-spacing:1.4px;text-transform:uppercase;
+  padding:.22rem .8rem;border-radius:20px;margin-bottom:.9rem;
+}
+.mizan-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+  gap:.85rem;margin-top:1.35rem;
+}
+.mizan-card{
+  background:rgba(0,0,0,.35);border:1px solid rgba(0,232,154,.1);
+  border-radius:8px;padding:1rem 1.1rem;
+  transition:border-color .2s,transform .2s;
+}
+.mizan-card:hover{border-color:rgba(0,232,154,.32);transform:translateY(-2px)}
+.mizan-card-icon{font-size:1.3rem;margin-bottom:.5rem;line-height:1}
+.mizan-card-name{
+  font-size:.81rem;font-weight:700;
+  color:var(--accent);margin-bottom:.35rem;letter-spacing:.02em;
+}
+.mizan-card-desc{font-size:.74rem;color:var(--muted);line-height:1.55}
+.mizan-compat-note{
+  margin-top:1.35rem;padding:.85rem 1rem;
+  background:rgba(0,232,154,.04);border:1px solid rgba(0,232,154,.1);
+  border-radius:7px;font-size:.78rem;color:var(--muted);line-height:1.65;
+}
+.mizan-compat-note strong{color:var(--text)}
+
 /* ── CTA ── */
 .cta-row-about{
   display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem;
@@ -213,6 +265,95 @@
         <div class="pillar-name">{% trans "Ethical Alignment" %}</div>
         <div class="pillar-desc">{% trans "Long-term value creation, harm avoidance, social contract with communities" %}</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Mizan Engine -->
+  <div class="mizan-section">
+    <div class="mizan-eyebrow">Ethical Intelligence Layer</div>
+    <h2>The EcoIQ <em>Mizan</em> Engine</h2>
+
+    <p>
+      EcoIQ does not only ask whether a project reduces emissions. It asks whether the
+      transition is <strong style="color:var(--text)">transparent</strong>,
+      <strong style="color:var(--text)">balanced</strong>,
+      <strong style="color:var(--text)">fair</strong>,
+      <strong style="color:var(--text)">evidence-based</strong> and
+      <strong style="color:var(--text)">beneficial to society</strong>.
+    </p>
+
+    <p>
+      The Mizan Engine is EcoIQ's ethical assessment layer — a structured evaluation that sits
+      beneath the headline score and asks deeper questions about how transition activity creates
+      or destroys value for people, communities, and future generations. Every company profile
+      is evaluated across six dimensions:
+    </p>
+
+    <div class="mizan-grid">
+
+      <div class="mizan-card">
+        <div class="mizan-card-icon">🤝</div>
+        <div class="mizan-card-name">Public Benefit</div>
+        <div class="mizan-card-desc">
+          Does the company genuinely serve society — creating quality jobs, supporting regional
+          development, and delivering infrastructure that communities depend on?
+        </div>
+      </div>
+
+      <div class="mizan-card">
+        <div class="mizan-card-icon">🛡️</div>
+        <div class="mizan-card-name">Harm Reduction</div>
+        <div class="mizan-card-desc">
+          Is the company actively reducing its pollution footprint, managing controversy risk,
+          and investing in cleaner processes — or is harm static or growing?
+        </div>
+      </div>
+
+      <div class="mizan-card">
+        <div class="mizan-card-icon">⚖️</div>
+        <div class="mizan-card-name">Justice &amp; Fair Distribution</div>
+        <div class="mizan-card-desc">
+          Are the gains from transition distributed equitably across stakeholders — workers,
+          communities, suppliers, and the public — or concentrated at the top?
+        </div>
+      </div>
+
+      <div class="mizan-card">
+        <div class="mizan-card-icon">📋</div>
+        <div class="mizan-card-name">Transparency &amp; Accountability</div>
+        <div class="mizan-card-desc">
+          Does the company disclose its performance honestly, maintain audit quality,
+          and hold itself accountable when claims are not met?
+        </div>
+      </div>
+
+      <div class="mizan-card">
+        <div class="mizan-card-icon">🌿</div>
+        <div class="mizan-card-name">Stewardship</div>
+        <div class="mizan-card-desc">
+          Is the company managing natural, financial, and human capital as a long-term
+          custodian — or extracting maximum short-term value at future cost?
+        </div>
+      </div>
+
+      <div class="mizan-card">
+        <div class="mizan-card-icon">🔬</div>
+        <div class="mizan-card-name">Evidence Confidence</div>
+        <div class="mizan-card-desc">
+          How reliable is the underlying data? EcoIQ distinguishes verified, analyst-reviewed,
+          and AI-seeded profiles — and flags confidence level on every score.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mizan-compat-note">
+      <strong>Compatible with ethical finance frameworks.</strong>
+      The Mizan Engine's principles — public benefit, harm reduction, fair distribution,
+      transparency, and long-term stewardship — align with the foundational requirements
+      of responsible investment, development finance, and capital allocation frameworks
+      focused on equitable and sustainable outcomes. EcoIQ is designed for institutions
+      that evaluate not just financial return, but the broader impact of capital on society.
     </div>
   </div>
 
