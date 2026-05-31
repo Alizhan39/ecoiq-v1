@@ -3,7 +3,7 @@ services:
     name: ecoiq-v1
     env: python
     region: oregon
-    plan: free
+    plan: starter
     buildCommand: pip install -r requirements.txt && ./build.sh
     startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
@@ -34,5 +34,5 @@ databases:
   - name: ecoiq-db
     databaseName: ecoiq
     user: ecoiq
-    plan: free
+    plan: starter
     region: oregon
