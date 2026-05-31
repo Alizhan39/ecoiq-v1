@@ -4,9 +4,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EcoIQ 1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-31 08:54+0000\n"
-"PO-Revision-Date: 2026-05-31 08:23+0000\n"
+"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
+"POT-Creation-Date: 2026-05-31 09:12+0000\n"
+"PO-Revision-Date: 2026-05-31 09:12+0000\n"
 "Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
 "Language-Team: Russian\n"
 "Language: ru\n"
@@ -34,6 +34,166 @@ msgstr "Арабский"
 #: ecoiq/settings.py:180
 msgid "Turkish"
 msgstr "Турецкий"
+
+#: templates/about.html:138
+msgid "Ethical Intelligence for the Industrial Transition"
+msgstr "Этическая аналитика для промышленного перехода"
+
+#: templates/about.html:140
+msgid "EcoIQ is an AI-assisted platform that scores companies, industries, and countries on their readiness for the ethical and environmental transition. We combine public data, AI analysis, and a structured ethical framework to help investors, governments, and companies act with clarity."
+msgstr "EcoIQ — платформа на основе ИИ, которая оценивает компании, отрасли и страны по их готовности к этическому и экологическому переходу. Мы объединяем публичные данные, анализ ИИ и структурированную этическую систему, чтобы помочь инвесторам, правительствам и компаниям действовать с ясностью."
+
+#: templates/about.html:148
+msgid "Companies Rated"
+msgstr "Компаний оценено"
+
+#: templates/about.html:149
+msgid "Ethical Pillars"
+msgstr "Этических столпов"
+
+#: templates/about.html:150
+msgid "Countries Tracked"
+msgstr "Стран охвачено"
+
+#: templates/about.html:151
+msgid "Point Scale"
+msgstr "Балльная шкала"
+
+#: templates/about.html:157
+msgid "Our Mission"
+msgstr "Наша миссия"
+
+#: templates/about.html:177
+msgid "The EcoIQ Framework"
+msgstr "Фреймворк EcoIQ"
+
+#: templates/about.html:188
+msgid "Environmental Responsibility"
+msgstr "Экологическая ответственность"
+
+#: templates/about.html:189
+msgid "Emissions reduction, pollution control, biodiversity impact, water stewardship"
+msgstr "Снижение выбросов, контроль загрязнения, воздействие на биоразнообразие, управление водными ресурсами"
+
+#: templates/about.html:193
+msgid "Public Benefit"
+msgstr "Общественная польза"
+
+#: templates/about.html:194
+msgid "Community wellbeing, jobs quality, health outcomes, equitable access"
+msgstr "Благополучие сообщества, качество рабочих мест, состояние здоровья, равный доступ"
+
+#: templates/about.html:198
+msgid "Responsible Modernisation"
+msgstr "Ответственная модернизация"
+
+#: templates/about.html:199
+msgid "Technology adoption, clean investment, workforce transition, R&D commitment"
+msgstr "Внедрение технологий, чистые инвестиции, переход рабочей силы, обязательства по НИОКР"
+
+#: templates/about.html:203
+msgid "Governance & Transparency"
+msgstr "Управление и прозрачность"
+
+#: templates/about.html:204
+msgid "Disclosure quality, board diversity, climate risk reporting, accountability mechanisms"
+msgstr "Качество раскрытия, разнообразие совета директоров, отчётность о климатических рисках, механизмы подотчётности"
+
+#: templates/about.html:208
+msgid "Anti-Corruption"
+msgstr "Противодействие коррупции"
+
+#: templates/about.html:209
+msgid "Lobbying transparency, regulatory compliance history, whistleblower protections"
+msgstr "Прозрачность лоббирования, история соблюдения нормативных требований, защита информаторов"
+
+#: templates/about.html:213
+msgid "Ethical Alignment"
+msgstr "Этическое соответствие"
+
+#: templates/about.html:214
+msgid "Long-term value creation, harm avoidance, social contract with communities"
+msgstr "Долгосрочное создание ценности, предотвращение вреда, социальный контракт с сообществами"
+
+#: templates/about.html:221
+msgid "Our Principles"
+msgstr "Наши принципы"
+
+#: templates/about.html:228
+msgid "Protect Life"
+msgstr "Защита жизни"
+
+#: templates/about.html:232
+msgid "Honest Evidence"
+msgstr "Честные доказательства"
+
+#: templates/about.html:236
+msgid "Long-term Resilience"
+msgstr "Долгосрочная устойчивость"
+
+#: templates/about.html:240
+msgid "Public Benefit Priority"
+msgstr "Приоритет общественной пользы"
+
+#: templates/about.html:244
+msgid "No Greenwashing"
+msgstr "Никакого гринвошинга"
+
+#: templates/about.html:252
+msgid "The Founder"
+msgstr "Основатель"
+
+#: templates/about.html:262
+msgid "Founder & Lead Analyst"
+msgstr "Основатель и ведущий аналитик"
+
+#: templates/about.html:276
+msgid "What EcoIQ Is Not"
+msgstr "Чем EcoIQ не является"
+
+#: templates/about.html:297
+msgid "Legal Entity"
+msgstr "Юридическое лицо"
+
+#: templates/about.html:300
+msgid "Company"
+msgstr "Компания"
+
+#: templates/about.html:304
+msgid "Trading As"
+msgstr "Торговое название"
+
+#: templates/about.html:308
+msgid "Company Number"
+msgstr "Номер компании"
+
+#: templates/about.html:312
+msgid "Incorporated"
+msgstr "Дата регистрации"
+
+#: templates/about.html:316
+msgid "Jurisdiction"
+msgstr "Юрисдикция"
+
+#: templates/about.html:320
+msgid "Registered Office"
+msgstr "Юридический адрес"
+
+#: templates/about.html:328
+msgid "Get Involved"
+msgstr "Присоединиться"
+
+#: templates/about.html:334
+msgid "View Rankings"
+msgstr "Смотреть рейтинг"
+
+#: templates/about.html:335
+msgid "Claim Your Profile"
+msgstr "Заявить профиль"
+
+#: templates/about.html:336
+msgid "Contact Us"
+msgstr "Связаться с нами"
 
 #: templates/admin/index.html:77
 msgid "Add"

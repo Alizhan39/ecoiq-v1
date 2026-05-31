@@ -4,9 +4,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EcoIQ 1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-31 08:54+0000\n"
-"PO-Revision-Date: 2026-05-31 08:23+0000\n"
+"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
+"POT-Creation-Date: 2026-05-31 09:12+0000\n"
+"PO-Revision-Date: 2026-05-31 09:12+0000\n"
 "Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
 "Language-Team: Turkish\n"
 "Language: tr\n"
@@ -34,6 +34,166 @@ msgstr "Arapça"
 #: ecoiq/settings.py:180
 msgid "Turkish"
 msgstr "Türkçe"
+
+#: templates/about.html:138
+msgid "Ethical Intelligence for the Industrial Transition"
+msgstr "Endüstriyel Dönüşüm için Etik Zeka"
+
+#: templates/about.html:140
+msgid "EcoIQ is an AI-assisted platform that scores companies, industries, and countries on their readiness for the ethical and environmental transition. We combine public data, AI analysis, and a structured ethical framework to help investors, governments, and companies act with clarity."
+msgstr "EcoIQ, şirketleri, endüstrileri ve ülkeleri etik ve çevresel dönüşüme hazırlıkları açısından puanlayan yapay zeka destekli bir platformdur. Yatırımcıların, hükümetlerin ve şirketlerin netlik içinde hareket etmelerine yardımcı olmak için kamuya açık verileri, yapay zeka analizini ve yapılandırılmış bir etik çerçeveyi bir araya getiriyoruz."
+
+#: templates/about.html:148
+msgid "Companies Rated"
+msgstr "Şirket Derecelendirildi"
+
+#: templates/about.html:149
+msgid "Ethical Pillars"
+msgstr "Etik Sütunlar"
+
+#: templates/about.html:150
+msgid "Countries Tracked"
+msgstr "Ülke Takip Edildi"
+
+#: templates/about.html:151
+msgid "Point Scale"
+msgstr "Puan Ölçeği"
+
+#: templates/about.html:157
+msgid "Our Mission"
+msgstr "Misyonumuz"
+
+#: templates/about.html:177
+msgid "The EcoIQ Framework"
+msgstr "EcoIQ Çerçevesi"
+
+#: templates/about.html:188
+msgid "Environmental Responsibility"
+msgstr "Çevresel Sorumluluk"
+
+#: templates/about.html:189
+msgid "Emissions reduction, pollution control, biodiversity impact, water stewardship"
+msgstr "Emisyon azaltımı, kirlilik kontrolü, biyoçeşitlilik etkisi, su yönetimi"
+
+#: templates/about.html:193
+msgid "Public Benefit"
+msgstr "Kamu Yararı"
+
+#: templates/about.html:194
+msgid "Community wellbeing, jobs quality, health outcomes, equitable access"
+msgstr "Toplum refahı, iş kalitesi, sağlık sonuçları, eşit erişim"
+
+#: templates/about.html:198
+msgid "Responsible Modernisation"
+msgstr "Sorumlu Modernizasyon"
+
+#: templates/about.html:199
+msgid "Technology adoption, clean investment, workforce transition, R&D commitment"
+msgstr "Teknoloji benimseme, temiz yatırım, iş gücü geçişi, Ar-Ge taahhüdü"
+
+#: templates/about.html:203
+msgid "Governance & Transparency"
+msgstr "Yönetim ve Şeffaflık"
+
+#: templates/about.html:204
+msgid "Disclosure quality, board diversity, climate risk reporting, accountability mechanisms"
+msgstr "Açıklama kalitesi, yönetim kurulu çeşitliliği, iklim riski raporlaması, hesap verebilirlik mekanizmaları"
+
+#: templates/about.html:208
+msgid "Anti-Corruption"
+msgstr "Yolsuzlukla Mücadele"
+
+#: templates/about.html:209
+msgid "Lobbying transparency, regulatory compliance history, whistleblower protections"
+msgstr "Lobi şeffaflığı, düzenleyici uyumluluk geçmişi, ihbarcı korumaları"
+
+#: templates/about.html:213
+msgid "Ethical Alignment"
+msgstr "Etik Uyum"
+
+#: templates/about.html:214
+msgid "Long-term value creation, harm avoidance, social contract with communities"
+msgstr "Uzun vadeli değer yaratma, zarara yol açmama, toplumlarla sosyal sözleşme"
+
+#: templates/about.html:221
+msgid "Our Principles"
+msgstr "İlkelerimiz"
+
+#: templates/about.html:228
+msgid "Protect Life"
+msgstr "Yaşamı Koru"
+
+#: templates/about.html:232
+msgid "Honest Evidence"
+msgstr "Dürüst Kanıt"
+
+#: templates/about.html:236
+msgid "Long-term Resilience"
+msgstr "Uzun Vadeli Dayanıklılık"
+
+#: templates/about.html:240
+msgid "Public Benefit Priority"
+msgstr "Kamu Yararı Önceliği"
+
+#: templates/about.html:244
+msgid "No Greenwashing"
+msgstr "Yeşil Yıkama Yok"
+
+#: templates/about.html:252
+msgid "The Founder"
+msgstr "Kurucu"
+
+#: templates/about.html:262
+msgid "Founder & Lead Analyst"
+msgstr "Kurucu ve Baş Analist"
+
+#: templates/about.html:276
+msgid "What EcoIQ Is Not"
+msgstr "EcoIQ Ne Değildir"
+
+#: templates/about.html:297
+msgid "Legal Entity"
+msgstr "Tüzel Kişilik"
+
+#: templates/about.html:300
+msgid "Company"
+msgstr "Şirket"
+
+#: templates/about.html:304
+msgid "Trading As"
+msgstr "Ticaret Adı"
+
+#: templates/about.html:308
+msgid "Company Number"
+msgstr "Şirket Numarası"
+
+#: templates/about.html:312
+msgid "Incorporated"
+msgstr "Kuruluş Tarihi"
+
+#: templates/about.html:316
+msgid "Jurisdiction"
+msgstr "Yetki Alanı"
+
+#: templates/about.html:320
+msgid "Registered Office"
+msgstr "Kayıtlı Ofis"
+
+#: templates/about.html:328
+msgid "Get Involved"
+msgstr "Katılın"
+
+#: templates/about.html:334
+msgid "View Rankings"
+msgstr "Sıralamaları Görüntüle"
+
+#: templates/about.html:335
+msgid "Claim Your Profile"
+msgstr "Profilinizi Talep Edin"
+
+#: templates/about.html:336
+msgid "Contact Us"
+msgstr "Bize Ulaşın"
 
 #: templates/admin/index.html:77
 msgid "Add"

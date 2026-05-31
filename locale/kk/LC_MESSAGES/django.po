@@ -4,9 +4,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EcoIQ 1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-31 08:54+0000\n"
-"PO-Revision-Date: 2026-05-31 08:23+0000\n"
+"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
+"POT-Creation-Date: 2026-05-31 09:12+0000\n"
+"PO-Revision-Date: 2026-05-31 09:12+0000\n"
 "Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
 "Language-Team: Kazakh\n"
 "Language: kk\n"
@@ -34,6 +34,166 @@ msgstr "Арабша"
 #: ecoiq/settings.py:180
 msgid "Turkish"
 msgstr "Түрікше"
+
+#: templates/about.html:138
+msgid "Ethical Intelligence for the Industrial Transition"
+msgstr "Өнеркәсіптік ауысымға арналған этикалық аналитика"
+
+#: templates/about.html:140
+msgid "EcoIQ is an AI-assisted platform that scores companies, industries, and countries on their readiness for the ethical and environmental transition. We combine public data, AI analysis, and a structured ethical framework to help investors, governments, and companies act with clarity."
+msgstr "EcoIQ — компанияларды, салаларды және елдерді этикалық және экологиялық ауысымға дайындығы бойынша бағалайтын ЖИ платформасы. Біз инвесторларға, үкіметтерге және компанияларға нақты әрекет етуге көмектесу үшін жалпыға қол жетімді деректерді, ЖИ талдауын және этикалық шеңберді біріктіреміз."
+
+#: templates/about.html:148
+msgid "Companies Rated"
+msgstr "Компания бағаланды"
+
+#: templates/about.html:149
+msgid "Ethical Pillars"
+msgstr "Этикалық тіректер"
+
+#: templates/about.html:150
+msgid "Countries Tracked"
+msgstr "Ел қамтылды"
+
+#: templates/about.html:151
+msgid "Point Scale"
+msgstr "Балл шкаласы"
+
+#: templates/about.html:157
+msgid "Our Mission"
+msgstr "Біздің миссия"
+
+#: templates/about.html:177
+msgid "The EcoIQ Framework"
+msgstr "EcoIQ жүйесі"
+
+#: templates/about.html:188
+msgid "Environmental Responsibility"
+msgstr "Экологиялық жауапкершілік"
+
+#: templates/about.html:189
+msgid "Emissions reduction, pollution control, biodiversity impact, water stewardship"
+msgstr "Шығарындыларды азайту, ластануды бақылау, биоәртүрлілікке әсер, су ресурстарын басқару"
+
+#: templates/about.html:193
+msgid "Public Benefit"
+msgstr "Қоғамдық пайда"
+
+#: templates/about.html:194
+msgid "Community wellbeing, jobs quality, health outcomes, equitable access"
+msgstr "Қоғам әл-ауқаты, жұмыс сапасы, денсаулық нәтижелері, тең қол жетімділік"
+
+#: templates/about.html:198
+msgid "Responsible Modernisation"
+msgstr "Жауапты жаңғырту"
+
+#: templates/about.html:199
+msgid "Technology adoption, clean investment, workforce transition, R&D commitment"
+msgstr "Технологияларды енгізу, таза инвестициялар, жұмыс күшінің ауысуы, ҒЗТКЖ міндеттемелері"
+
+#: templates/about.html:203
+msgid "Governance & Transparency"
+msgstr "Басқару және ашықтық"
+
+#: templates/about.html:204
+msgid "Disclosure quality, board diversity, climate risk reporting, accountability mechanisms"
+msgstr "Ашқару сапасы, директорлар кеңесінің алуандығы, климаттық тәуекел есептілігі, есептілік тетіктері"
+
+#: templates/about.html:208
+msgid "Anti-Corruption"
+msgstr "Сыбайлас жемқорлыққа қарсы"
+
+#: templates/about.html:209
+msgid "Lobbying transparency, regulatory compliance history, whistleblower protections"
+msgstr "Лоббинг ашықтығы, нормативтік сәйкестік тарихы, ақпарат берушілерді қорғау"
+
+#: templates/about.html:213
+msgid "Ethical Alignment"
+msgstr "Этикалық сәйкестік"
+
+#: templates/about.html:214
+msgid "Long-term value creation, harm avoidance, social contract with communities"
+msgstr "Ұзақ мерзімді құндылық жасау, зиянды болдырмау, қоғамдастықтармен әлеуметтік келісімшарт"
+
+#: templates/about.html:221
+msgid "Our Principles"
+msgstr "Біздің принциптер"
+
+#: templates/about.html:228
+msgid "Protect Life"
+msgstr "Өмірді қорғау"
+
+#: templates/about.html:232
+msgid "Honest Evidence"
+msgstr "Шынайы дәлелдер"
+
+#: templates/about.html:236
+msgid "Long-term Resilience"
+msgstr "Ұзақ мерзімді тұрақтылық"
+
+#: templates/about.html:240
+msgid "Public Benefit Priority"
+msgstr "Қоғамдық пайда басымдығы"
+
+#: templates/about.html:244
+msgid "No Greenwashing"
+msgstr "Жасыл жуынуға жол жоқ"
+
+#: templates/about.html:252
+msgid "The Founder"
+msgstr "Негізін қалаушы"
+
+#: templates/about.html:262
+msgid "Founder & Lead Analyst"
+msgstr "Негізін қалаушы және бас аналитик"
+
+#: templates/about.html:276
+msgid "What EcoIQ Is Not"
+msgstr "EcoIQ не емес"
+
+#: templates/about.html:297
+msgid "Legal Entity"
+msgstr "Заңды тұлға"
+
+#: templates/about.html:300
+msgid "Company"
+msgstr "Компания"
+
+#: templates/about.html:304
+msgid "Trading As"
+msgstr "Сауда атауы"
+
+#: templates/about.html:308
+msgid "Company Number"
+msgstr "Компания нөмірі"
+
+#: templates/about.html:312
+msgid "Incorporated"
+msgstr "Тіркелген күні"
+
+#: templates/about.html:316
+msgid "Jurisdiction"
+msgstr "Юрисдикция"
+
+#: templates/about.html:320
+msgid "Registered Office"
+msgstr "Тіркелген мекенжай"
+
+#: templates/about.html:328
+msgid "Get Involved"
+msgstr "Қатысу"
+
+#: templates/about.html:334
+msgid "View Rankings"
+msgstr "Рейтингті қарау"
+
+#: templates/about.html:335
+msgid "Claim Your Profile"
+msgstr "Профильді талап ету"
+
+#: templates/about.html:336
+msgid "Contact Us"
+msgstr "Байланысу"
 
 #: templates/admin/index.html:77
 msgid "Add"

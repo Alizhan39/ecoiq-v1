@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static i18n %}
 
 {% block title %}About EcoIQ — Ethical Industrial Intelligence{% endblock %}
 {% block meta_description %}<meta name="description" content="EcoIQ is an AI-assisted ethical intelligence platform. We score companies on public benefit, environmental stewardship, responsible modernisation, governance, and long-term resilience.">{% endblock %}
@@ -135,26 +135,28 @@
   <!-- Hero -->
   <div class="about-hero">
     <div class="about-eyebrow">About EcoIQ</div>
-    <h1>Ethical Intelligence<br>for the <em>Industrial Transition</em></h1>
+    <h1>{% trans "Ethical Intelligence for the Industrial Transition" %}</h1>
     <p>
-      EcoIQ is an AI-assisted platform that scores companies, industries, and countries
-      on their readiness for the ethical and environmental transition. We combine public
-      data, AI analysis, and a structured ethical framework to help investors, governments,
-      and companies act with clarity.
+      {% blocktrans trimmed %}
+        EcoIQ is an AI-assisted platform that scores companies, industries, and countries
+        on their readiness for the ethical and environmental transition. We combine public
+        data, AI analysis, and a structured ethical framework to help investors, governments,
+        and companies act with clarity.
+      {% endblocktrans %}
     </p>
     <div class="stat-row">
-      <div class="stat-item"><span class="sv">{{ company_count }}+</span><span class="sl">Companies Rated</span></div>
-      <div class="stat-item"><span class="sv">6</span><span class="sl">Ethical Pillars</span></div>
-      <div class="stat-item"><span class="sv">{{ country_count }}+</span><span class="sl">Countries Tracked</span></div>
-      <div class="stat-item"><span class="sv">100</span><span class="sl">Point Scale</span></div>
+      <div class="stat-item"><span class="sv">{{ company_count }}+</span><span class="sl">{% trans "Companies Rated" %}</span></div>
+      <div class="stat-item"><span class="sv">6</span><span class="sl">{% trans "Ethical Pillars" %}</span></div>
+      <div class="stat-item"><span class="sv">{{ country_count }}+</span><span class="sl">{% trans "Countries Tracked" %}</span></div>
+      <div class="stat-item"><span class="sv">100</span><span class="sl">{% trans "Point Scale" %}</span></div>
     </div>
   </div>
 
   <!-- Our Mission -->
   <div class="about-section">
-    <h2>Our <em>Mission</em></h2>
+    <h2>{% trans "Our Mission" %}</h2>
     <p>
-      Heavy industry — oil & gas, manufacturing, chemicals, metals — accounts for the majority
+      Heavy industry — oil &amp; gas, manufacturing, chemicals, metals — accounts for the majority
       of global emissions and employs hundreds of millions of people. These sectors cannot be
       simply shut down. They must be transformed.
     </p>
@@ -172,7 +174,7 @@
 
   <!-- Scoring Framework -->
   <div class="about-section">
-    <h2>The <em>EcoIQ Framework</em></h2>
+    <h2>{% trans "The EcoIQ Framework" %}</h2>
     <p>
       Every EcoIQ score is built from six dimensions, each grounded in a different aspect of
       long-term ethical value creation. The framework draws on principles of public stewardship,
@@ -183,63 +185,63 @@
     <div class="pillars-grid">
       <div class="pillar-card">
         <div class="pillar-icon">🌱</div>
-        <div class="pillar-name">Environmental Responsibility</div>
-        <div class="pillar-desc">Emissions reduction, pollution control, biodiversity impact, water stewardship</div>
+        <div class="pillar-name">{% trans "Environmental Responsibility" %}</div>
+        <div class="pillar-desc">{% trans "Emissions reduction, pollution control, biodiversity impact, water stewardship" %}</div>
       </div>
       <div class="pillar-card">
         <div class="pillar-icon">🤝</div>
-        <div class="pillar-name">Public Benefit</div>
-        <div class="pillar-desc">Community wellbeing, jobs quality, health outcomes, equitable access</div>
+        <div class="pillar-name">{% trans "Public Benefit" %}</div>
+        <div class="pillar-desc">{% trans "Community wellbeing, jobs quality, health outcomes, equitable access" %}</div>
       </div>
       <div class="pillar-card">
         <div class="pillar-icon">⚙️</div>
-        <div class="pillar-name">Responsible Modernisation</div>
-        <div class="pillar-desc">Technology adoption, clean investment, workforce transition, R&D commitment</div>
+        <div class="pillar-name">{% trans "Responsible Modernisation" %}</div>
+        <div class="pillar-desc">{% trans "Technology adoption, clean investment, workforce transition, R&D commitment" %}</div>
       </div>
       <div class="pillar-card">
         <div class="pillar-icon">📋</div>
-        <div class="pillar-name">Governance & Transparency</div>
-        <div class="pillar-desc">Disclosure quality, board diversity, climate risk reporting, accountability mechanisms</div>
+        <div class="pillar-name">{% trans "Governance & Transparency" %}</div>
+        <div class="pillar-desc">{% trans "Disclosure quality, board diversity, climate risk reporting, accountability mechanisms" %}</div>
       </div>
       <div class="pillar-card">
         <div class="pillar-icon">🛡️</div>
-        <div class="pillar-name">Anti-Corruption</div>
-        <div class="pillar-desc">Lobbying transparency, regulatory compliance history, whistleblower protections</div>
+        <div class="pillar-name">{% trans "Anti-Corruption" %}</div>
+        <div class="pillar-desc">{% trans "Lobbying transparency, regulatory compliance history, whistleblower protections" %}</div>
       </div>
       <div class="pillar-card">
         <div class="pillar-icon">⚖️</div>
-        <div class="pillar-name">Ethical Alignment</div>
-        <div class="pillar-desc">Long-term value creation, harm avoidance, social contract with communities</div>
+        <div class="pillar-name">{% trans "Ethical Alignment" %}</div>
+        <div class="pillar-desc">{% trans "Long-term value creation, harm avoidance, social contract with communities" %}</div>
       </div>
     </div>
   </div>
 
   <!-- Core Principles -->
   <div class="about-section">
-    <h2>Our <em>Principles</em></h2>
+    <h2>{% trans "Our Principles" %}</h2>
     <p>
       EcoIQ's design is guided by five commitments we hold to be non-negotiable, regardless
       of commercial pressure:
     </p>
     <div class="principles">
       <div class="principle">
-        <strong>Protect Life</strong>
+        <strong>{% trans "Protect Life" %}</strong>
         <span>We will not rate a company highly if it harms the health of workers, communities, or ecosystems. Harm signals reduce scores — there is no offset.</span>
       </div>
       <div class="principle">
-        <strong>Honest Evidence</strong>
+        <strong>{% trans "Honest Evidence" %}</strong>
         <span>Every score dimension is sourced from verifiable public information. We flag confidence levels and distinguish AI-generated analysis from verified data.</span>
       </div>
       <div class="principle">
-        <strong>Long-term Resilience</strong>
+        <strong>{% trans "Long-term Resilience" %}</strong>
         <span>We reward companies building durable, sustainable businesses — not those optimising short-term profit at the expense of future generations.</span>
       </div>
       <div class="principle">
-        <strong>Public Benefit Priority</strong>
+        <strong>{% trans "Public Benefit Priority" %}</strong>
         <span>Companies that serve communities well, create quality jobs, and contribute to societal progress are rewarded. Narrow profit maximisation is insufficient.</span>
       </div>
       <div class="principle">
-        <strong>No Greenwashing</strong>
+        <strong>{% trans "No Greenwashing" %}</strong>
         <span>We penalise companies that make public commitments but fail to show evidence of action. Words without data do not improve scores.</span>
       </div>
     </div>
@@ -247,7 +249,7 @@
 
   <!-- Founder -->
   <div class="about-section">
-    <h2>The <em>Founder</em></h2>
+    <h2>{% trans "The Founder" %}</h2>
     <p>
       EcoIQ was founded in London to address a gap that became impossible to ignore:
       the world's most polluting industries were being evaluated by financial metrics alone.
@@ -257,7 +259,7 @@
       <div class="founder-avatar">A</div>
       <div class="founder-info">
         <h3>Alizhan Tazabekov</h3>
-        <div class="role">Founder & Lead Analyst</div>
+        <div class="role">{% trans "Founder & Lead Analyst" %}</div>
         <p>
           Alizhan built EcoIQ after recognising that industrial transition requires both
           rigorous data and an ethical framework that goes beyond carbon accounting. The platform
@@ -271,7 +273,7 @@
 
   <!-- What We Are Not -->
   <div class="about-section">
-    <h2>What EcoIQ Is <em>Not</em></h2>
+    <h2>{% trans "What EcoIQ Is Not" %}</h2>
     <p>
       <strong style="color:var(--text)">We are not an ESG rating agency.</strong>
       Traditional ESG ratings serve financial disclosure. EcoIQ scores ethical performance and
@@ -292,30 +294,30 @@
 
   <!-- Legal Entity -->
   <div class="about-section">
-    <h2>Legal <em>Entity</em></h2>
+    <h2>{% trans "Legal Entity" %}</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.5rem;margin-top:1rem">
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem">
-        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Company</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">{% trans "Company" %}</div>
         <div style="font-size:.9rem;color:var(--text);font-weight:600">Stoke Share Ltd</div>
       </div>
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem">
-        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Trading As</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">{% trans "Trading As" %}</div>
         <div style="font-size:.9rem;color:var(--text);font-weight:600">EcoIQ</div>
       </div>
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem">
-        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Company Number</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">{% trans "Company Number" %}</div>
         <div style="font-size:.9rem;color:var(--text);font-weight:600">14347320</div>
       </div>
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem">
-        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Incorporated</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">{% trans "Incorporated" %}</div>
         <div style="font-size:.9rem;color:var(--text);font-weight:600">9 September 2022</div>
       </div>
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem">
-        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Jurisdiction</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">{% trans "Jurisdiction" %}</div>
         <div style="font-size:.9rem;color:var(--text);font-weight:600">England &amp; Wales</div>
       </div>
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem;grid-column:span 2">
-        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">Registered Office</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem">{% trans "Registered Office" %}</div>
         <div style="font-size:.85rem;color:var(--text)">C/O Schoolgate Accounting Services, 46-50 Coombe Road, New Malden, England, KT3 4QF</div>
       </div>
     </div>
@@ -323,15 +325,15 @@
 
   <!-- CTA -->
   <div class="about-section" style="text-align:center">
-    <h2>Get Involved</h2>
+    <h2>{% trans "Get Involved" %}</h2>
     <p>
       Whether you are an investor seeking ethical context, a government designing transition
       policy, or a company that wants to improve its profile — EcoIQ is built for you.
     </p>
     <div class="cta-row-about" style="justify-content:center">
-      <a href="/companies/" class="cta-main">View Rankings →</a>
-      <a href="/request-access/claim/" class="cta-sec">Claim Your Profile</a>
-      <a href="mailto:alizhan@ecoiq.uk" class="cta-sec">Contact Us</a>
+      <a href="/companies/" class="cta-main">{% trans "View Rankings" %} →</a>
+      <a href="/request-access/claim/" class="cta-sec">{% trans "Claim Your Profile" %}</a>
+      <a href="mailto:alizhan@ecoiq.uk" class="cta-sec">{% trans "Contact Us" %}</a>
     </div>
   </div>
 

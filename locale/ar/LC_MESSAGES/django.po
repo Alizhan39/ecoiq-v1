@@ -4,9 +4,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EcoIQ 1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-31 08:54+0000\n"
-"PO-Revision-Date: 2026-05-31 08:23+0000\n"
+"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
+"POT-Creation-Date: 2026-05-31 09:12+0000\n"
+"PO-Revision-Date: 2026-05-31 09:12+0000\n"
 "Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
 "Language-Team: Arabic\n"
 "Language: ar\n"
@@ -34,6 +34,166 @@ msgstr "العربية"
 #: ecoiq/settings.py:180
 msgid "Turkish"
 msgstr "التركية"
+
+#: templates/about.html:138
+msgid "Ethical Intelligence for the Industrial Transition"
+msgstr "الذكاء الأخلاقي للتحول الصناعي"
+
+#: templates/about.html:140
+msgid "EcoIQ is an AI-assisted platform that scores companies, industries, and countries on their readiness for the ethical and environmental transition. We combine public data, AI analysis, and a structured ethical framework to help investors, governments, and companies act with clarity."
+msgstr "EcoIQ منصة مدعومة بالذكاء الاصطناعي تُقيِّم الشركات والصناعات والدول وفق جاهزيتها للتحول الأخلاقي والبيئي. نجمع بين البيانات العامة وتحليل الذكاء الاصطناعي وإطار أخلاقي منظم لمساعدة المستثمرين والحكومات والشركات على التصرف بوضوح."
+
+#: templates/about.html:148
+msgid "Companies Rated"
+msgstr "شركة مُقيَّمة"
+
+#: templates/about.html:149
+msgid "Ethical Pillars"
+msgstr "الركائز الأخلاقية"
+
+#: templates/about.html:150
+msgid "Countries Tracked"
+msgstr "دولة مرصودة"
+
+#: templates/about.html:151
+msgid "Point Scale"
+msgstr "مقياس النقاط"
+
+#: templates/about.html:157
+msgid "Our Mission"
+msgstr "مهمتنا"
+
+#: templates/about.html:177
+msgid "The EcoIQ Framework"
+msgstr "إطار عمل EcoIQ"
+
+#: templates/about.html:188
+msgid "Environmental Responsibility"
+msgstr "المسؤولية البيئية"
+
+#: templates/about.html:189
+msgid "Emissions reduction, pollution control, biodiversity impact, water stewardship"
+msgstr "تقليل الانبعاثات، مكافحة التلوث، الأثر على التنوع البيولوجي، إدارة المياه"
+
+#: templates/about.html:193
+msgid "Public Benefit"
+msgstr "المنفعة العامة"
+
+#: templates/about.html:194
+msgid "Community wellbeing, jobs quality, health outcomes, equitable access"
+msgstr "رفاه المجتمع، جودة الوظائف، النتائج الصحية، الوصول العادل"
+
+#: templates/about.html:198
+msgid "Responsible Modernisation"
+msgstr "التحديث المسؤول"
+
+#: templates/about.html:199
+msgid "Technology adoption, clean investment, workforce transition, R&D commitment"
+msgstr "اعتماد التكنولوجيا، الاستثمار النظيف، انتقال القوى العاملة، الالتزام بالبحث والتطوير"
+
+#: templates/about.html:203
+msgid "Governance & Transparency"
+msgstr "الحوكمة والشفافية"
+
+#: templates/about.html:204
+msgid "Disclosure quality, board diversity, climate risk reporting, accountability mechanisms"
+msgstr "جودة الإفصاح، تنوع مجلس الإدارة، الإبلاغ عن مخاطر المناخ، آليات المساءلة"
+
+#: templates/about.html:208
+msgid "Anti-Corruption"
+msgstr "مكافحة الفساد"
+
+#: templates/about.html:209
+msgid "Lobbying transparency, regulatory compliance history, whistleblower protections"
+msgstr "شفافية الضغط، سجل الامتثال التنظيمي، حماية المبلِّغين عن المخالفات"
+
+#: templates/about.html:213
+msgid "Ethical Alignment"
+msgstr "التوافق الأخلاقي"
+
+#: templates/about.html:214
+msgid "Long-term value creation, harm avoidance, social contract with communities"
+msgstr "خلق قيمة طويلة الأمد، تجنب الضرر، العقد الاجتماعي مع المجتمعات"
+
+#: templates/about.html:221
+msgid "Our Principles"
+msgstr "مبادؤنا"
+
+#: templates/about.html:228
+msgid "Protect Life"
+msgstr "حماية الحياة"
+
+#: templates/about.html:232
+msgid "Honest Evidence"
+msgstr "الدليل الصادق"
+
+#: templates/about.html:236
+msgid "Long-term Resilience"
+msgstr "المرونة طويلة الأمد"
+
+#: templates/about.html:240
+msgid "Public Benefit Priority"
+msgstr "أولوية المنفعة العامة"
+
+#: templates/about.html:244
+msgid "No Greenwashing"
+msgstr "لا للغسيل الأخضر"
+
+#: templates/about.html:252
+msgid "The Founder"
+msgstr "المؤسس"
+
+#: templates/about.html:262
+msgid "Founder & Lead Analyst"
+msgstr "المؤسس والمحلل الرئيسي"
+
+#: templates/about.html:276
+msgid "What EcoIQ Is Not"
+msgstr "ما ليس عليه EcoIQ"
+
+#: templates/about.html:297
+msgid "Legal Entity"
+msgstr "الكيان القانوني"
+
+#: templates/about.html:300
+msgid "Company"
+msgstr "الشركة"
+
+#: templates/about.html:304
+msgid "Trading As"
+msgstr "يتداول باسم"
+
+#: templates/about.html:308
+msgid "Company Number"
+msgstr "رقم الشركة"
+
+#: templates/about.html:312
+msgid "Incorporated"
+msgstr "تاريخ التأسيس"
+
+#: templates/about.html:316
+msgid "Jurisdiction"
+msgstr "الاختصاص القضائي"
+
+#: templates/about.html:320
+msgid "Registered Office"
+msgstr "المكتب المسجل"
+
+#: templates/about.html:328
+msgid "Get Involved"
+msgstr "شارك معنا"
+
+#: templates/about.html:334
+msgid "View Rankings"
+msgstr "عرض التصنيفات"
+
+#: templates/about.html:335
+msgid "Claim Your Profile"
+msgstr "استرداد ملفك"
+
+#: templates/about.html:336
+msgid "Contact Us"
+msgstr "اتصل بنا"
 
 #: templates/admin/index.html:77
 msgid "Add"
