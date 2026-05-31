@@ -826,7 +826,12 @@ def about(request):
     Founder story, mission, 6-pillar framework, core principles, and CTAs.
     Public, no auth required.
     """
-    return render(request, 'about.html')
+    from league.models import Company
+    context = {
+        'company_count': Company.objects.count(),
+        'country_count': Company.objects.values('country').distinct().count(),
+    }
+    return render(request, 'about.html', context)
 
 
 # ── API documentation page ───────────────────────────────────────────────────

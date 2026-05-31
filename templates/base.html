@@ -104,41 +104,9 @@
   <!-- EcoIQ Institutional Design System — shared components -->
   <link rel="stylesheet" href="{% static 'css/ecoiq-institutional.css' %}">
 
-  <!-- ── Language switcher styles ──────────────────────────────────────────── -->
+  <!-- RTL mirror for Arabic -->
   <style>
-    .lang-switcher {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 5px;
-      overflow: hidden;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: .7rem;
-      letter-spacing: .04em;
-      flex-shrink: 0;
-    }
-    .lang-switcher form { display: contents; }
-    .lang-btn {
-      background: transparent;
-      border: none;
-      color: #8b949e;
-      cursor: pointer;
-      padding: .28rem .45rem;
-      font-size: .7rem;
-      font-family: inherit;
-      letter-spacing: .04em;
-      line-height: 1;
-      border-right: 1px solid rgba(255,255,255,.08);
-      transition: background .15s, color .15s;
-    }
-    .lang-btn:last-of-type { border-right: none; }
-    .lang-btn:hover  { background: rgba(0,232,154,.08); color: #00e89a; }
-    .lang-btn.active { background: rgba(0,232,154,.12); color: #00e89a; font-weight: 700; }
-
-    /* RTL nav mirror */
     [dir="rtl"] header nav { flex-direction: row-reverse; }
-    [dir="rtl"] .lang-switcher { direction: ltr; } /* always LTR — code labels */
   </style>
 
   {% block extra_head %}{% endblock %}
@@ -173,18 +141,6 @@
       <a href="/admin/" style="color:#94a3b8;font-size:.8rem;">{% trans "Admin" %}</a>
       {% endif %}
 
-      <!-- ── Language switcher ───────────────────────────────────────────── -->
-      <div class="lang-switcher" role="navigation" aria-label="Language">
-        <form action="{% url 'set_language' %}" method="post">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <button type="submit" name="language" value="en"  class="lang-btn{% if CURRENT_LANG == 'en' %} active{% endif %}">EN</button>
-          <button type="submit" name="language" value="ru"  class="lang-btn{% if CURRENT_LANG == 'ru' %} active{% endif %}">RU</button>
-          <button type="submit" name="language" value="kk"  class="lang-btn{% if CURRENT_LANG == 'kk' %} active{% endif %}">KK</button>
-          <button type="submit" name="language" value="ar"  class="lang-btn{% if CURRENT_LANG == 'ar' %} active{% endif %}">AR</button>
-          <button type="submit" name="language" value="tr"  class="lang-btn{% if CURRENT_LANG == 'tr' %} active{% endif %}">TR</button>
-        </form>
-      </div>
     </nav>
   </header>
 
