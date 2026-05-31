@@ -112,6 +112,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',   # static files — must be 2nd
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',   # language detection from cookie/Accept-Language
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -166,7 +167,25 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # ── Internationalisation ──────────────────────────────────────────────────────
 
-LANGUAGE_CODE = 'en-us'
+from django.utils.translation import gettext_lazy as _
+
+LANGUAGE_CODE = 'en'          # default when no preference is stored
+
+LANGUAGES = [
+    ('en', _('English')),
+    ('ru', _('Russian')),
+    ('kk', _('Kazakh')),
+    ('ar', _('Arabic')),
+    ('tr', _('Turkish')),
+]
+
+# Where Django looks for .po / .mo files
+LOCALE_PATHS = [BASE_DIR / 'locale']
+
+# Cookie name for language preference (distinct from django_language default)
+LANGUAGE_COOKIE_NAME = 'ecoiq_lang'
+LANGUAGE_COOKIE_AGE  = 60 * 60 * 24 * 365   # 1 year
+
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True

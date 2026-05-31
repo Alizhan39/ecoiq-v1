@@ -1,0 +1,100 @@
+# EcoIQ — Kazakh translations
+# Copyright (C) 2026 Stoke Share Ltd
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EcoIQ 1.0\n"
+"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
+"POT-Creation-Date: 2026-05-31 08:23+0000\n"
+"PO-Revision-Date: 2026-05-31 08:23+0000\n"
+"Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
+"Language-Team: Kazakh\n"
+"Language: kk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ecoiq/settings.py:175
+msgid "English"
+msgstr "Ағылшын"
+
+#: ecoiq/settings.py:176
+msgid "Russian"
+msgstr "Орысша"
+
+#: ecoiq/settings.py:177
+msgid "Kazakh"
+msgstr "Қазақша"
+
+#: ecoiq/settings.py:178
+msgid "Arabic"
+msgstr "Арабша"
+
+#: ecoiq/settings.py:179
+msgid "Turkish"
+msgstr "Түрікше"
+
+#: templates/admin/index.html:77
+msgid "Add"
+msgstr "Қосу"
+
+#: templates/admin/index.html:85
+msgid "You don't have permission to view or edit anything."
+msgstr "Сізде ештеңені көруге немесе өңдеуге рұқсат жоқ."
+
+#: templates/base.html:159
+msgid "Rankings"
+msgstr "Рейтинг"
+
+#: templates/base.html:160
+msgid "Countries"
+msgstr "Елдер"
+
+#: templates/base.html:161 templates/base.html:204
+msgid "About"
+msgstr "Біз туралы"
+
+#: templates/base.html:162
+msgid "Methodology"
+msgstr "Методология"
+
+#: templates/base.html:163 templates/base.html:205
+msgid "Pricing"
+msgstr "Бағалар"
+
+#: templates/base.html:164
+msgid "Contact"
+msgstr "Байланыс"
+
+#: templates/base.html:166
+msgid "Dashboard"
+msgstr "Басқару тақтасы"
+
+#: templates/base.html:168
+msgid "Register"
+msgstr "Тіркелу"
+
+#: templates/base.html:169
+msgid "Sign In"
+msgstr "Кіру"
+
+#: templates/base.html:173
+msgid "Admin"
+msgstr "Әкімші"
+
+#: templates/base.html:203
+msgid "Ethical Intelligence Platform"
+msgstr "Этикалық интеллект платформасы"
+
+#: templates/base.html:206
+msgid "For Investors"
+msgstr "Инвесторларға"
+
+#: templates/base.html:207
+msgid "Press & Media"
+msgstr "Баспасөз және БАҚ"
+
+#: templates/base.html:209
+msgid "Claim Profile"
+msgstr "Профильді талап ету"

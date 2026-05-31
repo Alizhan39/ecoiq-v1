@@ -1,6 +1,8 @@
-{% load static %}
+{% load static i18n %}
+{% get_current_language as CURRENT_LANG %}
+{% get_current_language_bidi as LANG_BIDI %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ CURRENT_LANG }}"{% if LANG_BIDI %} dir="rtl"{% endif %}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -101,6 +103,44 @@
   </style>
   <!-- EcoIQ Institutional Design System — shared components -->
   <link rel="stylesheet" href="{% static 'css/ecoiq-institutional.css' %}">
+
+  <!-- ── Language switcher styles ──────────────────────────────────────────── -->
+  <style>
+    .lang-switcher {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 5px;
+      overflow: hidden;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: .7rem;
+      letter-spacing: .04em;
+      flex-shrink: 0;
+    }
+    .lang-switcher form { display: contents; }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: #8b949e;
+      cursor: pointer;
+      padding: .28rem .45rem;
+      font-size: .7rem;
+      font-family: inherit;
+      letter-spacing: .04em;
+      line-height: 1;
+      border-right: 1px solid rgba(255,255,255,.08);
+      transition: background .15s, color .15s;
+    }
+    .lang-btn:last-of-type { border-right: none; }
+    .lang-btn:hover  { background: rgba(0,232,154,.08); color: #00e89a; }
+    .lang-btn.active { background: rgba(0,232,154,.12); color: #00e89a; font-weight: 700; }
+
+    /* RTL nav mirror */
+    [dir="rtl"] header nav { flex-direction: row-reverse; }
+    [dir="rtl"] .lang-switcher { direction: ltr; } /* always LTR — code labels */
+  </style>
+
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -116,22 +156,35 @@
       <span style="font-weight:800;color:#fff;font-size:1rem;letter-spacing:-.02em;">Eco<span style="color:#00e89a;">IQ</span></span>
     </a>
     <nav>
-      <a href="/companies/">Rankings</a>
-      <a href="/countries/">Countries</a>
-      <a href="/about/">About</a>
-      <a href="/methodology/">Methodology</a>
-      <a href="/pricing/">Pricing</a>
-      <a href="{% url 'contact' %}" style="color:#d8f3dc;">Contact</a>
+      <a href="/companies/">{% trans "Rankings" %}</a>
+      <a href="/countries/">{% trans "Countries" %}</a>
+      <a href="/about/">{% trans "About" %}</a>
+      <a href="/methodology/">{% trans "Methodology" %}</a>
+      <a href="/pricing/">{% trans "Pricing" %}</a>
+      <a href="{% url 'contact' %}" style="color:#d8f3dc;">{% trans "Contact" %}</a>
       {% if request.user.is_authenticated %}
-      <a href="/dashboard/" style="color:#00e89a;font-weight:600;">Dashboard</a>
+      <a href="/dashboard/" style="color:#00e89a;font-weight:600;">{% trans "Dashboard" %}</a>
       {% else %}
-      <a href="/register/">Register</a>
-      <a href="/login/" style="color:#00e89a;font-weight:600;">Sign In</a>
+      <a href="/register/">{% trans "Register" %}</a>
+      <a href="/login/" style="color:#00e89a;font-weight:600;">{% trans "Sign In" %}</a>
       {% endif %}
       {% if request.user.is_staff %}
       <a href="/ingest/" style="color:#f4a261;font-weight:700;">⚡ Ingest</a>
-      <a href="/admin/" style="color:#94a3b8;font-size:.8rem;">Admin</a>
+      <a href="/admin/" style="color:#94a3b8;font-size:.8rem;">{% trans "Admin" %}</a>
       {% endif %}
+
+      <!-- ── Language switcher ───────────────────────────────────────────── -->
+      <div class="lang-switcher" role="navigation" aria-label="Language">
+        <form action="{% url 'set_language' %}" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" name="language" value="en"  class="lang-btn{% if CURRENT_LANG == 'en' %} active{% endif %}">EN</button>
+          <button type="submit" name="language" value="ru"  class="lang-btn{% if CURRENT_LANG == 'ru' %} active{% endif %}">RU</button>
+          <button type="submit" name="language" value="kk"  class="lang-btn{% if CURRENT_LANG == 'kk' %} active{% endif %}">KK</button>
+          <button type="submit" name="language" value="ar"  class="lang-btn{% if CURRENT_LANG == 'ar' %} active{% endif %}">AR</button>
+          <button type="submit" name="language" value="tr"  class="lang-btn{% if CURRENT_LANG == 'tr' %} active{% endif %}">TR</button>
+        </form>
+      </div>
     </nav>
   </header>
 
@@ -147,13 +200,13 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer>EcoIQ v1 — Ethical Intelligence Platform
-    · <a href="/about/" style="color:#888;text-decoration:none;">About</a>
-    · <a href="/pricing/" style="color:#888;text-decoration:none;">Pricing</a>
-    · <a href="/investors/" style="color:#888;text-decoration:none;">For Investors</a>
-    · <a href="/press/" style="color:#888;text-decoration:none;">Press &amp; Media</a>
+  <footer>EcoIQ — {% trans "Ethical Intelligence Platform" %}
+    · <a href="/about/" style="color:#888;text-decoration:none;">{% trans "About" %}</a>
+    · <a href="/pricing/" style="color:#888;text-decoration:none;">{% trans "Pricing" %}</a>
+    · <a href="/investors/" style="color:#888;text-decoration:none;">{% trans "For Investors" %}</a>
+    · <a href="/press/" style="color:#888;text-decoration:none;">{% trans "Press & Media" %}</a>
     · <a href="/api-docs/" style="color:#888;text-decoration:none;">API</a>
-    · <a href="/request-access/claim/" style="color:#888;text-decoration:none;">Claim Profile</a>
+    · <a href="/request-access/claim/" style="color:#888;text-decoration:none;">{% trans "Claim Profile" %}</a>
     · <a href="mailto:alizhan@ecoiq.uk" style="color:#888;text-decoration:none;">alizhan@ecoiq.uk</a>
   </footer>
 </body>

@@ -1,0 +1,100 @@
+# EcoIQ — Russian translations
+# Copyright (C) 2026 Stoke Share Ltd
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EcoIQ 1.0\n"
+"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
+"POT-Creation-Date: 2026-05-31 08:23+0000\n"
+"PO-Revision-Date: 2026-05-31 08:23+0000\n"
+"Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: ecoiq/settings.py:175
+msgid "English"
+msgstr "Английский"
+
+#: ecoiq/settings.py:176
+msgid "Russian"
+msgstr "Русский"
+
+#: ecoiq/settings.py:177
+msgid "Kazakh"
+msgstr "Казахский"
+
+#: ecoiq/settings.py:178
+msgid "Arabic"
+msgstr "Арабский"
+
+#: ecoiq/settings.py:179
+msgid "Turkish"
+msgstr "Турецкий"
+
+#: templates/admin/index.html:77
+msgid "Add"
+msgstr "Добавить"
+
+#: templates/admin/index.html:85
+msgid "You don't have permission to view or edit anything."
+msgstr "У вас нет прав для просмотра или редактирования."
+
+#: templates/base.html:159
+msgid "Rankings"
+msgstr "Рейтинг"
+
+#: templates/base.html:160
+msgid "Countries"
+msgstr "Страны"
+
+#: templates/base.html:161 templates/base.html:204
+msgid "About"
+msgstr "О нас"
+
+#: templates/base.html:162
+msgid "Methodology"
+msgstr "Методология"
+
+#: templates/base.html:163 templates/base.html:205
+msgid "Pricing"
+msgstr "Тарифы"
+
+#: templates/base.html:164
+msgid "Contact"
+msgstr "Контакт"
+
+#: templates/base.html:166
+msgid "Dashboard"
+msgstr "Панель"
+
+#: templates/base.html:168
+msgid "Register"
+msgstr "Регистрация"
+
+#: templates/base.html:169
+msgid "Sign In"
+msgstr "Войти"
+
+#: templates/base.html:173
+msgid "Admin"
+msgstr "Администратор"
+
+#: templates/base.html:203
+msgid "Ethical Intelligence Platform"
+msgstr "Платформа этического интеллекта"
+
+#: templates/base.html:206
+msgid "For Investors"
+msgstr "Инвесторам"
+
+#: templates/base.html:207
+msgid "Press & Media"
+msgstr "Пресса и СМИ"
+
+#: templates/base.html:209
+msgid "Claim Profile"
+msgstr "Заявить профиль"

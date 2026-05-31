@@ -58,7 +58,8 @@ coverage.xml
 cover/
 
 # Translations
-*.mo
+# *.mo files are committed so Render can serve them without a compile step
+# (compilemessages is also in render.yaml buildCommand as a safety net)
 *.pot
 
 # Django stuff:

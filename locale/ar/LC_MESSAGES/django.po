@@ -1,0 +1,100 @@
+# EcoIQ — Arabic translations
+# Copyright (C) 2026 Stoke Share Ltd
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EcoIQ 1.0\n"
+"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
+"POT-Creation-Date: 2026-05-31 08:23+0000\n"
+"PO-Revision-Date: 2026-05-31 08:23+0000\n"
+"Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+#: ecoiq/settings.py:175
+msgid "English"
+msgstr "الإنجليزية"
+
+#: ecoiq/settings.py:176
+msgid "Russian"
+msgstr "الروسية"
+
+#: ecoiq/settings.py:177
+msgid "Kazakh"
+msgstr "الكازاخية"
+
+#: ecoiq/settings.py:178
+msgid "Arabic"
+msgstr "العربية"
+
+#: ecoiq/settings.py:179
+msgid "Turkish"
+msgstr "التركية"
+
+#: templates/admin/index.html:77
+msgid "Add"
+msgstr "إضافة"
+
+#: templates/admin/index.html:85
+msgid "You don't have permission to view or edit anything."
+msgstr "ليس لديك صلاحية لعرض أو تعديل أي شيء."
+
+#: templates/base.html:159
+msgid "Rankings"
+msgstr "التصنيفات"
+
+#: templates/base.html:160
+msgid "Countries"
+msgstr "الدول"
+
+#: templates/base.html:161 templates/base.html:204
+msgid "About"
+msgstr "عن المنصة"
+
+#: templates/base.html:162
+msgid "Methodology"
+msgstr "المنهجية"
+
+#: templates/base.html:163 templates/base.html:205
+msgid "Pricing"
+msgstr "الأسعار"
+
+#: templates/base.html:164
+msgid "Contact"
+msgstr "اتصل بنا"
+
+#: templates/base.html:166
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+#: templates/base.html:168
+msgid "Register"
+msgstr "التسجيل"
+
+#: templates/base.html:169
+msgid "Sign In"
+msgstr "تسجيل الدخول"
+
+#: templates/base.html:173
+msgid "Admin"
+msgstr "الإدارة"
+
+#: templates/base.html:203
+msgid "Ethical Intelligence Platform"
+msgstr "منصة الذكاء الأخلاقي"
+
+#: templates/base.html:206
+msgid "For Investors"
+msgstr "للمستثمرين"
+
+#: templates/base.html:207
+msgid "Press & Media"
+msgstr "الصحافة والإعلام"
+
+#: templates/base.html:209
+msgid "Claim Profile"
+msgstr "المطالبة بالملف"

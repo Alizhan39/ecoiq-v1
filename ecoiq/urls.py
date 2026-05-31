@@ -18,6 +18,9 @@ _sitemaps = {
 }
 
 urlpatterns = [
+    # i18n — language switcher endpoint (set_language view, POST)
+    path('i18n/', include('django.conf.urls.i18n')),
+
     # Django admin (data management)
     path('admin/', admin.site.urls),
 
