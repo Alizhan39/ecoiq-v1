@@ -56,8 +56,11 @@ urlpatterns = [
     path('countries/', include('countries.urls', namespace='countries')),
 
     # EcoIQ REST API — docs at /api/, endpoints at /api/v1/
-    path('api/',    __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
-    path('api/v1/', include('api.urls', namespace='api')),
+    path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
+    path('api/v1/',     include('api.urls',   namespace='api')),
+
+    # EcoIQ Mizan Engine — ethical intelligence API
+    path('api/mizan/',  include('mizan.urls', namespace='mizan')),
 
     # Wagtail CMS pages served at /pages/ (safe — no conflict with existing routes)
     path('pages/', include(wagtail_urls)),
