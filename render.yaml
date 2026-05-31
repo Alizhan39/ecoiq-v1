@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ecoiq-v1
+    name: ecoiq
     env: python
     region: oregon
     plan: starter

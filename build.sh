@@ -6,7 +6,7 @@ echo "==> Installing Python dependencies..."
 pip install -r requirements.txt
 
 echo "==> Compiling translation messages..."
-python manage.py compilemessages
+python manage.py compilemessages || true
 
 echo "==> Collecting static files..."
 python manage.py collectstatic --no-input
@@ -32,5 +32,8 @@ python manage.py add_400_companies
 
 echo "==> Seeding score-history snapshots for Chart.js trend charts (idempotent)..."
 python manage.py seed_score_history
+
+echo "==> Focusing public profiles on 4 target markets: UK / Kazakhstan / Saudi Arabia / Türkiye..."
+python manage.py focus_target_markets
 
 echo "==> Build complete."
