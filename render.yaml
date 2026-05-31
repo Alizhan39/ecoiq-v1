@@ -1,38 +1,63 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# EcoIQ — Render Blueprint
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Services:
+#   ecoiq       — Django/Gunicorn web service (starter plan, Oregon)
+#   ecoiq-db    — PostgreSQL database (starter plan, Oregon)
+#
+# All seeding and migration runs inside build.sh on every deploy.
+# No release commands — build.sh is the single source of truth.
+# Secrets (ANTHROPIC_API_KEY, COMPANIES_HOUSE_API_KEY) must be set
+# manually in the Render dashboard — they are never committed to git.
+# ══════════════════════════════════════════════════════════════════════════════
+
 services:
   - type: web
-    name: ecoiq
+    name: ecoiq                          # Blueprint matches by this name — do NOT rename
     env: python
     region: oregon
-    plan: starter
+    plan: starter                        # $7/month — persistent disk, no cold starts
     buildCommand: pip install -r requirements.txt && ./build.sh
     startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT
+
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"
+
       - key: DEBUG
-        value: "False"
+        value: "False"                   # always False in production
+
       - key: DJANGO_SETTINGS_MODULE
         value: ecoiq.settings
+
       - key: DJANGO_SECRET_KEY
-        generateValue: true
+        generateValue: true              # Render generates and rotates this automatically
+
       - key: ALLOWED_HOSTS
         value: "*"
+
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://ecoiq.onrender.com,https://ecoiq.uk,https://www.ecoiq.uk"
+
       - key: SITE_URL
         value: "https://ecoiq.uk"
+
       - key: DATABASE_URL
         fromDatabase:
-          name: ecoiq-db
+          name: ecoiq-db                 # links to the database service below
           property: connectionString
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: COMPANIES_HOUSE_API_KEY
-        sync: false
 
+      - key: ANTHROPIC_API_KEY
+        sync: false                      # set manually in Render dashboard — never in git
+
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false                      # set manually in Render dashboard — never in git
+
+# ── Database ──────────────────────────────────────────────────────────────────
 databases:
   - name: ecoiq-db
     databaseName: ecoiq
     user: ecoiq
-    plan: starter
-    region: oregon
+    plan: starter                        # $7/month PostgreSQL — 1 GB storage
+    region: oregon                       # same region as web service for low latency

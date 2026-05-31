@@ -1251,6 +1251,127 @@ footer a:hover{color:var(--accent)}
       </p>
     </div>
 
+    <!-- INVESTOR OPPORTUNITY MAP (shown for all target-market countries) -->
+    {% if country.name == 'Kazakhstan' or country.name == 'United Kingdom' or country.name == 'Saudi Arabia' or country.name == 'Türkiye' %}
+    <div class="section" id="investor-opportunity-map" style="margin-bottom:1.5rem;">
+      <div class="section-title">
+        🗺 Investor Opportunity Map
+        <span class="st-right" style="display:flex;align-items:center;gap:.4rem">
+          <span class="iq-label iq-label-ai">AI-Assisted</span>
+        </span>
+      </div>
+
+      <p style="font-size:.82rem;color:var(--muted2);line-height:1.6;margin-bottom:1.25rem;">
+        Key sectors and opportunity themes for responsible capital deployment in
+        <strong>{{ country.name }}</strong>, based on EcoIQ transition readiness data.
+        {% if country.name == 'Kazakhstan' %}
+        Kazakhstan is a priority emerging-market focus for EcoIQ — 100+ companies tracked
+        across energy, mining, oil &amp; gas, transport, and finance.
+        {% elif country.name == 'Saudi Arabia' %}
+        Saudi Arabia's Vision 2030 drives major opportunities in renewable energy, diversification,
+        and industrial modernisation — tracked across 100+ EcoIQ profiles.
+        {% elif country.name == 'United Kingdom' %}
+        The UK's net-zero legislative framework creates structured opportunities in green finance,
+        industrial decarbonisation, and sustainable infrastructure — 100+ companies tracked.
+        {% elif country.name == 'Türkiye' %}
+        Türkiye's industrial base and renewable energy potential create transition investment
+        opportunities across energy, steel, transport, and finance — 100+ companies tracked.
+        {% endif %}
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;">
+
+        {% if country.name == 'Kazakhstan' %}
+        <div style="background:rgba(0,232,154,.04);border:1px solid rgba(0,232,154,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#00e89a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Renewables &amp; Clean Energy</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Wind corridors (Zhetysu, Mangistau), solar parks, hydropower modernisation. Eligible for IFC/EBRD green finance.</div>
+        </div>
+        <div style="background:rgba(88,166,255,.04);border:1px solid rgba(88,166,255,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Critical Minerals</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Uranium, chromium, copper, zinc, rare earths — strategic for global battery supply chains. Kazatomprom, ERG, KazMinerals tracked.</div>
+        </div>
+        <div style="background:rgba(244,162,97,.04);border:1px solid rgba(244,162,97,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#f4a261;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Transport &amp; Logistics Corridor</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Middle Corridor (Trans-Caspian) infrastructure. KTZ rail, Aktau Port, and QazExpressway positioned for green freight investment.</div>
+        </div>
+        <div style="background:rgba(168,85,247,.04);border:1px solid rgba(168,85,247,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Digital &amp; FinTech</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Kaspi.kz, AIFC, Jusan Bank — a rapidly modernising financial ecosystem with regional fintech leadership.</div>
+        </div>
+        <div style="background:rgba(0,232,154,.04);border:1px solid rgba(0,232,154,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#00e89a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Oil &amp; Gas Transition</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">KazMunayGas, Tengizchevroil, Kashagan — mature assets with decarbonisation pathway requirements and methane reduction mandates.</div>
+        </div>
+        <div style="background:rgba(20,184,166,.04);border:1px solid rgba(20,184,166,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#14b8a6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Green Bond &amp; ESG Finance</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Development Bank of Kazakhstan, Bayterek, AIFC Authority — institutional frameworks for responsible capital deployment at scale.</div>
+        </div>
+
+        {% elif country.name == 'Saudi Arabia' %}
+        <div style="background:rgba(0,232,154,.04);border:1px solid rgba(0,232,154,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#00e89a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Renewable Energy (Vision 2030)</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">ACWA Power, Alfanar — world-scale solar and wind projects. 50% renewable target by 2030 drives major green capital flows.</div>
+        </div>
+        <div style="background:rgba(88,166,255,.04);border:1px solid rgba(88,166,255,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Industrial Diversification</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">NEOM, Red Sea Global, Qiddiya — giga-projects requiring responsible finance frameworks. SABIC petrochemical transition.</div>
+        </div>
+        <div style="background:rgba(244,162,97,.04);border:1px solid rgba(244,162,97,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#f4a261;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Banking &amp; Islamic Finance</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Al Rajhi Bank, Saudi National Bank, Alinma — stewardship-based capital frameworks align with EcoIQ ethical intelligence scoring.</div>
+        </div>
+        <div style="background:rgba(168,85,247,.04);border:1px solid rgba(168,85,247,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Mining &amp; Phosphates</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Maaden — global-scale phosphate and aluminium producer with active decarbonisation programmes.</div>
+        </div>
+
+        {% elif country.name == 'United Kingdom' %}
+        <div style="background:rgba(0,232,154,.04);border:1px solid rgba(0,232,154,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#00e89a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Offshore Wind &amp; Grid</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">National Grid, SSE, Octopus Energy, Dogger Bank — Europe's largest offshore wind pipeline. Greencoat UK Wind for listed exposure.</div>
+        </div>
+        <div style="background:rgba(88,166,255,.04);border:1px solid rgba(88,166,255,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Green Finance &amp; ESG</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">HSBC, Barclays, NatWest, Legal &amp; General — UK banks with published net-zero commitments and green bond issuance frameworks.</div>
+        </div>
+        <div style="background:rgba(244,162,97,.04);border:1px solid rgba(244,162,97,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#f4a261;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Clean Chemistry &amp; Materials</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Johnson Matthey, Croda International — high-score specialty chemicals with active decarbonisation and circular economy programmes.</div>
+        </div>
+        <div style="background:rgba(168,85,247,.04);border:1px solid rgba(168,85,247,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Industrial Decarbonisation</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">British Steel, Tata Steel UK, ITM Power (green hydrogen) — industrial transition plays aligned with UK JETP commitments.</div>
+        </div>
+
+        {% elif country.name == 'Türkiye' %}
+        <div style="background:rgba(0,232,154,.04);border:1px solid rgba(0,232,154,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#00e89a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Renewable Energy</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Borusan EnBW, Kalyon Enerji, Güneş Enerji — strong solar and wind pipeline. Turkey targets 65% renewable electricity by 2035.</div>
+        </div>
+        <div style="background:rgba(88,166,255,.04);border:1px solid rgba(88,166,255,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Steel Transition</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Erdemir, Kardemir, Borusan Mannesmann — CBAM-exposed; green steel investment required to maintain EU market access.</div>
+        </div>
+        <div style="background:rgba(244,162,97,.04);border:1px solid rgba(244,162,97,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#f4a261;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Automotive Electrification</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Ford Otosan, Tofaş, OYAK Renault — major EV transition underway. Turkey's automotive sector targets 30% EV output by 2030.</div>
+        </div>
+        <div style="background:rgba(168,85,247,.04);border:1px solid rgba(168,85,247,.15);border-radius:6px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Banking &amp; Finance</div>
+          <div style="font-size:.78rem;color:var(--muted2);line-height:1.55;">Garanti BBVA, TSKB Kalkınma Bankası — green loan frameworks and development finance with active ESG integration.</div>
+        </div>
+        {% endif %}
+
+      </div>
+
+      <p style="font-size:.7rem;color:var(--muted2);margin-top:1rem;line-height:1.5;border-top:1px solid rgba(255,255,255,.06);padding-top:.75rem;">
+        ⓘ Investor Opportunity Map is AI-assisted and indicative. It does not represent investment advice or verified deal flow.
+        Independent due diligence is required before capital deployment.
+        <a href="/methodology/" style="color:var(--info);">EcoIQ Methodology →</a>
+      </p>
+    </div>
+    {% endif %}
+
     <!-- TRACKED COMPANIES -->
     {% if companies %}
     <div class="section">

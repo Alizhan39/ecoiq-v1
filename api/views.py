@@ -432,3 +432,147 @@ def responsible_finance_detail(request, slug):
             'Not investment advice. Requires independent due diligence.'
         ),
     })
+
+
+# ── Ethical Intelligence ──────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def ethical_intelligence_score(request):
+    """
+    GET /api/v1/intelligence/ethical-score/?company=<slug>
+
+    Returns a multi-dimensional ethical intelligence payload for a company.
+    Combines public benefit, harm reduction, justice balance, stewardship,
+    and evidence confidence into a single weighted score.
+
+    All scores are AI-assisted and indicative. Not investment advice.
+    """
+    from companies.models import CompanyProfile
+    from ml.ethics import compute_ethical_intelligence
+
+    slug = request.query_params.get('company', '').strip()
+    if not slug:
+        return Response(
+            {'error': 'company parameter required (company slug)'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    company = get_object_or_404(Company, slug=slug)
+    try:
+        profile = company.profile
+    except Exception:
+        return Response({'error': 'No profile found for this company.'}, status=404)
+
+    result = compute_ethical_intelligence(profile)
+
+    return Response({
+        'company': slug,
+        'name':    company.name,
+        'country': company.country,
+        'sector':  company.sector,
+        **result,
+    })
+
+
+@api_view(['GET'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def company_ethical_intelligence(request, slug):
+    """
+    GET /api/v1/companies/<slug>/ethical-intelligence/
+
+    Full ethical intelligence breakdown for a specific company.
+    Includes public benefit composite, harm reduction assessment,
+    justice balance, stewardship score, and evidence confidence tier.
+    """
+    from companies.models import CompanyProfile
+    from ml.ethics import compute_ethical_intelligence
+
+    company = get_object_or_404(Company.objects.select_related('profile'), slug=slug)
+    try:
+        profile = company.profile
+    except Exception:
+        return Response({'error': 'No profile found for this company.'}, status=404)
+
+    result = compute_ethical_intelligence(profile)
+
+    return Response({
+        'company': slug,
+        'name':    company.name,
+        'country': company.country,
+        'sector':  company.sector,
+        'ecoiq_total_score': float(getattr(profile, 'ecoiq_total_score', 0) or 0),
+        'ethical_intelligence': result,
+        '_note': (
+            'EcoIQ Ethical Intelligence is AI-assisted and derived from public or seeded data. '
+            'Not investment advice. Independent verification required for investment use.'
+        ),
+    })
+
+
+@api_view(['GET'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def country_ethical_intelligence(request, slug):
+    """
+    GET /api/v1/countries/<slug>/ethical-intelligence/
+
+    Aggregate ethical intelligence for all public companies in a country.
+    Returns sector breakdown and average sub-scores.
+    """
+    from companies.models import CompanyProfile
+    from ml.ethics import compute_ethical_intelligence
+    from django.db.models import Avg as DjAvg
+
+    try:
+        from countries.models import CountryProfile
+        country_profile = get_object_or_404(CountryProfile, slug=slug)
+        country_name    = country_profile.name
+    except Exception:
+        return Response({'error': 'Country not found.'}, status=404)
+
+    profiles = (
+        CompanyProfile.objects
+        .filter(company__country__iexact=country_name, status__in=('public', 'verified'))
+        .select_related('company')
+    )
+
+    if not profiles.exists():
+        return Response({
+            'country': slug,
+            'name':    country_name,
+            'message': 'No public profiles found for this country.',
+            'company_count': 0,
+        })
+
+    all_results = [compute_ethical_intelligence(p) for p in profiles]
+
+    avg_overall    = round(sum(r['overall_score']                for r in all_results) / len(all_results), 2)
+    avg_pb         = round(sum(r['public_benefit']['score']      for r in all_results) / len(all_results), 2)
+    avg_harm       = round(sum(r['harm_reduction']['harm_score'] for r in all_results) / len(all_results), 2)
+    avg_stewardship= round(sum(r['stewardship']['score']         for r in all_results) / len(all_results), 2)
+    avg_justice    = round(sum(r['justice_balance']['score']     for r in all_results) / len(all_results), 2)
+
+    # Label distribution
+    from collections import Counter
+    label_dist = Counter(r['label'] for r in all_results)
+
+    return Response({
+        'country':       slug,
+        'name':          country_name,
+        'company_count': len(all_results),
+        'aggregate': {
+            'avg_ethical_intelligence_score': avg_overall,
+            'avg_public_benefit':             avg_pb,
+            'avg_harm_score':                 avg_harm,
+            'avg_stewardship':                avg_stewardship,
+            'avg_justice_balance':            avg_justice,
+        },
+        'label_distribution': dict(label_dist),
+        '_note': (
+            'Country aggregate is based on all public EcoIQ company profiles for this country. '
+            'AI-assisted profiles are included; treat aggregate as indicative.'
+        ),
+    })

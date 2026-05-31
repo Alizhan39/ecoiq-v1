@@ -211,6 +211,59 @@ COMPANIES = [
     ("MUFG",                   "other",      "Japan",         57, "Low"),
 ]
 
+# ── AI summary helpers ────────────────────────────────────────────────────────
+
+_SECTOR_INTRO = {
+    'energy':     "an energy sector company covering power generation, distribution, and renewable energy development",
+    'oil_gas':    "an oil and gas operator",
+    'chemical':   "a chemical or petrochemical company",
+    'metallurgy': "a metals and materials company",
+    'mining':     "a mining and natural resources company",
+    'transport':  "a transport or logistics operator",
+    'agriculture':"an agricultural or agri-food company",
+}
+
+_SECTOR_DETAIL = {
+    'oil_gas':    "EcoIQ evaluates decarbonisation commitments, methane reduction progress, and capital allocation towards energy transition.",
+    'chemical':   "EcoIQ scoring reflects process emissions intensity, circular chemistry initiatives, and transition pathways.",
+    'metallurgy': "EcoIQ evaluates carbon intensity, recycled input rates, and investment in low-carbon smelting or steelmaking technologies.",
+    'mining':     "The EcoIQ profile assesses environmental rehabilitation, water stewardship, community impact, and governance against international standards.",
+    'transport':  "EcoIQ scoring covers fleet and operational emissions, modal shift initiatives, and infrastructure investment in lower-carbon mobility.",
+    'agriculture':"EcoIQ evaluates land-use efficiency, water management, food system resilience, and supply chain sustainability.",
+}
+
+
+def _readiness_sentence(name: str, total: float) -> str:
+    if total >= 70:
+        return (
+            f"With an EcoIQ score of {total}/100, {name} demonstrates strong transition "
+            "readiness across environmental stewardship, governance, and public benefit delivery."
+        )
+    elif total >= 55:
+        return (
+            f"With an EcoIQ score of {total}/100, {name} shows moderate transition readiness "
+            "with identified opportunities to strengthen environmental and governance commitments."
+        )
+    elif total >= 40:
+        return (
+            f"With an EcoIQ score of {total}/100, {name} is at an early transition stage "
+            "with significant scope to improve decarbonisation strategy and governance quality."
+        )
+    return (
+        f"With an EcoIQ score of {total}/100, {name} faces material climate transition risks. "
+        "EcoIQ identifies high-priority areas for emissions reduction and responsible resource management."
+    )
+
+
+def make_ai_summary(name: str, sector: str, country: str, scores: dict) -> str:
+    """Generate a credible, sector-specific AI summary. Replaces generic seed placeholders."""
+    desc   = _SECTOR_INTRO.get(sector, f"a company in the {sector.replace('_', ' ')} sector")
+    detail = _SECTOR_DETAIL.get(sector, "")
+    intro  = f"{name} is {desc}, operating in {country}."
+    body   = f"{detail} " if detail else ""
+    return f"{intro} {body}{_readiness_sentence(name, scores['ecoiq_total_score'])}"
+
+
 # ── Score generation helpers ──────────────────────────────────────────────────
 
 HARM_PENALTY = {'Severe': 12, 'High': 6, 'Medium': 2, 'Low': 0}
@@ -420,12 +473,7 @@ class Command(BaseCommand):
                 harm_penalty      = scores['harm_penalty'],
                 ecoiq_total_score = scores['ecoiq_total_score'],
                 moral_label       = scores['moral_label'],
-                ai_summary        = (
-                    f"{name} is a {sector.replace('_',' ')} company based in {country}. "
-                    f"EcoIQ score: {scores['ecoiq_total_score']}/100 "
-                    f"({dict(MORAL_LABEL_FROM_SCORE).get(scores['moral_label'], scores['moral_label'])}). "
-                    f"Seeded by add_400_companies management command."
-                ),
+                ai_summary        = make_ai_summary(name, sector, country, scores),
             )
 
             profile, pr_created = CompanyProfile.objects.get_or_create(

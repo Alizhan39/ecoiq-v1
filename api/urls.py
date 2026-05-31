@@ -31,4 +31,9 @@ urlpatterns = [
 
     # Responsible Finance alignment score
     path('companies/<slug:slug>/responsible-finance/', views.responsible_finance_detail,    name='responsible_finance'),
+
+    # Ethical Intelligence
+    path('intelligence/ethical-score/',                    views.ethical_intelligence_score,       name='ethical_intelligence_score'),
+    path('companies/<slug:slug>/ethical-intelligence/',    views.company_ethical_intelligence,     name='company_ethical_intelligence'),
+    path('countries/<slug:slug>/ethical-intelligence/',    views.country_ethical_intelligence,     name='country_ethical_intelligence'),
 ]

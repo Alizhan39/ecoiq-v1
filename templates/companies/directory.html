@@ -408,6 +408,9 @@ a{color:inherit;text-decoration:none;}
             {% endif %}
             <!-- Verified -->
             {% if profile.is_verified %}<span class="badge badge-teal">✓ Verified</span>{% endif %}
+            <!-- Data quality signals -->
+            <span class="badge badge-gray">AI-assisted</span>
+            {% if not profile.is_verified %}<span class="badge badge-orange">Needs verification</span>{% endif %}
           </div>
         </div>
       </div>
@@ -515,10 +518,10 @@ a{color:inherit;text-decoration:none;}
 
   <!-- Disclaimer -->
   <div class="disclaimer">
-    ⓘ {{ disclaimer_light }}
-    EcoIQ scores are computed from publicly available data and AI analysis.
-    Verified profiles are marked with ✓ Verified badge.
-    Scores are updated as new information becomes available.
+    ⓘ EcoIQ profiles are AI-assisted and based on available public or seeded data.
+    Scores and descriptions require independent analyst review before investment use.
+    Profiles marked <strong>✓ Verified</strong> have been reviewed by the EcoIQ team.
+    <strong>AI-assisted</strong> profiles use deterministic scoring models; accuracy improves as companies submit verified disclosures.
   </div>
 
 </div><!-- /.page -->
