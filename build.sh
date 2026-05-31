@@ -5,6 +5,9 @@ set -o errexit
 echo "==> Installing Python dependencies..."
 pip install -r requirements.txt
 
+echo "==> Compiling translation messages..."
+python manage.py compilemessages
+
 echo "==> Collecting static files..."
 python manage.py collectstatic --no-input
 
