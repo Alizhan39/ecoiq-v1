@@ -1,6 +1,8 @@
-{% load static %}
+{% load static i18n %}
+{% get_current_language as CURRENT_LANG %}
+{% get_current_language_bidi as LANG_BIDI %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ CURRENT_LANG }}"{% if LANG_BIDI %} dir="rtl"{% endif %}>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -192,11 +194,11 @@
       <!-- CTAs -->
       <div style="display:flex;gap:.9rem;flex-wrap:wrap;margin-bottom:2rem;">
         <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.95rem;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;" class="glow-acc">
-          Explore Rankings
+          {% trans "Explore Rankings" %}
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
         <a href="/countries/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:var(--info);font-weight:600;font-size:.95rem;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;">
-          Country Intelligence
+          {% trans "Country Intelligence" %}
         </a>
       </div>
 

@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EcoIQ 1.0\n"
-"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
-"POT-Creation-Date: 2026-05-31 08:23+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-31 08:54+0000\n"
 "PO-Revision-Date: 2026-05-31 08:23+0000\n"
 "Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
 "Language-Team: Arabic\n"
@@ -15,23 +15,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
 
-#: ecoiq/settings.py:175
+#: ecoiq/settings.py:176
 msgid "English"
 msgstr "الإنجليزية"
 
-#: ecoiq/settings.py:176
+#: ecoiq/settings.py:177
 msgid "Russian"
 msgstr "الروسية"
 
-#: ecoiq/settings.py:177
+#: ecoiq/settings.py:178
 msgid "Kazakh"
 msgstr "الكازاخية"
 
-#: ecoiq/settings.py:178
+#: ecoiq/settings.py:179
 msgid "Arabic"
 msgstr "العربية"
 
-#: ecoiq/settings.py:179
+#: ecoiq/settings.py:180
 msgid "Turkish"
 msgstr "التركية"
 
@@ -43,58 +43,66 @@ msgstr "إضافة"
 msgid "You don't have permission to view or edit anything."
 msgstr "ليس لديك صلاحية لعرض أو تعديل أي شيء."
 
-#: templates/base.html:159
+#: templates/base.html:127
 msgid "Rankings"
 msgstr "التصنيفات"
 
-#: templates/base.html:160
+#: templates/base.html:128
 msgid "Countries"
 msgstr "الدول"
 
-#: templates/base.html:161 templates/base.html:204
+#: templates/base.html:129 templates/base.html:184
 msgid "About"
 msgstr "عن المنصة"
 
-#: templates/base.html:162
+#: templates/base.html:130
 msgid "Methodology"
 msgstr "المنهجية"
 
-#: templates/base.html:163 templates/base.html:205
+#: templates/base.html:131 templates/base.html:185
 msgid "Pricing"
 msgstr "الأسعار"
 
-#: templates/base.html:164
+#: templates/base.html:132
 msgid "Contact"
 msgstr "اتصل بنا"
 
-#: templates/base.html:166
+#: templates/base.html:134
 msgid "Dashboard"
 msgstr "لوحة التحكم"
 
-#: templates/base.html:168
+#: templates/base.html:136
 msgid "Register"
 msgstr "التسجيل"
 
-#: templates/base.html:169
+#: templates/base.html:137
 msgid "Sign In"
 msgstr "تسجيل الدخول"
 
-#: templates/base.html:173
+#: templates/base.html:141
 msgid "Admin"
 msgstr "الإدارة"
 
-#: templates/base.html:203
+#: templates/base.html:183
 msgid "Ethical Intelligence Platform"
 msgstr "منصة الذكاء الأخلاقي"
 
-#: templates/base.html:206
+#: templates/base.html:186
 msgid "For Investors"
 msgstr "للمستثمرين"
 
-#: templates/base.html:207
+#: templates/base.html:187
 msgid "Press & Media"
 msgstr "الصحافة والإعلام"
 
-#: templates/base.html:209
+#: templates/base.html:189
 msgid "Claim Profile"
 msgstr "المطالبة بالملف"
+
+#: templates/landing.html:197
+msgid "Explore Rankings"
+msgstr "استكشف التصنيفات"
+
+#: templates/landing.html:201
+msgid "Country Intelligence"
+msgstr "ذكاء الدول"

@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EcoIQ 1.0\n"
-"Report-Msgid-Bugs-To: alizhan@ecoiq.uk\n"
-"POT-Creation-Date: 2026-05-31 08:23+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-31 08:54+0000\n"
 "PO-Revision-Date: 2026-05-31 08:23+0000\n"
 "Last-Translator: EcoIQ Team <alizhan@ecoiq.uk>\n"
 "Language-Team: Turkish\n"
@@ -15,23 +15,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ecoiq/settings.py:175
+#: ecoiq/settings.py:176
 msgid "English"
 msgstr "İngilizce"
 
-#: ecoiq/settings.py:176
+#: ecoiq/settings.py:177
 msgid "Russian"
 msgstr "Rusça"
 
-#: ecoiq/settings.py:177
+#: ecoiq/settings.py:178
 msgid "Kazakh"
 msgstr "Kazakça"
 
-#: ecoiq/settings.py:178
+#: ecoiq/settings.py:179
 msgid "Arabic"
 msgstr "Arapça"
 
-#: ecoiq/settings.py:179
+#: ecoiq/settings.py:180
 msgid "Turkish"
 msgstr "Türkçe"
 
@@ -43,58 +43,66 @@ msgstr "Ekle"
 msgid "You don't have permission to view or edit anything."
 msgstr "Herhangi bir şeyi görüntüleme veya düzenleme izniniz yok."
 
-#: templates/base.html:159
+#: templates/base.html:127
 msgid "Rankings"
 msgstr "Sıralamalar"
 
-#: templates/base.html:160
+#: templates/base.html:128
 msgid "Countries"
 msgstr "Ülkeler"
 
-#: templates/base.html:161 templates/base.html:204
+#: templates/base.html:129 templates/base.html:184
 msgid "About"
 msgstr "Hakkında"
 
-#: templates/base.html:162
+#: templates/base.html:130
 msgid "Methodology"
 msgstr "Metodoloji"
 
-#: templates/base.html:163 templates/base.html:205
+#: templates/base.html:131 templates/base.html:185
 msgid "Pricing"
 msgstr "Fiyatlandırma"
 
-#: templates/base.html:164
+#: templates/base.html:132
 msgid "Contact"
 msgstr "İletişim"
 
-#: templates/base.html:166
+#: templates/base.html:134
 msgid "Dashboard"
 msgstr "Panel"
 
-#: templates/base.html:168
+#: templates/base.html:136
 msgid "Register"
 msgstr "Kayıt Ol"
 
-#: templates/base.html:169
+#: templates/base.html:137
 msgid "Sign In"
 msgstr "Giriş Yap"
 
-#: templates/base.html:173
+#: templates/base.html:141
 msgid "Admin"
 msgstr "Yönetim"
 
-#: templates/base.html:203
+#: templates/base.html:183
 msgid "Ethical Intelligence Platform"
 msgstr "Etik Zeka Platformu"
 
-#: templates/base.html:206
+#: templates/base.html:186
 msgid "For Investors"
 msgstr "Yatırımcılar İçin"
 
-#: templates/base.html:207
+#: templates/base.html:187
 msgid "Press & Media"
 msgstr "Basın ve Medya"
 
-#: templates/base.html:209
+#: templates/base.html:189
 msgid "Claim Profile"
 msgstr "Profil Talep Et"
+
+#: templates/landing.html:197
+msgid "Explore Rankings"
+msgstr "Sıralamaları Keşfet"
+
+#: templates/landing.html:201
+msgid "Country Intelligence"
+msgstr "Ülke İstihbaratı"
