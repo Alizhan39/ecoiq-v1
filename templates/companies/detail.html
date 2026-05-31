@@ -759,7 +759,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
             id="score-arc-glow" opacity=".15" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1) .05s"/>
         </svg>
         <div style="text-align:center">
-          <div class="score-num" id="score-counter" data-target="{{ profile.ecoiq_total_score|floatformat:1 }}" style="color:{{ profile.moral_label_color }}">{{ profile.ecoiq_total_score|floatformat:1 }}</div>
+          <div class="score-num" id="score-counter" data-target="{{ profile.ecoiq_total_score|default:company.ecoiq_score|floatformat:1 }}" style="color:{{ profile.moral_label_color }}">{{ profile.ecoiq_total_score|default:company.ecoiq_score|floatformat:1 }}</div>
           <div class="score-denom">/ 100</div>
         </div>
       </div>
@@ -2007,7 +2007,8 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
   /* ── Animated score counter ─────────────────────────────────── */
   const counter = document.getElementById('score-counter');
   const TARGET  = parseFloat(counter ? counter.dataset.target : '0')
-                  || {{ profile.ecoiq_total_score|default:company.ecoiq_score|default:0 }};
+                  || parseFloat('{{ profile.ecoiq_total_score|default:company.ecoiq_score|default:0 }}')
+                  || 0;
   const ARC_LEN = 339.29;
   const arc     = document.getElementById('score-arc');
   const glow    = document.getElementById('score-arc-glow');
