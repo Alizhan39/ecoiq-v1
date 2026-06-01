@@ -13,7 +13,8 @@ from .models import (
 )
 from .forms import AuditSessionForm
 from .questions import QUESTIONS, grouped as grouped_questions
-from .ai import run_full_analysis
+# run_full_analysis is imported lazily inside the view that calls it — keeps
+# the anthropic SDK (~40 MB) out of Django startup memory.
 from core.utils import extract_text  # reuse existing PDF extractor
 
 
@@ -21,7 +22,7 @@ from core.utils import extract_text  # reuse existing PDF extractor
 
 @login_required
 def index(request):
-    sessions = AuditSession.objects.select_related('report').all()
+    sessions = AuditSession.objects.select_related('report').order_by('-created_at')[:50]
     return render(request, 'audit/index.html', {'sessions': sessions})
 
 
@@ -105,6 +106,7 @@ def analyse(request, pk):
 
     if request.method == 'POST':
         try:
+            from .ai import run_full_analysis  # lazy — avoids loading anthropic at startup
             run_full_analysis(session)
             session.status = 'complete'
             session.save(update_fields=['status', 'updated_at'])

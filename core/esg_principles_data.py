@@ -4,7 +4,12 @@ EcoIQ — Capital Ethics Compendium
 
 Public language: professional English only. Zero religious terminology.
 Internal origin mapping: docs/governance-principles-surah-map.md  (INTERNAL ONLY — not for public distribution)
+
+PRINCIPLES_JSON and CATEGORIES_JSON are pre-serialised at module load time so
+that the governance_principles() view never calls json.dumps() on a request
+thread — the ~60 KB JSON string is produced exactly once per worker.
 """
+import json as _json
 
 # ---------------------------------------------------------------------------
 # 10 Categories (id → display label)
@@ -1062,3 +1067,11 @@ PRINCIPLES = [
         'signal': 'Legal permissibility is an insufficient standard. Score against genuine consumer protection — not just regulatory compliance.',
     },
 ]
+
+# ---------------------------------------------------------------------------
+# Pre-serialised JSON strings — computed once at import time.
+# The governance_principles() view passes these directly to the template
+# instead of calling json.dumps() on every request.
+# ---------------------------------------------------------------------------
+PRINCIPLES_JSON: str   = _json.dumps(PRINCIPLES,          separators=(',', ':'))
+CATEGORIES_JSON: str   = _json.dumps(PRINCIPLE_CATEGORIES, separators=(',', ':'))

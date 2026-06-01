@@ -12,13 +12,15 @@ Call 2 — Recommendations:
 
 import json
 import re
-import anthropic
 from django.conf import settings
+# anthropic is imported lazily inside _client() so the ~40 MB SDK does NOT
+# load at Django startup — only when an audit analysis is actually triggered.
 
 MODEL = "claude-sonnet-4-6"
 
 
 def _client():
+    import anthropic  # lazy — keeps the SDK out of startup memory
     key = settings.ANTHROPIC_API_KEY
     if not key:
         raise ValueError(
@@ -96,6 +98,7 @@ Only return the JSON object."""
 
 
 def run_diagnostic(session) -> dict:
+    import anthropic  # lazy import for exception-type references below
     profile = _build_profile(session)
     doc_text = (session.extracted_text or 'No document provided.')[:8000]
     prompt = DIAGNOSTIC_PROMPT.format(profile=profile, doc_text=doc_text)
@@ -207,6 +210,7 @@ Only return the JSON object."""
 
 
 def run_recommendations(session, diagnostic: dict) -> dict:
+    import anthropic  # lazy import for exception-type references below
     responses = list(session.responses.all())
     qa_text = '\n\n'.join(
         f"**{r.question_text}**\n{r.answer or '(not answered)'}"

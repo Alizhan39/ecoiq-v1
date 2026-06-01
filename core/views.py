@@ -10,7 +10,8 @@ from .models import Assessment, QuestionnaireResponse, Finding
 from .forms import AssessmentUploadForm
 from .utils import extract_text
 from .questions import QUESTIONS, grouped as grouped_questions
-from .ai import run_ecoiq_analysis
+# run_ecoiq_analysis is imported lazily inside run_analysis() — keeps the
+# anthropic SDK (~40 MB) out of Django startup memory.
 
 PILLARS = [
     ('Environment', '#d8f3dc'),
@@ -205,7 +206,8 @@ HOW_IT_WORKS = [
 
 @login_required
 def index(request):
-    assessments = Assessment.objects.all()
+    # Limit to the 50 most-recent assessments — avoids loading all rows into memory.
+    assessments = Assessment.objects.order_by('-created_at')[:50]
     return render(request, 'core/index.html', {
         'pillars':     PILLARS,
         'assessments': assessments,
@@ -305,6 +307,7 @@ def run_analysis(request, pk):
 
     if request.method == 'POST':
         try:
+            from .ai import run_ecoiq_analysis  # lazy — avoids loading anthropic at startup
             result = run_ecoiq_analysis(assessment)
             Finding.objects.update_or_create(
                 assessment=assessment,
@@ -1050,18 +1053,11 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'user': request.user})
 
 
-def platform(request):
-    """
-    /platform/ — EcoIQ Intelligence Platform overview.
-    Public page showcasing the five analytical modules with descriptions,
-    use cases, and a strong Request EcoIQ Review CTA.
-    """
-    from django.conf import settings as _s
-    calendly_url = getattr(_s, 'CALENDLY_URL', '')
-
-    modules = [
-        {
-            'id':       'country-intelligence',
+# ── Platform module data ──────────────────────────────────────────────────────
+# Defined at module level so it is built once per worker, not on every request.
+_PLATFORM_MODULES = [
+    {
+        'id':       'country-intelligence',
             'number':   '01',
             'icon':     '🌍',
             'title':    'Country Transition Intelligence',
@@ -1230,11 +1226,21 @@ def platform(request):
                 'in any investment or financing decision.'
             ),
         },
-    ]
+]
 
+
+def platform(request):
+    """
+    /platform/ — EcoIQ Intelligence Platform overview.
+    Public page showcasing the five analytical modules with descriptions,
+    use cases, and a strong Request EcoIQ Review CTA.
+    Module data lives in the module-level _PLATFORM_MODULES constant so it is
+    built exactly once per worker startup, not re-created on every request.
+    """
+    from django.conf import settings as _s
     return render(request, 'platform.html', {
-        'modules':      modules,
-        'calendly_url': calendly_url,
+        'modules':      _PLATFORM_MODULES,
+        'calendly_url': getattr(_s, 'CALENDLY_URL', ''),
         'site_url':     getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
     })
 
@@ -1547,17 +1553,16 @@ def governance_principles(request):
     114 governance principles rendered via client-side JavaScript.
     Language: professional English only.
     Internal principle-origin mapping: docs/governance-principles-surah-map.md (INTERNAL ONLY).
-    """
-    import json
-    from django.conf import settings as _s
-    from .esg_principles_data import PRINCIPLES, PRINCIPLE_CATEGORIES
 
-    principles_json = json.dumps(PRINCIPLES)
-    categories_json = json.dumps(PRINCIPLE_CATEGORIES)
+    JSON strings are pre-serialised at module load time (in esg_principles_data.py)
+    so this view does zero json.dumps() work on the request thread.
+    """
+    from django.conf import settings as _s
+    from .esg_principles_data import PRINCIPLES_JSON, CATEGORIES_JSON, PRINCIPLES
 
     return render(request, 'governance_principles.html', {
-        'principles_json': principles_json,
-        'categories_json': categories_json,
+        'principles_json':  PRINCIPLES_JSON,   # pre-baked — no per-request serialisation
+        'categories_json':  CATEGORIES_JSON,
         'principles_count': len(PRINCIPLES),
         'site_url':   getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
         'calendly_url': getattr(_s, 'CALENDLY_URL', ''),
