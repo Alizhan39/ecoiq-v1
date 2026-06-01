@@ -11,5 +11,27 @@ Public-facing terminology:
 Internal Maqasid mapping is in docs/ethical-intelligence-engine.md ONLY.
 """
 from .ethical_score import compute_ethical_intelligence
+from .capital_integrity import (
+    CapitalIntegrityInput,
+    CapitalIntegrityResult,
+    score_capital_integrity,
+    capital_integrity_feature_vector,
+)
+from .greenwashing_risk import (
+    GreenwashingInput,
+    GreenwashingAssessment,
+    assess_greenwashing_risk,
+    greenwashing_from_profile,
+)
 
-__all__ = ['compute_ethical_intelligence']
+__all__ = [
+    'compute_ethical_intelligence',
+    'CapitalIntegrityInput',
+    'CapitalIntegrityResult',
+    'score_capital_integrity',
+    'capital_integrity_feature_vector',
+    'GreenwashingInput',
+    'GreenwashingAssessment',
+    'assess_greenwashing_risk',
+    'greenwashing_from_profile',
+]

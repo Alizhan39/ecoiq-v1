@@ -1,0 +1,132 @@
+{% load i18n %}
+{#
+  Reusable EcoIQ Review CTA strip.
+  Include with: {% include 'partials/_review_cta.html' %}
+  Optional context: calendly_url (str)
+#}
+<section class="py-16 px-4 sm:px-6">
+  <div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono tracking-wider mb-4">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        ECOIQ ANALYTICAL REVIEW
+      </div>
+      <h2 class="text-2xl md:text-3xl font-bold text-white mb-3">
+        Ready to get a structured intelligence review?
+      </h2>
+      <p class="text-slate-400 text-base max-w-xl mx-auto leading-relaxed">
+        Submit a company, country, or project for scoring by the Mizan Engine —
+        or upload your sustainability report for a greenwashing risk assessment.
+      </p>
+    </div>
+
+    <!-- Three CTA cards -->
+    <div class="grid sm:grid-cols-3 gap-4">
+
+      <!-- Request EcoIQ Review -->
+      <a
+        href="{% url 'leads:request_review' %}"
+        class="group flex flex-col gap-3 p-6 rounded-2xl
+               bg-white/[.035] border border-white/[.08]
+               hover:bg-white/[.06] hover:border-emerald-500/30
+               transition-all duration-200"
+      >
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-slate-100 mb-1">Request EcoIQ Review</p>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Company assessment, country intelligence, project readiness, or finance fit review.
+          </p>
+        </div>
+        <span class="text-xs text-emerald-400 font-medium flex items-center gap-1 mt-auto">
+          Get started
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- Upload Sustainability Report -->
+      <a
+        href="{% url 'leads:request_review' %}?type=greenwashing_review"
+        class="group flex flex-col gap-3 p-6 rounded-2xl
+               bg-white/[.035] border border-white/[.08]
+               hover:bg-white/[.06] hover:border-emerald-500/30
+               transition-all duration-200"
+      >
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-slate-100 mb-1">Upload Sustainability Report</p>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Upload a PDF sustainability or ESG report for a greenwashing risk assessment.
+          </p>
+        </div>
+        <span class="text-xs text-emerald-400 font-medium flex items-center gap-1 mt-auto">
+          Upload PDF
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- Book Investor Briefing -->
+      {% if calendly_url %}
+      <a
+        href="{{ calendly_url }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="group flex flex-col gap-3 p-6 rounded-2xl
+               bg-emerald-500/10 border border-emerald-500/25
+               hover:bg-emerald-500/15 hover:border-emerald-500/40
+               transition-all duration-200"
+      >
+      {% else %}
+      <a
+        href="mailto:alizhan@ecoiq.uk?subject=Investor Briefing Request"
+        class="group flex flex-col gap-3 p-6 rounded-2xl
+               bg-emerald-500/10 border border-emerald-500/25
+               hover:bg-emerald-500/15 hover:border-emerald-500/40
+               transition-all duration-200"
+      >
+      {% endif %}
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/35 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500/25 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-slate-100 mb-1">Book Investor Briefing</p>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Schedule a 30-minute call with our analysts to discuss findings and recommendations.
+          </p>
+        </div>
+        <span class="text-xs text-emerald-400 font-medium flex items-center gap-1 mt-auto">
+          Schedule now
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </span>
+      </a>
+
+    </div>
+
+    <!-- Footnote -->
+    <p class="text-center text-slate-600 text-xs mt-8">
+      No payment required. EcoIQ assessments are analytical and indicative — not investment advice.
+    </p>
+
+  </div>
+</section>

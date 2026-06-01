@@ -1,3 +1,4 @@
+import os
 import random
 from django.db import models
 from django.utils import timezone
@@ -154,6 +155,90 @@ class ProfileClaim(models.Model):
             else:                     # pragma: no cover
                 self.ref = _generate_claim_ref()
         super().save(*args, **kwargs)
+
+
+# ── NewsletterSignup ──────────────────────────────────────────────────────────
+
+# ── ReviewRequest ─────────────────────────────────────────────────────────────
+
+REVIEW_REQUEST_TYPE_CHOICES = [
+    ('company_assessment',   'Company EcoIQ Assessment'),
+    ('country_intelligence', 'Country Transition Intelligence'),
+    ('investor_readiness',   'Investor Readiness Review'),
+    ('islamic_finance',      'Islamic & Ethical Finance Fit'),
+    ('project_readiness',    'Project Readiness Review'),
+    ('greenwashing_review',  'Greenwashing Risk Review'),
+]
+
+REVIEW_SECTOR_CHOICES = [
+    ('renewables',     'Renewables / Clean Energy'),
+    ('infrastructure', 'Infrastructure / Transport'),
+    ('oil_gas',        'Oil & Gas / Extractives'),
+    ('agriculture',    'Agriculture / Forestry'),
+    ('manufacturing',  'Manufacturing / Industry'),
+    ('finance',        'Financial Services / Banking'),
+    ('government',     'Government / Public Sector'),
+    ('development',    'Development Finance / NGO / Research'),
+    ('other',          'Other'),
+]
+
+REVIEW_STATUS_CHOICES = [
+    ('new',       'New'),
+    ('reviewing', 'Under Review'),
+    ('contacted', 'Contacted'),
+    ('complete',  'Complete'),
+    ('declined',  'Declined'),
+]
+
+
+class ReviewRequest(models.Model):
+    """
+    Submitted when an investor, company, or project owner requests
+    an EcoIQ analytical review.  Supports optional PDF upload.
+    """
+
+    # Contact
+    name         = models.CharField(max_length=200)
+    organisation = models.CharField(max_length=200)
+    email        = models.EmailField(db_index=True)
+    country      = models.CharField(max_length=100)
+
+    # Review specification
+    sector       = models.CharField(max_length=30, choices=REVIEW_SECTOR_CHOICES)
+    request_type = models.CharField(max_length=30, choices=REVIEW_REQUEST_TYPE_CHOICES)
+    message      = models.TextField(blank=True, help_text='Context, questions, or specific focus areas')
+
+    # Optional sustainability report upload
+    sustainability_report = models.FileField(
+        upload_to='review_reports/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text='PDF only · max 10 MB',
+    )
+
+    # Security
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    # CRM pipeline
+    status = models.CharField(max_length=20, choices=REVIEW_STATUS_CHOICES, default='new')
+    notes  = models.TextField(blank=True, help_text='Internal notes — not visible to the submitter')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering            = ['-created_at']
+        verbose_name        = 'Review Request'
+        verbose_name_plural = 'Review Requests'
+
+    def __str__(self):
+        return f'{self.name} — {self.organisation} ({self.get_request_type_display()})'
+
+    @property
+    def report_filename(self):
+        if self.sustainability_report:
+            return os.path.basename(self.sustainability_report.name)
+        return ''
 
 
 # ── NewsletterSignup ──────────────────────────────────────────────────────────

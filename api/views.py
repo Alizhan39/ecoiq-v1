@@ -576,3 +576,368 @@ def country_ethical_intelligence(request, slug):
             'AI-assisted profiles are included; treat aggregate as indicative.'
         ),
     })
+
+
+# ── Capital Integrity Score ───────────────────────────────────────────────────
+
+@api_view(['POST'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def capital_integrity_score(request):
+    """
+    POST /api/v1/capital-integrity/
+
+    Evaluate a financing instrument or transaction against the
+    EcoIQ Capital Integrity Score (CIS).
+
+    Returns: capital_integrity_score, label, dimension_scores,
+             red_flags, positive_indicators, investor_note,
+             islamic_finance_note, due_diligence_required,
+             recommended_next_actions, confidence, methodology.
+
+    Request body (JSON):
+    {
+        "name":                        "Green Bond 2026",        // optional
+        "instrument_type":             "green_bond",             // REQUIRED
+        "sector":                      "renewables",             // REQUIRED
+        "country":                     "Kazakhstan",             // optional
+        "use_of_proceeds_specificity": "specific",               // specific|general|vague|none
+        "proceeds_amount_usd":         500000000,                // optional float
+        "third_party_verified":        true,                     // bool
+        "reporting_commitment":        "annual",                 // annual|bi-annual|none
+        "community_consultation":      "standard",               // fpic_aligned|standard|minimal|none
+        "ownership_disclosed":         true,                     // bool
+        "procurement_framework":       "IFC",                    // IFC|EBRD|ADB|GBP|national|none
+        "emission_reduction_target":   true,                     // bool
+        "impact_measurement_plan":     true,                     // bool
+        "baseline_data_available":     true,                     // bool
+        "independent_verification_plan": true,                   // bool
+        "additionality_demonstrated":  false,                    // bool
+        "label_matches_project":       true,                     // bool
+        "sector_excluded":             false,                    // bool
+        "issuer_track_record":         "moderate",               // strong|moderate|weak|unknown
+        "gender_inclusion":            false,                    // bool
+        "local_employment_commitment": false,                    // bool
+        "existing_ecoiq_profile":      "company-slug"           // optional slug
+    }
+    """
+    body = request.data
+    if not body:
+        return Response(
+            {
+                'error': 'Request body required.',
+                'hint':  (
+                    'Send JSON with at minimum {"instrument_type": "green_bond", "sector": "renewables"} '
+                    'to receive a baseline Capital Integrity assessment.'
+                ),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    instrument_type = str(body.get('instrument_type', '')).strip()
+    sector          = str(body.get('sector', '')).strip()
+
+    if not instrument_type:
+        return Response(
+            {
+                'error': '"instrument_type" is required.',
+                'hint':  'Accepted values: green_bond, sustainability_linked_loan, transition_bond, sukuk, blended_finance, project_finance, other.',
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not sector:
+        return Response(
+            {'error': '"sector" is required. Provide a sector slug (e.g. "renewables", "energy", "oil_gas").'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        from ml.ethics.capital_integrity import CapitalIntegrityInput, score_capital_integrity
+        ci_input = CapitalIntegrityInput.from_dict(dict(body))
+        result   = score_capital_integrity(ci_input)
+    except (TypeError, ValueError) as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'instrument':  ci_input.name,
+        'instrument_type': ci_input.instrument_type,
+        'sector':      ci_input.sector,
+        'country':     ci_input.country,
+        **result.to_dict(),
+        '_meta': {
+            'engine':   'EcoIQ Capital Integrity Score v1',
+            'endpoint': request.build_absolute_uri(),
+            'note': (
+                'Capital Integrity Score is a model estimate based on declared instrument parameters. '
+                'Independent legal, financial, and environmental due diligence is required '
+                'before any capital commitment or responsible finance labelling decision.'
+            ),
+        },
+    })
+
+
+# ── Islamic & Ethical Finance Fit ─────────────────────────────────────────────
+
+@api_view(['POST'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def islamic_finance_fit(request):
+    """
+    POST /api/v1/finance/islamic-fit/
+
+    Assess whether a transition project may be structurally suitable for
+    Islamic finance instruments (sukuk, murabaha, musharakah), ethical
+    finance frameworks, or development-bank blended finance.
+
+    ⚠ This assessment is indicative only. It does not constitute a
+    religious ruling, Shariah determination, or compliance certification.
+    All Islamic finance suitability conclusions require review by a
+    qualified Shariah scholar or accredited Shariah advisory board.
+
+    Returns: finance_fit_score, label, dimension_scores,
+             suitable_instruments, sukuk_potential, blended_finance_potential,
+             required_evidence, structuring_notes, investor_note,
+             sharia_review_note, confidence_note, methodology.
+
+    Request body (JSON) — all fields optional except sector:
+    {
+        "name":                          "Solar Park Phase 2",
+        "sector":                        "renewables",            // REQUIRED
+        "country":                       "Kazakhstan",
+        "project_type":                  "renewable_energy",
+        "budget_usd":                    50000000,
+        "duration_years":                20,
+        "tangible_asset_linked":         true,
+        "asset_ownership_transferable":  true,
+        "asset_generates_income":        true,
+        "community_benefit":             "high",
+        "direct_jobs":                   400,
+        "local_procurement_pct":         60,
+        "additionality_demonstrated":    true,
+        "use_of_proceeds_specificity":   "specific",
+        "third_party_verified":          false,
+        "reporting_commitment":          "annual",
+        "ring_fenced_account":           false,
+        "sector_excluded":               false,
+        "sector_cautionary":             false,
+        "environmental_assessment":      true,
+        "pollution_mitigation_plan":     false,
+        "project_stage":                 "development",
+        "contractual_clarity":           "high",
+        "performance_guarantees":        false,
+        "profit_loss_sharing":           false,
+        "investor_equity_participation": false,
+        "fixed_return_only":             false,
+        "community_benefit_sharing":     false,
+        "governance_framework":          "IFC",
+        "ownership_disclosed":           true,
+        "independent_board_oversight":   false,
+        "shariah_advisory_engaged":      false,
+        "renewable_energy_share":        100,
+        "nature_positive":               false,
+        "climate_risk_disclosure":       true,
+        "biodiversity_plan":             false,
+        "emission_reduction_target":     true,
+        "impact_measurement_plan":       true,
+        "baseline_data_available":       false,
+        "independent_verification_plan": false
+    }
+    """
+    body = request.data
+    if not body:
+        return Response(
+            {
+                'error': 'Request body required.',
+                'hint':  (
+                    'Send JSON with at minimum {"sector": "renewables"} to receive '
+                    'a baseline Islamic & Ethical Finance Fit assessment.'
+                ),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    sector = str(body.get('sector', '')).strip()
+    if not sector:
+        return Response(
+            {
+                'error': '"sector" is required.',
+                'hint':  (
+                    'Accepted values: renewables, energy, infrastructure, transport, '
+                    'agriculture, water, mining, metallurgy, other — and excluded sectors '
+                    'such as tobacco, alcohol, gambling.'
+                ),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        from ml.finance.islamic_finance_fit import IslamicFinanceFitInput, assess_islamic_finance_fit
+        if_input  = IslamicFinanceFitInput.from_dict(dict(body))
+        if_result = assess_islamic_finance_fit(if_input)
+    except (TypeError, ValueError) as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'project':      if_input.name,
+        'sector':       if_input.sector,
+        'country':      if_input.country,
+        'project_type': if_input.project_type,
+        **if_result.to_dict(),
+        '_meta': {
+            'engine':   'EcoIQ Islamic & Ethical Finance Fit v1',
+            'endpoint': request.build_absolute_uri(),
+            'note': (
+                'This assessment is indicative only and based on declared project parameters. '
+                'It does not constitute a religious ruling, Shariah determination, or '
+                'certification of any kind. Formal Islamic finance suitability requires '
+                'review by a qualified Shariah scholar or accredited Shariah advisory board. '
+                'Not investment advice.'
+            ),
+        },
+    })
+
+
+# ── Project Readiness Score ───────────────────────────────────────────────────
+
+@api_view(['POST'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsPublicOrAPIKey])
+def project_readiness_score(request):
+    """
+    POST /api/projects/readiness/
+
+    Assess how ready a transition project is for investor, development bank,
+    or climate finance review across ten structured dimensions.
+
+    Returns:
+      project_readiness_score      float 0–100
+      readiness_label              investment-ready | advanced | developing | early-stage
+      dimension_scores             dict — all 10 raw scores
+      missing_documents            list — documents absent from the project file
+      main_blockers                list — highest-priority structural gaps
+      investor_note                str — investor-facing narrative
+      next_steps                   list — ordered, actionable preparation steps
+      recommended_finance_route    str — most appropriate financing pathway
+
+    Request body (JSON):
+    {
+        "project_name":                     "Solar Farm Kazakhstan",   // optional
+        "sector":                           "renewables",              // REQUIRED
+        "country":                          "Kazakhstan",              // optional
+        "project_type":                     "energy",                  // optional
+        "budget_usd":                       120000000,                 // optional float
+        "duration_years":                   20,                        // optional
+
+        // Problem clarity
+        "problem_statement":                "clear",                   // detailed|clear|partial|vague|none
+        "quantified_impact_target":         true,
+        "baseline_problem_data":            true,
+
+        // Emissions baseline
+        "emissions_baseline_documented":    true,
+        "baseline_independently_verified":  false,
+        "emissions_measurement_methodology": "ghg_protocol",          // iso_14064|ghg_protocol|sector_specific|internal|none
+
+        // Technical feasibility
+        "technology_readiness":             "proven",                  // operational|proven|pilot|prototype|concept
+        "feasibility_study":                "standard",                // bankable|standard|preliminary|none
+        "technical_advisor_engaged":        true,
+        "technology_local_availability":    true,
+
+        // CAPEX / OPEX
+        "capex_estimate_quality":           "order_of_magnitude",      // detailed|order_of_magnitude|preliminary|none
+        "opex_estimate_quality":            "preliminary",
+        "independent_cost_review":          false,
+        "contingency_provision":            true,
+
+        // Revenue model
+        "revenue_model":                    "contracted",              // contracted|market|grant|hybrid|none
+        "offtake_agreement":                true,
+        "subsidy_or_grant_confirmed":       false,
+        "revenue_projections_available":    true,
+
+        // Governance
+        "governance_framework":             "IFC",                     // IFC|EBRD|ADB|World Bank|EU Taxonomy|GBP|TCFD|national|none
+        "procurement_plan_documented":      true,
+        "ownership_structure_disclosed":    true,
+        "shareholder_agreement":            false,
+
+        // Public benefit
+        "community_benefit":                "medium",                  // high|medium|low|none
+        "direct_jobs":                      250,
+        "public_benefit_metrics_defined":   true,
+        "gender_inclusion_plan":            false,
+
+        // Risk mitigation
+        "risk_register_documented":         true,
+        "environmental_assessment":         true,
+        "social_risk_assessment":           false,
+        "insurance_plan":                   false,
+        "force_majeure_coverage":           false,
+
+        // Evidence
+        "evidence_type":                    "analyst-reviewed",        // verified|analyst-reviewed|ai-seeded|model-estimate
+        "key_documents_available":          ["feasibility_study", "eia", "financial_model"],
+        "legal_land_rights_confirmed":      true,
+        "permits_in_progress":              true,
+
+        // Finance structure
+        "finance_instrument":               "project_finance",         // green_bond|sukuk|project_finance|blended_finance|grant|equity|other
+        "financial_model_available":        true,
+        "legal_structure_defined":          false,
+        "co_financing_identified":          false,
+        "development_bank_engaged":         true
+    }
+    """
+    body = request.data
+    if not body:
+        return Response(
+            {
+                'error': 'Request body required.',
+                'hint': (
+                    'Send JSON with at minimum {"sector": "renewables"} to receive '
+                    'a baseline Project Readiness assessment. All other fields are optional '
+                    'and default conservatively.'
+                ),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    sector = str(body.get('sector', '')).strip()
+    if not sector:
+        return Response(
+            {
+                'error': '"sector" is required.',
+                'hint': (
+                    'Provide a sector slug, e.g. "renewables", "energy", "infrastructure", '
+                    '"transport", "water", "agriculture", "forestry", "waste", "other".'
+                ),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        from ml.projects.project_readiness import ProjectReadinessInput, assess_project_readiness
+        pr_input  = ProjectReadinessInput.from_dict(dict(body))
+        pr_result = assess_project_readiness(pr_input)
+    except (TypeError, ValueError) as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'project':       pr_input.project_name,
+        'sector':        pr_input.sector,
+        'country':       pr_input.country,
+        'project_type':  pr_input.project_type,
+        'budget_usd':    pr_input.budget_usd,
+        **pr_result.to_dict(),
+        '_meta': {
+            'engine':   'EcoIQ Project Readiness Score v1',
+            'endpoint': request.build_absolute_uri(),
+            'note': (
+                'Project Readiness Score is based on declared project parameters. '
+                'It does not constitute investment advice, legal opinion, or a '
+                'guarantee of finance eligibility. Independent technical, legal, '
+                'and financial due diligence is required before any capital commitment.'
+            ),
+        },
+    })

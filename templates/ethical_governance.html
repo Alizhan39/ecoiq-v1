@@ -1,0 +1,601 @@
+{% load static i18n %}
+{% get_current_language as CURRENT_LANG %}
+<!DOCTYPE html>
+<html lang="{{ CURRENT_LANG }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EcoIQ Ethical Governance Intelligence Framework — ten measurable governance principles covering justice, oversight, protection, accountability and long-term stewardship. Built for responsible investors, development banks and sovereign funds." />
+  <meta property="og:title"       content="Ethical Governance Intelligence | EcoIQ" />
+  <meta property="og:description" content="EcoIQ translates timeless principles of justice, stewardship, accountability and protection from harm into measurable governance signals for responsible investors." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="{{ site_url }}/ethical-governance/" />
+  <meta property="og:site_name"   content="EcoIQ" />
+  <meta name="twitter:card"       content="summary_large_image" />
+  <title>Ethical Governance Intelligence | EcoIQ</title>
+
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'], mono: ['"SF Mono"','"Fira Code"','"JetBrains Mono"','"Courier New"',monospace] } } }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:  #06080e;
+      --bg2: #0d1117;
+      --bg3: #0a0f16;
+      --acc: #00e89a;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    body { background: var(--bg); color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #1c2333; border-radius: 99px; }
+
+    .glass { background: rgba(255,255,255,.032); border: 1px solid rgba(255,255,255,.07); backdrop-filter: blur(14px); }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(0,232,154,.016) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,232,154,.016) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(0,232,154,.07); border: 1px solid rgba(0,232,154,.2);
+      color: var(--acc); font-size: .68rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: .28rem .75rem; border-radius: 20px;
+    }
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .55s ease, transform .55s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(90px); }
+
+    /* Module card */
+    .module-card {
+      background: var(--bg3);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.07);
+      padding: 1.75rem;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .module-card:hover {
+      border-color: rgba(255,255,255,.15);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(0,0,0,.5);
+    }
+
+    /* Signal box */
+    .signal-box {
+      background: rgba(255,255,255,.03);
+      border-left: 3px solid;
+      border-radius: 0 8px 8px 0;
+      padding: .75rem 1rem;
+      font-size: .78rem;
+      line-height: 1.6;
+      color: #94a3b8;
+      margin-top: auto;
+    }
+
+    /* Metrics pills */
+    .metric-pill {
+      display: inline-flex;
+      font-size: .66rem;
+      padding: .18rem .55rem;
+      border-radius: 4px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Extended card */
+    .ext-card {
+      background: var(--bg2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 10px;
+      padding: .85rem 1rem;
+      transition: border-color .15s, transform .15s;
+    }
+    .ext-card:hover {
+      border-color: rgba(0,232,154,.2);
+      transform: translateY(-1px);
+    }
+
+    /* Accordion */
+    .accordion-toggle { cursor: pointer; list-style: none; }
+    .accordion-toggle::-webkit-details-marker { display: none; }
+    .accordion-body { overflow: hidden; }
+
+    @media (max-width: 640px) { .hide-sm { display: none !important; } }
+  </style>
+</head>
+
+<body>
+
+<!-- ════════════════════ NAV ════════════════════ -->
+<header style="position:sticky;top:0;z-index:100;background:rgba(6,8,14,.93);border-bottom:1px solid rgba(255,255,255,.05);backdrop-filter:blur(18px);">
+  <div style="max-width:1120px;margin:0 auto;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;">
+
+    <a href="/" style="display:flex;align-items:center;gap:.55rem;text-decoration:none;flex-shrink:0;" aria-label="EcoIQ Home">
+      <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="9" fill="#070b0f"/>
+        <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2" stroke-linejoin="round"/>
+        <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.4" stroke-linejoin="round"/>
+        <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+        <circle cx="20" cy="4"  r="1.2" fill="#00e89a" opacity=".45"/>
+        <circle cx="6.1" cy="28" r="1.2" fill="#00e89a" opacity=".45"/>
+        <circle cx="33.9" cy="28" r="1.2" fill="#00e89a" opacity=".45"/>
+      </svg>
+      <span style="font-weight:800;color:#fff;font-size:.95rem;letter-spacing:-.02em;">Eco<span style="color:var(--acc);">IQ</span></span>
+    </a>
+
+    <nav style="display:flex;align-items:center;gap:1.6rem;" class="hide-sm">
+      <a href="/companies/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Rankings</a>
+      <a href="/countries/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Countries</a>
+      <a href="/platform/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Platform</a>
+      <a href="/ethical-governance/" style="font-size:.84rem;color:#00e89a;text-decoration:none;font-weight:600;">Framework</a>
+      <a href="/governance-principles/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Compendium</a>
+      <a href="/methodology/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Methodology</a>
+    </nav>
+
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <a href="{% url 'leads:request_review' %}" style="background:var(--acc);color:#000;font-weight:700;font-size:.83rem;padding:.45rem 1rem;border-radius:7px;text-decoration:none;white-space:nowrap;">
+        Request Assessment →
+      </a>
+    </div>
+  </div>
+</header>
+
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<section class="grid-bg" style="position:relative;overflow:hidden;padding:5rem 1.5rem 4rem;">
+  <div class="orb" style="width:700px;height:700px;background:rgba(0,232,154,1);opacity:.04;top:-200px;right:-150px;"></div>
+  <div class="orb" style="width:400px;height:400px;background:rgba(129,140,248,1);opacity:.04;bottom:-100px;left:-80px;"></div>
+
+  <div style="max-width:860px;margin:0 auto;text-align:center;position:relative;" class="reveal">
+    <div class="chip" style="margin-bottom:1.2rem;">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s ease-in-out infinite;display:inline-block;"></span>
+      Ethical Governance Intelligence · EcoIQ Framework
+    </div>
+
+    <h1 style="font-size:clamp(2rem,4.5vw,3.3rem);font-weight:900;line-height:1.07;letter-spacing:-.03em;color:#fff;margin-bottom:1.1rem;">
+      Ethical Governance Intelligence<br>
+      <span style="background:linear-gradient(105deg,#00e89a 0%,#34d399 45%,#f4a261 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Built on Timeless Principles</span>
+    </h1>
+
+    <p style="font-size:1.05rem;color:#94a3b8;line-height:1.8;max-width:660px;margin:0 auto 1.6rem;">
+      EcoIQ translates timeless principles of justice, stewardship, accountability and protection
+      into measurable governance, sustainability and investment signals —
+      helping investors identify companies that protect people, nature and long-term value.
+    </p>
+
+    <!-- Formula strip -->
+    <div style="display:inline-flex;align-items:center;gap:.75rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.8rem 1.4rem;margin-bottom:2rem;font-family:'SF Mono',monospace;font-size:.82rem;">
+      <span style="color:#e2e8f0;font-weight:600;">EcoIQ</span>
+      <span style="color:#334155;">=</span>
+      <span style="color:#00e89a;">Evidence</span>
+      <span style="color:#334155;">×</span>
+      <span style="color:#f4a261;">Ethics</span>
+      <span style="color:#334155;">×</span>
+      <span style="color:#818cf8;">Accountability</span>
+    </div>
+
+    <p style="font-size:.84rem;color:#64748b;line-height:1.7;max-width:600px;margin:0 auto 2.5rem;">
+      This framework connects each governance principle to a practical investment signal,
+      measurable ESG question, risk indicator and investor action.
+      It is not decorative — it is a governance logic for capital allocation, justice,
+      accountability and protection from harm.
+    </p>
+
+    <!-- CTAs -->
+    <div style="display:flex;gap:.85rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{% url 'leads:request_review' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.92rem;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;box-shadow:0 0 22px rgba(0,232,154,.25);">
+        Request Ethical Governance Assessment
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:#58a6ff;font-weight:600;font-size:.92rem;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;">
+        Generate Ethical Impact Score
+      </a>
+      <a href="/platform/#project-readiness" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.25);color:#f4a261;font-weight:600;font-size:.92rem;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;">
+        View Transition Roadmap
+      </a>
+    </div>
+
+    <!-- Anchor strip -->
+    <div style="display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;margin-top:2.5rem;">
+      {% for m in modules %}
+      <a href="#module-{{ m.number }}" style="font-size:.7rem;color:#334155;text-decoration:none;border:1px solid rgba(255,255,255,.07);padding:.25rem .65rem;border-radius:4px;font-family:monospace;transition:all .15s;" onmouseover="this.style.color='var(--acc)';this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.color='#334155';this.style.borderColor='rgba(255,255,255,.07)'">
+        {{ m.number }}. {{ m.title }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════ FRAMEWORK INTRO ════════════════════ -->
+<div style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.012);padding:1.2rem 1.5rem;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap;text-align:center;">
+    <div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:.8px;text-transform:uppercase;">10 Primary Modules</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Justice · Oversight · Protection · Impact · Provision · Wisdom · Sensitivity · Trust · Visibility · Accounting</div>
+    </div>
+    <div style="width:1px;height:32px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div>
+      <div style="font-size:.72rem;font-weight:700;color:#f4a261;letter-spacing:.8px;text-transform:uppercase;">44 Extended Principles</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Comprehensive ethical governance intelligence map</div>
+    </div>
+    <div style="width:1px;height:32px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div>
+      <div style="font-size:.72rem;font-weight:700;color:#818cf8;letter-spacing:.8px;text-transform:uppercase;">Evidence-Based</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Every principle maps to measurable ESG metrics</div>
+    </div>
+    <div style="width:1px;height:32px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div>
+      <div style="font-size:.72rem;font-weight:700;color:#22d3ee;letter-spacing:.8px;text-transform:uppercase;">Investor Grade</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Built for capital allocation, not compliance theatre</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════ 10 PRIMARY MODULES ════════════════════ -->
+<section style="padding:5rem 1.5rem;">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:monospace;margin-bottom:2.5rem;display:flex;align-items:center;gap:12px;">
+      Primary Governance Modules
+      <span style="flex:1;height:1px;background:rgba(255,255,255,.07);"></span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem;">
+
+      {% for m in modules %}
+      <div id="module-{{ m.number }}" class="module-card reveal" style="--card-color:{{ m.color }};border-color:rgba(255,255,255,.07);" onmouseover="this.style.borderColor='{{ m.border }}'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:flex-start;gap:.85rem;">
+          <div style="width:46px;height:46px;border-radius:11px;background:{{ m.bg }};border:1px solid {{ m.border }};display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">{{ m.icon }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.65rem;color:#334155;font-family:monospace;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.2rem;">Module {{ m.number }}</div>
+            <div style="font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.15;">{{ m.title }}</div>
+            <div style="font-size:.75rem;color:#475569;margin-top:.15rem;">{{ m.subtitle }}</div>
+          </div>
+        </div>
+
+        <!-- Principle -->
+        <div>
+          <div style="font-size:.65rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.3rem;">Principle</div>
+          <p style="font-size:.82rem;color:#94a3b8;line-height:1.65;margin:0;">{{ m.principle }}</p>
+        </div>
+
+        <!-- Question -->
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:.7rem .9rem;">
+          <div style="font-size:.62rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.25rem;">Key Question</div>
+          <p style="font-size:.82rem;color:#e2e8f0;line-height:1.55;margin:0;font-style:italic;">{{ m.question }}</p>
+        </div>
+
+        <!-- Metrics -->
+        <div>
+          <div style="font-size:.62rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem;">Metrics</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.3rem;">
+            {% for metric in m.metrics %}
+            <span class="metric-pill" style="background:{{ m.bg }};border:1px solid {{ m.border }};color:{{ m.color }};">{{ metric }}</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Investor Signal -->
+        <div class="signal-box" style="border-color:{{ m.color }};">
+          <div style="font-size:.6rem;font-weight:700;color:{{ m.color }};text-transform:uppercase;letter-spacing:1px;margin-bottom:.3rem;">↗ Investor Signal</div>
+          {{ m.signal }}
+        </div>
+
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════ FRAMEWORK LOGIC STRIP ════════════════════ -->
+<div style="background:rgba(0,232,154,.04);border-top:1px solid rgba(0,232,154,.1);border-bottom:1px solid rgba(0,232,154,.1);padding:2.5rem 1.5rem;">
+  <div style="max-width:900px;margin:0 auto;text-align:center;">
+    <div class="chip" style="margin-bottom:1rem;">Governance Logic</div>
+    <h2 style="font-size:clamp(1.3rem,2.5vw,1.8rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem;">
+      A framework for capital allocation, not for compliance decoration.
+    </h2>
+    <p style="color:#64748b;font-size:.9rem;line-height:1.8;max-width:640px;margin:0 auto;">
+      Each of the ten modules translates a governance principle into measurable ESG questions,
+      investor signals and concrete risk indicators. The result is a structured framework
+      for screening, scoring and ranking companies — based on evidence, not narrative.
+      It aligns with IFC, EBRD, GRI, TCFD and responsible capital frameworks.
+    </p>
+    <div style="display:flex;gap:.65rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem;">
+      <span style="font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.3rem .75rem;border-radius:5px;">IFC Performance Standards</span>
+      <span style="font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.3rem .75rem;border-radius:5px;">EBRD Environmental Policy</span>
+      <span style="font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.3rem .75rem;border-radius:5px;">GRI Standards</span>
+      <span style="font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.3rem .75rem;border-radius:5px;">TCFD Recommendations</span>
+      <span style="font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.3rem .75rem;border-radius:5px;">UN SDG Alignment</span>
+      <span style="font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.3rem .75rem;border-radius:5px;">Green Bond Principles</span>
+      <span style="font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.3rem .75rem;border-radius:5px;">Responsible Finance</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════ EXTENDED PRINCIPLES ════════════════════ -->
+<section style="padding:5rem 1.5rem;background:rgba(255,255,255,.01);">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:monospace;margin-bottom:.75rem;display:flex;align-items:center;gap:12px;">
+      Extended Ethical Governance Principles
+      <span style="flex:1;height:1px;background:rgba(255,255,255,.07);"></span>
+    </div>
+
+    <div style="margin-bottom:2rem;" class="reveal">
+      <div class="chip" style="margin-bottom:.9rem;">44 Extended Principles</div>
+      <h2 style="font-size:clamp(1.3rem,2.5vw,1.8rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.65rem;">
+        Comprehensive Ethical Intelligence Map
+      </h2>
+      <p style="color:#64748b;font-size:.88rem;max-width:560px;line-height:1.75;margin:0;">
+        The full framework extends across 44 governance principles — from universal benefit
+        and targeted community care to intergenerational justice, system stability,
+        and patient long-term transformation.
+      </p>
+    </div>
+
+    <details style="background:var(--bg2);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;">
+      <summary class="accordion-toggle" style="padding:1.1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;list-style:none;border-bottom:1px solid rgba(255,255,255,.05);" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          <span style="font-size:.82rem;font-weight:700;color:#e2e8f0;">View all 44 extended governance principles</span>
+          <span style="font-size:.68rem;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);color:var(--acc);padding:.15rem .55rem;border-radius:4px;font-weight:700;">44 principles</span>
+        </div>
+        <svg id="ext-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .25s;flex-shrink:0;">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </summary>
+
+      <div class="accordion-body" style="padding:1.5rem 1.4rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.65rem;">
+          {% for icon, title, desc in extended %}
+          <div class="ext-card reveal">
+            <div style="display:flex;align-items:flex-start;gap:.6rem;">
+              <span style="font-size:1.1rem;flex-shrink:0;line-height:1.3;">{{ icon }}</span>
+              <div>
+                <div style="font-size:.8rem;font-weight:700;color:#e2e8f0;margin-bottom:.2rem;line-height:1.3;">{{ title }}</div>
+                <div style="font-size:.72rem;color:#475569;line-height:1.55;">{{ desc }}</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,.05);text-align:center;">
+          <p style="font-size:.78rem;color:#334155;line-height:1.7;">
+            Each extended principle maps to specific EcoIQ metrics, risk signals and investor actions.
+            Contact us to receive the full framework technical specification.
+          </p>
+          <a href="{% url 'contact' %}" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--acc);font-weight:600;text-decoration:none;margin-top:.6rem;">
+            Request full framework spec →
+          </a>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════ HOW IT CONNECTS ════════════════════ -->
+<section style="padding:4.5rem 1.5rem;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px;">
+      How It Connects to EcoIQ Scoring
+      <span style="flex:1;height:1px;background:rgba(255,255,255,.07);"></span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;" class="reveal">
+
+      <div style="background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.4rem;">
+        <div style="font-size:1.2rem;margin-bottom:.7rem;">🏭</div>
+        <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;margin-bottom:.4rem;">Company Assessment</div>
+        <div style="font-size:.76rem;color:#475569;line-height:1.65;">
+          The 10 modules map directly to EcoIQ's 6-pillar company scoring framework.
+          Justice → Public Benefit. Protection → Environmental Stewardship.
+          Oversight → Transparent Governance.
+        </div>
+        <a href="/companies/" style="font-size:.74rem;color:var(--acc);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;margin-top:.75rem;">
+          Browse company rankings →
+        </a>
+      </div>
+
+      <div style="background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.4rem;">
+        <div style="font-size:1.2rem;margin-bottom:.7rem;">📐</div>
+        <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;margin-bottom:.4rem;">Project Readiness Review</div>
+        <div style="font-size:.76rem;color:#475569;line-height:1.65;">
+          Wisdom, Provision and Protection map to project readiness dimensions:
+          capital allocation judgment, sustainable livelihood creation and
+          harm prevention in project design.
+        </div>
+        <a href="/request-access/review/?type=project_readiness" style="font-size:.74rem;color:var(--acc);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;margin-top:.75rem;">
+          Request project review →
+        </a>
+      </div>
+
+      <div style="background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.4rem;">
+        <div style="font-size:1.2rem;margin-bottom:.7rem;">⚖️</div>
+        <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;margin-bottom:.4rem;">Ethical Finance Fit</div>
+        <div style="font-size:.76rem;color:#475569;line-height:1.65;">
+          Trust, Accounting and Justice underpin the Ethical Finance Fit module —
+          assessing fiduciary responsibility, full transparency and fair
+          value distribution relative to responsible finance standards.
+        </div>
+        <a href="{% url 'leads:request_review' %}" style="font-size:.74rem;color:var(--acc);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;margin-top:.75rem;">
+          Request ethical finance review →
+        </a>
+      </div>
+
+      <div style="background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.4rem;">
+        <div style="font-size:1.2rem;margin-bottom:.7rem;">🌍</div>
+        <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;margin-bottom:.4rem;">Country Intelligence</div>
+        <div style="font-size:.76rem;color:#475569;line-height:1.65;">
+          Oversight, Visibility and Sensitivity map to national-level governance quality,
+          regulatory transparency and the protection of vulnerable communities
+          in industrial transition assessment.
+        </div>
+        <a href="/countries/" style="font-size:.74rem;color:var(--acc);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;margin-top:.75rem;">
+          View country intelligence →
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════ CTA ════════════════════ -->
+<section style="padding:5rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden;">
+  <div class="orb" style="width:500px;height:500px;background:rgba(0,232,154,1);opacity:.04;top:-150px;left:50%;transform:translateX(-50%);"></div>
+
+  <div style="max-width:780px;margin:0 auto;text-align:center;position:relative;" class="reveal">
+    <div class="chip" style="margin-bottom:1rem;">Apply the Framework</div>
+    <h2 style="font-size:clamp(1.4rem,3vw,2.1rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.8rem;">
+      Ready to apply this governance framework?
+    </h2>
+    <p style="color:#64748b;font-size:.92rem;max-width:500px;margin:0 auto 2.5rem;line-height:1.75;">
+      Request an ethical governance assessment for your company, portfolio or project.
+      Our analysts apply the full 10-module framework and deliver a structured intelligence brief.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:2rem;">
+
+      <a href="{% url 'leads:request_review' %}" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.22);border-radius:12px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,232,154,.13)'" onmouseout="this.style.background='rgba(0,232,154,.08)'">
+        <div style="font-size:1.2rem;">📋</div>
+        <div>
+          <div style="font-size:.86rem;font-weight:700;color:#e2e8f0;margin-bottom:.2rem;">Request Ethical Governance Assessment</div>
+          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Company, country or project reviewed against all 10 modules.</div>
+        </div>
+        <span style="font-size:.74rem;color:var(--acc);font-weight:600;">Get started →</span>
+      </a>
+
+      <a href="/companies/" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.18);border-radius:12px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(88,166,255,.12)'" onmouseout="this.style.background='rgba(88,166,255,.07)'">
+        <div style="font-size:1.2rem;">📊</div>
+        <div>
+          <div style="font-size:.86rem;font-weight:700;color:#e2e8f0;margin-bottom:.2rem;">Generate Ethical Impact Score</div>
+          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Browse 400+ companies scored using EcoIQ's ethical framework.</div>
+        </div>
+        <span style="font-size:.74rem;color:#58a6ff;font-weight:600;">Browse rankings →</span>
+      </a>
+
+      <a href="/platform/#project-readiness" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18);border-radius:12px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(244,162,97,.12)'" onmouseout="this.style.background='rgba(244,162,97,.07)'">
+        <div style="font-size:1.2rem;">🗺️</div>
+        <div>
+          <div style="font-size:.86rem;font-weight:700;color:#e2e8f0;margin-bottom:.2rem;">View Transition Roadmap</div>
+          <div style="font-size:.74rem;color:#475569;line-height:1.55;">See how EcoIQ's Project Readiness module guides transition finance.</div>
+        </div>
+        <span style="font-size:.74rem;color:#f4a261;font-weight:600;">Explore module →</span>
+      </a>
+
+    </div>
+
+    <p style="font-size:.72rem;color:#1e293b;">
+      No payment required. Outputs are analytical and indicative — not investment advice.
+    </p>
+  </div>
+</section>
+
+
+<!-- ════════════════════ DISCLAIMER ════════════════════ -->
+<section style="padding:2rem 1.5rem;background:#070b0f;border-top:1px solid rgba(255,255,255,.04);">
+  <div style="max-width:900px;margin:0 auto;">
+    <div style="font-size:.65rem;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:.6rem;font-family:monospace;">Analytical Note</div>
+    <p style="font-size:.75rem;color:#1e293b;line-height:1.75;">
+      The EcoIQ Ethical Governance Intelligence Framework is an analytical tool. All outputs — including governance assessments, ethical compatibility scores, company rankings and project readiness reviews — are AI-assisted and indicative. They are derived from publicly available evidence and structured rule-based models. They do not constitute investment advice, financial advice, legal advice, or any regulatory determination. Qualified professional review is required before use in any investment or financing decision.
+    </p>
+  </div>
+</section>
+
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer style="border-top:1px solid rgba(255,255,255,.05);padding:2.5rem 1.5rem 2rem;">
+  <div style="max-width:1120px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;margin-bottom:2rem;" class="hide-sm">
+
+      <div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;">
+          <svg width="24" height="24" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <rect width="40" height="40" rx="9" fill="#070b0f"/>
+            <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2.2" stroke-linejoin="round"/>
+            <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+          </svg>
+          <span style="font-weight:800;color:#fff;font-size:.88rem;letter-spacing:-.02em;">Eco<span style="color:var(--acc);">IQ</span></span>
+        </div>
+        <p style="font-size:.78rem;color:#334155;line-height:1.65;">
+          Ethical climate intelligence platform. Justice, accountability and evidence-based
+          governance signals for responsible capital and development finance.
+        </p>
+      </div>
+
+      <div>
+        <div style="font-size:.68rem;color:#334155;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:.7rem;">Platform</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <a href="/platform/" style="font-size:.8rem;color:#475569;text-decoration:none;">Intelligence Modules</a>
+          <a href="/ethical-governance/" style="font-size:.8rem;color:#475569;text-decoration:none;">Ethical Governance Framework</a>
+          <a href="/governance-principles/" style="font-size:.8rem;color:#475569;text-decoration:none;">Capital Ethics Compendium</a>
+          <a href="/companies/" style="font-size:.8rem;color:#475569;text-decoration:none;">Company Rankings</a>
+          <a href="/countries/" style="font-size:.8rem;color:#475569;text-decoration:none;">Country Intelligence</a>
+          <a href="{% url 'leads:request_review' %}" style="font-size:.8rem;color:#475569;text-decoration:none;">Request EcoIQ Review</a>
+          <a href="/methodology/" style="font-size:.8rem;color:#475569;text-decoration:none;">Methodology</a>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:.68rem;color:#334155;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:.7rem;">Contact</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <a href="mailto:alizhan@ecoiq.uk" style="font-size:.8rem;color:#475569;text-decoration:none;">alizhan@ecoiq.uk</a>
+          <a href="{% url 'contact' %}" style="font-size:.8rem;color:#475569;text-decoration:none;">Contact form</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="border-top:1px solid rgba(255,255,255,.04);padding-top:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+      <span style="font-size:.72rem;color:#1e293b;">© {% now "Y" %} EcoIQ. All rights reserved.</span>
+      <span style="font-size:.72rem;color:#1e293b;">Analytical and indicative. Not investment advice.</span>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+(function(){
+  // Reveal on scroll
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.07 });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  // Accordion chevron rotation
+  var details = document.querySelector('details');
+  if(details){
+    details.addEventListener('toggle', function(){
+      var chevron = document.getElementById('ext-chevron');
+      if(chevron) chevron.style.transform = details.open ? 'rotate(180deg)' : 'none';
+    });
+  }
+}());
+</script>
+
+</body>
+</html>

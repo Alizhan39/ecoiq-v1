@@ -17,6 +17,11 @@ from collections import Counter
 from dataclasses import dataclass, field, asdict
 from typing import Any, Optional
 
+from ml.ethics.greenwashing_risk import (
+    GreenwashingInput, assess_greenwashing_risk,
+    _POLLUTION_TO_FF,
+)
+
 
 # ── Dimension weights (must sum to 1.0) ───────────────────────────────────────
 DIMENSION_WEIGHTS: dict[str, float] = {
@@ -107,6 +112,12 @@ class MizanResult:
     data_source: str   # 'company_profile' | 'country_aggregate' | 'project_model'
     confidence:  str   # 'verified' | 'analyst-reviewed' | 'ai-seeded' | 'model-estimate'
     methodology: str   = field(default='EcoIQ Mizan Engine v1 — rule-based; ML integration pending')
+
+    # Greenwashing risk assessment (included automatically for company + project scores)
+    greenwashing_risk: dict = field(default_factory=dict)
+
+    # Islamic & Ethical Finance Fit (included automatically for project scores)
+    islamic_finance_fit: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -381,6 +392,31 @@ def score_company(profile: Any) -> MizanResult:
     if confidence == 'ai-seeded':
         flags.append('AI-assisted profile — independent verification required')
 
+    # ── Greenwashing risk assessment ──────────────────────────────────────────
+    is_verified = getattr(profile, 'is_verified', False)
+
+    gw_inp = GreenwashingInput(
+        climate_claims_strength     = round(_clamp(energy_tr * 0.55 + _clamp(profile.future_readiness_score) * 0.45), 2),
+        verified_emissions_data     = round(90.0 if is_verified else _clamp(_clamp(profile.audit_quality_score) * 0.35), 2),
+        third_party_assurance       = round(85.0 if is_verified else _clamp(_clamp(profile.audit_quality_score) * 0.30), 2),
+        transition_capex_disclosure = round(_clamp(energy_tr * 0.55 + _clamp(profile.infrastructure_upgrade_score) * 0.45), 2),
+        fossil_fuel_exposure        = round(_clamp(_POLLUTION_TO_FF.get(pollution, 35.0) * (1.0 - energy_tr / 250.0)), 2),
+        target_quality              = round(_clamp(profile.future_readiness_score), 2),
+        evidence_confidence         = round(92.0 if is_verified else (55.0 if str(getattr(profile, 'status', 'public')) == 'public' else 35.0), 2),
+        controversy_flags           = (3 if controversy >= 80 else 2 if controversy >= 60 else 1 if controversy >= 40 else 0),
+        ownership_transparency      = round(_clamp((_clamp(profile.transparency_anti_corruption_score) + _clamp(profile.procurement_transparency_score)) / 2.0), 2),
+        entity_type                 = 'company',
+    )
+    gw_result = assess_greenwashing_risk(gw_inp)
+
+    # Surface greenwashing flags into the main risk_flags list
+    if gw_result.risk_level in ('high', 'severe'):
+        flags.append(
+            f'Greenwashing risk indicators: {gw_result.risk_level} '
+            f'(score {gw_result.greenwashing_risk_score:.0f}/100, public-data based) — '
+            'independent verification of climate claims required'
+        )
+
     return MizanResult(
         public_benefit_score               = round(pb,    2),
         harm_reduction_score               = round(hr,    2),
@@ -397,6 +433,7 @@ def score_company(profile: Any) -> MizanResult:
         recommended_next_actions           = _recommended_actions(pb, hr, jd, ta, st, ec),
         data_source                        = 'company_profile',
         confidence                         = confidence,
+        greenwashing_risk                  = gw_result.to_dict(),
     )
 
 
@@ -452,6 +489,36 @@ def score_country(profiles: list[Any]) -> MizanResult:
         'ai-seeded'
     )
 
+    # ── Country-level greenwashing aggregate ─────────────────────────────────
+    gw_scores = [
+        r.greenwashing_risk.get('greenwashing_risk_score', 0.0)
+        for r in results
+        if r.greenwashing_risk
+    ]
+    gw_levels = [
+        r.greenwashing_risk.get('risk_level', 'low')
+        for r in results
+        if r.greenwashing_risk
+    ]
+    avg_gw_score = round(sum(gw_scores) / len(gw_scores), 2) if gw_scores else 0.0
+    gw_level_dist = dict(Counter(gw_levels).most_common())
+    dominant_gw_level = gw_levels[0] if gw_levels else 'low'  # already ordered by most_common
+    if gw_level_dist:
+        dominant_gw_level = max(gw_level_dist, key=gw_level_dist.get)  # type: ignore[arg-type]
+    high_risk_n  = sum(1 for lvl in gw_levels if lvl in ('high', 'severe'))
+    country_gw = {
+        'greenwashing_risk_score':    avg_gw_score,
+        'risk_level':                 dominant_gw_level,
+        'high_or_severe_count':       high_risk_n,
+        'high_or_severe_pct':         round(high_risk_n / len(results) * 100, 1) if results else 0.0,
+        'risk_level_distribution':    gw_level_dist,
+        'confidence_note':            (
+            'Country greenwashing risk is aggregated from individual company assessments '
+            'based on public data only. It reflects the weighted average of company-level '
+            'indicators and should be treated as indicative, not conclusive.'
+        ),
+    }
+
     return MizanResult(
         public_benefit_score               = round(pb,    2),
         harm_reduction_score               = round(hr,    2),
@@ -468,4 +535,5 @@ def score_country(profiles: list[Any]) -> MizanResult:
         recommended_next_actions           = _recommended_actions(pb, hr, jd, ta, st, ec),
         data_source                        = 'country_aggregate',
         confidence                         = confidence,
+        greenwashing_risk                  = country_gw,
     )

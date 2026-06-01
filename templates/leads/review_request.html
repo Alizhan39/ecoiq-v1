@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request EcoIQ Review — Ethical Intelligence Platform</title>
+  <meta name="description" content="Request an EcoIQ analytical review — company assessment, greenwashing risk, investor readiness, Islamic finance fit, or project readiness scoring.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            emerald: { 400: '#34d399', 500: '#10b981', 600: '#059669' },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { background: #080c0e; }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(16,185,129,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,185,129,.04) 1px, transparent 1px);
+      background-size: 64px 64px;
+    }
+
+    .glass {
+      background: rgba(255,255,255,.035);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .glass-strong {
+      background: rgba(255,255,255,.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .glow-emerald { box-shadow: 0 0 60px rgba(16,185,129,.10); }
+
+    input:focus, textarea:focus, select:focus {
+      box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+    }
+
+    .field-error { color: #f87171; font-size: .75rem; margin-top: .25rem; }
+
+    /* Request type cards */
+    .rt-card input[type="radio"] { display: none; }
+    .rt-card label {
+      display: block;
+      padding: .75rem 1rem;
+      border-radius: .75rem;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .rt-card input[type="radio"]:checked + label {
+      border-color: rgba(16,185,129,.5);
+      background: rgba(16,185,129,.08);
+      box-shadow: 0 0 0 1px rgba(16,185,129,.3);
+    }
+    .rt-card label:hover {
+      border-color: rgba(16,185,129,.3);
+      background: rgba(16,185,129,.04);
+    }
+
+    /* File drop zone */
+    #drop-zone {
+      border: 1.5px dashed rgba(255,255,255,.15);
+      border-radius: .75rem;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: all .15s ease;
+      cursor: pointer;
+    }
+    #drop-zone.drag-over {
+      border-color: rgba(16,185,129,.5);
+      background: rgba(16,185,129,.05);
+    }
+    #drop-zone.has-file {
+      border-color: rgba(16,185,129,.4);
+      background: rgba(16,185,129,.06);
+    }
+
+    /* Submit spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin .7s linear infinite; display: none; }
+    .btn-loading .spinner { display: inline-block; }
+    .btn-loading .btn-label { display: none; }
+
+    /* CTA button variants */
+    .cta-primary {
+      display: flex; align-items: center; gap: .5rem; justify-content: center;
+      padding: .75rem 1.25rem;
+      border-radius: .75rem;
+      background: rgba(16,185,129,1);
+      color: #fff;
+      font-size: .875rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .15s;
+      width: 100%;
+    }
+    .cta-primary:hover { background: rgba(52,211,153,1); }
+
+    .cta-ghost {
+      display: flex; align-items: center; gap: .5rem; justify-content: center;
+      padding: .75rem 1.25rem;
+      border-radius: .75rem;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      color: #cbd5e1;
+      font-size: .875rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all .15s;
+      width: 100%;
+    }
+    .cta-ghost:hover { background: rgba(255,255,255,.08); color: #fff; }
+  </style>
+</head>
+
+<body class="grid-bg min-h-screen font-sans text-slate-100 antialiased">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 inset-x-0 z-50 border-b border-white/[.06] bg-[#080c0e]/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="/" class="font-mono text-sm font-medium tracking-widest text-slate-200 hover:text-emerald-400 transition-colors">
+        ECO<span class="text-emerald-400">IQ</span>
+      </a>
+      <div class="flex items-center gap-6">
+        <a href="/companies/" class="hidden sm:block text-sm text-slate-400 hover:text-slate-200 transition-colors">Rankings</a>
+        <a href="/countries/" class="hidden sm:block text-sm text-slate-400 hover:text-slate-200 transition-colors">Countries</a>
+        <a href="/" class="text-sm text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+          </svg>
+          Back
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-24 pb-24 px-4 sm:px-6">
+    <div class="max-w-6xl mx-auto">
+
+      <!-- Page header -->
+      <div class="text-center mb-12">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono tracking-wider mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          ECOIQ ANALYTICAL REVIEW
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+          Request an EcoIQ Review
+        </h1>
+        <p class="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+          Select the type of review you need. Our analysts use the Mizan Engine and
+          specialised scoring modules to deliver a structured intelligence brief —
+          typically within 5 business days.
+        </p>
+      </div>
+
+      {% if rate_limited %}
+      <div class="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
+        <strong>Too many submissions.</strong> We've received several requests from your network recently.
+        Please try again in an hour, or email us directly at
+        <a href="mailto:alizhan@ecoiq.uk" class="underline hover:text-amber-200">alizhan@ecoiq.uk</a>.
+      </div>
+      {% endif %}
+
+      <div class="grid lg:grid-cols-[1fr_340px] gap-10 items-start">
+
+        <!-- ── Main form ────────────────────────────────────────────────────── -->
+        <div class="glass-strong glow-emerald rounded-2xl p-8 md:p-10">
+          <form method="post" enctype="multipart/form-data" novalidate id="review-form">
+            {% csrf_token %}
+
+            <!-- Honeypot -->
+            <div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true" tabindex="-1">
+              {{ form.website }}
+            </div>
+
+            <!-- ── Section 1: Review type ──────────────────────────────────── -->
+            <div class="mb-8">
+              <p class="text-xs font-medium text-slate-400 mb-4 tracking-wide uppercase">
+                Review type <span class="text-emerald-400">*</span>
+              </p>
+
+              {% if form.request_type.errors %}
+                <p class="field-error mb-3">{{ form.request_type.errors.0 }}</p>
+              {% endif %}
+
+              <div class="grid sm:grid-cols-2 gap-3">
+
+                <div class="rt-card">
+                  <input type="radio" name="request_type" id="rt_company" value="company_assessment"
+                    {% if form.request_type.value == 'company_assessment' %}checked{% endif %}>
+                  <label for="rt_company">
+                    <div class="flex items-start gap-3">
+                      <span class="text-lg mt-0.5">🏭</span>
+                      <div>
+                        <p class="text-sm font-semibold text-slate-100">Company EcoIQ Assessment</p>
+                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Mizan Engine scoring — six ethical dimensions, harm signals, investor note</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="rt-card">
+                  <input type="radio" name="request_type" id="rt_country" value="country_intelligence"
+                    {% if form.request_type.value == 'country_intelligence' %}checked{% endif %}>
+                  <label for="rt_country">
+                    <div class="flex items-start gap-3">
+                      <span class="text-lg mt-0.5">🌍</span>
+                      <div>
+                        <p class="text-sm font-semibold text-slate-100">Country Transition Intelligence</p>
+                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">National climate readiness, sovereign risk, and policy trajectory</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="rt-card">
+                  <input type="radio" name="request_type" id="rt_investor" value="investor_readiness"
+                    {% if form.request_type.value == 'investor_readiness' %}checked{% endif %}>
+                  <label for="rt_investor">
+                    <div class="flex items-start gap-3">
+                      <span class="text-lg mt-0.5">📊</span>
+                      <div>
+                        <p class="text-sm font-semibold text-slate-100">Investor Readiness Review</p>
+                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Project Readiness Score, finance route recommendation, blocker analysis</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="rt-card">
+                  <input type="radio" name="request_type" id="rt_islamic" value="islamic_finance"
+                    {% if form.request_type.value == 'islamic_finance' %}checked{% endif %}>
+                  <label for="rt_islamic">
+                    <div class="flex items-start gap-3">
+                      <span class="text-lg mt-0.5">⚖️</span>
+                      <div>
+                        <p class="text-sm font-semibold text-slate-100">Islamic & Ethical Finance Fit</p>
+                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Structural suitability for sukuk, murabaha, and ethical finance instruments</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="rt-card">
+                  <input type="radio" name="request_type" id="rt_project" value="project_readiness"
+                    {% if form.request_type.value == 'project_readiness' %}checked{% endif %}>
+                  <label for="rt_project">
+                    <div class="flex items-start gap-3">
+                      <span class="text-lg mt-0.5">🏗️</span>
+                      <div>
+                        <p class="text-sm font-semibold text-slate-100">Project Readiness Review</p>
+                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Ten-dimension readiness score for climate and development finance</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="rt-card">
+                  <input type="radio" name="request_type" id="rt_gw" value="greenwashing_review"
+                    {% if form.request_type.value == 'greenwashing_review' %}checked{% endif %}>
+                  <label for="rt_gw">
+                    <div class="flex items-start gap-3">
+                      <span class="text-lg mt-0.5">🔍</span>
+                      <div>
+                        <p class="text-sm font-semibold text-slate-100">Greenwashing Risk Review</p>
+                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Evidence-based assessment of climate claim credibility and disclosure gaps</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- ── Section 2: Contact ──────────────────────────────────────── -->
+            <div class="border-t border-white/[.06] pt-8 mb-6">
+              <p class="text-xs font-medium text-slate-400 mb-5 tracking-wide uppercase">Contact details</p>
+
+              <div class="grid sm:grid-cols-2 gap-5 mb-5">
+                <div>
+                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.name.id_for_label }}">
+                    Name <span class="text-emerald-400">*</span>
+                  </label>
+                  {{ form.name }}
+                  {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.organisation.id_for_label }}">
+                    Organisation <span class="text-emerald-400">*</span>
+                  </label>
+                  {{ form.organisation }}
+                  {% if form.organisation.errors %}<p class="field-error">{{ form.organisation.errors.0 }}</p>{% endif %}
+                </div>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-5 mb-5">
+                <div>
+                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.email.id_for_label }}">
+                    Work email <span class="text-emerald-400">*</span>
+                  </label>
+                  {{ form.email }}
+                  {% if form.email.errors %}<p class="field-error">{{ form.email.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.country.id_for_label }}">
+                    Country <span class="text-emerald-400">*</span>
+                  </label>
+                  {{ form.country }}
+                  {% if form.country.errors %}<p class="field-error">{{ form.country.errors.0 }}</p>{% endif %}
+                </div>
+              </div>
+
+              <div class="mb-5">
+                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.sector.id_for_label }}">
+                  Sector <span class="text-emerald-400">*</span>
+                </label>
+                {{ form.sector }}
+                {% if form.sector.errors %}<p class="field-error">{{ form.sector.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+
+            <!-- ── Section 3: Context + upload ────────────────────────────── -->
+            <div class="border-t border-white/[.06] pt-8 mb-8">
+              <p class="text-xs font-medium text-slate-400 mb-5 tracking-wide uppercase">Context & documents</p>
+
+              <div class="mb-5">
+                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.message.id_for_label }}">
+                  Context or focus areas
+                  <span class="text-slate-600 font-normal normal-case">(optional)</span>
+                </label>
+                {{ form.message }}
+                {% if form.message.errors %}<p class="field-error">{{ form.message.errors.0 }}</p>{% endif %}
+              </div>
+
+              <!-- File upload -->
+              <div id="upload-section">
+                <label class="block text-xs font-medium text-slate-400 mb-3 tracking-wide uppercase">
+                  Sustainability report
+                  <span class="text-slate-600 font-normal normal-case">(optional · PDF · max 10 MB)</span>
+                </label>
+
+                <div id="drop-zone" onclick="document.getElementById('id_sustainability_report').click()" role="button" aria-label="Upload sustainability report">
+
+                  <!-- Default state -->
+                  <div id="dz-default">
+                    <svg class="w-8 h-8 mx-auto mb-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="text-sm text-slate-400 mb-1">
+                      <span class="text-emerald-400 font-medium">Click to upload</span> or drag and drop
+                    </p>
+                    <p class="text-xs text-slate-600">PDF only · max 10 MB</p>
+                  </div>
+
+                  <!-- File selected state (hidden by default) -->
+                  <div id="dz-selected" class="hidden">
+                    <svg class="w-7 h-7 mx-auto mb-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-sm text-emerald-400 font-medium" id="dz-filename">report.pdf</p>
+                    <p class="text-xs text-slate-500 mt-1" id="dz-filesize"></p>
+                    <button type="button" onclick="clearFile(event)" class="mt-2 text-xs text-slate-600 hover:text-slate-400 underline">
+                      Remove file
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Hidden file input -->
+                <div class="hidden">
+                  {{ form.sustainability_report }}
+                </div>
+                {% if form.sustainability_report.errors %}
+                  <p class="field-error mt-2">{{ form.sustainability_report.errors.0 }}</p>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- ── Submit ─────────────────────────────────────────────────── -->
+            <button
+              type="submit"
+              id="submit-btn"
+              class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold text-sm tracking-wide transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            >
+              <span class="btn-label flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Submit review request
+              </span>
+              <svg class="spinner w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span class="spinner text-sm font-medium">Submitting…</span>
+            </button>
+
+            <p class="text-center text-slate-600 text-xs mt-4">
+              No payment required. We respond within 48 hours.
+            </p>
+          </form>
+        </div>
+
+        <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+        <div class="space-y-5 lg:sticky lg:top-24">
+
+          <!-- What happens next -->
+          <div class="glass rounded-2xl p-6">
+            <h3 class="text-xs font-semibold text-slate-400 mb-5 tracking-widest uppercase">What happens next</h3>
+            <ol class="space-y-5">
+              <li class="flex gap-4">
+                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">01</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-200">Request received</p>
+                  <p class="text-xs text-slate-500 mt-0.5">Confirmation email sent immediately. Our team is notified.</p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">02</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-200">Analysis runs within 48 hours</p>
+                  <p class="text-xs text-slate-500 mt-0.5">Mizan Engine and specialist scoring modules are applied to your subject.</p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">03</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-200">Intelligence brief delivered</p>
+                  <p class="text-xs text-slate-500 mt-0.5">You receive a structured report with scores, blockers, and recommended actions.</p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">04</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-200">Investor briefing available</p>
+                  <p class="text-xs text-slate-500 mt-0.5">Book a 30-minute call to walk through the findings with our team.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <!-- CTA actions -->
+          <div class="glass rounded-2xl p-6">
+            <h3 class="text-xs font-semibold text-slate-400 mb-4 tracking-widest uppercase">Quick actions</h3>
+            <div class="space-y-3">
+
+              <!-- Request EcoIQ Review — anchors to this page -->
+              <a href="#review-form" class="cta-ghost scroll-smooth">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Request EcoIQ Review
+              </a>
+
+              <!-- Upload Sustainability Report — scrolls to upload zone -->
+              <button type="button" onclick="scrollToUpload()" class="cta-ghost text-left w-full">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                Upload Sustainability Report
+              </button>
+
+              <!-- Book Investor Briefing -->
+              {% if calendly_url %}
+              <a href="{{ calendly_url }}" target="_blank" rel="noopener noreferrer" class="cta-primary">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Book Investor Briefing
+              </a>
+              {% else %}
+              <a href="mailto:alizhan@ecoiq.uk?subject=Investor Briefing Request" class="cta-primary">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Book Investor Briefing
+              </a>
+              {% endif %}
+
+            </div>
+          </div>
+
+          <!-- Review types legend -->
+          <div class="glass rounded-2xl p-6">
+            <h3 class="text-xs font-semibold text-slate-400 mb-4 tracking-widest uppercase">Scoring modules used</h3>
+            <ul class="space-y-2">
+              <li class="flex items-center gap-2 text-xs text-slate-400">
+                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
+                Mizan Engine — six-dimension ethical intelligence
+              </li>
+              <li class="flex items-center gap-2 text-xs text-slate-400">
+                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
+                Project Readiness Score — ten dimensions
+              </li>
+              <li class="flex items-center gap-2 text-xs text-slate-400">
+                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
+                Islamic & Ethical Finance Fit — nine dimensions
+              </li>
+              <li class="flex items-center gap-2 text-xs text-slate-400">
+                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
+                Greenwashing Risk Detector — five-component score
+              </li>
+              <li class="flex items-center gap-2 text-xs text-slate-400">
+                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
+                Capital Integrity Score — seven dimensions
+              </li>
+            </ul>
+          </div>
+
+          <!-- Privacy -->
+          <p class="text-xs text-slate-600 leading-relaxed px-1">
+            Your information is used solely to process your review request.
+            Uploaded documents are stored securely and never shared with third parties.
+            EcoIQ assessments are analytical and indicative — not investment advice.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-white/[.05] py-8 text-center text-slate-600 text-xs font-mono">
+    &copy; {% now "Y" %} EcoIQ — Ethical Intelligence Platform &nbsp;·&nbsp;
+    <a href="/about/" class="hover:text-slate-400 transition-colors">About</a> &nbsp;·&nbsp;
+    <a href="/methodology/" class="hover:text-slate-400 transition-colors">Methodology</a> &nbsp;·&nbsp;
+    <a href="mailto:alizhan@ecoiq.uk" class="hover:text-slate-400 transition-colors">alizhan@ecoiq.uk</a>
+  </footer>
+
+  <script>
+    // ── Submit spinner ────────────────────────────────────────────────────────
+    document.getElementById('review-form').addEventListener('submit', function () {
+      const btn = document.getElementById('submit-btn');
+      btn.classList.add('btn-loading');
+      btn.disabled = true;
+    });
+
+    // ── File upload: drag-and-drop + preview ──────────────────────────────────
+    const fileInput  = document.getElementById('id_sustainability_report');
+    const dropZone   = document.getElementById('drop-zone');
+    const dzDefault  = document.getElementById('dz-default');
+    const dzSelected = document.getElementById('dz-selected');
+    const dzFilename = document.getElementById('dz-filename');
+    const dzFilesize = document.getElementById('dz-filesize');
+
+    function formatBytes(bytes) {
+      if (bytes < 1024)        return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    function showFile(file) {
+      dzFilename.textContent = file.name;
+      dzFilesize.textContent = formatBytes(file.size);
+      dzDefault.classList.add('hidden');
+      dzSelected.classList.remove('hidden');
+      dropZone.classList.add('has-file');
+    }
+
+    function clearFile(e) {
+      e.stopPropagation();
+      fileInput.value = '';
+      dzDefault.classList.remove('hidden');
+      dzSelected.classList.add('hidden');
+      dropZone.classList.remove('has-file');
+    }
+
+    fileInput.addEventListener('change', function () {
+      if (this.files && this.files[0]) showFile(this.files[0]);
+    });
+
+    dropZone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      this.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', function () {
+      this.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      showFile(file);
+    });
+
+    // ── Scroll to upload section ──────────────────────────────────────────────
+    function scrollToUpload() {
+      const el = document.getElementById('upload-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.querySelector('#drop-zone').style.borderColor = 'rgba(16,185,129,.5)';
+        setTimeout(() => {
+          el.querySelector('#drop-zone').style.borderColor = '';
+        }, 1800);
+      }
+    }
+
+    // ── Pre-select from URL query param ──────────────────────────────────────
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('type');
+      if (t) {
+        const el = document.getElementById('rt_' + t.replace('_review','').replace('_readiness','').replace('_intelligence','').replace('_assessment','').replace('_finance',''));
+        // Fallback: find the radio with matching value
+        const radios = document.querySelectorAll('input[name="request_type"]');
+        radios.forEach(r => { if (r.value === t) r.checked = true; });
+      }
+    })();
+  </script>
+</body>
+</html>
