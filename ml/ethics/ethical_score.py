@@ -12,11 +12,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from companies.models import CompanyProfile
 
-from .public_benefit    import compute_public_benefit_composite
-from .harm_reduction     import compute_harm_reduction
-from .justice_balance    import compute_justice_balance
-from .stewardship        import compute_stewardship
-from .evidence_confidence import compute_evidence_confidence
+from .public_benefit      import compute_public_benefit_composite
+from .harm_reduction       import compute_harm_reduction
+from .justice_balance      import compute_justice_balance
+from .stewardship          import compute_stewardship
+from .evidence_confidence  import compute_evidence_confidence
+from .greenwashing_risk    import greenwashing_from_profile
 
 
 _OVERALL_LABEL = [
@@ -54,6 +55,7 @@ def compute_ethical_intelligence(profile: 'CompanyProfile') -> dict:
     jb  = compute_justice_balance(profile)
     st  = compute_stewardship(profile)
     ev  = compute_evidence_confidence(profile)
+    gw  = greenwashing_from_profile(profile)
 
     # Weighted overall ethical intelligence score
     #   Public benefit   30%
@@ -86,11 +88,14 @@ def compute_ethical_intelligence(profile: 'CompanyProfile') -> dict:
         'justice_balance':   jb,
         'stewardship':       st,
         'evidence':          ev,
+        'greenwashing_risk': gw.to_dict(),
         'ecoiq_total_score': float(profile.ecoiq_total_score or 0),
         'methodology_note': (
             'EcoIQ Ethical Intelligence scores are derived from existing pillar data. '
             'They reflect evidence-based stewardship, public benefit delivery, and '
             'harm mitigation — not investment advice. '
-            'Profiles marked ai-seeded require independent verification.'
+            'Profiles marked ai-seeded require independent verification. '
+            'Greenwashing risk indicators are public-data based and require '
+            'independent verification before use in capital decisions.'
         ),
     }

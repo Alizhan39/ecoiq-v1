@@ -42,6 +42,15 @@ urlpatterns = [
     # /claim/ → canonical claim-profile shortcut (leads app handles the form)
     path('claim/', RedirectView.as_view(url='/request-access/claim/', permanent=False), name='claim'),
 
+    # EcoIQ Platform — five intelligence modules overview
+    path('platform/',              views.platform,              name='platform'),
+
+    # EcoIQ Ethical Governance Intelligence Framework
+    path('ethical-governance/',    views.ethical_governance,    name='ethical_governance'),
+
+    # EcoIQ Capital Ethics Compendium — 114 governance principles
+    path('governance-principles/', views.governance_principles,  name='governance_principles'),
+
     # EcoIQ Investors — pre-seed opportunity page
     path('investors/',          views.investors,          name='investors'),
 

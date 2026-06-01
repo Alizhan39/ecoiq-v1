@@ -36,4 +36,10 @@ urlpatterns = [
     path('intelligence/ethical-score/',                    views.ethical_intelligence_score,       name='ethical_intelligence_score'),
     path('companies/<slug:slug>/ethical-intelligence/',    views.company_ethical_intelligence,     name='company_ethical_intelligence'),
     path('countries/<slug:slug>/ethical-intelligence/',    views.country_ethical_intelligence,     name='country_ethical_intelligence'),
+
+    # Capital Integrity Score
+    path('capital-integrity/',                             views.capital_integrity_score,          name='capital_integrity_score'),
+
+    # Islamic & Ethical Finance Fit
+    path('finance/islamic-fit/',                           views.islamic_finance_fit,              name='islamic_finance_fit'),
 ]

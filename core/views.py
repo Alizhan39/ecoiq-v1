@@ -10,7 +10,8 @@ from .models import Assessment, QuestionnaireResponse, Finding
 from .forms import AssessmentUploadForm
 from .utils import extract_text
 from .questions import QUESTIONS, grouped as grouped_questions
-from .ai import run_ecoiq_analysis
+# run_ecoiq_analysis is imported lazily inside run_analysis() — keeps the
+# anthropic SDK (~40 MB) out of Django startup memory.
 
 PILLARS = [
     ('Environment', '#d8f3dc'),
@@ -178,6 +179,8 @@ def landing(request):
         'country_count':  country_count,
         'pillars_meta':   pillars_meta,
         'audience_labels': ['Investors', 'Governments', 'Companies', 'Climate Programmes', 'Development Banks'],
+        # Review CTA context
+        'calendly_url':   getattr(_s, 'CALENDLY_URL', ''),
         # Legacy context kept for any remaining partial usage
         'industries':              INDUSTRIES,
         'cta_sectors':             CTA_SECTORS,
@@ -203,7 +206,8 @@ HOW_IT_WORKS = [
 
 @login_required
 def index(request):
-    assessments = Assessment.objects.all()
+    # Limit to the 50 most-recent assessments — avoids loading all rows into memory.
+    assessments = Assessment.objects.order_by('-created_at')[:50]
     return render(request, 'core/index.html', {
         'pillars':     PILLARS,
         'assessments': assessments,
@@ -303,6 +307,7 @@ def run_analysis(request, pk):
 
     if request.method == 'POST':
         try:
+            from .ai import run_ecoiq_analysis  # lazy — avoids loading anthropic at startup
             result = run_ecoiq_analysis(assessment)
             Finding.objects.update_or_create(
                 assessment=assessment,
@@ -1046,3 +1051,519 @@ def dashboard(request):
     if not request.user.is_authenticated:
         return redirect(f'/login/?next=/dashboard/')
     return render(request, 'dashboard.html', {'user': request.user})
+
+
+# ── Platform module data ──────────────────────────────────────────────────────
+# Defined at module level so it is built once per worker, not on every request.
+_PLATFORM_MODULES = [
+    {
+        'id':       'country-intelligence',
+            'number':   '01',
+            'icon':     '🌍',
+            'title':    'Country Transition Intelligence',
+            'tagline':  'National-level transition risk and opportunity mapping.',
+            'color':    '#00e89a',
+            'bg':       'rgba(0,232,154,.1)',
+            'border':   'rgba(0,232,154,.2)',
+            'link':     '/countries/',
+            'link_label': 'View country intelligence',
+            'description': (
+                'Country Transition Intelligence assesses the industrial and regulatory '
+                'environment of a nation relative to the demands of the low-carbon economy. '
+                'EcoIQ scores countries across policy clarity, energy infrastructure readiness, '
+                'industrial sector composition, climate commitment ambition, and regulatory '
+                'trajectory — producing a structured transition risk and opportunity profile.'
+            ),
+            'dimensions': [
+                ('Policy Environment',        'Clarity and ambition of climate and industrial policy frameworks.'),
+                ('Energy Infrastructure',     'Renewable capacity, grid modernisation, and fossil fuel dependency.'),
+                ('Industrial Composition',    'Sector mix, emissions intensity, and transition-sensitive employment.'),
+                ('Climate Commitments',       'NDC ambition, JETP eligibility, and bilateral climate agreements.'),
+                ('Regulatory Trajectory',     'Direction and pace of environmental and financial regulation.'),
+            ],
+            'markets': ['United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye'],
+            'tags': ['Country Scores', 'JETP Alignment', 'Sector Exposure', 'Policy Risk'],
+            'disclaimer': 'Country intelligence is indicative and AI-assisted. Not investment advice.',
+        },
+        {
+            'id':       'company-assessment',
+            'number':   '02',
+            'icon':     '🏭',
+            'title':    'Company EcoIQ Assessment',
+            'tagline':  'Six-pillar ethical scoring for industrial companies.',
+            'color':    '#58a6ff',
+            'bg':       'rgba(88,166,255,.1)',
+            'border':   'rgba(88,166,255,.2)',
+            'link':     '/companies/',
+            'link_label': 'Browse company rankings',
+            'description': (
+                'The Company EcoIQ Assessment produces a 0–100 score for industrial companies '
+                'across six pillars of ethical and environmental performance. All scores are '
+                'derived from public evidence: annual reports, sustainability disclosures, '
+                'CDP filings, and regulatory records. A harm penalty of up to 30 points is '
+                'applied where severe pollution, governance failures, or profit extraction '
+                'without proportionate public benefit is identified.'
+            ),
+            'dimensions': [
+                ('Public Benefit',              'Employment quality, regional development, and community investment.'),
+                ('Environmental Stewardship',   'Pollution intensity, waste, water, and biodiversity management.'),
+                ('Responsible Modernisation',   'Energy transition, digitalisation, and infrastructure upgrades.'),
+                ('Transparent Governance',      'Reporting quality, audit standards, and procurement transparency.'),
+                ('Anti-Corruption',             'Governance integrity, ethical procurement, and accountability.'),
+                ('Ethical Alignment',           'Long-term value creation, controversy management, and stakeholder trust.'),
+            ],
+            'markets': ['United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye', 'Global'],
+            'tags': ['EcoIQ Score 0–100', '6 Pillars', 'Harm Signals', 'Moral Label', 'Sector Rank'],
+            'disclaimer': 'Scores are AI-assisted and indicative. Not investment advice.',
+        },
+        {
+            'id':       'project-readiness',
+            'number':   '03',
+            'icon':     '📐',
+            'title':    'Project Readiness Review',
+            'tagline':  'Climate finance readiness scored across ten dimensions.',
+            'color':    '#a855f7',
+            'bg':       'rgba(168,85,247,.1)',
+            'border':   'rgba(168,85,247,.2)',
+            'link':     '/request-access/review/?type=project_readiness',
+            'link_label': 'Request a project review',
+            'description': (
+                'The Project Readiness Review assesses how prepared a climate or transition '
+                'project is for review by investors, development finance institutions, or '
+                'climate finance programmes. Ten dimensions are scored — from problem clarity '
+                'and technical feasibility to revenue model strength and governance quality — '
+                'producing a single readiness score and a structured brief of missing documents, '
+                'main blockers, and recommended next steps.'
+            ),
+            'dimensions': [
+                ('Problem Clarity',          'Is the transition problem well-defined with a credible baseline?'),
+                ('Emissions Baseline',       'Is the GHG impact quantified and methodology credible?'),
+                ('Technical Feasibility',    'How proven is the technology? Is a bankable feasibility study in place?'),
+                ('CAPEX / OPEX Clarity',     'Is the cost structure defined and funded?'),
+                ('Revenue Model',            'Is revenue contracted, market-based, or grant-dependent?'),
+                ('Governance & Procurement', 'Are safeguards, procurement standards, and oversight in place?'),
+                ('Public Benefit',           'Does the project generate jobs, community benefit, or energy access?'),
+                ('Risk Mitigation',          'Are key risks identified and mitigated with documented plans?'),
+                ('Evidence Confidence',      'Is the evidence verified, analyst-reviewed, or AI-estimated?'),
+                ('Finance Structure',        'Is there a clear finance plan with identified lead institutions?'),
+            ],
+            'markets': ['United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye', 'Global'],
+            'tags': ['Readiness Score', '10 Dimensions', 'DFI Criteria', 'IFC / EBRD Standards', 'Investment Label'],
+            'disclaimer': (
+                'Project Readiness outputs are AI-assisted and indicative. '
+                'All outputs require analyst review before use in any investment or financing decision.'
+            ),
+        },
+        {
+            'id':       'capital-integrity',
+            'number':   '04',
+            'icon':     '🏦',
+            'title':    'Capital Integrity Score',
+            'tagline':  'How responsibly is capital structured and deployed?',
+            'color':    '#f4a261',
+            'bg':       'rgba(244,162,97,.1)',
+            'border':   'rgba(244,162,97,.2)',
+            'link':     '/request-access/review/?type=investor_readiness',
+            'link_label': 'Request a capital integrity review',
+            'description': (
+                'The Capital Integrity Score assesses whether the financial structure of a '
+                'company or fund aligns with responsible investment principles — including '
+                'debt transparency, profit reinvestment ratios, ownership accountability, '
+                'and long-term orientation. EcoIQ maps capital structure indicators against '
+                'development finance institution criteria and green bond framework requirements '
+                'to produce a compatibility assessment. Outputs are indicative and require '
+                'qualified analyst review.'
+            ),
+            'dimensions': [
+                ('Ownership Transparency',     'Beneficial ownership clarity and related-party structures.'),
+                ('Debt Structure',             'Debt profile, covenants, and alignment with responsible finance norms.'),
+                ('Profit Reinvestment',        'Ratio of profit reinvested in operations versus extracted.'),
+                ('Shareholder Accountability', 'Board independence, minority protection, and voting structure.'),
+                ('Long-Term Orientation',      'Capital allocation toward durable, transition-aligned assets.'),
+                ('DFI Compatibility',          'Alignment with IFC, EBRD, and ADB responsible finance criteria.'),
+            ],
+            'markets': ['United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye'],
+            'tags': ['Capital Score', 'DFI Compatibility', 'Green Bond Fit', 'Integrity Rating', 'Ownership Transparency'],
+            'disclaimer': (
+                'Capital Integrity outputs are AI-assisted and indicative. '
+                'They do not constitute financial, legal, or investment advice.'
+            ),
+        },
+        {
+            'id':       'ethical-finance-fit',
+            'number':   '05',
+            'icon':     '⚖️',
+            'title':    'Ethical Finance Fit',
+            'tagline':  'Compatibility with responsible capital frameworks.',
+            'color':    '#10b981',
+            'bg':       'rgba(16,185,129,.1)',
+            'border':   'rgba(16,185,129,.2)',
+            'link':     '/request-access/review/',
+            'link_label': 'Request an ethical finance review',
+            'description': (
+                'Ethical Finance Fit assesses the compatibility of a company, fund, or project '
+                'with responsible capital frameworks that emphasise ethical stewardship, public '
+                'benefit, equitable value distribution, and long-term resilience. EcoIQ examines '
+                'asset structure, revenue stream composition, prohibited-activity exposure, '
+                'governance quality, and social impact orientation — producing an indicative '
+                'compatibility assessment. All outputs require review by a qualified finance '
+                'professional before use in any investment or financing decision.'
+            ),
+            'dimensions': [
+                ('Asset Structure Alignment',    'Tangible versus speculative asset composition and leverage profile.'),
+                ('Revenue Stream Composition',   'Proportion of revenue from ethically aligned versus excluded activities.'),
+                ('Prohibited Activity Exposure', 'Exposure to sectors or practices incompatible with ethical frameworks.'),
+                ('Governance Stewardship',        'Board quality, accountability structures, and ethical procurement.'),
+                ('Social Impact Orientation',    'Employment, community investment, and equitable value sharing.'),
+                ('Long-Term Resilience',          'Capital resilience, sustainability commitments, and transition readiness.'),
+            ],
+            'markets': ['United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye'],
+            'tags': ['Ethical Compatibility', 'Stewardship Score', 'Analyst Review Required', 'Responsible Capital'],
+            'disclaimer': (
+                'Ethical Finance Fit outputs are AI-assisted and indicative. '
+                'They are not a determination of permissibility under any legal, religious, '
+                'or regulatory framework. Qualified professional review is required before use '
+                'in any investment or financing decision.'
+            ),
+        },
+]
+
+
+def platform(request):
+    """
+    /platform/ — EcoIQ Intelligence Platform overview.
+    Public page showcasing the five analytical modules with descriptions,
+    use cases, and a strong Request EcoIQ Review CTA.
+    Module data lives in the module-level _PLATFORM_MODULES constant so it is
+    built exactly once per worker startup, not re-created on every request.
+    """
+    from django.conf import settings as _s
+    return render(request, 'platform.html', {
+        'modules':      _PLATFORM_MODULES,
+        'calendly_url': getattr(_s, 'CALENDLY_URL', ''),
+        'site_url':     getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
+    })
+
+
+# ── Ethical Governance Intelligence Framework ─────────────────────────────────
+# Public-facing labels use professional English only.
+# The internal Name-by-Name mapping lives in docs/ethical-governance-internal-map.md
+# and is NEVER served via any public URL or API response.
+
+_EGF_MODULES = [
+    {
+        'number':   '01',
+        'icon':     '⚖️',
+        'title':    'Justice',
+        'subtitle': 'Fair Distribution of Value & Risk',
+        'color':    '#00e89a',
+        'bg':       'rgba(0,232,154,.09)',
+        'border':   'rgba(0,232,154,.22)',
+        'principle': (
+            'Fair distribution of value, risk, responsibility and benefit '
+            'across investors, workers, communities and future generations.'
+        ),
+        'question': 'Who benefits, who pays, and who is exposed to harm?',
+        'metrics': [
+            'fair wages', 'local employment quality', 'supplier fairness',
+            'tax transparency', 'pollution burden distribution',
+            'service affordability', 'regional inequality impact',
+        ],
+        'signal': (
+            'Do not approve projects where profit depends on exploitation, '
+            'hidden harm or unfair burden transfer to communities or future generations.'
+        ),
+    },
+    {
+        'number':   '02',
+        'icon':     '🔭',
+        'title':    'Oversight',
+        'subtitle': 'Governance, Control & Accountability',
+        'color':    '#58a6ff',
+        'bg':       'rgba(88,166,255,.09)',
+        'border':   'rgba(88,166,255,.22)',
+        'principle': (
+            'A system must supervise power, prevent abuse and ensure '
+            'responsible control at every level of governance.'
+        ),
+        'question': 'Who controls the company, who watches them, and who can stop harm?',
+        'metrics': [
+            'ownership transparency', 'board independence', 'audit quality',
+            'anti-corruption controls', 'whistleblower protection',
+            'governance disclosure completeness',
+        ],
+        'signal': (
+            'No serious capital allocation without visible ownership, '
+            'auditability and documented governance accountability.'
+        ),
+    },
+    {
+        'number':   '03',
+        'icon':     '🛡️',
+        'title':    'Protection',
+        'subtitle': 'Harm Prevention & Safety Standards',
+        'color':    '#a855f7',
+        'bg':       'rgba(168,85,247,.09)',
+        'border':   'rgba(168,85,247,.22)',
+        'principle': (
+            'Investment must protect life, health, property, dignity '
+            'and the environment from foreseeable harm.'
+        ),
+        'question': 'What harm could this project create, and who is protected from it?',
+        'metrics': [
+            'health & safety record', 'environmental risk level',
+            'emissions intensity', 'water contamination risk',
+            'worker protection standards', 'disaster resilience',
+        ],
+        'signal': (
+            'If harm prevention is weak, the project cannot be considered '
+            'ethically strong even if it is profitable.'
+        ),
+    },
+    {
+        'number':   '04',
+        'icon':     '📈',
+        'title':    'Impact Reward',
+        'subtitle': 'Recognising & Scaling Positive Outcomes',
+        'color':    '#00e89a',
+        'bg':       'rgba(0,232,154,.09)',
+        'border':   'rgba(0,232,154,.22)',
+        'principle': (
+            'Good impact should be recognised, measured, rewarded and scaled — '
+            'not buried in aggregate ESG scores.'
+        ),
+        'question': 'Does the company create measurable benefit beyond normal profit?',
+        'metrics': [
+            'jobs created', 'emissions reduced', 'households served',
+            'energy bills lowered', 'waste diverted', 'land restored',
+            'local suppliers supported',
+        ],
+        'signal': (
+            'Companies with proven positive impact should receive stronger '
+            'investor visibility, better capital access and higher EcoIQ ranking.'
+        ),
+    },
+    {
+        'number':   '05',
+        'icon':     '🌱',
+        'title':    'Provision',
+        'subtitle': 'Sustainable Opportunity & Livelihood',
+        'color':    '#34d399',
+        'bg':       'rgba(52,211,153,.09)',
+        'border':   'rgba(52,211,153,.22)',
+        'principle': (
+            'Provision must be sustainable, dignified and accessible — '
+            'creating real opportunity without destroying future resources.'
+        ),
+        'question': 'Does this company create real livelihood and opportunity without depleting what remains?',
+        'metrics': [
+            'employment creation', 'SME opportunity generated',
+            'food / energy / water access', 'service affordability',
+            'skills development', 'household income impact',
+        ],
+        'signal': (
+            'Prefer investments that expand long-term livelihood and opportunity '
+            'over those generating temporary profit from resource depletion.'
+        ),
+    },
+    {
+        'number':   '06',
+        'icon':     '💡',
+        'title':    'Wisdom',
+        'subtitle': 'Judgment in Capital Allocation',
+        'color':    '#f4a261',
+        'bg':       'rgba(244,162,97,.09)',
+        'border':   'rgba(244,162,97,.22)',
+        'principle': (
+            'Capital must be placed with evidence, timing and long-term judgment — '
+            'not chasing fashion or short-term returns.'
+        ),
+        'question': 'Is this the right project, in the right place, at the right time?',
+        'metrics': [
+            'capital efficiency', 'climate transition risk',
+            'long-term demand outlook', 'policy alignment',
+            'technology maturity', 'community acceptance level',
+        ],
+        'signal': (
+            'Do not fund what is merely fashionable; '
+            'fund what is wise, needed, durable and beneficial.'
+        ),
+    },
+    {
+        'number':   '07',
+        'icon':     '🤝',
+        'title':    'Sensitivity',
+        'subtitle': 'Protecting Vulnerable & Underserved Communities',
+        'color':    '#f472b6',
+        'bg':       'rgba(244,114,182,.09)',
+        'border':   'rgba(244,114,182,.22)',
+        'principle': (
+            'Governance must notice subtle harm that powerful systems often ignore — '
+            'particularly harm to those least able to protect themselves.'
+        ),
+        'question': 'How does this project affect people with the least power to complain?',
+        'metrics': [
+            'low-income household impact', 'children and elderly exposure',
+            'rural community effects', 'energy poverty risk',
+            'service accessibility', 'grievance response time',
+        ],
+        'signal': (
+            'A project cannot be rated excellent if it looks good on paper '
+            'but quietly harms weak or underrepresented groups.'
+        ),
+    },
+    {
+        'number':   '08',
+        'icon':     '🔒',
+        'title':    'Trust',
+        'subtitle': 'Fiduciary Responsibility & Agency',
+        'color':    '#818cf8',
+        'bg':       'rgba(129,140,248,.09)',
+        'border':   'rgba(129,140,248,.22)',
+        'principle': (
+            'Those entrusted with capital must act as responsible agents — '
+            'not selfish owners — accountable to investors, communities and regulators.'
+        ),
+        'question': 'Can investors, communities and regulators trust this company to do what it promises?',
+        'metrics': [
+            'delivery against commitments', 'audit consistency',
+            'contract fulfilment record', 'complaint resolution speed',
+            'legal dispute history', 'management integrity signals',
+        ],
+        'signal': (
+            'Trust must be earned through evidence and consistent behaviour, '
+            'not asserted through branding or narrative.'
+        ),
+    },
+    {
+        'number':   '09',
+        'icon':     '👁️',
+        'title':    'Visibility',
+        'subtitle': 'Monitoring, Evidence & Transparency',
+        'color':    '#22d3ee',
+        'bg':       'rgba(34,211,238,.09)',
+        'border':   'rgba(34,211,238,.22)',
+        'principle': (
+            'Ethical capital requires visibility. '
+            'What is hidden cannot be governed, assessed or improved.'
+        ),
+        'question': 'Can we see the real impact, real risks and real behaviour of this company?',
+        'metrics': [
+            'data availability & completeness', 'emissions monitoring quality',
+            'financial reporting transparency', 'supply-chain visibility',
+            'third-party verification', 'satellite evidence use',
+        ],
+        'signal': (
+            'No visibility, no confidence. '
+            'No verifiable evidence means no high ethical governance rating.'
+        ),
+    },
+    {
+        'number':   '10',
+        'icon':     '📊',
+        'title':    'Accounting',
+        'subtitle': 'Full Measurement & Consequence Tracking',
+        'color':    '#fb923c',
+        'bg':       'rgba(251,146,60,.09)',
+        'border':   'rgba(251,146,60,.22)',
+        'principle': (
+            'Everything must be counted: profit, harm, benefit, '
+            'responsibility and consequences — not just what is convenient.'
+        ),
+        'question': 'Is the company honestly measuring what matters?',
+        'metrics': [
+            'carbon accounting completeness', 'water use reporting',
+            'waste output tracking', 'social impact measurement',
+            'tax paid and local value created', 'impact per £ invested',
+        ],
+        'signal': (
+            'What cannot be measured responsibly cannot be claimed as impact. '
+            'Selective reporting is a governance failure.'
+        ),
+    },
+]
+
+_EGF_EXTENDED = [
+    ('🌊', 'Universal Benefit',       'Public benefit across all stakeholders, not just shareholders.'),
+    ('💛', 'Targeted Care',           'Deliberate attention to those most affected by a project\'s risks.'),
+    ('🏛️', 'Stewardship',            'Responsible management of resources held in trust for communities.'),
+    ('✨', 'Ethical Screening',       'Active exclusion of harmful activities from investment consideration.'),
+    ('☮️', 'Non-Harm',               'Primary obligation to cause no damage before seeking gain.'),
+    ('🔐', 'Security',               'Building systems that communities and investors can rely on.'),
+    ('💪', 'Resilience',             'Strategic strength that withstands stress without externalities.'),
+    ('🔄', 'Restorative Justice',    'Repairing harm already caused and creating remediation pathways.'),
+    ('🔬', 'Innovation',             'Creating new sources of value without increasing harm.'),
+    ('♻️', 'Regenerative Design',    'Systems that restore rather than deplete what they use.'),
+    ('🧩', 'Inclusive Design',       'Products and services built to serve all users, not only the powerful.'),
+    ('🌿', 'Remediation',            'Pathways for companies to repair past failures and re-qualify.'),
+    ('⚡', 'Enforcement',            'Clear consequences for abuse, breach of standards or harm.'),
+    ('🔓', 'Access',                 'Removing cost and structural barriers to economic participation.'),
+    ('🚪', 'Barrier Removal',        'Unlocking markets, finance and opportunity for excluded actors.'),
+    ('🧠', 'Intelligence',           'Evidence-based decision-making powered by complete, verified data.'),
+    ('🎯', 'Risk Control',           'Disciplined restraint when risk-adjusted returns do not justify harm.'),
+    ('📡', 'Impact Scaling',         'Actively growing what works and replicating proven positive models.'),
+    ('📉', 'Harm Downgrade',         'Reducing visibility and capital access for persistently harmful actors.'),
+    ('📤', 'Leader Elevation',       'Amplifying and rewarding companies that consistently do better.'),
+    ('📣', 'Community Voice',        'Structured mechanisms for affected communities to raise concerns.'),
+    ('🔎', 'Deep Due Diligence',     'Rigorous analysis below the surface of headline ESG scores.'),
+    ('⏳', 'Patient Transition',     'Supporting companies on genuine long-term change pathways.'),
+    ('🤲', 'Inclusive Prosperity',   'Capital allocation that broadens economic participation.'),
+    ('📋', 'Continuous Supervision', 'Ongoing monitoring rather than point-in-time assessment.'),
+    ('🧮', 'Full Quantification',    'Counting all outcomes — positive, negative and indirect.'),
+    ('🔃', 'Circularity',            'Investment in systems that restore and repurpose rather than discard.'),
+    ('💧', 'Life-Giving Capital',    'Prioritising investment that sustains essential systems.'),
+    ('🏗️', 'System Stability',       'Long-term maintenance of infrastructure and operational continuity.'),
+    ('🔗', 'Unified Framework',      'Coherent ethical logic applied consistently, not selectively.'),
+    ('🕸️', 'Dependency Mapping',     'Understanding and managing critical infrastructure interdependencies.'),
+    ('📰', 'Public Transparency',    'Proactive disclosure of material information, not just compliance.'),
+    ('🕵️', 'Hidden Risk Detection',  'Identifying risks obscured by complexity, narrative or distance.'),
+    ('⚖️', 'Stakeholder Balance',    'Fair consideration of competing interests without systemic bias.'),
+    ('🌐', 'Collective Action',      'System-level coordination to solve problems no single actor can fix.'),
+    ('🆓', 'Capital Independence',   'Resisting dependency on exploitative or coercive financing.'),
+    ('🚫', 'Harm Prevention',        'Active systems to stop damage before it occurs.'),
+    ('✅', 'Benefit Creation',       'Deliberate generation of positive outcomes as a primary objective.'),
+    ('🔦', 'Disclosure Clarity',     'Plain, accessible communication of risk, impact and governance.'),
+    ('🗺️', 'Transition Guidance',    'Roadmaps that help companies move from high-harm to lower-harm models.'),
+    ('🌳', 'Long-Term Sustainability','Investment horizons that protect the interests of future generations.'),
+    ('⏭️', 'Intergenerational Justice','Ensuring today\'s decisions do not impoverish those who follow.'),
+    ('🧭', 'Sound Decision-Making',  'Structured, evidence-based processes for governance choices.'),
+    ('🌅', 'Enduring Transformation','Patient commitment to long-term systemic change over short-term gain.'),
+]
+
+
+def ethical_governance(request):
+    """
+    /ethical-governance/ — EcoIQ Ethical Governance Intelligence Framework.
+    A professional, investor-grade presentation of the 10 primary governance
+    principles and 44 extended principles. Language is professional English only.
+    The internal Name-by-Name mapping is in docs/ethical-governance-internal-map.md.
+    """
+    from django.conf import settings as _s
+    return render(request, 'ethical_governance.html', {
+        'modules':    _EGF_MODULES,
+        'extended':   _EGF_EXTENDED,
+        'site_url':   getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
+        'calendly_url': getattr(_s, 'CALENDLY_URL', ''),
+    })
+
+
+def governance_principles(request):
+    """
+    /governance-principles/ — EcoIQ Capital Ethics Compendium.
+    114 governance principles rendered via client-side JavaScript.
+    Language: professional English only.
+    Internal principle-origin mapping: docs/governance-principles-surah-map.md (INTERNAL ONLY).
+
+    JSON strings are pre-serialised at module load time (in esg_principles_data.py)
+    so this view does zero json.dumps() work on the request thread.
+    """
+    from django.conf import settings as _s
+    from .esg_principles_data import PRINCIPLES_JSON, CATEGORIES_JSON, PRINCIPLES
+
+    return render(request, 'governance_principles.html', {
+        'principles_json':  PRINCIPLES_JSON,   # pre-baked — no per-request serialisation
+        'categories_json':  CATEGORIES_JSON,
+        'principles_count': len(PRINCIPLES),
+        'site_url':   getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
+        'calendly_url': getattr(_s, 'CALENDLY_URL', ''),
+    })

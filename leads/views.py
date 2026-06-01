@@ -10,8 +10,8 @@ from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
-from .forms import AccessRequestForm
-from .models import AccessRequest, ProfileClaim
+from .forms import AccessRequestForm, ReviewRequestForm
+from .models import AccessRequest, ProfileClaim, ReviewRequest
 
 logger = logging.getLogger(__name__)
 
@@ -242,3 +242,106 @@ def claim_profile_submit(request):
     _send_claim_emails(claim, request)
 
     return JsonResponse({'success': True, 'ref': claim.ref})
+
+
+# ── EcoIQ Review Request ───────────────────────────────────────────────────────
+
+def _is_rate_limited_review(ip: str) -> bool:
+    """True if this IP has submitted ≥ 5 review requests in the last hour."""
+    if not ip:
+        return False
+    cutoff = timezone.now() - timedelta(hours=1)
+    return ReviewRequest.objects.filter(ip_address=ip, created_at__gte=cutoff).count() >= 5
+
+
+def _send_review_emails(instance: 'ReviewRequest', request) -> None:
+    """
+    Fire two emails for a new ReviewRequest:
+      1. Team notification → LEAD_NOTIFY_EMAIL
+      2. Confirmation      → submitter's email
+    Failures are logged and silenced — never surfaced to the user.
+    """
+    try:
+        notify_email = getattr(settings, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
+        from_email   = getattr(settings, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
+
+        notify_body = render_to_string('emails/review_notify.txt', {
+            'instance':  instance,
+            'admin_url': request.build_absolute_uri(
+                f'/admin/leads/reviewrequest/{instance.pk}/change/'
+            ),
+        })
+        send_mail(
+            subject=(
+                f'[EcoIQ] New review request — {instance.get_request_type_display()} '
+                f'({instance.name}, {instance.organisation})'
+            ),
+            message=notify_body,
+            from_email=from_email,
+            recipient_list=[notify_email],
+            fail_silently=True,
+        )
+
+        confirm_body = render_to_string('emails/review_confirm.txt', {'instance': instance})
+        send_mail(
+            subject='Your EcoIQ review request — we\'ll be in touch within 48 hours',
+            message=confirm_body,
+            from_email=from_email,
+            recipient_list=[instance.email],
+            fail_silently=True,
+        )
+
+    except Exception as exc:   # pragma: no cover
+        logger.exception('Email send failed for ReviewRequest pk=%s: %s', instance.pk, exc)
+
+
+def request_review(request):
+    """
+    GET/POST /request-access/review/
+
+    Renders the "Request EcoIQ Review" lead-capture form.
+    Accepts an optional ?type= query param to pre-select the request type.
+    Handles multipart/form-data for the optional sustainability report upload.
+    """
+    # Pre-select request type from query string (used by CTA deep-links)
+    initial = {}
+    rt = request.GET.get('type', '').strip()
+    if rt:
+        initial['request_type'] = rt
+
+    form = ReviewRequestForm(initial=initial)
+
+    if request.method == 'POST':
+        # Honeypot check — silently redirect bots
+        if request.POST.get('website', '').strip():
+            return redirect('leads:review_success')
+
+        ip   = _get_client_ip(request)
+        form = ReviewRequestForm(request.POST, request.FILES)
+
+        if _is_rate_limited_review(ip):
+            return render(request, 'leads/review_request.html', {
+                'form':         form,
+                'rate_limited': True,
+            })
+
+        if form.is_valid():
+            instance            = form.save(commit=False)
+            instance.ip_address = ip
+            instance.save()
+            _send_review_emails(instance, request)
+            return redirect('leads:review_success')
+
+    calendly_url = getattr(settings, 'CALENDLY_URL', '')
+    return render(request, 'leads/review_request.html', {
+        'form':         form,
+        'calendly_url': calendly_url,
+    })
+
+
+def review_success(request):
+    """GET /request-access/review/success/ — thank-you page after form submission."""
+    calendly_url = getattr(settings, 'CALENDLY_URL', '')
+    return render(request, 'leads/review_success.html', {
+        'calendly_url': calendly_url,
+    })

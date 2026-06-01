@@ -31,6 +31,8 @@ from mizan.scoring import (
     _investor_note, _islamic_finance_note,
     _due_diligence_note, _recommended_actions,
 )
+from ml.ethics.greenwashing_risk import GreenwashingInput, assess_greenwashing_risk
+from ml.finance.islamic_finance_fit import IslamicFinanceFitInput, assess_islamic_finance_fit, _ASSET_BACKED_SECTORS
 
 
 # ── Lookup tables ─────────────────────────────────────────────────────────────
@@ -274,6 +276,94 @@ def score_project(inp: ProjectInput) -> MizanResult:
     # Always include this for project-model scores
     flags.append('Project scoring is indicative — independent ESIA is required')
 
+    # ── Greenwashing risk for project ─────────────────────────────────────────
+    # Derive inputs from project parameters and pre-computed feature vector
+    gov_score   = fv['governance_score']
+    sector_harm = fv['sector_harm_base']
+
+    # Climate claims: how ambitious are the stated green / transition credentials
+    proj_climate_claims = _clamp(
+        inp.renewable_energy_share * 0.45
+        + (gov_score / 100.0) * 35.0
+        + (15.0 if inp.climate_risk_disclosure else 0.0)
+    )
+    # Verified data: EIA + climate disclosure as proxies
+    proj_verified_data = _clamp(
+        (50.0 if inp.environmental_assessment else 0.0)
+        + (25.0 if inp.climate_risk_disclosure else 0.0)
+    )
+    # Third-party assurance: governance framework strength
+    proj_third_party = _clamp(gov_score * 0.75)
+    # Transition capex: renewable share + EIA as proxies for investment disclosure
+    proj_transition_capex = _clamp(
+        inp.renewable_energy_share * 0.60
+        + (20.0 if inp.environmental_assessment else 0.0)
+    )
+    # Fossil fuel exposure: directly from sector harm base
+    proj_ff_exposure = _clamp(sector_harm)
+
+    gw_inp = GreenwashingInput(
+        climate_claims_strength     = round(proj_climate_claims,   2),
+        verified_emissions_data     = round(proj_verified_data,    2),
+        third_party_assurance       = round(proj_third_party,      2),
+        transition_capex_disclosure = round(proj_transition_capex, 2),
+        fossil_fuel_exposure        = round(proj_ff_exposure,      2),
+        target_quality              = round(ec,                    2),   # ec mirrors evidence quality
+        evidence_confidence         = round(ec,                    2),
+        controversy_flags           = 0,   # not known for new project submissions
+        ownership_transparency      = round(gov_score,             2),
+        entity_type                 = 'project',
+    )
+    gw_result = assess_greenwashing_risk(gw_inp)
+
+    if gw_result.risk_level in ('high', 'severe'):
+        flags.append(
+            f'Greenwashing risk indicators: {gw_result.risk_level} '
+            f'(score {gw_result.greenwashing_risk_score:.0f}/100) — '
+            'declared parameters do not fully substantiate stated climate claims'
+        )
+
+    # ── Islamic & Ethical Finance Fit ─────────────────────────────────────────
+    # Infer fields not present in ProjectInput conservatively.
+    # tangible_asset_linked: true when the sector naturally produces a real asset
+    # use_of_proceeds_specificity: proxied from governance framework strength
+    _spec_from_gov = {
+        'IFC': 'specific', 'EBRD': 'specific', 'ADB': 'specific',
+        'World Bank': 'specific', 'EU Taxonomy': 'specific',
+        'GBP': 'general', 'TCFD': 'general', 'national': 'general',
+        'none': 'vague', '': 'vague',
+    }
+    _clarity_from_gov = {
+        'IFC': 'high', 'EBRD': 'high', 'ADB': 'high', 'World Bank': 'high',
+        'EU Taxonomy': 'high', 'GBP': 'standard', 'TCFD': 'standard',
+        'national': 'standard', 'none': 'low', '': 'low',
+    }
+    if_inp = IslamicFinanceFitInput(
+        name                        = inp.name,
+        sector                      = inp.sector,
+        country                     = inp.country,
+        project_type                = inp.project_type,
+        budget_usd                  = inp.budget_usd,
+        duration_years              = inp.duration_years,
+        tangible_asset_linked       = inp.sector.lower() in _ASSET_BACKED_SECTORS,
+        asset_ownership_transferable = False,      # not declared in ProjectInput
+        asset_generates_income      = inp.renewable_energy_share >= 50,
+        community_benefit           = inp.community_benefit,
+        direct_jobs                 = inp.direct_jobs,
+        local_procurement_pct       = inp.local_procurement_pct,
+        use_of_proceeds_specificity = _spec_from_gov.get(inp.governance_framework, 'vague'),
+        environmental_assessment    = inp.environmental_assessment,
+        governance_framework        = inp.governance_framework,
+        ownership_disclosed         = False,       # not declared in ProjectInput
+        independent_board_oversight = inp.governance_framework in ('IFC', 'EBRD', 'ADB', 'World Bank'),
+        project_stage               = 'feasibility',   # conservative default
+        contractual_clarity         = _clarity_from_gov.get(inp.governance_framework, 'low'),
+        renewable_energy_share      = inp.renewable_energy_share,
+        climate_risk_disclosure     = inp.climate_risk_disclosure,
+        community_benefit_sharing   = inp.community_benefit == 'high',
+    )
+    if_result = assess_islamic_finance_fit(if_inp)
+
     return MizanResult(
         public_benefit_score               = round(pb,    2),
         harm_reduction_score               = round(hr,    2),
@@ -290,4 +380,6 @@ def score_project(inp: ProjectInput) -> MizanResult:
         recommended_next_actions           = _recommended_actions(pb, hr, jd, ta, st, ec),
         data_source                        = 'project_model',
         confidence                         = confidence,
+        greenwashing_risk                  = gw_result.to_dict(),
+        islamic_finance_fit                = if_result.to_dict(),
     )

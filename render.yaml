@@ -19,11 +19,16 @@ services:
     region: oregon
     plan: starter                        # $7/month — persistent disk, no cold starts
     buildCommand: pip install -r requirements.txt && ./build.sh
-    startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT
+    # 1 worker only — Render starter plan is 512MB RAM.
+    # Two workers = two full Django + Wagtail processes = OOM.
+    startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
 
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"
+
+      - key: WEB_CONCURRENCY
+        value: "1"                       # belt-and-suspenders: matches --workers above
 
       - key: DEBUG
         value: "False"                   # always False in production

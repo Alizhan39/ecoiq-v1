@@ -1,0 +1,414 @@
+{% load static i18n %}
+{% get_current_language as CURRENT_LANG %}
+<!DOCTYPE html>
+<html lang="{{ CURRENT_LANG }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EcoIQ Intelligence Platform — five analytical modules for investor-grade ethical climate intelligence. Country transition intelligence, company assessment, project readiness, capital integrity, and ethical finance fit." />
+  <meta property="og:title"       content="EcoIQ Intelligence Platform — Five Analytical Modules" />
+  <meta property="og:description" content="Investor-grade ethical climate intelligence for responsible capital, development banks, and sovereign funds. UK · Kazakhstan · Saudi Arabia · Türkiye." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="{{ site_url }}/platform/" />
+  <meta property="og:site_name"   content="EcoIQ" />
+  <meta name="twitter:card"       content="summary_large_image" />
+  <title>EcoIQ Intelligence Platform — Five Analytical Modules</title>
+
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] } } }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:  #06080e;
+      --bg2: #0d1117;
+      --acc: #00e89a;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    body { background: var(--bg); color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #1c2333; border-radius: 99px; }
+
+    .glass { background: rgba(255,255,255,.032); border: 1px solid rgba(255,255,255,.07); backdrop-filter: blur(14px); }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(0,232,154,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,232,154,.018) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(0,232,154,.07); border: 1px solid rgba(0,232,154,.2);
+      color: var(--acc); font-size: .68rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: .28rem .75rem; border-radius: 20px;
+    }
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .55s ease, transform .55s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    .card-hover { transition: border-color .2s, transform .2s, box-shadow .2s; }
+    .card-hover:hover { border-color: rgba(0,232,154,.25) !important; transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+    .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(90px); }
+
+    @media (max-width: 640px) { .hide-sm { display: none !important; } }
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════ NAV ═══════════════════════════════════ -->
+<header style="position:sticky;top:0;z-index:100;background:rgba(6,8,14,.92);border-bottom:1px solid rgba(255,255,255,.05);backdrop-filter:blur(18px);">
+  <div style="max-width:1120px;margin:0 auto;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;">
+
+    <a href="/" style="display:flex;align-items:center;gap:.55rem;text-decoration:none;flex-shrink:0;" aria-label="EcoIQ Home">
+      <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="9" fill="#070b0f"/>
+        <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2" stroke-linejoin="round"/>
+        <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.4" stroke-linejoin="round"/>
+        <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+        <circle cx="20" cy="4"  r="1.2" fill="#00e89a" opacity=".45"/>
+        <circle cx="6.1" cy="28" r="1.2" fill="#00e89a" opacity=".45"/>
+        <circle cx="33.9" cy="28" r="1.2" fill="#00e89a" opacity=".45"/>
+      </svg>
+      <span style="font-weight:800;color:#fff;font-size:.95rem;letter-spacing:-.02em;">Eco<span style="color:var(--acc);">IQ</span></span>
+    </a>
+
+    <nav style="display:flex;align-items:center;gap:1.6rem;" class="hide-sm">
+      <a href="/companies/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Rankings</a>
+      <a href="/countries/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Countries</a>
+      <a href="/platform/" style="font-size:.84rem;color:#00e89a;text-decoration:none;font-weight:600;">Platform</a>
+      <a href="/ethical-governance/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Framework</a>
+      <a href="/governance-principles/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Compendium</a>
+      <a href="/methodology/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Methodology</a>
+      <a href="/about/" style="font-size:.84rem;color:#94a3b8;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">About</a>
+    </nav>
+
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <a href="{% url 'leads:request_review' %}" style="background:var(--acc);color:#000;font-weight:700;font-size:.83rem;padding:.45rem 1rem;border-radius:7px;text-decoration:none;white-space:nowrap;">
+        Request Review →
+      </a>
+    </div>
+  </div>
+</header>
+
+
+<!-- ═══════════════════════════════════ HERO ══════════════════════════════════ -->
+<section class="grid-bg" style="position:relative;overflow:hidden;padding:4.5rem 1.5rem 3.5rem;">
+  <div class="orb" style="width:600px;height:600px;background:rgba(0,232,154,1);opacity:.04;top:-200px;right:-120px;"></div>
+  <div class="orb" style="width:350px;height:350px;background:rgba(88,166,255,1);opacity:.03;bottom:-50px;left:-80px;"></div>
+
+  <div style="max-width:900px;margin:0 auto;text-align:center;position:relative;" class="reveal">
+    <div class="chip" style="margin-bottom:1.2rem;">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s ease-in-out infinite;"></span>
+      Ethical Climate Intelligence · UK · Kazakhstan · Saudi Arabia · Türkiye
+    </div>
+
+    <h1 style="font-size:clamp(2rem,4.5vw,3.2rem);font-weight:900;line-height:1.08;letter-spacing:-.03em;color:#fff;margin-bottom:1rem;">
+      Five Modules.<br>
+      <span style="background:linear-gradient(105deg,#00e89a,#34d399 50%,#6ee7b7 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">One Intelligence Platform.</span>
+    </h1>
+
+    <p style="font-size:1.05rem;color:#94a3b8;line-height:1.75;max-width:620px;margin:0 auto 2rem;">
+      EcoIQ brings together five structured analytical modules — from national transition intelligence
+      to ethical finance compatibility — to give responsible investors, development banks, and
+      sovereign funds a clear, evidence-based picture of climate risk and opportunity.
+    </p>
+
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{% url 'leads:request_review' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.95rem;padding:.7rem 1.5rem;border-radius:8px;text-decoration:none;box-shadow:0 0 22px rgba(0,232,154,.3);">
+        Request EcoIQ Review
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;font-weight:600;font-size:.95rem;padding:.7rem 1.5rem;border-radius:8px;text-decoration:none;">
+        Browse Company Rankings
+      </a>
+    </div>
+
+    <!-- Module anchor strip -->
+    <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:2.5rem;">
+      {% for m in modules %}
+      <a href="#{{ m.id }}" style="font-size:.72rem;color:#475569;text-decoration:none;border:1px solid rgba(255,255,255,.08);padding:.3rem .7rem;border-radius:5px;font-family:'SF Mono',monospace;transition:all .15s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='rgba(255,255,255,.2)'" onmouseout="this.style.color='#475569';this.style.borderColor='rgba(255,255,255,.08)'">
+        {{ m.number }} {{ m.title }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════ STAT BAND ═══════════════════════════ -->
+<div style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.015);padding:.85rem 1.5rem;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap;">
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:.8px;text-transform:uppercase;">5 Modules</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Integrated intelligence</div>
+    </div>
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:#58a6ff;letter-spacing:.8px;text-transform:uppercase;">400+ Companies</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Scored and ranked</div>
+    </div>
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:#a855f7;letter-spacing:.8px;text-transform:uppercase;">25+ Countries</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Transition intelligence profiles</div>
+    </div>
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
+    <div style="text-align:center;">
+      <div style="font-size:.72rem;font-weight:700;color:#f4a261;letter-spacing:.8px;text-transform:uppercase;">AI + Analyst Review</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Evidence-based, not black-box</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════ MODULE DETAIL SECTIONS ══════════════ -->
+{% for m in modules %}
+<section id="{{ m.id }}" style="padding:5rem 1.5rem;{% if forloop.even %}background:rgba(255,255,255,.012);border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);{% endif %}">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <!-- Module header -->
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:3rem;align-items:start;margin-bottom:3rem;" class="reveal">
+
+      <!-- Left: copy -->
+      <div>
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.2rem;">
+          <div style="width:48px;height:48px;border-radius:12px;background:{{ m.bg }};border:1px solid {{ m.border }};display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">{{ m.icon }}</div>
+          <div>
+            <div style="font-size:.65rem;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.2rem;">Module {{ m.number }}</div>
+            <h2 style="font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:800;color:#fff;letter-spacing:-.03em;line-height:1.1;">{{ m.title }}</h2>
+          </div>
+        </div>
+
+        <p style="font-size:.95rem;color:#64748b;line-height:1.75;margin-bottom:1.5rem;">{{ m.description }}</p>
+
+        <!-- Tags -->
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+          {% for tag in m.tags %}
+          <span style="font-size:.68rem;background:{{ m.bg }};border:1px solid {{ m.border }};color:{{ m.color }};padding:.22rem .6rem;border-radius:5px;">{{ tag }}</span>
+          {% endfor %}
+        </div>
+
+        <!-- Markets -->
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1.75rem;">
+          <span style="font-size:.7rem;color:#334155;font-family:'SF Mono',monospace;">Markets:</span>
+          {% for market in m.markets %}
+          <span style="font-size:.7rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#64748b;padding:.15rem .5rem;border-radius:4px;">{{ market }}</span>
+          {% endfor %}
+        </div>
+
+        <a href="{{ m.link }}" style="display:inline-flex;align-items:center;gap:.5rem;background:{{ m.bg }};border:1px solid {{ m.border }};color:{{ m.color }};font-weight:700;font-size:.88rem;padding:.6rem 1.25rem;border-radius:8px;text-decoration:none;transition:opacity .15s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+          {{ m.link_label }}
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+
+      <!-- Right: dimensions panel -->
+      <div style="background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.5rem;" class="hide-sm">
+        <div style="font-size:.65rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:1rem;font-family:'SF Mono',monospace;">Scored Dimensions</div>
+        <div style="display:flex;flex-direction:column;gap:.85rem;">
+          {% for dim_name, dim_desc in m.dimensions %}
+          <div>
+            <div style="font-size:.8rem;font-weight:600;color:#e2e8f0;margin-bottom:.2rem;">{{ dim_name }}</div>
+            <div style="font-size:.72rem;color:#475569;line-height:1.55;">{{ dim_desc }}</div>
+          </div>
+          {% if not forloop.last %}
+          <div style="height:1px;background:rgba(255,255,255,.05);"></div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Mobile: dimensions as list -->
+    <div style="background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:2rem;" class="reveal">
+      <div style="font-size:.65rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:.85rem;font-family:'SF Mono',monospace;">Scored Dimensions</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;">
+        {% for dim_name, dim_desc in m.dimensions %}
+        <div style="display:flex;gap:.5rem;align-items:flex-start;">
+          <div style="color:{{ m.color }};font-size:.75rem;flex-shrink:0;margin-top:.15rem;">▸</div>
+          <div>
+            <div style="font-size:.78rem;font-weight:600;color:#e2e8f0;">{{ dim_name }}</div>
+            <div style="font-size:.7rem;color:#475569;line-height:1.5;">{{ dim_desc }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div style="font-size:.72rem;color:#1e293b;border-top:1px solid rgba(255,255,255,.04);padding-top:1rem;">
+      ⚠️ {{ m.disclaimer }}
+    </div>
+
+  </div>
+</section>
+{% endfor %}
+
+
+<!-- ═══════════════════════════════════ REVIEW CTA ═══════════════════════════ -->
+<section style="padding:5rem 1.5rem;background:rgba(16,185,129,.04);border-top:1px solid rgba(255,255,255,.06);">
+  <div style="max-width:920px;margin:0 auto;" class="reveal">
+
+    <div style="text-align:center;margin-bottom:3rem;">
+      <div class="chip" style="margin-bottom:1rem;">Request a Review</div>
+      <h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem;">
+        Get a structured intelligence review
+      </h2>
+      <p style="color:#64748b;font-size:.95rem;max-width:540px;margin:0 auto;line-height:1.75;">
+        Submit a company, country, or project for EcoIQ analysis —
+        or upload your sustainability report for a greenwashing risk assessment.
+        No payment required.
+      </p>
+    </div>
+
+    <!-- 3-column CTA grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:2rem;">
+
+      <a href="{% url 'leads:request_review' %}" style="display:flex;flex-direction:column;gap:.75rem;padding:1.5rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)';this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.borderColor='rgba(255,255,255,.09)';this.style.background='rgba(255,255,255,.04)'">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.25);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Request EcoIQ Review</div>
+          <div style="font-size:.76rem;color:#475569;line-height:1.6;">Company assessment, country intelligence, project readiness, or ethical finance fit review.</div>
+        </div>
+        <div style="font-size:.76rem;color:var(--acc);font-weight:600;margin-top:auto;">Get started →</div>
+      </a>
+
+      <a href="{% url 'leads:request_review' %}?type=greenwashing_review" style="display:flex;flex-direction:column;gap:.75rem;padding:1.5rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)';this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.borderColor='rgba(255,255,255,.09)';this.style.background='rgba(255,255,255,.04)'">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.25);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Upload Sustainability Report</div>
+          <div style="font-size:.76rem;color:#475569;line-height:1.6;">Upload a PDF sustainability or ESG report for a greenwashing risk assessment.</div>
+        </div>
+        <div style="font-size:.76rem;color:var(--acc);font-weight:600;margin-top:auto;">Upload PDF →</div>
+      </a>
+
+      {% if calendly_url %}
+      <a href="{{ calendly_url }}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;gap:.75rem;padding:1.5rem;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.25);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,232,154,.12)'" onmouseout="this.style.background='rgba(0,232,154,.08)'">
+      {% else %}
+      <a href="mailto:alizhan@ecoiq.uk?subject=Investor Briefing Request" style="display:flex;flex-direction:column;gap:.75rem;padding:1.5rem;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.25);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,232,154,.12)'" onmouseout="this.style.background='rgba(0,232,154,.08)'">
+      {% endif %}
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,232,154,.18);border:1px solid rgba(0,232,154,.35);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Book Investor Briefing</div>
+          <div style="font-size:.76rem;color:#475569;line-height:1.6;">Schedule a 30-minute call with our analysts to discuss findings and recommendations.</div>
+        </div>
+        <div style="font-size:.76rem;color:var(--acc);font-weight:600;margin-top:auto;">Schedule now →</div>
+      </a>
+
+    </div>
+
+    <p style="text-align:center;font-size:.72rem;color:#1e293b;">
+      No payment required. EcoIQ assessments are analytical and indicative — not investment advice.
+    </p>
+
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════ DISCLAIMERS ═══════════════════════════ -->
+<section style="padding:2.5rem 1.5rem;background:#070b0f;border-top:1px solid rgba(255,255,255,.05);">
+  <div style="max-width:900px;margin:0 auto;">
+    <div style="font-size:.65rem;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:.75rem;font-family:'SF Mono',monospace;">Important Notices</div>
+    <p style="font-size:.75rem;color:#1e293b;line-height:1.75;margin-bottom:.5rem;">
+      All EcoIQ intelligence outputs — including country scores, company assessments, project readiness reviews, capital integrity scores, and ethical finance fit assessments — are <strong style="color:#334155;">AI-assisted and indicative in nature</strong>. They are derived from publicly available information and rule-based scoring models. They do not constitute investment advice, financial advice, legal advice, or any regulatory determination.
+    </p>
+    <p style="font-size:.75rem;color:#1e293b;line-height:1.75;margin-bottom:.5rem;">
+      Ethical Finance Fit assessments are analytical tools only. They are <strong style="color:#334155;">not a determination of permissibility under any religious, legal, or regulatory framework</strong>. Any use in investment or financing decisions requires independent review by qualified professionals.
+    </p>
+    <p style="font-size:.75rem;color:#1e293b;line-height:1.75;">
+      EcoIQ scores should be used as one input among many in a professional due diligence process, not as a standalone basis for any investment or financing decision.
+    </p>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════ FOOTER ════════════════════════════════ -->
+<footer style="border-top:1px solid rgba(255,255,255,.05);padding:2.5rem 1.5rem 2rem;">
+  <div style="max-width:1120px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;margin-bottom:2rem;" class="hide-sm">
+
+      <div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;">
+          <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="40" height="40" rx="9" fill="#070b0f"/>
+            <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2.2" stroke-linejoin="round"/>
+            <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+          </svg>
+          <span style="font-weight:800;color:#fff;font-size:.88rem;letter-spacing:-.02em;">Eco<span style="color:var(--acc);">IQ</span></span>
+        </div>
+        <p style="font-size:.78rem;color:#334155;line-height:1.65;">
+          Investor-facing ethical climate intelligence platform. Five analytical modules for
+          responsible capital, development banks, and sovereign funds.
+        </p>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.75rem;">
+          <span style="font-size:.65rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:#334155;padding:.2rem .5rem;border-radius:4px;">United Kingdom</span>
+          <span style="font-size:.65rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:#334155;padding:.2rem .5rem;border-radius:4px;">Kazakhstan</span>
+          <span style="font-size:.65rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:#334155;padding:.2rem .5rem;border-radius:4px;">Saudi Arabia</span>
+          <span style="font-size:.65rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:#334155;padding:.2rem .5rem;border-radius:4px;">Türkiye</span>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:.68rem;color:#334155;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:.7rem;">Platform</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <a href="/platform/" style="font-size:.8rem;color:#475569;text-decoration:none;">Intelligence Modules</a>
+          <a href="/ethical-governance/" style="font-size:.8rem;color:#475569;text-decoration:none;">Ethical Governance Framework</a>
+          <a href="/governance-principles/" style="font-size:.8rem;color:#475569;text-decoration:none;">Capital Ethics Compendium</a>
+          <a href="/companies/" style="font-size:.8rem;color:#475569;text-decoration:none;">Company Rankings</a>
+          <a href="/countries/" style="font-size:.8rem;color:#475569;text-decoration:none;">Country Intelligence</a>
+          <a href="{% url 'leads:request_review' %}" style="font-size:.8rem;color:#475569;text-decoration:none;">Request EcoIQ Review</a>
+          <a href="/methodology/" style="font-size:.8rem;color:#475569;text-decoration:none;">Methodology</a>
+          <a href="/pricing/" style="font-size:.8rem;color:#475569;text-decoration:none;">Pricing</a>
+          <a href="/api-docs/" style="font-size:.8rem;color:#475569;text-decoration:none;">API Docs</a>
+          <a href="/investors/" style="font-size:.8rem;color:#475569;text-decoration:none;">For Investors</a>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:.68rem;color:#334155;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:.7rem;">Contact</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <a href="mailto:alizhan@ecoiq.uk" style="font-size:.8rem;color:#475569;text-decoration:none;">alizhan@ecoiq.uk</a>
+          <a href="{% url 'contact' %}" style="font-size:.8rem;color:#475569;text-decoration:none;">Contact form</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="border-top:1px solid rgba(255,255,255,.04);padding-top:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+      <span style="font-size:.72rem;color:#1e293b;">© {% now "Y" %} EcoIQ. All rights reserved.</span>
+      <span style="font-size:.72rem;color:#1e293b;text-align:right;">All outputs are AI-assisted and indicative. Not investment advice.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+}());
+</script>
+
+</body>
+</html>

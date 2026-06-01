@@ -5,8 +5,10 @@ and return structured findings.
 
 import json
 import re
-import anthropic
 from django.conf import settings
+# anthropic is imported lazily inside run_ecoiq_analysis() so it does NOT
+# load the SDK (and its ~40 MB of dependencies) at Django startup —
+# only when an actual ESG assessment is run.
 
 
 SYSTEM_PROMPT = """You are an EcoIQ Analyst — an expert in corporate sustainability,
@@ -95,6 +97,8 @@ def run_ecoiq_analysis(assessment) -> dict:
     Raises ValueError if the API key is missing.
     Raises anthropic.APIError (or subclasses) on API failures.
     """
+    import anthropic  # lazy — keeps the SDK out of startup memory
+
     api_key = settings.ANTHROPIC_API_KEY
     if not api_key:
         raise ValueError(

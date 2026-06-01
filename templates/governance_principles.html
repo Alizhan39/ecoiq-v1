@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Capital Ethics Compendium | {{ principles_count }} Governance Principles | EcoIQ</title>
+  <meta name="description" content="A structured compendium of {{ principles_count }} governance principles covering justice, ecological stewardship, economic ethics, human development, and long-term accountability. Used in EcoIQ assessments.">
+  <meta property="og:title" content="Capital Ethics Compendium — {{ principles_count }} Governance Principles">
+  <meta property="og:description" content="The complete EcoIQ governance intelligence library: {{ principles_count }} principles, 10 dimensions, evidence-based assessment signals.">
+  <meta property="og:url" content="{{ site_url }}/governance-principles/">
+  <link rel="canonical" href="{{ site_url }}/governance-principles/">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg:   #06080e;
+      --bg2:  #0d1117;
+      --bg3:  #111827;
+      --acc:  #00e89a;
+      --acc2: #00b87a;
+      --txt:  #e2e8f0;
+      --muted:#94a3b8;
+      --border: rgba(255,255,255,.07);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--txt); font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    .nav { position: sticky; top: 0; z-index: 50; background: rgba(6,8,14,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; padding: .85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { font-weight: 800; font-size: 1.15rem; color: var(--acc); text-decoration: none; letter-spacing: -.3px; }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .88rem; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--txt); }
+    .nav-links a.active { color: var(--acc); font-weight: 600; }
+    .nav-cta { background: var(--acc); color: #06080e; padding: .42rem 1rem; border-radius: 6px; font-size: .82rem; font-weight: 700; text-decoration: none; transition: opacity .2s; }
+    .nav-cta:hover { opacity: .88; }
+    @media(max-width:720px){ .nav-links { display: none; } }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero { max-width: 900px; margin: 0 auto; padding: 5rem 1.5rem 3rem; text-align: center; }
+    .hero-badge { display: inline-flex; align-items: center; gap: .4rem; background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.25); color: var(--acc); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: .35rem .85rem; border-radius: 20px; margin-bottom: 1.5rem; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -.5px; line-height: 1.15; margin-bottom: 1.25rem; }
+    .hero h1 span { color: var(--acc); }
+    .hero p { font-size: 1.08rem; color: var(--muted); max-width: 640px; margin: 0 auto 2rem; }
+    .stat-band { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem; }
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--acc); }
+    .stat-lbl { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+
+    /* ── Search & Filter Bar ──────────────────────────────── */
+    .controls { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 2rem; }
+    .search-wrap { position: relative; margin-bottom: 1rem; }
+    .search-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--txt);
+      padding: .75rem 1rem .75rem 2.75rem;
+      border-radius: 10px;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-input:focus { border-color: rgba(0,232,154,.4); }
+    .search-input::placeholder { color: var(--muted); }
+    .search-icon { position: absolute; left: .9rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 1rem; pointer-events: none; }
+    .search-count { position: absolute; right: .9rem; top: 50%; transform: translateY(-50%); font-size: .78rem; color: var(--muted); }
+
+    .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .filter-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: .38rem .85rem;
+      border-radius: 20px;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .filter-btn:hover { border-color: rgba(0,232,154,.3); color: var(--txt); }
+    .filter-btn.active { background: rgba(0,232,154,.12); border-color: rgba(0,232,154,.4); color: var(--acc); font-weight: 600; }
+
+    /* ── Card Grid ────────────────────────────────────────── */
+    .card-grid { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 4rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+    @media(max-width:480px){ .card-grid { grid-template-columns: 1fr; } }
+
+    .principle-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color .2s, transform .2s;
+      cursor: pointer;
+    }
+    .principle-card:hover { border-color: rgba(0,232,154,.25); transform: translateY(-1px); }
+    .principle-card.expanded { border-color: rgba(0,232,154,.35); }
+
+    .card-header { padding: 1.1rem 1.1rem .65rem; display: flex; align-items: flex-start; gap: .75rem; }
+    .card-num { font-size: .68rem; font-weight: 700; color: var(--muted); min-width: 2rem; padding-top: .15rem; }
+    .card-cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .5rem; }
+    .card-main { flex: 1; }
+    .card-title { font-size: .98rem; font-weight: 700; color: var(--txt); line-height: 1.3; }
+    .card-tagline { font-size: .78rem; color: var(--muted); margin-top: .3rem; line-height: 1.4; }
+    .card-chevron { color: var(--muted); font-size: .75rem; transition: transform .25s; flex-shrink: 0; padding-top: .25rem; }
+    .principle-card.expanded .card-chevron { transform: rotate(180deg); }
+
+    .card-body { display: none; padding: 0 1.1rem 1.1rem; border-top: 1px solid var(--border); }
+    .principle-card.expanded .card-body { display: block; }
+
+    .card-question { font-size: .82rem; color: var(--muted); font-style: italic; margin: .85rem 0 .75rem; line-height: 1.5; }
+    .card-metrics { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .85rem; }
+    .metric-tag {
+      font-size: .66rem;
+      padding: .18rem .52rem;
+      border-radius: 4px;
+      background: rgba(0,232,154,.08);
+      border: 1px solid rgba(0,232,154,.18);
+      color: var(--acc);
+    }
+    .signal-box {
+      background: rgba(255,255,255,.03);
+      border-left: 3px solid var(--acc);
+      border-radius: 0 8px 8px 0;
+      padding: .65rem .9rem;
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .signal-box strong { color: var(--txt); display: block; margin-bottom: .25rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ── Empty State ─────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 4rem 1.5rem; color: var(--muted); display: none; }
+    .empty-state.visible { display: block; }
+    .empty-state h3 { font-size: 1.15rem; margin-bottom: .5rem; color: var(--txt); }
+
+    /* ── CTA ─────────────────────────────────────────────── */
+    .cta-section { background: rgba(0,232,154,.04); border-top: 1px solid rgba(0,232,154,.12); padding: 4rem 1.5rem; text-align: center; }
+    .cta-inner { max-width: 700px; margin: 0 auto; }
+    .cta-inner h2 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; margin-bottom: .75rem; }
+    .cta-inner p { color: var(--muted); font-size: .95rem; margin-bottom: 2rem; }
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary { background: var(--acc); color: #06080e; padding: .75rem 1.75rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: .9rem; transition: opacity .2s; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-outline { border: 1px solid rgba(0,232,154,.35); color: var(--acc); padding: .75rem 1.75rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: .9rem; transition: all .2s; }
+    .btn-outline:hover { background: rgba(0,232,154,.08); }
+
+    /* ── Disclaimer ──────────────────────────────────────── */
+    .disclaimer { background: rgba(0,0,0,.3); border-top: 1px solid var(--border); padding: 2rem 1.5rem; }
+    .disclaimer-inner { max-width: 900px; margin: 0 auto; font-size: .72rem; color: #475569; line-height: 1.7; }
+    .disclaimer-inner strong { color: #64748b; }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    footer { background: #020408; border-top: 1px solid var(--border); padding: 2.5rem 1.5rem; }
+    .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+    .footer-brand { font-weight: 700; color: var(--acc); font-size: .95rem; }
+    .footer-links { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: .8rem; transition: color .2s; }
+    .footer-links a:hover { color: var(--txt); }
+    .footer-copy { font-size: .75rem; color: #475569; width: 100%; padding-top: 1rem; border-top: 1px solid var(--border); margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ NAV ═══════════════════════════ -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">EcoIQ</a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/platform/">Platform</a></li>
+      <li><a href="/ethical-governance/">Framework</a></li>
+      <li><a href="/governance-principles/" class="active">Compendium</a></li>
+      <li><a href="/methodology/">Methodology</a></li>
+      <li><a href="/about/">About</a></li>
+    </ul>
+    <a href="/request-access/review/" class="nav-cta">Request Review</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════ HERO ══════════════════════════ -->
+<section class="hero">
+  <div class="hero-badge">
+    <span>📐</span>
+    Capital Ethics Compendium
+  </div>
+  <h1>{{ principles_count }} Principles of<br><span>Governance Intelligence</span></h1>
+  <p>A structured library of evidence-based governance principles — spanning justice, ecological stewardship, economic ethics, human development, and long-term accountability. Every EcoIQ assessment is grounded in this compendium.</p>
+
+  <div class="stat-band">
+    <div class="stat-item">
+      <div class="stat-num">{{ principles_count }}</div>
+      <div class="stat-lbl">Governance Principles</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">10</div>
+      <div class="stat-lbl">Thematic Dimensions</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">700+</div>
+      <div class="stat-lbl">Assessment Metrics</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">{{ principles_count }}</div>
+      <div class="stat-lbl">Assessment Signals</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ CONTROLS ═════════════════════ -->
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input
+      id="searchInput"
+      class="search-input"
+      type="text"
+      placeholder="Search principles, metrics, signals…"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Search governance principles"
+    >
+    <span class="search-count" id="searchCount"></span>
+  </div>
+  <div class="filter-bar" id="filterBar" role="group" aria-label="Filter by category">
+    <!-- JS fills this -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ GRID ═════════════════════════ -->
+<div class="card-grid" id="cardGrid" role="list" aria-label="Governance principles">
+  <!-- JS renders all cards -->
+</div>
+<div class="empty-state" id="emptyState" aria-live="polite">
+  <h3>No principles found</h3>
+  <p>Try adjusting your search or clearing the category filter.</p>
+</div>
+
+<!-- ═══════════════════════════════════════ CTA ══════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2>Apply These Principles to Your Portfolio</h2>
+    <p>EcoIQ assessments use this compendium to evaluate companies, projects and capital structures across all four markets. Request an assessment or explore the full framework.</p>
+    <div class="cta-buttons">
+      {% if calendly_url %}
+      <a href="{{ calendly_url }}" target="_blank" rel="noopener noreferrer" class="btn-primary">Request EcoIQ Assessment</a>
+      {% else %}
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ Assessment Request" class="btn-primary">Request EcoIQ Assessment</a>
+      {% endif %}
+      <a href="/ethical-governance/" class="btn-outline">View Governance Framework</a>
+      <a href="/platform/" class="btn-outline">Explore Platform</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ DISCLAIMER ═══════════════════ -->
+<div class="disclaimer">
+  <div class="disclaimer-inner">
+    <strong>Assessment guidance — not investment advice.</strong>
+    The principles, signals and metrics in this compendium are provided for governance assessment and analytical purposes only. They do not constitute investment advice, legal advice, or a recommendation to buy, sell or hold any financial instrument. EcoIQ assessments are informational tools to support due diligence — they do not replace professional legal, financial or regulatory counsel. EcoIQ Ltd is not regulated by the FCA, SEC or any financial regulatory authority. Assessment results should be considered alongside qualified professional advice before any investment decision.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ FOOTER ═══════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">EcoIQ</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/platform/">Platform</a>
+      <a href="/ethical-governance/">Framework</a>
+      <a href="/governance-principles/">Compendium</a>
+      <a href="/methodology/">Methodology</a>
+      <a href="/about/">About</a>
+      <a href="/pricing/">Pricing</a>
+      <a href="/contact/">Contact</a>
+    </div>
+  </div>
+  <div class="footer-inner">
+    <div class="footer-copy">© 2026 EcoIQ Ltd. Registered in England &amp; Wales. Capital Ethics Compendium — for governance assessment purposes only.</div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════ DATA + JS ════════════════════ -->
+<script>
+/* ── embedded data ───────────────────────────────────────────────────── */
+const PRINCIPLES   = {{ principles_json|safe }};
+const CATEGORIES   = {{ categories_json|safe }};  /* [[id, label], ...] */
+
+/* ── category colour map ─────────────────────────────────────────────── */
+const CAT_COLORS = {
+  governance: '#818cf8',
+  economy:    '#f4a261',
+  social:     '#f472b6',
+  earth:      '#34d399',
+  justice:    '#00e89a',
+  risk:       '#fb923c',
+  knowledge:  '#22d3ee',
+  human:      '#a78bfa',
+  community:  '#fbbf24',
+  longterm:   '#60a5fa',
+};
+
+const catMap = Object.fromEntries(CATEGORIES);
+
+/* ── state ───────────────────────────────────────────────────────────── */
+let activeCategory = 'all';
+let searchQuery    = '';
+let expandedId     = null;
+
+/* ── DOM refs ─────────────────────────────────────────────────────────── */
+const grid       = document.getElementById('cardGrid');
+const searchInput= document.getElementById('searchInput');
+const filterBar  = document.getElementById('filterBar');
+const emptyState = document.getElementById('emptyState');
+const countEl    = document.getElementById('searchCount');
+
+/* ── build filter buttons ─────────────────────────────────────────────── */
+function buildFilters() {
+  const allBtn = document.createElement('button');
+  allBtn.className = 'filter-btn active';
+  allBtn.dataset.cat = 'all';
+  allBtn.textContent = `All (${PRINCIPLES.length})`;
+  filterBar.appendChild(allBtn);
+
+  CATEGORIES.forEach(([id, label]) => {
+    const count = PRINCIPLES.filter(p => p.category === id).length;
+    const btn   = document.createElement('button');
+    btn.className    = 'filter-btn';
+    btn.dataset.cat  = id;
+    btn.style.setProperty('--dot', CAT_COLORS[id] || '#94a3b8');
+    btn.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${CAT_COLORS[id]||'#94a3b8'};margin-right:.35rem;vertical-align:middle;"></span>${label} <span style="opacity:.6;margin-left:.25rem;">(${count})</span>`;
+    filterBar.appendChild(btn);
+  });
+
+  filterBar.addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCategory = btn.dataset.cat;
+    expandedId = null;
+    render();
+  });
+}
+
+/* ── filter + search ─────────────────────────────────────────────────── */
+function filteredPrinciples() {
+  const q = searchQuery.toLowerCase().trim();
+  return PRINCIPLES.filter(p => {
+    const catOk = activeCategory === 'all' || p.category === activeCategory;
+    if (!catOk) return false;
+    if (!q) return true;
+    return (
+      p.title.toLowerCase().includes(q)    ||
+      p.tagline.toLowerCase().includes(q)  ||
+      p.question.toLowerCase().includes(q) ||
+      p.signal.toLowerCase().includes(q)   ||
+      p.metrics.some(m => m.toLowerCase().includes(q))
+    );
+  });
+}
+
+/* ── create card DOM ─────────────────────────────────────────────────── */
+function createCard(p) {
+  const color   = CAT_COLORS[p.category] || '#94a3b8';
+  const catLabel= catMap[p.category] || p.category;
+  const isExp   = expandedId === p.id;
+
+  const card = document.createElement('div');
+  card.className = 'principle-card' + (isExp ? ' expanded' : '');
+  card.setAttribute('role', 'listitem');
+  card.dataset.id = p.id;
+
+  const metricsHtml = p.metrics.map(m =>
+    `<span class="metric-tag">${escHtml(m)}</span>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="card-num">${String(p.id).padStart(3,'0')}</span>
+      <span class="card-cat-dot" style="background:${color};margin-top:.55rem;" title="${catLabel}"></span>
+      <div class="card-main">
+        <div class="card-title">${escHtml(p.title)}</div>
+        <div class="card-tagline">${escHtml(p.tagline)}</div>
+      </div>
+      <span class="card-chevron" aria-hidden="true">▼</span>
+    </div>
+    <div class="card-body" ${isExp ? '' : 'aria-hidden="true"'}>
+      <p class="card-question">"${escHtml(p.question)}"</p>
+      <div class="card-metrics">${metricsHtml}</div>
+      <div class="signal-box">
+        <strong>Analyst Signal</strong>
+        ${escHtml(p.signal)}
+      </div>
+      <div style="margin-top:.65rem;display:flex;align-items:center;gap:.4rem;">
+        <span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block;"></span>
+        <span style="font-size:.68rem;color:${color};">${catLabel}</span>
+      </div>
+    </div>
+  `;
+
+  card.addEventListener('click', () => {
+    expandedId = expandedId === p.id ? null : p.id;
+    render();
+    if (expandedId === p.id) {
+      // scroll into view after render
+      requestAnimationFrame(() => {
+        const el = grid.querySelector(`[data-id="${p.id}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+  });
+
+  return card;
+}
+
+/* ── main render ─────────────────────────────────────────────────────── */
+function render() {
+  const results = filteredPrinciples();
+  grid.innerHTML = '';
+
+  if (results.length === 0) {
+    emptyState.classList.add('visible');
+    countEl.textContent = '';
+  } else {
+    emptyState.classList.remove('visible');
+    const showing = results.length < PRINCIPLES.length
+      ? `${results.length} of ${PRINCIPLES.length}`
+      : '';
+    countEl.textContent = showing;
+
+    const frag = document.createDocumentFragment();
+    results.forEach(p => frag.appendChild(createCard(p)));
+    grid.appendChild(frag);
+  }
+}
+
+/* ── search handler ──────────────────────────────────────────────────── */
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value;
+  expandedId  = null;
+  render();
+});
+
+/* ── keyboard: clear on Escape ──────────────────────────────────────── */
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    searchInput.value = '';
+    searchQuery = '';
+    expandedId  = null;
+    render();
+    searchInput.blur();
+  }
+});
+
+/* ── util ────────────────────────────────────────────────────────────── */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ── init ────────────────────────────────────────────────────────────── */
+buildFilters();
+render();
+
+/* ── smooth reveal on scroll (reuse EcoIQ pattern) ───────────────────── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.style.opacity = '1'; });
+}, { threshold: .05 });
+document.querySelectorAll('.hero, .controls, .cta-section').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transition = 'opacity .6s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>

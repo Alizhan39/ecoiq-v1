@@ -60,7 +60,10 @@ urlpatterns = [
     path('api/v1/',     include('api.urls',   namespace='api')),
 
     # EcoIQ Mizan Engine — ethical intelligence API
-    path('api/mizan/',  include('mizan.urls', namespace='mizan')),
+    path('api/mizan/',  include('mizan.urls',          namespace='mizan')),
+
+    # EcoIQ Project Intelligence — readiness and pipeline scoring
+    path('api/projects/', include('api.projects_urls', namespace='projects')),
 
     # Wagtail CMS pages served at /pages/ (safe — no conflict with existing routes)
     path('pages/', include(wagtail_urls)),

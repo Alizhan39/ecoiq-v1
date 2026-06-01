@@ -1,0 +1,34 @@
+New EcoIQ Review Request
+========================
+
+Submitted: {{ instance.created_at|date:"d M Y, H:i" }} UTC
+
+CONTACT
+-------
+Name:         {{ instance.name }}
+Organisation: {{ instance.organisation }}
+Email:        {{ instance.email }}
+Country:      {{ instance.country }}
+
+REVIEW SPECIFICATION
+--------------------
+Request type: {{ instance.get_request_type_display }}
+Sector:       {{ instance.get_sector_display }}
+
+{% if instance.message %}
+CONTEXT / FOCUS AREAS
+---------------------
+{{ instance.message }}
+{% endif %}
+
+{% if instance.sustainability_report %}
+UPLOADED DOCUMENT
+-----------------
+File: {{ instance.report_filename }}
+Path: {{ instance.sustainability_report.url }}
+{% endif %}
+
+─────────────────────────────────────────
+Review and update status in the admin panel:
+{{ admin_url }}
+─────────────────────────────────────────

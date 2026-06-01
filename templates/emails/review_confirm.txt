@@ -1,0 +1,41 @@
+Hi {{ instance.name }},
+
+Thank you for submitting an EcoIQ Review Request.
+
+We have received your request for:
+  {{ instance.get_request_type_display }}
+
+Our analysts will process your request and deliver a structured
+intelligence brief within 5 business days. We will be in touch
+by email to confirm next steps.
+
+SUMMARY OF YOUR REQUEST
+------------------------
+Review type:  {{ instance.get_request_type_display }}
+Organisation: {{ instance.organisation }}
+Country:      {{ instance.country }}
+Sector:       {{ instance.get_sector_display }}
+{% if instance.sustainability_report %}
+Uploaded:     {{ instance.report_filename }}
+{% endif %}
+
+WHAT HAPPENS NEXT
+-----------------
+1. Our team reviews your request within 48 hours.
+2. The Mizan Engine and relevant scoring modules are applied.
+3. You receive a structured intelligence brief with scores,
+   blockers, and recommended actions.
+4. Optional: book a 30-minute investor briefing to walk through
+   the findings with our analysts.
+
+Questions? Reply to this email or contact us at:
+alizhan@ecoiq.uk
+
+─────────────────────────────────────────
+EcoIQ — Ethical Intelligence Platform
+https://ecoiq.uk
+─────────────────────────────────────────
+
+This assessment is analytical and indicative in nature.
+It does not constitute investment advice, a legal opinion,
+or a regulatory determination of any kind.
