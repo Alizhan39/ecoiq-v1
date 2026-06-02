@@ -313,12 +313,18 @@ def report_pdf(request, pk):
     session = get_object_or_404(AuditSession, pk=pk)
     ctx = _report_context(session)
     try:
+        import gc
         import weasyprint
         html_str  = render_to_string('audit/report_pdf.html', ctx, request=request)
-        pdf_bytes = weasyprint.HTML(
+        _html_doc = weasyprint.HTML(
             string=html_str,
             base_url=request.build_absolute_uri('/'),
-        ).write_pdf()
+        )
+        try:
+            pdf_bytes = _html_doc.write_pdf()
+        finally:
+            del _html_doc   # free WeasyPrint document tree; cairocffi refs released
+            gc.collect()    # force GC so freed C-level objects don't linger
         name = f"ecoiq-audit-{session.pk}-{session.facility_name[:30].replace(' ', '-').lower()}.pdf"
         resp = HttpResponse(pdf_bytes, content_type='application/pdf')
         resp['Content-Disposition'] = f'attachment; filename="{name}"'
