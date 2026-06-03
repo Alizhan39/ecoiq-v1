@@ -183,7 +183,7 @@
 
       <p style="font-size:1.05rem;color:#94a3b8;line-height:1.75;max-width:520px;margin-bottom:1.4rem;">
         Ethical climate intelligence for the UK, Kazakhstan, Saudi Arabia &amp; Türkiye.
-        EcoIQ scores 400+ industrial companies on transition readiness —
+        EcoIQ scores {{ company_count }} industrial companies on transition readiness —
         built for responsible capital, development finance, and
         stewardship-based investment frameworks.
       </p>
@@ -206,42 +206,32 @@
         </a>
       </div>
 
-      <!-- Live score comparison -->
+      <!-- Live score comparison — dynamic, one company per focus market -->
+      {% if hero_companies %}
       <div style="display:flex;gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden;max-width:560px;margin-bottom:1.75rem;">
-
-        <a href="/companies/schneider-electric/" style="flex:1;background:#070b0f;padding:1rem 1.25rem;text-decoration:none;transition:background .15s;display:block;" onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='#070b0f'">
-          <div style="font-size:9px;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:4px">ENERGY · FRANCE</div>
-          <div style="font-size:13px;font-weight:500;color:#e2e8f0;margin-bottom:6px">Schneider Electric</div>
-          <div style="font-size:1.6rem;font-weight:300;color:#10b981;letter-spacing:-.02em;line-height:1">81.7</div>
-          <div style="font-size:9px;color:#10b981;font-family:'SF Mono',monospace;margin-top:3px">Regenerative Leader</div>
+        {% for p in hero_companies %}
+        <a href="{% url 'companies:detail' p.company.slug %}"
+           style="flex:1;background:#070b0f;padding:1rem 1.25rem;text-decoration:none;transition:background .15s;display:block;"
+           onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='#070b0f'">
+          <div style="font-size:9px;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:4px;text-transform:uppercase;">{{ p.company.sector }} · {{ p.company.country }}</div>
+          <div style="font-size:13px;font-weight:500;color:#e2e8f0;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.company.name }}</div>
+          <div style="font-size:1.6rem;font-weight:300;color:{{ p.moral_label_color }};letter-spacing:-.02em;line-height:1">{{ p.ecoiq_total_score|floatformat:1 }}</div>
+          <div style="font-size:9px;color:{{ p.moral_label_color }};font-family:'SF Mono',monospace;margin-top:3px">{{ p.moral_label_display }}</div>
         </a>
-
-        <a href="/companies/bp/" style="flex:1;background:#070b0f;padding:1rem 1.25rem;text-decoration:none;transition:background .15s;display:block;" onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='#070b0f'">
-          <div style="font-size:9px;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:4px">OIL &amp; GAS · UK</div>
-          <div style="font-size:13px;font-weight:500;color:#e2e8f0;margin-bottom:6px">BP</div>
-          <div style="font-size:1.6rem;font-weight:300;color:#fbbf24;letter-spacing:-.02em;line-height:1">28.2</div>
-          <div style="font-size:9px;color:#fbbf24;font-family:'SF Mono',monospace;margin-top:3px">Transitional</div>
-        </a>
-
-        <a href="/companies/saudi-aramco/" style="flex:1;background:#070b0f;padding:1rem 1.25rem;text-decoration:none;transition:background .15s;display:block;" onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='#070b0f'">
-          <div style="font-size:9px;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:4px">OIL &amp; GAS · SAUDI ARABIA</div>
-          <div style="font-size:13px;font-weight:500;color:#e2e8f0;margin-bottom:6px">Saudi Aramco</div>
-          <div style="font-size:1.6rem;font-weight:300;color:#f87171;letter-spacing:-.02em;line-height:1">18.4</div>
-          <div style="font-size:9px;color:#f87171;font-family:'SF Mono',monospace;margin-top:3px">Extractive Core</div>
-        </a>
-
+        {% endfor %}
       </div>
       <div style="font-size:10px;color:#334155;font-family:'SF Mono',monospace;margin-top:-1.4rem;margin-bottom:1.75rem">↑ Live scores · Updated monthly · Click any company →</div>
+      {% endif %}
 
-      <!-- Proof stats -->
+      <!-- Proof stats — all values from DB -->
       <div style="display:flex;gap:2rem;flex-wrap:wrap;">
         <div>
           <div style="font-size:1.5rem;font-weight:900;color:var(--acc);line-height:1;">{{ company_count }}</div>
           <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Companies Ranked</div>
         </div>
         <div>
-          <div style="font-size:1.5rem;font-weight:900;color:var(--info);line-height:1;">{{ country_count }}</div>
-          <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Countries Covered</div>
+          <div style="font-size:1.5rem;font-weight:900;color:var(--info);line-height:1;">{{ market_count }}</div>
+          <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Focus Markets</div>
         </div>
         <div>
           <div style="font-size:1.5rem;font-weight:900;color:#a855f7;line-height:1;">6</div>
@@ -320,8 +310,8 @@
     </div>
     <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
     <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--info);letter-spacing:.8px;text-transform:uppercase;">{{ country_count }} Countries</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">National intelligence profiles</div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--info);letter-spacing:.8px;text-transform:uppercase;">{{ market_count }} Focus Markets</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">UK · Kazakhstan · Saudi Arabia · Türkiye</div>
     </div>
     <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
     <div style="text-align:center;">
@@ -421,7 +411,7 @@
     <a href="/companies/" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:2rem;text-decoration:none;display:block;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
       <div style="font-size:1.5rem;margin-bottom:1rem">📊</div>
       <div style="font-size:15px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Investors &amp; Fund Managers</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:1rem">Screen 200+ companies by climate score. Filter by sector, country, pollution level. Identify which companies qualify for green financing.</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:1rem">Screen {{ company_count }} companies by climate score. Filter by sector, country, pollution level. Identify which companies qualify for green financing.</div>
       <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace">Browse rankings →</div>
     </a>
 
@@ -437,7 +427,7 @@
     <a href="/countries/" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:2rem;text-decoration:none;display:block;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
       <div style="font-size:1.5rem;margin-bottom:1rem">🌍</div>
       <div style="font-size:15px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Governments &amp; Development Banks</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:1rem">Country-level climate intelligence across 25+ markets. Identify JETP-eligible companies. Track national industrial transition progress.</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:1rem">Country-level climate intelligence across {{ market_count }} focus markets. Identify JETP-eligible companies. Track national industrial transition progress.</div>
       <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace">View country intelligence →</div>
     </a>
 
@@ -522,7 +512,7 @@
         <div style="color:#00e89a;font-size:1rem;flex-shrink:0;margin-top:.1rem;">✓</div>
         <div>
           <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Screen &amp; benchmark companies</div>
-          <div style="font-size:.78rem;color:#475569;line-height:1.6;">Filter 400+ companies by sector, country, EcoIQ score, and pollution level. Compare transition readiness across peer groups and markets.</div>
+          <div style="font-size:.78rem;color:#475569;line-height:1.6;">Filter {{ company_count }} companies by sector, country, EcoIQ score, and pollution level. Compare transition readiness across peer groups and markets.</div>
         </div>
       </div>
 
@@ -546,7 +536,7 @@
         <div style="color:#00e89a;font-size:1rem;flex-shrink:0;margin-top:.1rem;">✓</div>
         <div>
           <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Generate country intelligence</div>
-          <div style="font-size:.78rem;color:#475569;line-height:1.6;">Access national-level transition profiles for 25+ markets. Understand sector composition, average scores, and industrial climate risk per country.</div>
+          <div style="font-size:.78rem;color:#475569;line-height:1.6;">Access national-level transition profiles for our {{ market_count }} focus markets. Understand sector composition, average scores, and industrial climate risk per country.</div>
         </div>
       </div>
 
@@ -601,7 +591,7 @@
             <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;">Country Transition Intelligence</div>
           </div>
         </div>
-        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Policy environment, energy infrastructure, industrial composition, and regulatory trajectory — scored for 25+ markets. Focused on UK, Kazakhstan, Saudi Arabia, and Türkiye.</p>
+        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Policy environment, energy infrastructure, industrial composition, and regulatory trajectory — scored across {{ market_count }} key markets: UK, Kazakhstan, Saudi Arabia, and Türkiye.</p>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
           <span style="font-size:.65rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">Country Scores</span>
           <span style="font-size:.65rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">JETP Alignment</span>
@@ -619,7 +609,7 @@
             <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;">Company EcoIQ Assessment</div>
           </div>
         </div>
-        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Six-pillar scoring for 400+ industrial companies: public benefit, environmental stewardship, responsible modernisation, transparent governance, anti-corruption, and ethical alignment. Score 0–100.</p>
+        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Six-pillar scoring for {{ company_count }} industrial companies: public benefit, environmental stewardship, responsible modernisation, transparent governance, anti-corruption, and ethical alignment. Score 0–100.</p>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
           <span style="font-size:.65rem;background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.15);color:#58a6ff;padding:.2rem .5rem;border-radius:4px;">EcoIQ Score</span>
           <span style="font-size:.65rem;background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.15);color:#58a6ff;padding:.2rem .5rem;border-radius:4px;">6 Pillars</span>
@@ -693,6 +683,87 @@
 
   </div>
 </section>
+
+
+<!-- ════════════════════════════════ MIZAN ENGINE DEMO ══════════════════════ -->
+{% if mizan_demo %}
+<section style="padding:4rem 1.5rem;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);">
+  <div style="max-width:1120px;margin:0 auto;">
+
+    <div class="reveal" style="margin-bottom:2.5rem;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div class="chip" style="margin-bottom:.8rem;background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3);color:#a855f7;">Mizan Engine — Live</div>
+        <h2 style="font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.5rem;">
+          Six-Dimensional Ethical Intelligence
+        </h2>
+        <p style="font-size:.88rem;color:#64748b;max-width:560px;line-height:1.6;">
+          Beyond ESG checkboxes — the Mizan Engine scores public benefit, harm reduction, justice distribution, transparency, stewardship, and evidence confidence. Live example below.
+        </p>
+      </div>
+      <a href="/api/mizan/company/{{ mizan_demo.slug }}/" style="font-size:.78rem;font-weight:600;color:#a855f7;text-decoration:none;white-space:nowrap;border:1px solid rgba(168,85,247,.3);padding:.45rem .9rem;border-radius:6px;" target="_blank" rel="noopener">View raw API →</a>
+    </div>
+
+    <div class="reveal glass" style="border-radius:14px;padding:1.75rem 2rem;border:1px solid rgba(168,85,247,.2);background:rgba(168,85,247,.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.75rem;">
+
+        <!-- Company identity -->
+        <div>
+          <div style="font-size:.65rem;font-family:'SF Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#64748b;margin-bottom:.3rem;">
+            {{ mizan_demo.sector }} · {{ mizan_demo.country }}
+          </div>
+          <div style="font-size:1.05rem;font-weight:700;color:#e2e8f0;">
+            <a href="/companies/{{ mizan_demo.slug }}/" style="color:#e2e8f0;text-decoration:none;">{{ mizan_demo.company }}</a>
+          </div>
+        </div>
+
+        <!-- Dual score badge -->
+        <div style="display:flex;gap:1.2rem;align-items:center;">
+          <div style="text-align:center;">
+            <div style="font-size:.6rem;color:#64748b;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem;">EcoIQ Score</div>
+            <div style="font-size:1.75rem;font-weight:300;color:{{ mizan_demo.moral_label_color }};letter-spacing:-.03em;line-height:1;">{{ mizan_demo.ecoiq_score|floatformat:1 }}</div>
+          </div>
+          <div style="width:1px;height:36px;background:rgba(255,255,255,.08);"></div>
+          <div style="text-align:center;">
+            <div style="font-size:.6rem;color:#64748b;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem;">Mizan Score</div>
+            <div style="font-size:1.75rem;font-weight:300;color:{{ mizan_demo.label_color }};letter-spacing:-.03em;line-height:1;">{{ mizan_demo.mizan_score }}</div>
+          </div>
+          <div style="background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);color:#a855f7;font-size:.7rem;font-weight:700;padding:.3rem .7rem;border-radius:5px;">
+            {{ mizan_demo.label }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Six dimension bars -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.85rem;">
+        {% for dim_name, dim_score in mizan_demo.dimensions %}
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:.8rem 1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem;">
+            <span style="font-size:.75rem;font-weight:600;color:#cbd5e1;">{{ dim_name }}</span>
+            <span style="font-size:.82rem;font-weight:700;color:{% if dim_score >= 70 %}#00e89a{% elif dim_score >= 50 %}#fbbf24{% else %}#f87171{% endif %};">{{ dim_score }}</span>
+          </div>
+          <div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:{{ dim_score }}%;background:{% if dim_score >= 70 %}linear-gradient(90deg,#00e89a,#34d399){% elif dim_score >= 50 %}linear-gradient(90deg,#fbbf24,#fcd34d){% else %}linear-gradient(90deg,#f87171,#fca5a5){% endif %};border-radius:2px;transition:width .8s ease;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Investor note -->
+      {% if mizan_demo.investor_note %}
+      <div style="margin-top:1.25rem;padding:.85rem 1rem;background:rgba(0,232,154,.04);border-left:3px solid rgba(0,232,154,.3);border-radius:0 6px 6px 0;">
+        <div style="font-size:.65rem;font-weight:700;color:#00e89a;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem;">Investor Signal</div>
+        <p style="font-size:.78rem;color:#94a3b8;line-height:1.6;margin:0;">{{ mizan_demo.investor_note|truncatechars:240 }}</p>
+      </div>
+      {% endif %}
+
+      <div style="margin-top:1rem;font-size:.68rem;color:#334155;">
+        ⚠ Mizan scores are AI-assisted and indicative. Not investment advice. <a href="/api/mizan/explain/" style="color:#475569;">Methodology →</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endif %}
 
 
 <!-- ════════════════════════════════ RANKINGS PREVIEW ════════════════════════ -->
@@ -817,7 +888,7 @@
     </h2>
 
     <p style="font-size:14px;color:#64748b;margin-bottom:2rem;line-height:1.7">
-      200+ companies already have a profile. Search below or browse the full rankings.
+      {{ company_count }} companies have a profile. Search below or browse the full rankings.
     </p>
 
     <!-- Inline search -->
@@ -831,7 +902,7 @@
     </form>
 
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <a href="/companies/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">Browse all {{ company_count }}+ companies →</a>
+      <a href="/companies/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">Browse all {{ company_count }} companies →</a>
       <a href="/pricing/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">View pricing →</a>
     </div>
 

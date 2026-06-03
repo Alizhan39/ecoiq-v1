@@ -129,39 +129,87 @@ CTA_TRUST_SIGNALS = [
 def landing(request):
     from django.conf import settings as _s
 
-    # Live platform data for homepage
-    top_companies = []
-    company_count = 0
-    country_count = 0
+    # ── Live platform data ────────────────────────────────────────────────────
+    top_companies   = []
+    hero_companies  = []   # 3 real companies for the hero carousel (one per market)
+    company_count   = 0    # exact count from DB — no inflated "400+"
+    mizan_demo      = None # live Mizan scoring for one company
+
     try:
         from companies.models import CompanyProfile
-        from countries.models import CountryProfile
-        top_companies = list(
+        from mizan.scoring import score_company as _mizan_score
+
+        _qs = (
             CompanyProfile.objects
             .filter(status__in=('public', 'verified'))
             .select_related('company')
-            .order_by('-ecoiq_total_score')[:8]
+            .order_by('-ecoiq_total_score')
         )
-        _co = CompanyProfile.objects.filter(status__in=('public', 'verified')).count()
-        _ct = CountryProfile.objects.filter(is_published=True).count()
-        # Format as "400+", "200+" etc. for display
-        if _co >= 400:
-            company_count = '400+'
-        elif _co >= 200:
-            company_count = '200+'
-        elif _co >= 100:
-            company_count = '100+'
-        else:
-            company_count = _co or 38
-        # Use actual company-country diversity if CountryProfile count is low
-        from league.models import Company as _Co
-        _distinct_countries = _Co.objects.values('country').distinct().count()
-        country_count = (
-            f'{_ct}+' if _ct >= 15
-            else (f'{_distinct_countries}+' if _distinct_countries >= 15 else (_ct or 11))
-        )
+
+        # Top 8 for the sidebar rankings widget
+        top_companies = list(_qs[:8])
+
+        # Exact count — show the real number, no inflating with "+"
+        company_count = CompanyProfile.objects.filter(
+            status__in=('public', 'verified')
+        ).count()
+
+        # Hero carousel: best company from each of the 4 focus markets
+        _focus_markets = ['United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye']
+        for _market in _focus_markets:
+            _p = (
+                CompanyProfile.objects
+                .filter(status__in=('public', 'verified'), company__country=_market)
+                .select_related('company')
+                .order_by('-ecoiq_total_score')
+                .first()
+            )
+            if _p:
+                hero_companies.append(_p)
+            if len(hero_companies) == 3:
+                break
+        # Fallback: fill from overall top if fewer than 3 markets had results
+        if len(hero_companies) < 3:
+            for _p in top_companies:
+                if _p not in hero_companies:
+                    hero_companies.append(_p)
+                if len(hero_companies) == 3:
+                    break
+
+        # Mizan live demo: score the top company to show the 6 ethical dimensions
+        if top_companies:
+            try:
+                _top = top_companies[0]
+                _r = _mizan_score(_top)
+                mizan_demo = {
+                    'company':       _top.company.name,
+                    'slug':          _top.company.slug,
+                    'country':       _top.company.country,
+                    'sector':        _top.company.sector,
+                    'ecoiq_score':   float(_top.ecoiq_total_score),
+                    'mizan_score':   round(_r.final_mizan_score, 1),
+                    'label':         _r.mizan_label,
+                    'label_color': (
+                        '#00e89a' if _r.final_mizan_score >= 70 else
+                        '#fbbf24' if _r.final_mizan_score >= 55 else
+                        '#f87171'
+                    ),
+                    'dimensions': [
+                        ('Public Benefit',        round(_r.public_benefit_score, 1)),
+                        ('Harm Reduction',         round(_r.harm_reduction_score, 1)),
+                        ('Justice Distribution',   round(_r.justice_distribution_score, 1)),
+                        ('Transparency',           round(_r.transparency_accountability_score, 1)),
+                        ('Stewardship',            round(_r.stewardship_score, 1)),
+                        ('Evidence Confidence',    round(_r.evidence_confidence_score, 1)),
+                    ],
+                    'investor_note': _r.investor_note,
+                    'moral_label_color': _top.moral_label_color,
+                }
+            except Exception:
+                mizan_demo = None   # Mizan unavailable — section hidden gracefully
+
     except Exception:
-        pass  # DB may not be ready (first migration)
+        pass  # DB not ready (first migration)
 
     pillars_meta = [
         {'icon': '🌍', 'label': 'Public Benefit',              'desc': 'Employment quality, regional development, community investment, national value', 'weight': '25%'},
@@ -175,8 +223,10 @@ def landing(request):
     return render(request, 'landing.html', {
         # Live data
         'top_companies':  top_companies,
+        'hero_companies': hero_companies,
         'company_count':  company_count,
-        'country_count':  country_count,
+        'market_count':   4,   # the 4 focus markets — fixed, honest
+        'mizan_demo':     mizan_demo,
         'pillars_meta':   pillars_meta,
         'audience_labels': ['Investors', 'Governments', 'Companies', 'Climate Programmes', 'Development Banks'],
         # Review CTA context
