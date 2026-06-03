@@ -159,10 +159,13 @@ LANGUAGE_CODE = 'en'          # default when no preference is stored
 
 LANGUAGES = [
     ('en', _('English')),
-    ('ru', _('Russian')),
-    ('kk', _('Kazakh')),
-    ('ar', _('Arabic')),
-    ('tr', _('Turkish')),
+    # ru / kk / ar / tr disabled for now — translation files kept in locale/
+    # for future use. Re-enable by un-commenting the entries below and
+    # restoring the language switcher in templates/base.html.
+    # ('ru', _('Russian')),
+    # ('kk', _('Kazakh')),
+    # ('ar', _('Arabic')),
+    # ('tr', _('Turkish')),
 ]
 
 # Where Django looks for .po / .mo files
