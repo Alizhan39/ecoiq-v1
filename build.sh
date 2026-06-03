@@ -14,9 +14,6 @@ python manage.py collectstatic --no-input
 echo "==> Running database migrations..."
 python manage.py migrate --no-input
 
-echo "==> Setting up Wagtail site structure..."
-python manage.py setup_wagtail_site
-
 echo "==> Bootstrapping admin superuser..."
 python manage.py bootstrap_superuser
 
