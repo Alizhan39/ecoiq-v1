@@ -71,22 +71,6 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.sitemaps',
 
-    # Wagtail
-    'wagtail.contrib.forms',
-    'wagtail.contrib.redirects',
-    'wagtail.contrib.table_block',
-    'wagtail.embeds',
-    'wagtail.sites',
-    'wagtail.users',
-    'wagtail.snippets',
-    'wagtail.documents',
-    'wagtail.images',
-    'wagtail.search',
-    'wagtail.admin',
-    'wagtail',
-    'modelcluster',
-    'taggit',
-
     # REST API
     'rest_framework',
 
@@ -96,7 +80,7 @@ INSTALLED_APPS = [
     'leads',
     'league',
     'api',
-    'cms',
+    # 'cms' removed — Wagtail CMS unregistered (tables orphaned in DB, harmless)
     'ingestion',
     'intelligence',
     'transition',
@@ -118,7 +102,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'wagtail.contrib.redirects.middleware.RedirectMiddleware',  # must be last
+    # wagtail.contrib.redirects.middleware removed — site-specific redirects
+    # are handled by Django RedirectView entries in core/urls.py and ecoiq/urls.py
 ]
 
 ROOT_URLCONF = 'ecoiq.urls'
@@ -214,20 +199,8 @@ ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 # AI Findings Engine — model selection (override in .env if needed)
 ECOIQ_AI_MODEL = os.environ.get('ECOIQ_AI_MODEL', 'claude-opus-4-5')
 
-# ── Wagtail ────────────────────────────────────────────────────────────────────
-
-WAGTAIL_SITE_NAME = 'EcoIQ'
-WAGTAILADMIN_BASE_URL = os.environ.get('SITE_URL', 'https://ecoiq.uk')
-WAGTAIL_ENABLE_UPDATE_CHECK = False     # don't ping wagtail.io in production
-WAGTAILSEARCH_BACKENDS = {
-    'default': {
-        'BACKEND': 'wagtail.search.backends.database',
-    }
-}
-# All new StreamFields use JSON storage (Wagtail 7.x default)
-WAGTAIL_USE_JSON_FIELD = True
-
 # ── Site URL (used for og:image and share links) ──────────────────────────────
+# (Wagtail settings removed — Wagtail uninstalled June 2026)
 SITE_URL = os.environ.get('SITE_URL', 'https://ecoiq.uk')
 
 # ── Email ─────────────────────────────────────────────────────────────────────

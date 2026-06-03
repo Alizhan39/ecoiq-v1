@@ -6,10 +6,6 @@ from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
-from wagtail import urls as wagtail_urls
-from wagtail.admin import urls as wagtailadmin_urls
-from wagtail.documents import urls as wagtaildocs_urls
-
 from companies.sitemaps import CompanySitemap, StaticSitemap
 
 _sitemaps = {
@@ -23,10 +19,6 @@ urlpatterns = [
 
     # Django admin (data management)
     path('admin/', admin.site.urls),
-
-    # Wagtail CMS admin (content editing)
-    path('cms-admin/', include(wagtailadmin_urls)),
-    path('documents/',  include(wagtaildocs_urls)),
 
     # Auth
     path('login/',  auth_views.LoginView.as_view(template_name='registration/login.html'),  name='login'),
@@ -64,9 +56,6 @@ urlpatterns = [
 
     # EcoIQ Project Intelligence — readiness and pipeline scoring
     path('api/projects/', include('api.projects_urls', namespace='projects')),
-
-    # Wagtail CMS pages served at /pages/ (safe — no conflict with existing routes)
-    path('pages/', include(wagtail_urls)),
 
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
