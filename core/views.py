@@ -129,39 +129,53 @@ CTA_TRUST_SIGNALS = [
 def landing(request):
     from django.conf import settings as _s
 
-    # Live platform data for homepage
-    top_companies = []
-    company_count = 0
-    country_count = 0
+    # ── Live platform data ────────────────────────────────────────────────────
+    top_companies  = []
+    hero_companies = []   # 3 real companies for the hero carousel (one per market)
+    company_count  = 0    # exact integer from DB — never inflated with "+"
+    market_count   = 4    # the 4 focus markets — fixed and honest
+
     try:
         from companies.models import CompanyProfile
-        from countries.models import CountryProfile
-        top_companies = list(
+
+        _qs = (
             CompanyProfile.objects
             .filter(status__in=('public', 'verified'))
             .select_related('company')
-            .order_by('-ecoiq_total_score')[:8]
+            .order_by('-ecoiq_total_score')
         )
-        _co = CompanyProfile.objects.filter(status__in=('public', 'verified')).count()
-        _ct = CountryProfile.objects.filter(is_published=True).count()
-        # Format as "400+", "200+" etc. for display
-        if _co >= 400:
-            company_count = '400+'
-        elif _co >= 200:
-            company_count = '200+'
-        elif _co >= 100:
-            company_count = '100+'
-        else:
-            company_count = _co or 38
-        # Use actual company-country diversity if CountryProfile count is low
-        from league.models import Company as _Co
-        _distinct_countries = _Co.objects.values('country').distinct().count()
-        country_count = (
-            f'{_ct}+' if _ct >= 15
-            else (f'{_distinct_countries}+' if _distinct_countries >= 15 else (_ct or 11))
-        )
+
+        # Sidebar rankings widget (top 8 overall)
+        top_companies = list(_qs[:8])
+
+        # Exact count — show the real number, no inflating
+        company_count = _qs.count()
+
+        # Hero carousel: best company from each of the 4 focus markets
+        # (exactly 3 cards: UK, Kazakhstan, SA or TR — whichever fills first)
+        for _market in ['United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye']:
+            _p = (
+                CompanyProfile.objects
+                .filter(status__in=('public', 'verified'), company__country=_market)
+                .select_related('company')
+                .order_by('-ecoiq_total_score')
+                .first()
+            )
+            if _p:
+                hero_companies.append(_p)
+            if len(hero_companies) == 3:
+                break
+
+        # Fallback: fill from overall top if fewer than 3 markets had profiles
+        if len(hero_companies) < 3:
+            for _p in top_companies:
+                if _p not in hero_companies:
+                    hero_companies.append(_p)
+                if len(hero_companies) == 3:
+                    break
+
     except Exception:
-        pass  # DB may not be ready (first migration)
+        pass  # DB not ready on first migration
 
     pillars_meta = [
         {'icon': '🌍', 'label': 'Public Benefit',              'desc': 'Employment quality, regional development, community investment, national value', 'weight': '25%'},
@@ -173,10 +187,11 @@ def landing(request):
     ]
 
     return render(request, 'landing.html', {
-        # Live data
+        # Live data — all counts direct from DB
         'top_companies':  top_companies,
+        'hero_companies': hero_companies,
         'company_count':  company_count,
-        'country_count':  country_count,
+        'market_count':   market_count,
         'pillars_meta':   pillars_meta,
         'audience_labels': ['Investors', 'Governments', 'Companies', 'Climate Programmes', 'Development Banks'],
         # Review CTA context
