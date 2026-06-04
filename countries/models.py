@@ -83,7 +83,22 @@ class CountryProfile(models.Model):
                              help_text='% of electricity from renewables')
     fossil_fuel_dependency = models.FloatField(null=True, blank=True,
                              help_text='% of energy from fossil fuels')
-    companies_tracked      = models.PositiveIntegerField(default=0)
+    companies_tracked      = models.PositiveIntegerField(default=0,
+                             help_text='Legacy stored count — prefer live_company_count property')
+
+    # Macro context — additional fields (non-destructive additions)
+    gdp_growth_pct   = models.FloatField(null=True, blank=True,
+                       help_text='Real GDP growth rate % (IMF WEO estimate for current year)')
+    inflation_pct    = models.FloatField(null=True, blank=True,
+                       help_text='Inflation rate % (IMF WEO estimate for current year)')
+    population_millions = models.FloatField(null=True, blank=True,
+                          help_text='Population in millions (IMF WEO estimate)')
+
+    # Data provenance
+    data_sources     = models.TextField(blank=True,
+                       help_text='Citation string e.g. "GDP: IMF WEO Apr 2026; CO2: EDGAR 2024"')
+    data_last_updated = models.DateField(null=True, blank=True,
+                        help_text='Date macro/climate data was last reviewed and updated')
 
     # Financing
     estimated_transition_gap_usd = models.BigIntegerField(null=True, blank=True,
@@ -146,3 +161,23 @@ class CountryProfile(models.Model):
         """Return first severe hotspot, or first hotspot."""
         severe = [h for h in self.pollution_hotspots if h.get('severity') == 'severe']
         return severe[0] if severe else (self.pollution_hotspots[0] if self.pollution_hotspots else None)
+
+    @property
+    def live_company_count(self):
+        """
+        Live count of public/verified CompanyProfile records for this country.
+        Queries the DB on access — never stale. Use in templates instead of
+        the legacy companies_tracked field.
+        """
+        try:
+            from companies.models import CompanyProfile
+            return (
+                CompanyProfile.objects
+                .filter(
+                    status__in=('public', 'verified'),
+                    company__country__icontains=self.name,
+                )
+                .count()
+            )
+        except Exception:
+            return self.companies_tracked  # fallback to stored value
