@@ -35,12 +35,12 @@ COUNTRIES = [
         'transparency_score': 78.0,
         'industrial_modernization_score': 65.0,
         'transition_readiness_label': 'advancing',
-        'gdp_usd': 3_100_000_000_000,
+        'gdp_usd': 4_260_000_000_000,   # IMF WEO Apr 2026 (was 3_100_000_000_000)
         'industrial_gdp_share': 18.5,
-        'co2_megatonnes': 340.0,
-        'renewable_energy_share': 43.0,
+        'co2_megatonnes': 292.0,         # EDGAR 2024 fossil CO2 2023 (was 340.0)
+        'renewable_energy_share': 40.0,  # DESNZ/Carbon Brief 2025 (was 43.0)
         'fossil_fuel_dependency': 79.0,
-        'companies_tracked': 4,
+        'companies_tracked': 0,
         'estimated_transition_gap_usd': 28_000_000_000,
         'green_finance_available_usd': 15_000_000_000,
         'ai_overview': (
@@ -553,12 +553,12 @@ COUNTRIES = [
         'transparency_score': 38.0,
         'industrial_modernization_score': 52.0,
         'transition_readiness_label': 'developing',
-        'gdp_usd': 1_100_000_000_000,
+        'gdp_usd': 1_389_000_000_000,   # IMF WEO Apr 2026 (was 1_100_000_000_000)
         'industrial_gdp_share': 44.2,
-        'co2_megatonnes': 723.0,
-        'renewable_energy_share': 3.0,
+        'co2_megatonnes': 623.0,         # EDGAR 2024 fossil CO2 2023 (was 723.0)
+        'renewable_energy_share': 2.2,   # Ember 2024 (was 3.0)
         'fossil_fuel_dependency': 99.0,
-        'companies_tracked': 1,
+        'companies_tracked': 0,
         'estimated_transition_gap_usd': 120_000_000_000,
         'green_finance_available_usd': 18_000_000_000,
         'ai_overview': (
@@ -803,9 +803,10 @@ COUNTRIES = [
         ],
     },
 
-    # ── Turkey ──────────────────────────────────────────────────────────────────
+    # ── Türkiye ──────────────────────────────────────────────────────────────────
     {
-        'name': 'Turkey',
+        'name': 'Türkiye',          # official English spelling; slug kept as 'turkey' for URL stability
+        'slug': 'turkey',           # explicit slug — prevents slug='turkiye' being auto-generated
         'iso_code': 'TR',
         'flag_emoji': '🇹🇷',
         'region': 'middle_east',
@@ -818,10 +819,10 @@ COUNTRIES = [
         'transparency_score': 40.0,
         'industrial_modernization_score': 50.0,
         'transition_readiness_label': 'developing',
-        'gdp_usd': 1_108_000_000_000,
+        'gdp_usd': 1_640_000_000_000,   # IMF WEO Apr 2026
         'industrial_gdp_share': 28.3,
-        'co2_megatonnes': 523.0,
-        'renewable_energy_share': 42.0,
+        'co2_megatonnes': 446.0,         # EDGAR 2024 / Worldometer 2023
+        'renewable_energy_share': 45.5,  # Ember Türkiye Electricity Review 2025
         'fossil_fuel_dependency': 68.0,
         'companies_tracked': 0,
         'estimated_transition_gap_usd': 55_000_000_000,
@@ -1005,13 +1006,23 @@ class Command(BaseCommand):
     help = 'Seed 10 country intelligence profiles (idempotent — safe to re-run).'
 
     def handle(self, *args, **options):
+        from django.utils.text import slugify
         created_count = 0
         updated_count = 0
 
         for data in COUNTRIES:
+            # Lookup by slug (stable URL key) so that renaming a country's
+            # display name (e.g. 'Turkey' → 'Türkiye') never creates a duplicate
+            # record.  Slug is derived from the seed data's 'slug' field if
+            # present, otherwise from the name.
+            lookup_slug = data.get('slug') or slugify(data['name'])
+
+            # Separate lookup fields from the data written to the record
+            defaults = {k: v for k, v in data.items() if k != 'slug'}
+
             obj, created = CountryProfile.objects.update_or_create(
-                name=data['name'],
-                defaults=data,
+                slug=lookup_slug,
+                defaults=defaults,
             )
             if created:
                 created_count += 1
