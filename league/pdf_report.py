@@ -334,9 +334,22 @@ def generate_pdf_report(company) -> bytes:
     """
     Render the PDF report for a Company instance.
     Returns raw PDF bytes ready for HttpResponse.
-    """
-    import weasyprint
 
-    context  = build_pdf_context(company)
-    html_str = render_to_string('league/report_pdf.html', context)
-    return weasyprint.HTML(string=html_str, base_url='/').write_pdf()
+    del + gc.collect() after write_pdf() frees WeasyPrint's internal layout tree
+    and cairocffi objects promptly — prevents memory accumulation on 2 GB Render.
+    base_url uses SITE_URL so static asset references resolve correctly on Render.
+    """
+    import gc
+    import weasyprint
+    from django.conf import settings as _s
+
+    context   = build_pdf_context(company)
+    html_str  = render_to_string('league/report_pdf.html', context)
+    base_url  = getattr(_s, 'SITE_URL', 'https://ecoiq.uk') + '/'
+    _html_doc = weasyprint.HTML(string=html_str, base_url=base_url)
+    try:
+        pdf_bytes = _html_doc.write_pdf()
+    finally:
+        del _html_doc
+        gc.collect()
+    return pdf_bytes

@@ -540,9 +540,15 @@ def report_pdf(request, pk):
     ctx = _build_report_ctx(assessment)
 
     try:
+        import gc
         import weasyprint
         html_string = render_to_string('core/report_pdf.html', ctx, request=request)
-        pdf_bytes   = weasyprint.HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+        _html_doc   = weasyprint.HTML(string=html_string, base_url=request.build_absolute_uri('/'))
+        try:
+            pdf_bytes = _html_doc.write_pdf()
+        finally:
+            del _html_doc   # free WeasyPrint's internal layout tree + cairocffi objects
+            gc.collect()    # force GC so C-level memory is reclaimed before next request
         filename    = f"ecoiq-report-{assessment.pk}-{assessment.company_name[:30].replace(' ', '-').lower()}.pdf"
         response    = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'

@@ -19,9 +19,10 @@ services:
     region: oregon
     plan: starter                        # $7/month — persistent disk, no cold starts
     buildCommand: pip install -r requirements.txt && ./build.sh
-    # 1 worker only — Render starter plan is 512MB RAM.
-    # Two workers = two full Django + Wagtail processes = OOM.
-    startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    # 1 gthread worker, 4 threads — Standard plan (2 GB RAM).
+    # gthread: 4 concurrent requests without forking a second Python process.
+    # max-requests 300: recycle worker after ~300 requests to evict PDF memory.
+    startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --worker-class gthread --threads 4 --timeout 120 --max-requests 300 --max-requests-jitter 50
 
     envVars:
       - key: PYTHON_VERSION

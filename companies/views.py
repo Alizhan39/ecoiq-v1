@@ -646,6 +646,7 @@ def company_pdf_report(request, slug):
     GET /companies/<slug>/report.pdf
     Generates a 3-page A4 WeasyPrint PDF intelligence report.
     """
+    import gc
     import weasyprint
     from datetime import date
     from django.template.loader import render_to_string
@@ -772,9 +773,14 @@ def company_pdf_report(request, slug):
         'report_date':      date.today(),
     }
 
-    base_url = request.build_absolute_uri('/')
+    base_url  = request.build_absolute_uri('/')
     html_str  = render_to_string('companies/report_pdf.html', context, request=request)
-    pdf_bytes = weasyprint.HTML(string=html_str, base_url=base_url).write_pdf()
+    _html_doc = weasyprint.HTML(string=html_str, base_url=base_url)
+    try:
+        pdf_bytes = _html_doc.write_pdf()
+    finally:
+        del _html_doc   # release layout tree + cairocffi objects before responding
+        gc.collect()
 
     filename = f"ecoiq-report-{company.slug}.pdf"
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
