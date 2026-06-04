@@ -1,6 +1,29 @@
+# EcoIQ robots.txt  —  https://ecoiq.uk
+# Updated: June 2026
+#
+# Heavy endpoints (/companies/*/report.pdf, /*ml-insights.json) generate
+# WeasyPrint PDFs and run scikit-learn models on every hit.
+# On Render Starter (512 MB) simultaneous bot-driven PDF requests cause 502s.
+# These endpoints are disallowed for all crawlers below.
+#
+# Legitimate human users can still access them from a browser.
+
+# ── All crawlers ─────────────────────────────────────────────────────────────
+
 User-agent: *
 Allow: /
+Allow: /companies/
+Allow: /countries/
+Allow: /platform/
+Allow: /ethical-governance/
+Allow: /governance-principles/
+Allow: /methodology/
+Allow: /about/
+Allow: /pricing/
+Allow: /press/
+Allow: /investors/
 
+# Auth / internal — never index
 Disallow: /admin/
 Disallow: /cms-admin/
 Disallow: /dashboard/
@@ -11,4 +34,68 @@ Disallow: /ingest/
 Disallow: /audit/
 Disallow: /transition/
 
+# Heavy compute — PDF rendering (WeasyPrint) and ML inference
+Disallow: /companies/*/report.pdf
+Disallow: /companies/reports/sector/
+Disallow: /*ml-insights.json
+Disallow: /league/*/report.pdf
+Disallow: /companies/*/certificate/
+
+# REST API — not for indexing
+Disallow: /api/
+Disallow: /api/mizan/
+Disallow: /api/projects/
+
+# Crawl-delay: honoured by Bing, ClaudeBot, GPTBot and most other bots.
+# Google ignores it — rate-limit Google via Search Console instead.
+Crawl-delay: 10
+
 Sitemap: https://ecoiq.uk/sitemap.xml
+
+# ── AI / LLM crawlers — stricter limits ──────────────────────────────────────
+# These bots caused the majority of PDF/ML-driven 502s.
+
+User-agent: ClaudeBot
+Disallow: /companies/*/report.pdf
+Disallow: /companies/reports/
+Disallow: /*ml-insights.json
+Disallow: /league/*/report.pdf
+Disallow: /api/
+Disallow: /api/mizan/
+Disallow: /api/projects/
+Crawl-delay: 30
+
+User-agent: GPTBot
+Disallow: /companies/*/report.pdf
+Disallow: /companies/reports/
+Disallow: /*ml-insights.json
+Disallow: /league/*/report.pdf
+Disallow: /api/
+Disallow: /api/mizan/
+Disallow: /api/projects/
+Crawl-delay: 30
+
+User-agent: OAI-SearchBot
+Disallow: /companies/*/report.pdf
+Disallow: /*ml-insights.json
+Disallow: /api/
+Crawl-delay: 20
+
+# Bytespider (ByteDance) — aggressive crawler, block entirely
+User-agent: Bytespider
+Disallow: /
+
+# CCBot (Common Crawl) — bulk academic crawler
+User-agent: CCBot
+Disallow: /
+
+# PetalBot (Huawei) — frequently ignores rate hints
+User-agent: PetalBot
+Disallow: /
+
+# Amazonbot
+User-agent: Amazonbot
+Disallow: /api/
+Disallow: /companies/*/report.pdf
+Disallow: /*ml-insights.json
+Crawl-delay: 20
