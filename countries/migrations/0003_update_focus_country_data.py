@@ -71,49 +71,61 @@ FOCUS_COUNTRIES = {
         "data_last_updated": datetime.date(2026, 6, 4),
     },
 
-    # ---- Turkiye (stored as 'Turkey' in DB) -----------------------------------
-    "Turkey": {
-        "name":                   "Türkiye",       # official spelling (u-umlaut ü)
+    # ---- Turkiye (slug='turkey', was stored as name='Turkey') ------------------
+    # IMPORTANT: we do NOT rename here. The name is managed by seed_countries.
+    # Lookup uses slug so it is safe regardless of current name value.
+    "turkey": {                         # key = slug, used for DB lookup below
         "gdp_usd":                1_640_000_000_000,   # $1.640 T  IMF WEO Apr 2026
         "gdp_growth_pct":         3.4,                 # %         IMF WEO Apr 2026
         "population_millions":    87.9,                # M         IMF WEO Apr 2026
         "co2_megatonnes":         446.0,               # Mt CO2    EDGAR / Worldometer 2023
         "renewable_energy_share": 45.5,                # % elec    Ember Turkiye Elec. Review 2025
-        # fossil_fuel_dependency, industrial_gdp_share: not in existing DB -- not added
+        # fossil_fuel_dependency, industrial_gdp_share: not added -- no verified update
         "data_sources": (
             "GDP/growth/population: IMF WEO April 2026; "
             "CO2 (fossil): EDGAR 2024 / Worldometer (2023 data, ~446 Mt); "
-            "Renewables (electricity): Ember Turkiye Electricity Review 2025 (2024 data). "
-            "Name updated to official spelling 'Türkiye' (slug 'turkey' unchanged for URL stability)."
+            "Renewables (electricity): Ember Turkiye Electricity Review 2025 (2024 data)."
         ),
         "data_last_updated": datetime.date(2026, 6, 4),
     },
 }
 
+# Slug-to-name map for the three name-keyed entries (lookup by name, not slug)
+NAME_KEYED = {"United Kingdom", "Kazakhstan", "Saudi Arabia"}
+
 
 def update_country_data(apps, schema_editor):
+    """
+    Look up countries by slug (stable) so renaming the display name never
+    causes a DoesNotExist miss or a duplicate-slug INSERT.
+    The 'turkey' entry uses slug lookup; the others use name lookup.
+    No rename operations are performed here — name is managed by seed_countries.
+    """
     CountryProfile = apps.get_model('countries', 'CountryProfile')
 
-    for lookup_name, fields in FOCUS_COUNTRIES.items():
-        try:
-            country = CountryProfile.objects.get(name=lookup_name)
-        except CountryProfile.DoesNotExist:
-            # Maybe it was already renamed in a previous run
-            new_name = fields.get('name', lookup_name)
+    for lookup_key, fields in FOCUS_COUNTRIES.items():
+        # For Turkey we key by slug; for others we key by name
+        if lookup_key not in NAME_KEYED:
+            # lookup_key is a slug
             try:
-                country = CountryProfile.objects.get(name=new_name)
+                country = CountryProfile.objects.get(slug=lookup_key)
             except CountryProfile.DoesNotExist:
-                print(f'  [SKIP] CountryProfile not found: {lookup_name!r} or {new_name!r}')
+                print(f'  [SKIP] No CountryProfile with slug={lookup_key!r}')
+                continue
+        else:
+            # lookup_key is a name
+            try:
+                country = CountryProfile.objects.get(name=lookup_key)
+            except CountryProfile.DoesNotExist:
+                print(f'  [SKIP] No CountryProfile with name={lookup_key!r}')
                 continue
 
+        # Apply only the numeric/text fields — never touch name or slug
         for field, value in fields.items():
-            if field == 'name' and country.name != value:
-                country.name = value
-            elif field != 'name':
-                setattr(country, field, value)
+            setattr(country, field, value)
 
         country.save()
-        print(f'  [OK] Updated: {country.name}')
+        print(f'  [OK] Updated: {country.name} (slug={country.slug})')
 
 
 def reverse_update(apps, schema_editor):
