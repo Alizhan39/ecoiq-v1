@@ -736,7 +736,7 @@ footer a:hover{color:var(--accent)}
         <div class="hero-sub">
           <span>{{ country.get_region_display }}</span>
           <span class="dot">·</span>
-          <span>{{ country.companies_tracked }} companies tracked</span>
+          <span>{{ country.live_company_count }} companies tracked</span>
           {% if country.iso_code %}
           <span class="dot">·</span>
           <span>ISO {{ country.iso_code }}</span>
@@ -783,7 +783,7 @@ footer a:hover{color:var(--accent)}
     </div>
     <div class="is-sep"></div>
     <div class="is-item">
-      🏭 <strong>{{ country.companies_tracked }}</strong>&nbsp;companies
+      🏭 <strong>{{ country.live_company_count }}</strong>&nbsp;companies
     </div>
     {% if country.co2_megatonnes %}
     <div class="is-sep"></div>
@@ -934,6 +934,14 @@ footer a:hover{color:var(--accent)}
     </div>
     {% endif %}
   </div>
+
+  {% if country.data_sources or country.data_last_updated %}
+  <div style="margin-top:.75rem;padding:.6rem .85rem;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:6px;display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem;">
+    <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;flex-shrink:0;">Sources:</span>
+    {% if country.data_sources %}<span style="font-size:.68rem;color:#475569;line-height:1.5;">{{ country.data_sources }}</span>{% endif %}
+    {% if country.data_last_updated %}<span style="font-size:.62rem;color:#334155;white-space:nowrap;margin-left:auto;">Updated {{ country.data_last_updated|date:"j N Y" }}</span>{% endif %}
+  </div>
+  {% endif %}
 
   <div class="two-col">
   <!-- ═══════════════════════════════════ LEFT COLUMN ═══════════════════════ -->
