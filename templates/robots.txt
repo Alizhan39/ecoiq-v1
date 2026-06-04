@@ -1,8 +1,14 @@
-# EcoIQ robots.txt — https://ecoiq.uk
-# Served via Django view (core/views.robots_txt) reading this file.
-# Updated: June 2026 — blocking PDF/ML endpoints that cause 502s on 512 MB Render.
+# EcoIQ robots.txt  —  https://ecoiq.uk
+# Updated: June 2026
+#
+# Heavy endpoints (/companies/*/report.pdf, /*ml-insights.json) generate
+# WeasyPrint PDFs and run scikit-learn models on every hit.
+# On Render Starter (512 MB) simultaneous bot-driven PDF requests cause 502s.
+# These endpoints are disallowed for all crawlers below.
+#
+# Legitimate human users can still access them from a browser.
 
-# ── All crawlers ──────────────────────────────────────────────────────────────
+# ── All crawlers ─────────────────────────────────────────────────────────────
 
 User-agent: *
 Allow: /
@@ -28,9 +34,7 @@ Disallow: /ingest/
 Disallow: /audit/
 Disallow: /transition/
 
-# Heavy compute — PDF (WeasyPrint) and ML inference endpoints.
-# Each call generates a full document render + ~100 MB memory spike.
-# Bots hammering these in parallel cause 502s on Render Starter (512 MB RAM).
+# Heavy compute — PDF rendering (WeasyPrint) and ML inference
 Disallow: /companies/*/report.pdf
 Disallow: /companies/reports/sector/
 Disallow: /*ml-insights.json
@@ -42,14 +46,14 @@ Disallow: /api/
 Disallow: /api/mizan/
 Disallow: /api/projects/
 
-# Crawl-delay: respected by Bing, ClaudeBot, GPTBot and most bots.
-# Google ignores it — manage Google's crawl rate via Search Console.
+# Crawl-delay: honoured by Bing, ClaudeBot, GPTBot and most other bots.
+# Google ignores it — rate-limit Google via Search Console instead.
 Crawl-delay: 10
 
 Sitemap: https://ecoiq.uk/sitemap.xml
 
 # ── AI / LLM crawlers — stricter limits ──────────────────────────────────────
-# These bots were the primary source of PDF/ML-driven 502 traffic.
+# These bots caused the majority of PDF/ML-driven 502s.
 
 User-agent: ClaudeBot
 Disallow: /companies/*/report.pdf
@@ -77,7 +81,7 @@ Disallow: /*ml-insights.json
 Disallow: /api/
 Crawl-delay: 20
 
-# Bytespider (ByteDance) — ignores rate hints, block entirely
+# Bytespider (ByteDance) — aggressive crawler, block entirely
 User-agent: Bytespider
 Disallow: /
 
@@ -85,7 +89,7 @@ Disallow: /
 User-agent: CCBot
 Disallow: /
 
-# PetalBot (Huawei)
+# PetalBot (Huawei) — frequently ignores rate hints
 User-agent: PetalBot
 Disallow: /
 

@@ -323,8 +323,8 @@ def report_pdf(request, pk):
         try:
             pdf_bytes = _html_doc.write_pdf()
         finally:
-            del _html_doc
-            gc.collect()
+            del _html_doc   # free WeasyPrint document tree; cairocffi refs released
+            gc.collect()    # force GC so freed C-level objects don't linger
         name = f"ecoiq-audit-{session.pk}-{session.facility_name[:30].replace(' ', '-').lower()}.pdf"
         resp = HttpResponse(pdf_bytes, content_type='application/pdf')
         resp['Content-Disposition'] = f'attachment; filename="{name}"'
