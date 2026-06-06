@@ -29,8 +29,9 @@ urlpatterns = [
     path('', include('core.urls')),
     path('audit/', include('audit.urls')),
     path('request-access/', include('leads.urls', namespace='leads')),
-    # Staff-only Investor Readiness Report draft preview (not in public nav)
+    # Staff-only Investor Readiness Report previews (not in public nav)
     path('admin-report-preview/<int:access_request_id>/', leads_views.admin_report_preview, name='admin_report_preview'),
+    path('client-report-preview/<int:access_request_id>/', leads_views.client_report_preview, name='client_report_preview'),
     # Short-form claim URL used in company detail CTAs
     path('claim/', RedirectView.as_view(url='/request-access/claim/', query_string=True), name='claim_shortcut'),
     path('league/', include('league.urls', namespace='league')),

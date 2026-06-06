@@ -413,3 +413,44 @@ def admin_report_preview(request, access_request_id):
         'obj':    obj,
         'drafts': drafts,
     })
+
+
+# ── Staff-only client-facing report preview ────────────────────────────────────
+
+# Professional placeholder for empty draft fields on the client-facing report.
+CLIENT_DRAFT_PLACEHOLDER = 'Pending final analyst review.'
+
+# The draft fields surfaced on the client report (internal_notes is deliberately excluded).
+_CLIENT_DRAFT_FIELDS = (
+    'draft_score_summary',
+    'draft_risk_summary',
+    'draft_recommendations',
+    'draft_roadmap',
+)
+
+
+@staff_member_required
+def client_report_preview(request, access_request_id):
+    """
+    GET /client-report-preview/<access_request_id>/
+
+    Staff-only, client-facing version of the Investor Readiness Report rendered
+    from an AccessRequest. Same source data as the internal draft preview, but
+    with no internal notes, warnings, or admin-only language — suitable for
+    printing / saving as PDF and sending to the client.
+
+    Non-staff users are redirected to the admin login by @staff_member_required.
+    Empty draft fields fall back to a professional "Pending final analyst
+    review." placeholder.
+    """
+    obj = get_object_or_404(AccessRequest, pk=access_request_id)
+
+    drafts = {
+        key: (getattr(obj, key) or '').strip() or CLIENT_DRAFT_PLACEHOLDER
+        for key in _CLIENT_DRAFT_FIELDS
+    }
+
+    return render(request, 'leads/client_report_preview.html', {
+        'obj':    obj,
+        'drafts': drafts,
+    })

@@ -40,7 +40,7 @@ class AccessRequestAdmin(admin.ModelAdmin):
     list_editable = ()
     ordering      = ('-created_at',)
     date_hierarchy = 'created_at'
-    readonly_fields = ('draft_preview_link', 'ip_address', 'created_at', 'updated_at')
+    readonly_fields = ('draft_preview_link', 'client_preview_link', 'ip_address', 'created_at', 'updated_at')
 
     fieldsets = (
         ('Lead details', {
@@ -59,12 +59,12 @@ class AccessRequestAdmin(admin.ModelAdmin):
         }),
         ('Draft report preparation', {
             'fields': (
-                'draft_preview_link', 'report_status',
+                'draft_preview_link', 'client_preview_link', 'report_status',
                 'draft_score_summary', 'draft_risk_summary',
                 'draft_recommendations', 'draft_roadmap',
             ),
             'description': 'Prepare the Investor Readiness Report draft from this lead, '
-                           'then open the staff-only preview to review it.',
+                           'then open the internal draft preview or the client-facing preview.',
         }),
         ('Internal notes', {
             'fields': ('notes', 'internal_notes'),
@@ -105,7 +105,7 @@ class AccessRequestAdmin(admin.ModelAdmin):
 
     @admin.display(description='Draft report preview')
     def draft_preview_link(self, obj):
-        """Read-only link to the staff-only draft report preview page."""
+        """Read-only link to the staff-only internal draft report preview page."""
         if obj.pk is None:
             return format_html('<span style="color:#888;">Save the lead first to enable preview.</span>')
         url = reverse('admin_report_preview', args=[obj.pk])
@@ -113,6 +113,19 @@ class AccessRequestAdmin(admin.ModelAdmin):
             '<a class="button" href="{}" target="_blank" rel="noopener" '
             'style="background:#1b4332;color:#fff;padding:6px 14px;border-radius:6px;'
             'text-decoration:none;font-weight:600;">View draft report preview ↗</a>',
+            url,
+        )
+
+    @admin.display(description='Client report preview')
+    def client_preview_link(self, obj):
+        """Read-only link to the staff-only client-facing report preview page."""
+        if obj.pk is None:
+            return format_html('<span style="color:#888;">Save the lead first to enable preview.</span>')
+        url = reverse('client_report_preview', args=[obj.pk])
+        return format_html(
+            '<a class="button" href="{}" target="_blank" rel="noopener" '
+            'style="background:#c9a84c;color:#0a0f14;padding:6px 14px;border-radius:6px;'
+            'text-decoration:none;font-weight:700;">View client report preview ↗</a>',
             url,
         )
 
