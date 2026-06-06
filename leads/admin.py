@@ -18,11 +18,11 @@ class AccessRequestAdmin(admin.ModelAdmin):
 
     list_display  = (
         'full_name', 'company', 'work_email',
-        'industry_display', 'company_size', 'status', 'status_badge',
-        'created_at',
+        'industry_display', 'company_size', 'country', 'role',
+        'status', 'status_badge', 'created_at',
     )
-    list_filter   = ('status', 'industry', 'company_size', 'created_at')
-    search_fields = ('full_name', 'company', 'work_email', 'challenge', 'message', 'notes')
+    list_filter   = ('status', 'industry', 'company_size', 'role', 'created_at')
+    search_fields = ('full_name', 'company', 'work_email', 'country', 'role', 'challenge', 'message', 'notes')
     list_editable = ('status',)   # inline status update — useful for bulk pipeline management
     ordering      = ('-created_at',)
     date_hierarchy = 'created_at'
@@ -33,7 +33,7 @@ class AccessRequestAdmin(admin.ModelAdmin):
             'fields': ('full_name', 'company', 'work_email'),
         }),
         ('Facility Profile', {
-            'fields': ('industry', 'facility_type', 'company_size'),
+            'fields': ('industry', 'facility_type', 'company_size', 'country', 'role'),
         }),
         ('Qualification', {
             'fields': ('challenge', 'message'),

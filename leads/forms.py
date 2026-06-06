@@ -23,6 +23,7 @@ class AccessRequestForm(forms.ModelForm):
         fields = [
             'full_name', 'company', 'work_email',
             'industry', 'facility_type', 'company_size',
+            'country', 'role',
             'challenge', 'message',
         ]
         widgets = {
@@ -43,6 +44,11 @@ class AccessRequestForm(forms.ModelForm):
                 'placeholder': 'e.g. Continuous process refinery, Cold-chain warehouse',
             }),
             'company_size': forms.Select(),
+            'country': forms.TextInput(attrs={
+                'placeholder': 'e.g. United Kingdom, Kazakhstan, Saudi Arabia',
+                'autocomplete': 'country-name',
+            }),
+            'role': forms.Select(),
             'challenge': forms.Textarea(attrs={
                 'rows': 4,
                 'placeholder': 'Describe your main operational challenge — energy losses, unplanned downtime, maintenance gaps, compliance pressure…',
@@ -70,10 +76,15 @@ class AccessRequestForm(forms.ModelForm):
         # Blank choice for selects
         self.fields['industry'].choices    = [('', 'Select your industry…')]    + list(self.fields['industry'].choices)[1:]
         self.fields['company_size'].choices = [('', 'Select company size…')] + list(self.fields['company_size'].choices)[1:]
+        self.fields['role'].choices = [('', 'Select your role… (optional)')] + [c for c in self.fields['role'].choices if c[0]]
 
         # Mark optional fields
         self.fields['message'].required = False
         self.fields['message'].label    = 'Additional context (optional)'
+        self.fields['country'].required = False
+        self.fields['country'].label    = 'Country (optional)'
+        self.fields['role'].required    = False
+        self.fields['role'].label       = 'I am a… (optional)'
 
     def clean_work_email(self):
         return self.cleaned_data['work_email'].strip().lower()

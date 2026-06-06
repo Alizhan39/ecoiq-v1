@@ -1,459 +1,298 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Value Distribution — EcoIQ Institutional Intelligence{% endblock %}
-{% block meta_description_content %}How EcoIQ distributes intelligence value across companies, investors, analysts, governments, and communities — including the Rizq Distribution Model.{% endblock %}
+{% block title %}How EcoIQ Distributes Value — EcoIQ Institutional Intelligence{% endblock %}
+{% block meta_description_content %}How EcoIQ distributes value across the whole transition ecosystem — investors, companies, analysts, public institutions, and the communities affected by industrial decisions.{% endblock %}
 
 {% block extra_head %}
 <style>
 :root {
-  --dg:  #1b4332;   /* dark green */
-  --mg:  #2d6a4f;   /* mid green */
-  --lg:  #40916c;   /* light green */
-  --ag:  #00e89a;   /* accent green */
-  --bg:  #070b0f;
-  --bg2: #0d1117;
-  --bg3: #161b22;
-  --gold:#c9a84c;
-  --gold2:rgba(201,168,76,.15);
-  --gold3:rgba(201,168,76,.08);
-  --text:#e2e8f0;
-  --muted:#64748b;
-  --muted2:#94a3b8;
-  --border:rgba(255,255,255,.06);
-  --border2:rgba(255,255,255,.12);
-  --radius:12px;
+  --vd-bg:#070b0f; --vd-bg2:#0d1117; --vd-bg3:#161b22;
+  --vd-border:rgba(255,255,255,.06); --vd-border2:rgba(255,255,255,.12);
+  --vd-text:#e2e8f0; --vd-muted:#64748b; --vd-muted2:#94a3b8;
+  --vd-green:#00e89a; --vd-emerald:#10b981; --vd-gold:#c9a84c;
+  --vd-blue:#58a6ff; --vd-purple:#a855f7; --vd-teal:#06b6d4;
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
+body{background:var(--vd-bg);color:var(--vd-text);-webkit-font-smoothing:antialiased}
+a{text-decoration:none}
 
-/* ── Page shell ── */
-.vd-wrap{max-width:1120px;margin:0 auto;padding:0 1.5rem 6rem}
+.vd-wrap{max-width:1120px;margin:0 auto;padding:0 1.5rem 5rem}
 
 /* ── Hero ── */
 .vd-hero{
-  padding:5rem 1.5rem 4rem;
-  text-align:center;
-  background:linear-gradient(180deg,rgba(27,67,50,.18) 0%,transparent 100%);
-  border-bottom:1px solid var(--border);
-  margin-bottom:0;
-  position:relative;
-  overflow:hidden;
+  padding:5rem 1.5rem 3.5rem;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(16,185,129,.06) 0%,transparent 100%);
+  border-bottom:1px solid var(--vd-border);
 }
 .vd-hero::before{
-  content:'';position:absolute;inset:0;
+  content:'';position:absolute;inset:0;pointer-events:none;
   background:
-    linear-gradient(rgba(0,232,154,.014) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,232,154,.014) 1px,transparent 1px);
-  background-size:56px 56px;pointer-events:none;
+    linear-gradient(rgba(0,232,154,.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,232,154,.015) 1px,transparent 1px);
+  background-size:56px 56px;
 }
 .vd-eyebrow{
   display:inline-flex;align-items:center;gap:.45rem;
-  background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);
-  color:var(--gold);font-size:.7rem;font-weight:700;
+  background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.22);
+  color:var(--vd-green);font-size:.7rem;font-weight:700;
   letter-spacing:1.5px;text-transform:uppercase;
-  padding:.3rem 1rem;border-radius:20px;margin-bottom:1.5rem;
+  padding:.3rem 1rem;border-radius:20px;margin-bottom:1.5rem;position:relative;
 }
 .vd-hero h1{
-  font-size:clamp(2rem,4.5vw,3.2rem);font-weight:800;
-  letter-spacing:-.04em;line-height:1.1;
-  color:#fff;margin-bottom:1rem;position:relative;
+  font-size:clamp(2rem,4.5vw,3rem);font-weight:800;letter-spacing:-.04em;
+  line-height:1.1;color:#fff;margin-bottom:1.2rem;position:relative;
 }
-.vd-hero h1 em{
-  font-style:normal;
-  background:linear-gradient(105deg,#00e89a,#34d399 50%,#6ee7b7);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.vd-hero-sub{
-  font-size:1rem;color:var(--muted2);line-height:1.75;
-  max-width:600px;margin:0 auto 2.5rem;position:relative;
+.vd-hero p{
+  font-size:1.02rem;color:var(--vd-muted2);line-height:1.75;
+  max-width:680px;margin:0 auto;position:relative;
 }
 
 /* ── Section label ── */
-.sec-label{
+.vd-seclabel{
   display:flex;align-items:center;gap:12px;
-  font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--muted);font-family:"SF Mono","Fira Code",monospace;
-  margin-bottom:2rem;
+  font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--vd-muted);font-family:'SF Mono','Fira Code',monospace;
+  margin:3.5rem 0 1.75rem;
 }
-.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.vd-seclabel::after{content:'';flex:1;height:1px;background:var(--vd-border)}
 
 /* ── Value cards grid ── */
 .vd-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
-  gap:1.25rem;
-  margin-bottom:4rem;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.25rem;
 }
-
 .vd-card{
-  background:var(--bg2);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:2rem;
-  position:relative;
-  transition:border-color .2s,transform .2s,box-shadow .2s;
-  display:flex;flex-direction:column;
+  background:var(--vd-bg2);border:1px solid var(--vd-border);border-radius:14px;
+  padding:1.9rem;position:relative;transition:border-color .2s,transform .2s,box-shadow .2s;
+  display:flex;flex-direction:column;backdrop-filter:blur(14px);
 }
-.vd-card:hover{
-  border-color:rgba(0,232,154,.25);
-  transform:translateY(-2px);
-  box-shadow:0 16px 48px rgba(0,0,0,.4);
-}
-.vd-card-accent{border-top:2px solid var(--ag)}
-.vd-card-gold{border-top:2px solid var(--gold)}
-
+.vd-card:hover{border-color:rgba(0,232,154,.25);transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.4)}
 .vd-card-icon{
-  width:48px;height:48px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.4rem;margin-bottom:1.2rem;flex-shrink:0;
+  width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-size:1.35rem;margin-bottom:1.1rem;
 }
-.icon-green{background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2)}
-.icon-blue{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2)}
-.icon-gold{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2)}
-.icon-purple{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2)}
-.icon-teal{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2)}
-.icon-emerald{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2)}
+.ic-green{background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2)}
+.ic-blue{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2)}
+.ic-gold{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2)}
+.ic-teal{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2)}
+.ic-purple{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2)}
+.vd-card-num{font-size:.6rem;font-family:'SF Mono',monospace;color:var(--vd-muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem}
+.vd-card h2{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:1rem;letter-spacing:-.02em}
+.vd-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.6rem}
+.vd-list li{font-size:.82rem;color:var(--vd-muted2);display:flex;align-items:flex-start;gap:.55rem;line-height:1.5}
+.vd-tick{flex-shrink:0;font-size:.85rem;margin-top:.02rem;color:var(--vd-green)}
+.vd-note{font-size:.76rem;color:var(--vd-muted);line-height:1.6;margin-top:1.1rem;padding-top:1rem;border-top:1px solid var(--vd-border)}
 
-.vd-card h2{
-  font-size:1.05rem;font-weight:700;color:#fff;
-  margin-bottom:.5rem;letter-spacing:-.02em;
-}
-.vd-card .vd-card-sub{
-  font-size:.8rem;color:var(--muted2);line-height:1.65;margin-bottom:1.4rem;flex:1;
-}
-
-.vd-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.55rem}
-.vd-list li{
-  font-size:.8rem;color:var(--muted2);
-  display:flex;align-items:flex-start;gap:.55rem;line-height:1.5;
-}
-.vd-tick{color:var(--ag);flex-shrink:0;font-size:.85rem;margin-top:.05rem}
-.vd-tick-gold{color:var(--gold);flex-shrink:0;font-size:.85rem;margin-top:.05rem}
-
-.vd-card-cta{
-  display:inline-flex;align-items:center;gap:.4rem;
-  font-size:.78rem;font-weight:700;color:var(--ag);
-  margin-top:1.4rem;
-  padding:.5rem 0;border-bottom:1px solid rgba(0,232,154,.2);
-  transition:border-color .2s;width:fit-content;
-}
-.vd-card-cta:hover{border-color:var(--ag)}
-.vd-card-cta-gold{color:var(--gold);border-bottom:1px solid rgba(201,168,76,.2)}
-.vd-card-cta-gold:hover{border-color:var(--gold)}
-
-/* ── Rizq model section ── */
-.rizq-section{
-  background:linear-gradient(135deg,rgba(201,168,76,.06) 0%,rgba(27,67,50,.12) 100%);
-  border:1px solid rgba(201,168,76,.2);
-  border-radius:16px;
-  padding:3rem 2.5rem;
-  margin-bottom:4rem;
+/* ── Rizq flow block ── */
+.rizq{
+  margin-top:3.5rem;
+  background:linear-gradient(135deg,rgba(201,168,76,.06) 0%,rgba(16,185,129,.05) 100%);
+  border:1px solid rgba(201,168,76,.2);border-radius:18px;padding:3rem 2.5rem;
   position:relative;overflow:hidden;
 }
-.rizq-section::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-}
-.rizq-section::after{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(201,168,76,.05),transparent 70%);
-  pointer-events:none;
-}
-.rizq-header{text-align:center;margin-bottom:3rem;position:relative}
-.rizq-eyebrow{
-  font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:.8rem;
-}
-.rizq-title{
-  font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:800;color:#fff;
-  letter-spacing:-.04em;margin-bottom:.75rem;
-}
-.rizq-sub{
-  font-size:.9rem;color:var(--muted2);max-width:580px;margin:0 auto;line-height:1.7;
-}
+.rizq::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--vd-gold),transparent)}
+.rizq-head{text-align:center;margin-bottom:2.5rem;position:relative}
+.rizq-eyebrow{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--vd-gold);margin-bottom:.7rem}
+.rizq-head h2{font-size:clamp(1.5rem,2.8vw,2.1rem);font-weight:800;color:#fff;letter-spacing:-.04em;margin-bottom:.6rem}
+.rizq-head p{font-size:.88rem;color:var(--vd-muted2);max-width:560px;margin:0 auto;line-height:1.7}
 
-.rizq-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:1rem;
-  position:relative;
+.flow{display:flex;align-items:stretch;justify-content:center;gap:0;flex-wrap:wrap;position:relative}
+.flow-node{
+  flex:1;min-width:150px;background:rgba(0,0,0,.3);border:1px solid rgba(201,168,76,.15);
+  border-radius:12px;padding:1.3rem 1.1rem;text-align:center;transition:border-color .2s;
 }
-.rizq-card{
-  background:rgba(0,0,0,.3);
-  border:1px solid rgba(201,168,76,.15);
-  border-radius:10px;padding:1.4rem 1.5rem;
-  transition:border-color .2s;
+.flow-node:hover{border-color:rgba(201,168,76,.4)}
+.flow-node-icon{font-size:1.5rem;margin-bottom:.6rem}
+.flow-node-from{font-size:.85rem;font-weight:700;color:#fff;margin-bottom:.35rem}
+.flow-node-to{font-size:.74rem;color:var(--vd-muted2);line-height:1.5}
+.flow-arrow{
+  display:flex;align-items:center;justify-content:center;
+  color:var(--vd-gold);font-size:1.1rem;padding:0 .35rem;flex-shrink:0;
 }
-.rizq-card:hover{border-color:rgba(201,168,76,.4)}
-.rizq-num{
-  font-size:.65rem;font-family:"SF Mono","Fira Code",monospace;
-  color:var(--gold);letter-spacing:.1em;margin-bottom:.7rem;
+@media(max-width:900px){
+  .flow{flex-direction:column;gap:0}
+  .flow-arrow{transform:rotate(90deg);padding:.4rem 0}
 }
-.rizq-card h3{font-size:.92rem;font-weight:700;color:#fff;margin-bottom:.5rem;letter-spacing:-.01em}
-.rizq-card p{font-size:.78rem;color:var(--muted2);line-height:1.6}
-
-.rizq-footer{
+.rizq-close{
   text-align:center;margin-top:2.5rem;padding-top:2rem;
   border-top:1px solid rgba(201,168,76,.12);position:relative;
 }
-.rizq-disclaimer{
-  font-size:.72rem;color:var(--muted);line-height:1.65;max-width:520px;margin:0 auto 1.5rem;
-}
+.rizq-close p{font-size:.95rem;color:var(--vd-text);line-height:1.7;max-width:620px;margin:0 auto;font-style:italic}
 
 /* ── CTA band ── */
-.vd-cta-band{
-  background:rgba(255,255,255,.02);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:3rem 2rem;
-  text-align:center;
-  margin-bottom:3rem;
+.vd-cta{
+  margin-top:3.5rem;background:rgba(255,255,255,.02);border:1px solid var(--vd-border);
+  border-radius:16px;padding:3rem 2rem;text-align:center;
 }
-.vd-cta-title{
-  font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:800;
-  letter-spacing:-.03em;color:#fff;margin-bottom:.7rem;
-}
-.vd-cta-sub{
-  font-size:.88rem;color:var(--muted2);max-width:480px;margin:0 auto 2rem;line-height:1.65;
-}
+.vd-cta h2{font-size:clamp(1.3rem,2.5vw,1.85rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem}
+.vd-cta p{font-size:.88rem;color:var(--vd-muted2);max-width:480px;margin:0 auto 2rem;line-height:1.65}
 .vd-cta-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
-.btn-primary{
-  background:var(--ag);color:#0a0f14;
-  font-size:.88rem;font-weight:700;padding:.72rem 1.5rem;border-radius:9px;
-  display:inline-flex;align-items:center;gap:.4rem;
-  transition:opacity .2s,transform .1s;
-}
-.btn-primary:hover{opacity:.87;transform:translateY(-1px)}
-.btn-outline{
-  background:transparent;border:1px solid var(--border2);color:var(--muted2);
-  font-size:.88rem;font-weight:600;padding:.72rem 1.5rem;border-radius:9px;
-  display:inline-flex;align-items:center;gap:.4rem;
-  transition:all .2s;
-}
-.btn-outline:hover{border-color:var(--ag);color:var(--ag)}
-.btn-gold{
-  background:var(--gold);color:#0a0f14;
-  font-size:.88rem;font-weight:700;padding:.72rem 1.5rem;border-radius:9px;
-  display:inline-flex;align-items:center;gap:.4rem;
-  transition:opacity .2s,transform .1s;
-}
-.btn-gold:hover{opacity:.87;transform:translateY(-1px)}
+.vd-btn{font-size:.86rem;font-weight:700;padding:.74rem 1.5rem;border-radius:10px;display:inline-flex;align-items:center;gap:.4rem;transition:opacity .2s,transform .1s,border-color .2s,color .2s}
+.vd-btn-green{background:var(--vd-green);color:#0a0f14}
+.vd-btn-green:hover{opacity:.87;transform:translateY(-1px)}
+.vd-btn-gold{background:var(--vd-gold);color:#0a0f14}
+.vd-btn-gold:hover{opacity:.87;transform:translateY(-1px)}
+.vd-btn-outline{background:transparent;border:1px solid var(--vd-border2);color:var(--vd-muted2)}
+.vd-btn-outline:hover{border-color:var(--vd-green);color:var(--vd-green)}
 
 @media(max-width:640px){
   .vd-hero{padding:3.5rem 1rem 2.5rem}
   .vd-grid{grid-template-columns:1fr}
-  .rizq-grid{grid-template-columns:1fr}
-  .rizq-section{padding:2rem 1.25rem}
+  .rizq{padding:2rem 1.25rem}
   .vd-cta-btns{flex-direction:column;align-items:center}
+  .vd-btn{width:100%;max-width:320px;justify-content:center}
 }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- ═══ HERO ══════════════════════════════════════════════════════════════ -->
+<!-- ═══ HERO ═══ -->
 <div class="vd-hero">
-  <div class="vd-eyebrow">◆ Stakeholder Value Architecture</div>
-  <h1>Intelligence that creates<br><em>shared value</em></h1>
-  <p class="vd-hero-sub">
-    EcoIQ is built on a principle of equitable value distribution — every stakeholder
-    who touches the platform receives intelligence calibrated to their decisions,
-    responsibilities, and long-term interests.
+  <div class="vd-eyebrow">◆ Value Distribution</div>
+  <h1>How EcoIQ Distributes Value</h1>
+  <p>
+    EcoIQ is designed to distribute value across the whole transition ecosystem —
+    from investors and companies to analysts, public institutions and communities
+    affected by industrial decisions.
   </p>
-  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
-    <a href="/pricing/" class="btn-primary">View Pricing →</a>
-    <a href="/methodology/" class="btn-outline">Our Methodology</a>
-  </div>
 </div>
 
-<div class="vd-wrap" style="padding-top:4rem">
+<div class="vd-wrap">
 
-<!-- ═══ STAKEHOLDER VALUE GRID ════════════════════════════════════════════ -->
-<div class="sec-label">Stakeholder value map</div>
+  <!-- ═══ STAKEHOLDER VALUE ═══ -->
+  <div class="vd-seclabel">Where the value goes</div>
 
-<div class="vd-grid">
+  <div class="vd-grid">
 
-  <!-- 1. Companies -->
-  <div class="vd-card vd-card-accent">
-    <div class="vd-card-icon icon-green">🏭</div>
-    <h2>Value for Companies</h2>
-    <p class="vd-card-sub">
-      Industrial companies receive actionable intelligence to understand their ethical
-      standing, benchmark against peers, and access the capital they need to grow responsibly.
-    </p>
-    <ul class="vd-list">
-      <li><span class="vd-tick">✓</span>Know your EcoIQ score before investors see it</li>
-      <li><span class="vd-tick">✓</span>Six-pillar gap analysis with an improvement roadmap</li>
-      <li><span class="vd-tick">✓</span>Benchmark against sector peers across 4 focus markets</li>
-      <li><span class="vd-tick">✓</span>Identify green bond and DFI financing eligibility</li>
-      <li><span class="vd-tick">✓</span>Claim and control your verified EcoIQ profile</li>
-      <li><span class="vd-tick">✓</span>Prepare for regulatory disclosure requirements (SFDR, ISSB)</li>
-    </ul>
-    <a href="/request-access/claim/" class="vd-card-cta">Claim your company profile →</a>
-  </div>
-
-  <!-- 2. Investors -->
-  <div class="vd-card vd-card-accent">
-    <div class="vd-card-icon icon-blue">📊</div>
-    <h2>Value for Investors</h2>
-    <p class="vd-card-sub">
-      Responsible investors and fund managers gain institutional-grade climate intelligence
-      to screen portfolios, quantify transition risk, and identify green finance opportunities.
-    </p>
-    <ul class="vd-list">
-      <li><span class="vd-tick">✓</span>Screen hundreds of companies by EcoIQ score, sector, or country</li>
-      <li><span class="vd-tick">✓</span>6-pillar ethical intelligence scoring for every company</li>
-      <li><span class="vd-tick">✓</span>Transition risk signals and greenwashing flags</li>
-      <li><span class="vd-tick">✓</span>IFC, EBRD, ADB and AIIB compatibility assessments</li>
-      <li><span class="vd-tick">✓</span>Country-level intelligence across the UK, Kazakhstan, KSA &amp; Türkiye</li>
-      <li><span class="vd-tick">✓</span>AI-assisted investor briefings exportable as white-label PDFs</li>
-    </ul>
-    <a href="/pricing/" class="vd-card-cta">View investor plans →</a>
-  </div>
-
-  <!-- 3. Analysts -->
-  <div class="vd-card">
-    <div class="vd-card-icon icon-purple">📐</div>
-    <h2>Value for Analysts</h2>
-    <p class="vd-card-sub">
-      ESG and climate analysts gain a structured, evidence-based scoring system that
-      replaces subjective assessment with reproducible, AI-assisted methodology.
-    </p>
-    <ul class="vd-list">
-      <li><span class="vd-tick">✓</span>Transparent, explainable AI — no black box outputs</li>
-      <li><span class="vd-tick">✓</span>Full 6-pillar breakdown with evidence coverage %</li>
-      <li><span class="vd-tick">✓</span>Harm penalty model — surfacing real-world controversy signals</li>
-      <li><span class="vd-tick">✓</span>API access for integration into proprietary tooling</li>
-      <li><span class="vd-tick">✓</span>CSV and PDF exports for client deliverables</li>
-      <li><span class="vd-tick">✓</span>Methodology aligned with SFDR PAI and EU Taxonomy principles</li>
-    </ul>
-    <a href="/api-docs/" class="vd-card-cta">Explore the API →</a>
-  </div>
-
-  <!-- 4. Governments -->
-  <div class="vd-card">
-    <div class="vd-card-icon icon-teal">🏛️</div>
-    <h2>Value for Governments</h2>
-    <p class="vd-card-sub">
-      Policymakers, regulators, and development finance institutions receive national-level
-      transition intelligence to prioritise intervention and track industrial progress.
-    </p>
-    <ul class="vd-list">
-      <li><span class="vd-tick">✓</span>Country transition profiles for UK, Kazakhstan, KSA &amp; Türkiye</li>
-      <li><span class="vd-tick">✓</span>Identify JETP-eligible companies by sector and score band</li>
-      <li><span class="vd-tick">✓</span>National industrial composition and pollution level mapping</li>
-      <li><span class="vd-tick">✓</span>Track aggregate sector improvement over time</li>
-      <li><span class="vd-tick">✓</span>Evidence-based input for climate programme prioritisation</li>
-      <li><span class="vd-tick">✓</span>Customisable enterprise intelligence for policy teams</li>
-    </ul>
-    <a href="/countries/" class="vd-card-cta">View country intelligence →</a>
-  </div>
-
-  <!-- 5. Communities -->
-  <div class="vd-card">
-    <div class="vd-card-icon icon-emerald">🌍</div>
-    <h2>Value for Communities</h2>
-    <p class="vd-card-sub">
-      Communities affected by industrial operations benefit indirectly as EcoIQ's scoring
-      raises accountability standards and directs capital toward companies with genuine
-      public benefit commitments.
-    </p>
-    <ul class="vd-list">
-      <li><span class="vd-tick">✓</span>Public benefit pillar weighted in every company score</li>
-      <li><span class="vd-tick">✓</span>Harm penalty reduces the score of high-pollution operators</li>
-      <li><span class="vd-tick">✓</span>Free, public access to all EcoIQ company rankings</li>
-      <li><span class="vd-tick">✓</span>Transparent methodology — no gatekeeping of climate data</li>
-      <li><span class="vd-tick">✓</span>Amplifies accountability through investor-facing disclosure</li>
-      <li><span class="vd-tick">✓</span>Long-term stewardship built into the scoring framework</li>
-    </ul>
-    <a href="/companies/" class="vd-card-cta">Browse company rankings →</a>
-  </div>
-
-</div><!-- /vd-grid -->
-
-
-<!-- ═══ RIZQ DISTRIBUTION MODEL ══════════════════════════════════════════ -->
-<div class="rizq-section">
-  <div class="rizq-header">
-    <div class="rizq-eyebrow">◈ Ethical Finance Architecture</div>
-    <h2 class="rizq-title">The Rizq Distribution Model</h2>
-    <p class="rizq-sub">
-      EcoIQ is structured around the principle that value — <em>rizq</em> — should be
-      distributed equitably across all those who contribute to or are affected by economic
-      activity. This model underpins our scoring weights, capital compatibility assessments,
-      and long-term stewardship framework.
-    </p>
-  </div>
-
-  <div class="rizq-grid">
-
-    <div class="rizq-card">
-      <div class="rizq-num">01</div>
-      <h3>Equitable Capital Deployment</h3>
-      <p>Capital should flow to companies that distribute economic returns broadly — to employees, communities, and long-term reinvestment — not concentrated extraction by shareholders alone.</p>
+    <!-- 1 — Companies -->
+    <div class="vd-card">
+      <div class="vd-card-icon ic-green">🏭</div>
+      <div class="vd-card-num">Section 01</div>
+      <h2>Value for Companies</h2>
+      <ul class="vd-list">
+        <li><span class="vd-tick">✓</span>Better investor readiness</li>
+        <li><span class="vd-tick">✓</span>Lower ESG and reputation risk</li>
+        <li><span class="vd-tick">✓</span>A clear transition roadmap</li>
+        <li><span class="vd-tick">✓</span>Access to ethical &amp; sustainability-linked finance</li>
+        <li><span class="vd-tick">✓</span>Practical 30 / 60 / 90-day actions</li>
+      </ul>
     </div>
 
-    <div class="rizq-card">
-      <div class="rizq-num">02</div>
-      <h3>Long-Term Stewardship</h3>
-      <p>Responsible finance prioritises durable value creation over short-term profit extraction. EcoIQ's Future Readiness pillar scores companies on their long-horizon orientation and climate transition investment.</p>
+    <!-- 2 — Investors -->
+    <div class="vd-card">
+      <div class="vd-card-icon ic-blue">📊</div>
+      <div class="vd-card-num">Section 02</div>
+      <h2>Value for Investors</h2>
+      <ul class="vd-list">
+        <li><span class="vd-tick" style="color:var(--vd-blue)">✓</span>Cleaner due diligence and risk filtering</li>
+        <li><span class="vd-tick" style="color:var(--vd-blue)">✓</span>Maqasid alignment for better deal selection</li>
+        <li><span class="vd-tick" style="color:var(--vd-blue)">✓</span>Early warning on governance, pollution &amp; corruption risk</li>
+        <li><span class="vd-tick" style="color:var(--vd-blue)">✓</span>Transition-risk signals before they surface</li>
+        <li><span class="vd-tick" style="color:var(--vd-blue)">✓</span>Comparable intelligence across companies and countries</li>
+      </ul>
     </div>
 
-    <div class="rizq-card">
-      <div class="rizq-num">03</div>
-      <h3>Public Benefit Accountability</h3>
-      <p>Every company is scored on its contribution to public welfare — job creation, community investment, social infrastructure, and environmental restoration — not just financial performance.</p>
+    <!-- 3 — Analysts -->
+    <div class="vd-card">
+      <div class="vd-card-icon ic-purple">🔬</div>
+      <div class="vd-card-num">Section 03</div>
+      <h2>Value for Analysts</h2>
+      <ul class="vd-list">
+        <li><span class="vd-tick" style="color:var(--vd-purple)">✓</span>A paid analyst network — earn from verified knowledge</li>
+        <li><span class="vd-tick" style="color:var(--vd-purple)">✓</span>Freelance researchers &amp; sustainability analysts</li>
+        <li><span class="vd-tick" style="color:var(--vd-purple)">✓</span>Ethical-finance reviewers &amp; country experts</li>
+        <li><span class="vd-tick" style="color:var(--vd-purple)">✓</span>Policy researchers contributing sector notes</li>
+        <li><span class="vd-tick" style="color:var(--vd-purple)">✓</span>Verified research, country insights &amp; company reviews</li>
+      </ul>
+      <div class="vd-note">Analysts contribute structured, verified intelligence — and are paid for knowledge that improves decisions across the network.</div>
     </div>
 
-    <div class="rizq-card">
-      <div class="rizq-num">04</div>
-      <h3>Transparent Governance</h3>
-      <p>Rizq flows freely only where governance is transparent. EcoIQ scores board independence, anti-corruption safeguards, disclosure quality, and accountability mechanisms as core indicators.</p>
+    <!-- 4 — Governments -->
+    <div class="vd-card">
+      <div class="vd-card-icon ic-teal">🏛️</div>
+      <div class="vd-card-num">Section 04</div>
+      <h2>Value for Governments</h2>
+      <ul class="vd-list">
+        <li><span class="vd-tick" style="color:var(--vd-teal)">✓</span>Better policy decisions and cleaner industrial strategy</li>
+        <li><span class="vd-tick" style="color:var(--vd-teal)">✓</span>Lower corruption and misuse risk</li>
+        <li><span class="vd-tick" style="color:var(--vd-teal)">✓</span>Better public fund allocation</li>
+        <li><span class="vd-tick" style="color:var(--vd-teal)">✓</span>Transparent investment prioritisation</li>
+        <li><span class="vd-tick" style="color:var(--vd-teal)">✓</span>National transition-readiness tools</li>
+      </ul>
     </div>
 
-    <div class="rizq-card">
-      <div class="rizq-num">05</div>
-      <h3>Harm-Adjusted Returns</h3>
-      <p>Companies that generate profits by externalising environmental or social costs receive a harm penalty of up to –30 points. True rizq cannot be built on harm to others.</p>
-    </div>
-
-    <div class="rizq-card">
-      <div class="rizq-num">06</div>
-      <h3>Ethical Finance Compatibility</h3>
-      <p>The model is designed to be compatible with responsible capital frameworks that emphasise stewardship, prohibition of exploitative structures, and alignment with broader human welfare — regardless of the specific framework tradition.</p>
+    <!-- 5 — Communities -->
+    <div class="vd-card">
+      <div class="vd-card-icon ic-green">🌍</div>
+      <div class="vd-card-num">Section 05</div>
+      <h2>Value for Communities</h2>
+      <ul class="vd-list">
+        <li><span class="vd-tick">✓</span>Less pollution and more transparency</li>
+        <li><span class="vd-tick">✓</span>Better jobs and dignity-focused development</li>
+        <li><span class="vd-tick">✓</span>Stronger accountability</li>
+        <li><span class="vd-tick">✓</span>Better long-term public benefit</li>
+      </ul>
     </div>
 
   </div>
 
-  <div class="rizq-footer">
-    <p class="rizq-disclaimer">
-      The Rizq Distribution Model is a conceptual framework developed by EcoIQ to structure ethical scoring weights and capital compatibility assessments.
-      It is not a Shariah compliance opinion, religious ruling, or regulatory determination. All outputs are AI-assisted and indicative.
-    </p>
-    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
-      <a href="/ethical-governance/" class="btn-gold">Explore Ethical Governance Framework →</a>
-      <a href="/methodology/" class="btn-outline">Read the Full Methodology</a>
+  <!-- ═══ SECTION 06 — RIZQ DISTRIBUTION MODEL ═══ -->
+  <div class="rizq">
+    <div class="rizq-head">
+      <div class="rizq-eyebrow">◈ Section 06 · Value Flow</div>
+      <h2>The Rizq Distribution Model</h2>
+      <p>EcoIQ is built so that value moves — not pools. Intelligence created at one point in the ecosystem becomes useful capacity at the next.</p>
+    </div>
+
+    <div class="flow">
+      <div class="flow-node">
+        <div class="flow-node-icon">🏭</div>
+        <div class="flow-node-from">Companies</div>
+        <div class="flow-node-to">become more investable</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-icon">📊</div>
+        <div class="flow-node-from">Investors</div>
+        <div class="flow-node-to">make better decisions</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-icon">🔬</div>
+        <div class="flow-node-from">Analysts</div>
+        <div class="flow-node-to">earn from verified knowledge</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-icon">🏛️</div>
+        <div class="flow-node-from">Governments</div>
+        <div class="flow-node-to">allocate resources better</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-icon">🌍</div>
+        <div class="flow-node-from">Communities</div>
+        <div class="flow-node-to">receive cleaner and fairer development</div>
+      </div>
+    </div>
+
+    <div class="rizq-close">
+      <p>EcoIQ's goal is not only to measure value, but to help value move toward the people, institutions and communities that can use it responsibly.</p>
     </div>
   </div>
-</div><!-- /rizq-section -->
 
-
-<!-- ═══ BOTTOM CTA ════════════════════════════════════════════════════════ -->
-<div class="vd-cta-band">
-  <div class="vd-cta-title">Start generating value for your organisation</div>
-  <p class="vd-cta-sub">
-    Whether you're screening investments, improving a company score, or building policy intelligence —
-    EcoIQ has a pathway for you.
-  </p>
-  <div class="vd-cta-btns">
-    <a href="/pricing/#free-scan" class="btn-primary">Request Free Scan →</a>
-    <a href="mailto:alizhan@ecoiq.uk?subject=Investor+Readiness+Report+Request" class="btn-gold">Request Investor Readiness Report →</a>
-    <a href="mailto:alizhan@ecoiq.uk?subject=Institutional+Pilot+Enquiry" class="btn-outline">Discuss Institutional Pilot →</a>
+  <!-- ═══ CTA ═══ -->
+  <div class="vd-cta">
+    <h2>Put EcoIQ intelligence to work</h2>
+    <p>Start with a free scan, request an investor-grade report, or talk to us about an institutional pilot.</p>
+    <div class="vd-cta-btns">
+      <a href="/request-access/" class="vd-btn vd-btn-green">Request Free Scan →</a>
+      <a href="/request-access/review/" class="vd-btn vd-btn-gold">Request Investor Readiness Report →</a>
+      <a href="/contact/" class="vd-btn vd-btn-outline">Discuss Institutional Pilot →</a>
+    </div>
   </div>
+
 </div>
-
-</div><!-- /vd-wrap -->
 
 {% endblock %}
