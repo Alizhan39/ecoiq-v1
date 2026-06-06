@@ -53,6 +53,16 @@ PRODUCT_INTEREST_CHOICES = [
     ('institutional_pilot', 'Institutional Pilot'),
 ]
 
+# Internal draft-report preparation pipeline for a lead
+REPORT_STATUS_CHOICES = [
+    ('not_started',  'Not Started'),
+    ('draft_needed', 'Draft Needed'),
+    ('draft_ready',  'Draft Prepared'),
+    ('sent',         'Sent to Client'),
+    ('paid_request', 'Paid Report Requested'),
+    ('closed',       'Closed'),
+]
+
 
 class AccessRequest(models.Model):
     # Contact
@@ -94,6 +104,17 @@ class AccessRequest(models.Model):
     # CRM
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     notes  = models.TextField(blank=True, help_text='Internal notes — not visible to the submitter')
+
+    # ── Investor Readiness Report draft preparation (all optional, additive) ──
+    report_status = models.CharField(
+        max_length=20, choices=REPORT_STATUS_CHOICES, default='not_started', blank=True,
+        help_text='Internal draft-report preparation stage',
+    )
+    draft_score_summary    = models.TextField(blank=True, help_text='Draft EcoIQ / Maqasid score summary')
+    draft_risk_summary     = models.TextField(blank=True, help_text='Draft climate, governance & transition risk summary')
+    draft_recommendations  = models.TextField(blank=True, help_text='Draft investor-readiness recommendations')
+    draft_roadmap          = models.TextField(blank=True, help_text='Draft 90-day roadmap (30 / 60 / 90-day windows)')
+    internal_notes         = models.TextField(blank=True, help_text='Internal analyst notes for report preparation')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

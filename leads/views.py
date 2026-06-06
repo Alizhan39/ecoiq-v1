@@ -1,9 +1,10 @@
 import logging
 from datetime import timedelta
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.core.mail import send_mail
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
@@ -14,6 +15,25 @@ from .forms import AccessRequestForm, ReviewRequestForm, ReportRequestForm
 from .models import AccessRequest, ProfileClaim, ReviewRequest
 
 logger = logging.getLogger(__name__)
+
+
+# ── Starter draft defaults — shown in the preview when draft fields are empty ──
+
+DRAFT_PLACEHOLDERS = {
+    'draft_score_summary': (
+        'Pending analyst review. EcoIQ will assess public data, governance signals, '
+        'sustainability exposure, and Maqasid-aligned value creation.'
+    ),
+    'draft_risk_summary': (
+        'Pending review of climate, governance, reputational, and transition risks.'
+    ),
+    'draft_recommendations': (
+        'Pending preparation of practical actions for investor readiness and ethical transition.'
+    ),
+    'draft_roadmap': (
+        'Pending roadmap across 30, 60, and 90-day implementation windows.'
+    ),
+}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -363,4 +383,31 @@ def review_success(request):
     calendly_url = getattr(settings, 'CALENDLY_URL', '')
     return render(request, 'leads/review_success.html', {
         'calendly_url': calendly_url,
+    })
+
+
+# ── Staff-only draft report preview ────────────────────────────────────────────
+
+@staff_member_required
+def admin_report_preview(request, access_request_id):
+    """
+    GET /admin-report-preview/<access_request_id>/
+
+    Staff-only internal preview of an Investor Readiness Report draft, rendered
+    from an AccessRequest. Non-staff users are redirected to the admin login by
+    the @staff_member_required decorator.
+
+    Empty draft fields fall back to neutral "starter draft" placeholder text so
+    the layout is always complete.
+    """
+    obj = get_object_or_404(AccessRequest, pk=access_request_id)
+
+    drafts = {
+        key: (getattr(obj, key) or '').strip() or placeholder
+        for key, placeholder in DRAFT_PLACEHOLDERS.items()
+    }
+
+    return render(request, 'leads/admin_report_preview.html', {
+        'obj':    obj,
+        'drafts': drafts,
     })
