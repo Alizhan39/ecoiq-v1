@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sample EcoIQ Investor Readiness Report{% endblock %}
+{% block meta_description_content %}A sample EcoIQ Investor Readiness Report — demonstration layout showing EcoIQ Score, Maqasid alignment, climate &amp; governance risk, Mizan balance, and a 90-day roadmap. Demo data only.{% endblock %}
+
+{% block extra_head %}
+<style>
+:root{
+  --sr-bg:#070b0f; --sr-bg2:#0d1117; --sr-bg3:#161b22;
+  --sr-border:rgba(255,255,255,.06); --sr-border2:rgba(255,255,255,.12);
+  --sr-text:#e2e8f0; --sr-muted:#64748b; --sr-muted2:#94a3b8;
+  --sr-green:#00e89a; --sr-emerald:#10b981; --sr-gold:#c9a84c;
+  --sr-blue:#58a6ff; --sr-purple:#a855f7; --sr-warn:#f4a261; --sr-danger:#e63946;
+}
+*{box-sizing:border-box}
+body{background:var(--sr-bg);color:var(--sr-text);-webkit-font-smoothing:antialiased}
+a{text-decoration:none}
+.sr-wrap{max-width:1080px;margin:0 auto;padding:0 1.5rem 5rem}
+
+/* ── Demo banner ── */
+.sr-demo{
+  background:rgba(244,162,97,.08);border-bottom:1px solid rgba(244,162,97,.2);
+  color:var(--sr-warn);text-align:center;font-size:.75rem;font-weight:600;
+  letter-spacing:.04em;padding:.55rem 1rem;
+}
+
+/* ── Report header ── */
+.sr-head{
+  padding:3.5rem 1.5rem 2.5rem;border-bottom:1px solid var(--sr-border);
+  background:linear-gradient(180deg,rgba(201,168,76,.05) 0%,transparent 100%);
+}
+.sr-head-inner{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;gap:1.5rem;flex-wrap:wrap}
+.sr-eyebrow{font-size:.66rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--sr-gold);margin-bottom:.7rem}
+.sr-head h1{font-size:clamp(1.7rem,3.2vw,2.4rem);font-weight:800;color:#fff;letter-spacing:-.03em;line-height:1.12}
+.sr-head .sr-sub{font-size:.85rem;color:var(--sr-muted2);margin-top:.6rem}
+.sr-meta{font-family:'SF Mono','Fira Code',monospace;font-size:.66rem;color:var(--sr-muted);text-align:right;line-height:1.8}
+.sr-meta b{color:var(--sr-muted2);font-weight:600}
+
+/* ── Section label ── */
+.sr-seclabel{display:flex;align-items:center;gap:12px;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sr-muted);font-family:'SF Mono',monospace;margin:3rem 0 1.5rem}
+.sr-seclabel::after{content:'';flex:1;height:1px;background:var(--sr-border)}
+
+/* ── Exec summary ── */
+.sr-exec{background:var(--sr-bg2);border:1px solid var(--sr-border);border-radius:14px;padding:1.9rem 2rem;line-height:1.75;font-size:.92rem;color:var(--sr-muted2)}
+.sr-exec strong{color:var(--sr-text);font-weight:600}
+
+/* ── Score cards ── */
+.sr-scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin-top:1.25rem}
+.sr-score{background:var(--sr-bg2);border:1px solid var(--sr-border);border-radius:14px;padding:1.5rem 1.4rem;position:relative;overflow:hidden}
+.sr-score::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sr-score-green::before{background:linear-gradient(90deg,transparent,var(--sr-green),transparent)}
+.sr-score-gold::before{background:linear-gradient(90deg,transparent,var(--sr-gold),transparent)}
+.sr-score-blue::before{background:linear-gradient(90deg,transparent,var(--sr-blue),transparent)}
+.sr-score-purple::before{background:linear-gradient(90deg,transparent,var(--sr-purple),transparent)}
+.sr-score-label{font-size:.6rem;font-family:'SF Mono',monospace;color:var(--sr-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.7rem}
+.sr-score-val{font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:-.04em}
+.sr-score-tag{font-size:.72rem;font-weight:700;margin-top:.45rem}
+.sr-score-bar{margin-top:.9rem;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.sr-score-bar i{display:block;height:4px;border-radius:2px}
+
+/* ── Risk grid ── */
+.sr-grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:760px){.sr-grid2{grid-template-columns:1fr}}
+.sr-card{background:var(--sr-bg2);border:1px solid var(--sr-border);border-radius:14px;padding:1.6rem 1.7rem}
+.sr-card h3{font-size:.95rem;font-weight:700;color:#fff;margin-bottom:1rem;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem}
+.sr-metric-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--sr-border)}
+.sr-metric-row:last-child{border-bottom:none}
+.sr-metric-name{font-size:.82rem;color:var(--sr-muted2)}
+.sr-pill{font-size:.66rem;font-weight:700;padding:.18rem .6rem;border-radius:20px;white-space:nowrap}
+.pill-low{background:rgba(0,232,154,.1);color:var(--sr-green);border:1px solid rgba(0,232,154,.25)}
+.pill-med{background:rgba(244,162,97,.1);color:var(--sr-warn);border:1px solid rgba(244,162,97,.25)}
+.pill-high{background:rgba(230,57,70,.1);color:var(--sr-danger);border:1px solid rgba(230,57,70,.25)}
+.pill-strong{background:rgba(0,232,154,.1);color:var(--sr-green);border:1px solid rgba(0,232,154,.25)}
+
+/* ── Mizan balance ── */
+.sr-mizan{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(16,185,129,.05));border:1px solid rgba(201,168,76,.2);border-radius:14px;padding:1.8rem 2rem}
+.sr-mizan-bar{display:flex;height:34px;border-radius:8px;overflow:hidden;margin:1rem 0 .6rem;border:1px solid var(--sr-border2)}
+.sr-mizan-bar div{display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:#0a0f14}
+
+/* ── Roadmap ── */
+.sr-roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:760px){.sr-roadmap{grid-template-columns:1fr}}
+.sr-phase{background:var(--sr-bg2);border:1px solid var(--sr-border);border-radius:14px;padding:1.5rem;position:relative}
+.sr-phase-tag{font-size:.6rem;font-family:'SF Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--sr-gold);margin-bottom:.7rem}
+.sr-phase h4{font-size:.95rem;font-weight:700;color:#fff;margin-bottom:.8rem}
+.sr-phase ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem}
+.sr-phase li{font-size:.8rem;color:var(--sr-muted2);display:flex;gap:.5rem;line-height:1.45}
+.sr-phase li span{color:var(--sr-green);flex-shrink:0}
+
+/* ── Evidence chips ── */
+.sr-chips{display:flex;flex-wrap:wrap;gap:.6rem}
+.sr-chip{display:inline-flex;align-items:center;gap:.45rem;font-size:.72rem;font-weight:600;padding:.4rem .8rem;border-radius:20px;background:var(--sr-bg3);border:1px solid var(--sr-border2);color:var(--sr-muted2)}
+.sr-chip b{font-weight:700}
+.chip-verified b{color:var(--sr-green)}
+.chip-high b{color:var(--sr-blue)}
+.chip-med b{color:var(--sr-warn)}
+.chip-ai b{color:var(--sr-purple)}
+
+/* ── CTA ── */
+.sr-cta{margin-top:3.5rem;background:linear-gradient(135deg,rgba(0,232,154,.07),rgba(201,168,76,.05));border:1px solid rgba(0,232,154,.2);border-radius:16px;padding:3rem 2rem;text-align:center;position:relative;overflow:hidden}
+.sr-cta::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--sr-green),transparent)}
+.sr-cta h2{font-size:clamp(1.4rem,2.6vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem}
+.sr-cta p{font-size:.9rem;color:var(--sr-muted2);max-width:520px;margin:0 auto 2rem;line-height:1.65}
+.sr-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.sr-btn{font-size:.88rem;font-weight:700;padding:.78rem 1.6rem;border-radius:10px;display:inline-flex;align-items:center;gap:.4rem;transition:opacity .2s,transform .1s,border-color .2s,color .2s}
+.sr-btn-green{background:var(--sr-green);color:#0a0f14}
+.sr-btn-green:hover{opacity:.88;transform:translateY(-1px)}
+.sr-btn-outline{background:transparent;border:1px solid var(--sr-border2);color:var(--sr-muted2)}
+.sr-btn-outline:hover{border-color:var(--sr-gold);color:var(--sr-gold)}
+
+.sr-disclaimer{font-size:.7rem;color:var(--sr-muted);text-align:center;line-height:1.65;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--sr-border)}
+
+@media(max-width:640px){
+  .sr-head-inner{flex-direction:column;align-items:flex-start}
+  .sr-meta{text-align:left}
+  .sr-btns{flex-direction:column;align-items:center}
+  .sr-btn{width:100%;max-width:340px;justify-content:center}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="sr-demo">◈ SAMPLE REPORT · Demonstration data only — not a real assessment of any company</div>
+
+<!-- ═══ HEADER ═══ -->
+<div class="sr-head">
+  <div class="sr-head-inner">
+    <div>
+      <div class="sr-eyebrow">EcoIQ · Investor Readiness Report</div>
+      <h1>Sample EcoIQ Investor Readiness Report</h1>
+      <div class="sr-sub">Demonstration subject: <strong style="color:var(--sr-text)">Meridian Industrial Holdings</strong> · Heavy Industry</div>
+    </div>
+    <div class="sr-meta">
+      <div><b>Report ID</b> &nbsp; EIQ-SAMPLE-0001</div>
+      <div><b>Markets</b> &nbsp; Kazakhstan · UK · Saudi Arabia · Türkiye</div>
+      <div><b>Prepared by</b> &nbsp; EcoIQ Analyst Network</div>
+      <div><b>Status</b> &nbsp; Illustrative · AI-assisted</div>
+    </div>
+  </div>
+</div>
+
+<div class="sr-wrap">
+
+  <!-- ═══ EXECUTIVE SUMMARY ═══ -->
+  <div class="sr-seclabel">Executive Summary</div>
+  <div class="sr-exec">
+    Meridian Industrial Holdings demonstrates <strong>strong investor readiness</strong>, anchored by a high
+    EcoIQ Score and excellent Maqasid alignment. The group shows credible decarbonisation intent, improving
+    governance transparency, and a public-benefit orientation consistent with ethical capital frameworks.
+    Residual exposure is concentrated in <strong>scope-3 supply-chain emissions</strong> and
+    <strong>regional regulatory transition risk</strong>. With the recommended 90-day roadmap executed,
+    the group is well positioned for sustainability-linked finance and development-bank eligibility across
+    its four focus markets.
+  </div>
+
+  <!-- ═══ SCORE CARDS ═══ -->
+  <div class="sr-seclabel">Headline Scores</div>
+  <div class="sr-scores">
+    <div class="sr-score sr-score-green">
+      <div class="sr-score-label">EcoIQ Score</div>
+      <div class="sr-score-val" style="color:var(--sr-green)">84.2</div>
+      <div class="sr-score-tag" style="color:var(--sr-green)">▲ Regenerative Leader</div>
+      <div class="sr-score-bar"><i style="width:84%;background:var(--sr-green)"></i></div>
+    </div>
+    <div class="sr-score sr-score-gold">
+      <div class="sr-score-label">Maqasid Score</div>
+      <div class="sr-score-val" style="color:var(--sr-gold)">92</div>
+      <div class="sr-score-tag" style="color:var(--sr-gold)">▲ High Alignment</div>
+      <div class="sr-score-bar"><i style="width:92%;background:var(--sr-gold)"></i></div>
+    </div>
+    <div class="sr-score sr-score-blue">
+      <div class="sr-score-label">Investor Readiness</div>
+      <div class="sr-score-val" style="color:var(--sr-blue);font-size:1.9rem;margin-top:.5rem">Strong</div>
+      <div class="sr-score-tag" style="color:var(--sr-blue)">Finance-ready with conditions</div>
+      <div class="sr-score-bar"><i style="width:80%;background:var(--sr-blue)"></i></div>
+    </div>
+    <div class="sr-score sr-score-purple">
+      <div class="sr-score-label">Mizan Balance</div>
+      <div class="sr-score-val" style="color:var(--sr-purple)">+0.71</div>
+      <div class="sr-score-tag" style="color:var(--sr-purple)">Net positive contribution</div>
+      <div class="sr-score-bar"><i style="width:86%;background:var(--sr-purple)"></i></div>
+    </div>
+  </div>
+
+  <!-- ═══ RISK ═══ -->
+  <div class="sr-seclabel">Risk Assessment</div>
+  <div class="sr-grid2">
+    <div class="sr-card">
+      <h3>🌍 Climate &amp; Governance Risk</h3>
+      <div class="sr-metric-row"><span class="sr-metric-name">Scope 1 &amp; 2 emissions trajectory</span><span class="sr-pill pill-low">Low</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Scope 3 supply-chain emissions</span><span class="sr-pill pill-med">Medium</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Board independence &amp; disclosure</span><span class="sr-pill pill-low">Low</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Regional regulatory transition</span><span class="sr-pill pill-med">Medium</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Anti-corruption controls</span><span class="sr-pill pill-low">Low</span></div>
+    </div>
+    <div class="sr-card">
+      <h3>⚠️ Fasad (Harm) Risk</h3>
+      <div class="sr-metric-row"><span class="sr-metric-name">Environmental harm / pollution</span><span class="sr-pill pill-low">Low</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Community &amp; labour impact</span><span class="sr-pill pill-low">Low</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Resource depletion intensity</span><span class="sr-pill pill-med">Medium</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Exploitative revenue exposure</span><span class="sr-pill pill-low">Low</span></div>
+      <div class="sr-metric-row"><span class="sr-metric-name">Overall harm penalty applied</span><span class="sr-pill pill-low">−4 pts</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ MIZAN ═══ -->
+  <div class="sr-seclabel">Mizan Balance — Value vs Harm</div>
+  <div class="sr-mizan">
+    <p style="font-size:.86rem;color:var(--sr-muted2);line-height:1.7;margin:0">
+      The Mizan Engine weighs the value the group creates — jobs, public benefit, decarbonisation investment —
+      against the harm it externalises. A positive balance indicates net contribution.
+    </p>
+    <div class="sr-mizan-bar">
+      <div style="width:78%;background:var(--sr-green)">Value created · 78%</div>
+      <div style="width:22%;background:var(--sr-warn)">Harm · 22%</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--sr-muted);font-family:'SF Mono',monospace">
+      <span>Net Mizan balance: <b style="color:var(--sr-green)">+0.71</b></span>
+      <span>Threshold for finance fit: +0.40</span>
+    </div>
+  </div>
+
+  <!-- ═══ ROADMAP ═══ -->
+  <div class="sr-seclabel">Recommended 90-Day Roadmap</div>
+  <div class="sr-roadmap">
+    <div class="sr-phase">
+      <div class="sr-phase-tag">Days 0–30</div>
+      <h4>Stabilise &amp; disclose</h4>
+      <ul>
+        <li><span>✓</span>Publish scope-3 emissions baseline</li>
+        <li><span>✓</span>Formalise board ESG committee</li>
+        <li><span>✓</span>Close two priority governance gaps</li>
+      </ul>
+    </div>
+    <div class="sr-phase">
+      <div class="sr-phase-tag">Days 31–60</div>
+      <h4>Strengthen &amp; align</h4>
+      <ul>
+        <li><span>✓</span>Supplier decarbonisation programme</li>
+        <li><span>✓</span>Map to IFC &amp; green-bond criteria</li>
+        <li><span>✓</span>Independent assurance on key metrics</li>
+      </ul>
+    </div>
+    <div class="sr-phase">
+      <div class="sr-phase-tag">Days 61–90</div>
+      <h4>Package &amp; raise</h4>
+      <ul>
+        <li><span>✓</span>Sustainability-linked finance memo</li>
+        <li><span>✓</span>Investor-ready data room</li>
+        <li><span>✓</span>Re-score &amp; verify EcoIQ uplift</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ EVIDENCE ═══ -->
+  <div class="sr-seclabel">Evidence &amp; Confidence Labels</div>
+  <div class="sr-chips">
+    <span class="sr-chip chip-verified">Source: Annual Report 2024 · <b>Verified</b></span>
+    <span class="sr-chip chip-high">Emissions data · <b>High confidence</b></span>
+    <span class="sr-chip chip-med">Supply-chain estimates · <b>Medium confidence</b></span>
+    <span class="sr-chip chip-verified">Regulatory filings · <b>Verified</b></span>
+    <span class="sr-chip chip-ai">Narrative synthesis · <b>AI-assisted</b></span>
+    <span class="sr-chip chip-high">Governance disclosures · <b>High confidence</b></span>
+    <span class="sr-chip chip-med">Peer benchmark · <b>Medium confidence</b></span>
+  </div>
+
+  <!-- ═══ CTA ═══ -->
+  <div class="sr-cta">
+    <h2>This is a sample. Get the real report.</h2>
+    <p>Request a full EcoIQ Investor Readiness Report for your own company or project — with verified evidence, scoring, and a tailored 90-day roadmap.</p>
+    <div class="sr-btns">
+      <a href="/request-access/" class="sr-btn sr-btn-green">Request Full Investor Readiness Report →</a>
+      <a href="/pricing/" class="sr-btn sr-btn-outline">View pricing</a>
+    </div>
+  </div>
+
+  <p class="sr-disclaimer">
+    This sample report uses fictional demonstration data for illustration only. "Meridian Industrial Holdings"
+    is not a real company and the figures shown are not assessments of any actual entity. EcoIQ scores and
+    estimates are AI-assisted and indicative, and are not investment advice or regulatory assessments.
+  </p>
+
+</div>
+
+{% endblock %}

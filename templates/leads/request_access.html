@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Request Access — EcoIQ</title>
+  <title>Request EcoIQ Investor Readiness Report — EcoIQ</title>
+  <meta name="description" content="Request an EcoIQ Investor Readiness Report — ethical transition intelligence, Maqasid alignment, climate &amp; governance risk, and a 90-day roadmap for any company or project.">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,11 +22,8 @@
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            emerald: {
-              400: '#34d399',
-              500: '#10b981',
-              600: '#059669',
-            },
+            emerald: { 400: '#34d399', 500: '#10b981', 600: '#059669' },
+            gold:    { 400: '#d8be6a', 500: '#c9a84c' },
           },
         },
       },
@@ -34,30 +32,20 @@
 
   <style>
     body { background: #080c0e; }
-
     .grid-bg {
       background-image:
         linear-gradient(rgba(16,185,129,.04) 1px, transparent 1px),
         linear-gradient(90deg, rgba(16,185,129,.04) 1px, transparent 1px);
       background-size: 64px 64px;
     }
-
     .glass {
       background: rgba(255,255,255,.035);
       backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,.08);
     }
-
     .glow-emerald { box-shadow: 0 0 40px rgba(16,185,129,.12); }
-
-    /* Input focus glow pulse */
-    input:focus, textarea:focus, select:focus {
-      box-shadow: 0 0 0 3px rgba(16,185,129,.12);
-    }
-
+    input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px rgba(16,185,129,.12); }
     .field-error { color: #f87171; font-size: .75rem; margin-top: .25rem; }
-
-    /* Spinner */
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { animation: spin .7s linear infinite; display: none; }
     .btn-loading .spinner { display: inline-block; }
@@ -73,12 +61,16 @@
       <a href="/" class="font-mono text-sm font-medium tracking-widest text-slate-200 hover:text-emerald-400 transition-colors">
         ECO<span class="text-emerald-400">IQ</span>
       </a>
-      <a href="/" class="text-sm text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-        </svg>
-        Back to home
-      </a>
+      <div class="flex items-center gap-5">
+        <a href="/sample-report/" class="text-sm text-slate-400 hover:text-emerald-400 transition-colors hidden sm:inline">Sample report</a>
+        <a href="/pricing/" class="text-sm text-slate-400 hover:text-emerald-400 transition-colors hidden sm:inline">Pricing</a>
+        <a href="/" class="text-sm text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+          </svg>
+          Home
+        </a>
+      </div>
     </div>
   </nav>
 
@@ -87,15 +79,17 @@
 
       <!-- Header -->
       <div class="text-center mb-14">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono tracking-wider mb-6">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          PILOT PROGRAMME · LIMITED ACCESS
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/25 text-gold-400 text-xs font-mono tracking-wider mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse"></span>
+          EcoIQ · INVESTOR READINESS REPORT
         </div>
         <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
-          Request platform access
+          Request EcoIQ Investor Readiness Report
         </h1>
-        <p class="text-slate-400 text-lg max-w-xl mx-auto leading-relaxed">
-          Join industrial leaders using EcoIQ to surface hidden operational losses and accelerate sustainability outcomes.
+        <p class="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+          EcoIQ reviews company and project requests and prepares ethical transition
+          intelligence, investor-readiness analysis, Maqasid alignment, climate &amp;
+          governance risk, and a 90-day roadmap.
         </p>
       </div>
 
@@ -114,129 +108,96 @@
           <form method="post" novalidate id="access-form">
             {% csrf_token %}
 
-            <!-- Honeypot — hidden from real users, traps bots -->
+            <!-- Honeypot -->
             <div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true" tabindex="-1">
               {{ form.website }}
             </div>
 
-            <!-- Row 1: Full name + Company -->
+            <!-- Row 1: Name + Email -->
             <div class="grid sm:grid-cols-2 gap-5 mb-5">
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.full_name.id_for_label }}">
-                  Full name <span class="text-emerald-400">*</span>
+                  Name <span class="text-emerald-400">*</span>
                 </label>
                 {{ form.full_name }}
-                {% if form.full_name.errors %}
-                  <p class="field-error">{{ form.full_name.errors.0 }}</p>
-                {% endif %}
+                {% if form.full_name.errors %}<p class="field-error">{{ form.full_name.errors.0 }}</p>{% endif %}
               </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.work_email.id_for_label }}">
+                  Email <span class="text-emerald-400">*</span>
+                </label>
+                {{ form.work_email }}
+                {% if form.work_email.errors %}<p class="field-error">{{ form.work_email.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+
+            <!-- Row 2: Organisation + Country -->
+            <div class="grid sm:grid-cols-2 gap-5 mb-5">
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.company.id_for_label }}">
-                  Company <span class="text-emerald-400">*</span>
+                  Organisation <span class="text-emerald-400">*</span>
                 </label>
                 {{ form.company }}
-                {% if form.company.errors %}
-                  <p class="field-error">{{ form.company.errors.0 }}</p>
-                {% endif %}
+                {% if form.company.errors %}<p class="field-error">{{ form.company.errors.0 }}</p>{% endif %}
               </div>
-            </div>
-
-            <!-- Work email -->
-            <div class="mb-5">
-              <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.work_email.id_for_label }}">
-                Work email <span class="text-emerald-400">*</span>
-              </label>
-              {{ form.work_email }}
-              {% if form.work_email.errors %}
-                <p class="field-error">{{ form.work_email.errors.0 }}</p>
-              {% endif %}
-            </div>
-
-            <!-- Row 2: Industry + Company size -->
-            <div class="grid sm:grid-cols-2 gap-5 mb-5">
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.industry.id_for_label }}">
-                  Industry <span class="text-emerald-400">*</span>
-                </label>
-                {{ form.industry }}
-                {% if form.industry.errors %}
-                  <p class="field-error">{{ form.industry.errors.0 }}</p>
-                {% endif %}
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.company_size.id_for_label }}">
-                  Company size <span class="text-emerald-400">*</span>
-                </label>
-                {{ form.company_size }}
-                {% if form.company_size.errors %}
-                  <p class="field-error">{{ form.company_size.errors.0 }}</p>
-                {% endif %}
-              </div>
-            </div>
-
-            <!-- Facility type -->
-            <div class="mb-5">
-              <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.facility_type.id_for_label }}">
-                Facility type <span class="text-emerald-400">*</span>
-              </label>
-              {{ form.facility_type }}
-              {% if form.facility_type.errors %}
-                <p class="field-error">{{ form.facility_type.errors.0 }}</p>
-              {% endif %}
-            </div>
-
-            <!-- Row 3: Country + Role (both optional) -->
-            <div class="grid sm:grid-cols-2 gap-5 mb-5">
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.country.id_for_label }}">
                   Country <span class="text-slate-600 font-normal normal-case">(optional)</span>
                 </label>
                 {{ form.country }}
-                {% if form.country.errors %}
-                  <p class="field-error">{{ form.country.errors.0 }}</p>
-                {% endif %}
+                {% if form.country.errors %}<p class="field-error">{{ form.country.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+
+            <!-- Company or project to assess -->
+            <div class="mb-5">
+              <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.target_entity.id_for_label }}">
+                Company or project to assess <span class="text-emerald-400">*</span>
+              </label>
+              {{ form.target_entity }}
+              {% if form.target_entity.errors %}<p class="field-error">{{ form.target_entity.errors.0 }}</p>{% endif %}
+            </div>
+
+            <!-- Row 3: Sector + Role -->
+            <div class="grid sm:grid-cols-2 gap-5 mb-5">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.sector.id_for_label }}">
+                  Sector <span class="text-slate-600 font-normal normal-case">(optional)</span>
+                </label>
+                {{ form.sector }}
+                {% if form.sector.errors %}<p class="field-error">{{ form.sector.errors.0 }}</p>{% endif %}
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.role.id_for_label }}">
-                  I am a… <span class="text-slate-600 font-normal normal-case">(optional)</span>
+                  Your role <span class="text-slate-600 font-normal normal-case">(optional)</span>
                 </label>
                 {{ form.role }}
-                {% if form.role.errors %}
-                  <p class="field-error">{{ form.role.errors.0 }}</p>
-                {% endif %}
+                {% if form.role.errors %}<p class="field-error">{{ form.role.errors.0 }}</p>{% endif %}
               </div>
             </div>
 
-            <!-- Main challenge -->
+            <!-- Product interest -->
             <div class="mb-5">
-              <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.challenge.id_for_label }}">
-                Main operational challenge <span class="text-emerald-400">*</span>
+              <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.product_interest.id_for_label }}">
+                Product interest <span class="text-slate-600 font-normal normal-case">(optional)</span>
               </label>
-              {{ form.challenge }}
-              <p class="text-slate-600 text-xs mt-1">Minimum one sentence — energy losses, downtime, compliance, emissions…</p>
-              {% if form.challenge.errors %}
-                <p class="field-error">{{ form.challenge.errors.0 }}</p>
-              {% endif %}
+              {{ form.product_interest }}
+              {% if form.product_interest.errors %}<p class="field-error">{{ form.product_interest.errors.0 }}</p>{% endif %}
             </div>
 
-            <!-- Additional context -->
+            <!-- Message -->
             <div class="mb-8">
               <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.message.id_for_label }}">
-                Additional context <span class="text-slate-600 font-normal normal-case">(optional)</span>
+                Message <span class="text-slate-600 font-normal normal-case">(optional)</span>
               </label>
               {{ form.message }}
-              {% if form.message.errors %}
-                <p class="field-error">{{ form.message.errors.0 }}</p>
-              {% endif %}
+              {% if form.message.errors %}<p class="field-error">{{ form.message.errors.0 }}</p>{% endif %}
             </div>
 
             <!-- Submit -->
-            <button
-              type="submit"
-              id="submit-btn"
-              class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold text-sm tracking-wide transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-            >
-              <span class="btn-label">Request access</span>
+            <button type="submit" id="submit-btn"
+              class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold text-sm tracking-wide transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+              <span class="btn-label">Request Investor Readiness Report</span>
               <svg class="spinner w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
@@ -245,62 +206,61 @@
             </button>
 
             <p class="text-center text-slate-600 text-xs mt-4">
-              No commitment required. We respond within 48 hours.
+              No commitment required. We review every request and respond within 48 hours.
             </p>
           </form>
         </div>
 
-        <!-- ── Value proposition sidebar ──────────────────────────────────── -->
+        <!-- ── Sidebar ───────────────────────────────────────────────────── -->
         <div class="space-y-6">
 
-          <!-- What happens next -->
+          <!-- What's in the report -->
+          <div class="glass rounded-2xl p-6">
+            <h3 class="text-sm font-semibold text-slate-200 mb-4 tracking-wide uppercase">What the report covers</h3>
+            <ul class="space-y-2.5">
+              <li class="flex items-start gap-2.5 text-sm text-slate-400"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400/70 flex-shrink-0"></span>EcoIQ Score &amp; Maqasid alignment</li>
+              <li class="flex items-start gap-2.5 text-sm text-slate-400"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400/70 flex-shrink-0"></span>Investor-readiness analysis</li>
+              <li class="flex items-start gap-2.5 text-sm text-slate-400"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400/70 flex-shrink-0"></span>Climate &amp; governance risk</li>
+              <li class="flex items-start gap-2.5 text-sm text-slate-400"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400/70 flex-shrink-0"></span>Fasad harm &amp; Mizan balance</li>
+              <li class="flex items-start gap-2.5 text-sm text-slate-400"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400/70 flex-shrink-0"></span>A practical 90-day roadmap</li>
+            </ul>
+            <a href="/sample-report/" class="inline-flex items-center gap-1.5 mt-5 text-sm font-medium text-gold-400 hover:text-gold-500 transition-colors">
+              View a sample report
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+
+          <!-- Process -->
           <div class="glass rounded-2xl p-6">
             <h3 class="text-sm font-semibold text-slate-200 mb-4 tracking-wide uppercase">What happens next</h3>
             <ol class="space-y-4">
               <li class="flex gap-4">
                 <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">01</span>
                 <div>
-                  <p class="text-sm font-medium text-slate-200">We review your profile</p>
-                  <p class="text-xs text-slate-500 mt-0.5">Within 48 hours, our team checks fit and industrial context.</p>
+                  <p class="text-sm font-medium text-slate-200">We review your request</p>
+                  <p class="text-xs text-slate-500 mt-0.5">We assess the company or project and confirm fit.</p>
                 </div>
               </li>
               <li class="flex gap-4">
                 <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">02</span>
                 <div>
-                  <p class="text-sm font-medium text-slate-200">Discovery call — 30 min</p>
-                  <p class="text-xs text-slate-500 mt-0.5">We align on your operational challenges and pilot scope.</p>
+                  <p class="text-sm font-medium text-slate-200">Sample scan or paid report</p>
+                  <p class="text-xs text-slate-500 mt-0.5">We may send a sample scan, then a full Investor Readiness Report.</p>
                 </div>
               </li>
               <li class="flex gap-4">
                 <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">03</span>
                 <div>
-                  <p class="text-sm font-medium text-slate-200">Platform access granted</p>
-                  <p class="text-xs text-slate-500 mt-0.5">Upload your first document and run an AI-assisted audit.</p>
+                  <p class="text-sm font-medium text-slate-200">Pilot discussion</p>
+                  <p class="text-xs text-slate-500 mt-0.5">For institutions, we scope an EcoIQ pilot engagement.</p>
                 </div>
               </li>
             </ol>
           </div>
 
-          <!-- Designed for -->
-          <div class="glass rounded-2xl p-6">
-            <h3 class="text-sm font-semibold text-slate-200 mb-4 tracking-wide uppercase">Designed for</h3>
-            <ul class="space-y-2">
-                <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Oil &amp; Gas / Refining</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Manufacturing</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Chemicals &amp; Petrochemicals</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Automotive</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Pharmaceuticals</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Food &amp; Beverage</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Utilities / Energy</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Logistics &amp; Warehousing</li>
-              <li class="flex items-center gap-2 text-sm text-slate-400"><span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>Metals &amp; Mining</li>
-            </ul>
-          </div>
-
-          <!-- Privacy note -->
           <p class="text-xs text-slate-600 leading-relaxed px-1">
-            Your information is used solely to evaluate and manage your access request. We do not sell or share your data with third parties.
-            Financial projections and KPI estimates generated by EcoIQ are AI-assisted and illustrative in nature.
+            Your information is used solely to evaluate and prepare your assessment. We do not sell or share your data.
+            EcoIQ scores and estimates are AI-assisted and indicative.
           </p>
 
         </div>
@@ -310,7 +270,14 @@
 
   <!-- Footer -->
   <footer class="border-t border-white/[.05] py-8 text-center text-slate-600 text-xs font-mono">
-    &copy; {% now "Y" %} EcoIQ &mdash; AI-assisted industrial intelligence
+    <div class="flex items-center justify-center gap-4 mb-3">
+      <a href="/sample-report/" class="hover:text-emerald-400 transition-colors">Sample Report</a>
+      <span class="text-slate-700">·</span>
+      <a href="/pricing/" class="hover:text-emerald-400 transition-colors">Pricing</a>
+      <span class="text-slate-700">·</span>
+      <a href="/value-distribution/" class="hover:text-emerald-400 transition-colors">Value Distribution</a>
+    </div>
+    &copy; {% now "Y" %} EcoIQ &mdash; ethical transition intelligence
   </footer>
 
   <script>

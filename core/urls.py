@@ -63,6 +63,9 @@ urlpatterns = [
     # EcoIQ Value Distribution — stakeholder value map + Rizq model
     path('value-distribution/', views.value_distribution, name='value_distribution'),
 
+    # EcoIQ Sample Investor Readiness Report — public demo report
+    path('sample-report/', views.sample_report, name='sample_report'),
+
     # EcoIQ Contact — enquiry form + founder/company details
     path('contact/',        views.contact,        name='contact'),
     path('contact/submit/', views.contact_submit, name='contact_submit'),

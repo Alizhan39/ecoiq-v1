@@ -35,13 +35,22 @@ ROLE_CHOICES = [
     ('other',      'Other'),
 ]
 
+# Lead pipeline — Investor Readiness Report workflow stages
 STATUS_CHOICES = [
-    ('new',            'New'),
-    ('contacted',      'Contacted'),
-    ('qualified',      'Qualified'),
-    ('demo_scheduled', 'Demo Scheduled'),
-    ('pilot_active',   'Pilot Active'),
-    ('declined',       'Declined'),
+    ('new',           'New'),
+    ('reviewed',      'Reviewed'),
+    ('sample_sent',   'Sample Sent'),
+    ('call_booked',   'Call Booked'),
+    ('proposal_sent', 'Proposal Sent'),
+    ('won',           'Won'),
+    ('lost',          'Lost'),
+]
+
+# Which EcoIQ product the requester is interested in
+PRODUCT_INTEREST_CHOICES = [
+    ('free_scan',           'Free Scan'),
+    ('readiness_report',    'Investor Readiness Report'),
+    ('institutional_pilot', 'Institutional Pilot'),
 ]
 
 
@@ -51,20 +60,32 @@ class AccessRequest(models.Model):
     company      = models.CharField(max_length=200)
     work_email   = models.EmailField(db_index=True)
 
-    # Profile
-    industry      = models.CharField(max_length=30, choices=INDUSTRY_CHOICES)
-    facility_type = models.CharField(max_length=200, help_text='e.g. Continuous process refinery, Cold-chain warehouse')
-    company_size  = models.CharField(max_length=20, choices=COMPANY_SIZE_CHOICES)
+    # Profile — originally required for the industrial-audit form; now optional so
+    # the simpler Investor Readiness Report form can reuse this model non-destructively.
+    industry      = models.CharField(max_length=30, choices=INDUSTRY_CHOICES, blank=True)
+    facility_type = models.CharField(max_length=200, blank=True, help_text='e.g. Continuous process refinery, Cold-chain warehouse')
+    company_size  = models.CharField(max_length=20, choices=COMPANY_SIZE_CHOICES, blank=True)
 
-    # Optional context — added non-destructively (both blank=True)
+    # Optional context — added non-destructively (all blank=True)
     country = models.CharField(max_length=100, blank=True, help_text='Country of operation (optional)')
     role    = models.CharField(
         max_length=30, choices=ROLE_CHOICES, blank=True,
         help_text='How the requester identifies themselves (optional)',
     )
 
-    # Qualification
-    challenge = models.TextField(help_text='Main operational challenge — minimum 30 characters')
+    # Investor Readiness Report workflow fields (all optional, additive)
+    target_entity    = models.CharField(
+        max_length=300, blank=True,
+        help_text='Company or project the requester wants assessed',
+    )
+    sector           = models.CharField(max_length=120, blank=True, help_text='Sector of the company/project (optional)')
+    product_interest = models.CharField(
+        max_length=30, choices=PRODUCT_INTEREST_CHOICES, blank=True,
+        help_text='Which EcoIQ product the requester is interested in',
+    )
+
+    # Qualification — challenge now optional (simpler report form does not require it)
+    challenge = models.TextField(blank=True, help_text='Main operational challenge (optional)')
     message   = models.TextField(blank=True, help_text='Optional additional context')
 
     # Security
