@@ -60,6 +60,9 @@ urlpatterns = [
     # EcoIQ Newsletter — popup signup endpoint (JSON/AJAX, POST only)
     path('newsletter/signup/',  views.newsletter_signup,  name='newsletter_signup'),
 
+    # EcoIQ Value Distribution — stakeholder value map + Rizq model
+    path('value-distribution/', views.value_distribution, name='value_distribution'),
+
     # EcoIQ Contact — enquiry form + founder/company details
     path('contact/',        views.contact,        name='contact'),
     path('contact/submit/', views.contact_submit, name='contact_submit'),
