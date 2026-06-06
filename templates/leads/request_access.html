@@ -185,6 +185,28 @@
               {% endif %}
             </div>
 
+            <!-- Row 3: Country + Role (both optional) -->
+            <div class="grid sm:grid-cols-2 gap-5 mb-5">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.country.id_for_label }}">
+                  Country <span class="text-slate-600 font-normal normal-case">(optional)</span>
+                </label>
+                {{ form.country }}
+                {% if form.country.errors %}
+                  <p class="field-error">{{ form.country.errors.0 }}</p>
+                {% endif %}
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.role.id_for_label }}">
+                  I am a… <span class="text-slate-600 font-normal normal-case">(optional)</span>
+                </label>
+                {{ form.role }}
+                {% if form.role.errors %}
+                  <p class="field-error">{{ form.role.errors.0 }}</p>
+                {% endif %}
+              </div>
+            </div>
+
             <!-- Main challenge -->
             <div class="mb-5">
               <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.challenge.id_for_label }}">

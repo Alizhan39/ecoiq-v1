@@ -25,6 +25,16 @@ COMPANY_SIZE_CHOICES = [
     ('5001_plus',  '5,001+ employees'),
 ]
 
+# Stakeholder role — optional self-identification on the access request form
+ROLE_CHOICES = [
+    ('investor',   'Investor'),
+    ('company',    'Company'),
+    ('government', 'Government'),
+    ('consultant', 'Consultant'),
+    ('analyst',    'Analyst'),
+    ('other',      'Other'),
+]
+
 STATUS_CHOICES = [
     ('new',            'New'),
     ('contacted',      'Contacted'),
@@ -45,6 +55,13 @@ class AccessRequest(models.Model):
     industry      = models.CharField(max_length=30, choices=INDUSTRY_CHOICES)
     facility_type = models.CharField(max_length=200, help_text='e.g. Continuous process refinery, Cold-chain warehouse')
     company_size  = models.CharField(max_length=20, choices=COMPANY_SIZE_CHOICES)
+
+    # Optional context — added non-destructively (both blank=True)
+    country = models.CharField(max_length=100, blank=True, help_text='Country of operation (optional)')
+    role    = models.CharField(
+        max_length=30, choices=ROLE_CHOICES, blank=True,
+        help_text='How the requester identifies themselves (optional)',
+    )
 
     # Qualification
     challenge = models.TextField(help_text='Main operational challenge — minimum 30 characters')
