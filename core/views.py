@@ -1063,6 +1063,18 @@ def contact_submit(request):
     return redirect('contact')
 
 
+# ── Value Distribution ───────────────────────────────────────────────────────
+
+def value_distribution(request):
+    """
+    /value-distribution/ — EcoIQ value distribution page.
+    Shows value proposition for each stakeholder group: Companies, Investors,
+    Analysts, Governments, Communities, and the Rizq Distribution Model.
+    Public, no auth required.
+    """
+    return render(request, 'value_distribution.html')
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 def dashboard(request):
