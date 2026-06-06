@@ -1,111 +1,276 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — EcoIQ{% endblock %}
+{% block title %}Dashboard — EcoIQ Institutional Intelligence{% endblock %}
+
+{% block extra_head %}
+<style>
+:root {
+  --d-bg:#070b0f; --d-bg2:#0d1117; --d-bg3:#161b22;
+  --d-border:rgba(255,255,255,.06); --d-border2:rgba(255,255,255,.12);
+  --d-text:#e2e8f0; --d-muted:#64748b; --d-muted2:#94a3b8;
+  --d-green:#00e89a; --d-gold:#c9a84c; --d-blue:#58a6ff; --d-purple:#a855f7;
+}
+.d-wrap{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+/* ── Command bar ── */
+.d-cmd{
+  display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;
+  padding:.85rem 0;margin-bottom:2rem;
+  border-bottom:1px solid var(--d-border);
+}
+.d-cmd-title{font-size:.72rem;font-weight:700;color:var(--d-muted);text-transform:uppercase;letter-spacing:.1em;}
+.d-tier{display:inline-flex;align-items:center;gap:.4rem;
+  background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.25);
+  border-radius:20px;padding:.28rem .85rem;font-size:.72rem;color:var(--d-green);font-weight:700;}
+.d-tier-gold{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.3);color:var(--d-gold);}
+
+/* ── Alert banner ── */
+.d-alert{
+  background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.18);
+  border-radius:10px;padding:.9rem 1.2rem;font-size:.82rem;color:var(--d-blue);
+  line-height:1.55;margin-bottom:1.75rem;display:flex;align-items:center;gap:.75rem;
+}
+.d-alert a{color:var(--d-blue);font-weight:600;}
+
+/* ── Sovereign Performance Monitor ── */
+.spm-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;
+}
+.spm-title{font-size:1.15rem;font-weight:800;color:#fff;letter-spacing:-.03em;}
+.spm-sub{font-size:.78rem;color:var(--d-muted);margin-top:.2rem;}
+
+/* ── Score cards ── */
+.score-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.score-card{
+  background:var(--d-bg2);border:1px solid var(--d-border);border-radius:12px;
+  padding:1.25rem 1.4rem;position:relative;overflow:hidden;
+}
+.score-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.score-card-green::before{background:linear-gradient(90deg,transparent,var(--d-green),transparent);}
+.score-card-gold::before{background:linear-gradient(90deg,transparent,var(--d-gold),transparent);}
+.score-card-blue::before{background:linear-gradient(90deg,transparent,var(--d-blue),transparent);}
+.score-card-purple::before{background:linear-gradient(90deg,transparent,var(--d-purple),transparent);}
+.sc-label{font-size:.6rem;font-family:'SF Mono','Fira Code',monospace;color:var(--d-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem;}
+.sc-value{font-size:2rem;font-weight:300;line-height:1;letter-spacing:-.04em;margin-bottom:.3rem;}
+.sc-tag{font-size:.65rem;font-weight:700;}
+
+/* ── Pillar bars ── */
+.pillar-section{background:var(--d-bg2);border:1px solid var(--d-border);border-radius:12px;padding:1.4rem;margin-bottom:1.5rem;}
+.pillar-row{display:flex;align-items:center;gap:.85rem;margin-bottom:.6rem;}
+.pillar-row:last-child{margin-bottom:0;}
+.pillar-name{font-size:.68rem;color:var(--d-muted);width:100px;flex-shrink:0;font-family:'SF Mono',monospace;}
+.pillar-track{flex:1;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;}
+.pillar-fill{height:5px;border-radius:3px;transition:width .6s ease;}
+.pillar-score{font-size:.68rem;width:28px;text-align:right;font-family:'SF Mono',monospace;}
+
+/* ── Two-col layout ── */
+.d-two-col{display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:1.5rem;}
+@media(max-width:768px){.d-two-col{grid-template-columns:1fr;}}
+
+/* ── Intelligence modules card ── */
+.intel-card{background:var(--d-bg2);border:1px solid var(--d-border);border-radius:12px;padding:1.4rem;}
+.intel-card-title{font-size:.68rem;color:var(--d-muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:1rem;}
+.intel-link{display:flex;align-items:center;gap:.65rem;text-decoration:none;
+  color:var(--d-muted2);font-size:.83rem;padding:.55rem .65rem;border-radius:8px;
+  transition:background .15s,color .15s;border:1px solid transparent;}
+.intel-link:hover{background:var(--d-bg3);color:#fff;border-color:var(--d-border);}
+.intel-link-icon{font-size:.95rem;width:1.4rem;text-align:center;flex-shrink:0;}
+.intel-link-arrow{margin-left:auto;color:var(--d-border2);font-size:.75rem;}
+.intel-link-badge{font-size:.6rem;font-weight:700;padding:.15rem .5rem;border-radius:6px;margin-left:.25rem;}
+.badge-new{background:rgba(0,232,154,.12);color:var(--d-green);border:1px solid rgba(0,232,154,.25);}
+.badge-gold{background:rgba(201,168,76,.1);color:var(--d-gold);border:1px solid rgba(201,168,76,.25);}
+
+/* ── Quick actions ── */
+.qa-card{background:var(--d-bg2);border:1px solid var(--d-border);border-radius:12px;padding:1.4rem;}
+.qa-btn{
+  display:block;width:100%;text-align:left;
+  padding:.7rem .9rem;border-radius:8px;border:1px solid var(--d-border);
+  background:transparent;color:var(--d-muted2);font-size:.8rem;font-weight:600;
+  text-decoration:none;cursor:pointer;transition:all .15s;margin-bottom:.5rem;
+}
+.qa-btn:last-child{margin-bottom:0;}
+.qa-btn:hover{background:var(--d-bg3);border-color:var(--d-border2);color:#fff;}
+.qa-btn-primary{background:rgba(0,232,154,.08);border-color:rgba(0,232,154,.25);color:var(--d-green);}
+.qa-btn-primary:hover{background:rgba(0,232,154,.14);}
+.qa-btn-gold{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.25);color:var(--d-gold);}
+.qa-btn-gold:hover{background:rgba(201,168,76,.14);}
+</style>
+{% endblock %}
 
 {% block content %}
-<style>
-  .dash-wrap{max-width:900px;margin:2.5rem auto;padding:0 1.25rem;}
-  .dash-header{margin-bottom:2rem;}
-  .dash-title{font-size:1.55rem;font-weight:700;color:#f0f6fc;margin:0 0 .4rem;}
-  .dash-sub{font-size:.88rem;color:#6e7681;}
-  .dash-sub strong{color:#8b949e;}
-  .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.1rem;margin-bottom:2rem;}
-  .dash-card{background:#0d1117;border:1px solid #21262d;border-radius:12px;padding:1.4rem 1.5rem;}
-  .dash-card-title{font-size:.72rem;color:#6e7681;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:.9rem;}
-  .dash-stat{font-size:2rem;font-weight:800;color:#f0f6fc;line-height:1;}
-  .dash-stat-label{font-size:.78rem;color:#6e7681;margin-top:.3rem;}
-  .dash-links{display:flex;flex-direction:column;gap:.5rem;}
-  .dash-link{display:flex;align-items:center;gap:.6rem;text-decoration:none;
-    color:#c9d1d9;font-size:.875rem;padding:.5rem .6rem;border-radius:7px;
-    transition:background .15s,color .15s;}
-  .dash-link:hover{background:#161b22;color:#f0f6fc;}
-  .dash-link-icon{font-size:1rem;width:1.5rem;text-align:center;flex-shrink:0;}
-  .dash-link-arrow{margin-left:auto;color:#30363d;font-size:.8rem;}
-  .dash-tier{display:inline-flex;align-items:center;gap:.45rem;
-    background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.25);
-    border-radius:20px;padding:.3rem .9rem;font-size:.78rem;color:#00e89a;font-weight:600;}
-  .dash-section-title{font-size:.72rem;color:#6e7681;text-transform:uppercase;letter-spacing:1px;
-    font-weight:600;margin:1.6rem 0 .8rem;}
-  .dash-alert{background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.2);
-    border-radius:10px;padding:1rem 1.2rem;font-size:.83rem;color:#58a6ff;line-height:1.55;margin-bottom:1.2rem;}
-  .dash-alert a{color:#58a6ff;font-weight:600;}
-</style>
 
-<div class="dash-wrap">
-  <!-- Header -->
-  <div class="dash-header">
-    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap;">
-      <h1 class="dash-title">Welcome back, {{ user.username }}</h1>
-      <span class="dash-tier">🌿 Explorer</span>
-    </div>
-    <p class="dash-sub">Signed in as <strong>{{ user.username }}</strong>{% if user.email %} · {{ user.email }}{% endif %} · Last login: {{ user.last_login|date:"d M Y, H:i" }}</p>
-  </div>
+<div class="d-wrap">
 
-  <!-- Upgrade notice -->
-  <div class="dash-alert">
-    You're on the <strong>Explorer plan</strong> — free access to company rankings and country intelligence.
-    <a href="/pricing/">Upgrade to Analyst</a> to unlock PDF reports, AI briefings, and financing match data.
-  </div>
-
-  <!-- Quick stats -->
-  <div class="dash-grid">
-    <div class="dash-card">
-      <div class="dash-card-title">Account Status</div>
-      <div class="dash-stat">Active</div>
-      <div class="dash-stat-label">Explorer access · Free tier</div>
-    </div>
-    <div class="dash-card">
-      <div class="dash-card-title">Platform</div>
-      <div class="dash-stat">EcoIQ</div>
-      <div class="dash-stat-label">Ethical Intelligence v1</div>
-    </div>
-    <div class="dash-card">
-      <div class="dash-card-title">Member Since</div>
-      <div class="dash-stat" style="font-size:1.25rem;">{{ user.date_joined|date:"M Y" }}</div>
-      <div class="dash-stat-label">{{ user.date_joined|date:"d F Y" }}</div>
+  <!-- ── Command bar ─────────────────────────────────────────────── -->
+  <div class="d-cmd">
+    <span class="d-cmd-title">Sovereign Performance Monitor</span>
+    <span class="d-tier">🌿 Explorer</span>
+    <span style="font-size:.72rem;color:var(--d-muted);margin-left:.25rem;">{{ user.username }}</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:.6rem;">
+      <a href="/pricing/" style="font-size:.72rem;color:var(--d-muted);text-decoration:none;padding:.3rem .8rem;border:1px solid var(--d-border);border-radius:6px;transition:all .15s;" onmouseover="this.style.borderColor='rgba(201,168,76,.4)';this.style.color='#c9a84c'" onmouseout="this.style.borderColor='var(--d-border)';this.style.color='var(--d-muted)'">Upgrade →</a>
+      <a href="/logout/" style="font-size:.72rem;color:var(--d-muted);text-decoration:none;padding:.3rem .8rem;border:1px solid var(--d-border);border-radius:6px;transition:color .15s;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='var(--d-muted)'">Sign out</a>
     </div>
   </div>
 
-  <!-- Quick links -->
-  <div class="dash-card">
-    <div class="dash-card-title">Quick Access</div>
-    <div class="dash-links">
-      <a href="/companies/" class="dash-link">
-        <span class="dash-link-icon">🌍</span>
+  <!-- ── Upgrade notice ─────────────────────────────────────────── -->
+  <div class="d-alert">
+    <span>⚡</span>
+    <span>You're on <strong>Explorer</strong> — free access to rankings and country intelligence.
+    <a href="/pricing/">Upgrade to Analyst</a> for Maqasid scoring, PDF briefings, and financing match data.</span>
+  </div>
+
+  <!-- ── SPM header ─────────────────────────────────────────────── -->
+  <div class="spm-header">
+    <div>
+      <div class="spm-title">Sovereign Performance Monitor</div>
+      <div class="spm-sub">EcoIQ · Maqasid · Mizan — indicative intelligence snapshot</div>
+    </div>
+    <div style="font-size:.68rem;color:var(--d-muted);font-family:'SF Mono',monospace;">
+      Last login: {{ user.last_login|date:"d M Y, H:i" }}
+    </div>
+  </div>
+
+  <!-- ── Score cards ────────────────────────────────────────────── -->
+  <div class="score-row">
+
+    <div class="score-card score-card-green">
+      <div class="sc-label">EcoIQ Score</div>
+      <div class="sc-value" style="color:var(--d-green);">—</div>
+      <div class="sc-tag" style="color:var(--d-muted);">No company linked yet</div>
+      <div style="margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--d-border);">
+        <a href="/companies/" style="font-size:.7rem;color:var(--d-green);text-decoration:none;font-weight:600;">Browse rankings →</a>
+      </div>
+    </div>
+
+    <div class="score-card score-card-gold">
+      <div class="sc-label">Maqasid Score</div>
+      <div class="sc-value" style="color:var(--d-gold);">—</div>
+      <div class="sc-tag" style="color:var(--d-muted);">Ethical finance overlay</div>
+      <div style="margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--d-border);">
+        <a href="/pricing/" style="font-size:.7rem;color:var(--d-gold);text-decoration:none;font-weight:600;">Unlock with Analyst →</a>
+      </div>
+    </div>
+
+    <div class="score-card score-card-blue">
+      <div class="sc-label">Country Grade</div>
+      <div class="sc-value" style="color:var(--d-blue);">—</div>
+      <div class="sc-tag" style="color:var(--d-muted);">Transition readiness</div>
+      <div style="margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--d-border);">
+        <a href="/countries/" style="font-size:.7rem;color:var(--d-blue);text-decoration:none;font-weight:600;">Country intelligence →</a>
+      </div>
+    </div>
+
+    <div class="score-card score-card-purple">
+      <div class="sc-label">Account</div>
+      <div class="sc-value" style="color:var(--d-purple);font-size:1.3rem;margin-top:.35rem;">Explorer</div>
+      <div class="sc-tag" style="color:var(--d-muted);">Free tier · active</div>
+      <div style="margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--d-border);">
+        <span style="font-size:.7rem;color:var(--d-muted);">Since {{ user.date_joined|date:"M Y" }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Pillar breakdown (indicative) ─────────────────────────── -->
+  <div class="pillar-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div style="font-size:.68rem;color:var(--d-muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700;">6-Pillar Intelligence Snapshot · Indicative</div>
+      <span style="font-size:.62rem;color:var(--d-muted);font-family:'SF Mono',monospace;">Claim a profile to unlock live data</span>
+    </div>
+    <div class="pillar-row">
+      <span class="pillar-name">Environment</span>
+      <div class="pillar-track"><div class="pillar-fill" style="width:0%;background:var(--d-green);"></div></div>
+      <span class="pillar-score" style="color:var(--d-muted);">—</span>
+    </div>
+    <div class="pillar-row">
+      <span class="pillar-name">Governance</span>
+      <div class="pillar-track"><div class="pillar-fill" style="width:0%;background:var(--d-gold);"></div></div>
+      <span class="pillar-score" style="color:var(--d-muted);">—</span>
+    </div>
+    <div class="pillar-row">
+      <span class="pillar-name">Public Benefit</span>
+      <div class="pillar-track"><div class="pillar-fill" style="width:0%;background:var(--d-green);"></div></div>
+      <span class="pillar-score" style="color:var(--d-muted);">—</span>
+    </div>
+    <div class="pillar-row">
+      <span class="pillar-name">Modernisation</span>
+      <div class="pillar-track"><div class="pillar-fill" style="width:0%;background:var(--d-blue);"></div></div>
+      <span class="pillar-score" style="color:var(--d-muted);">—</span>
+    </div>
+    <div class="pillar-row">
+      <span class="pillar-name">Ethics</span>
+      <div class="pillar-track"><div class="pillar-fill" style="width:0%;background:var(--d-purple);"></div></div>
+      <span class="pillar-score" style="color:var(--d-muted);">—</span>
+    </div>
+    <div class="pillar-row">
+      <span class="pillar-name">Future Readiness</span>
+      <div class="pillar-track"><div class="pillar-fill" style="width:0%;background:var(--d-gold);"></div></div>
+      <span class="pillar-score" style="color:var(--d-muted);">—</span>
+    </div>
+    <div style="margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--d-border);display:flex;gap:.75rem;">
+      <a href="/request-access/claim/" style="font-size:.75rem;font-weight:700;color:var(--d-green);text-decoration:none;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.2);padding:.42rem .9rem;border-radius:7px;transition:background .15s;" onmouseover="this.style.background='rgba(0,232,154,.14)'" onmouseout="this.style.background='rgba(0,232,154,.08)'">Claim a company profile →</a>
+      <a href="/pricing/" style="font-size:.75rem;font-weight:600;color:var(--d-gold);text-decoration:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);padding:.42rem .9rem;border-radius:7px;transition:background .15s;" onmouseover="this.style.background='rgba(201,168,76,.13)'" onmouseout="this.style.background='rgba(201,168,76,.07)'">Upgrade for live scores →</a>
+    </div>
+  </div>
+
+  <!-- ── Two-column: intelligence modules + quick actions ───────── -->
+  <div class="d-two-col">
+
+    <!-- Intelligence modules -->
+    <div class="intel-card">
+      <div class="intel-card-title">Intelligence Modules</div>
+      <a href="/companies/" class="intel-link">
+        <span class="intel-link-icon">🌍</span>
         <span>Company Rankings</span>
-        <span class="dash-link-arrow">→</span>
+        <span class="intel-link-arrow">→</span>
       </a>
-      <a href="/countries/" class="dash-link">
-        <span class="dash-link-icon">🗺</span>
+      <a href="/countries/" class="intel-link">
+        <span class="intel-link-icon">🗺️</span>
         <span>Country Intelligence</span>
-        <span class="dash-link-arrow">→</span>
+        <span class="intel-link-arrow">→</span>
       </a>
-      <a href="/league/" class="dash-link">
-        <span class="dash-link-icon">🏆</span>
+      <a href="/league/" class="intel-link">
+        <span class="intel-link-icon">🏆</span>
         <span>EcoIQ League</span>
-        <span class="dash-link-arrow">→</span>
+        <span class="intel-link-arrow">→</span>
       </a>
-      <a href="/methodology/" class="dash-link">
-        <span class="dash-link-icon">📐</span>
+      <a href="/ethical-governance/" class="intel-link">
+        <span class="intel-link-icon">⚖️</span>
+        <span>Ethical Governance Framework</span>
+        <span class="intel-link-badge badge-new">Maqasid</span>
+        <span class="intel-link-arrow">→</span>
+      </a>
+      <a href="/value-distribution/" class="intel-link">
+        <span class="intel-link-icon">◈</span>
+        <span>Value Distribution · Rizq Model</span>
+        <span class="intel-link-badge badge-gold">New</span>
+        <span class="intel-link-arrow">→</span>
+      </a>
+      <a href="/methodology/" class="intel-link">
+        <span class="intel-link-icon">📐</span>
         <span>Scoring Methodology</span>
-        <span class="dash-link-arrow">→</span>
+        <span class="intel-link-arrow">→</span>
       </a>
-      <a href="/request-access/claim/" class="dash-link">
-        <span class="dash-link-icon">🏷</span>
-        <span>Claim a Company Profile</span>
-        <span class="dash-link-arrow">→</span>
-      </a>
-      <a href="/pricing/" class="dash-link" style="color:#00e89a;">
-        <span class="dash-link-icon">⚡</span>
-        <span>Upgrade to Analyst</span>
-        <span class="dash-link-arrow">→</span>
+      <a href="/api-docs/" class="intel-link">
+        <span class="intel-link-icon">⚙️</span>
+        <span>API Documentation</span>
+        <span class="intel-link-arrow">→</span>
       </a>
     </div>
+
+    <!-- Quick actions -->
+    <div class="qa-card">
+      <div class="intel-card-title">Quick Actions</div>
+      <a href="/request-access/claim/" class="qa-btn qa-btn-primary">🏷 Claim Company Profile</a>
+      <a href="mailto:alizhan@ecoiq.uk?subject=Free+Scan+Request" class="qa-btn">🔍 Request Free Scan</a>
+      <a href="mailto:alizhan@ecoiq.uk?subject=Investor+Readiness+Report+Request" class="qa-btn qa-btn-gold">📋 Investor Readiness Report</a>
+      <a href="mailto:alizhan@ecoiq.uk?subject=Institutional+Pilot+Enquiry" class="qa-btn">🏛️ Discuss Institutional Pilot</a>
+      <a href="/pricing/" class="qa-btn">⚡ View all plans</a>
+      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Support" class="qa-btn" style="margin-top:.75rem;border-color:transparent;color:var(--d-muted);font-size:.75rem;">Contact support →</a>
+    </div>
+
   </div>
 
-  <!-- Footer actions -->
-  <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
-    <a href="/logout/" style="font-size:.82rem;color:#6e7681;text-decoration:none;padding:.5rem .9rem;border:1px solid #21262d;border-radius:7px;transition:color .2s;" onmouseover="this.style.color='#f0f6fc'" onmouseout="this.style.color='#6e7681'">Sign out</a>
-    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Account+Enquiry" style="font-size:.82rem;color:#6e7681;text-decoration:none;padding:.5rem .9rem;border:1px solid #21262d;border-radius:7px;transition:color .2s;" onmouseover="this.style.color='#f0f6fc'" onmouseout="this.style.color='#6e7681'">Contact Support</a>
-  </div>
 </div>
+
 {% endblock %}
