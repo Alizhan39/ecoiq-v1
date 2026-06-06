@@ -214,3 +214,88 @@ class ReviewRequestForm(forms.ModelForm):
         if ext not in _ALLOWED_EXTS:
             raise forms.ValidationError('Only PDF files are accepted.')
         return f
+
+
+# ── ReportRequestForm ─────────────────────────────────────────────────────────
+# Simplified, investor-facing form that reuses the AccessRequest model for the
+# "Request EcoIQ Investor Readiness Report" workflow.
+
+class ReportRequestForm(forms.ModelForm):
+    # Honeypot — must stay empty on real submissions
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off'}),
+    )
+
+    class Meta:
+        model  = AccessRequest
+        fields = [
+            'full_name', 'work_email', 'company', 'country',
+            'target_entity', 'sector', 'role', 'product_interest',
+            'message',
+        ]
+        labels = {
+            'full_name':        'Name',
+            'work_email':       'Email',
+            'company':          'Organisation',
+            'country':          'Country',
+            'target_entity':    'Company or project to assess',
+            'sector':           'Sector',
+            'role':             'Your role',
+            'product_interest': 'Product interest',
+            'message':          'Message',
+        }
+        widgets = {
+            'full_name':   forms.TextInput(attrs={'placeholder': 'Jane Smith', 'autocomplete': 'name'}),
+            'work_email':  forms.EmailInput(attrs={'placeholder': 'jane@organisation.com', 'autocomplete': 'email'}),
+            'company':     forms.TextInput(attrs={'placeholder': 'Acme Capital / Ministry of Energy', 'autocomplete': 'organization'}),
+            'country':     forms.TextInput(attrs={'placeholder': 'e.g. United Kingdom, Kazakhstan, Saudi Arabia', 'autocomplete': 'country-name'}),
+            'target_entity': forms.TextInput(attrs={'placeholder': 'e.g. KazMunayGas, or a named transition project'}),
+            'sector':      forms.TextInput(attrs={'placeholder': 'e.g. Oil & Gas, Renewables, Manufacturing'}),
+            'role':        forms.Select(),
+            'product_interest': forms.Select(),
+            'message':     forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Tell us what you would like assessed, your timeline, and any specific questions.',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Apply Tailwind classes
+        for name, f in self.fields.items():
+            if name == 'website':
+                continue
+            if isinstance(f.widget, forms.Select):
+                f.widget.attrs.setdefault('class', _SELECT)
+            elif isinstance(f.widget, forms.Textarea):
+                f.widget.attrs.setdefault('class', _TEXTAREA)
+            else:
+                f.widget.attrs.setdefault('class', _INPUT)
+
+        # Blank prompts for selects
+        self.fields['role'].choices = [('', 'Select your role…')] + [c for c in self.fields['role'].choices if c[0]]
+        self.fields['product_interest'].choices = (
+            [('', 'Select product interest…')] + [c for c in self.fields['product_interest'].choices if c[0]]
+        )
+
+        # Required vs optional
+        self.fields['full_name'].required        = True
+        self.fields['work_email'].required       = True
+        self.fields['company'].required          = True
+        self.fields['target_entity'].required    = True
+        self.fields['country'].required          = False
+        self.fields['sector'].required           = False
+        self.fields['role'].required             = False
+        self.fields['product_interest'].required = False
+        self.fields['message'].required          = False
+
+    def clean_work_email(self):
+        return self.cleaned_data['work_email'].strip().lower()
+
+    def clean_full_name(self):
+        name = self.cleaned_data['full_name'].strip()
+        if len(name) < 2:
+            raise forms.ValidationError('Please enter your full name.')
+        return name

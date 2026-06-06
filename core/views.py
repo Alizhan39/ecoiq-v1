@@ -1075,6 +1075,17 @@ def value_distribution(request):
     return render(request, 'value_distribution.html')
 
 
+# ── Sample Investor Readiness Report ──────────────────────────────────────────
+
+def sample_report(request):
+    """
+    /sample-report/ — Public sample EcoIQ Investor Readiness Report.
+    Shows a realistic report layout using demonstration data only (no real
+    claims about any company). Public, no auth required.
+    """
+    return render(request, 'sample_report.html')
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 def dashboard(request):

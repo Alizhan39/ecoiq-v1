@@ -4,9 +4,10 @@ from . import views
 app_name = 'leads'
 
 urlpatterns = [
-    # Access request flow
-    path('',         views.request_access,      name='request_access'),
-    path('success/', views.success,             name='success'),
+    # Access request flow → Investor Readiness Report request
+    path('',           views.request_access,  name='request_access'),
+    path('thank-you/', views.thank_you,       name='thank_you'),
+    path('success/',   views.success,         name='success'),  # legacy alias
 
     # EcoIQ Review Request flow
     path('review/',          views.request_review,  name='request_review'),

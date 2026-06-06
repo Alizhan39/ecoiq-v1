@@ -10,7 +10,7 @@ from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
-from .forms import AccessRequestForm, ReviewRequestForm
+from .forms import AccessRequestForm, ReviewRequestForm, ReportRequestForm
 from .models import AccessRequest, ProfileClaim, ReviewRequest
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ def _send_emails(instance, request):
             'instance': instance,
         })
         send_mail(
-            subject='Your EcoIQ access request — we\'ll be in touch',
+            subject='EcoIQ assessment request received',
             message=confirm_body,
             from_email=from_email,
             recipient_list=[instance.work_email],
@@ -75,21 +75,28 @@ def _send_emails(instance, request):
         )
 
     except Exception as exc:  # pragma: no cover
+        # Never break the form on email failure — log and continue silently.
         logger.exception('Email send failed for AccessRequest pk=%s: %s', instance.pk, exc)
 
 
 # ── Views ─────────────────────────────────────────────────────────────────────
 
 def request_access(request):
-    form = AccessRequestForm()
+    """
+    GET/POST /request-access/
+    "Request EcoIQ Investor Readiness Report" lead-capture form.
+    Reuses the AccessRequest model via the simplified ReportRequestForm and
+    redirects to the thank-you page on success.
+    """
+    form = ReportRequestForm()
 
     if request.method == 'POST':
-        form = AccessRequestForm(request.POST)
+        form = ReportRequestForm(request.POST)
 
         # Honeypot: if the hidden `website` field has any value, silently redirect
-        # to success so bots get no feedback about detection.
+        # to the thank-you page so bots get no feedback about detection.
         if request.POST.get('website', '').strip():
-            return redirect('leads:success')
+            return redirect('leads:thank_you')
 
         ip = _get_client_ip(request)
 
@@ -106,7 +113,7 @@ def request_access(request):
 
             _send_emails(instance, request)
 
-            return redirect('leads:success')
+            return redirect('leads:thank_you')
 
     return render(request, 'leads/request_access.html', {
         'form': form,
@@ -114,8 +121,20 @@ def request_access(request):
 
 
 def success(request):
+    """Legacy success page — kept for backward compatibility / older links."""
     calendly_url = getattr(settings, 'CALENDLY_URL', '')
     return render(request, 'leads/success.html', {
+        'calendly_url': calendly_url,
+    })
+
+
+def thank_you(request):
+    """
+    GET /request-access/thank-you/
+    Confirmation page shown after an Investor Readiness Report request.
+    """
+    calendly_url = getattr(settings, 'CALENDLY_URL', '')
+    return render(request, 'leads/thank_you.html', {
         'calendly_url': calendly_url,
     })
 

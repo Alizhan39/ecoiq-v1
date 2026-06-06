@@ -4,12 +4,13 @@ from .models import AccessRequest, ProfileClaim, NewsletterSignup, ReviewRequest
 
 
 STATUS_COLOURS = {
-    'new':            ('#1b4332', '#d8f3dc'),
-    'contacted':      ('#0c3a6b', '#dde5f4'),
-    'qualified':      ('#4a1d8a', '#ede9fe'),
-    'demo_scheduled': ('#854d0e', '#fef9c3'),
-    'pilot_active':   ('#fff',    '#10b981'),
-    'declined':       ('#7c2020', '#ffe0e0'),
+    'new':           ('#1b4332', '#d8f3dc'),
+    'reviewed':      ('#0c3a6b', '#dde5f4'),
+    'sample_sent':   ('#4a1d8a', '#ede9fe'),
+    'call_booked':   ('#854d0e', '#fef9c3'),
+    'proposal_sent': ('#0a4f4a', '#ccfbf1'),
+    'won':           ('#fff',    '#10b981'),
+    'lost':          ('#7c2020', '#ffe0e0'),
 }
 
 
@@ -17,31 +18,39 @@ STATUS_COLOURS = {
 class AccessRequestAdmin(admin.ModelAdmin):
 
     list_display  = (
-        'full_name', 'company', 'work_email',
-        'industry_display', 'company_size', 'country', 'role',
-        'status', 'status_badge', 'created_at',
+        'full_name', 'work_email', 'company', 'country',
+        'role', 'product_interest', 'status_badge', 'status', 'created_at',
     )
-    list_filter   = ('status', 'industry', 'company_size', 'role', 'created_at')
-    search_fields = ('full_name', 'company', 'work_email', 'country', 'role', 'challenge', 'message', 'notes')
-    list_editable = ('status',)   # inline status update — useful for bulk pipeline management
+    list_filter   = ('status', 'role', 'product_interest', 'country', 'created_at')
+    search_fields = (
+        'full_name', 'work_email', 'company', 'target_entity',
+        'country', 'sector', 'challenge', 'message', 'notes',
+    )
+    list_editable = ('status',)   # inline status update — pipeline management
     ordering      = ('-created_at',)
     date_hierarchy = 'created_at'
     readonly_fields = ('ip_address', 'created_at', 'updated_at')
 
     fieldsets = (
         ('Contact', {
-            'fields': ('full_name', 'company', 'work_email'),
+            'fields': ('full_name', 'work_email', 'company', 'country', 'role'),
         }),
-        ('Facility Profile', {
-            'fields': ('industry', 'facility_type', 'company_size', 'country', 'role'),
+        ('Report Request', {
+            'fields': ('target_entity', 'sector', 'product_interest'),
+            'description': 'Company or project to assess, sector, and product interest.',
+        }),
+        ('Legacy Facility Profile', {
+            'fields': ('industry', 'facility_type', 'company_size'),
+            'classes': ('collapse',),
+            'description': 'Older industrial-audit fields — optional, retained for back-compatibility.',
         }),
         ('Qualification', {
             'fields': ('challenge', 'message'),
-            'description': 'Operational challenge and additional context provided by the applicant.',
+            'description': 'Context provided by the requester.',
         }),
-        ('CRM', {
+        ('CRM Pipeline', {
             'fields': ('status', 'notes'),
-            'description': 'Internal status tracking and team notes. Not visible to the applicant.',
+            'description': 'Lead pipeline stage and internal team notes. Not visible to the requester.',
         }),
         ('Security & Timestamps', {
             'fields': ('ip_address', 'created_at', 'updated_at'),
