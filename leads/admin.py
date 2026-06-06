@@ -23,6 +23,58 @@ REPORT_STATUS_COLOURS = {
     'closed':       ('#fff',    '#10b981'),
 }
 
+# Draft fields the starter generator may populate (only when empty).
+STARTER_DRAFT_FIELDS = (
+    'draft_score_summary',
+    'draft_risk_summary',
+    'draft_recommendations',
+    'draft_roadmap',
+)
+
+
+def build_starter_draft(obj):
+    """
+    Produce an institutional, investor-grade starter draft for an AccessRequest,
+    tailored to its company/project, country, sector, and product interest.
+
+    Returns a dict mapping each draft field name to suggested text. This is a
+    deterministic template — no external AI APIs — intended as a first pass that
+    an analyst then edits.
+    """
+    entity  = (obj.target_entity or '').strip() or (obj.company or '').strip() or 'the company or project'
+    country = (obj.country or '').strip() or 'the target market'
+    sector  = (obj.sector or '').strip() or 'the sector'
+    product = obj.get_product_interest_display() if obj.product_interest else 'an EcoIQ Investor Readiness Report'
+
+    return {
+        'draft_score_summary': (
+            f'Starter draft for {entity} ({sector}, {country}). Pending final analyst review. '
+            f'EcoIQ will assess public disclosures, governance signals, and sustainability '
+            f'exposure to produce an indicative EcoIQ Score alongside a Maqasid alignment score '
+            f'covering public benefit, harm avoidance, and long-term stewardship. '
+            f'Engagement scope: {product}.'
+        ),
+        'draft_risk_summary': (
+            f'Indicative risk review for {entity} across climate, governance, reputational, and '
+            f'transition dimensions, contextualised to {sector} in {country}. Analyst to confirm '
+            f'scope 1/2/3 emissions exposure, board independence and disclosure quality, and '
+            f'{country} regulatory transition risk. Pending final analyst review.'
+        ),
+        'draft_recommendations': (
+            f'Strategic recommendations for {entity} to strengthen investor readiness and ethical '
+            f'transition: (1) close priority governance and disclosure gaps; (2) baseline and reduce '
+            f'{sector} emissions intensity; (3) align reporting with recognised green-finance and '
+            f'Maqasid-aligned criteria. Final recommendations pending analyst review.'
+        ),
+        'draft_roadmap': (
+            f'Indicative 90-day roadmap for {entity}. '
+            f'Days 0–30: establish disclosure baseline and a governance/ESG committee. '
+            f'Days 31–60: address priority {sector} risk gaps and map to investor and financing criteria. '
+            f'Days 61–90: package an investor-ready data room and re-score. '
+            f'Pending analyst confirmation.'
+        ),
+    }
+
 
 @admin.register(AccessRequest)
 class AccessRequestAdmin(admin.ModelAdmin):
@@ -40,6 +92,7 @@ class AccessRequestAdmin(admin.ModelAdmin):
     list_editable = ()
     ordering      = ('-created_at',)
     date_hierarchy = 'created_at'
+    actions       = ('generate_starter_draft',)
     readonly_fields = ('draft_preview_link', 'client_preview_link', 'ip_address', 'created_at', 'updated_at')
 
     fieldsets = (
@@ -127,6 +180,40 @@ class AccessRequestAdmin(admin.ModelAdmin):
             'style="background:#c9a84c;color:#0a0f14;padding:6px 14px;border-radius:6px;'
             'text-decoration:none;font-weight:700;">View client report preview ↗</a>',
             url,
+        )
+
+    @admin.action(description='Generate starter draft')
+    def generate_starter_draft(self, request, queryset):
+        """
+        Fill EMPTY draft report fields with an institutional starter draft tailored
+        to each lead's company/project, country, sector, and product interest.
+
+        - Never overwrites a draft field that already contains content.
+        - Sets report_status to 'Draft Prepared' (draft_ready) only if it was
+          'Not Started' or 'Draft Needed'.
+        - No external AI APIs; deterministic templates an analyst then edits.
+        """
+        count = 0
+        for obj in queryset:
+            starter = build_starter_draft(obj)
+            changed = []
+
+            for field in STARTER_DRAFT_FIELDS:
+                if not (getattr(obj, field) or '').strip():
+                    setattr(obj, field, starter[field])
+                    changed.append(field)
+
+            if obj.report_status in ('not_started', 'draft_needed'):
+                obj.report_status = 'draft_ready'
+                changed.append('report_status')
+
+            if changed:
+                obj.save(update_fields=changed + ['updated_at'])
+            count += 1
+
+        self.message_user(
+            request,
+            f'Starter draft generated for {count} access request(s).',
         )
 
 
