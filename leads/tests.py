@@ -212,3 +212,87 @@ class ReportPreviewTests(TestCase):
         self.client.force_login(self.normal)
         r = self.client.get(self.draft_url)
         self.assertEqual(r.status_code, 302)
+
+
+class GenerateStarterDraftActionTests(TestCase):
+    """Admin action: 'Generate starter draft'."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        U = get_user_model()
+        self.admin = U.objects.create_superuser(
+            username='su', password='x', email='su@ecoiq.uk',
+        )
+        self.client.force_login(self.admin)
+        self.changelist = reverse('admin:leads_accessrequest_changelist')
+
+    def _run_action(self, *pks):
+        return self.client.post(self.changelist, {
+            'action': 'generate_starter_draft',
+            '_selected_action': [str(pk) for pk in pks],
+        }, follow=True)
+
+    def test_action_fills_empty_draft_fields(self):
+        obj = AccessRequest.objects.create(
+            full_name='Jane', work_email='j@f.com', company='Green Fund LLP',
+            country='United Kingdom', target_entity='KazMunayGas', sector='Oil & Gas',
+            role='investor', product_interest='readiness_report',
+            report_status='not_started',
+        )
+        self._run_action(obj.pk)
+        obj.refresh_from_db()
+        # All four draft fields are now populated...
+        self.assertTrue(obj.draft_score_summary.strip())
+        self.assertTrue(obj.draft_risk_summary.strip())
+        self.assertTrue(obj.draft_recommendations.strip())
+        self.assertTrue(obj.draft_roadmap.strip())
+        # ...and tailored to the lead's data
+        self.assertIn('KazMunayGas', obj.draft_score_summary)
+        self.assertIn('United Kingdom', obj.draft_risk_summary)
+        self.assertIn('Oil & Gas', obj.draft_recommendations)
+
+    def test_action_does_not_overwrite_existing_fields(self):
+        obj = AccessRequest.objects.create(
+            full_name='Jane', work_email='j2@f.com', company='Acme',
+            target_entity='Acme Refinery', sector='Chemicals',
+            draft_score_summary='ANALYST WRITTEN SCORE',
+            draft_roadmap='ANALYST WRITTEN ROADMAP',
+            report_status='draft_needed',
+        )
+        self._run_action(obj.pk)
+        obj.refresh_from_db()
+        # Pre-filled fields are preserved verbatim
+        self.assertEqual(obj.draft_score_summary, 'ANALYST WRITTEN SCORE')
+        self.assertEqual(obj.draft_roadmap, 'ANALYST WRITTEN ROADMAP')
+        # Empty fields get populated
+        self.assertTrue(obj.draft_risk_summary.strip())
+        self.assertTrue(obj.draft_recommendations.strip())
+
+    def test_action_sets_report_status_when_appropriate(self):
+        for start in ('not_started', 'draft_needed'):
+            obj = AccessRequest.objects.create(
+                full_name='X', work_email=f'{start}@f.com', company='C',
+                target_entity='T', report_status=start,
+            )
+            self._run_action(obj.pk)
+            obj.refresh_from_db()
+            self.assertEqual(obj.report_status, 'draft_ready')
+
+    def test_action_does_not_change_report_status_when_already_advanced(self):
+        obj = AccessRequest.objects.create(
+            full_name='X', work_email='sent@f.com', company='C',
+            target_entity='T', report_status='sent',
+        )
+        self._run_action(obj.pk)
+        obj.refresh_from_db()
+        self.assertEqual(obj.report_status, 'sent')
+
+    def test_action_success_message(self):
+        objs = [
+            AccessRequest.objects.create(
+                full_name='X', work_email=f'm{i}@f.com', company='C', target_entity='T',
+            )
+            for i in range(2)
+        ]
+        r = self._run_action(*[o.pk for o in objs])
+        self.assertContains(r, 'Starter draft generated for 2 access request(s).')
