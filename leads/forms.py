@@ -221,10 +221,19 @@ class ReviewRequestForm(forms.ModelForm):
 # "Request EcoIQ Investor Readiness Report" workflow.
 
 class ReportRequestForm(forms.ModelForm):
-    # Honeypot — must stay empty on real submissions
-    website = forms.CharField(
+    # Honeypot — must stay empty on real submissions.
+    # NOTE: do NOT name this 'website'/'url'/'email' etc. Browser autofill and
+    # password managers ignore autocomplete="off" and will fill semantic names
+    # like "website", which silently drops genuine leads. Use a neutral,
+    # non-vocabulary name so autofill leaves it empty.
+    hp_field = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off'}),
+        label='',
+        widget=forms.TextInput(attrs={
+            'tabindex': '-1',
+            'autocomplete': 'off',
+            'aria-hidden': 'true',
+        }),
     )
 
     class Meta:
@@ -265,7 +274,7 @@ class ReportRequestForm(forms.ModelForm):
 
         # Apply Tailwind classes
         for name, f in self.fields.items():
-            if name == 'website':
+            if name == 'hp_field':
                 continue
             if isinstance(f.widget, forms.Select):
                 f.widget.attrs.setdefault('class', _SELECT)
