@@ -953,15 +953,9 @@
 
         <!-- Pillar bars -->
         <div style="padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.05);">
-          <div style="font-size:.6rem;font-family:'SF Mono',monospace;color:#334155;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.8rem;">Pillar Breakdown</div>
-          {% for bar in pillar_bars|default:"" %}
-          {% empty %}
-          {% for item in "EEEGMG"|make_list %}
-          {% endfor %}
-          <!-- Static mockup bars -->
+          <div style="font-size:.6rem;font-family:'SF Mono',monospace;color:#334155;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.8rem;">Pillar Breakdown · Illustrative</div>
+          <!-- Illustrative mockup bars — static sample, not live data -->
           <div style="display:flex;flex-direction:column;gap:.5rem;">
-            {% for pillar_name, bar_pct, bar_color in pillar_bar_data|default:pillar_mockup %}
-            {% empty %}
             <div style="display:flex;align-items:center;gap:.75rem;">
               <span style="font-size:.65rem;color:#334155;width:90px;flex-shrink:0;font-family:'SF Mono',monospace;">Environment</span>
               <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;">
@@ -997,9 +991,7 @@
               </div>
               <span style="font-size:.65rem;color:#a855f7;width:28px;text-align:right;font-family:'SF Mono',monospace;">85</span>
             </div>
-            {% endfor %}
           </div>
-          {% endfor %}
         </div>
 
         <!-- Footer strip -->
@@ -1064,7 +1056,6 @@
 
       <!-- Market chips -->
       <div style="display:flex;flex-direction:column;gap:.6rem;min-width:160px;" class="hide-sm">
-        {% for country in focus_markets|default:"" %}{% empty %}
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.7rem 1rem;text-align:center;">
           <div style="font-size:.7rem;font-weight:700;color:#e2e8f0;">🇬🇧 United Kingdom</div>
           <div style="font-size:.6rem;color:#334155;margin-top:.2rem;font-family:'SF Mono',monospace;">AVAILABLE</div>
@@ -1081,7 +1072,6 @@
           <div style="font-size:.7rem;font-weight:700;color:#e2e8f0;">🇹🇷 Türkiye</div>
           <div style="font-size:.6rem;color:#334155;margin-top:.2rem;font-family:'SF Mono',monospace;">AVAILABLE</div>
         </div>
-        {% endfor %}
       </div>
 
     </div>
