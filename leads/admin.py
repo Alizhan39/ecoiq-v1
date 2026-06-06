@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.html import format_html
 from .models import AccessRequest, ProfileClaim, NewsletterSignup, ReviewRequest
 
@@ -13,46 +14,68 @@ STATUS_COLOURS = {
     'lost':          ('#7c2020', '#ffe0e0'),
 }
 
+REPORT_STATUS_COLOURS = {
+    'not_started':  ('#333',    '#e5e7eb'),
+    'draft_needed': ('#854d0e', '#fef9c3'),
+    'draft_ready':  ('#0c3a6b', '#dde5f4'),
+    'sent':         ('#4a1d8a', '#ede9fe'),
+    'paid_request': ('#0a4f4a', '#ccfbf1'),
+    'closed':       ('#fff',    '#10b981'),
+}
+
 
 @admin.register(AccessRequest)
 class AccessRequestAdmin(admin.ModelAdmin):
 
     list_display  = (
         'full_name', 'work_email', 'company', 'country',
-        'role', 'product_interest', 'status_badge', 'status', 'created_at',
+        'role', 'product_interest', 'status_badge', 'report_status_badge',
+        'created_at',
     )
-    list_filter   = ('status', 'role', 'product_interest', 'country', 'created_at')
+    list_filter   = ('status', 'report_status', 'role', 'product_interest', 'country', 'created_at')
     search_fields = (
         'full_name', 'work_email', 'company', 'target_entity',
-        'country', 'sector', 'challenge', 'message', 'notes',
+        'sector', 'message', 'internal_notes',
     )
-    list_editable = ('status',)   # inline status update — pipeline management
+    list_editable = ()
     ordering      = ('-created_at',)
     date_hierarchy = 'created_at'
-    readonly_fields = ('ip_address', 'created_at', 'updated_at')
+    readonly_fields = ('draft_preview_link', 'ip_address', 'created_at', 'updated_at')
 
     fieldsets = (
-        ('Contact', {
+        ('Lead details', {
             'fields': ('full_name', 'work_email', 'company', 'country', 'role'),
         }),
-        ('Report Request', {
-            'fields': ('target_entity', 'sector', 'product_interest'),
-            'description': 'Company or project to assess, sector, and product interest.',
+        ('Project / company to assess', {
+            'fields': ('target_entity', 'sector', 'challenge', 'message'),
+            'description': 'What the requester wants assessed and any context they provided.',
         }),
-        ('Legacy Facility Profile', {
+        ('Product interest', {
+            'fields': ('product_interest',),
+        }),
+        ('Lead status', {
+            'fields': ('status',),
+            'description': 'Sales pipeline stage. Not visible to the requester.',
+        }),
+        ('Draft report preparation', {
+            'fields': (
+                'draft_preview_link', 'report_status',
+                'draft_score_summary', 'draft_risk_summary',
+                'draft_recommendations', 'draft_roadmap',
+            ),
+            'description': 'Prepare the Investor Readiness Report draft from this lead, '
+                           'then open the staff-only preview to review it.',
+        }),
+        ('Internal notes', {
+            'fields': ('notes', 'internal_notes'),
+            'description': 'Internal team / analyst notes — never shown to the requester.',
+        }),
+        ('Legacy facility profile', {
             'fields': ('industry', 'facility_type', 'company_size'),
             'classes': ('collapse',),
             'description': 'Older industrial-audit fields — optional, retained for back-compatibility.',
         }),
-        ('Qualification', {
-            'fields': ('challenge', 'message'),
-            'description': 'Context provided by the requester.',
-        }),
-        ('CRM Pipeline', {
-            'fields': ('status', 'notes'),
-            'description': 'Lead pipeline stage and internal team notes. Not visible to the requester.',
-        }),
-        ('Security & Timestamps', {
+        ('Security & timestamps', {
             'fields': ('ip_address', 'created_at', 'updated_at'),
             'classes': ('collapse',),
         }),
@@ -62,13 +85,35 @@ class AccessRequestAdmin(admin.ModelAdmin):
     def industry_display(self, obj):
         return obj.get_industry_display()
 
-    @admin.display(description='Status', ordering='status')
+    @admin.display(description='Lead status', ordering='status')
     def status_badge(self, obj):
         fg, bg = STATUS_COLOURS.get(obj.status, ('#333', '#eee'))
         return format_html(
             '<span style="background:{};color:{};padding:2px 10px;border-radius:12px;'
             'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',
             bg, fg, obj.get_status_display()
+        )
+
+    @admin.display(description='Report status', ordering='report_status')
+    def report_status_badge(self, obj):
+        fg, bg = REPORT_STATUS_COLOURS.get(obj.report_status, ('#333', '#eee'))
+        return format_html(
+            '<span style="background:{};color:{};padding:2px 10px;border-radius:12px;'
+            'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',
+            bg, fg, obj.get_report_status_display()
+        )
+
+    @admin.display(description='Draft report preview')
+    def draft_preview_link(self, obj):
+        """Read-only link to the staff-only draft report preview page."""
+        if obj.pk is None:
+            return format_html('<span style="color:#888;">Save the lead first to enable preview.</span>')
+        url = reverse('admin_report_preview', args=[obj.pk])
+        return format_html(
+            '<a class="button" href="{}" target="_blank" rel="noopener" '
+            'style="background:#1b4332;color:#fff;padding:6px 14px;border-radius:6px;'
+            'text-decoration:none;font-weight:600;">View draft report preview ↗</a>',
+            url,
         )
 
 
