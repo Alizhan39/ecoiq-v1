@@ -113,9 +113,11 @@ def request_access(request):
     if request.method == 'POST':
         form = ReportRequestForm(request.POST)
 
-        # Honeypot: if the hidden `website` field has any value, silently redirect
+        # Honeypot: if the hidden `hp_field` has any value, silently redirect
         # to the thank-you page so bots get no feedback about detection.
-        if request.POST.get('website', '').strip():
+        # (Named `hp_field` — not `website` — so browser autofill cannot fill it
+        # and silently drop genuine submissions.)
+        if request.POST.get('hp_field', '').strip():
             return redirect('leads:thank_you')
 
         ip = _get_client_ip(request)

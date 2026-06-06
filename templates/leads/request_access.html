@@ -108,9 +108,9 @@
           <form method="post" novalidate id="access-form">
             {% csrf_token %}
 
-            <!-- Honeypot -->
+            <!-- Honeypot — bots fill this; real users (and browser autofill) leave it empty -->
             <div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true" tabindex="-1">
-              {{ form.website }}
+              <label aria-hidden="true">Leave this field empty {{ form.hp_field }}</label>
             </div>
 
             <!-- Row 1: Name + Email -->

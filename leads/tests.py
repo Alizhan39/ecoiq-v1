@@ -10,15 +10,15 @@ from .models import AccessRequest
 
 VALID_POST = {
     'full_name':        'Jane Smith',
-    'work_email':       'jane@acmeplc.com',
+    'work_email':       'Jane@AcmePLC.com',
     'company':          'Acme Capital LLP',
     'country':          'United Kingdom',
     'target_entity':    'Acme Refinery Ltd',
     'sector':           'Oil & Gas',
     'role':             'investor',
     'product_interest': 'readiness_report',
-    'message':          '',
-    'website':          '',   # honeypot — must be empty
+    'message':          'Please assess our transition readiness.',
+    'hp_field':         '',   # honeypot — must be empty on genuine submissions
 }
 
 
@@ -35,22 +35,51 @@ class RequestAccessFormTests(TestCase):
         r = self.c.post(reverse('leads:request_access'), VALID_POST)
         self.assertRedirects(r, reverse('leads:thank_you'), fetch_redirect_response=False)
 
-    def test_valid_submission_creates_record(self):
+    def test_valid_submission_creates_exactly_one_record(self):
         self.c.post(reverse('leads:request_access'), VALID_POST)
         self.assertEqual(AccessRequest.objects.count(), 1)
-        obj = AccessRequest.objects.first()
-        self.assertEqual(obj.company, 'Acme Capital LLP')
-        self.assertEqual(obj.target_entity, 'Acme Refinery Ltd')
-        self.assertEqual(obj.role, 'investor')
-        self.assertEqual(obj.product_interest, 'readiness_report')
+
+    def test_saved_object_contains_all_fields(self):
+        """A valid POST persists every submitted field to the AccessRequest."""
+        self.c.post(reverse('leads:request_access'), VALID_POST)
+        obj = AccessRequest.objects.get()
+        self.assertEqual(obj.full_name, 'Jane Smith')                 # name
+        self.assertEqual(obj.work_email, 'jane@acmeplc.com')          # email (normalised)
+        self.assertEqual(obj.company, 'Acme Capital LLP')             # organisation
+        self.assertEqual(obj.country, 'United Kingdom')               # country
+        self.assertEqual(obj.target_entity, 'Acme Refinery Ltd')      # company/project
+        self.assertEqual(obj.sector, 'Oil & Gas')                     # sector
+        self.assertEqual(obj.role, 'investor')                        # role
+        self.assertEqual(obj.product_interest, 'readiness_report')    # product_interest
+        self.assertEqual(obj.message, 'Please assess our transition readiness.')  # message
         self.assertEqual(obj.status, 'new')
 
     def test_honeypot_prevents_record_creation(self):
-        """Honeypot-triggered submissions redirect silently but save nothing."""
-        data = {**VALID_POST, 'website': 'http://spam.example.com'}
+        """A filled honeypot (hp_field) redirects silently but saves nothing."""
+        data = {**VALID_POST, 'hp_field': 'http://spam.example.com'}
         r = self.c.post(reverse('leads:request_access'), data)
         self.assertRedirects(r, reverse('leads:thank_you'), fetch_redirect_response=False)
         self.assertEqual(AccessRequest.objects.count(), 0)
+
+    def test_autofilled_website_does_not_drop_submission(self):
+        """
+        Regression: the honeypot must NOT be named 'website' (or any autofill
+        token). A browser/password-manager that autofills a 'website' field must
+        not cause a genuine submission to be silently dropped.
+        """
+        data = {**VALID_POST, 'website': 'https://acmecapital.com'}
+        r = self.c.post(reverse('leads:request_access'), data)
+        self.assertRedirects(r, reverse('leads:thank_you'), fetch_redirect_response=False)
+        self.assertEqual(AccessRequest.objects.count(), 1)
+
+    def test_invalid_post_shows_errors_and_saves_nothing(self):
+        """Missing required fields → 200 re-render with visible errors, no record."""
+        data = {**VALID_POST, 'full_name': '', 'work_email': '', 'company': '', 'target_entity': ''}
+        r = self.c.post(reverse('leads:request_access'), data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(AccessRequest.objects.count(), 0)
+        self.assertTrue(r.context['form'].errors)
+        self.assertContains(r, 'This field is required.')
 
     def test_missing_required_field_shows_form(self):
         """Missing full_name → form is re-shown with errors, no DB record."""
