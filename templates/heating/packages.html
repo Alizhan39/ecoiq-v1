@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Packages — Khalifa Heat | EcoIQ{% endblock %}
+{% block meta_description_content %}Khalifa Heat household and company packages — from DIY Basic electric-boiler kits to Heat Pump Ready, plus corporate sponsorship of homes, streets and villages.{% endblock %}
+{% block extra_head %}{% include "heating/_styles.html" %}{% endblock %}
+
+{% block content %}
+<div class="kh-hero">
+  <div class="kh-eyebrow">◆ Khalifa Heat · Packages</div>
+  <h1>Pick by budget and<br><span class="hl">how much help you want.</span></h1>
+  <p>Five household tiers from DIY to heat-pump-ready, plus company sponsorship packages. All prices indicative (KZT), confirmed after a pre-sale technical check.</p>
+  <div class="kh-hero-btns">
+    <a href="{% url 'heating:calculator' %}" class="kh-btn kh-btn-green">Size my home</a>
+    <a href="{% url 'heating:pilot_application' %}" class="kh-btn kh-btn-outline">Apply</a>
+  </div>
+</div>
+
+<div class="kh-wrap">
+
+  <div class="kh-seclabel">Household packages</div>
+  <div class="kh-grid">
+    {% for p in packages %}
+    <div class="kh-card ac-green">
+      {% if p.tier == 2 %}<span class="kh-tag">Best value</span>{% endif %}
+      <h3>{{ p.name }}</h3>
+      <div class="kh-price">{{ p.price_min_kzt|floatformat:0 }}–{{ p.price_max_kzt|floatformat:0 }} <span style="font-size:.7rem;color:var(--kh-muted)">KZT</span></div>
+      <p class="sub">{{ p.target_customer }}</p>
+      {% if p.included %}<ul><li>{{ p.included }}</li></ul>{% endif %}
+      {% if p.not_included %}<ul class="no"><li>{{ p.not_included }}</li></ul>{% endif %}
+      <div class="sub" style="margin-top:auto"><strong style="color:var(--kh-muted2)">Install:</strong> {{ p.get_install_responsibility_display }}</div>
+      <div style="margin-top:.6rem"><a href="{% url 'heating:pilot_application' %}" style="font-size:.78rem;font-weight:700;color:var(--kh-green)">Apply with this package →</a></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="kh-seclabel">Price for 10 homes</div>
+  <table class="kh-table">
+    <thead><tr><th>Package</th><th>Per home (KZT)</th><th>10 homes (KZT)</th><th>Install</th></tr></thead>
+    <tbody>
+      {% for p in packages %}
+      <tr>
+        <td style="color:#fff;font-weight:600">{{ p.name }}</td>
+        <td>{{ p.price_min_kzt|floatformat:0 }}–{{ p.price_max_kzt|floatformat:0 }}</td>
+        <td>{{ p.price_for_10.0|floatformat:0 }}–{{ p.price_for_10.1|floatformat:0 }}</td>
+        <td>{{ p.get_install_responsibility_display }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="kh-seclabel">Company sponsorship packages</div>
+  <div class="kh-grid">
+    {% for c in company_packages %}
+    <div class="kh-card ac-{{ c.accent }}">
+      <h3>{{ c.name }}</h3>
+      <div class="kh-price">{{ c.budget }}</div>
+      <p class="sub">{{ c.desc }}</p>
+      <div style="margin-top:auto"><a href="{% url 'heating:company_sponsorship' %}" style="font-size:.78rem;font-weight:700;color:var(--ac)">Enquire →</a></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="kh-disclaimer">All prices are indicative and subject to a pre-sale technical check (electricity phase &amp; available kW, wiring, radiators, insulation, boiler space). EcoIQ impact reporting included on sponsored programs.</p>
+</div>
+{% endblock %}

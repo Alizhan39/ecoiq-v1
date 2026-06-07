@@ -55,6 +55,9 @@ urlpatterns = [
     # (namespace 'projects_site' — 'projects' is taken by the API app below)
     path('projects/', include('projects.urls', namespace='projects_site')),
 
+    # Khalifa Heat — coal-to-electric heating retrofit
+    path('heating/', include('heating.urls', namespace='heating')),
+
     # EcoIQ REST API — docs at /api/, endpoints at /api/v1/
     path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
     path('api/v1/',     include('api.urls',   namespace='api')),

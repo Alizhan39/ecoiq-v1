@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Apply — Khalifa Heat Pilot &amp; Tour | EcoIQ{% endblock %}
+{% block meta_description_content %}Apply for the Khalifa Heat clean-heating tour/pilot as a household, or start an akimat / government partnership to bring coal-to-electric retrofits to your district.{% endblock %}
+{% block extra_head %}{% include "heating/_styles.html" %}{% endblock %}
+
+{% block content %}
+<div class="kh-hero">
+  <div class="kh-eyebrow">◆ Khalifa Heat · Apply</div>
+  <h1>Join the <span class="hl">Clean Heat Tour.</span></h1>
+  <p>Households apply for a retrofit; akimats and partners apply to bring the program to a district. We review every application and follow up.</p>
+</div>
+
+<div class="kh-wrap" style="padding-top:2.5rem">
+
+  <!-- Household -->
+  <div class="kh-seclabel">Household application</div>
+  {% if submitted == 'household' %}<div class="kh-success">✓ Thank you — your application has been received. We'll be in touch.</div>{% endif %}
+  <form method="post" class="kh-form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="household">
+    <div style="position:absolute;left:-9999px" aria-hidden="true">{{ household_form.hp_field }}</div>
+    <div class="kh-grid2">
+      <div class="kh-field"><label>Your name</label>{{ household_form.full_name }}{% if household_form.full_name.errors %}<div class="kh-err">{{ household_form.full_name.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Phone</label>{{ household_form.phone }}{% if household_form.phone.errors %}<div class="kh-err">{{ household_form.phone.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Email (optional)</label>{{ household_form.email }}</div>
+      <div class="kh-field"><label>Location</label>{{ household_form.location }}</div>
+      <div class="kh-field"><label>Package</label>{{ household_form.package }}</div>
+      <div class="kh-field"><label>Installation type</label>{{ household_form.install_type }}</div>
+    </div>
+    <div class="kh-field"><label>Message (optional)</label>{{ household_form.message }}</div>
+    <button type="submit" class="kh-btn kh-btn-green">Apply</button>
+  </form>
+
+  <!-- Akimat -->
+  <div class="kh-seclabel">Akimat / partnership application</div>
+  {% if submitted == 'akimat' %}<div class="kh-success">✓ Thank you — your partnership enquiry has been received. We'll be in touch.</div>{% endif %}
+  <form method="post" class="kh-form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="akimat">
+    <div style="position:absolute;left:-9999px" aria-hidden="true">{{ akimat_form.hp_field }}</div>
+    <div class="kh-grid2">
+      <div class="kh-field"><label>Akimat / organisation</label>{{ akimat_form.organisation }}{% if akimat_form.organisation.errors %}<div class="kh-err">{{ akimat_form.organisation.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Contact name</label>{{ akimat_form.full_name }}{% if akimat_form.full_name.errors %}<div class="kh-err">{{ akimat_form.full_name.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Email</label>{{ akimat_form.email }}{% if akimat_form.email.errors %}<div class="kh-err">{{ akimat_form.email.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Phone</label>{{ akimat_form.phone }}</div>
+      <div class="kh-field"><label>Region / district</label>{{ akimat_form.location }}</div>
+    </div>
+    <div class="kh-field"><label>Scope &amp; goals (optional)</label>{{ akimat_form.message }}</div>
+    <button type="submit" class="kh-btn kh-btn-gold">Start partnership</button>
+  </form>
+
+  <p class="kh-disclaimer">We review every application for technical fit and pilot scope. No payment is required to apply.</p>
+</div>
+{% endblock %}

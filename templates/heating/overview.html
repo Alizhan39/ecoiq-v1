@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Khalifa Heat — Clean Electric Heating Retrofit for Kazakhstan{% endblock %}
+{% block meta_description_content %}Khalifa Heat: a low-cost clean electric heating retrofit kit for Kazakhstan households — replace coal heating with an electric boiler, heat-pump-ready for the future. Impact reporting through EcoIQ.{% endblock %}
+{% block og_title %}Khalifa Heat — From Coal Stove to Clean Electric Heating{% endblock %}
+{% block og_description %}A low-cost electric-boiler retrofit kit for Kazakhstan homes, designed to be heat-pump-ready. Household packages, a 10-home tour, and company sponsorship.{% endblock %}
+{% block extra_head %}{% include "heating/_styles.html" %}{% endblock %}
+
+{% block content %}
+<div class="kh-hero">
+  <div class="kh-eyebrow">◆ Khalifa Heat · Coal-to-Electric Retrofit</div>
+  <h1>From Coal Stove to<br><span class="hl">Clean Electric Heating.</span></h1>
+  <p>
+    A low-cost clean electric heating retrofit kit for Kazakhstan households — starting with
+    electric boilers and designed to be heat-pump-ready in the future. Connects to the radiators
+    you already have.
+  </p>
+  <div class="kh-hero-btns">
+    <a href="{% url 'heating:calculator' %}" class="kh-btn kh-btn-green">Check my home</a>
+    <a href="{% url 'heating:packages' %}" class="kh-btn kh-btn-outline">See packages</a>
+  </div>
+</div>
+
+<div class="kh-wrap">
+
+  <!-- Problem -->
+  <div class="kh-seclabel">The Problem — coal heating in homes</div>
+  <p class="kh-intro">
+    Tens of thousands of private homes around Almaty heat with coal. In a mountain valley with
+    winter temperature inversions, that household smoke is a leading driver of severe seasonal
+    PM2.5 — and it means hauling fuel, daily stoking, dust, and fire and carbon-monoxide risk.
+  </p>
+
+  <!-- Solution -->
+  <div class="kh-seclabel">The Solution — an electric boiler retrofit kit</div>
+  <p class="kh-intro">
+    Khalifa Heat replaces the coal boiler with a correctly-sized electric boiler, wired safely
+    (breakers + RCD/УЗО), with a thermostat and safety group, connected to existing radiators.
+    No coal, no smoke, no daily stoking — installed in about a day.
+  </p>
+  <div class="kh-grid">
+    <div class="kh-card ac-green"><h3>Cheaper to start</h3><p class="sub">Electric boilers cost a fraction of heat pumps and are easy to source and install locally in Kazakhstan.</p></div>
+    <div class="kh-card ac-blue"><h3>Safe &amp; standard</h3><p class="sub">Every kit ships with proper electrical protection, cable specs and a clear manual. Optional professional install.</p></div>
+    <div class="kh-card ac-gold"><h3>Heat-pump-ready</h3><p class="sub">Choose Ready+ and your home is pre-built for a 3–4× more efficient heat-pump upgrade later.</p></div>
+    <div class="kh-card ac-purple"><h3>Measured by EcoIQ</h3><p class="sub">Coal displaced and in-home PM2.5 removed — reported per home through the EcoIQ platform.</p></div>
+  </div>
+
+  <!-- Packages preview -->
+  <div class="kh-seclabel">Household packages</div>
+  <div class="kh-grid">
+    {% for p in packages %}
+    <div class="kh-card ac-green">
+      <h3>{{ p.name }}</h3>
+      <div class="kh-price">{{ p.price_min_kzt|floatformat:0 }}–{{ p.price_max_kzt|floatformat:0 }} <span style="font-size:.7rem;color:var(--kh-muted)">KZT</span></div>
+      <p class="sub">{{ p.target_customer }}</p>
+      <div style="margin-top:auto"><a href="{% url 'heating:packages' %}" style="font-size:.78rem;font-weight:700;color:var(--kh-green)">Compare packages →</a></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- 10-home tour -->
+  <div class="kh-seclabel">The 10-household tour model</div>
+  <p class="kh-intro">
+    The <strong>Khalifa Clean Heat Tour</strong> upgrades ten homes together. Cheaper packages —
+    families install themselves or use their own local master with our guidance; higher packages —
+    our engineers install, with smart controls and heat-pump-ready options.
+  </p>
+  <a href="{% url 'heating:pilot_application' %}" class="kh-btn kh-btn-green">Apply for a tour / pilot</a>
+
+  <!-- Company sponsorship -->
+  <div class="kh-seclabel">Company sponsorship</div>
+  <div class="kh-grid">
+    {% for c in company_packages %}
+    <div class="kh-card ac-{{ c.accent }}">
+      <h3>{{ c.name }}</h3>
+      <div class="kh-price">{{ c.budget }}</div>
+      <p class="sub">{{ c.desc }}</p>
+      <div style="margin-top:auto"><a href="{% url 'heating:company_sponsorship' %}" style="font-size:.78rem;font-weight:700;color:var(--ac)">Sponsor homes →</a></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Future + CTA -->
+  <div class="kh-seclabel">Future upgrade path</div>
+  <p class="kh-intro">
+    Start with an affordable electric boiler today. As Kazakhstan's grid adds nuclear and
+    renewables, every converted home gets cleaner automatically — and a later heat-pump upgrade
+    cuts electricity use 3–4×. Boiler now, heat pump later, on a decarbonising grid.
+  </p>
+
+  <div style="text-align:center;margin-top:2.5rem;background:rgba(255,255,255,.02);border:1px solid var(--kh-border);border-radius:14px;padding:2.5rem 1.5rem">
+    <h2 style="font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:.6rem">Check if your home is ready in 2 minutes.</h2>
+    <p style="font-size:.88rem;color:var(--kh-muted2);margin-bottom:1.5rem">Get a recommended boiler size, an indicative price, and safety flags.</p>
+    <a href="{% url 'heating:calculator' %}" class="kh-btn kh-btn-green">Start the calculator</a>
+  </div>
+
+  <p class="kh-disclaimer">
+    Prices are indicative and subject to a pre-sale technical check. An electric boiler on
+    Kazakhstan's current grid mainly delivers a local air-quality (PM2.5 / in-home smoke) benefit
+    today; net-CO₂ benefit grows as the grid decarbonises and with a future heat-pump upgrade.
+  </p>
+</div>
+{% endblock %}

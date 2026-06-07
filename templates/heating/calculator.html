@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Heating Calculator — Khalifa Heat | EcoIQ{% endblock %}
+{% block meta_description_content %}Khalifa Heat calculator — get a recommended electric-boiler size, an indicative package price, and electricity/insulation safety flags for your Kazakhstan home.{% endblock %}
+{% block extra_head %}{% include "heating/_styles.html" %}{% endblock %}
+
+{% block content %}
+<div class="kh-hero">
+  <div class="kh-eyebrow">◆ Khalifa Heat · Calculator</div>
+  <h1>Size your <span class="hl">clean heating</span> in 2 minutes.</h1>
+  <p>Enter a few details about your home for a recommended boiler size, an indicative price, and any electricity or insulation warnings. Indicative only — confirmed on site.</p>
+</div>
+
+<div class="kh-wrap" style="padding-top:2.5rem">
+
+  {% if result %}
+  <div class="kh-result">
+    <h3>Recommendation</h3>
+    <div class="row"><span>Recommended boiler size</span><span class="v">{{ result.recommended_kw }} kW</span></div>
+    <div class="row"><span>Package ({{ result.package_label }})</span><span class="v">{{ result.estimated_cost_min|floatformat:0 }}–{{ result.estimated_cost_max|floatformat:0 }} KZT</span></div>
+    {% if result.large_home_surcharge %}<div class="row"><span>Large-home surcharge applied</span><span class="v">+15%</span></div>{% endif %}
+    <div class="row"><span>Heat-pump readiness recommended</span><span class="v">{% if result.hp_ready_recommended %}Yes{% else %}Optional{% endif %}</span></div>
+    {% if result.warnings %}
+    <div class="kh-warnbox">
+      {% for w in result.warnings %}<div>⚠ {{ w }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    <div style="margin-top:1.2rem;display:flex;gap:.7rem;flex-wrap:wrap">
+      <a href="{% url 'heating:pilot_application' %}" class="kh-btn kh-btn-green">Apply with these details</a>
+      <a href="{% url 'heating:packages' %}" class="kh-btn kh-btn-outline">Compare packages</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="post" class="kh-form" novalidate>
+    {% csrf_token %}
+    <div class="kh-grid2">
+      <div class="kh-field"><label>House area (m²)</label>{{ form.area_m2 }}{% if form.area_m2.errors %}<div class="kh-err">{{ form.area_m2.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Number of rooms</label>{{ form.rooms }}{% if form.rooms.errors %}<div class="kh-err">{{ form.rooms.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Insulation quality</label>{{ form.insulation }}{% if form.insulation.errors %}<div class="kh-err">{{ form.insulation.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Existing radiators</label>{{ form.has_radiators }}{% if form.has_radiators.errors %}<div class="kh-err">{{ form.has_radiators.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Electricity type</label>{{ form.electricity }}{% if form.electricity.errors %}<div class="kh-err">{{ form.electricity.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Available power (kW)</label>{{ form.available_kw }}{% if form.available_kw.errors %}<div class="kh-err">{{ form.available_kw.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Package</label>{{ form.package }}{% if form.package.errors %}<div class="kh-err">{{ form.package.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Installation type</label>{{ form.install_type }}{% if form.install_type.errors %}<div class="kh-err">{{ form.install_type.errors.0 }}</div>{% endif %}</div>
+    </div>
+    <button type="submit" class="kh-btn kh-btn-green" style="margin-top:.5rem">Calculate</button>
+  </form>
+
+  <p class="kh-disclaimer">Boiler sizing uses cold-climate heat-demand estimates (70–130 W/m² by insulation). Results are indicative; a pre-sale technical check confirms wiring, grounding, capacity and radiator condition before any quote.</p>
+</div>
+{% endblock %}

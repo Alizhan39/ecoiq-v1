@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Company Sponsorship — Khalifa Heat | EcoIQ{% endblock %}
+{% block meta_description_content %}Sponsor clean heating retrofits in Kazakhstan — Sponsor 10 Homes, Clean Street Pilot, Coal-Free Village Pilot, or an ESG Heat Partnership. Verified EcoIQ impact reporting included.{% endblock %}
+{% block extra_head %}{% include "heating/_styles.html" %}{% endblock %}
+
+{% block content %}
+<div class="kh-hero">
+  <div class="kh-eyebrow">◆ Khalifa Heat · Company Sponsorship</div>
+  <h1>Fund verified <span class="hl">clean-heat impact.</span></h1>
+  <p>Sponsor homes, a street, or a coal-free village pilot. Attributable CSR/ESG impact with EcoIQ verified reporting — coal displaced and in-home PM2.5 removed.</p>
+</div>
+
+<div class="kh-wrap" style="padding-top:2.5rem">
+
+  <div class="kh-grid">
+    {% for c in company_packages %}
+    <div class="kh-card ac-{{ c.accent }}">
+      <h3>{{ c.name }}</h3>
+      <div class="kh-price">{{ c.budget }}</div>
+      <p class="sub">{{ c.desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="kh-seclabel">Enquire</div>
+  {% if submitted %}<div class="kh-success">✓ Thank you — your sponsorship enquiry has been received. We'll be in touch.</div>{% endif %}
+  <form method="post" class="kh-form" novalidate>
+    {% csrf_token %}
+    <div style="position:absolute;left:-9999px" aria-hidden="true">{{ form.hp_field }}</div>
+    <div class="kh-grid2">
+      <div class="kh-field"><label>Company name</label>{{ form.company_name }}{% if form.company_name.errors %}<div class="kh-err">{{ form.company_name.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Contact name</label>{{ form.contact_name }}{% if form.contact_name.errors %}<div class="kh-err">{{ form.contact_name.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Email</label>{{ form.email }}{% if form.email.errors %}<div class="kh-err">{{ form.email.errors.0 }}</div>{% endif %}</div>
+      <div class="kh-field"><label>Phone</label>{{ form.phone }}</div>
+      <div class="kh-field"><label>Package</label>{{ form.package }}</div>
+      <div class="kh-field"><label>Indicative budget</label>{{ form.budget_band }}</div>
+    </div>
+    <div class="kh-field"><label>Message</label>{{ form.message }}</div>
+    <button type="submit" class="kh-btn kh-btn-green">Send enquiry</button>
+  </form>
+
+  <p class="kh-disclaimer">Impact reported two ways: coal-tonnes displaced and in-home PM2.5/black-carbon removed (headline local-health metric), plus net-CO₂ against the current grid and projected as the grid decarbonises.</p>
+</div>
+{% endblock %}
