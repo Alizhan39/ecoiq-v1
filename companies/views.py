@@ -9,6 +9,7 @@ from django.http import JsonResponse
 
 from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_CHOICES
 from companies.scoring import get_path_to_100_actions
+from companies.throttle import rate_limit, cache_response
 from companies.improvement_data import get_improvement_pathway
 from league.models import Company, SECTOR_CHOICES
 
@@ -641,6 +642,8 @@ def _tier_color_from_score(score: float) -> str:
     return '#b91c1c'
 
 
+@rate_limit('pdf_report')
+@cache_response('pdf_report', timeout=600)
 def company_pdf_report(request, slug):
     """
     GET /companies/<slug>/report.pdf
@@ -794,6 +797,8 @@ def company_pdf_report(request, slug):
 
 # ── ML Insights endpoint ───────────────────────────────────────────────────────
 
+@rate_limit('ml_insights', json=True)
+@cache_response('ml_insights', timeout=300)
 def company_ml_insights(request, slug):
     """
     JSON endpoint: /companies/<slug>/ml-insights.json
@@ -879,6 +884,8 @@ _SECTOR_DISPLAY = {
 
 # ── Sector PDF Report ──────────────────────────────────────────────────────────
 
+@rate_limit('sector_report')
+@cache_response('sector_report', timeout=600)
 def sector_pdf_report(request, sector):
     """
     GET /companies/reports/sector/<sector>/
@@ -1100,6 +1107,8 @@ def report_index(request):
 
 # ── Verified Certificate ───────────────────────────────────────────────────────
 
+@rate_limit('certificate')
+@cache_response('certificate', timeout=600)
 def generate_certificate(request, slug):
     """
     GET /companies/<slug>/certificate/
