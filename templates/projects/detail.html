@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ project.name }} — EcoIQ Projects{% endblock %}
+{% block meta_description_content %}{{ project.name }}: {{ project.tagline }} EcoIQ real-world project — problem, solution, expected impact, KPI alignment, timeline, partnership and funding opportunities.{% endblock %}
+{% block og_title %}{{ project.name }} — EcoIQ Projects{% endblock %}
+{% block og_description %}{{ project.tagline }}{% endblock %}
+
+{% block extra_head %}
+<style>
+:root{
+  --pj-bg:#070b0f; --pj-bg2:#0d1117; --pj-bg3:#161b22;
+  --pj-border:rgba(255,255,255,.06); --pj-border2:rgba(255,255,255,.12);
+  --pj-text:#e2e8f0; --pj-muted:#64748b; --pj-muted2:#94a3b8;
+  --pj-green:#00e89a; --pj-gold:#c9a84c; --pj-blue:#58a6ff; --pj-teal:#06b6d4; --pj-purple:#a855f7;
+}
+*{box-sizing:border-box}
+body{background:var(--pj-bg);color:var(--pj-text);-webkit-font-smoothing:antialiased}
+a{text-decoration:none}
+.pj-wrap{max-width:980px;margin:0 auto;padding:0 1.5rem 5rem}
+
+.ac-green{--ac:var(--pj-green)} .ac-gold{--ac:var(--pj-gold)} .ac-blue{--ac:var(--pj-blue)}
+.ac-teal{--ac:var(--pj-teal)} .ac-purple{--ac:var(--pj-purple)}
+
+/* breadcrumb */
+.pj-crumb{max-width:980px;margin:0 auto;padding:1.25rem 1.5rem 0;font-size:.78rem;color:var(--pj-muted)}
+.pj-crumb a{color:var(--pj-muted2)} .pj-crumb a:hover{color:var(--pj-green)}
+
+/* hero */
+.pj-hero{padding:2.5rem 1.5rem 3rem;position:relative;overflow:hidden;border-bottom:1px solid var(--pj-border);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 10%,transparent) 0%,transparent 60%)}
+.pj-hero-inner{max-width:980px;margin:0 auto}
+.pj-hero-top{display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap}
+.pj-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0;
+  background:color-mix(in srgb,var(--ac) 12%,transparent);border:1px solid color-mix(in srgb,var(--ac) 28%,transparent)}
+.pj-status{font-size:.64rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:.3rem .7rem;border-radius:20px;background:color-mix(in srgb,var(--ac) 12%,transparent);
+  color:var(--ac);border:1px solid color-mix(in srgb,var(--ac) 30%,transparent)}
+.pj-hero h1{font-size:clamp(1.8rem,3.6vw,2.6rem);font-weight:800;letter-spacing:-.03em;color:#fff;line-height:1.12;margin-bottom:.7rem}
+.pj-hero .tag{font-size:1rem;color:var(--pj-muted2);line-height:1.6;max-width:680px}
+.pj-hero-meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.3rem}
+.pj-chip{font-size:.7rem;color:var(--pj-muted2);background:var(--pj-bg2);border:1px solid var(--pj-border);border-radius:8px;padding:.35rem .7rem}
+
+/* section label */
+.pj-seclabel{display:flex;align-items:center;gap:12px;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--pj-muted);font-family:'SF Mono','Fira Code',monospace;margin:3rem 0 1.3rem}
+.pj-seclabel::after{content:'';flex:1;height:1px;background:var(--pj-border)}
+
+/* prose */
+.pj-prose{font-size:.96rem;color:var(--pj-muted2);line-height:1.8}
+
+/* two-col problem/solution */
+.pj-2col{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem}
+.pj-block{background:var(--pj-bg2);border:1px solid var(--pj-border);border-radius:14px;padding:1.6rem 1.7rem}
+.pj-block h3{font-size:.95rem;font-weight:700;color:#fff;margin-bottom:.7rem;display:flex;align-items:center;gap:.5rem}
+.pj-block p{font-size:.88rem;color:var(--pj-muted2);line-height:1.7}
+
+/* impact tiles */
+.pj-impact{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}
+.impact-tile{background:var(--pj-bg2);border:1px solid var(--pj-border);border-radius:14px;padding:1.5rem;position:relative;overflow:hidden}
+.impact-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent)}
+.impact-val{font-size:1.4rem;font-weight:800;color:var(--ac);letter-spacing:-.02em;margin-bottom:.4rem}
+.impact-lbl{font-size:.82rem;color:var(--pj-muted2);line-height:1.55}
+
+/* KPI cards */
+.pj-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.kpi{background:var(--pj-bg2);border:1px solid var(--pj-border);border-radius:14px;padding:1.4rem 1.5rem;transition:border-color .2s}
+.kpi:hover{border-color:color-mix(in srgb,var(--ac) 35%,transparent)}
+.kpi-head{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem}
+.kpi-code{font-family:'SF Mono','Fira Code',monospace;font-size:.76rem;font-weight:700;color:var(--ac);
+  background:color-mix(in srgb,var(--ac) 12%,transparent);border:1px solid color-mix(in srgb,var(--ac) 28%,transparent);padding:.24rem .55rem;border-radius:8px}
+.kpi-name{font-size:.86rem;font-weight:700;color:#fff}
+.kpi-note{font-size:.8rem;color:var(--pj-muted2);line-height:1.55}
+
+/* timeline */
+.pj-timeline{display:flex;flex-direction:column;gap:1px;background:var(--pj-border);border:1px solid var(--pj-border);border-radius:14px;overflow:hidden}
+.tl-row{background:var(--pj-bg2);padding:1.2rem 1.6rem;display:grid;grid-template-columns:120px 1fr;gap:1rem;align-items:baseline}
+.tl-phase{font-weight:700;color:#fff;font-size:.9rem}
+.tl-window{font-family:'SF Mono','Fira Code',monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);display:block;margin-top:.2rem}
+.tl-detail{font-size:.86rem;color:var(--pj-muted2);line-height:1.6}
+
+/* list cards (partnership) */
+.pj-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.6rem}
+.pj-list li{font-size:.88rem;color:var(--pj-muted2);display:flex;gap:.6rem;align-items:flex-start;line-height:1.6;
+  background:var(--pj-bg2);border:1px solid var(--pj-border);border-radius:10px;padding:.85rem 1.1rem}
+.pj-list li::before{content:'◆';color:var(--ac);font-size:.7rem;margin-top:.25rem;flex-shrink:0}
+
+/* funding panel */
+.pj-fund{background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 8%,transparent) 0%,var(--pj-bg2) 60%);
+  border:1px solid color-mix(in srgb,var(--ac) 22%,transparent);border-radius:16px;padding:2rem}
+.pj-fund-amt{font-size:2rem;font-weight:800;color:var(--ac);letter-spacing:-.03em}
+.pj-fund-amt small{font-size:.85rem;font-weight:600;color:var(--pj-muted2);margin-left:.4rem}
+.pj-fund-note{font-size:.84rem;color:var(--pj-muted2);line-height:1.7;margin-top:.6rem}
+
+/* CTA band */
+.pj-cta{margin-top:3.5rem;background:rgba(255,255,255,.02);border:1px solid var(--pj-border);border-radius:16px;padding:3rem 2rem;text-align:center}
+.pj-cta h2{font-size:clamp(1.3rem,2.5vw,1.85rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem}
+.pj-cta p{font-size:.88rem;color:var(--pj-muted2);max-width:520px;margin:0 auto 2rem;line-height:1.65}
+.pj-cta-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.pj-btn{font-size:.86rem;font-weight:700;padding:.74rem 1.5rem;border-radius:10px;display:inline-flex;align-items:center;gap:.4rem;transition:opacity .2s,transform .1s,border-color .2s,color .2s}
+.pj-btn-green{background:var(--pj-green);color:#0a0f14}.pj-btn-green:hover{opacity:.88;transform:translateY(-1px)}
+.pj-btn-gold{background:var(--pj-gold);color:#0a0f14}.pj-btn-gold:hover{opacity:.88;transform:translateY(-1px)}
+.pj-btn-outline{background:transparent;border:1px solid var(--pj-border2);color:var(--pj-muted2)}.pj-btn-outline:hover{border-color:var(--pj-green);color:var(--pj-green)}
+
+.pj-disclaimer{font-size:.72rem;color:var(--pj-muted);text-align:center;line-height:1.6;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--pj-border)}
+
+@media(max-width:640px){
+  .pj-2col{grid-template-columns:1fr}
+  .pj-kpis,.pj-impact{grid-template-columns:1fr}
+  .tl-row{grid-template-columns:1fr}
+  .pj-cta-btns{flex-direction:column;align-items:center}
+  .pj-btn{width:100%;max-width:320px;justify-content:center}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="pj-crumb ac-{{ project.accent }}">
+  <a href="{% url 'projects_site:index' %}">Projects</a> &nbsp;/&nbsp; {{ project.name }}
+</div>
+
+<!-- ═══ OVERVIEW / HERO ═══ -->
+<div class="pj-hero ac-{{ project.accent }}">
+  <div class="pj-hero-inner">
+    <div class="pj-hero-top">
+      <div class="pj-icon">{{ project.icon }}</div>
+      <span class="pj-status">{{ project.status }}</span>
+    </div>
+    <h1>{{ project.name }}</h1>
+    <p class="tag">{{ project.tagline }}</p>
+    <div class="pj-hero-meta">
+      <span class="pj-chip">📍 {{ project.location }}</span>
+      <span class="pj-chip">{{ project.sector }}</span>
+      <span class="pj-chip">🗓 {{ project.timeline_label }}</span>
+      {% if project.funding_amount %}<span class="pj-chip">💷 {{ project.funding_amount }}{% if project.funding_label %} · {{ project.funding_label }}{% endif %}</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="pj-wrap ac-{{ project.accent }}">
+
+  <!-- Overview -->
+  <div class="pj-seclabel">Overview</div>
+  <p class="pj-prose">{{ project.overview }}</p>
+
+  <!-- Problem / Solution -->
+  <div class="pj-seclabel">Problem &amp; Solution</div>
+  <div class="pj-2col">
+    <div class="pj-block">
+      <h3>⚠️ The Problem</h3>
+      <p>{{ project.problem }}</p>
+    </div>
+    <div class="pj-block">
+      <h3>✅ The Solution</h3>
+      <p>{{ project.solution }}</p>
+    </div>
+  </div>
+
+  <!-- Expected Impact -->
+  <div class="pj-seclabel">Expected Impact</div>
+  <div class="pj-impact">
+    {% for i in project.expected_impact %}
+    <div class="impact-tile">
+      <div class="impact-val">{{ i.value }}</div>
+      <div class="impact-lbl">{{ i.label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- EcoIQ KPI Alignment -->
+  <div class="pj-seclabel">EcoIQ KPI Alignment</div>
+  <p class="pj-prose" style="margin-bottom:1.3rem">
+    This project is measured against EcoIQ's impact framework. Targets are indicative and
+    confirmed during delivery. <a href="/stewardship/" style="color:var(--ac)">See full KPI definitions →</a>
+  </p>
+  <div class="pj-kpis">
+    {% for k in project.kpis %}
+    <div class="kpi">
+      <div class="kpi-head">
+        <span class="kpi-code">{{ k.code }}</span>
+        <span class="kpi-name">{{ k.label }}</span>
+      </div>
+      <div class="kpi-note">{{ k.note }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Timeline -->
+  <div class="pj-seclabel">Timeline</div>
+  <div class="pj-timeline">
+    {% for t in project.timeline_phases %}
+    <div class="tl-row">
+      <div class="tl-phase">{{ t.phase }}<span class="tl-window">{{ t.window }}</span></div>
+      <div class="tl-detail">{{ t.detail }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Partnership Opportunities -->
+  <div class="pj-seclabel">Partnership Opportunities</div>
+  <ul class="pj-list">
+    {% for p in project.partnership_opportunities %}
+    <li>{{ p }}</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Funding Opportunities -->
+  <div class="pj-seclabel">Funding Opportunities</div>
+  <div class="pj-fund">
+    {% if project.funding_amount %}
+    <div class="pj-fund-amt">{{ project.funding_amount }}{% if project.funding_label %} <small>{{ project.funding_label }}</small>{% endif %}</div>
+    {% endif %}
+    <p class="pj-fund-note">{{ project.funding_note }}</p>
+  </div>
+
+  <!-- Current Status -->
+  <div class="pj-seclabel">Current Status</div>
+  <p class="pj-prose">
+    This project is currently at <strong style="color:var(--ac)">{{ project.status }}</strong> stage.
+    EcoIQ is actively seeking delivery, research and funding partners to move it forward.
+  </p>
+
+  <!-- Get Involved CTA -->
+  <div class="pj-cta">
+    <h2>Get Involved</h2>
+    <p>
+      EcoIQ is building a portfolio of credible, measurable real-world impact. Partner with us,
+      fund a pilot, or request the full project brief.
+    </p>
+    <div class="pj-cta-btns">
+      <a href="/request-access/?type=project&amp;project={{ project.slug }}" class="pj-btn pj-btn-green">Fund this Pilot →</a>
+      <a href="/contact/" class="pj-btn pj-btn-gold">Become a Partner →</a>
+      <a href="/contact/" class="pj-btn pj-btn-outline">Request Project Brief</a>
+    </div>
+  </div>
+
+  <p class="pj-disclaimer">
+    All budgets, KPIs, timelines and impact figures shown are <strong>indicative pilot estimates</strong>
+    and subject to confirmation. EcoIQ scores and projections are AI-assisted and indicative —
+    not investment advice or a regulatory assessment.
+  </p>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Projects — EcoIQ Real-World Impact Portfolio{% endblock %}
+{% block meta_description_content %}EcoIQ's real-world project portfolio — clean air, water restoration, food resilience, stewardship leadership and regenerative communities. Climate intelligence translated into measurable impact.{% endblock %}
+{% block og_title %}EcoIQ Projects — Climate Intelligence + Real-World Impact{% endblock %}
+{% block og_description %}Explore EcoIQ's pilot project portfolio: Almaty Clean Air, Lake Restoration, Community Greenhouses, Khalifah Living and Future EcoIQ Villages — with indicative budgets, KPIs and partnership opportunities.{% endblock %}
+
+{% block extra_head %}
+<style>
+:root{
+  --pj-bg:#070b0f; --pj-bg2:#0d1117; --pj-bg3:#161b22;
+  --pj-border:rgba(255,255,255,.06); --pj-border2:rgba(255,255,255,.12);
+  --pj-text:#e2e8f0; --pj-muted:#64748b; --pj-muted2:#94a3b8;
+  --pj-green:#00e89a; --pj-gold:#c9a84c; --pj-blue:#58a6ff; --pj-teal:#06b6d4; --pj-purple:#a855f7;
+}
+*{box-sizing:border-box}
+body{background:var(--pj-bg);color:var(--pj-text);-webkit-font-smoothing:antialiased}
+a{text-decoration:none}
+.pj-wrap{max-width:1120px;margin:0 auto;padding:0 1.5rem 5rem}
+
+.ac-green{--ac:var(--pj-green)} .ac-gold{--ac:var(--pj-gold)} .ac-blue{--ac:var(--pj-blue)}
+.ac-teal{--ac:var(--pj-teal)} .ac-purple{--ac:var(--pj-purple)}
+
+/* hero */
+.pj-hero{padding:5rem 1.5rem 3.5rem;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(16,185,129,.06) 0%,transparent 100%);border-bottom:1px solid var(--pj-border)}
+.pj-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(0,232,154,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,232,154,.015) 1px,transparent 1px);background-size:56px 56px}
+.pj-eyebrow{display:inline-flex;align-items:center;gap:.45rem;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.22);
+  color:var(--pj-green);font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:.3rem 1rem;border-radius:20px;margin-bottom:1.5rem;position:relative}
+.pj-hero h1{font-size:clamp(2.1rem,4.6vw,3.1rem);font-weight:800;letter-spacing:-.04em;line-height:1.1;color:#fff;margin-bottom:1.2rem;position:relative}
+.pj-hero h1 .hl{background:linear-gradient(105deg,#00e89a,#34d399 50%,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.pj-hero p{font-size:1.02rem;color:var(--pj-muted2);line-height:1.75;max-width:680px;margin:0 auto;position:relative}
+
+/* portfolio grid */
+.pj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.25rem;margin-top:2.75rem}
+.pj-card{background:var(--pj-bg2);border:1px solid var(--pj-border);border-radius:16px;padding:1.8rem;
+  display:flex;flex-direction:column;position:relative;overflow:hidden;transition:border-color .2s,transform .2s,box-shadow .2s}
+.pj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent)}
+.pj-card:hover{border-color:color-mix(in srgb,var(--ac) 35%,transparent);transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.pj-card-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:1.1rem}
+.pj-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;
+  background:color-mix(in srgb,var(--ac) 12%,transparent);border:1px solid color-mix(in srgb,var(--ac) 28%,transparent)}
+.pj-status{font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;
+  padding:.28rem .65rem;border-radius:20px;background:color-mix(in srgb,var(--ac) 12%,transparent);
+  color:var(--ac);border:1px solid color-mix(in srgb,var(--ac) 30%,transparent)}
+.pj-name{font-size:1.15rem;font-weight:700;color:#fff;letter-spacing:-.02em;margin-bottom:.4rem}
+.pj-tag{font-size:.86rem;color:var(--pj-muted2);line-height:1.6;flex:1}
+.pj-meta{display:flex;flex-wrap:wrap;gap:.4rem;margin:1.1rem 0}
+.pj-chip{font-size:.66rem;color:var(--pj-muted2);background:var(--pj-bg3);border:1px solid var(--pj-border);border-radius:7px;padding:.25rem .55rem}
+.pj-chip.fund{color:var(--ac);border-color:color-mix(in srgb,var(--ac) 28%,transparent)}
+.pj-foot{display:flex;align-items:center;justify-content:space-between;padding-top:1rem;border-top:1px solid var(--pj-border)}
+.pj-link{font-size:.8rem;font-weight:700;color:var(--ac)}
+
+.pj-note{font-size:.74rem;color:var(--pj-muted);text-align:center;margin-top:2.5rem;line-height:1.6}
+
+@media(max-width:640px){.pj-hero{padding:3.5rem 1rem 2.5rem}.pj-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="pj-hero">
+  <div class="pj-eyebrow">◆ Real-World Impact Portfolio</div>
+  <h1>Climate Intelligence,<br><span class="hl">put into practice.</span></h1>
+  <p>
+    EcoIQ pairs measurement with delivery. These pilot projects turn climate intelligence
+    into real-world stewardship — clean air, restored ecosystems, food resilience, and
+    stronger communities — each measured against the EcoIQ impact framework.
+  </p>
+</div>
+
+<div class="pj-wrap">
+  <div class="pj-grid">
+    {% for p in projects %}
+    <a href="{% url 'projects_site:detail' p.slug %}" class="pj-card ac-{{ p.accent }}">
+      <div class="pj-card-top">
+        <div class="pj-icon">{{ p.icon }}</div>
+        <span class="pj-status">{{ p.status }}</span>
+      </div>
+      <div class="pj-name">{{ p.name }}</div>
+      <div class="pj-tag">{{ p.tagline }}</div>
+      <div class="pj-meta">
+        <span class="pj-chip">📍 {{ p.location }}</span>
+        <span class="pj-chip">{{ p.sector }}</span>
+        {% if p.funding_amount %}<span class="pj-chip fund">{{ p.funding_amount }}{% if p.funding_label %} · {{ p.funding_label }}{% endif %}</span>{% endif %}
+      </div>
+      <div class="pj-foot">
+        <span class="pj-link">View project →</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <p class="pj-note">
+    All budgets, KPIs and timelines shown are <strong>indicative pilot estimates</strong> and subject to confirmation.
+    EcoIQ scores and projections are AI-assisted and indicative — not investment advice.
+  </p>
+</div>
+
+{% endblock %}
