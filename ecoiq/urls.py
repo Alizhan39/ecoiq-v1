@@ -51,6 +51,10 @@ urlpatterns = [
     # EcoIQ Country Intelligence
     path('countries/', include('countries.urls', namespace='countries')),
 
+    # EcoIQ Projects — real-world implementation portfolio
+    # (namespace 'projects_site' — 'projects' is taken by the API app below)
+    path('projects/', include('projects.urls', namespace='projects_site')),
+
     # EcoIQ REST API — docs at /api/, endpoints at /api/v1/
     path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
     path('api/v1/',     include('api.urls',   namespace='api')),
