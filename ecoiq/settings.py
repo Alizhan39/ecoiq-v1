@@ -219,6 +219,8 @@ EMAIL_HOST_USER    = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
 LEAD_NOTIFY_EMAIL  = os.environ.get('LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
+# Khalifa Heat lead notifications — falls back to LEAD_NOTIFY_EMAIL if unset.
+HEATING_LEADS_NOTIFY_EMAIL = os.environ.get('HEATING_LEADS_NOTIFY_EMAIL', LEAD_NOTIFY_EMAIL)
 CALENDLY_URL       = os.environ.get('CALENDLY_URL', '')
 
 # ── Data ingestion API keys ───────────────────────────────────────────────────

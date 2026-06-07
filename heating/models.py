@@ -26,14 +26,18 @@ LEAD_TYPE_CHOICES = [
     ('akimat',    'Akimat / Government'),
 ]
 
-APPLICATION_STATUS_CHOICES = [
+# Unified lead workflow (shared by household/akimat applications and company leads)
+LEAD_STATUS_CHOICES = [
     ('new',       'New'),
     ('contacted', 'Contacted'),
-    ('assessed',  'Assessed'),
-    ('quoted',    'Quoted'),
-    ('won',       'Won'),
-    ('lost',      'Lost'),
+    ('qualified', 'Qualified'),
+    ('scheduled', 'Scheduled'),
+    ('closed',    'Closed'),
+    ('spam',      'Spam'),
 ]
+
+# Backwards-compatible alias (kept so existing imports/usages keep working)
+APPLICATION_STATUS_CHOICES = LEAD_STATUS_CHOICES
 
 INSULATION_CHOICES = [
     ('poor',   'Poor'),
@@ -53,13 +57,8 @@ COMPANY_PACKAGE_CHOICES = [
     ('esg_partner',    'ESG Heat Partnership'),
 ]
 
-COMPANY_LEAD_STATUS_CHOICES = [
-    ('new',       'New'),
-    ('contacted', 'Contacted'),
-    ('proposal',  'Proposal Sent'),
-    ('won',       'Won'),
-    ('lost',      'Lost'),
-]
+# Company leads use the same unified workflow.
+COMPANY_LEAD_STATUS_CHOICES = LEAD_STATUS_CHOICES
 
 PILOT_SCALE_CHOICES = [
     ('A', 'Pilot A — 1 home'),

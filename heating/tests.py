@@ -136,3 +136,112 @@ class AdminActionTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r['Content-Type'], 'text/csv')
         self.assertIn('Aliya', r.content.decode())
+
+
+class LeadNotificationTests(TestCase):
+    """Email notifications + default status + ordering."""
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    # ── default status ──────────────────────────────────────────────
+    def test_household_default_status_is_new(self):
+        self.c.post(reverse('heating:pilot_application'), {
+            'form_type': 'household', 'hh-full_name': 'Aliya', 'hh-phone': '+77001234567',
+        })
+        obj = HeatingApplication.objects.get()
+        self.assertEqual(obj.status, 'new')
+
+    def test_company_default_status_is_new(self):
+        self.c.post(reverse('heating:company_sponsorship'), {
+            'company_name': 'Acme', 'contact_name': 'Dana', 'email': 'd@acme.kz',
+        })
+        self.assertEqual(CompanySponsorshipLead.objects.get().status, 'new')
+
+    def test_status_choices_include_workflow(self):
+        keys = dict(HeatingApplication._meta.get_field('status').choices)
+        for s in ('new', 'contacted', 'qualified', 'scheduled', 'closed', 'spam'):
+            self.assertIn(s, keys)
+
+    # ── email sent when configured ──────────────────────────────────
+    def test_household_submission_sends_email(self):
+        from django.core import mail
+        from django.test import override_settings
+        with override_settings(
+            EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+            HEATING_LEADS_NOTIFY_EMAIL='leads@ecoiq.uk',
+        ):
+            self.c.post(reverse('heating:pilot_application'), {
+                'form_type': 'household', 'hh-full_name': 'Aliya', 'hh-phone': '+77001234567',
+            })
+            self.assertEqual(len(mail.outbox), 1)
+            self.assertIn('Household Application', mail.outbox[0].subject)
+            self.assertEqual(mail.outbox[0].to, ['leads@ecoiq.uk'])
+
+    def test_company_submission_sends_email(self):
+        from django.core import mail
+        from django.test import override_settings
+        with override_settings(
+            EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+            HEATING_LEADS_NOTIFY_EMAIL='leads@ecoiq.uk',
+        ):
+            self.c.post(reverse('heating:company_sponsorship'), {
+                'company_name': 'Acme', 'contact_name': 'Dana', 'email': 'd@acme.kz',
+            })
+            self.assertEqual(len(mail.outbox), 1)
+            self.assertIn('Company Sponsorship', mail.outbox[0].subject)
+
+    def test_assessment_submission_sends_email(self):
+        from django.core import mail
+        from django.test import override_settings
+        with override_settings(
+            EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+            HEATING_LEADS_NOTIFY_EMAIL='leads@ecoiq.uk',
+        ):
+            self.c.post(reverse('heating:calculator'), {
+                'area_m2': 100, 'insulation': 'medium', 'rooms': 4, 'has_radiators': 'yes',
+                'electricity': '380', 'available_kw': 15, 'package': 'assisted', 'install_type': 'full',
+            })
+            self.assertEqual(HomeAssessment.objects.count(), 1)
+            self.assertEqual(len(mail.outbox), 1)
+            self.assertIn('Home Assessment', mail.outbox[0].subject)
+
+    # ── never crash / save still works when email not configured ────
+    def test_submission_saves_when_no_notify_email(self):
+        from django.core import mail
+        from django.test import override_settings
+        with override_settings(
+            EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+            HEATING_LEADS_NOTIFY_EMAIL='', LEAD_NOTIFY_EMAIL='',
+        ):
+            r = self.c.post(reverse('heating:pilot_application'), {
+                'form_type': 'household', 'hh-full_name': 'NoEmail', 'hh-phone': '+77000000000',
+            })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(HeatingApplication.objects.count(), 1)   # saved
+            self.assertEqual(len(mail.outbox), 0)                     # no email, no crash
+
+    def test_submission_saves_when_email_backend_broken(self):
+        from django.test import override_settings
+        with override_settings(EMAIL_BACKEND='heating.tests.BrokenEmailBackend'):
+            r = self.c.post(reverse('heating:company_sponsorship'), {
+                'company_name': 'Acme', 'contact_name': 'Dana', 'email': 'd@acme.kz',
+            })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(CompanySponsorshipLead.objects.count(), 1)  # saved despite send failure
+
+    # ── ordering newest first ───────────────────────────────────────
+    def test_admin_ordering_newest_first(self):
+        a = HeatingApplication.objects.create(full_name='First', lead_type='household')
+        b = HeatingApplication.objects.create(full_name='Second', lead_type='household')
+        first = list(HeatingApplication.objects.all())[0]
+        self.assertEqual(first.pk, b.pk)
+
+
+# A backend whose send always raises — to prove form submission survives email failure.
+from django.core.mail.backends.base import BaseEmailBackend  # noqa: E402
+
+
+class BrokenEmailBackend(BaseEmailBackend):
+    def send_messages(self, email_messages):
+        raise RuntimeError('SMTP down')
