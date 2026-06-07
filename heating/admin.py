@@ -52,16 +52,29 @@ class HeatingPackageAdmin(admin.ModelAdmin):
     ordering = ('sort_order', 'tier')
 
 
+@admin.display(description='', ordering='status')
+def _new_badge(obj):
+    """Show a 🆕 marker for status=new so fresh leads stand out in the list."""
+    if getattr(obj, 'status', '') == 'new':
+        return format_html(
+            '<span style="background:#1b4332;color:#fff;padding:2px 8px;border-radius:10px;'
+            'font-size:10px;font-weight:700;white-space:nowrap;">🆕 NEW</span>'
+        )
+    return ''
+
+
 @admin.register(HeatingApplication)
 class HeatingApplicationAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'phone', 'location', 'package', 'lead_type', 'install_type', 'status', 'created_at')
-    list_filter = ('lead_type', 'status', 'install_type', 'package')
+    list_display = ('new_badge', 'full_name', 'phone', 'location', 'package', 'lead_type', 'install_type', 'status', 'created_at')
+    list_filter = ('status', 'lead_type', 'install_type', 'package', 'created_at')
     search_fields = ('full_name', 'phone', 'email', 'organisation', 'location', 'address', 'message', 'notes')
     list_editable = ('lead_type', 'status')
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
     readonly_fields = ('ip_address', 'created_at', 'updated_at')
     actions = ('generate_starter_report', 'export_leads_csv')
+
+    new_badge = staticmethod(_new_badge)
 
     fieldsets = (
         ('Lead', {'fields': ('full_name', 'phone', 'email', 'organisation', 'location', 'address', 'lead_type')}),
@@ -100,14 +113,16 @@ class HomeAssessmentAdmin(admin.ModelAdmin):
 
 @admin.register(CompanySponsorshipLead)
 class CompanySponsorshipLeadAdmin(admin.ModelAdmin):
-    list_display = ('company_name', 'contact_name', 'email', 'package', 'status', 'created_at')
-    list_filter = ('status', 'package')
-    search_fields = ('company_name', 'contact_name', 'email', 'message', 'notes')
+    list_display = ('new_badge', 'company_name', 'contact_name', 'email', 'package', 'status', 'created_at')
+    list_filter = ('status', 'package', 'created_at')
+    search_fields = ('company_name', 'contact_name', 'email', 'phone', 'message', 'notes')
     list_editable = ('status',)
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
     readonly_fields = ('ip_address', 'created_at', 'updated_at')
     actions = ('export_company_csv',)
+
+    new_badge = staticmethod(_new_badge)
 
     @admin.action(description='Export selected company leads as CSV')
     def export_company_csv(self, request, queryset):

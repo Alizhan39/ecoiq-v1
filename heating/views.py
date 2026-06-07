@@ -6,6 +6,7 @@ from .forms import (
     CalculatorForm, HouseholdInquiryForm, CompanySponsorshipForm, AkimatPartnershipForm,
 )
 from .calculator import recommend, PACKAGE_PRICES, PACKAGE_LABELS
+from .emails import notify_new_lead
 
 
 COMPANY_PACKAGES = [
@@ -58,7 +59,7 @@ def calculator(request):
             available_kw=cd['available_kw'], package=cd['package'], install_type=cd['install_type'],
         )
         # Persist anonymous assessment for pipeline analytics.
-        HomeAssessment.objects.create(
+        assessment = HomeAssessment.objects.create(
             area_m2=cd['area_m2'], insulation=cd['insulation'], rooms=cd['rooms'],
             has_radiators=(cd['has_radiators'] == 'yes'), electricity=cd['electricity'],
             available_kw=cd['available_kw'], selected_package=cd['package'],
@@ -68,6 +69,7 @@ def calculator(request):
             hp_ready_recommended=result['hp_ready_recommended'],
             warnings='\n'.join(result['warnings']),
         )
+        notify_new_lead('assessment', assessment, request)
         result['package_label'] = PACKAGE_LABELS.get(cd['package'], cd['package'])
     return render(request, 'heating/calculator.html', {'form': form, 'result': result})
 
@@ -83,6 +85,7 @@ def company_sponsorship(request):
             lead = form.save(commit=False)
             lead.ip_address = _client_ip(request)
             lead.save()
+            notify_new_lead('company', lead, request)
             form = CompanySponsorshipForm()
             submitted = True
     return render(request, 'heating/company_sponsorship.html', {
@@ -104,6 +107,7 @@ def pilot_application(request):
                 obj.lead_type = 'household'
                 obj.ip_address = _client_ip(request)
                 obj.save()
+                notify_new_lead('household', obj, request)
                 household_form = HouseholdInquiryForm(prefix='hh')
                 submitted = 'household'
         elif which == 'akimat':
@@ -113,6 +117,7 @@ def pilot_application(request):
                 obj.lead_type = 'akimat'
                 obj.ip_address = _client_ip(request)
                 obj.save()
+                notify_new_lead('akimat', obj, request)
                 akimat_form = AkimatPartnershipForm(prefix='ak')
                 submitted = 'akimat'
     elif request.method == 'POST' and _is_bot(request):
