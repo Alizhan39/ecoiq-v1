@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Stewardship — EcoIQ Climate Intelligence &amp; Real-World Stewardship{% endblock %}
+{% block meta_description_content %}EcoIQ helps governments, investors, companies and communities move beyond compliance towards measurable stewardship of people, resources and the natural world — restoration, balance and long-term resilience.{% endblock %}
+{% block og_title %}Beyond Net Zero. Towards Stewardship. — EcoIQ{% endblock %}
+{% block og_description %}EcoIQ measures responsibility: responsible resource management, restoration, balance and long-term resilience — with a real-world stewardship project portfolio and impact KPIs.{% endblock %}
+
+{% block extra_head %}
+<style>
+:root{
+  --sw-bg:#070b0f; --sw-bg2:#0d1117; --sw-bg3:#161b22;
+  --sw-border:rgba(255,255,255,.06); --sw-border2:rgba(255,255,255,.12);
+  --sw-text:#e2e8f0; --sw-muted:#64748b; --sw-muted2:#94a3b8;
+  --sw-green:#00e89a; --sw-emerald:#10b981; --sw-gold:#c9a84c;
+  --sw-blue:#58a6ff; --sw-purple:#a855f7; --sw-teal:#06b6d4; --sw-danger:#e63946;
+}
+*{box-sizing:border-box}
+body{background:var(--sw-bg);color:var(--sw-text);-webkit-font-smoothing:antialiased}
+a{text-decoration:none}
+
+.sw-wrap{max-width:1120px;margin:0 auto;padding:0 1.5rem 5rem}
+
+/* accent helpers */
+.ac-green{--ac:var(--sw-green)}
+.ac-gold{--ac:var(--sw-gold)}
+.ac-blue{--ac:var(--sw-blue)}
+.ac-teal{--ac:var(--sw-teal)}
+.ac-purple{--ac:var(--sw-purple)}
+.ac-danger{--ac:var(--sw-danger)}
+
+/* ── Hero ── */
+.sw-hero{
+  padding:5.5rem 1.5rem 4rem;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(16,185,129,.07) 0%,rgba(201,168,76,.03) 45%,transparent 100%);
+  border-bottom:1px solid var(--sw-border);
+}
+.sw-hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(rgba(0,232,154,.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,232,154,.015) 1px,transparent 1px);
+  background-size:56px 56px;
+}
+.sw-eyebrow{
+  display:inline-flex;align-items:center;gap:.45rem;
+  background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.22);
+  color:var(--sw-green);font-size:.7rem;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:.3rem 1rem;border-radius:20px;margin-bottom:1.5rem;position:relative;
+}
+.sw-hero h1{
+  font-size:clamp(2.2rem,5vw,3.4rem);font-weight:800;letter-spacing:-.04em;
+  line-height:1.08;color:#fff;margin-bottom:1.3rem;position:relative;
+}
+.sw-hero h1 .accentline{
+  background:linear-gradient(105deg,#00e89a,#34d399 50%,#6ee7b7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.sw-hero p{
+  font-size:1.05rem;color:var(--sw-muted2);line-height:1.75;
+  max-width:700px;margin:0 auto 2rem;position:relative;
+}
+.sw-hero-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;position:relative}
+
+/* buttons */
+.sw-btn{font-size:.88rem;font-weight:700;padding:.78rem 1.6rem;border-radius:10px;
+  display:inline-flex;align-items:center;gap:.45rem;transition:opacity .2s,transform .1s,border-color .2s,color .2s}
+.sw-btn-green{background:var(--sw-green);color:#0a0f14}
+.sw-btn-green:hover{opacity:.88;transform:translateY(-1px)}
+.sw-btn-outline{background:transparent;border:1px solid var(--sw-border2);color:var(--sw-muted2)}
+.sw-btn-outline:hover{border-color:var(--sw-green);color:var(--sw-green)}
+
+/* ── Section label ── */
+.sw-seclabel{
+  display:flex;align-items:center;gap:12px;
+  font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--sw-muted);font-family:'SF Mono','Fira Code',monospace;
+  margin:3.75rem 0 1.75rem;
+}
+.sw-seclabel::after{content:'';flex:1;height:1px;background:var(--sw-border)}
+.sw-secintro{font-size:.95rem;color:var(--sw-muted2);line-height:1.7;max-width:720px;margin:-0.9rem 0 1.9rem}
+
+/* ── Foundations ── */
+.sw-found{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem}
+.found-card{
+  background:var(--sw-bg2);border:1px solid var(--sw-border);border-radius:16px;
+  padding:2rem;position:relative;overflow:hidden;transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.found-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--ac),transparent)}
+.found-card:hover{border-color:color-mix(in srgb,var(--ac) 35%,transparent);transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.found-icon{
+  width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;margin-bottom:1.2rem;
+  background:color-mix(in srgb,var(--ac) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--ac) 28%,transparent);
+}
+.found-term{font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:-.02em}
+.found-translation{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin:.25rem 0 1rem}
+.found-blurb{font-size:.9rem;color:var(--sw-muted2);line-height:1.7}
+
+/* ── Project cards ── */
+.sw-projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.1rem}
+.proj-card{
+  background:var(--sw-bg2);border:1px solid var(--sw-border);border-radius:14px;
+  padding:1.6rem;display:flex;flex-direction:column;gap:.65rem;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.proj-card:hover{border-color:color-mix(in srgb,var(--ac) 35%,transparent);transform:translateY(-2px);box-shadow:0 14px 40px rgba(0,0,0,.38)}
+.proj-icon{
+  width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+  background:color-mix(in srgb,var(--ac) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--ac) 26%,transparent);
+}
+.proj-title{font-size:1.02rem;font-weight:700;color:#fff;letter-spacing:-.01em}
+.proj-sub{font-size:.84rem;color:var(--sw-muted2);line-height:1.55}
+
+/* ── KPI cards ── */
+.sw-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.1rem}
+.kpi-card{
+  background:var(--sw-bg2);border:1px solid var(--sw-border);border-radius:14px;
+  padding:1.6rem 1.7rem;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
+.kpi-card:hover{border-color:color-mix(in srgb,var(--ac) 35%,transparent);transform:translateY(-2px)}
+.kpi-head{display:flex;align-items:center;gap:.7rem;margin-bottom:.9rem}
+.kpi-code{
+  font-family:'SF Mono','Fira Code',monospace;font-size:.8rem;font-weight:700;letter-spacing:.04em;
+  color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--ac) 28%,transparent);
+  padding:.28rem .6rem;border-radius:8px;
+}
+.kpi-name{font-size:.95rem;font-weight:700;color:#fff;letter-spacing:-.01em}
+.kpi-def{font-size:.84rem;color:var(--sw-muted2);line-height:1.6;margin-bottom:.9rem;flex:1}
+.kpi-formula{
+  font-family:'SF Mono','Fira Code',monospace;font-size:.72rem;color:var(--sw-text);
+  background:var(--sw-bg3);border:1px solid var(--sw-border);border-radius:8px;
+  padding:.55rem .7rem;margin-bottom:.7rem;overflow-x:auto;white-space:nowrap;
+}
+.kpi-eg{font-size:.78rem;color:var(--sw-muted);line-height:1.55}
+.kpi-eg b{color:var(--sw-muted2);font-weight:600}
+
+/* ── Pilot roadmap ── */
+.sw-pilots{display:flex;flex-direction:column;gap:1px;background:var(--sw-border);border:1px solid var(--sw-border);border-radius:14px;overflow:hidden}
+.pilot{
+  background:var(--sw-bg2);padding:1.5rem 1.7rem;display:grid;
+  grid-template-columns:1fr auto;gap:.5rem 1.5rem;align-items:start;transition:background .15s;
+}
+.pilot:hover{background:var(--sw-bg3)}
+.pilot-name{font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:.55rem}
+.pilot-row{font-size:.85rem;color:var(--sw-muted2);line-height:1.6;display:flex;gap:.5rem;margin-bottom:.3rem}
+.pilot-row .lbl{font-family:'SF Mono','Fira Code',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--sw-muted);min-width:74px;padding-top:.18rem;flex-shrink:0}
+.pilot-status{
+  font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+  padding:.3rem .7rem;border-radius:20px;align-self:start;
+}
+.st-design{background:rgba(0,232,154,.12);color:var(--sw-green);border:1px solid rgba(0,232,154,.3)}
+.st-scoping{background:rgba(88,166,255,.12);color:var(--sw-blue);border:1px solid rgba(88,166,255,.3)}
+.st-planned{background:rgba(201,168,76,.12);color:var(--sw-gold);border:1px solid rgba(201,168,76,.3)}
+.st-concept{background:rgba(168,85,247,.12);color:var(--sw-purple);border:1px solid rgba(168,85,247,.3)}
+.st-vision{background:rgba(255,255,255,.05);color:var(--sw-muted2);border:1px solid var(--sw-border2)}
+
+/* ── Manifesto ── */
+.sw-manifesto{
+  margin-top:4rem;
+  background:linear-gradient(135deg,rgba(201,168,76,.06) 0%,rgba(16,185,129,.05) 100%);
+  border:1px solid rgba(201,168,76,.2);border-radius:18px;padding:3.5rem 2.5rem;
+  text-align:center;position:relative;overflow:hidden;
+}
+.sw-manifesto::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--sw-gold),transparent)}
+.sw-manifesto .eyebrow{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sw-gold);margin-bottom:.9rem}
+.sw-manifesto h2{font-size:clamp(1.7rem,3.2vw,2.4rem);font-weight:800;color:#fff;letter-spacing:-.04em;margin-bottom:1.6rem}
+.sw-manifesto p{font-size:1rem;color:var(--sw-muted2);line-height:1.9;max-width:620px;margin:0 auto}
+.sw-manifesto .closing{margin-top:1.2rem;color:var(--sw-text)}
+.sw-manifesto .signoff{margin-top:1.4rem;font-size:1.05rem;font-weight:700;color:#fff;line-height:1.7}
+.sw-manifesto .signoff span{color:var(--sw-green)}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .sw-hero{padding:3.75rem 1rem 2.75rem}
+  .sw-found,.sw-projects,.sw-kpis{grid-template-columns:1fr}
+  .sw-manifesto{padding:2.25rem 1.25rem}
+  .pilot{grid-template-columns:1fr}
+  .pilot-status{justify-self:start}
+  .sw-hero-btns{flex-direction:column;align-items:center}
+  .sw-btn{width:100%;max-width:320px;justify-content:center}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══ HERO ═══ -->
+<div class="sw-hero">
+  <div class="sw-eyebrow">◆ Climate Intelligence + Real-World Stewardship</div>
+  <h1>Beyond Net Zero.<br><span class="accentline">Towards Stewardship.</span></h1>
+  <p>
+    EcoIQ helps governments, investors, companies and communities move beyond compliance
+    and towards measurable stewardship of people, resources and the natural world.
+  </p>
+  <div class="sw-hero-btns">
+    <a href="#foundations" class="sw-btn sw-btn-green">Explore Stewardship</a>
+    <a href="#projects" class="sw-btn sw-btn-outline">View Projects</a>
+  </div>
+</div>
+
+<div class="sw-wrap">
+
+  <!-- ═══ FOUNDATIONS ═══ -->
+  <div class="sw-seclabel" id="foundations">Foundations</div>
+  <p class="sw-secintro">
+    EcoIQ's stewardship model rests on three institutional principles — responsible
+    stewardship, balance and human wellbeing — translated into measurable sustainability practice.
+  </p>
+  <div class="sw-found">
+    {% for f in foundations %}
+    <div class="found-card ac-{{ f.accent }}">
+      <div class="found-icon">{{ f.icon }}</div>
+      <div class="found-term">{{ f.term }}</div>
+      <div class="found-translation">{{ f.translation }}</div>
+      <p class="found-blurb">{{ f.blurb }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ═══ STEWARDSHIP IN ACTION ═══ -->
+  <div class="sw-seclabel" id="projects">Stewardship in Action</div>
+  <p class="sw-secintro">
+    Stewardship is measured in the real world. EcoIQ pairs intelligence with practical
+    projects that restore ecosystems, strengthen communities and build long-term resilience.
+  </p>
+  <div class="sw-projects">
+    {% for p in projects %}
+    <div class="proj-card ac-{{ p.accent }}">
+      <div class="proj-icon">{{ p.icon }}</div>
+      <div class="proj-title">{{ p.title }}</div>
+      <div class="proj-sub">{{ p.subtitle }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ═══ IMPACT KPIs ═══ -->
+  <div class="sw-seclabel">EcoIQ Impact KPIs</div>
+  <p class="sw-secintro">
+    EcoIQ measures responsibility with a consistent set of indicators — quantifying value
+    created, balance achieved, harm avoided and benefit delivered. Formulas shown are indicative.
+  </p>
+  <div class="sw-kpis">
+    {% for k in kpis %}
+    <div class="kpi-card ac-{{ k.accent }}">
+      <div class="kpi-head">
+        <span class="kpi-code">{{ k.code }}</span>
+        <span class="kpi-name">{{ k.name }}</span>
+      </div>
+      <p class="kpi-def">{{ k.definition }}</p>
+      <div class="kpi-formula">{{ k.formula }}</div>
+      <div class="kpi-eg"><b>Example —</b> {{ k.example }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ═══ PILOT PROJECTS ═══ -->
+  <div class="sw-seclabel">Pilot Projects</div>
+  <p class="sw-secintro">
+    A staged roadmap from concept to community — each pilot designed to demonstrate
+    measurable stewardship before it scales.
+  </p>
+  <div class="sw-pilots">
+    {% for pl in pilots %}
+    <div class="pilot">
+      <div>
+        <div class="pilot-name">{{ pl.name }}</div>
+        <div class="pilot-row"><span class="lbl">Objective</span><span>{{ pl.objective }}</span></div>
+        <div class="pilot-row"><span class="lbl">Impact</span><span>{{ pl.impact }}</span></div>
+      </div>
+      <span class="pilot-status st-{{ pl.status_key }}">{{ pl.status }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ═══ MANIFESTO ═══ -->
+  <div class="sw-manifesto">
+    <div class="eyebrow">Manifesto</div>
+    <h2>We Measure Responsibility.</h2>
+    <p>
+      Sustainability is not only about reducing harm.<br>
+      It is about restoring balance.
+    </p>
+    <p class="closing">
+      Protecting what is valuable.<br>
+      Repairing what is damaged.<br>
+      Supporting people and communities.<br>
+      Creating systems that benefit future generations.
+    </p>
+    <p class="closing">Leaving behind more good than harm.</p>
+    <p class="signoff">That is stewardship.<br>That is <span>EcoIQ</span>.</p>
+  </div>
+
+</div>
+
+{% endblock %}

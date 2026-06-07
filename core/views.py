@@ -1086,6 +1086,121 @@ def sample_report(request):
     return render(request, 'sample_report.html')
 
 
+# ── Stewardship ───────────────────────────────────────────────────────────────
+
+def stewardship(request):
+    """
+    /stewardship/ — EcoIQ Stewardship section.
+
+    Positions EcoIQ as a Climate Intelligence + Real-World Stewardship platform.
+    Introduces stewardship, responsible resource management, restoration and
+    long-term resilience; translates the Khalifah / Mizan / Maqasid foundations
+    into institutional sustainability language; presents real-world projects,
+    the EcoIQ impact KPIs, and the pilot roadmap.
+
+    Public, no auth required. All content is static context (no models / no DB).
+    """
+    foundations = [
+        {
+            'term': 'Khalifah',
+            'translation': 'Responsible Stewardship',
+            'blurb': ('The principle that institutions hold resources in trust and are '
+                      'accountable for managing them responsibly — protecting and improving '
+                      'people, communities and ecosystems for the long term.'),
+            'icon': '🌱', 'accent': 'green',
+        },
+        {
+            'term': 'Mizan',
+            'translation': 'Balance',
+            'blurb': ('The discipline of balance — ensuring regeneration keeps pace with '
+                      'consumption, and that value created is weighed honestly against harm '
+                      'caused across environmental, social and economic systems.'),
+            'icon': '⚖️', 'accent': 'gold',
+        },
+        {
+            'term': 'Maqasid',
+            'translation': 'Human Wellbeing',
+            'blurb': ('The objective of advancing human wellbeing — health, livelihoods, '
+                      'education, dignity and a liveable environment — as the ultimate purpose '
+                      'of responsible economic and climate activity.'),
+            'icon': '🤝', 'accent': 'blue',
+        },
+    ]
+
+    projects = [
+        {'title': 'Clean Air Transition', 'subtitle': 'Replacing coal heating systems',
+         'icon': '🏭', 'accent': 'green'},
+        {'title': 'Water Restoration', 'subtitle': 'Lake restoration and ecosystem recovery',
+         'icon': '💧', 'accent': 'blue'},
+        {'title': 'Regenerative Landscapes', 'subtitle': 'Tree planting and land restoration',
+         'icon': '🌳', 'accent': 'green'},
+        {'title': 'Community Greenhouses', 'subtitle': 'Food resilience infrastructure',
+         'icon': '🌾', 'accent': 'gold'},
+        {'title': 'Community Resilience', 'subtitle': 'Supporting MSMEs and local economies',
+         'icon': '🏘️', 'accent': 'teal'},
+        {'title': 'Khalifah Living', 'subtitle': 'Leadership, service and sustainability immersion',
+         'icon': '🧭', 'accent': 'purple'},
+    ]
+
+    kpis = [
+        {'code': 'MQV', 'name': 'Maqasid Value Added', 'accent': 'green',
+         'definition': ('Total value created across environmental, social, economic and '
+                        'long-term wellbeing dimensions, minus harm created.'),
+         'formula': 'MQV = Σ value (env · social · econ · wellbeing) − harm',
+         'example': 'A retrofit programme raises local health and jobs while cutting emissions.'},
+        {'code': 'MBI', 'name': 'Mizan Balance Index', 'accent': 'gold',
+         'definition': 'Measures regeneration versus consumption. MBI > 1 means restoration exceeds resource use.',
+         'formula': 'MBI = regeneration ÷ consumption',
+         'example': 'Reforestation sequestering more than a project consumes scores MBI > 1.'},
+        {'code': 'FHI', 'name': 'Fasad Harm Index', 'accent': 'danger',
+         'definition': 'Measures environmental, social and governance harm. Lower is better.',
+         'formula': 'FHI = weighted(env harm + social harm + governance harm)',
+         'example': 'High pollution and weak oversight raise FHI, lowering the overall balance.'},
+        {'code': 'KHI', 'name': 'Khalifah Impact Index', 'accent': 'green',
+         'definition': ('How much a project restores, protects and improves people, communities '
+                        'and ecosystems relative to resources consumed.'),
+         'formula': 'KHI = (restoration + protection + improvement) ÷ resources used',
+         'example': 'Lake recovery that revives livelihoods and biodiversity scores a high KHI.'},
+        {'code': 'RPI', 'name': 'Rahma Performance Index', 'accent': 'blue',
+         'definition': 'Measures benefit delivered to vulnerable communities and public wellbeing.',
+         'formula': 'RPI = benefit to vulnerable groups ÷ total benefit',
+         'example': 'Clean-air heating prioritising low-income households lifts RPI.'},
+        {'code': 'RZQ', 'name': 'Rizq Distribution Coefficient', 'accent': 'teal',
+         'definition': 'Measures how fairly value is distributed across stakeholders.',
+         'formula': 'RZQ = distribution equity across stakeholders (0–1)',
+         'example': 'Returns shared with workers and communities, not only owners, raise RZQ.'},
+        {'code': 'AMN', 'name': 'Amanah Trust Score', 'accent': 'purple',
+         'definition': 'Measures transparency, accountability, governance quality and ethical stewardship.',
+         'formula': 'AMN = weighted(transparency + accountability + governance)',
+         'example': 'Open reporting and independent oversight produce a high AMN.'},
+    ]
+
+    pilots = [
+        {'name': 'Almaty Clean Air Pilot', 'status': 'In Design', 'status_key': 'design',
+         'objective': 'Replace coal-based household heating in high-pollution districts.',
+         'impact': 'Lower winter PM2.5 exposure and measurable public-health improvement.'},
+        {'name': 'Lake Restoration Initiative', 'status': 'Scoping', 'status_key': 'scoping',
+         'objective': 'Restore a degraded lake ecosystem and surrounding watershed.',
+         'impact': 'Recovered biodiversity, water security and local livelihoods.'},
+        {'name': 'Community Greenhouse Program', 'status': 'Pilot Planned', 'status_key': 'planned',
+         'objective': 'Deploy food-resilience greenhouse infrastructure for communities.',
+         'impact': 'Year-round local food production and reduced supply-chain fragility.'},
+        {'name': 'Khalifah Living Experience', 'status': 'Concept', 'status_key': 'concept',
+         'objective': 'Immersive leadership, service and sustainability programme.',
+         'impact': 'A pipeline of practitioners trained in real-world stewardship.'},
+        {'name': 'Future EcoIQ Villages', 'status': 'Vision', 'status_key': 'vision',
+         'objective': 'Integrated, regenerative community model combining all pilots.',
+         'impact': 'Replicable blueprint for resilient, low-harm settlements.'},
+    ]
+
+    return render(request, 'stewardship.html', {
+        'foundations': foundations,
+        'projects':    projects,
+        'kpis':        kpis,
+        'pilots':      pilots,
+    })
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 def dashboard(request):
