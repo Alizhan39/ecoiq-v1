@@ -89,6 +89,7 @@ INSTALLED_APPS = [
     'ethics',
     'financing',
     'projects',
+    'heating',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
