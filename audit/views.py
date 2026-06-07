@@ -4,6 +4,7 @@ import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
 
@@ -97,7 +98,8 @@ def questionnaire(request, pk):
 
 # ── Analysis trigger ──────────────────────────────────────────────────────────
 
-@login_required
+# Triggers paid Anthropic API calls — restricted to staff (no paid user-tier exists).
+@staff_member_required(login_url='/login/')
 def analyse(request, pk):
     session = get_object_or_404(AuditSession, pk=pk)
 
@@ -463,7 +465,8 @@ def ai_job_detail(request, pk):
     })
 
 
-@login_required
+# Triggers paid Anthropic API calls — restricted to staff (no paid user-tier exists).
+@staff_member_required(login_url='/login/')
 def ai_job_run(request, pk):
     """POST → trigger AI analysis synchronously."""
     if request.method != 'POST':
