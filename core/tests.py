@@ -281,3 +281,47 @@ class AuditAuthTests(TestCase):
 
     def test_audit_report_pdf_requires_login(self):
         self._assert_login_redirect('/audit/999/report/pdf/')
+
+
+# ── AI-trigger endpoints must be staff-only (paid Anthropic calls) ──────────────
+
+class AITriggerStaffOnlyTests(TestCase):
+    """
+    Endpoints that trigger paid Anthropic API calls must reject anonymous AND
+    non-staff authenticated users. Only staff may trigger AI analysis (there is
+    no paid user-tier model). Guards against unauthenticated/free cost abuse.
+    """
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+        self.assessment = _make_assessment(status=Assessment.STATUS_DRAFT)
+        User.objects.create_user('freeuser', password='x')           # non-staff
+        User.objects.create_user('staffuser', password='x', is_staff=True)
+
+    def _urls(self):
+        # Auth decorator fires before object lookup, so non-existent pks are fine.
+        return [
+            reverse('run_analysis', args=[self.assessment.pk]),  # core ESG AI
+            '/audit/999/analyse/',                               # audit AI
+            '/audit/ai/999/run/',                                # audit AI job
+        ]
+
+    def test_anonymous_blocked_from_ai_triggers(self):
+        for url in self._urls():
+            r = self.c.get(url)
+            self.assertEqual(r.status_code, 302, msg=f'{url} anon should redirect')
+            self.assertIn('/login/', r['Location'])
+
+    def test_non_staff_user_blocked_from_ai_triggers(self):
+        self.c.login(username='freeuser', password='x')
+        for url in self._urls():
+            r = self.c.get(url)
+            self.assertEqual(r.status_code, 302,
+                             msg=f'{url} non-staff should be blocked, got {r.status_code}')
+            self.assertIn('/login/', r['Location'])
+
+    def test_staff_user_allowed_to_reach_ai_trigger_page(self):
+        self.c.login(username='staffuser', password='x')
+        # GET renders the confirm page (does NOT call AI — AI only on POST).
+        r = self.c.get(reverse('run_analysis', args=[self.assessment.pk]))
+        self.assertEqual(r.status_code, 200)
