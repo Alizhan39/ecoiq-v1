@@ -1,164 +1,162 @@
 /*
- * EcoIQ — Photorealistic Earth Globe v2 (homepage hero).
+ * EcoIQ — Photorealistic Earth Globe v2 (homepage hero) — FULLY SELF-HOSTED.
  *
- * three.js + three-globe, loaded LAZILY via dynamic import (CDN ES modules
- * resolved by the page's import map). The heavy bundle is fetched only:
- *   - on this page (the script is only referenced from landing.html), and
- *   - on desktop with WebGL, no reduced-motion, after first paint (idle).
+ * three.js + three-globe + textures are all served from our own Django static
+ * files (no esm.sh, no external CDN at runtime, no API keys, no backend calls).
+ * The vendored script + texture URLs are passed in via data-* attributes on the
+ * #hero-globe canvas (resolved with {% static %} in landing.html).
  *
- * Everything degrades gracefully: on mobile / no-WebGL / reduced-motion / any
- * failure we simply leave the CSS radial-glow on #hero-globe-wrap. No API keys,
- * no backend calls. Renders onto the existing #hero-globe <canvas>.
+ * Loading is lazy and conditional: the heavy three.js/three-globe scripts are
+ * injected only on this page, only on desktop with WebGL, only after first paint
+ * (requestIdleCallback). Camera controls (drag / slow auto-rotate / gentle zoom)
+ * are hand-rolled so we don't need OrbitControls.
  *
- * Textures: NASA "Black Marble" night lights + Earth topology bump, served from
- * the three-globe example CDN (public-domain imagery). See PR notes for vendoring.
+ * Any failure → leave the CSS radial-glow fallback on #hero-globe-wrap.
  */
 (function () {
-  const canvas = document.getElementById('hero-globe');
+  var canvas = document.getElementById('hero-globe');
   if (!canvas) return;
 
   // ── Guards → fall back to CSS glow ──────────────────────────────────
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const smallScreen = window.matchMedia('(max-width: 860px)').matches;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var smallScreen = window.matchMedia('(max-width: 860px)').matches;
   if (smallScreen || reduceMotion) return;
-
-  // crude low-power heuristic: very low core count → skip the 3D globe
-  if ((navigator.hardwareConcurrency || 4) <= 2) return;
-
+  if ((navigator.hardwareConcurrency || 4) <= 2) return;   // low-power heuristic
   try {
-    const t = document.createElement('canvas');
-    if (!(t.getContext('webgl2') || t.getContext('webgl') || t.getContext('experimental-webgl'))) return;
+    var test = document.createElement('canvas');
+    if (!(test.getContext('webgl2') || test.getContext('webgl') || test.getContext('experimental-webgl'))) return;
   } catch (e) { return; }
 
-  // ── Defer the heavy import until the browser is idle (after first paint) ──
-  const start = () => init().catch(() => { /* leave CSS glow */ });
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(start, { timeout: 2500 });
-  } else {
-    setTimeout(start, 600);
+  var URLS = {
+    three: canvas.dataset.three,
+    globe: canvas.dataset.globe,
+    night: canvas.dataset.texNight,
+    bump:  canvas.dataset.texBump,
+  };
+  if (!URLS.three || !URLS.globe) return;
+
+  // ── Defer heavy script injection until the browser is idle ──────────
+  var start = function () { boot().catch(function () { /* leave CSS glow */ }); };
+  if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 2500 });
+  else setTimeout(start, 600);
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src; s.async = true;
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
   }
 
-  const TEX = 'https://cdn.jsdelivr.net/npm/three-globe@2.31.0/example/img/';
-
-  // EcoIQ priority markets
-  const MARKETS = [
-    { name: 'Kazakhstan',    lat: 43.2220, lng: 76.8512 },
-    { name: 'United Kingdom',lat: 51.5074, lng: -0.1278 },
-    { name: 'Saudi Arabia',  lat: 24.7136, lng: 46.6753 },
-    { name: 'Türkiye',       lat: 41.0082, lng: 28.9784 },
+  var MARKETS = [
+    { name: 'Kazakhstan',     lat: 43.2220, lng: 76.8512 },
+    { name: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
+    { name: 'Saudi Arabia',   lat: 24.7136, lng: 46.6753 },
+    { name: 'Türkiye',        lat: 41.0082, lng: 28.9784 },
   ];
-  // subtle green data arcs between markets
-  const ARCS = [
-    [0, 1], [0, 2], [0, 3], [1, 2],
-  ].map(([a, b]) => ({
-    startLat: MARKETS[a].lat, startLng: MARKETS[a].lng,
-    endLat: MARKETS[b].lat,   endLng: MARKETS[b].lng,
-  }));
+  var ARCS = [[0, 1], [0, 2], [0, 3], [1, 2]].map(function (p) {
+    return {
+      startLat: MARKETS[p[0]].lat, startLng: MARKETS[p[0]].lng,
+      endLat: MARKETS[p[1]].lat, endLng: MARKETS[p[1]].lng,
+    };
+  });
 
-  async function init() {
-    const THREE = await import('three');
-    const ThreeGlobe = (await import('three-globe')).default;
-    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+  async function boot() {
+    await loadScript(URLS.three);          // global THREE
+    await loadScript(URLS.globe);          // global ThreeGlobe (uses THREE)
+    var THREE = window.THREE, ThreeGlobe = window.ThreeGlobe;
+    if (!THREE || !ThreeGlobe) throw new Error('three/three-globe unavailable');
 
-    const w = canvas.clientWidth || 600;
-    const h = canvas.clientHeight || 600;
+    var w = canvas.clientWidth || 600, h = canvas.clientHeight || 600;
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h, false);
 
-    const scene = new THREE.Scene();
+    var scene = new THREE.Scene();
     scene.add(new THREE.AmbientLight(0xbfc6d0, 1.1));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.55);
-    dir.position.set(-1, 0.6, 1);
-    scene.add(dir);
+    var dir = new THREE.DirectionalLight(0xffffff, 0.55);
+    dir.position.set(-1, 0.6, 1); scene.add(dir);
 
-    const globe = new ThreeGlobe({ animateIn: true })
-      .globeImageUrl(TEX + 'earth-night.jpg')      // dark earth + warm gold city lights (baked)
-      .bumpImageUrl(TEX + 'earth-topology.png')    // subtle relief (small file)
-      .showAtmosphere(true)
-      .atmosphereColor('#00e89a')                  // soft green EcoIQ halo
-      .atmosphereAltitude(0.18)
-      // gold glowing market markers
-      .pointsData(MARKETS)
-      .pointLat('lat').pointLng('lng')
-      .pointColor(() => '#e8c46a')
-      .pointAltitude(0.012)
-      .pointRadius(0.55)
-      // subtle pulsing green rings at markets
+    var globe = new ThreeGlobe({ animateIn: true })
+      .globeImageUrl(URLS.night)
+      .showAtmosphere(true).atmosphereColor('#00e89a').atmosphereAltitude(0.18)
+      .pointsData(MARKETS).pointLat('lat').pointLng('lng')
+      .pointColor(function () { return '#e8c46a'; }).pointAltitude(0.012).pointRadius(0.55)
       .ringsData(MARKETS)
-      .ringColor(() => (tt) => `rgba(0,232,154,${1 - tt})`)
-      .ringMaxRadius(4)
-      .ringPropagationSpeed(2)
-      .ringRepeatPeriod(1400)
-      // subtle animated green data arcs
+      .ringColor(function () { return function (tt) { return 'rgba(0,232,154,' + (1 - tt) + ')'; }; })
+      .ringMaxRadius(4).ringPropagationSpeed(2).ringRepeatPeriod(1400)
       .arcsData(ARCS)
-      .arcColor(() => ['rgba(0,232,154,0.05)', 'rgba(0,232,154,0.65)'])
-      .arcAltitude(0.22)
-      .arcStroke(0.4)
+      .arcColor(function () { return ['rgba(0,232,154,0.05)', 'rgba(0,232,154,0.65)']; })
+      .arcAltitude(0.22).arcStroke(0.4)
       .arcDashLength(0.5).arcDashGap(0.25).arcDashAnimateTime(4200);
+    if (URLS.bump) globe.bumpImageUrl(URLS.bump);
 
-    // calmer, premium material tone
-    const gm = globe.globeMaterial();
-    gm.bumpScale = 6;
-    gm.shininess = 6;
+    var gm = globe.globeMaterial();
+    gm.bumpScale = 6; gm.shininess = 6;
     scene.add(globe);
 
-    // a couple of faint orbit/data rings around the globe
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00e89a, transparent: true, opacity: 0.06, side: THREE.DoubleSide });
-    [125, 150].forEach((r, i) => {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(r, r + 0.4, 96), ringMat);
+    // faint orbit rings
+    var ringMat = new THREE.MeshBasicMaterial({ color: 0x00e89a, transparent: true, opacity: 0.06, side: THREE.DoubleSide });
+    [125, 150].forEach(function (r, i) {
+      var ring = new THREE.Mesh(new THREE.RingGeometry(r, r + 0.4, 96), ringMat);
       ring.rotation.x = Math.PI / 2 - (i ? 0.5 : 0.25);
       ring.rotation.y = i ? 0.3 : 0;
       scene.add(ring);
     });
 
-    const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
-    camera.position.z = 320;
+    var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.rotateSpeed = 0.4;
-    controls.enablePan = false;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.34;          // slow cinematic spin
-    controls.enableZoom = true;                // gentle zoom only
-    controls.minDistance = 240;
-    controls.maxDistance = 420;
-    controls.minPolarAngle = Math.PI * 0.18;
-    controls.maxPolarAngle = Math.PI * 0.82;
+    // ── Hand-rolled camera controls (spherical) ───────────────────────
+    var theta = Math.PI * 0.1, phi = Math.PI * 0.46, radius = 320;
+    var MIN_R = 240, MAX_R = 420, MIN_PHI = Math.PI * 0.18, MAX_PHI = Math.PI * 0.82;
+    var down = false, lastX = 0, lastY = 0, autoRotate = 0.0016;
+    function place() {
+      camera.position.set(
+        radius * Math.sin(phi) * Math.sin(theta),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.cos(theta)
+      );
+      camera.lookAt(0, 0, 0);
+    }
+    canvas.style.cursor = 'grab';
+    canvas.addEventListener('pointerdown', function (e) { down = true; lastX = e.clientX; lastY = e.clientY; canvas.style.cursor = 'grabbing'; });
+    window.addEventListener('pointerup', function () { down = false; canvas.style.cursor = 'grab'; });
+    window.addEventListener('pointermove', function (e) {
+      if (!down) return;
+      theta -= (e.clientX - lastX) * 0.005;
+      phi = Math.max(MIN_PHI, Math.min(MAX_PHI, phi - (e.clientY - lastY) * 0.005));
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    canvas.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      radius = Math.max(MIN_R, Math.min(MAX_R, radius + e.deltaY * 0.25));
+    }, { passive: false });
 
-    let running = true;
+    var running = true;
     function loop() {
       if (!running) return;
-      controls.update();
+      if (!down) theta += autoRotate;       // slow cinematic spin
+      place();
       renderer.render(scene, camera);
       requestAnimationFrame(loop);
     }
     function play() { if (!running) { running = true; loop(); } }
     function pause() { running = false; }
 
-    // pause when tab hidden / globe scrolled off-screen (perf)
-    document.addEventListener('visibilitychange', () => (document.hidden ? pause() : play()));
+    document.addEventListener('visibilitychange', function () { document.hidden ? pause() : play(); });
     if ('IntersectionObserver' in window) {
-      new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting ? play() : pause())))
-        .observe(canvas);
+      new IntersectionObserver(function (es) { es.forEach(function (en) { en.isIntersecting ? play() : pause(); }); }).observe(canvas);
     }
-
-    function onResize() {
-      const nw = canvas.clientWidth, nh = canvas.clientHeight;
+    window.addEventListener('resize', function () {
+      var nw = canvas.clientWidth, nh = canvas.clientHeight;
       if (!nw || !nh) return;
       camera.aspect = nw / nh; camera.updateProjectionMatrix();
       renderer.setSize(nw, nh, false);
-    }
-    window.addEventListener('resize', onResize);
+    });
 
-    canvas.style.cursor = 'grab';
-    canvas.addEventListener('pointerdown', () => (canvas.style.cursor = 'grabbing'));
-    window.addEventListener('pointerup', () => (canvas.style.cursor = 'grab'));
-
-    loop();
-    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+    place(); loop();
+    requestAnimationFrame(function () { canvas.style.opacity = '1'; });
   }
 })();

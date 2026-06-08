@@ -124,19 +124,9 @@
     }
   </style>
 
-  <!-- Hero globe v2 — three.js / three-globe (CDN ES modules via import map).
-       No API key, no build step. Loaded lazily & only on this page; see
-       static/js/hero-globe-v2.js. COBE remains in the repo as a fallback ref. -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://esm.sh/three@0.160.1",
-      "three/addons/": "https://esm.sh/three@0.160.1/examples/jsm/",
-      "three-globe": "https://esm.sh/three-globe@2.31.0?external=three",
-      "cobe": "https://cdn.jsdelivr.net/npm/cobe@0.6.3/+esm"
-    }
-  }
-  </script>
+  <!-- Hero globe v2 — three.js / three-globe + textures are fully self-hosted
+       (Django static files). No external CDN at runtime, no import map, no build
+       step, no API keys. Lazy-loaded only on this page; see hero-globe-v2.js. -->
 </head>
 
 <body>
@@ -204,7 +194,11 @@
 
   <!-- Variant 1: premium 3D globe (right-side background visual) -->
   <div id="hero-globe-wrap" aria-hidden="true">
-    <canvas id="hero-globe"></canvas>
+    <canvas id="hero-globe"
+            data-three="{% static 'js/vendor/three.min.js' %}"
+            data-globe="{% static 'js/vendor/three-globe.min.js' %}"
+            data-tex-night="{% static 'img/globe/earth-night-2048.webp' %}"
+            data-tex-bump="{% static 'img/globe/earth-topology-2048.webp' %}"></canvas>
   </div>
   <div id="hero-scrim" aria-hidden="true"></div>
 
@@ -1539,6 +1533,6 @@ document.getElementById('newsletter-form').addEventListener('submit', async func
 
 <!-- Hero globe v2 island — three.js / three-globe, lazy-loaded after first paint.
      Falls back to the CSS radial glow on mobile / no-WebGL / reduced-motion / failure. -->
-<script type="module" src="{% static 'js/hero-globe-v2.js' %}"></script>
+<script src="{% static 'js/hero-globe-v2.js' %}" defer></script>
 </body>
 </html>
