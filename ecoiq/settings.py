@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     'financing',
     'projects',
     'heating',
+    'notifications',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
