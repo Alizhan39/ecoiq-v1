@@ -1,0 +1,90 @@
+{% comment %}
+SectionVisualBackground — reusable contextual background layer.
+Usage:  {% include "partials/section_bg.html" with variant="heating" %}
+Place inside a section that has the .svb-host class; content is auto-lifted
+above it. Decorative only (aria-hidden). Variants: globe, heating, kazakhstan,
+industrial, countries, rankings, api-data, impact.
+{% endcomment %}
+<div class="svb svb--{{ variant|default:'globe' }}" aria-hidden="true">
+  {% if variant == 'heating' %}
+    {# house + rising heat/clean-air flow lines #}
+    <svg class="svb-motif" viewBox="0 0 240 200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M40 110 L120 50 L200 110" />
+      <path d="M60 100 V170 H180 V100" />
+      <rect x="105" y="130" width="30" height="40" />
+      <path class="accent" d="M120 40 C112 30 128 24 120 12" />
+      <path class="accent" d="M150 44 C142 34 158 28 150 16" />
+      <path class="accent" d="M90 44 C82 34 98 28 90 16" />
+    </svg>
+  {% elif variant == 'kazakhstan' or variant == 'eco-tours' %}
+    {# journey route with impact markers over soft hills #}
+    <svg class="svb-motif" viewBox="0 0 260 180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M0 150 C60 120 90 160 140 130 C190 100 220 140 260 120" opacity=".5"/>
+      <path class="accent" d="M30 60 C70 90 110 40 150 70 C185 96 215 60 240 80" stroke-dasharray="5 7"/>
+      <circle class="accent" cx="30" cy="60" r="5" fill="currentColor" stroke="none"/>
+      <circle class="accent" cx="150" cy="70" r="5" fill="currentColor" stroke="none"/>
+      <circle class="accent" cx="240" cy="80" r="6" fill="currentColor" stroke="none"/>
+    </svg>
+  {% elif variant == 'industrial' %}
+    {# factory roofline + chimneys + emission/data dashes #}
+    <svg class="svb-motif" viewBox="0 0 260 180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 150 V90 L60 110 V70 L100 90 V70 L140 90 V150 Z"/>
+      <rect x="170" y="60" width="22" height="90"/>
+      <rect x="205" y="80" width="22" height="70"/>
+      <path class="accent" d="M181 50 C173 40 189 34 181 24" stroke-dasharray="3 5"/>
+      <path class="accent" d="M216 70 C208 60 224 54 216 44" stroke-dasharray="3 5"/>
+      <path d="M20 150 H240" opacity=".5"/>
+    </svg>
+  {% elif variant == 'countries' %}
+    {# map graticule + country-style outlines + heat points #}
+    <svg class="svb-motif" viewBox="0 0 260 180" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M40 60 L90 50 L120 80 L100 120 L60 110 Z" opacity=".6"/>
+      <path d="M140 50 L200 60 L220 100 L180 130 L150 100 Z" opacity=".6"/>
+      <path d="M0 90 H260 M0 45 H260 M0 135 H260" opacity=".18"/>
+      <path d="M70 0 V180 M150 0 V180 M210 0 V180" opacity=".18"/>
+      <circle class="accent" cx="80" cy="85" r="4" fill="currentColor" stroke="none"/>
+      <circle class="accent" cx="185" cy="95" r="4" fill="currentColor" stroke="none"/>
+    </svg>
+  {% elif variant == 'rankings' %}
+    {# ranked bars / chart matrix #}
+    <svg class="svb-motif" viewBox="0 0 240 180" stroke-width="0">
+      <g fill="currentColor" opacity=".8">
+        <rect x="20" y="40"  width="150" height="10" rx="5"/>
+        <rect x="20" y="70"  width="120" height="10" rx="5"/>
+        <rect x="20" y="100" width="90"  height="10" rx="5"/>
+        <rect x="20" y="130" width="60"  height="10" rx="5"/>
+      </g>
+      <g class="accent" fill="currentColor"><circle cx="180" cy="45" r="5"/><circle cx="150" cy="75" r="5"/><circle cx="120" cy="105" r="5"/></g>
+    </svg>
+  {% elif variant == 'api-data' %}
+    {# JSON-style braces + data streams #}
+    <svg class="svb-motif" viewBox="0 0 260 180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" font-family="monospace">
+      <path d="M70 40 C50 40 50 80 35 90 C50 100 50 140 70 140"/>
+      <path d="M190 40 C210 40 210 80 225 90 C210 100 210 140 190 140"/>
+      <g class="accent" stroke-dasharray="4 6" opacity=".8">
+        <path d="M95 70 H165"/><path d="M95 90 H150"/><path d="M95 110 H170"/>
+      </g>
+    </svg>
+  {% elif variant == 'impact' %}
+    {# soft concentric light rings + small homes (future generations) #}
+    <svg class="svb-motif" viewBox="0 0 240 240" stroke-width="1.6">
+      <circle cx="120" cy="120" r="40" opacity=".7"/>
+      <circle cx="120" cy="120" r="70" opacity=".4"/>
+      <circle cx="120" cy="120" r="100" opacity=".2"/>
+      <g class="accent" stroke-width="2" fill="none" stroke-linejoin="round">
+        <path d="M104 128 L120 116 L136 128 V146 H104 Z"/>
+      </g>
+    </svg>
+  {% else %}
+    {# globe: graticule sphere + data points #}
+    <svg class="svb-motif" viewBox="0 0 220 220" stroke-width="1.6">
+      <circle cx="110" cy="110" r="92" opacity=".55"/>
+      <ellipse cx="110" cy="110" rx="92" ry="40" opacity=".3"/>
+      <ellipse cx="110" cy="110" rx="50" ry="92" opacity=".3"/>
+      <path d="M18 110 H202" opacity=".3"/>
+      <g class="accent" fill="currentColor" stroke="none">
+        <circle cx="78" cy="84" r="3.5"/><circle cx="138" cy="120" r="3.5"/><circle cx="150" cy="70" r="3"/><circle cx="92" cy="150" r="3"/>
+      </g>
+    </svg>
+  {% endif %}
+</div>

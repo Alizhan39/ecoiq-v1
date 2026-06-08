@@ -6,7 +6,8 @@
 {% block extra_head %}{% include "heating/_styles.html" %}{% endblock %}
 
 {% block content %}
-<div class="kh-hero">
+<div class="kh-hero svb-host">
+  {% include "partials/section_bg.html" with variant="heating" %}
   <div class="kh-eyebrow">◆ Khalifa Heat · Coal-to-Electric Retrofit</div>
   <h1>From Coal Stove to<br><span class="hl">Clean Electric Heating.</span></h1>
   <p>
