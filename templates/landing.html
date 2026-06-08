@@ -124,9 +124,18 @@
     }
   </style>
 
-  <!-- COBE globe library (CDN ES module via import map; no API key, no build step) -->
+  <!-- Hero globe v2 — three.js / three-globe (CDN ES modules via import map).
+       No API key, no build step. Loaded lazily & only on this page; see
+       static/js/hero-globe-v2.js. COBE remains in the repo as a fallback ref. -->
   <script type="importmap">
-  { "imports": { "cobe": "https://cdn.jsdelivr.net/npm/cobe@0.6.3/+esm" } }
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.160.1",
+      "three/addons/": "https://esm.sh/three@0.160.1/examples/jsm/",
+      "three-globe": "https://esm.sh/three-globe@2.31.0?external=three",
+      "cobe": "https://cdn.jsdelivr.net/npm/cobe@0.6.3/+esm"
+    }
+  }
   </script>
 </head>
 
@@ -1528,7 +1537,8 @@ document.getElementById('newsletter-form').addEventListener('submit', async func
 });
 </script>
 
-<!-- Variant 1 hero globe island (vanilla JS, COBE via import map) -->
-<script type="module" src="{% static 'js/hero-globe.js' %}"></script>
+<!-- Hero globe v2 island — three.js / three-globe, lazy-loaded after first paint.
+     Falls back to the CSS radial glow on mobile / no-WebGL / reduced-motion / failure. -->
+<script type="module" src="{% static 'js/hero-globe-v2.js' %}"></script>
 </body>
 </html>
