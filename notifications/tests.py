@@ -148,3 +148,52 @@ class FormSubmissionNotificationTests(TestCase):
         self._assert_one('contact', '/contact/submit/', dict(
             name='Visitor', email='v@x.com', subject='Partnership', company='X',
             message='This is a message longer than twenty chars.'))
+
+
+from django.test import override_settings
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+class RemainingSourceNotificationTests(TestCase):
+    """
+    Covers the remaining connected sources not exercised elsewhere:
+      - ReviewRequest  (the investor / demo / intelligence request form, #8)
+      - ProfileClaim
+      - NewsletterSignup
+    Each must create exactly one unread AdminNotification.
+    """
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_review_request_form_investor_intelligence(self):
+        """/request-access/review/ — investor/intelligence request → 1 notification."""
+        before = AdminNotification.objects.count()
+        r = self.c.post('/request-access/review/', dict(
+            name='Aigerim', organisation='Sovereign Fund', email='a@fund.kz',
+            country='Kazakhstan', sector='finance', request_type='investor_readiness',
+            message='Requesting an investor readiness review.'))
+        self.assertIn(r.status_code, (200, 302))
+        self.assertEqual(AdminNotification.objects.count() - before, 1)
+        n = AdminNotification.objects.order_by('-id').first()
+        self.assertEqual(n.source_type, 'review_request')
+        self.assertEqual(n.status, 'unread')
+
+    def test_profile_claim_creates_one_notification(self):
+        from leads.models import ProfileClaim
+        before = AdminNotification.objects.count()
+        ProfileClaim.objects.create(full_name='Owner', work_email='o@co.com',
+                                    job_title='CEO', company_name_reported='Acme')
+        self.assertEqual(AdminNotification.objects.count() - before, 1)
+        n = AdminNotification.objects.order_by('-id').first()
+        self.assertEqual(n.source_type, 'profile_claim')
+        self.assertEqual(n.status, 'unread')
+
+    def test_newsletter_signup_creates_one_notification(self):
+        from leads.models import NewsletterSignup
+        before = AdminNotification.objects.count()
+        NewsletterSignup.objects.create(email='sub@x.com', name='Sub')
+        self.assertEqual(AdminNotification.objects.count() - before, 1)
+        n = AdminNotification.objects.order_by('-id').first()
+        self.assertEqual(n.source_type, 'newsletter')
+        self.assertEqual(n.status, 'unread')
