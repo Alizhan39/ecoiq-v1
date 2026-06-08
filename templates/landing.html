@@ -102,7 +102,30 @@
       transition: all .15s; white-space: nowrap;
     }
     .aud-pill:hover { border-color: #10b981; color: #10b981; }
+
+    /* Variant 1 — premium 3D hero globe (right-side background visual) */
+    #hero-globe-wrap{
+      position:absolute; top:50%; right:-140px; transform:translateY(-50%);
+      width:680px; height:680px; max-width:60%; z-index:0; pointer-events:none;
+      /* CSS fallback glow — shown if WebGL/JS/CDN unavailable so the hero never looks empty */
+      background:radial-gradient(circle at 58% 50%, rgba(0,232,154,.10), rgba(201,168,76,.05) 42%, transparent 68%);
+    }
+    #hero-globe{ width:100%; height:100%; opacity:0; transition:opacity 1.2s ease; pointer-events:auto; }
+    /* Left-side scrim keeps hero copy crisp over the globe */
+    #hero-scrim{
+      position:absolute; inset:0; z-index:1; pointer-events:none;
+      background:linear-gradient(90deg, var(--bg) 0%, rgba(6,8,14,.85) 30%, rgba(6,8,14,.25) 55%, transparent 75%);
+    }
+    @media (max-width: 860px){
+      #hero-globe-wrap{ display:none; }   /* mobile: drop the globe entirely for performance */
+      #hero-scrim{ display:none; }
+    }
   </style>
+
+  <!-- COBE globe library (CDN ES module via import map; no API key, no build step) -->
+  <script type="importmap">
+  { "imports": { "cobe": "https://cdn.jsdelivr.net/npm/cobe@0.6.3/+esm" } }
+  </script>
 </head>
 
 <body>
@@ -168,7 +191,13 @@
   <div class="orb" style="width:600px;height:600px;background:rgba(0,232,154,1);opacity:.04;top:-150px;right:-100px;"></div>
   <div class="orb" style="width:500px;height:500px;background:rgba(27,67,50,1);opacity:.25;top:-80px;left:-120px;"></div>
 
-  <div style="max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:3rem;align-items:center;position:relative;">
+  <!-- Variant 1: premium 3D globe (right-side background visual) -->
+  <div id="hero-globe-wrap" aria-hidden="true">
+    <canvas id="hero-globe"></canvas>
+  </div>
+  <div id="hero-scrim" aria-hidden="true"></div>
+
+  <div style="max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:3rem;align-items:center;position:relative;z-index:2;">
 
     <!-- LEFT: copy -->
     <div class="reveal">
@@ -1495,5 +1524,8 @@ document.getElementById('newsletter-form').addEventListener('submit', async func
   }
 });
 </script>
+
+<!-- Variant 1 hero globe island (vanilla JS, COBE via import map) -->
+<script type="module" src="{% static 'js/hero-globe.js' %}"></script>
 </body>
 </html>
