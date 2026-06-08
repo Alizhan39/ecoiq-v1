@@ -1,0 +1,81 @@
+/*
+ * EcoIQ — SectionVisualBackground system.
+ *
+ * A reusable, CSS+SVG-only contextual background layer. No JS, no images.
+ * Decorative only (aria-hidden) → progressive enhancement: if anything fails,
+ * the text is always readable on the dark theme.
+ *
+ * Usage (in a position:relative; overflow:hidden section):
+ *   {% include "partials/section_bg.html" with variant="heating" %}
+ *   ...then place section content in a wrapper with position:relative; z-index:1
+ *
+ * Variants: globe · heating · kazakhstan · industrial · countries · rankings ·
+ *           api-data · impact
+ */
+
+/* Host: add this class to any section + drop the partial in as the first child.
+   It positions the section and lifts all real content above the visual layer. */
+.svb-host{ position:relative; overflow:hidden; }
+.svb-host > *:not(.svb){ position:relative; z-index:1; }
+
+.svb{
+  position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+  --svb-accent:#00e89a;          /* default green */
+  --svb-accent2:#c9a84c;         /* gold */
+}
+
+/* faint data-grid overlay, masked so it fades at the edges */
+.svb::before{
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+  background-size:48px 48px;
+  -webkit-mask:radial-gradient(ellipse 75% 75% at var(--svb-grid-x,70%) 50%, #000 25%, transparent 80%);
+          mask:radial-gradient(ellipse 75% 75% at var(--svb-grid-x,70%) 50%, #000 25%, transparent 80%);
+}
+
+/* soft accent glow */
+.svb::after{
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(circle at var(--svb-glow-x,72%) 45%,
+    color-mix(in srgb, var(--svb-accent) 12%, transparent), transparent 60%);
+}
+
+/* the SVG motif sits on the right, low opacity, never grabs attention */
+.svb-motif{
+  position:absolute; top:50%; right:-2%; transform:translateY(-50%);
+  width:min(560px,52%); height:auto; opacity:.14;
+  color:var(--svb-accent); stroke:currentColor; fill:none;
+}
+
+/* ── Per-variant accents & glow placement ─────────────────────────── */
+.svb--globe     { --svb-accent:#00e89a; --svb-accent2:#c9a84c; }
+.svb--heating   { --svb-accent:#f4a261; --svb-accent2:#00e89a; --svb-glow-x:64%; }
+.svb--kazakhstan{ --svb-accent:#c9a84c; --svb-accent2:#00e89a; --svb-glow-x:60%; }
+.svb--industrial{ --svb-accent:#58a6ff; --svb-accent2:#94a3b8; --svb-glow-x:68%; }
+.svb--countries { --svb-accent:#58a6ff; --svb-accent2:#00e89a; --svb-glow-x:66%; }
+.svb--rankings  { --svb-accent:#00e89a; --svb-accent2:#58a6ff; --svb-glow-x:70%; }
+.svb--api-data  { --svb-accent:#a855f7; --svb-accent2:#58a6ff; --svb-glow-x:68%; }
+.svb--impact    { --svb-accent:#c9a84c; --svb-accent2:#00e89a; --svb-glow-x:50%; }
+.svb--impact::after{ background:radial-gradient(circle at 50% 40%,
+    color-mix(in srgb, var(--svb-accent) 14%, transparent), transparent 62%); }
+.svb--impact .svb-motif{ left:50%; right:auto; transform:translate(-50%,-50%); opacity:.12; }
+
+/* a couple of variants use a secondary motif colour for accent strokes */
+.svb-motif .accent{ color:var(--svb-accent2); stroke:var(--svb-accent2); }
+
+/* very slow, barely-perceptible drift on the motif (desktop only) */
+@keyframes svb-drift{ from{ transform:translateY(-50%) translateX(0); } to{ transform:translateY(-50%) translateX(-10px); } }
+@media (min-width:861px) and (prefers-reduced-motion: no-preference){
+  .svb-motif:not(.svb--impact .svb-motif){ animation:svb-drift 14s ease-in-out infinite alternate; }
+}
+
+/* ── Mobile / reduced-motion: simplify (no grid, smaller static motif) ── */
+@media (max-width:640px){
+  .svb::before{ display:none; }              /* drop the grid on small screens */
+  .svb-motif{ width:70%; opacity:.10; animation:none !important; }
+}
+@media (prefers-reduced-motion: reduce){
+  .svb-motif{ animation:none !important; }
+}

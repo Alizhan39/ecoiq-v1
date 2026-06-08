@@ -1,6 +1,7 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="{% static 'css/section-bg.css' %}">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EcoIQ API — Developer Documentation</title>
@@ -190,7 +191,8 @@
   </aside>
 
   <!-- Main Content -->
-  <main class="content">
+  <main class="content svb-host">
+  {% include "partials/section_bg.html" with variant="api-data" %}
 
     <h1>EcoIQ Intelligence API</h1>
     <p class="subtitle">REST API — v1 · Base URL: <code>https://ecoiq.uk/api/v1/</code></p>
