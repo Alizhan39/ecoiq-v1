@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+{% load notifications_tags %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block userlinks %}
+  {% if user.is_active and user.is_staff %}
+    {% notifications_unread_count as ecoiq_unread %}
+    <a href="{% url 'admin:notifications_adminnotification_changelist' %}?status__exact=unread"
+       title="Incoming form submissions"
+       style="font-weight:600;{% if ecoiq_unread %}color:#dc2626;{% endif %}">
+      🔔 Notifications{% if ecoiq_unread %} (<strong>{{ ecoiq_unread }}</strong>){% endif %}
+    </a> /
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

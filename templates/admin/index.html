@@ -1,7 +1,20 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n notifications_tags %}
 
 {% block content %}
+{% notifications_unread_count as ecoiq_unread %}
+<a href="{% url 'admin:notifications_adminnotification_changelist' %}?status__exact=unread"
+   style="display:flex;align-items:center;gap:1rem;text-decoration:none;margin-bottom:1.5rem;
+   border-radius:12px;padding:1.1rem 1.4rem;border:1px solid {% if ecoiq_unread %}#dc2626{% else %}#e0e0e0{% endif %};
+   background:{% if ecoiq_unread %}#fef2f2{% else %}#fff{% endif %};">
+  <span style="font-size:1.8rem;">🔔</span>
+  <span>
+    <span style="font-size:1.6rem;font-weight:800;color:{% if ecoiq_unread %}#dc2626{% else %}#2d6a4f{% endif %};letter-spacing:-.03em;">{{ ecoiq_unread }}</span>
+    <span style="font-size:.85rem;color:#555;font-weight:600;margin-left:.4rem;">unread notification{{ ecoiq_unread|pluralize }}</span>
+    <div style="font-size:.76rem;color:#888;margin-top:.15rem;">All incoming form submissions — click to view the notification hub →</div>
+  </span>
+</a>
+
 <style>
   .dash-grid {
     display: grid;

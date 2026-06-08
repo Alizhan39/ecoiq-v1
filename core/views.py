@@ -1062,6 +1062,19 @@ def contact_submit(request):
         # Email infra may not be configured in all environments; log but don't crash.
         messages.success(request, f"✓ Message received — we'll reply to {email} within one business day.")
 
+    # Central admin notification (contact form has no model — create explicitly).
+    try:
+        from notifications.models import create_notification
+        create_notification(
+            f'Contact form — {subject} ({name})',
+            source_type='contact', priority='normal',
+            message=message[:500],
+            contact_name=name, contact_email=email,
+            metadata={'company': company, 'subject': subject},
+        )
+    except Exception:
+        pass
+
     return redirect('contact')
 
 
