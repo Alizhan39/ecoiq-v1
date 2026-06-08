@@ -55,18 +55,32 @@ import createGlobe from 'cobe';
 
   // ── Gold "city-light" markers (EcoIQ focus markets + global cities) ──
   const markers = [
-    { location: [43.2220, 76.8512], size: 0.07 }, // Almaty
-    { location: [51.1605, 71.4704], size: 0.05 }, // Astana
-    { location: [51.5074, -0.1278], size: 0.06 }, // London
-    { location: [24.7136, 46.6753], size: 0.06 }, // Riyadh
-    { location: [41.0082, 28.9784], size: 0.06 }, // Istanbul
+    // EcoIQ focus markets — emphasised
+    { location: [43.2220, 76.8512], size: 0.09 }, // Almaty
+    { location: [51.1605, 71.4704], size: 0.06 }, // Astana
+    { location: [51.5074, -0.1278], size: 0.07 }, // London
+    { location: [24.7136, 46.6753], size: 0.07 }, // Riyadh
+    { location: [41.0082, 28.9784], size: 0.07 }, // Istanbul
+    // Global "night-light" city points
     { location: [25.2048, 55.2708], size: 0.05 }, // Dubai
-    { location: [40.7128, -74.0060], size: 0.05 }, // New York
+    { location: [40.7128, -74.0060], size: 0.06 }, // New York
+    { location: [34.0522, -118.2437], size: 0.05 }, // Los Angeles
+    { location: [19.4326, -99.1332], size: 0.05 }, // Mexico City
+    { location: [-23.5505, -46.6333], size: 0.05 }, // São Paulo
     { location: [1.3521, 103.8198], size: 0.05 }, // Singapore
     { location: [-1.2921, 36.8219], size: 0.05 }, // Nairobi
+    { location: [6.5244, 3.3792], size: 0.05 }, // Lagos
+    { location: [30.0444, 31.2357], size: 0.05 }, // Cairo
     { location: [55.7558, 37.6173], size: 0.05 }, // Moscow
-    { location: [39.9042, 116.4074], size: 0.05 }, // Beijing
+    { location: [39.9042, 116.4074], size: 0.06 }, // Beijing
+    { location: [35.6762, 139.6503], size: 0.06 }, // Tokyo
+    { location: [28.6139, 77.2090], size: 0.06 }, // Delhi
+    { location: [19.0760, 72.8777], size: 0.05 }, // Mumbai
     { location: [48.8566, 2.3522], size: 0.05 }, // Paris
+    { location: [52.5200, 13.4050], size: 0.04 }, // Berlin
+    { location: [-33.8688, 151.2093], size: 0.05 }, // Sydney
+    { location: [-26.2041, 28.0473], size: 0.04 }, // Johannesburg
+    { location: [41.3851, 2.1734], size: 0.04 }, // Barcelona
   ];
 
   let phi = 0;
@@ -76,15 +90,15 @@ import createGlobe from 'cobe';
       width: width * dpr,
       height: height * dpr,
       phi: 0,
-      theta: 0.28,
-      dark: 1,
-      diffuse: 1.15,
-      mapSamples: 16000,
-      mapBrightness: 5.2,
-      baseColor: [0.06, 0.12, 0.09],   // dark, green-tinted globe
-      markerColor: [0.81, 0.66, 0.30], // warm gold city lights
-      glowColor: [0.0, 0.45, 0.34],    // soft EcoIQ green glow
-      opacity: 0.95,
+      theta: 0.26,
+      dark: 1.08,                       // deeper night-side shadow → realistic Earth
+      diffuse: 1.5,                     // stronger directional shading (cinematic)
+      mapSamples: 24000,                // denser landmass dots → reads as continents, not a sparse grid
+      mapBrightness: 7.5,               // brighter continents so land/ocean contrast is clear
+      baseColor: [0.045, 0.075, 0.07],  // dark realistic earth, faint green tint
+      markerColor: [0.92, 0.74, 0.36],  // warm gold satellite night-lights
+      glowColor: [0.02, 0.52, 0.40],    // green transition/data-signal halo
+      opacity: 1,
       markers: markers,
       onRender: (state) => {
         current += (target - current) * 0.08;       // smooth drag easing
