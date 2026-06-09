@@ -354,6 +354,32 @@ class VideoStudioAccessTests(TestCase):
         self.assertContains(r, 'Khalifa Tours Impact Explainer')
 
 
+class KazakhstanBriefTests(TestCase):
+    """Flagship page is public, presentation-only, and mounts all 7 islands."""
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_public_and_renders_all_islands(self):
+        r = self.c.get(reverse('kazakhstan_transition_brief'))
+        self.assertEqual(r.status_code, 200)
+        for name in (
+            'KazakhstanHero', 'TransitionMap', 'RiskRadar', 'ESGGraph',
+            'ScenarioSimulator', 'StakeholderMap', 'AIStorytelling',
+        ):
+            self.assertContains(r, 'data-island="%s"' % name)
+        self.assertContains(r, 'dist/ecoiq-islands.js')
+
+    def test_props_are_valid_json(self):
+        import json
+        from html import unescape
+        import re
+        r = self.c.get(reverse('kazakhstan_transition_brief'))
+        body = r.content.decode()
+        for m in re.finditer(r'data-props="([^"]*)"', body):
+            json.loads(unescape(m.group(1)))  # raises if any island's props are malformed
+
+
 class VisualLabAccessTests(TestCase):
     """Visual Lab is staff-only and mounts the ImpactGlobe island bundle."""
 

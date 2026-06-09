@@ -1127,6 +1127,137 @@ VIDEO_TEMPLATES = [
 ]
 
 
+def kazakhstan_transition_brief(request):
+    """
+    /kazakhstan-transition-brief/ — EcoIQ flagship visual-intelligence page.
+
+    Pure presentation: assembles the Visual Intelligence islands (React, built
+    to static/dist) with curated transition data. No AI/API calls, no secrets;
+    safe to serve publicly. Each island receives its props as a JSON string —
+    Django autoescaping encodes it safely into the data-props attribute, and the
+    browser decodes it back to valid JSON for the loader to parse.
+    """
+    regions = [
+        {
+            'id': 'almaty', 'name': 'Almaty', 'projects': 14,
+            'fundingNeededM': 96, 'households': 420000, 'emissionsReductionKt': 880,
+            'note': 'Dense urban heat demand; strongest grid headroom for electrification.',
+        },
+        {
+            'id': 'shymkent', 'name': 'Shymkent', 'projects': 9,
+            'fundingNeededM': 64, 'households': 310000, 'emissionsReductionKt': 610,
+            'note': "Fast-growing southern hub; high coal-stove prevalence in peri-urban districts.",
+        },
+        {
+            'id': 'turkistan', 'name': 'Turkistan', 'projects': 6,
+            'fundingNeededM': 38, 'households': 180000, 'emissionsReductionKt': 340,
+            'note': 'Heritage city; pilot zone for community-financed retrofits.',
+        },
+        {
+            'id': 'karatau', 'name': 'Karatau', 'projects': 4,
+            'fundingNeededM': 22, 'households': 90000, 'emissionsReductionKt': 190,
+            'note': 'Industrial legacy town; phosphate-sector partnership potential.',
+        },
+    ]
+    total_households = sum(r['households'] for r in regions)
+    total_funding = sum(r['fundingNeededM'] for r in regions)
+    total_co2_kt = sum(r['emissionsReductionKt'] for r in regions)
+
+    islands = {
+        'hero': {
+            'eyebrow': 'EcoIQ Climate Intelligence · 2025',
+            'title': 'Kazakhstan Energy Transition Brief',
+            'subtitle': 'Coal-to-electric heating retrofit — investment-grade transition '
+                        'intelligence across four southern regions.',
+            'transitionScore': 68,
+            'households': total_households,
+            'fundingNeededM': total_funding,
+            'co2PotentialMt': round(total_co2_kt / 1000, 1),
+            'regionsActive': len(regions),
+        },
+        'map': {
+            'eyebrow': 'Regional Intelligence',
+            'title': 'Transition Map — Southern Kazakhstan',
+            'regions': regions,
+        },
+        'radar': {
+            'eyebrow': 'Risk Intelligence',
+            'title': 'Transition Risk Radar',
+            'score': 68,
+            'scoreLabel': 'Readiness',
+            'axes': [
+                {'label': 'Policy', 'value': 72},
+                {'label': 'Grid', 'value': 64},
+                {'label': 'Capital', 'value': 58},
+                {'label': 'Social', 'value': 76},
+                {'label': 'Supply', 'value': 52},
+                {'label': 'Delivery', 'value': 67},
+            ],
+        },
+        'esg': {
+            'eyebrow': 'Trajectory',
+            'title': 'Decarbonisation Trajectory (Index)',
+            'years': [2023, 2025, 2027, 2029, 2031, 2033],
+            'series': [
+                {'key': 'env', 'label': 'Environmental', 'color': '#00e89a',
+                 'values': [38, 46, 57, 68, 79, 88]},
+                {'key': 'soc', 'label': 'Social', 'color': '#e8c46a',
+                 'values': [44, 50, 58, 65, 71, 78]},
+                {'key': 'gov', 'label': 'Governance', 'color': '#5ab0f2',
+                 'values': [52, 56, 61, 67, 73, 80]},
+            ],
+        },
+        'sim': {
+            'eyebrow': 'Scenario Simulator',
+            'title': 'Model the transition — live',
+            'baseHouseholds': total_households,
+            'co2PerHomeT': 5.4,
+        },
+        'stake': {
+            'eyebrow': 'Value Network',
+            'title': 'Stakeholder Map',
+            'coreLabel': 'EcoIQ',
+            'stakeholders': [
+                {'id': 'gov', 'label': 'Government',
+                 'role': 'Sets phase-out policy, permits, and tariff reform; co-funds pilots.',
+                 'value': 'Provides mandate & matched capital → receives verified emissions outcomes.'},
+                {'id': 'inv', 'label': 'Investors',
+                 'role': 'Deploy transition capital seeking measurable, de-risked impact returns.',
+                 'value': 'Provide capital → receive investment-grade intelligence & MRV.'},
+                {'id': 'com', 'label': 'Communities',
+                 'role': 'Households moving from coal stoves to clean electric heating.',
+                 'value': 'Provide adoption → receive warmer homes, cleaner air, lower bills.'},
+                {'id': 'co', 'label': 'Companies',
+                 'role': 'Utilities, installers, and manufacturers delivering the retrofit at scale.',
+                 'value': 'Provide delivery capacity → receive aggregated, bankable demand.'},
+            ],
+        },
+        'story': {
+            'eyebrow': 'AI Synthesis',
+            'title': 'What the data is telling us',
+            'insights': [
+                {'stat': '1.0M households',
+                 'headline': 'The opportunity is concentrated and addressable',
+                 'body': 'Four southern regions hold the bulk of coal-heated homes — enough '
+                         'density to make electrification logistics and grid upgrades economic.'},
+                {'stat': '$220M',
+                 'headline': 'Capital is the binding constraint, not technology',
+                 'body': 'At roughly $4,200 per home, the retrofit pathway is well understood. '
+                         'Blended public-private capital unlocks the conversion rate.'},
+                {'stat': '2.0 Mt/yr',
+                 'headline': 'Decarbonisation depth tracks grid cleanliness',
+                 'body': 'Emissions avoided scale with how clean the electricity is — pairing '
+                         'retrofits with renewable supply roughly doubles the climate return.'},
+            ],
+            'takeaway': 'A staged, capital-led, electrification-paired program turns a fragmented '
+                        'coal-heating problem into an investment-grade, measurable transition.',
+        },
+    }
+
+    props = {k: _json.dumps(v) for k, v in islands.items()}
+    return render(request, 'kazakhstan_transition_brief.html', {'props': props})
+
+
 @staff_member_required(login_url='/login/')
 def visual_lab(request):
     """
