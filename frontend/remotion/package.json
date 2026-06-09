@@ -1,0 +1,25 @@
+{
+  "name": "ecoiq-video-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EcoIQ — local/offline Remotion video authoring. NOT a Render runtime dependency. Render the briefs locally, optimize, and drop the final MP4/WebM into Django static/video/.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render:country": "remotion render src/index.ts CountryTransitionBrief out/country-transition-brief.mp4",
+    "render:company": "remotion render src/index.ts CompanyEsgRiskBrief out/company-esg-risk-brief.mp4",
+    "render:tours": "remotion render src/index.ts KhalifaToursImpactExplainer out/khalifa-tours-impact.mp4",
+    "render:tours-webm": "remotion render src/index.ts KhalifaToursImpactExplainer out/khalifa-tours-impact.webm --codec=vp8",
+    "render:all": "npm run render:country && npm run render:company && npm run render:tours"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.190",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.190"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.3",
+    "typescript": "5.5.4"
+  }
+}

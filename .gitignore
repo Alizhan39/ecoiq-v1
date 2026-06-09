@@ -4,6 +4,14 @@ media/
 staticfiles/
 *.pdf
 
+# ── Remotion video studio — LOCAL/BUILD-TIME ONLY (never a Render runtime dep) ──
+# Node + Remotion live only inside frontend/remotion/. node_modules and rendered
+# outputs are never committed; only optimized final videos placed in static/video/.
+frontend/remotion/node_modules/
+frontend/remotion/out/
+frontend/remotion/.cache/
+node_modules/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
