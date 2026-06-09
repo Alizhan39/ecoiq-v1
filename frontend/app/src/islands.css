@@ -1,33 +1,56 @@
-/* EcoIQ Visual Intelligence — island styles.
-   Scoped under .eiq-* so they never leak into Django page CSS. */
+/* EcoIQ Visual Intelligence — component styles.
+   Design tokens + primitives live in design/system.css. Everything here is
+   scoped under .eiq* and consumes the CSS variables defined there. */
 
+/* ── Shared Metric tile ──────────────────────────────────────────────────── */
+.eiq-metric {
+  padding: 14px 16px;
+  border-radius: var(--eiq-r-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--eiq-border);
+}
+
+.eiq-metric__value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.eiq-metric__suffix {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--eiq-muted);
+}
+
+.eiq-metric__label {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--eiq-muted);
+}
+
+/* ── ImpactGlobe ─────────────────────────────────────────────────────────── */
 .eiq-ig {
-  --eiq-accent: #00e89a;
-  --eiq-gold: #e8c46a;
-  --eiq-ink: #e7f3ee;
-  --eiq-muted: #8fa9a0;
+  padding: 28px;
+  overflow: hidden;
+}
+
+.eiq-ig__inner {
   display: grid;
   grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
   gap: 28px;
   align-items: center;
-  padding: 28px;
-  border-radius: 18px;
-  background: linear-gradient(160deg, #06140f 0%, #04100c 60%, #020a07 100%);
-  border: 1px solid rgba(0, 232, 154, 0.14);
-  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.8);
-  color: var(--eiq-ink);
-  font-family: inherit;
 }
 
 @media (max-width: 720px) {
   .eiq-ig {
+    padding: 20px;
+  }
+  .eiq-ig__inner {
     grid-template-columns: 1fr;
     gap: 18px;
-    padding: 20px;
   }
 }
 
-/* ── Globe visual ── */
 .eiq-ig__visual {
   position: relative;
   display: flex;
@@ -45,17 +68,13 @@
 
 .eiq-ig__grid {
   transform-origin: 120px 120px;
-  animation: eiq-spin 36s linear infinite;
+  animation: eiq-spin 40s linear infinite;
 }
 
 @keyframes eiq-spin {
   to {
     transform: rotateZ(360deg);
   }
-}
-
-.eiq-ig[data-reduced='true'] .eiq-ig__grid {
-  animation: none;
 }
 
 .eiq-ig__pins {
@@ -81,7 +100,7 @@
   height: 7px;
   border-radius: 50%;
   background: var(--eiq-gold);
-  box-shadow: 0 0 8px rgba(232, 196, 106, 0.8);
+  box-shadow: 0 0 8px var(--eiq-gold-glow);
 }
 
 .eiq-ig__pin-label {
@@ -90,58 +109,20 @@
 
 .eiq-ig__pin-value {
   color: var(--eiq-accent);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── Metrics panel ── */
-.eiq-ig__eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--eiq-accent);
-  margin-bottom: 6px;
 }
 
 .eiq-ig__title {
-  margin: 0 0 18px;
+  margin: 8px 0 18px;
   font-size: 22px;
   line-height: 1.25;
   font-weight: 700;
-  color: #fff;
+  color: var(--eiq-ink-strong);
 }
 
 .eiq-ig__metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-}
-
-.eiq-ig__metric {
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.eiq-ig__metric-value {
-  font-size: 26px;
-  font-weight: 700;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-}
-
-.eiq-ig__metric-suffix {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--eiq-muted);
-}
-
-.eiq-ig__metric-label {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--eiq-muted);
 }
 
 .eiq-ig__cta {
@@ -155,4 +136,56 @@
 
 .eiq-ig__cta:hover {
   text-decoration: underline;
+}
+
+/* ── RiskRadar ───────────────────────────────────────────────────────────── */
+.eiq-radar {
+  padding: 24px 28px 28px;
+}
+
+.eiq-radar__head {
+  margin-bottom: 8px;
+}
+
+.eiq-radar__title {
+  margin: 8px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--eiq-ink-strong);
+}
+
+.eiq-radar__body {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.eiq-radar__svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+
+.eiq-radar__score {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.eiq-radar__score-value {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--eiq-ink-strong);
+  line-height: 1;
+}
+
+.eiq-radar__score-label {
+  margin-top: 2px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--eiq-muted);
 }

@@ -44,9 +44,30 @@
     </noscript>
   </div>
 
+  {# ── Island #2: RiskRadar ── #}
+  <div style="margin-top:28px;max-width:420px;"
+    data-island="RiskRadar"
+    data-props='{
+      "eyebrow": "Company Intelligence",
+      "title": "ESG Risk Radar — Sample Co.",
+      "score": 72,
+      "scoreLabel": "Composite",
+      "axes": [
+        {"label": "Climate", "value": 78},
+        {"label": "Energy", "value": 64},
+        {"label": "Governance", "value": 81},
+        {"label": "Social", "value": 70},
+        {"label": "Supply", "value": 55},
+        {"label": "Disclosure", "value": 88}
+      ]
+    }'>
+    <noscript><p style="color:#667;">Composite ESG score 72 / 100.</p></noscript>
+  </div>
+
   <p style="color:#99a;margin-top:28px;font-size:13px;">
     Open the browser console to confirm there are no <code>[ecoiq-islands]</code> errors.
-    Test <code>prefers-reduced-motion</code> to confirm counters/spin disable.
+    Test <code>prefers-reduced-motion</code> to confirm counters/spin/transitions disable.
+    Both cards use the dark institutional design system + Framer Motion.
   </p>
 </main>
 {% endblock %}
