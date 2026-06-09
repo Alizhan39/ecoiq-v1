@@ -1128,6 +1128,17 @@ VIDEO_TEMPLATES = [
 
 
 @staff_member_required(login_url='/login/')
+def visual_lab(request):
+    """
+    /visual-lab/ — Staff-only verification surface for the Visual Intelligence
+    islands layer (Phase 0). Renders the ImpactGlobe React island from sample
+    JSON props so the build-to-static → island-mount pipeline can be confirmed
+    live. Not linked in public nav; no AI/API calls; pure presentation.
+    """
+    return render(request, 'visual_lab.html')
+
+
+@staff_member_required(login_url='/login/')
 def video_studio(request):
     """
     /video-studio/ — Staff-only video workflow surface.
