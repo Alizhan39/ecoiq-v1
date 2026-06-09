@@ -325,3 +325,30 @@ class AITriggerStaffOnlyTests(TestCase):
         # GET renders the confirm page (does NOT call AI — AI only on POST).
         r = self.c.get(reverse('run_analysis', args=[self.assessment.pk]))
         self.assertEqual(r.status_code, 200)
+
+
+class VideoStudioAccessTests(TestCase):
+    """Video studio is staff-only and never renders on the server."""
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+        User.objects.create_user('vs_staff', password='x', is_staff=True)
+        User.objects.create_user('vs_user', password='x', is_staff=False)
+
+    def test_anonymous_redirected(self):
+        r = self.c.get(reverse('video_studio'))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_redirected(self):
+        self.c.login(username='vs_user', password='x')
+        r = self.c.get(reverse('video_studio'))
+        self.assertEqual(r.status_code, 302)
+
+    def test_staff_sees_templates(self):
+        self.c.login(username='vs_staff', password='x')
+        r = self.c.get(reverse('video_studio'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Country Transition Brief')
+        self.assertContains(r, 'Company ESG Risk Brief')
+        self.assertContains(r, 'Khalifa Tours Impact Explainer')

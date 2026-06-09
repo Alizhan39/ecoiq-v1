@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Video Studio — EcoIQ (Staff){% endblock %}
+{% block meta_description_content %}EcoIQ staff video workflow — render branded briefs offline with Remotion, preview ready files, and publish to the site.{% endblock %}
+
+{% block extra_head %}
+<style>
+:root{--vs-bg:#070b0f;--vs-bg2:#0d1117;--vs-bg3:#161b22;--vs-border:rgba(255,255,255,.07);--vs-border2:rgba(255,255,255,.13);
+  --vs-text:#e2e8f0;--vs-muted:#64748b;--vs-muted2:#94a3b8;--vs-green:#00e89a;--vs-gold:#c9a84c;--vs-blue:#58a6ff;}
+*{box-sizing:border-box}
+body{background:var(--vs-bg);color:var(--vs-text)}
+.vs-wrap{max-width:1080px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+.vs-eyebrow{font-size:.66rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--vs-gold);font-family:'SF Mono',monospace;margin-bottom:.7rem}
+.vs-h1{font-size:clamp(1.7rem,3vw,2.4rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.5rem}
+.vs-sub{font-size:.92rem;color:var(--vs-muted2);line-height:1.7;max-width:680px}
+.vs-note{background:rgba(244,162,97,.08);border:1px solid rgba(244,162,97,.25);color:#f4a261;border-radius:10px;padding:.85rem 1.1rem;margin:1.5rem 0 2rem;font-size:.82rem;line-height:1.6}
+.ac-green{--ac:var(--vs-green)} .ac-blue{--ac:var(--vs-blue)} .ac-gold{--ac:var(--vs-gold)}
+.vs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem}
+.vs-card{background:var(--vs-bg2);border:1px solid var(--vs-border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.vs-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac,#00e89a),transparent)}
+.vs-prev{aspect-ratio:16/9;background:#04070b;border-bottom:1px solid var(--vs-border);display:flex;align-items:center;justify-content:center;position:relative}
+.vs-prev video{width:100%;height:100%;object-fit:cover;display:block}
+.vs-prev-empty{font-size:.78rem;color:var(--vs-muted);text-align:center;padding:1rem;line-height:1.5}
+.vs-prev-empty b{color:var(--vs-muted2)}
+.vs-body{padding:1.3rem 1.4rem;display:flex;flex-direction:column;gap:.55rem;flex:1}
+.vs-name{font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:-.01em}
+.vs-meaning{font-size:.82rem;color:var(--vs-muted2);line-height:1.6;flex:1}
+.vs-id{font-size:.6rem;font-family:'SF Mono',monospace;color:var(--vs-muted);letter-spacing:.08em}
+.vs-btns{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem}
+.vs-btn{font-size:.78rem;font-weight:700;padding:.5rem .9rem;border-radius:8px;cursor:pointer;border:1px solid var(--vs-border2);background:transparent;color:var(--vs-muted2);transition:all .15s;font-family:inherit}
+.vs-btn-gen{background:color-mix(in srgb,var(--ac,#00e89a) 14%,transparent);border-color:color-mix(in srgb,var(--ac,#00e89a) 35%,transparent);color:var(--ac,#00e89a)}
+.vs-btn:hover{border-color:var(--ac,#00e89a);color:var(--ac,#00e89a)}
+.vs-howto{display:none;margin-top:.6rem;background:#04070b;border:1px solid var(--vs-border);border-radius:10px;padding:.85rem 1rem}
+.vs-howto.open{display:block}
+.vs-howto p{font-size:.74rem;color:var(--vs-muted2);margin-bottom:.5rem;line-height:1.5}
+.vs-code{font-family:'SF Mono',monospace;font-size:.72rem;color:var(--vs-green);background:#000;border:1px solid var(--vs-border);border-radius:6px;padding:.55rem .7rem;overflow-x:auto;white-space:pre;margin-bottom:.5rem}
+.vs-workflow{margin-top:3rem;background:var(--vs-bg2);border:1px solid var(--vs-border);border-radius:14px;padding:1.8rem}
+.vs-workflow h2{font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:1rem}
+.vs-steps{list-style:none;padding:0;margin:0;counter-reset:s;display:flex;flex-direction:column;gap:.7rem}
+.vs-steps li{display:flex;gap:.8rem;font-size:.85rem;color:var(--vs-muted2);line-height:1.5}
+.vs-steps li::before{counter-increment:s;content:counter(s);flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.3);color:var(--vs-green);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'SF Mono',monospace}
+.vs-disabled{font-size:.72rem;color:var(--vs-muted);margin-top:.6rem}
+@media(max-width:640px){.vs-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vs-wrap">
+  <div class="vs-eyebrow">◆ Staff · Video Workflow</div>
+  <h1 class="vs-h1">EcoIQ Video Studio</h1>
+  <p class="vs-sub">
+    Branded EcoIQ video briefs are authored as code and rendered <strong>offline</strong> with Remotion
+    (<code style="color:var(--vs-gold)">frontend/remotion/</code>). The live site only plays ready files —
+    nothing is rendered on the server. Use the buttons below to see the exact render command per template,
+    then drop the optimized file into <code style="color:var(--vs-gold)">static/video/</code>.
+  </p>
+
+  <div class="vs-note">
+    ⚙ <strong>Build-time only.</strong> “Generate Video” does not render on the server (no Node/Remotion in
+    production). It reveals the local Remotion command + the props you’d pass for a report-to-video render.
+  </div>
+
+  <div class="vs-grid">
+    {% for t in templates %}
+    <div class="vs-card ac-{{ t.accent }}">
+      <div class="vs-prev">
+        {# Plays the rendered file if present; otherwise the poster/empty state shows (no broken player). #}
+        <video controls preload="none" playsinline
+               poster="{% static 'img/og-card.svg' %}"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <source src="{% static t.video %}" type="video/mp4">
+        </video>
+        <div class="vs-prev-empty" style="display:none;">
+          <b>No render yet.</b><br>Produce it in the Remotion studio, then place the file in static/video/.
+        </div>
+      </div>
+      <div class="vs-body">
+        <div class="vs-id">{{ t.id }}</div>
+        <div class="vs-name">{{ t.name }}</div>
+        <div class="vs-meaning">{{ t.meaning }}</div>
+        <div class="vs-btns">
+          <button type="button" class="vs-btn vs-btn-gen" onclick="this.closest('.vs-card').querySelector('.vs-howto').classList.toggle('open')">▶ Generate Video</button>
+          <a class="vs-btn" href="{% static t.video %}" target="_blank" rel="noopener">Open file</a>
+        </div>
+        <div class="vs-howto">
+          <p>1 — Render locally (from <code>frontend/remotion/</code>):</p>
+          <div class="vs-code">{{ t.render_cmd }}</div>
+          <p>Report-to-video (override data):</p>
+          <div class="vs-code">{{ t.render_cmd }} -- --props='{{ t.props_example }}'</div>
+          <p>2 — Optimize &amp; copy the result into <code>static/video/</code>, then run collectstatic.</p>
+          <div class="vs-disabled">Server-side rendering is intentionally disabled (Phase 2 / build-time only).</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Report-to-video workflow placeholder -->
+  <div class="vs-workflow">
+    <h2>Report → Video workflow (placeholder)</h2>
+    <ul class="vs-steps">
+      <li>Pick a template and a source record (country / company / Khalifa Tours impact).</li>
+      <li>Export the record to a JSON <code>--props</code> payload (helper to be added in Phase 2).</li>
+      <li>Render offline with Remotion → optimized MP4/WebM.</li>
+      <li>Drop the file in <code>static/video/</code>, run <code>collectstatic</code>; the card above plays it.</li>
+    </ul>
+    <div class="vs-disabled">No Node/Remotion runs in production. This surface only previews ready files and documents the offline steps.</div>
+  </div>
+</div>
+{% endblock %}

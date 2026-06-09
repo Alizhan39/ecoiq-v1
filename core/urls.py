@@ -69,6 +69,9 @@ urlpatterns = [
     # EcoIQ Stewardship — climate intelligence + real-world stewardship
     path('stewardship/', views.stewardship, name='stewardship'),
 
+    # EcoIQ Video Studio — staff-only video workflow (rendering is offline/build-time)
+    path('video-studio/', views.video_studio, name='video_studio'),
+
     # EcoIQ Contact — enquiry form + founder/company details
     path('contact/',        views.contact,        name='contact'),
     path('contact/submit/', views.contact_submit, name='contact_submit'),

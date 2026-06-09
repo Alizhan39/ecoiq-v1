@@ -1090,6 +1090,54 @@ def value_distribution(request):
     return render(request, 'value_distribution.html')
 
 
+# ── Video Studio (staff-only) ─────────────────────────────────────────────────
+
+# Build-time only: video is authored/rendered OFFLINE with Remotion
+# (frontend/remotion/) and the optimized file is dropped into static/video/.
+# The live Django app NEVER renders video — this page is a workflow surface that
+# previews ready files and shows the exact offline render command per template.
+VIDEO_TEMPLATES = [
+    {
+        'id': 'CountryTransitionBrief',
+        'name': 'Country Transition Brief',
+        'meaning': 'A short branded brief on a country’s transition readiness and scores.',
+        'accent': 'green',
+        'video': 'video/country-transition-brief.mp4',
+        'render_cmd': 'npm run render:country',
+        'props_example': '{"country":"Kazakhstan","ecoiqScore":84.2,"maqasidScore":92}',
+    },
+    {
+        'id': 'CompanyEsgRiskBrief',
+        'name': 'Company ESG Risk Brief',
+        'meaning': 'A company’s EcoIQ score and climate / governance / harm risk at a glance.',
+        'accent': 'blue',
+        'video': 'video/company-esg-risk-brief.mp4',
+        'render_cmd': 'npm run render:company',
+        'props_example': '{"company":"Meridian Industrial Holdings","ecoiqScore":84.2}',
+    },
+    {
+        'id': 'KhalifaToursImpactExplainer',
+        'name': 'Khalifa Tours Impact Explainer',
+        'meaning': 'Travel-to-impact explainer: homes upgraded and daily benefit.',
+        'accent': 'gold',
+        'video': 'video/khalifa-tours-impact.mp4',
+        'render_cmd': 'npm run render:tours',
+        'props_example': '{"homesUpgraded":10,"headline":"Eco Tours with Daily Impact"}',
+    },
+]
+
+
+@staff_member_required(login_url='/login/')
+def video_studio(request):
+    """
+    /video-studio/ — Staff-only video workflow surface.
+    Lists the Remotion templates, previews any already-rendered static file, and
+    shows the offline render command. Does NOT render video on the server
+    (build-time only — no Node/Remotion at runtime).
+    """
+    return render(request, 'video_studio.html', {'templates': VIDEO_TEMPLATES})
+
+
 # ── Sample Investor Readiness Report ──────────────────────────────────────────
 
 def sample_report(request):
