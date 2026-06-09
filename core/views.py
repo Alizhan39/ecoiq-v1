@@ -1375,6 +1375,58 @@ def video_studio(request):
     return render(request, 'video_studio.html', {'templates': VIDEO_TEMPLATES})
 
 
+# ── Khalifa Impact Globe (public) ─────────────────────────────────────────────
+
+def khalifa_impact(request):
+    """
+    /khalifa-impact/ — Khalifa Impact: villages, homes upgraded, CO₂ reduced,
+    sponsor project cards, link to Khalifa Tours / heating. Figures indicative.
+    Public, no auth.
+    """
+    impact = [
+        {'value': 4,   'label': 'Pilot villages', 'accent': 'green'},
+        {'value': 10,  'label': 'Homes upgraded (pilot)', 'accent': 'gold'},
+        {'value': 230, 'label': 'tonnes CO₂/yr avoided', 'accent': 'blue'},
+        {'value': 10,  'label': 'Families in healthier homes', 'accent': 'teal'},
+    ]
+    sponsors = [
+        {'name': 'Sponsor 10 Homes', 'budget': '24M–30M KZT', 'desc': '10 verified retrofits + one EcoIQ impact report.', 'accent': 'green'},
+        {'name': 'Clean Street Pilot', 'budget': '65M–150M KZT', 'desc': '25–50 homes on one street, launch event, media kit.', 'accent': 'blue'},
+        {'name': 'Coal-Free Village Pilot', 'budget': '260M–320M KZT', 'desc': '100 homes, akimat co-launch, full impact study.', 'accent': 'gold'},
+        {'name': 'ESG Heat Partnership', 'budget': '300M+ KZT / yr', 'desc': 'Multi-year co-branded programme, audited reporting.', 'accent': 'purple'},
+    ]
+    return render(request, 'khalifa_impact.html', {'impact': impact, 'sponsors': sponsors})
+
+
+# ── Kazakhstan Transition Map (public) ────────────────────────────────────────
+
+def kazakhstan_map(request):
+    """
+    /kazakhstan-map/ — Kazakhstan transition map: Almaty, Shymkent, Turkistan,
+    Karatau, each with projects / funding / households / expected emissions cut.
+    SVG-based (no WebGL). Public, no auth. Figures indicative.
+    """
+    regions = [
+        {'key': 'almaty', 'name': 'Almaty', 'x': 80, 'y': 72, 'accent': 'green',
+         'projects': ['Almaty Clean Air Pilot', 'Insulation-first retrofit'],
+         'funding': '£15,000 pilot', 'households': '10 pilot → 1,000 target',
+         'emissions': '≈ 50–80 t CO₂/yr (pilot)'},
+        {'key': 'shymkent', 'name': 'Shymkent', 'x': 55, 'y': 78, 'accent': 'gold',
+         'projects': ['Coal-to-electric retrofit'],
+         'funding': '£20,000 pilot', 'households': '12 pilot → 800 target',
+         'emissions': '≈ 60 t CO₂/yr (pilot)'},
+        {'key': 'turkistan', 'name': 'Turkistan', 'x': 48, 'y': 70, 'accent': 'blue',
+         'projects': ['Community greenhouse + clean heating'],
+         'funding': '£25,000 pilot', 'households': '15 pilot → 600 target',
+         'emissions': '≈ 45 t CO₂/yr (pilot)'},
+        {'key': 'karatau', 'name': 'Karatau', 'x': 52, 'y': 64, 'accent': 'teal',
+         'projects': ['Industrial-town clean heating'],
+         'funding': '£18,000 pilot', 'households': '10 pilot → 500 target',
+         'emissions': '≈ 40 t CO₂/yr (pilot)'},
+    ]
+    return render(request, 'kazakhstan_map.html', {'regions': regions})
+
+
 # ── Sample Investor Readiness Report ──────────────────────────────────────────
 
 def sample_report(request):
