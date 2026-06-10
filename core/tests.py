@@ -380,6 +380,30 @@ class KazakhstanBriefTests(TestCase):
             json.loads(unescape(m.group(1)))  # raises if any island's props are malformed
 
 
+class KhalifaToursStoryTests(TestCase):
+    """The Khalifa Tours Impact Story is public and mounts 4 narrative islands."""
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_public_and_renders_narratives(self):
+        r = self.c.get(reverse('khalifa_tours_impact'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'data-island="NarrativeStory"', count=4)
+        self.assertContains(r, 'dist/ecoiq-islands.js')
+
+    def test_props_valid_json_and_variants(self):
+        import json, re
+        from html import unescape
+        r = self.c.get(reverse('khalifa_tours_impact'))
+        body = r.content.decode()
+        variants = []
+        for m in re.finditer(r'data-props="([^"]*)"', body):
+            data = json.loads(unescape(m.group(1)))  # raises if malformed
+            variants.append(data['variant'])
+        self.assertEqual(variants, ['village', 'ecosystem', 'timeline', 'intelligence'])
+
+
 class VisualLabAccessTests(TestCase):
     """Visual Lab is staff-only and mounts the ImpactGlobe island bundle."""
 

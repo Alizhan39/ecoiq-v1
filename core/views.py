@@ -1127,6 +1127,101 @@ VIDEO_TEMPLATES = [
 ]
 
 
+def khalifa_tours_impact(request):
+    """
+    /khalifa-tours-impact/ — EcoIQ's emotional flagship: a visual story (not a
+    dashboard) told through the Narrative Engine. Six scroll-driven sections,
+    each Information → Visual → Interaction, where the visual explains the text.
+    Public, presentation-only (no AI/API calls). Build-time React islands.
+    """
+    stories = {
+        # Sections 1–3 — one continuously morphing village (problem → intervention → community).
+        'village': {
+            'variant': 'village',
+            'eyebrow': 'Khalifa Tours · Impact Story',
+            'heading': 'A village, one winter, and the choice that changes it',
+            'data': {'homesUpgraded': '480', 'co2Avoided': '1,600', 'savings': '$220/yr'},
+            'scenes': [
+                {'kicker': 'The problem', 'title': 'Millions still heat homes with coal',
+                 'body': 'In the villages of southern Kazakhstan, winter means coal. Every stove '
+                         'darkens the sky, coats the home in soot, and quietly harms the lungs of '
+                         'the children who live there.'},
+                {'kicker': 'The cost', 'title': 'The air gets heavier every night',
+                 'body': 'As the cold deepens, more coal burns. Particulates climb, CO₂ rises past '
+                         '6 tonnes per home each year, and the health bill grows with the haze.'},
+                {'kicker': 'The intervention', 'title': 'One heating upgrade changes everything',
+                 'body': 'Replace a single coal stove with an efficient electric heat pump. The '
+                         'smoke stops, the home warms cleanly, efficiency jumps and the monthly '
+                         'cost falls — immediately.'},
+                {'kicker': 'Community transformation', 'title': 'A village begins to change',
+                 'body': 'House by house, the upgrade spreads. Clean homes multiply, the haze '
+                         'lifts, and the street starts to feel different.'},
+                {'kicker': 'The outcome', 'title': 'Clean air, warm homes, children outside',
+                 'body': 'Trees return, night lighting improves, and families breathe easier — '
+                         '480 homes upgraded, 1,600 tonnes of CO₂ avoided every year.'},
+            ],
+        },
+        # Section 4 — the value ecosystem.
+        'ecosystem': {
+            'variant': 'ecosystem',
+            'eyebrow': 'Section 04 · Travel with purpose',
+            'heading': 'Your visit becomes a living chain of value',
+            'scenes': [
+                {'kicker': 'The traveller', 'title': 'A visitor arrives',
+                 'body': 'A Khalifa Tour is more than a journey. The visit itself funds a real '
+                         'heating retrofit for a real family.'},
+                {'kicker': 'The exchange', 'title': 'Value flows household to community',
+                 'body': 'The household receives a cleaner, warmer home. The savings and skills '
+                         'ripple outward into the wider community.'},
+                {'kicker': 'The ecosystem', 'title': 'Everyone is connected to the outcome',
+                 'body': 'Visitor → household → community → environment. Not a transaction — a '
+                         'living ecosystem where every part benefits.'},
+            ],
+        },
+        # Section 5 — Sadaqah Jariyah, growing over time.
+        'timeline': {
+            'variant': 'timeline',
+            'eyebrow': 'Section 05 · Sadaqah Jariyah',
+            'heading': 'Impact that continues long after you leave',
+            'data': {'energyMwhPerYear': 1200, 'co2PerYear': 1600, 'familiesPerYear': 480},
+            'scenes': [
+                {'kicker': 'Year 1', 'title': 'The benefit begins immediately',
+                 'body': 'From the first winter, homes are warmer, air is cleaner, and savings '
+                         'start accruing to families who need them most.'},
+                {'kicker': 'Year 5', 'title': 'The impact compounds',
+                 'body': 'Five years on, the savings and emissions avoided have multiplied — a '
+                         'continuing charity that never stopped giving.'},
+                {'kicker': 'Year 10', 'title': 'A decade of ongoing good',
+                 'body': 'Ten years of clean heat: energy saved, emissions avoided and families '
+                         'helped keep growing — sadaqah jariyah in its truest form.'},
+            ],
+        },
+        # Section 6 — the EcoIQ intelligence layer.
+        'intelligence': {
+            'variant': 'intelligence',
+            'eyebrow': 'Section 06 · The EcoIQ intelligence layer',
+            'heading': 'How EcoIQ turns a story into measured, reported impact',
+            'scenes': [
+                {'kicker': 'Identify', 'title': 'EcoIQ finds the villages that matter most',
+                 'body': 'We scan regions for coal-heating density, grid readiness and need — '
+                         'pinpointing where a retrofit delivers the greatest impact.'},
+                {'kicker': 'Measure', 'title': 'Every home’s impact is quantified',
+                 'body': 'Each site is measured: emissions avoided, energy saved, households '
+                         'reached — converting good intentions into hard numbers.'},
+                {'kicker': 'Track', 'title': 'Outcomes are tracked over time',
+                 'body': 'Sites connect to a single intelligence hub, so progress and verified '
+                         'outcomes are tracked continuously, not just at handover.'},
+                {'kicker': 'Report', 'title': 'Investment-grade impact reports, automatically',
+                 'body': 'EcoIQ assembles the evidence into transparent, investment-grade reports '
+                         '— the proof that the story actually happened.'},
+            ],
+        },
+    }
+
+    props = {k: _json.dumps(v) for k, v in stories.items()}
+    return render(request, 'khalifa_tours_impact.html', {'props': props})
+
+
 def kazakhstan_transition_brief(request):
     """
     /kazakhstan-transition-brief/ — EcoIQ flagship visual-intelligence page.

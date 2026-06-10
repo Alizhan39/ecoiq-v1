@@ -426,3 +426,43 @@
 .eiq-fan { transform-origin: 245px 215px; animation: eiq-spin 3s linear infinite; }
 .eiq-aurora { animation: eiq-aurora-shift 9s ease-in-out infinite alternate; }
 @keyframes eiq-aurora-shift { from { transform: translateX(-12px); } to { transform: translateX(12px); } }
+
+/* ── Narrative scenes (shared) ───────────────────────────────────────────── */
+.eiq-story-section { padding: 32px; }
+.eiq-scene__svg { width: 100%; height: auto; display: block; }
+
+/* Ecosystem: flowing particles + node pulse */
+.eiq-eco-flow { offset-rotate: 0deg; animation: eiq-eco-move 2.4s linear infinite; }
+.eiq-eco-flow--2 { opacity: 0.7; }
+@keyframes eiq-eco-move { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+.eiq-eco-pulse { animation: eiq-eco-pulse 2.4s ease-out infinite; }
+@keyframes eiq-eco-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  70% { transform: scale(1.5); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Timeline: tree leaves + metrics */
+.eiq-tl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.eiq-tl__svg { max-width: 320px; margin: 0 auto; }
+.eiq-tl__metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.eiq-tl__metric { text-align: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--eiq-border); }
+.eiq-tl__metric-val { font-size: 20px; font-weight: 800; color: var(--eiq-ink-strong); }
+.eiq-tl__metric-suffix { font-size: 11px; font-weight: 500; color: var(--eiq-muted); }
+.eiq-tl__metric-label { margin-top: 2px; font-size: 10px; color: var(--eiq-muted); }
+.eiq-leaf { animation: eiq-leaf-fall 3.4s ease-in infinite; }
+.eiq-leaf--1 { animation-delay: 1.1s; }
+.eiq-leaf--2 { animation-delay: 2.2s; }
+@keyframes eiq-leaf-fall {
+  0% { transform: translateY(0); opacity: 0.9; }
+  100% { transform: translateY(60px) translateX(10px); opacity: 0; }
+}
+
+/* Intelligence: scanning beam + measure rings */
+.eiq-scan-beam { animation: eiq-scan 3.4s ease-in-out infinite; }
+@keyframes eiq-scan { 0% { transform: translateX(0); } 100% { transform: translateX(1180px); } }
+.eiq-measure-ring { animation: eiq-measure 2.2s ease-out infinite; }
+@keyframes eiq-measure {
+  0% { transform: scale(0.4); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}

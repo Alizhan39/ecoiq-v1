@@ -69,6 +69,9 @@ urlpatterns = [
     # EcoIQ Stewardship — climate intelligence + real-world stewardship
     path('stewardship/', views.stewardship, name='stewardship'),
 
+    # EcoIQ Khalifa Tours Impact Story — flagship visual narrative
+    path('khalifa-tours-impact/', views.khalifa_tours_impact, name='khalifa_tours_impact'),
+
     # EcoIQ Kazakhstan Transition Brief — flagship visual intelligence page
     path('kazakhstan-transition-brief/', views.kazakhstan_transition_brief, name='kazakhstan_transition_brief'),
 
