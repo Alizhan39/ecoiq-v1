@@ -1127,6 +1127,232 @@ VIDEO_TEMPLATES = [
 ]
 
 
+def khalifa_tours_impact(request):
+    """
+    /khalifa-tours-impact/ — EcoIQ's emotional flagship: a visual story (not a
+    dashboard) told through the Narrative Engine. Six scroll-driven sections,
+    each Information → Visual → Interaction, where the visual explains the text.
+    Public, presentation-only (no AI/API calls). Build-time React islands.
+    """
+    stories = {
+        # Sections 1–3 — one continuously morphing village (problem → intervention → community).
+        'village': {
+            'variant': 'village',
+            'eyebrow': 'Khalifa Tours · Impact Story',
+            'heading': 'A village, one winter, and the choice that changes it',
+            'data': {'homesUpgraded': '480', 'co2Avoided': '1,600', 'savings': '$220/yr'},
+            'scenes': [
+                {'kicker': 'The problem', 'title': 'Millions still heat homes with coal',
+                 'body': 'In the villages of southern Kazakhstan, winter means coal. Every stove '
+                         'darkens the sky, coats the home in soot, and quietly harms the lungs of '
+                         'the children who live there.'},
+                {'kicker': 'The cost', 'title': 'The air gets heavier every night',
+                 'body': 'As the cold deepens, more coal burns. Particulates climb, CO₂ rises past '
+                         '6 tonnes per home each year, and the health bill grows with the haze.'},
+                {'kicker': 'The intervention', 'title': 'One heating upgrade changes everything',
+                 'body': 'Replace a single coal stove with an efficient electric heat pump. The '
+                         'smoke stops, the home warms cleanly, efficiency jumps and the monthly '
+                         'cost falls — immediately.'},
+                {'kicker': 'Community transformation', 'title': 'A village begins to change',
+                 'body': 'House by house, the upgrade spreads. Clean homes multiply, the haze '
+                         'lifts, and the street starts to feel different.'},
+                {'kicker': 'The outcome', 'title': 'Clean air, warm homes, children outside',
+                 'body': 'Trees return, night lighting improves, and families breathe easier — '
+                         '480 homes upgraded, 1,600 tonnes of CO₂ avoided every year.'},
+            ],
+        },
+        # Section 4 — the value ecosystem.
+        'ecosystem': {
+            'variant': 'ecosystem',
+            'eyebrow': 'Section 04 · Travel with purpose',
+            'heading': 'Your visit becomes a living chain of value',
+            'scenes': [
+                {'kicker': 'The traveller', 'title': 'A visitor arrives',
+                 'body': 'A Khalifa Tour is more than a journey. The visit itself funds a real '
+                         'heating retrofit for a real family.'},
+                {'kicker': 'The exchange', 'title': 'Value flows household to community',
+                 'body': 'The household receives a cleaner, warmer home. The savings and skills '
+                         'ripple outward into the wider community.'},
+                {'kicker': 'The ecosystem', 'title': 'Everyone is connected to the outcome',
+                 'body': 'Visitor → household → community → environment. Not a transaction — a '
+                         'living ecosystem where every part benefits.'},
+            ],
+        },
+        # Section 5 — Sadaqah Jariyah, growing over time.
+        'timeline': {
+            'variant': 'timeline',
+            'eyebrow': 'Section 05 · Sadaqah Jariyah',
+            'heading': 'Impact that continues long after you leave',
+            'data': {'energyMwhPerYear': 1200, 'co2PerYear': 1600, 'familiesPerYear': 480},
+            'scenes': [
+                {'kicker': 'Year 1', 'title': 'The benefit begins immediately',
+                 'body': 'From the first winter, homes are warmer, air is cleaner, and savings '
+                         'start accruing to families who need them most.'},
+                {'kicker': 'Year 5', 'title': 'The impact compounds',
+                 'body': 'Five years on, the savings and emissions avoided have multiplied — a '
+                         'continuing charity that never stopped giving.'},
+                {'kicker': 'Year 10', 'title': 'A decade of ongoing good',
+                 'body': 'Ten years of clean heat: energy saved, emissions avoided and families '
+                         'helped keep growing — sadaqah jariyah in its truest form.'},
+            ],
+        },
+        # Section 6 — the EcoIQ intelligence layer.
+        'intelligence': {
+            'variant': 'intelligence',
+            'eyebrow': 'Section 06 · The EcoIQ intelligence layer',
+            'heading': 'How EcoIQ turns a story into measured, reported impact',
+            'scenes': [
+                {'kicker': 'Identify', 'title': 'EcoIQ finds the villages that matter most',
+                 'body': 'We scan regions for coal-heating density, grid readiness and need — '
+                         'pinpointing where a retrofit delivers the greatest impact.'},
+                {'kicker': 'Measure', 'title': 'Every home’s impact is quantified',
+                 'body': 'Each site is measured: emissions avoided, energy saved, households '
+                         'reached — converting good intentions into hard numbers.'},
+                {'kicker': 'Track', 'title': 'Outcomes are tracked over time',
+                 'body': 'Sites connect to a single intelligence hub, so progress and verified '
+                         'outcomes are tracked continuously, not just at handover.'},
+                {'kicker': 'Report', 'title': 'Investment-grade impact reports, automatically',
+                 'body': 'EcoIQ assembles the evidence into transparent, investment-grade reports '
+                         '— the proof that the story actually happened.'},
+            ],
+        },
+    }
+
+    props = {k: _json.dumps(v) for k, v in stories.items()}
+    return render(request, 'khalifa_tours_impact.html', {'props': props})
+
+
+def kazakhstan_transition_brief(request):
+    """
+    /kazakhstan-transition-brief/ — EcoIQ flagship visual-intelligence page.
+
+    Pure presentation: assembles the Visual Intelligence islands (React, built
+    to static/dist) with curated transition data. No AI/API calls, no secrets;
+    safe to serve publicly. Each island receives its props as a JSON string —
+    Django autoescaping encodes it safely into the data-props attribute, and the
+    browser decodes it back to valid JSON for the loader to parse.
+    """
+    regions = [
+        {
+            'id': 'almaty', 'name': 'Almaty', 'projects': 14,
+            'fundingNeededM': 96, 'households': 420000, 'emissionsReductionKt': 880,
+            'note': 'Dense urban heat demand; strongest grid headroom for electrification.',
+        },
+        {
+            'id': 'shymkent', 'name': 'Shymkent', 'projects': 9,
+            'fundingNeededM': 64, 'households': 310000, 'emissionsReductionKt': 610,
+            'note': "Fast-growing southern hub; high coal-stove prevalence in peri-urban districts.",
+        },
+        {
+            'id': 'turkistan', 'name': 'Turkistan', 'projects': 6,
+            'fundingNeededM': 38, 'households': 180000, 'emissionsReductionKt': 340,
+            'note': 'Heritage city; pilot zone for community-financed retrofits.',
+        },
+        {
+            'id': 'karatau', 'name': 'Karatau', 'projects': 4,
+            'fundingNeededM': 22, 'households': 90000, 'emissionsReductionKt': 190,
+            'note': 'Industrial legacy town; phosphate-sector partnership potential.',
+        },
+    ]
+    total_households = sum(r['households'] for r in regions)
+    total_funding = sum(r['fundingNeededM'] for r in regions)
+    total_co2_kt = sum(r['emissionsReductionKt'] for r in regions)
+
+    islands = {
+        'hero': {
+            'eyebrow': 'EcoIQ Climate Intelligence · 2025',
+            'title': 'Kazakhstan Energy Transition Brief',
+            'subtitle': 'Coal-to-electric heating retrofit — investment-grade transition '
+                        'intelligence across four southern regions.',
+            'transitionScore': 68,
+            'households': total_households,
+            'fundingNeededM': total_funding,
+            'co2PotentialMt': round(total_co2_kt / 1000, 1),
+            'regionsActive': len(regions),
+        },
+        'map': {
+            'eyebrow': 'Regional Intelligence',
+            'title': 'Transition Map — Southern Kazakhstan',
+            'regions': regions,
+        },
+        'radar': {
+            'eyebrow': 'Risk Intelligence',
+            'title': 'Transition Risk Radar',
+            'score': 68,
+            'scoreLabel': 'Readiness',
+            'axes': [
+                {'label': 'Policy', 'value': 72},
+                {'label': 'Grid', 'value': 64},
+                {'label': 'Capital', 'value': 58},
+                {'label': 'Social', 'value': 76},
+                {'label': 'Supply', 'value': 52},
+                {'label': 'Delivery', 'value': 67},
+            ],
+        },
+        'esg': {
+            'eyebrow': 'Trajectory',
+            'title': 'Decarbonisation Trajectory (Index)',
+            'years': [2023, 2025, 2027, 2029, 2031, 2033],
+            'series': [
+                {'key': 'env', 'label': 'Environmental', 'color': '#00e89a',
+                 'values': [38, 46, 57, 68, 79, 88]},
+                {'key': 'soc', 'label': 'Social', 'color': '#e8c46a',
+                 'values': [44, 50, 58, 65, 71, 78]},
+                {'key': 'gov', 'label': 'Governance', 'color': '#5ab0f2',
+                 'values': [52, 56, 61, 67, 73, 80]},
+            ],
+        },
+        'sim': {
+            'eyebrow': 'Scenario Simulator',
+            'title': 'Model the transition — live',
+            'baseHouseholds': total_households,
+            'co2PerHomeT': 5.4,
+        },
+        'stake': {
+            'eyebrow': 'Value Network',
+            'title': 'Stakeholder Map',
+            'coreLabel': 'EcoIQ',
+            'stakeholders': [
+                {'id': 'gov', 'label': 'Government',
+                 'role': 'Sets phase-out policy, permits, and tariff reform; co-funds pilots.',
+                 'value': 'Provides mandate & matched capital → receives verified emissions outcomes.'},
+                {'id': 'inv', 'label': 'Investors',
+                 'role': 'Deploy transition capital seeking measurable, de-risked impact returns.',
+                 'value': 'Provide capital → receive investment-grade intelligence & MRV.'},
+                {'id': 'com', 'label': 'Communities',
+                 'role': 'Households moving from coal stoves to clean electric heating.',
+                 'value': 'Provide adoption → receive warmer homes, cleaner air, lower bills.'},
+                {'id': 'co', 'label': 'Companies',
+                 'role': 'Utilities, installers, and manufacturers delivering the retrofit at scale.',
+                 'value': 'Provide delivery capacity → receive aggregated, bankable demand.'},
+            ],
+        },
+        'story': {
+            'eyebrow': 'AI Synthesis',
+            'title': 'What the data is telling us',
+            'insights': [
+                {'stat': '1.0M households',
+                 'headline': 'The opportunity is concentrated and addressable',
+                 'body': 'Four southern regions hold the bulk of coal-heated homes — enough '
+                         'density to make electrification logistics and grid upgrades economic.'},
+                {'stat': '$220M',
+                 'headline': 'Capital is the binding constraint, not technology',
+                 'body': 'At roughly $4,200 per home, the retrofit pathway is well understood. '
+                         'Blended public-private capital unlocks the conversion rate.'},
+                {'stat': '2.0 Mt/yr',
+                 'headline': 'Decarbonisation depth tracks grid cleanliness',
+                 'body': 'Emissions avoided scale with how clean the electricity is — pairing '
+                         'retrofits with renewable supply roughly doubles the climate return.'},
+            ],
+            'takeaway': 'A staged, capital-led, electrification-paired program turns a fragmented '
+                        'coal-heating problem into an investment-grade, measurable transition.',
+        },
+    }
+
+    props = {k: _json.dumps(v) for k, v in islands.items()}
+    return render(request, 'kazakhstan_transition_brief.html', {'props': props})
+
+
 @staff_member_required(login_url='/login/')
 def visual_lab(request):
     """

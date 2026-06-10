@@ -18,7 +18,9 @@
  */
 import { createElement } from 'react'
 import { createRoot } from 'react-dom/client'
+import './design/system.css'
 import './islands.css'
+import { MotionProvider } from './motion'
 import { registry } from './registry'
 
 type Props = Record<string, unknown>
@@ -47,8 +49,11 @@ export function mountAll(root: ParentNode = document): void {
       return
     }
     el.setAttribute('data-island-mounted', '')
+    el.classList.add('eiq') // scope design-system CSS variables to the island
     try {
-      createRoot(el).render(createElement(Component, parseProps(el)))
+      createRoot(el).render(
+        createElement(MotionProvider, null, createElement(Component, parseProps(el))),
+      )
     } catch (err) {
       console.error(`[ecoiq-islands] failed to mount "${name}"`, err)
       el.removeAttribute('data-island-mounted')

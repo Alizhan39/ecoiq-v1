@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Khalifa Tours Impact Story — EcoIQ{% endblock %}
+
+{% block extra_head %}
+<style>
+  .kt { background: linear-gradient(180deg, #04100c 0%, #030c09 100%); color: #e7f3ee; }
+  .kt__hero {
+    min-height: 86vh; display: flex; flex-direction: column; justify-content: center;
+    padding: 64px 20px; text-align: center;
+    background:
+      radial-gradient(70% 50% at 50% 18%, rgba(0,232,154,0.12) 0%, transparent 60%),
+      radial-gradient(50% 40% at 78% 82%, rgba(232,196,106,0.10) 0%, transparent 60%);
+  }
+  .kt__hero-eyebrow { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #00e89a; font-weight: 600; margin: 0 0 18px; }
+  .kt__hero-title { margin: 0 auto 18px; max-width: 16ch; font-size: clamp(34px, 6vw, 68px); font-weight: 800; line-height: 1.02; letter-spacing: -0.02em; color: #fff; }
+  .kt__hero-sub { margin: 0 auto; max-width: 56ch; font-size: clamp(15px, 2.2vw, 19px); color: #8fa9a0; line-height: 1.6; }
+  .kt__hero-cue { margin-top: 48px; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5f746c; }
+  .kt__wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 100px; }
+  .kt__section { margin-top: 36px; }
+  .kt__divider { display: flex; align-items: center; gap: 14px; margin: 64px 4px 18px; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5f746c; font-weight: 600; }
+  .kt__divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+  .kt__close { text-align: center; padding: 80px 20px 40px; }
+  .kt__close h2 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 800; color: #fff; margin: 0 0 14px; }
+  .kt__cta { display: inline-block; margin-top: 8px; padding: 14px 26px; border-radius: 999px; background: #00e89a; color: #04100c; font-weight: 700; text-decoration: none; }
+  .kt__fallback { color: #8fa9a0; padding: 22px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kt">
+  {# Emotional hero #}
+  <header class="kt__hero">
+    <p class="kt__hero-eyebrow">Khalifa Tours · Real-World Impact</p>
+    <h1 class="kt__hero-title">Travel today. Benefit every day.</h1>
+    <p class="kt__hero-sub">
+      A visual story of how one journey turns coal-heated homes into clean, warm ones —
+      and keeps giving, long after you leave.
+    </p>
+    <p class="kt__hero-cue">↓ Scroll to begin the story</p>
+  </header>
+
+  <div class="kt__wrap">
+    {# Sections 1–3 — the village transforms #}
+    <div class="kt__divider">01–03 — The Village</div>
+    <section class="kt__section">
+      <div data-island="NarrativeStory" data-props="{{ props.village }}">
+        <div class="kt__fallback">From coal-heated homes to a clean, warm village — 480 homes upgraded, 1,600 t CO₂ avoided/yr.</div>
+      </div>
+    </section>
+
+    {# Section 4 — the ecosystem #}
+    <div class="kt__divider">04 — Travel With Purpose</div>
+    <section class="kt__section">
+      <div data-island="NarrativeStory" data-props="{{ props.ecosystem }}">
+        <div class="kt__fallback">Visitor → household → community → environment: a living chain of value.</div>
+      </div>
+    </section>
+
+    {# Section 5 — Sadaqah Jariyah #}
+    <div class="kt__divider">05 — Sadaqah Jariyah</div>
+    <section class="kt__section">
+      <div data-island="NarrativeStory" data-props="{{ props.timeline }}">
+        <div class="kt__fallback">Impact that keeps growing over 1, 5 and 10 years.</div>
+      </div>
+    </section>
+
+    {# Section 6 — intelligence layer #}
+    <div class="kt__divider">06 — The EcoIQ Intelligence Layer</div>
+    <section class="kt__section">
+      <div data-island="NarrativeStory" data-props="{{ props.intelligence }}">
+        <div class="kt__fallback">EcoIQ identifies villages, measures impact, tracks outcomes and reports.</div>
+      </div>
+    </section>
+
+    {# Close #}
+    <div class="kt__close">
+      <h2>Travel with purpose. Leave warmth behind.</h2>
+      <a class="kt__cta" href="/heating/">Explore the Heating Transition →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

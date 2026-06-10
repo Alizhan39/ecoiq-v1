@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Kazakhstan Transition Brief 2025 — EcoIQ Visual Intelligence{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Flagship page chrome — dark institutional canvas behind the islands. */
+  .ktb {
+    background:
+      radial-gradient(80% 60% at 70% -10%, rgba(0,232,154,0.08) 0%, transparent 55%),
+      linear-gradient(180deg, #04100c 0%, #030c09 100%);
+    min-height: 100vh;
+    color: #e7f3ee;
+    padding: 56px 20px 96px;
+  }
+  .ktb__wrap { max-width: 1080px; margin: 0 auto; }
+  .ktb__crumb {
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #00e89a; font-weight: 600; margin: 0 0 28px;
+  }
+  .ktb__section { margin-top: 28px; }
+  .ktb__section-label {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #5f746c; font-weight: 600; margin: 44px 4px 14px;
+  }
+  .ktb__section-label::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+  .ktb__grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 900px) { .ktb__grid-2 { grid-template-columns: 1fr; } }
+  /* Fallback shown before JS hydrates / if it fails. */
+  .ktb__fallback { color: #8fa9a0; padding: 22px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ktb">
+  <div class="ktb__wrap">
+    <p class="ktb__crumb">EcoIQ · Climate Intelligence · Flagship Brief</p>
+
+    {# 1 — Hero #}
+    <section class="ktb__section">
+      <div data-island="KazakhstanHero" data-props="{{ props.hero }}">
+        <div class="ktb__fallback"><h1>Kazakhstan Energy Transition Brief 2025</h1>
+        <p>Transition readiness 68 / 100 · 1.0M households in scope · $220M required.</p></div>
+      </div>
+    </section>
+
+    {# 2 — Transition Map #}
+    <div class="ktb__section-label">02 — Regional Transition Map</div>
+    <section class="ktb__section">
+      <div data-island="TransitionMap" data-props="{{ props.map }}">
+        <div class="ktb__fallback">Interactive regional map (Almaty, Shymkent, Turkistan, Karatau).</div>
+      </div>
+    </section>
+
+    {# 3 + 4 — Risk Radar + ESG Graph #}
+    <div class="ktb__section-label">03 / 04 — Risk &amp; Trajectory Intelligence</div>
+    <section class="ktb__section ktb__grid-2">
+      <div data-island="RiskRadar" data-props="{{ props.radar }}">
+        <div class="ktb__fallback">Transition risk radar — readiness 68/100.</div>
+      </div>
+      <div data-island="ESGGraph" data-props="{{ props.esg }}">
+        <div class="ktb__fallback">Decarbonisation trajectory index, 2023–2033.</div>
+      </div>
+    </section>
+
+    {# 5 — Scenario Simulator #}
+    <div class="ktb__section-label">05 — Scenario Simulator</div>
+    <section class="ktb__section">
+      <div data-island="ScenarioSimulator" data-props="{{ props.sim }}">
+        <div class="ktb__fallback">Interactive scenario model — adjust policy levers to update projections.</div>
+      </div>
+    </section>
+
+    {# 6 — Stakeholder Map #}
+    <div class="ktb__section-label">06 — Stakeholder Value Network</div>
+    <section class="ktb__section">
+      <div data-island="StakeholderMap" data-props="{{ props.stake }}">
+        <div class="ktb__fallback">Stakeholder map — government, investors, communities, companies.</div>
+      </div>
+    </section>
+
+    {# 7 — AI Visual Storytelling #}
+    <div class="ktb__section-label">07 — AI Synthesis</div>
+    <section class="ktb__section">
+      <div data-island="AIStorytelling" data-props="{{ props.story }}">
+        <div class="ktb__fallback">AI synthesis of the transition opportunity.</div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
