@@ -11,6 +11,7 @@ import StakeholderMap from './components/StakeholderMap'
 import AIStorytelling from './components/AIStorytelling'
 import KazakhstanHero from './components/kazakhstan/KazakhstanHero'
 import TransitionMap from './components/kazakhstan/TransitionMap'
+import HeatingTransitionStory from './components/stories/HeatingTransitionStory'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
@@ -22,4 +23,5 @@ export const registry: Record<string, ComponentType<any>> = {
   AIStorytelling,
   KazakhstanHero,
   TransitionMap,
+  HeatingTransitionStory,
 }

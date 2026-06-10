@@ -404,6 +404,7 @@ class VisualLabAccessTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'data-island="ImpactGlobe"')
         self.assertContains(r, 'data-island="RiskRadar"')
+        self.assertContains(r, 'data-island="HeatingTransitionStory"')
         # base.html wires the build-time bundle (served by WhiteNoise, no Node).
         self.assertContains(r, 'dist/ecoiq-islands.js')
         self.assertContains(r, 'dist/ecoiq-islands.css')
