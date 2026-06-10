@@ -12,6 +12,13 @@ frontend/remotion/out/
 frontend/remotion/.cache/
 node_modules/
 
+# ── Visual Intelligence islands — BUILD-TIME ONLY (never a Render runtime dep) ──
+# Source lives in frontend/app/. node_modules + Vite caches are never committed.
+# The compiled bundle in static/dist/ IS committed (Render serves it without Node).
+frontend/app/node_modules/
+frontend/app/.vite/
+frontend/app/dist/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -231,3 +238,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── Re-include the compiled Visual Intelligence island bundle ──
+# This MUST come AFTER the generic `dist/` rule (Python packaging) above so it
+# wins. static/dist/ is a committed build artifact — Render serves it via
+# WhiteNoise with no Node step. (frontend/app/ source is built locally.)
+!static/dist/
+!static/dist/**

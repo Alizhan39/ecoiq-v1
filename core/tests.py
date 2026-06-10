@@ -352,3 +352,31 @@ class VideoStudioAccessTests(TestCase):
         self.assertContains(r, 'Country Transition Brief')
         self.assertContains(r, 'Company ESG Risk Brief')
         self.assertContains(r, 'Khalifa Tours Impact Explainer')
+
+
+class VisualLabAccessTests(TestCase):
+    """Visual Lab is staff-only and mounts the ImpactGlobe island bundle."""
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+        User.objects.create_user('vl_staff', password='x', is_staff=True)
+        User.objects.create_user('vl_user', password='x', is_staff=False)
+
+    def test_anonymous_redirected(self):
+        r = self.c.get(reverse('visual_lab'))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_redirected(self):
+        self.c.login(username='vl_user', password='x')
+        r = self.c.get(reverse('visual_lab'))
+        self.assertEqual(r.status_code, 302)
+
+    def test_staff_sees_island_and_bundle(self):
+        self.c.login(username='vl_staff', password='x')
+        r = self.c.get(reverse('visual_lab'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'data-island="ImpactGlobe"')
+        # base.html wires the build-time bundle (served by WhiteNoise, no Node).
+        self.assertContains(r, 'dist/ecoiq-islands.js')
+        self.assertContains(r, 'dist/ecoiq-islands.css')

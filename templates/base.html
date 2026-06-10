@@ -105,6 +105,8 @@
   <link rel="stylesheet" href="{% static 'css/ecoiq-institutional.css' %}">
   <!-- SectionVisualBackground system — reusable contextual backgrounds -->
   <link rel="stylesheet" href="{% static 'css/section-bg.css' %}">
+  <!-- Visual Intelligence islands — styles for React-mounted components (scoped .eiq-*) -->
+  <link rel="stylesheet" href="{% static 'dist/ecoiq-islands.css' %}">
 
   <!-- RTL mirror for Arabic -->
   <style>
@@ -209,5 +211,11 @@
       Stoke Share Ltd t/a EcoIQ &middot; Company No.&nbsp;14347320 &middot; Registered in England &amp; Wales &middot; Registered office: C/O Schoolgate Accounting Services, 46&ndash;50 Coombe Road, New Malden KT3&nbsp;4QF
     </span>
   </footer>
+
+  {# ── EcoIQ Visual Intelligence islands ──
+     Build-time bundle (frontend/app → static/dist). Hydrates any element with
+     data-island="…". No-ops on pages without islands; never blocks render. #}
+  <script type="module" src="{% static 'dist/ecoiq-islands.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
 </body>
 </html>
