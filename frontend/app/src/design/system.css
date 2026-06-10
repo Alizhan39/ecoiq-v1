@@ -1,0 +1,110 @@
+/* EcoIQ Visual Intelligence — design system (CSS custom properties + primitives).
+   Everything is scoped under .eiq so it never leaks into Django page styles.
+   These variables mirror design/tokens.ts. */
+
+.eiq {
+  /* Backgrounds */
+  --eiq-bg-900: #03100c;
+  --eiq-bg-800: #06140f;
+  --eiq-bg-700: #0a1c16;
+  --eiq-surface: #0c211a;
+  --eiq-surface-raised: #0f2a21;
+
+  /* Accents */
+  --eiq-accent: #00e89a;
+  --eiq-accent-dim: #0bbf82;
+  --eiq-accent-glow: rgba(0, 232, 154, 0.18);
+  --eiq-gold: #e8c46a;
+  --eiq-gold-glow: rgba(232, 196, 106, 0.55);
+
+  /* Signals */
+  --eiq-warn: #f2a65a;
+  --eiq-danger: #ef6f6f;
+  --eiq-info: #5ab0f2;
+
+  /* Text */
+  --eiq-ink: #e7f3ee;
+  --eiq-ink-strong: #ffffff;
+  --eiq-muted: #8fa9a0;
+  --eiq-faint: #5f746c;
+
+  /* Lines */
+  --eiq-border: rgba(255, 255, 255, 0.06);
+  --eiq-border-accent: rgba(0, 232, 154, 0.16);
+
+  /* Radii */
+  --eiq-r-sm: 10px;
+  --eiq-r-md: 14px;
+  --eiq-r-lg: 18px;
+  --eiq-r-xl: 24px;
+
+  /* Elevation */
+  --eiq-shadow-panel: 0 24px 60px -30px rgba(0, 0, 0, 0.8);
+  --eiq-shadow-raised: 0 18px 48px -24px rgba(0, 0, 0, 0.7);
+
+  /* Type */
+  --eiq-mono: "SF Mono", "JetBrains Mono", ui-monospace, "Roboto Mono", Menlo, monospace;
+
+  color: var(--eiq-ink);
+  font-family: inherit;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Surface / panel primitive ───────────────────────────────────────────── */
+.eiq-panel {
+  position: relative;
+  border-radius: var(--eiq-r-lg);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(0, 232, 154, 0.06) 0%, transparent 45%),
+    linear-gradient(160deg, var(--eiq-bg-800) 0%, var(--eiq-bg-900) 70%, #020a07 100%);
+  border: 1px solid var(--eiq-border);
+  box-shadow: var(--eiq-shadow-panel);
+}
+
+/* Hairline luminous top edge — institutional depth cue. */
+.eiq-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: var(--eiq-r-lg) var(--eiq-r-lg) 0 0;
+  background: linear-gradient(90deg, transparent, var(--eiq-border-accent), transparent);
+  pointer-events: none;
+}
+
+/* ── Eyebrow / kicker ────────────────────────────────────────────────────── */
+.eiq-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--eiq-accent);
+}
+
+.eiq-eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: var(--eiq-accent);
+  opacity: 0.7;
+}
+
+/* ── Numeric treatment ───────────────────────────────────────────────────── */
+.eiq-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Reduced motion: kill loops/spins globally inside islands ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .eiq *,
+  .eiq *::before,
+  .eiq *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

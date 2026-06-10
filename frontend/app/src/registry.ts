@@ -9,8 +9,10 @@
  */
 import type { ComponentType } from 'react'
 import ImpactGlobe from './components/ImpactGlobe'
+import RiskRadar from './components/RiskRadar'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
   ImpactGlobe,
+  RiskRadar,
 }
