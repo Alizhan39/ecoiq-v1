@@ -189,10 +189,11 @@ def landing(request):
 
     return render(request, 'landing.html', {
         # Live data — all counts direct from DB
-        'top_companies':  top_companies,
-        'hero_companies': hero_companies,
-        'company_count':  company_count,
-        'market_count':   market_count,
+        'top_companies':        top_companies,
+        'hero_companies':       hero_companies,
+        'company_count':        company_count,
+        'company_count_display': f"{company_count}+",
+        'market_count':         market_count,
         'pillars_meta':   pillars_meta,
         'audience_labels': ['Investors', 'Governments', 'Companies', 'Climate Programmes', 'Development Banks'],
         # Review CTA context
@@ -1752,10 +1753,17 @@ def platform(request):
     built exactly once per worker startup, not re-created on every request.
     """
     from django.conf import settings as _s
+    try:
+        from companies.models import CompanyProfile as _CP
+        _cnt = _CP.objects.filter(status__in=('public', 'verified')).count()
+    except Exception:
+        _cnt = 0
     return render(request, 'platform.html', {
-        'modules':      _PLATFORM_MODULES,
-        'calendly_url': getattr(_s, 'CALENDLY_URL', ''),
-        'site_url':     getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
+        'modules':               _PLATFORM_MODULES,
+        'calendly_url':          getattr(_s, 'CALENDLY_URL', ''),
+        'site_url':              getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
+        'company_count':         _cnt,
+        'company_count_display': f"{_cnt}+",
     })
 
 
@@ -2053,11 +2061,18 @@ def ethical_governance(request):
     The internal Name-by-Name mapping is in docs/ethical-governance-internal-map.md.
     """
     from django.conf import settings as _s
+    try:
+        from companies.models import CompanyProfile as _CP
+        _cnt = _CP.objects.filter(status__in=('public', 'verified')).count()
+    except Exception:
+        _cnt = 0
     return render(request, 'ethical_governance.html', {
-        'modules':    _EGF_MODULES,
-        'extended':   _EGF_EXTENDED,
-        'site_url':   getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
-        'calendly_url': getattr(_s, 'CALENDLY_URL', ''),
+        'modules':               _EGF_MODULES,
+        'extended':              _EGF_EXTENDED,
+        'site_url':              getattr(_s, 'SITE_URL', 'https://ecoiq.uk'),
+        'calendly_url':          getattr(_s, 'CALENDLY_URL', ''),
+        'company_count':         _cnt,
+        'company_count_display': f"{_cnt}+",
     })
 
 

@@ -48,6 +48,10 @@
     header a { color: #fff; text-decoration: none; font-weight: 600; font-size: 1.2rem; }
     header nav { margin-left: auto; display: flex; gap: 1.5rem; }
     header nav a { color: #d8f3dc; font-size: 0.9rem; }
+    @media (max-width: 900px) {
+      header { flex-wrap: wrap; }
+      header nav { flex-wrap: wrap; gap: .5rem 1rem; justify-content: flex-end; }
+    }
 
     main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
 
