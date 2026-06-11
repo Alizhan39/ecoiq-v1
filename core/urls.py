@@ -63,6 +63,10 @@ urlpatterns = [
     # EcoIQ Value Distribution — stakeholder value map + Rizq model
     path('value-distribution/', views.value_distribution, name='value_distribution'),
 
+    # EcoIQ Visual Intelligence — Khalifa Impact + Kazakhstan transition map
+    path('khalifa-impact/', views.khalifa_impact,  name='khalifa_impact'),
+    path('kazakhstan-map/', views.kazakhstan_map,  name='kazakhstan_map'),
+
     # EcoIQ Sample Investor Readiness Report — public demo report
     path('sample-report/', views.sample_report, name='sample_report'),
 

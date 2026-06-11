@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Khalifa Impact — Villages, Homes, CO₂ Reduced | EcoIQ{% endblock %}
+{% block meta_description_content %}Khalifa Impact — measurable real-world outcomes from EcoIQ's clean-heating work in Kazakhstan: villages, homes upgraded, CO₂ avoided, and sponsorship pathways.{% endblock %}
+{% block extra_head %}
+<style>
+:root{--ki-bg:#070b0f;--ki-bg2:#0d1117;--ki-border:rgba(255,255,255,.07);--ki-border2:rgba(255,255,255,.13);
+  --ki-text:#e2e8f0;--ki-muted:#64748b;--ki-muted2:#94a3b8;--ki-green:#00e89a;--ki-gold:#c9a84c;--ki-blue:#58a6ff;--ki-teal:#06b6d4;--ki-purple:#a855f7;}
+*{box-sizing:border-box}
+body{background:var(--ki-bg);color:var(--ki-text)}
+.ki-wrap{max-width:1080px;margin:0 auto;padding:0 1.5rem 5rem}
+.ac-green{--ac:var(--ki-green)}.ac-gold{--ac:var(--ki-gold)}.ac-blue{--ac:var(--ki-blue)}.ac-teal{--ac:var(--ki-teal)}.ac-purple{--ac:var(--ki-purple)}
+.ki-hero{padding:5rem 1.5rem 3rem;text-align:center;position:relative;overflow:hidden;border-bottom:1px solid var(--ki-border);
+  background:linear-gradient(180deg,rgba(201,168,76,.06) 0%,rgba(16,185,129,.04) 45%,transparent 100%)}
+.ki-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(0,232,154,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,232,154,.015) 1px,transparent 1px);background-size:56px 56px}
+.ki-eyebrow{display:inline-flex;align-items:center;gap:.45rem;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--ki-gold);
+  font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:.3rem 1rem;border-radius:20px;margin-bottom:1.4rem;position:relative}
+.ki-hero h1{font-size:clamp(2rem,4.5vw,3rem);font-weight:800;letter-spacing:-.04em;line-height:1.1;color:#fff;margin-bottom:1.1rem;position:relative}
+.ki-hero p{font-size:1.02rem;color:var(--ki-muted2);line-height:1.7;max-width:640px;margin:0 auto;position:relative}
+.ki-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:2.75rem}
+.ki-metric{background:var(--ki-bg2);border:1px solid var(--ki-border);border-radius:16px;padding:1.8rem 1.5rem;position:relative;overflow:hidden}
+.ki-metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent)}
+.ki-val{font-size:2.8rem;font-weight:900;color:var(--ac);letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.ki-lbl{font-size:.82rem;color:var(--ki-muted2);margin-top:.5rem;line-height:1.4}
+.ki-seclabel{display:flex;align-items:center;gap:12px;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ki-muted);font-family:'SF Mono',monospace;margin:3.25rem 0 1.5rem}
+.ki-seclabel::after{content:'';flex:1;height:1px;background:var(--ki-border)}
+.ki-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+.ki-card{background:var(--ki-bg2);border:1px solid var(--ki-border);border-radius:14px;padding:1.6rem;display:flex;flex-direction:column;gap:.5rem;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.ki-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent)}
+.ki-card:hover{border-color:color-mix(in srgb,var(--ac) 35%,transparent);transform:translateY(-2px)}
+.ki-card h3{font-size:1.02rem;font-weight:700;color:#fff;letter-spacing:-.01em}
+.ki-card .budget{font-size:1.15rem;font-weight:800;color:var(--ac);letter-spacing:-.02em}
+.ki-card .desc{font-size:.82rem;color:var(--ki-muted2);line-height:1.6;flex:1}
+.ki-cta{margin-top:3rem;text-align:center;background:rgba(255,255,255,.02);border:1px solid var(--ki-border);border-radius:16px;padding:3rem 2rem}
+.ki-cta h2{font-size:clamp(1.4rem,2.6vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem}
+.ki-cta p{font-size:.9rem;color:var(--ki-muted2);max-width:520px;margin:0 auto 1.8rem;line-height:1.65}
+.ki-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.ki-btn{font-size:.88rem;font-weight:700;padding:.78rem 1.6rem;border-radius:10px;display:inline-flex;gap:.4rem;align-items:center;transition:opacity .2s,transform .1s,border-color .2s,color .2s}
+.ki-btn-gold{background:var(--ki-gold);color:#0a0f14}.ki-btn-gold:hover{opacity:.88;transform:translateY(-1px)}
+.ki-btn-outline{background:transparent;border:1px solid var(--ki-border2);color:var(--ki-muted2)}.ki-btn-outline:hover{border-color:var(--ki-green);color:var(--ki-green)}
+.ki-disc{font-size:.72rem;color:var(--ki-muted);text-align:center;margin-top:2rem;line-height:1.6}
+@media(max-width:640px){.ki-hero{padding:3.5rem 1rem 2.5rem}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="ki-hero">
+  <div class="ki-eyebrow">◈ Khalifa Impact</div>
+  <h1>Every retrofit is a benefit<br>that continues every day.</h1>
+  <p>Measurable real-world outcomes from EcoIQ's clean-heating work in Kazakhstan — homes moved off coal, cleaner air, and CO₂ avoided, reported per home.</p>
+  <div class="ki-wrap" style="padding-bottom:0">
+    <div class="ki-metrics">
+      {% for m in impact %}
+      <div class="ki-metric ac-{{ m.accent }}">
+        <div class="ki-val" data-count="{{ m.value }}">0</div>
+        <div class="ki-lbl">{{ m.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="ki-wrap">
+  <div class="ki-seclabel">Sponsor a project</div>
+  <div class="ki-grid">
+    {% for s in sponsors %}
+    <div class="ki-card ac-{{ s.accent }}">
+      <h3>{{ s.name }}</h3>
+      <div class="budget">{{ s.budget }}</div>
+      <div class="desc">{{ s.desc }}</div>
+      <a href="/heating/company-sponsorship/" style="font-size:.78rem;font-weight:700;color:var(--ac);margin-top:auto">Sponsor →</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="ki-cta">
+    <h2>Travel today. Benefit every day.</h2>
+    <p>Khalifa Tours connect travellers to real heating-transition impact. Explore the programme or sponsor homes directly.</p>
+    <div class="ki-btns">
+      <a href="/heating/" class="ki-btn ki-btn-gold">Explore Khalifa Tours →</a>
+      <a href="/kazakhstan-map/" class="ki-btn ki-btn-outline">See the transition map</a>
+    </div>
+  </div>
+
+  <p class="ki-disc">All figures are indicative pilot estimates and subject to confirmation. CO₂ and air-quality impact are reported per home through EcoIQ.</p>
+</div>
+
+<script>
+// Count-up animation (respects reduced-motion).
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.ki-val[data-count]');
+  function run(el){
+    var to = parseInt(el.getAttribute('data-count'),10)||0;
+    if (reduce){ el.textContent = to.toLocaleString(); return; }
+    var t0=null, dur=1100;
+    function step(ts){ if(!t0)t0=ts; var p=Math.min((ts-t0)/dur,1); el.textContent=Math.round(p*to).toLocaleString(); if(p<1)requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+  if ('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){run(e.target);io.unobserve(e.target);}});});
+    els.forEach(function(el){io.observe(el);});
+  } else { els.forEach(run); }
+})();
+</script>
+{% endblock %}
