@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Global Intelligence — EcoIQ Country Coverage Map{% endblock %}
+{% block meta_description_content %}Interactive EcoIQ global coverage map. Select any country to see coverage status, companies ranked, transition risks, manufacturer intelligence, and project opportunities across the UK, Kazakhstan, Saudi Arabia, and Türkiye.{% endblock %}
+
+{% block extra_head %}
+<style>
+  body { background: #06080e; }
+  main { max-width: 1180px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1120px;margin:0 auto;padding:1rem 0 3rem;">
+
+  <div data-island="GlobalCountryExplorer" data-island-lazy
+       data-props='{"eyebrow":"Global Intelligence","title":"Select any country. See EcoIQ coverage."}'>
+    <!-- Server-rendered fallback (no-JS / pre-hydration) -->
+    <div class="card">
+      <h1>Global Intelligence</h1>
+      <p>EcoIQ active coverage: United Kingdom, Kazakhstan, Saudi Arabia, and Türkiye.
+         All other markets: research coverage planned.</p>
+      <p><a href="/countries/">Browse country intelligence →</a></p>
+    </div>
+  </div>
+
+  <div data-island="DigitalTwinPreview" data-island-lazy style="margin-top:1.5rem;">
+    <!-- Server-rendered fallback (no-JS / pre-hydration) -->
+    <div class="card">
+      <h2>EcoIQ Digital Twin — preview</h2>
+      <p>Country-level model overlaying project sites, manufacturer capacity, and grid context.</p>
+    </div>
+  </div>
+
+  <p style="font-size:.72rem;color:#475569;margin-top:1.25rem;">
+    Map geometry: Natural Earth (public domain). Coverage figures update with the EcoIQ platform;
+    Kazakhstan national layers and Digital Twin layers are demo/preview positions.
+  </p>
+</div>
+{% endblock %}
