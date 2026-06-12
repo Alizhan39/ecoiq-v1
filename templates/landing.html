@@ -6,13 +6,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="EcoIQ is an investor-facing ethical climate intelligence platform. Five analytical modules — country transition intelligence, company assessment, project readiness, capital integrity, and ethical finance fit — for responsible investors, development banks, and sovereign funds operating in the UK, Kazakhstan, Saudi Arabia, and Türkiye." />
-  <meta property="og:title"       content="EcoIQ — Ethical Climate Intelligence Platform" />
-  <meta property="og:description" content="Five intelligence modules for investor-grade climate analysis. Country scores, company assessments, project readiness, capital integrity, and ethical finance fit. Built for responsible capital, development finance, and long-term stewardship." />
+  <meta name="description" content="EcoIQ provides AI-assisted climate transition intelligence for investors, companies, governments, and ethical finance institutions across the UK, Kazakhstan, Saudi Arabia, and Türkiye." />
+  <meta property="og:title"       content="EcoIQ — Climate Transition Intelligence Platform" />
+  <meta property="og:description" content="EcoIQ provides AI-assisted climate transition intelligence for investors, companies, governments, and ethical finance institutions across the UK, Kazakhstan, Saudi Arabia, and Türkiye." />
   <meta property="og:type"        content="website" />
   <meta property="og:url"         content="{{ site_url }}/" />
   <meta property="og:site_name"   content="EcoIQ" />
   <meta name="twitter:card"       content="summary_large_image" />
+  <meta name="twitter:title"      content="EcoIQ — Climate Transition Intelligence Platform" />
+  <meta name="twitter:description" content="AI-assisted climate transition intelligence for investors, companies, governments, and ethical finance institutions. Company-level scoring, country intelligence, and ethical finance overlays across 4 key markets." />
   <title>EcoIQ — Climate Intelligence Platform | UK ESG Scoring</title>
 
   <!-- Favicon & brand -->
@@ -20,6 +22,8 @@
   <link rel="apple-touch-icon" href="{% static 'brand/ecoiq-icon.svg' %}">
   <!-- SectionVisualBackground system -->
   <link rel="stylesheet" href="{% static 'css/section-bg.css' %}">
+  <!-- Visual Intelligence islands — React-mounted sections (scoped .eiq-*) -->
+  <link rel="stylesheet" href="{% static 'dist/ecoiq-islands.css' %}">
   <meta name="theme-color" content="#070b0f">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -91,6 +95,11 @@
     .chip { display: inline-flex; align-items: center; gap: .4rem; background: rgba(0,232,154,.07); border: 1px solid rgba(0,232,154,.2); color: var(--acc); font-size: .68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: .28rem .75rem; border-radius: 20px; }
 
     @media (max-width: 640px) { .hide-sm { display: none !important; } }
+
+    /* Hero grid — two columns on desktop, single column on mobile/tablet */
+    .hero-grid { display: grid; grid-template-columns: 1fr 420px; }
+    .hero-grid > * { min-width: 0; }
+    @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
 
     /* Audience pills */
     .aud-pill {
@@ -203,7 +212,7 @@
   </div>
   <div id="hero-scrim" aria-hidden="true"></div>
 
-  <div style="max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:3rem;align-items:center;position:relative;z-index:2;">
+  <div class="hero-grid" style="max-width:1120px;margin:0 auto;gap:3rem;align-items:center;position:relative;z-index:2;">
 
     <!-- LEFT: copy -->
     <div class="reveal">
@@ -260,7 +269,7 @@
       <!-- Proof stats -->
       <div style="display:flex;gap:2rem;flex-wrap:wrap;">
         <div>
-          <div style="font-size:1.5rem;font-weight:900;color:var(--acc);line-height:1;">{{ company_count }}</div>
+          <div style="font-size:1.5rem;font-weight:900;color:var(--acc);line-height:1;">{{ company_count_display }}</div>
           <div style="font-size:.72rem;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-top:.15rem;">Companies Ranked</div>
         </div>
         <div>
@@ -335,91 +344,9 @@
 </section>
 
 
-<!-- ════════════════════════════════ ECO TOURS · DAILY IMPACT ════════════════ -->
-<section class="svb-host" style="padding:5rem 1.5rem;border-top:1px solid rgba(255,255,255,.05);background:linear-gradient(180deg,rgba(201,168,76,.05) 0%,rgba(16,185,129,.04) 45%,transparent 100%);">
-  {% include "partials/section_bg.html" with variant="kazakhstan" %}
-  <!-- ambient orbs (match hero language) -->
-  <div class="orb" style="width:520px;height:520px;background:rgba(201,168,76,1);opacity:.05;top:-160px;left:-120px;"></div>
-  <div class="orb" style="width:460px;height:460px;background:rgba(0,232,154,1);opacity:.04;bottom:-160px;right:-100px;"></div>
+<!-- ════════════════════════════════ ETHICAL FINANCE OVERLAY ═══════════════ -->
+<!-- Khalifa Tours / field projects link preserved as a subtle card below Real-World Projects -->
 
-  <div style="max-width:1000px;margin:0 auto;position:relative;" class="reveal">
-
-    <!-- Eyebrow -->
-    <div style="text-align:center;margin-bottom:1.4rem;">
-      <span style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:#c9a84c;font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:.35rem 1rem;border-radius:20px;">
-        ◈ Khalifa Tours · EcoIQ Eco Tours
-      </span>
-    </div>
-
-    <!-- Title + subtitle -->
-    <div style="text-align:center;margin-bottom:2.5rem;">
-      <h2 style="font-size:clamp(1.9rem,4vw,2.8rem);font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1.12;margin-bottom:1rem;">
-        Eco Tours with <span style="background:linear-gradient(105deg,#c9a84c,#e3cd86 55%,#f0e0a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Daily Impact</span>
-      </h2>
-      <p style="font-size:1.05rem;color:#94a3b8;line-height:1.7;max-width:620px;margin:0 auto;">
-        Travel to Kazakhstan. Help families transition from coal heating to cleaner, energy-efficient homes.
-      </p>
-    </div>
-
-    <!-- Body + daily-benefit list, two columns on desktop -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:start;margin-bottom:2.5rem;">
-
-      <!-- Narrative -->
-      <div>
-        <p style="font-size:.96rem;color:#cbd5e1;line-height:1.85;margin-bottom:1.2rem;">
-          Every replacement of a coal stove with modern, energy-efficient heating is not a one-time act of help.
-          It is a benefit that continues every day.
-        </p>
-        <p style="font-size:.92rem;color:#94a3b8;line-height:1.85;margin-bottom:1.2rem;">
-          As long as a family breathes cleaner air, as long as children grow up without smoke inside the home,
-          as long as emissions are reduced and natural resources are protected, the reward for this contribution
-          continues to be recorded.
-        </p>
-        <p style="font-size:.92rem;color:#94a3b8;line-height:1.85;">
-          That is why participation in this programme can be seen as a form of ongoing charity —
-          <em style="font-style:normal;color:#c9a84c;font-weight:600;">sadaqah jariyah</em>.
-        </p>
-      </div>
-
-      <!-- Daily-benefit list (premium card) -->
-      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(201,168,76,.18);border-radius:16px;padding:1.9rem;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);"></div>
-        <div style="font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c9a84c;margin-bottom:1.2rem;font-family:'SF Mono',monospace;">Every single day</div>
-        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.95rem;">
-          <li style="display:flex;gap:.7rem;align-items:flex-start;font-size:.9rem;color:#cbd5e1;line-height:1.55;"><span style="color:#00e89a;flex-shrink:0;margin-top:.05rem;">✦</span>A family lives in healthier conditions.</li>
-          <li style="display:flex;gap:.7rem;align-items:flex-start;font-size:.9rem;color:#cbd5e1;line-height:1.55;"><span style="color:#00e89a;flex-shrink:0;margin-top:.05rem;">✦</span>Air pollution is reduced.</li>
-          <li style="display:flex;gap:.7rem;align-items:flex-start;font-size:.9rem;color:#cbd5e1;line-height:1.55;"><span style="color:#00e89a;flex-shrink:0;margin-top:.05rem;">✦</span>Coal consumption decreases.</li>
-          <li style="display:flex;gap:.7rem;align-items:flex-start;font-size:.9rem;color:#cbd5e1;line-height:1.55;"><span style="color:#00e89a;flex-shrink:0;margin-top:.05rem;">✦</span>The burden on the environment becomes lighter.</li>
-          <li style="display:flex;gap:.7rem;align-items:flex-start;font-size:.9rem;color:#cbd5e1;line-height:1.55;"><span style="color:#00e89a;flex-shrink:0;margin-top:.05rem;">✦</span>Benefit is created for future generations.</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Organiser note + closing -->
-    <p style="font-size:.92rem;color:#94a3b8;line-height:1.85;max-width:760px;margin:0 auto 2rem;text-align:center;">
-      EcoIQ organises and sends <strong style="color:#e2e8f0;font-weight:600;">Khalifa Tours</strong> — eco tours connected to real,
-      measured heating-transition impact in Kazakhstan. Travellers do not simply visit the country.
-      They help create long-term change, with benefits that continue for years after the journey ends.
-    </p>
-
-    <!-- Highlighted closing line -->
-    <div style="text-align:center;margin-bottom:2.2rem;">
-      <div style="display:inline-block;padding:1.1rem 2rem;border:1px solid rgba(201,168,76,.3);border-radius:14px;background:rgba(201,168,76,.06);">
-        <span style="font-size:clamp(1.3rem,2.6vw,1.8rem);font-weight:800;letter-spacing:-.03em;color:#fff;">Travel today. <span style="color:#c9a84c;">Benefit every day.</span></span>
-      </div>
-    </div>
-
-    <!-- CTA -->
-    <div style="text-align:center;">
-      <a href="https://ecoiq.uk/heating/" style="display:inline-flex;align-items:center;gap:.5rem;background:#c9a84c;color:#0a0f14;font-weight:700;font-size:.95rem;padding:.85rem 1.8rem;border-radius:10px;text-decoration:none;transition:opacity .2s,transform .1s;" onmouseover="this.style.opacity='.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='none'">
-        Explore Heating Transition
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <p style="font-size:.72rem;color:#334155;margin-top:1rem;">Impact is measured per home and reported through EcoIQ. Estimates are indicative.</p>
-    </div>
-
-  </div>
-</section>
 
 
 <!-- ════════════════════════ FROM INTELLIGENCE TO ACTION ═════════════════════ -->
@@ -504,6 +431,17 @@
 
   </div>
   <p style="font-size:.7rem;color:#334155;margin-top:1.25rem;text-align:center;">Pilot budgets and outcomes shown across the portfolio are indicative estimates. <a href="/projects/" style="color:#475569;">Explore the full portfolio →</a></p>
+
+  <!-- Khalifa Tours pipeline (island; inner markup is the no-JS fallback) -->
+  <div style="margin-top:1.75rem;" data-island="KhalifaPipeline" data-island-lazy data-props='{"ctaHref":"/khalifa-tours-impact/"}'>
+    <div style="border-top:1px solid rgba(255,255,255,.04);padding-top:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <span style="font-size:.72rem;font-weight:700;color:#c9a84c;letter-spacing:.05em;">Khalifa Tours — Community Climate Action</span>
+        <span style="font-size:.72rem;color:#334155;margin-left:.75rem;">Ethical finance overlay for transition-linked community investment in Kazakhstan.</span>
+      </div>
+      <a href="/khalifa-tours/" style="font-size:.72rem;font-weight:600;color:#475569;text-decoration:none;white-space:nowrap;">View programme →</a>
+    </div>
+  </div>
 </section>
 
 
@@ -511,7 +449,7 @@
 <div style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.015);padding:.85rem 1.5rem;">
   <div style="max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap;">
     <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:.8px;text-transform:uppercase;">{{ company_count }} Companies</div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:.8px;text-transform:uppercase;">{{ company_count_display }} Companies</div>
       <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Globally tracked &amp; scored</div>
     </div>
     <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
@@ -531,6 +469,19 @@
     </div>
   </div>
 </div>
+
+
+<!-- ═══════════════════════════ GLOBAL INTELLIGENCE (island) ═════════════════ -->
+<section style="max-width:1120px;margin:0 auto;padding:3.5rem 1.5rem 0;">
+  <div data-island="GlobalIntelligence" data-island-lazy
+       data-props='{"eyebrow":"Global Intelligence","title":"Four focus markets. One coverage standard."}'>
+    <!-- Server-rendered fallback (no-JS / pre-hydration) -->
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.84rem;color:#94a3b8;">
+      <span>🇬🇧 United Kingdom</span><span>🇰🇿 Kazakhstan</span><span>🇸🇦 Saudi Arabia</span><span>🇹🇷 Türkiye</span>
+      <a href="/countries/" style="color:#00e89a;text-decoration:none;font-weight:600;">View country intelligence →</a>
+    </div>
+  </div>
+</section>
 
 
 <!-- ════════════════════════════════ MARKET ACCESS ════════════════════════════ -->
@@ -664,8 +615,8 @@
           <path d="M17 8C8 10 5.9 16.17 3.82 19.5c.95-.23 2.19-.74 3.18-1.5C9 16.5 9 13 13 11c0 2-1 5-5 7 3 0 7-1 9-5s1-8 0-5z"/>
         </svg>
       </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Ethical Finance Ready</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">Built for responsible capital frameworks — green bonds, development bank criteria, and long-term stewardship-based allocation. Zero direct competitors at this depth.</div>
+      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Ethical Finance Overlay</div>
+      <div style="font-size:12px;color:#475569;line-height:1.6">Unlike traditional ESG datasets, EcoIQ connects transition scores with investable project opportunities and ethical-finance readiness — covering Sharia-compliant capital, DFI mandates, and green bond frameworks.</div>
     </div>
 
   </div>
@@ -710,66 +661,6 @@
 </section>
 
 
-<!-- ════════════════════════════════ BUILT FOR ════════════════════════════════ -->
-<section style="max-width:1100px;margin:0 auto 4rem;padding:0 2rem">
-
-  <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
-    Built for
-    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-  </div>
-
-  <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.65rem;">
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">🏛️</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Government Agencies</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">Track national industrial transition progress and identify JETP-eligible companies for climate programme prioritisation.</div>
-    </div>
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">🏦</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Development Banks</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">Screen loan books and project pipelines for climate transition readiness. Align with IFC, EBRD, and ADB criteria using evidence-based profiles.</div>
-    </div>
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">🏭</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Industrial Companies</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">Claim and improve your EcoIQ profile. Benchmark against sector peers and unlock access to responsible finance and green bond frameworks.</div>
-    </div>
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">♻️</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">ESG &amp; Sustainability Teams</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">Rapid ESG baseline assessments across target markets. Evidence-backed scoring across six pillars with sub-sector granularity.</div>
-    </div>
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">📐</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Infrastructure Investors</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">Assess transition risk in energy, transport, and industrial infrastructure across emerging and developed markets in four key geographies.</div>
-    </div>
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">🌿</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Climate Finance Institutions</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">Identify companies aligned with green bond principles, Paris Agreement pathways, and national low-carbon transition roadmaps.</div>
-    </div>
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">🤝</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Responsible Finance Partners</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">EcoIQ scoring is designed for responsible capital frameworks emphasising long-term stewardship, public benefit, and equitable value distribution.</div>
-    </div>
-
-    <div style="background:#0a0f16;border:1px solid rgba(0,232,154,.12);border-radius:6px;padding:1.1rem 1.25rem;">
-      <div style="font-size:1.1rem;margin-bottom:.5rem;">💎</div>
-      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem;">Sovereign Wealth Funds</div>
-      <div style="font-size:.72rem;color:#475569;line-height:1.55;">Long-horizon portfolio assessment for SWFs targeting ethical, resilient, and regenerative industrial assets in high-growth transition markets.</div>
-    </div>
-
-  </div>
-</section>
 
 
 <!-- ════════════════════════════════ WHAT ECOIQ HELPS YOU DO ═════════════════ -->
@@ -960,81 +851,6 @@
 </section>
 
 
-<!-- ════════════════════════════════ RANKINGS PREVIEW ════════════════════════ -->
-{% if top_companies %}
-<section style="padding:5rem 1.5rem;">
-  <div style="max-width:1120px;margin:0 auto;">
-
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;" class="reveal">
-      <div>
-        <div class="chip" style="margin-bottom:.8rem;">Live Rankings</div>
-        <h2 style="font-size:clamp(1.5rem,2.5vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;">Top-ranked companies by EcoIQ score</h2>
-      </div>
-      <a href="/companies/" style="font-size:.84rem;font-weight:600;color:var(--acc);text-decoration:none;white-space:nowrap;">View all {{ company_count }} companies →</a>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
-      {% for p in top_companies %}
-      <a href="{% url 'companies:detail' p.company.slug %}" class="card-hover reveal" style="display:block;text-decoration:none;background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.2rem;">
-
-        <!-- Header row -->
-        <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:.9rem;">
-          <!-- Score circle -->
-          <div style="width:48px;height:48px;border-radius:50%;border:2px solid {{ p.moral_label_color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,.4);">
-            <span style="font-size:.8rem;font-weight:800;color:{{ p.moral_label_color }};">{{ p.ecoiq_total_score|floatformat:1 }}</span>
-          </div>
-          <!-- Name + country -->
-          <div style="min-width:0;flex:1;">
-            <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.company.name }}</div>
-            <div style="font-size:.74rem;color:#475569;margin-top:.1rem;">{{ p.company.country }}</div>
-          </div>
-          <!-- Rank -->
-          <div style="font-size:.72rem;font-weight:700;color:#334155;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:.2rem .45rem;border-radius:5px;">#{{ forloop.counter }}</div>
-        </div>
-
-        <!-- Sector -->
-        <div style="font-size:.75rem;color:#475569;margin-bottom:.65rem;">
-          <span style="color:#64748b;font-weight:500;">{{ p.company.sector }}</span>
-        </div>
-
-        <!-- Moral label badge -->
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
-          <span style="font-size:.68rem;font-weight:700;padding:.22rem .6rem;border-radius:6px;
-            {% if p.moral_label == 'regenerative_leader' %}background:rgba(0,232,154,.1);color:var(--acc);border:1px solid rgba(0,232,154,.2);
-            {% elif p.moral_label == 'responsible_builder' %}background:rgba(88,166,255,.1);color:var(--info);border:1px solid rgba(88,166,255,.2);
-            {% elif p.moral_label == 'public_benefit_oriented' %}background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.2);
-            {% elif p.moral_label == 'transitional_company' %}background:rgba(244,162,97,.1);color:var(--warn);border:1px solid rgba(244,162,97,.2);
-            {% elif p.moral_label == 'profit_first_operator' %}background:rgba(230,57,70,.1);color:var(--danger);border:1px solid rgba(230,57,70,.2);
-            {% else %}background:rgba(185,28,28,.12);color:#f97316;border:1px solid rgba(185,28,28,.25);{% endif %}
-            ">{{ p.moral_label_display }}</span>
-
-          <!-- Pollution signal -->
-          <span style="font-size:.67rem;color:#334155;">
-            {% if p.pollution_level == 'low' %}<span style="color:var(--acc);">● Low pollution</span>
-            {% elif p.pollution_level == 'medium' %}<span style="color:var(--warn);">● Med pollution</span>
-            {% elif p.pollution_level == 'high' %}<span style="color:var(--danger);">● High pollution</span>
-            {% else %}<span style="color:#b91c1c;">● Severe</span>{% endif %}
-          </span>
-        </div>
-
-        <!-- Score bar -->
-        <div style="margin-top:.85rem;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;">
-          <div style="height:3px;background:{{ p.moral_label_color }};border-radius:2px;width:{{ p.ecoiq_total_score }}%;"></div>
-        </div>
-
-      </a>
-      {% endfor %}
-    </div>
-
-    <div style="text-align:center;margin-top:2.5rem;">
-      <a href="/companies/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.2);color:var(--acc);font-weight:600;font-size:.9rem;padding:.7rem 1.6rem;border-radius:8px;text-decoration:none;">
-        View full rankings with filters &amp; country intelligence →
-      </a>
-    </div>
-
-  </div>
-</section>
-{% endif %}
 
 
 <!-- ════════════════════════════════ METHODOLOGY ═════════════════════════════ -->
@@ -1086,12 +902,12 @@
         <div class="chip" style="margin-bottom:1.1rem;">Sovereign Performance Monitor</div>
         <h2 style="font-size:clamp(1.5rem,2.5vw,2.1rem);font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1.15;margin-bottom:1rem;">
           Dashboard-grade intelligence.<br>
-          <span style="color:#c9a84c;">Maqasid &amp; Mizan scoring.</span>
+          <span style="color:#c9a84c;">Ethical finance overlay included.</span>
         </h2>
         <p style="font-size:.88rem;color:#475569;line-height:1.75;margin-bottom:1.5rem;">
-          The EcoIQ Intelligence Terminal combines our standard 6-pillar EcoIQ Score with
-          the Maqasid framework — an ethical finance overlay that weights public benefit,
-          harm prevention, and long-term stewardship. Two scores, one decision.
+          The EcoIQ Intelligence Terminal combines company-level transition scoring with an
+          ethical finance overlay — calibrated for Sharia-compliant capital, Islamic funds,
+          and transition-linked investment mandates. Two scores, one decision.
         </p>
 
         <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:2rem;">
@@ -1213,6 +1029,18 @@
 </section>
 
 
+<!-- ═══════════════════════════ DIGITAL TWIN PREVIEW (island) ════════════════ -->
+<section style="max-width:1120px;margin:0 auto;padding:3.5rem 1.5rem 0;">
+  <div data-island="DigitalTwinPreview" data-island-lazy data-props='{}'>
+    <!-- Server-rendered fallback -->
+    <div style="font-size:.84rem;color:#94a3b8;line-height:1.7;">
+      <strong style="color:#e2e8f0;">EcoIQ Digital Twin (preview)</strong> — company scores, project sites,
+      manufacturer capacity, and grid context on a single country model.
+    </div>
+  </div>
+</section>
+
+
 <!-- ════════════════════════════════ REQUEST COUNTRY REPORT ══════════════════ -->
 <section style="padding:5rem 1.5rem;background:linear-gradient(135deg,rgba(27,67,50,.25) 0%,rgba(10,15,10,.8) 100%);border-top:1px solid rgba(27,67,50,.4);border-bottom:1px solid rgba(27,67,50,.3);">
   <div style="max-width:900px;margin:0 auto;">
@@ -1232,7 +1060,7 @@
 
         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:2rem;">
           <div>
-            <div style="font-size:1.4rem;font-weight:800;color:#00e89a;line-height:1;">{{ company_count }}</div>
+            <div style="font-size:1.4rem;font-weight:800;color:#00e89a;line-height:1;">{{ company_count_display }}</div>
             <div style="font-size:.7rem;color:#334155;text-transform:uppercase;letter-spacing:.7px;margin-top:.15rem;">Companies tracked</div>
           </div>
           <div>
@@ -1298,7 +1126,7 @@
     </h2>
 
     <p style="font-size:14px;color:#64748b;margin-bottom:2rem;line-height:1.7">
-      {{ company_count }} companies have a profile. Search below or browse the full rankings.
+      {{ company_count_display }} companies ranked. Search below or browse the full rankings.
     </p>
 
     <!-- Inline search -->
@@ -1312,11 +1140,10 @@
     </form>
 
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <a href="/companies/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">Browse all {{ company_count }} companies →</a>
+      <a href="/companies/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">Browse all {{ company_count_display }} companies →</a>
       <a href="/pricing/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">View pricing →</a>
     </div>
 
-    <p style="margin-top:1.5rem;font-size:.72rem;color:#1e293b">All scores are indicative and AI-assisted. Not investment advice.</p>
   </div>
 </section>
 
@@ -1379,7 +1206,7 @@
 
     </div>
 
-    <p style="font-size:.72rem;color:#1e293b;">No payment required. EcoIQ assessments are analytical and indicative — not investment advice.</p>
+    <p style="font-size:.72rem;color:#1e293b;">No payment required to submit a review request.</p>
 
   </div>
 </section>
@@ -1442,7 +1269,7 @@
     <div style="border-top:1px solid rgba(255,255,255,.04);padding-top:1.2rem;display:flex;flex-direction:column;gap:.5rem;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
         <span style="font-size:.72rem;color:#1e293b;">© {% now "Y" %} EcoIQ. All rights reserved.</span>
-        <span style="font-size:.72rem;color:#1e293b;text-align:right;">All scores are AI-assisted and indicative. Not investment advice.</span>
+        <span style="font-size:.72rem;color:#1e293b;text-align:right;">EcoIQ scores and briefings are AI-assisted, indicative intelligence outputs for screening and decision-support purposes only. They are not investment, legal, financial, or regulatory advice.</span>
       </div>
       <p style="font-size:.68rem;color:#1e293b;line-height:1.5;">
         Stoke Share Ltd t/a EcoIQ &middot; Company No.&nbsp;14347320 &middot; Registered in England &amp; Wales &middot; Registered office: C/O Schoolgate Accounting Services, 46&ndash;50 Coombe Road, New Malden KT3&nbsp;4QF

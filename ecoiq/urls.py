@@ -58,6 +58,9 @@ urlpatterns = [
     # Khalifa Heat — coal-to-electric heating retrofit
     path('heating/', include('heating.urls', namespace='heating')),
 
+    # Khalifa Tours — public-facing alias for the dedicated impact story page
+    path('khalifa-tours/', RedirectView.as_view(url='/khalifa-tours-impact/', permanent=False), name='khalifa_tours'),
+
     # EcoIQ REST API — docs at /api/, endpoints at /api/v1/
     path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
     path('api/v1/',     include('api.urls',   namespace='api')),
