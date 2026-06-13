@@ -13,6 +13,8 @@ import KazakhstanHero from './components/kazakhstan/KazakhstanHero'
 import TransitionMap from './components/kazakhstan/TransitionMap'
 import HeatingTransitionStory from './components/stories/HeatingTransitionStory'
 import NarrativeStory from './components/stories/NarrativeStory'
+import DigitalTwinPreview from './components/intelligence/DigitalTwinPreview'
+import GlobalCountryExplorer from './components/global/GlobalCountryExplorer'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
@@ -26,4 +28,6 @@ export const registry: Record<string, ComponentType<any>> = {
   TransitionMap,
   HeatingTransitionStory,
   NarrativeStory,
+  DigitalTwinPreview,
+  GlobalCountryExplorer,
 }

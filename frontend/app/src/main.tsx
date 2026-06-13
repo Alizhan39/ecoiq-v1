@@ -36,29 +36,54 @@ function parseProps(el: HTMLElement): Props {
   }
 }
 
-/** Mount every not-yet-mounted island found under `root`. */
+function mountOne(el: HTMLElement): void {
+  const name = el.getAttribute('data-island') ?? ''
+  const Component = registry[name]
+  if (!Component) {
+    console.warn(`[ecoiq-islands] unknown island "${name}" — leaving fallback`)
+    return
+  }
+  el.setAttribute('data-island-mounted', '')
+  el.classList.add('eiq') // scope design-system CSS variables to the island
+  try {
+    createRoot(el).render(
+      createElement(MotionProvider, null, createElement(Component, parseProps(el))),
+    )
+  } catch (err) {
+    console.error(`[ecoiq-islands] failed to mount "${name}"`, err)
+    el.removeAttribute('data-island-mounted')
+  }
+}
+
+/** Mount every not-yet-mounted island found under `root`.
+ *  Islands marked `data-island-lazy` defer mounting until they approach the
+ *  viewport (IntersectionObserver, 400px margin) to keep initial work small. */
 export function mountAll(root: ParentNode = document): void {
   const nodes = root.querySelectorAll<HTMLElement>(
     '[data-island]:not([data-island-mounted])',
   )
+  const lazy: HTMLElement[] = []
   nodes.forEach((el) => {
-    const name = el.getAttribute('data-island') ?? ''
-    const Component = registry[name]
-    if (!Component) {
-      console.warn(`[ecoiq-islands] unknown island "${name}" — leaving fallback`)
-      return
-    }
-    el.setAttribute('data-island-mounted', '')
-    el.classList.add('eiq') // scope design-system CSS variables to the island
-    try {
-      createRoot(el).render(
-        createElement(MotionProvider, null, createElement(Component, parseProps(el))),
-      )
-    } catch (err) {
-      console.error(`[ecoiq-islands] failed to mount "${name}"`, err)
-      el.removeAttribute('data-island-mounted')
+    if (el.hasAttribute('data-island-lazy') && 'IntersectionObserver' in window) {
+      lazy.push(el)
+    } else {
+      mountOne(el)
     }
   })
+  if (lazy.length) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            io.unobserve(entry.target)
+            mountOne(entry.target as HTMLElement)
+          }
+        })
+      },
+      { rootMargin: '400px 0px' },
+    )
+    lazy.forEach((el) => io.observe(el))
+  }
 }
 
 if (document.readyState === 'loading') {

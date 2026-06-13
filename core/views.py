@@ -1441,6 +1441,17 @@ def sample_report(request):
 
 # ── Stewardship ───────────────────────────────────────────────────────────────
 
+def global_intelligence(request):
+    """
+    /global-intelligence/ — interactive EcoIQ global coverage map.
+
+    Hosts the GlobalCountryExplorer React island (Natural Earth geometry,
+    lazy-loaded) plus the Digital Twin preview. Static page shell; country
+    intel lives in the island's data model for now.
+    """
+    return render(request, 'global_intelligence.html')
+
+
 def stewardship(request):
     """
     /stewardship/ — EcoIQ Stewardship section.
