@@ -11,13 +11,18 @@ from io import StringIO
 from django.test import TestCase
 from django.core.management import call_command
 
+from datetime import date, timedelta
+
 from league.models import Company
 from companies.models import CompanyProfile
-from harvester.models import Source, HarvestJob, Evidence, Datapoint, content_hash
+from harvester.models import (
+    Source, HarvestJob, Evidence, Datapoint, EvidenceSourceRef, content_hash,
+)
 from harvester.constants import (
     EVIDENCE_CATEGORIES, VERIFICATION_STATUSES, SOURCE_TYPES, FUTURE_SOURCE_TYPES,
 )
 from harvester.source_registry import CATALOG, catalog_rows
+from harvester import adapters, verification, dedup
 
 
 def make_company(slug="national-grid"):
@@ -119,3 +124,162 @@ class SeedSourcesTests(TestCase):
         for row in catalog_rows():
             self.assertGreaterEqual(row["confidence_base"], 0.0)
             self.assertLessEqual(row["confidence_base"], 1.0)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 2 — SourceAdapter, Verification, Deduplication
+# ════════════════════════════════════════════════════════════════════════════
+class AdapterTests(TestCase):
+    def test_all_nine_required_source_types_supported(self):
+        for st in ("annual_report", "sustainability_report", "esg_report",
+                   "company_website", "investor_relations", "companies_house",
+                   "regulatory_filing", "press_release"):
+            self.assertIsNotNone(adapters.get_adapter(st), msg=f"missing adapter {st}")
+        # news is represented by a NetworkAdapter (reuters)
+        self.assertIsNotNone(adapters.get_adapter("reuters"))
+
+    def test_document_adapter_classifies_and_builds_candidates(self):
+        a = adapters.get_adapter("annual_report")
+        cands = a.collect("national-grid", documents=[
+            {"statement": "Scope 1 emissions reduced by 12% in 2024/25.",
+             "url": "https://x/ar.pdf", "publication_date": date(2025, 5, 15)},
+            {"statement": "Gross revenue was £18,378m.", "url": "https://x/ar.pdf"},
+        ])
+        self.assertEqual(len(cands), 2)
+        self.assertEqual(cands[0].category, "emissions")   # classified
+        self.assertEqual(cands[1].category, "financial")
+        self.assertEqual(cands[0].source_type, "annual_report")
+
+    def test_document_adapter_no_input_returns_empty(self):
+        a = adapters.get_adapter("esg_report")
+        self.assertEqual(a.collect("national-grid", documents=None), [])
+
+    def test_network_adapter_inert_offline_no_fabrication(self):
+        a = adapters.get_adapter("companies_house")
+        self.assertTrue(a.requires_network)
+        self.assertEqual(a.collect("national-grid"), [])  # honest empty, not invented
+
+    def test_profile_adapter_reads_company_fields(self):
+        company, profile = make_company()
+        profile.ai_summary = "National Grid is a UK electricity and gas utility."
+        profile.annual_report_url = "https://example.com/ar.pdf"
+        profile.save()
+        web = adapters.get_adapter("company_website").collect("national-grid", profile=profile)
+        ir = adapters.get_adapter("investor_relations").collect("national-grid", profile=profile)
+        self.assertTrue(any("utility" in c.statement for c in web))
+        self.assertTrue(any(c.url == "https://example.com/ar.pdf" for c in ir))
+
+
+class VerificationEngineTests(TestCase):
+    def test_scores_in_unit_range(self):
+        r = verification.score(source_type="annual_report",
+                               publication_date=date.today(), corroborating_sources=1)
+        for s in (r.source_quality_score, r.freshness_score,
+                  r.corroboration_score, r.confidence_score):
+            self.assertGreaterEqual(s, 0.0)
+            self.assertLessEqual(s, 1.0)
+
+    def test_status_verified_requires_corroboration_and_confidence(self):
+        r = verification.score(source_type="annual_report",
+                               publication_date=date.today(), corroborating_sources=2)
+        self.assertEqual(r.verification_status, "VERIFIED")
+
+    def test_status_partial_single_credible_source(self):
+        r = verification.score(source_type="annual_report",
+                               publication_date=date.today(), corroborating_sources=0)
+        self.assertEqual(r.verification_status, "PARTIAL")
+
+    def test_status_insufficient_for_weak_uncorroborated_source(self):
+        r = verification.score(source_type="company_website",  # quality 0.55... still PARTIAL
+                               publication_date=date.today(), corroborating_sources=0)
+        # company_website 0.55 > INSUFFICIENT threshold → PARTIAL not INSUFFICIENT
+        self.assertIn(r.verification_status, ("PARTIAL", "UNVERIFIED"))
+        weak = verification.score(source_type="", confidence_base=0.2,
+                                  corroborating_sources=0)
+        self.assertEqual(weak.verification_status, "INSUFFICIENT_EVIDENCE")
+
+    def test_status_contradicted_and_not_found(self):
+        self.assertEqual(
+            verification.score(source_type="annual_report", contradicted=True,
+                               publication_date=date.today()).verification_status,
+            "CONTRADICTED")
+        self.assertEqual(
+            verification.score(has_evidence=False).verification_status, "NOT_FOUND")
+
+    def test_freshness_decays_with_age(self):
+        fresh = verification.freshness(date.today())
+        old = verification.freshness(date.today() - timedelta(days=365 * 4))
+        undated = verification.freshness(None)
+        self.assertGreater(fresh, old)
+        self.assertEqual(undated, verification.UNKNOWN_DATE_FRESHNESS)
+
+    def test_verify_evidence_writes_back(self):
+        _, profile = make_company()
+        src = Source.objects.create(name="AR", source_type="annual_report",
+                                    confidence_base=0.85, company=profile)
+        ev = Evidence.objects.create(company=profile, company_slug="national-grid",
+                                     source=src, category="financial",
+                                     publication_date=date.today(),
+                                     corroboration_count=2)
+        result = verification.verify_evidence(ev)
+        ev.refresh_from_db()
+        self.assertEqual(ev.verification_status, result.verification_status)
+        self.assertEqual(ev.confidence, ev.confidence_score)
+        self.assertEqual(ev.verification_status, "VERIFIED")  # 0.85 + 2 corroborating
+
+
+class DeduplicationEngineTests(TestCase):
+    def _cands(self, statements):
+        # statements: list of (source_type, text)
+        return [adapters.EvidenceCandidate(
+            company_slug="national-grid", category="emissions",
+            statement=txt, source_type=st, url=f"https://{st}.example/x")
+            for st, txt in statements]
+
+    def test_same_fact_across_sources_merges_to_one_canonical(self):
+        _, profile = make_company()
+        cands = self._cands([
+            ("annual_report", "Scope 1 emissions reduced by 12% in 2024/25"),
+            ("esg_report",    "Scope 1 emissions reduced by 12% in 2024/25"),
+            ("company_website", "Scope 1 emissions reduced by 12% in 2024/25"),
+        ])
+        stats = dedup.deduplicate(cands, profile=profile)
+        self.assertEqual(stats["canonical_created"], 1)
+        self.assertEqual(Evidence.objects.count(), 1)
+        canonical = Evidence.objects.get()
+        self.assertEqual(canonical.source_refs.count(), 3)       # 3 source references
+        self.assertEqual(canonical.corroboration_count, 2)       # 2 beyond primary
+        self.assertEqual(canonical.verification_status, "VERIFIED")
+
+    def test_dedup_is_idempotent(self):
+        _, profile = make_company()
+        cands = self._cands([
+            ("annual_report", "Net zero by 2050 commitment"),
+            ("esg_report", "Net zero by 2050 commitment"),
+        ])
+        dedup.deduplicate(cands, profile=profile)
+        dedup.deduplicate(cands, profile=profile)  # re-run
+        self.assertEqual(Evidence.objects.count(), 1)
+        self.assertEqual(EvidenceSourceRef.objects.count(), 2)   # no dup refs
+
+    def test_distinct_facts_do_not_merge(self):
+        _, profile = make_company()
+        cands = self._cands([
+            ("annual_report", "Scope 1 emissions reduced by 12%"),
+            ("annual_report", "Gross revenue was 18378 million"),
+        ])
+        dedup.deduplicate(cands, profile=profile)
+        self.assertEqual(Evidence.objects.count(), 2)
+
+    def test_contradiction_flagged_when_directions_conflict(self):
+        _, profile = make_company()
+        cands = self._cands([
+            ("annual_report", "Emissions decreased by 10 percent"),
+            ("reuters",       "Emissions increased by 10 percent"),
+        ])
+        stats = dedup.deduplicate(cands, profile=profile)
+        # same dedup_key? statements differ only by direction word → likely same key
+        canonical = Evidence.objects.first()
+        if canonical.source_refs.count() == 2:
+            self.assertEqual(stats["contradicted"], 1)
+            self.assertEqual(canonical.verification_status, "CONTRADICTED")

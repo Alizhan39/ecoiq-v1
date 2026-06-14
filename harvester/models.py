@@ -180,6 +180,12 @@ class Evidence(models.Model):
 
     # Idempotent dedup key (set by the harvester; nullable for manual rows).
     content_hash = models.CharField(max_length=40, blank=True, db_index=True)
+    # Source-independent fact key — groups the same fact asserted by different
+    # sources into one canonical row (see harvester.dedup). Set by the dedup engine.
+    dedup_key = models.CharField(max_length=40, blank=True, db_index=True)
+    # Number of additional independent sources corroborating this canonical fact
+    # (denormalized from EvidenceSourceRef; feeds corroboration_score).
+    corroboration_count = models.IntegerField(default=0)
 
     class Meta:
         db_table = "harvester_evidence"
@@ -237,3 +243,42 @@ class Datapoint(models.Model):
     def __str__(self):
         v = self.value if self.value is not None else self.value_text
         return f"{self.company_slug}:{self.metric}={v}{self.unit}"
+
+
+class EvidenceSourceRef(models.Model):
+    """A single source that asserted a canonical Evidence fact.
+
+    The dedup engine merges the same fact appearing across annual reports, ESG
+    reports, websites, and news into ONE canonical Evidence row; each
+    contributing source is recorded here. The count of distinct refs drives the
+    verification corroboration score.
+    """
+
+    canonical_evidence = models.ForeignKey(
+        Evidence, on_delete=models.CASCADE, related_name="source_refs"
+    )
+    source = models.ForeignKey(
+        Source, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="evidence_refs",
+    )
+    source_type = models.CharField(max_length=40, blank=True)
+    source_owner = models.CharField(max_length=200, blank=True)
+    url = models.URLField(blank=True)
+    publication_date = models.DateField(null=True, blank=True)
+    excerpt = models.TextField(blank=True)
+    source_quality_score = models.FloatField(default=0.0)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_evidence_source_ref"
+        ordering = ["-source_quality_score", "-publication_date"]
+        # Idempotent: the same source+url contributes to a canonical item once.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["canonical_evidence", "source_type", "url"],
+                name="uniq_canonical_source_url",
+            )
+        ]
+
+    def __str__(self):
+        return f"ref({self.source_type} → ev#{self.canonical_evidence_id})"

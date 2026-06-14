@@ -1,7 +1,7 @@
 """Admin registrations for the Evidence Harvester (read/inspect convenience)."""
 from django.contrib import admin
 
-from .models import Source, HarvestJob, Evidence, Datapoint
+from .models import Source, HarvestJob, Evidence, Datapoint, EvidenceSourceRef
 
 
 @admin.register(Source)
@@ -26,6 +26,14 @@ class EvidenceAdmin(admin.ModelAdmin):
                     "confidence", "source", "publication_date")
     list_filter = ("category", "verification_status")
     search_fields = ("company_slug", "title", "url")
+
+
+@admin.register(EvidenceSourceRef)
+class EvidenceSourceRefAdmin(admin.ModelAdmin):
+    list_display = ("canonical_evidence", "source_type", "source_owner",
+                    "source_quality_score", "publication_date")
+    list_filter = ("source_type",)
+    search_fields = ("url", "source_owner")
 
 
 @admin.register(Datapoint)
