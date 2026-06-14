@@ -1,0 +1,282 @@
+{
+  "layer": "Evidence Intelligence Layer",
+  "version": "v1",
+  "role": "Foundational layer beneath all engines: ingests raw sources, separates SAY/DO/SHOW, grades reliability and confidence, detects contradiction and greenwashing, and emits typed Evidence records that every downstream engine consumes.",
+  "principle": "Deterministic Python classifies, scores, and grades; Claude (audit/ai.py) is used only for extraction/normalisation of unstructured text into candidate records and is never trusted to assign a final score. A SAY is never promoted to fact without DO/SHOW corroboration.",
+  "say_do_show": {
+    "SAY": "Stated intent/claims by management (annual letters, sustainability narrative, press, marketing).",
+    "DO": "Actions and capital allocation actually taken (capex, contracts, operations, disclosed spend).",
+    "SHOW": "Independent evidence and realised outcomes (regulators, audited data, news, datasets, third parties).",
+    "example": {
+      "SAY": "'We support sustainability'",
+      "DO": "invested £500m in emissions reduction",
+      "SHOW": "verified emissions dropped 18%"
+    }
+  },
+  "feeds": [
+    "Company Intelligence Engine",
+    "Country Intelligence Engine",
+    "Moral Compass Engine",
+    "Executive Brief Engine",
+    "Video Brief Engine"
+  ],
+  "grounding": {
+    "claude_extraction": "audit/ai.py (lazy client, JSON parse, grounding rules)",
+    "source_seed": "CompanyProfile.public_sources[], annual_report_url, sustainability_report_url",
+    "greenwashing_reuse": "mizan/scoring.py greenwashing_risk",
+    "graph": "docs/graph_index.json, docs/ayah_index.json"
+  },
+  "data_model": {
+    "EvidenceRecord": {
+      "id": "uuid",
+      "subject_type": "company|country|project|policy",
+      "subject_ref": "slug/id",
+      "kind": "say|do|show",
+      "statement": "normalised text of the claim/action/outcome",
+      "metric": {
+        "name": "str|null",
+        "value": "float|null",
+        "unit": "str|null"
+      },
+      "source": {
+        "url": "str",
+        "type": "annual_report|sustainability_report|regulatory_filing|news|dataset|independent_audit|ngo|marketing",
+        "publisher": "str",
+        "published_at": "date"
+      },
+      "graph_nodes": [
+        "activated principle node ids"
+      ],
+      "ayah_refs": [
+        "surah:ayah (via ayah_index, label preserved)"
+      ],
+      "source_reliability": "0-1 (Source Reliability Engine)",
+      "confidence_tier": "verified|analyst-reviewed|ai-seeded|model-estimate",
+      "confidence_score": "0-1",
+      "evidence_score": "0-1 (strength of this single record)",
+      "corroborates": [
+        "evidence_ids it supports"
+      ],
+      "contradicts": [
+        "evidence_ids it conflicts with"
+      ],
+      "causes": "evidence_id|null (DO->SHOW causal link, via cause_effect_tracer)",
+      "scholar_review_required": "bool (inherited from interpretive graph_nodes)",
+      "created_at": "datetime"
+    },
+    "EvidenceCluster": {
+      "subject_ref": "...",
+      "topic_node": "graph node id (e.g. emissions_responsibility)",
+      "say_records": [],
+      "do_records": [],
+      "show_records": [],
+      "alignment_score": "0-1 (SAY vs DO vs SHOW)",
+      "contradiction_score": "0-1",
+      "greenwashing_risk": "0-1",
+      "topic_confidence": "0-1",
+      "timeline": "ordered EvidenceRecord ids"
+    },
+    "note": "Additive Django model `Evidence` (nullable FK to CompanyProfile/Country); zero migration risk; mirrors audit.AIAnalysisJob status pattern for async extraction."
+  },
+  "modules": [
+    {
+      "module": "evidence_collector",
+      "graph_node_bindings": [
+        "provenance_citation_validator",
+        "disclosure_verification_engine"
+      ],
+      "inputs": [
+        "source URLs/docs",
+        "CompanyProfile.public_sources",
+        "news/filing feeds"
+      ],
+      "outputs": [
+        "raw extracted candidate statements + provenance metadata"
+      ],
+      "logic": "Fetch/parse sources; Claude (audit/ai.py) extracts candidate factual statements with source+date; dedupe; attach provenance. No classification or scoring here.",
+      "scoring": "none (collection only)",
+      "uncertainty": "Un-sourced or unparseable items dropped or queued; never fabricated."
+    },
+    {
+      "module": "evidence_classifier",
+      "graph_node_bindings": [
+        "benefit_harm_triangulator"
+      ],
+      "inputs": [
+        "candidate statements"
+      ],
+      "outputs": [
+        "each statement typed SAY|DO|SHOW + linked graph_nodes"
+      ],
+      "logic": "Rule+Claude classifier: modal/intent language -> SAY; action/capital verbs + figures -> DO; third-party/audited/regulator-sourced + outcome metrics -> SHOW. Map each to graph principle nodes by embedding match over node definitions.",
+      "scoring": "classification_confidence 0-1 (downstream gates low ones)",
+      "uncertainty": "Ambiguous class -> lowest-claim default (SAY) + review flag, so claims are never over-counted as outcomes."
+    },
+    {
+      "module": "say_detector",
+      "graph_node_bindings": [
+        "sidq",
+        "niyyah",
+        "benefit_harm_triangulator"
+      ],
+      "inputs": [
+        "candidate statements"
+      ],
+      "outputs": [
+        "SAY records (stated intent/claims)"
+      ],
+      "logic": "Detect stated commitments, targets, and value claims; capture target metric+year where present (feeds Intent-vs-Reality).",
+      "scoring": "say_strength 0-1 = specificity x prominence (a dated quantified pledge scores higher than vague aspiration)",
+      "uncertainty": "Vague claims flagged as low-specificity, weighted down."
+    },
+    {
+      "module": "do_detector",
+      "graph_node_bindings": [
+        "cause_effect_tracer",
+        "capital_integrity_analyzer"
+      ],
+      "inputs": [
+        "candidate statements",
+        "capex/operational data"
+      ],
+      "outputs": [
+        "DO records (actions, capital allocation)"
+      ],
+      "logic": "Detect actual actions and spend; quantify where possible; tag the topic node (e.g. invested in emissions_responsibility).",
+      "scoring": "do_strength 0-1 = materiality (size vs revenue) x verifiability",
+      "uncertainty": "Self-reported DO without independent confirmation capped below SHOW-corroborated DO."
+    },
+    {
+      "module": "show_detector",
+      "graph_node_bindings": [
+        "bayyinah",
+        "shahada",
+        "cause_effect_tracer"
+      ],
+      "inputs": [
+        "independent sources",
+        "audited datasets",
+        "regulator data"
+      ],
+      "outputs": [
+        "SHOW records (independent outcomes/evidence)"
+      ],
+      "logic": "Detect realised outcomes from independent sources; link to the DO that plausibly caused it (causes edge) with corroboration strength.",
+      "scoring": "show_strength 0-1 = source_reliability x outcome_directness",
+      "uncertainty": "Outcome with no independent source is NOT a SHOW; reclassified as DO/SAY."
+    },
+    {
+      "module": "evidence_confidence_grader",
+      "graph_node_bindings": [
+        "evidence_confidence_grader"
+      ],
+      "inputs": [
+        "EvidenceRecord + source"
+      ],
+      "outputs": [
+        "confidence_tier + confidence_score"
+      ],
+      "logic": "Grade each record: verified (audited/regulator) > analyst-reviewed > ai-seeded > model-estimate.",
+      "scoring": "confidence_score map: verified 0.95, analyst-reviewed 0.8, ai-seeded 0.5, model-estimate 0.3 (tunable constants)",
+      "uncertainty": "Low-confidence records excluded from scoring spine; surfaced, never silently used."
+    },
+    {
+      "module": "contradiction_detector",
+      "graph_node_bindings": [
+        "intent_reality_engine",
+        "benefit_harm_triangulator"
+      ],
+      "inputs": [
+        "SAY/DO/SHOW records per topic"
+      ],
+      "outputs": [
+        "contradiction edges + contradiction_score"
+      ],
+      "logic": "Within a topic cluster, compare SAY vs DO vs SHOW: pledge-vs-delivery gaps, claim-vs-outcome conflicts, internal inconsistencies; set contradicts edges.",
+      "scoring": "contradiction_score 0-1 (see scoring section)",
+      "uncertainty": "Apparent contradiction on low-confidence evidence -> flagged tentative, routed to review not asserted."
+    },
+    {
+      "module": "greenwashing_detector",
+      "graph_node_bindings": [
+        "truthfulness_greenwashing_detector",
+        "tatfif",
+        "ghish"
+      ],
+      "inputs": [
+        "topic clusters",
+        "SAY/SHOW strengths"
+      ],
+      "outputs": [
+        "greenwashing_risk per topic + unsupported-claim list"
+      ],
+      "logic": "Compute the SAY-minus-SHOW gap; flag claims (SAY) lacking corroborating SHOW; reuse mizan greenwashing_risk as a prior.",
+      "scoring": "greenwashing_risk 0-1 (see scoring section)",
+      "uncertainty": "High gap on thin evidence -> 'possible greenwash, unverified' not 'greenwash confirmed'."
+    },
+    {
+      "module": "source_reliability_engine",
+      "graph_node_bindings": [
+        "provenance_citation_validator",
+        "bayyinah",
+        "sidq"
+      ],
+      "inputs": [
+        "source metadata"
+      ],
+      "outputs": [
+        "source_reliability 0-1 per record"
+      ],
+      "logic": "Score source by independence and type: independent_audit/regulator high; company self-report medium; marketing/anonymous low. Penalise undisclosed provenance.",
+      "scoring": "reliability map: regulator 0.95, independent_audit 0.9, dataset 0.85, news(reputable) 0.7, ngo 0.65, self-report 0.5, marketing 0.3",
+      "uncertainty": "Unverifiable source -> reliability floor + provenance flag."
+    },
+    {
+      "module": "evidence_timeline_engine",
+      "graph_node_bindings": [
+        "intent_reality_engine",
+        "continuous_audit_engine"
+      ],
+      "inputs": [
+        "dated EvidenceRecords"
+      ],
+      "outputs": [
+        "per-topic timeline, trajectory, pledge-vs-delivery over time"
+      ],
+      "logic": "Order records by published_at; compute trajectory of DO/SHOW vs SAY targets; detect stale claims and reversals.",
+      "scoring": "recency_weight = decay(now - published_at); trajectory slope per metric",
+      "uncertainty": "Stale/expired commitments down-weighted; gaps in the timeline flagged."
+    }
+  ],
+  "scoring": {
+    "evidence_score (per record)": "evidence_score = source_reliability * confidence_score * recency_weight * type_strength(say|do|show). Range 0-1. SHOW with high reliability scores highest; vague SAY lowest.",
+    "alignment_score (per topic)": "alignment = corroborated_show_weight / claimed_say_weight, capped 0-1. 1 = claims fully borne out by independent outcomes; low = talk without proof.",
+    "contradiction_score (per topic)": "contradiction = 1 - alignment, raised by any direct claim-vs-outcome conflict (SAY says improving, SHOW shows worsening = max). Weighted by confidence of the conflicting records so low-confidence conflicts don't dominate.",
+    "greenwashing_risk (per topic)": "gw = mean( share_of_SAY_without_SHOW , mizan_greenwashing_prior , (1 - alignment) ). High when claims are prominent but uncorroborated.",
+    "topic_confidence": "min/weighted-mean of the confidence_scores of the records driving the topic; propagates to downstream engines."
+  },
+  "confidence_methodology": {
+    "tiers": [
+      "verified (independent audit / regulator)",
+      "analyst-reviewed (human-checked)",
+      "ai-seeded (model-extracted, unreviewed)",
+      "model-estimate (inferred, no direct source)"
+    ],
+    "rule": "Only verified+analyst-reviewed feed the deterministic scoring spine; ai-seeded/model-estimate are advisory and flagged; scholar_review_required propagates from any interpretive graph_node activated by the record."
+  },
+  "graph_integration": {
+    "node_linking": "Each EvidenceRecord links to graph principle nodes (graph_index.json) by embedding match; the record inherits those nodes' confidence_level and scholar_review_required.",
+    "verse_provenance": "ayah_index.json supplies citing verses per linked node, preserving each citation's direct/inferred/modern label (a SHOW never upgrades an inferred link to direct).",
+    "engine_handoff": "Clusters feed: Company/Country engines (benefit_detection consumes corroborated benefits, harm_detection consumes corroborated harms), Moral Compass (alignment+greenwashing as the SAY/DO/SHOW signal), Executive/Video Brief engines (top contradictions + timeline narrative)."
+  },
+  "api": {
+    "POST /api/v1/evidence/ingest": "{subject_type, subject_ref, sources[]} -> enqueue collection+classification job (mirrors audit.AIAnalysisJob)",
+    "GET  /api/v1/evidence/{subject_ref}": "all EvidenceRecords (filter ?kind=say|do|show&topic=&since=)",
+    "GET  /api/v1/evidence/{subject_ref}/clusters": "topic EvidenceClusters with alignment/contradiction/greenwashing scores",
+    "GET  /api/v1/evidence/{subject_ref}/contradictions": "ranked SAY/DO/SHOW conflicts with citations",
+    "GET  /api/v1/evidence/{subject_ref}/greenwashing": "per-topic greenwashing_risk + unsupported-claim list",
+    "GET  /api/v1/evidence/{subject_ref}/timeline?topic=": "chronological trajectory (pledge vs delivery)",
+    "GET  /api/v1/evidence/{evidence_id}": "single record with provenance + graph_nodes + ayah_refs",
+    "POST /api/v1/evidence/{evidence_id}/review": "analyst/scholar grade override -> bumps confidence_tier"
+  }
+}

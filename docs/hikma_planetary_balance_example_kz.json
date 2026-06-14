@@ -1,0 +1,277 @@
+{
+  "_note": "ILLUSTRATIVE Kazakhstan-scope planetary balance. DEMO data showing structure, boundary-cap logic, and traceability — not a real Earth-system measurement.",
+  "scope": {
+    "scope": "country",
+    "ref": "KZ",
+    "name": "Kazakhstan",
+    "horizon": "current"
+  },
+  "planetary_balance_score": 42,
+  "band": "Deteriorating / increasing risk",
+  "capped_by": "climate (high_risk boundary transgressed)",
+  "balances": {
+    "water": {
+      "score": 48,
+      "boundary_status": "increasing_risk",
+      "trend": "deteriorating",
+      "nodes": [
+        "water_security_index",
+        "maa",
+        "tawazun"
+      ],
+      "evidence_ids": [
+        "ds-water-01"
+      ],
+      "note": "arid basins; abstraction approaching recharge limits (demo)"
+    },
+    "climate": {
+      "score": 30,
+      "boundary_status": "high_risk",
+      "trend": "deteriorating",
+      "nodes": [
+        "climate_transition_intelligence",
+        "emissions_responsibility",
+        "maqasid_hifz_nasl"
+      ],
+      "evidence_ids": [
+        "ds-clim-01",
+        "ev-002",
+        "ev-003"
+      ],
+      "note": "high carbon intensity; coal-heavy power (rolled up from Samruk-Energy et al.) (demo)"
+    },
+    "energy": {
+      "score": 40,
+      "boundary_status": "increasing_risk",
+      "trend": "flat",
+      "nodes": [
+        "energy_systems_analyzer",
+        "clean_energy",
+        "israf"
+      ],
+      "evidence_ids": [
+        "ds-energy-01",
+        "ev-002",
+        "ev-004"
+      ],
+      "note": "low clean-energy share; early transition (demo)"
+    },
+    "food_security": {
+      "score": 58,
+      "boundary_status": "safe",
+      "trend": "flat",
+      "nodes": [
+        "food_systems_resilience",
+        "sustainable_agriculture"
+      ],
+      "evidence_ids": [
+        "ds-food-01"
+      ],
+      "note": "adequate but drought-exposed (demo)"
+    },
+    "biodiversity": {
+      "score": 52,
+      "boundary_status": "increasing_risk",
+      "trend": "deteriorating",
+      "nodes": [
+        "biodiversity_risk_engine",
+        "ecosystem_stability"
+      ],
+      "evidence_ids": [
+        "ds-bio-01"
+      ],
+      "note": "steppe/wetland pressure (demo)"
+    },
+    "pollution": {
+      "score": 38,
+      "boundary_status": "high_risk",
+      "trend": "flat",
+      "nodes": [
+        "pollution_emissions_auditor",
+        "fasad",
+        "public_health"
+      ],
+      "evidence_ids": [
+        "ds-poll-01",
+        "ev-003"
+      ],
+      "note": "urban/industrial air quality (demo)"
+    },
+    "land_use": {
+      "score": 55,
+      "boundary_status": "increasing_risk",
+      "trend": "flat",
+      "nodes": [
+        "soil_protection",
+        "ard"
+      ],
+      "evidence_ids": [
+        "ds-land-01"
+      ],
+      "note": "degradation in places; restoration limited (demo)"
+    },
+    "resource_depletion": {
+      "score": 45,
+      "boundary_status": "increasing_risk",
+      "trend": "deteriorating",
+      "nodes": [
+        "natural_capital_ledger",
+        "resource_stewardship",
+        "istikhlaf"
+      ],
+      "evidence_ids": [
+        "ds-res-01"
+      ],
+      "note": "hydrocarbon/mineral drawdown booked as income (demo)"
+    },
+    "waste": {
+      "score": 50,
+      "boundary_status": "increasing_risk",
+      "trend": "flat",
+      "nodes": [
+        "circular_resource_tracker",
+        "israf"
+      ],
+      "evidence_ids": [
+        "ds-waste-01"
+      ],
+      "note": "low circularity (demo)"
+    }
+  },
+  "future_generations_risk": {
+    "score": 36,
+    "irreversibility_flags": [
+      "carbon lock-in",
+      "aquifer depletion",
+      "habitat loss"
+    ],
+    "nodes": [
+      "maqasid_hifz_nasl",
+      "intergenerational_equity_ledger"
+    ],
+    "evidence_ids": [
+      "ev-002",
+      "ds-water-01",
+      "ds-bio-01"
+    ]
+  },
+  "boundary_dashboard": [
+    {
+      "boundary": "climate change",
+      "status": "high_risk",
+      "balance_ref": "climate",
+      "evidence_ids": [
+        "ds-clim-01"
+      ],
+      "nodes": [
+        "climate_transition_intelligence"
+      ]
+    },
+    {
+      "boundary": "freshwater use",
+      "status": "increasing_risk",
+      "balance_ref": "water",
+      "evidence_ids": [
+        "ds-water-01"
+      ],
+      "nodes": [
+        "water_security_index"
+      ]
+    },
+    {
+      "boundary": "biosphere integrity",
+      "status": "increasing_risk",
+      "balance_ref": "biodiversity",
+      "evidence_ids": [
+        "ds-bio-01"
+      ],
+      "nodes": [
+        "biodiversity_risk_engine"
+      ]
+    },
+    {
+      "boundary": "novel entities / pollution",
+      "status": "high_risk",
+      "balance_ref": "pollution",
+      "evidence_ids": [
+        "ds-poll-01"
+      ],
+      "nodes": [
+        "pollution_emissions_auditor"
+      ]
+    }
+  ],
+  "priority_intervention_areas": [
+    {
+      "system": "climate",
+      "reason": "transgressed boundary + deteriorating + irreversible lock-in",
+      "decision_pathways": [
+        "Coal-to-Heat-Pump Transition",
+        "Renewable Energy Program",
+        "National Grid Modernisation"
+      ],
+      "nodes": [
+        "emissions_responsibility",
+        "maqasid_hifz_nasl"
+      ],
+      "evidence_ids": [
+        "ds-clim-01",
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "system": "pollution",
+      "reason": "high-risk boundary + public-health harm",
+      "decision_pathways": [
+        "Coal Plant Expansion"
+      ],
+      "nodes": [
+        "pollution_emissions_auditor",
+        "public_health"
+      ],
+      "evidence_ids": [
+        "ds-poll-01",
+        "ev-003"
+      ]
+    },
+    {
+      "system": "water",
+      "reason": "increasing risk + deteriorating trend in arid basins",
+      "decision_pathways": [
+        "National Water Reservoir",
+        "Desalination Plant"
+      ],
+      "nodes": [
+        "water_security_index",
+        "maa"
+      ],
+      "evidence_ids": [
+        "ds-water-01"
+      ]
+    }
+  ],
+  "divergences": [
+    {
+      "system": "climate",
+      "bottom_up": 32,
+      "top_down": 30,
+      "note": "company roll-up and national dataset broadly agree (demo)"
+    }
+  ],
+  "uncertainty_flags": [
+    {
+      "area": "satellite land-use coverage",
+      "reason": "partial dataset",
+      "confidence": "medium"
+    }
+  ],
+  "scholar_review_flags": [
+    {
+      "topic": "intergenerational threshold for resource drawdown",
+      "node": "maqasid_hifz_nasl",
+      "reason": "interpretive long-horizon weighting"
+    }
+  ],
+  "disclaimer": "AI-assisted, indicative, decision-support for stewardship; science-anchored but not authoritative Earth-system measurement; not a ruling."
+}

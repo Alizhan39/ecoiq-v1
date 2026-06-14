@@ -1,0 +1,68 @@
+{
+  "_note": "ILLUSTRATIVE record (schema demo for an already-canonical verse); not a pipeline run",
+  "2:282": {
+    "ayah_id": "2:282",
+    "surah": 2,
+    "ayah": "282",
+    "text_hash": "<sha256>",
+    "concepts": [
+      "written contracts",
+      "witnessing",
+      "documentation of debt"
+    ],
+    "mapped_nodes": [
+      "shahada",
+      "bayyinah",
+      "dayn",
+      "hisab",
+      "decision_audit_trail"
+    ],
+    "principles": [
+      "shahada",
+      "bayyinah",
+      "dayn"
+    ],
+    "domains": [
+      "law",
+      "fintech",
+      "esg",
+      "governance_policy"
+    ],
+    "moral_questions": [
+      "Is the evidence and testimony behind this decision truthful, complete, and free from suppression?"
+    ],
+    "cause_effect_links": [
+      {
+        "cause": "recording the debt and calling witnesses",
+        "effect": "protection from dispute and injustice",
+        "interpretive": false
+      }
+    ],
+    "risk_signals": [
+      "undocumented dealings",
+      "false testimony"
+    ],
+    "benefit_signals": [
+      "documented evidence",
+      "verifiable proof"
+    ],
+    "decision_relevance": [
+      "Debt Restructuring Program",
+      "Infrastructure Financing"
+    ],
+    "relevance_label": "direct",
+    "confidence_level": "high",
+    "scholar_review_required": false,
+    "status": "canonical_curated",
+    "provenance": {
+      "translations_used": [
+        "established EN/RU"
+      ],
+      "matcher_version": "v1",
+      "extracted_at": "<ts>",
+      "reviewers": [
+        "curated_from_node_quranic_basis"
+      ]
+    }
+  }
+}

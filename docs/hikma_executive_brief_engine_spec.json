@@ -1,0 +1,157 @@
+{
+  "engine": "Executive Brief Engine",
+  "version": "v1",
+  "role": "Transforms a Runtime AssessmentResult into a board- and investor-ready executive briefing in institutional language, with every statement traceable to evidence_ids and (in metadata) graph nodes.",
+  "input": "AssessmentResult (from Runtime Execution Layer)",
+  "guarantees": [
+    "Board-ready, investor-ready institutional language — no devotional or religious terminology in rendered prose.",
+    "No rulings, no fatwas, no halal/haram determinations — decision-support framing only.",
+    "Every prose statement cites source evidence_ids; node provenance retained in metadata + appendix.",
+    "Deterministic field->section mapping; Claude writes prose only, validated to use no number/claim absent from the AssessmentResult.",
+    "Graph node names are PROJECTED to institutional phrasing in prose; node ids never surface as preaching, only as traceability."
+  ],
+  "terminology_projection": {
+    "_purpose": "Render graph-internal (often Arabic/ethical) node names as secular institutional concepts in board prose. Node ids remain in citations only.",
+    "mizan": "balance of stakeholder outcomes",
+    "qist": "distributional fairness",
+    "adl": "fair treatment",
+    "zulm": "injustice / rights violation",
+    "amanah": "fiduciary stewardship",
+    "fasad": "systemic environmental and social harm",
+    "maqasid_hifz_nafs": "protection of life and health",
+    "maqasid_hifz_nasl": "long-term and intergenerational impact",
+    "maqasid_hifz_mal": "protection of economic value",
+    "emissions_responsibility": "emissions accountability",
+    "israf": "resource inefficiency / stranded-asset exposure",
+    "adalah_ijtimaiyyah": "social equity",
+    "public_health": "public health",
+    "miskeen": "low-income and vulnerable communities",
+    "nasl": "future generations",
+    "energy_security": "energy security",
+    "clean_energy": "clean-energy transition",
+    "anti_corruption": "anti-corruption controls",
+    "masuliyyah": "accountability",
+    "greenwashing": "disclosure-vs-performance gap"
+  },
+  "section_mapping": {
+    "1_executive_summary": "moral_compass_summary (band+composite) + wisdom_synthesis_summary.narrative -> projected institutional summary",
+    "2_key_strengths": "benefit_assessment.items where corroboration in {do,show}",
+    "3_key_risks": "harm_assessment.items ordered by severity + red_line_flags",
+    "4_contradictions": "evidence_used SAY vs DO vs SHOW per topic + uncertainty_flags (intent-vs-reality)",
+    "5_governance_findings": "governance_assessment (score, flags, nodes)",
+    "6_stakeholder_findings": "stakeholder_impacts",
+    "7_future_generation_findings": "future_generation_impacts (+ irreversibility_flags)",
+    "8_greenwashing_findings": "harm_assessment.greenwashing_risk + benefit items with corroboration='say-only' + SAY-vs-SHOW contradictions",
+    "9_priority_actions": "moral_compass_summary.priority_actions",
+    "10_evidence_appendix": "evidence_used (full provenance) + scholar_review_flags + disclaimer"
+  },
+  "data_contracts": {
+    "BriefRequest": {
+      "subject_ref": "",
+      "assessment_ref": "job_id or latest",
+      "format": "json|pdf|both",
+      "audience": "board|investor|regulator",
+      "tone": "neutral_institutional"
+    },
+    "ExecutiveBrief": {
+      "subject": {
+        "type": "",
+        "ref": "",
+        "name": ""
+      },
+      "assessment_ref": "",
+      "generated_at": "",
+      "headline": "<=140 chars",
+      "overall_rating": {
+        "score": "0-100",
+        "band": "",
+        "trajectory": "improving|flat|declining"
+      },
+      "sections": [
+        {
+          "id": "",
+          "title": "",
+          "statements": [
+            {
+              "text": "institutional prose",
+              "evidence_ids": [],
+              "node_refs": [
+                "metadata only"
+              ],
+              "confidence": "high|medium|low"
+            }
+          ]
+        }
+      ],
+      "scholar_review_flags": [],
+      "uncertainty_flags": [],
+      "disclaimer": "AI-assisted, indicative, decision-support only; not investment, legal, financial, or regulatory advice."
+    }
+  },
+  "api": {
+    "POST /api/v1/brief": "{BriefRequest} -> ExecutiveBrief (json) and/or PDF url",
+    "GET  /api/v1/brief/{subject_ref}/latest": "latest brief",
+    "GET  /api/v1/brief/{subject_ref}.pdf": "rendered PDF",
+    "GET  /api/v1/brief/{subject_ref}/explain/{statement_id}": "evidence + node provenance for one statement"
+  },
+  "report_structure": [
+    "Cover (subject, rating, date)",
+    "Executive Summary",
+    "Key Strengths",
+    "Key Risks",
+    "Contradictions (SAY/DO/SHOW)",
+    "Governance Findings",
+    "Stakeholder Findings",
+    "Future-Generation Findings",
+    "Disclosure-vs-Performance (Greenwashing) Findings",
+    "Priority Actions",
+    "Evidence Appendix + Methodology + Disclaimer"
+  ],
+  "pdf_structure": {
+    "renderer": "WeasyPrint (reuse companies/report_pdf pattern)",
+    "style": "clean institutional, EcoIQ dark/emerald or light board variant",
+    "pages": [
+      {
+        "p": 1,
+        "content": "Cover: name, overall rating gauge, band, trajectory, date, confidence banner"
+      },
+      {
+        "p": 2,
+        "content": "Executive Summary + rating breakdown (Mizan 6-dim projected as 'assessment dimensions')"
+      },
+      {
+        "p": 3,
+        "content": "Key Strengths (cards) | Key Risks (severity heatmap)"
+      },
+      {
+        "p": 4,
+        "content": "Contradictions table: Claim (SAY) | Action (DO) | Independent Evidence (SHOW) | Gap"
+      },
+      {
+        "p": 5,
+        "content": "Governance + Stakeholder findings"
+      },
+      {
+        "p": 6,
+        "content": "Future-Generation findings (long-horizon chart) + Greenwashing findings"
+      },
+      {
+        "p": 7,
+        "content": "Priority Actions (ranked, with horizon)"
+      },
+      {
+        "p": 8,
+        "content": "Evidence Appendix (every evidence_id: kind, source, tier) + scholar-review notes + methodology + disclaimer"
+      }
+    ],
+    "chart_specs": [
+      "rating gauge (composite)",
+      "6-dim bar (projected dimensions)",
+      "risk severity x likelihood heatmap",
+      "SAY/DO/SHOW alignment bars",
+      "long-horizon trajectory"
+    ]
+  },
+  "explainability": "Each statement has a statement_id resolvable via /explain to its evidence_ids and node_refs (with ayah_index provenance, labels preserved). The numeric-validation guard rejects any figure not present in the AssessmentResult.",
+  "uncertainty": "Low-confidence statements carry a visible 'indicative — limited evidence' marker; scholar_review_flags become an appendix note, never a board recommendation; greenwashing framed as 'disclosure-vs-performance gap', not an accusation."
+}

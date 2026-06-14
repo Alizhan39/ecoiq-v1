@@ -1,0 +1,177 @@
+{
+  "total_nodes": 200,
+  "categories_count": 29,
+  "categories": {
+    "Artificial Intelligence Ethics": 7,
+    "Civilizational Sustainability": 10,
+    "Climate Resilience": 14,
+    "Conflict, peace and justice": 4,
+    "Core ethical principles": 7,
+    "Corporate Responsibility": 6,
+    "Decision-analysis meta-nodes": 8,
+    "Ecology and natural world": 3,
+    "Economy and finance": 12,
+    "Energy Systems": 4,
+    "Environmental Systems": 9,
+    "Family, society and vulnerable groups": 4,
+    "Food & Agriculture": 8,
+    "Future generations and stewardship": 4,
+    "Governance and leadership": 5,
+    "Human Development": 10,
+    "Infrastructure": 8,
+    "Innovation & Technology": 3,
+    "Institutional Integrity": 9,
+    "Knowledge, reason and evidence": 4,
+    "Law, contracts and accountability": 12,
+    "Maqasid-related preservation categories": 8,
+    "Moral risks and violations": 16,
+    "Public Policy": 2,
+    "Stakeholder Justice": 6,
+    "Virtues and character": 7,
+    "Water Stewardship": 4,
+    "Water, land, animals and resources": 1,
+    "Wealth, labour and trade": 5
+  },
+  "directed_relationship_count": 1005,
+  "undirected_relationship_count": 831,
+  "average_connectivity_undirected": 8.28,
+  "isolated_nodes": [],
+  "isolated_count": 0,
+  "dangling_edges": [
+    {
+      "target": "itqan",
+      "referenced_by": [
+        "ihsan"
+      ]
+    }
+  ],
+  "highest_degree_nodes": [
+    {
+      "id": "adl",
+      "degree": 33
+    },
+    {
+      "id": "zulm",
+      "degree": 31
+    },
+    {
+      "id": "qist",
+      "degree": 27
+    },
+    {
+      "id": "miskeen",
+      "degree": 26
+    },
+    {
+      "id": "maslahah",
+      "degree": 24
+    },
+    {
+      "id": "fasad",
+      "degree": 24
+    },
+    {
+      "id": "israf",
+      "degree": 23
+    },
+    {
+      "id": "amanah",
+      "degree": 22
+    },
+    {
+      "id": "mizan",
+      "degree": 21
+    },
+    {
+      "id": "khalifah",
+      "degree": 21
+    },
+    {
+      "id": "rizq",
+      "degree": 20
+    },
+    {
+      "id": "rahmah",
+      "degree": 20
+    },
+    {
+      "id": "maqasid_hifz_nasl",
+      "degree": 18
+    },
+    {
+      "id": "sidq",
+      "degree": 18
+    },
+    {
+      "id": "masuliyyah",
+      "degree": 18
+    }
+  ],
+  "centrality_candidates_by_in_degree": [
+    {
+      "id": "adl",
+      "in_degree": 33
+    },
+    {
+      "id": "zulm",
+      "in_degree": 31
+    },
+    {
+      "id": "qist",
+      "in_degree": 25
+    },
+    {
+      "id": "miskeen",
+      "in_degree": 25
+    },
+    {
+      "id": "fasad",
+      "in_degree": 24
+    },
+    {
+      "id": "israf",
+      "in_degree": 23
+    },
+    {
+      "id": "mizan",
+      "in_degree": 21
+    },
+    {
+      "id": "amanah",
+      "in_degree": 21
+    },
+    {
+      "id": "khalifah",
+      "in_degree": 21
+    },
+    {
+      "id": "rahmah",
+      "in_degree": 20
+    },
+    {
+      "id": "maslahah",
+      "in_degree": 19
+    },
+    {
+      "id": "rizq",
+      "in_degree": 18
+    },
+    {
+      "id": "sidq",
+      "in_degree": 17
+    },
+    {
+      "id": "maqasid_hifz_nasl",
+      "in_degree": 16
+    },
+    {
+      "id": "bayyinah",
+      "in_degree": 16
+    }
+  ],
+  "confidence_distribution": {
+    "high": 66,
+    "medium": 118,
+    "low": 16
+  }
+}

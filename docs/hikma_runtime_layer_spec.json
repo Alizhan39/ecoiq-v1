@@ -1,0 +1,237 @@
+{
+  "layer": "Runtime Execution Layer",
+  "version": "v1",
+  "role": "The orchestrator that executes a real-world assessment by binding a subject's evidence to the read-only graph, running the engine pipeline along a selected decision pathway, and emitting a fully traceable, ruling-free decision-support assessment.",
+  "guarantees": [
+    "No rulings, no fatwas, no halal/haram determinations — decision-support only.",
+    "Deterministic Python computes all scores; Claude writes only validated prose.",
+    "Every conclusion is doubly traceable: node-cited (graph id) AND evidence-cited (evidence_id).",
+    "Interpretive/low-confidence outputs route to scholar_review_workflow and are labelled, never asserted.",
+    "Graph and node files are read-only at runtime (no mutation)."
+  ],
+  "subject_types": [
+    "company",
+    "state_owned_enterprise",
+    "country",
+    "project",
+    "policy",
+    "infrastructure_asset",
+    "investment_opportunity"
+  ],
+  "orchestration": {
+    "controller": "ethical_intelligence_orchestrator (graph node) — sequences engines, gates, and review.",
+    "determinism": "Same evidence snapshot + same graph version + same engine versions => identical scores (hash-pinned).",
+    "caching": "per-subject AssessmentResult cached on (subject_ref, evidence_snapshot_hash, graph_version); prose cached on fact-pack hash."
+  },
+  "execution_flow": [
+    {
+      "step": 1,
+      "name": "ingest_evidence",
+      "engine": "evidence_collector",
+      "does": "Pull SAY/DO/SHOW EvidenceRecords for the subject from the Evidence Layer; snapshot + hash them.",
+      "emits": "evidence_snapshot"
+    },
+    {
+      "step": 2,
+      "name": "activate_nodes",
+      "engine": "principle_mapper",
+      "does": "Embedding-match evidence to graph principle nodes; inherit confidence + scholar_review flags.",
+      "emits": "activated_nodes"
+    },
+    {
+      "step": 3,
+      "name": "select_pathway",
+      "engine": "decision_triage_framework",
+      "does": "Match subject + activated nodes to one or more of the 50 decision pathways by shared nodes/sector.",
+      "emits": "pathway_used"
+    },
+    {
+      "step": 4,
+      "name": "traverse_graph",
+      "engine": "ethical_intelligence_orchestrator",
+      "does": "Run the pathway traversal: gates first (red_line_hudud_gate, harm_prevention_gate), then domain layers.",
+      "emits": "traversal_trace"
+    },
+    {
+      "step": 5,
+      "name": "benefit_signals",
+      "engine": "benefit_detection_engine",
+      "does": "Score corroborated (DO/SHOW) benefits; downgrade SAY-only.",
+      "emits": "benefit_assessment"
+    },
+    {
+      "step": 6,
+      "name": "harm_signals",
+      "engine": "harm_detection_engine",
+      "does": "Score corroborated harms + greenwashing gap; run harm gate.",
+      "emits": "harm_assessment"
+    },
+    {
+      "step": 7,
+      "name": "tradeoff",
+      "engine": "tradeoff_analyzer",
+      "does": "Weigh benefit vs harm under Maqasid priority + red-line constraints.",
+      "emits": "tradeoff_result"
+    },
+    {
+      "step": 8,
+      "name": "future_generations",
+      "engine": "future_generations_engine",
+      "does": "Weight irreversible/long-horizon effects; intergenerational ledger.",
+      "emits": "future_generation_impacts"
+    },
+    {
+      "step": 9,
+      "name": "governance",
+      "engine": "governance_assessment_engine",
+      "does": "Accountability chain + corruption/capture/conflict scan (critical for SOEs).",
+      "emits": "governance_assessment"
+    },
+    {
+      "step": 10,
+      "name": "moral_compass",
+      "engine": "moral_compass_generator",
+      "does": "Composite score+band + Mizan 6-dim + Maqasid dashboard + grounded prose (numeric-guarded).",
+      "emits": "moral_compass_summary"
+    },
+    {
+      "step": 11,
+      "name": "wisdom_synthesis",
+      "engine": "wisdom_synthesis_engine",
+      "does": "Apex synthesis; surface uncertainty; defer interpretive points to scholar review; no ruling.",
+      "emits": "wisdom_synthesis_summary"
+    }
+  ],
+  "data_contracts": {
+    "RuntimeRequest": {
+      "subject_type": "enum",
+      "subject_ref": "slug/id",
+      "subject_name": "str",
+      "evidence_mode": "live|snapshot",
+      "pathway_hint": "optional decision_name",
+      "options": {
+        "include_prose": "bool",
+        "depth": "standard|deep"
+      }
+    },
+    "AssessmentResult": {
+      "subject": {
+        "type": "",
+        "ref": "",
+        "name": ""
+      },
+      "graph_version": "hash",
+      "evidence_snapshot_hash": "hash",
+      "engine_versions": {},
+      "activated_nodes": [
+        {
+          "node": "id",
+          "activation": "0-1",
+          "confidence_level": "",
+          "scholar_review_required": "bool",
+          "evidence_ids": []
+        }
+      ],
+      "evidence_used": [
+        {
+          "evidence_id": "",
+          "kind": "say|do|show",
+          "statement": "",
+          "source": "",
+          "confidence_tier": ""
+        }
+      ],
+      "pathway_used": [
+        "decision_name(s)"
+      ],
+      "benefit_assessment": {
+        "score": "0-100",
+        "items": [
+          {
+            "title": "",
+            "nodes": [],
+            "evidence_ids": [],
+            "corroboration": "do|show|say-only"
+          }
+        ]
+      },
+      "harm_assessment": {
+        "score": "0-100",
+        "red_line_flags": [],
+        "greenwashing_risk": "0-1",
+        "items": [
+          {
+            "title": "",
+            "severity": "High|Medium|Low",
+            "nodes": [],
+            "evidence_ids": []
+          }
+        ]
+      },
+      "stakeholder_impacts": [
+        {
+          "stakeholder": "",
+          "impact": "benefit|harm|mixed",
+          "nodes": [],
+          "evidence_ids": []
+        }
+      ],
+      "future_generation_impacts": {
+        "score": "0-100",
+        "irreversibility_flags": [],
+        "items": [
+          {
+            "title": "",
+            "nodes": [],
+            "evidence_ids": []
+          }
+        ]
+      },
+      "governance_assessment": {
+        "score": "0-100",
+        "flags": [],
+        "nodes": [],
+        "evidence_ids": []
+      },
+      "uncertainty_flags": [
+        {
+          "area": "",
+          "reason": "",
+          "confidence": "low|medium"
+        }
+      ],
+      "scholar_review_flags": [
+        {
+          "topic": "",
+          "node": "",
+          "reason": ""
+        }
+      ],
+      "moral_compass_summary": {
+        "composite_score": "0-100",
+        "band": "",
+        "mizan_dimensions": {},
+        "maqasid_dashboard": {},
+        "findings": [],
+        "priority_actions": []
+      },
+      "wisdom_synthesis_summary": {
+        "narrative": "",
+        "caveats": [],
+        "scholar_deferrals": [],
+        "disposition": "decision_support_only"
+      },
+      "disclaimer": "AI-assisted, indicative, decision-support only; not investment, legal, financial, or religious advice; not a ruling."
+    }
+  },
+  "api": {
+    "POST /api/v1/assess": "{RuntimeRequest} -> enqueue assessment job (async, audit-job pattern) -> job_id",
+    "GET  /api/v1/assess/{job_id}": "job status + AssessmentResult when done",
+    "GET  /api/v1/assess/{subject_ref}/latest": "cached latest AssessmentResult",
+    "GET  /api/v1/assess/{subject_ref}/trace": "full traversal_trace (engine-by-engine, node+evidence citations)",
+    "GET  /api/v1/assess/{subject_ref}/explain/{output_field}": "node+evidence provenance for a single output",
+    "POST /api/v1/assess/{subject_ref}/review": "analyst/scholar disposition on flagged items"
+  },
+  "explainability": "Every numeric output carries nodes[] + evidence_ids[]; /trace replays the engine sequence; /explain resolves a single field to its graph nodes (with ayah_index provenance, labels preserved) and source evidence. The numeric-validation guard rejects any Claude number absent from the fact-pack.",
+  "uncertainty": "evidence_confidence_grader gates inputs; scholar_review_required propagates from any activated interpretive node to scholar_review_flags; low aggregate confidence sets a review-required banner; nothing interpretive is asserted as fact."
+}

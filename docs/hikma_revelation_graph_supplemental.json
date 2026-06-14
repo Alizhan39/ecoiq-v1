@@ -1,0 +1,191 @@
+[
+  {
+    "id": "maruf",
+    "name_arabic": "المعروف",
+    "transliteration": "al-Maʿrūf",
+    "english_name": "The recognised good / Enjoining good",
+    "russian_name": "Признанное добро / Одобряемое (Маʿруф)",
+    "category": "Core ethical principles",
+    "short_definition": "That which is recognised as good and beneficial by sound reason and revelation, which the community is enjoined to promote.",
+    "quranic_basis": [
+      {
+        "surah": "3",
+        "ayah": "104",
+        "relevance": "Direct: 'let there be a community enjoining the good (al-maʿrūf) and forbidding the wrong'."
+      },
+      {
+        "surah": "9",
+        "ayah": "71",
+        "relevance": "Direct: believing men and women 'enjoin al-maʿrūf and forbid al-munkar'."
+      }
+    ],
+    "moral_question": "Does this decision actively promote recognised good, or merely avoid wrong without advancing benefit?",
+    "positive_signals": [
+      "recognised benefit promoted",
+      "good actively enabled",
+      "constructive norms upheld"
+    ],
+    "risk_signals": [
+      "passivity toward achievable good",
+      "good obstructed",
+      "benefit left unrealised"
+    ],
+    "related_nodes": [
+      "munkar",
+      "ihsan",
+      "maslahah",
+      "islah",
+      "raqabah"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "esg",
+      "public_policy",
+      "ai_systems"
+    ],
+    "decision_use": "Apply as the positive-duty test: does the decision actively advance recognised good, not only refrain from harm?",
+    "confidence_level": "high",
+    "scholar_review_required": true
+  },
+  {
+    "id": "munkar",
+    "name_arabic": "المنكر",
+    "transliteration": "al-Munkar",
+    "english_name": "The reprehensible / Forbidding wrong",
+    "russian_name": "Порицаемое / Вредное (Мункар)",
+    "category": "Moral risks and violations",
+    "short_definition": "That which is recognised as wrong, harmful, or reprehensible, which the community is enjoined to oppose and prevent.",
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Direct: God 'forbids immorality, the reprehensible (al-munkar), and oppression'."
+      },
+      {
+        "surah": "3",
+        "ayah": "110",
+        "relevance": "Direct: 'you enjoin the good and forbid the reprehensible (al-munkar)'."
+      }
+    ],
+    "moral_question": "Does this decision confront and prevent recognised wrong, or tolerate and enable it?",
+    "positive_signals": [
+      "wrong actively prevented",
+      "harm interdicted",
+      "complicity refused"
+    ],
+    "risk_signals": [
+      "recognised wrong tolerated",
+      "harm enabled or normalised",
+      "silence in the face of abuse"
+    ],
+    "related_nodes": [
+      "maruf",
+      "fasad",
+      "zulm",
+      "raqabah",
+      "harm_prevention_gate"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "esg",
+      "ai_systems",
+      "public_policy"
+    ],
+    "decision_use": "Apply as the prevent-wrong test: does the decision act against recognised harm, not merely avoid causing it directly?",
+    "confidence_level": "high",
+    "scholar_review_required": true
+  },
+  {
+    "id": "tawakkul",
+    "name_arabic": "التوكل",
+    "transliteration": "at-Tawakkul",
+    "english_name": "Trust-with-action / Reliance after due effort",
+    "russian_name": "Упование с действием (Таваккуль)",
+    "category": "Virtues and character",
+    "short_definition": "Reliance on God exercised together with diligent means and planning — trust that follows, never replaces, responsible action.",
+    "quranic_basis": [
+      {
+        "surah": "3",
+        "ayah": "159",
+        "relevance": "Direct: 'when you have resolved, then rely on God (fa-tawakkal)' — reliance after deliberation and decision."
+      },
+      {
+        "surah": "65",
+        "ayah": "3",
+        "relevance": "Direct: 'whoever relies on God, He is sufficient for him'; the action-pairing ('tie your camel and trust') is from prophetic tradition."
+      }
+    ],
+    "moral_question": "Is confidence here grounded in diligent means and planning, or used to excuse passivity and neglected preparation?",
+    "positive_signals": [
+      "due diligence done before committing",
+      "contingency planning",
+      "calm execution after effort"
+    ],
+    "risk_signals": [
+      "fatalism replacing preparation",
+      "risk ignored as 'meant to be'",
+      "neglected means excused as trust"
+    ],
+    "related_nodes": [
+      "niyyah",
+      "sabr",
+      "hikmah",
+      "ilm",
+      "continuity_reserve_planner"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "investing",
+      "climate_risk",
+      "energy_transition"
+    ],
+    "decision_use": "Apply as the diligence-before-confidence test: trust is legitimate only after responsible means, planning, and risk assessment.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "itqan",
+    "name_arabic": "الإتقان",
+    "transliteration": "al-Itqān",
+    "english_name": "Mastery / Precision in work",
+    "russian_name": "Мастерство / Точность в деле (Иткан)",
+    "category": "Virtues and character",
+    "short_definition": "Doing work with mastery, precision, and care — the execution-quality counterpart to the moral excellence of iḥsān.",
+    "quranic_basis": [
+      {
+        "surah": "27",
+        "ayah": "88",
+        "relevance": "Direct: 'the work of God who perfected/mastered (atqana) everything' grounds the value of mastery in work."
+      }
+    ],
+    "moral_question": "Is this work executed with genuine mastery and care, or cut-corner and slipshod beneath its claims?",
+    "positive_signals": [
+      "precision and rigour",
+      "quality assurance",
+      "craftsmanship",
+      "defects designed out"
+    ],
+    "risk_signals": [
+      "slipshod execution",
+      "cut corners",
+      "quality sacrificed for speed or cost",
+      "negligent build"
+    ],
+    "related_nodes": [
+      "ihsan",
+      "maruf",
+      "scientific_responsibility",
+      "responsible_innovation"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "energy_transition",
+      "esg",
+      "labour",
+      "infrastructure"
+    ],
+    "decision_use": "Apply as the execution-quality test: assess whether work meets a standard of mastery and rigour, distinct from moral intent (iḥsān).",
+    "confidence_level": "high",
+    "scholar_review_required": true
+  }
+]

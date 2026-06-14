@@ -1,0 +1,354 @@
+{
+  "engine": "Planetary Balance Engine",
+  "version": "v1",
+  "tier": "Macro — sits ABOVE Company Intelligence and Country Intelligence; aggregates up and ingests Earth-system datasets.",
+  "frameworks": [
+    "Planetary Boundaries (safe operating space + transgression)",
+    "Earth System Science (state, trend, tipping points)",
+    "Natural Capital (stocks vs renewable yield)"
+  ],
+  "role": "Assess the state of planetary systems and identify where balance is improving or deteriorating, with the same evidence-grounded, non-ruling, fully-traceable discipline as the rest of the stack.",
+  "no_duplicate_logic": [
+    "Does NOT re-score companies/countries — consumes their AssessmentResults via the Runtime Layer.",
+    "Does NOT re-implement evidence handling — ingests macro Earth-system datasets through the Evidence Layer (SHOW-heavy: satellite, scientific).",
+    "Does NOT re-implement long-horizon logic — REUSES the Future Generations Engine + intergenerational_equity_ledger.",
+    "Binds the same decision pathways for intervention framing (no new pathway logic)."
+  ],
+  "guarantees": [
+    "Deterministic Python computes balances vs scientific boundaries; Claude writes only validated prose.",
+    "Every balance cites datasets (evidence_ids) and graph nodes.",
+    "No rulings; outputs are decision-support for stewardship, framed institutionally.",
+    "Boundary status is science-anchored, not asserted; uncertainty + scholar/expert review preserved."
+  ],
+  "aggregation_model": {
+    "bottom_up": "Roll up Company + Country AssessmentResults (emissions, water use, land impact, governance) weighted by materiality.",
+    "top_down": "Ingest macro datasets (climate, water, biodiversity, satellite, scientific reports) via Evidence Layer as SHOW.",
+    "reconciliation": "Where bottom-up and top-down disagree, surface the divergence (a data-integrity signal), do not silently average."
+  },
+  "modules": [
+    {
+      "module": "water_balance_module",
+      "graph_node_bindings": [
+        "water_stewardship_intelligence",
+        "water_security_index",
+        "maa",
+        "tawazun"
+      ],
+      "reuses": [
+        "Country water AssessmentResults",
+        "hydrology/abstraction datasets"
+      ],
+      "inputs": [
+        "aquifer/river abstraction vs recharge",
+        "freshwater-use boundary status"
+      ],
+      "outputs": [
+        "Water Balance: state vs renewable supply; trend; boundary='freshwater use'"
+      ],
+      "scoring": "freshwater_use_dataset + water_security_index",
+      "explainability": "cites datasets + water nodes"
+    },
+    {
+      "module": "climate_balance_module",
+      "graph_node_bindings": [
+        "climate_transition_intelligence",
+        "emissions_responsibility",
+        "carbon_responsibility",
+        "maqasid_hifz_nasl"
+      ],
+      "reuses": [
+        "aggregated emissions from Company/Country results",
+        "global climate datasets"
+      ],
+      "inputs": [
+        "net emissions trajectory vs carbon budget",
+        "climate-change boundary status"
+      ],
+      "outputs": [
+        "Climate Balance: emissions vs remaining budget; trend"
+      ],
+      "scoring": "carbon-budget science + aggregated emissions",
+      "explainability": "cites budget science + climate nodes"
+    },
+    {
+      "module": "energy_balance_module",
+      "graph_node_bindings": [
+        "energy_systems_analyzer",
+        "energy_security_analyzer",
+        "clean_energy",
+        "israf"
+      ],
+      "reuses": [
+        "energy AssessmentResults",
+        "generation-mix datasets"
+      ],
+      "inputs": [
+        "clean vs fossil share",
+        "efficiency",
+        "energy-system balance"
+      ],
+      "outputs": [
+        "Energy Balance: low-harm share + efficiency + security"
+      ],
+      "scoring": "generation-mix + efficiency data",
+      "explainability": "cites energy nodes"
+    },
+    {
+      "module": "food_security_balance_module",
+      "graph_node_bindings": [
+        "food_systems_resilience",
+        "food_security_monitor",
+        "sustainable_agriculture"
+      ],
+      "reuses": [
+        "food AssessmentResults",
+        "yield/soil/nutrition datasets"
+      ],
+      "inputs": [
+        "food access + agricultural sustainability",
+        "nitrogen/phosphorus boundary proxy"
+      ],
+      "outputs": [
+        "Food Security Balance: access + sustainability"
+      ],
+      "scoring": "food-security + biogeochemical-flow data",
+      "explainability": "cites food nodes"
+    },
+    {
+      "module": "biodiversity_balance_module",
+      "graph_node_bindings": [
+        "biodiversity_risk_engine",
+        "ecosystem_stability_monitor",
+        "biodiversity_protection",
+        "ecosystem_stability"
+      ],
+      "reuses": [
+        "biodiversity datasets",
+        "habitat/land-use change"
+      ],
+      "inputs": [
+        "species/habitat trend",
+        "biosphere-integrity boundary status"
+      ],
+      "outputs": [
+        "Biodiversity Balance: integrity vs loss rate"
+      ],
+      "scoring": "biosphere-integrity science",
+      "explainability": "cites biodiversity nodes"
+    },
+    {
+      "module": "pollution_balance_module",
+      "graph_node_bindings": [
+        "pollution_emissions_auditor",
+        "fasad",
+        "darar",
+        "public_health"
+      ],
+      "reuses": [
+        "pollution datasets",
+        "aggregated emitter results"
+      ],
+      "inputs": [
+        "air/water/soil pollution loads",
+        "novel-entities + air-quality boundary proxy"
+      ],
+      "outputs": [
+        "Pollution Balance: load vs safe threshold"
+      ],
+      "scoring": "pollution monitoring data",
+      "explainability": "cites pollution nodes"
+    },
+    {
+      "module": "land_use_balance_module",
+      "graph_node_bindings": [
+        "soil_protection",
+        "land_restoration",
+        "ard",
+        "fasad"
+      ],
+      "reuses": [
+        "land-use/satellite datasets"
+      ],
+      "inputs": [
+        "land-system change",
+        "soil integrity",
+        "restoration vs degradation"
+      ],
+      "outputs": [
+        "Land Use Balance: land-system change boundary status"
+      ],
+      "scoring": "land-cover + soil data (satellite)",
+      "explainability": "cites land nodes"
+    },
+    {
+      "module": "resource_depletion_module",
+      "graph_node_bindings": [
+        "natural_capital_ledger",
+        "resource_sufficiency_monitor",
+        "resource_stewardship",
+        "istikhlaf"
+      ],
+      "reuses": [
+        "extraction datasets",
+        "Company resource results"
+      ],
+      "inputs": [
+        "stock vs renewable yield",
+        "depletion rate"
+      ],
+      "outputs": [
+        "Resource Depletion Risk: drawdown vs renewal"
+      ],
+      "scoring": "natural-capital accounting",
+      "explainability": "cites resource nodes"
+    },
+    {
+      "module": "waste_balance_module",
+      "graph_node_bindings": [
+        "circular_resource_tracker",
+        "waste_reduction",
+        "israf",
+        "tabdhir"
+      ],
+      "reuses": [
+        "material-flow/waste datasets"
+      ],
+      "inputs": [
+        "circularity vs linear throughput",
+        "waste load"
+      ],
+      "outputs": [
+        "Waste Balance: circularity vs leakage"
+      ],
+      "scoring": "material-flow data",
+      "explainability": "cites waste nodes"
+    },
+    {
+      "module": "future_generations_risk_module",
+      "graph_node_bindings": [
+        "long_horizon_consequence_engine",
+        "intergenerational_equity_ledger",
+        "maqasid_hifz_nasl",
+        "future_generations_impact"
+      ],
+      "reuses": [
+        "all balance outputs",
+        "irreversibility flags"
+      ],
+      "inputs": [
+        "intergenerational burden across all systems"
+      ],
+      "outputs": [
+        "Future Generations Risk: aggregate irreversible burden passed forward"
+      ],
+      "scoring": "REUSES Future Generations Engine logic — no new scoring",
+      "explainability": "cites future nodes + contributing balances"
+    },
+    {
+      "module": "planetary_aggregator",
+      "graph_node_bindings": [
+        "planetary_balance",
+        "planetary_boundary_tracker",
+        "mizan_balance_engine",
+        "tipping_point_early_warning",
+        "mizan",
+        "tawazun",
+        "civilization_flourishing"
+      ],
+      "reuses": [
+        "all 9 system balances + future-generations risk"
+      ],
+      "inputs": [
+        "Planetary Balance Score + boundary dashboard + priority interventions"
+      ],
+      "outputs": [
+        "Planetary Balance Score (0-100) with breached-boundary CAP rule"
+      ],
+      "scoring": "aggregate under boundary-safety constraint",
+      "explainability": "cites all sub-balances + boundary science"
+    }
+  ],
+  "scoring_logic": {
+    "per_balance": "each balance = f(state vs safe-boundary, trend(improving|flat|deteriorating), data_confidence). 0-100 where 100=well within safe space, low=transgressed.",
+    "boundary_status": "map each to a Planetary Boundary state: safe | increasing_risk | high_risk(transgressed); science-anchored thresholds, cited.",
+    "planetary_balance_score": "weighted aggregate of the 9 system balances, BUT any transgressed boundary CAPS the overall score (lexicographic safety, like Maqasid priority) — a breached life-support system cannot be averaged away by a healthy one.",
+    "future_generations_risk": "reuses Future Generations Engine: irreversibility-weighted aggregate; raises priority of any balance with irreversible deterioration.",
+    "priority_intervention_areas": "rank systems by (distance past boundary x irreversibility x trend); link each to the relevant decision pathway(s) for action framing.",
+    "trend_over_state": "a deteriorating trend within safe space is flagged early (tipping_point_early_warning), not ignored until breach."
+  },
+  "data_contracts": {
+    "PlanetaryBalanceRequest": {
+      "scope": "global|region|country",
+      "ref": "iso2|region-id|world",
+      "horizon": "current|2030|2050",
+      "include_prose": "bool"
+    },
+    "PlanetaryBalanceResult": {
+      "scope": {},
+      "planetary_balance_score": 0,
+      "band": "",
+      "capped_by": "breached boundary or null",
+      "balances": {
+        "water": {},
+        "climate": {},
+        "energy": {},
+        "food_security": {},
+        "biodiversity": {},
+        "pollution": {},
+        "land_use": {},
+        "resource_depletion": {},
+        "waste": {}
+      },
+      "future_generations_risk": {
+        "score": 0,
+        "irreversibility_flags": []
+      },
+      "boundary_dashboard": [
+        {
+          "boundary": "",
+          "status": "safe|increasing_risk|high_risk",
+          "balance_ref": "",
+          "evidence_ids": [],
+          "nodes": []
+        }
+      ],
+      "priority_intervention_areas": [
+        {
+          "system": "",
+          "reason": "",
+          "decision_pathways": [],
+          "nodes": [],
+          "evidence_ids": []
+        }
+      ],
+      "divergences": [
+        {
+          "system": "",
+          "bottom_up": 0,
+          "top_down": 0,
+          "note": "data-integrity signal"
+        }
+      ],
+      "uncertainty_flags": [],
+      "scholar_review_flags": [],
+      "disclaimer": "AI-assisted, indicative, decision-support for stewardship; science-anchored but not authoritative Earth-system measurement; not a ruling."
+    }
+  },
+  "api": {
+    "POST /api/v1/planetary/assess": "{PlanetaryBalanceRequest} -> async job",
+    "GET  /api/v1/planetary/{scope}/{ref}/latest": "PlanetaryBalanceResult",
+    "GET  /api/v1/planetary/{ref}/boundary-dashboard": "boundary statuses",
+    "GET  /api/v1/planetary/{ref}/interventions": "priority intervention areas (+ pathways)",
+    "GET  /api/v1/planetary/{ref}/explain/{balance}": "datasets + nodes + contributing entity AssessmentResults"
+  },
+  "dashboard_outputs": [
+    "Planetary Balance gauge + band (capped-by indicator)",
+    "9-system balance radar/bars with boundary-status colour (safe/increasing/high-risk)",
+    "Planetary-boundaries ring (transgression visualisation)",
+    "Future-Generations risk panel (irreversibility flags)",
+    "Priority interventions list (each linked to decision pathways)",
+    "Bottom-up vs top-down divergence panel (data-integrity)"
+  ],
+  "explainability": "Every balance resolves via /explain to (a) the macro datasets (evidence_ids) and (b) the contributing Company/Country AssessmentResults rolled into it, and (c) the graph nodes. Boundary thresholds cite their scientific source; the validation guard rejects any figure absent from inputs.",
+  "uncertainty": "Dataset gaps -> low data_confidence + visible marker; bottom-up/top-down divergence surfaced not averaged; interpretive stewardship judgments -> scholar/expert review; nothing presented as authoritative Earth-system truth."
+}

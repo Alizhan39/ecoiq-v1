@@ -1,0 +1,5484 @@
+[
+  {
+    "id": "moral_compass_engine",
+    "english_name": "Moral Compass Engine",
+    "category": "Meta / Orchestration",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "The Quranic principles of justice, balance, and benefit-vs-harm.",
+      "ethical_inference": "Inferred duty to weigh all moral dimensions of a decision before acting.",
+      "modern_analytical_application": "A modern orchestrator that triangulates principle-layer scores into one assessment; not found in scripture."
+    },
+    "foundation_nodes": [
+      "mizan",
+      "adl",
+      "amanah",
+      "rahmah",
+      "maslahah",
+      "mafsadah",
+      "la_darar",
+      "maqasid_hifz_nafs"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: the command to justice and excellence grounds an orchestrating moral evaluator."
+      },
+      {
+        "surah": "55",
+        "ayah": "7-9",
+        "relevance": "Quranic foundation (principle): the balance grounds weighing all dimensions together."
+      }
+    ],
+    "purpose": "Top-level engine that triangulates SAY/DO/SHOW signals and routes a subject through all sub-engines to produce a Moral Compass assessment.",
+    "inputs": [
+      "principle-layer node scores",
+      "SAY/DO/SHOW evidence",
+      "domain engine outputs"
+    ],
+    "outputs": [
+      "composite moral score",
+      "band",
+      "grounded findings",
+      "priority actions"
+    ],
+    "decision_use": "Use as the entry point for any subject (company, country, project, policy) to produce an integrated, principle-grounded assessment.",
+    "stakeholder_impacts": [
+      "investors",
+      "regulators",
+      "affected communities",
+      "companies"
+    ],
+    "risk_assessment_use": "Surfaces where benefit, harm, justice, and stewardship diverge; flags decisions needing escalation.",
+    "related_nodes": [
+      "mizan_balance_engine",
+      "benefit_harm_triangulator",
+      "intent_reality_engine",
+      "maslahah",
+      "mafsadah"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "mizan_balance_engine",
+    "english_name": "Mizan Balance Engine",
+    "category": "Moral Assessment System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "The Quranic principle of the balance (mizan) and equity (qist).",
+      "ethical_inference": "Inferred that balance across stakeholders and systems can be assessed as proportionate equilibrium.",
+      "modern_analytical_application": "A deterministic engine scoring how far a decision keeps ecological, social, and economic ledgers in balance."
+    },
+    "foundation_nodes": [
+      "mizan",
+      "qist",
+      "tawazun",
+      "israf",
+      "wasatiyyah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "55",
+        "ayah": "7-9",
+        "relevance": "Quranic foundation (principle): 'do not transgress in the balance' grounds equilibrium scoring."
+      },
+      {
+        "surah": "57",
+        "ayah": "25",
+        "relevance": "Ethical inference: the Balance sent so people uphold justice grounds a balance evaluator."
+      }
+    ],
+    "purpose": "Score whether a decision restores, maintains, or breaks balance across interacting systems.",
+    "inputs": [
+      "resource flows",
+      "stakeholder benefit/burden data",
+      "system threshold data"
+    ],
+    "outputs": [
+      "balance score",
+      "imbalance drivers",
+      "overshoot flags"
+    ],
+    "decision_use": "Apply as the equilibrium test feeding the Moral Compass composite.",
+    "stakeholder_impacts": [
+      "ecosystems",
+      "communities",
+      "economy",
+      "future generations"
+    ],
+    "risk_assessment_use": "Detects overshoot, externalised cost, and benefit concentration as imbalance risks.",
+    "related_nodes": [
+      "moral_compass_engine",
+      "mizan",
+      "tawazun",
+      "planetary_boundary_tracker"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "maslahah_mafsadah_weigher",
+    "english_name": "Maslahah-Mafsadah Weigher",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic benefit (maslahah) and harm (mafsadah) principles.",
+      "ethical_inference": "Inferred juristic practice of weighing genuine benefit against harm.",
+      "modern_analytical_application": "A modern weighing framework quantifying public benefit against harm to produce a net judgement; the juristic doctrine is interpretive."
+    },
+    "foundation_nodes": [
+      "maslahah",
+      "mafsadah",
+      "mizan",
+      "la_darar"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "219",
+        "relevance": "Ethical inference: weighing where 'the sin is greater than the benefit' models benefit-harm balancing."
+      },
+      {
+        "surah": "7",
+        "ayah": "56",
+        "relevance": "Quranic foundation (principle): prohibition of corruption after reform grounds protecting net benefit."
+      }
+    ],
+    "purpose": "Quantify and weigh genuine public benefit against harms, flagging where harm dominates.",
+    "inputs": [
+      "benefit estimates",
+      "harm estimates",
+      "distribution data",
+      "reversibility data"
+    ],
+    "outputs": [
+      "net benefit-harm verdict",
+      "dominant-harm flag",
+      "review trigger"
+    ],
+    "decision_use": "Use to adjudicate trade-offs; where mafsadah dominates, disfavour pending scholar review.",
+    "stakeholder_impacts": [
+      "public",
+      "vulnerable groups",
+      "decision-makers"
+    ],
+    "risk_assessment_use": "Central risk-weighing node: makes harm explicit and comparable to claimed benefit.",
+    "related_nodes": [
+      "maslahah",
+      "mafsadah",
+      "la_darar",
+      "trade_off_resolver",
+      "moral_compass_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "maqasid_preservation_scorer",
+    "english_name": "Maqasid Preservation Scorer",
+    "category": "Moral Assessment System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "The five higher objectives (Maqasid) derived from Quranic principles.",
+      "ethical_inference": "Inferred juristic systematisation of what must be preserved (life, intellect, faith, progeny, wealth).",
+      "modern_analytical_application": "A scorer ranking a decision's impact on each of the five preservation objectives; the Maqasid framework is scholarly, not a scriptural list."
+    },
+    "foundation_nodes": [
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_aql",
+      "maqasid_hifz_din",
+      "maqasid_hifz_nasl",
+      "maqasid_hifz_mal"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "32",
+        "relevance": "Quranic foundation (principle): the supreme value of life anchors the preservation objectives."
+      },
+      {
+        "surah": "2",
+        "ayah": "256",
+        "relevance": "Ethical inference: no compulsion in religion grounds preservation of conscience."
+      }
+    ],
+    "purpose": "Rank a decision's effect on life, intellect, conscience, progeny, and wealth as tiered objectives.",
+    "inputs": [
+      "impact data per objective",
+      "severity and reversibility",
+      "affected populations"
+    ],
+    "outputs": [
+      "five-objective scorecard",
+      "tier-priority ranking",
+      "preservation breach flags"
+    ],
+    "decision_use": "Use to enforce objective priority (life above wealth) in trade-off analysis.",
+    "stakeholder_impacts": [
+      "affected persons",
+      "future generations",
+      "society"
+    ],
+    "risk_assessment_use": "Flags breaches of higher objectives that lower-order benefits cannot justify.",
+    "related_nodes": [
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_aql",
+      "maqasid_hifz_din",
+      "maqasid_hifz_nasl",
+      "maqasid_hifz_mal",
+      "maqasid_dashboard"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "benefit_harm_triangulator",
+    "english_name": "Benefit-Harm Triangulation Engine (SAY/DO/SHOW)",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic truth (haqq) and honest-measure principles.",
+      "ethical_inference": "Inferred duty to test stated intent against action and independent evidence.",
+      "modern_analytical_application": "A modern triangulation engine comparing SAY (stated), DO (action), and SHOW (independent evidence) signals."
+    },
+    "foundation_nodes": [
+      "haqq",
+      "sidq",
+      "bayyinah",
+      "ghish",
+      "mafsadah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Ethical inference: 'do not clothe truth with falsehood' grounds comparing stated vs real."
+      },
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Quranic foundation (principle): condemnation of those who claim full but give short grounds gap detection."
+      }
+    ],
+    "purpose": "Triangulate stated intent, actual conduct, and independent evidence to detect alignment or divergence.",
+    "inputs": [
+      "stated commitments",
+      "operational/capital data",
+      "independent third-party evidence"
+    ],
+    "outputs": [
+      "alignment score",
+      "SAY-SHOW gap",
+      "divergence findings"
+    ],
+    "decision_use": "Feeds the Moral Compass with an honesty/alignment signal across any subject.",
+    "stakeholder_impacts": [
+      "investors",
+      "regulators",
+      "public"
+    ],
+    "risk_assessment_use": "Detects greenwashing and intent-reality gaps as integrity risk.",
+    "related_nodes": [
+      "truthfulness_greenwashing_detector",
+      "intent_reality_engine",
+      "sidq",
+      "bayyinah"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "intent_reality_engine",
+    "english_name": "Intent-vs-Reality Engine",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic fidelity to commitment (wafa) and truthfulness.",
+      "ethical_inference": "Inferred that stated targets must be measured against delivered trajectory.",
+      "modern_analytical_application": "A modern engine computing the gap between promised and delivered outcomes (e.g., targets vs trajectory)."
+    },
+    "foundation_nodes": [
+      "sidq",
+      "wafa",
+      "mithaq",
+      "tatfif"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "1",
+        "relevance": "Ethical inference: 'fulfil your contracts' grounds testing promise against delivery."
+      },
+      {
+        "surah": "17",
+        "ayah": "34",
+        "relevance": "Quranic foundation (principle): the covenant 'will be questioned' grounds delivery accountability."
+      }
+    ],
+    "purpose": "Compute the delivery gap between stated targets and realised performance.",
+    "inputs": [
+      "stated targets",
+      "delivered metrics over time"
+    ],
+    "outputs": [
+      "progress ratio",
+      "on-track / lagging flag",
+      "credibility score"
+    ],
+    "decision_use": "Use to grade credibility of pledges (e.g., net-zero, transition plans).",
+    "stakeholder_impacts": [
+      "investors",
+      "regulators",
+      "affected communities"
+    ],
+    "risk_assessment_use": "Flags unmet commitments and pledge-vs-delivery divergence as a credibility risk.",
+    "related_nodes": [
+      "intent_reality_engine",
+      "transition_planning",
+      "wafa",
+      "benefit_harm_triangulator"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "truthfulness_greenwashing_detector",
+    "english_name": "Truthfulness & Greenwashing Detector",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic honesty in measure and disclosure.",
+      "ethical_inference": "Inferred duty to detect claims unsupported by evidence.",
+      "modern_analytical_application": "A modern detector scoring the gap between marketing claims and corroborating evidence."
+    },
+    "foundation_nodes": [
+      "sidq",
+      "ghish",
+      "tatfif",
+      "bayyinah",
+      "khabaith"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Quranic foundation (principle): short-measure condemnation grounds detecting inflated claims."
+      },
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Ethical inference: not concealing or distorting truth grounds disclosure-gap detection."
+      }
+    ],
+    "purpose": "Score the share of claims lacking independent corroboration and flag deceptive framing.",
+    "inputs": [
+      "public claims/marketing",
+      "disclosed data",
+      "independent verification sources"
+    ],
+    "outputs": [
+      "greenwashing-risk score",
+      "unsupported-claim list",
+      "disclosure-gap flags"
+    ],
+    "decision_use": "Apply to ESG/sustainability reporting and product claims.",
+    "stakeholder_impacts": [
+      "investors",
+      "consumers",
+      "regulators"
+    ],
+    "risk_assessment_use": "Primary screen for misrepresentation and disclosure-gap risk.",
+    "related_nodes": [
+      "benefit_harm_triangulator",
+      "tatfif",
+      "ghish",
+      "disclosure_verification_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "justice_allocation_engine",
+    "english_name": "Justice Allocation Engine",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic justice (adl) and equity (qist).",
+      "ethical_inference": "Inferred duty to allocate rights, benefits, and burdens by due.",
+      "modern_analytical_application": "A modern engine mapping rights-holders and testing distribution of benefit and burden for equity."
+    },
+    "foundation_nodes": [
+      "adl",
+      "qist",
+      "zulm",
+      "huquq",
+      "adalah_ijtimaiyyah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "135",
+        "relevance": "Quranic foundation (principle): standing for justice even against self/kin grounds impartial allocation."
+      },
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Ethical inference: that wealth not circulate only among the rich grounds distributive checks."
+      }
+    ],
+    "purpose": "Map every affected party and test whether benefits and burdens are distributed by due right.",
+    "inputs": [
+      "stakeholder map",
+      "benefit/burden distribution",
+      "rights inventory"
+    ],
+    "outputs": [
+      "equity score",
+      "rights-deprivation flags",
+      "distributional findings"
+    ],
+    "decision_use": "Use to detect who is unjustly advantaged or burdened by a decision.",
+    "stakeholder_impacts": [
+      "workers",
+      "communities",
+      "the poor",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags rights violations and regressive distribution as injustice risk.",
+    "related_nodes": [
+      "adl",
+      "qist",
+      "distributional_impact_engine",
+      "stakeholder_impact_mapper"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "harm_prevention_gate",
+    "english_name": "Harm Prevention Gate",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "The Quranic prohibition of harm and the no-harm maxim.",
+      "ethical_inference": "Inferred that serious harm is a binding side-constraint, not freely tradable.",
+      "modern_analytical_application": "A modern gating system that blocks or escalates decisions causing serious or irreversible harm."
+    },
+    "foundation_nodes": [
+      "la_darar",
+      "darar",
+      "mafsadah",
+      "nafs",
+      "maqasid_hifz_nafs"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "231",
+        "relevance": "Quranic foundation (principle): prohibition of harming to transgress grounds a harm side-constraint."
+      },
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Ethical inference: 'do not cast yourselves into destruction' grounds precaution."
+      }
+    ],
+    "purpose": "Apply serious-harm as a hard gate: such harm requires explicit justification and review, not mere offsetting.",
+    "inputs": [
+      "harm catalogue",
+      "severity/reversibility",
+      "precaution thresholds"
+    ],
+    "outputs": [
+      "gate pass/fail",
+      "escalation trigger",
+      "unmitigated-harm list"
+    ],
+    "decision_use": "Use as a side-constraint before benefit-harm trade-offs are even considered.",
+    "stakeholder_impacts": [
+      "life and health of affected persons",
+      "ecosystems",
+      "future generations"
+    ],
+    "risk_assessment_use": "Hard stop for catastrophic, irreversible, or rights-violating harm.",
+    "related_nodes": [
+      "la_darar",
+      "precautionary_principle_engine",
+      "reversibility_analyzer",
+      "maqasid_hifz_nafs"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "proportionality_calibrator",
+    "english_name": "Proportionality Calibrator",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic measure (qadar) and moderation (wasatiyyah).",
+      "ethical_inference": "Inferred that response should be proportioned to need and context.",
+      "modern_analytical_application": "A modern calibrator checking whether scale, cost, and intensity match the genuine problem."
+    },
+    "foundation_nodes": [
+      "qadar",
+      "wasatiyyah",
+      "mizan",
+      "israf"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "54",
+        "ayah": "49",
+        "relevance": "Quranic foundation (principle): 'everything created in due measure' grounds proportionate response."
+      },
+      {
+        "surah": "2",
+        "ayah": "143",
+        "relevance": "Ethical inference: the balanced middle community grounds avoiding extremes."
+      }
+    ],
+    "purpose": "Test whether a response is right-sized — neither over- nor under-engineered.",
+    "inputs": [
+      "problem magnitude",
+      "proposed response scale",
+      "cost and intensity"
+    ],
+    "outputs": [
+      "proportionality score",
+      "over/under-provision flag"
+    ],
+    "decision_use": "Use to avoid disproportionate or inadequate interventions.",
+    "stakeholder_impacts": [
+      "funders",
+      "beneficiaries",
+      "operators"
+    ],
+    "risk_assessment_use": "Flags over-engineering (waste) and under-provision (inadequate protection) as risks.",
+    "related_nodes": [
+      "qadar",
+      "wasatiyyah",
+      "mizan_balance_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "stewardship_accountability_engine",
+    "english_name": "Stewardship Accountability Engine",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "The Quranic stewardship (khalifah) and trust (amanah) principles.",
+      "ethical_inference": "Inferred that control over commons and authority is an accountable, conditional trust.",
+      "modern_analytical_application": "A modern engine assessing whether resources and authority are managed as accountable trust rather than owned outright."
+    },
+    "foundation_nodes": [
+      "khalifah",
+      "istikhlaf",
+      "amanah",
+      "masuliyyah",
+      "muhasabah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "30",
+        "relevance": "Quranic foundation (principle): the stewardship mandate grounds resource trusteeship accountability."
+      },
+      {
+        "surah": "57",
+        "ayah": "7",
+        "relevance": "Ethical inference: spending from what one is trustee of grounds accountable management."
+      }
+    ],
+    "purpose": "Test whether commons, authority, and assets are stewarded with accountability and within mandate.",
+    "inputs": [
+      "asset/authority inventory",
+      "mandate terms",
+      "stewardship records"
+    ],
+    "outputs": [
+      "stewardship score",
+      "mandate-breach flags",
+      "accountability gaps"
+    ],
+    "decision_use": "Use for governance of commons, public assets, and delegated authority.",
+    "stakeholder_impacts": [
+      "public",
+      "future generations",
+      "beneficiaries"
+    ],
+    "risk_assessment_use": "Flags treating entrusted assets as absolute possession and accountability gaps.",
+    "related_nodes": [
+      "khalifah",
+      "istikhlaf",
+      "amanah",
+      "accountability_chain_mapper",
+      "natural_capital_ledger"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "rights_duty_mapper",
+    "english_name": "Rights-Duty Mapper",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic rights (huquq) and obligations.",
+      "ethical_inference": "Inferred that every right implies a correlative, assignable duty.",
+      "modern_analytical_application": "A modern mapper pairing each rights-holder with the party who owes the correlative duty."
+    },
+    "foundation_nodes": [
+      "huquq",
+      "wajibat",
+      "adl",
+      "amanah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "70",
+        "ayah": "24-25",
+        "relevance": "Quranic foundation (principle): 'a known right for the deprived' grounds rights enumeration."
+      },
+      {
+        "surah": "5",
+        "ayah": "1",
+        "relevance": "Ethical inference: 'fulfil your contracts/obligations' grounds correlative duties."
+      }
+    ],
+    "purpose": "Enumerate rights-holders (human, social, ecological, future) and assign correlative duties.",
+    "inputs": [
+      "affected-party inventory",
+      "rights catalogue",
+      "duty-bearer roster"
+    ],
+    "outputs": [
+      "rights-duty matrix",
+      "unassigned-duty flags",
+      "orphaned-right flags"
+    ],
+    "decision_use": "Use to ensure no right is left without an answerable duty-bearer.",
+    "stakeholder_impacts": [
+      "all affected parties",
+      "duty-bearing institutions"
+    ],
+    "risk_assessment_use": "Flags rights with no assigned duty-bearer as accountability risk.",
+    "related_nodes": [
+      "huquq",
+      "wajibat",
+      "justice_allocation_engine",
+      "accountability_chain_mapper"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "vulnerability_impact_engine",
+    "english_name": "Vulnerability Impact Engine",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic priority for the orphan, needy, and wayfarer.",
+      "ethical_inference": "Inferred duty to assess impacts on those least able to protect themselves.",
+      "modern_analytical_application": "A modern engine that surfaces and weights impacts on vulnerable and voiceless groups."
+    },
+    "foundation_nodes": [
+      "miskeen",
+      "yateem",
+      "ibn_sabil",
+      "rahmah",
+      "zulm"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "107",
+        "ayah": "1-3",
+        "relevance": "Quranic foundation (principle): condemnation of repelling the orphan and not feeding the needy grounds vulnerable-impact focus."
+      },
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Ethical inference: concern for weak descendants grounds prioritising the vulnerable."
+      }
+    ],
+    "purpose": "Identify and weight effects on the poor, displaced, disabled, children, and future generations.",
+    "inputs": [
+      "distributional impact data",
+      "vulnerability indicators",
+      "access metrics"
+    ],
+    "outputs": [
+      "vulnerable-impact score",
+      "disproportionate-harm flags"
+    ],
+    "decision_use": "Use to ensure the most vulnerable are not silently burdened by a decision.",
+    "stakeholder_impacts": [
+      "the poor",
+      "children",
+      "displaced people",
+      "disabled",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags regressive impacts and harm concentrated on the powerless.",
+    "related_nodes": [
+      "miskeen",
+      "yateem",
+      "vulnerable_group_sentinel",
+      "equity_gap_monitor"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "long_horizon_consequence_engine",
+    "english_name": "Long-Horizon Consequence Engine",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic concern for progeny and forward accountability.",
+      "ethical_inference": "Inferred duty to weigh distant and irreversible consequences.",
+      "modern_analytical_application": "A modern engine modelling long-term and intergenerational effects, weighting irreversibility."
+    },
+    "foundation_nodes": [
+      "nasl",
+      "maqasid_hifz_nasl",
+      "intergenerational_responsibility",
+      "tadabbur",
+      "long_term_wisdom"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "18",
+        "relevance": "Quranic foundation (principle): 'look to what it has sent ahead' grounds forward consequence analysis."
+      },
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Ethical inference: protecting weak descendants grounds weighting long-term effects."
+      }
+    ],
+    "purpose": "Model distant consequences and weight irreversible/long-lived effects against present gain.",
+    "inputs": [
+      "impact-over-time projections",
+      "reversibility data",
+      "discounting assumptions"
+    ],
+    "outputs": [
+      "long-horizon impact profile",
+      "irreversibility flags",
+      "intergenerational-transfer score"
+    ],
+    "decision_use": "Use to counter short-termism in climate, infrastructure, and capital decisions.",
+    "stakeholder_impacts": [
+      "future generations",
+      "long-lived ecosystems",
+      "society"
+    ],
+    "risk_assessment_use": "Flags harm displaced onto the future and irreversible commitments.",
+    "related_nodes": [
+      "intergenerational_equity_ledger",
+      "future_generations_impact",
+      "maqasid_hifz_nasl",
+      "tadabbur"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "uncertainty_review_router",
+    "english_name": "Uncertainty & Scholar-Review Router",
+    "category": "Meta / Orchestration",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic injunctions to verify and the doubtful-zone (shubhah) principle.",
+      "ethical_inference": "Inferred that genuine uncertainty triggers precaution and qualified review.",
+      "modern_analytical_application": "A modern router that flags grey-zone cases for human/scholar review rather than confident automation."
+    },
+    "foundation_nodes": [
+      "shubhah",
+      "ilm",
+      "bayyinah",
+      "hikmah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Quranic foundation (principle): 'verify the news... lest you harm people in ignorance' grounds routing under doubt."
+      },
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Ethical inference: not pursuing what one has no knowledge of grounds caution under uncertainty."
+      }
+    ],
+    "purpose": "Route low-confidence or contested cases to mandatory expert and scholar review.",
+    "inputs": [
+      "confidence scores",
+      "evidence completeness",
+      "contestedness flags"
+    ],
+    "outputs": [
+      "review-required flag",
+      "uncertainty rationale",
+      "precaution trigger"
+    ],
+    "decision_use": "Use to enforce the graph-wide rule that interpretive cases are not auto-decided.",
+    "stakeholder_impacts": [
+      "affected parties",
+      "review boards",
+      "scholars"
+    ],
+    "risk_assessment_use": "Prevents false certainty; ensures uncertainty is surfaced not suppressed.",
+    "related_nodes": [
+      "shubhah",
+      "evidence_confidence_grader",
+      "scholar_review_workflow",
+      "precautionary_principle_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "climate_transition_intelligence",
+    "english_name": "Climate Transition Intelligence Layer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic stewardship and anti-corruption principles.",
+      "ethical_inference": "Inferred duty to manage transition harm and protect future generations.",
+      "modern_analytical_application": "A modern intelligence layer scoring climate transition readiness and risk for a subject."
+    },
+    "foundation_nodes": [
+      "climate_risk",
+      "emissions_responsibility",
+      "transition_planning",
+      "maqasid_hifz_nasl",
+      "fasad"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "41",
+        "relevance": "Quranic foundation (principle): human-caused corruption on land and sea grounds climate accountability."
+      },
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Ethical inference: foresight through coming hardship grounds transition planning."
+      }
+    ],
+    "purpose": "Assess physical and transition climate risk and credibility of decarbonisation plans.",
+    "inputs": [
+      "emissions data",
+      "transition plans",
+      "policy context",
+      "exposure data"
+    ],
+    "outputs": [
+      "transition-readiness score",
+      "risk exposure",
+      "plan-credibility flags"
+    ],
+    "decision_use": "Use to evaluate countries/companies/projects on climate transition.",
+    "stakeholder_impacts": [
+      "investors",
+      "regulators",
+      "exposed communities",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags stranded-asset, physical-climate, and pledge-credibility risk.",
+    "related_nodes": [
+      "climate_risk",
+      "transition_planning",
+      "carbon_responsibility",
+      "scenario_simulator"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "energy_systems_analyzer",
+    "english_name": "Energy Systems Analyzer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic taskhir (responsible use) and anti-waste principles.",
+      "ethical_inference": "Inferred balance of access, security, efficiency, and low harm.",
+      "modern_analytical_application": "A modern analyzer scoring an energy system across access, security, efficiency, and lifecycle harm."
+    },
+    "foundation_nodes": [
+      "clean_energy",
+      "energy_access",
+      "energy_security",
+      "energy_efficiency",
+      "taskhir"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "45",
+        "ayah": "13",
+        "relevance": "Quranic foundation (principle): nature subjected for benefit grounds responsible energy use."
+      },
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Ethical inference: avoidance of excess grounds energy efficiency."
+      }
+    ],
+    "purpose": "Evaluate energy choices across access, security, efficiency, and net harm.",
+    "inputs": [
+      "generation mix",
+      "access metrics",
+      "efficiency data",
+      "lifecycle emissions"
+    ],
+    "outputs": [
+      "energy-system score",
+      "access/security/efficiency sub-scores",
+      "harm flags"
+    ],
+    "decision_use": "Use for energy policy, project, and portfolio assessment.",
+    "stakeholder_impacts": [
+      "energy-poor households",
+      "workers",
+      "communities near sites",
+      "investors"
+    ],
+    "risk_assessment_use": "Flags energy poverty, supply fragility, inefficiency, and lifecycle harm.",
+    "related_nodes": [
+      "clean_energy",
+      "energy_security",
+      "energy_efficiency",
+      "just_transition_planner"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "water_stewardship_intelligence",
+    "english_name": "Water Stewardship Intelligence Layer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic sanctity and shared nature of water.",
+      "ethical_inference": "Inferred duty to secure, allocate justly, and conserve water.",
+      "modern_analytical_application": "A modern layer scoring water security, justice, conservation, and watershed integrity."
+    },
+    "foundation_nodes": [
+      "maa",
+      "water_security",
+      "water_justice",
+      "water_conservation",
+      "watershed_stewardship"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "21",
+        "ayah": "30",
+        "relevance": "Quranic foundation (principle): 'from water every living thing' grounds water as protected lifeline."
+      },
+      {
+        "surah": "54",
+        "ayah": "28",
+        "relevance": "Ethical inference: shared water turns ground just allocation."
+      }
+    ],
+    "purpose": "Assess decisions for water security, equitable allocation, efficiency, and catchment health.",
+    "inputs": [
+      "abstraction/quality data",
+      "allocation records",
+      "watershed condition"
+    ],
+    "outputs": [
+      "water-stewardship score",
+      "scarcity/justice flags",
+      "catchment-risk findings"
+    ],
+    "decision_use": "Use for water policy, utilities, and water-intensive industry.",
+    "stakeholder_impacts": [
+      "downstream users",
+      "the poor",
+      "ecosystems",
+      "farmers"
+    ],
+    "risk_assessment_use": "Flags depletion, pollution, inequitable allocation, and catchment degradation.",
+    "related_nodes": [
+      "water_security",
+      "water_justice",
+      "watershed_stewardship",
+      "drought_flood_early_warning"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "food_systems_resilience",
+    "english_name": "Food Systems Resilience Layer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic provision and anti-waste principles.",
+      "ethical_inference": "Inferred duty to secure nutrition without degrading the productive base.",
+      "modern_analytical_application": "A modern layer scoring food security, agricultural sustainability, and chain integrity."
+    },
+    "foundation_nodes": [
+      "food_security",
+      "sustainable_agriculture",
+      "supply_chain_integrity",
+      "community_nutrition",
+      "food_waste_prevention"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "106",
+        "ayah": "4",
+        "relevance": "Quranic foundation (principle): 'fed them against hunger' grounds food security."
+      },
+      {
+        "surah": "6",
+        "ayah": "141",
+        "relevance": "Ethical inference: 'eat, give its due, do not waste' grounds sustainable, low-waste food."
+      }
+    ],
+    "purpose": "Assess food systems for security, sustainability, nutrition equity, and waste.",
+    "inputs": [
+      "yield/supply data",
+      "soil and water condition",
+      "nutrition access",
+      "waste metrics"
+    ],
+    "outputs": [
+      "food-resilience score",
+      "insecurity/sustainability flags"
+    ],
+    "decision_use": "Use for agriculture, food policy, and supply-chain decisions.",
+    "stakeholder_impacts": [
+      "the hungry",
+      "children",
+      "farmers",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags food insecurity, soil/water depletion, and nutrition inequity.",
+    "related_nodes": [
+      "food_security",
+      "sustainable_agriculture",
+      "food_security_monitor",
+      "supply_chain_integrity_tracer"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "biodiversity_risk_engine",
+    "english_name": "Biodiversity Risk Engine",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic affirmation of the worth of living communities.",
+      "ethical_inference": "Inferred duty to avoid driving species and ecosystems to loss.",
+      "modern_analytical_application": "A modern engine scoring biodiversity and habitat risk from a decision."
+    },
+    "foundation_nodes": [
+      "biodiversity_protection",
+      "ecosystem_stability",
+      "ard",
+      "fasad",
+      "tawazun"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "38",
+        "relevance": "Quranic foundation (principle): species as 'communities like you' grounds protecting biodiversity."
+      },
+      {
+        "surah": "7",
+        "ayah": "56",
+        "relevance": "Ethical inference: not corrupting the earth grounds habitat protection."
+      }
+    ],
+    "purpose": "Assess impacts on species, habitats, and ecological networks.",
+    "inputs": [
+      "habitat/species data",
+      "land-use change",
+      "ecological-network maps"
+    ],
+    "outputs": [
+      "biodiversity-risk score",
+      "habitat-loss flags",
+      "extinction-risk indicators"
+    ],
+    "decision_use": "Use for land-use, infrastructure, and resource projects.",
+    "stakeholder_impacts": [
+      "ecosystems",
+      "dependent communities",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags habitat destruction, species loss, and ecosystem simplification.",
+    "related_nodes": [
+      "biodiversity_protection",
+      "ecosystem_stability_monitor",
+      "fasad",
+      "ecosystem_stability"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "pollution_emissions_auditor",
+    "english_name": "Pollution & Emissions Auditor",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic anti-corruption-of-the-earth principle.",
+      "ethical_inference": "Inferred duty to prevent and honestly account for harmful releases.",
+      "modern_analytical_application": "A modern auditor verifying emissions/pollution accounting and prevention."
+    },
+    "foundation_nodes": [
+      "pollution_prevention",
+      "emissions_responsibility",
+      "fasad",
+      "darar",
+      "public_health"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "41",
+        "relevance": "Quranic foundation (principle): corruption on land and sea grounds pollution accountability."
+      },
+      {
+        "surah": "2",
+        "ayah": "11-12",
+        "relevance": "Ethical inference: 'reform' claimed while corrupting warns against hidden pollution."
+      }
+    ],
+    "purpose": "Audit completeness of emissions/pollution accounting and effectiveness of prevention.",
+    "inputs": [
+      "emissions inventories",
+      "effluent data",
+      "monitoring records"
+    ],
+    "outputs": [
+      "audit verdict",
+      "scope-gap flags",
+      "externalisation findings"
+    ],
+    "decision_use": "Use for environmental compliance and ESG verification.",
+    "stakeholder_impacts": [
+      "nearby communities",
+      "public health",
+      "ecosystems"
+    ],
+    "risk_assessment_use": "Flags understated emissions, externalised pollution, and harm to communities.",
+    "related_nodes": [
+      "pollution_prevention",
+      "emissions_responsibility",
+      "carbon_responsibility",
+      "disclosure_verification_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "circular_resource_tracker",
+    "english_name": "Circular Resource Tracker",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic prohibition of waste and squandering.",
+      "ethical_inference": "Inferred duty to keep materials in productive use.",
+      "modern_analytical_application": "A modern tracker verifying material circularity and detecting false circular claims."
+    },
+    "foundation_nodes": [
+      "circular_economy",
+      "waste_reduction",
+      "resource_stewardship",
+      "israf",
+      "tabdhir"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "141",
+        "relevance": "Quranic foundation (principle): 'do not waste' grounds closing material loops."
+      },
+      {
+        "surah": "17",
+        "ayah": "27",
+        "relevance": "Ethical inference: condemnation of squandering grounds eliminating designed waste."
+      }
+    ],
+    "purpose": "Track material flows and verify genuine reuse/recycling versus relabelled waste.",
+    "inputs": [
+      "material-flow data",
+      "recycling/reuse rates",
+      "product-life data"
+    ],
+    "outputs": [
+      "circularity score",
+      "false-circularity flags",
+      "leakage points"
+    ],
+    "decision_use": "Use for product, manufacturing, and resource-policy decisions.",
+    "stakeholder_impacts": [
+      "future generations",
+      "waste-affected communities",
+      "consumers"
+    ],
+    "risk_assessment_use": "Flags greenwashed circularity and material leakage.",
+    "related_nodes": [
+      "circular_economy",
+      "waste_reduction",
+      "resource_sufficiency_monitor",
+      "israf"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "natural_capital_ledger",
+    "english_name": "Natural Capital Ledger",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic trusteeship principle, applied to nature's stocks.",
+      "ethical_inference": "Inferred that depletion of natural capital is a loss, not income.",
+      "modern_analytical_application": "A modern ledger accounting natural-capital stocks and flagging liquidation booked as profit."
+    },
+    "foundation_nodes": [
+      "natural_capital_stewardship",
+      "resource_stewardship",
+      "istikhlaf",
+      "maqasid_hifz_nasl",
+      "barakah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "57",
+        "ayah": "7",
+        "relevance": "Quranic foundation (principle): trusteeship over entrusted wealth, extended to natural stocks."
+      },
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Ethical inference: living within renewable yield grounds capital-not-income use."
+      }
+    ],
+    "purpose": "Account for natural-capital stocks and whether use stays within renewable yield.",
+    "inputs": [
+      "natural-stock inventories",
+      "extraction/regeneration rates",
+      "valuation data"
+    ],
+    "outputs": [
+      "natural-capital balance",
+      "depletion-as-loss flags",
+      "yield-breach alerts"
+    ],
+    "decision_use": "Use in ESG, sovereign, and investment accounting.",
+    "stakeholder_impacts": [
+      "future generations",
+      "resource-dependent communities",
+      "investors"
+    ],
+    "risk_assessment_use": "Flags natural-capital liquidation disguised as income.",
+    "related_nodes": [
+      "natural_capital_stewardship",
+      "resource_stewardship",
+      "stewardship_accountability_engine",
+      "intergenerational_equity_ledger"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "country_transition_scorer",
+    "english_name": "Country Transition Scorer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic justice, benefit, and consultation principles.",
+      "ethical_inference": "Inferred application to national governance and transition.",
+      "modern_analytical_application": "A modern composite scoring a country's transition readiness, policy integrity, and justice."
+    },
+    "foundation_nodes": [
+      "adl",
+      "fasad",
+      "maslahah",
+      "climate_risk",
+      "adalah_ijtimaiyyah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Quranic foundation (principle): justice and benefit ground national-level assessment."
+      },
+      {
+        "surah": "42",
+        "ayah": "38",
+        "relevance": "Ethical inference: governance by consultation grounds evaluating policy process."
+      }
+    ],
+    "purpose": "Score countries on transition readiness, governance integrity, and distributional justice.",
+    "inputs": [
+      "policy and energy data",
+      "governance indicators",
+      "social/distribution data"
+    ],
+    "outputs": [
+      "country transition score",
+      "sectoral breakdown",
+      "policy-credibility flags"
+    ],
+    "decision_use": "Use for sovereign analysis, DFI screening, and country intelligence.",
+    "stakeholder_impacts": [
+      "citizens",
+      "investors",
+      "development banks",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags transition lag, governance weakness, and distributional injustice.",
+    "related_nodes": [
+      "climate_transition_intelligence",
+      "governance_integrity_scanner",
+      "just_transition_planner"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "company_ethics_scorer",
+    "english_name": "Company Ethics & ESG Scorer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic honesty, trust, and wholesome-vs-harmful principles.",
+      "ethical_inference": "Inferred application to corporate conduct assessment.",
+      "modern_analytical_application": "A modern scorer combining ethics, governance, and ESG into a company assessment."
+    },
+    "foundation_nodes": [
+      "adl",
+      "amanah",
+      "tayyibat",
+      "khabaith",
+      "corporate_accountability"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Quranic foundation (principle): honest measure grounds verified company scoring."
+      },
+      {
+        "surah": "2",
+        "ayah": "267",
+        "relevance": "Ethical inference: investing/earning from the wholesome grounds excluding harmful activity."
+      }
+    ],
+    "purpose": "Score companies on ethical conduct, governance, and environmental/social impact.",
+    "inputs": [
+      "disclosures",
+      "operational data",
+      "controversy signals",
+      "third-party evidence"
+    ],
+    "outputs": [
+      "company ethics score",
+      "pillar breakdown",
+      "harm/greenwashing flags"
+    ],
+    "decision_use": "Use for investment screening and corporate intelligence.",
+    "stakeholder_impacts": [
+      "investors",
+      "workers",
+      "communities",
+      "consumers"
+    ],
+    "risk_assessment_use": "Flags harmful activity, governance failure, and misrepresentation.",
+    "related_nodes": [
+      "corporate_accountability",
+      "truthfulness_greenwashing_detector",
+      "capital_integrity_analyzer"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "project_readiness_assessor",
+    "english_name": "Project Readiness Assessor",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic clear-evidence and trust principles.",
+      "ethical_inference": "Inferred application to development/finance project appraisal.",
+      "modern_analytical_application": "A modern multi-dimension assessor of a project's readiness for finance/implementation."
+    },
+    "foundation_nodes": [
+      "bayyinah",
+      "amanah",
+      "maslahah",
+      "masuliyyah",
+      "wafa"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "282",
+        "relevance": "Quranic foundation (principle): documentation as clear proof grounds evidence-based readiness."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: benefit-orientation grounds assessing project worth."
+      }
+    ],
+    "purpose": "Assess technical, governance, financial, and evidence readiness of a project.",
+    "inputs": [
+      "project documentation",
+      "feasibility data",
+      "governance and evidence quality"
+    ],
+    "outputs": [
+      "readiness score",
+      "dimension breakdown",
+      "evidence-gap flags"
+    ],
+    "decision_use": "Use for climate-finance and development-bank screening.",
+    "stakeholder_impacts": [
+      "funders",
+      "host communities",
+      "implementers"
+    ],
+    "risk_assessment_use": "Flags weak feasibility, governance gaps, and thin evidence.",
+    "related_nodes": [
+      "bayyinah",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "capital_integrity_analyzer",
+    "english_name": "Capital Integrity Analyzer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic prohibition of unjust gain and protection of wealth.",
+      "ethical_inference": "Inferred analysis of how capital is structured and deployed.",
+      "modern_analytical_application": "A modern analyzer of debt structure, ownership transparency, and value-linkage of returns."
+    },
+    "foundation_nodes": [
+      "maqasid_hifz_mal",
+      "riba",
+      "mal",
+      "qist",
+      "sustainable_finance"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "275-279",
+        "relevance": "Quranic foundation (principle): permitting value-creating trade and forbidding ribā grounds capital-structure scrutiny."
+      },
+      {
+        "surah": "4",
+        "ayah": "29",
+        "relevance": "Ethical inference: wealth by mutual consent, not wrongdoing, grounds integrity testing."
+      }
+    ],
+    "purpose": "Assess capital structure for risk-sharing, transparency, and alignment with real value.",
+    "inputs": [
+      "capital structure",
+      "ownership data",
+      "return-vs-risk profile"
+    ],
+    "outputs": [
+      "capital-integrity score",
+      "extraction flags",
+      "opacity findings"
+    ],
+    "decision_use": "Use in ethical-finance and DFI/green-bond compatibility analysis.",
+    "stakeholder_impacts": [
+      "investors",
+      "borrowers",
+      "the financial system"
+    ],
+    "risk_assessment_use": "Flags risk-free extraction, opacity, and value-decoupled leverage.",
+    "related_nodes": [
+      "riba",
+      "sustainable_finance",
+      "ethical_finance_fit_engine",
+      "maqasid_hifz_mal"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ethical_finance_fit_engine",
+    "english_name": "Ethical Finance Fit Engine",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic finance principles (anti-ribā, anti-gharar, anti-maysir).",
+      "ethical_inference": "Inferred screening for ethical/Sharia-compatible finance.",
+      "modern_analytical_application": "A modern engine scoring compatibility with responsible/ethical finance frameworks; precise rulings require scholars."
+    },
+    "foundation_nodes": [
+      "riba",
+      "gharar",
+      "maysir",
+      "tayyibat",
+      "qard_hasan"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "275",
+        "relevance": "Quranic foundation (principle): trade permitted, ribā forbidden, grounds finance screening."
+      },
+      {
+        "surah": "5",
+        "ayah": "90-91",
+        "relevance": "Ethical inference: prohibition of gambling grounds excluding pure speculation."
+      }
+    ],
+    "purpose": "Score a structure's fit with ethical-finance criteria (risk-sharing, real value, low uncertainty).",
+    "inputs": [
+      "instrument terms",
+      "asset backing",
+      "risk-sharing structure"
+    ],
+    "outputs": [
+      "finance-fit score",
+      "prohibited-feature flags",
+      "review triggers"
+    ],
+    "decision_use": "Use for Islamic/ethical finance product screening.",
+    "stakeholder_impacts": [
+      "ethical investors",
+      "Islamic finance institutions",
+      "borrowers"
+    ],
+    "risk_assessment_use": "Flags interest-extraction, excessive uncertainty, and speculation.",
+    "related_nodes": [
+      "riba",
+      "gharar",
+      "maysir",
+      "capital_integrity_analyzer",
+      "scholar_review_workflow"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "supply_chain_integrity_tracer",
+    "english_name": "Supply Chain Integrity Tracer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic shared-responsibility and honesty principles.",
+      "ethical_inference": "Inferred duty to surface upstream harm and exploitation.",
+      "modern_analytical_application": "A modern tracer mapping supply chains to surface forced labour, fraud, and ecological harm."
+    },
+    "foundation_nodes": [
+      "supply_chain_integrity",
+      "ghish",
+      "fair_employment",
+      "ethical_production",
+      "khiyanah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "2",
+        "relevance": "Quranic foundation (principle): 'cooperate in righteousness, not in sin' grounds chain-wide responsibility."
+      },
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Ethical inference: honesty in dealing grounds tracing hidden harm."
+      }
+    ],
+    "purpose": "Trace chains to detect upstream exploitation, fraud, and harm beyond the visible tier.",
+    "inputs": [
+      "supplier maps",
+      "audit data",
+      "provenance records"
+    ],
+    "outputs": [
+      "chain-integrity score",
+      "forced-labour/harm flags",
+      "traceability gaps"
+    ],
+    "decision_use": "Use in procurement, ESG, and product sourcing.",
+    "stakeholder_impacts": [
+      "upstream workers",
+      "producing communities",
+      "consumers"
+    ],
+    "risk_assessment_use": "Flags hidden forced labour, fraud, and externalised harm.",
+    "related_nodes": [
+      "supply_chain_integrity",
+      "labour_justice_auditor",
+      "ethical_production"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "labour_justice_auditor",
+    "english_name": "Labour Justice Auditor",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic wage and dignity principles.",
+      "ethical_inference": "Inferred duty to audit fairness and dignity of work.",
+      "modern_analytical_application": "A modern auditor scoring wage fairness, conditions, and worker dignity."
+    },
+    "foundation_nodes": [
+      "ajr",
+      "fair_employment",
+      "worker_dignity",
+      "zulm",
+      "ijarah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "65",
+        "ayah": "6",
+        "relevance": "Quranic foundation (principle): 'give them their due payment' grounds wage-justice auditing."
+      },
+      {
+        "surah": "17",
+        "ayah": "70",
+        "relevance": "Ethical inference: human dignity grounds humane work conditions."
+      }
+    ],
+    "purpose": "Audit employment for fair pay, safe conditions, non-discrimination, and dignity.",
+    "inputs": [
+      "wage data",
+      "conditions data",
+      "grievance records"
+    ],
+    "outputs": [
+      "labour-justice score",
+      "wage-theft/exploitation flags"
+    ],
+    "decision_use": "Use in ESG, supply-chain, and corporate assessment.",
+    "stakeholder_impacts": [
+      "workers",
+      "unions",
+      "communities"
+    ],
+    "risk_assessment_use": "Flags underpayment, unsafe conditions, discrimination, and indignity.",
+    "related_nodes": [
+      "ajr",
+      "worker_dignity",
+      "fair_employment",
+      "supply_chain_integrity_tracer"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ai_ethics_assessment_layer",
+    "english_name": "AI Ethics Assessment Layer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic accountability and anti-concealment principles, plus protection of intellect.",
+      "ethical_inference": "Inferred application of trust, justice, and oversight to automated systems.",
+      "modern_analytical_application": "A modern layer assessing an AI system across transparency, fairness, accountability, and human oversight."
+    },
+    "foundation_nodes": [
+      "maqasid_hifz_aql",
+      "ai_accountability",
+      "ai_transparency",
+      "algorithmic_fairness",
+      "human_oversight"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Quranic foundation (principle): accountability for faculties grounds human answerability for AI."
+      },
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Ethical inference: no concealment grounds AI transparency."
+      }
+    ],
+    "purpose": "Assess AI systems on transparency, fairness, accountability, oversight, and harm.",
+    "inputs": [
+      "model documentation",
+      "training-data info",
+      "decision logs",
+      "impact data"
+    ],
+    "outputs": [
+      "AI-ethics score",
+      "fairness/oversight flags",
+      "responsibility-gap findings"
+    ],
+    "decision_use": "Use to evaluate deployment of consequential automated systems.",
+    "stakeholder_impacts": [
+      "affected individuals",
+      "operators",
+      "regulators",
+      "society"
+    ],
+    "risk_assessment_use": "Flags bias, opacity, unaccountable automation, and manipulation.",
+    "related_nodes": [
+      "ai_accountability",
+      "algorithmic_fairness_auditor",
+      "data_stewardship_monitor",
+      "responsibility_gap_detector"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "algorithmic_fairness_auditor",
+    "english_name": "Algorithmic Fairness Auditor",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic impartial-justice principle.",
+      "ethical_inference": "Inferred application of justice to automated decisions.",
+      "modern_analytical_application": "A modern auditor testing automated decisions for discriminatory or biased outcomes."
+    },
+    "foundation_nodes": [
+      "algorithmic_fairness",
+      "adl",
+      "qist",
+      "zulm",
+      "systemic_justice"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "8",
+        "relevance": "Quranic foundation (principle): justice undistorted by group bias grounds fairness auditing."
+      },
+      {
+        "surah": "49",
+        "ayah": "13",
+        "relevance": "Ethical inference: human equality of origin grounds anti-discrimination."
+      }
+    ],
+    "purpose": "Test models for disparate impact, biased error rates, and proxy discrimination.",
+    "inputs": [
+      "model outputs by group",
+      "error-rate data",
+      "feature/proxy analysis"
+    ],
+    "outputs": [
+      "fairness audit",
+      "disparate-impact flags",
+      "bias sources"
+    ],
+    "decision_use": "Use for credit, hiring, justice, and welfare algorithms.",
+    "stakeholder_impacts": [
+      "decision subjects",
+      "protected groups",
+      "operators"
+    ],
+    "risk_assessment_use": "Flags scaled discrimination and entrenched structural bias.",
+    "related_nodes": [
+      "algorithmic_fairness",
+      "ai_ethics_assessment_layer",
+      "systemic_justice_auditor"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "data_stewardship_monitor",
+    "english_name": "Data Stewardship & Privacy Monitor",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic prohibition of spying and the trust principle.",
+      "ethical_inference": "Inferred application of amanah to personal data.",
+      "modern_analytical_application": "A modern monitor assessing whether data is held and used as accountable, consented trust."
+    },
+    "foundation_nodes": [
+      "data_stewardship",
+      "privacy_protection",
+      "amanah",
+      "khiyanah",
+      "maqasid_hifz_nafs"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "12",
+        "relevance": "Quranic foundation (principle): 'do not spy' grounds privacy protection."
+      },
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Ethical inference: rendering trusts grounds data held as accountable trust."
+      }
+    ],
+    "purpose": "Monitor data handling for purpose-limitation, consent, security, and minimisation.",
+    "inputs": [
+      "data-processing records",
+      "consent terms",
+      "security posture"
+    ],
+    "outputs": [
+      "data-stewardship score",
+      "function-creep flags",
+      "privacy-breach risk"
+    ],
+    "decision_use": "Use for AI/data-intensive systems and platforms.",
+    "stakeholder_impacts": [
+      "data subjects",
+      "platform users",
+      "regulators"
+    ],
+    "risk_assessment_use": "Flags data exploitation beyond consent, surveillance, and insecure custody.",
+    "related_nodes": [
+      "data_stewardship",
+      "privacy_protection",
+      "ai_ethics_assessment_layer"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "public_health_impact_engine",
+    "english_name": "Public Health Impact Engine",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic sanctity of life.",
+      "ethical_inference": "Inferred duty to protect and improve population health.",
+      "modern_analytical_application": "A modern engine scoring net population-health impact of a decision."
+    },
+    "foundation_nodes": [
+      "public_health",
+      "nafs",
+      "maqasid_hifz_nafs",
+      "pollution_prevention",
+      "la_darar"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "32",
+        "relevance": "Quranic foundation (principle): the value of saving life grounds health-impact assessment."
+      },
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Ethical inference: avoiding self-destruction grounds health protection."
+      }
+    ],
+    "purpose": "Assess net effects on disease, exposure, and access to care.",
+    "inputs": [
+      "exposure data",
+      "health outcomes",
+      "access metrics"
+    ],
+    "outputs": [
+      "public-health impact score",
+      "exposure-harm flags"
+    ],
+    "decision_use": "Use for industrial, environmental, and policy decisions.",
+    "stakeholder_impacts": [
+      "affected populations",
+      "vulnerable groups",
+      "health systems"
+    ],
+    "risk_assessment_use": "Flags avoidable population-health harm and exposure.",
+    "related_nodes": [
+      "public_health",
+      "pollution_emissions_auditor",
+      "health_system_resilience"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "human_development_index_engine",
+    "english_name": "Human Development Index Engine",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic flourishing and knowledge principles.",
+      "ethical_inference": "Inferred holistic measure of human development.",
+      "modern_analytical_application": "A modern composite of health, education, mobility, and dignity outcomes."
+    },
+    "foundation_nodes": [
+      "human_flourishing",
+      "education_access",
+      "public_health",
+      "social_mobility",
+      "human_dignity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "97",
+        "relevance": "Quranic foundation (principle): the 'good life' for the righteous grounds holistic wellbeing focus."
+      },
+      {
+        "surah": "39",
+        "ayah": "9",
+        "relevance": "Ethical inference: exalting knowledge grounds education and capability."
+      }
+    ],
+    "purpose": "Assess decisions on whole-person and population development outcomes.",
+    "inputs": [
+      "health/education/income data",
+      "mobility indicators",
+      "dignity metrics"
+    ],
+    "outputs": [
+      "human-development score",
+      "capability-gap flags"
+    ],
+    "decision_use": "Use for public policy and social-impact analysis.",
+    "stakeholder_impacts": [
+      "citizens",
+      "children",
+      "marginalised groups"
+    ],
+    "risk_assessment_use": "Flags decisions that raise output while eroding human development.",
+    "related_nodes": [
+      "human_flourishing",
+      "education_access",
+      "social_mobility",
+      "equity_gap_monitor"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "infrastructure_equity_analyzer",
+    "english_name": "Infrastructure Equity Analyzer",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic distributive-justice principle.",
+      "ethical_inference": "Inferred fair distribution of infrastructure benefit and burden.",
+      "modern_analytical_application": "A modern analyzer scoring equity of infrastructure access and burden."
+    },
+    "foundation_nodes": [
+      "infrastructure_equity",
+      "adalah_ijtimaiyyah",
+      "qist",
+      "housing_dignity",
+      "public_utility_reliability"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Quranic foundation (principle): benefit not circulating only among the rich grounds equity analysis."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: justice grounds fair siting of benefit and burden."
+      }
+    ],
+    "purpose": "Assess whether infrastructure benefits reach the underserved and burdens are not dumped on the marginalised.",
+    "inputs": [
+      "access data by group",
+      "burden/siting data",
+      "reliability by region"
+    ],
+    "outputs": [
+      "infrastructure-equity score",
+      "burden-dumping flags"
+    ],
+    "decision_use": "Use for infrastructure planning and siting decisions.",
+    "stakeholder_impacts": [
+      "underserved communities",
+      "marginalised groups",
+      "regions"
+    ],
+    "risk_assessment_use": "Flags inequitable access and burdens concentrated on the vulnerable.",
+    "related_nodes": [
+      "infrastructure_equity",
+      "distributional_impact_engine",
+      "rural_development"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "disaster_resilience_planner",
+    "english_name": "Disaster Resilience Planner",
+    "category": "Intelligence Layer",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic foresight and life-protection principles.",
+      "ethical_inference": "Inferred duty to prepare for foreseeable disasters.",
+      "modern_analytical_application": "A modern planner assessing and improving disaster preparedness."
+    },
+    "foundation_nodes": [
+      "disaster_preparedness",
+      "flood_protection",
+      "community_resilience",
+      "sabr",
+      "nafs"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Quranic foundation (principle): storing reserves for hardship grounds preparedness planning."
+      },
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Ethical inference: avoiding foreseeable destruction grounds risk reduction."
+      }
+    ],
+    "purpose": "Assess preparedness and prioritise protection of the vulnerable against foreseeable disasters.",
+    "inputs": [
+      "hazard exposure",
+      "preparedness measures",
+      "vulnerability data"
+    ],
+    "outputs": [
+      "preparedness score",
+      "gap list",
+      "vulnerable-exposure flags"
+    ],
+    "decision_use": "Use for climate, infrastructure, and civil-protection planning.",
+    "stakeholder_impacts": [
+      "exposed populations",
+      "emergency services",
+      "the vulnerable"
+    ],
+    "risk_assessment_use": "Flags foreseeable-risk neglect and unprotected vulnerable groups.",
+    "related_nodes": [
+      "disaster_preparedness",
+      "community_resilience_planner",
+      "climate_resilience_stress_test"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "governance_integrity_scanner",
+    "english_name": "Governance Integrity Scanner",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic trust, justice, and consultation principles.",
+      "ethical_inference": "Inferred assessment of institutional integrity.",
+      "modern_analytical_application": "A modern scanner scoring governance on accountability, transparency, and capture resistance."
+    },
+    "foundation_nodes": [
+      "institutional_trust",
+      "public_accountability",
+      "transparency_systems",
+      "regulatory_integrity",
+      "raqabah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Quranic foundation (principle): rendering trusts and judging justly grounds governance scrutiny."
+      },
+      {
+        "surah": "42",
+        "ayah": "38",
+        "relevance": "Ethical inference: consultation grounds participatory, accountable governance."
+      }
+    ],
+    "purpose": "Scan institutions for accountability, transparency, oversight, and capture.",
+    "inputs": [
+      "governance indicators",
+      "disclosure records",
+      "oversight structures"
+    ],
+    "outputs": [
+      "governance-integrity score",
+      "capture/opacity flags"
+    ],
+    "decision_use": "Use for country, agency, and corporate governance assessment.",
+    "stakeholder_impacts": [
+      "citizens",
+      "investors",
+      "the governed"
+    ],
+    "risk_assessment_use": "Flags weak accountability, opacity, and institutional capture.",
+    "related_nodes": [
+      "institutional_trust",
+      "anti_corruption_detector",
+      "regulatory_capture_detector",
+      "oversight_adequacy_checker"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "anti_corruption_detector",
+    "english_name": "Anti-Corruption Detector",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic prohibition of bribery and corruption.",
+      "ethical_inference": "Inferred detection of abuse of entrusted power.",
+      "modern_analytical_application": "A modern detector flagging corruption indicators and capture patterns."
+    },
+    "foundation_nodes": [
+      "anti_corruption",
+      "fasad",
+      "khiyanah",
+      "zulm",
+      "conflict_of_interest_prevention"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "188",
+        "relevance": "Quranic foundation (principle): prohibition of bribery to consume wealth wrongfully grounds detection."
+      },
+      {
+        "surah": "38",
+        "ayah": "26",
+        "relevance": "Ethical inference: judging by truth, not desire, grounds incorruptible authority."
+      }
+    ],
+    "purpose": "Detect bribery, kickbacks, conflicts, and state/regulatory capture.",
+    "inputs": [
+      "transaction data",
+      "ownership/conflict data",
+      "procurement records"
+    ],
+    "outputs": [
+      "corruption-risk score",
+      "red-flag indicators",
+      "capture patterns"
+    ],
+    "decision_use": "Use in governance, procurement, and finance oversight.",
+    "stakeholder_impacts": [
+      "the public",
+      "honest competitors",
+      "whistleblowers"
+    ],
+    "risk_assessment_use": "Flags corrupt abuse of power and patronage.",
+    "related_nodes": [
+      "anti_corruption",
+      "procurement_integrity_monitor",
+      "conflict_of_interest_screen",
+      "whistleblower_signal_aggregator"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "procurement_integrity_monitor",
+    "english_name": "Procurement Integrity Monitor",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic justice and anti-bribery principles.",
+      "ethical_inference": "Inferred monitoring of fair, transparent procurement.",
+      "modern_analytical_application": "A modern monitor scoring procurement for fairness and capture resistance."
+    },
+    "foundation_nodes": [
+      "ethical_procurement",
+      "adl",
+      "anti_corruption",
+      "supply_chain_integrity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "188",
+        "relevance": "Quranic foundation (principle): prohibition of wrongful acquisition grounds clean procurement."
+      },
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Ethical inference: impartial judgement when entrusted grounds fair awards."
+      }
+    ],
+    "purpose": "Monitor tenders for competition, conflict-freedom, and ethical sourcing.",
+    "inputs": [
+      "tender data",
+      "bid records",
+      "supplier integrity data"
+    ],
+    "outputs": [
+      "procurement-integrity score",
+      "rigging/kickback flags"
+    ],
+    "decision_use": "Use for public and corporate procurement.",
+    "stakeholder_impacts": [
+      "taxpayers",
+      "honest suppliers",
+      "the public"
+    ],
+    "risk_assessment_use": "Flags rigged tenders, kickbacks, and favouritism.",
+    "related_nodes": [
+      "ethical_procurement",
+      "anti_corruption_detector",
+      "supply_chain_integrity_tracer"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "regulatory_capture_detector",
+    "english_name": "Regulatory Capture Detector",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic impartial-justice and consultation principles.",
+      "ethical_inference": "Inferred detection of regulation serving the regulated.",
+      "modern_analytical_application": "A modern detector flagging signs that rules serve the regulated over the public."
+    },
+    "foundation_nodes": [
+      "regulatory_integrity",
+      "conflict_of_interest_prevention",
+      "adl",
+      "raqabah",
+      "maslahah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "135",
+        "relevance": "Quranic foundation (principle): justice even against self/kin grounds capture detection."
+      },
+      {
+        "surah": "42",
+        "ayah": "38",
+        "relevance": "Ethical inference: governance serving the governed grounds anti-capture checks."
+      }
+    ],
+    "purpose": "Detect revolving doors, industry-written rules, and selective enforcement.",
+    "inputs": [
+      "rule-making records",
+      "revolving-door data",
+      "enforcement patterns"
+    ],
+    "outputs": [
+      "capture-risk score",
+      "capture indicators"
+    ],
+    "decision_use": "Use for regulatory and policy integrity analysis.",
+    "stakeholder_impacts": [
+      "the public",
+      "consumers",
+      "honest firms"
+    ],
+    "risk_assessment_use": "Flags regulatory capture and public-interest betrayal.",
+    "related_nodes": [
+      "regulatory_integrity",
+      "governance_integrity_scanner",
+      "conflict_of_interest_screen"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "policy_evidence_validator",
+    "english_name": "Policy Evidence Validator",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic verify-before-acting principle.",
+      "ethical_inference": "Inferred grounding of policy in verified evidence.",
+      "modern_analytical_application": "A modern validator testing whether policy rests on sound, honest evidence with disclosed uncertainty."
+    },
+    "foundation_nodes": [
+      "evidence_based_policy",
+      "ilm",
+      "bayyinah",
+      "shubhah",
+      "data_integrity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Quranic foundation (principle): 'verify the news lest you harm in ignorance' grounds evidence validation."
+      },
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Ethical inference: not pursuing what one has no knowledge of grounds evidence-grounding."
+      }
+    ],
+    "purpose": "Validate the evidence base of a policy and surface gaps and uncertainty.",
+    "inputs": [
+      "evidence cited",
+      "data quality",
+      "uncertainty estimates"
+    ],
+    "outputs": [
+      "evidence-validity score",
+      "cherry-picking flags",
+      "uncertainty disclosure"
+    ],
+    "decision_use": "Use for public-policy and regulatory decisions.",
+    "stakeholder_impacts": [
+      "citizens",
+      "affected sectors",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags ideology-over-evidence and false certainty.",
+    "related_nodes": [
+      "evidence_based_policy",
+      "provenance_citation_validator",
+      "evidence_confidence_grader"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "disclosure_verification_engine",
+    "english_name": "Disclosure Verification Engine",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic anti-concealment and honest-measure principles.",
+      "ethical_inference": "Inferred verification of material disclosures.",
+      "modern_analytical_application": "A modern engine checking disclosures for completeness, timeliness, and truthfulness."
+    },
+    "foundation_nodes": [
+      "public_disclosure",
+      "sidq",
+      "shahada",
+      "tatfif",
+      "data_integrity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "283",
+        "relevance": "Quranic foundation (principle): 'do not conceal testimony' grounds disclosure verification."
+      },
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Ethical inference: honest measure grounds checking reports against reality."
+      }
+    ],
+    "purpose": "Verify that material information is disclosed truthfully and in time.",
+    "inputs": [
+      "disclosures",
+      "underlying data",
+      "timing records"
+    ],
+    "outputs": [
+      "disclosure-quality score",
+      "omission/timing flags"
+    ],
+    "decision_use": "Use for financial, ESG, and regulatory reporting.",
+    "stakeholder_impacts": [
+      "investors",
+      "regulators",
+      "the public"
+    ],
+    "risk_assessment_use": "Flags withheld material facts and late or misleading disclosure.",
+    "related_nodes": [
+      "public_disclosure",
+      "truthfulness_greenwashing_detector",
+      "continuous_audit_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "stakeholder_impact_mapper",
+    "english_name": "Stakeholder Impact Mapper",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic rights and consultation principles.",
+      "ethical_inference": "Inferred mapping of all affected parties.",
+      "modern_analytical_application": "A modern mapper identifying all stakeholders and their impacts, including the voiceless."
+    },
+    "foundation_nodes": [
+      "stakeholder_protection",
+      "huquq",
+      "shura",
+      "vulnerability_impact_engine",
+      "adl"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "70",
+        "ayah": "24-25",
+        "relevance": "Quranic foundation (principle): rights of non-owning parties ground stakeholder mapping."
+      },
+      {
+        "surah": "42",
+        "ayah": "38",
+        "relevance": "Ethical inference: consultation grounds including affected voices."
+      }
+    ],
+    "purpose": "Identify every affected party and characterise benefit/harm to each.",
+    "inputs": [
+      "activity description",
+      "affected-party data",
+      "impact estimates"
+    ],
+    "outputs": [
+      "stakeholder map",
+      "impact-by-party matrix",
+      "voiceless-party flags"
+    ],
+    "decision_use": "Use as a foundation for justice and benefit-harm analysis.",
+    "stakeholder_impacts": [
+      "all affected parties",
+      "voiceless groups",
+      "future generations"
+    ],
+    "risk_assessment_use": "Surfaces overlooked and voiceless stakeholders as a blind-spot risk.",
+    "related_nodes": [
+      "stakeholder_protection",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "decision_triage_framework",
+    "english_name": "Decision Triage Framework",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic wisdom and benefit-harm principles.",
+      "ethical_inference": "Inferred structured routing of decisions by stakes and certainty.",
+      "modern_analytical_application": "A modern triage framework routing decisions to gates, engines, and review by stakes."
+    },
+    "foundation_nodes": [
+      "hikmah",
+      "maslahah",
+      "mafsadah",
+      "la_darar",
+      "shubhah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Quranic foundation (principle): justice and benefit ground structured decision triage."
+      },
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Ethical inference: verify before acting grounds routing by severity and certainty."
+      }
+    ],
+    "purpose": "Triage a decision: route to harm gate, benefit-harm weigher, and review per stakes and certainty.",
+    "inputs": [
+      "decision description",
+      "stakes estimate",
+      "certainty estimate"
+    ],
+    "outputs": [
+      "routing plan",
+      "engine assignments",
+      "review flags"
+    ],
+    "decision_use": "Use as the workflow controller across the analytical engines.",
+    "stakeholder_impacts": [
+      "decision-makers",
+      "affected parties"
+    ],
+    "risk_assessment_use": "Ensures high-stakes/low-certainty decisions get full scrutiny.",
+    "related_nodes": [
+      "moral_compass_engine",
+      "harm_prevention_gate",
+      "uncertainty_review_router"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "red_line_hudud_gate",
+    "english_name": "Red-Line (Hudud) Gate",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic limits (hudud) principle.",
+      "ethical_inference": "Inferred that some boundaries are non-negotiable side-constraints.",
+      "modern_analytical_application": "A modern gate encoding hard red-lines (legal, ecological, ethical) no benefit may cross."
+    },
+    "foundation_nodes": [
+      "hudud",
+      "haram",
+      "la_darar",
+      "maqasid_hifz_nafs"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "229",
+        "relevance": "Quranic foundation (principle): 'the limits of God, do not transgress them' grounds hard red-lines."
+      },
+      {
+        "surah": "65",
+        "ayah": "1",
+        "relevance": "Ethical inference: transgressing limits as self-wrong grounds non-negotiable boundaries."
+      }
+    ],
+    "purpose": "Block decisions that cross defined non-negotiable boundaries.",
+    "inputs": [
+      "red-line definitions",
+      "decision parameters"
+    ],
+    "outputs": [
+      "gate verdict",
+      "boundary-crossing flags"
+    ],
+    "decision_use": "Use before any benefit-harm trade-off is permitted.",
+    "stakeholder_impacts": [
+      "affected persons",
+      "ecosystems",
+      "society"
+    ],
+    "risk_assessment_use": "Hard stop for crossing legal, ecological, or ethical red-lines.",
+    "related_nodes": [
+      "hudud",
+      "haram",
+      "harm_prevention_gate",
+      "permissibility_classifier"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "permissibility_classifier",
+    "english_name": "Permissibility Classifier (Halal/Haram/Shubhah)",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic lawful/forbidden distinction.",
+      "ethical_inference": "Inferred three-way classification with a doubtful middle.",
+      "modern_analytical_application": "A modern classifier routing actions into permitted, prohibited, or doubtful (requiring review); rulings are scholarly."
+    },
+    "foundation_nodes": [
+      "halal",
+      "haram",
+      "shubhah",
+      "hudud"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "168",
+        "relevance": "Quranic foundation (principle): 'lawful and wholesome' grounds the permitted pole."
+      },
+      {
+        "surah": "6",
+        "ayah": "151",
+        "relevance": "Ethical inference: enumerated prohibitions ground the forbidden pole."
+      }
+    ],
+    "purpose": "Classify an action as clearly permitted, clearly prohibited, or doubtful.",
+    "inputs": [
+      "action description",
+      "applicable rules",
+      "evidence"
+    ],
+    "outputs": [
+      "permissibility class",
+      "doubt rationale",
+      "review trigger for shubhah"
+    ],
+    "decision_use": "Use as a first-pass ethical/legal classifier feeding the triage framework.",
+    "stakeholder_impacts": [
+      "decision-makers",
+      "review boards",
+      "affected parties"
+    ],
+    "risk_assessment_use": "Flags prohibited actions and routes doubtful cases to review.",
+    "related_nodes": [
+      "halal",
+      "haram",
+      "shubhah",
+      "red_line_hudud_gate",
+      "scholar_review_workflow"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "trade_off_resolver",
+    "english_name": "Trade-off Resolver",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic balance and benefit-harm principles.",
+      "ethical_inference": "Inferred structured resolution of competing goods.",
+      "modern_analytical_application": "A modern resolver ranking options by Maqasid priority and net benefit under hard constraints."
+    },
+    "foundation_nodes": [
+      "mizan",
+      "maslahah",
+      "mafsadah",
+      "qist",
+      "maqasid_preservation_scorer"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "219",
+        "relevance": "Quranic foundation (principle): weighing where harm outweighs benefit grounds trade-off resolution."
+      },
+      {
+        "surah": "55",
+        "ayah": "9",
+        "relevance": "Ethical inference: establishing weight in equity grounds balanced trade-offs."
+      }
+    ],
+    "purpose": "Resolve competing objectives by objective-priority and net benefit, subject to harm gates.",
+    "inputs": [
+      "option set",
+      "benefit-harm scores",
+      "Maqasid scores",
+      "constraints"
+    ],
+    "outputs": [
+      "ranked options",
+      "trade-off rationale",
+      "constraint-violation flags"
+    ],
+    "decision_use": "Use to choose among options once gates are passed.",
+    "stakeholder_impacts": [
+      "all affected parties",
+      "decision-makers"
+    ],
+    "risk_assessment_use": "Prevents lower goods overriding higher objectives or hard limits.",
+    "related_nodes": [
+      "maslahah_mafsadah_weigher",
+      "maqasid_preservation_scorer",
+      "harm_prevention_gate"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "shura_deliberation_engine",
+    "english_name": "Multi-Stakeholder Deliberation (Shura) Engine",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic consultation (shura) principle.",
+      "ethical_inference": "Inferred participatory decision process.",
+      "modern_analytical_application": "A modern engine structuring inclusive deliberation among affected stakeholders."
+    },
+    "foundation_nodes": [
+      "shura",
+      "huquq",
+      "adl",
+      "stakeholder_protection"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "42",
+        "ayah": "38",
+        "relevance": "Quranic foundation (principle): 'their affairs by consultation' grounds participatory deliberation."
+      },
+      {
+        "surah": "3",
+        "ayah": "159",
+        "relevance": "Ethical inference: 'consult them in the matter' grounds including affected voices."
+      }
+    ],
+    "purpose": "Structure genuine consultation so affected parties shape decisions concerning them.",
+    "inputs": [
+      "stakeholder roster",
+      "positions/inputs",
+      "deliberation records"
+    ],
+    "outputs": [
+      "consultation-quality score",
+      "exclusion flags",
+      "consensus map"
+    ],
+    "decision_use": "Use for policy, siting, and high-impact corporate decisions.",
+    "stakeholder_impacts": [
+      "affected communities",
+      "minorities",
+      "workers"
+    ],
+    "risk_assessment_use": "Flags tokenistic or captured consultation and excluded voices.",
+    "related_nodes": [
+      "shura",
+      "stakeholder_impact_mapper",
+      "social_cohesion_monitor"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "precautionary_principle_engine",
+    "english_name": "Precautionary Principle Engine",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic precaution and verification principles.",
+      "ethical_inference": "Inferred caution where serious or irreversible harm is plausible.",
+      "modern_analytical_application": "A modern engine applying precaution where harm is serious/irreversible and evidence incomplete."
+    },
+    "foundation_nodes": [
+      "la_darar",
+      "shubhah",
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_nasl",
+      "tadabbur"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Quranic foundation (principle): 'do not cast yourselves into destruction' grounds precaution."
+      },
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Ethical inference: verify before acting grounds caution under uncertainty."
+      }
+    ],
+    "purpose": "Trigger precaution when potential harm is grave or irreversible and knowledge is incomplete.",
+    "inputs": [
+      "hazard plausibility",
+      "severity/irreversibility",
+      "evidence completeness"
+    ],
+    "outputs": [
+      "precaution verdict",
+      "burden-shift flag",
+      "monitoring requirements"
+    ],
+    "decision_use": "Use for novel technologies, ecosystems, and catastrophic-tail risks.",
+    "stakeholder_impacts": [
+      "potential victims",
+      "future generations",
+      "ecosystems"
+    ],
+    "risk_assessment_use": "Counters false certainty where catastrophic/irreversible harm is possible.",
+    "related_nodes": [
+      "la_darar",
+      "harm_prevention_gate",
+      "reversibility_analyzer",
+      "uncertainty_review_router"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "reversibility_analyzer",
+    "english_name": "Reversibility Analyzer",
+    "category": "Decision Framework",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic concern for lasting harm to progeny and creation.",
+      "ethical_inference": "Inferred preference for reversible over irreversible action.",
+      "modern_analytical_application": "A modern analyzer classifying a decision's effects by reversibility."
+    },
+    "foundation_nodes": [
+      "maqasid_hifz_nasl",
+      "la_darar",
+      "long_horizon_consequence_engine",
+      "fasad"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "205",
+        "relevance": "Quranic foundation (principle): condemnation of destroying crops and progeny grounds weighting irreversible harm."
+      },
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Ethical inference: protecting descendants grounds preferring reversible action."
+      }
+    ],
+    "purpose": "Classify effects as reversible, costly-to-reverse, or irreversible, and weight accordingly.",
+    "inputs": [
+      "impact list",
+      "reversibility/cost-to-reverse data"
+    ],
+    "outputs": [
+      "reversibility profile",
+      "irreversibility flags"
+    ],
+    "decision_use": "Use to apply heightened scrutiny to irreversible commitments.",
+    "stakeholder_impacts": [
+      "future generations",
+      "ecosystems",
+      "society"
+    ],
+    "risk_assessment_use": "Flags irreversible commitments needing precaution and review.",
+    "related_nodes": [
+      "la_darar",
+      "precautionary_principle_engine",
+      "long_horizon_consequence_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "tipping_point_early_warning",
+    "english_name": "Tipping-Point Early-Warning System",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic balance and measure principles.",
+      "ethical_inference": "Inferred vigilance against breaching system thresholds.",
+      "modern_analytical_application": "A modern early-warning system detecting approach to ecological/social tipping points."
+    },
+    "foundation_nodes": [
+      "tawazun",
+      "ecosystem_stability",
+      "planetary_balance",
+      "mizan",
+      "fasad"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "55",
+        "ayah": "8",
+        "relevance": "Quranic foundation (principle): 'do not transgress in the balance' grounds threshold vigilance."
+      },
+      {
+        "surah": "15",
+        "ayah": "19",
+        "relevance": "Ethical inference: everything in measured balance grounds detecting overshoot."
+      }
+    ],
+    "purpose": "Detect approach to critical thresholds and trigger preventive action.",
+    "inputs": [
+      "system indicators",
+      "threshold estimates",
+      "trend data"
+    ],
+    "outputs": [
+      "proximity-to-threshold score",
+      "early-warning alerts"
+    ],
+    "decision_use": "Use for climate, ecosystem, and social-stability monitoring.",
+    "stakeholder_impacts": [
+      "dependent communities",
+      "ecosystems",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags imminent threshold breaches and runaway-feedback risk.",
+    "related_nodes": [
+      "ecosystem_stability_monitor",
+      "planetary_boundary_tracker",
+      "tawazun"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "scenario_simulator",
+    "english_name": "Competing-Futures Scenario Simulator",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic forward-looking reflection.",
+      "ethical_inference": "Inferred analysis of divergent possible futures.",
+      "modern_analytical_application": "A modern simulator projecting outcomes under aligned/delayed/disrupted scenarios."
+    },
+    "foundation_nodes": [
+      "tadabbur",
+      "long_term_wisdom",
+      "climate_risk",
+      "maqasid_hifz_nasl"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "18",
+        "relevance": "Quranic foundation (principle): 'look to what you have sent ahead' grounds forward scenarios."
+      },
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Ethical inference: planning across futures grounds scenario analysis."
+      }
+    ],
+    "purpose": "Project a subject's outcomes across competing future scenarios.",
+    "inputs": [
+      "baseline scores",
+      "scenario parameters",
+      "sensitivity data"
+    ],
+    "outputs": [
+      "scenario outcome spread",
+      "divergence drivers",
+      "robustness flags"
+    ],
+    "decision_use": "Use for transition, investment, and policy stress-analysis.",
+    "stakeholder_impacts": [
+      "investors",
+      "planners",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags fragility under adverse futures and scenario-dependent risk.",
+    "related_nodes": [
+      "long_horizon_consequence_engine",
+      "climate_resilience_stress_test",
+      "long_term_wisdom"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "cause_effect_tracer",
+    "english_name": "Cause-and-Effect Tracer",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic cause-and-consequence and accountability principles.",
+      "ethical_inference": "Inferred tracing of actions to their downstream effects.",
+      "modern_analytical_application": "A modern tracer linking decisions to corroborated downstream outcomes."
+    },
+    "foundation_nodes": [
+      "bayyinah",
+      "ilm",
+      "tadabbur",
+      "fasad",
+      "islah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "13",
+        "ayah": "11",
+        "relevance": "Quranic foundation (principle): consequence following from human action grounds causal tracing."
+      },
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Ethical inference: accountability for effects grounds tracing action to outcome."
+      }
+    ],
+    "purpose": "Trace and corroborate the causal chain from action to real-world outcome.",
+    "inputs": [
+      "action data",
+      "outcome evidence",
+      "corroboration links"
+    ],
+    "outputs": [
+      "causal chain",
+      "corroboration strength",
+      "spurious-claim flags"
+    ],
+    "decision_use": "Use to substantiate impact claims and attribute harm.",
+    "stakeholder_impacts": [
+      "affected parties",
+      "investors",
+      "regulators"
+    ],
+    "risk_assessment_use": "Flags unsubstantiated impact claims and untraced harm.",
+    "related_nodes": [
+      "bayyinah",
+      "cause_effect_tracer",
+      "disclosure_verification_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "evidence_confidence_grader",
+    "english_name": "Evidence Confidence Grader",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic clear-evidence principle.",
+      "ethical_inference": "Inferred grading of evidence strength and confidence.",
+      "modern_analytical_application": "A modern grader assigning confidence to claims and routing low-confidence to review."
+    },
+    "foundation_nodes": [
+      "bayyinah",
+      "ilm",
+      "shubhah",
+      "sidq"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "282",
+        "relevance": "Quranic foundation (principle): documentation as clear proof grounds evidence grading."
+      },
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Ethical inference: not acting without knowledge grounds confidence grading."
+      }
+    ],
+    "purpose": "Grade the confidence of each claim and surface low-confidence inputs.",
+    "inputs": [
+      "claims",
+      "supporting evidence",
+      "source quality"
+    ],
+    "outputs": [
+      "confidence grades",
+      "low-confidence list",
+      "review triggers"
+    ],
+    "decision_use": "Use to calibrate certainty across all engine outputs.",
+    "stakeholder_impacts": [
+      "decision-makers",
+      "review boards"
+    ],
+    "risk_assessment_use": "Prevents over-reliance on weak evidence and false certainty.",
+    "related_nodes": [
+      "bayyinah",
+      "provenance_citation_validator",
+      "uncertainty_review_router"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "provenance_citation_validator",
+    "english_name": "Provenance & Citation Validator",
+    "category": "Analytical Engine",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic testimony and verification principles.",
+      "ethical_inference": "Inferred validation of source provenance.",
+      "modern_analytical_application": "A modern validator checking that claims trace to genuine, citable sources."
+    },
+    "foundation_nodes": [
+      "bayyinah",
+      "sidq",
+      "shahada",
+      "data_integrity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "283",
+        "relevance": "Quranic foundation (principle): not concealing testimony grounds source provenance."
+      },
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Ethical inference: verifying the source grounds citation validation."
+      }
+    ],
+    "purpose": "Validate that every material claim cites a genuine, checkable source.",
+    "inputs": [
+      "claims",
+      "cited sources",
+      "provenance metadata"
+    ],
+    "outputs": [
+      "provenance-valid flag",
+      "uncited-claim list",
+      "fabrication risk"
+    ],
+    "decision_use": "Use to enforce grounding for AI-written findings and reports.",
+    "stakeholder_impacts": [
+      "readers",
+      "regulators",
+      "the public"
+    ],
+    "risk_assessment_use": "Flags fabricated, miscited, or unsourced claims.",
+    "related_nodes": [
+      "bayyinah",
+      "evidence_confidence_grader",
+      "disclosure_verification_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "accountability_chain_mapper",
+    "english_name": "Accountability Chain Mapper",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic answerability principle.",
+      "ethical_inference": "Inferred mapping of who is responsible for what.",
+      "modern_analytical_application": "A modern mapper assigning answerable owners to each consequential action."
+    },
+    "foundation_nodes": [
+      "masuliyyah",
+      "muhasabah",
+      "amanah",
+      "wakalah",
+      "wilayah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Quranic foundation (principle): 'all will be questioned' grounds mapping answerability."
+      },
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Ethical inference: rendering trusts grounds identifiable responsibility."
+      }
+    ],
+    "purpose": "Map responsibility so every consequential action has an identifiable, answerable owner.",
+    "inputs": [
+      "role/mandate data",
+      "decision logs",
+      "delegation records"
+    ],
+    "outputs": [
+      "accountability map",
+      "responsibility-gap flags"
+    ],
+    "decision_use": "Use for governance and especially automated-decision systems.",
+    "stakeholder_impacts": [
+      "affected parties",
+      "oversight bodies"
+    ],
+    "risk_assessment_use": "Flags orphaned responsibility and blame-shifting.",
+    "related_nodes": [
+      "masuliyyah",
+      "responsibility_gap_detector",
+      "oversight_adequacy_checker"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "oversight_adequacy_checker",
+    "english_name": "Oversight Adequacy Checker",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic oversight (raqabah) principle.",
+      "ethical_inference": "Inferred that oversight must be independent and proportionate to risk.",
+      "modern_analytical_application": "A modern checker assessing whether oversight matches a decision's risk."
+    },
+    "foundation_nodes": [
+      "raqabah",
+      "muhasabah",
+      "wilayah",
+      "masuliyyah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "50",
+        "ayah": "18",
+        "relevance": "Quranic foundation (principle): the ever-present watcher grounds oversight adequacy."
+      },
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Ethical inference: just judgement when entrusted grounds independent oversight."
+      }
+    ],
+    "purpose": "Check that monitoring is independent and proportionate to the stakes.",
+    "inputs": [
+      "oversight structures",
+      "independence data",
+      "risk profile"
+    ],
+    "outputs": [
+      "oversight-adequacy score",
+      "capture/blind-spot flags"
+    ],
+    "decision_use": "Use for governance, finance, and AI deployment.",
+    "stakeholder_impacts": [
+      "the public",
+      "affected parties",
+      "regulators"
+    ],
+    "risk_assessment_use": "Flags weak, captured, or self-supervised oversight.",
+    "related_nodes": [
+      "raqabah",
+      "governance_integrity_scanner",
+      "continuous_audit_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "responsibility_gap_detector",
+    "english_name": "Responsibility-Gap Detector",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic answerability principle.",
+      "ethical_inference": "Inferred detection of decisions with no answerable human owner.",
+      "modern_analytical_application": "A modern detector flagging automated or diffused decisions lacking an answerable party."
+    },
+    "foundation_nodes": [
+      "masuliyyah",
+      "ai_accountability",
+      "amanah",
+      "muhasabah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Quranic foundation (principle): answerability for one's faculties grounds detecting unowned harm."
+      },
+      {
+        "surah": "8",
+        "ayah": "27",
+        "relevance": "Ethical inference: not betraying trusts grounds closing accountability gaps."
+      }
+    ],
+    "purpose": "Detect consequential decisions (esp. automated) with no identifiable answerable human/institution.",
+    "inputs": [
+      "decision flows",
+      "automation map",
+      "responsibility assignments"
+    ],
+    "outputs": [
+      "responsibility-gap flags",
+      "'algorithm decided' risk",
+      "unowned-harm list"
+    ],
+    "decision_use": "Use for AI and complex multi-party systems.",
+    "stakeholder_impacts": [
+      "people harmed by automated decisions",
+      "regulators"
+    ],
+    "risk_assessment_use": "Flags responsibility laundering through automation or complexity.",
+    "related_nodes": [
+      "ai_accountability",
+      "accountability_chain_mapper",
+      "ai_ethics_assessment_layer"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "conflict_of_interest_screen",
+    "english_name": "Conflict-of-Interest Screen",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic impartial-justice principle.",
+      "ethical_inference": "Inferred screening of private interest in decisions.",
+      "modern_analytical_application": "A modern screen surfacing undisclosed conflicts and recommending recusal."
+    },
+    "foundation_nodes": [
+      "conflict_of_interest_prevention",
+      "adl",
+      "amanah",
+      "wakalah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "135",
+        "relevance": "Quranic foundation (principle): justice even against self/kin grounds conflict screening."
+      },
+      {
+        "surah": "5",
+        "ayah": "8",
+        "relevance": "Ethical inference: bias not diverting from justice grounds recusal."
+      }
+    ],
+    "purpose": "Surface decision-makers' private interests and flag where recusal is required.",
+    "inputs": [
+      "interest declarations",
+      "relationship data",
+      "decision roles"
+    ],
+    "outputs": [
+      "conflict flags",
+      "recusal recommendations"
+    ],
+    "decision_use": "Use across governance, finance, and procurement.",
+    "stakeholder_impacts": [
+      "the public",
+      "beneficiaries",
+      "honest parties"
+    ],
+    "risk_assessment_use": "Flags undisclosed conflicts and self-interested decisions.",
+    "related_nodes": [
+      "conflict_of_interest_prevention",
+      "anti_corruption_detector",
+      "regulatory_capture_detector"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "whistleblower_signal_aggregator",
+    "english_name": "Whistleblower Signal Aggregator",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic truthful-witness principle.",
+      "ethical_inference": "Inferred protection and aggregation of internal warnings.",
+      "modern_analytical_application": "A modern system aggregating and protecting whistleblower signals and verifying them."
+    },
+    "foundation_nodes": [
+      "shahada",
+      "sidq",
+      "raqabah",
+      "anti_corruption",
+      "huquq"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "135",
+        "relevance": "Quranic foundation (principle): witnessing for justice even against the powerful grounds protecting disclosure."
+      },
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Ethical inference: verifying reports grounds careful aggregation of signals."
+      }
+    ],
+    "purpose": "Aggregate, protect, and triage internal warning signals for verification.",
+    "inputs": [
+      "reports",
+      "corroborating data",
+      "protection status"
+    ],
+    "outputs": [
+      "aggregated risk signals",
+      "verification queue",
+      "retaliation flags"
+    ],
+    "decision_use": "Use in governance and corporate-integrity systems.",
+    "stakeholder_impacts": [
+      "whistleblowers",
+      "the public",
+      "employees"
+    ],
+    "risk_assessment_use": "Surfaces suppressed warnings; flags retaliation risk.",
+    "related_nodes": [
+      "shahada",
+      "oversight_adequacy_checker",
+      "anti_corruption_detector"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "transparency_compliance_engine",
+    "english_name": "Transparency Compliance Engine",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic anti-concealment principle.",
+      "ethical_inference": "Inferred compliance with transparency duties.",
+      "modern_analytical_application": "A modern engine scoring compliance with disclosure and openness obligations."
+    },
+    "foundation_nodes": [
+      "transparency_systems",
+      "public_disclosure",
+      "haqq",
+      "bayyinah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Quranic foundation (principle): not concealing truth grounds transparency compliance."
+      },
+      {
+        "surah": "3",
+        "ayah": "187",
+        "relevance": "Ethical inference: the covenant to make it clear grounds disclosure duties."
+      }
+    ],
+    "purpose": "Score whether decisions, data, and dealings meet transparency obligations.",
+    "inputs": [
+      "disclosure obligations",
+      "actual disclosures",
+      "accessibility data"
+    ],
+    "outputs": [
+      "transparency-compliance score",
+      "opacity flags"
+    ],
+    "decision_use": "Use for governance, ESG, and AI transparency.",
+    "stakeholder_impacts": [
+      "the public",
+      "investors",
+      "regulators"
+    ],
+    "risk_assessment_use": "Flags opacity and selective disclosure.",
+    "related_nodes": [
+      "transparency_systems",
+      "disclosure_verification_engine",
+      "ai_transparency"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "just_transition_planner",
+    "english_name": "Just Transition Planner",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic concern for the vulnerable and justice.",
+      "ethical_inference": "Inferred just management of economic transition.",
+      "modern_analytical_application": "A modern planner ensuring transition protects affected workers and communities."
+    },
+    "foundation_nodes": [
+      "transition_planning",
+      "climate_justice",
+      "skill_development",
+      "adalah_ijtimaiyyah",
+      "rahmah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Quranic foundation (principle): concern for those left behind grounds protecting transition's losers."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: justice grounds fair distribution of transition burden."
+      }
+    ],
+    "purpose": "Plan transitions so affected workers and regions are protected and supported.",
+    "inputs": [
+      "affected-worker data",
+      "regional dependency",
+      "reskilling capacity"
+    ],
+    "outputs": [
+      "just-transition plan",
+      "protection gaps",
+      "abandonment flags"
+    ],
+    "decision_use": "Use for energy/industrial transition decisions.",
+    "stakeholder_impacts": [
+      "fossil-sector workers",
+      "dependent regions",
+      "communities"
+    ],
+    "risk_assessment_use": "Flags workers and regions abandoned by transition.",
+    "related_nodes": [
+      "transition_planning",
+      "climate_justice",
+      "skill_development",
+      "shared_prosperity_analyzer"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "intergenerational_equity_ledger",
+    "english_name": "Intergenerational Equity Ledger",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic duty to future progeny.",
+      "ethical_inference": "Inferred ledger of burdens/benefits transferred across generations.",
+      "modern_analytical_application": "A modern ledger accounting what each generation passes to the next."
+    },
+    "foundation_nodes": [
+      "intergenerational_responsibility",
+      "maqasid_hifz_nasl",
+      "mithaq",
+      "barakah",
+      "natural_capital_ledger"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Quranic foundation (principle): protecting future descendants grounds an intergenerational ledger."
+      },
+      {
+        "surah": "2",
+        "ayah": "205",
+        "relevance": "Ethical inference: not destroying progeny grounds accounting harm to the future."
+      }
+    ],
+    "purpose": "Account for benefits and burdens transferred to future generations.",
+    "inputs": [
+      "long-term impact data",
+      "resource-stock changes",
+      "debt/obligation transfers"
+    ],
+    "outputs": [
+      "intergenerational balance",
+      "future-burden flags"
+    ],
+    "decision_use": "Use for climate, fiscal, and resource decisions.",
+    "stakeholder_impacts": [
+      "future generations",
+      "the young",
+      "society"
+    ],
+    "risk_assessment_use": "Flags burdens and depletion shifted onto the unborn.",
+    "related_nodes": [
+      "intergenerational_responsibility",
+      "long_horizon_consequence_engine",
+      "natural_capital_ledger"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "public_value_estimator",
+    "english_name": "Public Value Estimator",
+    "category": "Public Policy",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic lasting-benefit principle.",
+      "ethical_inference": "Inferred estimation of genuine public value.",
+      "modern_analytical_application": "A modern estimator distinguishing public-value creation from private value capture."
+    },
+    "foundation_nodes": [
+      "public_value_creation",
+      "maslahah",
+      "adl",
+      "shared_prosperity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "13",
+        "ayah": "17",
+        "relevance": "Quranic foundation (principle): 'what benefits people remains' grounds estimating public value."
+      },
+      {
+        "surah": "2",
+        "ayah": "272",
+        "relevance": "Ethical inference: spending for genuine benefit grounds public-value focus."
+      }
+    ],
+    "purpose": "Estimate net public value created versus private value captured at public expense.",
+    "inputs": [
+      "cost/benefit data",
+      "value-distribution data",
+      "spillover estimates"
+    ],
+    "outputs": [
+      "public-value estimate",
+      "value-capture flags"
+    ],
+    "decision_use": "Use for public spending, PPPs, and policy.",
+    "stakeholder_impacts": [
+      "the public",
+      "taxpayers",
+      "communities"
+    ],
+    "risk_assessment_use": "Flags socialised costs with privatised gains.",
+    "related_nodes": [
+      "public_value_creation",
+      "maslahah",
+      "shared_prosperity_analyzer"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "shared_prosperity_analyzer",
+    "english_name": "Shared Prosperity Analyzer",
+    "category": "Stakeholder Justice",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic broad-circulation-of-wealth principle.",
+      "ethical_inference": "Inferred analysis of how gains are distributed.",
+      "modern_analytical_application": "A modern analyzer measuring how broadly economic gains are shared."
+    },
+    "foundation_nodes": [
+      "shared_prosperity",
+      "adalah_ijtimaiyyah",
+      "qist",
+      "zakat",
+      "community_benefit"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Quranic foundation (principle): wealth not circulating only among the rich grounds shared-prosperity analysis."
+      },
+      {
+        "surah": "70",
+        "ayah": "24-25",
+        "relevance": "Ethical inference: a known right of others grounds broad benefit distribution."
+      }
+    ],
+    "purpose": "Measure distribution of gains across workers, communities, and owners.",
+    "inputs": [
+      "pay/ownership data",
+      "value-distribution data",
+      "community-benefit data"
+    ],
+    "outputs": [
+      "shared-prosperity score",
+      "concentration flags"
+    ],
+    "decision_use": "Use for corporate, investment, and policy analysis.",
+    "stakeholder_impacts": [
+      "workers",
+      "communities",
+      "the broader public"
+    ],
+    "risk_assessment_use": "Flags extreme concentration of economic gains.",
+    "related_nodes": [
+      "shared_prosperity",
+      "distributional_impact_engine",
+      "public_value_estimator"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "distributional_impact_engine",
+    "english_name": "Distributional Impact Engine",
+    "category": "Stakeholder Justice",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic distributive-justice principle.",
+      "ethical_inference": "Inferred analysis of who gains and who loses.",
+      "modern_analytical_application": "A modern engine modelling the distribution of a decision's effects across groups."
+    },
+    "foundation_nodes": [
+      "adalah_ijtimaiyyah",
+      "qist",
+      "zulm",
+      "miskeen",
+      "infrastructure_equity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Quranic foundation (principle): distribution beyond the rich grounds distributional analysis."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: justice grounds equitable burden/benefit allocation."
+      }
+    ],
+    "purpose": "Model gains and losses by income, region, and group, flagging regressive effects.",
+    "inputs": [
+      "impact-by-group data",
+      "baseline inequality",
+      "incidence analysis"
+    ],
+    "outputs": [
+      "distributional profile",
+      "regressivity flags"
+    ],
+    "decision_use": "Use for tax, pricing, subsidy, and infrastructure decisions.",
+    "stakeholder_impacts": [
+      "the poor",
+      "regions",
+      "vulnerable groups"
+    ],
+    "risk_assessment_use": "Flags regressive impacts and inequitable incidence.",
+    "related_nodes": [
+      "justice_allocation_engine",
+      "shared_prosperity_analyzer",
+      "equity_gap_monitor"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "social_cohesion_monitor",
+    "english_name": "Social Cohesion Monitor",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic unity and reconciliation principles.",
+      "ethical_inference": "Inferred monitoring of social trust and solidarity.",
+      "modern_analytical_application": "A modern monitor tracking social cohesion and division risk."
+    },
+    "foundation_nodes": [
+      "societal_cohesion",
+      "sulh",
+      "namimah",
+      "fitnah",
+      "peaceful_coexistence"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "3",
+        "ayah": "103",
+        "relevance": "Quranic foundation (principle): 'hold together, do not be divided' grounds cohesion monitoring."
+      },
+      {
+        "surah": "49",
+        "ayah": "10",
+        "relevance": "Ethical inference: reconciling believers grounds repairing social bonds."
+      }
+    ],
+    "purpose": "Monitor whether decisions strengthen or fracture social trust and solidarity.",
+    "inputs": [
+      "trust indicators",
+      "polarisation data",
+      "intergroup relations"
+    ],
+    "outputs": [
+      "cohesion score",
+      "division-risk flags"
+    ],
+    "decision_use": "Use for policy, platform, and media-system decisions.",
+    "stakeholder_impacts": [
+      "communities",
+      "minorities",
+      "society"
+    ],
+    "risk_assessment_use": "Flags polarisation and erosion of social trust.",
+    "related_nodes": [
+      "societal_cohesion",
+      "disinformation_fitnah_detector",
+      "peaceful_coexistence"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "disinformation_fitnah_detector",
+    "english_name": "Disinformation & Fitnah Risk Detector",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic verify-before-spreading and anti-fitnah principles.",
+      "ethical_inference": "Inferred detection of divisive, unverified, destabilising content.",
+      "modern_analytical_application": "A modern detector scoring disinformation and social-destabilisation risk."
+    },
+    "foundation_nodes": [
+      "fitnah",
+      "namimah",
+      "sidq",
+      "bayyinah",
+      "maqasid_hifz_aql"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Quranic foundation (principle): 'verify the news lest you harm in ignorance' grounds disinformation detection."
+      },
+      {
+        "surah": "2",
+        "ayah": "191",
+        "relevance": "Ethical inference: fitnah as grave social harm grounds detecting destabilising content."
+      }
+    ],
+    "purpose": "Detect amplification of unverified, divisive, or destabilising content.",
+    "inputs": [
+      "content/propagation data",
+      "verification status",
+      "amplification patterns"
+    ],
+    "outputs": [
+      "disinformation-risk score",
+      "destabilisation flags"
+    ],
+    "decision_use": "Use for platforms, AI content systems, and information policy.",
+    "stakeholder_impacts": [
+      "the public",
+      "targeted groups",
+      "social order"
+    ],
+    "risk_assessment_use": "Flags engagement-driven division and destabilising disinformation.",
+    "related_nodes": [
+      "fitnah",
+      "namimah",
+      "social_cohesion_monitor",
+      "maqasid_hifz_aql"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "cultural_impact_assessor",
+    "english_name": "Cultural Impact Assessor",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic affirmation of cultural diversity.",
+      "ethical_inference": "Inferred assessment of impact on cultures and heritage.",
+      "modern_analytical_application": "A modern assessor scoring effects on cultural diversity, heritage, and identity."
+    },
+    "foundation_nodes": [
+      "cultural_preservation",
+      "peaceful_coexistence",
+      "huquq",
+      "rahmah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "22",
+        "relevance": "Quranic foundation (principle): diversity of languages and peoples as signs grounds valuing cultural impact."
+      },
+      {
+        "surah": "49",
+        "ayah": "13",
+        "relevance": "Ethical inference: peoples made diverse to know one another grounds respecting cultures."
+      }
+    ],
+    "purpose": "Assess whether a decision protects or erodes cultural diversity and heritage.",
+    "inputs": [
+      "heritage/identity data",
+      "language-vitality data",
+      "community input"
+    ],
+    "outputs": [
+      "cultural-impact score",
+      "erasure/homogenisation flags"
+    ],
+    "decision_use": "Use for development, media, and AI-content decisions.",
+    "stakeholder_impacts": [
+      "cultural communities",
+      "minorities",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags cultural erasure and forced homogenisation.",
+    "related_nodes": [
+      "cultural_preservation",
+      "peaceful_coexistence",
+      "social_cohesion_monitor"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "moral_resilience_stress_test",
+    "english_name": "Moral Resilience Stress-Test",
+    "category": "Moral Assessment System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic steadfastness principle.",
+      "ethical_inference": "Inferred testing of whether ethics hold under pressure.",
+      "modern_analytical_application": "A modern stress-test probing whether ethical commitments survive cost and pressure."
+    },
+    "foundation_nodes": [
+      "moral_resilience",
+      "taqwa",
+      "sabr",
+      "sidq",
+      "ikhlas"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "103",
+        "ayah": "1-3",
+        "relevance": "Quranic foundation (principle): enjoining truth and patience grounds testing ethical steadfastness."
+      },
+      {
+        "surah": "41",
+        "ayah": "30",
+        "relevance": "Ethical inference: steadfastness (istiqama) grounds resilience under pressure."
+      }
+    ],
+    "purpose": "Stress-test ethical commitments against cost, incentive, and pressure scenarios.",
+    "inputs": [
+      "stated commitments",
+      "incentive structures",
+      "pressure scenarios"
+    ],
+    "outputs": [
+      "moral-resilience score",
+      "collapse-point flags"
+    ],
+    "decision_use": "Use for governance, leadership, and culture assessment.",
+    "stakeholder_impacts": [
+      "the institution",
+      "its stakeholders",
+      "society"
+    ],
+    "risk_assessment_use": "Flags ethics likely to collapse when costly or inconvenient.",
+    "related_nodes": [
+      "moral_resilience",
+      "taqwa",
+      "leadership_integrity_index"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "systemic_justice_auditor",
+    "english_name": "Systemic Justice Auditor",
+    "category": "Moral Assessment System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic justice-in-structure principle.",
+      "ethical_inference": "Inferred audit of justice embedded in rules and systems.",
+      "modern_analytical_application": "A modern auditor testing whether a system produces just outcomes even when individuals act well."
+    },
+    "foundation_nodes": [
+      "systemic_justice",
+      "adl",
+      "qist",
+      "zulm",
+      "algorithmic_fairness"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "57",
+        "ayah": "25",
+        "relevance": "Quranic foundation (principle): the Balance sent so people uphold justice grounds auditing just structures."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: standing command to justice grounds structural-justice audit."
+      }
+    ],
+    "purpose": "Audit structures and rules for justice independent of individual virtue.",
+    "inputs": [
+      "rule/process data",
+      "outcome distributions",
+      "bias analysis"
+    ],
+    "outputs": [
+      "systemic-justice score",
+      "structural-injustice flags"
+    ],
+    "decision_use": "Use for institutions, markets, and algorithmic systems.",
+    "stakeholder_impacts": [
+      "disadvantaged groups",
+      "the public",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags structures producing injustice regardless of individual intent.",
+    "related_nodes": [
+      "systemic_justice",
+      "algorithmic_fairness_auditor",
+      "distributional_impact_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "civilizational_balance_dashboard",
+    "english_name": "Civilizational Balance Dashboard",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic balance and moderation principles.",
+      "ethical_inference": "Inferred multi-dimensional view of societal balance.",
+      "modern_analytical_application": "A modern dashboard tracking material, social, ecological, and moral balance together."
+    },
+    "foundation_nodes": [
+      "civilizational_balance",
+      "mizan",
+      "wasatiyyah",
+      "systemic_justice",
+      "planetary_balance"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "143",
+        "relevance": "Quranic foundation (principle): the balanced middle community grounds civilizational balance."
+      },
+      {
+        "surah": "55",
+        "ayah": "7-9",
+        "relevance": "Ethical inference: the cosmic balance grounds tracking multi-dimensional societal balance."
+      }
+    ],
+    "purpose": "Track whether societal progress is balanced across all key dimensions.",
+    "inputs": [
+      "material/social/ecological/moral indicators",
+      "trend data"
+    ],
+    "outputs": [
+      "civilizational-balance profile",
+      "imbalance flags"
+    ],
+    "decision_use": "Use for national and civilizational-scale assessment.",
+    "stakeholder_impacts": [
+      "citizens",
+      "future generations",
+      "the biosphere"
+    ],
+    "risk_assessment_use": "Flags overdevelopment of one dimension at others' cost.",
+    "related_nodes": [
+      "civilizational_balance",
+      "mizan_balance_engine",
+      "planetary_boundary_tracker",
+      "systemic_justice_auditor"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "long_term_wisdom_synthesizer",
+    "english_name": "Long-Term Wisdom Synthesizer",
+    "category": "Meta / Orchestration",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic wisdom and forward-reflection principles.",
+      "ethical_inference": "Inferred synthesis weighting enduring goods over immediate gain.",
+      "modern_analytical_application": "A modern synthesizer integrating long-horizon outputs into far-sighted judgement."
+    },
+    "foundation_nodes": [
+      "long_term_wisdom",
+      "hikmah",
+      "tadabbur",
+      "sabr",
+      "long_horizon_consequence_engine"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "269",
+        "relevance": "Quranic foundation (principle): wisdom as 'much good' grounds far-sighted synthesis."
+      },
+      {
+        "surah": "59",
+        "ayah": "18",
+        "relevance": "Ethical inference: looking to what is sent ahead grounds long-term judgement."
+      }
+    ],
+    "purpose": "Synthesise long-horizon analyses into a far-sighted recommendation resisting short-termism.",
+    "inputs": [
+      "long-horizon engine outputs",
+      "scenario spreads",
+      "enduring-good estimates"
+    ],
+    "outputs": [
+      "long-term wisdom verdict",
+      "short-termism flags"
+    ],
+    "decision_use": "Use as a capstone over consequence and scenario engines.",
+    "stakeholder_impacts": [
+      "future generations",
+      "society",
+      "decision-makers"
+    ],
+    "risk_assessment_use": "Counters discounting of distant harm and enduring goods.",
+    "related_nodes": [
+      "hikmah",
+      "long_horizon_consequence_engine",
+      "scenario_simulator",
+      "hikma_synthesis_engine"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "societal_resilience_index",
+    "english_name": "Societal Resilience Index",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic unity and foresight principles.",
+      "ethical_inference": "Inferred composite of a society's capacity to absorb shocks.",
+      "modern_analytical_application": "A modern index aggregating social, institutional, and economic resilience."
+    },
+    "foundation_nodes": [
+      "community_resilience",
+      "societal_cohesion",
+      "institutional_trust",
+      "sabr",
+      "aman"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "3",
+        "ayah": "103",
+        "relevance": "Quranic foundation (principle): unity grounds collective resilience."
+      },
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Ethical inference: reserves through hardship grounds resilience capacity."
+      }
+    ],
+    "purpose": "Score a society's capacity to withstand and recover from shocks.",
+    "inputs": [
+      "cohesion/trust data",
+      "economic buffers",
+      "institutional capacity"
+    ],
+    "outputs": [
+      "resilience index",
+      "fragility flags"
+    ],
+    "decision_use": "Use for national and community resilience assessment.",
+    "stakeholder_impacts": [
+      "citizens",
+      "vulnerable groups",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags brittleness and low shock-absorption capacity.",
+    "related_nodes": [
+      "community_resilience_planner",
+      "social_cohesion_monitor",
+      "institutional_trust_index"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "community_resilience_planner",
+    "english_name": "Community Resilience Planner",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic cooperation and solidarity principles.",
+      "ethical_inference": "Inferred planning to build local resilience.",
+      "modern_analytical_application": "A modern planner building community capacity to withstand shocks together."
+    },
+    "foundation_nodes": [
+      "community_resilience",
+      "sulh",
+      "aman",
+      "disaster_preparedness",
+      "miskeen"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "2",
+        "relevance": "Quranic foundation (principle): cooperation in good grounds collective capacity-building."
+      },
+      {
+        "surah": "3",
+        "ayah": "103",
+        "relevance": "Ethical inference: holding together grounds community solidarity."
+      }
+    ],
+    "purpose": "Plan and strengthen local capacity for mutual support under stress.",
+    "inputs": [
+      "local capacity data",
+      "hazard exposure",
+      "social-network data"
+    ],
+    "outputs": [
+      "resilience plan",
+      "capacity gaps"
+    ],
+    "decision_use": "Use for community development and disaster planning.",
+    "stakeholder_impacts": [
+      "local residents",
+      "vulnerable households",
+      "local institutions"
+    ],
+    "risk_assessment_use": "Flags dependency without capacity and fragile communities.",
+    "related_nodes": [
+      "community_resilience",
+      "disaster_resilience_planner",
+      "societal_resilience_index"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "climate_resilience_stress_test",
+    "english_name": "Climate Resilience Stress-Test",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic foresight principle.",
+      "ethical_inference": "Inferred stress-testing against climate scenarios.",
+      "modern_analytical_application": "A modern stress-test of a system's resilience under climate-impact scenarios."
+    },
+    "foundation_nodes": [
+      "climate_adaptation",
+      "long_term_resilience",
+      "climate_risk",
+      "disaster_preparedness"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Quranic foundation (principle): planning for lean years grounds climate stress-testing."
+      },
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Ethical inference: avoiding foreseeable destruction grounds resilience testing."
+      }
+    ],
+    "purpose": "Stress-test assets, communities, and systems against climate scenarios.",
+    "inputs": [
+      "exposure data",
+      "climate scenarios",
+      "adaptive-capacity data"
+    ],
+    "outputs": [
+      "resilience stress score",
+      "failure-point flags"
+    ],
+    "decision_use": "Use for infrastructure, finance, and policy resilience.",
+    "stakeholder_impacts": [
+      "exposed communities",
+      "asset owners",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags climate-driven failure points and maladaptation.",
+    "related_nodes": [
+      "climate_adaptation",
+      "scenario_simulator",
+      "long_term_resilience"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "resource_sufficiency_monitor",
+    "english_name": "Resource Sufficiency Monitor",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic anti-excess and trusteeship principles.",
+      "ethical_inference": "Inferred monitoring of use against sufficiency and renewal.",
+      "modern_analytical_application": "A modern monitor tracking resource use against sufficiency and renewable yield."
+    },
+    "foundation_nodes": [
+      "resource_stewardship",
+      "israf",
+      "circular_economy",
+      "natural_capital_stewardship"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Quranic foundation (principle): avoidance of excess grounds sufficiency monitoring."
+      },
+      {
+        "surah": "57",
+        "ayah": "7",
+        "relevance": "Ethical inference: trusteeship grounds living within resource limits."
+      }
+    ],
+    "purpose": "Track whether resource use stays within sufficiency and renewal limits.",
+    "inputs": [
+      "consumption data",
+      "stock/yield data",
+      "sufficiency thresholds"
+    ],
+    "outputs": [
+      "sufficiency status",
+      "overshoot alerts"
+    ],
+    "decision_use": "Use for resource, water, and energy management.",
+    "stakeholder_impacts": [
+      "future generations",
+      "resource-dependent communities"
+    ],
+    "risk_assessment_use": "Flags overshoot and unsustainable consumption.",
+    "related_nodes": [
+      "resource_stewardship",
+      "natural_capital_ledger",
+      "circular_resource_tracker"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "planetary_boundary_tracker",
+    "english_name": "Planetary Boundary Tracker",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic balance and limits principles.",
+      "ethical_inference": "Inferred tracking against planetary limits; the boundaries framework is modern science.",
+      "modern_analytical_application": "A modern tracker scoring activity against planetary-boundary thresholds."
+    },
+    "foundation_nodes": [
+      "planetary_balance",
+      "mizan",
+      "hudud",
+      "ecosystem_stability",
+      "fasad"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "55",
+        "ayah": "7-9",
+        "relevance": "Quranic foundation (principle): the balance set 'do not transgress it' grounds boundary tracking."
+      },
+      {
+        "surah": "54",
+        "ayah": "49",
+        "relevance": "Ethical inference: everything in measure grounds respecting global limits."
+      }
+    ],
+    "purpose": "Track whether activity stays within planetary safe-operating limits.",
+    "inputs": [
+      "boundary indicators",
+      "emissions/land/water data",
+      "threshold science"
+    ],
+    "outputs": [
+      "boundary-status profile",
+      "overshoot alerts"
+    ],
+    "decision_use": "Use for climate, land, and biogeochemical impact assessment.",
+    "stakeholder_impacts": [
+      "the biosphere",
+      "all humanity",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags breaches of planetary boundaries and systemic overshoot.",
+    "related_nodes": [
+      "planetary_balance",
+      "mizan_balance_engine",
+      "tipping_point_early_warning"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ecosystem_stability_monitor",
+    "english_name": "Ecosystem Stability Monitor",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic balance principle.",
+      "ethical_inference": "Inferred monitoring of ecosystem function and thresholds.",
+      "modern_analytical_application": "A modern monitor tracking ecosystem health, services, and stability."
+    },
+    "foundation_nodes": [
+      "ecosystem_stability",
+      "biodiversity_protection",
+      "tawazun",
+      "fasad"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "15",
+        "ayah": "19",
+        "relevance": "Quranic foundation (principle): everything in measured balance grounds ecosystem monitoring."
+      },
+      {
+        "surah": "55",
+        "ayah": "8",
+        "relevance": "Ethical inference: not transgressing the balance grounds maintaining ecosystem function."
+      }
+    ],
+    "purpose": "Track ecosystem function and proximity to degradation thresholds.",
+    "inputs": [
+      "ecosystem indicators",
+      "service metrics",
+      "threshold data"
+    ],
+    "outputs": [
+      "ecosystem-stability score",
+      "degradation alerts"
+    ],
+    "decision_use": "Use for conservation, land-use, and resource decisions.",
+    "stakeholder_impacts": [
+      "dependent communities",
+      "ecosystems",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags ecosystem-service decline and collapse risk.",
+    "related_nodes": [
+      "ecosystem_stability",
+      "biodiversity_risk_engine",
+      "tipping_point_early_warning"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "drought_flood_early_warning",
+    "english_name": "Drought & Flood Early-Warning System",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic foresight and preparedness principles.",
+      "ethical_inference": "Inferred early warning for water extremes.",
+      "modern_analytical_application": "A modern early-warning system for drought and flood risk."
+    },
+    "foundation_nodes": [
+      "drought_resilience",
+      "flood_protection",
+      "water_security",
+      "disaster_preparedness"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Quranic foundation (principle): foresight for scarcity grounds drought warning."
+      },
+      {
+        "surah": "18",
+        "ayah": "37",
+        "relevance": "Ethical inference: anticipatory protection (the ark) grounds flood warning."
+      }
+    ],
+    "purpose": "Provide early warning and trigger protection for drought and flood.",
+    "inputs": [
+      "hydrological data",
+      "forecasts",
+      "vulnerability maps"
+    ],
+    "outputs": [
+      "risk alerts",
+      "lead-time estimates",
+      "exposure flags"
+    ],
+    "decision_use": "Use for water, agriculture, and civil protection.",
+    "stakeholder_impacts": [
+      "farmers",
+      "exposed communities",
+      "the vulnerable"
+    ],
+    "risk_assessment_use": "Flags imminent water-extreme exposure of the vulnerable.",
+    "related_nodes": [
+      "drought_resilience",
+      "flood_protection",
+      "water_security_index",
+      "disaster_resilience_planner"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "food_security_monitor",
+    "english_name": "Food Security Monitor",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic provision and foresight principles.",
+      "ethical_inference": "Inferred monitoring of food access and shortfall risk.",
+      "modern_analytical_application": "A modern monitor tracking food availability, access, and shortfall risk."
+    },
+    "foundation_nodes": [
+      "food_security",
+      "community_nutrition",
+      "drought_resilience",
+      "miskeen"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "106",
+        "ayah": "4",
+        "relevance": "Quranic foundation (principle): freedom from hunger grounds food-security monitoring."
+      },
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Ethical inference: grain reserves ground monitoring against shortfall."
+      }
+    ],
+    "purpose": "Monitor food security and trigger response to emerging shortfalls.",
+    "inputs": [
+      "supply/price data",
+      "access metrics",
+      "reserve levels"
+    ],
+    "outputs": [
+      "food-security status",
+      "shortfall alerts"
+    ],
+    "decision_use": "Use for food policy and humanitarian planning.",
+    "stakeholder_impacts": [
+      "the hungry",
+      "children",
+      "low-income households"
+    ],
+    "risk_assessment_use": "Flags emerging food insecurity and price-shock exposure.",
+    "related_nodes": [
+      "food_security",
+      "food_systems_resilience",
+      "community_nutrition"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "energy_security_analyzer",
+    "english_name": "Energy Security Analyzer",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic security and foresight principles.",
+      "ethical_inference": "Inferred analysis of energy supply resilience.",
+      "modern_analytical_application": "A modern analyzer scoring energy supply security and dependency risk."
+    },
+    "foundation_nodes": [
+      "energy_security",
+      "energy_access",
+      "drought_resilience",
+      "aman"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "106",
+        "ayah": "4",
+        "relevance": "Quranic foundation (principle): security against want grounds energy-security analysis."
+      },
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Ethical inference: reserves through hardship ground supply resilience."
+      }
+    ],
+    "purpose": "Analyze energy supply for resilience, diversity, and undue dependency.",
+    "inputs": [
+      "supply mix",
+      "import dependency",
+      "reserve/storage data"
+    ],
+    "outputs": [
+      "energy-security score",
+      "fragility/dependency flags"
+    ],
+    "decision_use": "Use for energy policy and infrastructure planning.",
+    "stakeholder_impacts": [
+      "households",
+      "industry",
+      "national interest"
+    ],
+    "risk_assessment_use": "Flags supply fragility and undue dependency.",
+    "related_nodes": [
+      "energy_security",
+      "energy_systems_analyzer",
+      "societal_resilience_index"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "water_security_index",
+    "english_name": "Water Security Index",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic sanctity of water.",
+      "ethical_inference": "Inferred composite of water availability, quality, and equity.",
+      "modern_analytical_application": "A modern index scoring water security for a region or system."
+    },
+    "foundation_nodes": [
+      "water_security",
+      "water_justice",
+      "drought_resilience",
+      "maa"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "21",
+        "ayah": "30",
+        "relevance": "Quranic foundation (principle): water as basis of life grounds water-security indexing."
+      },
+      {
+        "surah": "23",
+        "ayah": "18",
+        "relevance": "Ethical inference: water stored in measure grounds securing supply."
+      }
+    ],
+    "purpose": "Score reliable, safe, equitable water availability over time.",
+    "inputs": [
+      "availability/quality data",
+      "demand data",
+      "equity metrics"
+    ],
+    "outputs": [
+      "water-security index",
+      "scarcity/quality flags"
+    ],
+    "decision_use": "Use for water policy and basin management.",
+    "stakeholder_impacts": [
+      "downstream users",
+      "the poor",
+      "ecosystems"
+    ],
+    "risk_assessment_use": "Flags water-stress and inequitable access risk.",
+    "related_nodes": [
+      "water_security",
+      "water_stewardship_intelligence",
+      "drought_flood_early_warning"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "health_system_resilience",
+    "english_name": "Health System Resilience Monitor",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic sanctity of life.",
+      "ethical_inference": "Inferred monitoring of health-system shock capacity.",
+      "modern_analytical_application": "A modern monitor of health-system capacity and resilience to shocks."
+    },
+    "foundation_nodes": [
+      "public_health",
+      "nafs",
+      "maqasid_hifz_nafs",
+      "disaster_preparedness",
+      "aman"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "32",
+        "relevance": "Quranic foundation (principle): saving life grounds protecting health-system capacity."
+      },
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Ethical inference: preparing for hardship grounds health-system reserves."
+      }
+    ],
+    "purpose": "Assess health-system capacity to withstand surges and shocks.",
+    "inputs": [
+      "capacity data",
+      "surge plans",
+      "access metrics"
+    ],
+    "outputs": [
+      "health-resilience score",
+      "capacity-gap flags"
+    ],
+    "decision_use": "Use for health policy and pandemic/disaster preparedness.",
+    "stakeholder_impacts": [
+      "patients",
+      "health workers",
+      "the vulnerable"
+    ],
+    "risk_assessment_use": "Flags health-system fragility and surge-capacity gaps.",
+    "related_nodes": [
+      "public_health_impact_engine",
+      "disaster_resilience_planner",
+      "societal_resilience_index"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "institutional_trust_index",
+    "english_name": "Institutional Trust Index",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic trust principle.",
+      "ethical_inference": "Inferred measurement of justified public confidence.",
+      "modern_analytical_application": "A modern index tracking justified public trust in institutions."
+    },
+    "foundation_nodes": [
+      "institutional_trust",
+      "public_accountability",
+      "transparency_systems",
+      "sidq"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Quranic foundation (principle): rendering trusts grounds measuring earned trust."
+      },
+      {
+        "surah": "8",
+        "ayah": "27",
+        "relevance": "Ethical inference: not betraying trusts grounds trust as an asset to protect."
+      }
+    ],
+    "purpose": "Track whether institutions are building or eroding justified public trust.",
+    "inputs": [
+      "delivery data",
+      "integrity indicators",
+      "public-perception data"
+    ],
+    "outputs": [
+      "trust index",
+      "trust-erosion flags"
+    ],
+    "decision_use": "Use for governance and institutional assessment.",
+    "stakeholder_impacts": [
+      "citizens",
+      "stakeholders",
+      "the governed"
+    ],
+    "risk_assessment_use": "Flags trust erosion through broken commitments or betrayal.",
+    "related_nodes": [
+      "institutional_trust",
+      "governance_integrity_scanner",
+      "societal_resilience_index"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "antifragility_designer",
+    "english_name": "Anti-Fragility Designer",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic durability and steadfastness principles.",
+      "ethical_inference": "Inferred design for systems that strengthen under stress.",
+      "modern_analytical_application": "A modern design aid favouring redundancy, diversity, and durability over brittle optimisation."
+    },
+    "foundation_nodes": [
+      "long_term_resilience",
+      "tawazun",
+      "sabr",
+      "disaster_preparedness"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "13",
+        "ayah": "17",
+        "relevance": "Quranic foundation (principle): 'what benefits people remains' grounds favouring durable design."
+      },
+      {
+        "surah": "2",
+        "ayah": "153",
+        "relevance": "Ethical inference: steadfastness grounds systems that endure stress."
+      }
+    ],
+    "purpose": "Guide design toward resilience and anti-fragility rather than brittle efficiency.",
+    "inputs": [
+      "system architecture",
+      "failure modes",
+      "stressor data"
+    ],
+    "outputs": [
+      "fragility assessment",
+      "redundancy recommendations"
+    ],
+    "decision_use": "Use for infrastructure, finance, and institutional design.",
+    "stakeholder_impacts": [
+      "dependent users",
+      "society",
+      "future operators"
+    ],
+    "risk_assessment_use": "Flags brittle single-points-of-failure and over-optimisation.",
+    "related_nodes": [
+      "long_term_resilience",
+      "climate_resilience_stress_test",
+      "continuity_reserve_planner"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "continuity_reserve_planner",
+    "english_name": "Continuity & Reserve Planner",
+    "category": "Societal Resilience System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic reserve-and-foresight model (Yusuf).",
+      "ethical_inference": "Inferred maintenance of reserves for continuity through shocks.",
+      "modern_analytical_application": "A modern planner sizing reserves and continuity plans against foreseeable shocks."
+    },
+    "foundation_nodes": [
+      "drought_resilience",
+      "energy_security",
+      "food_security",
+      "sabr",
+      "maqasid_hifz_nasl"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Quranic foundation (principle): the Yusuf grain-reserve plan grounds continuity planning."
+      },
+      {
+        "surah": "23",
+        "ayah": "18",
+        "relevance": "Ethical inference: storing provision in measure grounds maintaining reserves."
+      }
+    ],
+    "purpose": "Size and maintain reserves and continuity plans for essential systems.",
+    "inputs": [
+      "consumption/demand data",
+      "shock scenarios",
+      "reserve levels"
+    ],
+    "outputs": [
+      "reserve adequacy",
+      "continuity-gap flags"
+    ],
+    "decision_use": "Use for food, energy, water, and fiscal continuity.",
+    "stakeholder_impacts": [
+      "dependent populations",
+      "essential services",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags inadequate reserves and continuity exposure.",
+    "related_nodes": [
+      "drought_resilience",
+      "energy_security_analyzer",
+      "food_security_monitor"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "restoration_prioritizer",
+    "english_name": "Restoration Prioritizer",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic reform (islah) principle.",
+      "ethical_inference": "Inferred prioritisation of restoration effort.",
+      "modern_analytical_application": "A modern prioritizer ranking degraded systems for restoration by benefit and urgency."
+    },
+    "foundation_nodes": [
+      "islah",
+      "land_restoration",
+      "environmental_restoration",
+      "fasad",
+      "maslahah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "56",
+        "relevance": "Quranic foundation (principle): reform over corruption grounds prioritising restoration."
+      },
+      {
+        "surah": "36",
+        "ayah": "33",
+        "relevance": "Ethical inference: bringing dead land to life grounds restoration priority."
+      }
+    ],
+    "purpose": "Rank degraded ecosystems/systems for restoration by impact, urgency, and feasibility.",
+    "inputs": [
+      "degradation data",
+      "restoration feasibility",
+      "benefit estimates"
+    ],
+    "outputs": [
+      "restoration priority list",
+      "impact projections"
+    ],
+    "decision_use": "Use for ecological and infrastructure restoration programmes.",
+    "stakeholder_impacts": [
+      "affected communities",
+      "ecosystems",
+      "future generations"
+    ],
+    "risk_assessment_use": "Flags neglected restoration needs and low-value offset projects.",
+    "related_nodes": [
+      "islah",
+      "environmental_restoration",
+      "harm_remediation_tracker",
+      "natural_capital_ledger"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "harm_remediation_tracker",
+    "english_name": "Harm Remediation Tracker",
+    "category": "Moral Assessment System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic reform-and-restitution principle.",
+      "ethical_inference": "Inferred tracking of remediation owed for harm caused.",
+      "modern_analytical_application": "A modern tracker following whether caused harms are actually remedied."
+    },
+    "foundation_nodes": [
+      "islah",
+      "darar",
+      "la_darar",
+      "masuliyyah",
+      "huquq"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "279",
+        "relevance": "Quranic foundation (principle): 'you shall have your principal, wronging none' grounds remedying harm without further wrong."
+      },
+      {
+        "surah": "7",
+        "ayah": "56",
+        "relevance": "Ethical inference: reform after corruption grounds remediation of caused harm."
+      }
+    ],
+    "purpose": "Track that harms caused are identified, owned, and remediated for those affected.",
+    "inputs": [
+      "harm records",
+      "remediation commitments",
+      "delivery data"
+    ],
+    "outputs": [
+      "remediation status",
+      "unremedied-harm flags"
+    ],
+    "decision_use": "Use for accountability and restorative-justice processes.",
+    "stakeholder_impacts": [
+      "harmed parties",
+      "affected communities"
+    ],
+    "risk_assessment_use": "Flags harms acknowledged but not remedied.",
+    "related_nodes": [
+      "islah",
+      "masuliyyah",
+      "restoration_prioritizer",
+      "accountability_chain_mapper"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "equity_gap_monitor",
+    "english_name": "Equity Gap Monitor",
+    "category": "Stakeholder Justice",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic distributive-justice principle.",
+      "ethical_inference": "Inferred monitoring of inequality gaps.",
+      "modern_analytical_application": "A modern monitor tracking equity gaps across income, access, and opportunity."
+    },
+    "foundation_nodes": [
+      "adalah_ijtimaiyyah",
+      "qist",
+      "zulm",
+      "social_mobility",
+      "miskeen"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Quranic foundation (principle): wealth not only among the rich grounds equity-gap monitoring."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: justice grounds closing unjust gaps."
+      }
+    ],
+    "purpose": "Monitor and flag widening gaps in income, access, and opportunity.",
+    "inputs": [
+      "inequality indicators",
+      "access-by-group data",
+      "opportunity metrics"
+    ],
+    "outputs": [
+      "equity-gap profile",
+      "widening-gap flags"
+    ],
+    "decision_use": "Use for policy and social-impact analysis.",
+    "stakeholder_impacts": [
+      "the disadvantaged",
+      "marginalised groups",
+      "society"
+    ],
+    "risk_assessment_use": "Flags widening structural inequities.",
+    "related_nodes": [
+      "adalah_ijtimaiyyah",
+      "distributional_impact_engine",
+      "vulnerable_group_sentinel"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "vulnerable_group_sentinel",
+    "english_name": "Vulnerable-Group Sentinel",
+    "category": "Stakeholder Justice",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic priority for the vulnerable.",
+      "ethical_inference": "Inferred continuous vigilance for impacts on the powerless.",
+      "modern_analytical_application": "A modern sentinel continuously surfacing impacts on vulnerable groups across decisions."
+    },
+    "foundation_nodes": [
+      "miskeen",
+      "yateem",
+      "ibn_sabil",
+      "rahmah",
+      "vulnerability_impact_engine"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "107",
+        "ayah": "1-3",
+        "relevance": "Quranic foundation (principle): condemnation of neglecting orphan and needy grounds a vulnerable-group sentinel."
+      },
+      {
+        "surah": "4",
+        "ayah": "75",
+        "relevance": "Ethical inference: standing for the oppressed weak grounds protective vigilance."
+      }
+    ],
+    "purpose": "Continuously surface and flag impacts on vulnerable and voiceless groups.",
+    "inputs": [
+      "decision streams",
+      "vulnerability indicators",
+      "impact data"
+    ],
+    "outputs": [
+      "vulnerable-impact alerts",
+      "neglect flags"
+    ],
+    "decision_use": "Use as a cross-cutting watch across all engines.",
+    "stakeholder_impacts": [
+      "the poor",
+      "children",
+      "displaced",
+      "disabled"
+    ],
+    "risk_assessment_use": "Flags decisions silently harming the powerless.",
+    "related_nodes": [
+      "vulnerability_impact_engine",
+      "equity_gap_monitor",
+      "miskeen"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "maqasid_dashboard",
+    "english_name": "Maqasid Preservation Dashboard",
+    "category": "Meta / Orchestration",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "The five Maqasid derived from Quranic principles.",
+      "ethical_inference": "Inferred consolidated view of the five preservation objectives.",
+      "modern_analytical_application": "A modern dashboard consolidating Maqasid preservation scores for a subject."
+    },
+    "foundation_nodes": [
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_aql",
+      "maqasid_hifz_din",
+      "maqasid_hifz_nasl",
+      "maqasid_hifz_mal"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "32",
+        "relevance": "Quranic foundation (principle): sanctity of life anchors the preservation dashboard."
+      },
+      {
+        "surah": "2",
+        "ayah": "256",
+        "relevance": "Ethical inference: freedom of conscience grounds preservation of religion/values."
+      }
+    ],
+    "purpose": "Present a consolidated view of impact on all five higher objectives.",
+    "inputs": [
+      "maqasid_preservation_scorer outputs",
+      "subject data"
+    ],
+    "outputs": [
+      "five-objective dashboard",
+      "breach summary"
+    ],
+    "decision_use": "Use as a standing summary for institutional review.",
+    "stakeholder_impacts": [
+      "affected persons",
+      "society",
+      "future generations"
+    ],
+    "risk_assessment_use": "Surfaces which higher objectives a decision threatens.",
+    "related_nodes": [
+      "maqasid_preservation_scorer",
+      "moral_compass_engine",
+      "ethical_intelligence_orchestrator"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "mizan_civilizational_index",
+    "english_name": "Mizan Civilizational Index",
+    "category": "Sustainability System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic balance and flourishing principles.",
+      "ethical_inference": "Inferred composite index of integrated civilizational health.",
+      "modern_analytical_application": "A modern apex index integrating balance, justice, stewardship, and flourishing."
+    },
+    "foundation_nodes": [
+      "civilization_flourishing",
+      "civilizational_balance",
+      "mizan",
+      "maslahah",
+      "systemic_justice"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "143",
+        "relevance": "Quranic foundation (principle): the balanced community grounds a civilizational index."
+      },
+      {
+        "surah": "7",
+        "ayah": "96",
+        "relevance": "Ethical inference: blessings opened for the mindful society ground integrated flourishing."
+      }
+    ],
+    "purpose": "Provide a single integrated index of a society's durable, balanced flourishing.",
+    "inputs": [
+      "balance/justice/stewardship/flourishing sub-scores"
+    ],
+    "outputs": [
+      "civilizational index",
+      "dimension breakdown",
+      "hollow-growth flags"
+    ],
+    "decision_use": "Use as the top-level civilizational assessment.",
+    "stakeholder_impacts": [
+      "citizens",
+      "future generations",
+      "the biosphere"
+    ],
+    "risk_assessment_use": "Flags hollow growth masking decline beneath prosperity.",
+    "related_nodes": [
+      "civilization_flourishing",
+      "civilizational_balance_dashboard",
+      "hikma_synthesis_engine"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ethical_intelligence_orchestrator",
+    "english_name": "Ethical Intelligence Orchestrator",
+    "category": "Meta / Orchestration",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic justice, benefit, and wisdom principles.",
+      "ethical_inference": "Inferred orchestration of all engines into coherent intelligence.",
+      "modern_analytical_application": "A modern orchestration layer sequencing engines, gates, and review into one workflow."
+    },
+    "foundation_nodes": [
+      "moral_compass_engine",
+      "maqasid_preservation_scorer",
+      "justice_allocation_engine",
+      "hikmah"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Quranic foundation (principle): justice and excellence ground an orchestrating intelligence."
+      },
+      {
+        "surah": "2",
+        "ayah": "269",
+        "relevance": "Ethical inference: wisdom as great good grounds integrating analyses wisely."
+      }
+    ],
+    "purpose": "Sequence all engines, gates, and review steps into a coherent assessment workflow.",
+    "inputs": [
+      "subject data",
+      "engine registry",
+      "routing rules"
+    ],
+    "outputs": [
+      "orchestrated assessment",
+      "engine trace",
+      "review queue"
+    ],
+    "decision_use": "Use as the master controller of the analytical layer.",
+    "stakeholder_impacts": [
+      "all stakeholders",
+      "review boards",
+      "decision-makers"
+    ],
+    "risk_assessment_use": "Ensures no gate or review is bypassed in producing an assessment.",
+    "related_nodes": [
+      "moral_compass_engine",
+      "decision_triage_framework",
+      "continuous_audit_engine",
+      "scholar_review_workflow"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "continuous_audit_engine",
+    "english_name": "Continuous Audit Engine",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic reckoning principle.",
+      "ethical_inference": "Inferred continuous rather than one-off accountability.",
+      "modern_analytical_application": "A modern engine performing ongoing audit of decisions against standards."
+    },
+    "foundation_nodes": [
+      "muhasabah",
+      "raqabah",
+      "hisab",
+      "data_integrity"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "21",
+        "ayah": "47",
+        "relevance": "Quranic foundation (principle): the just scales of reckoning ground continuous auditing."
+      },
+      {
+        "surah": "59",
+        "ayah": "18",
+        "relevance": "Ethical inference: looking to what one has sent ahead grounds ongoing self-audit."
+      }
+    ],
+    "purpose": "Continuously audit live decisions and outcomes against committed standards.",
+    "inputs": [
+      "decision/outcome streams",
+      "standards",
+      "thresholds"
+    ],
+    "outputs": [
+      "audit findings",
+      "drift alerts",
+      "breach flags"
+    ],
+    "decision_use": "Use for live governance, finance, and AI monitoring.",
+    "stakeholder_impacts": [
+      "the public",
+      "stakeholders",
+      "regulators"
+    ],
+    "risk_assessment_use": "Flags drift from standards before harm accumulates.",
+    "related_nodes": [
+      "muhasabah",
+      "oversight_adequacy_checker",
+      "decision_audit_trail"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "decision_audit_trail",
+    "english_name": "Decision Audit Trail",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic documentation principle.",
+      "ethical_inference": "Inferred immutable record of how decisions were made.",
+      "modern_analytical_application": "A modern audit trail recording inputs, reasoning, and owners of each decision."
+    },
+    "foundation_nodes": [
+      "shahada",
+      "bayyinah",
+      "hisab",
+      "masuliyyah",
+      "transparency_systems"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "282",
+        "relevance": "Quranic foundation (principle): writing down obligations grounds an audit trail."
+      },
+      {
+        "surah": "50",
+        "ayah": "18",
+        "relevance": "Ethical inference: every word recorded grounds traceable decision records."
+      }
+    ],
+    "purpose": "Record the inputs, reasoning, evidence, and owners behind each decision.",
+    "inputs": [
+      "decision inputs",
+      "reasoning steps",
+      "evidence",
+      "owners"
+    ],
+    "outputs": [
+      "immutable decision record",
+      "traceability index"
+    ],
+    "decision_use": "Use to make any assessment reconstructable and contestable.",
+    "stakeholder_impacts": [
+      "affected parties",
+      "auditors",
+      "regulators"
+    ],
+    "risk_assessment_use": "Flags decisions lacking a reconstructable basis.",
+    "related_nodes": [
+      "shahada",
+      "bayyinah",
+      "accountability_chain_mapper",
+      "continuous_audit_engine"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "scholar_review_workflow",
+    "english_name": "Scholar Review Workflow",
+    "category": "Meta / Orchestration",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic 'ask those who know' principle.",
+      "ethical_inference": "Inferred routing of interpretive cases to qualified scholars.",
+      "modern_analytical_application": "A modern workflow ensuring interpretive/doubtful outputs receive qualified scholarly review."
+    },
+    "foundation_nodes": [
+      "shubhah",
+      "ilm",
+      "hikmah",
+      "uncertainty_review_router"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "43",
+        "relevance": "Quranic foundation (principle): 'ask the people of knowledge if you do not know' grounds expert review."
+      },
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Ethical inference: verifying before acting grounds routing doubt to qualified review."
+      }
+    ],
+    "purpose": "Route flagged outputs to qualified scholarly/expert review and record the determination.",
+    "inputs": [
+      "flagged cases",
+      "reviewer roster",
+      "case context"
+    ],
+    "outputs": [
+      "review determinations",
+      "caveats",
+      "approved/declined status"
+    ],
+    "decision_use": "Use to honour the graph-wide rule that interpretation requires human scholars.",
+    "stakeholder_impacts": [
+      "affected parties",
+      "scholars",
+      "institutions"
+    ],
+    "risk_assessment_use": "Prevents the system from issuing rulings; preserves human scholarly authority.",
+    "related_nodes": [
+      "uncertainty_review_router",
+      "shubhah",
+      "ethical_intelligence_orchestrator"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "leadership_integrity_index",
+    "english_name": "Leadership Integrity Index",
+    "category": "Governance System",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic trust and just-authority principles.",
+      "ethical_inference": "Inferred measurement of leadership as accountable trust.",
+      "modern_analytical_application": "A modern index scoring leadership integrity, accountability, and humility."
+    },
+    "foundation_nodes": [
+      "responsible_leadership",
+      "amanah",
+      "masuliyyah",
+      "kibr",
+      "moral_resilience"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Quranic foundation (principle): rendering trusts and judging justly grounds leadership integrity."
+      },
+      {
+        "surah": "38",
+        "ayah": "26",
+        "relevance": "Ethical inference: judging by truth not desire grounds incorruptible leadership."
+      }
+    ],
+    "purpose": "Score leaders/boards on integrity, accountability, humility, and long-term orientation.",
+    "inputs": [
+      "governance records",
+      "decision patterns",
+      "incentive structures"
+    ],
+    "outputs": [
+      "leadership-integrity index",
+      "hubris/self-interest flags"
+    ],
+    "decision_use": "Use for governance and corporate-leadership assessment.",
+    "stakeholder_impacts": [
+      "the led",
+      "stakeholders",
+      "institution"
+    ],
+    "risk_assessment_use": "Flags self-enrichment, hubris, and short-termism in leadership.",
+    "related_nodes": [
+      "responsible_leadership",
+      "moral_resilience_stress_test",
+      "governance_integrity_scanner"
+    ],
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "hikma_synthesis_engine",
+    "english_name": "Hikma Synthesis Engine",
+    "category": "Meta / Orchestration",
+    "node_type": "system",
+    "derivation": {
+      "quranic_foundation": "Quranic wisdom and balance principles.",
+      "ethical_inference": "Inferred apex synthesis of all engine outputs into wise, grounded judgement.",
+      "modern_analytical_application": "A modern apex synthesizer integrating every engine into a final, humility-bounded recommendation that defers to scholars on interpretation."
+    },
+    "foundation_nodes": [
+      "hikmah",
+      "mizan",
+      "maslahah",
+      "civilization_flourishing",
+      "long_term_wisdom"
+    ],
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "269",
+        "relevance": "Quranic foundation (principle): wisdom as 'much good' grounds the apex synthesis."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Ethical inference: justice and excellence ground integrating all into wise judgement."
+      }
+    ],
+    "purpose": "Synthesise all engine, gate, and review outputs into a final grounded recommendation with explicit uncertainty and scholar deferral.",
+    "inputs": [
+      "all engine outputs",
+      "gate results",
+      "review determinations",
+      "confidence grades"
+    ],
+    "outputs": [
+      "final synthesis",
+      "recommendation",
+      "explicit caveats",
+      "scholar-deferral notes"
+    ],
+    "decision_use": "Use as the apex of the Hikma Intelligence Layer above all other systems.",
+    "stakeholder_impacts": [
+      "decision-makers",
+      "affected parties",
+      "scholars",
+      "society"
+    ],
+    "risk_assessment_use": "Guards against overconfident synthesis; surfaces residual uncertainty and the limits of machine judgement.",
+    "related_nodes": [
+      "ethical_intelligence_orchestrator",
+      "moral_compass_engine",
+      "long_term_wisdom_synthesizer",
+      "mizan_civilizational_index"
+    ],
+    "confidence_level": "low",
+    "scholar_review_required": true
+  }
+]

@@ -1,0 +1,4816 @@
+[
+  {
+    "id": "water_security",
+    "name_arabic": "الأمن المائي",
+    "transliteration": "al-Amn al-Māʾī",
+    "english_name": "Water Security",
+    "russian_name": "Водная безопасность (аль-Амн аль-Маи)",
+    "category": "Water Stewardship",
+    "short_definition": "Reliable access to sufficient, safe water for people and ecosystems over time.",
+    "quranic_basis": [
+      {
+        "surah": "21",
+        "ayah": "30",
+        "relevance": "Inferred: 'We made from water every living thing' grounds water as the basis of life to be secured."
+      },
+      {
+        "surah": "23",
+        "ayah": "18",
+        "relevance": "Inferred: 'We sent down water in due measure and lodged it in the earth' implies responsible storage and security of supply."
+      }
+    ],
+    "moral_question": "Does this decision protect reliable, safe water access for all dependents, or jeopardise it for some?",
+    "positive_signals": [
+      "assured supply for basic needs",
+      "buffer against shocks",
+      "protection of source quality"
+    ],
+    "risk_signals": [
+      "supply failure risk",
+      "contamination of sources",
+      "access denied to weaker users"
+    ],
+    "related_nodes": [
+      "maa",
+      "rizq",
+      "aman",
+      "maslahah",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "water_management",
+      "governance_policy",
+      "climate_risk",
+      "esg"
+    ],
+    "decision_use": "Test whether a decision strengthens or undermines dependable, safe water access across all users.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "water_justice",
+    "name_arabic": "العدالة المائية",
+    "transliteration": "al-ʿAdālah al-Māʾiyyah",
+    "english_name": "Water Justice",
+    "russian_name": "Водная справедливость",
+    "category": "Water Stewardship",
+    "short_definition": "Fair allocation of water rights and burdens, with priority to basic human and ecological needs.",
+    "quranic_basis": [
+      {
+        "surah": "54",
+        "ayah": "28",
+        "relevance": "Inferred: the she-camel's shared water turn ('the water is divided between them') models just water apportionment."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: the command to justice (ʿadl) applied to the distribution of a shared lifeline."
+      }
+    ],
+    "moral_question": "Is water allocated fairly with priority to essential needs, or captured by the powerful?",
+    "positive_signals": [
+      "basic-needs priority",
+      "equitable allocation",
+      "protection of downstream users"
+    ],
+    "risk_signals": [
+      "capture by powerful users",
+      "upstream-downstream injustice",
+      "essential needs deprioritised"
+    ],
+    "related_nodes": [
+      "maa",
+      "qist",
+      "adl",
+      "zulm",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "water_management",
+      "governance_policy",
+      "esg",
+      "climate_risk"
+    ],
+    "decision_use": "Assess fairness of water allocation, prioritising basic human and ecological needs over discretionary use.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "water_conservation",
+    "name_arabic": "ترشيد المياه",
+    "transliteration": "Tarshīd al-Miyāh",
+    "english_name": "Water Conservation",
+    "russian_name": "Сбережение воды",
+    "category": "Water Stewardship",
+    "short_definition": "Avoiding waste and using water efficiently as an entrusted, finite resource.",
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Inferred: 'do not be excessive' applied directly to water use; classical guidance discourages waste even at flowing water."
+      },
+      {
+        "surah": "25",
+        "ayah": "67",
+        "relevance": "Inferred: spending neither wastefully nor stingily extends to resource use."
+      }
+    ],
+    "moral_question": "Does this decision minimise water waste, or squander a finite shared resource?",
+    "positive_signals": [
+      "efficiency gains",
+      "leakage reduction",
+      "reuse and recycling of water"
+    ],
+    "risk_signals": [
+      "high losses",
+      "wasteful processes",
+      "inefficiency normalised"
+    ],
+    "related_nodes": [
+      "maa",
+      "israf",
+      "tabdhir",
+      "nimah",
+      "qadar"
+    ],
+    "applicable_domains": [
+      "water_management",
+      "esg",
+      "energy_transition",
+      "governance_policy"
+    ],
+    "decision_use": "Evaluate efficiency and waste-avoidance in water use as a duty of resource stewardship.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "watershed_stewardship",
+    "name_arabic": "رعاية مستجمعات المياه",
+    "transliteration": "Riʿāyat Mustajmaʿāt al-Miyāh",
+    "english_name": "Watershed Stewardship",
+    "russian_name": "Охрана водосборов",
+    "category": "Water Stewardship",
+    "short_definition": "Protecting the integrity of whole watersheds and their feeding ecosystems as interconnected systems.",
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "41",
+        "relevance": "Inferred: corruption appearing 'on land and sea by human hands' implies duty to protect interconnected water systems."
+      },
+      {
+        "surah": "2",
+        "ayah": "30",
+        "relevance": "Inferred: the stewardship (khalīfah) mandate extends to whole-system care, not isolated assets."
+      }
+    ],
+    "moral_question": "Does this decision protect the whole watershed system, or optimise one point while degrading the catchment?",
+    "positive_signals": [
+      "catchment-level protection",
+      "source ecosystem integrity",
+      "upstream-downstream coordination"
+    ],
+    "risk_signals": [
+      "fragmented point optimisation",
+      "source degradation",
+      "ecosystem feedbacks ignored"
+    ],
+    "related_nodes": [
+      "maa",
+      "khalifah",
+      "ard",
+      "fasad",
+      "tawazun"
+    ],
+    "applicable_domains": [
+      "water_management",
+      "climate_risk",
+      "esg",
+      "governance_policy"
+    ],
+    "decision_use": "Apply systems-level review: protect the full watershed rather than optimising isolated water assets.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "drought_resilience",
+    "name_arabic": "الصمود أمام الجفاف",
+    "transliteration": "aṣ-Ṣumūd amām al-Jafāf",
+    "english_name": "Drought Resilience",
+    "russian_name": "Устойчивость к засухе",
+    "category": "Climate Resilience",
+    "short_definition": "Capacity to anticipate, withstand, and recover from water scarcity and drought.",
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Inferred: Yūsuf's plan to store grain through seven lean years models foresight and reserves against scarcity."
+      },
+      {
+        "surah": "23",
+        "ayah": "18",
+        "relevance": "Inferred: storing water 'in the earth' implies prudent reserves against drought."
+      }
+    ],
+    "moral_question": "Does this decision build buffers and foresight against drought, or assume permanent abundance?",
+    "positive_signals": [
+      "reserves and storage",
+      "early-warning planning",
+      "diversified water sources"
+    ],
+    "risk_signals": [
+      "no scarcity buffers",
+      "over-reliance on single source",
+      "planning assumes abundance"
+    ],
+    "related_nodes": [
+      "water_security",
+      "sabr",
+      "maqasid_hifz_nasl",
+      "climate_adaptation",
+      "tafakkur"
+    ],
+    "applicable_domains": [
+      "water_management",
+      "climate_risk",
+      "food_systems",
+      "governance_policy"
+    ],
+    "decision_use": "Test foresight and buffering against water scarcity, drawing on the Yūsuf reserve model.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "flood_protection",
+    "name_arabic": "الحماية من الفيضانات",
+    "transliteration": "al-Ḥimāyah min al-Fayaḍānāt",
+    "english_name": "Flood Protection",
+    "russian_name": "Защита от наводнений",
+    "category": "Climate Resilience",
+    "short_definition": "Protecting people and assets from flooding through prevention, defence, and preparedness.",
+    "quranic_basis": [
+      {
+        "surah": "18",
+        "ayah": "37",
+        "relevance": "Inferred: Nūḥ's ark as anticipatory protection against catastrophic flood models duty of preparedness."
+      },
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Inferred: 'do not cast yourselves into destruction' grounds a duty to guard against foreseeable disaster."
+      }
+    ],
+    "moral_question": "Does this decision adequately protect the vulnerable from foreseeable flood risk?",
+    "positive_signals": [
+      "flood defences and early warning",
+      "protection of vulnerable settlements",
+      "resilient drainage"
+    ],
+    "risk_signals": [
+      "exposed vulnerable communities",
+      "ignored floodplain risk",
+      "defences for the wealthy only"
+    ],
+    "related_nodes": [
+      "nafs",
+      "la_darar",
+      "aman",
+      "disaster_preparedness",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "climate_risk",
+      "water_management",
+      "governance_policy"
+    ],
+    "decision_use": "Assess whether foreseeable flood risk to people and assets — especially the vulnerable — is adequately mitigated.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "soil_protection",
+    "name_arabic": "حماية التربة",
+    "transliteration": "Ḥimāyat at-Turbah",
+    "english_name": "Soil Protection",
+    "russian_name": "Защита почвы",
+    "category": "Environmental Systems",
+    "short_definition": "Safeguarding soil fertility and integrity against degradation, erosion, and contamination.",
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "58",
+        "relevance": "Inferred: 'good land yields its produce by its Lord's permission, the bad yields only sparingly' grounds the value of healthy soil."
+      },
+      {
+        "surah": "2",
+        "ayah": "205",
+        "relevance": "Inferred: condemnation of corrupting 'crops and progeny' implies protection of productive soil."
+      }
+    ],
+    "moral_question": "Does this decision preserve soil fertility for current and future use, or degrade it?",
+    "positive_signals": [
+      "soil fertility maintained",
+      "erosion controlled",
+      "contamination prevented"
+    ],
+    "risk_signals": [
+      "soil degradation",
+      "erosion accelerated",
+      "chemical contamination"
+    ],
+    "related_nodes": [
+      "ard",
+      "fasad",
+      "land_restoration",
+      "maqasid_hifz_nasl",
+      "khalifah"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "climate_risk",
+      "esg",
+      "water_management"
+    ],
+    "decision_use": "Evaluate impacts on long-term soil fertility and integrity as a productive trust.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "land_restoration",
+    "name_arabic": "استصلاح الأرض",
+    "transliteration": "Istiṣlāḥ al-Arḍ",
+    "english_name": "Land Restoration",
+    "russian_name": "Восстановление земель",
+    "category": "Environmental Systems",
+    "short_definition": "Active rehabilitation of degraded land to productive, living condition.",
+    "quranic_basis": [
+      {
+        "surah": "36",
+        "ayah": "33",
+        "relevance": "Inferred: 'a sign for them is the dead land We brought to life and produced grain' models restoration of degraded land."
+      },
+      {
+        "surah": "7",
+        "ayah": "56",
+        "relevance": "Inferred: 'do not corrupt the earth after its reform (iṣlāḥ)' enjoins restoration over degradation."
+      }
+    ],
+    "moral_question": "Does this decision actively restore degraded land, or merely halt or continue its decline?",
+    "positive_signals": [
+      "degraded land rehabilitated",
+      "productivity revived",
+      "ecological function returned"
+    ],
+    "risk_signals": [
+      "restoration claimed not delivered",
+      "greenwashed offsets",
+      "continued degradation"
+    ],
+    "related_nodes": [
+      "islah",
+      "ard",
+      "soil_protection",
+      "environmental_restoration",
+      "khalifah"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "food_systems",
+      "esg",
+      "water_management"
+    ],
+    "decision_use": "Grade restoration ambition: distinguish genuine land rehabilitation from halted decline or offset claims.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "reforestation",
+    "name_arabic": "إعادة التشجير",
+    "transliteration": "Iʿādat at-Tashjīr",
+    "english_name": "Reforestation",
+    "russian_name": "Лесовосстановление",
+    "category": "Environmental Systems",
+    "short_definition": "Re-establishing forests and tree cover for ecological, climatic, and social benefit.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "99",
+        "relevance": "Inferred: God 'brings forth gardens, vineyards, olives' — the value of vegetation and trees as provision and sign."
+      },
+      {
+        "surah": "27",
+        "ayah": "60",
+        "relevance": "Inferred: 'He sent down water and caused gardens of beauty to grow' grounds the worth of restoring green cover."
+      }
+    ],
+    "moral_question": "Does this reforestation deliver genuine ecological benefit, or serve as a token offset masking ongoing harm?",
+    "positive_signals": [
+      "native-appropriate planting",
+      "biodiversity and watershed benefit",
+      "long-term survival ensured"
+    ],
+    "risk_signals": [
+      "monoculture or unsuitable species",
+      "offsetting that licenses harm",
+      "plantings that die or displace communities"
+    ],
+    "related_nodes": [
+      "ard",
+      "biodiversity_protection",
+      "environmental_restoration",
+      "carbon_responsibility",
+      "islah"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "esg",
+      "water_management",
+      "food_systems"
+    ],
+    "decision_use": "Assess ecological authenticity of tree-planting and guard against offset-as-licence-to-pollute.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "biodiversity_protection",
+    "name_arabic": "حماية التنوع الحيوي",
+    "transliteration": "Ḥimāyat at-Tanawwuʿ al-Ḥayawī",
+    "english_name": "Biodiversity Protection",
+    "russian_name": "Защита биоразнообразия",
+    "category": "Environmental Systems",
+    "short_definition": "Safeguarding the diversity of living species and their habitats as a created order.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "38",
+        "relevance": "Direct (underlying principle), modern framing: 'there is no creature on earth nor bird that flies but they are communities like you' grounds intrinsic worth of species."
+      },
+      {
+        "surah": "55",
+        "ayah": "10",
+        "relevance": "Inferred: the earth set down 'for all creatures' implies a shared living order to protect."
+      }
+    ],
+    "moral_question": "Does this decision protect the diversity of life and habitats, or drive species and ecosystems toward loss?",
+    "positive_signals": [
+      "habitat preserved",
+      "species loss avoided",
+      "ecological networks intact"
+    ],
+    "risk_signals": [
+      "habitat destruction",
+      "species extinction risk",
+      "ecosystem simplification"
+    ],
+    "related_nodes": [
+      "ard",
+      "fasad",
+      "ecosystem_stability",
+      "khalifah",
+      "tawazun"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "food_systems",
+      "water_management",
+      "esg"
+    ],
+    "decision_use": "Evaluate impacts on species and habitat diversity, treating living communities as having intrinsic worth.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "clean_energy",
+    "name_arabic": "الطاقة النظيفة",
+    "transliteration": "aṭ-Ṭāqah an-Naẓīfah",
+    "english_name": "Clean Energy",
+    "russian_name": "Чистая энергия",
+    "category": "Energy Systems",
+    "short_definition": "Energy from sources that minimise pollution and harm across their lifecycle.",
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "41",
+        "relevance": "Inferred: reducing 'corruption on land and sea by human hands' supports shifting to low-harm energy."
+      },
+      {
+        "surah": "45",
+        "ayah": "13",
+        "relevance": "Inferred: nature 'subjected' (taskhīr) for benefit invites using its forces without corrupting them."
+      }
+    ],
+    "moral_question": "Does this energy choice genuinely reduce net harm across its lifecycle, or shift harm elsewhere?",
+    "positive_signals": [
+      "lifecycle harm reduced",
+      "pollution avoided",
+      "just transition for workers"
+    ],
+    "risk_signals": [
+      "harm shifted upstream (mining, disposal)",
+      "greenwashed 'clean' claims",
+      "stranded-community costs"
+    ],
+    "related_nodes": [
+      "taskhir",
+      "fasad",
+      "emissions_responsibility",
+      "pollution_prevention",
+      "maslahah"
+    ],
+    "applicable_domains": [
+      "energy_transition",
+      "climate_risk",
+      "esg",
+      "investing"
+    ],
+    "decision_use": "Assess whole-lifecycle harm reduction of an energy choice, not just point-of-use emissions.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "energy_access",
+    "name_arabic": "الوصول إلى الطاقة",
+    "transliteration": "al-Wuṣūl ilā aṭ-Ṭāqah",
+    "english_name": "Energy Access",
+    "russian_name": "Доступ к энергии",
+    "category": "Energy Systems",
+    "short_definition": "Ensuring affordable, reliable energy reaches all people, including the poor and remote.",
+    "quranic_basis": [
+      {
+        "surah": "11",
+        "ayah": "6",
+        "relevance": "Inferred: provision (rizq) for every creature being assured grounds equitable access to life-enabling energy."
+      },
+      {
+        "surah": "70",
+        "ayah": "24-25",
+        "relevance": "Inferred: 'a known right for the deprived' supports access for those who cannot afford it."
+      }
+    ],
+    "moral_question": "Does this decision extend reliable energy to the underserved, or deepen energy poverty?",
+    "positive_signals": [
+      "affordable access for the poor",
+      "rural and remote inclusion",
+      "reliability for basic services"
+    ],
+    "risk_signals": [
+      "energy poverty deepened",
+      "exclusion of the remote",
+      "affordability ignored"
+    ],
+    "related_nodes": [
+      "rizq",
+      "miskeen",
+      "adalah_ijtimaiyyah",
+      "energy_security",
+      "infrastructure_equity"
+    ],
+    "applicable_domains": [
+      "energy_transition",
+      "governance_policy",
+      "esg",
+      "infrastructure"
+    ],
+    "decision_use": "Test whether energy decisions widen or narrow access for the underserved and energy-poor.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "energy_security",
+    "name_arabic": "أمن الطاقة",
+    "transliteration": "Amn aṭ-Ṭāqah",
+    "english_name": "Energy Security",
+    "russian_name": "Энергетическая безопасность",
+    "category": "Energy Systems",
+    "short_definition": "Reliable, resilient energy supply resistant to shocks and undue dependency.",
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Inferred: the Yūsuf storage model supports reserves and resilience against supply shocks."
+      },
+      {
+        "surah": "106",
+        "ayah": "4",
+        "relevance": "Inferred: being 'secured against fear' extends to security of essential supply."
+      }
+    ],
+    "moral_question": "Does this decision strengthen resilient energy supply, or create fragile dependency and shock exposure?",
+    "positive_signals": [
+      "diversified supply",
+      "resilience to shocks",
+      "reduced undue dependency"
+    ],
+    "risk_signals": [
+      "single-point dependency",
+      "shock fragility",
+      "security for some at others' expense"
+    ],
+    "related_nodes": [
+      "aman",
+      "energy_access",
+      "drought_resilience",
+      "long_term_resilience",
+      "maslahah"
+    ],
+    "applicable_domains": [
+      "energy_transition",
+      "governance_policy",
+      "climate_risk",
+      "infrastructure"
+    ],
+    "decision_use": "Assess resilience and freedom from undue dependency in energy supply decisions.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "energy_efficiency",
+    "name_arabic": "كفاءة الطاقة",
+    "transliteration": "Kafāʾat aṭ-Ṭāqah",
+    "english_name": "Energy Efficiency",
+    "russian_name": "Энергоэффективность",
+    "category": "Energy Systems",
+    "short_definition": "Achieving the same benefit with less energy, avoiding waste of a costly resource.",
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Inferred: prohibition of excess (isrāf) directly supports avoiding energy waste."
+      },
+      {
+        "surah": "17",
+        "ayah": "26-27",
+        "relevance": "Inferred: condemnation of squandering (tabdhīr) applies to wasteful energy use."
+      }
+    ],
+    "moral_question": "Does this decision deliver its benefit with minimum necessary energy, or tolerate avoidable waste?",
+    "positive_signals": [
+      "energy intensity reduced",
+      "waste designed out",
+      "efficiency-first planning"
+    ],
+    "risk_signals": [
+      "avoidable energy waste",
+      "rebound effects ignored",
+      "inefficiency entrenched"
+    ],
+    "related_nodes": [
+      "israf",
+      "tabdhir",
+      "qadar",
+      "clean_energy",
+      "resource_stewardship"
+    ],
+    "applicable_domains": [
+      "energy_transition",
+      "esg",
+      "infrastructure",
+      "investing"
+    ],
+    "decision_use": "Evaluate whether benefit is achieved with minimum necessary energy, treating waste as a moral failing.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "resource_stewardship",
+    "name_arabic": "رعاية الموارد",
+    "transliteration": "Riʿāyat al-Mawārid",
+    "english_name": "Resource Stewardship",
+    "russian_name": "Управление ресурсами",
+    "category": "Environmental Systems",
+    "short_definition": "Responsible management of finite natural resources as an accountable trust.",
+    "quranic_basis": [
+      {
+        "surah": "57",
+        "ayah": "7",
+        "relevance": "Inferred: spending from 'that of which He made you trustees (mustakhlafīn)' grounds resource trusteeship."
+      },
+      {
+        "surah": "45",
+        "ayah": "13",
+        "relevance": "Inferred: subjected resources (taskhīr) held responsibly, not exploited without limit."
+      }
+    ],
+    "moral_question": "Are finite resources here managed as an accountable trust, or depleted as if limitless?",
+    "positive_signals": [
+      "depletion within renewal limits",
+      "accountable resource accounting",
+      "reserves for the future"
+    ],
+    "risk_signals": [
+      "depletion beyond renewal",
+      "resource accounting hidden",
+      "future foreclosed for present gain"
+    ],
+    "related_nodes": [
+      "istikhlaf",
+      "taskhir",
+      "nimah",
+      "circular_economy",
+      "maqasid_hifz_nasl"
+    ],
+    "applicable_domains": [
+      "energy_transition",
+      "water_management",
+      "esg",
+      "investing",
+      "food_systems"
+    ],
+    "decision_use": "Apply trust-accountability to finite resources: extraction must respect renewal limits and future claims.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "circular_economy",
+    "name_arabic": "الاقتصاد الدائري",
+    "transliteration": "al-Iqtiṣād ad-Dāʾirī",
+    "english_name": "Circular Economy",
+    "russian_name": "Циклическая экономика",
+    "category": "Environmental Systems",
+    "short_definition": "An economic model that designs out waste by keeping materials in productive use.",
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Inferred: the ethic against waste (isrāf) thematically supports closing material loops; circular economy itself is a modern construct."
+      },
+      {
+        "surah": "17",
+        "ayah": "27",
+        "relevance": "Inferred: condemnation of squandering resonates with eliminating designed waste."
+      }
+    ],
+    "moral_question": "Does this model genuinely keep materials in productive use, or merely relabel a linear, wasteful system?",
+    "positive_signals": [
+      "materials reused and recycled",
+      "waste designed out",
+      "product longevity"
+    ],
+    "risk_signals": [
+      "false circularity claims",
+      "downcycling masked as recycling",
+      "designed obsolescence persists"
+    ],
+    "related_nodes": [
+      "israf",
+      "waste_reduction",
+      "resource_stewardship",
+      "tabdhir",
+      "responsible_consumption"
+    ],
+    "applicable_domains": [
+      "esg",
+      "energy_transition",
+      "investing",
+      "food_systems"
+    ],
+    "decision_use": "Test authenticity of circular claims: are material loops genuinely closed, or is waste merely relabelled?",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "waste_reduction",
+    "name_arabic": "تقليل النفايات",
+    "transliteration": "Taqlīl an-Nifāyāt",
+    "english_name": "Waste Reduction",
+    "russian_name": "Сокращение отходов",
+    "category": "Environmental Systems",
+    "short_definition": "Minimising the generation of waste across production and consumption.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "141",
+        "relevance": "Inferred: 'do not waste; He does not love the wasteful' directly grounds waste minimisation."
+      },
+      {
+        "surah": "17",
+        "ayah": "26",
+        "relevance": "Inferred: avoidance of squandering applied to material throughput."
+      }
+    ],
+    "moral_question": "Does this decision reduce waste at source, or merely shift or hide it downstream?",
+    "positive_signals": [
+      "source reduction",
+      "reuse prioritised",
+      "disposal minimised"
+    ],
+    "risk_signals": [
+      "waste exported or hidden",
+      "end-of-pipe only",
+      "throughput maximised"
+    ],
+    "related_nodes": [
+      "israf",
+      "tabdhir",
+      "circular_economy",
+      "pollution_prevention",
+      "food_waste_prevention"
+    ],
+    "applicable_domains": [
+      "esg",
+      "energy_transition",
+      "food_systems",
+      "governance_policy"
+    ],
+    "decision_use": "Evaluate whether waste is reduced at source rather than displaced or concealed downstream.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "pollution_prevention",
+    "name_arabic": "منع التلوث",
+    "transliteration": "Manʿ at-Talawwuth",
+    "english_name": "Pollution Prevention",
+    "russian_name": "Предотвращение загрязнения",
+    "category": "Environmental Systems",
+    "short_definition": "Preventing the release of harmful substances into air, water, and land.",
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "41",
+        "relevance": "Inferred: 'corruption appeared on land and sea by what people's hands earned' grounds pollution prevention."
+      },
+      {
+        "surah": "2",
+        "ayah": "11-12",
+        "relevance": "Inferred: those who 'spread corruption while claiming reform' warns against polluting under benign cover."
+      }
+    ],
+    "moral_question": "Does this decision prevent harmful releases at source, or treat pollution as an acceptable externality?",
+    "positive_signals": [
+      "emissions and effluent prevented",
+      "precaution for toxics",
+      "no harmful externalisation"
+    ],
+    "risk_signals": [
+      "pollution externalised",
+      "toxic releases tolerated",
+      "harm to nearby communities"
+    ],
+    "related_nodes": [
+      "fasad",
+      "darar",
+      "la_darar",
+      "emissions_responsibility",
+      "public_health"
+    ],
+    "applicable_domains": [
+      "energy_transition",
+      "water_management",
+      "esg",
+      "climate_risk"
+    ],
+    "decision_use": "Assess prevention of harmful releases at source and the externalisation of pollution onto others.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "emissions_responsibility",
+    "name_arabic": "مسؤولية الانبعاثات",
+    "transliteration": "Masʾūliyyat al-Inbiʿāthāt",
+    "english_name": "Emissions Responsibility",
+    "russian_name": "Ответственность за выбросы",
+    "category": "Climate Resilience",
+    "short_definition": "Accountability for greenhouse and harmful emissions across one's value chain.",
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "41",
+        "relevance": "Inferred: human-caused 'corruption on land and sea' grounds responsibility for emissions harm."
+      },
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Inferred: 'hearing, sight, and heart will be questioned' grounds accountability for foreseeable effects."
+      }
+    ],
+    "moral_question": "Does this actor honestly account for and reduce its full emissions, or understate and offload them?",
+    "positive_signals": [
+      "full-scope accounting",
+      "genuine reduction",
+      "transparent disclosure"
+    ],
+    "risk_signals": [
+      "scope omissions",
+      "offset-reliance over reduction",
+      "emissions offloaded to suppliers"
+    ],
+    "related_nodes": [
+      "masuliyyah",
+      "fasad",
+      "carbon_responsibility",
+      "tatfif",
+      "public_disclosure"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "esg",
+      "energy_transition",
+      "investing"
+    ],
+    "decision_use": "Test honest, full-scope emissions accounting and genuine reduction versus understatement and offloading.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "climate_adaptation",
+    "name_arabic": "التكيف المناخي",
+    "transliteration": "at-Takayyuf al-Munākhī",
+    "english_name": "Climate Adaptation",
+    "russian_name": "Адаптация к климату",
+    "category": "Climate Resilience",
+    "short_definition": "Adjusting systems to reduce harm from climate impacts already underway.",
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Inferred: planning ahead for lean years models proactive adaptation to coming stress."
+      },
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Inferred: concern for leaving descendants secure grounds protecting people from climate harm."
+      }
+    ],
+    "moral_question": "Does this decision prepare the vulnerable for climate impacts, or leave them exposed?",
+    "positive_signals": [
+      "protection of exposed groups",
+      "resilient design",
+      "anticipatory planning"
+    ],
+    "risk_signals": [
+      "maladaptation",
+      "vulnerable left exposed",
+      "short-term fixes increasing future risk"
+    ],
+    "related_nodes": [
+      "sabr",
+      "drought_resilience",
+      "flood_protection",
+      "long_term_resilience",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "water_management",
+      "food_systems",
+      "infrastructure"
+    ],
+    "decision_use": "Assess whether systems and the vulnerable are prepared for climate impacts without maladaptation.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "food_security",
+    "name_arabic": "الأمن الغذائي",
+    "transliteration": "al-Amn al-Ghidhāʾī",
+    "english_name": "Food Security",
+    "russian_name": "Продовольственная безопасность",
+    "category": "Food & Agriculture",
+    "short_definition": "Reliable access for all to sufficient, safe, and nourishing food.",
+    "quranic_basis": [
+      {
+        "surah": "106",
+        "ayah": "4",
+        "relevance": "Inferred: 'fed them against hunger' marks freedom from hunger as a basic good to secure."
+      },
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Inferred: Yūsuf's grain-storage strategy models securing food against scarcity."
+      }
+    ],
+    "moral_question": "Does this decision strengthen reliable access to sufficient, safe food for all, or threaten it?",
+    "positive_signals": [
+      "stable food access",
+      "reserves against shortfall",
+      "nutrition for the poor"
+    ],
+    "risk_signals": [
+      "food insecurity risk",
+      "reserves depleted",
+      "price shocks harming the poor"
+    ],
+    "related_nodes": [
+      "rizq",
+      "miskeen",
+      "drought_resilience",
+      "community_nutrition",
+      "maslahah"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "climate_risk",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test impact on reliable, sufficient, safe food access, with priority to the hungry and poor.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "sustainable_agriculture",
+    "name_arabic": "الزراعة المستدامة",
+    "transliteration": "az-Zirāʿah al-Mustadāmah",
+    "english_name": "Sustainable Agriculture",
+    "russian_name": "Устойчивое сельское хозяйство",
+    "category": "Food & Agriculture",
+    "short_definition": "Farming that meets present food needs without degrading the basis for future production.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "141",
+        "relevance": "Inferred: 'eat of its fruit, give its due, and do not waste' grounds productive yet non-wasteful farming."
+      },
+      {
+        "surah": "7",
+        "ayah": "58",
+        "relevance": "Inferred: the contrast of good and barren land grounds care for productive capacity."
+      }
+    ],
+    "moral_question": "Does this farming meet present needs without degrading soil, water, and future yield?",
+    "positive_signals": [
+      "soil and water preserved",
+      "input use within limits",
+      "yield maintained long-term"
+    ],
+    "risk_signals": [
+      "soil mining",
+      "aquifer depletion",
+      "short-term yield at long-term cost"
+    ],
+    "related_nodes": [
+      "soil_protection",
+      "water_conservation",
+      "regenerative_agriculture",
+      "maqasid_hifz_nasl",
+      "israf"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "water_management",
+      "climate_risk",
+      "esg"
+    ],
+    "decision_use": "Assess whether agricultural practice sustains the productive base rather than depleting it for present yield.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "regenerative_agriculture",
+    "name_arabic": "الزراعة التجديدية",
+    "transliteration": "az-Zirāʿah at-Tajdīdiyyah",
+    "english_name": "Regenerative Agriculture",
+    "russian_name": "Регенеративное земледелие",
+    "category": "Food & Agriculture",
+    "short_definition": "Farming that actively restores soil health, biodiversity, and ecosystem function.",
+    "quranic_basis": [
+      {
+        "surah": "36",
+        "ayah": "33",
+        "relevance": "Inferred: bringing 'dead land to life' resonates with regenerating soil and ecosystems."
+      },
+      {
+        "surah": "7",
+        "ayah": "56",
+        "relevance": "Inferred: reform (iṣlāḥ) over corruption supports net-restorative farming."
+      }
+    ],
+    "moral_question": "Does this practice actively regenerate ecological function, or merely sustain a degraded baseline?",
+    "positive_signals": [
+      "soil carbon and life rebuilt",
+      "biodiversity increased",
+      "water cycle improved"
+    ],
+    "risk_signals": [
+      "regenerative claims unverified",
+      "practices that mine then move on",
+      "greenwashed labelling"
+    ],
+    "related_nodes": [
+      "islah",
+      "soil_protection",
+      "land_restoration",
+      "biodiversity_protection",
+      "sustainable_agriculture"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "climate_risk",
+      "esg",
+      "water_management"
+    ],
+    "decision_use": "Grade whether farming net-restores ecological function or merely holds a degraded baseline.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "animal_welfare",
+    "name_arabic": "الرفق بالحيوان",
+    "transliteration": "ar-Rifq bil-Ḥayawān",
+    "english_name": "Animal Welfare",
+    "russian_name": "Благополучие животных",
+    "category": "Food & Agriculture",
+    "short_definition": "Humane treatment of animals, avoiding cruelty and unnecessary suffering.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "38",
+        "relevance": "Direct (underlying principle), modern framing: animals as 'communities like you' grounds duties of care toward them."
+      },
+      {
+        "surah": "16",
+        "ayah": "5-8",
+        "relevance": "Inferred: cattle created 'for warmth and benefit' alongside beauty implies respectful, non-cruel use."
+      }
+    ],
+    "moral_question": "Does this decision avoid cruelty and unnecessary suffering to animals?",
+    "positive_signals": [
+      "humane conditions",
+      "suffering minimised",
+      "no gratuitous cruelty"
+    ],
+    "risk_signals": [
+      "systematic cruelty",
+      "extreme confinement",
+      "needless suffering for marginal gain"
+    ],
+    "related_nodes": [
+      "rahmah",
+      "darar",
+      "ethical_production",
+      "supply_chain_integrity",
+      "khabaith"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "esg",
+      "investing",
+      "supply_chain"
+    ],
+    "decision_use": "Assess avoidance of cruelty and unnecessary animal suffering in production systems.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "seed_preservation",
+    "name_arabic": "حفظ البذور",
+    "transliteration": "Ḥifẓ al-Budhūr",
+    "english_name": "Seed Preservation",
+    "russian_name": "Сохранение семян",
+    "category": "Food & Agriculture",
+    "short_definition": "Protecting crop seed diversity and access as a foundation of food resilience.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "95",
+        "relevance": "Inferred: 'God is the splitter of grain and seed' grounds the value of the seed as a basis of provision."
+      },
+      {
+        "surah": "80",
+        "ayah": "27-32",
+        "relevance": "Inferred: 'We caused grain to grow' as provision implies safeguarding its source."
+      }
+    ],
+    "moral_question": "Does this decision protect seed diversity and farmers' access, or concentrate control over the basis of food?",
+    "positive_signals": [
+      "seed diversity conserved",
+      "farmer access protected",
+      "local varieties maintained"
+    ],
+    "risk_signals": [
+      "monopoly over seed",
+      "diversity erosion",
+      "farmers locked out of saving seed"
+    ],
+    "related_nodes": [
+      "rizq",
+      "biodiversity_protection",
+      "maqasid_hifz_nasl",
+      "food_security",
+      "huquq"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "governance_policy",
+      "esg",
+      "supply_chain"
+    ],
+    "decision_use": "Evaluate protection of seed diversity and equitable access against monopolistic control of food's basis.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "community_nutrition",
+    "name_arabic": "تغذية المجتمع",
+    "transliteration": "Taghdhiyat al-Mujtamaʿ",
+    "english_name": "Community Nutrition",
+    "russian_name": "Питание сообщества",
+    "category": "Food & Agriculture",
+    "short_definition": "Ensuring communities, especially children and the poor, receive adequate nourishment.",
+    "quranic_basis": [
+      {
+        "surah": "107",
+        "ayah": "1-3",
+        "relevance": "Inferred: condemnation of those who 'do not urge feeding the needy' grounds duty toward community nutrition."
+      },
+      {
+        "surah": "2",
+        "ayah": "177",
+        "relevance": "Inferred: feeding the needy and orphan as a mark of righteousness."
+      }
+    ],
+    "moral_question": "Does this decision improve nourishment for the community, especially children and the poor?",
+    "positive_signals": [
+      "child nutrition improved",
+      "affordable nutritious food",
+      "hunger reduced"
+    ],
+    "risk_signals": [
+      "malnutrition tolerated",
+      "nutritious food unaffordable",
+      "children's needs neglected"
+    ],
+    "related_nodes": [
+      "miskeen",
+      "yateem",
+      "food_security",
+      "public_health",
+      "rahmah"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "governance_policy",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Test effects on community nourishment with priority to children and the poor.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "responsible_consumption",
+    "name_arabic": "الاستهلاك المسؤول",
+    "transliteration": "al-Istihlāk al-Masʾūl",
+    "english_name": "Responsible Consumption",
+    "russian_name": "Ответственное потребление",
+    "category": "Food & Agriculture",
+    "short_definition": "Consuming within genuine need and lawful, wholesome bounds, avoiding excess.",
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Inferred: 'eat and drink but do not be excessive' directly grounds moderate consumption."
+      },
+      {
+        "surah": "25",
+        "ayah": "67",
+        "relevance": "Inferred: spending between extravagance and stinginess models balanced consumption."
+      }
+    ],
+    "moral_question": "Does this pattern of consumption stay within genuine need and wholesome bounds, or drive harmful excess?",
+    "positive_signals": [
+      "needs-based consumption",
+      "wholesome choices",
+      "demand-side restraint"
+    ],
+    "risk_signals": [
+      "manufactured overconsumption",
+      "harmful demand stimulation",
+      "excess normalised"
+    ],
+    "related_nodes": [
+      "israf",
+      "wasatiyyah",
+      "tayyibat",
+      "waste_reduction",
+      "qadar"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "esg",
+      "governance_policy",
+      "investing"
+    ],
+    "decision_use": "Assess whether consumption is steered toward genuine need and wholesomeness rather than harmful excess.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "supply_chain_integrity",
+    "name_arabic": "نزاهة سلسلة التوريد",
+    "transliteration": "Nazāhat Silsilat at-Tawrīd",
+    "english_name": "Supply Chain Integrity",
+    "russian_name": "Целостность цепочки поставок",
+    "category": "Corporate Responsibility",
+    "short_definition": "Honesty and ethical conduct throughout the chain that brings goods to market.",
+    "quranic_basis": [
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Inferred: condemnation of short measure extends to honesty across the chain of dealing."
+      },
+      {
+        "surah": "5",
+        "ayah": "2",
+        "relevance": "Inferred: 'cooperate in righteousness, not in sin' grounds shared responsibility along the chain."
+      }
+    ],
+    "moral_question": "Is the whole supply chain free of hidden harm, fraud, and exploitation, not just the final tier?",
+    "positive_signals": [
+      "traceable sourcing",
+      "upstream harms surfaced",
+      "no hidden exploitation"
+    ],
+    "risk_signals": [
+      "hidden forced labour",
+      "upstream harm ignored",
+      "traceability gaps exploited"
+    ],
+    "related_nodes": [
+      "ghish",
+      "tatfif",
+      "fair_employment",
+      "ethical_production",
+      "masuliyyah"
+    ],
+    "applicable_domains": [
+      "supply_chain",
+      "esg",
+      "investing",
+      "governance_policy"
+    ],
+    "decision_use": "Apply integrity across the full chain: surface upstream harm, fraud, and exploitation, not only the visible tier.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ethical_production",
+    "name_arabic": "الإنتاج الأخلاقي",
+    "transliteration": "al-Intāj al-Akhlāqī",
+    "english_name": "Ethical Production",
+    "russian_name": "Этичное производство",
+    "category": "Corporate Responsibility",
+    "short_definition": "Producing goods without exploitation, cruelty, or harm to people and creation.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "188",
+        "relevance": "Inferred: prohibition of wrongful gain grounds producing without exploitation."
+      },
+      {
+        "surah": "7",
+        "ayah": "85",
+        "relevance": "Inferred: 'give full measure and do not deprive people' grounds fair, non-harmful production."
+      }
+    ],
+    "moral_question": "Are these goods produced without exploiting workers, animals, or ecosystems?",
+    "positive_signals": [
+      "fair labour conditions",
+      "no cruelty or coercion",
+      "ecological harm minimised"
+    ],
+    "risk_signals": [
+      "exploited labour",
+      "cruelty in production",
+      "harm offloaded to producing regions"
+    ],
+    "related_nodes": [
+      "zulm",
+      "ajr",
+      "worker_dignity",
+      "animal_welfare",
+      "supply_chain_integrity"
+    ],
+    "applicable_domains": [
+      "supply_chain",
+      "esg",
+      "investing",
+      "labour"
+    ],
+    "decision_use": "Assess whether production is free of exploitation and cruelty toward workers, animals, and ecosystems.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "food_waste_prevention",
+    "name_arabic": "منع هدر الطعام",
+    "transliteration": "Manʿ Hadr aṭ-Ṭaʿām",
+    "english_name": "Food Waste Prevention",
+    "russian_name": "Предотвращение пищевых потерь",
+    "category": "Food & Agriculture",
+    "short_definition": "Avoiding the waste of food along the chain from harvest to consumption.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "141",
+        "relevance": "Inferred: 'do not waste' applied specifically to food, a divine provision."
+      },
+      {
+        "surah": "17",
+        "ayah": "26-27",
+        "relevance": "Inferred: squandering condemned; wasting food while others hunger compounds the wrong."
+      }
+    ],
+    "moral_question": "Does this decision reduce food loss and waste, or tolerate squandering while others go hungry?",
+    "positive_signals": [
+      "harvest and storage losses cut",
+      "surplus redistributed",
+      "consumer waste reduced"
+    ],
+    "risk_signals": [
+      "edible food discarded",
+      "surplus destroyed not shared",
+      "waste while hunger persists"
+    ],
+    "related_nodes": [
+      "israf",
+      "tabdhir",
+      "community_nutrition",
+      "waste_reduction",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "food_systems",
+      "esg",
+      "governance_policy",
+      "supply_chain"
+    ],
+    "decision_use": "Evaluate reduction of food loss and redistribution of surplus rather than squandering amid hunger.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "human_dignity",
+    "name_arabic": "الكرامة الإنسانية",
+    "transliteration": "al-Karāmah al-Insāniyyah",
+    "english_name": "Human Dignity",
+    "russian_name": "Человеческое достоинство",
+    "category": "Human Development",
+    "short_definition": "The inherent worth of every human being, to be honoured and protected.",
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "70",
+        "relevance": "Direct (underlying principle), modern framing: 'We have certainly honoured the children of Adam' grounds inherent human dignity."
+      },
+      {
+        "surah": "95",
+        "ayah": "4",
+        "relevance": "Inferred: humanity created 'in the best stature' affirms inherent worth."
+      }
+    ],
+    "moral_question": "Does this decision honour the inherent dignity of every person affected, or treat some as mere means?",
+    "positive_signals": [
+      "persons treated as ends",
+      "dignity preserved in hardship",
+      "no dehumanisation"
+    ],
+    "risk_signals": [
+      "people treated as mere instruments",
+      "dehumanising conditions",
+      "dignity sacrificed for efficiency"
+    ],
+    "related_nodes": [
+      "nafs",
+      "rahmah",
+      "worker_dignity",
+      "housing_dignity",
+      "maqasid_hifz_nafs"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "labour",
+      "ai_systems",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Apply as a dignity test: ensure no affected person is reduced to a mere instrument of others' ends.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "human_flourishing",
+    "name_arabic": "ازدهار الإنسان",
+    "transliteration": "Izdihār al-Insān",
+    "english_name": "Human Flourishing",
+    "russian_name": "Процветание человека",
+    "category": "Human Development",
+    "short_definition": "The genuine wellbeing and development of the whole person, beyond mere material gain.",
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "97",
+        "relevance": "Inferred: 'whoever does good... We will give a good life (ḥayāh ṭayyibah)' grounds holistic flourishing."
+      },
+      {
+        "surah": "28",
+        "ayah": "77",
+        "relevance": "Inferred: 'seek the Hereafter, yet do not forget your share of this world' balances material and higher goods."
+      }
+    ],
+    "moral_question": "Does this decision advance whole-person wellbeing, or optimise narrow metrics at the cost of flourishing?",
+    "positive_signals": [
+      "holistic wellbeing advanced",
+      "capabilities expanded",
+      "meaning and security supported"
+    ],
+    "risk_signals": [
+      "narrow metric optimisation",
+      "wellbeing sacrificed for output",
+      "human ends subordinated to systems"
+    ],
+    "related_nodes": [
+      "maqasid_hifz_nafs",
+      "public_health",
+      "mental_wellbeing",
+      "human_dignity",
+      "maslahah"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "ai_systems",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Test whether decisions serve whole-person flourishing rather than narrow material or engagement metrics.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "public_health",
+    "name_arabic": "الصحة العامة",
+    "transliteration": "aṣ-Ṣiḥḥah al-ʿĀmmah",
+    "english_name": "Public Health",
+    "russian_name": "Общественное здоровье",
+    "category": "Human Development",
+    "short_definition": "Protection and improvement of the health of populations.",
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "32",
+        "relevance": "Inferred: the supreme value of saving life grounds protecting population health."
+      },
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Inferred: 'do not cast yourselves into destruction' grounds duties to avoid health harms."
+      }
+    ],
+    "moral_question": "Does this decision protect and improve population health, or expose people to avoidable harm?",
+    "positive_signals": [
+      "disease and exposure reduced",
+      "health systems strengthened",
+      "prevention prioritised"
+    ],
+    "risk_signals": [
+      "population health harmed",
+      "exposure tolerated for profit",
+      "prevention neglected"
+    ],
+    "related_nodes": [
+      "nafs",
+      "maqasid_hifz_nafs",
+      "pollution_prevention",
+      "community_nutrition",
+      "la_darar"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "esg",
+      "public_policy",
+      "water_management"
+    ],
+    "decision_use": "Assess net effect on population health, weighting avoidable harms heavily.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "mental_wellbeing",
+    "name_arabic": "السلامة النفسية",
+    "transliteration": "as-Salāmah an-Nafsiyyah",
+    "english_name": "Mental Wellbeing",
+    "russian_name": "Психическое благополучие",
+    "category": "Human Development",
+    "short_definition": "The protection of psychological health, peace of mind, and freedom from undue distress.",
+    "quranic_basis": [
+      {
+        "surah": "13",
+        "ayah": "28",
+        "relevance": "Inferred: 'in the remembrance of God hearts find rest (tuṭmaʾinn)' grounds the value of peace of mind."
+      },
+      {
+        "surah": "2",
+        "ayah": "286",
+        "relevance": "Inferred: 'God does not burden a soul beyond its capacity' grounds protection from crushing burdens."
+      }
+    ],
+    "moral_question": "Does this decision protect psychological wellbeing, or impose distress, anxiety, or manipulation?",
+    "positive_signals": [
+      "psychological safety",
+      "reasonable burdens",
+      "supportive environments"
+    ],
+    "risk_signals": [
+      "chronic stress imposed",
+      "manipulative or addictive design",
+      "mental harm externalised"
+    ],
+    "related_nodes": [
+      "maqasid_hifz_aql",
+      "human_flourishing",
+      "rahmah",
+      "human_centered_technology",
+      "la_darar"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "labour",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether decisions protect mental wellbeing or impose distress, manipulation, or unbearable burdens.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "education_access",
+    "name_arabic": "الوصول إلى التعليم",
+    "transliteration": "al-Wuṣūl ilā at-Taʿlīm",
+    "english_name": "Education Access",
+    "russian_name": "Доступ к образованию",
+    "category": "Human Development",
+    "short_definition": "Equitable access to learning and the means of knowledge for all.",
+    "quranic_basis": [
+      {
+        "surah": "96",
+        "ayah": "1-5",
+        "relevance": "Inferred: 'Read... taught by the pen' exalts learning, grounding broad access to it."
+      },
+      {
+        "surah": "20",
+        "ayah": "114",
+        "relevance": "Inferred: 'increase me in knowledge' affirms the pursuit of learning as a good to enable."
+      }
+    ],
+    "moral_question": "Does this decision widen equitable access to learning, or entrench educational exclusion?",
+    "positive_signals": [
+      "access widened for the excluded",
+      "quality and relevance",
+      "barriers lowered"
+    ],
+    "risk_signals": [
+      "exclusion entrenched",
+      "access gated by wealth",
+      "quality gaps widened"
+    ],
+    "related_nodes": [
+      "ilm",
+      "adalah_ijtimaiyyah",
+      "social_mobility",
+      "knowledge_development",
+      "huquq"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "public_policy",
+      "esg",
+      "ai_systems"
+    ],
+    "decision_use": "Assess whether access to learning is broadened equitably or restricted to the advantaged.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "knowledge_development",
+    "name_arabic": "تنمية المعرفة",
+    "transliteration": "Tanmiyat al-Maʿrifah",
+    "english_name": "Knowledge Development",
+    "russian_name": "Развитие знаний",
+    "category": "Human Development",
+    "short_definition": "Advancing reliable knowledge and research for genuine benefit.",
+    "quranic_basis": [
+      {
+        "surah": "39",
+        "ayah": "9",
+        "relevance": "Inferred: 'are those who know equal to those who do not?' exalts the development of knowledge."
+      },
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Inferred: 'do not pursue that of which you have no knowledge' grounds rigorous, verified knowledge."
+      }
+    ],
+    "moral_question": "Does this decision advance reliable, beneficial knowledge, or produce distortion, secrecy, or harmful capability?",
+    "positive_signals": [
+      "reliable knowledge advanced",
+      "open and verifiable research",
+      "benefit-oriented inquiry"
+    ],
+    "risk_signals": [
+      "distorted or captured research",
+      "knowledge weaponised",
+      "secrecy harming the public"
+    ],
+    "related_nodes": [
+      "ilm",
+      "bayyinah",
+      "scientific_responsibility",
+      "education_access",
+      "tafakkur"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "governance_policy",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Evaluate whether knowledge production is reliable, open, and benefit-oriented rather than distorted or weaponised.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "skill_development",
+    "name_arabic": "تنمية المهارات",
+    "transliteration": "Tanmiyat al-Mahārāt",
+    "english_name": "Skill Development",
+    "russian_name": "Развитие навыков",
+    "category": "Human Development",
+    "short_definition": "Building people's capabilities and livelihoods through skills and training.",
+    "quranic_basis": [
+      {
+        "surah": "28",
+        "ayah": "26",
+        "relevance": "Inferred: valuing the 'strong and trustworthy' worker grounds developing capability."
+      },
+      {
+        "surah": "62",
+        "ayah": "10",
+        "relevance": "Inferred: dispersing to 'seek God's bounty' implies enabling people's productive capability."
+      }
+    ],
+    "moral_question": "Does this decision build people's capabilities and livelihoods, or leave them stranded by change?",
+    "positive_signals": [
+      "reskilling for displaced workers",
+      "capability building",
+      "livelihood pathways"
+    ],
+    "risk_signals": [
+      "workers stranded by automation",
+      "no transition support",
+      "skills gaps ignored"
+    ],
+    "related_nodes": [
+      "ajr",
+      "rizq",
+      "social_mobility",
+      "fair_employment",
+      "transition_planning"
+    ],
+    "applicable_domains": [
+      "labour",
+      "ai_systems",
+      "energy_transition",
+      "governance_policy"
+    ],
+    "decision_use": "Test whether change is accompanied by capability-building, especially for those displaced by it.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "social_mobility",
+    "name_arabic": "الحراك الاجتماعي",
+    "transliteration": "al-Ḥirāk al-Ijtimāʿī",
+    "english_name": "Social Mobility",
+    "russian_name": "Социальная мобильность",
+    "category": "Human Development",
+    "short_definition": "Fair opportunity for people to improve their condition regardless of birth.",
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "13",
+        "relevance": "Inferred: nobility by righteousness 'not lineage' grounds opportunity beyond inherited status."
+      },
+      {
+        "surah": "53",
+        "ayah": "39",
+        "relevance": "Inferred: 'man shall have only what he strives for' affirms reward for effort, supporting mobility."
+      }
+    ],
+    "moral_question": "Does this decision open fair opportunity to advance regardless of origin, or lock in inherited advantage?",
+    "positive_signals": [
+      "opportunity by merit and effort",
+      "barriers to advancement lowered",
+      "inherited disadvantage offset"
+    ],
+    "risk_signals": [
+      "advantage entrenched by birth",
+      "opportunity gated by wealth or origin",
+      "mobility blocked"
+    ],
+    "related_nodes": [
+      "adalah_ijtimaiyyah",
+      "education_access",
+      "skill_development",
+      "qist",
+      "huquq"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "public_policy",
+      "labour",
+      "esg"
+    ],
+    "decision_use": "Assess whether opportunity to advance is fairly open or locked behind inherited advantage.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "community_resilience",
+    "name_arabic": "صمود المجتمع",
+    "transliteration": "Ṣumūd al-Mujtamaʿ",
+    "english_name": "Community Resilience",
+    "russian_name": "Устойчивость сообщества",
+    "category": "Human Development",
+    "short_definition": "A community's capacity to withstand and recover from shocks together.",
+    "quranic_basis": [
+      {
+        "surah": "3",
+        "ayah": "103",
+        "relevance": "Inferred: 'hold firmly to the rope of God together and do not be divided' grounds cohesive resilience."
+      },
+      {
+        "surah": "5",
+        "ayah": "2",
+        "relevance": "Inferred: mutual cooperation in good strengthens collective capacity to endure."
+      }
+    ],
+    "moral_question": "Does this decision strengthen a community's capacity to withstand and recover from shocks together?",
+    "positive_signals": [
+      "mutual support strengthened",
+      "local capacity built",
+      "cohesion under stress"
+    ],
+    "risk_signals": [
+      "social fabric weakened",
+      "dependency without capacity",
+      "shocks fracture the community"
+    ],
+    "related_nodes": [
+      "sulh",
+      "societal_cohesion",
+      "disaster_preparedness",
+      "sabr",
+      "aman"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "climate_risk",
+      "public_policy",
+      "infrastructure"
+    ],
+    "decision_use": "Test whether decisions build collective capacity to absorb and recover from shocks.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "intergenerational_responsibility",
+    "name_arabic": "المسؤولية بين الأجيال",
+    "transliteration": "al-Masʾūliyyah bayn al-Ajyāl",
+    "english_name": "Intergenerational Responsibility",
+    "russian_name": "Ответственность между поколениями",
+    "category": "Human Development",
+    "short_definition": "The duty of present actors to safeguard the interests of generations to come.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Direct (underlying principle), modern framing: concern for those who 'leave behind weak offspring' grounds duty to future generations."
+      },
+      {
+        "surah": "2",
+        "ayah": "205",
+        "relevance": "Inferred: condemnation of destroying 'progeny' grounds protecting future people."
+      }
+    ],
+    "moral_question": "Does this decision safeguard the interests of future generations, or borrow against their wellbeing?",
+    "positive_signals": [
+      "future interests weighted",
+      "reversibility preserved",
+      "no debt dumped on the young"
+    ],
+    "risk_signals": [
+      "future foreclosed for present gain",
+      "irreversible harm to descendants",
+      "burden shifted forward"
+    ],
+    "related_nodes": [
+      "nasl",
+      "maqasid_hifz_nasl",
+      "khalifah",
+      "mithaq",
+      "future_generations_impact"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "governance_policy",
+      "esg",
+      "energy_transition"
+    ],
+    "decision_use": "Apply as an intergenerational test: weight long-term and irreversible effects on those not yet born.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "institutional_trust",
+    "name_arabic": "الثقة المؤسسية",
+    "transliteration": "ath-Thiqah al-Muʾassasiyyah",
+    "english_name": "Institutional Trust",
+    "russian_name": "Институциональное доверие",
+    "category": "Institutional Integrity",
+    "short_definition": "The justified confidence of the public in an institution's integrity and competence.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: rendering trusts and judging justly grounds the trustworthiness institutions must earn."
+      },
+      {
+        "surah": "8",
+        "ayah": "27",
+        "relevance": "Inferred: 'do not betray your trusts' grounds the duty not to squander public confidence."
+      }
+    ],
+    "moral_question": "Does this decision build or erode the public's justified trust in the institution?",
+    "positive_signals": [
+      "promises kept",
+      "competent delivery",
+      "integrity demonstrated"
+    ],
+    "risk_signals": [
+      "broken commitments",
+      "competence failures hidden",
+      "trust exploited then betrayed"
+    ],
+    "related_nodes": [
+      "amanah",
+      "khiyanah",
+      "public_accountability",
+      "transparency_systems",
+      "sidq"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "fintech",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Assess whether the decision builds or erodes justified public trust through integrity and delivery.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "public_accountability",
+    "name_arabic": "المساءلة العامة",
+    "transliteration": "al-Musāʾalah al-ʿĀmmah",
+    "english_name": "Public Accountability",
+    "russian_name": "Публичная подотчётность",
+    "category": "Institutional Integrity",
+    "short_definition": "The answerability of public actors to those they serve.",
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Inferred: each faculty 'will be questioned' grounds answerability of those holding public roles."
+      },
+      {
+        "surah": "21",
+        "ayah": "47",
+        "relevance": "Inferred: the just scales of reckoning model accountability without favour."
+      }
+    ],
+    "moral_question": "Are public actors here genuinely answerable to those they serve, with real consequences?",
+    "positive_signals": [
+      "clear answerability",
+      "independent review",
+      "consequences for failure"
+    ],
+    "risk_signals": [
+      "impunity",
+      "captured oversight",
+      "answerability only nominal"
+    ],
+    "related_nodes": [
+      "muhasabah",
+      "masuliyyah",
+      "raqabah",
+      "institutional_trust",
+      "public_disclosure"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "public_policy",
+      "esg",
+      "fintech"
+    ],
+    "decision_use": "Test genuine answerability of public actors, with independent review and real consequences.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "transparency_systems",
+    "name_arabic": "نظم الشفافية",
+    "transliteration": "Nuẓum ash-Shafāfiyyah",
+    "english_name": "Transparency Systems",
+    "russian_name": "Системы прозрачности",
+    "category": "Institutional Integrity",
+    "short_definition": "Structures that make decisions, data, and dealings open to legitimate scrutiny.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Inferred: 'do not conceal the truth knowingly' grounds openness to scrutiny."
+      },
+      {
+        "surah": "2",
+        "ayah": "283",
+        "relevance": "Inferred: 'do not conceal testimony' grounds disclosure of material facts."
+      }
+    ],
+    "moral_question": "Are the decisions, data, and dealings here open to legitimate scrutiny, or shielded by opacity?",
+    "positive_signals": [
+      "open decision records",
+      "accessible data",
+      "scrutiny enabled"
+    ],
+    "risk_signals": [
+      "opacity by design",
+      "selective disclosure",
+      "information asymmetry exploited"
+    ],
+    "related_nodes": [
+      "haqq",
+      "bayyinah",
+      "public_disclosure",
+      "anti_corruption",
+      "data_integrity"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "fintech",
+      "ai_systems",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Assess whether systems enable legitimate scrutiny of decisions, data, and dealings.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "anti_corruption",
+    "name_arabic": "مكافحة الفساد",
+    "transliteration": "Mukāfaḥat al-Fasād",
+    "english_name": "Anti-Corruption",
+    "russian_name": "Противодействие коррупции",
+    "category": "Institutional Integrity",
+    "short_definition": "Preventing and rooting out abuse of entrusted power for private gain.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "188",
+        "relevance": "Inferred: 'do not bribe officials to consume people's wealth wrongfully' directly grounds anti-corruption."
+      },
+      {
+        "surah": "38",
+        "ayah": "26",
+        "relevance": "Inferred: judging by truth and not following desire grounds incorruptible authority."
+      }
+    ],
+    "moral_question": "Does this decision prevent and expose abuse of entrusted power for private gain?",
+    "positive_signals": [
+      "bribery and capture blocked",
+      "conflicts surfaced",
+      "whistleblowing protected"
+    ],
+    "risk_signals": [
+      "bribery normalised",
+      "state capture",
+      "kickbacks and patronage",
+      "whistleblowers punished"
+    ],
+    "related_nodes": [
+      "fasad",
+      "zulm",
+      "khiyanah",
+      "ethical_procurement",
+      "conflict_of_interest_prevention"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "fintech",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Test prevention and exposure of corrupt abuse of entrusted power for private benefit.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ethical_procurement",
+    "name_arabic": "الشراء الأخلاقي",
+    "transliteration": "ash-Shirāʾ al-Akhlāqī",
+    "english_name": "Ethical Procurement",
+    "russian_name": "Этичные закупки",
+    "category": "Institutional Integrity",
+    "short_definition": "Acquiring goods and services fairly, transparently, and without favouritism or harm.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "188",
+        "relevance": "Inferred: prohibition of wrongful acquisition grounds fair, untainted procurement."
+      },
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: judging with justice when entrusted grounds impartial awarding of contracts."
+      }
+    ],
+    "moral_question": "Is procurement here fair, transparent, and free of favouritism, kickbacks, or harmful sourcing?",
+    "positive_signals": [
+      "open competition",
+      "conflict-free awards",
+      "ethical sourcing criteria"
+    ],
+    "risk_signals": [
+      "rigged tenders",
+      "kickbacks",
+      "favouritism",
+      "harmful or tainted suppliers"
+    ],
+    "related_nodes": [
+      "adl",
+      "anti_corruption",
+      "conflict_of_interest_prevention",
+      "supply_chain_integrity",
+      "qist"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "fintech",
+      "esg",
+      "supply_chain"
+    ],
+    "decision_use": "Assess fairness, transparency, and freedom from favouritism and harm in procurement.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "conflict_of_interest_prevention",
+    "name_arabic": "منع تضارب المصالح",
+    "transliteration": "Manʿ Taḍārub al-Maṣāliḥ",
+    "english_name": "Conflict of Interest Prevention",
+    "russian_name": "Предотвращение конфликта интересов",
+    "category": "Institutional Integrity",
+    "short_definition": "Guarding decisions against distortion by the decision-maker's private interests.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "135",
+        "relevance": "Inferred: standing for justice 'even against yourselves or kin' grounds setting aside private interest."
+      },
+      {
+        "surah": "5",
+        "ayah": "8",
+        "relevance": "Inferred: not letting bias 'lead you away from justice' grounds conflict-of-interest control."
+      }
+    ],
+    "moral_question": "Are decisions here insulated from the private interests of those making them?",
+    "positive_signals": [
+      "interests declared and managed",
+      "recusal where conflicted",
+      "independent decision-making"
+    ],
+    "risk_signals": [
+      "undisclosed conflicts",
+      "self-interested decisions",
+      "revolving-door capture"
+    ],
+    "related_nodes": [
+      "adl",
+      "amanah",
+      "wakalah",
+      "anti_corruption",
+      "raqabah"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "fintech",
+      "investing",
+      "esg",
+      "ai_systems"
+    ],
+    "decision_use": "Test whether decisions are insulated from decision-makers' private interests through disclosure and recusal.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "regulatory_integrity",
+    "name_arabic": "نزاهة التنظيم",
+    "transliteration": "Nazāhat at-Tanẓīm",
+    "english_name": "Regulatory Integrity",
+    "russian_name": "Целостность регулирования",
+    "category": "Institutional Integrity",
+    "short_definition": "Rule-making and enforcement that serve the public interest free of capture.",
+    "quranic_basis": [
+      {
+        "surah": "42",
+        "ayah": "38",
+        "relevance": "Inferred: affairs decided by consultation grounds rule-making serving the governed."
+      },
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: judging with justice when entrusted grounds impartial regulation."
+      }
+    ],
+    "moral_question": "Does regulation here serve the public interest, or has it been captured to serve the regulated?",
+    "positive_signals": [
+      "independent rule-making",
+      "consistent enforcement",
+      "public-interest grounding"
+    ],
+    "risk_signals": [
+      "regulatory capture",
+      "selective enforcement",
+      "rules written by the regulated"
+    ],
+    "related_nodes": [
+      "adl",
+      "shura",
+      "anti_corruption",
+      "evidence_based_policy",
+      "maslahah"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "public_policy",
+      "fintech",
+      "esg"
+    ],
+    "decision_use": "Assess whether rule-making and enforcement serve the public interest free of capture by the regulated.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "evidence_based_policy",
+    "name_arabic": "السياسة المبنية على الأدلة",
+    "transliteration": "as-Siyāsah al-Mabniyyah ʿalā al-Adillah",
+    "english_name": "Evidence-Based Policy",
+    "russian_name": "Политика на основе доказательств",
+    "category": "Public Policy",
+    "short_definition": "Grounding policy in verified evidence rather than assertion, ideology, or interest.",
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "6",
+        "relevance": "Inferred: 'verify the news a corrupt person brings, lest you harm people in ignorance' grounds evidence before action."
+      },
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Inferred: 'do not pursue what you have no knowledge of' grounds evidence-grounded policy."
+      }
+    ],
+    "moral_question": "Is this policy grounded in verified evidence, with uncertainty acknowledged, rather than assertion or interest?",
+    "positive_signals": [
+      "evidence reviewed",
+      "uncertainty disclosed",
+      "policy revised with new data"
+    ],
+    "risk_signals": [
+      "evidence ignored or cherry-picked",
+      "ideology over data",
+      "false certainty"
+    ],
+    "related_nodes": [
+      "ilm",
+      "bayyinah",
+      "shubhah",
+      "data_integrity",
+      "tadabbur"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "public_policy",
+      "climate_risk",
+      "ai_systems"
+    ],
+    "decision_use": "Test whether policy is grounded in verified evidence with honest uncertainty, not assertion or interest.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "data_integrity",
+    "name_arabic": "سلامة البيانات",
+    "transliteration": "Salāmat al-Bayānāt",
+    "english_name": "Data Integrity",
+    "russian_name": "Достоверность данных",
+    "category": "Institutional Integrity",
+    "short_definition": "The accuracy, completeness, and honest handling of data used in decisions.",
+    "quranic_basis": [
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Inferred: condemnation of short measure extends to honest measurement and reporting of data."
+      },
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Inferred: not clothing truth with falsehood grounds honest data."
+      }
+    ],
+    "moral_question": "Is the data behind this decision accurate, complete, and honestly handled, or manipulated and selective?",
+    "positive_signals": [
+      "accurate and complete data",
+      "auditable provenance",
+      "no manipulation"
+    ],
+    "risk_signals": [
+      "data manipulation",
+      "selective reporting",
+      "fabricated or biased datasets"
+    ],
+    "related_nodes": [
+      "sidq",
+      "tatfif",
+      "bayyinah",
+      "transparency_systems",
+      "data_stewardship"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "esg",
+      "governance_policy",
+      "climate_risk"
+    ],
+    "decision_use": "Assess accuracy, completeness, and honest handling of the data underpinning a decision.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "public_disclosure",
+    "name_arabic": "الإفصاح العام",
+    "transliteration": "al-Ifṣāḥ al-ʿĀmm",
+    "english_name": "Public Disclosure",
+    "russian_name": "Публичное раскрытие",
+    "category": "Institutional Integrity",
+    "short_definition": "Timely, truthful disclosure of material information to those affected.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "283",
+        "relevance": "Inferred: 'do not conceal testimony; whoever conceals it, his heart is sinful' grounds disclosure of material facts."
+      },
+      {
+        "surah": "3",
+        "ayah": "187",
+        "relevance": "Inferred: the covenant to 'make it clear to people and not conceal it' grounds public disclosure."
+      }
+    ],
+    "moral_question": "Is material information disclosed truthfully and in time for those affected to act, or withheld?",
+    "positive_signals": [
+      "timely material disclosure",
+      "accessible to the affected",
+      "no burying of bad news"
+    ],
+    "risk_signals": [
+      "material facts withheld",
+      "disclosure too late to act",
+      "bad news buried"
+    ],
+    "related_nodes": [
+      "sidq",
+      "shahada",
+      "transparency_systems",
+      "emissions_responsibility",
+      "bayyinah"
+    ],
+    "applicable_domains": [
+      "fintech",
+      "esg",
+      "governance_policy",
+      "public_policy",
+      "investing"
+    ],
+    "decision_use": "Test timely, truthful disclosure of material information to those who need it to act.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "infrastructure_stewardship",
+    "name_arabic": "رعاية البنية التحتية",
+    "transliteration": "Riʿāyat al-Bunyah at-Taḥtiyyah",
+    "english_name": "Infrastructure Stewardship",
+    "russian_name": "Управление инфраструктурой",
+    "category": "Infrastructure",
+    "short_definition": "Building and maintaining infrastructure as a durable, accountable public trust.",
+    "quranic_basis": [
+      {
+        "surah": "11",
+        "ayah": "61",
+        "relevance": "Inferred: the mandate to 'develop the earth' grounds building lasting, beneficial infrastructure."
+      },
+      {
+        "surah": "57",
+        "ayah": "7",
+        "relevance": "Inferred: spending from what one is made trustee of grounds maintaining shared assets."
+      }
+    ],
+    "moral_question": "Is infrastructure here built and maintained as a durable public trust, or built-and-neglected?",
+    "positive_signals": [
+      "lifecycle maintenance funded",
+      "durability designed in",
+      "accountable asset management"
+    ],
+    "risk_signals": [
+      "build-and-neglect",
+      "deferred maintenance risk",
+      "assets captured for private benefit"
+    ],
+    "related_nodes": [
+      "imarah_al_ard",
+      "amanah",
+      "istikhlaf",
+      "public_utility_reliability",
+      "masuliyyah"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "governance_policy",
+      "esg",
+      "climate_risk"
+    ],
+    "decision_use": "Assess whether infrastructure is stewarded as a maintained, durable public trust across its lifecycle.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "housing_dignity",
+    "name_arabic": "كرامة السكن",
+    "transliteration": "Karāmat as-Sakan",
+    "english_name": "Housing Dignity",
+    "russian_name": "Достоинство жилья",
+    "category": "Infrastructure",
+    "short_definition": "Access to safe, adequate, affordable shelter befitting human dignity.",
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "80",
+        "relevance": "Inferred: 'God made for you your homes a place of rest' grounds shelter as a basic human good."
+      },
+      {
+        "surah": "17",
+        "ayah": "70",
+        "relevance": "Inferred: human dignity grounds adequate, non-degrading housing."
+      }
+    ],
+    "moral_question": "Does this decision provide or protect safe, adequate, affordable shelter, or push people into degrading conditions?",
+    "positive_signals": [
+      "safe and adequate housing",
+      "affordability protected",
+      "no forced degradation"
+    ],
+    "risk_signals": [
+      "unsafe or overcrowded housing",
+      "unaffordability",
+      "displacement without alternative"
+    ],
+    "related_nodes": [
+      "human_dignity",
+      "aman",
+      "miskeen",
+      "infrastructure_equity",
+      "maqasid_hifz_nafs"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "governance_policy",
+      "public_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether shelter outcomes uphold safety, adequacy, and affordability befitting human dignity.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "transport_access",
+    "name_arabic": "الوصول إلى النقل",
+    "transliteration": "al-Wuṣūl ilā an-Naql",
+    "english_name": "Transport Access",
+    "russian_name": "Доступ к транспорту",
+    "category": "Infrastructure",
+    "short_definition": "Equitable access to mobility and transport for participation in economic and social life.",
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "8",
+        "relevance": "Inferred: mounts and means of transport created 'for you to ride' grounds enabling mobility."
+      },
+      {
+        "surah": "67",
+        "ayah": "15",
+        "relevance": "Inferred: 'walk the earth and eat of His provision' implies enabling movement for livelihood."
+      }
+    ],
+    "moral_question": "Does this decision widen equitable access to mobility, or strand groups and regions?",
+    "positive_signals": [
+      "affordable mobility for all",
+      "rural and poor connected",
+      "accessibility for disabled"
+    ],
+    "risk_signals": [
+      "transport poverty",
+      "regions stranded",
+      "access gated by wealth"
+    ],
+    "related_nodes": [
+      "infrastructure_equity",
+      "adalah_ijtimaiyyah",
+      "energy_access",
+      "rural_development",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "governance_policy",
+      "energy_transition",
+      "public_policy"
+    ],
+    "decision_use": "Assess whether mobility access is broadened equitably or denied to groups and regions.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "urban_balance",
+    "name_arabic": "التوازن العمراني",
+    "transliteration": "at-Tawāzun al-ʿUmrānī",
+    "english_name": "Urban Balance",
+    "russian_name": "Городское равновесие",
+    "category": "Infrastructure",
+    "short_definition": "Balanced urban development that integrates people, nature, and function without overshoot.",
+    "quranic_basis": [
+      {
+        "surah": "15",
+        "ayah": "19",
+        "relevance": "Inferred: the earth laid out 'with everything in measured balance' grounds balanced settlement."
+      },
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Inferred: avoidance of excess grounds development within carrying capacity."
+      }
+    ],
+    "moral_question": "Is urban development here balanced across people, nature, and function, or overshooting into harm?",
+    "positive_signals": [
+      "mixed, livable density",
+      "green and water integration",
+      "capacity respected"
+    ],
+    "risk_signals": [
+      "sprawl or overcrowding",
+      "green and water systems paved over",
+      "segregation by wealth"
+    ],
+    "related_nodes": [
+      "mizan",
+      "tawazun",
+      "biodiversity_protection",
+      "housing_dignity",
+      "infrastructure_equity"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "governance_policy",
+      "climate_risk",
+      "water_management"
+    ],
+    "decision_use": "Test whether urban development stays balanced across human, ecological, and functional needs.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "rural_development",
+    "name_arabic": "التنمية الريفية",
+    "transliteration": "at-Tanmiyah ar-Rīfiyyah",
+    "english_name": "Rural Development",
+    "russian_name": "Развитие села",
+    "category": "Infrastructure",
+    "short_definition": "Equitable development of rural areas so they are not left behind.",
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Inferred: that wealth 'not circulate only among the rich' grounds investment beyond cities."
+      },
+      {
+        "surah": "11",
+        "ayah": "61",
+        "relevance": "Inferred: developing the earth includes its rural expanse, not only urban centres."
+      }
+    ],
+    "moral_question": "Does this decision invest equitably in rural areas, or concentrate benefit in cities while rural regions decline?",
+    "positive_signals": [
+      "rural livelihoods strengthened",
+      "services extended to villages",
+      "balanced regional investment"
+    ],
+    "risk_signals": [
+      "rural neglect",
+      "extraction without local benefit",
+      "forced rural-to-urban displacement"
+    ],
+    "related_nodes": [
+      "adalah_ijtimaiyyah",
+      "infrastructure_equity",
+      "food_security",
+      "transport_access",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "governance_policy",
+      "food_systems",
+      "public_policy"
+    ],
+    "decision_use": "Assess equitable investment in rural areas against urban concentration and rural neglect.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "disaster_preparedness",
+    "name_arabic": "التأهب للكوارث",
+    "transliteration": "at-Taʾahhub lil-Kawārith",
+    "english_name": "Disaster Preparedness",
+    "russian_name": "Готовность к катастрофам",
+    "category": "Climate Resilience",
+    "short_definition": "Anticipating and preparing for foreseeable disasters to protect life and assets.",
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Inferred: storing reserves for foreseen hardship models disaster preparedness."
+      },
+      {
+        "surah": "2",
+        "ayah": "195",
+        "relevance": "Inferred: 'do not cast yourselves into destruction' grounds proactive risk reduction."
+      }
+    ],
+    "moral_question": "Does this decision prepare adequately for foreseeable disasters, especially protecting the vulnerable?",
+    "positive_signals": [
+      "early-warning systems",
+      "reserves and evacuation plans",
+      "vulnerable prioritised"
+    ],
+    "risk_signals": [
+      "foreseeable risk ignored",
+      "no contingency",
+      "vulnerable left unprotected"
+    ],
+    "related_nodes": [
+      "sabr",
+      "nafs",
+      "flood_protection",
+      "community_resilience",
+      "long_term_resilience"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "infrastructure",
+      "governance_policy",
+      "water_management"
+    ],
+    "decision_use": "Test adequacy of preparation for foreseeable disasters, prioritising protection of the vulnerable.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "public_utility_reliability",
+    "name_arabic": "موثوقية المرافق العامة",
+    "transliteration": "Mawthūqiyyat al-Marāfiq al-ʿĀmmah",
+    "english_name": "Public Utility Reliability",
+    "russian_name": "Надёжность коммунальных служб",
+    "category": "Infrastructure",
+    "short_definition": "Dependable delivery of essential utilities (power, water, sanitation) to all.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: rendering trusts to those due grounds reliable delivery of essential services held in trust."
+      },
+      {
+        "surah": "106",
+        "ayah": "4",
+        "relevance": "Inferred: security against want grounds dependable essential provision."
+      }
+    ],
+    "moral_question": "Are essential utilities delivered dependably to all, or unreliable for the underserved?",
+    "positive_signals": [
+      "dependable essential services",
+      "equitable reliability",
+      "resilient delivery"
+    ],
+    "risk_signals": [
+      "frequent outages for the poor",
+      "under-investment in maintenance",
+      "reliability only for the wealthy"
+    ],
+    "related_nodes": [
+      "amanah",
+      "infrastructure_stewardship",
+      "energy_access",
+      "water_security",
+      "infrastructure_equity"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "governance_policy",
+      "energy_transition",
+      "water_management"
+    ],
+    "decision_use": "Assess dependable, equitable delivery of essential utilities across all served populations.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "digital_infrastructure",
+    "name_arabic": "البنية التحتية الرقمية",
+    "transliteration": "al-Bunyah at-Taḥtiyyah ar-Raqamiyyah",
+    "english_name": "Digital Infrastructure",
+    "russian_name": "Цифровая инфраструктура",
+    "category": "Infrastructure",
+    "short_definition": "The networks and systems enabling digital participation, treated as near-essential infrastructure.",
+    "quranic_basis": [
+      {
+        "surah": "11",
+        "ayah": "61",
+        "relevance": "Inferred: the mandate to develop the earth thematically extends to building beneficial modern infrastructure; digital infrastructure is a modern construct."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: justice and benefit ground equitable provision of enabling infrastructure."
+      }
+    ],
+    "moral_question": "Does this decision extend reliable digital access fairly, or widen the digital divide?",
+    "positive_signals": [
+      "broad reliable connectivity",
+      "affordable access",
+      "resilient and secure networks"
+    ],
+    "risk_signals": [
+      "digital divide widened",
+      "fragile or insecure systems",
+      "access gated by wealth or geography"
+    ],
+    "related_nodes": [
+      "infrastructure_equity",
+      "communication_access",
+      "privacy_protection",
+      "maslahah",
+      "adalah_ijtimaiyyah"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "ai_systems",
+      "governance_policy",
+      "public_policy"
+    ],
+    "decision_use": "Assess equitable, reliable, secure provision of digital infrastructure as near-essential.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "communication_access",
+    "name_arabic": "الوصول إلى الاتصال",
+    "transliteration": "al-Wuṣūl ilā al-Ittiṣāl",
+    "english_name": "Communication Access",
+    "russian_name": "Доступ к связи",
+    "category": "Infrastructure",
+    "short_definition": "Fair access to means of communication and information for all.",
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "13",
+        "relevance": "Inferred: peoples made diverse 'to know one another (litaʿārafū)' grounds enabling communication; the modern infrastructure framing is contemporary."
+      },
+      {
+        "surah": "55",
+        "ayah": "3-4",
+        "relevance": "Inferred: humanity 'taught eloquence/expression' affirms the value of communication."
+      }
+    ],
+    "moral_question": "Does this decision widen fair access to communication and information, or entrench exclusion or censorship?",
+    "positive_signals": [
+      "broad access to information",
+      "freedom from undue censorship",
+      "inclusion of marginalised voices"
+    ],
+    "risk_signals": [
+      "information access restricted",
+      "censorship of legitimate speech",
+      "marginalised excluded"
+    ],
+    "related_nodes": [
+      "ilm",
+      "communication_access",
+      "digital_infrastructure",
+      "maqasid_hifz_aql",
+      "huquq"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "ai_systems",
+      "governance_policy",
+      "public_policy"
+    ],
+    "decision_use": "Test fair access to communication and information against exclusion or undue censorship.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "infrastructure_equity",
+    "name_arabic": "عدالة البنية التحتية",
+    "transliteration": "ʿAdālat al-Bunyah at-Taḥtiyyah",
+    "english_name": "Infrastructure Equity",
+    "russian_name": "Справедливость инфраструктуры",
+    "category": "Stakeholder Justice",
+    "short_definition": "Fair distribution of infrastructure benefits and burdens across communities.",
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Inferred: that benefit 'not circulate only among the rich' grounds equitable infrastructure distribution."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: the command to justice applied to who gets, and who bears the cost of, infrastructure."
+      }
+    ],
+    "moral_question": "Are infrastructure benefits and burdens distributed fairly, or concentrated on the favoured while burdening the marginalised?",
+    "positive_signals": [
+      "benefits reach the underserved",
+      "burdens not dumped on the poor",
+      "participatory siting"
+    ],
+    "risk_signals": [
+      "benefits for the favoured",
+      "burdens (pollution, displacement) on the marginalised",
+      "exclusionary siting"
+    ],
+    "related_nodes": [
+      "qist",
+      "adalah_ijtimaiyyah",
+      "zulm",
+      "stakeholder_protection",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "infrastructure",
+      "governance_policy",
+      "energy_transition",
+      "esg"
+    ],
+    "decision_use": "Assess fair distribution of infrastructure benefits and burdens, guarding against burdening the marginalised.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "responsible_innovation",
+    "name_arabic": "الابتكار المسؤول",
+    "transliteration": "al-Ibtikār al-Masʾūl",
+    "english_name": "Responsible Innovation",
+    "russian_name": "Ответственные инновации",
+    "category": "Innovation & Technology",
+    "short_definition": "Pursuing new capabilities with foresight for their consequences and the common good.",
+    "quranic_basis": [
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: justice and benefit ('iḥsān') ground innovation oriented to good, not harm."
+      },
+      {
+        "surah": "28",
+        "ayah": "77",
+        "relevance": "Inferred: 'do good as God has done good to you, and do not seek corruption' grounds beneficial, non-corrupting innovation."
+      }
+    ],
+    "moral_question": "Is this innovation pursued with foresight for its consequences and orientation to the common good?",
+    "positive_signals": [
+      "consequence foresight",
+      "benefit-oriented design",
+      "precaution for novel risks"
+    ],
+    "risk_signals": [
+      "move-fast-and-break-things",
+      "externalised harms",
+      "innovation decoupled from benefit"
+    ],
+    "related_nodes": [
+      "hikmah",
+      "tadabbur",
+      "maslahah",
+      "scientific_responsibility",
+      "la_darar"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "energy_transition",
+      "esg",
+      "governance_policy"
+    ],
+    "decision_use": "Test whether innovation carries consequence-foresight and common-good orientation, not reckless deployment.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "scientific_responsibility",
+    "name_arabic": "المسؤولية العلمية",
+    "transliteration": "al-Masʾūliyyah al-ʿIlmiyyah",
+    "english_name": "Scientific Responsibility",
+    "russian_name": "Научная ответственность",
+    "category": "Innovation & Technology",
+    "short_definition": "The duty of researchers to pursue truth honestly and weigh the uses of their work.",
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Inferred: accountability for 'hearing, sight, and heart' grounds responsibility for how knowledge is used."
+      },
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Inferred: not concealing or distorting truth grounds honest science."
+      }
+    ],
+    "moral_question": "Is the science here pursued honestly, with due weight to how its results may be used?",
+    "positive_signals": [
+      "honest method and reporting",
+      "dual-use risks weighed",
+      "integrity over funding pressure"
+    ],
+    "risk_signals": [
+      "fabrication or bias",
+      "dual-use harms ignored",
+      "results shaped by funders"
+    ],
+    "related_nodes": [
+      "sidq",
+      "ilm",
+      "knowledge_development",
+      "responsible_innovation",
+      "masuliyyah"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "esg",
+      "governance_policy",
+      "public_policy"
+    ],
+    "decision_use": "Assess honesty of method and the weighing of downstream uses in scientific work.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ai_transparency",
+    "name_arabic": "شفافية الذكاء الاصطناعي",
+    "transliteration": "Shafāfiyyat adh-Dhakāʾ al-Iṣṭināʿī",
+    "english_name": "AI Transparency",
+    "russian_name": "Прозрачность ИИ",
+    "category": "Artificial Intelligence Ethics",
+    "short_definition": "Openness about an AI system's purpose, data, limits, and role in decisions; a modern application of the duty not to conceal.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "42",
+        "relevance": "Inferred: 'do not clothe truth with falsehood nor conceal it' grounds disclosure of an AI system's nature and role."
+      },
+      {
+        "surah": "2",
+        "ayah": "283",
+        "relevance": "Inferred: not concealing material facts grounds disclosing AI involvement and limits."
+      }
+    ],
+    "moral_question": "Is it clear to affected people when and how AI is shaping decisions about them, with its limits disclosed?",
+    "positive_signals": [
+      "AI use disclosed",
+      "data and limits documented",
+      "no covert automated decisions"
+    ],
+    "risk_signals": [
+      "covert AI decisioning",
+      "undisclosed data use",
+      "limits and errors hidden"
+    ],
+    "related_nodes": [
+      "haqq",
+      "sidq",
+      "transparency_systems",
+      "explainable_ai",
+      "ai_accountability"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether AI involvement, data, and limits are disclosed to those affected — a modern application of the no-concealment duty.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ai_accountability",
+    "name_arabic": "مساءلة الذكاء الاصطناعي",
+    "transliteration": "Musāʾalat adh-Dhakāʾ al-Iṣṭināʿī",
+    "english_name": "AI Accountability",
+    "russian_name": "Подотчётность ИИ",
+    "category": "Artificial Intelligence Ethics",
+    "short_definition": "Ensuring identifiable humans remain answerable for AI-mediated decisions and harms; a modern application of responsibility.",
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Inferred: 'each of these will be questioned' grounds human answerability for delegated/automated acts."
+      },
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: trusts must be rendered and judged justly — responsibility cannot be dissolved into a machine."
+      }
+    ],
+    "moral_question": "When an AI-mediated decision causes harm, is there an identifiable, answerable human or institution?",
+    "positive_signals": [
+      "clear human accountability",
+      "redress mechanisms",
+      "no responsibility laundering via automation"
+    ],
+    "risk_signals": [
+      "responsibility gap",
+      "'the algorithm decided' defence",
+      "no redress for those harmed"
+    ],
+    "related_nodes": [
+      "masuliyyah",
+      "muhasabah",
+      "amanah",
+      "human_oversight",
+      "wakalah"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test that identifiable humans remain answerable for AI-mediated decisions and harms — a modern application of masʾūliyyah.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "algorithmic_fairness",
+    "name_arabic": "عدالة الخوارزميات",
+    "transliteration": "ʿAdālat al-Khawārizmiyyāt",
+    "english_name": "Algorithmic Fairness",
+    "russian_name": "Алгоритмическая справедливость",
+    "category": "Artificial Intelligence Ethics",
+    "short_definition": "Ensuring automated decisions do not unjustly discriminate or entrench bias; a modern application of justice.",
+    "quranic_basis": [
+      {
+        "surah": "5",
+        "ayah": "8",
+        "relevance": "Inferred: 'let not hatred of a people lead you away from justice' grounds non-discrimination in automated decisions."
+      },
+      {
+        "surah": "49",
+        "ayah": "13",
+        "relevance": "Inferred: human equality of origin grounds against algorithmic discrimination by group."
+      }
+    ],
+    "moral_question": "Do these automated decisions treat people justly, or encode and scale discrimination and bias?",
+    "positive_signals": [
+      "bias tested and mitigated",
+      "equitable error rates",
+      "contestable outcomes"
+    ],
+    "risk_signals": [
+      "discriminatory outcomes",
+      "bias scaled at population level",
+      "proxy discrimination hidden"
+    ],
+    "related_nodes": [
+      "adl",
+      "qist",
+      "zulm",
+      "algorithmic_fairness",
+      "human_oversight"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether automated decisions are just across groups — a modern application of ʿadl and qisṭ to algorithms.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "human_oversight",
+    "name_arabic": "الإشراف البشري",
+    "transliteration": "al-Ishrāf al-Basharī",
+    "english_name": "Human Oversight",
+    "russian_name": "Человеческий надзор",
+    "category": "Artificial Intelligence Ethics",
+    "short_definition": "Meaningful human control and review over consequential automated systems; a modern application of oversight.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: judging with justice when entrusted grounds keeping consequential judgement under human responsibility."
+      },
+      {
+        "surah": "50",
+        "ayah": "18",
+        "relevance": "Inferred: the ever-present 'watcher' models the principle of vigilant oversight, applied here to humans over machines."
+      }
+    ],
+    "moral_question": "Do humans retain meaningful control and review over consequential automated decisions?",
+    "positive_signals": [
+      "meaningful human review",
+      "ability to override",
+      "escalation for high-stakes cases"
+    ],
+    "risk_signals": [
+      "rubber-stamp oversight",
+      "automation without recourse",
+      "humans unable to intervene"
+    ],
+    "related_nodes": [
+      "raqabah",
+      "masuliyyah",
+      "maqasid_hifz_aql",
+      "ai_accountability",
+      "human_centered_technology"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test for meaningful human control and review over consequential automation — a modern application of raqābah.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "explainable_ai",
+    "name_arabic": "الذكاء الاصطناعي القابل للتفسير",
+    "transliteration": "adh-Dhakāʾ al-Iṣṭināʿī al-Qābil lit-Tafsīr",
+    "english_name": "Explainable AI",
+    "russian_name": "Объяснимый ИИ",
+    "category": "Artificial Intelligence Ethics",
+    "short_definition": "Providing intelligible reasons for automated decisions so they can be understood and contested; a modern application of clear evidence.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "282",
+        "relevance": "Inferred: documentation of obligations as clear proof grounds intelligible justification of decisions affecting people."
+      },
+      {
+        "surah": "6",
+        "ayah": "57",
+        "relevance": "Inferred: standing 'upon clear evidence' grounds giving reasons that can be examined."
+      }
+    ],
+    "moral_question": "Can affected people get an intelligible reason for an automated decision sufficient to understand and contest it?",
+    "positive_signals": [
+      "intelligible reasons given",
+      "decisions contestable",
+      "reasoning auditable"
+    ],
+    "risk_signals": [
+      "black-box decisions",
+      "no meaningful explanation",
+      "contestation impossible"
+    ],
+    "related_nodes": [
+      "bayyinah",
+      "haqq",
+      "ai_transparency",
+      "algorithmic_fairness",
+      "ghibah"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether automated decisions come with intelligible, contestable reasons — a modern application of bayyinah.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "data_stewardship",
+    "name_arabic": "رعاية البيانات",
+    "transliteration": "Riʿāyat al-Bayānāt",
+    "english_name": "Data Stewardship",
+    "russian_name": "Управление данными",
+    "category": "Artificial Intelligence Ethics",
+    "short_definition": "Holding others' data as an entrusted responsibility, used only for legitimate, consented ends; a modern application of amānah.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: rendering trusts to those due grounds treating personal data as an entrusted responsibility."
+      },
+      {
+        "surah": "8",
+        "ayah": "27",
+        "relevance": "Inferred: 'do not betray your trusts' grounds not misusing data held on others."
+      }
+    ],
+    "moral_question": "Is data here held and used as an entrusted responsibility for legitimate, consented ends?",
+    "positive_signals": [
+      "purpose limitation",
+      "consent respected",
+      "secure custody",
+      "data minimisation"
+    ],
+    "risk_signals": [
+      "data exploited beyond consent",
+      "function creep",
+      "insecure custody",
+      "sale of entrusted data"
+    ],
+    "related_nodes": [
+      "amanah",
+      "khiyanah",
+      "privacy_protection",
+      "data_integrity",
+      "masuliyyah"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether data is held as an accountable trust used only for legitimate, consented ends — a modern application of amānah.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "privacy_protection",
+    "name_arabic": "حماية الخصوصية",
+    "transliteration": "Ḥimāyat al-Khuṣūṣiyyah",
+    "english_name": "Privacy Protection",
+    "russian_name": "Защита приватности",
+    "category": "Artificial Intelligence Ethics",
+    "short_definition": "Protecting people's private sphere from undue intrusion and surveillance; a modern application of prohibitions on spying.",
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "12",
+        "relevance": "Direct (underlying principle), modern framing: 'do not spy (lā tajassasū)' grounds protection from undue surveillance."
+      },
+      {
+        "surah": "24",
+        "ayah": "27-28",
+        "relevance": "Inferred: not entering others' homes without permission grounds respect for the private sphere."
+      }
+    ],
+    "moral_question": "Does this decision protect people's private sphere, or enable undue intrusion and surveillance?",
+    "positive_signals": [
+      "intrusion minimised",
+      "consent and notice",
+      "surveillance proportionate and bounded"
+    ],
+    "risk_signals": [
+      "mass surveillance",
+      "covert data collection",
+      "intrusion without consent or necessity"
+    ],
+    "related_nodes": [
+      "amanah",
+      "data_stewardship",
+      "maqasid_hifz_nafs",
+      "human_dignity",
+      "huquq"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "fintech",
+      "governance_policy",
+      "esg"
+    ],
+    "decision_use": "Test protection of the private sphere against undue intrusion — a modern application of the prohibition on spying (tajassus).",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "human_centered_technology",
+    "name_arabic": "التقنية المتمحورة حول الإنسان",
+    "transliteration": "at-Taqniyah al-Mutamaḥwirah ḥawl al-Insān",
+    "english_name": "Human-Centered Technology",
+    "russian_name": "Технологии в интересах человека",
+    "category": "Innovation & Technology",
+    "short_definition": "Designing technology to serve genuine human ends and dignity rather than capture or diminish people.",
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "70",
+        "relevance": "Inferred: the honouring of humanity grounds technology that serves rather than degrades the person."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: justice and benefit ground technology oriented to human good."
+      }
+    ],
+    "moral_question": "Does this technology serve genuine human ends and dignity, or exploit human weakness for other goals?",
+    "positive_signals": [
+      "serves genuine user ends",
+      "protects autonomy and attention",
+      "accessible and inclusive"
+    ],
+    "risk_signals": [
+      "attention or addiction exploited",
+      "autonomy undermined",
+      "humans serving the system"
+    ],
+    "related_nodes": [
+      "human_dignity",
+      "maqasid_hifz_aql",
+      "mental_wellbeing",
+      "human_oversight",
+      "maslahah"
+    ],
+    "applicable_domains": [
+      "ai_systems",
+      "governance_policy",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Test whether technology serves genuine human ends and dignity rather than exploiting human weakness.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "climate_justice",
+    "name_arabic": "العدالة المناخية",
+    "transliteration": "al-ʿAdālah al-Munākhiyyah",
+    "english_name": "Climate Justice",
+    "russian_name": "Климатическая справедливость",
+    "category": "Climate Resilience",
+    "short_definition": "Fair distribution of climate burdens and benefits, with regard to who caused harm and who bears it.",
+    "quranic_basis": [
+      {
+        "surah": "6",
+        "ayah": "164",
+        "relevance": "Inferred: 'no bearer of burdens bears another's burden' grounds that those least responsible should not bear the most harm."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: the command to justice applied to the distribution of climate burden and benefit."
+      }
+    ],
+    "moral_question": "Does this decision fairly account for who caused climate harm and who bears it, or burden the least responsible?",
+    "positive_signals": [
+      "historical responsibility weighted",
+      "support for the most exposed",
+      "just transition"
+    ],
+    "risk_signals": [
+      "harm dumped on the least responsible",
+      "burden on the poor and future",
+      "responsibility evaded"
+    ],
+    "related_nodes": [
+      "adl",
+      "qist",
+      "zulm",
+      "intergenerational_responsibility",
+      "miskeen"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "governance_policy",
+      "energy_transition",
+      "esg"
+    ],
+    "decision_use": "Assess fair distribution of climate burden and benefit relative to responsibility and exposure.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "climate_risk",
+    "name_arabic": "المخاطر المناخية",
+    "transliteration": "al-Makhāṭir al-Munākhiyyah",
+    "english_name": "Climate Risk",
+    "russian_name": "Климатический риск",
+    "category": "Climate Resilience",
+    "short_definition": "Identification and management of physical and transition risks from a changing climate.",
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Inferred: foresight for coming hardship models assessing and managing future climate risk."
+      },
+      {
+        "surah": "59",
+        "ayah": "18",
+        "relevance": "Inferred: 'let every soul look to what it has sent ahead' grounds forward risk assessment."
+      }
+    ],
+    "moral_question": "Are physical and transition climate risks honestly assessed and managed, or downplayed?",
+    "positive_signals": [
+      "risks assessed across horizons",
+      "transition risk planned for",
+      "disclosure of exposure"
+    ],
+    "risk_signals": [
+      "risk downplayed",
+      "stranded-asset denial",
+      "short-horizon blindness"
+    ],
+    "related_nodes": [
+      "tadabbur",
+      "maqasid_hifz_nasl",
+      "transition_planning",
+      "emissions_responsibility",
+      "long_term_resilience"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "investing",
+      "esg",
+      "energy_transition"
+    ],
+    "decision_use": "Test honest assessment and management of physical and transition climate risk across time horizons.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "transition_planning",
+    "name_arabic": "تخطيط التحول",
+    "transliteration": "Takhṭīṭ at-Taḥawwul",
+    "english_name": "Transition Planning",
+    "russian_name": "Планирование перехода",
+    "category": "Climate Resilience",
+    "short_definition": "Credible, just planning for the shift to a low-harm economy, protecting those affected.",
+    "quranic_basis": [
+      {
+        "surah": "12",
+        "ayah": "47-49",
+        "relevance": "Inferred: structured planning through change models a credible transition plan."
+      },
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Inferred: concern for those left behind grounds protecting workers and communities in transition."
+      }
+    ],
+    "moral_question": "Is there a credible, just plan for the transition that protects affected workers and communities?",
+    "positive_signals": [
+      "credible milestones",
+      "just-transition support",
+      "capital aligned to plan"
+    ],
+    "risk_signals": [
+      "vague pledges without plan",
+      "workers and regions abandoned",
+      "greenwashed targets"
+    ],
+    "related_nodes": [
+      "islah",
+      "skill_development",
+      "climate_justice",
+      "sustainable_finance",
+      "wafa"
+    ],
+    "applicable_domains": [
+      "energy_transition",
+      "climate_risk",
+      "investing",
+      "esg"
+    ],
+    "decision_use": "Assess credibility and justice of transition plans, especially protection of affected workers and regions.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "long_term_resilience",
+    "name_arabic": "الصمود طويل الأمد",
+    "transliteration": "aṣ-Ṣumūd Ṭawīl al-Amad",
+    "english_name": "Long-Term Resilience",
+    "russian_name": "Долгосрочная устойчивость",
+    "category": "Climate Resilience",
+    "short_definition": "The durable capacity of systems to absorb shocks and persist in serving their purpose.",
+    "quranic_basis": [
+      {
+        "surah": "13",
+        "ayah": "17",
+        "relevance": "Inferred: 'what benefits people remains on the earth, while froth vanishes' grounds favouring durable over fragile value."
+      },
+      {
+        "surah": "2",
+        "ayah": "153",
+        "relevance": "Inferred: patience and steadfastness ground enduring capacity through trial."
+      }
+    ],
+    "moral_question": "Does this decision build durable resilience, or optimise short-term performance at the cost of fragility?",
+    "positive_signals": [
+      "shock absorption",
+      "redundancy and diversity",
+      "durable design"
+    ],
+    "risk_signals": [
+      "brittle optimisation",
+      "single points of failure",
+      "short-term gain raising long-term fragility"
+    ],
+    "related_nodes": [
+      "sabr",
+      "tawazun",
+      "maqasid_hifz_nasl",
+      "community_resilience",
+      "ecosystem_stability"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "infrastructure",
+      "investing",
+      "energy_transition"
+    ],
+    "decision_use": "Test whether decisions build durable resilience rather than brittle short-term optimisation.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "carbon_responsibility",
+    "name_arabic": "مسؤولية الكربون",
+    "transliteration": "Masʾūliyyat al-Karbūn",
+    "english_name": "Carbon Responsibility",
+    "russian_name": "Углеродная ответственность",
+    "category": "Climate Resilience",
+    "short_definition": "Honest ownership of and reduction in one's carbon impact, prioritising real cuts over offsets.",
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "41",
+        "relevance": "Inferred: ownership of human-caused 'corruption on land and sea' grounds carbon responsibility."
+      },
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Inferred: condemnation of short measure grounds honest carbon accounting over creative claims."
+      }
+    ],
+    "moral_question": "Does this actor honestly own and genuinely reduce its carbon impact, or lean on accounting tricks and offsets?",
+    "positive_signals": [
+      "real absolute reductions",
+      "honest full-scope accounting",
+      "offsets only for true residuals"
+    ],
+    "risk_signals": [
+      "offset-reliance over cuts",
+      "creative accounting",
+      "net-zero claims without a plan"
+    ],
+    "related_nodes": [
+      "masuliyyah",
+      "emissions_responsibility",
+      "tatfif",
+      "transition_planning",
+      "sidq"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "esg",
+      "energy_transition",
+      "investing"
+    ],
+    "decision_use": "Test honest ownership and genuine reduction of carbon impact versus offset-reliance and accounting tricks.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ecosystem_stability",
+    "name_arabic": "استقرار النظم البيئية",
+    "transliteration": "Istiqrār an-Nuẓum al-Bīʾiyyah",
+    "english_name": "Ecosystem Stability",
+    "russian_name": "Стабильность экосистем",
+    "category": "Environmental Systems",
+    "short_definition": "Maintaining the functional stability of ecosystems and their services.",
+    "quranic_basis": [
+      {
+        "surah": "15",
+        "ayah": "19",
+        "relevance": "Inferred: everything created 'in measured balance' grounds maintaining ecosystem equilibrium."
+      },
+      {
+        "surah": "55",
+        "ayah": "7-8",
+        "relevance": "Inferred: the balance set so 'do not transgress in the balance' grounds not destabilising ecosystems."
+      }
+    ],
+    "moral_question": "Does this decision maintain the functional stability of ecosystems, or push them toward collapse?",
+    "positive_signals": [
+      "ecosystem function preserved",
+      "thresholds respected",
+      "services maintained"
+    ],
+    "risk_signals": [
+      "ecosystem services degraded",
+      "tipping points approached",
+      "collapse risk ignored"
+    ],
+    "related_nodes": [
+      "tawazun",
+      "mizan",
+      "biodiversity_protection",
+      "planetary_balance",
+      "fasad"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "water_management",
+      "food_systems",
+      "esg"
+    ],
+    "decision_use": "Assess whether ecosystem function and stability are preserved within safe thresholds.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "natural_capital_stewardship",
+    "name_arabic": "رعاية رأس المال الطبيعي",
+    "transliteration": "Riʿāyat Raʾs al-Māl aṭ-Ṭabīʿī",
+    "english_name": "Natural Capital Stewardship",
+    "russian_name": "Управление природным капиталом",
+    "category": "Climate Resilience",
+    "short_definition": "Treating nature's stocks and services as capital to be maintained, not liquidated; a modern framing of stewardship.",
+    "quranic_basis": [
+      {
+        "surah": "57",
+        "ayah": "7",
+        "relevance": "Inferred: trusteeship over entrusted wealth, extended in modern terms to the stock of natural capital."
+      },
+      {
+        "surah": "7",
+        "ayah": "31",
+        "relevance": "Inferred: avoidance of excess grounds living within nature's renewable yield."
+      }
+    ],
+    "moral_question": "Does this decision live within nature's renewable yield, or liquidate natural capital for present income?",
+    "positive_signals": [
+      "natural stocks maintained",
+      "income within renewable yield",
+      "depletion accounted as loss"
+    ],
+    "risk_signals": [
+      "natural capital liquidated",
+      "depletion booked as profit",
+      "yield exceeded"
+    ],
+    "related_nodes": [
+      "istikhlaf",
+      "resource_stewardship",
+      "maqasid_hifz_nasl",
+      "ecosystem_stability",
+      "barakah"
+    ],
+    "applicable_domains": [
+      "esg",
+      "investing",
+      "climate_risk",
+      "water_management"
+    ],
+    "decision_use": "Test whether nature's stocks are maintained as capital rather than liquidated for present income — a modern stewardship framing.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "future_generations_impact",
+    "name_arabic": "الأثر على الأجيال القادمة",
+    "transliteration": "al-Athar ʿalā al-Ajyāl al-Qādimah",
+    "english_name": "Future Generations Impact",
+    "russian_name": "Воздействие на будущие поколения",
+    "category": "Climate Resilience",
+    "short_definition": "Explicit assessment of a decision's effects on people not yet born.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "9",
+        "relevance": "Direct (underlying principle), modern framing: concern for vulnerable descendants grounds assessing impact on future people."
+      },
+      {
+        "surah": "2",
+        "ayah": "205",
+        "relevance": "Inferred: condemnation of destroying 'progeny' grounds weighting harm to the unborn."
+      }
+    ],
+    "moral_question": "Has the impact on future generations been explicitly assessed and weighted, not just present interests?",
+    "positive_signals": [
+      "future impacts modelled",
+      "irreversibility flagged",
+      "options preserved for descendants"
+    ],
+    "risk_signals": [
+      "future impacts ignored",
+      "irreversible harm discounted",
+      "present interests dominate wholly"
+    ],
+    "related_nodes": [
+      "nasl",
+      "maqasid_hifz_nasl",
+      "intergenerational_responsibility",
+      "khalifah",
+      "tadabbur"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "governance_policy",
+      "esg",
+      "energy_transition"
+    ],
+    "decision_use": "Require explicit assessment and weighting of effects on those not yet born.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "environmental_restoration",
+    "name_arabic": "الاستصلاح البيئي",
+    "transliteration": "al-Istiṣlāḥ al-Bīʾī",
+    "english_name": "Environmental Restoration",
+    "russian_name": "Восстановление окружающей среды",
+    "category": "Climate Resilience",
+    "short_definition": "Active repair of damaged ecosystems toward health and function.",
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "56",
+        "relevance": "Inferred: 'do not corrupt the earth after its reform (iṣlāḥ)' enjoins restoration over degradation."
+      },
+      {
+        "surah": "36",
+        "ayah": "33",
+        "relevance": "Inferred: bringing 'dead land to life' models ecological restoration."
+      }
+    ],
+    "moral_question": "Does this decision actively restore damaged ecosystems, or merely slow their decline?",
+    "positive_signals": [
+      "ecosystems repaired",
+      "function and biodiversity returning",
+      "net-positive ecological outcome"
+    ],
+    "risk_signals": [
+      "restoration claimed not delivered",
+      "harm offset rather than repaired",
+      "continued net degradation"
+    ],
+    "related_nodes": [
+      "islah",
+      "land_restoration",
+      "biodiversity_protection",
+      "ecosystem_stability",
+      "khalifah"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "water_management",
+      "food_systems",
+      "esg"
+    ],
+    "decision_use": "Grade active ecological restoration versus mere slowing of decline or offsetting.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "planetary_balance",
+    "name_arabic": "التوازن الكوكبي",
+    "transliteration": "at-Tawāzun al-Kawkabī",
+    "english_name": "Planetary Balance",
+    "russian_name": "Планетарное равновесие",
+    "category": "Climate Resilience",
+    "short_definition": "Keeping human activity within the planet's safe operating limits; a modern application of the principle of the balance.",
+    "quranic_basis": [
+      {
+        "surah": "55",
+        "ayah": "7-9",
+        "relevance": "Inferred: the cosmic balance set 'so do not transgress it' grounds living within planetary limits; planetary-boundaries framing is modern."
+      },
+      {
+        "surah": "54",
+        "ayah": "49",
+        "relevance": "Inferred: 'everything created in due measure' grounds respecting global ecological measure."
+      }
+    ],
+    "moral_question": "Does this decision keep human activity within the planet's safe operating limits, or push past them?",
+    "positive_signals": [
+      "activity within planetary boundaries",
+      "global thresholds respected",
+      "systemic overshoot avoided"
+    ],
+    "risk_signals": [
+      "planetary boundaries breached",
+      "systemic overshoot",
+      "global tipping risk"
+    ],
+    "related_nodes": [
+      "mizan",
+      "tawazun",
+      "hudud",
+      "ecosystem_stability",
+      "fasad"
+    ],
+    "applicable_domains": [
+      "climate_risk",
+      "esg",
+      "governance_policy",
+      "energy_transition"
+    ],
+    "decision_use": "Test whether activity respects planetary limits — a modern application of the Quranic principle of the balance (mīzān).",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "corporate_accountability",
+    "name_arabic": "المساءلة المؤسسية للشركات",
+    "transliteration": "al-Musāʾalah ash-Sharikātiyyah",
+    "english_name": "Corporate Accountability",
+    "russian_name": "Корпоративная подотчётность",
+    "category": "Corporate Responsibility",
+    "short_definition": "Holding companies answerable for their full impacts on people and creation.",
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "36",
+        "relevance": "Inferred: 'all will be questioned' grounds corporate answerability for impacts."
+      },
+      {
+        "surah": "83",
+        "ayah": "1-3",
+        "relevance": "Inferred: condemnation of those who take full but give short grounds answerability for what firms deliver versus claim."
+      }
+    ],
+    "moral_question": "Is the company genuinely answerable for its full impacts, or shielded by complexity and limited liability?",
+    "positive_signals": [
+      "full-impact answerability",
+      "redress for harms caused",
+      "no hiding behind structure"
+    ],
+    "risk_signals": [
+      "impacts disowned",
+      "harm externalised via subsidiaries",
+      "accountability evaded by complexity"
+    ],
+    "related_nodes": [
+      "masuliyyah",
+      "muhasabah",
+      "stakeholder_protection",
+      "public_disclosure",
+      "zulm"
+    ],
+    "applicable_domains": [
+      "esg",
+      "investing",
+      "governance_policy",
+      "supply_chain"
+    ],
+    "decision_use": "Test whether a company is answerable for its full impacts rather than shielded by structure and complexity.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "stakeholder_protection",
+    "name_arabic": "حماية أصحاب المصلحة",
+    "transliteration": "Ḥimāyat Aṣḥāb al-Maṣlaḥah",
+    "english_name": "Stakeholder Protection",
+    "russian_name": "Защита заинтересованных сторон",
+    "category": "Stakeholder Justice",
+    "short_definition": "Safeguarding the legitimate interests of all affected parties, not only shareholders.",
+    "quranic_basis": [
+      {
+        "surah": "70",
+        "ayah": "24-25",
+        "relevance": "Inferred: 'a known right for the petitioner and the deprived' grounds duties to non-owning stakeholders."
+      },
+      {
+        "surah": "4",
+        "ayah": "135",
+        "relevance": "Inferred: standing for justice for all parties grounds protecting affected interests broadly."
+      }
+    ],
+    "moral_question": "Are the legitimate interests of all affected parties protected, or sacrificed to owners' returns?",
+    "positive_signals": [
+      "affected interests mapped and protected",
+      "voice for the voiceless",
+      "harms remedied"
+    ],
+    "risk_signals": [
+      "only shareholder interest counts",
+      "affected parties harmed for returns",
+      "voiceless ignored"
+    ],
+    "related_nodes": [
+      "huquq",
+      "adl",
+      "stakeholder_protection",
+      "worker_dignity",
+      "community_benefit"
+    ],
+    "applicable_domains": [
+      "esg",
+      "investing",
+      "governance_policy",
+      "labour"
+    ],
+    "decision_use": "Apply a stakeholder test: protect the legitimate interests of all affected parties, not only owners.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "fair_employment",
+    "name_arabic": "التوظيف العادل",
+    "transliteration": "at-Tawẓīf al-ʿĀdil",
+    "english_name": "Fair Employment",
+    "russian_name": "Справедливая занятость",
+    "category": "Stakeholder Justice",
+    "short_definition": "Just terms, conditions, and treatment in work, free of discrimination and exploitation.",
+    "quranic_basis": [
+      {
+        "surah": "65",
+        "ayah": "6",
+        "relevance": "Inferred: 'give them their due payment' and not to harm workers grounds fair employment terms."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: justice in dealings grounds non-discriminatory, fair conditions."
+      }
+    ],
+    "moral_question": "Are work terms and conditions here just and free of discrimination and exploitation?",
+    "positive_signals": [
+      "fair contracts and pay",
+      "safe conditions",
+      "non-discrimination",
+      "freedom of association"
+    ],
+    "risk_signals": [
+      "exploitative contracts",
+      "unsafe conditions",
+      "discrimination",
+      "union-busting"
+    ],
+    "related_nodes": [
+      "ajr",
+      "ijarah",
+      "worker_dignity",
+      "zulm",
+      "qist"
+    ],
+    "applicable_domains": [
+      "labour",
+      "esg",
+      "investing",
+      "supply_chain"
+    ],
+    "decision_use": "Assess justice of employment terms and freedom from discrimination and exploitation.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "worker_dignity",
+    "name_arabic": "كرامة العامل",
+    "transliteration": "Karāmat al-ʿĀmil",
+    "english_name": "Worker Dignity",
+    "russian_name": "Достоинство работника",
+    "category": "Stakeholder Justice",
+    "short_definition": "Respecting workers as dignified persons, not mere inputs to be used up.",
+    "quranic_basis": [
+      {
+        "surah": "17",
+        "ayah": "70",
+        "relevance": "Inferred: human dignity grounds treating workers as persons, not disposable inputs."
+      },
+      {
+        "surah": "28",
+        "ayah": "26",
+        "relevance": "Inferred: valuing the worker as 'strong and trustworthy' grounds respect for labour."
+      }
+    ],
+    "moral_question": "Are workers treated as dignified persons with rights, or as disposable inputs to be used up?",
+    "positive_signals": [
+      "dignity in treatment",
+      "reasonable hours and rest",
+      "voice and grievance channels"
+    ],
+    "risk_signals": [
+      "dehumanising surveillance or pace",
+      "disposability",
+      "voice suppressed",
+      "burnout normalised"
+    ],
+    "related_nodes": [
+      "human_dignity",
+      "fair_employment",
+      "ajr",
+      "rahmah",
+      "mental_wellbeing"
+    ],
+    "applicable_domains": [
+      "labour",
+      "esg",
+      "ai_systems",
+      "supply_chain"
+    ],
+    "decision_use": "Test whether workers are treated as dignified persons with rights rather than disposable inputs.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "responsible_leadership",
+    "name_arabic": "القيادة المسؤولة",
+    "transliteration": "al-Qiyādah al-Masʾūlah",
+    "english_name": "Responsible Leadership",
+    "russian_name": "Ответственное лидерство",
+    "category": "Corporate Responsibility",
+    "short_definition": "Leadership exercised as an accountable trust for the good of those led and affected.",
+    "quranic_basis": [
+      {
+        "surah": "4",
+        "ayah": "58",
+        "relevance": "Inferred: rendering trusts and judging justly grounds leadership as accountable trust."
+      },
+      {
+        "surah": "38",
+        "ayah": "26",
+        "relevance": "Inferred: judging by truth and not following desire grounds leaders resisting self-interest."
+      }
+    ],
+    "moral_question": "Does leadership here act as an accountable trust for those led and affected, or for its own enrichment and ego?",
+    "positive_signals": [
+      "servant-leadership",
+      "accountable to the led",
+      "long-term and broad good prioritised"
+    ],
+    "risk_signals": [
+      "self-enrichment",
+      "ego-driven risk",
+      "short-termism for bonuses",
+      "capture of the institution"
+    ],
+    "related_nodes": [
+      "amanah",
+      "wilayah",
+      "masuliyyah",
+      "kibr",
+      "hikmah"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "esg",
+      "investing",
+      "ai_systems"
+    ],
+    "decision_use": "Assess whether leadership is exercised as accountable trust for the led, not self-enrichment or ego.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "ethical_investment",
+    "name_arabic": "الاستثمار الأخلاقي",
+    "transliteration": "al-Istithmār al-Akhlāqī",
+    "english_name": "Ethical Investment",
+    "russian_name": "Этичное инвестирование",
+    "category": "Corporate Responsibility",
+    "short_definition": "Allocating capital in ways that avoid harm and support genuine benefit.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "267",
+        "relevance": "Inferred: spending 'from the good of what you have earned' grounds investing in the wholesome, not the harmful."
+      },
+      {
+        "surah": "5",
+        "ayah": "2",
+        "relevance": "Inferred: 'cooperate in righteousness, not in sin' grounds avoiding capital that funds harm."
+      }
+    ],
+    "moral_question": "Does this capital allocation avoid funding harm and genuinely support benefit, or merely brand itself ethical?",
+    "positive_signals": [
+      "harmful activities excluded",
+      "genuine benefit funded",
+      "engagement for real change"
+    ],
+    "risk_signals": [
+      "greenwashed funds",
+      "harm funded behind labels",
+      "engagement without effect"
+    ],
+    "related_nodes": [
+      "tayyibat",
+      "khabaith",
+      "sustainable_finance",
+      "maslahah",
+      "sidq"
+    ],
+    "applicable_domains": [
+      "investing",
+      "fintech",
+      "esg",
+      "energy_transition"
+    ],
+    "decision_use": "Test whether capital genuinely avoids harm and supports benefit rather than merely branding itself ethical.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "sustainable_finance",
+    "name_arabic": "التمويل المستدام",
+    "transliteration": "at-Tamwīl al-Mustadām",
+    "english_name": "Sustainable Finance",
+    "russian_name": "Устойчивое финансирование",
+    "category": "Corporate Responsibility",
+    "short_definition": "Financial structures that align returns with long-term real-economy benefit and risk-sharing.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "275",
+        "relevance": "Inferred: permitting value-creating trade while forbidding ribā grounds finance tied to real value."
+      },
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Inferred: that wealth 'not circulate only among the rich' grounds broadly beneficial finance."
+      }
+    ],
+    "moral_question": "Does this finance align returns with long-term real benefit and shared risk, or extract regardless of outcome?",
+    "positive_signals": [
+      "returns tied to real value",
+      "risk genuinely shared",
+      "long-term alignment"
+    ],
+    "risk_signals": [
+      "extraction decoupled from value",
+      "short-term return at long-term cost",
+      "label without substance"
+    ],
+    "related_nodes": [
+      "riba",
+      "musharakah",
+      "mudarabah",
+      "barakah",
+      "long_term_resilience"
+    ],
+    "applicable_domains": [
+      "fintech",
+      "investing",
+      "esg",
+      "energy_transition"
+    ],
+    "decision_use": "Assess whether finance aligns returns with long-term real benefit and shared risk rather than decoupled extraction.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "shared_prosperity",
+    "name_arabic": "الازدهار المشترك",
+    "transliteration": "al-Izdihār al-Mushtarak",
+    "english_name": "Shared Prosperity",
+    "russian_name": "Общее процветание",
+    "category": "Stakeholder Justice",
+    "short_definition": "Distributing the gains of economic activity broadly rather than concentrating them.",
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "7",
+        "relevance": "Direct (underlying principle), modern framing: that wealth 'not circulate only among the rich among you' grounds broad sharing of prosperity."
+      },
+      {
+        "surah": "70",
+        "ayah": "24-25",
+        "relevance": "Inferred: a 'known right' of others in wealth grounds shared, not hoarded, gains."
+      }
+    ],
+    "moral_question": "Are the gains here shared broadly with workers, communities, and society, or concentrated among a few?",
+    "positive_signals": [
+      "gains shared with workers and communities",
+      "reasonable pay ratios",
+      "value distributed"
+    ],
+    "risk_signals": [
+      "gains concentrated at the top",
+      "extreme pay disparity",
+      "communities excluded from value"
+    ],
+    "related_nodes": [
+      "adalah_ijtimaiyyah",
+      "qist",
+      "zakat",
+      "community_benefit",
+      "stakeholder_protection"
+    ],
+    "applicable_domains": [
+      "investing",
+      "esg",
+      "labour",
+      "governance_policy"
+    ],
+    "decision_use": "Test whether economic gains are shared broadly or concentrated among a narrow few.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "community_benefit",
+    "name_arabic": "منفعة المجتمع",
+    "transliteration": "Manfaʿat al-Mujtamaʿ",
+    "english_name": "Community Benefit",
+    "russian_name": "Польза для сообщества",
+    "category": "Stakeholder Justice",
+    "short_definition": "Ensuring local communities affected by an activity genuinely benefit from it.",
+    "quranic_basis": [
+      {
+        "surah": "28",
+        "ayah": "77",
+        "relevance": "Inferred: 'do good as God has done good to you' grounds benefiting the surrounding community."
+      },
+      {
+        "surah": "11",
+        "ayah": "61",
+        "relevance": "Inferred: developing the earth for the people's benefit grounds local gain from local activity."
+      }
+    ],
+    "moral_question": "Do the communities hosting or affected by this activity genuinely benefit, or only bear its costs?",
+    "positive_signals": [
+      "local employment and value",
+      "host community share of benefit",
+      "local consent and voice"
+    ],
+    "risk_signals": [
+      "costs local, benefits elsewhere",
+      "enclave extraction",
+      "communities bear harm without gain"
+    ],
+    "related_nodes": [
+      "maslahah",
+      "shura",
+      "stakeholder_protection",
+      "infrastructure_equity",
+      "rahmah"
+    ],
+    "applicable_domains": [
+      "esg",
+      "investing",
+      "energy_transition",
+      "governance_policy"
+    ],
+    "decision_use": "Assess whether affected communities genuinely benefit rather than only bearing the costs of an activity.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "public_value_creation",
+    "name_arabic": "خلق القيمة العامة",
+    "transliteration": "Khalq al-Qīmah al-ʿĀmmah",
+    "english_name": "Public Value Creation",
+    "russian_name": "Создание общественной ценности",
+    "category": "Public Policy",
+    "short_definition": "Generating genuine, broad public value rather than capturing private value from the public.",
+    "quranic_basis": [
+      {
+        "surah": "13",
+        "ayah": "17",
+        "relevance": "Inferred: 'what benefits people remains on the earth' grounds creating lasting public value."
+      },
+      {
+        "surah": "2",
+        "ayah": "272",
+        "relevance": "Inferred: spending for genuine benefit grounds value that serves the public good."
+      }
+    ],
+    "moral_question": "Does this decision create genuine public value, or extract private value at public expense?",
+    "positive_signals": [
+      "net public value created",
+      "value retained by the public",
+      "positive spillovers"
+    ],
+    "risk_signals": [
+      "private value captured from the public",
+      "socialised costs, privatised gains",
+      "value extraction dressed as creation"
+    ],
+    "related_nodes": [
+      "maslahah",
+      "public_value_creation",
+      "shared_prosperity",
+      "barakah",
+      "adl"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "public_policy",
+      "esg",
+      "investing"
+    ],
+    "decision_use": "Test whether genuine broad public value is created versus private value captured at public expense.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "civilizational_balance",
+    "name_arabic": "التوازن الحضاري",
+    "transliteration": "at-Tawāzun al-Ḥaḍārī",
+    "english_name": "Civilizational Balance",
+    "russian_name": "Цивилизационное равновесие",
+    "category": "Civilizational Sustainability",
+    "short_definition": "Balance across a civilization's material, social, ecological, and moral dimensions.",
+    "quranic_basis": [
+      {
+        "surah": "55",
+        "ayah": "7-9",
+        "relevance": "Inferred: the balance set across creation grounds balance across a society's dimensions; civilizational framing is modern."
+      },
+      {
+        "surah": "2",
+        "ayah": "143",
+        "relevance": "Inferred: the 'balanced/middle community (wasaṭ)' grounds a civilization avoiding extremes."
+      }
+    ],
+    "moral_question": "Is this society advancing in balance across material, social, ecological, and moral dimensions, or overdeveloping one at others' cost?",
+    "positive_signals": [
+      "balanced multi-dimensional progress",
+      "material gain matched by social and moral health",
+      "ecological balance kept"
+    ],
+    "risk_signals": [
+      "material overshoot with social decay",
+      "moral or ecological deficit hidden by GDP",
+      "unbalanced development"
+    ],
+    "related_nodes": [
+      "mizan",
+      "wasatiyyah",
+      "tawazun",
+      "planetary_balance",
+      "systemic_justice"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "climate_risk",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Assess whether societal progress is balanced across material, social, ecological, and moral dimensions.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "societal_cohesion",
+    "name_arabic": "التماسك المجتمعي",
+    "transliteration": "at-Tamāsuk al-Mujtamaʿī",
+    "english_name": "Societal Cohesion",
+    "russian_name": "Сплочённость общества",
+    "category": "Civilizational Sustainability",
+    "short_definition": "The bonds of trust and solidarity that hold a society together.",
+    "quranic_basis": [
+      {
+        "surah": "3",
+        "ayah": "103",
+        "relevance": "Direct (underlying principle), modern framing: 'hold firmly together and do not be divided' grounds social cohesion."
+      },
+      {
+        "surah": "49",
+        "ayah": "10",
+        "relevance": "Inferred: believers as 'brothers' to be reconciled grounds maintaining social bonds."
+      }
+    ],
+    "moral_question": "Does this decision strengthen the bonds of trust and solidarity in society, or fracture them?",
+    "positive_signals": [
+      "trust and solidarity strengthened",
+      "division actively healed",
+      "inclusion across groups"
+    ],
+    "risk_signals": [
+      "polarisation deepened",
+      "trust eroded",
+      "groups set against one another"
+    ],
+    "related_nodes": [
+      "sulh",
+      "islah",
+      "namimah",
+      "fitnah",
+      "community_resilience"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "ai_systems",
+      "public_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether decisions strengthen or fracture social trust and solidarity.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "peaceful_coexistence",
+    "name_arabic": "التعايش السلمي",
+    "transliteration": "at-Taʿāyush as-Silmī",
+    "english_name": "Peaceful Coexistence",
+    "russian_name": "Мирное сосуществование",
+    "category": "Civilizational Sustainability",
+    "short_definition": "Living together across differences in peace and mutual security.",
+    "quranic_basis": [
+      {
+        "surah": "49",
+        "ayah": "13",
+        "relevance": "Direct (underlying principle), modern framing: peoples made diverse 'to know one another' grounds coexistence across difference."
+      },
+      {
+        "surah": "8",
+        "ayah": "61",
+        "relevance": "Inferred: 'if they incline to peace, incline to it' grounds preferring peaceful coexistence."
+      }
+    ],
+    "moral_question": "Does this decision support peaceful coexistence across differences, or inflame division and conflict?",
+    "positive_signals": [
+      "peace and mutual security supported",
+      "difference respected",
+      "de-escalation favoured"
+    ],
+    "risk_signals": [
+      "division inflamed",
+      "conflict provoked",
+      "groups dehumanised"
+    ],
+    "related_nodes": [
+      "sulh",
+      "aman",
+      "societal_cohesion",
+      "cultural_preservation",
+      "fitnah"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "ai_systems",
+      "public_policy",
+      "esg"
+    ],
+    "decision_use": "Assess whether decisions support peaceful coexistence across differences or inflame conflict.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "cultural_preservation",
+    "name_arabic": "الحفاظ على الثقافة",
+    "transliteration": "al-Ḥifāẓ ʿalā ath-Thaqāfah",
+    "english_name": "Cultural Preservation",
+    "russian_name": "Сохранение культуры",
+    "category": "Civilizational Sustainability",
+    "short_definition": "Protecting the diversity of cultures, languages, and heritage as a created good.",
+    "quranic_basis": [
+      {
+        "surah": "30",
+        "ayah": "22",
+        "relevance": "Direct (underlying principle), modern framing: 'the diversity of your languages and colours' as signs grounds valuing cultural diversity."
+      },
+      {
+        "surah": "49",
+        "ayah": "13",
+        "relevance": "Inferred: peoples and tribes made diverse grounds respect for distinct cultures."
+      }
+    ],
+    "moral_question": "Does this decision protect the diversity of cultures, languages, and heritage, or erase or homogenise them?",
+    "positive_signals": [
+      "heritage protected",
+      "linguistic and cultural diversity sustained",
+      "local identity respected"
+    ],
+    "risk_signals": [
+      "cultural erasure",
+      "forced homogenisation",
+      "heritage destroyed for development"
+    ],
+    "related_nodes": [
+      "maqasid_hifz_din",
+      "peaceful_coexistence",
+      "huquq",
+      "rahmah",
+      "cultural_preservation"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "ai_systems",
+      "public_policy",
+      "esg"
+    ],
+    "decision_use": "Test whether cultural, linguistic, and heritage diversity is protected rather than erased or homogenised.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "knowledge_civilization",
+    "name_arabic": "حضارة المعرفة",
+    "transliteration": "Ḥaḍārat al-Maʿrifah",
+    "english_name": "Knowledge Civilization",
+    "russian_name": "Цивилизация знаний",
+    "category": "Civilizational Sustainability",
+    "short_definition": "A society that cultivates, shares, and rightly uses knowledge for the common good.",
+    "quranic_basis": [
+      {
+        "surah": "96",
+        "ayah": "1-5",
+        "relevance": "Inferred: 'Read... taught by the pen' grounds a civilization built on learning; the civilizational framing is modern."
+      },
+      {
+        "surah": "39",
+        "ayah": "9",
+        "relevance": "Inferred: exalting those who know grounds a knowledge-cultivating society."
+      }
+    ],
+    "moral_question": "Does this society cultivate and rightly use knowledge for the common good, or suppress, distort, or weaponise it?",
+    "positive_signals": [
+      "broad knowledge cultivation",
+      "open exchange",
+      "knowledge applied for benefit"
+    ],
+    "risk_signals": [
+      "knowledge suppressed or captured",
+      "distortion and disinformation",
+      "knowledge weaponised"
+    ],
+    "related_nodes": [
+      "ilm",
+      "education_access",
+      "knowledge_development",
+      "scientific_responsibility",
+      "tafakkur"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "ai_systems",
+      "public_policy",
+      "esg"
+    ],
+    "decision_use": "Assess whether a society cultivates and rightly uses knowledge for the common good — a modern civilizational framing.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "stewardship_civilization",
+    "name_arabic": "حضارة الاستخلاف",
+    "transliteration": "Ḥaḍārat al-Istikhlāf",
+    "english_name": "Stewardship Civilization",
+    "russian_name": "Цивилизация попечительства",
+    "category": "Civilizational Sustainability",
+    "short_definition": "A society organised around responsible trusteeship of creation rather than extraction.",
+    "quranic_basis": [
+      {
+        "surah": "2",
+        "ayah": "30",
+        "relevance": "Inferred: the human role as steward (khalīfah) grounds a civilization of trusteeship; the civilizational framing is modern."
+      },
+      {
+        "surah": "6",
+        "ayah": "165",
+        "relevance": "Inferred: being made 'stewards of the earth' and tested in it grounds a stewardship-oriented society."
+      }
+    ],
+    "moral_question": "Is this society organised around responsible trusteeship of creation, or around extraction and overshoot?",
+    "positive_signals": [
+      "trusteeship institutions",
+      "extraction within limits",
+      "regenerative orientation"
+    ],
+    "risk_signals": [
+      "extractive model dominant",
+      "commons enclosed and depleted",
+      "overshoot normalised"
+    ],
+    "related_nodes": [
+      "khalifah",
+      "istikhlaf",
+      "resource_stewardship",
+      "natural_capital_stewardship",
+      "planetary_balance"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "climate_risk",
+      "esg",
+      "energy_transition"
+    ],
+    "decision_use": "Assess whether societal organisation reflects responsible trusteeship of creation versus extraction — a modern framing of istikhlāf.",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  },
+  {
+    "id": "moral_resilience",
+    "name_arabic": "الصمود الأخلاقي",
+    "transliteration": "aṣ-Ṣumūd al-Akhlāqī",
+    "english_name": "Moral Resilience",
+    "russian_name": "Моральная устойчивость",
+    "category": "Civilizational Sustainability",
+    "short_definition": "The capacity of people and institutions to hold to ethical commitments under pressure.",
+    "quranic_basis": [
+      {
+        "surah": "103",
+        "ayah": "1-3",
+        "relevance": "Inferred: enjoining truth and patience as protection from loss grounds steadfast moral commitment."
+      },
+      {
+        "surah": "41",
+        "ayah": "30",
+        "relevance": "Inferred: those who say 'our Lord is God' and remain steadfast (istaqāmū) model moral steadfastness."
+      }
+    ],
+    "moral_question": "Will the ethical commitments here hold under pressure, or collapse when costly or inconvenient?",
+    "positive_signals": [
+      "ethics held under pressure",
+      "integrity costly but kept",
+      "incentives aligned to values"
+    ],
+    "risk_signals": [
+      "ethics abandoned when costly",
+      "integrity theatre",
+      "values bent to expedience"
+    ],
+    "related_nodes": [
+      "taqwa",
+      "sabr",
+      "sidq",
+      "ikhlas",
+      "systemic_justice"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "esg",
+      "ai_systems",
+      "investing"
+    ],
+    "decision_use": "Test whether ethical commitments are robust under pressure rather than abandoned when costly.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "systemic_justice",
+    "name_arabic": "العدالة النظامية",
+    "transliteration": "al-ʿAdālah an-Niẓāmiyyah",
+    "english_name": "Systemic Justice",
+    "russian_name": "Системная справедливость",
+    "category": "Civilizational Sustainability",
+    "short_definition": "Justice embedded in the structures and rules of a system, not merely in individual acts.",
+    "quranic_basis": [
+      {
+        "surah": "57",
+        "ayah": "25",
+        "relevance": "Inferred: the Book and Balance sent 'so people uphold justice' grounds justice built into a society's order."
+      },
+      {
+        "surah": "16",
+        "ayah": "90",
+        "relevance": "Inferred: the standing command to justice grounds just structures, not only just individuals."
+      }
+    ],
+    "moral_question": "Is justice built into the structures and rules here, or does the system produce injustice even when individuals act well?",
+    "positive_signals": [
+      "just rules and structures",
+      "unjust outcomes designed out",
+      "systemic bias corrected"
+    ],
+    "risk_signals": [
+      "structural injustice",
+      "good individuals, unjust outcomes",
+      "rules that entrench advantage"
+    ],
+    "related_nodes": [
+      "adl",
+      "qist",
+      "adalah_ijtimaiyyah",
+      "algorithmic_fairness",
+      "zulm"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "ai_systems",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Test whether justice is embedded in system structure and rules, not left to individual virtue alone.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "long_term_wisdom",
+    "name_arabic": "الحكمة بعيدة المدى",
+    "transliteration": "al-Ḥikmah Baʿīdat al-Madā",
+    "english_name": "Long-Term Wisdom",
+    "russian_name": "Дальновидная мудрость",
+    "category": "Civilizational Sustainability",
+    "short_definition": "Decision-making that weighs distant consequences and enduring goods over immediate gain.",
+    "quranic_basis": [
+      {
+        "surah": "59",
+        "ayah": "18",
+        "relevance": "Inferred: 'let every soul look to what it has sent ahead' grounds weighing long-term consequences."
+      },
+      {
+        "surah": "2",
+        "ayah": "269",
+        "relevance": "Inferred: wisdom (ḥikmah) as 'much good' grounds far-sighted judgement."
+      }
+    ],
+    "moral_question": "Does this decision weigh distant consequences and enduring goods, or sacrifice them to immediate gain?",
+    "positive_signals": [
+      "long horizon considered",
+      "enduring goods prioritised",
+      "short-term temptation resisted"
+    ],
+    "risk_signals": [
+      "short-termism dominant",
+      "distant harm discounted to zero",
+      "enduring goods sacrificed"
+    ],
+    "related_nodes": [
+      "hikmah",
+      "tadabbur",
+      "sabr",
+      "future_generations_impact",
+      "long_term_resilience"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "investing",
+      "climate_risk",
+      "ai_systems"
+    ],
+    "decision_use": "Apply as a long-horizon test: weight distant consequences and enduring goods against immediate gain.",
+    "confidence_level": "medium",
+    "scholar_review_required": true
+  },
+  {
+    "id": "civilization_flourishing",
+    "name_arabic": "ازدهار الحضارة",
+    "transliteration": "Izdihār al-Ḥaḍārah",
+    "english_name": "Civilization Flourishing",
+    "russian_name": "Процветание цивилизации",
+    "category": "Civilizational Sustainability",
+    "short_definition": "The integrated, durable flourishing of a society across its people, environment, and values; the graph's apex objective.",
+    "quranic_basis": [
+      {
+        "surah": "7",
+        "ayah": "96",
+        "relevance": "Inferred: blessings 'opened from heaven and earth' for the mindful society grounds integrated flourishing; the civilizational synthesis is a modern framing."
+      },
+      {
+        "surah": "16",
+        "ayah": "97",
+        "relevance": "Inferred: the 'good life (ḥayāh ṭayyibah)' for the righteous, extended to collective flourishing."
+      }
+    ],
+    "moral_question": "Does this decision contribute to the integrated, durable flourishing of society across people, environment, and values — or to hollow growth?",
+    "positive_signals": [
+      "integrated durable flourishing",
+      "people, planet, and values advancing together",
+      "resilience compounding"
+    ],
+    "risk_signals": [
+      "hollow growth masking decline",
+      "one dimension advanced at others' ruin",
+      "fragility beneath prosperity"
+    ],
+    "related_nodes": [
+      "mizan",
+      "maslahah",
+      "civilizational_balance",
+      "systemic_justice",
+      "barakah"
+    ],
+    "applicable_domains": [
+      "governance_policy",
+      "climate_risk",
+      "esg",
+      "public_policy"
+    ],
+    "decision_use": "Use as the apex synthesis test: does the decision advance integrated, durable flourishing across people, environment, and values?",
+    "confidence_level": "low",
+    "scholar_review_required": true
+  }
+]

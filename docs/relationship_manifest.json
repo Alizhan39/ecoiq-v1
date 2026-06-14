@@ -1,0 +1,7396 @@
+{
+  "related_edges": [
+    {
+      "from": "accountability_chain_mapper",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "accountability_chain_mapper",
+      "to": "oversight_adequacy_checker"
+    },
+    {
+      "from": "accountability_chain_mapper",
+      "to": "responsibility_gap_detector"
+    },
+    {
+      "from": "adalah_ijtimaiyyah",
+      "to": "adl"
+    },
+    {
+      "from": "adalah_ijtimaiyyah",
+      "to": "huquq"
+    },
+    {
+      "from": "adalah_ijtimaiyyah",
+      "to": "miskeen"
+    },
+    {
+      "from": "adalah_ijtimaiyyah",
+      "to": "qist"
+    },
+    {
+      "from": "adalah_ijtimaiyyah",
+      "to": "zakat"
+    },
+    {
+      "from": "adalah_ijtimaiyyah",
+      "to": "zulm"
+    },
+    {
+      "from": "adl",
+      "to": "haqq"
+    },
+    {
+      "from": "adl",
+      "to": "hisab"
+    },
+    {
+      "from": "adl",
+      "to": "mizan"
+    },
+    {
+      "from": "adl",
+      "to": "qist"
+    },
+    {
+      "from": "adl",
+      "to": "shahada"
+    },
+    {
+      "from": "adl",
+      "to": "zulm"
+    },
+    {
+      "from": "ai_accountability",
+      "to": "amanah"
+    },
+    {
+      "from": "ai_accountability",
+      "to": "human_oversight"
+    },
+    {
+      "from": "ai_accountability",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "ai_accountability",
+      "to": "muhasabah"
+    },
+    {
+      "from": "ai_accountability",
+      "to": "wakalah"
+    },
+    {
+      "from": "ai_ethics_assessment_layer",
+      "to": "ai_accountability"
+    },
+    {
+      "from": "ai_ethics_assessment_layer",
+      "to": "algorithmic_fairness_auditor"
+    },
+    {
+      "from": "ai_ethics_assessment_layer",
+      "to": "data_stewardship_monitor"
+    },
+    {
+      "from": "ai_ethics_assessment_layer",
+      "to": "responsibility_gap_detector"
+    },
+    {
+      "from": "ai_transparency",
+      "to": "ai_accountability"
+    },
+    {
+      "from": "ai_transparency",
+      "to": "explainable_ai"
+    },
+    {
+      "from": "ai_transparency",
+      "to": "haqq"
+    },
+    {
+      "from": "ai_transparency",
+      "to": "sidq"
+    },
+    {
+      "from": "ai_transparency",
+      "to": "transparency_systems"
+    },
+    {
+      "from": "ajr",
+      "to": "adl"
+    },
+    {
+      "from": "ajr",
+      "to": "ijarah"
+    },
+    {
+      "from": "ajr",
+      "to": "qist"
+    },
+    {
+      "from": "ajr",
+      "to": "rizq"
+    },
+    {
+      "from": "ajr",
+      "to": "zulm"
+    },
+    {
+      "from": "algorithmic_fairness",
+      "to": "adl"
+    },
+    {
+      "from": "algorithmic_fairness",
+      "to": "algorithmic_fairness"
+    },
+    {
+      "from": "algorithmic_fairness",
+      "to": "human_oversight"
+    },
+    {
+      "from": "algorithmic_fairness",
+      "to": "qist"
+    },
+    {
+      "from": "algorithmic_fairness",
+      "to": "zulm"
+    },
+    {
+      "from": "algorithmic_fairness_auditor",
+      "to": "ai_ethics_assessment_layer"
+    },
+    {
+      "from": "algorithmic_fairness_auditor",
+      "to": "algorithmic_fairness"
+    },
+    {
+      "from": "algorithmic_fairness_auditor",
+      "to": "systemic_justice_auditor"
+    },
+    {
+      "from": "aman",
+      "to": "ibn_sabil"
+    },
+    {
+      "from": "aman",
+      "to": "nafs"
+    },
+    {
+      "from": "aman",
+      "to": "rahmah"
+    },
+    {
+      "from": "aman",
+      "to": "rizq"
+    },
+    {
+      "from": "aman",
+      "to": "sulh"
+    },
+    {
+      "from": "amanah",
+      "to": "adl"
+    },
+    {
+      "from": "amanah",
+      "to": "hisab"
+    },
+    {
+      "from": "amanah",
+      "to": "khalifah"
+    },
+    {
+      "from": "amanah",
+      "to": "khiyanah"
+    },
+    {
+      "from": "amanah",
+      "to": "mithaq"
+    },
+    {
+      "from": "amanah",
+      "to": "wafa"
+    },
+    {
+      "from": "animal_welfare",
+      "to": "darar"
+    },
+    {
+      "from": "animal_welfare",
+      "to": "ethical_production"
+    },
+    {
+      "from": "animal_welfare",
+      "to": "khabaith"
+    },
+    {
+      "from": "animal_welfare",
+      "to": "rahmah"
+    },
+    {
+      "from": "animal_welfare",
+      "to": "supply_chain_integrity"
+    },
+    {
+      "from": "anti_corruption",
+      "to": "conflict_of_interest_prevention"
+    },
+    {
+      "from": "anti_corruption",
+      "to": "ethical_procurement"
+    },
+    {
+      "from": "anti_corruption",
+      "to": "fasad"
+    },
+    {
+      "from": "anti_corruption",
+      "to": "khiyanah"
+    },
+    {
+      "from": "anti_corruption",
+      "to": "zulm"
+    },
+    {
+      "from": "anti_corruption_detector",
+      "to": "anti_corruption"
+    },
+    {
+      "from": "anti_corruption_detector",
+      "to": "conflict_of_interest_screen"
+    },
+    {
+      "from": "anti_corruption_detector",
+      "to": "procurement_integrity_monitor"
+    },
+    {
+      "from": "anti_corruption_detector",
+      "to": "whistleblower_signal_aggregator"
+    },
+    {
+      "from": "antifragility_designer",
+      "to": "climate_resilience_stress_test"
+    },
+    {
+      "from": "antifragility_designer",
+      "to": "continuity_reserve_planner"
+    },
+    {
+      "from": "antifragility_designer",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "aql",
+      "to": "hikmah"
+    },
+    {
+      "from": "aql",
+      "to": "ilm"
+    },
+    {
+      "from": "aql",
+      "to": "maqasid_hifz_aql"
+    },
+    {
+      "from": "aql",
+      "to": "tadabbur"
+    },
+    {
+      "from": "aql",
+      "to": "tafakkur"
+    },
+    {
+      "from": "ard",
+      "to": "fasad"
+    },
+    {
+      "from": "ard",
+      "to": "israf"
+    },
+    {
+      "from": "ard",
+      "to": "khalifah"
+    },
+    {
+      "from": "ard",
+      "to": "maa"
+    },
+    {
+      "from": "ard",
+      "to": "mizan"
+    },
+    {
+      "from": "barakah",
+      "to": "islah"
+    },
+    {
+      "from": "barakah",
+      "to": "israf"
+    },
+    {
+      "from": "barakah",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "barakah",
+      "to": "nimah"
+    },
+    {
+      "from": "barakah",
+      "to": "rizq"
+    },
+    {
+      "from": "batil",
+      "to": "gharar"
+    },
+    {
+      "from": "batil",
+      "to": "ghish"
+    },
+    {
+      "from": "batil",
+      "to": "haqq"
+    },
+    {
+      "from": "batil",
+      "to": "riba"
+    },
+    {
+      "from": "batil",
+      "to": "zulm"
+    },
+    {
+      "from": "bay",
+      "to": "gharar"
+    },
+    {
+      "from": "bay",
+      "to": "ghish"
+    },
+    {
+      "from": "bay",
+      "to": "ijarah"
+    },
+    {
+      "from": "bay",
+      "to": "qist"
+    },
+    {
+      "from": "bay",
+      "to": "riba"
+    },
+    {
+      "from": "bay",
+      "to": "tatfif"
+    },
+    {
+      "from": "bayyinah",
+      "to": "ghish"
+    },
+    {
+      "from": "bayyinah",
+      "to": "haqq"
+    },
+    {
+      "from": "bayyinah",
+      "to": "ilm"
+    },
+    {
+      "from": "bayyinah",
+      "to": "shahada"
+    },
+    {
+      "from": "benefit_harm_triangulator",
+      "to": "bayyinah"
+    },
+    {
+      "from": "benefit_harm_triangulator",
+      "to": "intent_reality_engine"
+    },
+    {
+      "from": "benefit_harm_triangulator",
+      "to": "sidq"
+    },
+    {
+      "from": "benefit_harm_triangulator",
+      "to": "truthfulness_greenwashing_detector"
+    },
+    {
+      "from": "biodiversity_protection",
+      "to": "ard"
+    },
+    {
+      "from": "biodiversity_protection",
+      "to": "ecosystem_stability"
+    },
+    {
+      "from": "biodiversity_protection",
+      "to": "fasad"
+    },
+    {
+      "from": "biodiversity_protection",
+      "to": "khalifah"
+    },
+    {
+      "from": "biodiversity_protection",
+      "to": "tawazun"
+    },
+    {
+      "from": "biodiversity_risk_engine",
+      "to": "biodiversity_protection"
+    },
+    {
+      "from": "biodiversity_risk_engine",
+      "to": "ecosystem_stability"
+    },
+    {
+      "from": "biodiversity_risk_engine",
+      "to": "ecosystem_stability_monitor"
+    },
+    {
+      "from": "biodiversity_risk_engine",
+      "to": "fasad"
+    },
+    {
+      "from": "bukhl",
+      "to": "israf"
+    },
+    {
+      "from": "bukhl",
+      "to": "tabdhir"
+    },
+    {
+      "from": "bukhl",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "bukhl",
+      "to": "zakat"
+    },
+    {
+      "from": "bukhl",
+      "to": "zulm"
+    },
+    {
+      "from": "capital_integrity_analyzer",
+      "to": "ethical_finance_fit_engine"
+    },
+    {
+      "from": "capital_integrity_analyzer",
+      "to": "maqasid_hifz_mal"
+    },
+    {
+      "from": "capital_integrity_analyzer",
+      "to": "riba"
+    },
+    {
+      "from": "capital_integrity_analyzer",
+      "to": "sustainable_finance"
+    },
+    {
+      "from": "carbon_responsibility",
+      "to": "emissions_responsibility"
+    },
+    {
+      "from": "carbon_responsibility",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "carbon_responsibility",
+      "to": "sidq"
+    },
+    {
+      "from": "carbon_responsibility",
+      "to": "tatfif"
+    },
+    {
+      "from": "carbon_responsibility",
+      "to": "transition_planning"
+    },
+    {
+      "from": "cause_effect_tracer",
+      "to": "bayyinah"
+    },
+    {
+      "from": "cause_effect_tracer",
+      "to": "cause_effect_tracer"
+    },
+    {
+      "from": "cause_effect_tracer",
+      "to": "disclosure_verification_engine"
+    },
+    {
+      "from": "circular_economy",
+      "to": "israf"
+    },
+    {
+      "from": "circular_economy",
+      "to": "resource_stewardship"
+    },
+    {
+      "from": "circular_economy",
+      "to": "responsible_consumption"
+    },
+    {
+      "from": "circular_economy",
+      "to": "tabdhir"
+    },
+    {
+      "from": "circular_economy",
+      "to": "waste_reduction"
+    },
+    {
+      "from": "circular_resource_tracker",
+      "to": "circular_economy"
+    },
+    {
+      "from": "circular_resource_tracker",
+      "to": "israf"
+    },
+    {
+      "from": "circular_resource_tracker",
+      "to": "resource_sufficiency_monitor"
+    },
+    {
+      "from": "circular_resource_tracker",
+      "to": "waste_reduction"
+    },
+    {
+      "from": "civilization_flourishing",
+      "to": "barakah"
+    },
+    {
+      "from": "civilization_flourishing",
+      "to": "civilizational_balance"
+    },
+    {
+      "from": "civilization_flourishing",
+      "to": "maslahah"
+    },
+    {
+      "from": "civilization_flourishing",
+      "to": "mizan"
+    },
+    {
+      "from": "civilization_flourishing",
+      "to": "systemic_justice"
+    },
+    {
+      "from": "civilizational_balance",
+      "to": "mizan"
+    },
+    {
+      "from": "civilizational_balance",
+      "to": "planetary_balance"
+    },
+    {
+      "from": "civilizational_balance",
+      "to": "systemic_justice"
+    },
+    {
+      "from": "civilizational_balance",
+      "to": "tawazun"
+    },
+    {
+      "from": "civilizational_balance",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "civilizational_balance_dashboard",
+      "to": "civilizational_balance"
+    },
+    {
+      "from": "civilizational_balance_dashboard",
+      "to": "mizan_balance_engine"
+    },
+    {
+      "from": "civilizational_balance_dashboard",
+      "to": "planetary_boundary_tracker"
+    },
+    {
+      "from": "civilizational_balance_dashboard",
+      "to": "systemic_justice_auditor"
+    },
+    {
+      "from": "clean_energy",
+      "to": "emissions_responsibility"
+    },
+    {
+      "from": "clean_energy",
+      "to": "fasad"
+    },
+    {
+      "from": "clean_energy",
+      "to": "maslahah"
+    },
+    {
+      "from": "clean_energy",
+      "to": "pollution_prevention"
+    },
+    {
+      "from": "clean_energy",
+      "to": "taskhir"
+    },
+    {
+      "from": "climate_adaptation",
+      "to": "drought_resilience"
+    },
+    {
+      "from": "climate_adaptation",
+      "to": "flood_protection"
+    },
+    {
+      "from": "climate_adaptation",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "climate_adaptation",
+      "to": "miskeen"
+    },
+    {
+      "from": "climate_adaptation",
+      "to": "sabr"
+    },
+    {
+      "from": "climate_justice",
+      "to": "adl"
+    },
+    {
+      "from": "climate_justice",
+      "to": "intergenerational_responsibility"
+    },
+    {
+      "from": "climate_justice",
+      "to": "miskeen"
+    },
+    {
+      "from": "climate_justice",
+      "to": "qist"
+    },
+    {
+      "from": "climate_justice",
+      "to": "zulm"
+    },
+    {
+      "from": "climate_resilience_stress_test",
+      "to": "climate_adaptation"
+    },
+    {
+      "from": "climate_resilience_stress_test",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "climate_resilience_stress_test",
+      "to": "scenario_simulator"
+    },
+    {
+      "from": "climate_risk",
+      "to": "emissions_responsibility"
+    },
+    {
+      "from": "climate_risk",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "climate_risk",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "climate_risk",
+      "to": "tadabbur"
+    },
+    {
+      "from": "climate_risk",
+      "to": "transition_planning"
+    },
+    {
+      "from": "climate_transition_intelligence",
+      "to": "carbon_responsibility"
+    },
+    {
+      "from": "climate_transition_intelligence",
+      "to": "climate_risk"
+    },
+    {
+      "from": "climate_transition_intelligence",
+      "to": "scenario_simulator"
+    },
+    {
+      "from": "climate_transition_intelligence",
+      "to": "transition_planning"
+    },
+    {
+      "from": "communication_access",
+      "to": "communication_access"
+    },
+    {
+      "from": "communication_access",
+      "to": "digital_infrastructure"
+    },
+    {
+      "from": "communication_access",
+      "to": "huquq"
+    },
+    {
+      "from": "communication_access",
+      "to": "ilm"
+    },
+    {
+      "from": "communication_access",
+      "to": "maqasid_hifz_aql"
+    },
+    {
+      "from": "community_benefit",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "community_benefit",
+      "to": "maslahah"
+    },
+    {
+      "from": "community_benefit",
+      "to": "rahmah"
+    },
+    {
+      "from": "community_benefit",
+      "to": "shura"
+    },
+    {
+      "from": "community_benefit",
+      "to": "stakeholder_protection"
+    },
+    {
+      "from": "community_nutrition",
+      "to": "food_security"
+    },
+    {
+      "from": "community_nutrition",
+      "to": "miskeen"
+    },
+    {
+      "from": "community_nutrition",
+      "to": "public_health"
+    },
+    {
+      "from": "community_nutrition",
+      "to": "rahmah"
+    },
+    {
+      "from": "community_nutrition",
+      "to": "yateem"
+    },
+    {
+      "from": "community_resilience",
+      "to": "aman"
+    },
+    {
+      "from": "community_resilience",
+      "to": "disaster_preparedness"
+    },
+    {
+      "from": "community_resilience",
+      "to": "sabr"
+    },
+    {
+      "from": "community_resilience",
+      "to": "societal_cohesion"
+    },
+    {
+      "from": "community_resilience",
+      "to": "sulh"
+    },
+    {
+      "from": "community_resilience_planner",
+      "to": "community_resilience"
+    },
+    {
+      "from": "community_resilience_planner",
+      "to": "disaster_resilience_planner"
+    },
+    {
+      "from": "community_resilience_planner",
+      "to": "societal_resilience_index"
+    },
+    {
+      "from": "company_ethics_scorer",
+      "to": "capital_integrity_analyzer"
+    },
+    {
+      "from": "company_ethics_scorer",
+      "to": "corporate_accountability"
+    },
+    {
+      "from": "company_ethics_scorer",
+      "to": "truthfulness_greenwashing_detector"
+    },
+    {
+      "from": "conflict_of_interest_prevention",
+      "to": "adl"
+    },
+    {
+      "from": "conflict_of_interest_prevention",
+      "to": "amanah"
+    },
+    {
+      "from": "conflict_of_interest_prevention",
+      "to": "anti_corruption"
+    },
+    {
+      "from": "conflict_of_interest_prevention",
+      "to": "raqabah"
+    },
+    {
+      "from": "conflict_of_interest_prevention",
+      "to": "wakalah"
+    },
+    {
+      "from": "conflict_of_interest_screen",
+      "to": "anti_corruption_detector"
+    },
+    {
+      "from": "conflict_of_interest_screen",
+      "to": "conflict_of_interest_prevention"
+    },
+    {
+      "from": "conflict_of_interest_screen",
+      "to": "regulatory_capture_detector"
+    },
+    {
+      "from": "continuity_reserve_planner",
+      "to": "drought_resilience"
+    },
+    {
+      "from": "continuity_reserve_planner",
+      "to": "energy_security_analyzer"
+    },
+    {
+      "from": "continuity_reserve_planner",
+      "to": "food_security_monitor"
+    },
+    {
+      "from": "continuous_audit_engine",
+      "to": "decision_audit_trail"
+    },
+    {
+      "from": "continuous_audit_engine",
+      "to": "muhasabah"
+    },
+    {
+      "from": "continuous_audit_engine",
+      "to": "oversight_adequacy_checker"
+    },
+    {
+      "from": "corporate_accountability",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "corporate_accountability",
+      "to": "muhasabah"
+    },
+    {
+      "from": "corporate_accountability",
+      "to": "public_disclosure"
+    },
+    {
+      "from": "corporate_accountability",
+      "to": "stakeholder_protection"
+    },
+    {
+      "from": "corporate_accountability",
+      "to": "zulm"
+    },
+    {
+      "from": "country_transition_scorer",
+      "to": "climate_transition_intelligence"
+    },
+    {
+      "from": "country_transition_scorer",
+      "to": "governance_integrity_scanner"
+    },
+    {
+      "from": "country_transition_scorer",
+      "to": "just_transition_planner"
+    },
+    {
+      "from": "cultural_impact_assessor",
+      "to": "cultural_preservation"
+    },
+    {
+      "from": "cultural_impact_assessor",
+      "to": "peaceful_coexistence"
+    },
+    {
+      "from": "cultural_impact_assessor",
+      "to": "social_cohesion_monitor"
+    },
+    {
+      "from": "cultural_preservation",
+      "to": "cultural_preservation"
+    },
+    {
+      "from": "cultural_preservation",
+      "to": "huquq"
+    },
+    {
+      "from": "cultural_preservation",
+      "to": "maqasid_hifz_din"
+    },
+    {
+      "from": "cultural_preservation",
+      "to": "peaceful_coexistence"
+    },
+    {
+      "from": "cultural_preservation",
+      "to": "rahmah"
+    },
+    {
+      "from": "darar",
+      "to": "la_darar"
+    },
+    {
+      "from": "darar",
+      "to": "mafsadah"
+    },
+    {
+      "from": "darar",
+      "to": "nafs"
+    },
+    {
+      "from": "darar",
+      "to": "rahmah"
+    },
+    {
+      "from": "darar",
+      "to": "zulm"
+    },
+    {
+      "from": "data_integrity",
+      "to": "bayyinah"
+    },
+    {
+      "from": "data_integrity",
+      "to": "data_stewardship"
+    },
+    {
+      "from": "data_integrity",
+      "to": "sidq"
+    },
+    {
+      "from": "data_integrity",
+      "to": "tatfif"
+    },
+    {
+      "from": "data_integrity",
+      "to": "transparency_systems"
+    },
+    {
+      "from": "data_stewardship",
+      "to": "amanah"
+    },
+    {
+      "from": "data_stewardship",
+      "to": "data_integrity"
+    },
+    {
+      "from": "data_stewardship",
+      "to": "khiyanah"
+    },
+    {
+      "from": "data_stewardship",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "data_stewardship",
+      "to": "privacy_protection"
+    },
+    {
+      "from": "data_stewardship_monitor",
+      "to": "ai_ethics_assessment_layer"
+    },
+    {
+      "from": "data_stewardship_monitor",
+      "to": "data_stewardship"
+    },
+    {
+      "from": "data_stewardship_monitor",
+      "to": "privacy_protection"
+    },
+    {
+      "from": "dayn",
+      "to": "maqasid_hifz_mal"
+    },
+    {
+      "from": "dayn",
+      "to": "qard_hasan"
+    },
+    {
+      "from": "dayn",
+      "to": "riba"
+    },
+    {
+      "from": "dayn",
+      "to": "shahada"
+    },
+    {
+      "from": "dayn",
+      "to": "wafa"
+    },
+    {
+      "from": "decision_audit_trail",
+      "to": "accountability_chain_mapper"
+    },
+    {
+      "from": "decision_audit_trail",
+      "to": "bayyinah"
+    },
+    {
+      "from": "decision_audit_trail",
+      "to": "continuous_audit_engine"
+    },
+    {
+      "from": "decision_audit_trail",
+      "to": "shahada"
+    },
+    {
+      "from": "decision_triage_framework",
+      "to": "harm_prevention_gate"
+    },
+    {
+      "from": "decision_triage_framework",
+      "to": "moral_compass_engine"
+    },
+    {
+      "from": "decision_triage_framework",
+      "to": "uncertainty_review_router"
+    },
+    {
+      "from": "digital_infrastructure",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "digital_infrastructure",
+      "to": "communication_access"
+    },
+    {
+      "from": "digital_infrastructure",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "digital_infrastructure",
+      "to": "maslahah"
+    },
+    {
+      "from": "digital_infrastructure",
+      "to": "privacy_protection"
+    },
+    {
+      "from": "din",
+      "to": "adl"
+    },
+    {
+      "from": "din",
+      "to": "haqq"
+    },
+    {
+      "from": "din",
+      "to": "maqasid_hifz_din"
+    },
+    {
+      "from": "din",
+      "to": "rahmah"
+    },
+    {
+      "from": "disaster_preparedness",
+      "to": "community_resilience"
+    },
+    {
+      "from": "disaster_preparedness",
+      "to": "flood_protection"
+    },
+    {
+      "from": "disaster_preparedness",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "disaster_preparedness",
+      "to": "nafs"
+    },
+    {
+      "from": "disaster_preparedness",
+      "to": "sabr"
+    },
+    {
+      "from": "disaster_resilience_planner",
+      "to": "climate_resilience_stress_test"
+    },
+    {
+      "from": "disaster_resilience_planner",
+      "to": "community_resilience_planner"
+    },
+    {
+      "from": "disaster_resilience_planner",
+      "to": "disaster_preparedness"
+    },
+    {
+      "from": "disclosure_verification_engine",
+      "to": "continuous_audit_engine"
+    },
+    {
+      "from": "disclosure_verification_engine",
+      "to": "public_disclosure"
+    },
+    {
+      "from": "disclosure_verification_engine",
+      "to": "truthfulness_greenwashing_detector"
+    },
+    {
+      "from": "disinformation_fitnah_detector",
+      "to": "fitnah"
+    },
+    {
+      "from": "disinformation_fitnah_detector",
+      "to": "maqasid_hifz_aql"
+    },
+    {
+      "from": "disinformation_fitnah_detector",
+      "to": "namimah"
+    },
+    {
+      "from": "disinformation_fitnah_detector",
+      "to": "social_cohesion_monitor"
+    },
+    {
+      "from": "distributional_impact_engine",
+      "to": "equity_gap_monitor"
+    },
+    {
+      "from": "distributional_impact_engine",
+      "to": "justice_allocation_engine"
+    },
+    {
+      "from": "distributional_impact_engine",
+      "to": "shared_prosperity_analyzer"
+    },
+    {
+      "from": "drought_flood_early_warning",
+      "to": "disaster_resilience_planner"
+    },
+    {
+      "from": "drought_flood_early_warning",
+      "to": "drought_resilience"
+    },
+    {
+      "from": "drought_flood_early_warning",
+      "to": "flood_protection"
+    },
+    {
+      "from": "drought_flood_early_warning",
+      "to": "water_security_index"
+    },
+    {
+      "from": "drought_resilience",
+      "to": "climate_adaptation"
+    },
+    {
+      "from": "drought_resilience",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "drought_resilience",
+      "to": "sabr"
+    },
+    {
+      "from": "drought_resilience",
+      "to": "tafakkur"
+    },
+    {
+      "from": "drought_resilience",
+      "to": "water_security"
+    },
+    {
+      "from": "ecosystem_stability",
+      "to": "biodiversity_protection"
+    },
+    {
+      "from": "ecosystem_stability",
+      "to": "fasad"
+    },
+    {
+      "from": "ecosystem_stability",
+      "to": "mizan"
+    },
+    {
+      "from": "ecosystem_stability",
+      "to": "planetary_balance"
+    },
+    {
+      "from": "ecosystem_stability",
+      "to": "tawazun"
+    },
+    {
+      "from": "ecosystem_stability_monitor",
+      "to": "biodiversity_risk_engine"
+    },
+    {
+      "from": "ecosystem_stability_monitor",
+      "to": "ecosystem_stability"
+    },
+    {
+      "from": "ecosystem_stability_monitor",
+      "to": "tipping_point_early_warning"
+    },
+    {
+      "from": "education_access",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "education_access",
+      "to": "huquq"
+    },
+    {
+      "from": "education_access",
+      "to": "ilm"
+    },
+    {
+      "from": "education_access",
+      "to": "knowledge_development"
+    },
+    {
+      "from": "education_access",
+      "to": "social_mobility"
+    },
+    {
+      "from": "emissions_responsibility",
+      "to": "carbon_responsibility"
+    },
+    {
+      "from": "emissions_responsibility",
+      "to": "fasad"
+    },
+    {
+      "from": "emissions_responsibility",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "emissions_responsibility",
+      "to": "public_disclosure"
+    },
+    {
+      "from": "emissions_responsibility",
+      "to": "tatfif"
+    },
+    {
+      "from": "energy_access",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "energy_access",
+      "to": "energy_security"
+    },
+    {
+      "from": "energy_access",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "energy_access",
+      "to": "miskeen"
+    },
+    {
+      "from": "energy_access",
+      "to": "rizq"
+    },
+    {
+      "from": "energy_efficiency",
+      "to": "clean_energy"
+    },
+    {
+      "from": "energy_efficiency",
+      "to": "israf"
+    },
+    {
+      "from": "energy_efficiency",
+      "to": "qadar"
+    },
+    {
+      "from": "energy_efficiency",
+      "to": "resource_stewardship"
+    },
+    {
+      "from": "energy_efficiency",
+      "to": "tabdhir"
+    },
+    {
+      "from": "energy_security",
+      "to": "aman"
+    },
+    {
+      "from": "energy_security",
+      "to": "drought_resilience"
+    },
+    {
+      "from": "energy_security",
+      "to": "energy_access"
+    },
+    {
+      "from": "energy_security",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "energy_security",
+      "to": "maslahah"
+    },
+    {
+      "from": "energy_security_analyzer",
+      "to": "energy_security"
+    },
+    {
+      "from": "energy_security_analyzer",
+      "to": "energy_systems_analyzer"
+    },
+    {
+      "from": "energy_security_analyzer",
+      "to": "societal_resilience_index"
+    },
+    {
+      "from": "energy_systems_analyzer",
+      "to": "clean_energy"
+    },
+    {
+      "from": "energy_systems_analyzer",
+      "to": "energy_efficiency"
+    },
+    {
+      "from": "energy_systems_analyzer",
+      "to": "energy_security"
+    },
+    {
+      "from": "energy_systems_analyzer",
+      "to": "just_transition_planner"
+    },
+    {
+      "from": "environmental_restoration",
+      "to": "biodiversity_protection"
+    },
+    {
+      "from": "environmental_restoration",
+      "to": "ecosystem_stability"
+    },
+    {
+      "from": "environmental_restoration",
+      "to": "islah"
+    },
+    {
+      "from": "environmental_restoration",
+      "to": "khalifah"
+    },
+    {
+      "from": "environmental_restoration",
+      "to": "land_restoration"
+    },
+    {
+      "from": "equity_gap_monitor",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "equity_gap_monitor",
+      "to": "distributional_impact_engine"
+    },
+    {
+      "from": "equity_gap_monitor",
+      "to": "vulnerable_group_sentinel"
+    },
+    {
+      "from": "ethical_finance_fit_engine",
+      "to": "capital_integrity_analyzer"
+    },
+    {
+      "from": "ethical_finance_fit_engine",
+      "to": "gharar"
+    },
+    {
+      "from": "ethical_finance_fit_engine",
+      "to": "maysir"
+    },
+    {
+      "from": "ethical_finance_fit_engine",
+      "to": "riba"
+    },
+    {
+      "from": "ethical_finance_fit_engine",
+      "to": "scholar_review_workflow"
+    },
+    {
+      "from": "ethical_intelligence_orchestrator",
+      "to": "continuous_audit_engine"
+    },
+    {
+      "from": "ethical_intelligence_orchestrator",
+      "to": "decision_triage_framework"
+    },
+    {
+      "from": "ethical_intelligence_orchestrator",
+      "to": "moral_compass_engine"
+    },
+    {
+      "from": "ethical_intelligence_orchestrator",
+      "to": "scholar_review_workflow"
+    },
+    {
+      "from": "ethical_investment",
+      "to": "khabaith"
+    },
+    {
+      "from": "ethical_investment",
+      "to": "maslahah"
+    },
+    {
+      "from": "ethical_investment",
+      "to": "sidq"
+    },
+    {
+      "from": "ethical_investment",
+      "to": "sustainable_finance"
+    },
+    {
+      "from": "ethical_investment",
+      "to": "tayyibat"
+    },
+    {
+      "from": "ethical_procurement",
+      "to": "adl"
+    },
+    {
+      "from": "ethical_procurement",
+      "to": "anti_corruption"
+    },
+    {
+      "from": "ethical_procurement",
+      "to": "conflict_of_interest_prevention"
+    },
+    {
+      "from": "ethical_procurement",
+      "to": "qist"
+    },
+    {
+      "from": "ethical_procurement",
+      "to": "supply_chain_integrity"
+    },
+    {
+      "from": "ethical_production",
+      "to": "ajr"
+    },
+    {
+      "from": "ethical_production",
+      "to": "animal_welfare"
+    },
+    {
+      "from": "ethical_production",
+      "to": "supply_chain_integrity"
+    },
+    {
+      "from": "ethical_production",
+      "to": "worker_dignity"
+    },
+    {
+      "from": "ethical_production",
+      "to": "zulm"
+    },
+    {
+      "from": "evidence_based_policy",
+      "to": "bayyinah"
+    },
+    {
+      "from": "evidence_based_policy",
+      "to": "data_integrity"
+    },
+    {
+      "from": "evidence_based_policy",
+      "to": "ilm"
+    },
+    {
+      "from": "evidence_based_policy",
+      "to": "shubhah"
+    },
+    {
+      "from": "evidence_based_policy",
+      "to": "tadabbur"
+    },
+    {
+      "from": "evidence_confidence_grader",
+      "to": "bayyinah"
+    },
+    {
+      "from": "evidence_confidence_grader",
+      "to": "provenance_citation_validator"
+    },
+    {
+      "from": "evidence_confidence_grader",
+      "to": "uncertainty_review_router"
+    },
+    {
+      "from": "explainable_ai",
+      "to": "ai_transparency"
+    },
+    {
+      "from": "explainable_ai",
+      "to": "algorithmic_fairness"
+    },
+    {
+      "from": "explainable_ai",
+      "to": "bayyinah"
+    },
+    {
+      "from": "explainable_ai",
+      "to": "ghibah"
+    },
+    {
+      "from": "explainable_ai",
+      "to": "haqq"
+    },
+    {
+      "from": "fair_employment",
+      "to": "ajr"
+    },
+    {
+      "from": "fair_employment",
+      "to": "ijarah"
+    },
+    {
+      "from": "fair_employment",
+      "to": "qist"
+    },
+    {
+      "from": "fair_employment",
+      "to": "worker_dignity"
+    },
+    {
+      "from": "fair_employment",
+      "to": "zulm"
+    },
+    {
+      "from": "fasad",
+      "to": "ard"
+    },
+    {
+      "from": "fasad",
+      "to": "islah"
+    },
+    {
+      "from": "fasad",
+      "to": "khalifah"
+    },
+    {
+      "from": "fasad",
+      "to": "maa"
+    },
+    {
+      "from": "fasad",
+      "to": "mizan"
+    },
+    {
+      "from": "fasad",
+      "to": "zulm"
+    },
+    {
+      "from": "fitnah",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "fitnah",
+      "to": "aman"
+    },
+    {
+      "from": "fitnah",
+      "to": "fasad"
+    },
+    {
+      "from": "fitnah",
+      "to": "maqasid_hifz_din"
+    },
+    {
+      "from": "fitnah",
+      "to": "namimah"
+    },
+    {
+      "from": "fitnah",
+      "to": "sulh"
+    },
+    {
+      "from": "flood_protection",
+      "to": "aman"
+    },
+    {
+      "from": "flood_protection",
+      "to": "disaster_preparedness"
+    },
+    {
+      "from": "flood_protection",
+      "to": "la_darar"
+    },
+    {
+      "from": "flood_protection",
+      "to": "miskeen"
+    },
+    {
+      "from": "flood_protection",
+      "to": "nafs"
+    },
+    {
+      "from": "food_security",
+      "to": "community_nutrition"
+    },
+    {
+      "from": "food_security",
+      "to": "drought_resilience"
+    },
+    {
+      "from": "food_security",
+      "to": "maslahah"
+    },
+    {
+      "from": "food_security",
+      "to": "miskeen"
+    },
+    {
+      "from": "food_security",
+      "to": "rizq"
+    },
+    {
+      "from": "food_security_monitor",
+      "to": "community_nutrition"
+    },
+    {
+      "from": "food_security_monitor",
+      "to": "food_security"
+    },
+    {
+      "from": "food_security_monitor",
+      "to": "food_systems_resilience"
+    },
+    {
+      "from": "food_systems_resilience",
+      "to": "food_security"
+    },
+    {
+      "from": "food_systems_resilience",
+      "to": "food_security_monitor"
+    },
+    {
+      "from": "food_systems_resilience",
+      "to": "supply_chain_integrity_tracer"
+    },
+    {
+      "from": "food_systems_resilience",
+      "to": "sustainable_agriculture"
+    },
+    {
+      "from": "food_waste_prevention",
+      "to": "community_nutrition"
+    },
+    {
+      "from": "food_waste_prevention",
+      "to": "israf"
+    },
+    {
+      "from": "food_waste_prevention",
+      "to": "miskeen"
+    },
+    {
+      "from": "food_waste_prevention",
+      "to": "tabdhir"
+    },
+    {
+      "from": "food_waste_prevention",
+      "to": "waste_reduction"
+    },
+    {
+      "from": "future_generations_impact",
+      "to": "intergenerational_responsibility"
+    },
+    {
+      "from": "future_generations_impact",
+      "to": "khalifah"
+    },
+    {
+      "from": "future_generations_impact",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "future_generations_impact",
+      "to": "nasl"
+    },
+    {
+      "from": "future_generations_impact",
+      "to": "tadabbur"
+    },
+    {
+      "from": "gharar",
+      "to": "batil"
+    },
+    {
+      "from": "gharar",
+      "to": "bayyinah"
+    },
+    {
+      "from": "gharar",
+      "to": "ghish"
+    },
+    {
+      "from": "gharar",
+      "to": "maysir"
+    },
+    {
+      "from": "gharar",
+      "to": "riba"
+    },
+    {
+      "from": "ghibah",
+      "to": "haqq"
+    },
+    {
+      "from": "ghibah",
+      "to": "namimah"
+    },
+    {
+      "from": "ghibah",
+      "to": "shahada"
+    },
+    {
+      "from": "ghibah",
+      "to": "sidq"
+    },
+    {
+      "from": "ghibah",
+      "to": "zulm"
+    },
+    {
+      "from": "ghish",
+      "to": "batil"
+    },
+    {
+      "from": "ghish",
+      "to": "bayyinah"
+    },
+    {
+      "from": "ghish",
+      "to": "haqq"
+    },
+    {
+      "from": "ghish",
+      "to": "khiyanah"
+    },
+    {
+      "from": "ghish",
+      "to": "sidq"
+    },
+    {
+      "from": "governance_integrity_scanner",
+      "to": "anti_corruption_detector"
+    },
+    {
+      "from": "governance_integrity_scanner",
+      "to": "institutional_trust"
+    },
+    {
+      "from": "governance_integrity_scanner",
+      "to": "oversight_adequacy_checker"
+    },
+    {
+      "from": "governance_integrity_scanner",
+      "to": "regulatory_capture_detector"
+    },
+    {
+      "from": "halal",
+      "to": "haram"
+    },
+    {
+      "from": "halal",
+      "to": "hudud"
+    },
+    {
+      "from": "halal",
+      "to": "maslahah"
+    },
+    {
+      "from": "halal",
+      "to": "shubhah"
+    },
+    {
+      "from": "halal",
+      "to": "tayyibat"
+    },
+    {
+      "from": "haqq",
+      "to": "adl"
+    },
+    {
+      "from": "haqq",
+      "to": "batil"
+    },
+    {
+      "from": "haqq",
+      "to": "bayyinah"
+    },
+    {
+      "from": "haqq",
+      "to": "ghish"
+    },
+    {
+      "from": "haqq",
+      "to": "sidq"
+    },
+    {
+      "from": "haram",
+      "to": "halal"
+    },
+    {
+      "from": "haram",
+      "to": "hudud"
+    },
+    {
+      "from": "haram",
+      "to": "khabaith"
+    },
+    {
+      "from": "haram",
+      "to": "shubhah"
+    },
+    {
+      "from": "haram",
+      "to": "zulm"
+    },
+    {
+      "from": "harm_prevention_gate",
+      "to": "la_darar"
+    },
+    {
+      "from": "harm_prevention_gate",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "harm_prevention_gate",
+      "to": "precautionary_principle_engine"
+    },
+    {
+      "from": "harm_prevention_gate",
+      "to": "reversibility_analyzer"
+    },
+    {
+      "from": "harm_remediation_tracker",
+      "to": "accountability_chain_mapper"
+    },
+    {
+      "from": "harm_remediation_tracker",
+      "to": "islah"
+    },
+    {
+      "from": "harm_remediation_tracker",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "harm_remediation_tracker",
+      "to": "restoration_prioritizer"
+    },
+    {
+      "from": "hasad",
+      "to": "fitnah"
+    },
+    {
+      "from": "hasad",
+      "to": "ikhlas"
+    },
+    {
+      "from": "hasad",
+      "to": "maysir"
+    },
+    {
+      "from": "hasad",
+      "to": "niyyah"
+    },
+    {
+      "from": "hasad",
+      "to": "zulm"
+    },
+    {
+      "from": "health_system_resilience",
+      "to": "disaster_resilience_planner"
+    },
+    {
+      "from": "health_system_resilience",
+      "to": "public_health_impact_engine"
+    },
+    {
+      "from": "health_system_resilience",
+      "to": "societal_resilience_index"
+    },
+    {
+      "from": "hikma_synthesis_engine",
+      "to": "ethical_intelligence_orchestrator"
+    },
+    {
+      "from": "hikma_synthesis_engine",
+      "to": "long_term_wisdom_synthesizer"
+    },
+    {
+      "from": "hikma_synthesis_engine",
+      "to": "mizan_civilizational_index"
+    },
+    {
+      "from": "hikma_synthesis_engine",
+      "to": "moral_compass_engine"
+    },
+    {
+      "from": "hikmah",
+      "to": "aql"
+    },
+    {
+      "from": "hikmah",
+      "to": "ilm"
+    },
+    {
+      "from": "hikmah",
+      "to": "mizan"
+    },
+    {
+      "from": "hikmah",
+      "to": "tadabbur"
+    },
+    {
+      "from": "hikmah",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "hisab",
+      "to": "adl"
+    },
+    {
+      "from": "hisab",
+      "to": "amanah"
+    },
+    {
+      "from": "hisab",
+      "to": "bayyinah"
+    },
+    {
+      "from": "hisab",
+      "to": "shahada"
+    },
+    {
+      "from": "hisab",
+      "to": "taqwa"
+    },
+    {
+      "from": "housing_dignity",
+      "to": "aman"
+    },
+    {
+      "from": "housing_dignity",
+      "to": "human_dignity"
+    },
+    {
+      "from": "housing_dignity",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "housing_dignity",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "housing_dignity",
+      "to": "miskeen"
+    },
+    {
+      "from": "hudud",
+      "to": "halal"
+    },
+    {
+      "from": "hudud",
+      "to": "haram"
+    },
+    {
+      "from": "hudud",
+      "to": "la_darar"
+    },
+    {
+      "from": "hudud",
+      "to": "mizan"
+    },
+    {
+      "from": "hudud",
+      "to": "taqwa"
+    },
+    {
+      "from": "human_centered_technology",
+      "to": "human_dignity"
+    },
+    {
+      "from": "human_centered_technology",
+      "to": "human_oversight"
+    },
+    {
+      "from": "human_centered_technology",
+      "to": "maqasid_hifz_aql"
+    },
+    {
+      "from": "human_centered_technology",
+      "to": "maslahah"
+    },
+    {
+      "from": "human_centered_technology",
+      "to": "mental_wellbeing"
+    },
+    {
+      "from": "human_development_index_engine",
+      "to": "education_access"
+    },
+    {
+      "from": "human_development_index_engine",
+      "to": "equity_gap_monitor"
+    },
+    {
+      "from": "human_development_index_engine",
+      "to": "human_flourishing"
+    },
+    {
+      "from": "human_development_index_engine",
+      "to": "social_mobility"
+    },
+    {
+      "from": "human_dignity",
+      "to": "housing_dignity"
+    },
+    {
+      "from": "human_dignity",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "human_dignity",
+      "to": "nafs"
+    },
+    {
+      "from": "human_dignity",
+      "to": "rahmah"
+    },
+    {
+      "from": "human_dignity",
+      "to": "worker_dignity"
+    },
+    {
+      "from": "human_flourishing",
+      "to": "human_dignity"
+    },
+    {
+      "from": "human_flourishing",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "human_flourishing",
+      "to": "maslahah"
+    },
+    {
+      "from": "human_flourishing",
+      "to": "mental_wellbeing"
+    },
+    {
+      "from": "human_flourishing",
+      "to": "public_health"
+    },
+    {
+      "from": "human_oversight",
+      "to": "ai_accountability"
+    },
+    {
+      "from": "human_oversight",
+      "to": "human_centered_technology"
+    },
+    {
+      "from": "human_oversight",
+      "to": "maqasid_hifz_aql"
+    },
+    {
+      "from": "human_oversight",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "human_oversight",
+      "to": "raqabah"
+    },
+    {
+      "from": "huquq",
+      "to": "adl"
+    },
+    {
+      "from": "huquq",
+      "to": "haqq"
+    },
+    {
+      "from": "huquq",
+      "to": "huquq"
+    },
+    {
+      "from": "huquq",
+      "to": "qist"
+    },
+    {
+      "from": "huquq",
+      "to": "wajibat"
+    },
+    {
+      "from": "huquq",
+      "to": "zulm"
+    },
+    {
+      "from": "ibn_sabil",
+      "to": "aman"
+    },
+    {
+      "from": "ibn_sabil",
+      "to": "miskeen"
+    },
+    {
+      "from": "ibn_sabil",
+      "to": "rahmah"
+    },
+    {
+      "from": "ibn_sabil",
+      "to": "yateem"
+    },
+    {
+      "from": "ihsan",
+      "to": "adl"
+    },
+    {
+      "from": "ihsan",
+      "to": "itqan"
+    },
+    {
+      "from": "ihsan",
+      "to": "rahmah"
+    },
+    {
+      "from": "ihsan",
+      "to": "taqwa"
+    },
+    {
+      "from": "ihtikar",
+      "to": "maslahah"
+    },
+    {
+      "from": "ihtikar",
+      "to": "miskeen"
+    },
+    {
+      "from": "ihtikar",
+      "to": "najash"
+    },
+    {
+      "from": "ihtikar",
+      "to": "rizq"
+    },
+    {
+      "from": "ihtikar",
+      "to": "zulm"
+    },
+    {
+      "from": "ijarah",
+      "to": "ajr"
+    },
+    {
+      "from": "ijarah",
+      "to": "bay"
+    },
+    {
+      "from": "ijarah",
+      "to": "gharar"
+    },
+    {
+      "from": "ijarah",
+      "to": "qist"
+    },
+    {
+      "from": "ijarah",
+      "to": "wafa"
+    },
+    {
+      "from": "ikhlas",
+      "to": "ghish"
+    },
+    {
+      "from": "ikhlas",
+      "to": "niyyah"
+    },
+    {
+      "from": "ikhlas",
+      "to": "sidq"
+    },
+    {
+      "from": "ikhlas",
+      "to": "taqwa"
+    },
+    {
+      "from": "ilm",
+      "to": "aql"
+    },
+    {
+      "from": "ilm",
+      "to": "bayyinah"
+    },
+    {
+      "from": "ilm",
+      "to": "hikmah"
+    },
+    {
+      "from": "ilm",
+      "to": "tadabbur"
+    },
+    {
+      "from": "ilm",
+      "to": "tafakkur"
+    },
+    {
+      "from": "imarah_al_ard",
+      "to": "ard"
+    },
+    {
+      "from": "imarah_al_ard",
+      "to": "barakah"
+    },
+    {
+      "from": "imarah_al_ard",
+      "to": "fasad"
+    },
+    {
+      "from": "imarah_al_ard",
+      "to": "islah"
+    },
+    {
+      "from": "imarah_al_ard",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "imarah_al_ard",
+      "to": "khalifah"
+    },
+    {
+      "from": "infrastructure_equity",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "infrastructure_equity",
+      "to": "miskeen"
+    },
+    {
+      "from": "infrastructure_equity",
+      "to": "qist"
+    },
+    {
+      "from": "infrastructure_equity",
+      "to": "stakeholder_protection"
+    },
+    {
+      "from": "infrastructure_equity",
+      "to": "zulm"
+    },
+    {
+      "from": "infrastructure_equity_analyzer",
+      "to": "distributional_impact_engine"
+    },
+    {
+      "from": "infrastructure_equity_analyzer",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "infrastructure_equity_analyzer",
+      "to": "rural_development"
+    },
+    {
+      "from": "infrastructure_stewardship",
+      "to": "amanah"
+    },
+    {
+      "from": "infrastructure_stewardship",
+      "to": "imarah_al_ard"
+    },
+    {
+      "from": "infrastructure_stewardship",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "infrastructure_stewardship",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "infrastructure_stewardship",
+      "to": "public_utility_reliability"
+    },
+    {
+      "from": "institutional_trust",
+      "to": "amanah"
+    },
+    {
+      "from": "institutional_trust",
+      "to": "khiyanah"
+    },
+    {
+      "from": "institutional_trust",
+      "to": "public_accountability"
+    },
+    {
+      "from": "institutional_trust",
+      "to": "sidq"
+    },
+    {
+      "from": "institutional_trust",
+      "to": "transparency_systems"
+    },
+    {
+      "from": "institutional_trust_index",
+      "to": "governance_integrity_scanner"
+    },
+    {
+      "from": "institutional_trust_index",
+      "to": "institutional_trust"
+    },
+    {
+      "from": "institutional_trust_index",
+      "to": "societal_resilience_index"
+    },
+    {
+      "from": "intent_reality_engine",
+      "to": "benefit_harm_triangulator"
+    },
+    {
+      "from": "intent_reality_engine",
+      "to": "intent_reality_engine"
+    },
+    {
+      "from": "intent_reality_engine",
+      "to": "transition_planning"
+    },
+    {
+      "from": "intent_reality_engine",
+      "to": "wafa"
+    },
+    {
+      "from": "intergenerational_equity_ledger",
+      "to": "intergenerational_responsibility"
+    },
+    {
+      "from": "intergenerational_equity_ledger",
+      "to": "long_horizon_consequence_engine"
+    },
+    {
+      "from": "intergenerational_equity_ledger",
+      "to": "natural_capital_ledger"
+    },
+    {
+      "from": "intergenerational_responsibility",
+      "to": "future_generations_impact"
+    },
+    {
+      "from": "intergenerational_responsibility",
+      "to": "khalifah"
+    },
+    {
+      "from": "intergenerational_responsibility",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "intergenerational_responsibility",
+      "to": "mithaq"
+    },
+    {
+      "from": "intergenerational_responsibility",
+      "to": "nasl"
+    },
+    {
+      "from": "islah",
+      "to": "fasad"
+    },
+    {
+      "from": "islah",
+      "to": "khalifah"
+    },
+    {
+      "from": "islah",
+      "to": "mizan"
+    },
+    {
+      "from": "islah",
+      "to": "sulh"
+    },
+    {
+      "from": "israf",
+      "to": "ard"
+    },
+    {
+      "from": "israf",
+      "to": "maa"
+    },
+    {
+      "from": "israf",
+      "to": "mizan"
+    },
+    {
+      "from": "israf",
+      "to": "nasl"
+    },
+    {
+      "from": "israf",
+      "to": "rizq"
+    },
+    {
+      "from": "israf",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "istikhlaf",
+      "to": "amanah"
+    },
+    {
+      "from": "istikhlaf",
+      "to": "imarah_al_ard"
+    },
+    {
+      "from": "istikhlaf",
+      "to": "khalifah"
+    },
+    {
+      "from": "istikhlaf",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "istikhlaf",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "itqan",
+      "to": "ihsan"
+    },
+    {
+      "from": "itqan",
+      "to": "maruf"
+    },
+    {
+      "from": "itqan",
+      "to": "responsible_innovation"
+    },
+    {
+      "from": "itqan",
+      "to": "scientific_responsibility"
+    },
+    {
+      "from": "jihad",
+      "to": "adl"
+    },
+    {
+      "from": "jihad",
+      "to": "hikmah"
+    },
+    {
+      "from": "jihad",
+      "to": "islah"
+    },
+    {
+      "from": "jihad",
+      "to": "sabr"
+    },
+    {
+      "from": "jihad",
+      "to": "sulh"
+    },
+    {
+      "from": "just_transition_planner",
+      "to": "climate_justice"
+    },
+    {
+      "from": "just_transition_planner",
+      "to": "shared_prosperity_analyzer"
+    },
+    {
+      "from": "just_transition_planner",
+      "to": "skill_development"
+    },
+    {
+      "from": "just_transition_planner",
+      "to": "transition_planning"
+    },
+    {
+      "from": "justice_allocation_engine",
+      "to": "adl"
+    },
+    {
+      "from": "justice_allocation_engine",
+      "to": "distributional_impact_engine"
+    },
+    {
+      "from": "justice_allocation_engine",
+      "to": "qist"
+    },
+    {
+      "from": "justice_allocation_engine",
+      "to": "stakeholder_impact_mapper"
+    },
+    {
+      "from": "khabaith",
+      "to": "batil"
+    },
+    {
+      "from": "khabaith",
+      "to": "darar"
+    },
+    {
+      "from": "khabaith",
+      "to": "fasad"
+    },
+    {
+      "from": "khabaith",
+      "to": "haram"
+    },
+    {
+      "from": "khabaith",
+      "to": "tayyibat"
+    },
+    {
+      "from": "khalifah",
+      "to": "amanah"
+    },
+    {
+      "from": "khalifah",
+      "to": "ard"
+    },
+    {
+      "from": "khalifah",
+      "to": "fasad"
+    },
+    {
+      "from": "khalifah",
+      "to": "maa"
+    },
+    {
+      "from": "khalifah",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "khalifah",
+      "to": "mizan"
+    },
+    {
+      "from": "khalifah",
+      "to": "nasl"
+    },
+    {
+      "from": "khiyanah",
+      "to": "amanah"
+    },
+    {
+      "from": "khiyanah",
+      "to": "ghish"
+    },
+    {
+      "from": "khiyanah",
+      "to": "hisab"
+    },
+    {
+      "from": "khiyanah",
+      "to": "wafa"
+    },
+    {
+      "from": "khiyanah",
+      "to": "zulm"
+    },
+    {
+      "from": "kibr",
+      "to": "fasad"
+    },
+    {
+      "from": "kibr",
+      "to": "hikmah"
+    },
+    {
+      "from": "kibr",
+      "to": "ilm"
+    },
+    {
+      "from": "kibr",
+      "to": "shura"
+    },
+    {
+      "from": "kibr",
+      "to": "tafakkur"
+    },
+    {
+      "from": "knowledge_civilization",
+      "to": "education_access"
+    },
+    {
+      "from": "knowledge_civilization",
+      "to": "ilm"
+    },
+    {
+      "from": "knowledge_civilization",
+      "to": "knowledge_development"
+    },
+    {
+      "from": "knowledge_civilization",
+      "to": "scientific_responsibility"
+    },
+    {
+      "from": "knowledge_civilization",
+      "to": "tafakkur"
+    },
+    {
+      "from": "knowledge_development",
+      "to": "bayyinah"
+    },
+    {
+      "from": "knowledge_development",
+      "to": "education_access"
+    },
+    {
+      "from": "knowledge_development",
+      "to": "ilm"
+    },
+    {
+      "from": "knowledge_development",
+      "to": "scientific_responsibility"
+    },
+    {
+      "from": "knowledge_development",
+      "to": "tafakkur"
+    },
+    {
+      "from": "la_darar",
+      "to": "darar"
+    },
+    {
+      "from": "la_darar",
+      "to": "mafsadah"
+    },
+    {
+      "from": "la_darar",
+      "to": "maslahah"
+    },
+    {
+      "from": "la_darar",
+      "to": "nafs"
+    },
+    {
+      "from": "la_darar",
+      "to": "zulm"
+    },
+    {
+      "from": "labour_justice_auditor",
+      "to": "ajr"
+    },
+    {
+      "from": "labour_justice_auditor",
+      "to": "fair_employment"
+    },
+    {
+      "from": "labour_justice_auditor",
+      "to": "supply_chain_integrity_tracer"
+    },
+    {
+      "from": "labour_justice_auditor",
+      "to": "worker_dignity"
+    },
+    {
+      "from": "land_restoration",
+      "to": "ard"
+    },
+    {
+      "from": "land_restoration",
+      "to": "environmental_restoration"
+    },
+    {
+      "from": "land_restoration",
+      "to": "islah"
+    },
+    {
+      "from": "land_restoration",
+      "to": "khalifah"
+    },
+    {
+      "from": "land_restoration",
+      "to": "soil_protection"
+    },
+    {
+      "from": "leadership_integrity_index",
+      "to": "governance_integrity_scanner"
+    },
+    {
+      "from": "leadership_integrity_index",
+      "to": "moral_resilience_stress_test"
+    },
+    {
+      "from": "leadership_integrity_index",
+      "to": "responsible_leadership"
+    },
+    {
+      "from": "long_horizon_consequence_engine",
+      "to": "future_generations_impact"
+    },
+    {
+      "from": "long_horizon_consequence_engine",
+      "to": "intergenerational_equity_ledger"
+    },
+    {
+      "from": "long_horizon_consequence_engine",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "long_horizon_consequence_engine",
+      "to": "tadabbur"
+    },
+    {
+      "from": "long_term_resilience",
+      "to": "community_resilience"
+    },
+    {
+      "from": "long_term_resilience",
+      "to": "ecosystem_stability"
+    },
+    {
+      "from": "long_term_resilience",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "long_term_resilience",
+      "to": "sabr"
+    },
+    {
+      "from": "long_term_resilience",
+      "to": "tawazun"
+    },
+    {
+      "from": "long_term_wisdom",
+      "to": "future_generations_impact"
+    },
+    {
+      "from": "long_term_wisdom",
+      "to": "hikmah"
+    },
+    {
+      "from": "long_term_wisdom",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "long_term_wisdom",
+      "to": "sabr"
+    },
+    {
+      "from": "long_term_wisdom",
+      "to": "tadabbur"
+    },
+    {
+      "from": "long_term_wisdom_synthesizer",
+      "to": "hikma_synthesis_engine"
+    },
+    {
+      "from": "long_term_wisdom_synthesizer",
+      "to": "hikmah"
+    },
+    {
+      "from": "long_term_wisdom_synthesizer",
+      "to": "long_horizon_consequence_engine"
+    },
+    {
+      "from": "long_term_wisdom_synthesizer",
+      "to": "scenario_simulator"
+    },
+    {
+      "from": "maa",
+      "to": "ard"
+    },
+    {
+      "from": "maa",
+      "to": "fasad"
+    },
+    {
+      "from": "maa",
+      "to": "israf"
+    },
+    {
+      "from": "maa",
+      "to": "khalifah"
+    },
+    {
+      "from": "maa",
+      "to": "miskeen"
+    },
+    {
+      "from": "maa",
+      "to": "rizq"
+    },
+    {
+      "from": "mafsadah",
+      "to": "darar"
+    },
+    {
+      "from": "mafsadah",
+      "to": "fasad"
+    },
+    {
+      "from": "mafsadah",
+      "to": "maslahah"
+    },
+    {
+      "from": "mafsadah",
+      "to": "mizan"
+    },
+    {
+      "from": "mafsadah",
+      "to": "zulm"
+    },
+    {
+      "from": "mal",
+      "to": "adl"
+    },
+    {
+      "from": "mal",
+      "to": "batil"
+    },
+    {
+      "from": "mal",
+      "to": "israf"
+    },
+    {
+      "from": "mal",
+      "to": "maqasid_hifz_mal"
+    },
+    {
+      "from": "mal",
+      "to": "riba"
+    },
+    {
+      "from": "mal",
+      "to": "rizq"
+    },
+    {
+      "from": "maqasid_dashboard",
+      "to": "ethical_intelligence_orchestrator"
+    },
+    {
+      "from": "maqasid_dashboard",
+      "to": "maqasid_preservation_scorer"
+    },
+    {
+      "from": "maqasid_dashboard",
+      "to": "moral_compass_engine"
+    },
+    {
+      "from": "maqasid_hifz_aql",
+      "to": "aql"
+    },
+    {
+      "from": "maqasid_hifz_aql",
+      "to": "din"
+    },
+    {
+      "from": "maqasid_hifz_aql",
+      "to": "fitnah"
+    },
+    {
+      "from": "maqasid_hifz_aql",
+      "to": "ghish"
+    },
+    {
+      "from": "maqasid_hifz_aql",
+      "to": "ilm"
+    },
+    {
+      "from": "maqasid_hifz_din",
+      "to": "adl"
+    },
+    {
+      "from": "maqasid_hifz_din",
+      "to": "din"
+    },
+    {
+      "from": "maqasid_hifz_din",
+      "to": "fitnah"
+    },
+    {
+      "from": "maqasid_hifz_din",
+      "to": "huquq"
+    },
+    {
+      "from": "maqasid_hifz_mal",
+      "to": "darar"
+    },
+    {
+      "from": "maqasid_hifz_mal",
+      "to": "ghish"
+    },
+    {
+      "from": "maqasid_hifz_mal",
+      "to": "mal"
+    },
+    {
+      "from": "maqasid_hifz_mal",
+      "to": "qist"
+    },
+    {
+      "from": "maqasid_hifz_mal",
+      "to": "riba"
+    },
+    {
+      "from": "maqasid_hifz_nafs",
+      "to": "aman"
+    },
+    {
+      "from": "maqasid_hifz_nafs",
+      "to": "la_darar"
+    },
+    {
+      "from": "maqasid_hifz_nafs",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "maqasid_hifz_nafs",
+      "to": "nafs"
+    },
+    {
+      "from": "maqasid_hifz_nafs",
+      "to": "rahmah"
+    },
+    {
+      "from": "maqasid_hifz_nasl",
+      "to": "barakah"
+    },
+    {
+      "from": "maqasid_hifz_nasl",
+      "to": "fasad"
+    },
+    {
+      "from": "maqasid_hifz_nasl",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "maqasid_hifz_nasl",
+      "to": "khalifah"
+    },
+    {
+      "from": "maqasid_hifz_nasl",
+      "to": "mithaq"
+    },
+    {
+      "from": "maqasid_hifz_nasl",
+      "to": "nasl"
+    },
+    {
+      "from": "maqasid_preservation_scorer",
+      "to": "maqasid_dashboard"
+    },
+    {
+      "from": "maqasid_preservation_scorer",
+      "to": "maqasid_hifz_aql"
+    },
+    {
+      "from": "maqasid_preservation_scorer",
+      "to": "maqasid_hifz_din"
+    },
+    {
+      "from": "maqasid_preservation_scorer",
+      "to": "maqasid_hifz_mal"
+    },
+    {
+      "from": "maqasid_preservation_scorer",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "maqasid_preservation_scorer",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "maruf",
+      "to": "ihsan"
+    },
+    {
+      "from": "maruf",
+      "to": "islah"
+    },
+    {
+      "from": "maruf",
+      "to": "maslahah"
+    },
+    {
+      "from": "maruf",
+      "to": "munkar"
+    },
+    {
+      "from": "maruf",
+      "to": "raqabah"
+    },
+    {
+      "from": "maslahah",
+      "to": "adl"
+    },
+    {
+      "from": "maslahah",
+      "to": "hikmah"
+    },
+    {
+      "from": "maslahah",
+      "to": "islah"
+    },
+    {
+      "from": "maslahah",
+      "to": "mafsadah"
+    },
+    {
+      "from": "maslahah",
+      "to": "mizan"
+    },
+    {
+      "from": "maslahah",
+      "to": "qist"
+    },
+    {
+      "from": "maslahah_mafsadah_weigher",
+      "to": "la_darar"
+    },
+    {
+      "from": "maslahah_mafsadah_weigher",
+      "to": "mafsadah"
+    },
+    {
+      "from": "maslahah_mafsadah_weigher",
+      "to": "maslahah"
+    },
+    {
+      "from": "maslahah_mafsadah_weigher",
+      "to": "moral_compass_engine"
+    },
+    {
+      "from": "maslahah_mafsadah_weigher",
+      "to": "trade_off_resolver"
+    },
+    {
+      "from": "masuliyyah",
+      "to": "amanah"
+    },
+    {
+      "from": "masuliyyah",
+      "to": "hisab"
+    },
+    {
+      "from": "masuliyyah",
+      "to": "muhasabah"
+    },
+    {
+      "from": "masuliyyah",
+      "to": "wajibat"
+    },
+    {
+      "from": "masuliyyah",
+      "to": "wilayah"
+    },
+    {
+      "from": "maysir",
+      "to": "batil"
+    },
+    {
+      "from": "maysir",
+      "to": "gharar"
+    },
+    {
+      "from": "maysir",
+      "to": "israf"
+    },
+    {
+      "from": "maysir",
+      "to": "riba"
+    },
+    {
+      "from": "mental_wellbeing",
+      "to": "human_centered_technology"
+    },
+    {
+      "from": "mental_wellbeing",
+      "to": "human_flourishing"
+    },
+    {
+      "from": "mental_wellbeing",
+      "to": "la_darar"
+    },
+    {
+      "from": "mental_wellbeing",
+      "to": "maqasid_hifz_aql"
+    },
+    {
+      "from": "mental_wellbeing",
+      "to": "rahmah"
+    },
+    {
+      "from": "miskeen",
+      "to": "ibn_sabil"
+    },
+    {
+      "from": "miskeen",
+      "to": "qist"
+    },
+    {
+      "from": "miskeen",
+      "to": "rahmah"
+    },
+    {
+      "from": "miskeen",
+      "to": "rizq"
+    },
+    {
+      "from": "miskeen",
+      "to": "yateem"
+    },
+    {
+      "from": "miskeen",
+      "to": "zulm"
+    },
+    {
+      "from": "mithaq",
+      "to": "adl"
+    },
+    {
+      "from": "mithaq",
+      "to": "amanah"
+    },
+    {
+      "from": "mithaq",
+      "to": "khalifah"
+    },
+    {
+      "from": "mithaq",
+      "to": "nasl"
+    },
+    {
+      "from": "mithaq",
+      "to": "wafa"
+    },
+    {
+      "from": "mizan",
+      "to": "adl"
+    },
+    {
+      "from": "mizan",
+      "to": "fasad"
+    },
+    {
+      "from": "mizan",
+      "to": "israf"
+    },
+    {
+      "from": "mizan",
+      "to": "khalifah"
+    },
+    {
+      "from": "mizan",
+      "to": "qist"
+    },
+    {
+      "from": "mizan",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "mizan_balance_engine",
+      "to": "mizan"
+    },
+    {
+      "from": "mizan_balance_engine",
+      "to": "moral_compass_engine"
+    },
+    {
+      "from": "mizan_balance_engine",
+      "to": "planetary_boundary_tracker"
+    },
+    {
+      "from": "mizan_balance_engine",
+      "to": "tawazun"
+    },
+    {
+      "from": "mizan_civilizational_index",
+      "to": "civilization_flourishing"
+    },
+    {
+      "from": "mizan_civilizational_index",
+      "to": "civilizational_balance_dashboard"
+    },
+    {
+      "from": "mizan_civilizational_index",
+      "to": "hikma_synthesis_engine"
+    },
+    {
+      "from": "moral_compass_engine",
+      "to": "benefit_harm_triangulator"
+    },
+    {
+      "from": "moral_compass_engine",
+      "to": "intent_reality_engine"
+    },
+    {
+      "from": "moral_compass_engine",
+      "to": "mafsadah"
+    },
+    {
+      "from": "moral_compass_engine",
+      "to": "maslahah"
+    },
+    {
+      "from": "moral_compass_engine",
+      "to": "mizan_balance_engine"
+    },
+    {
+      "from": "moral_resilience",
+      "to": "ikhlas"
+    },
+    {
+      "from": "moral_resilience",
+      "to": "sabr"
+    },
+    {
+      "from": "moral_resilience",
+      "to": "sidq"
+    },
+    {
+      "from": "moral_resilience",
+      "to": "systemic_justice"
+    },
+    {
+      "from": "moral_resilience",
+      "to": "taqwa"
+    },
+    {
+      "from": "moral_resilience_stress_test",
+      "to": "leadership_integrity_index"
+    },
+    {
+      "from": "moral_resilience_stress_test",
+      "to": "moral_resilience"
+    },
+    {
+      "from": "moral_resilience_stress_test",
+      "to": "taqwa"
+    },
+    {
+      "from": "mudarabah",
+      "to": "ajr"
+    },
+    {
+      "from": "mudarabah",
+      "to": "maysir"
+    },
+    {
+      "from": "mudarabah",
+      "to": "musharakah"
+    },
+    {
+      "from": "mudarabah",
+      "to": "qist"
+    },
+    {
+      "from": "mudarabah",
+      "to": "riba"
+    },
+    {
+      "from": "muhasabah",
+      "to": "bayyinah"
+    },
+    {
+      "from": "muhasabah",
+      "to": "hisab"
+    },
+    {
+      "from": "muhasabah",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "muhasabah",
+      "to": "raqabah"
+    },
+    {
+      "from": "muhasabah",
+      "to": "shahada"
+    },
+    {
+      "from": "munkar",
+      "to": "fasad"
+    },
+    {
+      "from": "munkar",
+      "to": "harm_prevention_gate"
+    },
+    {
+      "from": "munkar",
+      "to": "maruf"
+    },
+    {
+      "from": "munkar",
+      "to": "raqabah"
+    },
+    {
+      "from": "munkar",
+      "to": "zulm"
+    },
+    {
+      "from": "musharakah",
+      "to": "adl"
+    },
+    {
+      "from": "musharakah",
+      "to": "maysir"
+    },
+    {
+      "from": "musharakah",
+      "to": "mudarabah"
+    },
+    {
+      "from": "musharakah",
+      "to": "qist"
+    },
+    {
+      "from": "musharakah",
+      "to": "riba"
+    },
+    {
+      "from": "nafs",
+      "to": "aman"
+    },
+    {
+      "from": "nafs",
+      "to": "fasad"
+    },
+    {
+      "from": "nafs",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "nafs",
+      "to": "rahmah"
+    },
+    {
+      "from": "nafs",
+      "to": "zulm"
+    },
+    {
+      "from": "najash",
+      "to": "batil"
+    },
+    {
+      "from": "najash",
+      "to": "gharar"
+    },
+    {
+      "from": "najash",
+      "to": "ghish"
+    },
+    {
+      "from": "najash",
+      "to": "ihtikar"
+    },
+    {
+      "from": "najash",
+      "to": "maysir"
+    },
+    {
+      "from": "namimah",
+      "to": "bayyinah"
+    },
+    {
+      "from": "namimah",
+      "to": "fitnah"
+    },
+    {
+      "from": "namimah",
+      "to": "ghibah"
+    },
+    {
+      "from": "namimah",
+      "to": "islah"
+    },
+    {
+      "from": "namimah",
+      "to": "sidq"
+    },
+    {
+      "from": "nasl",
+      "to": "fasad"
+    },
+    {
+      "from": "nasl",
+      "to": "israf"
+    },
+    {
+      "from": "nasl",
+      "to": "khalifah"
+    },
+    {
+      "from": "nasl",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "nasl",
+      "to": "mithaq"
+    },
+    {
+      "from": "natural_capital_ledger",
+      "to": "intergenerational_equity_ledger"
+    },
+    {
+      "from": "natural_capital_ledger",
+      "to": "natural_capital_stewardship"
+    },
+    {
+      "from": "natural_capital_ledger",
+      "to": "resource_stewardship"
+    },
+    {
+      "from": "natural_capital_ledger",
+      "to": "stewardship_accountability_engine"
+    },
+    {
+      "from": "natural_capital_stewardship",
+      "to": "barakah"
+    },
+    {
+      "from": "natural_capital_stewardship",
+      "to": "ecosystem_stability"
+    },
+    {
+      "from": "natural_capital_stewardship",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "natural_capital_stewardship",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "natural_capital_stewardship",
+      "to": "resource_stewardship"
+    },
+    {
+      "from": "nimah",
+      "to": "barakah"
+    },
+    {
+      "from": "nimah",
+      "to": "israf"
+    },
+    {
+      "from": "nimah",
+      "to": "rizq"
+    },
+    {
+      "from": "nimah",
+      "to": "shukr"
+    },
+    {
+      "from": "nimah",
+      "to": "tabdhir"
+    },
+    {
+      "from": "nimah",
+      "to": "taskhir"
+    },
+    {
+      "from": "niyyah",
+      "to": "hikmah"
+    },
+    {
+      "from": "niyyah",
+      "to": "ikhlas"
+    },
+    {
+      "from": "niyyah",
+      "to": "sidq"
+    },
+    {
+      "from": "niyyah",
+      "to": "taqwa"
+    },
+    {
+      "from": "oversight_adequacy_checker",
+      "to": "continuous_audit_engine"
+    },
+    {
+      "from": "oversight_adequacy_checker",
+      "to": "governance_integrity_scanner"
+    },
+    {
+      "from": "oversight_adequacy_checker",
+      "to": "raqabah"
+    },
+    {
+      "from": "peaceful_coexistence",
+      "to": "aman"
+    },
+    {
+      "from": "peaceful_coexistence",
+      "to": "cultural_preservation"
+    },
+    {
+      "from": "peaceful_coexistence",
+      "to": "fitnah"
+    },
+    {
+      "from": "peaceful_coexistence",
+      "to": "societal_cohesion"
+    },
+    {
+      "from": "peaceful_coexistence",
+      "to": "sulh"
+    },
+    {
+      "from": "permissibility_classifier",
+      "to": "halal"
+    },
+    {
+      "from": "permissibility_classifier",
+      "to": "haram"
+    },
+    {
+      "from": "permissibility_classifier",
+      "to": "red_line_hudud_gate"
+    },
+    {
+      "from": "permissibility_classifier",
+      "to": "scholar_review_workflow"
+    },
+    {
+      "from": "permissibility_classifier",
+      "to": "shubhah"
+    },
+    {
+      "from": "planetary_balance",
+      "to": "ecosystem_stability"
+    },
+    {
+      "from": "planetary_balance",
+      "to": "fasad"
+    },
+    {
+      "from": "planetary_balance",
+      "to": "hudud"
+    },
+    {
+      "from": "planetary_balance",
+      "to": "mizan"
+    },
+    {
+      "from": "planetary_balance",
+      "to": "tawazun"
+    },
+    {
+      "from": "planetary_boundary_tracker",
+      "to": "mizan_balance_engine"
+    },
+    {
+      "from": "planetary_boundary_tracker",
+      "to": "planetary_balance"
+    },
+    {
+      "from": "planetary_boundary_tracker",
+      "to": "tipping_point_early_warning"
+    },
+    {
+      "from": "policy_evidence_validator",
+      "to": "evidence_based_policy"
+    },
+    {
+      "from": "policy_evidence_validator",
+      "to": "evidence_confidence_grader"
+    },
+    {
+      "from": "policy_evidence_validator",
+      "to": "provenance_citation_validator"
+    },
+    {
+      "from": "pollution_emissions_auditor",
+      "to": "carbon_responsibility"
+    },
+    {
+      "from": "pollution_emissions_auditor",
+      "to": "disclosure_verification_engine"
+    },
+    {
+      "from": "pollution_emissions_auditor",
+      "to": "emissions_responsibility"
+    },
+    {
+      "from": "pollution_emissions_auditor",
+      "to": "pollution_prevention"
+    },
+    {
+      "from": "pollution_prevention",
+      "to": "darar"
+    },
+    {
+      "from": "pollution_prevention",
+      "to": "emissions_responsibility"
+    },
+    {
+      "from": "pollution_prevention",
+      "to": "fasad"
+    },
+    {
+      "from": "pollution_prevention",
+      "to": "la_darar"
+    },
+    {
+      "from": "pollution_prevention",
+      "to": "public_health"
+    },
+    {
+      "from": "precautionary_principle_engine",
+      "to": "harm_prevention_gate"
+    },
+    {
+      "from": "precautionary_principle_engine",
+      "to": "la_darar"
+    },
+    {
+      "from": "precautionary_principle_engine",
+      "to": "reversibility_analyzer"
+    },
+    {
+      "from": "precautionary_principle_engine",
+      "to": "uncertainty_review_router"
+    },
+    {
+      "from": "privacy_protection",
+      "to": "amanah"
+    },
+    {
+      "from": "privacy_protection",
+      "to": "data_stewardship"
+    },
+    {
+      "from": "privacy_protection",
+      "to": "human_dignity"
+    },
+    {
+      "from": "privacy_protection",
+      "to": "huquq"
+    },
+    {
+      "from": "privacy_protection",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "procurement_integrity_monitor",
+      "to": "anti_corruption_detector"
+    },
+    {
+      "from": "procurement_integrity_monitor",
+      "to": "ethical_procurement"
+    },
+    {
+      "from": "procurement_integrity_monitor",
+      "to": "supply_chain_integrity_tracer"
+    },
+    {
+      "from": "project_readiness_assessor",
+      "to": "bayyinah"
+    },
+    {
+      "from": "project_readiness_assessor",
+      "to": "capital_integrity_analyzer"
+    },
+    {
+      "from": "project_readiness_assessor",
+      "to": "ethical_finance_fit_engine"
+    },
+    {
+      "from": "proportionality_calibrator",
+      "to": "mizan_balance_engine"
+    },
+    {
+      "from": "proportionality_calibrator",
+      "to": "qadar"
+    },
+    {
+      "from": "proportionality_calibrator",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "provenance_citation_validator",
+      "to": "bayyinah"
+    },
+    {
+      "from": "provenance_citation_validator",
+      "to": "disclosure_verification_engine"
+    },
+    {
+      "from": "provenance_citation_validator",
+      "to": "evidence_confidence_grader"
+    },
+    {
+      "from": "public_accountability",
+      "to": "institutional_trust"
+    },
+    {
+      "from": "public_accountability",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "public_accountability",
+      "to": "muhasabah"
+    },
+    {
+      "from": "public_accountability",
+      "to": "public_disclosure"
+    },
+    {
+      "from": "public_accountability",
+      "to": "raqabah"
+    },
+    {
+      "from": "public_disclosure",
+      "to": "bayyinah"
+    },
+    {
+      "from": "public_disclosure",
+      "to": "emissions_responsibility"
+    },
+    {
+      "from": "public_disclosure",
+      "to": "shahada"
+    },
+    {
+      "from": "public_disclosure",
+      "to": "sidq"
+    },
+    {
+      "from": "public_disclosure",
+      "to": "transparency_systems"
+    },
+    {
+      "from": "public_health",
+      "to": "community_nutrition"
+    },
+    {
+      "from": "public_health",
+      "to": "la_darar"
+    },
+    {
+      "from": "public_health",
+      "to": "maqasid_hifz_nafs"
+    },
+    {
+      "from": "public_health",
+      "to": "nafs"
+    },
+    {
+      "from": "public_health",
+      "to": "pollution_prevention"
+    },
+    {
+      "from": "public_health_impact_engine",
+      "to": "health_system_resilience"
+    },
+    {
+      "from": "public_health_impact_engine",
+      "to": "pollution_emissions_auditor"
+    },
+    {
+      "from": "public_health_impact_engine",
+      "to": "public_health"
+    },
+    {
+      "from": "public_utility_reliability",
+      "to": "amanah"
+    },
+    {
+      "from": "public_utility_reliability",
+      "to": "energy_access"
+    },
+    {
+      "from": "public_utility_reliability",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "public_utility_reliability",
+      "to": "infrastructure_stewardship"
+    },
+    {
+      "from": "public_utility_reliability",
+      "to": "water_security"
+    },
+    {
+      "from": "public_value_creation",
+      "to": "adl"
+    },
+    {
+      "from": "public_value_creation",
+      "to": "barakah"
+    },
+    {
+      "from": "public_value_creation",
+      "to": "maslahah"
+    },
+    {
+      "from": "public_value_creation",
+      "to": "public_value_creation"
+    },
+    {
+      "from": "public_value_creation",
+      "to": "shared_prosperity"
+    },
+    {
+      "from": "public_value_estimator",
+      "to": "maslahah"
+    },
+    {
+      "from": "public_value_estimator",
+      "to": "public_value_creation"
+    },
+    {
+      "from": "public_value_estimator",
+      "to": "shared_prosperity_analyzer"
+    },
+    {
+      "from": "qadar",
+      "to": "hikmah"
+    },
+    {
+      "from": "qadar",
+      "to": "israf"
+    },
+    {
+      "from": "qadar",
+      "to": "mizan"
+    },
+    {
+      "from": "qadar",
+      "to": "tawazun"
+    },
+    {
+      "from": "qadar",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "qard_hasan",
+      "to": "dayn"
+    },
+    {
+      "from": "qard_hasan",
+      "to": "miskeen"
+    },
+    {
+      "from": "qard_hasan",
+      "to": "rahmah"
+    },
+    {
+      "from": "qard_hasan",
+      "to": "riba"
+    },
+    {
+      "from": "qard_hasan",
+      "to": "rizq"
+    },
+    {
+      "from": "qist",
+      "to": "adl"
+    },
+    {
+      "from": "qist",
+      "to": "haqq"
+    },
+    {
+      "from": "qist",
+      "to": "israf"
+    },
+    {
+      "from": "qist",
+      "to": "mizan"
+    },
+    {
+      "from": "qist",
+      "to": "zulm"
+    },
+    {
+      "from": "rahmah",
+      "to": "ihsan"
+    },
+    {
+      "from": "rahmah",
+      "to": "miskeen"
+    },
+    {
+      "from": "rahmah",
+      "to": "nafs"
+    },
+    {
+      "from": "rahmah",
+      "to": "yateem"
+    },
+    {
+      "from": "rahmah",
+      "to": "zulm"
+    },
+    {
+      "from": "raqabah",
+      "to": "amanah"
+    },
+    {
+      "from": "raqabah",
+      "to": "hisab"
+    },
+    {
+      "from": "raqabah",
+      "to": "muhasabah"
+    },
+    {
+      "from": "raqabah",
+      "to": "shahada"
+    },
+    {
+      "from": "raqabah",
+      "to": "wilayah"
+    },
+    {
+      "from": "red_line_hudud_gate",
+      "to": "haram"
+    },
+    {
+      "from": "red_line_hudud_gate",
+      "to": "harm_prevention_gate"
+    },
+    {
+      "from": "red_line_hudud_gate",
+      "to": "hudud"
+    },
+    {
+      "from": "red_line_hudud_gate",
+      "to": "permissibility_classifier"
+    },
+    {
+      "from": "reforestation",
+      "to": "ard"
+    },
+    {
+      "from": "reforestation",
+      "to": "biodiversity_protection"
+    },
+    {
+      "from": "reforestation",
+      "to": "carbon_responsibility"
+    },
+    {
+      "from": "reforestation",
+      "to": "environmental_restoration"
+    },
+    {
+      "from": "reforestation",
+      "to": "islah"
+    },
+    {
+      "from": "regenerative_agriculture",
+      "to": "biodiversity_protection"
+    },
+    {
+      "from": "regenerative_agriculture",
+      "to": "islah"
+    },
+    {
+      "from": "regenerative_agriculture",
+      "to": "land_restoration"
+    },
+    {
+      "from": "regenerative_agriculture",
+      "to": "soil_protection"
+    },
+    {
+      "from": "regenerative_agriculture",
+      "to": "sustainable_agriculture"
+    },
+    {
+      "from": "regulatory_capture_detector",
+      "to": "conflict_of_interest_screen"
+    },
+    {
+      "from": "regulatory_capture_detector",
+      "to": "governance_integrity_scanner"
+    },
+    {
+      "from": "regulatory_capture_detector",
+      "to": "regulatory_integrity"
+    },
+    {
+      "from": "regulatory_integrity",
+      "to": "adl"
+    },
+    {
+      "from": "regulatory_integrity",
+      "to": "anti_corruption"
+    },
+    {
+      "from": "regulatory_integrity",
+      "to": "evidence_based_policy"
+    },
+    {
+      "from": "regulatory_integrity",
+      "to": "maslahah"
+    },
+    {
+      "from": "regulatory_integrity",
+      "to": "shura"
+    },
+    {
+      "from": "resource_stewardship",
+      "to": "circular_economy"
+    },
+    {
+      "from": "resource_stewardship",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "resource_stewardship",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "resource_stewardship",
+      "to": "nimah"
+    },
+    {
+      "from": "resource_stewardship",
+      "to": "taskhir"
+    },
+    {
+      "from": "resource_sufficiency_monitor",
+      "to": "circular_resource_tracker"
+    },
+    {
+      "from": "resource_sufficiency_monitor",
+      "to": "natural_capital_ledger"
+    },
+    {
+      "from": "resource_sufficiency_monitor",
+      "to": "resource_stewardship"
+    },
+    {
+      "from": "responsibility_gap_detector",
+      "to": "accountability_chain_mapper"
+    },
+    {
+      "from": "responsibility_gap_detector",
+      "to": "ai_accountability"
+    },
+    {
+      "from": "responsibility_gap_detector",
+      "to": "ai_ethics_assessment_layer"
+    },
+    {
+      "from": "responsible_consumption",
+      "to": "israf"
+    },
+    {
+      "from": "responsible_consumption",
+      "to": "qadar"
+    },
+    {
+      "from": "responsible_consumption",
+      "to": "tayyibat"
+    },
+    {
+      "from": "responsible_consumption",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "responsible_consumption",
+      "to": "waste_reduction"
+    },
+    {
+      "from": "responsible_innovation",
+      "to": "hikmah"
+    },
+    {
+      "from": "responsible_innovation",
+      "to": "la_darar"
+    },
+    {
+      "from": "responsible_innovation",
+      "to": "maslahah"
+    },
+    {
+      "from": "responsible_innovation",
+      "to": "scientific_responsibility"
+    },
+    {
+      "from": "responsible_innovation",
+      "to": "tadabbur"
+    },
+    {
+      "from": "responsible_leadership",
+      "to": "amanah"
+    },
+    {
+      "from": "responsible_leadership",
+      "to": "hikmah"
+    },
+    {
+      "from": "responsible_leadership",
+      "to": "kibr"
+    },
+    {
+      "from": "responsible_leadership",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "responsible_leadership",
+      "to": "wilayah"
+    },
+    {
+      "from": "restoration_prioritizer",
+      "to": "environmental_restoration"
+    },
+    {
+      "from": "restoration_prioritizer",
+      "to": "harm_remediation_tracker"
+    },
+    {
+      "from": "restoration_prioritizer",
+      "to": "islah"
+    },
+    {
+      "from": "restoration_prioritizer",
+      "to": "natural_capital_ledger"
+    },
+    {
+      "from": "reversibility_analyzer",
+      "to": "la_darar"
+    },
+    {
+      "from": "reversibility_analyzer",
+      "to": "long_horizon_consequence_engine"
+    },
+    {
+      "from": "reversibility_analyzer",
+      "to": "precautionary_principle_engine"
+    },
+    {
+      "from": "riba",
+      "to": "batil"
+    },
+    {
+      "from": "riba",
+      "to": "gharar"
+    },
+    {
+      "from": "riba",
+      "to": "mal"
+    },
+    {
+      "from": "riba",
+      "to": "maysir"
+    },
+    {
+      "from": "riba",
+      "to": "qist"
+    },
+    {
+      "from": "riba",
+      "to": "zulm"
+    },
+    {
+      "from": "rights_duty_mapper",
+      "to": "accountability_chain_mapper"
+    },
+    {
+      "from": "rights_duty_mapper",
+      "to": "huquq"
+    },
+    {
+      "from": "rights_duty_mapper",
+      "to": "justice_allocation_engine"
+    },
+    {
+      "from": "rights_duty_mapper",
+      "to": "wajibat"
+    },
+    {
+      "from": "rizq",
+      "to": "adl"
+    },
+    {
+      "from": "rizq",
+      "to": "israf"
+    },
+    {
+      "from": "rizq",
+      "to": "mal"
+    },
+    {
+      "from": "rizq",
+      "to": "miskeen"
+    },
+    {
+      "from": "rizq",
+      "to": "riba"
+    },
+    {
+      "from": "rural_development",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "rural_development",
+      "to": "food_security"
+    },
+    {
+      "from": "rural_development",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "rural_development",
+      "to": "miskeen"
+    },
+    {
+      "from": "rural_development",
+      "to": "transport_access"
+    },
+    {
+      "from": "sabr",
+      "to": "hikmah"
+    },
+    {
+      "from": "sabr",
+      "to": "shukr"
+    },
+    {
+      "from": "sabr",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "sadaqah",
+      "to": "ihsan"
+    },
+    {
+      "from": "sadaqah",
+      "to": "ikhlas"
+    },
+    {
+      "from": "sadaqah",
+      "to": "miskeen"
+    },
+    {
+      "from": "sadaqah",
+      "to": "waqf"
+    },
+    {
+      "from": "sadaqah",
+      "to": "zakat"
+    },
+    {
+      "from": "scenario_simulator",
+      "to": "climate_resilience_stress_test"
+    },
+    {
+      "from": "scenario_simulator",
+      "to": "long_horizon_consequence_engine"
+    },
+    {
+      "from": "scenario_simulator",
+      "to": "long_term_wisdom"
+    },
+    {
+      "from": "scholar_review_workflow",
+      "to": "ethical_intelligence_orchestrator"
+    },
+    {
+      "from": "scholar_review_workflow",
+      "to": "shubhah"
+    },
+    {
+      "from": "scholar_review_workflow",
+      "to": "uncertainty_review_router"
+    },
+    {
+      "from": "scientific_responsibility",
+      "to": "ilm"
+    },
+    {
+      "from": "scientific_responsibility",
+      "to": "knowledge_development"
+    },
+    {
+      "from": "scientific_responsibility",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "scientific_responsibility",
+      "to": "responsible_innovation"
+    },
+    {
+      "from": "scientific_responsibility",
+      "to": "sidq"
+    },
+    {
+      "from": "seed_preservation",
+      "to": "biodiversity_protection"
+    },
+    {
+      "from": "seed_preservation",
+      "to": "food_security"
+    },
+    {
+      "from": "seed_preservation",
+      "to": "huquq"
+    },
+    {
+      "from": "seed_preservation",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "seed_preservation",
+      "to": "rizq"
+    },
+    {
+      "from": "shahada",
+      "to": "adl"
+    },
+    {
+      "from": "shahada",
+      "to": "bayyinah"
+    },
+    {
+      "from": "shahada",
+      "to": "haqq"
+    },
+    {
+      "from": "shahada",
+      "to": "hisab"
+    },
+    {
+      "from": "shahada",
+      "to": "sidq"
+    },
+    {
+      "from": "shared_prosperity",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "shared_prosperity",
+      "to": "community_benefit"
+    },
+    {
+      "from": "shared_prosperity",
+      "to": "qist"
+    },
+    {
+      "from": "shared_prosperity",
+      "to": "stakeholder_protection"
+    },
+    {
+      "from": "shared_prosperity",
+      "to": "zakat"
+    },
+    {
+      "from": "shared_prosperity_analyzer",
+      "to": "distributional_impact_engine"
+    },
+    {
+      "from": "shared_prosperity_analyzer",
+      "to": "public_value_estimator"
+    },
+    {
+      "from": "shared_prosperity_analyzer",
+      "to": "shared_prosperity"
+    },
+    {
+      "from": "shubhah",
+      "to": "gharar"
+    },
+    {
+      "from": "shubhah",
+      "to": "halal"
+    },
+    {
+      "from": "shubhah",
+      "to": "haram"
+    },
+    {
+      "from": "shubhah",
+      "to": "ilm"
+    },
+    {
+      "from": "shubhah",
+      "to": "la_darar"
+    },
+    {
+      "from": "shukr",
+      "to": "israf"
+    },
+    {
+      "from": "shukr",
+      "to": "khalifah"
+    },
+    {
+      "from": "shukr",
+      "to": "rizq"
+    },
+    {
+      "from": "shukr",
+      "to": "sabr"
+    },
+    {
+      "from": "shura",
+      "to": "adl"
+    },
+    {
+      "from": "shura",
+      "to": "amanah"
+    },
+    {
+      "from": "shura",
+      "to": "haqq"
+    },
+    {
+      "from": "shura",
+      "to": "ilm"
+    },
+    {
+      "from": "shura_deliberation_engine",
+      "to": "shura"
+    },
+    {
+      "from": "shura_deliberation_engine",
+      "to": "social_cohesion_monitor"
+    },
+    {
+      "from": "shura_deliberation_engine",
+      "to": "stakeholder_impact_mapper"
+    },
+    {
+      "from": "sidq",
+      "to": "bayyinah"
+    },
+    {
+      "from": "sidq",
+      "to": "ghish"
+    },
+    {
+      "from": "sidq",
+      "to": "haqq"
+    },
+    {
+      "from": "sidq",
+      "to": "ikhlas"
+    },
+    {
+      "from": "sidq",
+      "to": "shahada"
+    },
+    {
+      "from": "skill_development",
+      "to": "ajr"
+    },
+    {
+      "from": "skill_development",
+      "to": "fair_employment"
+    },
+    {
+      "from": "skill_development",
+      "to": "rizq"
+    },
+    {
+      "from": "skill_development",
+      "to": "social_mobility"
+    },
+    {
+      "from": "skill_development",
+      "to": "transition_planning"
+    },
+    {
+      "from": "social_cohesion_monitor",
+      "to": "disinformation_fitnah_detector"
+    },
+    {
+      "from": "social_cohesion_monitor",
+      "to": "peaceful_coexistence"
+    },
+    {
+      "from": "social_cohesion_monitor",
+      "to": "societal_cohesion"
+    },
+    {
+      "from": "social_mobility",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "social_mobility",
+      "to": "education_access"
+    },
+    {
+      "from": "social_mobility",
+      "to": "huquq"
+    },
+    {
+      "from": "social_mobility",
+      "to": "qist"
+    },
+    {
+      "from": "social_mobility",
+      "to": "skill_development"
+    },
+    {
+      "from": "societal_cohesion",
+      "to": "community_resilience"
+    },
+    {
+      "from": "societal_cohesion",
+      "to": "fitnah"
+    },
+    {
+      "from": "societal_cohesion",
+      "to": "islah"
+    },
+    {
+      "from": "societal_cohesion",
+      "to": "namimah"
+    },
+    {
+      "from": "societal_cohesion",
+      "to": "sulh"
+    },
+    {
+      "from": "societal_resilience_index",
+      "to": "community_resilience_planner"
+    },
+    {
+      "from": "societal_resilience_index",
+      "to": "institutional_trust_index"
+    },
+    {
+      "from": "societal_resilience_index",
+      "to": "social_cohesion_monitor"
+    },
+    {
+      "from": "soil_protection",
+      "to": "ard"
+    },
+    {
+      "from": "soil_protection",
+      "to": "fasad"
+    },
+    {
+      "from": "soil_protection",
+      "to": "khalifah"
+    },
+    {
+      "from": "soil_protection",
+      "to": "land_restoration"
+    },
+    {
+      "from": "soil_protection",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "stakeholder_impact_mapper",
+      "to": "justice_allocation_engine"
+    },
+    {
+      "from": "stakeholder_impact_mapper",
+      "to": "stakeholder_protection"
+    },
+    {
+      "from": "stakeholder_impact_mapper",
+      "to": "vulnerability_impact_engine"
+    },
+    {
+      "from": "stakeholder_protection",
+      "to": "adl"
+    },
+    {
+      "from": "stakeholder_protection",
+      "to": "community_benefit"
+    },
+    {
+      "from": "stakeholder_protection",
+      "to": "huquq"
+    },
+    {
+      "from": "stakeholder_protection",
+      "to": "stakeholder_protection"
+    },
+    {
+      "from": "stakeholder_protection",
+      "to": "worker_dignity"
+    },
+    {
+      "from": "stewardship_accountability_engine",
+      "to": "accountability_chain_mapper"
+    },
+    {
+      "from": "stewardship_accountability_engine",
+      "to": "amanah"
+    },
+    {
+      "from": "stewardship_accountability_engine",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "stewardship_accountability_engine",
+      "to": "khalifah"
+    },
+    {
+      "from": "stewardship_accountability_engine",
+      "to": "natural_capital_ledger"
+    },
+    {
+      "from": "stewardship_civilization",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "stewardship_civilization",
+      "to": "khalifah"
+    },
+    {
+      "from": "stewardship_civilization",
+      "to": "natural_capital_stewardship"
+    },
+    {
+      "from": "stewardship_civilization",
+      "to": "planetary_balance"
+    },
+    {
+      "from": "stewardship_civilization",
+      "to": "resource_stewardship"
+    },
+    {
+      "from": "sulh",
+      "to": "adl"
+    },
+    {
+      "from": "sulh",
+      "to": "aman"
+    },
+    {
+      "from": "sulh",
+      "to": "islah"
+    },
+    {
+      "from": "sulh",
+      "to": "rahmah"
+    },
+    {
+      "from": "supply_chain_integrity",
+      "to": "ethical_production"
+    },
+    {
+      "from": "supply_chain_integrity",
+      "to": "fair_employment"
+    },
+    {
+      "from": "supply_chain_integrity",
+      "to": "ghish"
+    },
+    {
+      "from": "supply_chain_integrity",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "supply_chain_integrity",
+      "to": "tatfif"
+    },
+    {
+      "from": "supply_chain_integrity_tracer",
+      "to": "ethical_production"
+    },
+    {
+      "from": "supply_chain_integrity_tracer",
+      "to": "labour_justice_auditor"
+    },
+    {
+      "from": "supply_chain_integrity_tracer",
+      "to": "supply_chain_integrity"
+    },
+    {
+      "from": "sustainable_agriculture",
+      "to": "israf"
+    },
+    {
+      "from": "sustainable_agriculture",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "sustainable_agriculture",
+      "to": "regenerative_agriculture"
+    },
+    {
+      "from": "sustainable_agriculture",
+      "to": "soil_protection"
+    },
+    {
+      "from": "sustainable_agriculture",
+      "to": "water_conservation"
+    },
+    {
+      "from": "sustainable_finance",
+      "to": "barakah"
+    },
+    {
+      "from": "sustainable_finance",
+      "to": "long_term_resilience"
+    },
+    {
+      "from": "sustainable_finance",
+      "to": "mudarabah"
+    },
+    {
+      "from": "sustainable_finance",
+      "to": "musharakah"
+    },
+    {
+      "from": "sustainable_finance",
+      "to": "riba"
+    },
+    {
+      "from": "systemic_justice",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "systemic_justice",
+      "to": "adl"
+    },
+    {
+      "from": "systemic_justice",
+      "to": "algorithmic_fairness"
+    },
+    {
+      "from": "systemic_justice",
+      "to": "qist"
+    },
+    {
+      "from": "systemic_justice",
+      "to": "zulm"
+    },
+    {
+      "from": "systemic_justice_auditor",
+      "to": "algorithmic_fairness_auditor"
+    },
+    {
+      "from": "systemic_justice_auditor",
+      "to": "distributional_impact_engine"
+    },
+    {
+      "from": "systemic_justice_auditor",
+      "to": "systemic_justice"
+    },
+    {
+      "from": "tabdhir",
+      "to": "bukhl"
+    },
+    {
+      "from": "tabdhir",
+      "to": "israf"
+    },
+    {
+      "from": "tabdhir",
+      "to": "maqasid_hifz_mal"
+    },
+    {
+      "from": "tabdhir",
+      "to": "nimah"
+    },
+    {
+      "from": "tabdhir",
+      "to": "rizq"
+    },
+    {
+      "from": "tadabbur",
+      "to": "aql"
+    },
+    {
+      "from": "tadabbur",
+      "to": "hikmah"
+    },
+    {
+      "from": "tadabbur",
+      "to": "ilm"
+    },
+    {
+      "from": "tadabbur",
+      "to": "nasl"
+    },
+    {
+      "from": "tadabbur",
+      "to": "tafakkur"
+    },
+    {
+      "from": "tafakkur",
+      "to": "aql"
+    },
+    {
+      "from": "tafakkur",
+      "to": "hikmah"
+    },
+    {
+      "from": "tafakkur",
+      "to": "ilm"
+    },
+    {
+      "from": "tafakkur",
+      "to": "mizan"
+    },
+    {
+      "from": "tafakkur",
+      "to": "tadabbur"
+    },
+    {
+      "from": "taqwa",
+      "to": "adl"
+    },
+    {
+      "from": "taqwa",
+      "to": "hisab"
+    },
+    {
+      "from": "taqwa",
+      "to": "ikhlas"
+    },
+    {
+      "from": "taqwa",
+      "to": "niyyah"
+    },
+    {
+      "from": "taskhir",
+      "to": "ard"
+    },
+    {
+      "from": "taskhir",
+      "to": "israf"
+    },
+    {
+      "from": "taskhir",
+      "to": "khalifah"
+    },
+    {
+      "from": "taskhir",
+      "to": "maa"
+    },
+    {
+      "from": "taskhir",
+      "to": "nimah"
+    },
+    {
+      "from": "taskhir",
+      "to": "shukr"
+    },
+    {
+      "from": "tatfif",
+      "to": "bayyinah"
+    },
+    {
+      "from": "tatfif",
+      "to": "ghish"
+    },
+    {
+      "from": "tatfif",
+      "to": "mizan"
+    },
+    {
+      "from": "tatfif",
+      "to": "qist"
+    },
+    {
+      "from": "tatfif",
+      "to": "sidq"
+    },
+    {
+      "from": "tawakkul",
+      "to": "continuity_reserve_planner"
+    },
+    {
+      "from": "tawakkul",
+      "to": "hikmah"
+    },
+    {
+      "from": "tawakkul",
+      "to": "ilm"
+    },
+    {
+      "from": "tawakkul",
+      "to": "niyyah"
+    },
+    {
+      "from": "tawakkul",
+      "to": "sabr"
+    },
+    {
+      "from": "tawazun",
+      "to": "ard"
+    },
+    {
+      "from": "tawazun",
+      "to": "fasad"
+    },
+    {
+      "from": "tawazun",
+      "to": "mizan"
+    },
+    {
+      "from": "tawazun",
+      "to": "qadar"
+    },
+    {
+      "from": "tawazun",
+      "to": "wasatiyyah"
+    },
+    {
+      "from": "tayyibat",
+      "to": "halal"
+    },
+    {
+      "from": "tayyibat",
+      "to": "ihsan"
+    },
+    {
+      "from": "tayyibat",
+      "to": "khabaith"
+    },
+    {
+      "from": "tayyibat",
+      "to": "maslahah"
+    },
+    {
+      "from": "tayyibat",
+      "to": "rizq"
+    },
+    {
+      "from": "tipping_point_early_warning",
+      "to": "ecosystem_stability_monitor"
+    },
+    {
+      "from": "tipping_point_early_warning",
+      "to": "planetary_boundary_tracker"
+    },
+    {
+      "from": "tipping_point_early_warning",
+      "to": "tawazun"
+    },
+    {
+      "from": "trade_off_resolver",
+      "to": "harm_prevention_gate"
+    },
+    {
+      "from": "trade_off_resolver",
+      "to": "maqasid_preservation_scorer"
+    },
+    {
+      "from": "trade_off_resolver",
+      "to": "maslahah_mafsadah_weigher"
+    },
+    {
+      "from": "transition_planning",
+      "to": "climate_justice"
+    },
+    {
+      "from": "transition_planning",
+      "to": "islah"
+    },
+    {
+      "from": "transition_planning",
+      "to": "skill_development"
+    },
+    {
+      "from": "transition_planning",
+      "to": "sustainable_finance"
+    },
+    {
+      "from": "transition_planning",
+      "to": "wafa"
+    },
+    {
+      "from": "transparency_compliance_engine",
+      "to": "ai_transparency"
+    },
+    {
+      "from": "transparency_compliance_engine",
+      "to": "disclosure_verification_engine"
+    },
+    {
+      "from": "transparency_compliance_engine",
+      "to": "transparency_systems"
+    },
+    {
+      "from": "transparency_systems",
+      "to": "anti_corruption"
+    },
+    {
+      "from": "transparency_systems",
+      "to": "bayyinah"
+    },
+    {
+      "from": "transparency_systems",
+      "to": "data_integrity"
+    },
+    {
+      "from": "transparency_systems",
+      "to": "haqq"
+    },
+    {
+      "from": "transparency_systems",
+      "to": "public_disclosure"
+    },
+    {
+      "from": "transport_access",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "transport_access",
+      "to": "energy_access"
+    },
+    {
+      "from": "transport_access",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "transport_access",
+      "to": "miskeen"
+    },
+    {
+      "from": "transport_access",
+      "to": "rural_development"
+    },
+    {
+      "from": "truthfulness_greenwashing_detector",
+      "to": "benefit_harm_triangulator"
+    },
+    {
+      "from": "truthfulness_greenwashing_detector",
+      "to": "disclosure_verification_engine"
+    },
+    {
+      "from": "truthfulness_greenwashing_detector",
+      "to": "ghish"
+    },
+    {
+      "from": "truthfulness_greenwashing_detector",
+      "to": "tatfif"
+    },
+    {
+      "from": "uncertainty_review_router",
+      "to": "evidence_confidence_grader"
+    },
+    {
+      "from": "uncertainty_review_router",
+      "to": "precautionary_principle_engine"
+    },
+    {
+      "from": "uncertainty_review_router",
+      "to": "scholar_review_workflow"
+    },
+    {
+      "from": "uncertainty_review_router",
+      "to": "shubhah"
+    },
+    {
+      "from": "urban_balance",
+      "to": "biodiversity_protection"
+    },
+    {
+      "from": "urban_balance",
+      "to": "housing_dignity"
+    },
+    {
+      "from": "urban_balance",
+      "to": "infrastructure_equity"
+    },
+    {
+      "from": "urban_balance",
+      "to": "mizan"
+    },
+    {
+      "from": "urban_balance",
+      "to": "tawazun"
+    },
+    {
+      "from": "vulnerability_impact_engine",
+      "to": "equity_gap_monitor"
+    },
+    {
+      "from": "vulnerability_impact_engine",
+      "to": "miskeen"
+    },
+    {
+      "from": "vulnerability_impact_engine",
+      "to": "vulnerable_group_sentinel"
+    },
+    {
+      "from": "vulnerability_impact_engine",
+      "to": "yateem"
+    },
+    {
+      "from": "vulnerable_group_sentinel",
+      "to": "equity_gap_monitor"
+    },
+    {
+      "from": "vulnerable_group_sentinel",
+      "to": "miskeen"
+    },
+    {
+      "from": "vulnerable_group_sentinel",
+      "to": "vulnerability_impact_engine"
+    },
+    {
+      "from": "wafa",
+      "to": "adl"
+    },
+    {
+      "from": "wafa",
+      "to": "amanah"
+    },
+    {
+      "from": "wafa",
+      "to": "khiyanah"
+    },
+    {
+      "from": "wafa",
+      "to": "mithaq"
+    },
+    {
+      "from": "wafa",
+      "to": "sidq"
+    },
+    {
+      "from": "wajibat",
+      "to": "adl"
+    },
+    {
+      "from": "wajibat",
+      "to": "amanah"
+    },
+    {
+      "from": "wajibat",
+      "to": "huquq"
+    },
+    {
+      "from": "wajibat",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "wajibat",
+      "to": "wafa"
+    },
+    {
+      "from": "wakalah",
+      "to": "amanah"
+    },
+    {
+      "from": "wakalah",
+      "to": "khiyanah"
+    },
+    {
+      "from": "wakalah",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "wakalah",
+      "to": "wafa"
+    },
+    {
+      "from": "wakalah",
+      "to": "wilayah"
+    },
+    {
+      "from": "walidayn",
+      "to": "ihsan"
+    },
+    {
+      "from": "walidayn",
+      "to": "miskeen"
+    },
+    {
+      "from": "walidayn",
+      "to": "nasl"
+    },
+    {
+      "from": "walidayn",
+      "to": "rahmah"
+    },
+    {
+      "from": "waqf",
+      "to": "barakah"
+    },
+    {
+      "from": "waqf",
+      "to": "istikhlaf"
+    },
+    {
+      "from": "waqf",
+      "to": "maqasid_hifz_nasl"
+    },
+    {
+      "from": "waqf",
+      "to": "maslahah"
+    },
+    {
+      "from": "waqf",
+      "to": "sadaqah"
+    },
+    {
+      "from": "wasatiyyah",
+      "to": "hikmah"
+    },
+    {
+      "from": "wasatiyyah",
+      "to": "israf"
+    },
+    {
+      "from": "wasatiyyah",
+      "to": "mizan"
+    },
+    {
+      "from": "wasatiyyah",
+      "to": "qist"
+    },
+    {
+      "from": "waste_reduction",
+      "to": "circular_economy"
+    },
+    {
+      "from": "waste_reduction",
+      "to": "food_waste_prevention"
+    },
+    {
+      "from": "waste_reduction",
+      "to": "israf"
+    },
+    {
+      "from": "waste_reduction",
+      "to": "pollution_prevention"
+    },
+    {
+      "from": "waste_reduction",
+      "to": "tabdhir"
+    },
+    {
+      "from": "water_conservation",
+      "to": "israf"
+    },
+    {
+      "from": "water_conservation",
+      "to": "maa"
+    },
+    {
+      "from": "water_conservation",
+      "to": "nimah"
+    },
+    {
+      "from": "water_conservation",
+      "to": "qadar"
+    },
+    {
+      "from": "water_conservation",
+      "to": "tabdhir"
+    },
+    {
+      "from": "water_justice",
+      "to": "adl"
+    },
+    {
+      "from": "water_justice",
+      "to": "maa"
+    },
+    {
+      "from": "water_justice",
+      "to": "miskeen"
+    },
+    {
+      "from": "water_justice",
+      "to": "qist"
+    },
+    {
+      "from": "water_justice",
+      "to": "zulm"
+    },
+    {
+      "from": "water_security",
+      "to": "aman"
+    },
+    {
+      "from": "water_security",
+      "to": "maa"
+    },
+    {
+      "from": "water_security",
+      "to": "maslahah"
+    },
+    {
+      "from": "water_security",
+      "to": "miskeen"
+    },
+    {
+      "from": "water_security",
+      "to": "rizq"
+    },
+    {
+      "from": "water_security_index",
+      "to": "drought_flood_early_warning"
+    },
+    {
+      "from": "water_security_index",
+      "to": "water_security"
+    },
+    {
+      "from": "water_security_index",
+      "to": "water_stewardship_intelligence"
+    },
+    {
+      "from": "water_stewardship_intelligence",
+      "to": "drought_flood_early_warning"
+    },
+    {
+      "from": "water_stewardship_intelligence",
+      "to": "water_justice"
+    },
+    {
+      "from": "water_stewardship_intelligence",
+      "to": "water_security"
+    },
+    {
+      "from": "water_stewardship_intelligence",
+      "to": "watershed_stewardship"
+    },
+    {
+      "from": "watershed_stewardship",
+      "to": "ard"
+    },
+    {
+      "from": "watershed_stewardship",
+      "to": "fasad"
+    },
+    {
+      "from": "watershed_stewardship",
+      "to": "khalifah"
+    },
+    {
+      "from": "watershed_stewardship",
+      "to": "maa"
+    },
+    {
+      "from": "watershed_stewardship",
+      "to": "tawazun"
+    },
+    {
+      "from": "whistleblower_signal_aggregator",
+      "to": "anti_corruption_detector"
+    },
+    {
+      "from": "whistleblower_signal_aggregator",
+      "to": "oversight_adequacy_checker"
+    },
+    {
+      "from": "whistleblower_signal_aggregator",
+      "to": "shahada"
+    },
+    {
+      "from": "wilayah",
+      "to": "amanah"
+    },
+    {
+      "from": "wilayah",
+      "to": "masuliyyah"
+    },
+    {
+      "from": "wilayah",
+      "to": "raqabah"
+    },
+    {
+      "from": "wilayah",
+      "to": "shura"
+    },
+    {
+      "from": "wilayah",
+      "to": "wakalah"
+    },
+    {
+      "from": "wilayah",
+      "to": "zulm"
+    },
+    {
+      "from": "worker_dignity",
+      "to": "ajr"
+    },
+    {
+      "from": "worker_dignity",
+      "to": "fair_employment"
+    },
+    {
+      "from": "worker_dignity",
+      "to": "human_dignity"
+    },
+    {
+      "from": "worker_dignity",
+      "to": "mental_wellbeing"
+    },
+    {
+      "from": "worker_dignity",
+      "to": "rahmah"
+    },
+    {
+      "from": "yateem",
+      "to": "amanah"
+    },
+    {
+      "from": "yateem",
+      "to": "ibn_sabil"
+    },
+    {
+      "from": "yateem",
+      "to": "miskeen"
+    },
+    {
+      "from": "yateem",
+      "to": "rahmah"
+    },
+    {
+      "from": "yateem",
+      "to": "zulm"
+    },
+    {
+      "from": "zakat",
+      "to": "adalah_ijtimaiyyah"
+    },
+    {
+      "from": "zakat",
+      "to": "ibn_sabil"
+    },
+    {
+      "from": "zakat",
+      "to": "mal"
+    },
+    {
+      "from": "zakat",
+      "to": "miskeen"
+    },
+    {
+      "from": "zakat",
+      "to": "sadaqah"
+    },
+    {
+      "from": "zakat",
+      "to": "yateem"
+    },
+    {
+      "from": "zulm",
+      "to": "adl"
+    },
+    {
+      "from": "zulm",
+      "to": "fasad"
+    },
+    {
+      "from": "zulm",
+      "to": "miskeen"
+    },
+    {
+      "from": "zulm",
+      "to": "qist"
+    },
+    {
+      "from": "zulm",
+      "to": "rahmah"
+    },
+    {
+      "from": "zulm",
+      "to": "yateem"
+    }
+  ],
+  "related_edge_count": 1374,
+  "foundation_edges": [
+    {
+      "system": "accountability_chain_mapper",
+      "principle": "amanah"
+    },
+    {
+      "system": "accountability_chain_mapper",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "accountability_chain_mapper",
+      "principle": "muhasabah"
+    },
+    {
+      "system": "accountability_chain_mapper",
+      "principle": "wakalah"
+    },
+    {
+      "system": "accountability_chain_mapper",
+      "principle": "wilayah"
+    },
+    {
+      "system": "ai_ethics_assessment_layer",
+      "principle": "ai_accountability"
+    },
+    {
+      "system": "ai_ethics_assessment_layer",
+      "principle": "ai_transparency"
+    },
+    {
+      "system": "ai_ethics_assessment_layer",
+      "principle": "algorithmic_fairness"
+    },
+    {
+      "system": "ai_ethics_assessment_layer",
+      "principle": "human_oversight"
+    },
+    {
+      "system": "ai_ethics_assessment_layer",
+      "principle": "maqasid_hifz_aql"
+    },
+    {
+      "system": "algorithmic_fairness_auditor",
+      "principle": "adl"
+    },
+    {
+      "system": "algorithmic_fairness_auditor",
+      "principle": "algorithmic_fairness"
+    },
+    {
+      "system": "algorithmic_fairness_auditor",
+      "principle": "qist"
+    },
+    {
+      "system": "algorithmic_fairness_auditor",
+      "principle": "systemic_justice"
+    },
+    {
+      "system": "algorithmic_fairness_auditor",
+      "principle": "zulm"
+    },
+    {
+      "system": "anti_corruption_detector",
+      "principle": "anti_corruption"
+    },
+    {
+      "system": "anti_corruption_detector",
+      "principle": "conflict_of_interest_prevention"
+    },
+    {
+      "system": "anti_corruption_detector",
+      "principle": "fasad"
+    },
+    {
+      "system": "anti_corruption_detector",
+      "principle": "khiyanah"
+    },
+    {
+      "system": "anti_corruption_detector",
+      "principle": "zulm"
+    },
+    {
+      "system": "antifragility_designer",
+      "principle": "disaster_preparedness"
+    },
+    {
+      "system": "antifragility_designer",
+      "principle": "long_term_resilience"
+    },
+    {
+      "system": "antifragility_designer",
+      "principle": "sabr"
+    },
+    {
+      "system": "antifragility_designer",
+      "principle": "tawazun"
+    },
+    {
+      "system": "benefit_harm_triangulator",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "benefit_harm_triangulator",
+      "principle": "ghish"
+    },
+    {
+      "system": "benefit_harm_triangulator",
+      "principle": "haqq"
+    },
+    {
+      "system": "benefit_harm_triangulator",
+      "principle": "mafsadah"
+    },
+    {
+      "system": "benefit_harm_triangulator",
+      "principle": "sidq"
+    },
+    {
+      "system": "biodiversity_risk_engine",
+      "principle": "ard"
+    },
+    {
+      "system": "biodiversity_risk_engine",
+      "principle": "biodiversity_protection"
+    },
+    {
+      "system": "biodiversity_risk_engine",
+      "principle": "ecosystem_stability"
+    },
+    {
+      "system": "biodiversity_risk_engine",
+      "principle": "fasad"
+    },
+    {
+      "system": "biodiversity_risk_engine",
+      "principle": "tawazun"
+    },
+    {
+      "system": "capital_integrity_analyzer",
+      "principle": "mal"
+    },
+    {
+      "system": "capital_integrity_analyzer",
+      "principle": "maqasid_hifz_mal"
+    },
+    {
+      "system": "capital_integrity_analyzer",
+      "principle": "qist"
+    },
+    {
+      "system": "capital_integrity_analyzer",
+      "principle": "riba"
+    },
+    {
+      "system": "capital_integrity_analyzer",
+      "principle": "sustainable_finance"
+    },
+    {
+      "system": "cause_effect_tracer",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "cause_effect_tracer",
+      "principle": "fasad"
+    },
+    {
+      "system": "cause_effect_tracer",
+      "principle": "ilm"
+    },
+    {
+      "system": "cause_effect_tracer",
+      "principle": "islah"
+    },
+    {
+      "system": "cause_effect_tracer",
+      "principle": "tadabbur"
+    },
+    {
+      "system": "circular_resource_tracker",
+      "principle": "circular_economy"
+    },
+    {
+      "system": "circular_resource_tracker",
+      "principle": "israf"
+    },
+    {
+      "system": "circular_resource_tracker",
+      "principle": "resource_stewardship"
+    },
+    {
+      "system": "circular_resource_tracker",
+      "principle": "tabdhir"
+    },
+    {
+      "system": "circular_resource_tracker",
+      "principle": "waste_reduction"
+    },
+    {
+      "system": "civilizational_balance_dashboard",
+      "principle": "civilizational_balance"
+    },
+    {
+      "system": "civilizational_balance_dashboard",
+      "principle": "mizan"
+    },
+    {
+      "system": "civilizational_balance_dashboard",
+      "principle": "planetary_balance"
+    },
+    {
+      "system": "civilizational_balance_dashboard",
+      "principle": "systemic_justice"
+    },
+    {
+      "system": "civilizational_balance_dashboard",
+      "principle": "wasatiyyah"
+    },
+    {
+      "system": "climate_resilience_stress_test",
+      "principle": "climate_adaptation"
+    },
+    {
+      "system": "climate_resilience_stress_test",
+      "principle": "climate_risk"
+    },
+    {
+      "system": "climate_resilience_stress_test",
+      "principle": "disaster_preparedness"
+    },
+    {
+      "system": "climate_resilience_stress_test",
+      "principle": "long_term_resilience"
+    },
+    {
+      "system": "climate_transition_intelligence",
+      "principle": "climate_risk"
+    },
+    {
+      "system": "climate_transition_intelligence",
+      "principle": "emissions_responsibility"
+    },
+    {
+      "system": "climate_transition_intelligence",
+      "principle": "fasad"
+    },
+    {
+      "system": "climate_transition_intelligence",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "climate_transition_intelligence",
+      "principle": "transition_planning"
+    },
+    {
+      "system": "community_resilience_planner",
+      "principle": "aman"
+    },
+    {
+      "system": "community_resilience_planner",
+      "principle": "community_resilience"
+    },
+    {
+      "system": "community_resilience_planner",
+      "principle": "disaster_preparedness"
+    },
+    {
+      "system": "community_resilience_planner",
+      "principle": "miskeen"
+    },
+    {
+      "system": "community_resilience_planner",
+      "principle": "sulh"
+    },
+    {
+      "system": "company_ethics_scorer",
+      "principle": "adl"
+    },
+    {
+      "system": "company_ethics_scorer",
+      "principle": "amanah"
+    },
+    {
+      "system": "company_ethics_scorer",
+      "principle": "corporate_accountability"
+    },
+    {
+      "system": "company_ethics_scorer",
+      "principle": "khabaith"
+    },
+    {
+      "system": "company_ethics_scorer",
+      "principle": "tayyibat"
+    },
+    {
+      "system": "conflict_of_interest_screen",
+      "principle": "adl"
+    },
+    {
+      "system": "conflict_of_interest_screen",
+      "principle": "amanah"
+    },
+    {
+      "system": "conflict_of_interest_screen",
+      "principle": "conflict_of_interest_prevention"
+    },
+    {
+      "system": "conflict_of_interest_screen",
+      "principle": "wakalah"
+    },
+    {
+      "system": "continuity_reserve_planner",
+      "principle": "drought_resilience"
+    },
+    {
+      "system": "continuity_reserve_planner",
+      "principle": "energy_security"
+    },
+    {
+      "system": "continuity_reserve_planner",
+      "principle": "food_security"
+    },
+    {
+      "system": "continuity_reserve_planner",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "continuity_reserve_planner",
+      "principle": "sabr"
+    },
+    {
+      "system": "continuous_audit_engine",
+      "principle": "data_integrity"
+    },
+    {
+      "system": "continuous_audit_engine",
+      "principle": "hisab"
+    },
+    {
+      "system": "continuous_audit_engine",
+      "principle": "muhasabah"
+    },
+    {
+      "system": "continuous_audit_engine",
+      "principle": "raqabah"
+    },
+    {
+      "system": "country_transition_scorer",
+      "principle": "adalah_ijtimaiyyah"
+    },
+    {
+      "system": "country_transition_scorer",
+      "principle": "adl"
+    },
+    {
+      "system": "country_transition_scorer",
+      "principle": "climate_risk"
+    },
+    {
+      "system": "country_transition_scorer",
+      "principle": "fasad"
+    },
+    {
+      "system": "country_transition_scorer",
+      "principle": "maslahah"
+    },
+    {
+      "system": "cultural_impact_assessor",
+      "principle": "cultural_preservation"
+    },
+    {
+      "system": "cultural_impact_assessor",
+      "principle": "huquq"
+    },
+    {
+      "system": "cultural_impact_assessor",
+      "principle": "peaceful_coexistence"
+    },
+    {
+      "system": "cultural_impact_assessor",
+      "principle": "rahmah"
+    },
+    {
+      "system": "data_stewardship_monitor",
+      "principle": "amanah"
+    },
+    {
+      "system": "data_stewardship_monitor",
+      "principle": "data_stewardship"
+    },
+    {
+      "system": "data_stewardship_monitor",
+      "principle": "khiyanah"
+    },
+    {
+      "system": "data_stewardship_monitor",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "data_stewardship_monitor",
+      "principle": "privacy_protection"
+    },
+    {
+      "system": "decision_audit_trail",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "decision_audit_trail",
+      "principle": "hisab"
+    },
+    {
+      "system": "decision_audit_trail",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "decision_audit_trail",
+      "principle": "shahada"
+    },
+    {
+      "system": "decision_audit_trail",
+      "principle": "transparency_systems"
+    },
+    {
+      "system": "decision_triage_framework",
+      "principle": "hikmah"
+    },
+    {
+      "system": "decision_triage_framework",
+      "principle": "la_darar"
+    },
+    {
+      "system": "decision_triage_framework",
+      "principle": "mafsadah"
+    },
+    {
+      "system": "decision_triage_framework",
+      "principle": "maslahah"
+    },
+    {
+      "system": "decision_triage_framework",
+      "principle": "shubhah"
+    },
+    {
+      "system": "disaster_resilience_planner",
+      "principle": "community_resilience"
+    },
+    {
+      "system": "disaster_resilience_planner",
+      "principle": "disaster_preparedness"
+    },
+    {
+      "system": "disaster_resilience_planner",
+      "principle": "flood_protection"
+    },
+    {
+      "system": "disaster_resilience_planner",
+      "principle": "nafs"
+    },
+    {
+      "system": "disaster_resilience_planner",
+      "principle": "sabr"
+    },
+    {
+      "system": "disclosure_verification_engine",
+      "principle": "data_integrity"
+    },
+    {
+      "system": "disclosure_verification_engine",
+      "principle": "public_disclosure"
+    },
+    {
+      "system": "disclosure_verification_engine",
+      "principle": "shahada"
+    },
+    {
+      "system": "disclosure_verification_engine",
+      "principle": "sidq"
+    },
+    {
+      "system": "disclosure_verification_engine",
+      "principle": "tatfif"
+    },
+    {
+      "system": "disinformation_fitnah_detector",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "disinformation_fitnah_detector",
+      "principle": "fitnah"
+    },
+    {
+      "system": "disinformation_fitnah_detector",
+      "principle": "maqasid_hifz_aql"
+    },
+    {
+      "system": "disinformation_fitnah_detector",
+      "principle": "namimah"
+    },
+    {
+      "system": "disinformation_fitnah_detector",
+      "principle": "sidq"
+    },
+    {
+      "system": "distributional_impact_engine",
+      "principle": "adalah_ijtimaiyyah"
+    },
+    {
+      "system": "distributional_impact_engine",
+      "principle": "infrastructure_equity"
+    },
+    {
+      "system": "distributional_impact_engine",
+      "principle": "miskeen"
+    },
+    {
+      "system": "distributional_impact_engine",
+      "principle": "qist"
+    },
+    {
+      "system": "distributional_impact_engine",
+      "principle": "zulm"
+    },
+    {
+      "system": "drought_flood_early_warning",
+      "principle": "disaster_preparedness"
+    },
+    {
+      "system": "drought_flood_early_warning",
+      "principle": "drought_resilience"
+    },
+    {
+      "system": "drought_flood_early_warning",
+      "principle": "flood_protection"
+    },
+    {
+      "system": "drought_flood_early_warning",
+      "principle": "water_security"
+    },
+    {
+      "system": "ecosystem_stability_monitor",
+      "principle": "biodiversity_protection"
+    },
+    {
+      "system": "ecosystem_stability_monitor",
+      "principle": "ecosystem_stability"
+    },
+    {
+      "system": "ecosystem_stability_monitor",
+      "principle": "fasad"
+    },
+    {
+      "system": "ecosystem_stability_monitor",
+      "principle": "tawazun"
+    },
+    {
+      "system": "energy_security_analyzer",
+      "principle": "aman"
+    },
+    {
+      "system": "energy_security_analyzer",
+      "principle": "drought_resilience"
+    },
+    {
+      "system": "energy_security_analyzer",
+      "principle": "energy_access"
+    },
+    {
+      "system": "energy_security_analyzer",
+      "principle": "energy_security"
+    },
+    {
+      "system": "energy_systems_analyzer",
+      "principle": "clean_energy"
+    },
+    {
+      "system": "energy_systems_analyzer",
+      "principle": "energy_access"
+    },
+    {
+      "system": "energy_systems_analyzer",
+      "principle": "energy_efficiency"
+    },
+    {
+      "system": "energy_systems_analyzer",
+      "principle": "energy_security"
+    },
+    {
+      "system": "energy_systems_analyzer",
+      "principle": "taskhir"
+    },
+    {
+      "system": "equity_gap_monitor",
+      "principle": "adalah_ijtimaiyyah"
+    },
+    {
+      "system": "equity_gap_monitor",
+      "principle": "miskeen"
+    },
+    {
+      "system": "equity_gap_monitor",
+      "principle": "qist"
+    },
+    {
+      "system": "equity_gap_monitor",
+      "principle": "social_mobility"
+    },
+    {
+      "system": "equity_gap_monitor",
+      "principle": "zulm"
+    },
+    {
+      "system": "ethical_finance_fit_engine",
+      "principle": "gharar"
+    },
+    {
+      "system": "ethical_finance_fit_engine",
+      "principle": "maysir"
+    },
+    {
+      "system": "ethical_finance_fit_engine",
+      "principle": "qard_hasan"
+    },
+    {
+      "system": "ethical_finance_fit_engine",
+      "principle": "riba"
+    },
+    {
+      "system": "ethical_finance_fit_engine",
+      "principle": "tayyibat"
+    },
+    {
+      "system": "ethical_intelligence_orchestrator",
+      "principle": "hikmah"
+    },
+    {
+      "system": "ethical_intelligence_orchestrator",
+      "principle": "justice_allocation_engine"
+    },
+    {
+      "system": "ethical_intelligence_orchestrator",
+      "principle": "maqasid_preservation_scorer"
+    },
+    {
+      "system": "ethical_intelligence_orchestrator",
+      "principle": "moral_compass_engine"
+    },
+    {
+      "system": "evidence_confidence_grader",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "evidence_confidence_grader",
+      "principle": "ilm"
+    },
+    {
+      "system": "evidence_confidence_grader",
+      "principle": "shubhah"
+    },
+    {
+      "system": "evidence_confidence_grader",
+      "principle": "sidq"
+    },
+    {
+      "system": "food_security_monitor",
+      "principle": "community_nutrition"
+    },
+    {
+      "system": "food_security_monitor",
+      "principle": "drought_resilience"
+    },
+    {
+      "system": "food_security_monitor",
+      "principle": "food_security"
+    },
+    {
+      "system": "food_security_monitor",
+      "principle": "miskeen"
+    },
+    {
+      "system": "food_systems_resilience",
+      "principle": "community_nutrition"
+    },
+    {
+      "system": "food_systems_resilience",
+      "principle": "food_security"
+    },
+    {
+      "system": "food_systems_resilience",
+      "principle": "food_waste_prevention"
+    },
+    {
+      "system": "food_systems_resilience",
+      "principle": "supply_chain_integrity"
+    },
+    {
+      "system": "food_systems_resilience",
+      "principle": "sustainable_agriculture"
+    },
+    {
+      "system": "governance_integrity_scanner",
+      "principle": "institutional_trust"
+    },
+    {
+      "system": "governance_integrity_scanner",
+      "principle": "public_accountability"
+    },
+    {
+      "system": "governance_integrity_scanner",
+      "principle": "raqabah"
+    },
+    {
+      "system": "governance_integrity_scanner",
+      "principle": "regulatory_integrity"
+    },
+    {
+      "system": "governance_integrity_scanner",
+      "principle": "transparency_systems"
+    },
+    {
+      "system": "harm_prevention_gate",
+      "principle": "darar"
+    },
+    {
+      "system": "harm_prevention_gate",
+      "principle": "la_darar"
+    },
+    {
+      "system": "harm_prevention_gate",
+      "principle": "mafsadah"
+    },
+    {
+      "system": "harm_prevention_gate",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "harm_prevention_gate",
+      "principle": "nafs"
+    },
+    {
+      "system": "harm_remediation_tracker",
+      "principle": "darar"
+    },
+    {
+      "system": "harm_remediation_tracker",
+      "principle": "huquq"
+    },
+    {
+      "system": "harm_remediation_tracker",
+      "principle": "islah"
+    },
+    {
+      "system": "harm_remediation_tracker",
+      "principle": "la_darar"
+    },
+    {
+      "system": "harm_remediation_tracker",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "health_system_resilience",
+      "principle": "aman"
+    },
+    {
+      "system": "health_system_resilience",
+      "principle": "disaster_preparedness"
+    },
+    {
+      "system": "health_system_resilience",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "health_system_resilience",
+      "principle": "nafs"
+    },
+    {
+      "system": "health_system_resilience",
+      "principle": "public_health"
+    },
+    {
+      "system": "hikma_synthesis_engine",
+      "principle": "civilization_flourishing"
+    },
+    {
+      "system": "hikma_synthesis_engine",
+      "principle": "hikmah"
+    },
+    {
+      "system": "hikma_synthesis_engine",
+      "principle": "long_term_wisdom"
+    },
+    {
+      "system": "hikma_synthesis_engine",
+      "principle": "maslahah"
+    },
+    {
+      "system": "hikma_synthesis_engine",
+      "principle": "mizan"
+    },
+    {
+      "system": "human_development_index_engine",
+      "principle": "education_access"
+    },
+    {
+      "system": "human_development_index_engine",
+      "principle": "human_dignity"
+    },
+    {
+      "system": "human_development_index_engine",
+      "principle": "human_flourishing"
+    },
+    {
+      "system": "human_development_index_engine",
+      "principle": "public_health"
+    },
+    {
+      "system": "human_development_index_engine",
+      "principle": "social_mobility"
+    },
+    {
+      "system": "infrastructure_equity_analyzer",
+      "principle": "adalah_ijtimaiyyah"
+    },
+    {
+      "system": "infrastructure_equity_analyzer",
+      "principle": "housing_dignity"
+    },
+    {
+      "system": "infrastructure_equity_analyzer",
+      "principle": "infrastructure_equity"
+    },
+    {
+      "system": "infrastructure_equity_analyzer",
+      "principle": "public_utility_reliability"
+    },
+    {
+      "system": "infrastructure_equity_analyzer",
+      "principle": "qist"
+    },
+    {
+      "system": "institutional_trust_index",
+      "principle": "institutional_trust"
+    },
+    {
+      "system": "institutional_trust_index",
+      "principle": "public_accountability"
+    },
+    {
+      "system": "institutional_trust_index",
+      "principle": "sidq"
+    },
+    {
+      "system": "institutional_trust_index",
+      "principle": "transparency_systems"
+    },
+    {
+      "system": "intent_reality_engine",
+      "principle": "mithaq"
+    },
+    {
+      "system": "intent_reality_engine",
+      "principle": "sidq"
+    },
+    {
+      "system": "intent_reality_engine",
+      "principle": "tatfif"
+    },
+    {
+      "system": "intent_reality_engine",
+      "principle": "wafa"
+    },
+    {
+      "system": "intergenerational_equity_ledger",
+      "principle": "barakah"
+    },
+    {
+      "system": "intergenerational_equity_ledger",
+      "principle": "intergenerational_responsibility"
+    },
+    {
+      "system": "intergenerational_equity_ledger",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "intergenerational_equity_ledger",
+      "principle": "mithaq"
+    },
+    {
+      "system": "intergenerational_equity_ledger",
+      "principle": "natural_capital_ledger"
+    },
+    {
+      "system": "just_transition_planner",
+      "principle": "adalah_ijtimaiyyah"
+    },
+    {
+      "system": "just_transition_planner",
+      "principle": "climate_justice"
+    },
+    {
+      "system": "just_transition_planner",
+      "principle": "rahmah"
+    },
+    {
+      "system": "just_transition_planner",
+      "principle": "skill_development"
+    },
+    {
+      "system": "just_transition_planner",
+      "principle": "transition_planning"
+    },
+    {
+      "system": "justice_allocation_engine",
+      "principle": "adalah_ijtimaiyyah"
+    },
+    {
+      "system": "justice_allocation_engine",
+      "principle": "adl"
+    },
+    {
+      "system": "justice_allocation_engine",
+      "principle": "huquq"
+    },
+    {
+      "system": "justice_allocation_engine",
+      "principle": "qist"
+    },
+    {
+      "system": "justice_allocation_engine",
+      "principle": "zulm"
+    },
+    {
+      "system": "labour_justice_auditor",
+      "principle": "ajr"
+    },
+    {
+      "system": "labour_justice_auditor",
+      "principle": "fair_employment"
+    },
+    {
+      "system": "labour_justice_auditor",
+      "principle": "ijarah"
+    },
+    {
+      "system": "labour_justice_auditor",
+      "principle": "worker_dignity"
+    },
+    {
+      "system": "labour_justice_auditor",
+      "principle": "zulm"
+    },
+    {
+      "system": "leadership_integrity_index",
+      "principle": "amanah"
+    },
+    {
+      "system": "leadership_integrity_index",
+      "principle": "kibr"
+    },
+    {
+      "system": "leadership_integrity_index",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "leadership_integrity_index",
+      "principle": "moral_resilience"
+    },
+    {
+      "system": "leadership_integrity_index",
+      "principle": "responsible_leadership"
+    },
+    {
+      "system": "long_horizon_consequence_engine",
+      "principle": "intergenerational_responsibility"
+    },
+    {
+      "system": "long_horizon_consequence_engine",
+      "principle": "long_term_wisdom"
+    },
+    {
+      "system": "long_horizon_consequence_engine",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "long_horizon_consequence_engine",
+      "principle": "nasl"
+    },
+    {
+      "system": "long_horizon_consequence_engine",
+      "principle": "tadabbur"
+    },
+    {
+      "system": "long_term_wisdom_synthesizer",
+      "principle": "hikmah"
+    },
+    {
+      "system": "long_term_wisdom_synthesizer",
+      "principle": "long_horizon_consequence_engine"
+    },
+    {
+      "system": "long_term_wisdom_synthesizer",
+      "principle": "long_term_wisdom"
+    },
+    {
+      "system": "long_term_wisdom_synthesizer",
+      "principle": "sabr"
+    },
+    {
+      "system": "long_term_wisdom_synthesizer",
+      "principle": "tadabbur"
+    },
+    {
+      "system": "maqasid_dashboard",
+      "principle": "maqasid_hifz_aql"
+    },
+    {
+      "system": "maqasid_dashboard",
+      "principle": "maqasid_hifz_din"
+    },
+    {
+      "system": "maqasid_dashboard",
+      "principle": "maqasid_hifz_mal"
+    },
+    {
+      "system": "maqasid_dashboard",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "maqasid_dashboard",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "maqasid_preservation_scorer",
+      "principle": "maqasid_hifz_aql"
+    },
+    {
+      "system": "maqasid_preservation_scorer",
+      "principle": "maqasid_hifz_din"
+    },
+    {
+      "system": "maqasid_preservation_scorer",
+      "principle": "maqasid_hifz_mal"
+    },
+    {
+      "system": "maqasid_preservation_scorer",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "maqasid_preservation_scorer",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "maslahah_mafsadah_weigher",
+      "principle": "la_darar"
+    },
+    {
+      "system": "maslahah_mafsadah_weigher",
+      "principle": "mafsadah"
+    },
+    {
+      "system": "maslahah_mafsadah_weigher",
+      "principle": "maslahah"
+    },
+    {
+      "system": "maslahah_mafsadah_weigher",
+      "principle": "mizan"
+    },
+    {
+      "system": "mizan_balance_engine",
+      "principle": "israf"
+    },
+    {
+      "system": "mizan_balance_engine",
+      "principle": "mizan"
+    },
+    {
+      "system": "mizan_balance_engine",
+      "principle": "qist"
+    },
+    {
+      "system": "mizan_balance_engine",
+      "principle": "tawazun"
+    },
+    {
+      "system": "mizan_balance_engine",
+      "principle": "wasatiyyah"
+    },
+    {
+      "system": "mizan_civilizational_index",
+      "principle": "civilization_flourishing"
+    },
+    {
+      "system": "mizan_civilizational_index",
+      "principle": "civilizational_balance"
+    },
+    {
+      "system": "mizan_civilizational_index",
+      "principle": "maslahah"
+    },
+    {
+      "system": "mizan_civilizational_index",
+      "principle": "mizan"
+    },
+    {
+      "system": "mizan_civilizational_index",
+      "principle": "systemic_justice"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "adl"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "amanah"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "la_darar"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "mafsadah"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "maslahah"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "mizan"
+    },
+    {
+      "system": "moral_compass_engine",
+      "principle": "rahmah"
+    },
+    {
+      "system": "moral_resilience_stress_test",
+      "principle": "ikhlas"
+    },
+    {
+      "system": "moral_resilience_stress_test",
+      "principle": "moral_resilience"
+    },
+    {
+      "system": "moral_resilience_stress_test",
+      "principle": "sabr"
+    },
+    {
+      "system": "moral_resilience_stress_test",
+      "principle": "sidq"
+    },
+    {
+      "system": "moral_resilience_stress_test",
+      "principle": "taqwa"
+    },
+    {
+      "system": "natural_capital_ledger",
+      "principle": "barakah"
+    },
+    {
+      "system": "natural_capital_ledger",
+      "principle": "istikhlaf"
+    },
+    {
+      "system": "natural_capital_ledger",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "natural_capital_ledger",
+      "principle": "natural_capital_stewardship"
+    },
+    {
+      "system": "natural_capital_ledger",
+      "principle": "resource_stewardship"
+    },
+    {
+      "system": "oversight_adequacy_checker",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "oversight_adequacy_checker",
+      "principle": "muhasabah"
+    },
+    {
+      "system": "oversight_adequacy_checker",
+      "principle": "raqabah"
+    },
+    {
+      "system": "oversight_adequacy_checker",
+      "principle": "wilayah"
+    },
+    {
+      "system": "permissibility_classifier",
+      "principle": "halal"
+    },
+    {
+      "system": "permissibility_classifier",
+      "principle": "haram"
+    },
+    {
+      "system": "permissibility_classifier",
+      "principle": "hudud"
+    },
+    {
+      "system": "permissibility_classifier",
+      "principle": "shubhah"
+    },
+    {
+      "system": "planetary_boundary_tracker",
+      "principle": "ecosystem_stability"
+    },
+    {
+      "system": "planetary_boundary_tracker",
+      "principle": "fasad"
+    },
+    {
+      "system": "planetary_boundary_tracker",
+      "principle": "hudud"
+    },
+    {
+      "system": "planetary_boundary_tracker",
+      "principle": "mizan"
+    },
+    {
+      "system": "planetary_boundary_tracker",
+      "principle": "planetary_balance"
+    },
+    {
+      "system": "policy_evidence_validator",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "policy_evidence_validator",
+      "principle": "data_integrity"
+    },
+    {
+      "system": "policy_evidence_validator",
+      "principle": "evidence_based_policy"
+    },
+    {
+      "system": "policy_evidence_validator",
+      "principle": "ilm"
+    },
+    {
+      "system": "policy_evidence_validator",
+      "principle": "shubhah"
+    },
+    {
+      "system": "pollution_emissions_auditor",
+      "principle": "darar"
+    },
+    {
+      "system": "pollution_emissions_auditor",
+      "principle": "emissions_responsibility"
+    },
+    {
+      "system": "pollution_emissions_auditor",
+      "principle": "fasad"
+    },
+    {
+      "system": "pollution_emissions_auditor",
+      "principle": "pollution_prevention"
+    },
+    {
+      "system": "pollution_emissions_auditor",
+      "principle": "public_health"
+    },
+    {
+      "system": "precautionary_principle_engine",
+      "principle": "la_darar"
+    },
+    {
+      "system": "precautionary_principle_engine",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "precautionary_principle_engine",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "precautionary_principle_engine",
+      "principle": "shubhah"
+    },
+    {
+      "system": "precautionary_principle_engine",
+      "principle": "tadabbur"
+    },
+    {
+      "system": "procurement_integrity_monitor",
+      "principle": "adl"
+    },
+    {
+      "system": "procurement_integrity_monitor",
+      "principle": "anti_corruption"
+    },
+    {
+      "system": "procurement_integrity_monitor",
+      "principle": "ethical_procurement"
+    },
+    {
+      "system": "procurement_integrity_monitor",
+      "principle": "supply_chain_integrity"
+    },
+    {
+      "system": "project_readiness_assessor",
+      "principle": "amanah"
+    },
+    {
+      "system": "project_readiness_assessor",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "project_readiness_assessor",
+      "principle": "maslahah"
+    },
+    {
+      "system": "project_readiness_assessor",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "project_readiness_assessor",
+      "principle": "wafa"
+    },
+    {
+      "system": "proportionality_calibrator",
+      "principle": "israf"
+    },
+    {
+      "system": "proportionality_calibrator",
+      "principle": "mizan"
+    },
+    {
+      "system": "proportionality_calibrator",
+      "principle": "qadar"
+    },
+    {
+      "system": "proportionality_calibrator",
+      "principle": "wasatiyyah"
+    },
+    {
+      "system": "provenance_citation_validator",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "provenance_citation_validator",
+      "principle": "data_integrity"
+    },
+    {
+      "system": "provenance_citation_validator",
+      "principle": "shahada"
+    },
+    {
+      "system": "provenance_citation_validator",
+      "principle": "sidq"
+    },
+    {
+      "system": "public_health_impact_engine",
+      "principle": "la_darar"
+    },
+    {
+      "system": "public_health_impact_engine",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "public_health_impact_engine",
+      "principle": "nafs"
+    },
+    {
+      "system": "public_health_impact_engine",
+      "principle": "pollution_prevention"
+    },
+    {
+      "system": "public_health_impact_engine",
+      "principle": "public_health"
+    },
+    {
+      "system": "public_value_estimator",
+      "principle": "adl"
+    },
+    {
+      "system": "public_value_estimator",
+      "principle": "maslahah"
+    },
+    {
+      "system": "public_value_estimator",
+      "principle": "public_value_creation"
+    },
+    {
+      "system": "public_value_estimator",
+      "principle": "shared_prosperity"
+    },
+    {
+      "system": "red_line_hudud_gate",
+      "principle": "haram"
+    },
+    {
+      "system": "red_line_hudud_gate",
+      "principle": "hudud"
+    },
+    {
+      "system": "red_line_hudud_gate",
+      "principle": "la_darar"
+    },
+    {
+      "system": "red_line_hudud_gate",
+      "principle": "maqasid_hifz_nafs"
+    },
+    {
+      "system": "regulatory_capture_detector",
+      "principle": "adl"
+    },
+    {
+      "system": "regulatory_capture_detector",
+      "principle": "conflict_of_interest_prevention"
+    },
+    {
+      "system": "regulatory_capture_detector",
+      "principle": "maslahah"
+    },
+    {
+      "system": "regulatory_capture_detector",
+      "principle": "raqabah"
+    },
+    {
+      "system": "regulatory_capture_detector",
+      "principle": "regulatory_integrity"
+    },
+    {
+      "system": "resource_sufficiency_monitor",
+      "principle": "circular_economy"
+    },
+    {
+      "system": "resource_sufficiency_monitor",
+      "principle": "israf"
+    },
+    {
+      "system": "resource_sufficiency_monitor",
+      "principle": "natural_capital_stewardship"
+    },
+    {
+      "system": "resource_sufficiency_monitor",
+      "principle": "resource_stewardship"
+    },
+    {
+      "system": "responsibility_gap_detector",
+      "principle": "ai_accountability"
+    },
+    {
+      "system": "responsibility_gap_detector",
+      "principle": "amanah"
+    },
+    {
+      "system": "responsibility_gap_detector",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "responsibility_gap_detector",
+      "principle": "muhasabah"
+    },
+    {
+      "system": "restoration_prioritizer",
+      "principle": "environmental_restoration"
+    },
+    {
+      "system": "restoration_prioritizer",
+      "principle": "fasad"
+    },
+    {
+      "system": "restoration_prioritizer",
+      "principle": "islah"
+    },
+    {
+      "system": "restoration_prioritizer",
+      "principle": "land_restoration"
+    },
+    {
+      "system": "restoration_prioritizer",
+      "principle": "maslahah"
+    },
+    {
+      "system": "reversibility_analyzer",
+      "principle": "fasad"
+    },
+    {
+      "system": "reversibility_analyzer",
+      "principle": "la_darar"
+    },
+    {
+      "system": "reversibility_analyzer",
+      "principle": "long_horizon_consequence_engine"
+    },
+    {
+      "system": "reversibility_analyzer",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "rights_duty_mapper",
+      "principle": "adl"
+    },
+    {
+      "system": "rights_duty_mapper",
+      "principle": "amanah"
+    },
+    {
+      "system": "rights_duty_mapper",
+      "principle": "huquq"
+    },
+    {
+      "system": "rights_duty_mapper",
+      "principle": "wajibat"
+    },
+    {
+      "system": "scenario_simulator",
+      "principle": "climate_risk"
+    },
+    {
+      "system": "scenario_simulator",
+      "principle": "long_term_wisdom"
+    },
+    {
+      "system": "scenario_simulator",
+      "principle": "maqasid_hifz_nasl"
+    },
+    {
+      "system": "scenario_simulator",
+      "principle": "tadabbur"
+    },
+    {
+      "system": "scholar_review_workflow",
+      "principle": "hikmah"
+    },
+    {
+      "system": "scholar_review_workflow",
+      "principle": "ilm"
+    },
+    {
+      "system": "scholar_review_workflow",
+      "principle": "shubhah"
+    },
+    {
+      "system": "scholar_review_workflow",
+      "principle": "uncertainty_review_router"
+    },
+    {
+      "system": "shared_prosperity_analyzer",
+      "principle": "adalah_ijtimaiyyah"
+    },
+    {
+      "system": "shared_prosperity_analyzer",
+      "principle": "community_benefit"
+    },
+    {
+      "system": "shared_prosperity_analyzer",
+      "principle": "qist"
+    },
+    {
+      "system": "shared_prosperity_analyzer",
+      "principle": "shared_prosperity"
+    },
+    {
+      "system": "shared_prosperity_analyzer",
+      "principle": "zakat"
+    },
+    {
+      "system": "shura_deliberation_engine",
+      "principle": "adl"
+    },
+    {
+      "system": "shura_deliberation_engine",
+      "principle": "huquq"
+    },
+    {
+      "system": "shura_deliberation_engine",
+      "principle": "shura"
+    },
+    {
+      "system": "shura_deliberation_engine",
+      "principle": "stakeholder_protection"
+    },
+    {
+      "system": "social_cohesion_monitor",
+      "principle": "fitnah"
+    },
+    {
+      "system": "social_cohesion_monitor",
+      "principle": "namimah"
+    },
+    {
+      "system": "social_cohesion_monitor",
+      "principle": "peaceful_coexistence"
+    },
+    {
+      "system": "social_cohesion_monitor",
+      "principle": "societal_cohesion"
+    },
+    {
+      "system": "social_cohesion_monitor",
+      "principle": "sulh"
+    },
+    {
+      "system": "societal_resilience_index",
+      "principle": "aman"
+    },
+    {
+      "system": "societal_resilience_index",
+      "principle": "community_resilience"
+    },
+    {
+      "system": "societal_resilience_index",
+      "principle": "institutional_trust"
+    },
+    {
+      "system": "societal_resilience_index",
+      "principle": "sabr"
+    },
+    {
+      "system": "societal_resilience_index",
+      "principle": "societal_cohesion"
+    },
+    {
+      "system": "stakeholder_impact_mapper",
+      "principle": "adl"
+    },
+    {
+      "system": "stakeholder_impact_mapper",
+      "principle": "huquq"
+    },
+    {
+      "system": "stakeholder_impact_mapper",
+      "principle": "shura"
+    },
+    {
+      "system": "stakeholder_impact_mapper",
+      "principle": "stakeholder_protection"
+    },
+    {
+      "system": "stakeholder_impact_mapper",
+      "principle": "vulnerability_impact_engine"
+    },
+    {
+      "system": "stewardship_accountability_engine",
+      "principle": "amanah"
+    },
+    {
+      "system": "stewardship_accountability_engine",
+      "principle": "istikhlaf"
+    },
+    {
+      "system": "stewardship_accountability_engine",
+      "principle": "khalifah"
+    },
+    {
+      "system": "stewardship_accountability_engine",
+      "principle": "masuliyyah"
+    },
+    {
+      "system": "stewardship_accountability_engine",
+      "principle": "muhasabah"
+    },
+    {
+      "system": "supply_chain_integrity_tracer",
+      "principle": "ethical_production"
+    },
+    {
+      "system": "supply_chain_integrity_tracer",
+      "principle": "fair_employment"
+    },
+    {
+      "system": "supply_chain_integrity_tracer",
+      "principle": "ghish"
+    },
+    {
+      "system": "supply_chain_integrity_tracer",
+      "principle": "khiyanah"
+    },
+    {
+      "system": "supply_chain_integrity_tracer",
+      "principle": "supply_chain_integrity"
+    },
+    {
+      "system": "systemic_justice_auditor",
+      "principle": "adl"
+    },
+    {
+      "system": "systemic_justice_auditor",
+      "principle": "algorithmic_fairness"
+    },
+    {
+      "system": "systemic_justice_auditor",
+      "principle": "qist"
+    },
+    {
+      "system": "systemic_justice_auditor",
+      "principle": "systemic_justice"
+    },
+    {
+      "system": "systemic_justice_auditor",
+      "principle": "zulm"
+    },
+    {
+      "system": "tipping_point_early_warning",
+      "principle": "ecosystem_stability"
+    },
+    {
+      "system": "tipping_point_early_warning",
+      "principle": "fasad"
+    },
+    {
+      "system": "tipping_point_early_warning",
+      "principle": "mizan"
+    },
+    {
+      "system": "tipping_point_early_warning",
+      "principle": "planetary_balance"
+    },
+    {
+      "system": "tipping_point_early_warning",
+      "principle": "tawazun"
+    },
+    {
+      "system": "trade_off_resolver",
+      "principle": "mafsadah"
+    },
+    {
+      "system": "trade_off_resolver",
+      "principle": "maqasid_preservation_scorer"
+    },
+    {
+      "system": "trade_off_resolver",
+      "principle": "maslahah"
+    },
+    {
+      "system": "trade_off_resolver",
+      "principle": "mizan"
+    },
+    {
+      "system": "trade_off_resolver",
+      "principle": "qist"
+    },
+    {
+      "system": "transparency_compliance_engine",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "transparency_compliance_engine",
+      "principle": "haqq"
+    },
+    {
+      "system": "transparency_compliance_engine",
+      "principle": "public_disclosure"
+    },
+    {
+      "system": "transparency_compliance_engine",
+      "principle": "transparency_systems"
+    },
+    {
+      "system": "truthfulness_greenwashing_detector",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "truthfulness_greenwashing_detector",
+      "principle": "ghish"
+    },
+    {
+      "system": "truthfulness_greenwashing_detector",
+      "principle": "khabaith"
+    },
+    {
+      "system": "truthfulness_greenwashing_detector",
+      "principle": "sidq"
+    },
+    {
+      "system": "truthfulness_greenwashing_detector",
+      "principle": "tatfif"
+    },
+    {
+      "system": "uncertainty_review_router",
+      "principle": "bayyinah"
+    },
+    {
+      "system": "uncertainty_review_router",
+      "principle": "hikmah"
+    },
+    {
+      "system": "uncertainty_review_router",
+      "principle": "ilm"
+    },
+    {
+      "system": "uncertainty_review_router",
+      "principle": "shubhah"
+    },
+    {
+      "system": "vulnerability_impact_engine",
+      "principle": "ibn_sabil"
+    },
+    {
+      "system": "vulnerability_impact_engine",
+      "principle": "miskeen"
+    },
+    {
+      "system": "vulnerability_impact_engine",
+      "principle": "rahmah"
+    },
+    {
+      "system": "vulnerability_impact_engine",
+      "principle": "yateem"
+    },
+    {
+      "system": "vulnerability_impact_engine",
+      "principle": "zulm"
+    },
+    {
+      "system": "vulnerable_group_sentinel",
+      "principle": "ibn_sabil"
+    },
+    {
+      "system": "vulnerable_group_sentinel",
+      "principle": "miskeen"
+    },
+    {
+      "system": "vulnerable_group_sentinel",
+      "principle": "rahmah"
+    },
+    {
+      "system": "vulnerable_group_sentinel",
+      "principle": "vulnerability_impact_engine"
+    },
+    {
+      "system": "vulnerable_group_sentinel",
+      "principle": "yateem"
+    },
+    {
+      "system": "water_security_index",
+      "principle": "drought_resilience"
+    },
+    {
+      "system": "water_security_index",
+      "principle": "maa"
+    },
+    {
+      "system": "water_security_index",
+      "principle": "water_justice"
+    },
+    {
+      "system": "water_security_index",
+      "principle": "water_security"
+    },
+    {
+      "system": "water_stewardship_intelligence",
+      "principle": "maa"
+    },
+    {
+      "system": "water_stewardship_intelligence",
+      "principle": "water_conservation"
+    },
+    {
+      "system": "water_stewardship_intelligence",
+      "principle": "water_justice"
+    },
+    {
+      "system": "water_stewardship_intelligence",
+      "principle": "water_security"
+    },
+    {
+      "system": "water_stewardship_intelligence",
+      "principle": "watershed_stewardship"
+    },
+    {
+      "system": "whistleblower_signal_aggregator",
+      "principle": "anti_corruption"
+    },
+    {
+      "system": "whistleblower_signal_aggregator",
+      "principle": "huquq"
+    },
+    {
+      "system": "whistleblower_signal_aggregator",
+      "principle": "raqabah"
+    },
+    {
+      "system": "whistleblower_signal_aggregator",
+      "principle": "shahada"
+    },
+    {
+      "system": "whistleblower_signal_aggregator",
+      "principle": "sidq"
+    }
+  ],
+  "foundation_edge_count": 472,
+  "total_directed_edges": 1846,
+  "undirected_related_pairs": 1142,
+  "dangling_edges": [],
+  "dangling_count": 0
+}

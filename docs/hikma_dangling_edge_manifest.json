@@ -1,0 +1,65 @@
+{
+  "manifest_type": "dangling_edge_dependency",
+  "source_batch": "hikma_revelation_graph_001-050.json",
+  "generated_for": "nodes 51-100 planning",
+  "note": "These ids are referenced in related_nodes of existing nodes but do not yet exist. They must be created (or remapped) to close the graph. No ontology content is defined here — only the dependency contract.",
+  "dangling_nodes": [
+    {
+      "proposed_id": "maqasid_hifz_nafs",
+      "proposed_name": "Preservation of Life (Ḥifẓ an-Nafs)",
+      "category": "Maqasid-related preservation categories",
+      "why_required": "One of the five higher objectives (maqāṣid). The principle node 'nafs' carries the concept; this node is the explicit Maqasid-level preservation objective used as a top-tier protection test in decision analysis.",
+      "referenced_by": ["nafs"],
+      "expected_relationship_types": ["realizes_objective_of", "preservation_target_of", "parent_maqsid_of"]
+    },
+    {
+      "proposed_id": "maqasid_hifz_aql",
+      "proposed_name": "Preservation of Intellect (Ḥifẓ al-ʿAql)",
+      "category": "Maqasid-related preservation categories",
+      "why_required": "Maqasid-level objective protecting sound reason from impairment, manipulation, or intoxication. The faculty node 'aql' supplies the concept; this node anchors the preservation objective (critical for AI/manipulation analysis).",
+      "referenced_by": ["aql"],
+      "expected_relationship_types": ["realizes_objective_of", "preservation_target_of", "parent_maqsid_of"]
+    },
+    {
+      "proposed_id": "maqasid_hifz_din",
+      "proposed_name": "Preservation of Religion / Conscience (Ḥifẓ ad-Dīn)",
+      "category": "Maqasid-related preservation categories",
+      "why_required": "Maqasid-level objective protecting freedom of conviction and conscience. The concept node 'din' supplies the principle; this node anchors the preservation objective for governance and rights analysis.",
+      "referenced_by": ["din"],
+      "expected_relationship_types": ["realizes_objective_of", "preservation_target_of", "parent_maqsid_of"]
+    },
+    {
+      "proposed_id": "maqasid_hifz_nasl",
+      "proposed_name": "Preservation of Progeny / Future Generations (Ḥifẓ an-Nasl)",
+      "category": "Maqasid-related preservation categories",
+      "why_required": "Maqasid-level objective protecting lineage and the wellbeing of future generations. Referenced by both the concept node 'nasl' and the stewardship node 'khalifah', making it a key intergenerational node for climate and long-horizon analysis.",
+      "referenced_by": ["khalifah", "nasl"],
+      "expected_relationship_types": ["realizes_objective_of", "preservation_target_of", "parent_maqsid_of", "served_by_stewardship"]
+    },
+    {
+      "proposed_id": "maqasid_hifz_mal",
+      "proposed_name": "Preservation of Wealth / Property (Ḥifẓ al-Māl)",
+      "category": "Maqasid-related preservation categories",
+      "why_required": "Maqasid-level objective protecting lawful property and economic security. The concept node 'mal' supplies the principle; this node anchors the preservation objective for finance, ESG, and anti-fraud analysis.",
+      "referenced_by": ["mal"],
+      "expected_relationship_types": ["realizes_objective_of", "preservation_target_of", "parent_maqsid_of"]
+    },
+    {
+      "proposed_id": "itqan",
+      "proposed_name": "Itqān (Mastery / Precision in work)",
+      "category": "Virtues and character",
+      "why_required": "Referenced by 'ihsan' as the execution-quality counterpart to excellence: doing work with precision and mastery. Needed to support quality-of-build and engineering-integrity analysis (e.g. nuclear safety, AI system rigour) distinct from the broader ihsān concept.",
+      "referenced_by": ["ihsan"],
+      "expected_relationship_types": ["specializes", "quality_dimension_of", "complements"]
+    }
+  ],
+  "summary": {
+    "total_dangling": 6,
+    "by_category": {
+      "Maqasid-related preservation categories": 5,
+      "Virtues and character": 1
+    },
+    "must_create_in_batch": "51-100",
+    "no_remaps_recommended": "All six are genuine new nodes; none should be remapped onto existing ids. The five maqasid_hifz_* nodes form the Maqasid preservation tier (category 15) and should be created as a coherent set; 'itqan' is an independent virtue node."
+  }
+}

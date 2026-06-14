@@ -1,0 +1,323 @@
+{
+  "engine": "Company Intelligence Engine (Hikma Company Analysis Layer)",
+  "version": "v1",
+  "principle": "Deterministic Python computes all scores from the 304-node graph + Mizan engine; Claude writes only grounded prose. No module invents a score. Every numeric output traces to a graph node or a CompanyProfile field. scholar_review gating preserved end-to-end.",
+  "grounding_artifacts": {
+    "graph_full": "docs/hikma_revelation_graph_full.json",
+    "graph_index": "docs/graph_index.json",
+    "ayah_index": "docs/ayah_index.json",
+    "decision_pathways": "docs/hikma_decision_pathways.json",
+    "reused_scoring": "mizan/scoring.py (score_company -> MizanResult)",
+    "reused_prose_client": "audit/ai.py (lazy Anthropic client, grounding rules)",
+    "reused_compass": "companies/compass.py"
+  },
+  "subject_types": [
+    "public_company",
+    "state_owned_enterprise",
+    "private_company",
+    "utility",
+    "bank",
+    "energy_company",
+    "infrastructure_company"
+  ],
+  "pipeline_order": [
+    "evidence_collector",
+    "stakeholder_mapper",
+    "principle_mapper",
+    "harm_detection_engine",
+    "benefit_detection_engine",
+    "tradeoff_analyzer",
+    "stewardship_assessment_engine",
+    "governance_assessment_engine",
+    "future_generations_engine",
+    "moral_compass_generator",
+    "wisdom_synthesis_engine"
+  ],
+  "modules": [
+    {
+      "module": "evidence_collector",
+      "graph_node_bindings": [
+        "benefit_harm_triangulator",
+        "provenance_citation_validator",
+        "evidence_confidence_grader",
+        "disclosure_verification_engine"
+      ],
+      "inputs": [
+        "CompanyProfile",
+        "annual_report_url",
+        "sustainability_report_url",
+        "public_sources[]",
+        "news",
+        "regulatory_filings",
+        "independent_evidence"
+      ],
+      "outputs": [
+        "typed Evidence records tagged SAY|DO|SHOW",
+        "per-fact source + date + confidence",
+        "disclosure-gap list"
+      ],
+      "graph_traversal": "For each ingested fact, classify into SAY/DO/SHOW buckets; attach provenance; index claims to graph concept nodes via keyword+embedding match against node short_definition/positive/risk signals.",
+      "scoring_logic": "Deterministic: confidence grade per fact (verified|analyst-reviewed|ai-seeded|model-estimate) from source type; NO scoring of the company here.",
+      "explainability": "Each downstream number cites the evidence_id(s) it rests on.",
+      "uncertainty_handling": "Facts failing provenance -> flagged, excluded from scoring, routed to review. Missing SHOW for a SAY -> disclosure-gap flag.",
+      "reuses_existing": "audit/ai.py extraction pattern; CompanyProfile.public_sources"
+    },
+    {
+      "module": "stakeholder_mapper",
+      "graph_node_bindings": [
+        "stakeholder_impact_mapper",
+        "vulnerability_impact_engine",
+        "rights_duty_mapper"
+      ],
+      "inputs": [
+        "company sector/country/operations",
+        "Evidence records",
+        "graph nodes: miskeen,yateem,ibn_sabil,walidayn,nasl,ard,maa"
+      ],
+      "outputs": [
+        "stakeholder set (incl. voiceless: future generations, ecosystems, the poor)",
+        "impact-by-party matrix",
+        "rights-holder inventory"
+      ],
+      "graph_traversal": "Traverse from sector to affected-party nodes (workers->ajr/worker_dignity; communities->miskeen/community_benefit; nature->ard/maa/biodiversity_protection; future->nasl/maqasid_hifz_nasl).",
+      "scoring_logic": "Deterministic salience weighting; vulnerability multiplier from vulnerability_impact_engine logic.",
+      "explainability": "Each stakeholder links to the graph node(s) that justify its inclusion.",
+      "uncertainty_handling": "Unmapped affected parties flagged as blind-spot risk.",
+      "reuses_existing": "decision_pathways stakeholders field as priors"
+    },
+    {
+      "module": "principle_mapper",
+      "graph_node_bindings": [
+        "moral_compass_engine",
+        "maqasid_preservation_scorer"
+      ],
+      "inputs": [
+        "Evidence records",
+        "stakeholder map",
+        "full graph (graph_index.json)"
+      ],
+      "outputs": [
+        "activated principle nodes with relevance + confidence",
+        "ayah citations via ayah_index",
+        "maqasid activation profile"
+      ],
+      "graph_traversal": "Match evidence to principle nodes (adl,zulm,amanah,fasad,riba,israf,...); pull each node's quranic_basis (with its direct/inferred/modern label preserved) and related_nodes for context expansion.",
+      "scoring_logic": "Deterministic activation score per principle = evidence_strength x node_relevance; carries node confidence_level.",
+      "explainability": "Returns the labelled relevance string so a direct principle is never presented as more certain than an inferred one.",
+      "uncertainty_handling": "Low-evidence principle activations marked; interpretive ones inherit scholar_review_required=true.",
+      "reuses_existing": "graph_index.json, ayah_index.json"
+    },
+    {
+      "module": "harm_detection_engine",
+      "graph_node_bindings": [
+        "harm_prevention_gate",
+        "maslahah_mafsadah_weigher",
+        "pollution_emissions_auditor",
+        "truthfulness_greenwashing_detector"
+      ],
+      "inputs": [
+        "Evidence (DO/SHOW)",
+        "activated risk-side nodes (fasad,darar,zulm,riba,ghish,tatfif,munkar,khabaith)",
+        "MizanResult.harm_reduction_score, greenwashing_risk"
+      ],
+      "outputs": [
+        "harm catalogue w/ severity+reversibility",
+        "red-line breach flags",
+        "greenwashing/SAY-SHOW gap score"
+      ],
+      "graph_traversal": "For each harm node activated, gather corroborating SHOW evidence; run harm_prevention_gate (serious/irreversible -> hard flag, not tradable).",
+      "scoring_logic": "Deterministic: reuse MizanResult.harm_reduction (inverted) + pollution_level base + controversy_risk; greenwashing from benefit_harm_triangulator SAY-SHOW gap.",
+      "explainability": "Each harm cites the SHOW evidence and the graph harm-node.",
+      "uncertainty_handling": "Harm asserted in SAY but uncorroborated by SHOW -> 'unverified harm/greenwash' flag, not scored as fact.",
+      "reuses_existing": "mizan/scoring.py greenwashing_risk; companies/compass.py _prose_risks"
+    },
+    {
+      "module": "benefit_detection_engine",
+      "graph_node_bindings": [
+        "benefit_harm_triangulator",
+        "maslahah",
+        "public_value_estimator",
+        "shared_prosperity_analyzer"
+      ],
+      "inputs": [
+        "Evidence (DO/SHOW)",
+        "activated benefit nodes (maslahah,public_benefit,ajr,rizq,maruf,ihsan,shared_prosperity)",
+        "MizanResult.public_benefit_score"
+      ],
+      "outputs": [
+        "benefit catalogue w/ realisation evidence",
+        "public-value estimate",
+        "shared-prosperity signal"
+      ],
+      "graph_traversal": "Activate benefit nodes; require DO/SHOW corroboration before counting a claimed (SAY) benefit; distinguish public value created from private value captured.",
+      "scoring_logic": "Deterministic: MizanResult.public_benefit + corroborated-benefit ratio; downgrade SAY-only benefits.",
+      "explainability": "Each benefit cites the action/evidence proving realisation, not just the claim.",
+      "uncertainty_handling": "Claimed benefit without DO/SHOW -> 'aspirational, unrealised' tag.",
+      "reuses_existing": "mizan/scoring.py public_benefit; companies/compass.py"
+    },
+    {
+      "module": "tradeoff_analyzer",
+      "graph_node_bindings": [
+        "maslahah_mafsadah_weigher",
+        "trade_off_resolver",
+        "maqasid_preservation_scorer"
+      ],
+      "inputs": [
+        "benefit catalogue",
+        "harm catalogue",
+        "maqasid activation profile",
+        "red-line flags"
+      ],
+      "outputs": [
+        "net benefit-harm verdict",
+        "dominant-harm flags",
+        "objective-priority ranking (life>...>wealth)"
+      ],
+      "graph_traversal": "Weigh benefit vs harm under hard constraints; lower objectives cannot override higher Maqasid or red lines.",
+      "scoring_logic": "Deterministic: maslahah-mafsadah weighting with Maqasid priority lexicographic over tradable goods.",
+      "explainability": "Verdict shows which benefits and harms drove it, by node.",
+      "uncertainty_handling": "If harm/benefit rests on low-confidence evidence, verdict carries an uncertainty band and review trigger.",
+      "reuses_existing": "decision_pathways tradeoffs logic"
+    },
+    {
+      "module": "stewardship_assessment_engine",
+      "graph_node_bindings": [
+        "stewardship_accountability_engine",
+        "natural_capital_ledger",
+        "istikhlaf",
+        "taskhir"
+      ],
+      "inputs": [
+        "environmental Evidence",
+        "nodes: khalifah,ard,maa,israf,resource_stewardship,natural_capital_stewardship",
+        "CompanyProfile env fields (pollution_level,renewable_energy_share,emissions)"
+      ],
+      "outputs": [
+        "stewardship score",
+        "natural-capital depletion-vs-renewal flags",
+        "resource-trust accountability gaps"
+      ],
+      "graph_traversal": "Traverse stewardship cluster; test whether resources are managed as accountable trust vs liquidated as income.",
+      "scoring_logic": "Deterministic: reuse MizanResult.stewardship_score + env field deltas; depletion booked as loss.",
+      "explainability": "Cites env evidence + stewardship nodes.",
+      "uncertainty_handling": "Thin environmental disclosure -> low evidence_confidence, flagged not guessed.",
+      "reuses_existing": "mizan/scoring.py stewardship_score"
+    },
+    {
+      "module": "governance_assessment_engine",
+      "graph_node_bindings": [
+        "governance_integrity_scanner",
+        "anti_corruption_detector",
+        "accountability_chain_mapper",
+        "amanah"
+      ],
+      "inputs": [
+        "governance Evidence",
+        "nodes: amanah,khiyanah,shura,hisab,muhasabah,raqabah,anti_corruption,conflict_of_interest_prevention",
+        "CompanyProfile governance fields (transparency,audit_quality,anti_corruption,controversy_risk)"
+      ],
+      "outputs": [
+        "governance-integrity score",
+        "accountability gaps",
+        "corruption/capture/conflict flags"
+      ],
+      "graph_traversal": "Traverse governance cluster; map accountability chain; scan for corruption, conflicts, capture, disclosure gaps.",
+      "scoring_logic": "Deterministic: reuse MizanResult.transparency_accountability + governance fields.",
+      "explainability": "Cites governance evidence + nodes.",
+      "uncertainty_handling": "Opaque governance -> flagged as risk, not assumed clean.",
+      "reuses_existing": "mizan/scoring.py transparency_accountability; companies/compass.py"
+    },
+    {
+      "module": "future_generations_engine",
+      "graph_node_bindings": [
+        "long_horizon_consequence_engine",
+        "intergenerational_equity_ledger",
+        "future_generations_impact",
+        "maqasid_hifz_nasl"
+      ],
+      "inputs": [
+        "long-lived/irreversible impact Evidence",
+        "nodes: nasl,maqasid_hifz_nasl,mithaq,barakah,reversibility",
+        "emissions/stranded-asset/resource-depletion data"
+      ],
+      "outputs": [
+        "intergenerational impact profile",
+        "irreversibility flags",
+        "burden-transfer-to-future score"
+      ],
+      "graph_traversal": "Traverse future cluster; weight irreversible and long-horizon effects; ledger what is passed to the next generation.",
+      "scoring_logic": "Deterministic: discounted long-horizon harm-benefit with irreversibility premium; no zero-discounting of distant harm.",
+      "explainability": "Cites long-term evidence + future nodes.",
+      "uncertainty_handling": "Long-horizon projection uncertainty -> scenario band + review.",
+      "reuses_existing": "decision_pathways future_generations logic"
+    },
+    {
+      "module": "moral_compass_generator",
+      "graph_node_bindings": [
+        "moral_compass_engine",
+        "ethical_intelligence_orchestrator",
+        "maqasid_dashboard"
+      ],
+      "inputs": [
+        "all upstream module outputs",
+        "MizanResult"
+      ],
+      "outputs": [
+        "composite Compass score+band",
+        "6-dim Mizan breakdown",
+        "Maqasid dashboard",
+        "grounded findings (Claude, validated)",
+        "priority actions",
+        "risks",
+        "opportunities"
+      ],
+      "graph_traversal": "Orchestrate: assemble the fact-pack (all module outputs + Mizan) and route to the prose layer; bind to the matching decision pathway if the subject is a project/decision.",
+      "scoring_logic": "Deterministic composite (reuses companies/compass.py weighting: mizan-dominant blend); Claude writes prose only.",
+      "explainability": "Numeric-validation guard: reject any Claude number not in the fact-pack; every finding cites facts_used ids.",
+      "uncertainty_handling": "Aggregate confidence = min/weighted of module confidences; low -> review-required banner.",
+      "reuses_existing": "companies/compass.py build_compass; audit/ai.py client + grounding prompt"
+    },
+    {
+      "module": "wisdom_synthesis_engine",
+      "graph_node_bindings": [
+        "hikma_synthesis_engine",
+        "long_term_wisdom_synthesizer",
+        "uncertainty_review_router",
+        "scholar_review_workflow"
+      ],
+      "inputs": [
+        "Moral Compass output",
+        "uncertainty grades",
+        "interpretive flags"
+      ],
+      "outputs": [
+        "final synthesis with explicit caveats",
+        "scholar-deferral notes",
+        "executive/video-brief-ready narrative"
+      ],
+      "graph_traversal": "Apex synthesis above the Compass; integrate long-horizon + uncertainty; defer interpretive/contested points to scholar review; NEVER issue a ruling.",
+      "scoring_logic": "Deterministic gating only (no new score); routes, never decides.",
+      "explainability": "Surfaces residual uncertainty and the limits of machine judgement explicitly.",
+      "uncertainty_handling": "Anything interpretive or low-confidence -> scholar_review_workflow; output marked decision-support, not advice.",
+      "reuses_existing": "scholar_review_workflow node; companies/compass.py disclaimer pattern"
+    }
+  ],
+  "ten_outputs_mapping": {
+    "1_evidence_extraction": "evidence_collector",
+    "2_stakeholder_mapping": "stakeholder_mapper",
+    "3_principle_mapping": "principle_mapper",
+    "4_benefit_assessment": "benefit_detection_engine",
+    "5_harm_assessment": "harm_detection_engine",
+    "6_tradeoff_assessment": "tradeoff_analyzer",
+    "7_future_generations_impact": "future_generations_engine",
+    "8_governance_assessment": "governance_assessment_engine",
+    "9_stewardship_assessment": "stewardship_assessment_engine",
+    "10_moral_compass_summary": "moral_compass_generator + wisdom_synthesis_engine"
+  },
+  "cross_cutting": {
+    "scoring_rule": "All scores deterministic Python; reuse mizan/scoring.py MizanResult as the validated 6-dim spine; graph adds principle activation + Maqasid + future weighting.",
+    "explainability_rule": "Every output node-cites (graph node id) and evidence-cites (evidence_id); ayah_index provides verse provenance with its original direct/inferred/modern label.",
+    "uncertainty_rule": "evidence_confidence_grader + uncertainty_review_router gate every module; scholar_review_required propagates from any activated interpretive node; final output is decision-support, never a ruling.",
+    "say_do_show": "Triangulation runs through evidence_collector -> harm/benefit engines so claimed (SAY) is never scored as realised without DO/SHOW corroboration."
+  }
+}

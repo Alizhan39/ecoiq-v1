@@ -1,0 +1,485 @@
+{
+  "_note": "ILLUSTRATIVE Kazakhstan technology match derived from the KZ Planetary Balance (climate=high_risk, pollution=high_risk, water=increasing_risk). DEMO scores.",
+  "scope": {
+    "scope": "country",
+    "ref": "KZ",
+    "name": "Kazakhstan"
+  },
+  "challenges_in": [
+    {
+      "challenge": "climate (transgressed) + coal pollution",
+      "from": "planetary_balance KZ"
+    },
+    {
+      "challenge": "water stress (arid basins)",
+      "from": "planetary_balance KZ"
+    },
+    {
+      "challenge": "energy security / coal dependence",
+      "from": "country intelligence"
+    }
+  ],
+  "by_challenge": [
+    {
+      "challenge": "climate + coal pollution",
+      "ranked_technologies": [
+        {
+          "technology": "Heat Pumps",
+          "technology_readiness": 90,
+          "priority_score": 86,
+          "opportunity_score": 78,
+          "risk_score": 28,
+          "dimensions": {
+            "readiness": 90,
+            "scalability": 75,
+            "affordability": 55,
+            "implementation_complexity": 50,
+            "environmental_impact": 85,
+            "resource_intensity": 60,
+            "water_impact": 85,
+            "emissions_impact": 88,
+            "resilience_impact": 70,
+            "geopolitical_dependence": 45,
+            "manufacturing_feasibility": 60,
+            "local_adoption_feasibility": 58
+          },
+          "solves_challenges": [
+            {
+              "challenge": "coal-heating pollution + emissions",
+              "fit": 0.9,
+              "nodes": [
+                "public_health",
+                "emissions_responsibility",
+                "clean_energy"
+              ],
+              "evidence_ids": [
+                "ds-poll-01",
+                "ev-003"
+              ]
+            }
+          ],
+          "adoption_roadmap": [
+            {
+              "phase": "pilot",
+              "actions": [
+                "subsidised retrofits for low-income homes",
+                "installer training"
+              ],
+              "pathway": "Coal-to-Heat-Pump Transition",
+              "horizon": "0-2y"
+            },
+            {
+              "phase": "scale",
+              "actions": [
+                "grid-capacity upgrades",
+                "domestic assembly"
+              ],
+              "pathway": "National Grid Modernisation",
+              "horizon": "2-5y"
+            }
+          ],
+          "manufacturing_potential": {
+            "score": 60,
+            "local_value": "assembly + install jobs",
+            "notes": "electric-boiler/heat-pump assembly feasible (demo)"
+          },
+          "infrastructure_requirements": [
+            "grid capacity",
+            "installer workforce",
+            "retrofit financing"
+          ],
+          "flags": {
+            "catastrophic_tail": false,
+            "red_line": false,
+            "high_dependency": false
+          },
+          "nodes": [
+            "clean_energy",
+            "public_health",
+            "maqasid_hifz_nasl",
+            "adalah_ijtimaiyyah"
+          ],
+          "evidence_ids": [
+            "ds-poll-01",
+            "ev-003",
+            "ev-004"
+          ],
+          "scholar_review_flags": []
+        },
+        {
+          "technology": "Solar",
+          "technology_readiness": 92,
+          "priority_score": 82,
+          "opportunity_score": 80,
+          "risk_score": 30,
+          "dimensions": {
+            "readiness": 92,
+            "scalability": 88,
+            "affordability": 70,
+            "implementation_complexity": 40,
+            "environmental_impact": 80,
+            "resource_intensity": 55,
+            "water_impact": 75,
+            "emissions_impact": 90,
+            "resilience_impact": 65,
+            "geopolitical_dependence": 60,
+            "manufacturing_feasibility": 50,
+            "local_adoption_feasibility": 70
+          },
+          "solves_challenges": [
+            {
+              "challenge": "emissions / coal power",
+              "fit": 0.85,
+              "nodes": [
+                "clean_energy",
+                "emissions_responsibility"
+              ],
+              "evidence_ids": [
+                "ds-clim-01",
+                "ev-002"
+              ]
+            }
+          ],
+          "adoption_roadmap": [
+            {
+              "phase": "deploy",
+              "actions": [
+                "utility + distributed solar",
+                "clean supply-chain screening"
+              ],
+              "pathway": "Renewable Energy Program",
+              "horizon": "0-5y"
+            }
+          ],
+          "manufacturing_potential": {
+            "score": 50,
+            "local_value": "limited (module import)",
+            "notes": "high mineral-supply dependence (demo)"
+          },
+          "infrastructure_requirements": [
+            "grid integration",
+            "storage pairing"
+          ],
+          "flags": {
+            "catastrophic_tail": false,
+            "red_line": false,
+            "high_dependency": true
+          },
+          "nodes": [
+            "clean_energy",
+            "emissions_responsibility",
+            "supply_chain_integrity"
+          ],
+          "evidence_ids": [
+            "ds-clim-01",
+            "ev-002"
+          ],
+          "scholar_review_flags": []
+        },
+        {
+          "technology": "Wind",
+          "technology_readiness": 88,
+          "priority_score": 80,
+          "opportunity_score": 76,
+          "risk_score": 33,
+          "dimensions": {
+            "readiness": 88,
+            "scalability": 85,
+            "affordability": 68,
+            "implementation_complexity": 50,
+            "environmental_impact": 78,
+            "resource_intensity": 55,
+            "water_impact": 85,
+            "emissions_impact": 88,
+            "resilience_impact": 62,
+            "geopolitical_dependence": 58,
+            "manufacturing_feasibility": 48,
+            "local_adoption_feasibility": 62
+          },
+          "solves_challenges": [
+            {
+              "challenge": "emissions / coal power",
+              "fit": 0.82,
+              "nodes": [
+                "clean_energy",
+                "emissions_responsibility"
+              ],
+              "evidence_ids": [
+                "ds-clim-01"
+              ]
+            }
+          ],
+          "adoption_roadmap": [
+            {
+              "phase": "deploy",
+              "actions": [
+                "high-wind-corridor projects",
+                "biodiversity siting screen"
+              ],
+              "pathway": "Renewable Energy Program",
+              "horizon": "1-5y"
+            }
+          ],
+          "manufacturing_potential": {
+            "score": 45,
+            "local_value": "tower/assembly possible",
+            "notes": "turbine import dependence (demo)"
+          },
+          "infrastructure_requirements": [
+            "grid integration",
+            "transmission corridors"
+          ],
+          "flags": {
+            "catastrophic_tail": false,
+            "red_line": false,
+            "high_dependency": true
+          },
+          "nodes": [
+            "clean_energy",
+            "biodiversity_protection"
+          ],
+          "evidence_ids": [
+            "ds-clim-01"
+          ],
+          "scholar_review_flags": []
+        },
+        {
+          "technology": "Nuclear",
+          "technology_readiness": 85,
+          "priority_score": 58,
+          "opportunity_score": 55,
+          "risk_score": 72,
+          "dimensions": {
+            "readiness": 85,
+            "scalability": 55,
+            "affordability": 35,
+            "implementation_complexity": 85,
+            "environmental_impact": 70,
+            "resource_intensity": 65,
+            "water_impact": 45,
+            "emissions_impact": 90,
+            "resilience_impact": 75,
+            "geopolitical_dependence": 70,
+            "manufacturing_feasibility": 25,
+            "local_adoption_feasibility": 40
+          },
+          "solves_challenges": [
+            {
+              "challenge": "low-carbon baseload",
+              "fit": 0.7,
+              "nodes": [
+                "energy_security",
+                "emissions_responsibility"
+              ],
+              "evidence_ids": [
+                "ds-clim-01"
+              ]
+            }
+          ],
+          "adoption_roadmap": [
+            {
+              "phase": "feasibility",
+              "actions": [
+                "independent safety case",
+                "waste & water siting studies"
+              ],
+              "pathway": "Nuclear Power Plant",
+              "horizon": "5-15y"
+            }
+          ],
+          "manufacturing_potential": {
+            "score": 25,
+            "local_value": "low (high import + expertise)",
+            "notes": ""
+          },
+          "infrastructure_requirements": [
+            "cooling water",
+            "grid",
+            "decommissioning provisions",
+            "regulatory capacity"
+          ],
+          "flags": {
+            "catastrophic_tail": true,
+            "red_line": false,
+            "high_dependency": true
+          },
+          "nodes": [
+            "maqasid_hifz_nafs",
+            "maqasid_hifz_nasl",
+            "energy_security",
+            "itqan"
+          ],
+          "evidence_ids": [
+            "ds-clim-01"
+          ],
+          "scholar_review_flags": [
+            {
+              "topic": "catastrophic-tail risk to life + multi-generational waste",
+              "node": "maqasid_hifz_nafs",
+              "reason": "interpretive acceptability of low-probability/high-severity harm — expert + scholar review required"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "challenge": "water stress",
+      "ranked_technologies": [
+        {
+          "technology": "Water Technologies",
+          "technology_readiness": 80,
+          "priority_score": 75,
+          "opportunity_score": 68,
+          "risk_score": 35,
+          "dimensions": {
+            "readiness": 80,
+            "scalability": 70,
+            "affordability": 60,
+            "implementation_complexity": 45,
+            "environmental_impact": 75,
+            "resource_intensity": 50,
+            "water_impact": 88,
+            "emissions_impact": 70,
+            "resilience_impact": 78,
+            "geopolitical_dependence": 40,
+            "manufacturing_feasibility": 55,
+            "local_adoption_feasibility": 65
+          },
+          "solves_challenges": [
+            {
+              "challenge": "freshwater stress",
+              "fit": 0.8,
+              "nodes": [
+                "water_security",
+                "maa",
+                "israf"
+              ],
+              "evidence_ids": [
+                "ds-water-01"
+              ]
+            }
+          ],
+          "adoption_roadmap": [
+            {
+              "phase": "deploy",
+              "actions": [
+                "leak reduction, reuse, efficient irrigation"
+              ],
+              "pathway": "Water Utility Company",
+              "horizon": "0-5y"
+            }
+          ],
+          "manufacturing_potential": {
+            "score": 55,
+            "local_value": "install + maintenance",
+            "notes": ""
+          },
+          "infrastructure_requirements": [
+            "metering",
+            "reuse infrastructure"
+          ],
+          "flags": {
+            "catastrophic_tail": false,
+            "red_line": false,
+            "high_dependency": false
+          },
+          "nodes": [
+            "water_security",
+            "maa",
+            "israf"
+          ],
+          "evidence_ids": [
+            "ds-water-01"
+          ],
+          "scholar_review_flags": []
+        },
+        {
+          "technology": "Desalination",
+          "technology_readiness": 78,
+          "priority_score": 48,
+          "opportunity_score": 50,
+          "risk_score": 58,
+          "dimensions": {
+            "readiness": 78,
+            "scalability": 60,
+            "affordability": 35,
+            "implementation_complexity": 65,
+            "environmental_impact": 45,
+            "resource_intensity": 70,
+            "water_impact": 60,
+            "emissions_impact": 40,
+            "resilience_impact": 70,
+            "geopolitical_dependence": 55,
+            "manufacturing_feasibility": 35,
+            "local_adoption_feasibility": 40
+          },
+          "solves_challenges": [
+            {
+              "challenge": "freshwater stress",
+              "fit": 0.5,
+              "nodes": [
+                "water_security",
+                "maa",
+                "emissions_responsibility"
+              ],
+              "evidence_ids": [
+                "ds-water-01"
+              ]
+            }
+          ],
+          "adoption_roadmap": [
+            {
+              "phase": "last-resort",
+              "actions": [
+                "only after conservation; require renewable power + brine controls"
+              ],
+              "pathway": "Desalination Plant",
+              "horizon": "5-10y"
+            }
+          ],
+          "manufacturing_potential": {
+            "score": 35,
+            "local_value": "low",
+            "notes": "landlocked — limited applicability (demo)"
+          },
+          "infrastructure_requirements": [
+            "energy source",
+            "brine management"
+          ],
+          "flags": {
+            "catastrophic_tail": false,
+            "red_line": false,
+            "high_dependency": true
+          },
+          "nodes": [
+            "water_security",
+            "maa",
+            "emissions_responsibility"
+          ],
+          "evidence_ids": [
+            "ds-water-01"
+          ],
+          "scholar_review_flags": []
+        }
+      ]
+    }
+  ],
+  "headline_what_solves_what": {
+    "climate + coal pollution": [
+      "Heat Pumps",
+      "Solar",
+      "Wind",
+      "(Nuclear — capped, review)"
+    ],
+    "water stress": [
+      "Water Technologies (conservation-first)",
+      "(Desalination — last resort)"
+    ],
+    "energy security": [
+      "Smart Grids",
+      "Battery Storage",
+      "Solar+Wind+Storage portfolio"
+    ]
+  },
+  "disclaimer": "AI-assisted, indicative, decision-support only; not engineering, investment, or policy advice; not a ruling."
+}
