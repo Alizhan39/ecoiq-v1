@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% comment %}
+Hikma Company Intelligence terminal — read-only.
+Consumes ONLY the existing public Hikma API endpoints, client-side:
+  GET /api/v1/assess/<slug>/latest/
+  GET /api/v1/assess/<slug>/evidence/
+  GET /api/v1/assess/<slug>/contradictions/
+No server-side scoring/ingestion. Safe empty/error states throughout.
+{% endcomment %}
+
+{% block title %}Company Intelligence — {{ company_slug }} · EcoIQ{% endblock %}
+{% block meta_description_content %}Hikma Evidence Layer intelligence terminal — SAY/DO/SHOW evidence, Mizan dimensions, activated nodes, and verification gaps. AI-assisted, indicative, not a ruling.{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Scoped institutional dark theme (Bloomberg / Palantir / MSCI) ──
+     All rules namespaced under .ci-terminal so the rest of the site is untouched. */
+  .ci-terminal {
+    --ci-bg:      #070b0f;
+    --ci-bg2:     #0d1117;
+    --ci-bg3:     #161b22;
+    --ci-border:  rgba(255,255,255,.08);
+    --ci-border2: rgba(255,255,255,.14);
+    --ci-text:    #e2e8f0;
+    --ci-muted:   #64748b;
+    --ci-muted2:  #94a3b8;
+    --ci-accent:  #00e89a;
+    --ci-info:    #58a6ff;
+    --ci-warn:    #f4a261;
+    --ci-danger:  #e63946;
+    --ci-purple:  #a855f7;
+    --ci-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--ci-bg);
+    color: var(--ci-text);
+    border: 1px solid var(--ci-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  /* widen main just for this page */
+  body:has(.ci-terminal) main { max-width: 1180px; }
+
+  .ci-terminal * { box-sizing: border-box; }
+  .ci-head {
+    padding: 1.6rem 1.8rem 1.4rem;
+    border-bottom: 1px solid var(--ci-border);
+    background: linear-gradient(180deg, #0d1117 0%, #070b0f 100%);
+  }
+  .ci-eyebrow {
+    font-family: var(--ci-mono); font-size: .68rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ci-muted); margin-bottom: .55rem;
+  }
+  .ci-title { font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; color: #fff; line-height: 1.1; }
+  .ci-slug { font-family: var(--ci-mono); color: var(--ci-muted2); font-size: .8rem; margin-top: .3rem; }
+  .ci-rating {
+    display: inline-flex; align-items: center; gap: .5rem; margin-top: .9rem;
+    padding: .4rem .9rem; border-radius: 4px; border: 1px solid var(--ci-border2);
+    font-family: var(--ci-mono); font-size: .82rem; font-weight: 600; letter-spacing: .04em;
+    color: var(--ci-accent); background: rgba(0,232,154,.07);
+  }
+
+  .ci-grid { display: grid; grid-template-columns: 320px 1fr; gap: 0; }
+  @media (max-width: 820px) { .ci-grid { grid-template-columns: 1fr; } }
+
+  .ci-score-panel {
+    padding: 1.8rem; border-right: 1px solid var(--ci-border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    background: var(--ci-bg2);
+  }
+  @media (max-width: 820px) { .ci-score-panel { border-right: none; border-bottom: 1px solid var(--ci-border); } }
+  .ci-score-big { font-size: 3.6rem; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -.03em; font-family: var(--ci-mono); }
+  .ci-score-max { font-size: 1.1rem; color: var(--ci-muted); }
+  .ci-score-label { font-family: var(--ci-mono); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ci-muted); margin-top: .7rem; }
+
+  .ci-dims { padding: 1.6rem 1.8rem; }
+  .ci-dim-row { margin-bottom: .85rem; }
+  .ci-dim-top { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: .3rem; }
+  .ci-dim-name { color: var(--ci-muted2); }
+  .ci-dim-val { font-family: var(--ci-mono); color: var(--ci-text); font-weight: 600; }
+  .ci-bar { height: 6px; background: var(--ci-bg3); border-radius: 3px; overflow: hidden; }
+  .ci-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--ci-info), var(--ci-accent)); border-radius: 3px; }
+
+  .ci-section { padding: 1.6rem 1.8rem; border-top: 1px solid var(--ci-border); }
+  .ci-section h2 {
+    font-size: .78rem; font-family: var(--ci-mono); letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ci-muted2); margin: 0 0 1.1rem; display: flex; align-items: center; gap: .6rem;
+  }
+  .ci-section h2 .ci-count {
+    font-size: .7rem; color: var(--ci-bg); background: var(--ci-muted2);
+    border-radius: 10px; padding: .05rem .5rem; font-weight: 700;
+  }
+
+  .ci-sds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 820px) { .ci-sds { grid-template-columns: 1fr; } }
+  .ci-sds-col h3 {
+    font-family: var(--ci-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+    margin-bottom: .7rem; padding-bottom: .4rem; border-bottom: 1px solid var(--ci-border);
+  }
+  .ci-sds-col[data-k="say"]  h3 { color: var(--ci-info); }
+  .ci-sds-col[data-k="do"]   h3 { color: var(--ci-warn); }
+  .ci-sds-col[data-k="show"] h3 { color: var(--ci-accent); }
+
+  .ci-ev {
+    background: var(--ci-bg2); border: 1px solid var(--ci-border); border-radius: 6px;
+    padding: .7rem .8rem; margin-bottom: .6rem;
+  }
+  .ci-ev-stmt { font-size: .82rem; line-height: 1.45; color: var(--ci-text); }
+  .ci-ev-meta { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
+  .ci-tag {
+    font-family: var(--ci-mono); font-size: .62rem; letter-spacing: .04em; text-transform: uppercase;
+    padding: .12rem .45rem; border-radius: 3px; border: 1px solid var(--ci-border2); color: var(--ci-muted2);
+  }
+  .ci-tag.metric { color: var(--ci-text); }
+  .ci-tag a { color: var(--ci-info); text-decoration: none; }
+
+  .ci-nodes { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .ci-node {
+    font-family: var(--ci-mono); font-size: .72rem; padding: .3rem .7rem; border-radius: 4px;
+    border: 1px solid rgba(168,85,247,.35); background: rgba(168,85,247,.08); color: #d8b4fe;
+  }
+  .ci-node small { color: var(--ci-muted); margin-left: .35rem; }
+
+  .ci-signal {
+    border: 1px solid var(--ci-border); border-left: 3px solid var(--ci-muted); border-radius: 6px;
+    padding: .8rem .9rem; margin-bottom: .7rem; background: var(--ci-bg2);
+  }
+  .ci-signal.gap        { border-left-color: var(--ci-warn); }
+  .ci-signal.greenwash  { border-left-color: var(--ci-danger); }
+  .ci-signal.verify     { border-left-color: var(--ci-info); }
+  .ci-signal-type {
+    font-family: var(--ci-mono); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ci-muted2); margin-bottom: .35rem;
+  }
+  .ci-signal-body { font-size: .82rem; line-height: 1.5; color: var(--ci-text); }
+
+  .ci-questions { list-style: none; padding: 0; margin: 0; }
+  .ci-questions li {
+    font-size: .85rem; line-height: 1.5; color: var(--ci-text);
+    padding: .65rem .9rem .65rem 2.1rem; position: relative;
+    border: 1px solid var(--ci-border); border-radius: 6px; margin-bottom: .55rem; background: var(--ci-bg2);
+  }
+  .ci-questions li::before {
+    content: "?"; position: absolute; left: .85rem; top: .65rem;
+    font-family: var(--ci-mono); color: var(--ci-accent); font-weight: 700;
+  }
+
+  .ci-disclaimer {
+    padding: 1.3rem 1.8rem; border-top: 1px solid var(--ci-border); background: var(--ci-bg2);
+    font-size: .74rem; line-height: 1.6; color: var(--ci-muted2);
+  }
+  .ci-disclaimer strong { color: var(--ci-muted2); }
+
+  /* state helpers */
+  .ci-state { font-size: .82rem; color: var(--ci-muted); font-family: var(--ci-mono); padding: .4rem 0; }
+  .ci-state.err { color: var(--ci-warn); }
+  .ci-skel { color: var(--ci-muted); font-family: var(--ci-mono); font-size: .8rem; }
+  [hidden] { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ci-terminal"
+     data-slug="{{ company_slug }}"
+     data-latest-url="/api/v1/assess/{{ company_slug }}/latest/"
+     data-evidence-url="/api/v1/assess/{{ company_slug }}/evidence/"
+     data-contradictions-url="/api/v1/assess/{{ company_slug }}/contradictions/">
+
+  <!-- 1. Title + rating -->
+  <div class="ci-head">
+    <div class="ci-eyebrow">Hikma Evidence Layer · Company Intelligence</div>
+    <div class="ci-title" id="ci-name">{{ company_slug }}</div>
+    <div class="ci-slug">subject: {{ company_slug }}</div>
+    <div id="ci-rating-wrap" hidden><span class="ci-rating" id="ci-rating"></span></div>
+    <div class="ci-state" id="ci-head-state">Loading assessment…</div>
+  </div>
+
+  <div class="ci-grid">
+    <!-- 2. Composite score -->
+    <div class="ci-score-panel">
+      <div><span class="ci-score-big" id="ci-score">—</span><span class="ci-score-max">/100</span></div>
+      <div class="ci-score-label">Composite EcoIQ Score</div>
+    </div>
+
+    <!-- 3. Mizan dimensions -->
+    <div class="ci-dims">
+      <h2 style="font-family:var(--ci-mono);font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ci-muted2);margin:0 0 1.1rem;">Mizan Dimensions</h2>
+      <div id="ci-dims"><div class="ci-skel">Loading dimensions…</div></div>
+    </div>
+  </div>
+
+  <!-- 4. Evidence Layer SAY / DO / SHOW -->
+  <div class="ci-section">
+    <h2>Evidence Layer — SAY / DO / SHOW <span class="ci-count" id="ci-ev-count" hidden></span></h2>
+    <div id="ci-evidence"><div class="ci-skel">Loading evidence…</div></div>
+  </div>
+
+  <!-- 5. Activated Hikma nodes -->
+  <div class="ci-section">
+    <h2>Activated Hikma Nodes <span class="ci-count" id="ci-nodes-count" hidden></span></h2>
+    <div id="ci-nodes"><div class="ci-skel">Loading nodes…</div></div>
+  </div>
+
+  <!-- 6. Potential gaps / greenwashing signals -->
+  <div class="ci-section">
+    <h2>Potential Gaps &amp; Greenwashing Signals</h2>
+    <div id="ci-gaps"><div class="ci-skel">Loading signals…</div></div>
+  </div>
+
+  <!-- 7. Investor verification questions -->
+  <div class="ci-section">
+    <h2>Investor Verification Questions</h2>
+    <div id="ci-questions"><div class="ci-skel">Loading questions…</div></div>
+  </div>
+
+  <!-- 8. Disclaimer -->
+  <div class="ci-disclaimer" id="ci-disclaimer">
+    <strong>Disclaimer.</strong> AI-assisted, indicative decision-support only — not investment, legal,
+    financial, or regulatory advice, and not a ruling. All signals are potential gaps requiring
+    independent verification.
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.querySelector(".ci-terminal");
+  if (!root) return;
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function el(id) { return document.getElementById(id); }
+  function setState(node, msg, isErr) {
+    node.innerHTML = '<div class="ci-state' + (isErr ? " err" : "") + '">' + esc(msg) + "</div>";
+  }
+  function fmtNum(n) { return (typeof n === "number") ? (Math.round(n * 10) / 10) : n; }
+
+  // Map a failed response to a safe, specific message.
+  // 429 → rate-limit copy; 404 → caller-supplied notFound; else → fallback.
+  function errMsg(res, notFound, fallback) {
+    if (res.status === 429) return "Rate limit reached, retry shortly.";
+    if (res.status === 404) return notFound;
+    return fallback;
+  }
+
+  // Generic JSON fetch with safe error surface. Returns {ok, status, data}.
+  function getJSON(url) {
+    return fetch(url, { headers: { "Accept": "application/json" }, credentials: "same-origin" })
+      .then(function (r) {
+        return r.json().catch(function () { return null; }).then(function (data) {
+          return { ok: r.ok, status: r.status, data: data };
+        });
+      })
+      .catch(function () { return { ok: false, status: 0, data: null }; });
+  }
+
+  var TITLE_CASE = function (s) {
+    return String(s || "").replace(/[-_]/g, " ").replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+  };
+
+  // ── latest/ → sections 1,2,3,5 ──────────────────────────────────────────────
+  getJSON(root.dataset.latestUrl).then(function (res) {
+    var headState = el("ci-head-state");
+    if (!res.ok || !res.data) {
+      var msg = errMsg(res,
+        "No assessment has been generated for this company yet.",
+        "Assessment temporarily unavailable.");
+      headState.className = "ci-state err";
+      headState.textContent = msg;
+      el("ci-score").textContent = "—";
+      setState(el("ci-dims"), msg, true);
+      setState(el("ci-nodes"), msg, true);
+      return;
+    }
+    var d = res.data;
+    headState.hidden = true;
+
+    // 1. title + rating
+    var name = (d.subject && d.subject.name) || d.company_slug || root.dataset.slug;
+    el("ci-name").textContent = name;
+    if (d.rating_label) {
+      el("ci-rating").textContent = d.rating_label;
+      el("ci-rating-wrap").hidden = false;
+    }
+
+    // 2. composite score
+    if (typeof d.composite_score === "number") el("ci-score").textContent = fmtNum(d.composite_score);
+
+    // 3. dimensions
+    var dims = d.dimensions || {};
+    var keys = Object.keys(dims);
+    if (!keys.length) {
+      setState(el("ci-dims"), "No dimension data available.", false);
+    } else {
+      el("ci-dims").innerHTML = keys.map(function (k) {
+        var v = Number(dims[k]) || 0;
+        var pct = Math.max(0, Math.min(100, v));
+        return '<div class="ci-dim-row">' +
+          '<div class="ci-dim-top"><span class="ci-dim-name">' + esc(TITLE_CASE(k)) + '</span>' +
+          '<span class="ci-dim-val">' + esc(fmtNum(v)) + "</span></div>" +
+          '<div class="ci-bar"><span style="width:' + pct + '%"></span></div></div>';
+      }).join("");
+    }
+
+    // 5. activated nodes
+    var nodes = d.activated_nodes || [];
+    if (!nodes.length) {
+      setState(el("ci-nodes"), "No Hikma nodes were activated for this assessment.", false);
+    } else {
+      el("ci-nodes-count").textContent = nodes.length;
+      el("ci-nodes-count").hidden = false;
+      el("ci-nodes").innerHTML = '<div class="ci-nodes">' + nodes.map(function (n) {
+        var label = n.node || n.label || n.id || "node";
+        var extra = (n.theme || n.category || n.dimension);
+        return '<span class="ci-node">' + esc(label) +
+          (extra ? "<small>" + esc(extra) + "</small>" : "") + "</span>";
+      }).join("") + "</div>";
+    }
+  });
+
+  // ── evidence/ → section 4 ───────────────────────────────────────────────────
+  getJSON(root.dataset.evidenceUrl).then(function (res) {
+    var host = el("ci-evidence");
+    if (!res.ok || !res.data) {
+      setState(host, errMsg(res, "Company not found.", "Evidence temporarily unavailable."), true);
+      return;
+    }
+    var groups = (res.data.evidence) || { say: [], do: [], show: [] };
+    var counts = res.data.evidence_counts || {};
+    var total = (counts.say || 0) + (counts.do || 0) + (counts.show || 0);
+    if (!total) { setState(host, "No evidence has been ingested for this company yet.", false); return; }
+    el("ci-ev-count").textContent = total;
+    el("ci-ev-count").hidden = false;
+
+    var ORDER = [["say", "SAY · Stated"], ["do", "DO · Action"], ["show", "SHOW · Independent"]];
+    host.innerHTML = '<div class="ci-sds">' + ORDER.map(function (pair) {
+      var k = pair[0], items = groups[k] || [];
+      var body = items.length ? items.map(function (e) {
+        var conf = e.confidence || {};
+        var m = e.metric || {};
+        var tags = [];
+        if (conf.tier) tags.push('<span class="ci-tag">' + esc(conf.tier) + "</span>");
+        if (e.extraction_method) tags.push('<span class="ci-tag">' + esc(e.extraction_method) + "</span>");
+        if (m.value != null) tags.push('<span class="ci-tag metric">' + esc(m.name || "metric") + ": " + esc(m.value) + (m.unit ? " " + esc(m.unit) : "") + "</span>");
+        if (e.source_url) tags.push('<span class="ci-tag"><a href="' + esc(e.source_url) + '" target="_blank" rel="noopener noreferrer">source ↗</a></span>');
+        else if (e.source_type) tags.push('<span class="ci-tag">' + esc(e.source_type) + "</span>");
+        return '<div class="ci-ev"><div class="ci-ev-stmt">' + esc(e.statement) + "</div>" +
+          '<div class="ci-ev-meta">' + tags.join("") + "</div></div>";
+      }).join("") : '<div class="ci-state">No ' + k.toUpperCase() + " evidence.</div>";
+      return '<div class="ci-sds-col" data-k="' + k + '"><h3>' + esc(pair[1]) +
+        " (" + (items.length) + ")</h3>" + body + "</div>";
+    }).join("") + "</div>";
+  });
+
+  // ── contradictions/ → sections 6, 7 ─────────────────────────────────────────
+  getJSON(root.dataset.contradictionsUrl).then(function (res) {
+    var gaps = el("ci-gaps"), qs = el("ci-questions");
+    if (!res.ok || !res.data) {
+      var m = errMsg(res, "Company not found.", "Signals temporarily unavailable.");
+      setState(gaps, m, true); setState(qs, m, true); return;
+    }
+    var d = res.data;
+
+    // 6. gaps + greenwashing + verification gaps
+    var blocks = [];
+    (d.contradiction_signals || []).forEach(function (s) {
+      blocks.push(['gap', s.type, s.assessment || s.claim || ""]);
+    });
+    (d.greenwashing_signals || []).forEach(function (s) {
+      blocks.push(['greenwash', s.type, s.assessment || ""]);
+    });
+    (d.verification_gaps || []).forEach(function (s) {
+      blocks.push(['verify', s.type, s.assessment || ""]);
+    });
+    if (!blocks.length) {
+      setState(gaps, "No contradiction, greenwashing, or verification-gap signals detected from the available evidence.", false);
+    } else {
+      gaps.innerHTML = blocks.map(function (b) {
+        return '<div class="ci-signal ' + b[0] + '">' +
+          '<div class="ci-signal-type">' + esc(TITLE_CASE(b[1])) + "</div>" +
+          '<div class="ci-signal-body">' + esc(b[2]) + "</div></div>";
+      }).join("");
+    }
+
+    // 7. verification questions
+    var questions = d.recommended_next_questions || [];
+    if (!questions.length) {
+      setState(qs, "No verification questions generated.", false);
+    } else {
+      qs.innerHTML = '<ul class="ci-questions">' +
+        questions.map(function (q) { return "<li>" + esc(q) + "</li>"; }).join("") + "</ul>";
+    }
+
+    // 8. prefer the API-provided disclaimer when present
+    if (d.disclaimer) {
+      el("ci-disclaimer").innerHTML = "<strong>Disclaimer.</strong> " + esc(d.disclaimer);
+    }
+  });
+})();
+</script>
+{% endblock %}

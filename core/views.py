@@ -943,6 +943,21 @@ def investors(request):
     return render(request, 'investors.html')
 
 
+# ── Hikma Company Intelligence page ─────────────────────────────────────────────
+
+def company_intelligence(request, slug):
+    """
+    /company-intelligence/<slug>/ — Hikma Evidence Layer intelligence terminal.
+
+    Read-only institutional view that consumes the existing public Hikma API
+    endpoints (latest / evidence / contradictions) entirely client-side. No
+    server-side scoring, ingestion, or data fabrication — the template fetches
+    JSON and renders safe empty/error states when an endpoint 404s or fails.
+    Public, no auth required.
+    """
+    return render(request, 'company_intelligence.html', {'company_slug': slug})
+
+
 # ── Press / media page ────────────────────────────────────────────────────────
 
 def press(request):
