@@ -1,0 +1,239 @@
+"""
+EcoIQ Evidence Harvester — data-acquisition models (Slice 1, additive only).
+
+Four NEW tables, no existing table altered:
+  Source      — machine-readable source registry
+  HarvestJob  — async-shaped harvest run (mirrors hikma.IngestRefreshJob)
+  Evidence    — raw document-level evidence collected from a source
+  Datapoint   — normalized structured fact extracted from an Evidence row
+
+This is the acquisition layer ONLY. It collects / verifies / normalizes /
+stores evidence. It does NOT score, interpret (SAY/DO/SHOW lives in hikma), or
+generate briefs. Company linkage mirrors hikma: a nullable FK into
+companies.CompanyProfile (SET_NULL) plus a denormalized company_slug so
+evidence survives profile deletion and is queryable by slug.
+"""
+from __future__ import annotations
+
+import hashlib
+
+from django.db import models
+
+from .constants import (
+    SOURCE_TYPES,
+    UPDATE_FREQUENCIES,
+    EVIDENCE_CATEGORIES,
+    VERIFICATION_STATUSES,
+)
+
+
+def content_hash(*parts) -> str:
+    """Deterministic dedup key (sha1) over the given parts."""
+    joined = "|".join("" if p is None else str(p) for p in parts)
+    return hashlib.sha1(joined.encode("utf-8")).hexdigest()
+
+
+class Source(models.Model):
+    """A machine-readable source definition (the Source Registry).
+
+    Global sources (World Bank, IEA, Ofgem) have company=None. Company-specific
+    sources (a particular annual report) carry the company FK. Licensed/future
+    sources are seeded with is_active=False — catalogued but never harvested.
+    """
+
+    name = models.CharField(max_length=200)
+    source_type = models.CharField(max_length=40, choices=SOURCE_TYPES)
+    source_url = models.URLField(blank=True)
+    source_owner = models.CharField(max_length=200, blank=True)
+    # Base trust for this source class, 0..1 (feeds the verification engine).
+    confidence_base = models.FloatField(default=0.5)
+    update_frequency = models.CharField(
+        max_length=16, choices=UPDATE_FREQUENCIES, default="adhoc"
+    )
+
+    company = models.ForeignKey(
+        "companies.CompanyProfile",
+        null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="harvest_sources",
+        help_text="Null = global source.",
+    )
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_source"
+        ordering = ["source_type", "name"]
+        indexes = [
+            models.Index(fields=["source_type"]),
+            models.Index(fields=["is_active"]),
+        ]
+
+    def __str__(self):
+        scope = self.company.company.slug if self.company_id and self.company else "global"
+        return f"{self.get_source_type_display()} · {self.name} ({scope})"
+
+
+class HarvestJob(models.Model):
+    """An async-shaped harvest run for a company. Mirrors hikma.IngestRefreshJob
+    (status + timestamps + error + stats) so a worker can drain pending jobs."""
+
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("running", "Running"),
+        ("done", "Done"),
+        ("error", "Error"),
+    ]
+
+    company = models.ForeignKey(
+        "companies.CompanyProfile",
+        null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="harvest_jobs",
+    )
+    company_slug = models.CharField(max_length=120)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="pending")
+    triggered_by = models.CharField(max_length=80, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(blank=True)
+
+    # pipeline stats
+    sources_discovered = models.IntegerField(default=0)
+    documents_downloaded = models.IntegerField(default=0)
+    evidence_extracted = models.IntegerField(default=0)
+    evidence_verified = models.IntegerField(default=0)
+    evidence_normalized = models.IntegerField(default=0)
+    evidence_stored = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = "harvester_harvest_job"
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company_slug", "status"])]
+
+    def __str__(self):
+        return f"HarvestJob({self.company_slug}, {self.status})"
+
+    def status_dict(self):
+        return {
+            "job_id": self.id,
+            "company_slug": self.company_slug,
+            "status": self.status,
+            "stats": {
+                "sources_discovered": self.sources_discovered,
+                "documents_downloaded": self.documents_downloaded,
+                "evidence_extracted": self.evidence_extracted,
+                "evidence_verified": self.evidence_verified,
+                "evidence_normalized": self.evidence_normalized,
+                "evidence_stored": self.evidence_stored,
+            },
+            "error": self.error_message or None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+        }
+
+
+class Evidence(models.Model):
+    """A single raw, document-level piece of evidence collected from a source.
+
+    This is the acquisition record (not the SAY/DO/SHOW interpretation, which
+    lives in hikma.Evidence). Verification sub-scores and status are populated
+    by the verification engine in a later slice; here they default to UNVERIFIED.
+    """
+
+    company = models.ForeignKey(
+        "companies.CompanyProfile",
+        null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="harvested_evidence",
+    )
+    company_slug = models.CharField(max_length=120)
+    source = models.ForeignKey(
+        Source, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="evidence",
+    )
+    harvest_job = models.ForeignKey(
+        HarvestJob, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="evidence",
+    )
+
+    title = models.CharField(max_length=400, blank=True)
+    url = models.URLField(blank=True)
+    publication_date = models.DateField(null=True, blank=True)
+    retrieved_at = models.DateTimeField(auto_now_add=True)
+
+    excerpt = models.TextField(blank=True)
+    full_text = models.TextField(blank=True)
+    document_type = models.CharField(max_length=60, blank=True)
+    category = models.CharField(max_length=40, choices=EVIDENCE_CATEGORIES)
+
+    # Verification (populated by the verification engine in a later slice).
+    source_quality_score = models.FloatField(default=0.0)
+    freshness_score = models.FloatField(default=0.0)
+    corroboration_score = models.FloatField(default=0.0)
+    confidence_score = models.FloatField(default=0.0)
+    # Convenience alias kept distinct from confidence_score for the dashboard.
+    confidence = models.FloatField(default=0.0)
+    verification_status = models.CharField(
+        max_length=24, choices=VERIFICATION_STATUSES, default="UNVERIFIED"
+    )
+
+    # Idempotent dedup key (set by the harvester; nullable for manual rows).
+    content_hash = models.CharField(max_length=40, blank=True, db_index=True)
+
+    class Meta:
+        db_table = "harvester_evidence"
+        ordering = ["-publication_date", "-retrieved_at"]
+        indexes = [
+            models.Index(fields=["company_slug", "category"]),
+            models.Index(fields=["verification_status"]),
+        ]
+
+    def __str__(self):
+        return f"[{self.category}] {self.company_slug}: {(self.title or self.url)[:48]}"
+
+    def compute_hash(self):
+        """Stable hash for dedup across re-harvests."""
+        return content_hash(self.company_slug, self.category, self.url, self.title, self.excerpt)
+
+
+class Datapoint(models.Model):
+    """A normalized, structured fact extracted from an Evidence row.
+
+    e.g. raw "Scope 1 emissions reduced by 12%" → metric=scope1_emissions_change,
+    value=-12, unit=percent. Provenance is preserved via the Evidence FK; no
+    datapoint exists without a source Evidence row.
+    """
+
+    evidence = models.ForeignKey(
+        Evidence, on_delete=models.CASCADE, related_name="datapoints"
+    )
+    company = models.ForeignKey(
+        "companies.CompanyProfile",
+        null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="harvested_datapoints",
+    )
+    company_slug = models.CharField(max_length=120)
+
+    metric = models.CharField(max_length=120)
+    value = models.FloatField(null=True, blank=True)
+    value_text = models.CharField(max_length=400, blank=True)
+    unit = models.CharField(max_length=40, blank=True)
+    period_year = models.IntegerField(null=True, blank=True)
+    category = models.CharField(max_length=40, choices=EVIDENCE_CATEGORIES)
+
+    confidence = models.FloatField(default=0.0)
+    extraction_method = models.CharField(max_length=60, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_datapoint"
+        ordering = ["company_slug", "metric", "-period_year"]
+        indexes = [
+            models.Index(fields=["company_slug", "metric"]),
+            models.Index(fields=["category"]),
+        ]
+
+    def __str__(self):
+        v = self.value if self.value is not None else self.value_text
+        return f"{self.company_slug}:{self.metric}={v}{self.unit}"
