@@ -40,6 +40,8 @@ urlpatterns = [
     # Capital Integrity Score
     path('capital-integrity/',                             views.capital_integrity_score,          name='capital_integrity_score'),
 
+    # Hikma assessment (auth: enqueue evidence-ingestion + regeneration)
+    path('assess/<slug:slug>/refresh/', views.hikma_refresh_assessment, name='hikma_refresh_assessment'),
     # Hikma assessment (read-only latest)
     path('assess/<slug:slug>/latest/', views.hikma_latest_assessment, name='hikma_latest_assessment'),
 

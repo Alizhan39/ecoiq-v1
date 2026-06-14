@@ -53,6 +53,10 @@ class Evidence(models.Model):
     confidence_tier = models.CharField(
         max_length=20, choices=CONFIDENCE_TIERS, default="ai-seeded"
     )
+    confidence_score = models.FloatField(default=0.5)
+    # Deterministic dedup key (sha1 of subject_ref|kind|statement). Nullable so
+    # pre-existing rows are unaffected; new ingested rows always set it.
+    content_hash = models.CharField(max_length=40, blank=True, db_index=True)
     scholar_review_required = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -101,3 +105,59 @@ class AssessmentRun(models.Model):
 
     def __str__(self):
         return f"AssessmentRun({self.subject_ref}, {self.status})"
+
+
+class IngestRefreshJob(models.Model):
+    """Async-shaped job for evidence ingestion + assessment regeneration.
+    Mirrors audit.AIAnalysisJob (status + timestamps + error + stats)."""
+
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("running", "Running"),
+        ("done", "Done"),
+        ("error", "Error"),
+    ]
+
+    company = models.ForeignKey(
+        "companies.CompanyProfile",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="hikma_refresh_jobs",
+    )
+    subject_ref = models.CharField(max_length=120)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(blank=True)
+
+    # stats
+    sources_seen = models.IntegerField(default=0)
+    evidence_created = models.IntegerField(default=0)
+    evidence_skipped = models.IntegerField(default=0)
+    assessment_run = models.ForeignKey(
+        AssessmentRun, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="refresh_jobs",
+    )
+
+    class Meta:
+        db_table = "hikma_ingest_refresh_job"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"IngestRefreshJob({self.subject_ref}, {self.status})"
+
+    def status_dict(self):
+        return {
+            "job_id": self.id,
+            "subject_ref": self.subject_ref,
+            "status": self.status,
+            "sources_seen": self.sources_seen,
+            "evidence_created": self.evidence_created,
+            "evidence_skipped": self.evidence_skipped,
+            "assessment_run_id": self.assessment_run_id,
+            "error": self.error_message or None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+        }

@@ -975,3 +975,31 @@ def hikma_latest_assessment(request, slug):
             "note": "Stored assessment; not regenerated on request. AI-assisted, indicative, not a ruling.",
         },
     })
+
+
+@api_view(["POST"])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([IsAPIKeyAuthenticated])
+def hikma_refresh_assessment(request, slug):
+    """POST /api/v1/assess/<slug>/refresh/  (auth required)
+
+    Enqueues an evidence-ingestion + assessment-regeneration job and returns the
+    job status only. Mirrors the audit.AIAnalysisJob pattern. No broker is
+    configured yet, so the job is processed inline; a worker
+    (manage.py process_refresh_jobs) can also drain pending jobs.
+    """
+    from companies.models import CompanyProfile
+    from hikma.models import IngestRefreshJob
+    from hikma.refresh import process_refresh
+
+    profile = get_object_or_404(
+        CompanyProfile.objects.select_related("company"), company__slug=slug
+    )
+    job = IngestRefreshJob.objects.create(
+        company=profile, subject_ref=slug, status="pending"
+    )
+    try:
+        process_refresh(job)
+    except Exception:  # noqa: BLE001 — status captured on the job row
+        job.refresh_from_db()
+    return Response(job.status_dict(), status=status.HTTP_202_ACCEPTED)
