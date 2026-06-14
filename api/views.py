@@ -941,3 +941,37 @@ def project_readiness_score(request):
             ),
         },
     })
+
+
+# ── Hikma assessment (read-only) ──────────────────────────────────────────────
+@api_view(["GET"])
+@permission_classes([IsPublicOrAPIKey])
+def hikma_latest_assessment(request, slug):
+    """GET /api/v1/assess/<slug>/latest
+
+    Returns the latest stored Hikma AssessmentRun result for a company slug.
+    Read-only: does NOT trigger scoring and does NOT mutate the database.
+    404 if no completed run exists.
+    """
+    from hikma.models import AssessmentRun
+
+    run = (AssessmentRun.objects
+           .filter(subject_ref=slug, status="done", result__isnull=False)
+           .order_by("-created_at")
+           .first())
+    if run is None:
+        return Response(
+            {"error": f'No Hikma assessment found for "{slug}". Run is generated offline.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    return Response({
+        "assessment_run_id": run.id,
+        "generated_at": run.created_at.isoformat(),
+        "engine_version": run.engine_version,
+        **run.result,
+        "_meta": {
+            "endpoint": request.build_absolute_uri(),
+            "read_only": True,
+            "note": "Stored assessment; not regenerated on request. AI-assisted, indicative, not a ruling.",
+        },
+    })

@@ -48,8 +48,10 @@ class Command(BaseCommand):
         else:
             s = result
             self.stdout.write(self.style.SUCCESS(
-                f'{s["subject"]["name"]} — composite {s["composite_score"]} ({s["band"]})'))
-            self.stdout.write(f'  dimensions: {s["mizan_dimensions"]}')
-            self.stdout.write(f'  harm score: {s["harm_assessment"]["score"]} | flags: {s["harm_assessment"]["risk_flags"]}')
-            self.stdout.write(f'  evidence counts: {s["evidence_used"]["counts"]}')
+                f'{s["subject"]["name"]} — composite {s["composite_score"]} ({s["rating_label"]})'))
+            self.stdout.write(f'  dimensions: {s["dimensions"]}')
+            self.stdout.write(f'  harm score: {s["harm_score"]} | flags: {s["flags"]["risk_flags"]}')
+            self.stdout.write(f'  evidence counts: {s["evidence_counts"]}')
+            self.stdout.write(f'  activated nodes ({len(s["activated_nodes"])}): '
+                              + ', '.join(n["node"] for n in s["activated_nodes"][:8]))
             self.stdout.write(f'  scoring spine: {s["scoring_spine"]}')

@@ -40,6 +40,9 @@ urlpatterns = [
     # Capital Integrity Score
     path('capital-integrity/',                             views.capital_integrity_score,          name='capital_integrity_score'),
 
+    # Hikma assessment (read-only latest)
+    path('assess/<slug:slug>/latest/', views.hikma_latest_assessment, name='hikma_latest_assessment'),
+
     # Islamic & Ethical Finance Fit
     path('finance/islamic-fit/',                           views.islamic_finance_fit,              name='islamic_finance_fit'),
 ]
