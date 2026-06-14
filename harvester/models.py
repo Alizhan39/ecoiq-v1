@@ -24,6 +24,7 @@ from .constants import (
     UPDATE_FREQUENCIES,
     EVIDENCE_CATEGORIES,
     VERIFICATION_STATUSES,
+    NORMALIZATION_STATUSES,
 )
 
 
@@ -226,11 +227,23 @@ class Datapoint(models.Model):
     value_text = models.CharField(max_length=400, blank=True)
     unit = models.CharField(max_length=40, blank=True)
     period_year = models.IntegerField(null=True, blank=True)
+    # Reporting-period label (e.g. "2024/25", "FY2025"); period_year holds the
+    # numeric year for filtering.
+    period = models.CharField(max_length=20, blank=True)
     category = models.CharField(max_length=40, choices=EVIDENCE_CATEGORIES)
 
     confidence = models.FloatField(default=0.0)
+    status = models.CharField(
+        max_length=16, choices=NORMALIZATION_STATUSES, default="NORMALIZED"
+    )
     extraction_method = models.CharField(max_length=60, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    normalized_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def source_evidence(self):
+        """Provenance alias — the Evidence row this datapoint was extracted from."""
+        return self.evidence
 
     class Meta:
         db_table = "harvester_datapoint"

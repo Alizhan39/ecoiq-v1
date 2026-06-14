@@ -103,3 +103,12 @@ VERIFICATION_STATUSES = [
     ("NOT_FOUND", "Not found — no source located"),
     ("INSUFFICIENT_EVIDENCE", "Insufficient evidence — source too weak to assert"),
 ]
+
+# ── Normalization status ────────────────────────────────────────────────────
+# A Datapoint is NORMALIZED only when a clean value was deterministically
+# extracted. When the metric is discussed but no value can be parsed, the row is
+# recorded as NOT_NORMALIZED with value=None — never a fabricated number.
+NORMALIZATION_STATUSES = [
+    ("NORMALIZED", "Normalized — clean value extracted"),
+    ("NOT_NORMALIZED", "Not normalized — metric present, no parseable value"),
+]

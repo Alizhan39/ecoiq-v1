@@ -39,6 +39,6 @@ class EvidenceSourceRefAdmin(admin.ModelAdmin):
 @admin.register(Datapoint)
 class DatapointAdmin(admin.ModelAdmin):
     list_display = ("company_slug", "metric", "value", "unit",
-                    "period_year", "category", "confidence")
-    list_filter = ("category",)
+                    "period", "category", "status", "confidence")
+    list_filter = ("category", "status")
     search_fields = ("company_slug", "metric")

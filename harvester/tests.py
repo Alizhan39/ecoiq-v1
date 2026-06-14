@@ -283,3 +283,107 @@ class DeduplicationEngineTests(TestCase):
         if canonical.source_refs.count() == 2:
             self.assertEqual(stats["contradicted"], 1)
             self.assertEqual(canonical.verification_status, "CONTRADICTED")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 3 — Normalization Engine
+# ════════════════════════════════════════════════════════════════════════════
+from harvester import normalization
+
+
+class NormalizationExtractTests(TestCase):
+    def test_change_statement_signed_percent(self):
+        rows = normalization.extract("Scope 1 emissions reduced by 12% in 2024/25")
+        r = next(x for x in rows if x.metric == "scope1_emissions_change")
+        self.assertEqual(r.value, -12.0)
+        self.assertEqual(r.unit, "percent")
+        self.assertEqual(r.status, "NORMALIZED")
+        self.assertEqual(r.period, "2024/25")
+        self.assertEqual(r.period_year, 2025)
+
+    def test_increase_is_positive(self):
+        rows = normalization.extract("Scope 3 emissions increased by 4%")
+        r = next(x for x in rows if x.metric == "scope3_emissions_change")
+        self.assertEqual(r.value, 4.0)
+
+    def test_absolute_currency_revenue(self):
+        rows = normalization.extract("Gross revenue was £18,378m for the year")
+        r = next(x for x in rows if x.metric == "revenue")
+        self.assertEqual(r.value, 18378.0)
+        self.assertEqual(r.unit, "GBP_million")
+
+    def test_absolute_emissions_with_unit(self):
+        rows = normalization.extract("Scope 1 emissions were 4.5 MtCO2e")
+        r = next(x for x in rows if x.metric == "scope1_emissions")
+        self.assertEqual(r.value, 4.5)
+        self.assertEqual(r.unit, "MtCO2e")
+
+    def test_employee_count(self):
+        rows = normalization.extract("The group had 33,579 employees")
+        r = next(x for x in rows if x.metric == "employee_count")
+        self.assertEqual(r.value, 33579.0)
+        self.assertEqual(r.unit, "count")
+
+    def test_independent_directors_percent(self):
+        rows = normalization.extract("Independent directors represent 60% of the board")
+        r = next(x for x in rows if x.metric == "independent_directors_percent")
+        self.assertEqual(r.value, 60.0)
+        self.assertEqual(r.unit, "percent")
+
+    def test_metric_present_no_value_is_not_normalized(self):
+        rows = normalization.extract("Scope 1 emissions fell significantly during the period")
+        r = next(x for x in rows if x.metric.startswith("scope1_emissions"))
+        self.assertIsNone(r.value)
+        self.assertEqual(r.status, "NOT_NORMALIZED")
+
+    def test_no_metric_no_output(self):
+        self.assertEqual(normalization.extract("The weather was pleasant."), [])
+
+    def test_empty_text(self):
+        self.assertEqual(normalization.extract(""), [])
+
+    def test_all_required_metrics_have_specs(self):
+        specs = {m.metric for m in normalization.METRICS}
+        for needed in ("revenue", "operating_profit", "net_profit", "capex", "opex",
+                       "energy_generated", "renewable_generation", "coal_generation",
+                       "gas_generation", "scope1_emissions", "scope2_emissions",
+                       "scope3_emissions", "emissions_intensity", "water_withdrawal",
+                       "water_consumption", "employee_count", "lost_time_incidents",
+                       "board_size", "independent_directors_percent"):
+            self.assertIn(needed, specs, msg=f"missing metric spec {needed}")
+
+
+class NormalizationPersistTests(TestCase):
+    def _evidence(self, text, category="emissions"):
+        _, profile = make_company()
+        return Evidence.objects.create(
+            company=profile, company_slug="national-grid",
+            category=category, excerpt=text, publication_date=date(2025, 5, 15),
+        )
+
+    def test_persists_datapoint_with_provenance(self):
+        ev = self._evidence("Scope 1 emissions reduced by 12% in 2024/25")
+        points = normalization.normalize_evidence(ev)
+        dp = next(p for p in points if p.metric == "scope1_emissions_change")
+        self.assertEqual(dp.value, -12.0)
+        self.assertEqual(dp.evidence_id, ev.id)
+        self.assertEqual(dp.source_evidence, ev)        # alias works
+        self.assertEqual(dp.status, "NORMALIZED")
+        self.assertIsNotNone(dp.normalized_at)
+
+    def test_normalize_is_idempotent(self):
+        ev = self._evidence("Gross revenue was £18,378m in 2024/25", category="financial")
+        normalization.normalize_evidence(ev)
+        n1 = Datapoint.objects.filter(metric="revenue").count()
+        normalization.normalize_evidence(ev)            # re-run
+        n2 = Datapoint.objects.filter(metric="revenue").count()
+        self.assertEqual(n1, n2)
+        self.assertEqual(n1, 1)
+
+    def test_not_normalized_stored_with_null_value(self):
+        ev = self._evidence("Scope 2 emissions decreased markedly over the year")
+        normalization.normalize_evidence(ev)
+        dp = Datapoint.objects.filter(metric="scope2_emissions").first()
+        self.assertIsNotNone(dp)
+        self.assertIsNone(dp.value)                     # never fabricated
+        self.assertEqual(dp.status, "NOT_NORMALIZED")
