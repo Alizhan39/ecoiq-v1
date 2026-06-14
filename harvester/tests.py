@@ -387,3 +387,93 @@ class NormalizationPersistTests(TestCase):
         self.assertIsNotNone(dp)
         self.assertIsNone(dp.value)                     # never fabricated
         self.assertEqual(dp.status, "NOT_NORMALIZED")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 4 — Harvest pipeline (harvest_company + process_harvest_jobs)
+# ════════════════════════════════════════════════════════════════════════════
+from harvester.models import HarvestJob
+from harvester.pipeline import run_harvest
+
+
+class HarvestPipelineTests(TestCase):
+    def setUp(self):
+        # slug 'national-grid' has registered documents in company_documents.py
+        self.company, self.profile = make_company("national-grid")
+
+    def _run(self):
+        job = HarvestJob.objects.create(company=self.profile,
+                                        company_slug="national-grid", status="pending")
+        return run_harvest(job)
+
+    def test_national_grid_end_to_end(self):
+        job = self._run()
+        self.assertEqual(job.status, "done")
+        self.assertGreaterEqual(job.sources_discovered, 3)
+        self.assertGreater(job.evidence_extracted, 0)
+        self.assertGreater(job.evidence_stored, 0)
+
+        # real cited figures normalized correctly
+        rev = Datapoint.objects.get(company_slug="national-grid", metric="revenue")
+        self.assertEqual(rev.value, 18378.0)
+        self.assertEqual(rev.unit, "GBP_million")
+        self.assertEqual(rev.period_year, 2025)
+
+        emp = Datapoint.objects.get(company_slug="national-grid", metric="employee_count")
+        self.assertEqual(emp.value, 33579.0)
+
+        for m in ("operating_profit", "capex", "scope1_emissions",
+                  "scope2_emissions", "scope3_emissions"):
+            self.assertTrue(
+                Datapoint.objects.filter(company_slug="national-grid", metric=m).exists(),
+                msg=f"missing datapoint {m}")
+
+    def test_scope1_corroborated_and_verified(self):
+        self._run()
+        ev = Evidence.objects.get(company_slug="national-grid",
+                                  category="emissions", title__startswith="Scope 1")
+        self.assertEqual(ev.source_refs.count(), 2)        # annual + sustainability
+        self.assertEqual(ev.corroboration_count, 1)
+        self.assertEqual(ev.verification_status, "VERIFIED")
+
+    def test_evidence_source_records_created(self):
+        self._run()
+        # company-scoped EvidenceSource (Source) rows created during discovery
+        self.assertTrue(Source.objects.filter(company=self.profile).exists())
+
+    def test_net_zero_claim_has_no_fabricated_datapoint(self):
+        self._run()
+        # "net zero by 2050" carries no numeric metric → evidence but no datapoint
+        self.assertTrue(Evidence.objects.filter(
+            company_slug="national-grid", category="climate").exists())
+        self.assertFalse(Datapoint.objects.filter(
+            company_slug="national-grid", metric="climate").exists())
+
+    def test_pipeline_is_idempotent(self):
+        self._run()
+        ev1 = Evidence.objects.filter(company_slug="national-grid").count()
+        dp1 = Datapoint.objects.filter(company_slug="national-grid").count()
+        self._run()  # second harvest
+        self.assertEqual(Evidence.objects.filter(company_slug="national-grid").count(), ev1)
+        self.assertEqual(Datapoint.objects.filter(company_slug="national-grid").count(), dp1)
+
+    def test_unknown_company_completes_without_fabrication(self):
+        _, profile = make_company("ghost-co")
+        job = HarvestJob.objects.create(company=profile, company_slug="ghost-co")
+        run_harvest(job)
+        self.assertEqual(job.status, "done")
+        # no registered docs, empty profile fields → no datapoints invented
+        self.assertEqual(Datapoint.objects.filter(company_slug="ghost-co").count(), 0)
+
+
+class ProcessHarvestJobsTests(TestCase):
+    def test_worker_drains_pending_jobs(self):
+        from io import StringIO
+        from django.core.management import call_command
+        company, profile = make_company("national-grid")
+        HarvestJob.objects.create(company=profile, company_slug="national-grid",
+                                  status="pending")
+        call_command("process_harvest_jobs", stdout=StringIO())
+        job = HarvestJob.objects.get(company_slug="national-grid")
+        self.assertEqual(job.status, "done")
+        self.assertGreater(job.evidence_stored, 0)
