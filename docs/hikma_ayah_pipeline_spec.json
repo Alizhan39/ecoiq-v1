@@ -1,0 +1,220 @@
+{
+  "pipeline": "Full Ayah Ingestion Pipeline",
+  "version": "v1",
+  "scope": {
+    "total_ayat": 6236,
+    "already_canonical_curated": 214,
+    "remaining_machine_proposed": 6022,
+    "graph_nodes": 304
+  },
+  "hard_constraints": [
+    "DO NOT modify any of the 304 canonical nodes (read-only graph).",
+    "DO NOT auto-create nodes. Missing concepts go ONLY to proposed_nodes_review_queue.",
+    "Every machine mapping is AI-proposed and interpretive -> status='machine_proposed', scholar_review_required=true until reviewed.",
+    "The 214 verses already in ayah_index (from human-curated node quranic_basis) are status='canonical_curated' and are NOT re-proposed or overwritten.",
+    "No ayah record may upgrade an inferred node link to 'direct'; the relevance label is preserved, never inflated."
+  ],
+  "principle": "Claude proposes candidate concept tags and cause-effect reads from grounded verse text + established translations; deterministic code does node-matching, validation, dedup, and confidence scoring. Nothing becomes canonical without human+scholar review.",
+  "stages": [
+    {
+      "stage": 1,
+      "name": "source_loader",
+      "in": "public-domain Quran text (Uthmani) + 2-3 established translations keyed by surah:ayah",
+      "out": "normalised verse units",
+      "notes": "Vetted corpus (e.g. Tanzil); store text hash for idempotency. Pipeline reads scripture, never paraphrases it as its own output."
+    },
+    {
+      "stage": 2,
+      "name": "dedup_gate",
+      "in": "verse units",
+      "out": "verses needing processing",
+      "notes": "Skip surah:ayah already canonical_curated; skip unchanged hashes."
+    },
+    {
+      "stage": 3,
+      "name": "candidate_concept_extractor",
+      "in": "verse text + translations",
+      "out": "candidate concept phrases + tentative reads",
+      "notes": "Claude under audit/ai.py grounding rules: extract themes ONLY from supplied text+translations; forbid ruling/fatwa language; JSON with self-rated certainty."
+    },
+    {
+      "stage": 4,
+      "name": "node_matcher",
+      "in": "candidate concepts",
+      "out": "ranked graph-node matches + similarity",
+      "notes": "Deterministic embedding match vs 304 node short_definition+signals; threshold tau_match; below -> gap signal."
+    },
+    {
+      "stage": 5,
+      "name": "signal_mapper",
+      "in": "matched nodes",
+      "out": "domains, moral_questions, risk/benefit signals, decision_relevance",
+      "notes": "INHERIT from matched canonical nodes; link decision_relevance to hikma_decision_pathways by shared nodes."
+    },
+    {
+      "stage": 6,
+      "name": "cause_effect_linker",
+      "in": "verse + matched nodes",
+      "out": "tentative cause_effect_links",
+      "notes": "Propose action->consequence ONLY where the verse text explicitly states it; mark interpretive; never assert causation absent in text."
+    },
+    {
+      "stage": 7,
+      "name": "confidence_grader",
+      "in": "match scores + extractor certainty",
+      "out": "confidence_level + scholar_review_required",
+      "notes": "confidence=f(similarity, certainty, translation agreement). machine_proposed capped at 'medium'; legal/ruling-adjacent forced 'low'."
+    },
+    {
+      "stage": 8,
+      "name": "gap_detector",
+      "in": "low/no-match candidates",
+      "out": "proposed_nodes_review_queue entries",
+      "notes": "Recurring concept with NO node >= tau across >=N verses -> PROPOSED node (suggestion+rationale+supporting ayat). NEVER auto-added."
+    },
+    {
+      "stage": 9,
+      "name": "validator",
+      "in": "draft ayah records",
+      "out": "validated | rejects",
+      "notes": "Run validation_rules; reject malformed/nonexistent-node/constraint-violating."
+    },
+    {
+      "stage": 10,
+      "name": "review_router",
+      "in": "validated records",
+      "out": "review queues",
+      "notes": "machine_proposed -> analyst -> scholar. canonical_curated bypass to merged index."
+    },
+    {
+      "stage": 11,
+      "name": "index_writer",
+      "in": "reviewed records",
+      "out": "ayah_full_index.json (append-only) + provenance log",
+      "notes": "machine_proposed stays in staging index, NOT live ayah_index, until promoted."
+    }
+  ],
+  "ayah_schema": {
+    "ayah_id": "surah:ayah",
+    "surah": "int",
+    "ayah": "str",
+    "text_hash": "sha256",
+    "concepts": [
+      "machine candidate phrases"
+    ],
+    "mapped_nodes": [
+      "existing node ids only"
+    ],
+    "principles": [
+      "principle node ids"
+    ],
+    "domains": [
+      "inherited"
+    ],
+    "moral_questions": [
+      "inherited"
+    ],
+    "cause_effect_links": [
+      {
+        "cause": "text-grounded",
+        "effect": "text-grounded",
+        "interpretive": true
+      }
+    ],
+    "risk_signals": [
+      "inherited"
+    ],
+    "benefit_signals": [
+      "inherited positive_signals"
+    ],
+    "decision_relevance": [
+      "pathway decision_names sharing nodes"
+    ],
+    "relevance_label": "direct|inferred|modern_application",
+    "confidence_level": "high|medium|low (machine<=medium)",
+    "scholar_review_required": "bool",
+    "status": "canonical_curated|machine_proposed|analyst_reviewed|scholar_reviewed|rejected",
+    "provenance": {
+      "translations_used": [],
+      "matcher_version": "",
+      "extracted_at": "datetime",
+      "reviewers": []
+    }
+  },
+  "proposed_node_schema": {
+    "proposed_id": "kebab-case",
+    "proposed_name": "",
+    "category": "one of 16 principle categories",
+    "rationale": "",
+    "supporting_ayat": [
+      "surah:ayah"
+    ],
+    "nearest_existing_nodes": [
+      {
+        "id": "",
+        "similarity": 0.0
+      }
+    ],
+    "status": "queued|accepted|rejected|merged_into_existing",
+    "raised_at": "datetime"
+  },
+  "mapping_rules": [
+    "Map to a node only if candidate-to-node similarity >= tau_match (default 0.62, tunable).",
+    "mapped_nodes MUST already exist; the matcher cannot mint ids.",
+    "domains/moral_questions/signals are INHERITED from mapped nodes, never authored per ayah.",
+    "relevance_label from textual support: explicit term->'direct'; thematic->'inferred'; only-modern-bridge->'modern_application'. Default to weaker label under doubt.",
+    "Concept with no node >= tau recurring across >=3 verses -> proposed_nodes_review_queue (not the graph).",
+    "Ritual/legal/eschatological verses with no decision bearing -> mapped_nodes may be empty; do not force a mapping."
+  ],
+  "validation_rules": [
+    "schema_complete: all required fields present and typed.",
+    "node_existence: every mapped/principle id exists in graph_index (else reject).",
+    "no_node_mutation: output never writes to the 304 node files (CI file-hash check).",
+    "confidence_bounds: machine_proposed in {low,medium}; high only after scholar_reviewed.",
+    "scholar_flag: scholar_review_required=true unless scholar_reviewed or canonical_curated.",
+    "label_no_inflation: 'direct' only if the node's own canonical quranic_basis already cites this ayah as direct.",
+    "dedup: no duplicate ayah_id live; canonical_curated wins over machine_proposed.",
+    "idempotency: unchanged text_hash -> no new record."
+  ],
+  "review_workflow": {
+    "states": [
+      "machine_proposed",
+      "analyst_reviewed",
+      "scholar_reviewed",
+      "canonical_curated",
+      "rejected"
+    ],
+    "transitions": [
+      "machine_proposed --analyst approves--> analyst_reviewed",
+      "analyst_reviewed --scholar approves--> scholar_reviewed (flag cleared, may raise confidence)",
+      "scholar_reviewed --promotion job--> merged into live ayah_index",
+      "any --reviewer rejects--> rejected (reason retained)",
+      "proposed node --scholar accepts--> hands to SEPARATE human node-authoring task; pipeline still never auto-adds"
+    ],
+    "gate": "Only scholar_reviewed + canonical_curated enter the live ayah_index served to engines; machine_proposed stays in a labelled staging index."
+  },
+  "batch_plan": {
+    "unit": "by surah (114) then <=50 ayat/Claude call",
+    "order": "short/most-cited surahs first to validate matcher early",
+    "idempotent": "text_hash + canonical_curated skip => resumable",
+    "throughput": "prompt cache per surah; rate-limit; checkpoint per surah",
+    "estimated_records": 6236,
+    "canonical_skipped": 214,
+    "to_process": 6022,
+    "outputs": [
+      "docs/ayah_staging_index.json (machine_proposed)",
+      "docs/ayah_full_index.json (reviewed+canonical)",
+      "docs/proposed_nodes_review_queue.json"
+    ]
+  },
+  "quality_checks": [
+    "coverage: % processed; % with >=1 mapped node; % empty (expected for ritual/legal).",
+    "matcher_precision: human spot-check per surah; track false-map rate.",
+    "constraint_audit: 304 node files byte-identical pre/post run.",
+    "label_audit: count of 'direct' not backed by canonical citation must be 0.",
+    "confidence_distribution: machine_proposed 0% high.",
+    "queue_health: proposed queue size + dedup vs existing nodes.",
+    "regression: existing 214 canonical mappings unchanged after merge.",
+    "scholar_throughput: backlog of scholar_review_required (operational)."
+  ]
+}

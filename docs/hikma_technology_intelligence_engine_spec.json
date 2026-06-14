@@ -1,0 +1,375 @@
+{
+  "engine": "Technology Intelligence Engine",
+  "version": "v1",
+  "tier": "Solution layer — consumes Planetary Balance + Country/Company Intelligence to match technologies to identified challenges.",
+  "purpose": "Evaluate technologies as solutions to identified challenges; identify WHAT TECHNOLOGIES SOLVE WHAT PROBLEMS.",
+  "frameworks": [
+    "Technology Readiness Levels (TRL)",
+    "Natural-Capital / lifecycle impact",
+    "Planetary Boundaries (downside screening)",
+    "Supply-chain & geopolitical risk"
+  ],
+  "no_duplicate_logic": [
+    "Reads problems from Planetary Balance priority_intervention_areas + Country/Company pathways; does not re-derive.",
+    "Ingests scientific literature / tech databases via the Evidence Layer (SHOW).",
+    "Reuses the Planetary Balance lens for impact dimensions; reuses supply_chain_integrity_tracer for dependency.",
+    "Binds existing decision pathways for implementation framing."
+  ],
+  "guarantees": [
+    "Deterministic Python scores 12 dimensions from cited datasets; Claude writes only validated prose.",
+    "Every dimension and match cites evidence_ids + graph nodes.",
+    "Catastrophic-tail / red-line technologies are capped and routed to expert+scholar review, never auto-recommended.",
+    "Solutions are ranked decision-support, never prescriptions; no rulings."
+  ],
+  "technologies": [
+    "Nuclear",
+    "SMR",
+    "Solar",
+    "Wind",
+    "Hydro",
+    "Heat Pumps",
+    "Geothermal",
+    "Hydrogen",
+    "Carbon Capture",
+    "AI",
+    "Desalination",
+    "Battery Storage",
+    "Smart Grids",
+    "Public Transport",
+    "Water Technologies"
+  ],
+  "evaluation_dimensions": [
+    "readiness",
+    "scalability",
+    "affordability",
+    "implementation_complexity",
+    "environmental_impact",
+    "resource_intensity",
+    "water_impact",
+    "emissions_impact",
+    "resilience_impact",
+    "geopolitical_dependence",
+    "manufacturing_feasibility",
+    "local_adoption_feasibility"
+  ],
+  "modules": [
+    {
+      "module": "challenge_extractor",
+      "graph_node_bindings": [
+        "maslahah",
+        "mafsadah",
+        "planetary_balance"
+      ],
+      "reuses": "Planetary Balance + Country/Company Intelligence",
+      "inputs": [
+        "Planetary Balance priority_intervention_areas",
+        "Country/Company pathways + risks"
+      ],
+      "outputs": [
+        "ranked challenge set with severity + nodes"
+      ],
+      "logic": "Read existing problem signals from the engines below; each challenge carries its breached boundary / pathway / nodes."
+    },
+    {
+      "module": "technology_profiler",
+      "graph_node_bindings": [
+        "responsible_innovation",
+        "scientific_responsibility",
+        "taskhir",
+        "itqan"
+      ],
+      "reuses": "Evidence Layer",
+      "inputs": [
+        "scientific literature",
+        "tech databases",
+        "industrial datasets (via Evidence Layer)"
+      ],
+      "outputs": [
+        "per-technology 12-dimension profile + data_confidence"
+      ],
+      "logic": "Score each tech across 12 dimensions from cited datasets; SHOW-heavy; flag thin-evidence dimensions."
+    },
+    {
+      "module": "problem_solution_matcher",
+      "graph_node_bindings": [
+        "maslahah",
+        "mizan",
+        "hikmah"
+      ],
+      "reuses": "",
+      "inputs": [
+        "challenge set",
+        "technology profiles"
+      ],
+      "outputs": [
+        "challenge x technology fit matrix"
+      ],
+      "logic": "solution_fit = problem_severity x dimension_alignment; ranked solutions per challenge AND ranked challenges per tech."
+    },
+    {
+      "module": "readiness_assessor",
+      "graph_node_bindings": [
+        "itqan",
+        "bayyinah"
+      ],
+      "reuses": "",
+      "inputs": [
+        "technology profiles",
+        "deployment track-record"
+      ],
+      "outputs": [
+        "Technology Readiness (TRL) + scalability"
+      ],
+      "logic": "Readiness from maturity + proven deployment scale; immature tech capped low and flagged."
+    },
+    {
+      "module": "impact_assessor",
+      "graph_node_bindings": [
+        "fasad",
+        "ard",
+        "maa",
+        "emissions_responsibility",
+        "public_health",
+        "ecosystem_stability"
+      ],
+      "reuses": "Planetary Balance impact lens",
+      "inputs": [
+        "technology lifecycle data"
+      ],
+      "outputs": [
+        "environmental, water, emissions, resource, resilience impact"
+      ],
+      "logic": "Lifecycle (not point-of-use) impact; downside screening against boundaries."
+    },
+    {
+      "module": "dependency_geopolitics_module",
+      "graph_node_bindings": [
+        "supply_chain_integrity_tracer",
+        "energy_security",
+        "aman"
+      ],
+      "reuses": "supply_chain_integrity_tracer",
+      "inputs": [
+        "supply-chain + critical-mineral data"
+      ],
+      "outputs": [
+        "geopolitical_dependence + supply-chain flags"
+      ],
+      "logic": "Score dependence on concentrated/contested supply + exploitation flags."
+    },
+    {
+      "module": "manufacturing_feasibility_module",
+      "graph_node_bindings": [
+        "imarah_al_ard",
+        "skill_development",
+        "ajr"
+      ],
+      "reuses": "",
+      "inputs": [
+        "industrial base + skills data for target market"
+      ],
+      "outputs": [
+        "local manufacturing potential + Manufacturing Potential score"
+      ],
+      "logic": "Can the tech be built/assembled locally (jobs, capability, value retention) vs pure import?"
+    },
+    {
+      "module": "adoption_feasibility_module",
+      "graph_node_bindings": [
+        "adalah_ijtimaiyyah",
+        "miskeen",
+        "infrastructure_equity",
+        "rahmah"
+      ],
+      "reuses": "",
+      "inputs": [
+        "affordability + infrastructure + just-transition data"
+      ],
+      "outputs": [
+        "local adoption feasibility (affordability, complexity, equity)"
+      ],
+      "logic": "Score affordability for the poor, infrastructure readiness, distributional fairness of adoption."
+    },
+    {
+      "module": "roadmap_generator",
+      "graph_node_bindings": [
+        "islah",
+        "transition_planning",
+        "wafa"
+      ],
+      "reuses": "just_transition_planner",
+      "inputs": [
+        "matched solutions + readiness + adoption"
+      ],
+      "outputs": [
+        "Adoption Roadmap (phased) + Infrastructure Requirements"
+      ],
+      "logic": "Sequence by readiness + dependency + infrastructure; bind to decision pathways; reuse just-transition framing."
+    },
+    {
+      "module": "tech_scoring_aggregator",
+      "graph_node_bindings": [
+        "mizan_balance_engine",
+        "maqasid_preservation_scorer",
+        "tawazun"
+      ],
+      "reuses": "",
+      "inputs": [
+        "all module outputs"
+      ],
+      "outputs": [
+        "Technology Priority / Opportunity / Risk scores"
+      ],
+      "logic": "Aggregate under boundary-safety + Maqasid priority; catastrophic-tail/red-line tech cannot top-rank on benefit alone."
+    }
+  ],
+  "scoring_logic": {
+    "per_dimension": "0-100 from cited datasets + data_confidence; lifecycle basis for impact dims.",
+    "technology_readiness": "TRL-mapped + proven scalability (immature => low, flagged).",
+    "technology_priority_score": "priority = challenge_severity x solution_fit x readiness x local_adoption_feasibility.",
+    "technology_opportunity_score": "opportunity = manufacturing_potential + market_gap + co_benefits (jobs, health, resilience).",
+    "technology_risk_score": "risk = resource_intensity + geopolitical_dependence + environmental_downside + complexity + catastrophic_tail.",
+    "safety_cap": "Any catastrophic-tail or red-line dimension caps priority and routes to harm_prevention_gate + scholar/expert review; cannot be auto-recommended on net benefit.",
+    "what_solves_what": "Per challenge: ranked technologies by priority; per technology: ranked challenges it best addresses."
+  },
+  "decision_pathways": {
+    "Nuclear": [
+      "Nuclear Power Plant"
+    ],
+    "SMR": [
+      "Nuclear Power Plant",
+      "Renewable Energy Program"
+    ],
+    "Solar": [
+      "Renewable Energy Program"
+    ],
+    "Wind": [
+      "Renewable Energy Program"
+    ],
+    "Hydro": [
+      "Hydropower Dam"
+    ],
+    "Heat Pumps": [
+      "Coal-to-Heat-Pump Transition"
+    ],
+    "Geothermal": [
+      "Renewable Energy Program"
+    ],
+    "Hydrogen": [
+      "Renewable Energy Program",
+      "Gas Infrastructure Expansion"
+    ],
+    "Carbon Capture": [
+      "Coal Plant Expansion",
+      "Oil Field Development"
+    ],
+    "AI": [
+      "National AI Strategy",
+      "AI Education Platform"
+    ],
+    "Desalination": [
+      "Desalination Plant"
+    ],
+    "Battery Storage": [
+      "National Grid Modernisation",
+      "Renewable Energy Program"
+    ],
+    "Smart Grids": [
+      "National Grid Modernisation"
+    ],
+    "Public Transport": [
+      "National Railway"
+    ],
+    "Water Technologies": [
+      "Water Utility Company",
+      "National Water Reservoir"
+    ]
+  },
+  "data_contracts": {
+    "TechIntelRequest": {
+      "scope": "country|region|global",
+      "ref": "",
+      "challenge_filter": "optional",
+      "tech_filter": "optional",
+      "horizon": "current|2030|2050"
+    },
+    "TechnologyResult": {
+      "technology": "",
+      "scope": {},
+      "dimensions": {
+        "readiness": 0,
+        "scalability": 0,
+        "affordability": 0,
+        "implementation_complexity": 0,
+        "environmental_impact": 0,
+        "resource_intensity": 0,
+        "water_impact": 0,
+        "emissions_impact": 0,
+        "resilience_impact": 0,
+        "geopolitical_dependence": 0,
+        "manufacturing_feasibility": 0,
+        "local_adoption_feasibility": 0
+      },
+      "technology_readiness": 0,
+      "priority_score": 0,
+      "opportunity_score": 0,
+      "risk_score": 0,
+      "solves_challenges": [
+        {
+          "challenge": "",
+          "fit": 0,
+          "nodes": [],
+          "evidence_ids": []
+        }
+      ],
+      "adoption_roadmap": [
+        {
+          "phase": "",
+          "actions": [],
+          "pathway": "",
+          "horizon": ""
+        }
+      ],
+      "manufacturing_potential": {
+        "score": 0,
+        "local_value": "",
+        "notes": ""
+      },
+      "infrastructure_requirements": [],
+      "flags": {
+        "catastrophic_tail": false,
+        "red_line": false,
+        "high_dependency": false
+      },
+      "uncertainty_flags": [],
+      "scholar_review_flags": [],
+      "nodes": [],
+      "evidence_ids": [],
+      "disclaimer": "AI-assisted, indicative, decision-support only; not engineering, investment, or policy advice; not a ruling."
+    },
+    "TechMatchBoard": {
+      "scope": {},
+      "by_challenge": [
+        {
+          "challenge": "",
+          "ranked_technologies": []
+        }
+      ],
+      "by_technology": [
+        {
+          "technology": "",
+          "ranked_challenges": []
+        }
+      ]
+    }
+  },
+  "api": {
+    "POST /api/v1/technology/assess": "{TechIntelRequest} -> async job",
+    "GET  /api/v1/technology/{scope}/{ref}/board": "TechMatchBoard (what solves what)",
+    "GET  /api/v1/technology/{ref}/{tech}": "TechnologyResult",
+    "GET  /api/v1/technology/{ref}/{tech}/roadmap": "adoption roadmap + infrastructure",
+    "GET  /api/v1/technology/{ref}/{tech}/explain/{dimension}": "datasets + nodes provenance"
+  },
+  "explainability": "Every dimension/match resolves via /explain to datasets (evidence_ids) + graph nodes; roadmap phases link to pathways; safety caps cite the harm/red-line node that triggered them.",
+  "uncertainty": "Thin-evidence dimensions flagged + down-weighted; catastrophic-tail/red-line techs carry mandatory expert+scholar review and are never presented as recommended."
+}

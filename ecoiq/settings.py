@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     'projects',
     'heating',
     'notifications',
+    'hikma',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

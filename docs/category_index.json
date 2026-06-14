@@ -1,0 +1,626 @@
+{
+  "Analytical Engine": {
+    "count": 13,
+    "node_ids": [
+      "benefit_harm_triangulator",
+      "cause_effect_tracer",
+      "disclosure_verification_engine",
+      "evidence_confidence_grader",
+      "intent_reality_engine",
+      "justice_allocation_engine",
+      "long_horizon_consequence_engine",
+      "provenance_citation_validator",
+      "rights_duty_mapper",
+      "scenario_simulator",
+      "stakeholder_impact_mapper",
+      "truthfulness_greenwashing_detector",
+      "vulnerability_impact_engine"
+    ],
+    "confidence_breakdown": {
+      "medium": 13
+    }
+  },
+  "Artificial Intelligence Ethics": {
+    "count": 7,
+    "node_ids": [
+      "ai_accountability",
+      "ai_transparency",
+      "algorithmic_fairness",
+      "data_stewardship",
+      "explainable_ai",
+      "human_oversight",
+      "privacy_protection"
+    ],
+    "confidence_breakdown": {
+      "low": 4,
+      "medium": 3
+    }
+  },
+  "Civilizational Sustainability": {
+    "count": 10,
+    "node_ids": [
+      "civilization_flourishing",
+      "civilizational_balance",
+      "cultural_preservation",
+      "knowledge_civilization",
+      "long_term_wisdom",
+      "moral_resilience",
+      "peaceful_coexistence",
+      "societal_cohesion",
+      "stewardship_civilization",
+      "systemic_justice"
+    ],
+    "confidence_breakdown": {
+      "low": 4,
+      "medium": 6
+    }
+  },
+  "Climate Resilience": {
+    "count": 14,
+    "node_ids": [
+      "carbon_responsibility",
+      "climate_adaptation",
+      "climate_justice",
+      "climate_risk",
+      "disaster_preparedness",
+      "drought_resilience",
+      "emissions_responsibility",
+      "environmental_restoration",
+      "flood_protection",
+      "future_generations_impact",
+      "long_term_resilience",
+      "natural_capital_stewardship",
+      "planetary_balance",
+      "transition_planning"
+    ],
+    "confidence_breakdown": {
+      "medium": 11,
+      "low": 3
+    }
+  },
+  "Conflict, peace and justice": {
+    "count": 4,
+    "node_ids": [
+      "adalah_ijtimaiyyah",
+      "aman",
+      "fitnah",
+      "sulh"
+    ],
+    "confidence_breakdown": {
+      "high": 3,
+      "medium": 1
+    }
+  },
+  "Core ethical principles": {
+    "count": 8,
+    "node_ids": [
+      "adl",
+      "haqq",
+      "maruf",
+      "mizan",
+      "qadar",
+      "qist",
+      "tawazun",
+      "wasatiyyah"
+    ],
+    "confidence_breakdown": {
+      "high": 7,
+      "medium": 1
+    }
+  },
+  "Corporate Responsibility": {
+    "count": 6,
+    "node_ids": [
+      "corporate_accountability",
+      "ethical_investment",
+      "ethical_production",
+      "responsible_leadership",
+      "supply_chain_integrity",
+      "sustainable_finance"
+    ],
+    "confidence_breakdown": {
+      "medium": 6
+    }
+  },
+  "Decision Framework": {
+    "count": 10,
+    "node_ids": [
+      "decision_triage_framework",
+      "harm_prevention_gate",
+      "maslahah_mafsadah_weigher",
+      "permissibility_classifier",
+      "policy_evidence_validator",
+      "precautionary_principle_engine",
+      "proportionality_calibrator",
+      "red_line_hudud_gate",
+      "reversibility_analyzer",
+      "trade_off_resolver"
+    ],
+    "confidence_breakdown": {
+      "medium": 10
+    }
+  },
+  "Decision-analysis meta-nodes": {
+    "count": 8,
+    "node_ids": [
+      "hikmah",
+      "islah",
+      "jihad",
+      "la_darar",
+      "mafsadah",
+      "maslahah",
+      "niyyah",
+      "shubhah"
+    ],
+    "confidence_breakdown": {
+      "high": 2,
+      "medium": 5,
+      "low": 1
+    }
+  },
+  "Ecology and natural world": {
+    "count": 3,
+    "node_ids": [
+      "ard",
+      "nimah",
+      "taskhir"
+    ],
+    "confidence_breakdown": {
+      "high": 3
+    }
+  },
+  "Economy and finance": {
+    "count": 12,
+    "node_ids": [
+      "dayn",
+      "gharar",
+      "ihtikar",
+      "maysir",
+      "mudarabah",
+      "musharakah",
+      "qard_hasan",
+      "riba",
+      "sadaqah",
+      "tayyibat",
+      "waqf",
+      "zakat"
+    ],
+    "confidence_breakdown": {
+      "high": 7,
+      "medium": 5
+    }
+  },
+  "Energy Systems": {
+    "count": 4,
+    "node_ids": [
+      "clean_energy",
+      "energy_access",
+      "energy_efficiency",
+      "energy_security"
+    ],
+    "confidence_breakdown": {
+      "medium": 4
+    }
+  },
+  "Environmental Systems": {
+    "count": 9,
+    "node_ids": [
+      "biodiversity_protection",
+      "circular_economy",
+      "ecosystem_stability",
+      "land_restoration",
+      "pollution_prevention",
+      "reforestation",
+      "resource_stewardship",
+      "soil_protection",
+      "waste_reduction"
+    ],
+    "confidence_breakdown": {
+      "medium": 8,
+      "low": 1
+    }
+  },
+  "Family, society and vulnerable groups": {
+    "count": 4,
+    "node_ids": [
+      "ibn_sabil",
+      "miskeen",
+      "walidayn",
+      "yateem"
+    ],
+    "confidence_breakdown": {
+      "high": 3,
+      "medium": 1
+    }
+  },
+  "Food & Agriculture": {
+    "count": 8,
+    "node_ids": [
+      "animal_welfare",
+      "community_nutrition",
+      "food_security",
+      "food_waste_prevention",
+      "regenerative_agriculture",
+      "responsible_consumption",
+      "seed_preservation",
+      "sustainable_agriculture"
+    ],
+    "confidence_breakdown": {
+      "medium": 8
+    }
+  },
+  "Future generations and stewardship": {
+    "count": 4,
+    "node_ids": [
+      "barakah",
+      "imarah_al_ard",
+      "istikhlaf",
+      "khalifah"
+    ],
+    "confidence_breakdown": {
+      "high": 1,
+      "medium": 3
+    }
+  },
+  "Governance System": {
+    "count": 16,
+    "node_ids": [
+      "accountability_chain_mapper",
+      "anti_corruption_detector",
+      "conflict_of_interest_screen",
+      "continuous_audit_engine",
+      "decision_audit_trail",
+      "governance_integrity_scanner",
+      "institutional_trust_index",
+      "leadership_integrity_index",
+      "oversight_adequacy_checker",
+      "procurement_integrity_monitor",
+      "regulatory_capture_detector",
+      "responsibility_gap_detector",
+      "shura_deliberation_engine",
+      "stewardship_accountability_engine",
+      "transparency_compliance_engine",
+      "whistleblower_signal_aggregator"
+    ],
+    "confidence_breakdown": {
+      "medium": 15,
+      "low": 1
+    }
+  },
+  "Governance and leadership": {
+    "count": 5,
+    "node_ids": [
+      "amanah",
+      "masuliyyah",
+      "raqabah",
+      "shura",
+      "wilayah"
+    ],
+    "confidence_breakdown": {
+      "high": 2,
+      "medium": 3
+    }
+  },
+  "Human Development": {
+    "count": 10,
+    "node_ids": [
+      "community_resilience",
+      "education_access",
+      "human_dignity",
+      "human_flourishing",
+      "intergenerational_responsibility",
+      "knowledge_development",
+      "mental_wellbeing",
+      "public_health",
+      "skill_development",
+      "social_mobility"
+    ],
+    "confidence_breakdown": {
+      "medium": 10
+    }
+  },
+  "Infrastructure": {
+    "count": 8,
+    "node_ids": [
+      "communication_access",
+      "digital_infrastructure",
+      "housing_dignity",
+      "infrastructure_stewardship",
+      "public_utility_reliability",
+      "rural_development",
+      "transport_access",
+      "urban_balance"
+    ],
+    "confidence_breakdown": {
+      "medium": 6,
+      "low": 2
+    }
+  },
+  "Innovation & Technology": {
+    "count": 3,
+    "node_ids": [
+      "human_centered_technology",
+      "responsible_innovation",
+      "scientific_responsibility"
+    ],
+    "confidence_breakdown": {
+      "medium": 2,
+      "low": 1
+    }
+  },
+  "Institutional Integrity": {
+    "count": 9,
+    "node_ids": [
+      "anti_corruption",
+      "conflict_of_interest_prevention",
+      "data_integrity",
+      "ethical_procurement",
+      "institutional_trust",
+      "public_accountability",
+      "public_disclosure",
+      "regulatory_integrity",
+      "transparency_systems"
+    ],
+    "confidence_breakdown": {
+      "medium": 9
+    }
+  },
+  "Intelligence Layer": {
+    "count": 22,
+    "node_ids": [
+      "ai_ethics_assessment_layer",
+      "algorithmic_fairness_auditor",
+      "biodiversity_risk_engine",
+      "capital_integrity_analyzer",
+      "circular_resource_tracker",
+      "climate_transition_intelligence",
+      "company_ethics_scorer",
+      "country_transition_scorer",
+      "data_stewardship_monitor",
+      "disaster_resilience_planner",
+      "energy_systems_analyzer",
+      "ethical_finance_fit_engine",
+      "food_systems_resilience",
+      "human_development_index_engine",
+      "infrastructure_equity_analyzer",
+      "labour_justice_auditor",
+      "natural_capital_ledger",
+      "pollution_emissions_auditor",
+      "project_readiness_assessor",
+      "public_health_impact_engine",
+      "supply_chain_integrity_tracer",
+      "water_stewardship_intelligence"
+    ],
+    "confidence_breakdown": {
+      "medium": 19,
+      "low": 3
+    }
+  },
+  "Knowledge, reason and evidence": {
+    "count": 4,
+    "node_ids": [
+      "aql",
+      "ilm",
+      "tadabbur",
+      "tafakkur"
+    ],
+    "confidence_breakdown": {
+      "high": 4
+    }
+  },
+  "Law, contracts and accountability": {
+    "count": 12,
+    "node_ids": [
+      "bayyinah",
+      "halal",
+      "haram",
+      "hisab",
+      "hudud",
+      "huquq",
+      "mithaq",
+      "muhasabah",
+      "shahada",
+      "wafa",
+      "wajibat",
+      "wakalah"
+    ],
+    "confidence_breakdown": {
+      "high": 8,
+      "medium": 4
+    }
+  },
+  "Maqasid-related preservation categories": {
+    "count": 8,
+    "node_ids": [
+      "din",
+      "maqasid_hifz_aql",
+      "maqasid_hifz_din",
+      "maqasid_hifz_mal",
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_nasl",
+      "nafs",
+      "nasl"
+    ],
+    "confidence_breakdown": {
+      "high": 3,
+      "medium": 5
+    }
+  },
+  "Meta / Orchestration": {
+    "count": 7,
+    "node_ids": [
+      "ethical_intelligence_orchestrator",
+      "hikma_synthesis_engine",
+      "long_term_wisdom_synthesizer",
+      "maqasid_dashboard",
+      "moral_compass_engine",
+      "scholar_review_workflow",
+      "uncertainty_review_router"
+    ],
+    "confidence_breakdown": {
+      "medium": 2,
+      "low": 5
+    }
+  },
+  "Moral Assessment System": {
+    "count": 5,
+    "node_ids": [
+      "harm_remediation_tracker",
+      "maqasid_preservation_scorer",
+      "mizan_balance_engine",
+      "moral_resilience_stress_test",
+      "systemic_justice_auditor"
+    ],
+    "confidence_breakdown": {
+      "medium": 5
+    }
+  },
+  "Moral risks and violations": {
+    "count": 17,
+    "node_ids": [
+      "batil",
+      "bukhl",
+      "darar",
+      "fasad",
+      "ghibah",
+      "ghish",
+      "hasad",
+      "israf",
+      "khabaith",
+      "khiyanah",
+      "kibr",
+      "munkar",
+      "najash",
+      "namimah",
+      "tabdhir",
+      "tatfif",
+      "zulm"
+    ],
+    "confidence_breakdown": {
+      "high": 15,
+      "medium": 2
+    }
+  },
+  "Public Policy": {
+    "count": 3,
+    "node_ids": [
+      "evidence_based_policy",
+      "public_value_creation",
+      "public_value_estimator"
+    ],
+    "confidence_breakdown": {
+      "medium": 3
+    }
+  },
+  "Societal Resilience System": {
+    "count": 11,
+    "node_ids": [
+      "community_resilience_planner",
+      "continuity_reserve_planner",
+      "cultural_impact_assessor",
+      "disinformation_fitnah_detector",
+      "drought_flood_early_warning",
+      "energy_security_analyzer",
+      "food_security_monitor",
+      "health_system_resilience",
+      "social_cohesion_monitor",
+      "societal_resilience_index",
+      "water_security_index"
+    ],
+    "confidence_breakdown": {
+      "medium": 10,
+      "low": 1
+    }
+  },
+  "Stakeholder Justice": {
+    "count": 10,
+    "node_ids": [
+      "community_benefit",
+      "distributional_impact_engine",
+      "equity_gap_monitor",
+      "fair_employment",
+      "infrastructure_equity",
+      "shared_prosperity",
+      "shared_prosperity_analyzer",
+      "stakeholder_protection",
+      "vulnerable_group_sentinel",
+      "worker_dignity"
+    ],
+    "confidence_breakdown": {
+      "medium": 10
+    }
+  },
+  "Sustainability System": {
+    "count": 11,
+    "node_ids": [
+      "antifragility_designer",
+      "civilizational_balance_dashboard",
+      "climate_resilience_stress_test",
+      "ecosystem_stability_monitor",
+      "intergenerational_equity_ledger",
+      "just_transition_planner",
+      "mizan_civilizational_index",
+      "planetary_boundary_tracker",
+      "resource_sufficiency_monitor",
+      "restoration_prioritizer",
+      "tipping_point_early_warning"
+    ],
+    "confidence_breakdown": {
+      "medium": 8,
+      "low": 3
+    }
+  },
+  "Virtues and character": {
+    "count": 9,
+    "node_ids": [
+      "ihsan",
+      "ikhlas",
+      "itqan",
+      "rahmah",
+      "sabr",
+      "shukr",
+      "sidq",
+      "taqwa",
+      "tawakkul"
+    ],
+    "confidence_breakdown": {
+      "high": 6,
+      "medium": 3
+    }
+  },
+  "Water Stewardship": {
+    "count": 4,
+    "node_ids": [
+      "water_conservation",
+      "water_justice",
+      "water_security",
+      "watershed_stewardship"
+    ],
+    "confidence_breakdown": {
+      "medium": 4
+    }
+  },
+  "Water, land, animals and resources": {
+    "count": 1,
+    "node_ids": [
+      "maa"
+    ],
+    "confidence_breakdown": {
+      "high": 1
+    }
+  },
+  "Wealth, labour and trade": {
+    "count": 5,
+    "node_ids": [
+      "ajr",
+      "bay",
+      "ijarah",
+      "mal",
+      "rizq"
+    ],
+    "confidence_breakdown": {
+      "high": 4,
+      "medium": 1
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "engine": "Video Brief Engine",
+  "version": "v1",
+  "role": "Transforms an ExecutiveBrief into a structured cinematic-video production pack for Higgsfield + a data-viz overlay layer. It DOES NOT generate video; it emits prompts, scripts, scene plans, and render instructions.",
+  "input": "ExecutiveBrief (from Executive Brief Engine)",
+  "guarantees": [
+    "Bloomberg/Palantir/MSCI-grade institutional aesthetic; investor- and government-facing.",
+    "No religious language in VO, subtitles, or visuals.",
+    "Every scene links to an ExecutiveBrief section AND evidence_ids; every visual links to a section.",
+    "No rulings; greenwashing framed as 'disclosure-vs-performance gap'.",
+    "The engine emits inputs only; human/Higgsfield does generation; data-viz rendered deterministically from AssessmentResult numbers."
+  ],
+  "durations": {
+    "short": 180,
+    "standard": 300,
+    "deep": 600
+  },
+  "visual_language_system": {
+    "palette": {
+      "bg": "#06080e graphite",
+      "accent_primary": "#00e89a emerald",
+      "accent_secondary": "#58a6ff steel-blue",
+      "warn": "#f2a65a",
+      "danger": "#ef6f6f",
+      "ink": "#e7f3ee"
+    },
+    "motifs": [
+      "orbital/satellite earth (reuse static/media/hero-orbital.webm)",
+      "data-overlay grid",
+      "thin telemetry lines",
+      "industrial dusk",
+      "aerial drift"
+    ],
+    "typography": "institutional sans, tabular numerics, generous spacing",
+    "motion": "slow, restrained; no element should pull the eye from the data; respect prefers-reduced-motion in any web render",
+    "data_viz": "emerald/blue on graphite; gauges, severity heatmap, SAY/DO/SHOW bars, long-horizon fan; rendered as SVG/Remotion overlays, NOT Higgsfield",
+    "shared_style_suffix": "dark graphite and charcoal grade, deep shadows lifted to charcoal, teal-green and cold steel-blue accent lighting, subtle atmospheric haze, photorealistic cinematic, no people's faces, no text, no logos, no religious symbols, 16:9",
+    "shared_negative": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam"
+  },
+  "scene_taxonomy": [
+    {
+      "type": "title_card",
+      "visual": "orbital earth over subject region",
+      "data": "subject name + rating gauge overlay"
+    },
+    {
+      "type": "executive_summary",
+      "visual": "slow aerial / orbital drift",
+      "data": "composite score + band lower-third"
+    },
+    {
+      "type": "key_metric",
+      "visual": "industrial dusk or grid",
+      "data": "single metric count-up"
+    },
+    {
+      "type": "contradiction_reveal",
+      "visual": "split graphite frame",
+      "data": "SAY | DO | SHOW three-column bars"
+    },
+    {
+      "type": "risk_heatmap",
+      "visual": "dark control-room ambience",
+      "data": "severity x likelihood heatmap"
+    },
+    {
+      "type": "stakeholder_map",
+      "visual": "map with node points",
+      "data": "stakeholder impact chips"
+    },
+    {
+      "type": "future_horizon",
+      "visual": "satellite terrain with trajectory arcs",
+      "data": "long-horizon fan chart"
+    },
+    {
+      "type": "disclosure_gap",
+      "visual": "muted industrial",
+      "data": "disclosure-vs-performance gap bar"
+    },
+    {
+      "type": "priority_actions",
+      "visual": "boardroom glass at night",
+      "data": "numbered action list"
+    },
+    {
+      "type": "evidence_provenance",
+      "visual": "data-archive ambience",
+      "data": "evidence_id table (kind/source/tier)"
+    },
+    {
+      "type": "disclaimer_card",
+      "visual": "static graphite",
+      "data": "disclaimer text card"
+    }
+  ],
+  "section_to_scene_map": {
+    "executive_summary": [
+      "title_card",
+      "executive_summary"
+    ],
+    "key_strengths": [
+      "key_metric"
+    ],
+    "key_risks": [
+      "risk_heatmap"
+    ],
+    "contradictions": [
+      "contradiction_reveal"
+    ],
+    "governance_findings": [
+      "stakeholder_map"
+    ],
+    "stakeholder_findings": [
+      "stakeholder_map"
+    ],
+    "future_generation_findings": [
+      "future_horizon"
+    ],
+    "greenwashing_findings": [
+      "disclosure_gap"
+    ],
+    "priority_actions": [
+      "priority_actions"
+    ],
+    "evidence_appendix": [
+      "evidence_provenance",
+      "disclaimer_card"
+    ]
+  },
+  "data_contracts": {
+    "VideoBriefRequest": {
+      "subject_ref": "",
+      "brief_ref": "latest|id",
+      "length": "short|standard|deep",
+      "audience": "investor|government",
+      "aspect": "16:9"
+    },
+    "VideoBriefPack": {
+      "subject": {},
+      "length_s": 0,
+      "story_structure": {},
+      "narrative_arc": [],
+      "scene_list": [],
+      "higgsfield_prompt_pack": [],
+      "negative_prompt_pack": [],
+      "subtitle_script": [],
+      "render_plan": {},
+      "disclaimer": ""
+    },
+    "Scene": {
+      "scene_id": "",
+      "order": 0,
+      "type": "",
+      "brief_section": "",
+      "duration_s": 0,
+      "shot_type": "establishing|aerial|push-in|locked|insert|overlay",
+      "camera": "slow push|orbit drift|locked|tilt",
+      "visual_source": "higgsfield|data_viz_overlay|hybrid",
+      "higgsfield_prompt_id": "",
+      "data_viz": {},
+      "motion_graphics": "",
+      "voiceover": "",
+      "subtitle": "",
+      "on_screen_data": {},
+      "evidence_ids": []
+    }
+  },
+  "api": {
+    "POST /api/v1/video-brief": "{VideoBriefRequest} -> VideoBriefPack (JSON)",
+    "GET  /api/v1/video-brief/{subject_ref}/latest": "latest pack",
+    "GET  /api/v1/video-brief/{subject_ref}/prompts": "Higgsfield + negative prompt pack only",
+    "GET  /api/v1/video-brief/{subject_ref}/script": "VO + subtitle script only",
+    "GET  /api/v1/video-brief/{subject_ref}/explain/{scene_id}": "scene -> brief_section + evidence_ids provenance"
+  },
+  "higgsfield_prompt_rules": [
+    "Compose: [scene-type base] + [subject/region context] + [shared_style_suffix]. Always silent, loopable where used as bed.",
+    "Never request on-screen text/charts from Higgsfield — those are data_viz overlays rendered separately and composited.",
+    "Never depict identifiable people, faces, religious symbols, logos, or the company's actual assets (use representative, not literal, imagery to avoid false attribution).",
+    "Match palette: graphite base, emerald/steel-blue accents, atmospheric haze; restrained slow motion only.",
+    "Each prompt carries model='veo3_1' or 'kling3_0' hint, duration, aspect 16:9, and a seamless-loop flag for bed scenes."
+  ],
+  "negative_prompt_rules": [
+    "Always append shared_negative.",
+    "Add subject-specific exclusions (e.g. 'no identifiable power-plant branding').",
+    "Forbid anything implying a verdict/ruling or religious framing.",
+    "Forbid celebratory or alarmist tone cues; keep neutral-analytical."
+  ],
+  "storyboard_structure": [
+    "Intro sting (orbital, 3s)",
+    "Section scenes in brief order",
+    "Outro disclaimer card (4s)"
+  ],
+  "render_plan_template": {
+    "assembly": "Remotion timeline (repo already has frontend/remotion) compositing Higgsfield clips + SVG data-viz overlays + VO TTS",
+    "audio": "neutral VO (TTS or recorded); soft ambient bed only; NO dramatic music on serious findings",
+    "transitions": "slow cross-dissolve; no hard cuts on data",
+    "deliverable": "16:9 MP4 + WebM + SRT; per-scene source manifest for re-render",
+    "human_step": "Higgsfield generation + final stitch are human-triggered; engine output is the plan"
+  },
+  "explainability": "Every scene_id resolves via /explain to its brief_section and evidence_ids; data_viz numbers must equal the AssessmentResult/brief figures (validation guard).",
+  "uncertainty": "Low-confidence findings get a muted visual treatment + 'indicative' subtitle marker; scholar_review items are NOT dramatized — they appear only in the provenance/disclaimer scenes."
+}

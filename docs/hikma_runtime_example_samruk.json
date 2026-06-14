@@ -1,0 +1,390 @@
+{
+  "_note": "ILLUSTRATIVE execution trace. Evidence and scores are DEMO placeholders showing structure and traceability — not real Samruk-Energy assessment data. Real runs bind live Evidence Layer records.",
+  "subject": {
+    "type": "state_owned_enterprise",
+    "ref": "samruk-energy",
+    "name": "Samruk-Energy"
+  },
+  "graph_version": "<hash>",
+  "evidence_snapshot_hash": "<hash>",
+  "engine_versions": {
+    "mizan": "v1",
+    "compass": "v1",
+    "runtime": "v1"
+  },
+  "evidence_used": [
+    {
+      "evidence_id": "ev-001",
+      "kind": "say",
+      "statement": "Commits to lower carbon intensity and modernise generation (demo)",
+      "source": "annual_report",
+      "confidence_tier": "ai-seeded"
+    },
+    {
+      "evidence_id": "ev-002",
+      "kind": "do",
+      "statement": "Majority of generation remains coal-fired; renewables share low (demo)",
+      "source": "regulatory_filing",
+      "confidence_tier": "analyst-reviewed"
+    },
+    {
+      "evidence_id": "ev-003",
+      "kind": "show",
+      "statement": "Regional PM2.5 and CO2 intensity remain high near plants (demo)",
+      "source": "independent_dataset",
+      "confidence_tier": "verified"
+    },
+    {
+      "evidence_id": "ev-004",
+      "kind": "do",
+      "statement": "Grid-modernisation and pilot renewable projects underway (demo)",
+      "source": "company_disclosure",
+      "confidence_tier": "ai-seeded"
+    },
+    {
+      "evidence_id": "ev-005",
+      "kind": "show",
+      "statement": "SOE governance/transparency indicators mixed (demo)",
+      "source": "ngo",
+      "confidence_tier": "analyst-reviewed"
+    }
+  ],
+  "activated_nodes": [
+    {
+      "node": "emissions_responsibility",
+      "activation": 0.9,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "node": "fasad",
+      "activation": 0.8,
+      "confidence_level": "high",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-003"
+      ]
+    },
+    {
+      "node": "public_health",
+      "activation": 0.85,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-003"
+      ]
+    },
+    {
+      "node": "maqasid_hifz_nasl",
+      "activation": 0.8,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "node": "energy_security",
+      "activation": 0.7,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-002",
+        "ev-004"
+      ]
+    },
+    {
+      "node": "clean_energy",
+      "activation": 0.5,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-004"
+      ]
+    },
+    {
+      "node": "amanah",
+      "activation": 0.7,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-005"
+      ]
+    },
+    {
+      "node": "adalah_ijtimaiyyah",
+      "activation": 0.6,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-002"
+      ]
+    },
+    {
+      "node": "israf",
+      "activation": 0.5,
+      "confidence_level": "medium",
+      "scholar_review_required": true,
+      "evidence_ids": [
+        "ev-002"
+      ]
+    }
+  ],
+  "pathway_used": [
+    "Coal Plant Expansion",
+    "Coal-to-Heat-Pump Transition",
+    "Renewable Energy Program",
+    "National Grid Modernisation"
+  ],
+  "pathway_selection_reason": "State-owned coal-heavy energy holding with stated transition intent — matches coal/transition/renewable/grid pathways by shared nodes (emissions_responsibility, energy_security, clean_energy).",
+  "traversal_trace": [
+    "decision_triage_framework",
+    "stakeholder_impact_mapper",
+    "red_line_hudud_gate",
+    "harm_prevention_gate",
+    "energy_systems_analyzer",
+    "climate_transition_intelligence",
+    "pollution_emissions_auditor",
+    "governance_integrity_scanner",
+    "maslahah_mafsadah_weigher",
+    "justice_allocation_engine",
+    "vulnerability_impact_engine",
+    "long_horizon_consequence_engine",
+    "intergenerational_equity_ledger",
+    "maqasid_preservation_scorer",
+    "uncertainty_review_router",
+    "scholar_review_workflow",
+    "moral_compass_engine",
+    "hikma_synthesis_engine"
+  ],
+  "benefit_assessment": {
+    "score": 48,
+    "items": [
+      {
+        "title": "Energy security / reliable baseload (demo)",
+        "nodes": [
+          "energy_security",
+          "rizq"
+        ],
+        "evidence_ids": [
+          "ev-002"
+        ],
+        "corroboration": "do"
+      },
+      {
+        "title": "Grid modernisation + renewable pilots (demo)",
+        "nodes": [
+          "clean_energy",
+          "energy_efficiency"
+        ],
+        "evidence_ids": [
+          "ev-004"
+        ],
+        "corroboration": "do"
+      },
+      {
+        "title": "Stated decarbonisation commitment (demo)",
+        "nodes": [
+          "emissions_responsibility"
+        ],
+        "evidence_ids": [
+          "ev-001"
+        ],
+        "corroboration": "say-only"
+      }
+    ]
+  },
+  "harm_assessment": {
+    "score": 66,
+    "red_line_flags": [
+      "public-health exposure near plants (review)"
+    ],
+    "greenwashing_risk": 0.55,
+    "items": [
+      {
+        "title": "Air pollution / population health harm (demo)",
+        "severity": "High",
+        "nodes": [
+          "public_health",
+          "fasad",
+          "darar"
+        ],
+        "evidence_ids": [
+          "ev-003"
+        ]
+      },
+      {
+        "title": "High CO2 intensity / climate harm (demo)",
+        "severity": "High",
+        "nodes": [
+          "emissions_responsibility",
+          "maqasid_hifz_nasl"
+        ],
+        "evidence_ids": [
+          "ev-002",
+          "ev-003"
+        ]
+      },
+      {
+        "title": "Carbon lock-in / stranded-asset risk (demo)",
+        "severity": "Medium",
+        "nodes": [
+          "israf",
+          "maqasid_hifz_mal"
+        ],
+        "evidence_ids": [
+          "ev-002"
+        ]
+      }
+    ]
+  },
+  "stakeholder_impacts": [
+    {
+      "stakeholder": "communities near plants",
+      "impact": "harm",
+      "nodes": [
+        "miskeen",
+        "public_health"
+      ],
+      "evidence_ids": [
+        "ev-003"
+      ]
+    },
+    {
+      "stakeholder": "national grid users",
+      "impact": "benefit",
+      "nodes": [
+        "energy_security"
+      ],
+      "evidence_ids": [
+        "ev-002"
+      ]
+    },
+    {
+      "stakeholder": "future generations",
+      "impact": "harm",
+      "nodes": [
+        "maqasid_hifz_nasl",
+        "nasl"
+      ],
+      "evidence_ids": [
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "stakeholder": "citizens (as SOE owners)",
+      "impact": "mixed",
+      "nodes": [
+        "amanah",
+        "adalah_ijtimaiyyah"
+      ],
+      "evidence_ids": [
+        "ev-005"
+      ]
+    }
+  ],
+  "future_generation_impacts": {
+    "score": 40,
+    "irreversibility_flags": [
+      "long-lived emissions and carbon lock-in (review)"
+    ],
+    "items": [
+      {
+        "title": "Emissions burden transferred to the future (demo)",
+        "nodes": [
+          "maqasid_hifz_nasl",
+          "intergenerational_responsibility"
+        ],
+        "evidence_ids": [
+          "ev-002",
+          "ev-003"
+        ]
+      }
+    ]
+  },
+  "governance_assessment": {
+    "score": 55,
+    "flags": [
+      "SOE transparency/accountability mixed (review)"
+    ],
+    "nodes": [
+      "amanah",
+      "masuliyyah",
+      "anti_corruption"
+    ],
+    "evidence_ids": [
+      "ev-005"
+    ]
+  },
+  "uncertainty_flags": [
+    {
+      "area": "transition-plan credibility",
+      "reason": "stated intent (SAY) not yet corroborated by sufficient DO/SHOW",
+      "confidence": "low"
+    },
+    {
+      "area": "governance indicators",
+      "reason": "mixed/secondary sources only",
+      "confidence": "medium"
+    }
+  ],
+  "scholar_review_flags": [
+    {
+      "topic": "net benefit-vs-harm balance under harm to life/health",
+      "node": "maqasid_hifz_nafs",
+      "reason": "interpretive weighting of public-health harm vs energy benefit"
+    },
+    {
+      "topic": "intergenerational equity threshold",
+      "node": "maqasid_hifz_nasl",
+      "reason": "interpretive long-horizon weighting"
+    }
+  ],
+  "moral_compass_summary": {
+    "composite_score": 46,
+    "band": "Developing (demo)",
+    "mizan_dimensions": {
+      "public_benefit": 50,
+      "harm_reduction": 34,
+      "justice_distribution": 52,
+      "transparency_accountability": 55,
+      "stewardship": 38,
+      "evidence_confidence": 45
+    },
+    "maqasid_dashboard": {
+      "nafs": "at risk (health)",
+      "aql": "n/a",
+      "din": "n/a",
+      "nasl": "at risk (climate)",
+      "mal": "mixed (stranded risk)"
+    },
+    "findings": [
+      "Stated transition outpaces delivery (SAY>>DO/SHOW) (demo)",
+      "Population-health and climate harms are corroborated by independent evidence (demo)"
+    ],
+    "priority_actions": [
+      "publish audited transition pathway with dated milestones",
+      "accelerate renewables and grid to cut coal dependence",
+      "disclose plant-level health and emissions data"
+    ]
+  },
+  "wisdom_synthesis_summary": {
+    "narrative": "On demo evidence, Samruk-Energy shows genuine energy-security value but a material gap between stated decarbonisation intent and corroborated delivery, with high corroborated public-health and climate harms bearing on future generations. The balance of benefit and harm where life/health and intergenerational equity are engaged is interpretive and is deferred to qualified review.",
+    "caveats": [
+      "scores are illustrative demo values",
+      "transition credibility unverified pending DO/SHOW evidence"
+    ],
+    "scholar_deferrals": [
+      "net benefit-harm where harm to life/health is engaged",
+      "intergenerational-equity threshold"
+    ],
+    "disposition": "decision_support_only"
+  },
+  "disclaimer": "AI-assisted, indicative, decision-support only; not investment, legal, financial, or religious advice; not a ruling."
+}

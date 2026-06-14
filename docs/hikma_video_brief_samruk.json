@@ -1,0 +1,507 @@
+{
+  "_note": "ILLUSTRATIVE 5-min video production pack derived from the Samruk ExecutiveBrief. Engine emits inputs only; no video is generated here.",
+  "subject": {
+    "type": "state_owned_enterprise",
+    "ref": "samruk-energy",
+    "name": "Samruk-Energy"
+  },
+  "length_s": 320,
+  "story_structure": {
+    "act1_context": "title + executive summary",
+    "act2_findings": "strengths, contradictions, risks, stakeholders, future, disclosure",
+    "act3_resolution": "priority actions",
+    "coda": "evidence + disclaimer"
+  },
+  "narrative_arc": [
+    "establish subject and rating",
+    "state the core tension (value vs corroborated harm)",
+    "reveal the say/do/show gap",
+    "quantify risks and who bears them",
+    "look to the long horizon",
+    "name the disclosure gap",
+    "offer priorities",
+    "ground everything in evidence",
+    "close with limits and disclaimer"
+  ],
+  "scene_list": [
+    {
+      "scene_id": "sc-01",
+      "order": 1,
+      "type": "title_card",
+      "brief_section": "executive_summary",
+      "duration_s": 10,
+      "shot_type": "establishing",
+      "camera": "orbit drift",
+      "visual_source": "hybrid",
+      "higgsfield_prompt_id": "hp-01",
+      "data_viz": {
+        "chart": "rating_gauge",
+        "value": 46,
+        "band": "Developing"
+      },
+      "motion_graphics": "gauge count-up to 46",
+      "voiceover": "Samruk-Energy. An EcoIQ institutional assessment.",
+      "subtitle": "Samruk-Energy — Institutional Assessment",
+      "on_screen_data": {
+        "name": "Samruk-Energy",
+        "rating": "46 / 100",
+        "band": "Developing"
+      },
+      "evidence_ids": [
+        "ev-001"
+      ]
+    },
+    {
+      "scene_id": "sc-02",
+      "order": 2,
+      "type": "executive_summary",
+      "brief_section": "executive_summary",
+      "duration_s": 35,
+      "shot_type": "aerial",
+      "camera": "slow push",
+      "visual_source": "hybrid",
+      "higgsfield_prompt_id": "hp-02",
+      "data_viz": {
+        "chart": "six_dim_bars",
+        "dims": {
+          "public_benefit": 50,
+          "harm_reduction": 34,
+          "justice": 52,
+          "transparency": 55,
+          "stewardship": 38,
+          "evidence_confidence": 45
+        }
+      },
+      "motion_graphics": "dimension bars wipe in",
+      "voiceover": "Samruk-Energy delivers material energy-security value, but independent evidence shows high public-health and climate impacts, and a stated transition that delivery has not yet matched.",
+      "subtitle": "Energy-security value, offset by corroborated health and climate impact.",
+      "on_screen_data": {
+        "composite": 46,
+        "trajectory": "flat"
+      },
+      "evidence_ids": [
+        "ev-001",
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "scene_id": "sc-03",
+      "order": 3,
+      "type": "key_metric",
+      "brief_section": "key_strengths",
+      "duration_s": 25,
+      "shot_type": "aerial",
+      "camera": "orbit drift",
+      "visual_source": "higgsfield",
+      "higgsfield_prompt_id": "hp-03",
+      "data_viz": {
+        "chart": "metric",
+        "label": "baseload reliability",
+        "note": "energy security"
+      },
+      "motion_graphics": "single metric count-up",
+      "voiceover": "Its reliable baseload generation underpins national energy security, and early grid-modernisation and renewable pilots show transition capability.",
+      "subtitle": "Strength: reliable baseload; early transition pilots.",
+      "on_screen_data": {
+        "metric": "energy security"
+      },
+      "evidence_ids": [
+        "ev-002",
+        "ev-004"
+      ]
+    },
+    {
+      "scene_id": "sc-04",
+      "order": 4,
+      "type": "contradiction_reveal",
+      "brief_section": "contradictions",
+      "duration_s": 45,
+      "shot_type": "insert",
+      "camera": "locked",
+      "visual_source": "data_viz_overlay",
+      "higgsfield_prompt_id": "",
+      "data_viz": {
+        "chart": "say_do_show_bars",
+        "say": "commit to lower carbon intensity",
+        "do": "majority coal generation",
+        "show": "emissions and PM2.5 remain high"
+      },
+      "motion_graphics": "three columns resolve left-to-right; gap highlighted",
+      "voiceover": "Management states a commitment to lower carbon intensity. Its actions remain majority coal. Independent data show emissions and particulate pollution staying high. The stated intent is not yet corroborated by delivery.",
+      "subtitle": "Claim vs action vs independent evidence — an unproven transition.",
+      "on_screen_data": {
+        "SAY": "lower carbon intensity",
+        "DO": "majority coal",
+        "SHOW": "emissions high"
+      },
+      "evidence_ids": [
+        "ev-001",
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "scene_id": "sc-05",
+      "order": 5,
+      "type": "risk_heatmap",
+      "brief_section": "key_risks",
+      "duration_s": 40,
+      "shot_type": "locked",
+      "camera": "locked",
+      "visual_source": "data_viz_overlay",
+      "higgsfield_prompt_id": "",
+      "data_viz": {
+        "chart": "severity_heatmap",
+        "items": [
+          {
+            "risk": "public-health harm",
+            "severity": "High"
+          },
+          {
+            "risk": "climate harm / stranded assets",
+            "severity": "High"
+          },
+          {
+            "risk": "carbon lock-in",
+            "severity": "Medium"
+          }
+        ]
+      },
+      "motion_graphics": "heatmap cells pulse on high-severity",
+      "voiceover": "Two high-severity risks dominate: independently verified air pollution harming nearby communities, and high carbon intensity driving climate impact and stranded-asset exposure.",
+      "subtitle": "High-severity: public-health harm; climate and stranded-asset risk.",
+      "on_screen_data": {
+        "high_risks": 2
+      },
+      "evidence_ids": [
+        "ev-003",
+        "ev-002"
+      ]
+    },
+    {
+      "scene_id": "sc-06",
+      "order": 6,
+      "type": "stakeholder_map",
+      "brief_section": "stakeholder_findings",
+      "duration_s": 35,
+      "shot_type": "overlay",
+      "camera": "slow push",
+      "visual_source": "hybrid",
+      "higgsfield_prompt_id": "hp-04",
+      "data_viz": {
+        "chart": "stakeholder_chips",
+        "items": [
+          "communities near plants: harm",
+          "grid users: benefit",
+          "future generations: harm",
+          "citizen-owners: mixed"
+        ]
+      },
+      "motion_graphics": "stakeholder points light up on a region map",
+      "voiceover": "Communities near plants bear the health burden; grid users benefit from reliability; future generations inherit the emissions; and citizen-owners face mixed stewardship outcomes.",
+      "subtitle": "Burden falls on nearby communities and the future.",
+      "on_screen_data": {
+        "stakeholders": 4
+      },
+      "evidence_ids": [
+        "ev-003",
+        "ev-002",
+        "ev-005"
+      ]
+    },
+    {
+      "scene_id": "sc-07",
+      "order": 7,
+      "type": "future_horizon",
+      "brief_section": "future_generation_findings",
+      "duration_s": 35,
+      "shot_type": "aerial",
+      "camera": "orbit drift",
+      "visual_source": "hybrid",
+      "higgsfield_prompt_id": "hp-05",
+      "data_viz": {
+        "chart": "long_horizon_fan",
+        "score": 40,
+        "flag": "carbon lock-in"
+      },
+      "motion_graphics": "trajectory arcs draw across terrain",
+      "voiceover": "Long-lived emissions and carbon lock-in transfer a material, partly irreversible burden to future generations.",
+      "subtitle": "Long-term impact: a partly irreversible burden ahead.",
+      "on_screen_data": {
+        "long_term_score": 40
+      },
+      "evidence_ids": [
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "scene_id": "sc-08",
+      "order": 8,
+      "type": "disclosure_gap",
+      "brief_section": "greenwashing_findings",
+      "duration_s": 30,
+      "shot_type": "locked",
+      "camera": "locked",
+      "visual_source": "data_viz_overlay",
+      "higgsfield_prompt_id": "",
+      "data_viz": {
+        "chart": "gap_bar",
+        "value": 0.55,
+        "label": "disclosure-vs-performance gap"
+      },
+      "motion_graphics": "gap bar fills to 0.55",
+      "voiceover": "The decarbonisation commitment is currently supported only by management statement, without corroborating action or independent outcome — an elevated disclosure-versus-performance gap.",
+      "subtitle": "Disclosure-vs-performance gap: 0.55.",
+      "on_screen_data": {
+        "gap": 0.55
+      },
+      "evidence_ids": [
+        "ev-001",
+        "ev-002",
+        "ev-003"
+      ]
+    },
+    {
+      "scene_id": "sc-09",
+      "order": 9,
+      "type": "priority_actions",
+      "brief_section": "priority_actions",
+      "duration_s": 35,
+      "shot_type": "locked",
+      "camera": "slow push",
+      "visual_source": "hybrid",
+      "higgsfield_prompt_id": "hp-06",
+      "data_viz": {
+        "chart": "action_list",
+        "items": [
+          "Publish an audited transition pathway with dated milestones",
+          "Accelerate renewables and grid investment",
+          "Disclose plant-level health and emissions data"
+        ]
+      },
+      "motion_graphics": "actions reveal one by one",
+      "voiceover": "Three priorities follow: publish an audited transition pathway with dated milestones; accelerate renewables and grid investment; and disclose plant-level health and emissions data.",
+      "subtitle": "Priorities: audited pathway, faster renewables, full disclosure.",
+      "on_screen_data": {
+        "actions": 3
+      },
+      "evidence_ids": [
+        "ev-001",
+        "ev-002",
+        "ev-004",
+        "ev-003"
+      ]
+    },
+    {
+      "scene_id": "sc-10",
+      "order": 10,
+      "type": "evidence_provenance",
+      "brief_section": "evidence_appendix",
+      "duration_s": 20,
+      "shot_type": "insert",
+      "camera": "locked",
+      "visual_source": "data_viz_overlay",
+      "higgsfield_prompt_id": "",
+      "data_viz": {
+        "chart": "evidence_table",
+        "rows": [
+          {
+            "id": "ev-001",
+            "kind": "SAY",
+            "tier": "ai-seeded"
+          },
+          {
+            "id": "ev-002",
+            "kind": "DO",
+            "tier": "analyst-reviewed"
+          },
+          {
+            "id": "ev-003",
+            "kind": "SHOW",
+            "tier": "verified"
+          },
+          {
+            "id": "ev-004",
+            "kind": "DO",
+            "tier": "ai-seeded"
+          },
+          {
+            "id": "ev-005",
+            "kind": "SHOW",
+            "tier": "analyst-reviewed"
+          }
+        ]
+      },
+      "motion_graphics": "evidence rows scroll",
+      "voiceover": "Every finding traces to sourced evidence, separated into stated intent, action, and independent outcome.",
+      "subtitle": "Findings trace to sourced SAY / DO / SHOW evidence.",
+      "on_screen_data": {
+        "evidence_count": 5
+      },
+      "evidence_ids": [
+        "ev-001",
+        "ev-002",
+        "ev-003",
+        "ev-004",
+        "ev-005"
+      ]
+    },
+    {
+      "scene_id": "sc-11",
+      "order": 11,
+      "type": "disclaimer_card",
+      "brief_section": "evidence_appendix",
+      "duration_s": 10,
+      "shot_type": "locked",
+      "camera": "locked",
+      "visual_source": "data_viz_overlay",
+      "higgsfield_prompt_id": "",
+      "data_viz": {
+        "chart": "text_card"
+      },
+      "motion_graphics": "static fade",
+      "voiceover": "This is an AI-assisted, indicative assessment for decision support only. It is not investment, legal, financial, or regulatory advice, and not a ruling.",
+      "subtitle": "AI-assisted, indicative, decision-support only — not advice.",
+      "on_screen_data": {},
+      "evidence_ids": [
+        "ev-003"
+      ]
+    }
+  ],
+  "higgsfield_prompt_pack": [
+    {
+      "prompt_id": "hp-01",
+      "model": "veo3_1",
+      "duration": 10,
+      "aspect": "16:9",
+      "loop": true,
+      "prompt": "Slow orbital view of Central Asia at night from low orbit, glowing city-light clusters, thin cyan atmosphere line, dark graphite and charcoal grade, deep shadows lifted to charcoal, teal-green and cold steel-blue accent lighting, subtle atmospheric haze, photorealistic cinematic, no people's faces, no text, no logos, no religious symbols, 16:9",
+      "negative": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam"
+    },
+    {
+      "prompt_id": "hp-02",
+      "model": "veo3_1",
+      "duration": 8,
+      "aspect": "16:9",
+      "loop": true,
+      "prompt": "Very slow aerial drift over a dusk industrial-energy landscape, distant transmission lines, haze, dark graphite and charcoal grade, deep shadows lifted to charcoal, teal-green and cold steel-blue accent lighting, subtle atmospheric haze, photorealistic cinematic, no people's faces, no text, no logos, no religious symbols, 16:9",
+      "negative": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam"
+    },
+    {
+      "prompt_id": "hp-03",
+      "model": "veo3_1",
+      "duration": 8,
+      "aspect": "16:9",
+      "loop": true,
+      "prompt": "Blue-hour power-grid infrastructure, pylons and substations silhouetted, faint emerald telemetry glow, dark graphite and charcoal grade, deep shadows lifted to charcoal, teal-green and cold steel-blue accent lighting, subtle atmospheric haze, photorealistic cinematic, no people's faces, no text, no logos, no religious symbols, 16:9",
+      "negative": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam, no identifiable company branding"
+    },
+    {
+      "prompt_id": "hp-04",
+      "model": "veo3_1",
+      "duration": 8,
+      "aspect": "16:9",
+      "loop": true,
+      "prompt": "High-altitude night view of an industrial region with scattered settlement lights, analytical and still, dark graphite and charcoal grade, deep shadows lifted to charcoal, teal-green and cold steel-blue accent lighting, subtle atmospheric haze, photorealistic cinematic, no people's faces, no text, no logos, no religious symbols, 16:9",
+      "negative": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam"
+    },
+    {
+      "prompt_id": "hp-05",
+      "model": "veo3_1",
+      "duration": 8,
+      "aspect": "16:9",
+      "loop": true,
+      "prompt": "Satellite terrain at dusk with faint glowing trajectory arcs receding to horizon, dark graphite and charcoal grade, deep shadows lifted to charcoal, teal-green and cold steel-blue accent lighting, subtle atmospheric haze, photorealistic cinematic, no people's faces, no text, no logos, no religious symbols, 16:9",
+      "negative": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam"
+    },
+    {
+      "prompt_id": "hp-06",
+      "model": "veo3_1",
+      "duration": 8,
+      "aspect": "16:9",
+      "loop": true,
+      "prompt": "Empty executive boardroom at night behind floor-to-ceiling glass over a city light-grid, restrained, dark graphite and charcoal grade, deep shadows lifted to charcoal, teal-green and cold steel-blue accent lighting, subtle atmospheric haze, photorealistic cinematic, no people's faces, no text, no logos, no religious symbols, 16:9",
+      "negative": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam"
+    }
+  ],
+  "negative_prompt_pack": [
+    {
+      "global": "no on-screen text, no captions, no watermark, no logos, no human faces, no religious symbols or iconography, no cartoon or 3d-render look, no lens flares, no neon, no clutter, no fast motion, no shaky cam"
+    },
+    {
+      "subject_specific": "no identifiable Samruk-Energy assets, branding, or executives"
+    }
+  ],
+  "subtitle_script": [
+    {
+      "scene_id": "sc-01",
+      "t_start": null,
+      "text": "Samruk-Energy — Institutional Assessment"
+    },
+    {
+      "scene_id": "sc-02",
+      "t_start": null,
+      "text": "Energy-security value, offset by corroborated health and climate impact."
+    },
+    {
+      "scene_id": "sc-03",
+      "t_start": null,
+      "text": "Strength: reliable baseload; early transition pilots."
+    },
+    {
+      "scene_id": "sc-04",
+      "t_start": null,
+      "text": "Claim vs action vs independent evidence — an unproven transition."
+    },
+    {
+      "scene_id": "sc-05",
+      "t_start": null,
+      "text": "High-severity: public-health harm; climate and stranded-asset risk."
+    },
+    {
+      "scene_id": "sc-06",
+      "t_start": null,
+      "text": "Burden falls on nearby communities and the future."
+    },
+    {
+      "scene_id": "sc-07",
+      "t_start": null,
+      "text": "Long-term impact: a partly irreversible burden ahead."
+    },
+    {
+      "scene_id": "sc-08",
+      "t_start": null,
+      "text": "Disclosure-vs-performance gap: 0.55."
+    },
+    {
+      "scene_id": "sc-09",
+      "t_start": null,
+      "text": "Priorities: audited pathway, faster renewables, full disclosure."
+    },
+    {
+      "scene_id": "sc-10",
+      "t_start": null,
+      "text": "Findings trace to sourced SAY / DO / SHOW evidence."
+    },
+    {
+      "scene_id": "sc-11",
+      "t_start": null,
+      "text": "AI-assisted, indicative, decision-support only — not advice."
+    }
+  ],
+  "render_plan": {
+    "assembly": "Remotion (frontend/remotion) compositing Higgsfield beds + SVG data-viz overlays + VO",
+    "audio": "neutral VO; soft ambient bed; no dramatic music",
+    "transitions": "slow cross-dissolve",
+    "deliverables": [
+      "16:9 MP4",
+      "WebM",
+      "SRT"
+    ],
+    "total_s": 320,
+    "human_step": "Higgsfield generation + final stitch are human-triggered"
+  },
+  "disclaimer": "AI-assisted, indicative, decision-support only; not investment, legal, financial, or regulatory advice; not a ruling."
+}

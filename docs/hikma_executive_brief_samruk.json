@@ -1,0 +1,320 @@
+{
+  "_note": "ILLUSTRATIVE brief derived from the demo Samruk AssessmentResult. Institutional language; node ids in metadata only.",
+  "subject": {
+    "type": "state_owned_enterprise",
+    "ref": "samruk-energy",
+    "name": "Samruk-Energy"
+  },
+  "assessment_ref": "<job_id>",
+  "generated_at": "<ts>",
+  "headline": "Energy-security value offset by corroborated health and climate harms and an unproven transition plan",
+  "overall_rating": {
+    "score": 46,
+    "band": "Developing",
+    "trajectory": "flat"
+  },
+  "sections": [
+    {
+      "id": "executive_summary",
+      "title": "Executive Summary",
+      "statements": [
+        {
+          "text": "Samruk-Energy provides material energy-security value but carries high, independently corroborated public-health and climate impacts, with stated decarbonisation intent not yet matched by delivery.",
+          "evidence_ids": [
+            "ev-001",
+            "ev-002",
+            "ev-003"
+          ],
+          "node_refs": [
+            "energy_security",
+            "emissions_responsibility",
+            "public_health"
+          ],
+          "confidence": "medium"
+        },
+        {
+          "text": "Overall assessment: 46/100 (Developing), flat trajectory; the balance of benefit and harm where life-and-health and long-term impacts are engaged is interpretive and flagged for qualified review.",
+          "evidence_ids": [
+            "ev-002",
+            "ev-003"
+          ],
+          "node_refs": [
+            "maqasid_hifz_nafs",
+            "maqasid_hifz_nasl"
+          ],
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "id": "key_strengths",
+      "title": "Key Strengths",
+      "statements": [
+        {
+          "text": "Reliable baseload generation supports national energy security.",
+          "evidence_ids": [
+            "ev-002"
+          ],
+          "node_refs": [
+            "energy_security"
+          ],
+          "confidence": "medium"
+        },
+        {
+          "text": "Grid-modernisation and renewable pilot projects are underway, indicating early transition capability.",
+          "evidence_ids": [
+            "ev-004"
+          ],
+          "node_refs": [
+            "clean_energy",
+            "energy_efficiency"
+          ],
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "key_risks",
+      "title": "Key Risks",
+      "statements": [
+        {
+          "text": "HIGH: Independently verified air pollution near plants poses public-health harm to surrounding communities.",
+          "evidence_ids": [
+            "ev-003"
+          ],
+          "node_refs": [
+            "public_health",
+            "fasad"
+          ],
+          "confidence": "high"
+        },
+        {
+          "text": "HIGH: High carbon intensity drives climate harm and exposes the company to stranded-asset and transition risk.",
+          "evidence_ids": [
+            "ev-002",
+            "ev-003"
+          ],
+          "node_refs": [
+            "emissions_responsibility",
+            "maqasid_hifz_nasl"
+          ],
+          "confidence": "medium"
+        },
+        {
+          "text": "MEDIUM: Continued coal dependence risks high-carbon lock-in and resource inefficiency.",
+          "evidence_ids": [
+            "ev-002"
+          ],
+          "node_refs": [
+            "israf",
+            "maqasid_hifz_mal"
+          ],
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "contradictions",
+      "title": "Contradictions (Claim vs Action vs Independent Evidence)",
+      "statements": [
+        {
+          "text": "CLAIM (management): commitment to lower carbon intensity. ACTION: generation remains majority coal. INDEPENDENT EVIDENCE: regional emissions and PM2.5 remain high. Gap: stated intent not corroborated by delivery.",
+          "evidence_ids": [
+            "ev-001",
+            "ev-002",
+            "ev-003"
+          ],
+          "node_refs": [
+            "emissions_responsibility"
+          ],
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "governance_findings",
+      "title": "Governance Findings",
+      "statements": [
+        {
+          "text": "As a state-owned enterprise, fiduciary stewardship to citizen-owners is engaged; transparency and accountability indicators are mixed on available evidence.",
+          "evidence_ids": [
+            "ev-005"
+          ],
+          "node_refs": [
+            "amanah",
+            "masuliyyah",
+            "anti_corruption"
+          ],
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "stakeholder_findings",
+      "title": "Stakeholder Findings",
+      "statements": [
+        {
+          "text": "Communities near plants bear health harm; grid users benefit from reliability; future generations bear emissions burden; citizen-owners face mixed stewardship outcomes.",
+          "evidence_ids": [
+            "ev-003",
+            "ev-002",
+            "ev-005"
+          ],
+          "node_refs": [
+            "miskeen",
+            "public_health",
+            "energy_security",
+            "nasl",
+            "amanah"
+          ],
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "future_generation_findings",
+      "title": "Future-Generation Findings",
+      "statements": [
+        {
+          "text": "Long-lived emissions and carbon lock-in transfer a material, partly irreversible burden to future generations; long-term impact score 40/100.",
+          "evidence_ids": [
+            "ev-002",
+            "ev-003"
+          ],
+          "node_refs": [
+            "maqasid_hifz_nasl",
+            "intergenerational_responsibility"
+          ],
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "greenwashing_findings",
+      "title": "Disclosure-vs-Performance (Greenwashing) Findings",
+      "statements": [
+        {
+          "text": "Elevated disclosure-vs-performance gap (0.55): the decarbonisation commitment is currently supported only by management statement, without corroborating action or independent outcome evidence.",
+          "evidence_ids": [
+            "ev-001",
+            "ev-002",
+            "ev-003"
+          ],
+          "node_refs": [
+            "emissions_responsibility"
+          ],
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "priority_actions",
+      "title": "Priority Actions",
+      "statements": [
+        {
+          "text": "1. Publish an audited transition pathway with dated milestones.",
+          "evidence_ids": [
+            "ev-001",
+            "ev-002"
+          ],
+          "node_refs": [
+            "emissions_responsibility"
+          ],
+          "confidence": "medium"
+        },
+        {
+          "text": "2. Accelerate renewables and grid investment to reduce coal dependence.",
+          "evidence_ids": [
+            "ev-004"
+          ],
+          "node_refs": [
+            "clean_energy"
+          ],
+          "confidence": "medium"
+        },
+        {
+          "text": "3. Disclose plant-level health and emissions data.",
+          "evidence_ids": [
+            "ev-003"
+          ],
+          "node_refs": [
+            "public_health",
+            "emissions_responsibility"
+          ],
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "evidence_appendix",
+      "title": "Evidence Appendix",
+      "statements": [
+        {
+          "text": "ev-001 [SAY] Commits to lower carbon intensity and modernise generation (demo) — source: annual_report, confidence: ai-seeded.",
+          "evidence_ids": [
+            "ev-001"
+          ],
+          "node_refs": [],
+          "confidence": "medium"
+        },
+        {
+          "text": "ev-002 [DO] Majority of generation remains coal-fired; renewables share low (demo) — source: regulatory_filing, confidence: analyst-reviewed.",
+          "evidence_ids": [
+            "ev-002"
+          ],
+          "node_refs": [],
+          "confidence": "medium"
+        },
+        {
+          "text": "ev-003 [SHOW] Regional PM2.5 and CO2 intensity remain high near plants (demo) — source: independent_dataset, confidence: verified.",
+          "evidence_ids": [
+            "ev-003"
+          ],
+          "node_refs": [],
+          "confidence": "medium"
+        },
+        {
+          "text": "ev-004 [DO] Grid-modernisation and pilot renewable projects underway (demo) — source: company_disclosure, confidence: ai-seeded.",
+          "evidence_ids": [
+            "ev-004"
+          ],
+          "node_refs": [],
+          "confidence": "medium"
+        },
+        {
+          "text": "ev-005 [SHOW] SOE governance/transparency indicators mixed (demo) — source: ngo, confidence: analyst-reviewed.",
+          "evidence_ids": [
+            "ev-005"
+          ],
+          "node_refs": [],
+          "confidence": "medium"
+        }
+      ]
+    }
+  ],
+  "scholar_review_flags": [
+    {
+      "topic": "net benefit-vs-harm balance under harm to life/health",
+      "node": "maqasid_hifz_nafs",
+      "reason": "interpretive weighting of public-health harm vs energy benefit"
+    },
+    {
+      "topic": "intergenerational equity threshold",
+      "node": "maqasid_hifz_nasl",
+      "reason": "interpretive long-horizon weighting"
+    }
+  ],
+  "uncertainty_flags": [
+    {
+      "area": "transition-plan credibility",
+      "reason": "stated intent (SAY) not yet corroborated by sufficient DO/SHOW",
+      "confidence": "low"
+    },
+    {
+      "area": "governance indicators",
+      "reason": "mixed/secondary sources only",
+      "confidence": "medium"
+    }
+  ],
+  "disclaimer": "AI-assisted, indicative, decision-support only; not investment, legal, financial, or regulatory advice; not a ruling."
+}

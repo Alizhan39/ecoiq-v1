@@ -1,0 +1,186 @@
+{
+  "graph_name": "Hikma Revelation Graph",
+  "total_nodes": 304,
+  "node_layers": {
+    "principle_nodes": 204,
+    "system_nodes": 100
+  },
+  "categories_count": 37,
+  "categories": {
+    "Analytical Engine": 13,
+    "Artificial Intelligence Ethics": 7,
+    "Civilizational Sustainability": 10,
+    "Climate Resilience": 14,
+    "Conflict, peace and justice": 4,
+    "Core ethical principles": 8,
+    "Corporate Responsibility": 6,
+    "Decision Framework": 10,
+    "Decision-analysis meta-nodes": 8,
+    "Ecology and natural world": 3,
+    "Economy and finance": 12,
+    "Energy Systems": 4,
+    "Environmental Systems": 9,
+    "Family, society and vulnerable groups": 4,
+    "Food & Agriculture": 8,
+    "Future generations and stewardship": 4,
+    "Governance System": 16,
+    "Governance and leadership": 5,
+    "Human Development": 10,
+    "Infrastructure": 8,
+    "Innovation & Technology": 3,
+    "Institutional Integrity": 9,
+    "Intelligence Layer": 22,
+    "Knowledge, reason and evidence": 4,
+    "Law, contracts and accountability": 12,
+    "Maqasid-related preservation categories": 8,
+    "Meta / Orchestration": 7,
+    "Moral Assessment System": 5,
+    "Moral risks and violations": 17,
+    "Public Policy": 3,
+    "Societal Resilience System": 11,
+    "Stakeholder Justice": 10,
+    "Sustainability System": 11,
+    "Virtues and character": 9,
+    "Water Stewardship": 4,
+    "Water, land, animals and resources": 1,
+    "Wealth, labour and trade": 5
+  },
+  "related_edge_count": 1374,
+  "foundation_edge_count": 472,
+  "total_directed_edges": 1846,
+  "undirected_related_pairs": 1142,
+  "average_connectivity": 9.57,
+  "isolated_nodes": [],
+  "isolated_count": 0,
+  "dangling_edges": [],
+  "dangling_count": 0,
+  "confidence_distribution": {
+    "high": 69,
+    "medium": 206,
+    "low": 29
+  },
+  "highest_degree_nodes": [
+    {
+      "id": "adl",
+      "degree": 46
+    },
+    {
+      "id": "zulm",
+      "degree": 40
+    },
+    {
+      "id": "qist",
+      "degree": 37
+    },
+    {
+      "id": "maslahah",
+      "degree": 36
+    },
+    {
+      "id": "fasad",
+      "degree": 36
+    },
+    {
+      "id": "amanah",
+      "degree": 32
+    },
+    {
+      "id": "miskeen",
+      "degree": 32
+    },
+    {
+      "id": "mizan",
+      "degree": 31
+    },
+    {
+      "id": "maqasid_hifz_nasl",
+      "degree": 28
+    },
+    {
+      "id": "sidq",
+      "degree": 28
+    },
+    {
+      "id": "israf",
+      "degree": 27
+    },
+    {
+      "id": "bayyinah",
+      "degree": 27
+    },
+    {
+      "id": "masuliyyah",
+      "degree": 26
+    },
+    {
+      "id": "rahmah",
+      "degree": 25
+    },
+    {
+      "id": "adalah_ijtimaiyyah",
+      "degree": 23
+    }
+  ],
+  "centrality_candidates_by_in_degree": [
+    {
+      "id": "adl",
+      "in_degree": 46
+    },
+    {
+      "id": "zulm",
+      "in_degree": 40
+    },
+    {
+      "id": "fasad",
+      "in_degree": 36
+    },
+    {
+      "id": "qist",
+      "in_degree": 35
+    },
+    {
+      "id": "maslahah",
+      "in_degree": 31
+    },
+    {
+      "id": "mizan",
+      "in_degree": 31
+    },
+    {
+      "id": "amanah",
+      "in_degree": 31
+    },
+    {
+      "id": "miskeen",
+      "in_degree": 31
+    },
+    {
+      "id": "israf",
+      "in_degree": 27
+    },
+    {
+      "id": "sidq",
+      "in_degree": 27
+    },
+    {
+      "id": "bayyinah",
+      "in_degree": 27
+    },
+    {
+      "id": "maqasid_hifz_nasl",
+      "in_degree": 26
+    },
+    {
+      "id": "rahmah",
+      "in_degree": 25
+    },
+    {
+      "id": "masuliyyah",
+      "in_degree": 24
+    },
+    {
+      "id": "khalifah",
+      "in_degree": 22
+    }
+  ]
+}

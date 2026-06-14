@@ -1,0 +1,4114 @@
+[
+  {
+    "decision_name": "Nuclear Power Plant",
+    "stakeholders": [
+      "host communities",
+      "national grid users",
+      "future generations",
+      "regulators",
+      "workers",
+      "financiers"
+    ],
+    "benefits": [
+      "low-carbon baseload power",
+      "energy security",
+      "industrial development"
+    ],
+    "risks": [
+      "catastrophic accident (low-probability/high-severity)",
+      "long-lived radioactive waste",
+      "proliferation/security",
+      "water use for cooling",
+      "host-community burden"
+    ],
+    "affected_nodes": [
+      "nafs",
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_nasl",
+      "fasad",
+      "ard",
+      "maa",
+      "amanah",
+      "itqan"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nafs",
+      "la_darar",
+      "maqasid_hifz_nasl",
+      "amanah",
+      "itqan"
+    ],
+    "tradeoffs": [
+      "clean baseload vs catastrophic-tail and waste burden on the future",
+      "energy security vs irreversibility"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "energy_systems_analyzer",
+      "climate_transition_intelligence",
+      "pollution_emissions_auditor",
+      "precautionary_principle_engine",
+      "reversibility_analyzer",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is the catastrophic-tail risk to life acceptable and bounded?",
+      "Who bears the multi-generational waste burden?",
+      "Is build/operation quality (itqan) independently assured?",
+      "Is consent of host communities genuine?"
+    ],
+    "required_evidence": [
+      "independent safety case and tail-risk analysis",
+      "waste-management plan over full half-life horizon",
+      "seismic/water/siting studies",
+      "financial-liability and decommissioning provisions",
+      "host-community consultation records"
+    ],
+    "decision_engines": [
+      "energy_systems_analyzer",
+      "climate_transition_intelligence",
+      "precautionary_principle_engine",
+      "reversibility_analyzer",
+      "harm_prevention_gate",
+      "maqasid_preservation_scorer"
+    ],
+    "possible_outcomes": [
+      "proceed_with_safeguards_and_monitoring",
+      "proceed_conditionally_pending_evidence_and_review",
+      "redesign_to_remove_red_line_harm",
+      "defer_or_decline_pending_scholar_and_expert_review"
+    ]
+  },
+  {
+    "decision_name": "Coal Plant Expansion",
+    "stakeholders": [
+      "nearby communities",
+      "public health",
+      "future generations",
+      "workers",
+      "investors",
+      "climate-exposed populations"
+    ],
+    "benefits": [
+      "cheap dispatchable power",
+      "short-term jobs",
+      "supply reliability"
+    ],
+    "risks": [
+      "severe air pollution and health harm",
+      "high CO2 / climate harm",
+      "stranded-asset risk",
+      "lock-in of high-carbon infrastructure"
+    ],
+    "affected_nodes": [
+      "fasad",
+      "darar",
+      "public_health",
+      "emissions_responsibility",
+      "maqasid_hifz_nasl",
+      "israf",
+      "munkar"
+    ],
+    "critical_principles": [
+      "la_darar",
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_nasl",
+      "fasad",
+      "munkar"
+    ],
+    "tradeoffs": [
+      "cheap power now vs population health and climate harm",
+      "jobs vs stranded-asset and lock-in risk"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "pollution_emissions_auditor",
+      "public_health_impact_engine",
+      "climate_transition_intelligence",
+      "carbon_responsibility",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does expansion cross a public-health or climate red line?",
+      "Are cheaper low-harm alternatives available?",
+      "Who bears the pollution and climate burden?",
+      "Is this lock-in reversible?"
+    ],
+    "required_evidence": [
+      "air-quality and health-impact modelling",
+      "emissions and climate-alignment data",
+      "alternatives analysis",
+      "stranded-asset exposure"
+    ],
+    "decision_engines": [
+      "pollution_emissions_auditor",
+      "public_health_impact_engine",
+      "climate_transition_intelligence",
+      "harm_prevention_gate",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "decline_due_to_health_and_climate_red_line",
+      "redesign_toward_low_harm_alternatives",
+      "proceed_only_if_no_alternative_and_with_strict_mitigation_and_review"
+    ]
+  },
+  {
+    "decision_name": "Coal-to-Heat-Pump Transition",
+    "stakeholders": [
+      "households (esp. low-income)",
+      "public health",
+      "installers/manufacturers",
+      "grid operators",
+      "future generations"
+    ],
+    "benefits": [
+      "cleaner indoor and outdoor air",
+      "lower emissions",
+      "lower long-run heating cost",
+      "energy efficiency"
+    ],
+    "risks": [
+      "upfront affordability barrier",
+      "grid-capacity strain",
+      "installer-skill gaps",
+      "transition burden on the poor"
+    ],
+    "affected_nodes": [
+      "public_health",
+      "clean_energy",
+      "energy_efficiency",
+      "maqasid_hifz_nasl",
+      "miskeen",
+      "adalah_ijtimaiyyah",
+      "rahmah"
+    ],
+    "critical_principles": [
+      "maslahah",
+      "public_health",
+      "adalah_ijtimaiyyah",
+      "maqasid_hifz_nasl"
+    ],
+    "tradeoffs": [
+      "clean-air benefit vs upfront cost to poor households",
+      "speed vs grid readiness"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "energy_systems_analyzer",
+      "climate_transition_intelligence",
+      "just_transition_planner",
+      "distributional_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Can low-income households afford the transition without hardship?",
+      "Is grid capacity adequate?",
+      "Are installer skills and supply chains ready?"
+    ],
+    "required_evidence": [
+      "household affordability and subsidy analysis",
+      "grid-capacity assessment",
+      "health-benefit estimates",
+      "installer-capacity data"
+    ],
+    "decision_engines": [
+      "energy_systems_analyzer",
+      "just_transition_planner",
+      "distributional_impact_engine",
+      "public_health_impact_engine",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "proceed_with_subsidies_for_the_poor_and_grid_upgrades",
+      "phase_by_readiness_and_affordability",
+      "proceed_conditionally_pending_grid_and_skills"
+    ]
+  },
+  {
+    "decision_name": "National Water Reservoir",
+    "stakeholders": [
+      "downstream communities",
+      "farmers",
+      "displaced people",
+      "ecosystems",
+      "future generations",
+      "upstream/riparian states"
+    ],
+    "benefits": [
+      "water security",
+      "irrigation",
+      "flood buffering",
+      "drought resilience"
+    ],
+    "risks": [
+      "displacement of communities",
+      "ecosystem disruption",
+      "sedimentation/evaporation loss",
+      "transboundary conflict",
+      "unequal allocation"
+    ],
+    "affected_nodes": [
+      "maa",
+      "water_security",
+      "water_justice",
+      "ard",
+      "nasl",
+      "ibn_sabil",
+      "maqasid_hifz_nasl",
+      "fasad"
+    ],
+    "critical_principles": [
+      "water_justice",
+      "la_darar",
+      "maqasid_hifz_nasl",
+      "adl",
+      "khalifah"
+    ],
+    "tradeoffs": [
+      "water security vs displacement and ecosystem harm",
+      "storage benefit vs transboundary equity"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "water_stewardship_intelligence",
+      "water_security_index",
+      "drought_flood_early_warning",
+      "biodiversity_risk_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Who is displaced and how are they justly resettled?",
+      "Is downstream and transboundary allocation fair?",
+      "What ecosystems are lost and irreversibly?"
+    ],
+    "required_evidence": [
+      "hydrology and yield studies",
+      "resettlement and compensation plan",
+      "ecosystem-impact assessment",
+      "transboundary allocation agreements"
+    ],
+    "decision_engines": [
+      "water_stewardship_intelligence",
+      "water_security_index",
+      "justice_allocation_engine",
+      "biodiversity_risk_engine",
+      "reversibility_analyzer"
+    ],
+    "possible_outcomes": [
+      "proceed_with_safeguards_and_monitoring",
+      "proceed_conditionally_pending_evidence_and_review",
+      "redesign_to_remove_red_line_harm",
+      "defer_or_decline_pending_scholar_and_expert_review"
+    ]
+  },
+  {
+    "decision_name": "Desalination Plant",
+    "stakeholders": [
+      "water-stressed populations",
+      "coastal ecosystems",
+      "energy system",
+      "future generations",
+      "ratepayers"
+    ],
+    "benefits": [
+      "drought-proof water supply",
+      "reliability under scarcity"
+    ],
+    "risks": [
+      "high energy use and emissions",
+      "brine discharge harming marine life",
+      "high cost / affordability",
+      "fossil lock-in if powered by coal/gas"
+    ],
+    "affected_nodes": [
+      "maa",
+      "water_security",
+      "clean_energy",
+      "ard",
+      "emissions_responsibility",
+      "miskeen",
+      "fasad"
+    ],
+    "critical_principles": [
+      "water_security",
+      "la_darar",
+      "maslahah",
+      "adalah_ijtimaiyyah"
+    ],
+    "tradeoffs": [
+      "reliable water vs energy/emissions and brine harm",
+      "supply security vs affordability"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "water_stewardship_intelligence",
+      "energy_systems_analyzer",
+      "pollution_emissions_auditor",
+      "ecosystem_stability_monitor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is the plant powered by low-harm energy?",
+      "Is brine discharge managed to avoid marine harm?",
+      "Is water affordable to the poor?",
+      "Are cheaper conservation options exhausted first?"
+    ],
+    "required_evidence": [
+      "energy-source and emissions analysis",
+      "brine-dispersion and marine-impact study",
+      "affordability/tariff analysis",
+      "demand-side alternatives review"
+    ],
+    "decision_engines": [
+      "water_stewardship_intelligence",
+      "energy_systems_analyzer",
+      "pollution_emissions_auditor",
+      "maslahah_mafsadah_weigher",
+      "distributional_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_renewable_power_and_brine_controls",
+      "prioritise_conservation_first_then_desalination",
+      "proceed_conditionally_pending_marine_and_affordability_evidence"
+    ]
+  },
+  {
+    "decision_name": "Hydropower Dam",
+    "stakeholders": [
+      "downstream communities",
+      "displaced people",
+      "fisheries",
+      "ecosystems",
+      "future generations",
+      "grid users"
+    ],
+    "benefits": [
+      "renewable electricity",
+      "water storage",
+      "flood control"
+    ],
+    "risks": [
+      "displacement",
+      "river-ecosystem and fishery loss",
+      "methane from reservoirs",
+      "sediment and downstream harm",
+      "seismic risk"
+    ],
+    "affected_nodes": [
+      "maa",
+      "ard",
+      "biodiversity_protection",
+      "clean_energy",
+      "nasl",
+      "maqasid_hifz_nasl",
+      "fasad",
+      "ibn_sabil"
+    ],
+    "critical_principles": [
+      "water_justice",
+      "la_darar",
+      "maqasid_hifz_nasl",
+      "khalifah"
+    ],
+    "tradeoffs": [
+      "renewable power vs river-system and community harm",
+      "storage vs irreversibility of habitat loss"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "energy_systems_analyzer",
+      "water_stewardship_intelligence",
+      "biodiversity_risk_engine",
+      "reversibility_analyzer",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Who is displaced and justly compensated?",
+      "Is irreversible river/fishery loss acceptable vs alternatives?",
+      "Are downstream flows protected?"
+    ],
+    "required_evidence": [
+      "hydrology and sediment studies",
+      "resettlement plan",
+      "fishery and biodiversity assessment",
+      "greenhouse-gas (reservoir) estimate"
+    ],
+    "decision_engines": [
+      "water_stewardship_intelligence",
+      "biodiversity_risk_engine",
+      "justice_allocation_engine",
+      "reversibility_analyzer",
+      "long_horizon_consequence_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_safeguards_and_monitoring",
+      "proceed_conditionally_pending_evidence_and_review",
+      "redesign_to_remove_red_line_harm",
+      "defer_or_decline_pending_scholar_and_expert_review"
+    ]
+  },
+  {
+    "decision_name": "Renewable Energy Program",
+    "stakeholders": [
+      "households",
+      "industry",
+      "workers (incl. fossil-sector)",
+      "communities near sites",
+      "future generations",
+      "supply chains"
+    ],
+    "benefits": [
+      "low-carbon power",
+      "energy security",
+      "health benefits",
+      "new jobs"
+    ],
+    "risks": [
+      "mining/supply-chain harm for minerals",
+      "land/biodiversity impact of siting",
+      "intermittency/grid strain",
+      "just-transition gaps for fossil workers"
+    ],
+    "affected_nodes": [
+      "clean_energy",
+      "taskhir",
+      "maqasid_hifz_nasl",
+      "biodiversity_protection",
+      "supply_chain_integrity",
+      "skill_development",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "maslahah",
+      "khalifah",
+      "adalah_ijtimaiyyah",
+      "maqasid_hifz_nasl"
+    ],
+    "tradeoffs": [
+      "clean energy vs mineral-supply-chain harm",
+      "speed vs grid and worker readiness"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "energy_systems_analyzer",
+      "climate_transition_intelligence",
+      "supply_chain_integrity_tracer",
+      "just_transition_planner",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is the mineral supply chain free of exploitation and ecological harm?",
+      "Are fossil-sector workers protected?",
+      "Is siting low-harm to land and biodiversity?"
+    ],
+    "required_evidence": [
+      "lifecycle and supply-chain assessment",
+      "grid-integration plan",
+      "siting/biodiversity studies",
+      "just-transition and reskilling plan"
+    ],
+    "decision_engines": [
+      "energy_systems_analyzer",
+      "supply_chain_integrity_tracer",
+      "just_transition_planner",
+      "biodiversity_risk_engine",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "proceed_with_clean_supply_chain_and_just_transition",
+      "scale_by_grid_and_worker_readiness",
+      "proceed_conditionally_pending_supply_chain_evidence"
+    ]
+  },
+  {
+    "decision_name": "National Grid Modernisation",
+    "stakeholders": [
+      "all electricity users",
+      "the poor",
+      "industry",
+      "grid workers",
+      "future generations"
+    ],
+    "benefits": [
+      "reliability",
+      "renewable integration",
+      "efficiency",
+      "resilience to shocks"
+    ],
+    "risks": [
+      "cost passed to ratepayers",
+      "cyber/physical security risk",
+      "digital exclusion",
+      "capture by contractors"
+    ],
+    "affected_nodes": [
+      "energy_security",
+      "energy_access",
+      "infrastructure_equity",
+      "amanah",
+      "maqasid_hifz_mal",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "amanah",
+      "adalah_ijtimaiyyah",
+      "maslahah",
+      "maqasid_hifz_mal"
+    ],
+    "tradeoffs": [
+      "modernisation cost vs ratepayer affordability",
+      "digitalisation vs security and exclusion"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "energy_systems_analyzer",
+      "infrastructure_equity_analyzer",
+      "energy_security_analyzer",
+      "procurement_integrity_monitor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are costs distributed fairly across users?",
+      "Is the grid secure against cyber/physical attack?",
+      "Does modernisation widen or close access gaps?"
+    ],
+    "required_evidence": [
+      "cost-allocation and tariff analysis",
+      "security assessment",
+      "reliability and access metrics",
+      "procurement-integrity records"
+    ],
+    "decision_engines": [
+      "energy_systems_analyzer",
+      "infrastructure_equity_analyzer",
+      "energy_security_analyzer",
+      "procurement_integrity_monitor",
+      "distributional_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_fair_cost_allocation_and_security",
+      "phase_with_access_safeguards",
+      "proceed_conditionally_pending_security_and_equity_evidence"
+    ]
+  },
+  {
+    "decision_name": "Carbon Tax",
+    "stakeholders": [
+      "households (esp. low-income)",
+      "emitting industry",
+      "government",
+      "future generations",
+      "exposed communities"
+    ],
+    "benefits": [
+      "emissions reduction",
+      "revenue for public good",
+      "price signal for transition"
+    ],
+    "risks": [
+      "regressive burden on the poor",
+      "competitiveness/leakage concerns",
+      "capture of revenue",
+      "insufficient stringency"
+    ],
+    "affected_nodes": [
+      "emissions_responsibility",
+      "maqasid_hifz_nasl",
+      "adalah_ijtimaiyyah",
+      "miskeen",
+      "public_value_creation",
+      "qist"
+    ],
+    "critical_principles": [
+      "adalah_ijtimaiyyah",
+      "qist",
+      "maqasid_hifz_nasl",
+      "maslahah"
+    ],
+    "tradeoffs": [
+      "emissions reduction vs regressive impact on the poor",
+      "stringency vs competitiveness"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "climate_transition_intelligence",
+      "distributional_impact_engine",
+      "public_value_estimator",
+      "policy_evidence_validator",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is the burden made non-regressive (e.g. rebates to the poor)?",
+      "Is revenue used for genuine public value?",
+      "Is the price stringent enough to drive transition?"
+    ],
+    "required_evidence": [
+      "distributional-incidence analysis",
+      "revenue-use plan",
+      "emissions-response modelling",
+      "leakage assessment"
+    ],
+    "decision_engines": [
+      "distributional_impact_engine",
+      "climate_transition_intelligence",
+      "public_value_estimator",
+      "shared_prosperity_analyzer",
+      "policy_evidence_validator"
+    ],
+    "possible_outcomes": [
+      "proceed_with_rebates_and_revenue_recycling",
+      "adjust_stringency_and_protect_the_poor",
+      "proceed_conditionally_pending_distributional_evidence"
+    ]
+  },
+  {
+    "decision_name": "Carbon Credit Market",
+    "stakeholders": [
+      "buyers/emitters",
+      "host communities of offset projects",
+      "future generations",
+      "verifiers",
+      "regulators"
+    ],
+    "benefits": [
+      "finance for mitigation",
+      "cost-effective abatement",
+      "scaled climate action"
+    ],
+    "risks": [
+      "greenwashing / non-additional credits",
+      "double counting",
+      "license-to-pollute effect",
+      "harm to offset-host communities"
+    ],
+    "affected_nodes": [
+      "emissions_responsibility",
+      "tatfif",
+      "ghish",
+      "bayyinah",
+      "maqasid_hifz_nasl",
+      "fasad",
+      "sidq"
+    ],
+    "critical_principles": [
+      "sidq",
+      "bayyinah",
+      "maqasid_hifz_nasl",
+      "la_darar"
+    ],
+    "tradeoffs": [
+      "finance for mitigation vs offset-as-license-to-pollute",
+      "scale vs integrity of credits"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "carbon_responsibility",
+      "truthfulness_greenwashing_detector",
+      "cause_effect_tracer",
+      "disclosure_verification_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are credits genuinely additional and not double-counted?",
+      "Do they enable continued pollution rather than real cuts?",
+      "Are offset-host communities benefited or harmed?"
+    ],
+    "required_evidence": [
+      "additionality and verification evidence",
+      "registry/double-counting checks",
+      "host-community impact data",
+      "buyer-claim verification"
+    ],
+    "decision_engines": [
+      "truthfulness_greenwashing_detector",
+      "carbon_responsibility",
+      "cause_effect_tracer",
+      "disclosure_verification_engine",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "proceed_only_with_verified_additional_credits",
+      "reject_offsets_used_to_avoid_real_reduction",
+      "proceed_conditionally_pending_integrity_evidence"
+    ]
+  },
+  {
+    "decision_name": "AI Surveillance System",
+    "stakeholders": [
+      "surveilled public",
+      "minorities/dissenters",
+      "the state",
+      "operators",
+      "future generations"
+    ],
+    "benefits": [
+      "security/crime reduction (claimed)",
+      "situational awareness"
+    ],
+    "risks": [
+      "mass privacy intrusion",
+      "chilling of freedoms",
+      "discriminatory targeting",
+      "function creep",
+      "authoritarian capture"
+    ],
+    "affected_nodes": [
+      "data_stewardship",
+      "maqasid_hifz_nafs",
+      "maqasid_hifz_din",
+      "zulm",
+      "fitnah",
+      "huquq",
+      "munkar"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_din",
+      "la_darar",
+      "huquq",
+      "adl",
+      "munkar"
+    ],
+    "tradeoffs": [
+      "claimed security vs mass privacy and freedom harm",
+      "capability vs proportionality"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "systemic_justice_auditor",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is surveillance proportionate, bounded, and consented?",
+      "Who is disproportionately targeted?",
+      "Could this be captured for repression?"
+    ],
+    "required_evidence": [
+      "necessity-and-proportionality justification",
+      "disparate-impact analysis",
+      "oversight and sunset provisions",
+      "data-handling audit"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "systemic_justice_auditor",
+      "precautionary_principle_engine",
+      "harm_prevention_gate"
+    ],
+    "possible_outcomes": [
+      "decline_due_to_rights_red_line",
+      "permit_only_narrow_bounded_use_with_strong_oversight",
+      "defer_pending_rights_and_oversight_evidence"
+    ]
+  },
+  {
+    "decision_name": "Facial Recognition Network",
+    "stakeholders": [
+      "the public",
+      "misidentified individuals",
+      "minorities",
+      "operators",
+      "regulators"
+    ],
+    "benefits": [
+      "identification/security (claimed)",
+      "convenience"
+    ],
+    "risks": [
+      "false positives harming individuals",
+      "racial/gender bias",
+      "mass tracking",
+      "irreversible biometric exposure"
+    ],
+    "affected_nodes": [
+      "data_stewardship",
+      "algorithmic_fairness",
+      "maqasid_hifz_nafs",
+      "zulm",
+      "huquq",
+      "bayyinah"
+    ],
+    "critical_principles": [
+      "algorithmic_fairness",
+      "maqasid_hifz_din",
+      "huquq",
+      "adl"
+    ],
+    "tradeoffs": [
+      "security/convenience vs biometric privacy and bias harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "algorithmic_fairness_auditor",
+      "data_stewardship_monitor",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are error rates equitable across groups?",
+      "Is biometric data securely and minimally held?",
+      "Is there redress for misidentification?"
+    ],
+    "required_evidence": [
+      "bias and accuracy testing by group",
+      "data-security and retention audit",
+      "redress-mechanism design",
+      "necessity justification"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "algorithmic_fairness_auditor",
+      "data_stewardship_monitor",
+      "harm_prevention_gate",
+      "explainable_ai"
+    ],
+    "possible_outcomes": [
+      "restrict_or_prohibit_for_mass_use",
+      "permit_only_narrow_consented_use",
+      "defer_pending_bias_and_security_evidence"
+    ]
+  },
+  {
+    "decision_name": "National AI Strategy",
+    "stakeholders": [
+      "citizens",
+      "workers",
+      "industry",
+      "vulnerable groups",
+      "future generations",
+      "regulators"
+    ],
+    "benefits": [
+      "productivity",
+      "public-service improvement",
+      "competitiveness"
+    ],
+    "risks": [
+      "job displacement",
+      "bias at scale",
+      "concentration of power",
+      "surveillance creep",
+      "accountability gaps"
+    ],
+    "affected_nodes": [
+      "responsible_innovation",
+      "maqasid_hifz_aql",
+      "systemic_justice",
+      "masuliyyah",
+      "skill_development",
+      "maqasid_hifz_nasl"
+    ],
+    "critical_principles": [
+      "responsible_innovation",
+      "maqasid_hifz_aql",
+      "adl",
+      "masuliyyah"
+    ],
+    "tradeoffs": [
+      "innovation/competitiveness vs rights, jobs, and accountability"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "systemic_justice_auditor",
+      "governance_integrity_scanner",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does the strategy protect rights, jobs, and reasoning?",
+      "Is accountability for Ac-mediated decisions assured?",
+      "Are workers reskilled?"
+    ],
+    "required_evidence": [
+      "rights and impact assessment",
+      "workforce-transition plan",
+      "accountability and oversight framework",
+      "public-consultation records"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "systemic_justice_auditor",
+      "governance_integrity_scanner",
+      "just_transition_planner",
+      "long_horizon_consequence_engine"
+    ],
+    "possible_outcomes": [
+      "adopt_with_rights_jobs_and_oversight_safeguards",
+      "revise_to_close_accountability_gaps",
+      "defer_pending_impact_and_oversight_evidence"
+    ]
+  },
+  {
+    "decision_name": "AI Hiring System",
+    "stakeholders": [
+      "job applicants",
+      "protected groups",
+      "employers",
+      "workers",
+      "regulators"
+    ],
+    "benefits": [
+      "efficiency",
+      "scale",
+      "claimed consistency"
+    ],
+    "risks": [
+      "discriminatory screening",
+      "opaque rejection",
+      "proxy bias",
+      "dignity harm"
+    ],
+    "affected_nodes": [
+      "algorithmic_fairness",
+      "adl",
+      "human_dignity",
+      "bayyinah",
+      "huquq",
+      "zulm"
+    ],
+    "critical_principles": [
+      "algorithmic_fairness",
+      "adl",
+      "human_dignity",
+      "bayyinah"
+    ],
+    "tradeoffs": [
+      "efficiency vs fair, explainable, non-discriminatory selection"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "algorithmic_fairness_auditor",
+      "explainable_ai",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are outcomes fair across protected groups?",
+      "Can applicants get an intelligible, contestable reason?",
+      "Is there human oversight?"
+    ],
+    "required_evidence": [
+      "disparate-impact audit",
+      "explainability and contestability test",
+      "human-oversight design",
+      "training-data provenance"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "algorithmic_fairness_auditor",
+      "explainable_ai",
+      "human_oversight",
+      "harm_prevention_gate"
+    ],
+    "possible_outcomes": [
+      "deploy_only_with_fairness_explainability_and_human_review",
+      "redesign_to_remove_bias",
+      "defer_pending_fairness_evidence"
+    ]
+  },
+  {
+    "decision_name": "Autonomous Weapons",
+    "stakeholders": [
+      "potential victims",
+      "civilians",
+      "combatants",
+      "the state",
+      "humanity",
+      "future generations"
+    ],
+    "benefits": [
+      "military capability (claimed)"
+    ],
+    "risks": [
+      "unaccountable killing",
+      "loss of meaningful human control",
+      "escalation/proliferation",
+      "civilian harm",
+      "dehumanisation"
+    ],
+    "affected_nodes": [
+      "maqasid_hifz_nafs",
+      "nafs",
+      "masuliyyah",
+      "human_oversight",
+      "fitnah",
+      "zulm",
+      "munkar"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nafs",
+      "la_darar",
+      "masuliyyah",
+      "human_oversight",
+      "munkar"
+    ],
+    "tradeoffs": [
+      "claimed capability vs life-and-death decisions without human accountability"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "responsibility_gap_detector",
+      "human_oversight",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is lethal force ever delegated without meaningful human control?",
+      "Who is answerable for wrongful killing?",
+      "Does this cross an absolute red line?"
+    ],
+    "required_evidence": [
+      "meaningful-human-control assessment",
+      "accountability and law-of-war compliance",
+      "escalation/proliferation analysis"
+    ],
+    "decision_engines": [
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "responsibility_gap_detector",
+      "precautionary_principle_engine"
+    ],
+    "possible_outcomes": [
+      "prohibit_lethal_autonomy_without_human_control",
+      "permit_only_with_binding_human_control_and_law_compliance",
+      "defer_to_scholar_and_legal_review_on_absolute_limits"
+    ]
+  },
+  {
+    "decision_name": "Social Scoring System",
+    "stakeholders": [
+      "all citizens",
+      "the marginalised",
+      "dissenters",
+      "the state",
+      "future generations"
+    ],
+    "benefits": [
+      "claimed compliance/efficiency"
+    ],
+    "risks": [
+      "mass behavioural control",
+      "entrenched discrimination",
+      "loss of freedom and dignity",
+      "irreversible social stratification"
+    ],
+    "affected_nodes": [
+      "human_dignity",
+      "maqasid_hifz_din",
+      "systemic_justice",
+      "huquq",
+      "zulm",
+      "fitnah",
+      "munkar"
+    ],
+    "critical_principles": [
+      "human_dignity",
+      "maqasid_hifz_din",
+      "huquq",
+      "munkar"
+    ],
+    "tradeoffs": [
+      "claimed order vs freedom, dignity, and just treatment"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "systemic_justice_auditor",
+      "data_stewardship_monitor",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does this coerce behaviour and entrench discrimination?",
+      "Is exit and contest possible?",
+      "Does it cross a dignity/freedom red line?"
+    ],
+    "required_evidence": [
+      "rights and discrimination assessment",
+      "contestability and exit analysis",
+      "data-handling audit"
+    ],
+    "decision_engines": [
+      "red_line_hudud_gate",
+      "ai_ethics_assessment_layer",
+      "systemic_justice_auditor",
+      "harm_prevention_gate",
+      "human_development_index_engine"
+    ],
+    "possible_outcomes": [
+      "prohibit_as_dignity_and_freedom_red_line",
+      "permit_only_narrow_consented_non_coercive_uses",
+      "defer_pending_rights_review"
+    ]
+  },
+  {
+    "decision_name": "Data Collection Platform",
+    "stakeholders": [
+      "data subjects",
+      "users",
+      "the platform",
+      "regulators",
+      "society"
+    ],
+    "benefits": [
+      "service improvement",
+      "insight",
+      "personalisation"
+    ],
+    "risks": [
+      "surveillance/over-collection",
+      "consent erosion",
+      "breach risk",
+      "sale/misuse of entrusted data"
+    ],
+    "affected_nodes": [
+      "amanah",
+      "data_stewardship",
+      "khiyanah",
+      "maqasid_hifz_nafs",
+      "huquq",
+      "sidq"
+    ],
+    "critical_principles": [
+      "amanah",
+      "data_stewardship",
+      "huquq",
+      "sidq"
+    ],
+    "tradeoffs": [
+      "insight value vs privacy and trust"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "transparency_compliance_engine",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is collection minimised, consented, and purpose-limited?",
+      "Is data held securely as a trust?",
+      "Is there function creep?"
+    ],
+    "required_evidence": [
+      "data-minimisation and consent audit",
+      "security posture",
+      "purpose-limitation review",
+      "disclosure records"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "transparency_compliance_engine",
+      "harm_prevention_gate"
+    ],
+    "possible_outcomes": [
+      "proceed_with_minimisation_consent_and_security",
+      "restrict_collection_to_legitimate_purpose",
+      "defer_pending_privacy_evidence"
+    ]
+  },
+  {
+    "decision_name": "Digital Identity Program",
+    "stakeholders": [
+      "all residents",
+      "undocumented/marginalised",
+      "the state",
+      "service providers",
+      "future generations"
+    ],
+    "benefits": [
+      "service access",
+      "inclusion",
+      "fraud reduction"
+    ],
+    "risks": [
+      "exclusion of the undocumented",
+      "surveillance via single identifier",
+      "breach catastrophe",
+      "coercive linkage to services"
+    ],
+    "affected_nodes": [
+      "amanah",
+      "huquq",
+      "data_stewardship",
+      "miskeen",
+      "ibn_sabil",
+      "maqasid_hifz_nafs",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "amanah",
+      "huquq",
+      "adalah_ijtimaiyyah",
+      "la_darar"
+    ],
+    "tradeoffs": [
+      "inclusion/efficiency vs exclusion and surveillance"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "infrastructure_equity_analyzer",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are the marginalised included, not excluded, by ID requirements?",
+      "Is the system secure and privacy-protective?",
+      "Is enrolment non-coercive?"
+    ],
+    "required_evidence": [
+      "inclusion and exclusion-risk analysis",
+      "security and privacy design",
+      "voluntariness and fallback-access provisions"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "infrastructure_equity_analyzer",
+      "vulnerability_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_inclusion_security_and_voluntariness",
+      "redesign_to_prevent_exclusion_and_surveillance",
+      "defer_pending_inclusion_and_security_evidence"
+    ]
+  },
+  {
+    "decision_name": "Large Language Model Deployment",
+    "stakeholders": [
+      "users",
+      "affected third parties",
+      "workers",
+      "the public",
+      "future generations"
+    ],
+    "benefits": [
+      "productivity",
+      "access to knowledge",
+      "assistance"
+    ],
+    "risks": [
+      "misinformation/fabrication",
+      "bias",
+      "over-reliance and deskilling",
+      "manipulation",
+      "accountability gaps"
+    ],
+    "affected_nodes": [
+      "maqasid_hifz_aql",
+      "sidq",
+      "bayyinah",
+      "ghish",
+      "masuliyyah",
+      "fitnah",
+      "itqan"
+    ],
+    "critical_principles": [
+      "sidq",
+      "bayyinah",
+      "maqasid_hifz_aql",
+      "masuliyyah"
+    ],
+    "tradeoffs": [
+      "utility vs truthfulness, accountability, and protection of reasoning"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "provenance_citation_validator",
+      "human_oversight",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are outputs grounded and non-fabricated?",
+      "Is human accountability preserved?",
+      "Does it manipulate or deskill users?"
+    ],
+    "required_evidence": [
+      "grounding and hallucination evaluation",
+      "bias testing",
+      "accountability and oversight design",
+      "misuse assessment"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "provenance_citation_validator",
+      "human_oversight",
+      "disinformation_fitnah_detector",
+      "responsibility_gap_detector"
+    ],
+    "possible_outcomes": [
+      "deploy_with_grounding_oversight_and_disclosure",
+      "restrict_high_stakes_uses_pending_safeguards",
+      "defer_pending_safety_evidence"
+    ]
+  },
+  {
+    "decision_name": "AI Education Platform",
+    "stakeholders": [
+      "students (esp. disadvantaged)",
+      "teachers",
+      "parents",
+      "the public",
+      "future generations"
+    ],
+    "benefits": [
+      "scaled access to learning",
+      "personalisation",
+      "teacher support"
+    ],
+    "risks": [
+      "bias in assessment",
+      "data exploitation of children",
+      "deskilling of teachers",
+      "widening of divides",
+      "manipulation of attention"
+    ],
+    "affected_nodes": [
+      "education_access",
+      "maqasid_hifz_aql",
+      "data_stewardship",
+      "algorithmic_fairness",
+      "mental_wellbeing",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "education_access",
+      "maqasid_hifz_aql",
+      "algorithmic_fairness",
+      "adalah_ijtimaiyyah"
+    ],
+    "tradeoffs": [
+      "scaled learning vs child-data, bias, and developmental harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "algorithmic_fairness_auditor",
+      "data_stewardship_monitor",
+      "responsibility_gap_detector",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does it widen or narrow educational divides?",
+      "Is children's data protected?",
+      "Does it support or undermine sound learning?"
+    ],
+    "required_evidence": [
+      "learning-outcome and equity evidence",
+      "child-data protection audit",
+      "assessment-bias testing",
+      "wellbeing impact"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "human_development_index_engine",
+      "algorithmic_fairness_auditor",
+      "data_stewardship_monitor"
+    ],
+    "possible_outcomes": [
+      "deploy_with_child_data_protection_and_equity_focus",
+      "restrict_pending_outcome_evidence",
+      "defer_pending_safety_and_equity_evidence"
+    ]
+  },
+  {
+    "decision_name": "Islamic Fintech",
+    "stakeholders": [
+      "customers",
+      "the unbanked",
+      "investors",
+      "regulators",
+      "Sharia board"
+    ],
+    "benefits": [
+      "financial inclusion",
+      "ethical finance access",
+      "efficiency"
+    ],
+    "risks": [
+      "hidden interest/ribā via structuring",
+      "gharar in opaque products",
+      "data exploitation",
+      "exclusion of the poor by design"
+    ],
+    "affected_nodes": [
+      "riba",
+      "gharar",
+      "maqasid_hifz_mal",
+      "amanah",
+      "data_stewardship",
+      "adalah_ijtimaiyyah",
+      "sidq"
+    ],
+    "critical_principles": [
+      "riba",
+      "gharar",
+      "amanah",
+      "adalah_ijtimaiyyah"
+    ],
+    "tradeoffs": [
+      "inclusion/efficiency vs avoidance of ribā/gharar and data harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "data_stewardship_monitor",
+      "scholar_review_workflow",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are returns genuinely risk-sharing and free of disguised ribā?",
+      "Are products clear (low gharar)?",
+      "Is customer data held as trust?",
+      "Are the poor genuinely included?"
+    ],
+    "required_evidence": [
+      "product-structure and Sharia-compliance review",
+      "data-handling audit",
+      "inclusion metrics",
+      "disclosure quality"
+    ],
+    "decision_engines": [
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "data_stewardship_monitor",
+      "scholar_review_workflow",
+      "disclosure_verification_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_scholar_approved_structures_and_data_protection",
+      "redesign_to_remove_ribā_gharar_features",
+      "defer_to_scholar_review"
+    ]
+  },
+  {
+    "decision_name": "Islamic Bank",
+    "stakeholders": [
+      "depositors",
+      "borrowers",
+      "investors",
+      "the poor",
+      "regulators",
+      "Sharia board"
+    ],
+    "benefits": [
+      "ethical finance",
+      "real-economy linkage",
+      "risk-sharing"
+    ],
+    "risks": [
+      "form-over-substance compliance",
+      "concentration/extraction",
+      "exclusion of the needy",
+      "governance capture"
+    ],
+    "affected_nodes": [
+      "riba",
+      "musharakah",
+      "mudarabah",
+      "maqasid_hifz_mal",
+      "qard_hasan",
+      "amanah",
+      "qist"
+    ],
+    "critical_principles": [
+      "riba",
+      "amanah",
+      "qist",
+      "maqasid_hifz_mal"
+    ],
+    "tradeoffs": [
+      "compliance vs genuine risk-sharing and broad benefit"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "governance_integrity_scanner",
+      "shared_prosperity_analyzer",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is risk genuinely shared, not interest in disguise?",
+      "Does the bank serve the real economy and the needy?",
+      "Is governance sound and uncaptured?"
+    ],
+    "required_evidence": [
+      "contract-substance review",
+      "real-economy linkage data",
+      "governance assessment",
+      "inclusion and qard-hasan provision"
+    ],
+    "decision_engines": [
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "governance_integrity_scanner",
+      "scholar_review_workflow"
+    ],
+    "possible_outcomes": [
+      "proceed_with_genuine_risk_sharing_and_governance",
+      "correct_form_over_substance_issues",
+      "defer_to_scholar_review"
+    ]
+  },
+  {
+    "decision_name": "Sovereign Wealth Fund",
+    "stakeholders": [
+      "citizens (current and future)",
+      "beneficiaries",
+      "global investees",
+      "the state",
+      "future generations"
+    ],
+    "benefits": [
+      "intergenerational savings",
+      "stabilisation",
+      "development finance"
+    ],
+    "risks": [
+      "intergenerational injustice (over-spending)",
+      "investment in harmful/ribā activities",
+      "opacity/capture",
+      "resource-curse dynamics"
+    ],
+    "affected_nodes": [
+      "maqasid_hifz_nasl",
+      "amanah",
+      "istikhlaf",
+      "tayyibat",
+      "khabaith",
+      "maqasid_hifz_mal",
+      "intergenerational_responsibility"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nasl",
+      "amanah",
+      "istikhlaf",
+      "tayyibat"
+    ],
+    "tradeoffs": [
+      "present spending vs future generations",
+      "returns vs ethical screening"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "intergenerational_equity_ledger",
+      "ethical_investment",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is the present generation taking more than its just share?",
+      "Are holdings screened for harm and ribā?",
+      "Is governance transparent and uncaptured?"
+    ],
+    "required_evidence": [
+      "intergenerational-drawdown analysis",
+      "portfolio ethical-screening",
+      "governance and transparency audit"
+    ],
+    "decision_engines": [
+      "capital_integrity_analyzer",
+      "intergenerational_equity_ledger",
+      "ethical_finance_fit_engine",
+      "governance_integrity_scanner"
+    ],
+    "possible_outcomes": [
+      "proceed_with_intergenerational_rule_and_ethical_screen",
+      "tighten_drawdown_and_screening",
+      "defer_pending_governance_evidence"
+    ]
+  },
+  {
+    "decision_name": "Public Pension Fund",
+    "stakeholders": [
+      "current/future pensioners",
+      "contributors",
+      "investees",
+      "the state"
+    ],
+    "benefits": [
+      "retirement security",
+      "long-term capital"
+    ],
+    "risks": [
+      "underfunding shifting burden to the young",
+      "harmful/ribā investments",
+      "mismanagement",
+      "intergenerational unfairness"
+    ],
+    "affected_nodes": [
+      "maqasid_hifz_mal",
+      "wafa",
+      "amanah",
+      "maqasid_hifz_nasl",
+      "adalah_ijtimaiyyah",
+      "tayyibat"
+    ],
+    "critical_principles": [
+      "wafa",
+      "amanah",
+      "maqasid_hifz_nasl",
+      "adalah_ijtimaiyyah"
+    ],
+    "tradeoffs": [
+      "benefits now vs solvency for the young",
+      "returns vs ethical screening"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "intergenerational_equity_ledger",
+      "distributional_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is the fund solvent without burdening future contributors?",
+      "Are commitments to pensioners honoured?",
+      "Are investments ethically screened?"
+    ],
+    "required_evidence": [
+      "actuarial solvency analysis",
+      "intergenerational-burden assessment",
+      "portfolio screening"
+    ],
+    "decision_engines": [
+      "capital_integrity_analyzer",
+      "intergenerational_equity_ledger",
+      "ethical_finance_fit_engine",
+      "distributional_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_solvency_and_ethical_screen",
+      "reform_funding_to_protect_the_young",
+      "defer_pending_actuarial_evidence"
+    ]
+  },
+  {
+    "decision_name": "Green Sukuk Program",
+    "stakeholders": [
+      "investors",
+      "project communities",
+      "future generations",
+      "regulators",
+      "Sharia board"
+    ],
+    "benefits": [
+      "ethical climate finance",
+      "real-asset linkage",
+      "mobilised capital"
+    ],
+    "risks": [
+      "greenwashed use-of-proceeds",
+      "ribā/gharar in structuring",
+      "non-additional projects",
+      "weak verification"
+    ],
+    "affected_nodes": [
+      "riba",
+      "gharar",
+      "sustainable_finance",
+      "emissions_responsibility",
+      "sidq",
+      "bayyinah",
+      "maqasid_hifz_nasl"
+    ],
+    "critical_principles": [
+      "sidq",
+      "bayyinah",
+      "maqasid_hifz_nasl",
+      "riba"
+    ],
+    "tradeoffs": [
+      "climate finance vs verification integrity and Sharia compliance"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "climate_transition_intelligence",
+      "disclosure_verification_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are proceeds genuinely green and additional?",
+      "Is the structure free of ribā/gharar?",
+      "Is impact independently verified?"
+    ],
+    "required_evidence": [
+      "use-of-proceeds and additionality evidence",
+      "structure/Sharia review",
+      "impact-verification reports"
+    ],
+    "decision_engines": [
+      "ethical_finance_fit_engine",
+      "climate_transition_intelligence",
+      "truthfulness_greenwashing_detector",
+      "disclosure_verification_engine",
+      "scholar_review_workflow"
+    ],
+    "possible_outcomes": [
+      "proceed_with_verified_green_proceeds_and_scholar_approval",
+      "correct_structure_and_verification_gaps",
+      "defer_to_scholar_and_verification_review"
+    ]
+  },
+  {
+    "decision_name": "Venture Capital Fund",
+    "stakeholders": [
+      "founders",
+      "employees",
+      "investees' users",
+      "limited partners",
+      "society"
+    ],
+    "benefits": [
+      "innovation finance",
+      "job creation",
+      "growth"
+    ],
+    "risks": [
+      "funding harmful businesses",
+      "exploitation/growth-at-all-costs",
+      "ribā-linked structures",
+      "concentration of gains"
+    ],
+    "affected_nodes": [
+      "tayyibat",
+      "khabaith",
+      "ethical_investment",
+      "maslahah",
+      "ajr",
+      "shared_prosperity"
+    ],
+    "critical_principles": [
+      "tayyibat",
+      "maslahah",
+      "adl",
+      "la_darar"
+    ],
+    "tradeoffs": [
+      "growth/returns vs harm-screening and shared benefit"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "company_ethics_scorer",
+      "stakeholder_impact_mapper",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are funded businesses net-beneficial and non-harmful?",
+      "Are workers and users treated justly?",
+      "Are gains shared reasonably?"
+    ],
+    "required_evidence": [
+      "portfolio harm-screening",
+      "labour and user-impact review",
+      "structure review"
+    ],
+    "decision_engines": [
+      "ethical_finance_fit_engine",
+      "company_ethics_scorer",
+      "capital_integrity_analyzer",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "proceed_with_harm_screen_and_just_terms",
+      "exclude_harmful_sectors",
+      "defer_pending_screening_evidence"
+    ]
+  },
+  {
+    "decision_name": "Microfinance Program",
+    "stakeholders": [
+      "low-income borrowers",
+      "women",
+      "communities",
+      "lenders",
+      "regulators"
+    ],
+    "benefits": [
+      "financial inclusion",
+      "livelihood support",
+      "empowerment"
+    ],
+    "risks": [
+      "debt traps via high effective interest",
+      "coercive collection",
+      "over-indebtedness",
+      "ribā concerns"
+    ],
+    "affected_nodes": [
+      "riba",
+      "qard_hasan",
+      "miskeen",
+      "rahmah",
+      "dayn",
+      "maqasid_hifz_mal",
+      "zulm"
+    ],
+    "critical_principles": [
+      "riba",
+      "rahmah",
+      "la_darar",
+      "qist"
+    ],
+    "tradeoffs": [
+      "inclusion vs debt-trap and ribā risk"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "vulnerability_impact_engine",
+      "distributional_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Do terms relieve or entrap the poor?",
+      "Is collection humane and non-coercive?",
+      "Is this ribā or genuine benevolent finance?"
+    ],
+    "required_evidence": [
+      "effective-cost and over-indebtedness analysis",
+      "collection-practice review",
+      "borrower-outcome data"
+    ],
+    "decision_engines": [
+      "ethical_finance_fit_engine",
+      "vulnerability_impact_engine",
+      "scholar_review_workflow",
+      "harm_prevention_gate"
+    ],
+    "possible_outcomes": [
+      "proceed_with_humane_terms_and_qard_hasan_options",
+      "cap_costs_and_protect_borrowers",
+      "defer_to_scholar_review_on_riba"
+    ]
+  },
+  {
+    "decision_name": "Infrastructure Financing",
+    "stakeholders": [
+      "users",
+      "host communities",
+      "taxpayers",
+      "future generations",
+      "financiers"
+    ],
+    "benefits": [
+      "development",
+      "public services",
+      "economic growth"
+    ],
+    "risks": [
+      "debt burden on future taxpayers",
+      "ribā-based structures",
+      "cost overruns/corruption",
+      "stranded or low-value assets"
+    ],
+    "affected_nodes": [
+      "dayn",
+      "maqasid_hifz_mal",
+      "amanah",
+      "public_value_creation",
+      "maqasid_hifz_nasl",
+      "anti_corruption"
+    ],
+    "critical_principles": [
+      "amanah",
+      "maqasid_hifz_nasl",
+      "public_value_creation",
+      "qist"
+    ],
+    "tradeoffs": [
+      "development now vs debt and asset risk for the future"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "public_value_estimator",
+      "project_readiness_assessor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does the asset create genuine lasting public value?",
+      "Is the debt burden just to future taxpayers?",
+      "Is procurement clean?"
+    ],
+    "required_evidence": [
+      "public-value and demand analysis",
+      "debt-sustainability assessment",
+      "procurement-integrity records"
+    ],
+    "decision_engines": [
+      "capital_integrity_analyzer",
+      "public_value_estimator",
+      "project_readiness_assessor",
+      "procurement_integrity_monitor",
+      "intergenerational_equity_ledger"
+    ],
+    "possible_outcomes": [
+      "proceed_with_public_value_and_debt_sustainability",
+      "restructure_to_share_risk_and_value",
+      "defer_pending_value_and_integrity_evidence"
+    ]
+  },
+  {
+    "decision_name": "Public-Private Partnership",
+    "stakeholders": [
+      "the public",
+      "users",
+      "private partner",
+      "government",
+      "future generations"
+    ],
+    "benefits": [
+      "private capital and expertise",
+      "faster delivery"
+    ],
+    "risks": [
+      "socialised costs/privatised gains",
+      "hidden long-term liabilities",
+      "capture/conflicts",
+      "reduced accountability"
+    ],
+    "affected_nodes": [
+      "public_value_creation",
+      "amanah",
+      "masuliyyah",
+      "adl",
+      "conflict_of_interest_prevention",
+      "maqasid_hifz_mal"
+    ],
+    "critical_principles": [
+      "public_value_creation",
+      "amanah",
+      "adl",
+      "masuliyyah"
+    ],
+    "tradeoffs": [
+      "delivery speed vs public value and accountability"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "public_value_estimator",
+      "governance_integrity_scanner",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does the public get genuine value, not just private profit?",
+      "Are long-term liabilities transparent?",
+      "Is accountability preserved?"
+    ],
+    "required_evidence": [
+      "value-for-money analysis",
+      "full-liability disclosure",
+      "conflict and accountability review"
+    ],
+    "decision_engines": [
+      "public_value_estimator",
+      "capital_integrity_analyzer",
+      "governance_integrity_scanner",
+      "conflict_of_interest_screen"
+    ],
+    "possible_outcomes": [
+      "proceed_with_value_for_money_and_accountability",
+      "renegotiate_to_protect_public_value",
+      "defer_pending_value_and_accountability_evidence"
+    ]
+  },
+  {
+    "decision_name": "Debt Restructuring Program",
+    "stakeholders": [
+      "debtor (state/firm)",
+      "creditors",
+      "citizens (esp. poor)",
+      "future generations"
+    ],
+    "benefits": [
+      "solvency restoration",
+      "reduced burden",
+      "stability"
+    ],
+    "risks": [
+      "austerity harming the poor",
+      "creditor capture",
+      "moral hazard",
+      "intergenerational burden shift"
+    ],
+    "affected_nodes": [
+      "dayn",
+      "rahmah",
+      "maqasid_hifz_mal",
+      "miskeen",
+      "adalah_ijtimaiyyah",
+      "qist",
+      "maqasid_hifz_nasl"
+    ],
+    "critical_principles": [
+      "rahmah",
+      "qist",
+      "adalah_ijtimaiyyah",
+      "la_darar"
+    ],
+    "tradeoffs": [
+      "debt relief vs creditor claims and protection of the poor"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ethical_finance_fit_engine",
+      "capital_integrity_analyzer",
+      "distributional_impact_engine",
+      "vulnerability_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does restructuring protect the poor from austerity harm?",
+      "Is burden-sharing fair between debtor, creditors, and the future?",
+      "Is hardship-forbearance applied?"
+    ],
+    "required_evidence": [
+      "debt-sustainability and incidence analysis",
+      "creditor burden-sharing terms",
+      "social-protection provisions"
+    ],
+    "decision_engines": [
+      "capital_integrity_analyzer",
+      "distributional_impact_engine",
+      "vulnerability_impact_engine",
+      "intergenerational_equity_ledger"
+    ],
+    "possible_outcomes": [
+      "proceed_with_fair_burden_sharing_and_social_protection",
+      "adjust_to_shield_the_poor",
+      "defer_pending_distributional_evidence"
+    ]
+  },
+  {
+    "decision_name": "Mining Project",
+    "stakeholders": [
+      "host communities",
+      "indigenous peoples",
+      "workers",
+      "ecosystems",
+      "future generations",
+      "investors"
+    ],
+    "benefits": [
+      "minerals for development/transition",
+      "jobs",
+      "revenue"
+    ],
+    "risks": [
+      "land/water contamination",
+      "displacement",
+      "worker-safety hazards",
+      "biodiversity loss",
+      "resource-curse and corruption"
+    ],
+    "affected_nodes": [
+      "ard",
+      "maa",
+      "fasad",
+      "darar",
+      "worker_dignity",
+      "biodiversity_protection",
+      "maqasid_hifz_nasl",
+      "zulm"
+    ],
+    "critical_principles": [
+      "la_darar",
+      "khalifah",
+      "worker_dignity",
+      "maqasid_hifz_nasl"
+    ],
+    "tradeoffs": [
+      "minerals/revenue vs ecological and community harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "pollution_emissions_auditor",
+      "biodiversity_risk_engine",
+      "labour_justice_auditor",
+      "natural_capital_ledger",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are land and water protected from contamination?",
+      "Is community consent genuine and benefit shared?",
+      "Are workers safe and fairly treated?"
+    ],
+    "required_evidence": [
+      "environmental-impact and contamination studies",
+      "FPIC and benefit-sharing records",
+      "worker-safety data",
+      "closure/rehabilitation plan"
+    ],
+    "decision_engines": [
+      "pollution_emissions_auditor",
+      "biodiversity_risk_engine",
+      "labour_justice_auditor",
+      "justice_allocation_engine",
+      "reversibility_analyzer"
+    ],
+    "possible_outcomes": [
+      "proceed_with_safeguards_and_monitoring",
+      "proceed_conditionally_pending_evidence_and_review",
+      "redesign_to_remove_red_line_harm",
+      "defer_or_decline_pending_scholar_and_expert_review"
+    ]
+  },
+  {
+    "decision_name": "Oil Field Development",
+    "stakeholders": [
+      "host communities",
+      "global climate-exposed populations",
+      "future generations",
+      "workers",
+      "the state",
+      "investors"
+    ],
+    "benefits": [
+      "revenue",
+      "energy supply",
+      "jobs"
+    ],
+    "risks": [
+      "climate harm and lock-in",
+      "local pollution/spills",
+      "stranded-asset risk",
+      "resource-curse",
+      "intergenerational harm"
+    ],
+    "affected_nodes": [
+      "fasad",
+      "emissions_responsibility",
+      "maqasid_hifz_nasl",
+      "ard",
+      "maa",
+      "darar",
+      "israf"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nasl",
+      "la_darar",
+      "khalifah",
+      "fasad"
+    ],
+    "tradeoffs": [
+      "revenue/energy now vs climate and stranded-asset harm to the future"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "climate_transition_intelligence",
+      "pollution_emissions_auditor",
+      "natural_capital_ledger",
+      "carbon_responsibility",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is new fossil development compatible with climate limits?",
+      "Who bears the climate and pollution burden?",
+      "Is revenue stewarded for the future?"
+    ],
+    "required_evidence": [
+      "climate-alignment and stranded-asset analysis",
+      "local pollution/spill-risk assessment",
+      "revenue-stewardship plan"
+    ],
+    "decision_engines": [
+      "climate_transition_intelligence",
+      "pollution_emissions_auditor",
+      "natural_capital_ledger",
+      "intergenerational_equity_ledger",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "disfavour_new_development_against_climate_limits",
+      "permit_only_with_strong_justification_and_revenue_stewardship",
+      "defer_pending_climate_and_steward_evidence"
+    ]
+  },
+  {
+    "decision_name": "Gas Infrastructure Expansion",
+    "stakeholders": [
+      "energy users",
+      "host communities",
+      "future generations",
+      "climate-exposed populations",
+      "investors"
+    ],
+    "benefits": [
+      "bridge fuel / reliability",
+      "jobs",
+      "lower-than-coal emissions"
+    ],
+    "risks": [
+      "methane leakage",
+      "high-carbon lock-in",
+      "stranded-asset risk",
+      "local impacts"
+    ],
+    "affected_nodes": [
+      "emissions_responsibility",
+      "fasad",
+      "maqasid_hifz_nasl",
+      "clean_energy",
+      "israf"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nasl",
+      "la_darar",
+      "maslahah"
+    ],
+    "tradeoffs": [
+      "bridge-fuel reliability vs lock-in and methane harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "climate_transition_intelligence",
+      "pollution_emissions_auditor",
+      "energy_systems_analyzer",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is gas a genuine bridge or a high-carbon lock-in?",
+      "Is methane leakage controlled?",
+      "Are renewables a viable alternative?"
+    ],
+    "required_evidence": [
+      "lifecycle methane and emissions data",
+      "lock-in and stranded-asset analysis",
+      "renewables-alternative assessment"
+    ],
+    "decision_engines": [
+      "climate_transition_intelligence",
+      "pollution_emissions_auditor",
+      "energy_systems_analyzer",
+      "reversibility_analyzer"
+    ],
+    "possible_outcomes": [
+      "prefer_renewable_alternatives",
+      "permit_limited_bridge_use_with_methane_controls",
+      "defer_pending_lock_in_evidence"
+    ]
+  },
+  {
+    "decision_name": "Rare Earth Mining",
+    "stakeholders": [
+      "host communities",
+      "ecosystems",
+      "workers",
+      "clean-tech supply chains",
+      "future generations"
+    ],
+    "benefits": [
+      "materials for clean tech",
+      "strategic supply",
+      "jobs"
+    ],
+    "risks": [
+      "radioactive/toxic tailings",
+      "water contamination",
+      "worker exposure",
+      "supply-chain exploitation"
+    ],
+    "affected_nodes": [
+      "ard",
+      "maa",
+      "fasad",
+      "darar",
+      "worker_dignity",
+      "supply_chain_integrity",
+      "maqasid_hifz_nasl"
+    ],
+    "critical_principles": [
+      "la_darar",
+      "worker_dignity",
+      "khalifah",
+      "maqasid_hifz_nasl"
+    ],
+    "tradeoffs": [
+      "clean-tech materials vs toxic and worker harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "pollution_emissions_auditor",
+      "biodiversity_risk_engine",
+      "labour_justice_auditor",
+      "supply_chain_integrity_tracer",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are toxic/radioactive tailings safely managed?",
+      "Are workers protected from exposure?",
+      "Is the supply chain free of exploitation?"
+    ],
+    "required_evidence": [
+      "tailings and contamination management plan",
+      "worker-exposure monitoring",
+      "supply-chain audit"
+    ],
+    "decision_engines": [
+      "pollution_emissions_auditor",
+      "labour_justice_auditor",
+      "supply_chain_integrity_tracer",
+      "harm_prevention_gate"
+    ],
+    "possible_outcomes": [
+      "proceed_with_safeguards_and_monitoring",
+      "proceed_conditionally_pending_evidence_and_review",
+      "redesign_to_remove_red_line_harm",
+      "defer_or_decline_pending_scholar_and_expert_review"
+    ]
+  },
+  {
+    "decision_name": "Water Utility Company",
+    "stakeholders": [
+      "all water users",
+      "the poor",
+      "ecosystems",
+      "ratepayers",
+      "future generations"
+    ],
+    "benefits": [
+      "reliable safe water",
+      "sanitation",
+      "public health"
+    ],
+    "risks": [
+      "unaffordable tariffs for the poor",
+      "under-investment/leakage",
+      "over-abstraction",
+      "privatised essential service"
+    ],
+    "affected_nodes": [
+      "maa",
+      "water_security",
+      "water_justice",
+      "miskeen",
+      "public_health",
+      "adalah_ijtimaiyyah",
+      "amanah"
+    ],
+    "critical_principles": [
+      "water_justice",
+      "adalah_ijtimaiyyah",
+      "amanah",
+      "maslahah"
+    ],
+    "tradeoffs": [
+      "cost recovery vs affordability and the right to water"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "water_stewardship_intelligence",
+      "infrastructure_equity_analyzer",
+      "public_health_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is water affordable for the poor?",
+      "Is supply safe and reliable?",
+      "Is abstraction within sustainable limits?"
+    ],
+    "required_evidence": [
+      "tariff-affordability analysis",
+      "water-quality and reliability data",
+      "abstraction-sustainability assessment"
+    ],
+    "decision_engines": [
+      "water_stewardship_intelligence",
+      "infrastructure_equity_analyzer",
+      "public_health_impact_engine",
+      "distributional_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_affordable_tariffs_and_safe_supply",
+      "reform_to_protect_the_poor_and_sources",
+      "defer_pending_affordability_and_quality_evidence"
+    ]
+  },
+  {
+    "decision_name": "National Railway",
+    "stakeholders": [
+      "passengers/freight users",
+      "host/displaced communities",
+      "workers",
+      "regions",
+      "future generations"
+    ],
+    "benefits": [
+      "low-carbon mobility",
+      "regional development",
+      "connectivity"
+    ],
+    "risks": [
+      "displacement/severance",
+      "cost overruns and debt",
+      "unequal regional benefit",
+      "ecological impact of routes"
+    ],
+    "affected_nodes": [
+      "transport_access",
+      "infrastructure_equity",
+      "maa",
+      "ard",
+      "maqasid_hifz_mal",
+      "adalah_ijtimaiyyah",
+      "public_value_creation"
+    ],
+    "critical_principles": [
+      "infrastructure_equity",
+      "public_value_creation",
+      "adl",
+      "maqasid_hifz_nasl"
+    ],
+    "tradeoffs": [
+      "connectivity vs displacement and debt"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "infrastructure_equity_analyzer",
+      "public_value_estimator",
+      "biodiversity_risk_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Do benefits reach underserved regions equitably?",
+      "Is displacement just and compensated?",
+      "Is the asset worth its lifetime cost?"
+    ],
+    "required_evidence": [
+      "demand and public-value analysis",
+      "resettlement plan",
+      "route ecological assessment",
+      "debt-sustainability"
+    ],
+    "decision_engines": [
+      "infrastructure_equity_analyzer",
+      "public_value_estimator",
+      "justice_allocation_engine",
+      "biodiversity_risk_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_equitable_routing_and_just_resettlement",
+      "optimise_route_for_value_and_low_harm",
+      "defer_pending_value_and_resettlement_evidence"
+    ]
+  },
+  {
+    "decision_name": "Affordable Housing Program",
+    "stakeholders": [
+      "low-income households",
+      "homeless people",
+      "communities",
+      "builders",
+      "future generations"
+    ],
+    "benefits": [
+      "shelter dignity",
+      "reduced homelessness",
+      "stability"
+    ],
+    "risks": [
+      "poor-quality or segregated housing",
+      "displacement via gentrification",
+      "corruption in allocation",
+      "unsustainable build quality"
+    ],
+    "affected_nodes": [
+      "housing_dignity",
+      "miskeen",
+      "human_dignity",
+      "adalah_ijtimaiyyah",
+      "itqan",
+      "amanah",
+      "rahmah"
+    ],
+    "critical_principles": [
+      "housing_dignity",
+      "adalah_ijtimaiyyah",
+      "human_dignity",
+      "itqan"
+    ],
+    "tradeoffs": [
+      "scale/cost vs quality and non-segregation"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "infrastructure_equity_analyzer",
+      "human_development_index_engine",
+      "procurement_integrity_monitor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is housing safe, adequate, and non-segregated?",
+      "Is allocation fair and corruption-free?",
+      "Is build quality durable (itqan)?"
+    ],
+    "required_evidence": [
+      "housing-adequacy standards",
+      "allocation-fairness audit",
+      "build-quality and durability specs"
+    ],
+    "decision_engines": [
+      "infrastructure_equity_analyzer",
+      "human_development_index_engine",
+      "procurement_integrity_monitor",
+      "vulnerability_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_quality_fair_allocation_and_inclusion",
+      "correct_segregation_and_quality_gaps",
+      "defer_pending_quality_and_fairness_evidence"
+    ]
+  },
+  {
+    "decision_name": "New Industrial Zone",
+    "stakeholders": [
+      "nearby communities",
+      "workers",
+      "environment",
+      "local economy",
+      "future generations",
+      "investors"
+    ],
+    "benefits": [
+      "jobs",
+      "economic growth",
+      "industrial capacity"
+    ],
+    "risks": [
+      "pollution and health harm",
+      "worker exploitation",
+      "water/land stress",
+      "displacement",
+      "corruption"
+    ],
+    "affected_nodes": [
+      "fasad",
+      "public_health",
+      "worker_dignity",
+      "ard",
+      "maa",
+      "ajr",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "la_darar",
+      "worker_dignity",
+      "public_health",
+      "khalifah"
+    ],
+    "tradeoffs": [
+      "growth/jobs vs pollution and worker/community harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "pollution_emissions_auditor",
+      "labour_justice_auditor",
+      "infrastructure_equity_analyzer",
+      "water_stewardship_intelligence",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is pollution prevented and health protected?",
+      "Are workers' rights and wages assured?",
+      "Is water/land use sustainable?"
+    ],
+    "required_evidence": [
+      "environmental and health-impact assessment",
+      "labour-standards plan",
+      "resource-use analysis"
+    ],
+    "decision_engines": [
+      "pollution_emissions_auditor",
+      "labour_justice_auditor",
+      "public_health_impact_engine",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "proceed_with_pollution_controls_and_labour_standards",
+      "relocate_or_redesign_to_reduce_harm",
+      "defer_pending_environmental_and_labour_evidence"
+    ]
+  },
+  {
+    "decision_name": "Smart City Development",
+    "stakeholders": [
+      "residents",
+      "the marginalised",
+      "city government",
+      "tech vendors",
+      "future generations"
+    ],
+    "benefits": [
+      "efficiency",
+      "services",
+      "sustainability"
+    ],
+    "risks": [
+      "mass surveillance",
+      "digital exclusion",
+      "vendor lock-in/capture",
+      "displacement and unaffordability"
+    ],
+    "affected_nodes": [
+      "data_stewardship",
+      "human_dignity",
+      "infrastructure_equity",
+      "maqasid_hifz_din",
+      "amanah",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "human_dignity",
+      "maqasid_hifz_din",
+      "adalah_ijtimaiyyah",
+      "amanah"
+    ],
+    "tradeoffs": [
+      "efficiency vs surveillance, exclusion, and capture"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "infrastructure_equity_analyzer",
+      "governance_integrity_scanner",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does 'smart' mean surveillance or genuine service?",
+      "Are the marginalised included?",
+      "Is the city captured by vendors?"
+    ],
+    "required_evidence": [
+      "privacy and surveillance assessment",
+      "digital-inclusion analysis",
+      "vendor-dependency and procurement review"
+    ],
+    "decision_engines": [
+      "ai_ethics_assessment_layer",
+      "data_stewardship_monitor",
+      "infrastructure_equity_analyzer",
+      "governance_integrity_scanner"
+    ],
+    "possible_outcomes": [
+      "proceed_with_privacy_inclusion_and_open_governance",
+      "strip_surveillance_and_lock_in_features",
+      "defer_pending_privacy_and_inclusion_evidence"
+    ]
+  },
+  {
+    "decision_name": "Port Expansion Project",
+    "stakeholders": [
+      "trade-dependent economy",
+      "coastal communities",
+      "marine ecosystems",
+      "workers",
+      "future generations"
+    ],
+    "benefits": [
+      "trade capacity",
+      "jobs",
+      "economic growth"
+    ],
+    "risks": [
+      "marine-habitat destruction",
+      "dredging pollution",
+      "community displacement",
+      "emissions",
+      "corruption"
+    ],
+    "affected_nodes": [
+      "maa",
+      "ard",
+      "biodiversity_protection",
+      "fasad",
+      "worker_dignity",
+      "public_value_creation"
+    ],
+    "critical_principles": [
+      "la_darar",
+      "khalifah",
+      "public_value_creation",
+      "maqasid_hifz_nasl"
+    ],
+    "tradeoffs": [
+      "trade capacity vs marine and community harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "pollution_emissions_auditor",
+      "biodiversity_risk_engine",
+      "infrastructure_equity_analyzer",
+      "ecosystem_stability_monitor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is marine-ecosystem harm avoidable or irreversible?",
+      "Are coastal communities justly treated?",
+      "Does the expansion create genuine public value?"
+    ],
+    "required_evidence": [
+      "marine and dredging-impact studies",
+      "community-impact and compensation plan",
+      "demand and public-value analysis"
+    ],
+    "decision_engines": [
+      "biodiversity_risk_engine",
+      "pollution_emissions_auditor",
+      "public_value_estimator",
+      "reversibility_analyzer"
+    ],
+    "possible_outcomes": [
+      "proceed_with_safeguards_and_monitoring",
+      "proceed_conditionally_pending_evidence_and_review",
+      "redesign_to_remove_red_line_harm",
+      "defer_or_decline_pending_scholar_and_expert_review"
+    ]
+  },
+  {
+    "decision_name": "Healthcare Reform",
+    "stakeholders": [
+      "patients (esp. poor/vulnerable)",
+      "health workers",
+      "taxpayers",
+      "future generations"
+    ],
+    "benefits": [
+      "better health outcomes",
+      "access",
+      "efficiency",
+      "equity"
+    ],
+    "risks": [
+      "access cuts harming the vulnerable",
+      "quality erosion",
+      "privatisation excluding the poor",
+      "workforce strain"
+    ],
+    "affected_nodes": [
+      "public_health",
+      "maqasid_hifz_nafs",
+      "miskeen",
+      "rahmah",
+      "adalah_ijtimaiyyah",
+      "amanah"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nafs",
+      "adalah_ijtimaiyyah",
+      "rahmah",
+      "maslahah"
+    ],
+    "tradeoffs": [
+      "efficiency/cost vs universal access and quality"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "public_health_impact_engine",
+      "health_system_resilience",
+      "distributional_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does reform protect access for the poor and sick?",
+      "Is quality and safety maintained?",
+      "Is the system resilient to shocks?"
+    ],
+    "required_evidence": [
+      "access and outcome-equity analysis",
+      "quality and safety evidence",
+      "system-resilience assessment"
+    ],
+    "decision_engines": [
+      "public_health_impact_engine",
+      "health_system_resilience",
+      "distributional_impact_engine",
+      "vulnerability_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_universal_access_and_quality_safeguards",
+      "revise_to_protect_the_vulnerable",
+      "defer_pending_access_and_quality_evidence"
+    ]
+  },
+  {
+    "decision_name": "Education Reform",
+    "stakeholders": [
+      "students (esp. disadvantaged)",
+      "teachers",
+      "parents",
+      "society",
+      "future generations"
+    ],
+    "benefits": [
+      "learning outcomes",
+      "opportunity",
+      "skills for the future"
+    ],
+    "risks": [
+      "widening of divides",
+      "narrowing to testing",
+      "teacher disempowerment",
+      "cultural erasure"
+    ],
+    "affected_nodes": [
+      "education_access",
+      "ilm",
+      "maqasid_hifz_aql",
+      "social_mobility",
+      "adalah_ijtimaiyyah",
+      "cultural_preservation"
+    ],
+    "critical_principles": [
+      "education_access",
+      "maqasid_hifz_aql",
+      "adalah_ijtimaiyyah",
+      "maslahah"
+    ],
+    "tradeoffs": [
+      "standardisation/efficiency vs equity, depth, and culture"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "human_development_index_engine",
+      "distributional_impact_engine",
+      "cultural_impact_assessor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does reform narrow or widen educational divides?",
+      "Does it build genuine reasoning, not just test scores?",
+      "Is local culture respected?"
+    ],
+    "required_evidence": [
+      "learning-equity evidence",
+      "curriculum-quality review",
+      "cultural-impact assessment"
+    ],
+    "decision_engines": [
+      "human_development_index_engine",
+      "distributional_impact_engine",
+      "cultural_impact_assessor",
+      "long_horizon_consequence_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_equity_depth_and_cultural_respect",
+      "revise_to_close_divides",
+      "defer_pending_outcome_evidence"
+    ]
+  },
+  {
+    "decision_name": "Universal Internet Access",
+    "stakeholders": [
+      "unconnected populations",
+      "rural/poor communities",
+      "children",
+      "the state",
+      "future generations"
+    ],
+    "benefits": [
+      "information and service access",
+      "opportunity",
+      "inclusion"
+    ],
+    "risks": [
+      "surveillance/data exploitation",
+      "exposure to harmful content",
+      "digital divide if poorly targeted",
+      "vendor capture"
+    ],
+    "affected_nodes": [
+      "communication_access",
+      "ilm",
+      "maqasid_hifz_aql",
+      "adalah_ijtimaiyyah",
+      "data_stewardship",
+      "infrastructure_equity"
+    ],
+    "critical_principles": [
+      "communication_access",
+      "adalah_ijtimaiyyah",
+      "maqasid_hifz_aql",
+      "maslahah"
+    ],
+    "tradeoffs": [
+      "inclusion/opportunity vs privacy and harmful-content exposure"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "infrastructure_equity_analyzer",
+      "data_stewardship_monitor",
+      "human_development_index_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does access genuinely reach the unconnected poor?",
+      "Is user privacy protected?",
+      "Are children safeguarded online?"
+    ],
+    "required_evidence": [
+      "coverage and affordability analysis",
+      "privacy-protection design",
+      "child-safety provisions"
+    ],
+    "decision_engines": [
+      "infrastructure_equity_analyzer",
+      "data_stewardship_monitor",
+      "human_development_index_engine",
+      "vulnerability_impact_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_inclusive_reach_and_privacy_safeguards",
+      "target_the_unconnected_with_protections",
+      "defer_pending_inclusion_and_privacy_evidence"
+    ]
+  },
+  {
+    "decision_name": "Food Security Program",
+    "stakeholders": [
+      "the hungry/poor",
+      "children",
+      "farmers",
+      "future generations",
+      "the state"
+    ],
+    "benefits": [
+      "reduced hunger",
+      "nutrition",
+      "resilience"
+    ],
+    "risks": [
+      "dependency without local capacity",
+      "environmental harm of intensification",
+      "waste",
+      "corruption in distribution"
+    ],
+    "affected_nodes": [
+      "food_security",
+      "community_nutrition",
+      "miskeen",
+      "yateem",
+      "sustainable_agriculture",
+      "food_waste_prevention",
+      "rahmah"
+    ],
+    "critical_principles": [
+      "food_security",
+      "rahmah",
+      "adalah_ijtimaiyyah",
+      "maslahah"
+    ],
+    "tradeoffs": [
+      "immediate hunger relief vs long-term local capacity and sustainability"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "food_systems_resilience",
+      "food_security_monitor",
+      "distributional_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Does the program reach the hungry, especially children?",
+      "Does it build local capacity, not just dependency?",
+      "Is it environmentally sustainable?"
+    ],
+    "required_evidence": [
+      "targeting and reach data",
+      "local-capacity and sustainability assessment",
+      "distribution-integrity audit"
+    ],
+    "decision_engines": [
+      "food_systems_resilience",
+      "food_security_monitor",
+      "vulnerability_impact_engine",
+      "sustainable_agriculture"
+    ],
+    "possible_outcomes": [
+      "proceed_with_targeted_relief_and_local_capacity",
+      "add_sustainability_and_integrity_safeguards",
+      "defer_pending_targeting_evidence"
+    ]
+  },
+  {
+    "decision_name": "Reforestation Program",
+    "stakeholders": [
+      "local communities",
+      "ecosystems",
+      "future generations",
+      "climate-exposed populations",
+      "funders"
+    ],
+    "benefits": [
+      "carbon sequestration",
+      "biodiversity",
+      "watershed and soil benefit",
+      "livelihoods"
+    ],
+    "risks": [
+      "monoculture/offset-as-license harm",
+      "displacement of communities/land use",
+      "plantings that fail or displace food"
+    ],
+    "affected_nodes": [
+      "ard",
+      "biodiversity_protection",
+      "islah",
+      "carbon_responsibility",
+      "maqasid_hifz_nasl",
+      "miskeen"
+    ],
+    "critical_principles": [
+      "islah",
+      "khalifah",
+      "maqasid_hifz_nasl",
+      "la_darar"
+    ],
+    "tradeoffs": [
+      "carbon/ecology benefit vs offset-misuse and community land harm"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "biodiversity_risk_engine",
+      "restoration_prioritizer",
+      "carbon_responsibility",
+      "ecosystem_stability_monitor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is planting ecologically genuine (native, surviving)?",
+      "Does it benefit or displace local communities?",
+      "Is it used to license continued pollution?"
+    ],
+    "required_evidence": [
+      "species and survival-rate plans",
+      "community land-rights and benefit data",
+      "additionality and offset-use checks"
+    ],
+    "decision_engines": [
+      "restoration_prioritizer",
+      "biodiversity_risk_engine",
+      "carbon_responsibility",
+      "justice_allocation_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_native_planting_and_community_benefit",
+      "prevent_offset_misuse_and_displacement",
+      "defer_pending_ecological_and_rights_evidence"
+    ]
+  },
+  {
+    "decision_name": "Biodiversity Conservation Program",
+    "stakeholders": [
+      "indigenous/local communities",
+      "ecosystems",
+      "future generations",
+      "scientists",
+      "the state"
+    ],
+    "benefits": [
+      "habitat and species protection",
+      "ecosystem services",
+      "resilience"
+    ],
+    "risks": [
+      "fortress conservation displacing communities",
+      "under-funding",
+      "weak enforcement",
+      "conflict with livelihoods"
+    ],
+    "affected_nodes": [
+      "biodiversity_protection",
+      "ecosystem_stability",
+      "ard",
+      "maqasid_hifz_nasl",
+      "huquq",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "khalifah",
+      "maqasid_hifz_nasl",
+      "huquq",
+      "adl"
+    ],
+    "tradeoffs": [
+      "habitat protection vs local-community rights and livelihoods"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "biodiversity_risk_engine",
+      "ecosystem_stability_monitor",
+      "restoration_prioritizer",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are local and indigenous rights respected, not displaced?",
+      "Is protection effective and funded?",
+      "Are ecosystem thresholds maintained?"
+    ],
+    "required_evidence": [
+      "biodiversity and threshold data",
+      "community-rights and co-management plan",
+      "enforcement and funding assessment"
+    ],
+    "decision_engines": [
+      "biodiversity_risk_engine",
+      "ecosystem_stability_monitor",
+      "justice_allocation_engine",
+      "long_horizon_consequence_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_rights_based_effective_conservation",
+      "redesign_to_protect_community_rights",
+      "defer_pending_ecological_and_rights_evidence"
+    ]
+  },
+  {
+    "decision_name": "Climate Adaptation Strategy",
+    "stakeholders": [
+      "exposed/vulnerable populations",
+      "coastal/rural communities",
+      "future generations",
+      "the state"
+    ],
+    "benefits": [
+      "reduced climate harm",
+      "resilience",
+      "protected livelihoods"
+    ],
+    "risks": [
+      "maladaptation increasing future risk",
+      "protecting the rich while the poor stay exposed",
+      "under-investment",
+      "lock-in"
+    ],
+    "affected_nodes": [
+      "climate_adaptation",
+      "maqasid_hifz_nasl",
+      "miskeen",
+      "adalah_ijtimaiyyah",
+      "disaster_preparedness",
+      "rahmah"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nasl",
+      "adalah_ijtimaiyyah",
+      "la_darar",
+      "rahmah"
+    ],
+    "tradeoffs": [
+      "protection now vs avoiding maladaptation and protecting the poor"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "climate_resilience_stress_test",
+      "disaster_resilience_planner",
+      "distributional_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are the most exposed and poor prioritised?",
+      "Does adaptation avoid increasing future risk (maladaptation)?",
+      "Is it robust across scenarios?"
+    ],
+    "required_evidence": [
+      "vulnerability and exposure mapping",
+      "maladaptation risk review",
+      "scenario-robustness analysis"
+    ],
+    "decision_engines": [
+      "climate_resilience_stress_test",
+      "disaster_resilience_planner",
+      "distributional_impact_engine",
+      "scenario_simulator"
+    ],
+    "possible_outcomes": [
+      "proceed_with_vulnerable_first_robust_adaptation",
+      "revise_to_avoid_maladaptation",
+      "defer_pending_vulnerability_evidence"
+    ]
+  },
+  {
+    "decision_name": "Disaster Resilience Program",
+    "stakeholders": [
+      "exposed populations",
+      "emergency services",
+      "the vulnerable",
+      "future generations",
+      "the state"
+    ],
+    "benefits": [
+      "lives and assets protected",
+      "faster recovery",
+      "reduced loss"
+    ],
+    "risks": [
+      "neglect of the most vulnerable",
+      "over-reliance on hard defences",
+      "corruption in funds",
+      "false sense of security"
+    ],
+    "affected_nodes": [
+      "disaster_preparedness",
+      "nafs",
+      "maqasid_hifz_nafs",
+      "miskeen",
+      "community_resilience",
+      "amanah"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nafs",
+      "rahmah",
+      "adalah_ijtimaiyyah",
+      "la_darar"
+    ],
+    "tradeoffs": [
+      "protection investment vs prioritising the vulnerable and avoiding false security"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "disaster_resilience_planner",
+      "community_resilience_planner",
+      "vulnerability_impact_engine",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Are the most vulnerable prioritised for protection?",
+      "Is preparedness genuine, not cosmetic?",
+      "Are funds used with integrity?"
+    ],
+    "required_evidence": [
+      "hazard and vulnerability assessment",
+      "preparedness-gap analysis",
+      "fund-integrity audit"
+    ],
+    "decision_engines": [
+      "disaster_resilience_planner",
+      "community_resilience_planner",
+      "vulnerability_impact_engine",
+      "continuity_reserve_planner"
+    ],
+    "possible_outcomes": [
+      "proceed_with_vulnerable_first_genuine_preparedness",
+      "close_preparedness_gaps",
+      "defer_pending_vulnerability_and_integrity_evidence"
+    ]
+  },
+  {
+    "decision_name": "National Innovation Strategy",
+    "stakeholders": [
+      "citizens",
+      "researchers",
+      "industry",
+      "workers",
+      "future generations",
+      "the vulnerable"
+    ],
+    "benefits": [
+      "growth",
+      "capability",
+      "problem-solving capacity"
+    ],
+    "risks": [
+      "innovation harming society (dual-use)",
+      "inequitable benefit",
+      "ethics-lag behind capability",
+      "brain-drain/capture"
+    ],
+    "affected_nodes": [
+      "responsible_innovation",
+      "scientific_responsibility",
+      "ilm",
+      "maslahah",
+      "maqasid_hifz_nasl",
+      "itqan",
+      "adalah_ijtimaiyyah"
+    ],
+    "critical_principles": [
+      "responsible_innovation",
+      "maslahah",
+      "la_darar",
+      "adl"
+    ],
+    "tradeoffs": [
+      "capability/growth vs societal benefit and harm-foresight"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "responsible_innovation",
+      "scientific_responsibility",
+      "scenario_simulator",
+      "systemic_justice_auditor",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is innovation oriented to genuine benefit, with harm foresight?",
+      "Are benefits shared, not captured?",
+      "Does ethics keep pace with capability?"
+    ],
+    "required_evidence": [
+      "benefit-and-harm foresight analysis",
+      "dual-use risk review",
+      "benefit-distribution plan"
+    ],
+    "decision_engines": [
+      "responsible_innovation",
+      "scenario_simulator",
+      "systemic_justice_auditor",
+      "long_horizon_consequence_engine",
+      "maslahah_mafsadah_weigher"
+    ],
+    "possible_outcomes": [
+      "proceed_with_benefit_orientation_and_harm_foresight",
+      "add_dual_use_and_equity_safeguards",
+      "defer_pending_foresight_evidence"
+    ]
+  },
+  {
+    "decision_name": "Future Generations Fund",
+    "stakeholders": [
+      "future generations",
+      "current citizens",
+      "beneficiaries",
+      "the state",
+      "trustees"
+    ],
+    "benefits": [
+      "intergenerational savings",
+      "long-term resilience",
+      "stewardship of finite resources"
+    ],
+    "risks": [
+      "raiding by present generation",
+      "harmful/ribā investments",
+      "opacity/capture",
+      "mismanagement"
+    ],
+    "affected_nodes": [
+      "maqasid_hifz_nasl",
+      "intergenerational_responsibility",
+      "istikhlaf",
+      "amanah",
+      "khalifah",
+      "tayyibat",
+      "barakah"
+    ],
+    "critical_principles": [
+      "maqasid_hifz_nasl",
+      "istikhlaf",
+      "amanah",
+      "khalifah"
+    ],
+    "tradeoffs": [
+      "present needs vs binding protection of future generations' share"
+    ],
+    "pathway": [
+      "decision_triage_framework",
+      "stakeholder_impact_mapper",
+      "red_line_hudud_gate",
+      "harm_prevention_gate",
+      "intergenerational_equity_ledger",
+      "natural_capital_ledger",
+      "ethical_finance_fit_engine",
+      "governance_integrity_scanner",
+      "maslahah_mafsadah_weigher",
+      "trade_off_resolver",
+      "justice_allocation_engine",
+      "vulnerability_impact_engine",
+      "long_horizon_consequence_engine",
+      "intergenerational_equity_ledger",
+      "maqasid_preservation_scorer",
+      "uncertainty_review_router",
+      "scholar_review_workflow",
+      "moral_compass_engine",
+      "hikma_synthesis_engine"
+    ],
+    "key_questions": [
+      "Is the future generations' share protected from present raiding?",
+      "Are holdings free of harm and ribā?",
+      "Is governance transparent and trustee-accountable?"
+    ],
+    "required_evidence": [
+      "intergenerational-rule and drawdown design",
+      "portfolio ethical-screening",
+      "trustee-governance and transparency audit"
+    ],
+    "decision_engines": [
+      "intergenerational_equity_ledger",
+      "natural_capital_ledger",
+      "ethical_finance_fit_engine",
+      "governance_integrity_scanner",
+      "stewardship_accountability_engine"
+    ],
+    "possible_outcomes": [
+      "proceed_with_binding_intergenerational_rule_and_ethical_screen",
+      "strengthen_trustee_governance",
+      "defer_pending_governance_evidence"
+    ]
+  }
+]

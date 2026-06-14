@@ -1,0 +1,477 @@
+{
+  "platform": "Global Intelligence Explorer",
+  "version": "v1",
+  "role": "Primary user-facing layer (Bloomberg + Palantir + MSCI + World Bank Data Explorer style) assembling the existing EcoIQ frontend islands over the Hikma engine APIs.",
+  "inspiration": [
+    "Bloomberg Terminal (density, command-driven)",
+    "Palantir Foundry (graph exploration, provenance)",
+    "MSCI ESG (rating + pillar drill-down)",
+    "World Bank Data Explorer (geo + indicator browsing)"
+  ],
+  "builds_on_existing": {
+    "islands": [
+      "GlobalCountryExplorer (2D world map)",
+      "MissionControl (3D globe + flight nav)",
+      "CommandPalette (Ctrl+K search)",
+      "atlas.ts/intel.ts data models",
+      "BriefingPanel"
+    ],
+    "routes": [
+      "/global-intelligence/",
+      "/mission-control/",
+      "/companies/",
+      "/countries/",
+      "/companies/<slug>/ (Moral Compass panel)"
+    ],
+    "design": "dark glassmorphism, emerald #00e89a accent, graphite base, institutional density",
+    "principle": "Explorer is a presentation+navigation skin; every data widget calls DOWN into runtime/engine APIs; no scoring in the frontend."
+  },
+  "information_architecture": {
+    "primary_nav": "the globe (MissionControl) IS the primary spatial navigation; CommandPalette IS the primary keyboard navigation; traditional top-nav is secondary.",
+    "ten_views": [
+      "global_map",
+      "country",
+      "sector",
+      "company",
+      "technology",
+      "decision_pathway",
+      "moral_compass",
+      "future_generations",
+      "evidence_explorer",
+      "video_intelligence"
+    ],
+    "containment": "World -> Country -> Sector -> Company -> Asset/Project ; plus cross-cuts: Technology, Pathway, Evidence, Future-Generations, Moral-Compass, Video"
+  },
+  "page_hierarchy": {
+    "/explorer/": "global_map (default; 3D globe or 2D fallback)",
+    "/explorer/country/<iso2>/": "country view",
+    "/explorer/country/<iso2>/sector/<sector>/": "sector view",
+    "/explorer/company/<slug>/": "company view (assessment dashboard)",
+    "/explorer/company/<slug>/compass/": "moral_compass view",
+    "/explorer/company/<slug>/future/": "future_generations view",
+    "/explorer/company/<slug>/evidence/": "evidence_explorer",
+    "/explorer/company/<slug>/video/": "video_intelligence view",
+    "/explorer/technology/<tech>/": "technology view",
+    "/explorer/pathway/<pathway_slug>/": "decision_pathway view",
+    "/explorer/graph/": "graph exploration (node traversal viewer)"
+  },
+  "navigation_system": {
+    "spatial": "globe flight (Earth->country->region->city->asset), breadcrumb address bar (Earth ▸ Kazakhstan ▸ Energy ▸ Samruk-Energy)",
+    "command": "Ctrl/Cmd+K palette over countries, companies, sectors, technologies, pathways, evidence",
+    "layer_toggles": "companies, manufacturers, projects, capital, technologies, climate-risk, air-quality, energy-infra (reuse atlas LAYERS)",
+    "contextual": "every entity links to its assessment, compass, evidence, brief, and video"
+  },
+  "search_architecture": {
+    "index": "entities (country|company|sector|technology|pathway|evidence_id) + graph nodes; built over runtime catalog + graph_index.json",
+    "ux": "CommandPalette (existing) extended with entity-type facets; fuzzy + type-ahead; returns deep links to views",
+    "graph_search": "semantic match into the 304-node graph -> shows which engines/principles apply to a query",
+    "api": "GET /api/v1/search?q=&type="
+  },
+  "graph_exploration_ux": {
+    "objective": "Palantir-style node-link exploration of the Revelation Graph + an entity's activated nodes",
+    "widgets": [
+      "force/radial node-link canvas",
+      "node inspector (definition, quranic_basis with labels, related_nodes)",
+      "edge filter (related vs foundation)",
+      "activation heat overlay for a selected subject"
+    ],
+    "interactions": [
+      "click node -> inspector + connected entities",
+      "trace from entity -> its activated_nodes -> evidence",
+      "filter by category/confidence"
+    ],
+    "data": "hikma_revelation_graph_full.json, graph_index.json, ayah_index.json, AssessmentResult.activated_nodes",
+    "guardrail": "node prose shows the direct/inferred/modern label; never presented as ruling"
+  },
+  "screens": [
+    {
+      "id": "global_map",
+      "title": "Global Map",
+      "objective": "Spatial entry point to all coverage and intelligence.",
+      "widgets": [
+        "3D globe (MissionControl) / 2D fallback (GlobalCountryExplorer)",
+        "layer toggles",
+        "coverage legend (active/research)",
+        "command palette",
+        "top-movers ticker"
+      ],
+      "data_inputs": [
+        "country coverage + scores",
+        "layer node positions",
+        "watchlist"
+      ],
+      "outputs": [
+        "composite map of country ratings + intelligence layers"
+      ],
+      "actions": [
+        "click country -> country view",
+        "toggle layers",
+        "search",
+        "add to watchlist"
+      ],
+      "api_calls": [
+        "GET /api/v1/countries",
+        "GET /api/v1/map/layers?layer=",
+        "GET /api/v1/search"
+      ]
+    },
+    {
+      "id": "country",
+      "title": "Country View",
+      "objective": "Sovereign-level transition + governance intelligence.",
+      "widgets": [
+        "country rating gauge",
+        "sector breakdown grid",
+        "transition-risk panel",
+        "governance integrity panel",
+        "companies-in-country table",
+        "project pipeline",
+        "manufacturer ecosystem chips"
+      ],
+      "data_inputs": [
+        "country AssessmentResult",
+        "sector scores",
+        "ranked companies",
+        "pathways relevant to country"
+      ],
+      "outputs": [
+        "country score+band, sector heatmap, top companies, opportunities"
+      ],
+      "actions": [
+        "drill to sector",
+        "drill to company",
+        "request country brief",
+        "open evidence"
+      ],
+      "api_calls": [
+        "GET /api/v1/assess/country/<iso2>/latest",
+        "GET /api/v1/countries/<iso2>/companies",
+        "POST /api/v1/brief"
+      ]
+    },
+    {
+      "id": "sector",
+      "title": "Sector View",
+      "objective": "Compare entities within a sector and country.",
+      "widgets": [
+        "sector rating distribution",
+        "company league table (sortable by compass/pillar)",
+        "sector-specific risks",
+        "technology adoption panel"
+      ],
+      "data_inputs": [
+        "companies in sector",
+        "sector benchmark",
+        "relevant decision pathways"
+      ],
+      "outputs": [
+        "ranked companies, sector risk profile, benchmark"
+      ],
+      "actions": [
+        "sort/filter",
+        "drill to company",
+        "compare companies",
+        "open pathway"
+      ],
+      "api_calls": [
+        "GET /api/v1/sectors/<sector>?country=",
+        "GET /api/v1/assess?sector="
+      ]
+    },
+    {
+      "id": "company",
+      "title": "Company View",
+      "objective": "Full entity assessment dashboard (MSCI-style rating + drill-down).",
+      "widgets": [
+        "composite rating gauge + band + trajectory",
+        "Mizan/assessment 6-dim radar",
+        "SAY/DO/SHOW alignment bars",
+        "strengths & risks cards",
+        "governance + stakeholder panels",
+        "greenwashing gap meter",
+        "priority actions",
+        "brief + video CTAs"
+      ],
+      "data_inputs": [
+        "AssessmentResult",
+        "ExecutiveBrief summary",
+        "evidence clusters"
+      ],
+      "outputs": [
+        "full assessment dashboard with citations"
+      ],
+      "actions": [
+        "run/refresh assessment",
+        "open compass",
+        "open evidence",
+        "generate executive brief (PDF)",
+        "generate video brief",
+        "add to watchlist/compare"
+      ],
+      "api_calls": [
+        "GET /api/v1/assess/<slug>/latest",
+        "POST /api/v1/assess",
+        "POST /api/v1/brief",
+        "POST /api/v1/video-brief"
+      ]
+    },
+    {
+      "id": "technology",
+      "title": "Technology View",
+      "objective": "Scout the manufacturer/technology ecosystem across markets.",
+      "widgets": [
+        "technology map (heat pumps, solar, grid, storage...)",
+        "manufacturer table (presence, certifications)",
+        "country adoption matrix",
+        "project pipeline using the tech",
+        "supply-chain integrity flags"
+      ],
+      "data_inputs": [
+        "manufacturer intel",
+        "tech-tagged projects",
+        "supply-chain evidence"
+      ],
+      "outputs": [
+        "manufacturer ecosystem, adoption by country, pipeline"
+      ],
+      "actions": [
+        "filter by country/cert",
+        "drill to manufacturer/company",
+        "open supply-chain evidence"
+      ],
+      "api_calls": [
+        "GET /api/v1/technology/<tech>",
+        "GET /api/v1/manufacturers?tech=&country="
+      ]
+    },
+    {
+      "id": "decision_pathway",
+      "title": "Decision Pathway View",
+      "objective": "Inspect a canonical decision-analysis template and run it on a subject.",
+      "widgets": [
+        "pathway diagram (stakeholders->gates->engines->outcomes)",
+        "critical principles list",
+        "key questions checklist",
+        "required-evidence checklist",
+        "run-on-subject panel"
+      ],
+      "data_inputs": [
+        "one of 50 hikma_decision_pathways",
+        "subject binding (optional)"
+      ],
+      "outputs": [
+        "pathway logic + a bound assessment if subject selected"
+      ],
+      "actions": [
+        "bind a subject (company/project)",
+        "run assessment",
+        "open resulting compass"
+      ],
+      "api_calls": [
+        "GET /api/v1/pathways/<slug>",
+        "POST /api/v1/assess (pathway_hint)"
+      ]
+    },
+    {
+      "id": "moral_compass",
+      "title": "Moral Compass View",
+      "objective": "The ethical assessment summary with full traceability.",
+      "widgets": [
+        "compass gauge + band",
+        "6-dim breakdown",
+        "Maqasid dashboard (projected: life/intellect/values/future/wealth)",
+        "findings (node+evidence cited)",
+        "scholar-review banner",
+        "uncertainty markers"
+      ],
+      "data_inputs": [
+        "AssessmentResult.moral_compass_summary + wisdom_synthesis_summary"
+      ],
+      "outputs": [
+        "compass summary; every finding cites evidence + node"
+      ],
+      "actions": [
+        "explain any finding",
+        "open evidence",
+        "escalate to review"
+      ],
+      "api_calls": [
+        "GET /api/v1/assess/<slug>/latest",
+        "GET /api/v1/assess/<slug>/explain/<field>"
+      ]
+    },
+    {
+      "id": "future_generations",
+      "title": "Future Generations View",
+      "objective": "Long-horizon and intergenerational impact lens.",
+      "widgets": [
+        "long-horizon trajectory/fan chart",
+        "irreversibility flags",
+        "intergenerational ledger (what is passed forward)",
+        "stranded-asset + lock-in panel"
+      ],
+      "data_inputs": [
+        "AssessmentResult.future_generation_impacts",
+        "scenario_simulator outputs"
+      ],
+      "outputs": [
+        "long-term impact profile + irreversibility flags"
+      ],
+      "actions": [
+        "run scenarios",
+        "compare subjects on long-horizon",
+        "open evidence"
+      ],
+      "api_calls": [
+        "GET /api/v1/assess/<slug>/latest",
+        "GET /api/v1/assess/<slug>/scenarios"
+      ]
+    },
+    {
+      "id": "evidence_explorer",
+      "title": "Evidence Explorer",
+      "objective": "Browse and audit the SAY/DO/SHOW evidence behind any score.",
+      "widgets": [
+        "evidence table (kind, source, tier, date)",
+        "SAY/DO/SHOW columns",
+        "contradiction list",
+        "greenwashing/disclosure-gap panel",
+        "timeline (pledge vs delivery)",
+        "source-reliability badges"
+      ],
+      "data_inputs": [
+        "EvidenceRecords + EvidenceClusters from Evidence Layer"
+      ],
+      "outputs": [
+        "full provenance; contradictions; timeline"
+      ],
+      "actions": [
+        "filter by kind/topic/date",
+        "open source",
+        "flag for review",
+        "trace a finding to its evidence"
+      ],
+      "api_calls": [
+        "GET /api/v1/evidence/<subject>",
+        "GET /api/v1/evidence/<subject>/contradictions",
+        "GET /api/v1/evidence/<subject>/timeline"
+      ]
+    },
+    {
+      "id": "video_intelligence",
+      "title": "Video Intelligence View",
+      "objective": "Generate and review the cinematic institutional brief.",
+      "widgets": [
+        "video player (rendered brief)",
+        "scene list (each linked to brief section + evidence)",
+        "prompt-pack viewer",
+        "length selector (3/5/10 min)",
+        "download (MP4/SRT)"
+      ],
+      "data_inputs": [
+        "VideoBriefPack + rendered asset",
+        "ExecutiveBrief"
+      ],
+      "outputs": [
+        "video brief + per-scene provenance"
+      ],
+      "actions": [
+        "generate pack",
+        "trigger render (human step)",
+        "download",
+        "open scene evidence"
+      ],
+      "api_calls": [
+        "POST /api/v1/video-brief",
+        "GET /api/v1/video-brief/<slug>/latest",
+        "GET /api/v1/video-brief/<slug>/explain/<scene>"
+      ]
+    }
+  ],
+  "data_model": {
+    "ExplorerEntity": {
+      "type": "country|company|sector|technology|pathway",
+      "ref": "",
+      "name": "",
+      "rating": {
+        "score": 0,
+        "band": "",
+        "trajectory": ""
+      },
+      "coverage": "active|research",
+      "geo": {
+        "lat": 0,
+        "lon": 0
+      }
+    },
+    "WatchlistItem": {
+      "user": "",
+      "entity_ref": "",
+      "added_at": ""
+    },
+    "CompareSet": {
+      "user": "",
+      "entity_refs": [],
+      "dimension": "compass|pillar|future"
+    },
+    "note": "All view models are read-projections of AssessmentResult/ExecutiveBrief/EvidenceClusters; the Explorer stores only watchlists/compare-sets/user prefs (additive), never scores."
+  },
+  "api_contracts": {
+    "GET /api/v1/countries": "coverage + ratings for the map",
+    "GET /api/v1/map/layers?layer=": "geo node positions per intelligence layer",
+    "GET /api/v1/search?q=&type=": "entity + graph-node search",
+    "GET /api/v1/sectors/<sector>?country=": "sector league table",
+    "GET /api/v1/technology/<tech>": "tech ecosystem + manufacturers",
+    "GET /api/v1/manufacturers?tech=&country=": "manufacturer intel",
+    "GET /api/v1/pathways/<slug>": "decision pathway template",
+    "GET /api/v1/assess/<ref>/latest": "AssessmentResult",
+    "POST /api/v1/assess": "run/refresh (async)",
+    "GET /api/v1/assess/<ref>/explain/<field>": "node+evidence provenance",
+    "GET /api/v1/evidence/<ref>/*": "Evidence Layer endpoints",
+    "POST /api/v1/brief | /api/v1/video-brief": "brief + video pack",
+    "GET/POST /api/v1/watchlist | /compare": "user collections (Explorer-owned)"
+  },
+  "user_flows": {
+    "investor": [
+      "global_map -> filter by transition-readiness",
+      "country -> sector league table",
+      "company view -> rating + SAY/DO/SHOW",
+      "evidence_explorer -> verify contradictions",
+      "generate executive brief (PDF) -> add to watchlist -> compare holdings"
+    ],
+    "government": [
+      "country view (own country) -> governance + sector heatmap",
+      "decision_pathway (e.g. Coal Phaseout) -> bind national program",
+      "future_generations view -> long-horizon impact",
+      "commission country brief + video for cabinet"
+    ],
+    "analyst": [
+      "command palette -> company",
+      "graph exploration -> activated nodes -> evidence",
+      "evidence_explorer -> grade/flag sources",
+      "moral_compass -> explain each finding",
+      "escalate scholar-review items"
+    ],
+    "climate": [
+      "global_map climate-risk layer",
+      "country transition-risk panel",
+      "technology view (clean tech adoption)",
+      "future_generations + scenarios",
+      "sector decarbonisation benchmark"
+    ],
+    "technology_scouting": [
+      "technology view -> manufacturer ecosystem by country/cert",
+      "supply-chain integrity flags",
+      "drill to manufacturer company assessment",
+      "pathway view (e.g. Renewable Energy Program) -> project pipeline",
+      "shortlist -> compare"
+    ]
+  },
+  "explainability": "Every widget that shows a number exposes a provenance affordance -> /explain -> graph nodes (with ayah_index labels preserved) + evidence_ids. No frontend computation of scores.",
+  "uncertainty": "Low-confidence and scholar-review items render with visible 'indicative / under review' markers; the platform never presents an interpretive judgment as settled or as a ruling.",
+  "non_goals": [
+    "no scoring in the browser",
+    "no rulings/fatwas/halal-haram labels in any view",
+    "no religious framing in entity-facing copy (graph terms projected to institutional language as in the Executive Brief Engine)"
+  ]
+}
