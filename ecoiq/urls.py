@@ -64,6 +64,9 @@ urlpatterns = [
     # Manufacturer intelligence — currently surfaced inside the global explorer
     path('manufacturers/', RedirectView.as_view(url='/global-intelligence/', query_string=True, permanent=False), name='manufacturers'),
 
+    # EcoIQ Evidence Harvester — standalone read-only Company Evidence Dashboard
+    path('evidence/',   include('harvester.urls', namespace='harvester')),
+
     # EcoIQ REST API — docs at /api/, endpoints at /api/v1/
     path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
     path('api/v1/',     include('api.urls',   namespace='api')),

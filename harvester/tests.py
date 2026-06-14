@@ -477,3 +477,82 @@ class ProcessHarvestJobsTests(TestCase):
         job = HarvestJob.objects.get(company_slug="national-grid")
         self.assertEqual(job.status, "done")
         self.assertGreater(job.evidence_stored, 0)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 5 — standalone read-only Company Evidence Dashboard
+# ════════════════════════════════════════════════════════════════════════════
+from django.test import Client
+from harvester.views import build_dashboard_data
+
+
+class DashboardDataTests(TestCase):
+    def setUp(self):
+        self.company, self.profile = make_company("national-grid")
+        HarvestJob = __import__("harvester.models", fromlist=["HarvestJob"]).HarvestJob
+        from harvester.pipeline import run_harvest
+        run_harvest(HarvestJob.objects.create(
+            company=self.profile, company_slug="national-grid", status="pending"))
+
+    def test_payload_shape_and_metrics(self):
+        d = build_dashboard_data("national-grid")
+        for k in ("coverage_pct", "verification_pct", "missing_categories",
+                  "sources", "evidence", "datapoints", "contradictions", "counts"):
+            self.assertIn(k, d)
+        self.assertEqual(d["categories_total"], 25)
+        self.assertGreater(d["counts"]["evidence"], 0)
+        self.assertGreater(d["counts"]["datapoints"], 0)
+        self.assertTrue(d["read_only"])
+
+    def test_coverage_and_verification_are_consistent(self):
+        d = build_dashboard_data("national-grid")
+        # coverage = present categories / 25
+        self.assertEqual(d["categories_present"] + len(d["missing_categories"]), 25)
+        # verification % reflects VERIFIED share (scope1 is verified)
+        self.assertGreater(d["verification_pct"], 0.0)
+        self.assertIn("VERIFIED", d["status_breakdown"])
+
+    def test_empty_company_safe_state(self):
+        d = build_dashboard_data("no-such-co")
+        self.assertEqual(d["counts"]["evidence"], 0)
+        self.assertEqual(d["coverage_pct"], 0.0)
+        self.assertEqual(d["verification_pct"], 0.0)
+        self.assertEqual(len(d["missing_categories"]), 25)
+
+
+class DashboardViewTests(TestCase):
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+        self.company, self.profile = make_company("national-grid")
+        from harvester.models import HarvestJob
+        from harvester.pipeline import run_harvest
+        run_harvest(HarvestJob.objects.create(
+            company=self.profile, company_slug="national-grid", status="pending"))
+
+    def test_dashboard_html_200(self):
+        r = self.client.get("/evidence/national-grid/")
+        self.assertEqual(r.status_code, 200)
+        body = r.content.decode()
+        self.assertIn("Coverage", body)
+        self.assertIn("Datapoints", body)
+        self.assertIn("revenue", body)          # a real harvested datapoint
+
+    def test_dashboard_json_200(self):
+        r = self.client.get("/evidence/national-grid/data/")
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["company_slug"], "national-grid")
+        self.assertGreater(data["counts"]["datapoints"], 0)
+
+    def test_unknown_company_renders_safe_empty(self):
+        r = self.client.get("/evidence/ghost-co/")
+        self.assertEqual(r.status_code, 200)            # read-only, never 500
+        self.assertIn("No evidence harvested yet", r.content.decode())
+
+    def test_dashboard_is_read_only_no_mutation(self):
+        from harvester.models import Evidence, Datapoint
+        before = (Evidence.objects.count(), Datapoint.objects.count())
+        self.client.get("/evidence/national-grid/")
+        self.client.get("/evidence/national-grid/data/")
+        after = (Evidence.objects.count(), Datapoint.objects.count())
+        self.assertEqual(before, after)

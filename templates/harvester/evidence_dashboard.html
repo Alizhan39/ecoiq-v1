@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% comment %}
+Standalone, read-only Company Evidence Dashboard (Evidence Harvester).
+Renders server-side from harvested data only — no scoring, no interpretation,
+no writes. Does not touch existing company-profile templates.
+{% endcomment %}
+
+{% block title %}Evidence Dashboard — {{ d.company_name }} · EcoIQ{% endblock %}
+{% block meta_description_content %}Read-only Evidence Harvester dashboard — coverage, verification, sources, evidence, datapoints, and contradictions. No scoring.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ev-dash {
+    --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --border:rgba(255,255,255,.08);
+    --border2:rgba(255,255,255,.14); --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+    --accent:#00e89a; --info:#58a6ff; --warn:#f4a261; --danger:#e63946; --purple:#a855f7;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    background:var(--bg); color:var(--text); border:1px solid var(--border);
+    border-radius:10px; overflow:hidden;
+  }
+  body:has(.ev-dash) main { max-width:1180px; }
+  .ev-dash * { box-sizing:border-box; }
+  .ev-head { padding:1.5rem 1.8rem; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0d1117,#070b0f); }
+  .ev-eyebrow { font-family:var(--mono); font-size:.66rem; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:.5rem; }
+  .ev-title { font-size:1.7rem; font-weight:800; color:#fff; letter-spacing:-.02em; }
+  .ev-slug { font-family:var(--mono); color:var(--muted2); font-size:.78rem; margin-top:.25rem; }
+
+  .ev-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+    border-bottom:1px solid var(--border); }
+  @media (max-width:820px){ .ev-kpis{ grid-template-columns:repeat(2,1fr); } }
+  .ev-kpi { padding:1.3rem 1.5rem; border-right:1px solid var(--border); }
+  .ev-kpi:last-child{ border-right:none; }
+  .ev-kpi .n { font-family:var(--mono); font-size:2rem; font-weight:800; color:#fff; }
+  .ev-kpi .l { font-family:var(--mono); font-size:.64rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); margin-top:.35rem; }
+  .ev-kpi .bar { height:5px; background:var(--bg3); border-radius:3px; margin-top:.6rem; overflow:hidden; }
+  .ev-kpi .bar > span { display:block; height:100%; background:linear-gradient(90deg,var(--info),var(--accent)); }
+
+  .ev-section { padding:1.4rem 1.8rem; border-top:1px solid var(--border); }
+  .ev-section h2 { font-family:var(--mono); font-size:.74rem; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--muted2); margin:0 0 1rem; display:flex; gap:.6rem; align-items:center; }
+  .ev-section h2 .c { font-size:.66rem; color:var(--bg); background:var(--muted2);
+    border-radius:10px; padding:.05rem .5rem; font-weight:700; }
+
+  .ev-chips { display:flex; flex-wrap:wrap; gap:.45rem; }
+  .ev-chip { font-family:var(--mono); font-size:.7rem; padding:.25rem .6rem; border-radius:4px;
+    border:1px solid var(--border2); color:var(--muted2); }
+  .ev-chip.miss { border-color:rgba(244,162,97,.3); background:rgba(244,162,97,.07); color:#f4a261; }
+
+  table.ev-tbl { width:100%; border-collapse:collapse; font-size:.8rem; }
+  .ev-tbl th { text-align:left; font-family:var(--mono); font-size:.62rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); padding:.5rem .6rem; border-bottom:1px solid var(--border2); }
+  .ev-tbl td { padding:.55rem .6rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  .ev-tbl td a { color:var(--info); text-decoration:none; }
+  .ev-tbl tr:hover td { background:rgba(255,255,255,.02); }
+
+  .st { font-family:var(--mono); font-size:.62rem; letter-spacing:.04em; padding:.1rem .45rem;
+    border-radius:3px; border:1px solid var(--border2); }
+  .st-VERIFIED{ color:var(--accent); border-color:rgba(0,232,154,.35); }
+  .st-PARTIAL{ color:var(--info); border-color:rgba(88,166,255,.35); }
+  .st-UNVERIFIED{ color:var(--muted2); }
+  .st-CONTRADICTED{ color:var(--danger); border-color:rgba(230,57,70,.4); }
+  .st-NOT_FOUND,.st-INSUFFICIENT_EVIDENCE,.st-NOT_NORMALIZED{ color:var(--warn); border-color:rgba(244,162,97,.35); }
+  .st-NORMALIZED{ color:var(--accent); border-color:rgba(0,232,154,.35); }
+
+  .ev-empty { font-family:var(--mono); font-size:.78rem; color:var(--muted); }
+  .ev-disc { padding:1.2rem 1.8rem; border-top:1px solid var(--border); background:var(--bg2);
+    font-size:.72rem; color:var(--muted2); line-height:1.6; }
+  .ev-num { font-family:var(--mono); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ev-dash">
+  <div class="ev-head">
+    <div class="ev-eyebrow">Evidence Harvester · Company Evidence Dashboard · Read-only</div>
+    <div class="ev-title">{{ d.company_name }}</div>
+    <div class="ev-slug">subject: {{ d.company_slug }} · <a href="{% url 'harvester:evidence_dashboard_data' d.company_slug %}" style="color:var(--info);text-decoration:none;">JSON ↗</a></div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="ev-kpis">
+    <div class="ev-kpi">
+      <div class="n">{{ d.coverage_pct }}%</div>
+      <div class="l">Coverage ({{ d.categories_present }}/{{ d.categories_total }} categories)</div>
+      <div class="bar"><span style="width:{{ d.coverage_pct }}%"></span></div>
+    </div>
+    <div class="ev-kpi">
+      <div class="n">{{ d.verification_pct }}%</div>
+      <div class="l">Verified ({{ d.status_breakdown.VERIFIED|default:0 }}/{{ d.counts.evidence }} evidence)</div>
+      <div class="bar"><span style="width:{{ d.verification_pct }}%"></span></div>
+    </div>
+    <div class="ev-kpi">
+      <div class="n ev-num">{{ d.counts.evidence }}</div>
+      <div class="l">Evidence · {{ d.counts.sources }} sources</div>
+    </div>
+    <div class="ev-kpi">
+      <div class="n ev-num">{{ d.counts.datapoints }}</div>
+      <div class="l">Datapoints · {{ d.counts.contradictions }} contradiction{{ d.counts.contradictions|pluralize }}</div>
+    </div>
+  </div>
+
+  <!-- Missing categories -->
+  <div class="ev-section">
+    <h2>Missing Categories <span class="c">{{ d.missing_categories|length }}</span></h2>
+    {% if d.missing_categories %}
+      <div class="ev-chips">
+        {% for c in d.missing_categories %}<span class="ev-chip miss">{{ c.label }}</span>{% endfor %}
+      </div>
+    {% else %}
+      <div class="ev-empty">All {{ d.categories_total }} categories have evidence.</div>
+    {% endif %}
+  </div>
+
+  <!-- Sources -->
+  <div class="ev-section">
+    <h2>Sources <span class="c">{{ d.counts.sources }}</span></h2>
+    {% if d.sources %}
+      <table class="ev-tbl">
+        <thead><tr><th>Type</th><th>Owner</th><th>Published</th><th>Quality</th><th>Link</th></tr></thead>
+        <tbody>
+        {% for s in d.sources %}
+          <tr>
+            <td>{{ s.source_type }}</td>
+            <td>{{ s.source_owner|default:"—" }}</td>
+            <td class="ev-num">{{ s.publication_date|default:"—" }}</td>
+            <td class="ev-num">{{ s.quality }}</td>
+            <td>{% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">source ↗</a>{% else %}—{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}<div class="ev-empty">No sources harvested yet.</div>{% endif %}
+  </div>
+
+  <!-- Evidence -->
+  <div class="ev-section">
+    <h2>Evidence <span class="c">{{ d.counts.evidence }}</span></h2>
+    {% if d.evidence %}
+      <table class="ev-tbl">
+        <thead><tr><th>Category</th><th>Statement</th><th>Status</th><th>Conf.</th><th>Sources</th></tr></thead>
+        <tbody>
+        {% for e in d.evidence %}
+          <tr>
+            <td>{{ e.category_label }}</td>
+            <td>{% if e.url %}<a href="{{ e.url }}" target="_blank" rel="noopener noreferrer">{{ e.title }}</a>{% else %}{{ e.title }}{% endif %}</td>
+            <td><span class="st st-{{ e.verification_status }}">{{ e.verification_status }}</span></td>
+            <td class="ev-num">{{ e.confidence }}</td>
+            <td class="ev-num">{{ e.source_count }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}<div class="ev-empty">No evidence harvested yet.</div>{% endif %}
+  </div>
+
+  <!-- Datapoints -->
+  <div class="ev-section">
+    <h2>Datapoints <span class="c">{{ d.counts.datapoints }}</span></h2>
+    {% if d.datapoints %}
+      <table class="ev-tbl">
+        <thead><tr><th>Metric</th><th>Value</th><th>Unit</th><th>Period</th><th>Category</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for p in d.datapoints %}
+          <tr>
+            <td class="ev-num">{{ p.metric }}</td>
+            <td class="ev-num">{% if p.value != None %}{{ p.value }}{% elif p.value_text %}{{ p.value_text }}{% else %}—{% endif %}</td>
+            <td>{{ p.unit|default:"—" }}</td>
+            <td class="ev-num">{{ p.period|default:"—" }}</td>
+            <td>{{ p.category_label }}</td>
+            <td><span class="st st-{{ p.status }}">{{ p.status }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}<div class="ev-empty">No datapoints normalized yet.</div>{% endif %}
+  </div>
+
+  <!-- Contradictions -->
+  <div class="ev-section">
+    <h2>Contradictions <span class="c">{{ d.counts.contradictions }}</span></h2>
+    {% if d.contradictions %}
+      <table class="ev-tbl">
+        <thead><tr><th>Category</th><th>Statement</th><th>Sources</th></tr></thead>
+        <tbody>
+        {% for e in d.contradictions %}
+          <tr>
+            <td>{{ e.category_label }}</td>
+            <td>{{ e.title }}</td>
+            <td class="ev-num">{{ e.source_count }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}<div class="ev-empty">No contradictions detected in the harvested evidence.</div>{% endif %}
+  </div>
+
+  <div class="ev-disc">{{ d.disclaimer }}</div>
+</div>
+{% endblock %}
