@@ -42,6 +42,10 @@ urlpatterns = [
 
     # Hikma assessment (auth: enqueue evidence-ingestion + regeneration)
     path('assess/<slug:slug>/refresh/', views.hikma_refresh_assessment, name='hikma_refresh_assessment'),
+    # Hikma Evidence Layer (read-only)
+    path('assess/<slug:slug>/evidence/',       views.hikma_evidence_list,   name='hikma_evidence_list'),
+    path('assess/<slug:slug>/contradictions/', views.hikma_contradictions,  name='hikma_contradictions'),
+
     # Hikma assessment (read-only latest)
     path('assess/<slug:slug>/latest/', views.hikma_latest_assessment, name='hikma_latest_assessment'),
 

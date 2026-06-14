@@ -1003,3 +1003,66 @@ def hikma_refresh_assessment(request, slug):
     except Exception:  # noqa: BLE001 — status captured on the job row
         job.refresh_from_db()
     return Response(job.status_dict(), status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(["GET"])
+@permission_classes([IsPublicOrAPIKey])
+def hikma_evidence_list(request, slug):
+    """GET /api/v1/assess/<slug>/evidence/
+
+    Read-only. Returns stored Evidence rows grouped by SAY / DO / SHOW.
+    Does NOT ingest, score, or mutate anything. 404 if the company is unknown.
+    """
+    from companies.models import CompanyProfile
+    from hikma.models import Evidence
+    from hikma.contradictions import extraction_method
+
+    get_object_or_404(CompanyProfile.objects.select_related("company"), company__slug=slug)
+
+    groups = {"say": [], "do": [], "show": []}
+    for e in Evidence.objects.filter(subject_ref=slug).order_by("kind", "-created_at"):
+        if e.kind not in groups:
+            continue
+        groups[e.kind].append({
+            "id": e.id,
+            "kind": e.kind,
+            "statement": e.statement,
+            "source_url": e.source_url or None,
+            "source_type": e.source_type or None,
+            "confidence": {"tier": e.confidence_tier, "score": e.confidence_score},
+            "extraction_method": extraction_method(e.source_type),
+            "metric": {"name": e.metric_name or None, "value": e.metric_value, "unit": e.metric_unit or None},
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+            "updated_at": None,  # Evidence has no updated_at field
+        })
+    return Response({
+        "company_slug": slug,
+        "evidence_counts": {k: len(v) for k, v in groups.items()},
+        "evidence": groups,
+        "read_only": True,
+        "disclaimer": "AI-assisted, indicative evidence for decision support; not a ruling.",
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsPublicOrAPIKey])
+def hikma_contradictions(request, slug):
+    """GET /api/v1/assess/<slug>/contradictions/
+
+    Read-only. Derives potential-gap / verification signals from stored Evidence
+    (and the latest stored AssessmentRun greenwashing prior). Careful language;
+    no accusations. Does NOT ingest, score, or mutate anything.
+    """
+    from companies.models import CompanyProfile
+    from hikma.models import Evidence, AssessmentRun
+    from hikma.contradictions import analyze
+
+    get_object_or_404(CompanyProfile.objects.select_related("company"), company__slug=slug)
+
+    evidence_qs = Evidence.objects.filter(subject_ref=slug)
+    latest_run = (AssessmentRun.objects
+                  .filter(subject_ref=slug, status="done", result__isnull=False)
+                  .order_by("-created_at").first())
+    payload = analyze(slug, evidence_qs, latest_run=latest_run)
+    payload["read_only"] = True
+    return Response(payload)
