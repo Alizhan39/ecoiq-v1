@@ -684,3 +684,71 @@ class HarvestRegistryTests(TestCase):
         batch = BatchHarvestRun.objects.latest("created_at")
         self.assertEqual(batch.total_companies,
                          RegistryCompany.objects.filter(sector="water").count())
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 8 — UK document registry expansion
+# ════════════════════════════════════════════════════════════════════════════
+from harvester.company_documents import REGISTERED_DOCUMENTS, get_documents
+from harvester import normalization as _norm
+from harvester.models import HarvestJob as _HJ
+from harvester.pipeline import run_harvest as _run
+
+SLICE8_SLUGS = [
+    "sse", "centrica", "severn-trent", "united-utilities",
+    "national-gas", "cadent-gas", "uk-power-networks", "thames-water", "anglian-water",
+]
+
+
+class DocumentRegistryExpansionTests(TestCase):
+    def test_new_companies_registered(self):
+        for slug in SLICE8_SLUGS:
+            self.assertIn(slug, REGISTERED_DOCUMENTS, msg=f"missing {slug}")
+        self.assertEqual(len(REGISTERED_DOCUMENTS), 10)  # national-grid + 9 verified
+        # scottishpower omitted (domain WAF-blocks verification)
+        self.assertNotIn("scottishpower", REGISTERED_DOCUMENTS)
+
+    def test_all_urls_are_real_https(self):
+        for slug, docs in REGISTERED_DOCUMENTS.items():
+            for d in docs:
+                u = d.get("url", "")
+                self.assertTrue(u.startswith("https://"), msg=f"{slug}: {u!r}")
+                self.assertNotIn("example.com", u)       # no placeholder/fabricated
+                self.assertNotIn("TODO", u)
+
+    def test_expected_datapoints_extracted(self):
+        expected = {
+            ("sse", "operating_profit"): 2608.2,
+            ("centrica", "operating_profit"): 297.0,
+            ("severn-trent", "revenue"): 2426.7,
+            ("united-utilities", "revenue"): 2145.0,
+            ("united-utilities", "operating_profit"): 634.0,
+            ("national-gas", "revenue"): 1551.0,
+            ("cadent-gas", "revenue"): 1056.0,
+            ("thames-water", "revenue"): 2738.2,
+        }
+        got = {}
+        for slug in SLICE8_SLUGS:
+            for d in get_documents(slug):
+                for r in _norm.extract(d["statement"]):
+                    if r.status == "NORMALIZED":
+                        got[(slug, r.metric)] = r.value
+        for key, val in expected.items():
+            self.assertEqual(got.get(key), val, msg=f"{key} expected {val}, got {got.get(key)}")
+        self.assertEqual(len(got), 8)                    # exactly 8 new datapoints
+
+    def test_evidence_only_companies_have_no_fabricated_datapoint(self):
+        for slug in ("uk-power-networks", "anglian-water"):
+            dp = []
+            for d in get_documents(slug):
+                dp += [r for r in _norm.extract(d["statement"]) if r.status == "NORMALIZED"]
+            self.assertEqual(dp, [], msg=f"{slug} should be evidence-only")
+
+    def test_harvest_new_company_end_to_end(self):
+        _, profile = make_company("severn-trent")
+        job = _HJ.objects.create(company=profile, company_slug="severn-trent", status="pending")
+        _run(job)
+        self.assertEqual(job.status, "done")
+        dp = Datapoint.objects.get(company_slug="severn-trent", metric="revenue")
+        self.assertEqual(dp.value, 2426.7)
+        self.assertEqual(dp.unit, "GBP_million")
