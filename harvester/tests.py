@@ -909,3 +909,54 @@ class HomepageIntelligenceBlockTests(_SeededHarvest):
         r = company_rollup("national-grid")
         self.assertIn("avg_confidence", r)
         self.assertIsNotNone(r["avg_confidence"])
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 11 (Track B) — international company registries (KZ/SA/TR)
+# ════════════════════════════════════════════════════════════════════════════
+from harvester.intl_registry import COMPANIES as _INTL
+
+
+class IntlRegistryTests(TestCase):
+    def test_catalog_has_15_distinct_across_three_countries(self):
+        self.assertEqual(len(_INTL), 15)
+        slugs = [c[0] for c in _INTL]
+        self.assertEqual(len(set(slugs)), 15)
+        from collections import Counter
+        dist = Counter(c[4] for c in _INTL)
+        self.assertEqual(dist["KZ"], 5)
+        self.assertEqual(dist["SA"], 5)
+        self.assertEqual(dist["TR"], 5)
+
+    def test_seed_idempotent_and_country_tagged(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_country_registries", stdout=StringIO())
+        self.assertEqual(RegistryCompany.objects.filter(country="KZ").count(), 5)
+        self.assertEqual(RegistryCompany.objects.filter(country="SA").count(), 5)
+        self.assertEqual(RegistryCompany.objects.filter(country="TR").count(), 5)
+        call_command("seed_country_registries", stdout=StringIO())  # re-run
+        self.assertEqual(RegistryCompany.objects.exclude(country="GB").count(), 15)
+
+    def test_expected_anchors_present(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_country_registries", stdout=StringIO())
+        for slug in ("kazmunaygas", "kazatomprom", "saudi-aramco", "sabic",
+                     "botas", "tupras"):
+            self.assertTrue(RegistryCompany.objects.filter(slug=slug).exists())
+
+    def test_no_fabricated_metadata(self):
+        from harvester.intl_registry import registry_rows
+        for row in registry_rows():
+            self.assertEqual(row["ticker"], "")
+            self.assertEqual(row["website"], "")
+            self.assertEqual(row["companies_house_number"], "")
+            self.assertEqual(row["annual_report_url"], "")
+
+    def test_seeding_creates_no_evidence(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_country_registries", stdout=StringIO())
+        self.assertEqual(Evidence.objects.count(), 0)
+        self.assertEqual(Datapoint.objects.count(), 0)
