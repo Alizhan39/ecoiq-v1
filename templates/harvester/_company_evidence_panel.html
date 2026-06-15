@@ -52,6 +52,7 @@ flat (no gradients), no marketing language. Safe empty state.
     <span class="hv-eyebrow">Evidence Layer</span>
     <span class="hv-stat"><b>{{ evidence_count }}</b> evidence</span>
     <span class="hv-stat"><b>{{ datapoint_count }}</b> datapoints</span>
+    {% if avg_confidence != None %}<span class="hv-stat">confidence <b>{{ avg_confidence }}</b></span>{% endif %}
     {% if last_updated %}<span class="hv-stat">updated <b>{{ last_updated|date:"Y-m-d" }}</b></span>{% endif %}
     {% if dashboard_url %}<a href="{{ dashboard_url }}">full dashboard ↗</a>{% endif %}
   </div>

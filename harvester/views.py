@@ -140,3 +140,75 @@ def evidence_dashboard(request, slug):
 def evidence_dashboard_data(request, slug):
     """GET /evidence/<slug>/data/ — same payload as JSON (read-only)."""
     return JsonResponse(build_dashboard_data(slug))
+
+
+def utilities_ranking(request):
+    """GET /rankings/utilities/ — UK Infrastructure & Utilities Intelligence.
+
+    Read-only ranking of all active registry companies by operating profit, with
+    an embedded Top-10 leaderboard. No scoring, no writes.
+    """
+    from .rollups import rankings_data, platform_stats
+    rows = rankings_data()
+    return render(request, "harvester/utilities_ranking.html", {
+        "rows": rows,
+        "top10": rows[:10],
+        "stats": platform_stats(),
+    })
+
+
+def evidence_explorer(request):
+    """GET /evidence/ — read-only Evidence Explorer.
+
+    Filters: company, category, metric (via Datapoint join), free-text q.
+    Paginated. No writes.
+    """
+    from django.core.paginator import Paginator
+    from .models import Evidence, Datapoint, RegistryCompany
+    from .constants import EVIDENCE_CATEGORIES
+
+    company = (request.GET.get("company") or "").strip()
+    category = (request.GET.get("category") or "").strip()
+    metric = (request.GET.get("metric") or "").strip()
+    q = (request.GET.get("q") or "").strip()
+
+    qs = Evidence.objects.all().order_by("-retrieved_at")
+    if company:
+        qs = qs.filter(company_slug=company)
+    if category:
+        qs = qs.filter(category=category)
+    if metric:
+        ev_ids = (Datapoint.objects.filter(metric=metric)
+                  .values_list("evidence_id", flat=True))
+        qs = qs.filter(id__in=list(ev_ids))
+    if q:
+        from django.db.models import Q
+        qs = qs.filter(Q(title__icontains=q) | Q(excerpt__icontains=q))
+
+    paginator = Paginator(qs, 25)
+    page = paginator.get_page(request.GET.get("page") or 1)
+
+    cat_labels = dict(EVIDENCE_CATEGORIES)
+    items = [{
+        "company_slug": e.company_slug,
+        "category": e.category,
+        "category_label": cat_labels.get(e.category, e.category),
+        "title": e.title or (e.excerpt[:160] if e.excerpt else ""),
+        "url": e.url or "",
+        "verification_status": e.verification_status,
+        "confidence": round(e.confidence, 2),
+    } for e in page.object_list]
+
+    companies = list(RegistryCompany.objects.filter(is_active=True)
+                     .order_by("company_name").values_list("slug", "company_name"))
+    metrics = sorted(set(Datapoint.objects.values_list("metric", flat=True)))
+
+    return render(request, "harvester/evidence_explorer.html", {
+        "items": items,
+        "page": page,
+        "total": paginator.count,
+        "companies": companies,
+        "categories": EVIDENCE_CATEGORIES,
+        "metrics": metrics,
+        "f": {"company": company, "category": category, "metric": metric, "q": q},
+    })

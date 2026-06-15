@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% comment %}
+Evidence Explorer — read-only, filterable, paginated. Institutional, flat.
+Filters: company, category, metric (via datapoint join), free-text search.
+{% endcomment %}
+{% block title %}Evidence Explorer — EcoIQ{% endblock %}
+{% block meta_description_content %}Read-only explorer of harvested company evidence — filter by company, category, metric, and free text.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .exp{
+    --bg:#070b0f; --bg2:#0d1117; --border:rgba(255,255,255,.08); --border2:rgba(255,255,255,.14);
+    --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8; --accent:#00e89a; --info:#58a6ff; --danger:#e63946; --warn:#f4a261;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  }
+  body:has(.exp) main{max-width:1180px}
+  .exp *{box-sizing:border-box}
+  .exp-head{padding:1.4rem 1.8rem;border-bottom:1px solid var(--border)}
+  .exp-eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+  .exp-title{font-size:1.5rem;font-weight:800;color:#fff;letter-spacing:-.02em}
+  .exp-filters{display:flex;flex-wrap:wrap;gap:.6rem;padding:1rem 1.8rem;border-bottom:1px solid var(--border);align-items:center}
+  .exp-filters select,.exp-filters input{
+    background:var(--bg2);border:1px solid var(--border2);color:var(--text);
+    font-family:var(--mono);font-size:.76rem;padding:.4rem .6rem;border-radius:4px}
+  .exp-filters input[type=text]{min-width:220px}
+  .exp-filters button{font-family:var(--mono);font-size:.74rem;padding:.42rem .9rem;border-radius:4px;
+    border:1px solid rgba(0,232,154,.4);background:transparent;color:var(--accent);cursor:pointer}
+  .exp-filters a.clear{font-family:var(--mono);font-size:.7rem;color:var(--muted2);text-decoration:none}
+  table.exp-tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+  .exp-tbl th{text-align:left;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);padding:.55rem .7rem;border-bottom:1px solid var(--border2)}
+  .exp-tbl td{padding:.55rem .7rem;border-bottom:1px solid var(--border);vertical-align:top}
+  .exp-tbl tr:hover td{background:rgba(255,255,255,.02)}
+  .exp-tbl a{color:var(--text);text-decoration:none}
+  .exp-tbl a:hover{color:var(--info)}
+  .st{font-family:var(--mono);font-size:.58rem;letter-spacing:.04em;padding:.08rem .4rem;border-radius:3px;border:1px solid var(--border2);color:var(--muted2);white-space:nowrap}
+  .st.VERIFIED{color:var(--accent);border-color:rgba(0,232,154,.35)}
+  .st.PARTIAL{color:var(--info);border-color:rgba(88,166,255,.35)}
+  .st.CONTRADICTED{color:var(--danger);border-color:rgba(230,57,70,.4)}
+  .st.UNVERIFIED{color:var(--muted2)}
+  .exp-pag{display:flex;align-items:center;gap:1rem;padding:1rem 1.8rem;font-family:var(--mono);font-size:.74rem;color:var(--muted2);border-top:1px solid var(--border)}
+  .exp-pag a{color:var(--info);text-decoration:none;border:1px solid var(--border2);border-radius:4px;padding:.3rem .7rem}
+  .exp-pag .muted{color:var(--muted)}
+  .exp-empty{padding:1.6rem 1.8rem;font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="exp">
+  <div class="exp-head">
+    <div class="exp-eyebrow">EcoIQ · Read-only</div>
+    <div class="exp-title">Evidence Explorer</div>
+  </div>
+
+  <form class="exp-filters" method="get">
+    <select name="company">
+      <option value="">All companies</option>
+      {% for slug, name in companies %}
+      <option value="{{ slug }}" {% if f.company == slug %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <select name="category">
+      <option value="">All categories</option>
+      {% for val, label in categories %}
+      <option value="{{ val }}" {% if f.category == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="metric">
+      <option value="">All metrics</option>
+      {% for m in metrics %}
+      <option value="{{ m }}" {% if f.metric == m %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="q" value="{{ f.q }}" placeholder="search evidence text…">
+    <button type="submit">Apply</button>
+    <a class="clear" href="{% url 'harvester:evidence_explorer' %}">clear</a>
+  </form>
+
+  {% if items %}
+  <table class="exp-tbl">
+    <thead><tr><th>Company</th><th>Category</th><th>Statement</th><th>Status</th><th>Conf.</th></tr></thead>
+    <tbody>
+      {% for e in items %}
+      <tr>
+        <td><a href="/evidence/{{ e.company_slug }}/">{{ e.company_slug }}</a></td>
+        <td>{{ e.category_label }}</td>
+        <td>{% if e.url %}<a href="{{ e.url }}" target="_blank" rel="noopener noreferrer">{{ e.title }}</a>{% else %}{{ e.title }}{% endif %}</td>
+        <td><span class="st {{ e.verification_status }}">{{ e.verification_status }}</span></td>
+        <td style="font-family:var(--mono)">{{ e.confidence }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="exp-pag">
+    {% if page.has_previous %}<a href="?{% if f.company %}company={{ f.company }}&{% endif %}{% if f.category %}category={{ f.category }}&{% endif %}{% if f.metric %}metric={{ f.metric }}&{% endif %}{% if f.q %}q={{ f.q }}&{% endif %}page={{ page.previous_page_number }}">‹ prev</a>{% endif %}
+    <span class="muted">page {{ page.number }} / {{ page.paginator.num_pages }} · {{ total }} result{{ total|pluralize }}</span>
+    {% if page.has_next %}<a href="?{% if f.company %}company={{ f.company }}&{% endif %}{% if f.category %}category={{ f.category }}&{% endif %}{% if f.metric %}metric={{ f.metric }}&{% endif %}{% if f.q %}q={{ f.q }}&{% endif %}page={{ page.next_page_number }}">next ›</a>{% endif %}
+  </div>
+  {% else %}
+  <div class="exp-empty">No evidence matches these filters.</div>
+  {% endif %}
+</div>
+{% endblock %}
