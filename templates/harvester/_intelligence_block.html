@@ -1,0 +1,50 @@
+{% comment %}
+Compact read-only platform intelligence block for the homepage.
+Institutional, flat (no gradients), data-first, no marketing copy.
+{% endcomment %}
+<section class="hv-intel" aria-label="EcoIQ Intelligence">
+  <style>
+    .hv-intel{
+      --i-bg:#0a0e13; --i-border:rgba(255,255,255,.10); --i-text:#e2e8f0;
+      --i-muted:#64748b; --i-muted2:#94a3b8; --i-accent:#00e89a; --i-info:#58a6ff;
+      --i-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+      max-width:1100px;margin:2.5rem auto;padding:0 1.5rem;color:var(--i-text);
+    }
+    .hv-intel-card{background:var(--i-bg);border:1px solid var(--i-border);border-radius:8px}
+    .hv-intel-head{display:flex;justify-content:space-between;align-items:baseline;
+      gap:1rem;flex-wrap:wrap;padding:.85rem 1.2rem;border-bottom:1px solid var(--i-border)}
+    .hv-intel-title{font-family:var(--i-mono);font-size:.66rem;letter-spacing:.18em;
+      text-transform:uppercase;color:var(--i-muted2)}
+    .hv-intel-updated{font-family:var(--i-mono);font-size:.66rem;color:var(--i-muted)}
+    .hv-intel-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+    @media (max-width:680px){.hv-intel-grid{grid-template-columns:repeat(2,1fr)}}
+    .hv-intel-cell{padding:1.3rem 1.2rem;border-right:1px solid var(--i-border)}
+    .hv-intel-cell:last-child{border-right:none}
+    @media (max-width:680px){.hv-intel-cell:nth-child(2n){border-right:none}}
+    .hv-intel-num{font-family:var(--i-mono);font-size:1.9rem;font-weight:800;color:#fff;line-height:1}
+    .hv-intel-label{font-family:var(--i-mono);font-size:.6rem;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--i-muted);margin-top:.45rem}
+    .hv-intel-cta{display:flex;gap:.6rem;padding:.85rem 1.2rem;border-top:1px solid var(--i-border)}
+    .hv-intel-cta a{font-family:var(--i-mono);font-size:.72rem;letter-spacing:.04em;
+      text-decoration:none;border:1px solid var(--i-border);border-radius:4px;
+      padding:.45rem .9rem;color:var(--i-text)}
+    .hv-intel-cta a.primary{border-color:rgba(0,232,154,.4);color:var(--i-accent)}
+    .hv-intel-cta a:hover{border-color:var(--i-info);color:var(--i-info)}
+  </style>
+  <div class="hv-intel-card">
+    <div class="hv-intel-head">
+      <span class="hv-intel-title">EcoIQ · UK Infrastructure &amp; Utilities Intelligence</span>
+      {% if last_updated %}<span class="hv-intel-updated">last update {{ last_updated|date:"Y-m-d" }}</span>{% endif %}
+    </div>
+    <div class="hv-intel-grid">
+      <div class="hv-intel-cell"><div class="hv-intel-num">{{ companies_tracked }}</div><div class="hv-intel-label">Companies tracked</div></div>
+      <div class="hv-intel-cell"><div class="hv-intel-num">{{ evidence_count }}</div><div class="hv-intel-label">Evidence collected</div></div>
+      <div class="hv-intel-cell"><div class="hv-intel-num">{{ datapoint_count }}</div><div class="hv-intel-label">Datapoints extracted</div></div>
+      <div class="hv-intel-cell"><div class="hv-intel-num">{% if last_updated %}{{ last_updated|date:"M j" }}{% else %}—{% endif %}</div><div class="hv-intel-label">Last update</div></div>
+    </div>
+    <div class="hv-intel-cta">
+      <a class="primary" href="{{ rankings_url }}">View Rankings</a>
+      <a href="{{ evidence_url }}">View Evidence</a>
+    </div>
+  </div>
+</section>

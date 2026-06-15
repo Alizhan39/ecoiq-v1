@@ -1,0 +1,13 @@
+{% comment %}Top-10 by operating profit. Read-only, institutional, flat.{% endcomment %}
+<div class="lb">
+  <div class="lb-head">Top 10 by operating profit</div>
+  <div class="lb-grid">
+    {% for r in top10 %}
+    <a class="lb-cell" href="/evidence/{{ r.slug }}/">
+      <span class="lb-rank">{{ r.rank|stringformat:"02d" }}</span>
+      <span class="lb-name">{{ r.company_name }}</span>
+      <span class="lb-val">{% if r.operating_profit != None %}£{{ r.operating_profit }}m{% else %}—{% endif %}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>

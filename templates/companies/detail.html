@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load humanize %}
+{% load harvester_panels %}
 
 {% block title %}{{ company.name }} — EcoIQ Intelligence Profile{% endblock %}
 {% block meta_description %}<meta name="description" content="{{ company.name }} EcoIQ climate score: {{ profile.ecoiq_total_score|floatformat:1 }}/100. {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
@@ -768,6 +769,9 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     </div>
   </div>
 </div>
+
+<!-- ── Evidence Layer panel (harvester, read-only) ─────────────────── -->
+{% company_evidence_panel company.slug %}
 
 <!-- ── Institutional Signals Strip ─────────────────────────────────── -->
 <div class="isig-strip">

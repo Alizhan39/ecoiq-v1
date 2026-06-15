@@ -1,0 +1,84 @@
+{% comment %}
+Read-only Evidence Layer panel for the canonical company page.
+Renders from harvester rollups only — no scoring, no writes. Institutional,
+flat (no gradients), no marketing language. Safe empty state.
+{% endcomment %}
+<section class="hv-ev-panel" aria-label="Evidence Layer">
+  <style>
+    .hv-ev-panel{
+      --hv-bg:#0d1117; --hv-bg2:#0a0e13; --hv-border:rgba(255,255,255,.08);
+      --hv-border2:rgba(255,255,255,.14); --hv-text:#e2e8f0; --hv-muted:#64748b;
+      --hv-muted2:#94a3b8; --hv-accent:#00e89a; --hv-info:#58a6ff; --hv-warn:#f4a261;
+      --hv-danger:#e63946; --hv-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+      background:var(--hv-bg); border:1px solid var(--hv-border); border-radius:8px;
+      margin:1rem 0 1.25rem; overflow:hidden; color:var(--hv-text);
+    }
+    .hv-ev-panel *{box-sizing:border-box}
+    .hv-head{display:flex;align-items:baseline;gap:.9rem;flex-wrap:wrap;
+      padding:.85rem 1.1rem;border-bottom:1px solid var(--hv-border)}
+    .hv-eyebrow{font-family:var(--hv-mono);font-size:.62rem;letter-spacing:.16em;
+      text-transform:uppercase;color:var(--hv-muted)}
+    .hv-stat{font-family:var(--hv-mono);font-size:.74rem;color:var(--hv-muted2)}
+    .hv-stat b{color:#fff;font-weight:700}
+    .hv-head a{margin-left:auto;font-family:var(--hv-mono);font-size:.7rem;
+      color:var(--hv-info);text-decoration:none}
+    .hv-cols{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    @media (max-width:760px){.hv-cols{grid-template-columns:1fr}}
+    .hv-col{padding:.9rem 1.1rem}
+    .hv-col + .hv-col{border-left:1px solid var(--hv-border)}
+    @media (max-width:760px){.hv-col + .hv-col{border-left:none;border-top:1px solid var(--hv-border)}}
+    .hv-col h4{font-family:var(--hv-mono);font-size:.62rem;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--hv-muted2);margin:0 0 .6rem;font-weight:600}
+    .hv-dp{display:flex;justify-content:space-between;gap:.6rem;font-size:.78rem;
+      padding:.3rem 0;border-bottom:1px solid var(--hv-border)}
+    .hv-dp:last-child{border-bottom:none}
+    .hv-dp .m{color:var(--hv-muted2);font-family:var(--hv-mono)}
+    .hv-dp .v{font-family:var(--hv-mono);color:#fff;font-weight:600;white-space:nowrap}
+    .hv-ev{font-size:.76rem;line-height:1.4;padding:.35rem 0;border-bottom:1px solid var(--hv-border);
+      display:flex;gap:.5rem;align-items:flex-start}
+    .hv-ev:last-child{border-bottom:none}
+    .hv-ev .st{font-family:var(--hv-mono);font-size:.56rem;letter-spacing:.04em;
+      padding:.06rem .35rem;border-radius:3px;border:1px solid var(--hv-border2);
+      color:var(--hv-muted2);white-space:nowrap;margin-top:.1rem}
+    .hv-ev .st.VERIFIED{color:var(--hv-accent);border-color:rgba(0,232,154,.35)}
+    .hv-ev .st.PARTIAL{color:var(--hv-info);border-color:rgba(88,166,255,.35)}
+    .hv-ev .st.CONTRADICTED{color:var(--hv-danger);border-color:rgba(230,57,70,.4)}
+    .hv-ev .tx{color:var(--hv-text)}
+    .hv-ev a{color:var(--hv-text);text-decoration:none}
+    .hv-empty{font-family:var(--hv-mono);font-size:.74rem;color:var(--hv-muted);padding:1rem 1.1rem}
+  </style>
+
+  <div class="hv-head">
+    <span class="hv-eyebrow">Evidence Layer</span>
+    <span class="hv-stat"><b>{{ evidence_count }}</b> evidence</span>
+    <span class="hv-stat"><b>{{ datapoint_count }}</b> datapoints</span>
+    {% if avg_confidence != None %}<span class="hv-stat">confidence <b>{{ avg_confidence }}</b></span>{% endif %}
+    {% if last_updated %}<span class="hv-stat">updated <b>{{ last_updated|date:"Y-m-d" }}</b></span>{% endif %}
+    {% if dashboard_url %}<a href="{{ dashboard_url }}">full dashboard ↗</a>{% endif %}
+  </div>
+
+  {% if has_data %}
+  <div class="hv-cols">
+    <div class="hv-col">
+      <h4>Latest Datapoints</h4>
+      {% for p in latest_datapoints %}
+      <div class="hv-dp">
+        <span class="m">{{ p.metric }}</span>
+        <span class="v">{% if p.value != None %}{{ p.value }}{% elif p.value_text %}{{ p.value_text }}{% else %}—{% endif %} {{ p.unit }}{% if p.period %} · {{ p.period }}{% endif %}</span>
+      </div>
+      {% empty %}<div class="hv-empty">No datapoints normalized yet.</div>{% endfor %}
+    </div>
+    <div class="hv-col">
+      <h4>Latest Evidence</h4>
+      {% for e in latest_evidence %}
+      <div class="hv-ev">
+        <span class="st {{ e.verification_status }}">{{ e.verification_status }}</span>
+        <span class="tx">{% if e.url %}<a href="{{ e.url }}" target="_blank" rel="noopener noreferrer">{{ e.title }}</a>{% else %}{{ e.title }}{% endif %}</span>
+      </div>
+      {% empty %}<div class="hv-empty">No evidence harvested yet.</div>{% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="hv-empty">No evidence harvested for this company yet.</div>
+  {% endif %}
+</section>

@@ -752,3 +752,160 @@ class DocumentRegistryExpansionTests(TestCase):
         dp = Datapoint.objects.get(company_slug="severn-trent", metric="revenue")
         self.assertEqual(dp.value, 2426.7)
         self.assertEqual(dp.unit, "GBP_million")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 9 — company-page Evidence Layer panel (presentation only)
+# ════════════════════════════════════════════════════════════════════════════
+from django.template import Template, Context
+from harvester.rollups import company_rollup as _rollup
+
+
+class CompanyEvidencePanelTests(TestCase):
+    def setUp(self):
+        self.company, self.profile = make_company("national-grid")
+        from harvester.pipeline import run_harvest
+        run_harvest(_HJ.objects.create(
+            company=self.profile, company_slug="national-grid", status="pending"))
+
+    def test_rollup_counts_and_last_updated(self):
+        r = _rollup("national-grid")
+        self.assertGreater(r["evidence_count"], 0)
+        self.assertGreater(r["datapoint_count"], 0)
+        self.assertTrue(r["has_data"])
+        self.assertIsNotNone(r["last_updated"])
+        self.assertEqual(r["dashboard_url"], "/evidence/national-grid/")
+        # latest datapoints carry real values
+        metrics = {d["metric"] for d in r["latest_datapoints"]}
+        self.assertIn("revenue", metrics)
+
+    def test_rollup_unknown_company_empty_safe(self):
+        r = _rollup("ghost-co")
+        self.assertEqual(r["evidence_count"], 0)
+        self.assertEqual(r["datapoint_count"], 0)
+        self.assertFalse(r["has_data"])
+        self.assertIsNone(r["last_updated"])
+
+    def test_inclusion_tag_renders_panel(self):
+        html = Template(
+            "{% load harvester_panels %}{% company_evidence_panel 'national-grid' %}"
+        ).render(Context({}))
+        self.assertIn("Evidence Layer", html)
+        self.assertIn("datapoints", html)
+        self.assertIn("revenue", html)
+        self.assertIn("/evidence/national-grid/", html)
+
+    def test_inclusion_tag_empty_state(self):
+        html = Template(
+            "{% load harvester_panels %}{% company_evidence_panel 'ghost-co' %}"
+        ).render(Context({}))
+        self.assertIn("No evidence harvested", html)
+
+    def test_panel_on_canonical_company_page(self):
+        from django.test import Client
+        c = Client(SERVER_NAME="localhost")
+        r = c.get("/companies/national-grid/")
+        self.assertEqual(r.status_code, 200)
+        body = r.content.decode()
+        self.assertIn("hv-ev-panel", body)             # panel injected
+        self.assertIn("Evidence Layer", body)
+        self.assertIn("operating_profit", body)        # real datapoint shown
+
+    def test_panel_is_read_only(self):
+        from harvester.models import Evidence, Datapoint
+        before = (Evidence.objects.count(), Datapoint.objects.count())
+        _rollup("national-grid")
+        Template("{% load harvester_panels %}{% company_evidence_panel 'national-grid' %}").render(Context({}))
+        self.assertEqual((Evidence.objects.count(), Datapoint.objects.count()), before)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 10 — investor surfaces (rankings, evidence explorer, homepage block)
+# ════════════════════════════════════════════════════════════════════════════
+from django.test import Client as _Client
+from django.core.management import call_command as _cc
+from io import StringIO as _S
+from harvester.rollups import platform_stats as _pstats, rankings_data as _rdata
+
+
+class _SeededHarvest(TestCase):
+    """Seeds registry + harvests National Grid and SSE for surface tests."""
+    def setUp(self):
+        self.client = _Client(SERVER_NAME="localhost")
+        _cc("seed_uk_registry", stdout=_S())
+        for slug in ("national-grid", "sse"):
+            make_company(slug)
+            from harvester.pipeline import run_harvest
+            run_harvest(_HJ.objects.create(company_slug=slug, status="pending"))
+
+
+class RankingsTests(_SeededHarvest):
+    def test_rankings_sorted_by_operating_profit_desc(self):
+        rows = _rdata()
+        self.assertEqual(len(rows), 25)                       # all active registry
+        ops = [r["operating_profit"] for r in rows if r["operating_profit"] is not None]
+        self.assertEqual(ops, sorted(ops, reverse=True))      # descending
+        self.assertEqual(rows[0]["slug"], "national-grid")    # 5357 tops
+        self.assertEqual(rows[0]["rank"], 1)
+
+    def test_rankings_page_renders(self):
+        r = self.client.get("/rankings/utilities/")
+        self.assertEqual(r.status_code, 200)
+        body = r.content.decode()
+        self.assertIn("UK Infrastructure &amp; Utilities Intelligence", body)
+        self.assertIn("Top 10 by operating profit", body)
+        self.assertIn("National Grid", body)
+
+
+class EvidenceExplorerTests(_SeededHarvest):
+    def test_explorer_page_renders(self):
+        r = self.client.get("/evidence/")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Evidence Explorer", r.content.decode())
+
+    def test_company_filter(self):
+        r = self.client.get("/evidence/?company=national-grid")
+        body = r.content.decode()
+        self.assertIn("national-grid", body)
+        self.assertNotIn(">sse<", body.replace(" ", ""))  # sse rows excluded (rough)
+
+    def test_metric_filter_via_datapoint_join(self):
+        r = self.client.get("/evidence/?metric=operating_profit")
+        self.assertEqual(r.status_code, 200)
+        # only evidence whose datapoints include operating_profit
+        from harvester.models import Datapoint, Evidence
+        ev_ids = set(Datapoint.objects.filter(metric="operating_profit").values_list("evidence_id", flat=True))
+        self.assertTrue(ev_ids)
+
+    def test_text_search(self):
+        r = self.client.get("/evidence/?q=revenue")
+        self.assertEqual(r.status_code, 200)
+
+    def test_pagination_present(self):
+        r = self.client.get("/evidence/")
+        self.assertIn("page", r.content.decode().lower())
+
+
+class HomepageIntelligenceBlockTests(_SeededHarvest):
+    def test_platform_stats(self):
+        s = _pstats()
+        self.assertEqual(s["companies_tracked"], 25)
+        self.assertGreater(s["evidence_count"], 0)
+        self.assertGreater(s["datapoint_count"], 0)
+        self.assertEqual(s["rankings_url"], "/rankings/utilities/")
+        self.assertEqual(s["evidence_url"], "/evidence/")
+
+    def test_block_renders_on_homepage(self):
+        r = self.client.get("/")
+        self.assertEqual(r.status_code, 200)
+        body = r.content.decode()
+        self.assertIn("Companies tracked", body)
+        self.assertIn("Evidence collected", body)
+        self.assertIn("Datapoints extracted", body)
+        self.assertIn("View Rankings", body)
+
+    def test_company_panel_exposes_confidence(self):
+        from harvester.rollups import company_rollup
+        r = company_rollup("national-grid")
+        self.assertIn("avg_confidence", r)
+        self.assertIsNotNone(r["avg_confidence"])

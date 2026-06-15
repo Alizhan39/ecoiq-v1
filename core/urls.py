@@ -1,6 +1,7 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from . import views
+from harvester import views as harvester_views
 
 urlpatterns = [
     # Landing page — public homepage
@@ -8,6 +9,8 @@ urlpatterns = [
 
     # /rankings/ → canonical company rankings (alias for /companies/)
     path('rankings/', RedirectView.as_view(url='/companies/', permanent=False), name='rankings'),
+    # UK Infrastructure & Utilities Intelligence ranking (read-only)
+    path('rankings/utilities/', harvester_views.utilities_ranking, name='utilities_ranking'),
 
     # ESG Assessment app
     path('esg/',                                    views.index,             name='index'),

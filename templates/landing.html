@@ -1,4 +1,5 @@
 {% load static i18n %}
+{% load harvester_panels %}
 {% get_current_language as CURRENT_LANG %}
 {% get_current_language_bidi as LANG_BIDI %}
 <!DOCTYPE html>
@@ -342,6 +343,9 @@
 
   </div>
 </section>
+
+<!-- ════════════════ EcoIQ Intelligence block (harvester, read-only) ════════ -->
+{% intelligence_block %}
 
 
 <!-- ════════════════════════════════ ETHICAL FINANCE OVERLAY ═══════════════ -->
