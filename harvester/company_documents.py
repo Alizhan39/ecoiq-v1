@@ -76,6 +76,90 @@ REGISTERED_DOCUMENTS = {
          "url": "https://www.nationalgrid.com/responsibility/our-environment/net-zero/scope-1-2-3-emissions",
          "publication_date": date(2025, 5, 15)},
     ],
+
+    # ── SSE plc — Annual Report 2024 (year ended 31 March 2024) ──
+    "sse": [
+        {"source_type": "annual_report",
+         "statement": "SSE adjusted operating profit was £2,608.2m in 2023/24.",
+         "category": "financial", "source_owner": "SSE plc",
+         "url": "https://www.sse.com/media/0aibgke4/sse_ar24_interactive.pdf"},
+    ],
+
+    # ── Centrica plc — Annual Report 2024 Strategic Report (year ended 31 Dec 2024) ──
+    "centrica": [
+        {"source_type": "annual_report",
+         "statement": "Centrica adjusted operating profit was £297m in 2024.",
+         "category": "financial", "source_owner": "Centrica plc",
+         "url": "https://www.centrica.com/media/5a1cz0nv/annual-report-24_strategic-report.pdf",
+         "publication_date": date(2025, 2, 20)},
+    ],
+
+    # ── ScottishPower — intentionally NOT registered here.
+    # The scottishpower.com domain returns HTTP 403 to all automated requests
+    # (WAF bot-protection), so the document URL could not be verified accessible.
+    # Omitted rather than ship an unverifiable URL. Re-add once a verifiable
+    # (CDN/PDF) URL or manual confirmation is available.
+
+    # ── Severn Trent plc — Annual Report and Accounts 2025 (2024/25) ──
+    "severn-trent": [
+        {"source_type": "annual_report",
+         "statement": "Severn Trent group turnover was £2,426.7m in 2024/25.",
+         "category": "financial", "source_owner": "Severn Trent Plc",
+         "url": "https://www.severntrent.com/content/dam/stw-plc/Severn_Trent_AR25.pdf"},
+    ],
+
+    # ── United Utilities Group plc — 2024/25 Full Year Results (RNS) ──
+    "united-utilities": [
+        {"source_type": "annual_report",
+         "statement": "United Utilities revenue was £2,145m in 2024/25.",
+         "category": "financial", "source_owner": "United Utilities Group PLC",
+         "url": "https://www.unitedutilities.com/globalassets/documents/corporate-documents/2024-25-rns-annoucement.pdf"},
+        {"source_type": "annual_report",
+         "statement": "United Utilities underlying operating profit was £634m in 2024/25.",
+         "category": "financial", "source_owner": "United Utilities Group PLC",
+         "url": "https://www.unitedutilities.com/globalassets/documents/corporate-documents/2024-25-rns-annoucement.pdf"},
+    ],
+
+    # ── National Gas Transmission plc — Annual Report and Accounts 2024/25 ──
+    "national-gas": [
+        {"source_type": "annual_report",
+         "statement": "National Gas Transmission revenue was £1,551m in 2024/25.",
+         "category": "financial", "source_owner": "National Gas Transmission plc",
+         "url": "https://www.nationalgas.com/sites/default/files/documents/FY25%20NGT%20-%20Financial%20Review.pdf"},
+    ],
+
+    # ── Cadent Gas Limited — FY25 Interim Report (6 months to 30 Sep 2024) ──
+    # Registry slug is "cadent-gas".
+    "cadent-gas": [
+        {"source_type": "annual_report",
+         "statement": "Cadent Gas total group revenue was £1,056m for the six months to 30 September 2024.",
+         "category": "financial", "source_owner": "Cadent Gas Limited",
+         "url": "https://cadentgas.com/getmedia/0b5b1c68-d5d0-458d-baa2-fe7f6e76656a/Cadent-Gas-FY25-Interim-Report_1.pdf"},
+    ],
+
+    # ── UK Power Networks — Annual Review 2023/24 (evidence only) ──
+    "uk-power-networks": [
+        {"source_type": "annual_report",
+         "statement": "UK Power Networks published its Annual Review 2023/24.",
+         "category": "strategy", "source_owner": "UK Power Networks",
+         "url": "https://annualreview2024.ukpowernetworks.co.uk/downloads"},
+    ],
+
+    # ── Thames Water — results & presentations (2024/25) ──
+    "thames-water": [
+        {"source_type": "annual_report",
+         "statement": "Thames Water revenue was £2,738.2m in 2024/25.",
+         "category": "financial", "source_owner": "Thames Water Utilities Limited",
+         "url": "https://www.thameswater.co.uk/about-us/investors/results-and-presentations"},
+    ],
+
+    # ── Anglian Water — Annual Integrated Report 2024/25 (evidence only) ──
+    "anglian-water": [
+        {"source_type": "annual_report",
+         "statement": "Anglian Water published its Annual Integrated Report 2024/25.",
+         "category": "strategy", "source_owner": "Anglian Water Services Limited",
+         "url": "https://www.anglianwater.co.uk/globalassets/anglian-waters-annual-integrated-report-2024-25-1.pdf"},
+    ],
 }
 
 
