@@ -1,6 +1,7 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from . import views
+from . import globe as globe_views
 from harvester import views as harvester_views
 
 urlpatterns = [
@@ -11,6 +12,9 @@ urlpatterns = [
     path('rankings/', RedirectView.as_view(url='/companies/', permanent=False), name='rankings'),
     # UK Infrastructure & Utilities Intelligence ranking (read-only)
     path('rankings/utilities/', harvester_views.utilities_ranking, name='utilities_ranking'),
+
+    # Living Infrastructure Earth — read-only globe data (Phase 0)
+    path('api/globe/layers/', globe_views.globe_layers, name='globe_layers'),
 
     # ESG Assessment app
     path('esg/',                                    views.index,             name='index'),
