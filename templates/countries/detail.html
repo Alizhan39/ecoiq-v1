@@ -1,4 +1,5 @@
 {% load static humanize %}
+{% load country_panels %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -774,6 +775,9 @@ footer a:hover{color:var(--accent)}
 
   </div>
 </section>
+
+<!-- ── Country Intelligence panel (harvester, read-only) ───────────────── -->
+{% country_intelligence_panel country %}
 
 <!-- INTELLIGENCE STRIP -->
 <div class="intel-strip">
