@@ -25,6 +25,7 @@ from .constants import (
     EVIDENCE_CATEGORIES,
     VERIFICATION_STATUSES,
     NORMALIZATION_STATUSES,
+    REGISTRY_SECTORS,
 )
 
 
@@ -295,3 +296,91 @@ class EvidenceSourceRef(models.Model):
 
     def __str__(self):
         return f"ref({self.source_type} → ev#{self.canonical_evidence_id})"
+
+
+class RegistryCompany(models.Model):
+    """A target company in the harvest universe (Slice 6 — registry only).
+
+    Identifying metadata for companies the harvester will later collect evidence
+    for. The `slug` is the join key to harvested data (Evidence/Datapoint
+    company_slug). This model stores NO evidence and triggers NO harvesting.
+
+    Fields left blank (report URLs, companies_house_number) are intentionally
+    unset pending verification — never fabricated.
+    """
+
+    company_name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=120, unique=True)
+    ticker = models.CharField(max_length=16, blank=True)
+    sector = models.CharField(max_length=20, choices=REGISTRY_SECTORS)
+    subsector = models.CharField(max_length=120, blank=True)
+    country = models.CharField(max_length=2, default="GB")
+
+    website = models.URLField(blank=True)
+    investor_relations_url = models.URLField(blank=True)
+    annual_report_url = models.URLField(blank=True)
+    sustainability_report_url = models.URLField(blank=True)
+    companies_house_number = models.CharField(max_length=12, blank=True)
+
+    is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_registry_company"
+        ordering = ["priority", "company_name"]
+        verbose_name_plural = "registry companies"
+        indexes = [
+            models.Index(fields=["sector"]),
+            models.Index(fields=["is_active"]),
+        ]
+
+    def __str__(self):
+        return f"{self.company_name} ({self.sector})"
+
+
+class BatchHarvestRun(models.Model):
+    """Summary of a batch harvest across the registry (Slice 7).
+
+    Persists aggregate stats for one `harvest_registry` run. Per-company detail
+    lives on the individual HarvestJob rows; this is the roll-up.
+    """
+
+    STATUS_CHOICES = [
+        ("running", "Running"),
+        ("done", "Done"),
+        ("error", "Error"),
+    ]
+
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="running")
+    filter_note = models.CharField(max_length=120, blank=True)
+
+    total_companies = models.IntegerField(default=0)
+    successful = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    evidence_created = models.IntegerField(default=0)
+    datapoints_created = models.IntegerField(default=0)
+
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_batch_harvest_run"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (f"BatchHarvestRun({self.created_at:%Y-%m-%d}, "
+                f"{self.successful}/{self.total_companies} ok)")
+
+    def summary_dict(self):
+        return {
+            "total_companies": self.total_companies,
+            "successful": self.successful,
+            "failed": self.failed,
+            "evidence_created": self.evidence_created,
+            "datapoints_created": self.datapoints_created,
+            "status": self.status,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+        }

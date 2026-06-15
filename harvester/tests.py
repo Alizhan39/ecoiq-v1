@@ -556,3 +556,131 @@ class DashboardViewTests(TestCase):
         self.client.get("/evidence/national-grid/data/")
         after = (Evidence.objects.count(), Datapoint.objects.count())
         self.assertEqual(before, after)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 6 — UK target company registry
+# ════════════════════════════════════════════════════════════════════════════
+from harvester.models import RegistryCompany
+from harvester.uk_registry import COMPANIES, registry_rows
+
+
+class RegistryModelTests(TestCase):
+    def test_create_and_unique_slug(self):
+        RegistryCompany.objects.create(company_name="Test Co", slug="test-co",
+                                       sector="energy", country="GB")
+        self.assertEqual(RegistryCompany.objects.get(slug="test-co").sector, "energy")
+        with self.assertRaises(Exception):
+            RegistryCompany.objects.create(company_name="Dup", slug="test-co",
+                                           sector="water")
+
+    def test_catalog_has_25_distinct_companies(self):
+        slugs = [c[0] for c in COMPANIES]
+        self.assertEqual(len(slugs), 25)
+        self.assertEqual(len(set(slugs)), 25)          # no duplicate slugs
+
+    def test_catalog_sectors_are_valid(self):
+        from harvester.constants import REGISTRY_SECTORS
+        valid = {s[0] for s in REGISTRY_SECTORS}
+        for row in registry_rows():
+            self.assertIn(row["sector"], valid)
+
+    def test_no_fabricated_ch_numbers_or_report_urls(self):
+        # registry never invents CH numbers / report deep links
+        for row in registry_rows():
+            self.assertEqual(row["companies_house_number"], "")
+            self.assertEqual(row["annual_report_url"], "")
+            self.assertEqual(row["investor_relations_url"], "")
+            self.assertEqual(row["sustainability_report_url"], "")
+
+
+class SeedUKRegistryTests(TestCase):
+    def test_seed_idempotent_and_complete(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_uk_registry", stdout=StringIO())
+        self.assertEqual(RegistryCompany.objects.count(), 25)
+        call_command("seed_uk_registry", stdout=StringIO())   # re-run
+        self.assertEqual(RegistryCompany.objects.count(), 25)  # no duplicates
+
+    def test_expected_companies_present(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_uk_registry", stdout=StringIO())
+        for slug in ("national-grid", "severn-trent", "thames-water",
+                     "cadent-gas", "bp", "octopus-energy"):
+            self.assertTrue(RegistryCompany.objects.filter(slug=slug).exists(),
+                            msg=f"missing {slug}")
+        # listed plcs carry a ticker; private/subsidiaries do not
+        self.assertEqual(RegistryCompany.objects.get(slug="national-grid").ticker, "NG.")
+        self.assertEqual(RegistryCompany.objects.get(slug="octopus-energy").ticker, "")
+
+    def test_registry_is_inert_no_harvest(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_uk_registry", stdout=StringIO())
+        # seeding the registry creates no evidence/datapoints
+        self.assertEqual(Evidence.objects.count(), 0)
+        self.assertEqual(Datapoint.objects.count(), 0)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 7 — Batch Harvest Runner (harvest_registry)
+# ════════════════════════════════════════════════════════════════════════════
+from io import StringIO as _SIO
+from unittest import mock
+from django.core.management import call_command
+from harvester.models import BatchHarvestRun
+
+
+class HarvestRegistryTests(TestCase):
+    def setUp(self):
+        call_command("seed_uk_registry", stdout=_SIO())
+
+    def test_batch_runs_and_stores_summary(self):
+        out = _SIO()
+        call_command("harvest_registry", "--limit", "3", stdout=out)
+        batch = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(batch.status, "done")
+        self.assertEqual(batch.total_companies, 3)
+        self.assertEqual(batch.successful, 3)
+        self.assertEqual(batch.failed, 0)
+        # national-grid (priority 1) has registered docs → real evidence created
+        self.assertGreater(batch.evidence_created, 0)
+        self.assertGreater(batch.datapoints_created, 0)
+
+    def test_progress_printed_per_company(self):
+        out = _SIO()
+        call_command("harvest_registry", "--limit", "3", stdout=out)
+        text = out.getvalue()
+        self.assertIn("[1/3] national-grid", text)
+        self.assertIn("[2/3] sse", text)
+        self.assertIn("[3/3] centrica", text)
+
+    def test_idempotent_second_batch_creates_nothing(self):
+        call_command("harvest_registry", "--limit", "3", stdout=_SIO())
+        call_command("harvest_registry", "--limit", "3", stdout=_SIO())
+        latest = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(latest.evidence_created, 0)      # nothing new on re-run
+        self.assertEqual(latest.datapoints_created, 0)
+
+    def test_continues_when_one_company_fails(self):
+        real = __import__("harvester.pipeline", fromlist=["run_harvest"]).run_harvest
+
+        def flaky(job):
+            if job.company_slug == "sse":
+                raise RuntimeError("boom")
+            return real(job)
+
+        with mock.patch("harvester.pipeline.run_harvest", side_effect=flaky):
+            call_command("harvest_registry", "--limit", "3", stdout=_SIO())
+        batch = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(batch.status, "done")            # batch completed
+        self.assertEqual(batch.failed, 1)                 # sse failed
+        self.assertEqual(batch.successful, 2)             # others succeeded
+
+    def test_sector_filter(self):
+        call_command("harvest_registry", "--sector", "water", stdout=_SIO())
+        batch = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(batch.total_companies,
+                         RegistryCompany.objects.filter(sector="water").count())

@@ -1,7 +1,25 @@
 """Admin registrations for the Evidence Harvester (read/inspect convenience)."""
 from django.contrib import admin
 
-from .models import Source, HarvestJob, Evidence, Datapoint, EvidenceSourceRef
+from .models import (
+    Source, HarvestJob, Evidence, Datapoint, EvidenceSourceRef, RegistryCompany,
+    BatchHarvestRun,
+)
+
+
+@admin.register(BatchHarvestRun)
+class BatchHarvestRunAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "status", "total_companies", "successful",
+                    "failed", "evidence_created", "datapoints_created")
+    list_filter = ("status",)
+
+
+@admin.register(RegistryCompany)
+class RegistryCompanyAdmin(admin.ModelAdmin):
+    list_display = ("company_name", "slug", "ticker", "sector", "subsector",
+                    "country", "is_active", "priority")
+    list_filter = ("sector", "country", "is_active")
+    search_fields = ("company_name", "slug", "ticker", "companies_house_number")
 
 
 @admin.register(Source)
