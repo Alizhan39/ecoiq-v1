@@ -1,0 +1,114 @@
+{% load static %}
+{% comment %}
+Living Infrastructure Earth — Phase 1 MVP hero (self-contained, additive).
+Breathing globe + 5 layer toggles + 4 country chips + live stat strip.
+DOM HUD always works; 3D canvas is progressive enhancement; poster fallback.
+Data: /api/globe/layers/ (real). No fly-to twin, no scoring, no fabrication.
+{% endcomment %}
+<section id="living-earth" class="le"
+  data-endpoint="{% url 'globe_layers' %}"
+  data-three="{% static 'js/vendor/three.min.js' %}"
+  data-globe="{% static 'js/vendor/three-globe.min.js' %}"
+  data-tex-night="{% static 'img/globe/earth-night-2048.webp' %}"
+  data-tex-bump="{% static 'img/globe/earth-topology-2048.webp' %}"
+  data-geo="{% static 'data/countries-110m.geojson' %}">
+  <style>
+    .le{ --bg:#070b0f; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#64748b;
+      --muted2:#94a3b8; --accent:#00e89a; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+      position:relative; min-height:680px; background:
+        radial-gradient(60% 80% at 72% 42%, rgba(0,232,154,.10), transparent 60%),
+        radial-gradient(90% 90% at 75% 45%, rgba(20,40,60,.5), transparent 70%), var(--bg);
+      color:var(--text); overflow:hidden; border-bottom:1px solid var(--border); }
+    .le *{ box-sizing:border-box; }
+    /* poster fallback behind the canvas — always present */
+    .le-poster{ position:absolute; inset:0; background:
+      radial-gradient(42% 60% at 72% 42%, rgba(0,232,154,.12), transparent 62%),
+      url('{% static 'img/globe/earth-night-2048.webp' %}') center right / contain no-repeat;
+      opacity:.5; filter:saturate(.9); }
+    .le-3d-on .le-poster{ opacity:0; transition:opacity 1s ease; }
+    #le-canvas{ position:absolute; inset:0; width:100%; height:100%; opacity:0;
+      transition:opacity 1.2s ease; }
+    @media (max-width:860px){ #le-canvas{ display:none; } .le-poster{ opacity:.35; } }
+
+    .le-inner{ position:relative; z-index:2; max-width:1240px; margin:0 auto; padding:3.5rem 1.5rem 2rem;
+      display:grid; grid-template-columns:minmax(0,520px) 1fr; gap:2rem; align-items:start; }
+    @media (max-width:860px){ .le-inner{ grid-template-columns:1fr; } }
+    .le-eyebrow{ font-family:var(--mono); font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:.8rem; }
+    .le-h1{ font-size:clamp(1.9rem,4vw,3rem); font-weight:800; letter-spacing:-.025em; line-height:1.05; color:#fff; }
+    .le-sub{ color:var(--muted2); font-size:.95rem; line-height:1.6; max-width:420px; margin-top:1rem; }
+    .le-cta{ margin-top:1.5rem; display:flex; gap:.8rem; flex-wrap:wrap; }
+    .le-btn{ font-family:var(--mono); font-size:.8rem; text-decoration:none; padding:.6rem 1.1rem; border-radius:5px; border:1px solid var(--border); color:var(--text); }
+    .le-btn.primary{ background:var(--accent); color:#06231a; border-color:var(--accent); font-weight:700; }
+
+    /* layer toggles (right rail) */
+    .le-layers{ justify-self:end; align-self:start; background:rgba(10,14,19,.7); backdrop-filter:blur(8px);
+      border:1px solid var(--border); border-radius:10px; padding:.9rem 1rem; min-width:190px; }
+    .le-layers h4{ font-family:var(--mono); font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .7rem; }
+    .le-layer{ display:flex; align-items:center; gap:.6rem; width:100%; background:transparent; border:none; color:var(--text);
+      font-size:.82rem; padding:.35rem 0; cursor:pointer; text-align:left; }
+    .le-dot{ width:9px; height:9px; border-radius:50%; }
+    .le-layer.off{ opacity:.35; }
+    .le-layer.off .le-dot{ box-shadow:none; }
+
+    /* country chips */
+    .le-chips{ position:relative; z-index:2; max-width:1240px; margin:0 auto; padding:0 1.5rem;
+      display:flex; gap:.6rem; flex-wrap:wrap; }
+    .le-chip{ background:rgba(13,17,23,.7); border:1px solid var(--border); border-radius:8px; padding:.55rem .9rem;
+      cursor:pointer; color:var(--text); font-size:.85rem; }
+    .le-chip.active{ border-color:var(--accent); background:rgba(0,232,154,.08); }
+    .le-chip small{ display:block; color:var(--muted); font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; }
+
+    /* live stat strip */
+    .le-stats{ position:relative; z-index:2; max-width:1240px; margin:1.6rem auto 0; padding:1rem 1.5rem;
+      border-top:1px solid var(--border); display:grid; grid-template-columns:repeat(6,1fr); gap:1rem; }
+    @media (max-width:760px){ .le-stats{ grid-template-columns:repeat(3,1fr); } }
+    .le-stat .n{ font-family:var(--mono); font-size:1.5rem; font-weight:800; color:#fff; }
+    .le-stat .l{ font-family:var(--mono); font-size:.58rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:.3rem; }
+    .le-note{ position:relative; z-index:2; max-width:1240px; margin:.6rem auto 0; padding:0 1.5rem 1.5rem;
+      font-family:var(--mono); font-size:.62rem; color:var(--muted); }
+  </style>
+
+  <div class="le-poster" aria-hidden="true"></div>
+  <canvas id="le-canvas" aria-hidden="true"></canvas>
+
+  <div class="le-inner">
+    <div>
+      <div class="le-eyebrow">The trust infrastructure for a planet in transition</div>
+      <h1 class="le-h1">Intelligence you can trust.<br>Decisions the world can defend.</h1>
+      <p class="le-sub">EcoIQ unifies evidence, verification and provenance across energy,
+        infrastructure, capital, carbon and water — so institutions can act with confidence.</p>
+      <div class="le-cta">
+        <a class="le-btn primary" href="/countries/">Explore countries →</a>
+        <a class="le-btn" href="/evidence/">View evidence</a>
+      </div>
+    </div>
+    <div class="le-layers" role="group" aria-label="Data layers">
+      <h4>Data layers</h4>
+      <button class="le-layer" data-layer="energy"><span class="le-dot" style="background:#f4a261"></span> Energy</button>
+      <button class="le-layer" data-layer="infrastructure"><span class="le-dot" style="background:#58a6ff"></span> Infrastructure</button>
+      <button class="le-layer" data-layer="capital"><span class="le-dot" style="background:#00e89a"></span> Capital</button>
+      <button class="le-layer" data-layer="carbon"><span class="le-dot" style="background:#a855f7"></span> Carbon</button>
+      <button class="le-layer" data-layer="water"><span class="le-dot" style="background:#38bdf8"></span> Water</button>
+    </div>
+  </div>
+
+  <div class="le-chips" role="group" aria-label="Featured countries">
+    <button class="le-chip" data-iso="GB">United Kingdom<small>Europe</small></button>
+    <button class="le-chip" data-iso="KZ">Kazakhstan<small>Central Asia</small></button>
+    <button class="le-chip" data-iso="SA">Saudi Arabia<small>Middle East</small></button>
+    <button class="le-chip" data-iso="TR">Türkiye<small>Europe / Asia</small></button>
+  </div>
+
+  <div class="le-stats">
+    <div class="le-stat"><div class="n" id="le-stat-companies">—</div><div class="l">Companies covered</div></div>
+    <div class="le-stat"><div class="n" id="le-stat-datapoints">—</div><div class="l">Data points</div></div>
+    <div class="le-stat"><div class="n" id="le-stat-evidence">—</div><div class="l">Evidence documents</div></div>
+    <div class="le-stat"><div class="n" id="le-stat-countries">—</div><div class="l">Countries</div></div>
+    <div class="le-stat"><div class="n" id="le-stat-verification">—</div><div class="l">Verification rate</div></div>
+    <div class="le-stat"><div class="n" id="le-stat-freshness">—</div><div class="l">Data freshness</div></div>
+  </div>
+  <div class="le-note">Live figures from EcoIQ's evidence layer. Globe markers are representative
+    (country-centroid clusters), not precise asset coordinates.</div>
+
+  <script src="{% static 'js/living-earth.js' %}" defer></script>
+</section>
