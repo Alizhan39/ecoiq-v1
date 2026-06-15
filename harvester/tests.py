@@ -752,3 +752,68 @@ class DocumentRegistryExpansionTests(TestCase):
         dp = Datapoint.objects.get(company_slug="severn-trent", metric="revenue")
         self.assertEqual(dp.value, 2426.7)
         self.assertEqual(dp.unit, "GBP_million")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 9 — company-page Evidence Layer panel (presentation only)
+# ════════════════════════════════════════════════════════════════════════════
+from django.template import Template, Context
+from harvester.rollups import company_rollup as _rollup
+
+
+class CompanyEvidencePanelTests(TestCase):
+    def setUp(self):
+        self.company, self.profile = make_company("national-grid")
+        from harvester.pipeline import run_harvest
+        run_harvest(_HJ.objects.create(
+            company=self.profile, company_slug="national-grid", status="pending"))
+
+    def test_rollup_counts_and_last_updated(self):
+        r = _rollup("national-grid")
+        self.assertGreater(r["evidence_count"], 0)
+        self.assertGreater(r["datapoint_count"], 0)
+        self.assertTrue(r["has_data"])
+        self.assertIsNotNone(r["last_updated"])
+        self.assertEqual(r["dashboard_url"], "/evidence/national-grid/")
+        # latest datapoints carry real values
+        metrics = {d["metric"] for d in r["latest_datapoints"]}
+        self.assertIn("revenue", metrics)
+
+    def test_rollup_unknown_company_empty_safe(self):
+        r = _rollup("ghost-co")
+        self.assertEqual(r["evidence_count"], 0)
+        self.assertEqual(r["datapoint_count"], 0)
+        self.assertFalse(r["has_data"])
+        self.assertIsNone(r["last_updated"])
+
+    def test_inclusion_tag_renders_panel(self):
+        html = Template(
+            "{% load harvester_panels %}{% company_evidence_panel 'national-grid' %}"
+        ).render(Context({}))
+        self.assertIn("Evidence Layer", html)
+        self.assertIn("datapoints", html)
+        self.assertIn("revenue", html)
+        self.assertIn("/evidence/national-grid/", html)
+
+    def test_inclusion_tag_empty_state(self):
+        html = Template(
+            "{% load harvester_panels %}{% company_evidence_panel 'ghost-co' %}"
+        ).render(Context({}))
+        self.assertIn("No evidence harvested", html)
+
+    def test_panel_on_canonical_company_page(self):
+        from django.test import Client
+        c = Client(SERVER_NAME="localhost")
+        r = c.get("/companies/national-grid/")
+        self.assertEqual(r.status_code, 200)
+        body = r.content.decode()
+        self.assertIn("hv-ev-panel", body)             # panel injected
+        self.assertIn("Evidence Layer", body)
+        self.assertIn("operating_profit", body)        # real datapoint shown
+
+    def test_panel_is_read_only(self):
+        from harvester.models import Evidence, Datapoint
+        before = (Evidence.objects.count(), Datapoint.objects.count())
+        _rollup("national-grid")
+        Template("{% load harvester_panels %}{% company_evidence_panel 'national-grid' %}").render(Context({}))
+        self.assertEqual((Evidence.objects.count(), Datapoint.objects.count()), before)
