@@ -337,3 +337,50 @@ class RegistryCompany(models.Model):
 
     def __str__(self):
         return f"{self.company_name} ({self.sector})"
+
+
+class BatchHarvestRun(models.Model):
+    """Summary of a batch harvest across the registry (Slice 7).
+
+    Persists aggregate stats for one `harvest_registry` run. Per-company detail
+    lives on the individual HarvestJob rows; this is the roll-up.
+    """
+
+    STATUS_CHOICES = [
+        ("running", "Running"),
+        ("done", "Done"),
+        ("error", "Error"),
+    ]
+
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="running")
+    filter_note = models.CharField(max_length=120, blank=True)
+
+    total_companies = models.IntegerField(default=0)
+    successful = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    evidence_created = models.IntegerField(default=0)
+    datapoints_created = models.IntegerField(default=0)
+
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_batch_harvest_run"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (f"BatchHarvestRun({self.created_at:%Y-%m-%d}, "
+                f"{self.successful}/{self.total_companies} ok)")
+
+    def summary_dict(self):
+        return {
+            "total_companies": self.total_companies,
+            "successful": self.successful,
+            "failed": self.failed,
+            "evidence_created": self.evidence_created,
+            "datapoints_created": self.datapoints_created,
+            "status": self.status,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+        }

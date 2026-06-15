@@ -3,7 +3,15 @@ from django.contrib import admin
 
 from .models import (
     Source, HarvestJob, Evidence, Datapoint, EvidenceSourceRef, RegistryCompany,
+    BatchHarvestRun,
 )
+
+
+@admin.register(BatchHarvestRun)
+class BatchHarvestRunAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "status", "total_companies", "successful",
+                    "failed", "evidence_created", "datapoints_created")
+    list_filter = ("status",)
 
 
 @admin.register(RegistryCompany)

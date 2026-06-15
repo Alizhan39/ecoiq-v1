@@ -622,3 +622,65 @@ class SeedUKRegistryTests(TestCase):
         # seeding the registry creates no evidence/datapoints
         self.assertEqual(Evidence.objects.count(), 0)
         self.assertEqual(Datapoint.objects.count(), 0)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 7 — Batch Harvest Runner (harvest_registry)
+# ════════════════════════════════════════════════════════════════════════════
+from io import StringIO as _SIO
+from unittest import mock
+from django.core.management import call_command
+from harvester.models import BatchHarvestRun
+
+
+class HarvestRegistryTests(TestCase):
+    def setUp(self):
+        call_command("seed_uk_registry", stdout=_SIO())
+
+    def test_batch_runs_and_stores_summary(self):
+        out = _SIO()
+        call_command("harvest_registry", "--limit", "3", stdout=out)
+        batch = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(batch.status, "done")
+        self.assertEqual(batch.total_companies, 3)
+        self.assertEqual(batch.successful, 3)
+        self.assertEqual(batch.failed, 0)
+        # national-grid (priority 1) has registered docs → real evidence created
+        self.assertGreater(batch.evidence_created, 0)
+        self.assertGreater(batch.datapoints_created, 0)
+
+    def test_progress_printed_per_company(self):
+        out = _SIO()
+        call_command("harvest_registry", "--limit", "3", stdout=out)
+        text = out.getvalue()
+        self.assertIn("[1/3] national-grid", text)
+        self.assertIn("[2/3] sse", text)
+        self.assertIn("[3/3] centrica", text)
+
+    def test_idempotent_second_batch_creates_nothing(self):
+        call_command("harvest_registry", "--limit", "3", stdout=_SIO())
+        call_command("harvest_registry", "--limit", "3", stdout=_SIO())
+        latest = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(latest.evidence_created, 0)      # nothing new on re-run
+        self.assertEqual(latest.datapoints_created, 0)
+
+    def test_continues_when_one_company_fails(self):
+        real = __import__("harvester.pipeline", fromlist=["run_harvest"]).run_harvest
+
+        def flaky(job):
+            if job.company_slug == "sse":
+                raise RuntimeError("boom")
+            return real(job)
+
+        with mock.patch("harvester.pipeline.run_harvest", side_effect=flaky):
+            call_command("harvest_registry", "--limit", "3", stdout=_SIO())
+        batch = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(batch.status, "done")            # batch completed
+        self.assertEqual(batch.failed, 1)                 # sse failed
+        self.assertEqual(batch.successful, 2)             # others succeeded
+
+    def test_sector_filter(self):
+        call_command("harvest_registry", "--sector", "water", stdout=_SIO())
+        batch = BatchHarvestRun.objects.latest("created_at")
+        self.assertEqual(batch.total_companies,
+                         RegistryCompany.objects.filter(sector="water").count())
