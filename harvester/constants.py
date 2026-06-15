@@ -112,3 +112,12 @@ NORMALIZATION_STATUSES = [
     ("NORMALIZED", "Normalized — clean value extracted"),
     ("NOT_NORMALIZED", "Not normalized — metric present, no parseable value"),
 ]
+
+# ── Registry sectors (Slice 6 target universe) ──────────────────────────────
+REGISTRY_SECTORS = [
+    ("energy", "Energy"),
+    ("utilities", "Utilities"),
+    ("water", "Water"),
+    ("infrastructure", "Infrastructure"),
+    ("industrials", "Industrials"),
+]

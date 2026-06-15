@@ -1,7 +1,17 @@
 """Admin registrations for the Evidence Harvester (read/inspect convenience)."""
 from django.contrib import admin
 
-from .models import Source, HarvestJob, Evidence, Datapoint, EvidenceSourceRef
+from .models import (
+    Source, HarvestJob, Evidence, Datapoint, EvidenceSourceRef, RegistryCompany,
+)
+
+
+@admin.register(RegistryCompany)
+class RegistryCompanyAdmin(admin.ModelAdmin):
+    list_display = ("company_name", "slug", "ticker", "sector", "subsector",
+                    "country", "is_active", "priority")
+    list_filter = ("sector", "country", "is_active")
+    search_fields = ("company_name", "slug", "ticker", "companies_house_number")
 
 
 @admin.register(Source)

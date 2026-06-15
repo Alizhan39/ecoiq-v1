@@ -556,3 +556,69 @@ class DashboardViewTests(TestCase):
         self.client.get("/evidence/national-grid/data/")
         after = (Evidence.objects.count(), Datapoint.objects.count())
         self.assertEqual(before, after)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Slice 6 — UK target company registry
+# ════════════════════════════════════════════════════════════════════════════
+from harvester.models import RegistryCompany
+from harvester.uk_registry import COMPANIES, registry_rows
+
+
+class RegistryModelTests(TestCase):
+    def test_create_and_unique_slug(self):
+        RegistryCompany.objects.create(company_name="Test Co", slug="test-co",
+                                       sector="energy", country="GB")
+        self.assertEqual(RegistryCompany.objects.get(slug="test-co").sector, "energy")
+        with self.assertRaises(Exception):
+            RegistryCompany.objects.create(company_name="Dup", slug="test-co",
+                                           sector="water")
+
+    def test_catalog_has_25_distinct_companies(self):
+        slugs = [c[0] for c in COMPANIES]
+        self.assertEqual(len(slugs), 25)
+        self.assertEqual(len(set(slugs)), 25)          # no duplicate slugs
+
+    def test_catalog_sectors_are_valid(self):
+        from harvester.constants import REGISTRY_SECTORS
+        valid = {s[0] for s in REGISTRY_SECTORS}
+        for row in registry_rows():
+            self.assertIn(row["sector"], valid)
+
+    def test_no_fabricated_ch_numbers_or_report_urls(self):
+        # registry never invents CH numbers / report deep links
+        for row in registry_rows():
+            self.assertEqual(row["companies_house_number"], "")
+            self.assertEqual(row["annual_report_url"], "")
+            self.assertEqual(row["investor_relations_url"], "")
+            self.assertEqual(row["sustainability_report_url"], "")
+
+
+class SeedUKRegistryTests(TestCase):
+    def test_seed_idempotent_and_complete(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_uk_registry", stdout=StringIO())
+        self.assertEqual(RegistryCompany.objects.count(), 25)
+        call_command("seed_uk_registry", stdout=StringIO())   # re-run
+        self.assertEqual(RegistryCompany.objects.count(), 25)  # no duplicates
+
+    def test_expected_companies_present(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_uk_registry", stdout=StringIO())
+        for slug in ("national-grid", "severn-trent", "thames-water",
+                     "cadent-gas", "bp", "octopus-energy"):
+            self.assertTrue(RegistryCompany.objects.filter(slug=slug).exists(),
+                            msg=f"missing {slug}")
+        # listed plcs carry a ticker; private/subsidiaries do not
+        self.assertEqual(RegistryCompany.objects.get(slug="national-grid").ticker, "NG.")
+        self.assertEqual(RegistryCompany.objects.get(slug="octopus-energy").ticker, "")
+
+    def test_registry_is_inert_no_harvest(self):
+        from io import StringIO
+        from django.core.management import call_command
+        call_command("seed_uk_registry", stdout=StringIO())
+        # seeding the registry creates no evidence/datapoints
+        self.assertEqual(Evidence.objects.count(), 0)
+        self.assertEqual(Datapoint.objects.count(), 0)
