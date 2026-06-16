@@ -22,6 +22,7 @@
   };
   var LAYER_PRIORITY = ['capital', 'carbon', 'energy', 'water', 'infrastructure'];
   var active = { energy: true, infrastructure: true, capital: true, carbon: true, water: true };
+  var revealMax = 5;   // layers revealed (staggered during a country flight)
   var DATA = null;
 
   // ── 1. Always: fetch live data → populate the DOM HUD (works without WebGL) ──
@@ -53,19 +54,94 @@
     root.querySelectorAll('[data-iso]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         var iso = chip.dataset.iso;
-        focusISO = (focusISO === iso) ? null : iso;
-        root.querySelectorAll('[data-iso]').forEach(function (c) { c.classList.toggle('active', c.dataset.iso === focusISO); });
+        if (focusISO === iso) { closeCountry(); return; }
+        focusISO = iso;
+        root.querySelectorAll('[data-iso]').forEach(function (c) { c.classList.toggle('active', c.dataset.iso === iso); });
         applyLayers();
-        if (window.__leFocus) window.__leFocus(iso, !!focusISO, countries);
+        if (window.__leFlyTo) window.__leFlyTo(iso);   // desktop globe flight (no-op on mobile)
+        openCountry(iso, countries);
       });
+    });
+    var closeBtn = document.getElementById('le-panel-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeCountry);
+  }
+
+  function closeCountry() {
+    focusISO = null;
+    root.querySelectorAll('[data-iso]').forEach(function (c) { c.classList.remove('active'); });
+    var panel = document.getElementById('le-panel');
+    if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
+    applyLayers();
+    if (window.__leFlyTo) window.__leFlyTo(null);
+  }
+
+  // ── Country Intelligence Panel (works with or without the 3D globe) ──
+  function openCountry(iso, countries) {
+    var c = (countries || []).find(function (x) { return x.iso === iso; });
+    if (!c) return;
+    var panel = document.getElementById('le-panel');
+    panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false');
+    setText('le-panel-name', c.name);
+    setHTML('le-panel-stats', 'loading…');
+    fetch('/api/globe/country/' + c.slug + '/', { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); }).then(renderPanel)
+      .catch(function () { setHTML('le-panel-stats', 'Country data temporarily unavailable.'); });
+  }
+  function setHTML(id, h) { var el = document.getElementById(id); if (el) el.innerHTML = h; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]; }); }
+
+  function renderPanel(d) {
+    setText('le-panel-name', d.name);
+    setHTML('le-panel-stats', '<b>' + d.stats.companies + '</b> companies · <b>' + d.stats.evidence +
+      '</b> evidence · <b>' + d.stats.datapoints + '</b> datapoints');
+    var banner = document.getElementById('le-panel-banner');
+    if (d.no_registry) { banner.hidden = false; banner.textContent = 'Company registry — data expansion in progress.'; }
+    else if (d.data_expansion) { banner.hidden = false; banner.textContent = d.stats.companies + ' companies registered · evidence harvest in progress.'; }
+    else { banner.hidden = true; }
+
+    // scores — real value or honest "Insufficient evidence"
+    setHTML('le-panel-scores', d.scores.map(function (s) {
+      var v = (s.value === null || s.value === undefined)
+        ? '<span class="val na">Insufficient evidence</span>'
+        : '<span class="val">' + esc(s.value) + '</span>';
+      return '<div class="le-score"><span class="lab">' + esc(s.label) + '</span>' + v +
+        '<button class="why" data-why="' + esc(s.label) + '">Why?</button></div>';
+    }).join(''));
+
+    // companies
+    setHTML('le-panel-companies', (d.companies.length ? d.companies.map(function (co) {
+      var op = (co.operating_profit != null) ? '£' + co.operating_profit + 'm' : '—';
+      return '<div class="le-co"><a href="/evidence/' + esc(co.slug) + '/">' + esc(co.company_name) +
+        '</a><span class="m">' + esc(co.sector) + ' · ' + op + ' · ' + co.evidence_count + ' ev</span></div>';
+    }).join('') : '<div class="le-co"><span class="m">No companies tracked yet.</span></div>'));
+
+    var link = document.getElementById('le-panel-link');
+    link.href = d.why.country_url;
+    setText('le-panel-disc', d.disclaimer);
+
+    // "Why?" drill-down (evidence-grounded checklist + links)
+    var why = document.getElementById('le-panel-why');
+    function showWhy(metricLabel) {
+      var rows = d.why.checklist.map(function (k) {
+        return '<div class="le-chk ' + (k.ok ? 'ok' : 'no') + '"><span class="mk">' + (k.ok ? '✓' : '⚠') + '</span>' + esc(k.label) + '</div>';
+      }).join('');
+      why.innerHTML = '<h5>Why “' + esc(metricLabel) + '”?</h5>' +
+        '<div style="font-family:var(--mono);font-size:.66rem;color:var(--muted);margin-bottom:.5rem">Source: ' + esc(d.score_source) + ' · basis: ' + esc(d.why.confidence_basis) + '</div>' +
+        rows +
+        '<div style="margin-top:.6rem"><a href="' + d.why.evidence_url + '">View evidence ↗</a> &nbsp; <a href="' + d.why.country_url + '">Full country ↗</a></div>';
+      why.hidden = false;
+    }
+    document.querySelectorAll('#le-panel-scores .why').forEach(function (b) {
+      b.addEventListener('click', function () { showWhy(b.dataset.why); });
     });
   }
 
   function visibleMarkers() {
     if (!DATA) return [];
+    var revealed = LAYER_PRIORITY.slice(0, revealMax);
     return DATA.markers.filter(function (m) {
       if (focusISO && m.country !== focusISO) return false;
-      return m.layers.some(function (L) { return active[L]; });
+      return m.layers.some(function (L) { return active[L] && revealed.indexOf(L) >= 0; });
     }).map(function (m) {
       var primary = LAYER_PRIORITY.find(function (L) { return m.layers.indexOf(L) >= 0 && active[L]; }) || m.layers[0];
       return { lat: m.lat, lng: m.lng, color: LAYER_COLOR[primary] || '#94a3b8', name: m.name };
@@ -136,11 +212,13 @@
       applyLayers();
 
       var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
-      var theta = Math.PI * 0.1, phi = Math.PI * 0.46, radius = 330, tTheta = theta, tPhi = phi;
+      var theta = Math.PI * 0.1, phi = Math.PI * 0.46, radius = 330;
+      var tTheta = theta, tPhi = phi, tRadius = radius;
       var MIN_PHI = Math.PI * 0.16, MAX_PHI = Math.PI * 0.84;
       var down = false, lx = 0, ly = 0;
       function place() {
-        theta += (tTheta - theta) * 0.1; phi += (tPhi - phi) * 0.1;
+        // eased flight: ~0.07/frame lerp ≈ 1–1.5s settle
+        theta += (tTheta - theta) * 0.07; phi += (tPhi - phi) * 0.07; radius += (tRadius - radius) * 0.07;
         camera.position.set(radius * Math.sin(phi) * Math.sin(theta), radius * Math.cos(phi), radius * Math.sin(phi) * Math.cos(theta));
         camera.lookAt(0, 0, 0);
       }
@@ -153,15 +231,25 @@
         lx = e.clientX; ly = e.clientY;
       });
 
-      // gentle chip focus (NOT the cinematic country twin — that's a later phase)
+      // Country Twin flight: 1–2s eased camera flight + staggered layer reveal.
       var CENTROID = {}; (DATA.countries || []).forEach(function (c) { CENTROID[c.iso] = c; });
-      window.__leFocus = function (isoCode, on) {
-        if (on && CENTROID[isoCode]) {
+      var revealTimer = null;
+      window.__leFlyTo = function (isoCode) {
+        if (revealTimer) { clearInterval(revealTimer); revealTimer = null; }
+        if (isoCode && CENTROID[isoCode]) {
           var c = CENTROID[isoCode];
           tPhi = Math.max(MIN_PHI, Math.min(MAX_PHI, (90 - c.lat) * Math.PI / 180));
           tTheta = (c.lng) * Math.PI / 180;
+          tRadius = 235;                          // fly closer
+          revealMax = 0;                          // layers gradually appear during flight
+          applyLayers();
+          revealTimer = setInterval(function () {
+            revealMax = Math.min(5, revealMax + 1); applyLayers();
+            if (revealMax >= 5) { clearInterval(revealTimer); revealTimer = null; }
+          }, 260);
+        } else {
+          tRadius = 330; revealMax = 5; applyLayers();   // back to world view
         }
-        applyLayers();
       };
 
       var running = true, auto = 0.0015, breathe = 0;

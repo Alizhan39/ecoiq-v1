@@ -74,3 +74,41 @@ class GlobeLayersEndpointTests(TestCase):
         before = (Evidence.objects.count(), Datapoint.objects.count())
         self.client.get("/api/globe/layers/")
         self.assertEqual((Evidence.objects.count(), Datapoint.objects.count()), before)
+
+
+class GlobeCountryEndpointTests(TestCase):
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+        self.kz = CountryProfile.objects.create(
+            name="Kazakhstan", slug="kazakhstan", iso_code="KZ", is_published=True,
+            policy_environment_score=36.0, national_ecoiq_index=29.8)
+        RegistryCompany.objects.create(company_name="KazMunayGas", slug="kazmunaygas",
+                                       sector="energy", country="KZ")
+
+    def test_scores_from_real_fields(self):
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        gov = next(s for s in d["scores"] if s["key"] == "governance")
+        self.assertEqual(gov["value"], 36.0)             # real CountryProfile field
+        overall = next(s for s in d["scores"] if s["key"] == "overall")
+        self.assertEqual(overall["value"], 29.8)
+
+    def test_missing_score_is_null_not_fabricated(self):
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        trans = next(s for s in d["scores"] if s["key"] == "transition")
+        self.assertIsNone(trans["value"])               # field unset → null → "insufficient evidence"
+
+    def test_why_checklist_is_evidence_grounded(self):
+        # KZ has a registered but unharvested company → all checklist items false
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        self.assertTrue(all(not k["ok"] for k in d["why"]["checklist"]))
+        self.assertEqual(d["stats"]["evidence"], 0)
+        self.assertTrue(d["data_expansion"])
+
+    def test_unknown_country_404(self):
+        self.assertEqual(self.client.get("/api/globe/country/nope/").status_code, 404)
+
+    def test_read_only(self):
+        from harvester.models import Evidence
+        before = Evidence.objects.count()
+        self.client.get("/api/globe/country/kazakhstan/")
+        self.assertEqual(Evidence.objects.count(), before)
