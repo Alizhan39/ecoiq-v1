@@ -13,8 +13,9 @@ urlpatterns = [
     # UK Infrastructure & Utilities Intelligence ranking (read-only)
     path('rankings/utilities/', harvester_views.utilities_ranking, name='utilities_ranking'),
 
-    # Living Infrastructure Earth — read-only globe data (Phase 0)
+    # Living Infrastructure Earth — read-only globe data (Phase 0 + 2)
     path('api/globe/layers/', globe_views.globe_layers, name='globe_layers'),
+    path('api/globe/country/<slug:slug>/', globe_views.globe_country, name='globe_country'),
 
     # ESG Assessment app
     path('esg/',                                    views.index,             name='index'),

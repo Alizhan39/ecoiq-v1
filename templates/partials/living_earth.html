@@ -110,5 +110,54 @@ Data: /api/globe/layers/ (real). No fly-to twin, no scoring, no fabrication.
   <div class="le-note">Live figures from EcoIQ's evidence layer. Globe markers are representative
     (country-centroid clusters), not precise asset coordinates.</div>
 
+  <!-- Country Intelligence Panel (Phase 2 — slides in on country select) -->
+  <aside id="le-panel" class="le-panel" aria-hidden="true">
+    <div class="le-panel-head">
+      <div><div class="le-panel-eyebrow">Country Intelligence · read-only</div>
+        <h3 id="le-panel-name">—</h3>
+        <div id="le-panel-stats" class="le-panel-stats"></div></div>
+      <button id="le-panel-close" class="le-panel-close" aria-label="Close">×</button>
+    </div>
+    <div id="le-panel-banner" class="le-panel-banner" hidden></div>
+    <div class="le-panel-section"><h4>Indicators</h4><div id="le-panel-scores"></div></div>
+    <div id="le-panel-why" class="le-panel-why" hidden></div>
+    <div class="le-panel-section"><h4>Companies tracked</h4><div id="le-panel-companies"></div></div>
+    <a id="le-panel-link" class="le-panel-link" href="#">Open full country workspace →</a>
+    <div class="le-panel-disc" id="le-panel-disc"></div>
+  </aside>
+  <style>
+    .le-panel{ position:absolute; top:0; right:0; height:100%; width:420px; max-width:92vw; z-index:5;
+      background:rgba(8,12,17,.92); backdrop-filter:blur(10px); border-left:1px solid var(--border);
+      transform:translateX(100%); transition:transform .35s ease; overflow-y:auto; padding:1.2rem 1.3rem;
+      font-family:inherit; }
+    .le-panel.open{ transform:translateX(0); }
+    @media (max-width:860px){ .le-panel{ top:auto; bottom:0; right:0; left:0; width:100%; height:82%;
+      border-left:none; border-top:1px solid var(--border); transform:translateY(100%); border-radius:14px 14px 0 0; }
+      .le-panel.open{ transform:translateY(0); } }
+    .le-panel-head{ display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:.9rem; }
+    .le-panel-eyebrow{ font-family:var(--mono); font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+    #le-panel-name{ font-size:1.5rem; font-weight:800; color:#fff; margin:.3rem 0 0; }
+    .le-panel-stats{ font-family:var(--mono); font-size:.72rem; color:var(--muted2); margin-top:.5rem; }
+    .le-panel-stats b{ color:#fff; }
+    .le-panel-close{ background:transparent; border:1px solid var(--border); color:var(--muted2); border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:1.1rem; }
+    .le-panel-banner{ font-family:var(--mono); font-size:.7rem; color:#f4a261; background:rgba(244,162,97,.08); border:1px solid rgba(244,162,97,.25); border-radius:6px; padding:.55rem .7rem; margin-top:.9rem; }
+    .le-panel-section{ margin-top:1.1rem; } .le-panel-section h4{ font-family:var(--mono); font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted2); margin:0 0 .6rem; }
+    .le-score{ display:flex; align-items:center; gap:.7rem; padding:.4rem 0; border-bottom:1px solid var(--border); }
+    .le-score .lab{ flex:1; font-size:.82rem; color:var(--muted2); }
+    .le-score .val{ font-family:var(--mono); font-weight:700; color:#fff; }
+    .le-score .val.na{ color:var(--muted); font-weight:400; font-size:.72rem; }
+    .le-score .why{ background:transparent; border:1px solid var(--border); color:var(--accent); font-family:var(--mono); font-size:.6rem; padding:.2rem .5rem; border-radius:4px; cursor:pointer; }
+    .le-panel-why{ margin-top:.8rem; background:rgba(13,17,23,.7); border:1px solid var(--border); border-radius:8px; padding:.8rem .9rem; }
+    .le-panel-why h5{ margin:0 0 .5rem; font-size:.8rem; color:#fff; }
+    .le-chk{ display:flex; gap:.5rem; font-size:.76rem; padding:.2rem 0; color:var(--text); }
+    .le-chk .mk{ font-family:var(--mono); } .le-chk.ok .mk{ color:var(--accent);} .le-chk.no .mk{ color:#f4a261; }
+    .le-panel-why a{ color:var(--info); font-size:.72rem; text-decoration:none; font-family:var(--mono); }
+    .le-co{ display:flex; justify-content:space-between; gap:.6rem; font-size:.78rem; padding:.3rem 0; border-bottom:1px solid var(--border); }
+    .le-co a{ color:var(--text); text-decoration:none; } .le-co a:hover{ color:var(--info); }
+    .le-co .m{ font-family:var(--mono); color:var(--muted2); white-space:nowrap; }
+    .le-panel-link{ display:inline-block; margin-top:1rem; font-family:var(--mono); font-size:.76rem; color:var(--accent); text-decoration:none; border:1px solid rgba(0,232,154,.4); border-radius:5px; padding:.5rem .9rem; }
+    .le-panel-disc{ margin-top:1rem; font-family:var(--mono); font-size:.6rem; color:var(--muted); line-height:1.5; }
+  </style>
+
   <script src="{% static 'js/living-earth.js' %}" defer></script>
 </section>

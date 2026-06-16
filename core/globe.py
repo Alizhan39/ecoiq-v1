@@ -110,3 +110,92 @@ def globe_layers(request):
         "disclaimer": ("Markers are representative (country-centroid clusters), "
                        "not precise asset coordinates. All counts are live and real."),
     })
+
+
+# CountryProfile score field → panel label. Values render "Insufficient evidence"
+# when null. No score is computed or invented here — only existing fields surfaced.
+_SCORE_FIELDS = [
+    ("overall", "Overall (EcoIQ index)", "national_ecoiq_index"),
+    ("transition", "Transition readiness", "transition_readiness_score"),
+    ("governance", "Governance / policy", "policy_environment_score"),
+    ("investment", "Investment climate", "investment_climate_score"),
+    ("transparency", "Transparency", "transparency_score"),
+    ("industrial", "Industrial modernisation", "industrial_modernization_score"),
+]
+
+
+def globe_country(request, slug):
+    """GET /api/globe/country/<slug>/ — Country Twin payload (read-only, real).
+
+    Scores come only from existing CountryProfile fields (null → "insufficient
+    evidence"). Companies/evidence/datapoints from the harvester. The 'why'
+    checklist is derived from real evidence coverage — never fabricated.
+    """
+    from countries.models import CountryProfile
+    from countries.intelligence import country_intelligence
+    from harvester.models import Evidence, Datapoint, RegistryCompany
+
+    cp = CountryProfile.objects.filter(slug=slug).first()
+    if cp is None:
+        return JsonResponse({"error": "country not found", "slug": slug}, status=404)
+
+    intel = country_intelligence(cp)            # reuse the read-only bridge
+    iso = (cp.iso_code or "").upper()
+    centroid = next((c for s, i, la, ln in FEATURED if i == iso
+                     for c in [{"lat": la, "lng": ln}]), None)
+
+    scores = []
+    for key, label, field in _SCORE_FIELDS:
+        v = getattr(cp, field, None)
+        # 0/None on a 0–100 index = unset/not-computed → render "Insufficient
+        # evidence" rather than a misleading zero. Real non-zero values pass through.
+        if v in (None, 0, 0.0):
+            v = None
+        scores.append({"key": key, "label": label, "field": field, "value": v})
+
+    # layer marker counts for this country (same deterministic mapping)
+    slugs = [c["slug"] for c in intel["companies"]]
+    dp_metrics = set(Datapoint.objects.filter(company_slug__in=slugs)
+                     .values_list("metric", flat=True)) if slugs else set()
+    layers = {
+        "energy": RegistryCompany.objects.filter(country=iso, sector__in=["energy", "utilities"]).count(),
+        "infrastructure": RegistryCompany.objects.filter(country=iso, sector__in=["infrastructure", "industrials"]).count(),
+        "water": RegistryCompany.objects.filter(country=iso, sector="water").count(),
+        "capital": Datapoint.objects.filter(company_slug__in=slugs, metric="capex").values("company_slug").distinct().count() if slugs else 0,
+        "carbon": Datapoint.objects.filter(company_slug__in=slugs, metric__in=_CARBON_METRICS).values("company_slug").distinct().count() if slugs else 0,
+    }
+
+    # evidence-coverage checklist (the "Why?" backbone) — real presence only
+    cat = set(Evidence.objects.filter(company_slug__in=slugs).values_list("category", flat=True)) if slugs else set()
+    verified = Evidence.objects.filter(company_slug__in=slugs, verification_status="VERIFIED").exists() if slugs else False
+    checklist = [
+        {"label": "Financial reports available", "ok": "financial" in cat or "capital_projects" in cat},
+        {"label": "Emissions disclosed", "ok": bool(dp_metrics & _CARBON_METRICS) or "emissions" in cat},
+        {"label": "Governance / ownership disclosed", "ok": bool({"governance", "board", "ownership"} & cat)},
+        {"label": "Climate / transition pathway disclosed", "ok": "climate" in cat},
+        {"label": "Independently verified evidence", "ok": verified},
+    ]
+
+    return JsonResponse({
+        "slug": slug, "name": cp.name, "iso": iso, "centroid": centroid,
+        "published": bool(cp.is_published),
+        "scores": scores,
+        "score_source": intel.get("data_sources") or "EcoIQ national indicators",
+        "stats": {
+            "companies": intel["companies_count"],
+            "evidence": intel["evidence_count"],
+            "datapoints": intel["datapoint_count"],
+            "last_updated": intel["last_updated"].isoformat() if intel["last_updated"] else None,
+        },
+        "layers": layers,
+        "companies": intel["companies"][:8],
+        "why": {"confidence_basis": "evidence verification coverage",
+                "checklist": checklist,
+                "evidence_url": "/evidence/" + ("?" if slugs else ""),
+                "country_url": "/countries/%s/" % slug},
+        "data_expansion": intel["data_expansion"],
+        "no_registry": intel["no_registry"],
+        "disclaimer": ("Scores are existing EcoIQ national indicators; metrics with no "
+                       "value show 'Insufficient evidence'. Company figures are evidence-"
+                       "backed. Markers are representative, not precise coordinates."),
+    })
