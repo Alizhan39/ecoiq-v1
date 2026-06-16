@@ -2,6 +2,7 @@ from django.urls import path
 from django.views.generic import RedirectView
 from . import views
 from . import globe as globe_views
+from . import why_views
 from harvester import views as harvester_views
 
 urlpatterns = [
@@ -16,6 +17,14 @@ urlpatterns = [
     # Living Infrastructure Earth — read-only globe data (Phase 0 + 2)
     path('api/globe/layers/', globe_views.globe_layers, name='globe_layers'),
     path('api/globe/country/<slug:slug>/', globe_views.globe_country, name='globe_country'),
+
+    # WHY Engine — explainability (Boardroom Mode + Decision Defense Pack + API)
+    path('why/country/<slug:slug>/', why_views.why_country_page, name='why_country'),
+    path('why/company/<slug:slug>/', why_views.why_company_page, name='why_company'),
+    path('why/country/<slug:slug>/pack.pdf', why_views.defense_pack_country, name='why_country_pack'),
+    path('why/company/<slug:slug>/pack.pdf', why_views.defense_pack_company, name='why_company_pack'),
+    path('api/why/country/<slug:slug>/', why_views.api_why_country, name='api_why_country'),
+    path('api/why/company/<slug:slug>/', why_views.api_why_company, name='api_why_company'),
 
     # ESG Assessment app
     path('esg/',                                    views.index,             name='index'),

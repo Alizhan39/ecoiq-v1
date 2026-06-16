@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% comment %}WHY Engine — Boardroom Mode report. Read-only, evidence-derived.{% endcomment %}
+{% block title %}Why — {{ d.name }} · EcoIQ{% endblock %}
+{% block meta_description_content %}EcoIQ WHY report — evidence, verification, confidence and the path to defend every figure to an investment committee.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .why{ --bg:#070b0f; --bg2:#0d1117; --border:rgba(255,255,255,.08); --border2:rgba(255,255,255,.14);
+    --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8; --accent:#00e89a; --info:#58a6ff; --warn:#f4a261; --danger:#e63946;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace; background:var(--bg); color:var(--text);
+    border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  body:has(.why) main{ max-width:1080px; }
+  .why *{ box-sizing:border-box; }
+  .why-head{ padding:1.5rem 1.8rem; border-bottom:1px solid var(--border); }
+  .why-eyebrow{ font-family:var(--mono); font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); }
+  .why-title{ font-size:1.7rem; font-weight:800; color:#fff; margin:.35rem 0 0; }
+  .why-sum{ font-family:var(--mono); font-size:.74rem; color:var(--muted2); margin-top:.5rem; }
+  .why-sum b{ color:#fff; }
+  .why-dl{ margin-top:1rem; }
+  .why-dl a{ font-family:var(--mono); font-size:.78rem; color:#06231a; background:var(--accent); border-radius:5px; padding:.55rem 1rem; text-decoration:none; font-weight:700; }
+
+  .why-card{ padding:1.3rem 1.8rem; border-top:1px solid var(--border); }
+  .why-row1{ display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap; }
+  .why-metric{ font-size:1.05rem; font-weight:700; color:#fff; }
+  .why-val{ font-family:var(--mono); font-size:1.4rem; font-weight:800; color:#fff; }
+  .why-val.na{ font-size:.9rem; color:var(--muted); font-weight:400; }
+  .badge{ font-family:var(--mono); font-size:.6rem; letter-spacing:.05em; padding:.12rem .5rem; border-radius:4px; border:1px solid var(--border2); }
+  .b-YES{ color:var(--accent); border-color:rgba(0,232,154,.4); } .b-WITH_CAVEATS{ color:var(--warn); border-color:rgba(244,162,97,.4);} .b-NOT_YET{ color:var(--danger); border-color:rgba(230,57,70,.4);}
+  .v-VERIFIED{ color:var(--accent);} .v-PARTIAL{ color:var(--info);} .v-CONTRADICTED{ color:var(--danger);} .v-NOT_FOUND,.v-INSUFFICIENT_EVIDENCE,.v-UNVERIFIED{ color:var(--warn);}
+
+  .board{ margin-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:.5rem 1.4rem; }
+  @media (max-width:780px){ .board{ grid-template-columns:1fr; } }
+  .board .q{ font-family:var(--mono); font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .board .a{ font-size:.84rem; color:var(--text); margin-bottom:.4rem; }
+  .board .a.def-YES{ color:var(--accent);} .board .a.def-WITH_CAVEATS{ color:var(--warn);} .board .a.def-NOT_YET{ color:var(--danger);}
+
+  .why-grid{ margin-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+  @media (max-width:780px){ .why-grid{ grid-template-columns:1fr; } }
+  .why-grid h5{ font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted2); margin:0 0 .5rem; }
+  .ev{ font-size:.8rem; padding:.3rem 0; border-bottom:1px solid var(--border); }
+  .ev a{ color:var(--info); text-decoration:none; } .ev .m{ font-family:var(--mono); font-size:.62rem; color:var(--muted); }
+  .miss{ font-size:.8rem; color:var(--warn); padding:.25rem 0; }
+  .meth{ margin-top:.9rem; font-size:.76rem; color:var(--muted2); line-height:1.55; }
+  .meth .lab{ font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .tl{ font-family:var(--mono); font-size:.74rem; color:var(--text); }
+  .why-disc{ padding:1.2rem 1.8rem; border-top:1px solid var(--border); background:var(--bg2); font-family:var(--mono); font-size:.64rem; color:var(--muted); line-height:1.6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="why">
+  <div class="why-head">
+    <div class="why-eyebrow">EcoIQ WHY · Boardroom Mode · read-only</div>
+    <div class="why-title">{{ d.name }}</div>
+    {% if d.subject_type == 'company' %}
+      <div class="why-sum"><b>{{ d.summary.metrics_covered }}</b>/{{ d.summary.metrics_total }} metrics covered · <b>{{ d.summary.evidence }}</b> evidence · <b>{{ d.summary.verified_metrics }}</b> independently verified</div>
+    {% else %}
+      <div class="why-sum"><b>{{ d.summary.companies }}</b> companies · <b>{{ d.summary.evidence }}</b> evidence · verified coverage <b>{{ d.summary.verified_coverage_pct }}%</b></div>
+    {% endif %}
+    <div class="why-dl">
+      {% if d.subject_type == 'company' %}<a href="{% url 'why_company_pack' d.slug %}">Download Decision Defense Pack (PDF)</a>
+      {% else %}<a href="{% url 'why_country_pack' d.slug %}">Download Decision Defense Pack (PDF)</a>{% endif %}
+    </div>
+  </div>
+
+  {% for r in d.reports %}
+  <div class="why-card">
+    <div class="why-row1">
+      <span class="why-metric">{{ r.label }}</span>
+      {% if r.value != None %}<span class="why-val">{{ r.value }} {{ r.unit }}{% if r.period %} · {{ r.period }}{% endif %}</span>
+      {% else %}<span class="why-val na">Insufficient evidence</span>{% endif %}
+      <span class="badge v-{{ r.verification_status }}">{{ r.verification_status }}</span>
+      {% if r.confidence != None %}<span class="badge">conf {{ r.confidence }}</span>{% endif %}
+      <span class="badge b-{{ r.defendable }}">{{ r.defendable }}</span>
+    </div>
+
+    <div class="board">
+      <div><div class="q">1 · Can I trust this number?</div><div class="a">{{ r.boardroom.1_trust }}</div></div>
+      <div><div class="q">2 · Where did it come from?</div><div class="a">{{ r.boardroom.2_origin }}</div></div>
+      <div><div class="q">3 · What evidence supports it?</div><div class="a">{{ r.boardroom.3_supports }}</div></div>
+      <div><div class="q">4 · What evidence is missing?</div><div class="a">{{ r.boardroom.4_missing }}</div></div>
+      <div><div class="q">5 · What would improve it?</div><div class="a">{{ r.boardroom.5_improve }}</div></div>
+      <div><div class="q">6 · Can I defend this to an IC?</div><div class="a def-{{ r.defendable }}">{{ r.boardroom.6_defend }}</div></div>
+    </div>
+
+    <div class="why-grid">
+      <div>
+        <h5>Evidence used</h5>
+        {% for e in r.evidence_used %}
+          <div class="ev">{% if e.url %}<a href="{{ e.url }}" target="_blank" rel="noopener noreferrer">{{ e.title }}</a>{% else %}{{ e.title }}{% endif %}
+            <div class="m">{{ e.source_type }}{% if e.source_owner %} · {{ e.source_owner }}{% endif %}{% if e.verification_status %} · {{ e.verification_status }}{% endif %}{% if e.publication_date %} · {{ e.publication_date }}{% endif %}</div></div>
+        {% empty %}<div class="miss">No supporting evidence on record.</div>{% endfor %}
+      </div>
+      <div>
+        <h5>Evidence missing</h5>
+        {% for m in r.evidence_missing %}<div class="miss">⚠ {{ m }}</div>{% empty %}<div class="ev">No material gaps detected.</div>{% endfor %}
+        {% if r.timeline %}<h5 style="margin-top:.9rem">Timeline</h5><div class="tl">{% for t in r.timeline %}{{ t.period }}: {{ t.value }}{% if not forloop.last %} · {% endif %}{% endfor %}</div>
+        {% else %}<h5 style="margin-top:.9rem">Timeline</h5><div class="tl" style="color:var(--muted)">{{ r.timeline_note|default:'unavailable' }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="meth"><span class="lab">Methodology</span> — {{ r.methodology }}</div>
+    {% if r.improvement_path %}<div class="meth"><span class="lab">Improvement path</span> — {% for a in r.improvement_path %}{{ a }}{% if not forloop.last %} {% endif %}{% endfor %}</div>{% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="why-disc">{{ d.disclaimer }}</div>
+</div>
+{% endblock %}

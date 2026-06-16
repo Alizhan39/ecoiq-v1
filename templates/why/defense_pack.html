@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>EcoIQ Decision Defense Pack — {{ d.name }}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm;
+    @bottom-center { content: "EcoIQ Decision Defense Pack · {{ d.name }} · evidence-derived, read-only · page " counter(page) " of " counter(pages); font: 7pt 'Helvetica'; color:#8a8f98; } }
+  * { box-sizing: border-box; }
+  body { font-family: 'Helvetica','Arial',sans-serif; color:#161b22; font-size:9.5pt; line-height:1.5; }
+  .cover { border-bottom:2px solid #00a36c; padding-bottom:10pt; margin-bottom:14pt; }
+  .brand { font-size:11pt; font-weight:800; letter-spacing:-.02em; } .brand .q{ color:#00a36c; }
+  .eyebrow { font-size:7pt; letter-spacing:.18em; text-transform:uppercase; color:#6b7280; margin-top:8pt; }
+  h1 { font-size:20pt; margin:2pt 0 0; }
+  .sum { font-size:8.5pt; color:#374151; margin-top:6pt; }
+  .sum b{ color:#111; }
+  .meta { font-size:7.5pt; color:#6b7280; margin-top:4pt; }
+
+  .metric { border:0.6pt solid #d6dae0; border-radius:5pt; padding:9pt 11pt; margin-bottom:9pt; page-break-inside:avoid; }
+  .m-head { display:flex; justify-content:space-between; align-items:baseline; border-bottom:0.6pt solid #e5e7eb; padding-bottom:5pt; margin-bottom:6pt; }
+  .m-name { font-size:11pt; font-weight:700; }
+  .m-val { font-size:14pt; font-weight:800; } .m-val.na{ font-size:9pt; color:#9ca3af; font-weight:400; }
+  .tags { margin-top:3pt; } .tag { font-size:6.5pt; letter-spacing:.04em; padding:1pt 5pt; border:0.6pt solid #cbd5e1; border-radius:3pt; margin-right:3pt; }
+  .tag.def-YES{ color:#067a4e; border-color:#067a4e;} .tag.def-WITH_CAVEATS{ color:#b45309; border-color:#b45309;} .tag.def-NOT_YET{ color:#b91c1c; border-color:#b91c1c;}
+  .sect { margin-top:6pt; } .sect .lab { font-size:6.5pt; letter-spacing:.1em; text-transform:uppercase; color:#6b7280; font-weight:700; }
+  .ev { font-size:8pt; padding:1.5pt 0; } .ev .m{ color:#6b7280; font-size:7pt; }
+  .miss { font-size:8pt; color:#b45309; padding:1pt 0; }
+  .ok { font-size:8pt; color:#067a4e; }
+  .defend { font-size:8.5pt; margin-top:5pt; padding:5pt 7pt; background:#f3f6f4; border-left:2.5pt solid #00a36c; }
+  .defend.NOT_YET { border-left-color:#b91c1c; background:#fdf2f2; } .defend.WITH_CAVEATS{ border-left-color:#b45309; background:#fffaf0; }
+  .disc { margin-top:12pt; font-size:7pt; color:#6b7280; border-top:0.6pt solid #e5e7eb; padding-top:6pt; }
+</style></head>
+<body>
+  <div class="cover">
+    <div class="brand">Eco<span class="q">IQ</span></div>
+    <div class="eyebrow">Decision Defense Pack · {{ d.subject_type|capfirst }} Intelligence · Read-only</div>
+    <h1>{{ d.name }}</h1>
+    {% if d.subject_type == 'company' %}
+      <div class="sum"><b>{{ d.summary.metrics_covered }}</b>/{{ d.summary.metrics_total }} metrics evidenced · <b>{{ d.summary.evidence }}</b> source documents · <b>{{ d.summary.verified_metrics }}</b> independently verified</div>
+    {% else %}
+      <div class="sum"><b>{{ d.summary.companies }}</b> companies tracked · <b>{{ d.summary.evidence }}</b> evidence · verified coverage <b>{{ d.summary.verified_coverage_pct }}%</b></div>
+    {% endif %}
+    <div class="meta">Generated {{ d.generated_at }} · every figure below is traceable to a cited source with a verification status. Metrics without evidence are shown as "Insufficient evidence" — no value is estimated or fabricated.</div>
+  </div>
+
+  {% for r in d.reports %}
+  <div class="metric">
+    <div class="m-head">
+      <div><span class="m-name">{{ r.label }}</span>
+        <div class="tags">
+          <span class="tag">Verification: {{ r.verification_status }}</span>
+          {% if r.confidence != None %}<span class="tag">Confidence: {{ r.confidence }}</span>{% endif %}
+          <span class="tag def-{{ r.defendable }}">IC-defendable: {{ r.defendable }}</span>
+        </div>
+      </div>
+      {% if r.value != None %}<span class="m-val">{{ r.value }} {{ r.unit }}</span>{% else %}<span class="m-val na">Insufficient evidence</span>{% endif %}
+    </div>
+
+    <div class="sect"><span class="lab">Evidence used</span>
+      {% for e in r.evidence_used %}<div class="ev">{{ e.title }}<div class="m">{{ e.source_type }}{% if e.source_owner %} · {{ e.source_owner }}{% endif %}{% if e.verification_status %} · {{ e.verification_status }}{% endif %}{% if e.url %} · {{ e.url }}{% endif %}</div></div>{% empty %}<div class="miss">None on record.</div>{% endfor %}
+    </div>
+
+    <div class="sect"><span class="lab">Evidence missing</span>
+      {% for m in r.evidence_missing %}<div class="miss">⚠ {{ m }}</div>{% empty %}<div class="ok">No material gaps detected.</div>{% endfor %}
+    </div>
+
+    <div class="sect"><span class="lab">Timeline</span>
+      {% if r.timeline %}<div class="ev">{% for t in r.timeline %}{{ t.period }}: {{ t.value }}{% if not forloop.last %} · {% endif %}{% endfor %}</div>{% else %}<div class="ev" style="color:#9ca3af">{{ r.timeline_note|default:'unavailable' }}</div>{% endif %}
+    </div>
+
+    <div class="sect"><span class="lab">Methodology</span><div class="ev">{{ r.methodology }}</div></div>
+
+    {% if r.improvement_path %}<div class="sect"><span class="lab">Recommended actions</span>{% for a in r.improvement_path %}<div class="ev">• {{ a }}</div>{% endfor %}</div>{% endif %}
+
+    <div class="defend {{ r.defendable }}"><b>Can I defend this to an investment committee?</b> {{ r.boardroom.6_defend }}</div>
+  </div>
+  {% endfor %}
+
+  <div class="disc">{{ d.disclaimer }}</div>
+</body></html>
