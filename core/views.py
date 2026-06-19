@@ -1238,6 +1238,178 @@ def khalifa_tours_impact(request):
     return render(request, 'khalifa_tours_impact.html', {'props': props})
 
 
+def khalifa_stewardship_tours(request):
+    """
+    /khalifa-tours/ — Khalifa Stewardship Tours.
+
+    Premium institutional landing page for EcoIQ's purpose-driven travel
+    product: cinematic Kazakhstan expeditions where travellers become stewards
+    of the land — clean heating transition, home efficiency, mountain/lake
+    restoration, community greenhouses and field monitoring — all measured
+    through EcoIQ. Pure presentation (no AI/API calls, no secrets); safe to
+    serve publicly. All data below is illustrative/indicative.
+    """
+    # ── Kazakhstan experience cards ──────────────────────────────────────
+    # IMAGES: each card's `img` is a placeholder (Unsplash CDN). To use your
+    # own licensed photography, drop files into  static/khalifa-tours/  and
+    # swap the value, e.g.:
+    #     'img': static('khalifa-tours/tian-shan.jpg')
+    # (import: `from django.templatetags.static import static`). The template
+    # renders these as real <img> tags with alt text, lazy loading, and a
+    # graceful coloured fallback if the image fails to load.
+    experiences = [
+        {'tag': 'Expedition', 'title': 'Tian Shan Expeditions',
+         'body': 'Trek the snow-fed ridgelines and glacial valleys of the Tian Shan, '
+                 'one of the great unspoiled mountain systems of Central Asia.',
+         'alt': 'Snow-capped Tian Shan mountain peaks above the clouds at sunrise',
+         'img': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=70'},
+        {'tag': 'Alpine', 'title': 'Big Almaty Lake',
+         'body': 'A turquoise alpine reservoir cradled at 2,500 m — and the field site '
+                 'for water and ecosystem restoration work.',
+         'alt': 'A turquoise alpine lake surrounded by forested mountain slopes',
+         'img': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=70'},
+        {'tag': 'Protected', 'title': 'National Parks & Reserves',
+         'body': 'Ile-Alatau and the protected steppe-to-summit corridors that shelter '
+                 'rare wildlife and fragile high-altitude habitats.',
+         'alt': 'A hiker standing on a ridge overlooking protected mountain wilderness',
+         'img': 'https://images.unsplash.com/photo-1454942901704-3c44c11b2ad1?auto=format&fit=crop&w=1200&q=70'},
+        {'tag': 'Hospitality', 'title': 'Kazakh Hospitality',
+         'body': 'Traditional communities whose welcome — dastarkhan, music and shared '
+                 'tea — is a heritage as living as the landscape.',
+         'alt': 'A snow leopard, emblem of Kazakhstan’s mountain wildlife and heritage',
+         'img': 'https://images.unsplash.com/photo-1517825738774-7de9363ef735?auto=format&fit=crop&w=1200&q=70'},
+        {'tag': 'Heritage', 'title': 'Horses, Food & Culture',
+         'body': 'Nomadic horsemanship, bread baked in mountain homes, and a culture '
+                 'shaped by the balance between people and land.',
+         'alt': 'A white horse in a mountain valley, evoking Kazakh nomadic heritage',
+         'img': 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1200&q=70'},
+        {'tag': 'Gateway', 'title': 'Almaty — The Gateway City',
+         'body': 'A modern city at the foot of the mountains: your arrival point, '
+                 'cultural briefing and the bridge between worlds.',
+         'alt': 'A modern city skyline at dusk, the gateway to the mountains',
+         'img': 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=70'},
+    ]
+
+    projects = [
+        {'code': 'A', 'title': 'Clean Heating Transition',
+         'body': 'Support the replacement of polluting coal heating with cleaner '
+                 'alternatives — electric boilers, heat pumps, insulation upgrades and '
+                 'smart energy controls.'},
+        {'code': 'B', 'title': 'Home Energy Efficiency',
+         'body': 'Help with simple home assessments, insulation support, heat-loss checks '
+                 'and comfort improvements for local families.'},
+        {'code': 'C', 'title': 'Mountain & Lake Restoration',
+         'body': 'Remove waste from trails, rivers, mountain areas and lakes while learning '
+                 'how these high-altitude ecosystems work.'},
+        {'code': 'D', 'title': 'Community Greenhouses',
+         'body': 'Contribute to greenhouse construction and food-resilience projects that '
+                 'help families and communities grow fresh produce.'},
+        {'code': 'E', 'title': 'Environmental Monitoring',
+         'body': 'Collect simple field observations, photographs and project data that feed '
+                 'directly into EcoIQ impact dashboards.'},
+    ]
+
+    # Illustrative impact metrics for the EXAMPLE impact model — animated
+    # count-up on the page. These are designed projections used to show how the
+    # EcoIQ measurement model would work across a future multi-expedition
+    # programme; they are NOT records of completed work. The template labels
+    # them clearly as an example / illustrative model.
+    metrics = [
+        {'label': 'Homes upgraded',           'value': 480,    'suffix': '',     'unit': 'homes'},
+        {'label': 'Coal systems replaced',    'value': 312,    'suffix': '',     'unit': 'systems'},
+        {'label': 'Heat loss reduced',        'value': 34,     'suffix': '%',    'unit': 'avg per home'},
+        {'label': 'Emissions avoided',        'value': 1600,   'suffix': ' t',   'unit': 'CO₂ / year'},
+        {'label': 'Waste removed',            'value': 27,     'suffix': ' t',   'unit': 'from trails & lakes'},
+        {'label': 'Water restored',           'value': 9,      'suffix': ' km',  'unit': 'of shoreline & river'},
+        {'label': 'Greenhouse output',        'value': 18,     'suffix': '',     'unit': 'community greenhouses'},
+        {'label': 'Families reached',         'value': 2100,   'suffix': '',     'unit': 'people'},
+        {'label': 'Volunteer hours',          'value': 7400,   'suffix': '',     'unit': 'completed'},
+        {'label': 'Community benefit',        'value': 12,     'suffix': '+ yrs','unit': 'of lasting value'},
+    ]
+
+    itinerary = [
+        {'day': '01', 'title': 'Arrival in Almaty',
+         'body': 'Airport arrival, welcome dinner, cultural briefing and an introduction to '
+                 'EcoIQ and the Khalifa stewardship principles.'},
+        {'day': '02', 'title': 'Landscape & Climate Briefing',
+         'body': 'Mountain visit, environmental context, and an introduction to air pollution '
+                 'and the clean-heating transition.'},
+        {'day': '03', 'title': 'Community Home Assessment',
+         'body': 'Visit selected homes with local partners and learn how heat loss, insulation '
+                 'and heating systems shape daily life for families.'},
+        {'day': '04', 'title': 'Clean Heating or Insulation Support',
+         'body': 'Supervised, safe project activities — insulation, preparation, documentation '
+                 'or installation support alongside qualified professionals.'},
+        {'day': '05', 'title': 'Mountain or Lake Restoration',
+         'body': 'Trail clean-up, lake restoration, environmental monitoring, photography and '
+                 'field data collection.'},
+        {'day': '06', 'title': 'Greenhouse or Community Project',
+         'body': 'Support greenhouse construction, planting, food resilience or another '
+                 'community sustainability activity.'},
+        {'day': '07', 'title': 'Impact Review & Closing Gathering',
+         'body': 'EcoIQ dashboard review, certificates, a local family gathering, reflection '
+                 'and departure.'},
+    ]
+
+    audiences = [
+        'Purpose-driven travellers', 'Muslim families and communities',
+        'Students and universities', 'Corporate teams',
+        'Investors and sponsors', 'Environmental organizations',
+        'Schools and youth groups', 'Professionals seeking meaningful travel',
+    ]
+
+    # "Why Partners Care" — the institutional value proposition per stakeholder.
+    # Positions Khalifa Tours as a partnership platform, not only a tour product.
+    partner_value = [
+        {'tag': '01', 'label': 'For Sponsors',
+         'body': 'Sponsor a visible, measurable environmental project connected to real '
+                 'communities and transparent EcoIQ impact tracking.',
+         'meta': 'Branded impact · verified reporting'},
+        {'tag': '02', 'label': 'For Universities',
+         'body': 'Offer students a field-learning expedition combining climate, culture, '
+                 'community service, and data-based impact measurement.',
+         'meta': 'Accredited field learning · research data'},
+        {'tag': '03', 'label': 'For Corporates',
+         'body': 'Create a team stewardship experience connected to ESG, employee engagement, '
+                 'and measurable local benefit.',
+         'meta': 'ESG-aligned · team engagement'},
+        {'tag': '04', 'label': 'For Local Communities',
+         'body': 'Bring attention, practical support, and long-term visibility to clean heating, '
+                 'energy efficiency, restoration, and food resilience needs.',
+         'meta': 'Local priority · lasting benefit'},
+    ]
+
+    partners = [
+        'Local communities', 'Akimats & municipalities', 'Universities',
+        'Heating manufacturers', 'Sustainability sponsors',
+        'Islamic charities & foundations', 'Corporate ESG teams',
+        'Environmental NGOs', 'Tourism operators',
+    ]
+
+    # Forward-looking programme commitments (how Khalifa Tours is designed to
+    # operate) — phrased to avoid implying any expedition has yet taken place.
+    safety = [
+        'Projects will be selected together with trusted local partners.',
+        'Technical work will be supervised by qualified professionals.',
+        'All travel activities will be risk-assessed in advance.',
+        'Participants are never asked to perform unsafe technical installation.',
+        'Community dignity and consent are central to the model.',
+        'Impact is designed to be verified and tracked through EcoIQ records.',
+    ]
+
+    ctx = {
+        'experiences': experiences,
+        'projects': projects,
+        'metrics': metrics,
+        'itinerary': itinerary,
+        'audiences': audiences,
+        'partner_value': partner_value,
+        'partners': partners,
+        'safety': safety,
+    }
+    return render(request, 'khalifa_stewardship_tours.html', ctx)
+
+
 def kazakhstan_transition_brief(request):
     """
     /kazakhstan-transition-brief/ — EcoIQ flagship visual-intelligence page.
