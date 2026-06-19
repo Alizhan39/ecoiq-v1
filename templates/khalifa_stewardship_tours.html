@@ -116,19 +116,53 @@
   .kst-reveal[data-d="5"].in { transition-delay: .35s; }
   .kst-reveal[data-d="6"].in { transition-delay: .42s; }
 
-  /* ════════════════ FROM AMANAH TO IMPACT (journey) ════════════════ */
-  .kst__journey { position: relative; margin-top: 48px; }
-  .kst__jline { position: absolute; left: 0; right: 0; top: 33px; height: 2px; z-index: 0; }
-  .kst__jline svg { width: 100%; height: 2px; display: block; }
-  .kst__jgrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; position: relative; z-index: 1; }
-  .kst__jstep { text-align: left; }
-  .kst__jnode { width: 66px; height: 66px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 18px;
-    background: linear-gradient(180deg, var(--kst-glass), rgba(255,255,255,.02)); border: 1px solid var(--kst-glassln);
-    color: var(--kst-bright); backdrop-filter: blur(6px); box-shadow: 0 0 0 6px var(--kst-ink), 0 18px 40px -22px rgba(0,232,154,.5); }
-  .kst__jnode svg { width: 30px; height: 30px; }
-  .kst__jstep h3 { color: #fff; font-size: 16px; font-weight: 800; margin: 0 0 4px; letter-spacing: -.01em; }
-  .kst__jstep .kst__jname { font-family: var(--kst-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--kst-gold); font-weight: 700; }
-  .kst__jstep p { color: var(--kst-muted); font-size: 13.5px; margin: 6px 0 0; }
+  /* ── Cinematic microcopy ──────────────────────────────────────────── */
+  .kst__micro { font-family: var(--kst-mono); font-size: 12.5px; letter-spacing: .04em; color: var(--kst-bright); opacity: .9; margin: 0; }
+  .kst__micro--sand { color: var(--kst-sand); }
+
+  /* ════════════ EXPEDITION SCROLL PATH (vertical, scroll-drawn) ════════════ */
+  .kst__epath { position: relative; margin-top: 52px; }
+  .kst__epath-rail { position: absolute; top: 6px; bottom: 6px; left: 50%; transform: translateX(-50%); width: 2px; z-index: 0; }
+  .kst__epath-rail svg { width: 2px; height: 100%; display: block; overflow: visible; }
+  .kst__estep { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 80px 1fr; align-items: center; margin-bottom: 28px; }
+  .kst__estep:last-child { margin-bottom: 0; }
+  .kst__enode { grid-column: 2; justify-self: center; width: 70px; height: 70px; border-radius: 20px; display: grid; place-items: center;
+    color: var(--kst-bright); background: linear-gradient(180deg, var(--kst-glass), rgba(255,255,255,.02)); border: 1px solid var(--kst-glassln);
+    backdrop-filter: blur(6px); box-shadow: 0 0 0 7px var(--kst-ink), 0 18px 40px -22px rgba(0,232,154,.5); }
+  .kst__enode svg { width: 30px; height: 30px; }
+  .kst__ecard { background: var(--kst-card); border: 1px solid var(--kst-line); border-radius: 16px; padding: 20px 22px; max-width: 400px; }
+  .kst__estep:nth-child(odd) .kst__ecard { grid-column: 1; justify-self: end; text-align: right; }
+  .kst__estep:nth-child(even) .kst__ecard { grid-column: 3; justify-self: start; text-align: left; }
+  .kst__ecard .kst__ename { font-family: var(--kst-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--kst-gold); font-weight: 700; }
+  .kst__ecard h3 { color: #fff; font-size: 18px; font-weight: 800; margin: 5px 0 6px; letter-spacing: -.01em; }
+  .kst__ecard p { color: var(--kst-muted); font-size: 13.5px; margin: 0; }
+
+  /* ════════════════ 3D STEWARDSHIP FIELD MAP ════════════════ */
+  .kst__mapwrap { perspective: 1500px; margin-top: 40px; }
+  .kst__map { position: relative; border-radius: 22px; overflow: hidden; border: 1px solid var(--kst-line);
+    background: radial-gradient(120% 100% at 50% 4%, rgba(14,49,63,.6), var(--kst-ink) 72%);
+    transform: rotateX(9deg); transform-origin: center 82%; transition: transform .6s cubic-bezier(.2,.7,.2,1);
+    box-shadow: 0 50px 120px -50px rgba(0,0,0,.9); }
+  .kst__mapwrap:hover .kst__map { transform: rotateX(0deg); }
+  .kst__map-hud { position: absolute; top: 16px; left: 18px; right: 18px; display: flex; justify-content: space-between; gap: 12px; z-index: 3;
+    font-family: var(--kst-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--kst-blue); pointer-events: none; }
+  .kst__map-hud b { color: var(--kst-gold); font-weight: 600; }
+  .kst__map svg { display: block; width: 100%; height: auto; }
+  .kst__map-corner { position: absolute; width: 16px; height: 16px; border: 1px solid rgba(94,147,179,.5); z-index: 3; }
+  .kst__map-corner--tl { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+  .kst__map-corner--tr { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
+  .kst__map-corner--bl { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
+  .kst__map-corner--br { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+  .kst__map-grid { stroke: rgba(94,147,179,.10); stroke-width: 1; }
+  .kst__map-contour { fill: none; stroke: rgba(94,147,179,.22); stroke-width: 1.4; }
+  .kst__map-ridge { fill: rgba(10,61,46,.35); stroke: rgba(0,232,154,.22); stroke-width: 1.2; }
+  .kst__map-route { fill: none; stroke: var(--kst-gold); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(232,196,106,.6)); }
+  .kst__pt-core { fill: var(--kst-bright); filter: drop-shadow(0 0 7px var(--kst-bright)); }
+  .kst__pt-ring { fill: none; stroke: rgba(0,232,154,.5); stroke-width: 1.4; }
+  .kst__pt-ping { fill: none; stroke: var(--kst-bright); stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: kstPing 3s ease-out infinite; }
+  @keyframes kstPing { 0% { transform: scale(.5); opacity: .85; } 80%,100% { transform: scale(2.8); opacity: 0; } }
+  .kst__pt-label { fill: #fff; font-family: var(--kst-mono); font-size: 15px; font-weight: 600; }
+  .kst__pt-sub { fill: var(--kst-sand); font-family: var(--kst-mono); font-size: 11.5px; }
 
   /* ════════════════ ONE JOURNEY, FIVE LEGACIES ════════════════ */
   .kst__legacy-stage { position: relative; margin-top: 46px; perspective: 1400px; }
@@ -145,6 +179,12 @@
   .kst__caps > :nth-child(4) { animation-delay: -3.6s; } .kst__caps > :nth-child(5) { animation-delay: -4.8s; }
   @keyframes kstFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
   .kst__cap:hover { border-color: rgba(0,232,154,.4); box-shadow: 0 40px 80px -34px rgba(0,232,154,.4), inset 0 1px 0 rgba(255,255,255,.12); }
+  /* glowing gradient edge */
+  .kst__cap::after { content:""; position:absolute; inset:-1px; border-radius:21px; padding:1px; pointer-events:none;
+    background: linear-gradient(160deg, rgba(0,232,154,.5), transparent 42%, transparent 68%, rgba(94,147,179,.4));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; opacity:.65; transition: opacity .4s; }
+  .kst__cap:hover::after { opacity: 1; }
   .kst__cap-glow { position: absolute; inset: 0; border-radius: 20px; pointer-events: none;
     background: radial-gradient(80% 60% at 50% 0%, rgba(0,232,154,.14), transparent 70%); opacity: .8; }
   .kst__cap-ico { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; margin-bottom: 18px;
@@ -200,7 +240,12 @@
   .kst__panel li::before { content:""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; flex: none; }
 
   /* ════════════════ AMANAH IMPACT LEDGER ════════════════ */
-  .kst__ledger { position: relative; border: 1px solid var(--kst-line); border-radius: 22px; overflow: hidden; background: linear-gradient(180deg, rgba(8,21,18,.92), rgba(5,12,10,.92)); box-shadow: 0 40px 120px -50px rgba(0,0,0,.9); }
+  .kst__ledger { position: relative; border: 1px solid var(--kst-line); border-radius: 22px; overflow: hidden;
+    background:
+      linear-gradient(rgba(94,147,179,.05) 1px, transparent 1px) 0 0 / 100% 46px,
+      linear-gradient(90deg, rgba(94,147,179,.05) 1px, transparent 1px) 0 0 / 46px 100%,
+      linear-gradient(180deg, rgba(8,21,18,.94), rgba(5,12,10,.94));
+    box-shadow: 0 40px 120px -50px rgba(0,0,0,.9); }
   .kst__ledger-bar { display: flex; align-items: center; gap: 8px; padding: 16px 22px; border-bottom: 1px solid var(--kst-line); background: rgba(255,255,255,.02); flex-wrap: wrap; }
   .kst__ledger-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.18); }
   .kst__ledger-name { margin-left: 10px; font-family: var(--kst-mono); font-size: 12.5px; letter-spacing: .1em; color: #fff; font-weight: 600; }
@@ -209,14 +254,18 @@
   .kst__ledger-note { padding: 14px 22px 0; margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--kst-sand); }
   .kst__ledger-note strong { color: #fff; }
   .kst__ledger-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--kst-line); margin-top: 16px; border-top: 1px solid var(--kst-line); }
-  .kst__row { background: var(--kst-ink-2); padding: 24px 22px; position: relative; transition: background .4s; }
-  .kst__row:hover { background: #0b1d18; }
+  .kst__row { background: rgba(9,22,18,.72); padding: 24px 22px; position: relative; transition: background .4s; }
+  .kst__row:hover { background: rgba(11,29,24,.85); }
   .kst__row-code { font-family: var(--kst-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--kst-muted); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
   .kst__row-code span:last-child { color: var(--kst-bright); opacity: .6; }
-  .kst__num { font-size: clamp(26px, 3.2vw, 38px); font-weight: 800; color: #fff; letter-spacing: -.02em; line-height: 1; }
+  .kst__num { font-size: clamp(26px, 3.2vw, 38px); font-weight: 800; color: #fff; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
   .kst__num b { color: var(--kst-bright); font-weight: 800; }
   .kst__row-label { font-size: 13px; color: #fff; margin-top: 10px; font-weight: 700; }
   .kst__row-unit { font-size: 11.5px; color: var(--kst-muted); margin-top: 3px; font-family: var(--kst-mono); }
+  .kst__row-conf { margin-top: 14px; display: flex; align-items: center; gap: 9px; font-family: var(--kst-mono); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--kst-muted); }
+  .kst__row-conf .bar { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .kst__row-conf .bar i { display: block; height: 100%; width: 0; border-radius: 2px; background: linear-gradient(90deg, var(--kst-bright), rgba(0,232,154,.2)); transition: width 1.4s cubic-bezier(.2,.7,.2,1); }
+  .kst__ledger.in .kst__row-conf .bar i { width: var(--conf, 60%); }
   .kst__ledger-foot { padding: 18px 22px; border-top: 1px solid var(--kst-line); font-size: 12.5px; color: var(--kst-muted); display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
   .kst__ledger-foot b { color: var(--kst-sand); }
 
@@ -262,8 +311,6 @@
 
   /* ════════════════ Responsive ════════════════ */
   @media (max-width: 1080px) {
-    .kst__jgrid { grid-template-columns: repeat(3, 1fr); row-gap: 34px; }
-    .kst__jline { display: none; }
     .kst__caps { grid-template-columns: repeat(3, 1fr); }
     .kst__lspine { display: none; }
   }
@@ -274,17 +321,25 @@
     .kst__split { grid-template-columns: 1fr; }
   }
   @media (max-width: 720px) {
-    .kst__jgrid { grid-template-columns: repeat(2, 1fr); }
     .kst__caps { grid-template-columns: 1fr; }
     .kst__cap { min-height: 0; animation: none; }
     .kst__bar { grid-template-columns: 1fr; }
     .kst__barflow { display: none; }
+    /* Expedition path collapses to a single left rail */
+    .kst__epath-rail { left: 26px; transform: none; }
+    .kst__estep { grid-template-columns: 52px 1fr; gap: 16px; margin-bottom: 22px; }
+    .kst__enode { grid-column: 1; width: 52px; height: 52px; border-radius: 15px; box-shadow: 0 0 0 6px var(--kst-ink), 0 18px 40px -22px rgba(0,232,154,.5); }
+    .kst__enode svg { width: 24px; height: 24px; }
+    .kst__estep:nth-child(odd) .kst__ecard,
+    .kst__estep:nth-child(even) .kst__ecard { grid-column: 2; justify-self: start; text-align: left; max-width: none; }
+    /* Field map: drop the 3D tilt on touch */
+    .kst__map, .kst__mapwrap:hover .kst__map { transform: none; }
+    .kst__pt-label { font-size: 19px; } .kst__pt-sub { font-size: 14px; }
   }
   @media (max-width: 600px) {
     .kst__grid--3, .kst__grid--4 { grid-template-columns: 1fr; }
     .kst__ledger-grid { grid-template-columns: 1fr; }
     .kst__trust { grid-template-columns: 1fr; }
-    .kst__jgrid { grid-template-columns: 1fr; }
     .kst__hero { min-height: 94vh; }
     .kst__tl-item { grid-template-columns: 44px 1fr; gap: 16px; }
     .kst__tl-node { width: 44px; height: 44px; font-size: 13px; }
@@ -294,7 +349,9 @@
   /* ── Reduced motion ───────────────────────────────────────────────── */
   @media (prefers-reduced-motion: reduce) {
     .kst-rise, .kst-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-    .kst__hero-glow, .kst__cap { animation: none !important; }
+    .kst__hero-glow, .kst__cap, .kst__pt-ping { animation: none !important; }
+    .kst__map, .kst__mapwrap:hover .kst__map { transform: none !important; }
+    .kst__row-conf .bar i { transition: none !important; }
   }
   .kst__split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 80px); align-items: center; }
 </style>
@@ -335,33 +392,102 @@
     </div>
   </section>
 
-  {# ═══════════════════ 2 · FROM AMANAH TO IMPACT ═══════════════════ #}
+  {# ═══════════════════ 2 · EXPEDITION SCROLL PATH ═══════════════════ #}
   <section class="kst__section kst__section--alt" id="journey">
     <div class="kst__wrap">
-      <span class="kst__divider-label kst-reveal">From Amanah to Impact</span>
-      <h2 class="kst__h kst-reveal">Six moments turn a visit into a trust kept.</h2>
+      <span class="kst__divider-label kst-reveal">The Stewardship Route</span>
+      <h2 class="kst__h kst-reveal">From Amanah to Impact — one route, six moments.</h2>
       <p class="kst__verse kst-reveal" data-d="2" style="max-width:42ch;margin-top:6px">
         "The Earth is not a backdrop for consumption. It is an amanah — a trust."
       </p>
-      <div class="kst__journey">
-        <div class="kst__jline" aria-hidden="true">
-          <svg viewBox="0 0 1000 2" preserveAspectRatio="none">
-            <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
-            <line id="kstJourneyPath" x1="0" y1="1" x2="1000" y2="1" stroke="var(--kst-bright)" stroke-width="2"
+      <p class="kst__micro kst-reveal" data-d="3" style="margin-top:16px">Amanah becomes action.</p>
+
+      <div class="kst__epath">
+        <div class="kst__epath-rail" aria-hidden="true">
+          <svg viewBox="0 0 2 1000" preserveAspectRatio="none">
+            <line x1="1" y1="0" x2="1" y2="1000" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+            <line id="kstExpedPath" x1="1" y1="0" x2="1" y2="1000" stroke="var(--kst-bright)" stroke-width="2"
                   pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
           </svg>
         </div>
-        <div class="kst__jgrid">
-          {% for j in journey %}
-          <div class="kst__jstep kst-reveal" data-d="{{ forloop.counter }}">
-            <div class="kst__jnode">{{ j.icon|safe }}</div>
-            <span class="kst__jname">{{ j.step }}</span>
+        {% for j in journey %}
+        <div class="kst__estep kst-reveal" data-d="{{ forloop.counter }}">
+          <div class="kst__enode">{{ j.icon|safe }}</div>
+          <div class="kst__ecard">
+            <span class="kst__ename">{{ forloop.counter|stringformat:"02d" }} · {{ j.step }}</span>
             <h3>{{ j.head }}</h3>
             <p>{{ j.line }}</p>
           </div>
-          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# ═══════════════════ 2b · 3D STEWARDSHIP FIELD MAP ═══════════════════ #}
+  <section class="kst__section">
+    <div class="kst__topo" data-parallax="0.05" aria-hidden="true">
+      <svg viewBox="0 0 1200 600" preserveAspectRatio="none">
+        <path d="M-50 180 C 320 120 540 260 820 190 S 1140 110 1260 200"/>
+        <path d="M-50 320 C 320 270 560 400 840 330 S 1150 250 1260 340"/>
+      </svg>
+    </div>
+    <div class="kst__wrap">
+      <span class="kst__divider-label kst-reveal">Field Map · Impact Zones</span>
+      <h2 class="kst__h kst-reveal">A journey becomes a field record.</h2>
+      <p class="kst__lead kst-reveal" data-d="2" style="margin-bottom:6px">
+        EcoIQ is designed to map each expedition to real impact zones across the Almaty region and
+        Tian Shan — turning a route into a measured field record.
+      </p>
+      <p class="kst__micro kst--sand kst-reveal" data-d="2" style="color:var(--kst-sand);margin-top:8px">
+        Pilot expeditions are being designed — the map below is an illustrative model, not live GIS.
+      </p>
+
+      <div class="kst__mapwrap kst-reveal" data-d="2">
+        <div class="kst__map">
+          <span class="kst__map-corner kst__map-corner--tl"></span>
+          <span class="kst__map-corner kst__map-corner--tr"></span>
+          <span class="kst__map-corner kst__map-corner--bl"></span>
+          <span class="kst__map-corner kst__map-corner--br"></span>
+          <div class="kst__map-hud">
+            <span>Field Map · Kazakhstan — Almaty Region</span>
+            <span><b>Illustrative</b> · not live GIS</span>
+          </div>
+          <svg viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet" role="img"
+               aria-label="Illustrative field map of Kazakhstan stewardship impact zones around Almaty and the Tian Shan.">
+            {# grid #}
+            <g>
+              <line class="kst__map-grid" x1="0" y1="140" x2="1000" y2="140"/>
+              <line class="kst__map-grid" x1="0" y1="280" x2="1000" y2="280"/>
+              <line class="kst__map-grid" x1="0" y1="420" x2="1000" y2="420"/>
+              <line class="kst__map-grid" x1="200" y1="0" x2="200" y2="560"/>
+              <line class="kst__map-grid" x1="400" y1="0" x2="400" y2="560"/>
+              <line class="kst__map-grid" x1="600" y1="0" x2="600" y2="560"/>
+              <line class="kst__map-grid" x1="800" y1="0" x2="800" y2="560"/>
+            </g>
+            {# Tian Shan ridge silhouette #}
+            <path class="kst__map-ridge" d="M0 200 L150 120 L260 175 L380 95 L520 165 L660 70 L780 150 L900 80 L1000 140 L1000 0 L0 0 Z"/>
+            {# contour lines #}
+            <path class="kst__map-contour" d="M-20 260 C 240 215 470 330 740 270 S 1040 200 1040 250"/>
+            <path class="kst__map-contour" d="M-20 350 C 260 305 500 420 770 360 S 1040 290 1040 340"/>
+            <path class="kst__map-contour" d="M-20 440 C 260 405 520 510 800 450 S 1050 390 1050 430"/>
+            {# stewardship route through the zones #}
+            <polyline id="kstMapRoute" class="kst__map-route" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"
+              points="{% for p in map_points %}{{ p.sx }},{{ p.sy }} {% endfor %}"/>
+            {# impact-zone markers #}
+            {% for p in map_points %}
+            <g>
+              <circle class="kst__pt-ping" cx="{{ p.sx }}" cy="{{ p.sy }}" r="9" style="animation-delay: {{ forloop.counter0 }}00ms"/>
+              <circle class="kst__pt-ring" cx="{{ p.sx }}" cy="{{ p.sy }}" r="9"/>
+              <circle class="kst__pt-core" cx="{{ p.sx }}" cy="{{ p.sy }}" r="4.5"/>
+              <text class="kst__pt-label" x="{{ p.lx }}" y="{{ p.ly }}" text-anchor="{{ p.anchor }}">{{ p.name }}</text>
+              <text class="kst__pt-sub" x="{{ p.lx }}" y="{{ p.ly|add:18 }}" text-anchor="{{ p.anchor }}">{{ p.coord }} · {{ p.role }}</text>
+            </g>
+            {% endfor %}
+          </svg>
         </div>
       </div>
+      <p class="kst__micro kst-reveal" style="margin-top:22px">A visit becomes a measurable benefit.</p>
     </div>
   </section>
 
@@ -381,6 +507,7 @@
         Every Khalifa expedition is designed to generate five distinct, lasting legacies —
         a single system, ownable and measurable end to end.
       </p>
+      <p class="kst__micro kst-reveal" data-d="2" style="margin-top:12px">The legacy remains after the traveller leaves.</p>
       <div class="kst__legacy-hub kst-reveal" data-d="2" style="margin-top:34px">● One Expedition →</div>
       <div class="kst__legacy-stage">
         <div class="kst__lspine" aria-hidden="true">
@@ -515,6 +642,11 @@
             <div class="kst__num" data-target="{{ m.value }}" data-suffix="{{ m.suffix }}">0{{ m.suffix }}</div>
             <div class="kst__row-label">{{ m.label }}</div>
             <div class="kst__row-unit">{{ m.unit }}</div>
+            <div class="kst__row-conf">
+              <span>{{ m.method }}</span>
+              <span class="bar" aria-hidden="true"><i style="--conf: {{ m.conf }}%"></i></span>
+              <span>conf {{ m.conf }}%</span>
+            </div>
           </div>
           {% endfor %}
         </div>
@@ -638,7 +770,7 @@
   <section class="kst__final">
     <div class="kst__final-bg" data-parallax="0.12"></div>
     <div class="kst__wrap kst__final-inner">
-      <h2 class="kst-reveal">Every journey becomes more than a holiday. It becomes a legacy.</h2>
+      <h2 class="kst-reveal">Every expedition becomes more than a visit. It becomes a measured legacy.</h2>
       <p class="kst__final-lines kst-reveal" data-d="2">Travel With Purpose. Leave A Legacy.</p>
       <p class="kst__final-lines kst-reveal" data-d="2">The Earth Is Not Ours. It Is A Trust.</p>
       <p class="kst__final-lines kst-reveal" data-d="3" style="color:var(--kst-bright)">Khalifa Tours — Stewardship in Action.</p>
@@ -673,7 +805,7 @@
     root.querySelectorAll('[data-target]').forEach(function (el) {
       el.textContent = fmt(+el.dataset.target) + (el.dataset.suffix || '');
     });
-    ['kstJourneyPath','kstLegacyPath','kstRipplePath','kstTlProgress'].forEach(function (id) {
+    ['kstExpedPath','kstMapRoute','kstLegacyPath','kstRipplePath','kstTlProgress'].forEach(function (id) {
       var p = document.getElementById(id); if (p) p.setAttribute('stroke-dashoffset', '0');
     });
     return;
@@ -721,10 +853,32 @@
     }, { threshold: 0.2 });
     obs.observe(anchor);
   }
-  drawLine('kstJourneyPath', '.kst__journey', 2400);
+  drawLine('kstMapRoute', '.kst__map', 2600);
   drawLine('kstLegacyPath', '.kst__legacy-stage', 2400);
   drawLine('kstRipplePath', '.kst__bar', 2000);
   drawLine('kstTlProgress', '.kst__timeline', 2600);
+
+  /* Scroll-linked expedition path — the vertical rail draws with scroll
+     progress through the section (anime.js "learn" style precision). */
+  (function () {
+    var path = document.getElementById('kstExpedPath');
+    var epath = root.querySelector('.kst__epath');
+    if (!path || !epath) return;
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var r = epath.getBoundingClientRect();
+      var start = window.innerHeight * 0.82;       // begin drawing when section top hits 82% vh
+      var p = (start - r.top) / (r.height || 1);
+      p = Math.max(0, Math.min(1, p));
+      path.setAttribute('stroke-dashoffset', String(100 - p * 100));
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+  })();
 
   /* 3D tilt on floating legacy capsules (desktop / fine-pointer only) */
   if (finePointer) {

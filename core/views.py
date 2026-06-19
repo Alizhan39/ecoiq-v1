@@ -1316,15 +1316,15 @@ def khalifa_stewardship_tours(request):
     # Future expeditions are designed to connect this ledger to verified EcoIQ
     # records; until then every value is a modelled projection.
     ledger = [
-        {'code': 'AML·01', 'label': 'Homes assessed',                       'value': 640,  'suffix': '',     'unit': 'field surveys'},
-        {'code': 'AML·02', 'label': 'Homes upgraded',                       'value': 480,  'suffix': '',     'unit': 'retrofits delivered'},
-        {'code': 'AML·03', 'label': 'Coal systems targeted for replacement', 'value': 312, 'suffix': '',     'unit': 'replacement pipeline'},
-        {'code': 'AML·04', 'label': 'Estimated emissions avoided',          'value': 1600, 'suffix': ' t',   'unit': 'CO₂e / yr (modelled)'},
-        {'code': 'AML·05', 'label': 'Waste removed',                        'value': 27,   'suffix': ' t',   'unit': 'trails, rivers & lakes'},
-        {'code': 'AML·06', 'label': 'Volunteer hours',                      'value': 7400, 'suffix': '',     'unit': 'stewardship logged'},
-        {'code': 'AML·07', 'label': 'Families reached',                     'value': 2100, 'suffix': '',     'unit': 'household members'},
-        {'code': 'AML·08', 'label': 'Restoration actions',                  'value': 58,   'suffix': '',     'unit': 'documented interventions'},
-        {'code': 'AML·09', 'label': 'Community benefit score',              'value': 87,   'suffix': '/100', 'unit': 'composite index (model)'},
+        {'code': 'AML·01', 'label': 'Homes assessed',                       'value': 640,  'suffix': '',     'unit': 'field surveys',           'conf': 82, 'method': 'survey count'},
+        {'code': 'AML·02', 'label': 'Homes upgraded',                       'value': 480,  'suffix': '',     'unit': 'retrofits delivered',     'conf': 76, 'method': 'install records'},
+        {'code': 'AML·03', 'label': 'Coal systems targeted for replacement', 'value': 312, 'suffix': '',     'unit': 'replacement pipeline',    'conf': 64, 'method': 'pipeline est.'},
+        {'code': 'AML·04', 'label': 'Estimated emissions avoided',          'value': 1600, 'suffix': ' t',   'unit': 'CO₂e / yr (modelled)',    'conf': 58, 'method': 'modelled'},
+        {'code': 'AML·05', 'label': 'Waste removed',                        'value': 27,   'suffix': ' t',   'unit': 'trails, rivers & lakes',  'conf': 80, 'method': 'weighed logs'},
+        {'code': 'AML·06', 'label': 'Volunteer hours',                      'value': 7400, 'suffix': '',     'unit': 'stewardship logged',      'conf': 88, 'method': 'time logs'},
+        {'code': 'AML·07', 'label': 'Families reached',                     'value': 2100, 'suffix': '',     'unit': 'household members',       'conf': 70, 'method': 'household avg'},
+        {'code': 'AML·08', 'label': 'Restoration actions',                  'value': 58,   'suffix': '',     'unit': 'documented interventions', 'conf': 74, 'method': 'field reports'},
+        {'code': 'AML·09', 'label': 'Community benefit score',              'value': 87,   'suffix': '/100', 'unit': 'composite index (model)', 'conf': 62, 'method': 'composite'},
     ]
 
     # ── One Journey, Five Legacies ───────────────────────────────────────
@@ -1348,26 +1348,38 @@ def khalifa_stewardship_tours(request):
          'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-3"/><path d="M12 16V8"/><path d="M16 16v-6"/></svg>'},
     ]
 
-    # ── From Amanah to Impact (scroll journey) ───────────────────────────
+    # ── Expedition scroll path (Arrival → Leave a Legacy) ────────────────
+    # Vertical, scroll-drawn route. `icon` is trusted hand-authored inline SVG.
     journey = [
-        {'step': 'Amanah', 'head': 'A trust accepted',
-         'line': 'You arrive not as a consumer of scenery, but as a caretaker of a place held in trust.',
-         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11c0 4.5 3.6 7.5 8 7.5s8-3 8-7.5"/><circle cx="12" cy="8" r="2.6"/></svg>'},
+        {'step': 'Arrival', 'head': 'Enter as a guest of the land',
+         'line': 'You arrive as a caretaker, not a consumer — briefed on the route, the people and the trust you are joining.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>'},
         {'step': 'Witness', 'head': 'See it honestly',
          'line': 'Meet the families, the coal smoke and the cold — the real conditions behind the statistics.',
          'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'},
-        {'step': 'Participate', 'head': 'Lend your hands',
+        {'step': 'Serve', 'head': 'Lend your hands',
          'line': 'Join safe, supervised stewardship work alongside qualified local professionals.',
          'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 11V6.5a1.5 1.5 0 0 1 3 0V11"/><path d="M10.5 11V5.2a1.5 1.5 0 0 1 3 0V11"/><path d="M13.5 11V6.6a1.5 1.5 0 0 1 3 0V13c0 4-2.2 7-6 7-2 0-3.2-1-4.2-2.8l-1.6-2.6a1.6 1.6 0 0 1 2.7-1.7L7.5 14"/></svg>'},
         {'step': 'Restore', 'head': 'Leave it better',
          'line': 'Clear waste, support retrofits and help repair the land you came to understand.',
          'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg>'},
         {'step': 'Measure', 'head': 'Count what matters',
-         'line': 'Field data and observations feed the EcoIQ ledger — outcomes, not anecdotes.',
+         'line': 'Field data and observations are designed to feed the EcoIQ ledger — outcomes, not anecdotes.',
          'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4.5-5.5"/><circle cx="12" cy="18" r="1.3"/></svg>'},
-        {'step': 'Legacy', 'head': 'Benefit that remains',
-         'line': 'Long after departure, the warmth, health and trust keep compounding.',
+        {'step': 'Leave a Legacy', 'head': 'Benefit that remains',
+         'line': 'Long after departure, the warmth, health and trust are designed to keep compounding.',
          'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.2-3 7.2-7 8-4-0.8-7-3.8-7-8V6z"/><path d="M9 12l2 2 4-4.5"/></svg>'},
+    ]
+
+    # ── 3D Stewardship field map — illustrative impact zones ─────────────
+    # Stylised (not GIS). `sx`/`sy` are SVG coordinates in a 1000×560 viewBox,
+    # listed in route order so a polyline can connect them.
+    map_points = [
+        {'name': 'Almaty Gateway',           'coord': '43.24° N · 76.95° E', 'role': 'Arrival & briefing',   'sx': 300, 'sy': 432, 'lx': 300, 'ly': 470, 'anchor': 'middle'},
+        {'name': 'Community Retrofit Zone',   'coord': '43.20° N · 76.84° E', 'role': 'Retrofit site',        'sx': 232, 'sy': 300, 'lx': 232, 'ly': 268, 'anchor': 'middle'},
+        {'name': 'Tian Shan Foothills',       'coord': '43.13° N · 77.05° E', 'role': 'Field-learning route', 'sx': 520, 'sy': 332, 'lx': 520, 'ly': 372, 'anchor': 'middle'},
+        {'name': 'Big Almaty Lake',           'coord': '43.05° N · 76.98° E', 'role': 'Restoration zone',     'sx': 662, 'sy': 214, 'lx': 662, 'ly': 182, 'anchor': 'middle'},
+        {'name': 'Mountain Restoration Zone', 'coord': '43.02° N · 77.10° E', 'role': 'Restoration zone',     'sx': 812, 'sy': 120, 'lx': 812, 'ly': 90,  'anchor': 'middle'},
     ]
 
     # ── Before / After / Ripple ──────────────────────────────────────────
@@ -1464,6 +1476,7 @@ def khalifa_stewardship_tours(request):
         'ledger': ledger,
         'legacies': legacies,
         'journey': journey,
+        'map_points': map_points,
         'ripple': ripple,
         'field_sites': field_sites,
         'itinerary': itinerary,
