@@ -100,6 +100,9 @@ urlpatterns = [
     # EcoIQ Khalifa Tours Impact Story — flagship visual narrative
     path('khalifa-tours-impact/', views.khalifa_tours_impact, name='khalifa_tours_impact'),
 
+    # Khalifa Stewardship Tours — premium institutional landing page
+    path('khalifa-tours/', views.khalifa_stewardship_tours, name='khalifa_stewardship_tours'),
+
     # EcoIQ Kazakhstan Transition Brief — flagship visual intelligence page
     path('kazakhstan-transition-brief/', views.kazakhstan_transition_brief, name='kazakhstan_transition_brief'),
 
