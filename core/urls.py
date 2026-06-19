@@ -90,6 +90,10 @@ urlpatterns = [
     # EcoIQ Stewardship — climate intelligence + real-world stewardship
     path('stewardship/', views.stewardship, name='stewardship'),
 
+    # Tazkiyah 114 — The Surah Map (114 Surahs as life pathways)
+    path('tazkiyah-114/', views.tazkiyah, name='tazkiyah'),
+    path('surah-map/',    views.tazkiyah, name='surah_map'),   # clear public alias
+
     # EcoIQ Global Intelligence — interactive country coverage map
     path('global-intelligence/', views.global_intelligence, name='global_intelligence'),
 
