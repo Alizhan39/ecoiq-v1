@@ -1309,22 +1309,83 @@ def khalifa_stewardship_tours(request):
                  'directly into EcoIQ impact dashboards.'},
     ]
 
-    # Illustrative impact metrics for the EXAMPLE impact model — animated
-    # count-up on the page. These are designed projections used to show how the
-    # EcoIQ measurement model would work across a future multi-expedition
-    # programme; they are NOT records of completed work. The template labels
-    # them clearly as an example / illustrative model.
-    metrics = [
-        {'label': 'Homes upgraded',           'value': 480,    'suffix': '',     'unit': 'homes'},
-        {'label': 'Coal systems replaced',    'value': 312,    'suffix': '',     'unit': 'systems'},
-        {'label': 'Heat loss reduced',        'value': 34,     'suffix': '%',    'unit': 'avg per home'},
-        {'label': 'Emissions avoided',        'value': 1600,   'suffix': ' t',   'unit': 'CO₂ / year'},
-        {'label': 'Waste removed',            'value': 27,     'suffix': ' t',   'unit': 'from trails & lakes'},
-        {'label': 'Water restored',           'value': 9,      'suffix': ' km',  'unit': 'of shoreline & river'},
-        {'label': 'Greenhouse output',        'value': 18,     'suffix': '',     'unit': 'community greenhouses'},
-        {'label': 'Families reached',         'value': 2100,   'suffix': '',     'unit': 'people'},
-        {'label': 'Volunteer hours',          'value': 7400,   'suffix': '',     'unit': 'completed'},
-        {'label': 'Community benefit',        'value': 12,     'suffix': '+ yrs','unit': 'of lasting value'},
+    # ── Amanah Impact Ledger ─────────────────────────────────────────────
+    # ILLUSTRATIVE / EXAMPLE figures only — NOT verified results. Animated
+    # count-up on the page. Each row carries a field code so the ledger reads
+    # like an EcoIQ measurement product rather than a generic metrics grid.
+    # Future expeditions are designed to connect this ledger to verified EcoIQ
+    # records; until then every value is a modelled projection.
+    ledger = [
+        {'code': 'AML·01', 'label': 'Homes assessed',                       'value': 640,  'suffix': '',     'unit': 'field surveys'},
+        {'code': 'AML·02', 'label': 'Homes upgraded',                       'value': 480,  'suffix': '',     'unit': 'retrofits delivered'},
+        {'code': 'AML·03', 'label': 'Coal systems targeted for replacement', 'value': 312, 'suffix': '',     'unit': 'replacement pipeline'},
+        {'code': 'AML·04', 'label': 'Estimated emissions avoided',          'value': 1600, 'suffix': ' t',   'unit': 'CO₂e / yr (modelled)'},
+        {'code': 'AML·05', 'label': 'Waste removed',                        'value': 27,   'suffix': ' t',   'unit': 'trails, rivers & lakes'},
+        {'code': 'AML·06', 'label': 'Volunteer hours',                      'value': 7400, 'suffix': '',     'unit': 'stewardship logged'},
+        {'code': 'AML·07', 'label': 'Families reached',                     'value': 2100, 'suffix': '',     'unit': 'household members'},
+        {'code': 'AML·08', 'label': 'Restoration actions',                  'value': 58,   'suffix': '',     'unit': 'documented interventions'},
+        {'code': 'AML·09', 'label': 'Community benefit score',              'value': 87,   'suffix': '/100', 'unit': 'composite index (model)'},
+    ]
+
+    # ── One Journey, Five Legacies ───────────────────────────────────────
+    # The ownable Khalifa Tours system: one expedition → five lasting legacies.
+    # `icon` holds trusted, hand-authored inline SVG (rendered with |safe).
+    legacies = [
+        {'key': 'comfort', 'name': 'Comfort Legacy', 'line': 'Warmer homes, better winter resilience',
+         'body': 'Homes that hold their heat — a measurable rise in winter comfort for the families who live there.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/><path d="M12 13.5c1.6 1 1.6 2.6 0 3.6"/></svg>'},
+        {'key': 'health', 'name': 'Health Legacy', 'line': 'Reduced smoke exposure, cleaner indoor air',
+         'body': 'Less coal smoke indoors and out — lowering exposure for children, elders and everyone between.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h9a3 3 0 1 0-3-3"/><path d="M4 13h13a3 3 0 1 1-3 3"/><path d="M4 17h7"/></svg>'},
+        {'key': 'community', 'name': 'Community Legacy', 'line': 'Practical support and local trust',
+         'body': 'Work done with communities, not for them — building durable trust and local capability.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M18.5 20a5.5 5.5 0 0 0-3-4.6"/></svg>'},
+        {'key': 'land', 'name': 'Land Legacy', 'line': 'Cleaner trails, lakes and mountain landscapes',
+         'body': 'Restored shorelines and trails — fragile high-altitude ecosystems left measurably better.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19l5.5-9 3.5 5.5L15 11l6 8z"/><path d="M3 19h18"/></svg>'},
+        {'key': 'data', 'name': 'Data Legacy', 'line': 'Transparent EcoIQ measurement and reporting',
+         'body': 'Every action recorded and reported — the proof layer that turns effort into evidence.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-3"/><path d="M12 16V8"/><path d="M16 16v-6"/></svg>'},
+    ]
+
+    # ── From Amanah to Impact (scroll journey) ───────────────────────────
+    journey = [
+        {'step': 'Amanah', 'head': 'A trust accepted',
+         'line': 'You arrive not as a consumer of scenery, but as a caretaker of a place held in trust.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11c0 4.5 3.6 7.5 8 7.5s8-3 8-7.5"/><circle cx="12" cy="8" r="2.6"/></svg>'},
+        {'step': 'Witness', 'head': 'See it honestly',
+         'line': 'Meet the families, the coal smoke and the cold — the real conditions behind the statistics.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'},
+        {'step': 'Participate', 'head': 'Lend your hands',
+         'line': 'Join safe, supervised stewardship work alongside qualified local professionals.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 11V6.5a1.5 1.5 0 0 1 3 0V11"/><path d="M10.5 11V5.2a1.5 1.5 0 0 1 3 0V11"/><path d="M13.5 11V6.6a1.5 1.5 0 0 1 3 0V13c0 4-2.2 7-6 7-2 0-3.2-1-4.2-2.8l-1.6-2.6a1.6 1.6 0 0 1 2.7-1.7L7.5 14"/></svg>'},
+        {'step': 'Restore', 'head': 'Leave it better',
+         'line': 'Clear waste, support retrofits and help repair the land you came to understand.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg>'},
+        {'step': 'Measure', 'head': 'Count what matters',
+         'line': 'Field data and observations feed the EcoIQ ledger — outcomes, not anecdotes.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4.5-5.5"/><circle cx="12" cy="18" r="1.3"/></svg>'},
+        {'step': 'Legacy', 'head': 'Benefit that remains',
+         'line': 'Long after departure, the warmth, health and trust keep compounding.',
+         'icon': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.2-3 7.2-7 8-4-0.8-7-3.8-7-8V6z"/><path d="M9 12l2 2 4-4.5"/></svg>'},
+    ]
+
+    # ── Before / After / Ripple ──────────────────────────────────────────
+    ripple = [
+        {'phase': 'Before', 'tone': 'cold', 'head': 'The winter burden',
+         'items': ['Coal smoke', 'Heat loss', 'Cold, costly homes']},
+        {'phase': 'After', 'tone': 'warm', 'head': 'A cleaner pathway',
+         'items': ['Cleaner heating pathway', 'Warmer home', 'Improved comfort']},
+        {'phase': 'Ripple', 'tone': 'benefit', 'head': 'The lasting effect',
+         'items': ['Family benefit', 'Community confidence', 'Measurable environmental value']},
+    ]
+
+    # ── Kazakhstan expedition layer — illustrative field sites/coordinates ─
+    field_sites = [
+        {'coord': '43.2384° N · 76.9450° E', 'name': 'Almaty Gateway'},
+        {'coord': '43.1330° N · 77.0470° E', 'name': 'Tian Shan Foothills'},
+        {'coord': '43.0530° N · 76.9850° E', 'name': 'Big Almaty Lake'},
+        {'coord': '43.2010° N · 76.8420° E', 'name': 'Community Retrofit Zone'},
     ]
 
     itinerary = [
@@ -1400,7 +1461,11 @@ def khalifa_stewardship_tours(request):
     ctx = {
         'experiences': experiences,
         'projects': projects,
-        'metrics': metrics,
+        'ledger': ledger,
+        'legacies': legacies,
+        'journey': journey,
+        'ripple': ripple,
+        'field_sites': field_sites,
         'itinerary': itinerary,
         'audiences': audiences,
         'partner_value': partner_value,

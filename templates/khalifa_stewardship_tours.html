@@ -9,23 +9,16 @@
 {% block extra_head %}
 <style>
   /* ════════════════════════════════════════════════════════════════════
-     Khalifa Stewardship Tours — fully scoped under .kst
-     Palette: deep emerald · warm sand · mountain blue · soft gold · white
-     Breaks out of the 900px <main> container with a full-bleed technique.
+     KHALIFA STEWARDSHIP TOURS — interactive cinematic expedition experience
+     All styles scoped under .kst. Palette: deep emerald · mountain blue ·
+     warm sand · soft gold · white. Breaks out of the centred 900px <main>.
      ════════════════════════════════════════════════════════════════════ */
   .kst {
-    /* full-bleed: escape the centred 900px main column */
-    width: 100vw;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
-    margin-top: -2rem;       /* cancel main's top margin */
-    margin-bottom: -2rem;    /* cancel main's bottom margin */
+    width: 100vw; position: relative; left: 50%; right: 50%;
+    margin-left: -50vw; margin-right: -50vw; margin-top: -2rem; margin-bottom: -2rem;
 
     --kst-ink:      #050c0a;
-    --kst-ink-2:    #081512;
+    --kst-ink-2:    #07130f;
     --kst-emerald:  #0a3d2e;
     --kst-bright:   #00e89a;
     --kst-blue:     #5e93b3;
@@ -37,53 +30,45 @@
     --kst-muted:    #8aa39a;
     --kst-line:     rgba(255,255,255,.08);
     --kst-card:     rgba(255,255,255,.035);
+    --kst-glass:    rgba(255,255,255,.055);
+    --kst-glassln:  rgba(255,255,255,.14);
+    --kst-mono:     "SFMono-Regular", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 
     background: var(--kst-ink);
     color: var(--kst-text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    overflow-x: hidden;
-    line-height: 1.6;
+    overflow-x: hidden; line-height: 1.6;
   }
   .kst * { box-sizing: border-box; }
-
   .kst__wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 
-  /* ── Typographic helpers ─────────────────────────────────────────── */
-  .kst__eyebrow {
-    font-size: 12px; letter-spacing: .26em; text-transform: uppercase;
-    color: var(--kst-bright); font-weight: 700; margin: 0 0 18px;
-  }
-  .kst__eyebrow--gold { color: var(--kst-gold); }
-  .kst h2.kst__h {
-    font-size: clamp(28px, 4vw, 46px); line-height: 1.06; letter-spacing: -.02em;
-    color: #fff; font-weight: 800; margin: 0 0 18px; max-width: 22ch;
-  }
-  .kst__lead { font-size: clamp(16px, 1.6vw, 19px); color: var(--kst-muted); max-width: 60ch; }
-  .kst__verse {
-    font-family: Georgia, "Times New Roman", serif; font-style: italic;
-    color: var(--kst-sand); font-size: clamp(18px, 2.4vw, 26px); line-height: 1.5;
-  }
+  /* ── Typography ───────────────────────────────────────────────────── */
+  .kst__eyebrow { font-size: 12px; letter-spacing: .26em; text-transform: uppercase; color: var(--kst-bright); font-weight: 700; margin: 0 0 18px; }
+  .kst h2.kst__h { font-size: clamp(28px, 4vw, 48px); line-height: 1.05; letter-spacing: -.02em; color: #fff; font-weight: 800; margin: 0 0 18px; max-width: 24ch; }
+  .kst__lead { font-size: clamp(16px, 1.6vw, 19px); color: var(--kst-muted); max-width: 62ch; }
+  .kst__verse { font-family: Georgia, "Times New Roman", serif; font-style: italic; color: var(--kst-sand); font-size: clamp(18px, 2.4vw, 27px); line-height: 1.5; }
 
-  /* ── Section rhythm ──────────────────────────────────────────────── */
+  /* ── Field labels (expedition layer) ──────────────────────────────── */
+  .kst__field { display: inline-flex; align-items: center; gap: 9px; font-family: var(--kst-mono);
+    font-size: 11px; letter-spacing: .04em; color: var(--kst-blue); }
+  .kst__field b { color: var(--kst-sand); font-weight: 600; }
+  .kst__field::before { content:""; width: 6px; height: 6px; border-radius: 50%; background: var(--kst-bright); box-shadow: 0 0 8px var(--kst-bright); flex: none; }
+  .kst__divider-label { display: inline-flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--kst-muted); font-weight: 700; margin-bottom: 22px; font-family: var(--kst-mono); }
+  .kst__divider-label::before { content:""; width: 28px; height: 1px; background: var(--kst-bright); opacity:.8; }
+
+  /* ── Topographic contour motif ────────────────────────────────────── */
+  .kst__topo { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: .5; }
+  .kst__topo svg { position: absolute; width: 140%; height: 140%; top: -20%; left: -20%; }
+  .kst__topo path { fill: none; stroke: rgba(94,147,179,.18); stroke-width: 1; }
+
+  /* ── Sections ─────────────────────────────────────────────────────── */
   .kst__section { padding: clamp(72px, 10vw, 140px) 0; position: relative; }
-  .kst__section--alt { background:
-      radial-gradient(120% 80% at 50% 0%, rgba(10,61,46,.55) 0%, transparent 60%),
-      var(--kst-ink-2); }
-  .kst__divider-label {
-    display: inline-flex; align-items: center; gap: 12px;
-    font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
-    color: var(--kst-muted); font-weight: 700; margin-bottom: 22px;
-  }
-  .kst__divider-label::before { content:""; width: 28px; height: 1px; background: var(--kst-bright); opacity:.7; }
+  .kst__section--alt { background: radial-gradient(120% 80% at 50% 0%, rgba(10,61,46,.5) 0%, transparent 60%), var(--kst-ink-2); }
+  .kst__section > .kst__wrap { position: relative; z-index: 1; }
 
-  /* ── CTA buttons ─────────────────────────────────────────────────── */
+  /* ── Buttons ──────────────────────────────────────────────────────── */
   .kst__cta-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
-  .kst__btn {
-    display: inline-flex; align-items: center; gap: 9px;
-    padding: 14px 26px; border-radius: 999px; font-size: 14.5px; font-weight: 700;
-    text-decoration: none; letter-spacing: .01em; cursor: pointer;
-    border: 1px solid transparent; transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s, background .3s, border-color .3s;
-  }
+  .kst__btn { display: inline-flex; align-items: center; gap: 9px; padding: 14px 26px; border-radius: 999px; font-size: 14.5px; font-weight: 700; text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s, background .3s, border-color .3s; }
   .kst__btn--primary { background: var(--kst-bright); color: #042018; box-shadow: 0 10px 40px -12px rgba(0,232,154,.6); }
   .kst__btn--primary:hover { transform: translateY(-3px); box-shadow: 0 18px 50px -12px rgba(0,232,154,.7); }
   .kst__btn--ghost { background: rgba(255,255,255,.04); color: #fff; border-color: var(--kst-line); }
@@ -92,48 +77,28 @@
   .kst__btn--gold:hover { transform: translateY(-3px); box-shadow: 0 16px 44px -14px rgba(232,196,106,.6); }
 
   /* ════════════════ HERO ════════════════ */
-  .kst__hero {
-    position: relative; min-height: 96vh; display: flex; align-items: center;
-    overflow: hidden; padding: 120px 0 90px;
-  }
-  /* HERO BACKGROUND IMAGE — placeholder (Unsplash). To use a local asset, drop
-     it in static/khalifa-tours/ and replace the url(...) below with
-     url("{% static 'khalifa-tours/hero.jpg' %}"). The solid var(--kst-emerald)
-     beneath the gradient is the graceful fallback if the image fails to load. */
-  .kst__hero-bg {
-    position: absolute; inset: -8% 0 0 0; z-index: 0;
+  .kst__hero { position: relative; min-height: 100vh; display: flex; align-items: center; overflow: hidden; padding: 120px 0 96px; }
+  /* HERO BACKGROUND IMAGE — placeholder (Unsplash). Swap for a local asset via
+     url("{% static 'khalifa-tours/hero.jpg' %}"). var(--kst-emerald) fallback. */
+  .kst__hero-bg { position: absolute; inset: -8% 0 0 0; z-index: 0;
     background:
-      linear-gradient(180deg, rgba(5,12,10,.62) 0%, rgba(5,12,10,.45) 38%, rgba(5,12,10,.92) 100%),
+      linear-gradient(180deg, rgba(5,12,10,.66) 0%, rgba(5,12,10,.5) 38%, rgba(5,12,10,.95) 100%),
       url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2000&q=72') center/cover no-repeat,
       var(--kst-emerald);
-    will-change: transform; transform: translateY(0) scale(1.08);
-  }
-  .kst__hero-glow {
-    position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background:
-      radial-gradient(60% 50% at 18% 30%, rgba(0,232,154,.16) 0%, transparent 60%),
-      radial-gradient(50% 45% at 88% 78%, rgba(94,147,179,.20) 0%, transparent 60%);
-    animation: kstGlow 16s ease-in-out infinite alternate;
-  }
+    will-change: transform; transform: translateY(0) scale(1.08); }
+  .kst__hero-glow { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(60% 50% at 16% 28%, rgba(0,232,154,.16) 0%, transparent 60%), radial-gradient(50% 45% at 88% 80%, rgba(94,147,179,.22) 0%, transparent 60%);
+    animation: kstGlow 16s ease-in-out infinite alternate; }
   @keyframes kstGlow { from { opacity:.7; transform: translate(0,0); } to { opacity:1; transform: translate(-2%, 1.5%); } }
   .kst__hero-inner { position: relative; z-index: 2; }
-  .kst__hero-brand { font-size: 13px; letter-spacing: .34em; text-transform: uppercase; color: var(--kst-gold); font-weight: 700; }
-  .kst__hero-title {
-    font-size: clamp(40px, 7.4vw, 88px); line-height: .98; letter-spacing: -.03em;
-    color: #fff; font-weight: 800; margin: 18px 0 20px; max-width: 16ch;
-  }
+  .kst__hero-brand { font-family: var(--kst-mono); font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--kst-gold); font-weight: 600; }
+  .kst__hero-title { font-size: clamp(40px, 7.4vw, 90px); line-height: .97; letter-spacing: -.03em; color: #fff; font-weight: 800; margin: 18px 0 20px; max-width: 16ch; }
   .kst__hero-title em { font-style: normal; color: var(--kst-bright); }
   .kst__hero-sub { font-size: clamp(16px, 1.9vw, 21px); color: #cdddd6; max-width: 58ch; margin-bottom: 20px; }
-  .kst__hero-trust {
-    display: inline-block; font-family: Georgia, serif; font-style: italic;
-    color: var(--kst-sand); font-size: clamp(16px, 2vw, 22px);
-    border-left: 2px solid var(--kst-gold); padding-left: 16px;
-  }
-  .kst__scrollcue { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 2;
-    font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--kst-muted); }
-  .kst__scrollcue span { display:block; width:1px; height:34px; margin: 10px auto 0; background: linear-gradient(var(--kst-bright), transparent); }
+  .kst__hero-trust { display: inline-block; font-family: Georgia, serif; font-style: italic; color: var(--kst-sand); font-size: clamp(16px, 2vw, 22px); border-left: 2px solid var(--kst-gold); padding-left: 16px; }
+  .kst__ticker { position: absolute; bottom: 22px; left: 0; right: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 10px 26px; padding: 0 24px; max-width: 1180px; margin: 0 auto; }
 
-  /* Load-reveal animation (hero + any .kst-rise) */
+  /* ── Load + scroll reveal ─────────────────────────────────────────── */
   .kst-rise { opacity: 0; transform: translateY(26px); transition: opacity .9s ease, transform .9s cubic-bezier(.2,.7,.2,1); }
   .kst.is-loaded .kst-rise { opacity: 1; transform: none; }
   .kst.is-loaded .kst-rise[data-delay="1"] { transition-delay: .12s; }
@@ -141,187 +106,197 @@
   .kst.is-loaded .kst-rise[data-delay="3"] { transition-delay: .36s; }
   .kst.is-loaded .kst-rise[data-delay="4"] { transition-delay: .48s; }
   .kst.is-loaded .kst-rise[data-delay="5"] { transition-delay: .60s; }
-
-  /* Scroll-reveal */
+  .kst.is-loaded .kst-rise[data-delay="6"] { transition-delay: .72s; }
   .kst-reveal { opacity: 0; transform: translateY(34px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1); }
   .kst-reveal.in { opacity: 1; transform: none; }
-  .kst-reveal[data-d="1"].in { transition-delay: .08s; }
-  .kst-reveal[data-d="2"].in { transition-delay: .16s; }
-  .kst-reveal[data-d="3"].in { transition-delay: .24s; }
-  .kst-reveal[data-d="4"].in { transition-delay: .32s; }
-  .kst-reveal[data-d="5"].in { transition-delay: .40s; }
+  .kst-reveal[data-d="1"].in { transition-delay: .07s; }
+  .kst-reveal[data-d="2"].in { transition-delay: .14s; }
+  .kst-reveal[data-d="3"].in { transition-delay: .21s; }
+  .kst-reveal[data-d="4"].in { transition-delay: .28s; }
+  .kst-reveal[data-d="5"].in { transition-delay: .35s; }
+  .kst-reveal[data-d="6"].in { transition-delay: .42s; }
 
-  /* ════════════════ Concept / Meaning split ════════════════ */
-  .kst__split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 80px); align-items: center; }
-  .kst__pull {
-    font-size: clamp(22px, 3vw, 34px); line-height: 1.3; color: #fff; font-weight: 700; letter-spacing: -.01em;
-    border-left: 3px solid var(--kst-bright); padding-left: 22px;
-  }
-  .kst__meaning-card {
-    background: var(--kst-card); border: 1px solid var(--kst-line); border-radius: 20px;
-    padding: clamp(28px, 4vw, 46px); position: relative; overflow: hidden;
-  }
-  .kst__meaning-card::before {
-    content: "خليفة"; position: absolute; top: -18px; right: 6px; font-size: 120px;
-    color: rgba(232,196,106,.07); font-family: serif; pointer-events: none;
-  }
+  /* ════════════════ FROM AMANAH TO IMPACT (journey) ════════════════ */
+  .kst__journey { position: relative; margin-top: 48px; }
+  .kst__jline { position: absolute; left: 0; right: 0; top: 33px; height: 2px; z-index: 0; }
+  .kst__jline svg { width: 100%; height: 2px; display: block; }
+  .kst__jgrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; position: relative; z-index: 1; }
+  .kst__jstep { text-align: left; }
+  .kst__jnode { width: 66px; height: 66px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 18px;
+    background: linear-gradient(180deg, var(--kst-glass), rgba(255,255,255,.02)); border: 1px solid var(--kst-glassln);
+    color: var(--kst-bright); backdrop-filter: blur(6px); box-shadow: 0 0 0 6px var(--kst-ink), 0 18px 40px -22px rgba(0,232,154,.5); }
+  .kst__jnode svg { width: 30px; height: 30px; }
+  .kst__jstep h3 { color: #fff; font-size: 16px; font-weight: 800; margin: 0 0 4px; letter-spacing: -.01em; }
+  .kst__jstep .kst__jname { font-family: var(--kst-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--kst-gold); font-weight: 700; }
+  .kst__jstep p { color: var(--kst-muted); font-size: 13.5px; margin: 6px 0 0; }
 
-  /* ════════════════ Experience cards ════════════════ */
+  /* ════════════════ ONE JOURNEY, FIVE LEGACIES ════════════════ */
+  .kst__legacy-stage { position: relative; margin-top: 46px; perspective: 1400px; }
+  .kst__lspine { position: absolute; left: 4%; right: 4%; top: 50%; height: 2px; z-index: 0; }
+  .kst__lspine svg { width: 100%; height: 2px; display: block; }
+  .kst__caps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; position: relative; z-index: 1; }
+  .kst__cap { position: relative; border-radius: 20px; padding: 26px 22px 24px; min-height: 280px;
+    background: linear-gradient(160deg, var(--kst-glass), rgba(255,255,255,.015));
+    border: 1px solid var(--kst-glassln); backdrop-filter: blur(10px);
+    box-shadow: 0 30px 60px -34px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.08);
+    transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2,.7,.2,1), border-color .4s, box-shadow .4s;
+    animation: kstFloat 7s ease-in-out infinite; }
+  .kst__caps > :nth-child(2) { animation-delay: -1.2s; } .kst__caps > :nth-child(3) { animation-delay: -2.4s; }
+  .kst__caps > :nth-child(4) { animation-delay: -3.6s; } .kst__caps > :nth-child(5) { animation-delay: -4.8s; }
+  @keyframes kstFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  .kst__cap:hover { border-color: rgba(0,232,154,.4); box-shadow: 0 40px 80px -34px rgba(0,232,154,.4), inset 0 1px 0 rgba(255,255,255,.12); }
+  .kst__cap-glow { position: absolute; inset: 0; border-radius: 20px; pointer-events: none;
+    background: radial-gradient(80% 60% at 50% 0%, rgba(0,232,154,.14), transparent 70%); opacity: .8; }
+  .kst__cap-ico { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; margin-bottom: 18px;
+    color: var(--kst-bright); background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.3); transform: translateZ(40px); }
+  .kst__cap-ico svg { width: 28px; height: 28px; }
+  .kst__cap-idx { position: absolute; top: 20px; right: 22px; font-family: var(--kst-mono); font-size: 12px; color: var(--kst-muted); transform: translateZ(30px); }
+  .kst__cap h3 { color: #fff; font-size: 18px; font-weight: 800; margin: 0 0 6px; letter-spacing: -.01em; transform: translateZ(28px); }
+  .kst__cap .kst__cap-line { color: var(--kst-sand); font-size: 12.5px; font-weight: 600; margin: 0 0 12px; transform: translateZ(22px); }
+  .kst__cap p { color: var(--kst-muted); font-size: 13.5px; margin: 0; transform: translateZ(16px); }
+  .kst__legacy-hub { text-align: center; margin: 0 auto 6px; font-family: var(--kst-mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--kst-bright); }
+
+  /* ════════════════ Experience cards (expedition layer) ════════════════ */
   .kst__grid { display: grid; gap: 22px; }
   .kst__grid--3 { grid-template-columns: repeat(3, 1fr); }
-  .kst__grid--2 { grid-template-columns: repeat(2, 1fr); }
-  .kst__xcard {
-    position: relative; border-radius: 18px; overflow: hidden; min-height: 320px;
-    display: flex; align-items: flex-end; color: #fff; text-decoration: none;
-    border: 1px solid var(--kst-line); isolation: isolate;
-    background: var(--kst-blue-dk);   /* fallback tint shown if the image fails to load */
-  }
-  .kst__xcard-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2;
-    background: var(--kst-blue-dk); border: 0;
-    transition: transform 1.1s cubic-bezier(.2,.7,.2,1); }
-  .kst__xcard::after { content:""; position: absolute; inset: 0; z-index: -1;
-    background: linear-gradient(180deg, rgba(5,12,10,.05) 0%, rgba(5,12,10,.4) 55%, rgba(5,12,10,.94) 100%); }
+  .kst__grid--4 { grid-template-columns: repeat(4, 1fr); }
+  .kst__xcard { position: relative; border-radius: 18px; overflow: hidden; min-height: 320px; display: flex; align-items: flex-end; color: #fff; border: 1px solid var(--kst-line); isolation: isolate; background: var(--kst-blue-dk); }
+  .kst__xcard-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; background: var(--kst-blue-dk); border: 0; transition: transform 1.1s cubic-bezier(.2,.7,.2,1); }
+  .kst__xcard::after { content:""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(5,12,10,.05) 0%, rgba(5,12,10,.4) 55%, rgba(5,12,10,.94) 100%); }
   .kst__xcard:hover .kst__xcard-img { transform: scale(1.08); }
   .kst__xcard-body { padding: 24px; }
-  .kst__xcard-tag { display:inline-block; font-size:10.5px; letter-spacing:.18em; text-transform:uppercase;
-    color: var(--kst-ink); background: var(--kst-gold); padding: 4px 10px; border-radius: 999px; font-weight: 800; margin-bottom: 12px; }
+  .kst__xcard-tag { display:inline-block; font-family: var(--kst-mono); font-size:10px; letter-spacing:.1em; color: var(--kst-sand); margin-bottom: 8px; }
   .kst__xcard h3 { font-size: 21px; color: #fff; margin: 0 0 8px; font-weight: 800; letter-spacing: -.01em; }
   .kst__xcard p { font-size: 14px; color: #c4d4cd; margin: 0; }
 
   /* ════════════════ Project cards ════════════════ */
-  .kst__pcard {
-    background: var(--kst-card); border: 1px solid var(--kst-line); border-radius: 18px;
-    padding: 30px 26px; transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .4s, background .4s;
-    position: relative; overflow: hidden;
-  }
-  .kst__pcard::before { content:""; position:absolute; left:0; top:0; height:100%; width:3px;
-    background: linear-gradient(var(--kst-bright), var(--kst-blue)); transform: scaleY(0); transform-origin: top; transition: transform .5s ease; }
+  .kst__pcard { background: var(--kst-card); border: 1px solid var(--kst-line); border-radius: 18px; padding: 30px 26px; transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .4s, background .4s; position: relative; overflow: hidden; }
+  .kst__pcard::before { content:""; position:absolute; left:0; top:0; height:100%; width:3px; background: linear-gradient(var(--kst-bright), var(--kst-blue)); transform: scaleY(0); transform-origin: top; transition: transform .5s ease; }
   .kst__pcard:hover { transform: translateY(-6px); border-color: rgba(0,232,154,.35); background: rgba(0,232,154,.04); }
   .kst__pcard:hover::before { transform: scaleY(1); }
-  .kst__pcard-code {
-    width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
-    font-weight: 800; font-size: 18px; color: var(--kst-bright);
-    background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.3); margin-bottom: 18px;
-  }
+  .kst__pcard-code { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 18px; color: var(--kst-bright); background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.3); margin-bottom: 18px; font-family: var(--kst-mono); }
   .kst__pcard h3 { font-size: 19px; color: #fff; margin: 0 0 10px; font-weight: 800; }
   .kst__pcard p { font-size: 14.5px; color: var(--kst-muted); margin: 0; }
 
-  /* ════════════════ Why Partners Care cards ════════════════ */
-  .kst__grid--4 { grid-template-columns: repeat(4, 1fr); }
-  .kst__wcard {
-    position: relative; display: flex; flex-direction: column;
-    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
-    border: 1px solid var(--kst-line); border-radius: 18px; padding: 30px 26px 26px; overflow: hidden;
-    transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .4s, box-shadow .4s;
-  }
-  .kst__wcard::after { content:""; position:absolute; inset:0 0 auto 0; height:3px;
-    background: linear-gradient(90deg, var(--kst-gold), var(--kst-bright)); opacity:.85; }
-  .kst__wcard:hover { transform: translateY(-6px); border-color: rgba(232,196,106,.4);
-    box-shadow: 0 26px 60px -34px rgba(232,196,106,.45); }
-  .kst__wcard-tag { font-family: Georgia, serif; font-size: 13px; letter-spacing: .12em;
-    color: var(--kst-gold); font-weight: 700; opacity: .9; }
-  .kst__wcard h3 { margin: 8px 0 12px; color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
-  .kst__wcard p { margin: 0; color: var(--kst-muted); font-size: 14.5px; flex: 1; }
-  .kst__wcard-meta { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--kst-line);
-    font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--kst-sand); font-weight: 700; }
+  /* ════════════════ BEFORE / AFTER / RIPPLE ════════════════ */
+  .kst__bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; position: relative; margin-top: 42px; }
+  .kst__barflow { position: absolute; left: 6%; right: 6%; top: 46px; height: 2px; z-index: 0; }
+  .kst__barflow svg { width: 100%; height: 2px; display: block; }
+  .kst__panel { position: relative; z-index: 1; border-radius: 18px; padding: 28px 26px; border: 1px solid var(--kst-line); background: var(--kst-card); overflow: hidden; }
+  .kst__panel::before { content:""; position:absolute; inset:0 0 auto 0; height: 3px; }
+  .kst__panel--cold::before { background: linear-gradient(90deg, #46627a, #2b3b49); }
+  .kst__panel--warm::before { background: linear-gradient(90deg, var(--kst-gold), #c98b3f); }
+  .kst__panel--benefit::before { background: linear-gradient(90deg, var(--kst-bright), var(--kst-blue)); }
+  .kst__panel--cold { background: linear-gradient(180deg, rgba(70,98,122,.10), rgba(255,255,255,.02)); }
+  .kst__panel--warm { background: linear-gradient(180deg, rgba(232,196,106,.10), rgba(255,255,255,.02)); }
+  .kst__panel--benefit { background: linear-gradient(180deg, rgba(0,232,154,.10), rgba(255,255,255,.02)); }
+  .kst__panel-phase { font-family: var(--kst-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; }
+  .kst__panel--cold .kst__panel-phase { color: var(--kst-blue); }
+  .kst__panel--warm .kst__panel-phase { color: var(--kst-gold); }
+  .kst__panel--benefit .kst__panel-phase { color: var(--kst-bright); }
+  .kst__panel h3 { color: #fff; font-size: 21px; font-weight: 800; margin: 8px 0 16px; letter-spacing: -.01em; }
+  .kst__panel ul { list-style: none; margin: 0; padding: 0; }
+  .kst__panel li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--kst-line); color: var(--kst-text); font-size: 14.5px; }
+  .kst__panel li::before { content:""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; flex: none; }
 
-  /* ════════════════ Impact dashboard ════════════════ */
-  .kst__dash {
-    background: linear-gradient(180deg, rgba(8,21,18,.9), rgba(5,12,10,.9));
-    border: 1px solid var(--kst-line); border-radius: 22px; overflow: hidden;
-    box-shadow: 0 40px 120px -50px rgba(0,0,0,.9);
-  }
-  .kst__dash-bar { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid var(--kst-line);
-    background: rgba(255,255,255,.02); }
-  .kst__dash-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.18); }
-  .kst__dash-title { margin-left: 10px; font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--kst-muted); font-weight: 700; }
-  .kst__dash-live { margin-left: auto; display:inline-flex; align-items:center; gap:7px; font-size:11px; color: var(--kst-bright); font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
-  .kst__dash-live i { width:7px; height:7px; border-radius:50%; background: var(--kst-bright); box-shadow: 0 0 0 0 rgba(0,232,154,.6); animation: kstPulse 2s infinite; font-style: normal; }
-  @keyframes kstPulse { 0%{box-shadow:0 0 0 0 rgba(0,232,154,.5);} 70%{box-shadow:0 0 0 8px rgba(0,232,154,0);} 100%{box-shadow:0 0 0 0 rgba(0,232,154,0);} }
-  /* "Example" (not "Live") — gold, to signal an illustrative model rather than real-time data */
-  .kst__dash-live--example { color: var(--kst-gold); }
-  .kst__dash-live--example i { background: var(--kst-gold); box-shadow: 0 0 0 0 rgba(232,196,106,.6); animation: none; }
-  .kst__dash-note { padding: 14px 22px 0; margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--kst-sand); }
-  .kst__dash-note strong { color: #fff; }
-  .kst__metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--kst-line); }
-  .kst__metric { background: var(--kst-ink-2); padding: 26px 22px; position: relative; transition: background .4s; }
-  .kst__metric:hover { background: #0b1d18; }
-  .kst__metric-num { font-size: clamp(26px, 3.4vw, 40px); font-weight: 800; color: #fff; letter-spacing: -.02em; line-height: 1; }
-  .kst__metric-num b { color: var(--kst-bright); font-weight: 800; }
-  .kst__metric-label { font-size: 12.5px; color: #fff; margin-top: 10px; font-weight: 700; }
-  .kst__metric-unit { font-size: 11.5px; color: var(--kst-muted); margin-top: 3px; }
-  .kst__dash-foot { padding: 18px 22px; border-top: 1px solid var(--kst-line); font-size: 12.5px; color: var(--kst-muted);
-    display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
-  .kst__dash-foot span b { color: var(--kst-sand); }
+  /* ════════════════ AMANAH IMPACT LEDGER ════════════════ */
+  .kst__ledger { position: relative; border: 1px solid var(--kst-line); border-radius: 22px; overflow: hidden; background: linear-gradient(180deg, rgba(8,21,18,.92), rgba(5,12,10,.92)); box-shadow: 0 40px 120px -50px rgba(0,0,0,.9); }
+  .kst__ledger-bar { display: flex; align-items: center; gap: 8px; padding: 16px 22px; border-bottom: 1px solid var(--kst-line); background: rgba(255,255,255,.02); flex-wrap: wrap; }
+  .kst__ledger-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.18); }
+  .kst__ledger-name { margin-left: 10px; font-family: var(--kst-mono); font-size: 12.5px; letter-spacing: .1em; color: #fff; font-weight: 600; }
+  .kst__badge { margin-left: auto; display:inline-flex; align-items:center; gap:7px; font-family: var(--kst-mono); font-size:11px; color: var(--kst-gold); font-weight:700; letter-spacing:.08em; text-transform:uppercase; border: 1px solid rgba(232,196,106,.4); padding: 5px 11px; border-radius: 999px; background: rgba(232,196,106,.06); }
+  .kst__badge i { width:6px; height:6px; border-radius:50%; background: var(--kst-gold); font-style: normal; }
+  .kst__ledger-note { padding: 14px 22px 0; margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--kst-sand); }
+  .kst__ledger-note strong { color: #fff; }
+  .kst__ledger-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--kst-line); margin-top: 16px; border-top: 1px solid var(--kst-line); }
+  .kst__row { background: var(--kst-ink-2); padding: 24px 22px; position: relative; transition: background .4s; }
+  .kst__row:hover { background: #0b1d18; }
+  .kst__row-code { font-family: var(--kst-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--kst-muted); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .kst__row-code span:last-child { color: var(--kst-bright); opacity: .6; }
+  .kst__num { font-size: clamp(26px, 3.2vw, 38px); font-weight: 800; color: #fff; letter-spacing: -.02em; line-height: 1; }
+  .kst__num b { color: var(--kst-bright); font-weight: 800; }
+  .kst__row-label { font-size: 13px; color: #fff; margin-top: 10px; font-weight: 700; }
+  .kst__row-unit { font-size: 11.5px; color: var(--kst-muted); margin-top: 3px; font-family: var(--kst-mono); }
+  .kst__ledger-foot { padding: 18px 22px; border-top: 1px solid var(--kst-line); font-size: 12.5px; color: var(--kst-muted); display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
+  .kst__ledger-foot b { color: var(--kst-sand); }
 
   /* ════════════════ Timeline ════════════════ */
   .kst__timeline { position: relative; }
   .kst__tl-line { position: absolute; left: 27px; top: 8px; bottom: 8px; width: 2px; overflow: hidden; }
   .kst__tl-line svg { position: absolute; inset: 0; height: 100%; width: 2px; }
   .kst__tl-item { display: grid; grid-template-columns: 56px 1fr; gap: 22px; padding: 0 0 34px; position: relative; }
-  .kst__tl-node {
-    width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; z-index: 2;
-    background: var(--kst-ink-2); border: 1px solid rgba(0,232,154,.35); color: var(--kst-bright);
-    font-weight: 800; font-size: 15px; box-shadow: 0 0 0 6px var(--kst-ink);
-  }
+  .kst__tl-node { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; z-index: 2; background: var(--kst-ink-2); border: 1px solid rgba(0,232,154,.35); color: var(--kst-bright); font-weight: 800; font-size: 15px; box-shadow: 0 0 0 6px var(--kst-ink); font-family: var(--kst-mono); }
   .kst__tl-card { background: var(--kst-card); border: 1px solid var(--kst-line); border-radius: 16px; padding: 22px 24px; }
   .kst__tl-card h3 { margin: 0 0 8px; color: #fff; font-size: 18px; font-weight: 800; }
-  .kst__tl-day { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--kst-gold); font-weight: 700; }
+  .kst__tl-day { font-family: var(--kst-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--kst-gold); font-weight: 700; }
   .kst__tl-card p { margin: 6px 0 0; color: var(--kst-muted); font-size: 14.5px; }
 
-  /* ════════════════ Chips (audience / partners) ════════════════ */
+  /* ════════════════ Chips ════════════════ */
   .kst__chips { display: flex; flex-wrap: wrap; gap: 12px; }
-  .kst__chip {
-    padding: 13px 20px; border-radius: 14px; background: var(--kst-card); border: 1px solid var(--kst-line);
-    color: #e7f1ec; font-weight: 600; font-size: 14.5px; transition: transform .35s, border-color .35s, background .35s;
-  }
+  .kst__chip { padding: 13px 20px; border-radius: 14px; background: var(--kst-card); border: 1px solid var(--kst-line); color: #e7f1ec; font-weight: 600; font-size: 14.5px; transition: transform .35s, border-color .35s, background .35s; }
   .kst__chip:hover { transform: translateY(-3px); border-color: rgba(0,232,154,.35); background: rgba(0,232,154,.05); }
+
+  /* ════════════════ Why Partners Care ════════════════ */
+  .kst__wcard { position: relative; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02)); border: 1px solid var(--kst-line); border-radius: 18px; padding: 30px 26px 26px; overflow: hidden; transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .4s, box-shadow .4s; }
+  .kst__wcard::after { content:""; position:absolute; inset:0 0 auto 0; height:3px; background: linear-gradient(90deg, var(--kst-gold), var(--kst-bright)); opacity:.85; }
+  .kst__wcard:hover { transform: translateY(-6px); border-color: rgba(232,196,106,.4); box-shadow: 0 26px 60px -34px rgba(232,196,106,.45); }
+  .kst__wcard-tag { font-family: Georgia, serif; font-size: 13px; letter-spacing: .12em; color: var(--kst-gold); font-weight: 700; opacity: .9; }
+  .kst__wcard h3 { margin: 8px 0 12px; color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+  .kst__wcard p { margin: 0; color: var(--kst-muted); font-size: 14.5px; flex: 1; }
+  .kst__wcard-meta { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--kst-line); font-family: var(--kst-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--kst-sand); font-weight: 600; }
 
   /* ════════════════ Trust list ════════════════ */
   .kst__trust { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .kst__trust-item { display: grid; grid-template-columns: 26px 1fr; gap: 14px; align-items: start;
-    padding: 18px 20px; background: var(--kst-card); border: 1px solid var(--kst-line); border-radius: 14px; }
+  .kst__trust-item { display: grid; grid-template-columns: 26px 1fr; gap: 14px; align-items: start; padding: 18px 20px; background: var(--kst-card); border: 1px solid var(--kst-line); border-radius: 14px; }
   .kst__trust-item svg { margin-top: 2px; }
   .kst__trust-item p { margin: 0; color: var(--kst-text); font-size: 14.5px; }
 
   /* ════════════════ Final CTA ════════════════ */
   .kst__final { position: relative; padding: clamp(96px, 14vw, 200px) 0; overflow: hidden; text-align: center; }
-  /* FINAL CTA BACKGROUND IMAGE — placeholder (Unsplash); swap for a local asset
-     via url("{% static 'khalifa-tours/final.jpg' %}"). var(--kst-emerald) is the
-     fallback colour if the image fails. */
-  .kst__final-bg { position: absolute; inset: 0; z-index: 0;
-    background:
-      linear-gradient(180deg, rgba(5,12,10,.78), rgba(5,12,10,.92)),
-      url('https://images.unsplash.com/photo-1454942901704-3c44c11b2ad1?auto=format&fit=crop&w=2000&q=72') center/cover no-repeat,
-      var(--kst-emerald);
-    will-change: transform; }
+  /* FINAL BACKGROUND IMAGE — placeholder; swap via url("{% static 'khalifa-tours/final.jpg' %}"). */
+  .kst__final-bg { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, rgba(5,12,10,.8), rgba(5,12,10,.93)), url('https://images.unsplash.com/photo-1454942901704-3c44c11b2ad1?auto=format&fit=crop&w=2000&q=72') center/cover no-repeat, var(--kst-emerald); will-change: transform; }
   .kst__final-inner { position: relative; z-index: 1; }
   .kst__final h2 { font-size: clamp(30px, 5vw, 58px); color: #fff; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; margin: 0 auto 18px; max-width: 18ch; }
   .kst__final-lines { font-family: Georgia, serif; font-style: italic; color: var(--kst-sand); font-size: clamp(17px, 2.2vw, 24px); line-height: 1.7; margin: 0 auto 6px; }
   .kst__final .kst__cta-row { justify-content: center; }
 
   /* ════════════════ Responsive ════════════════ */
+  @media (max-width: 1080px) {
+    .kst__jgrid { grid-template-columns: repeat(3, 1fr); row-gap: 34px; }
+    .kst__jline { display: none; }
+    .kst__caps { grid-template-columns: repeat(3, 1fr); }
+    .kst__lspine { display: none; }
+  }
   @media (max-width: 980px) {
     .kst__grid--3 { grid-template-columns: repeat(2, 1fr); }
     .kst__grid--4 { grid-template-columns: repeat(2, 1fr); }
-    .kst__metrics { grid-template-columns: repeat(3, 1fr); }
+    .kst__ledger-grid { grid-template-columns: repeat(2, 1fr); }
     .kst__split { grid-template-columns: 1fr; }
   }
-  @media (max-width: 640px) {
-    .kst__grid--3, .kst__grid--2, .kst__grid--4 { grid-template-columns: 1fr; }
-    .kst__metrics { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 720px) {
+    .kst__jgrid { grid-template-columns: repeat(2, 1fr); }
+    .kst__caps { grid-template-columns: 1fr; }
+    .kst__cap { min-height: 0; animation: none; }
+    .kst__bar { grid-template-columns: 1fr; }
+    .kst__barflow { display: none; }
+  }
+  @media (max-width: 600px) {
+    .kst__grid--3, .kst__grid--4 { grid-template-columns: 1fr; }
+    .kst__ledger-grid { grid-template-columns: 1fr; }
     .kst__trust { grid-template-columns: 1fr; }
-    .kst__hero { min-height: 92vh; }
+    .kst__jgrid { grid-template-columns: 1fr; }
+    .kst__hero { min-height: 94vh; }
     .kst__tl-item { grid-template-columns: 44px 1fr; gap: 16px; }
     .kst__tl-node { width: 44px; height: 44px; font-size: 13px; }
     .kst__tl-line { left: 21px; }
   }
 
-  /* Respect reduced motion */
+  /* ── Reduced motion ───────────────────────────────────────────────── */
   @media (prefers-reduced-motion: reduce) {
     .kst-rise, .kst-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-    .kst__hero-glow { animation: none; }
+    .kst__hero-glow, .kst__cap { animation: none !important; }
   }
+  .kst__split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 80px); align-items: center; }
 </style>
 {% endblock %}
 
@@ -332,6 +307,15 @@
   <section class="kst__hero" id="top">
     <div class="kst__hero-bg" data-parallax="0.18"></div>
     <div class="kst__hero-glow"></div>
+    <div class="kst__topo" data-parallax="0.06" aria-hidden="true">
+      <svg viewBox="0 0 1200 600" preserveAspectRatio="none">
+        <path d="M-50 120 C 250 60 450 180 700 120 S 1100 40 1260 130"/>
+        <path d="M-50 200 C 250 150 470 270 720 210 S 1100 130 1260 220"/>
+        <path d="M-50 290 C 280 250 480 360 760 300 S 1120 230 1260 310"/>
+        <path d="M-50 390 C 260 350 500 460 770 400 S 1120 330 1260 410"/>
+        <path d="M-50 480 C 280 450 520 540 800 490 S 1130 430 1260 500"/>
+      </svg>
+    </div>
     <div class="kst__wrap kst__hero-inner">
       <p class="kst__hero-brand kst-rise" data-delay="1">Khalifa Stewardship Tours · EcoIQ</p>
       <h1 class="kst__hero-title kst-rise" data-delay="2">Travel With Purpose. <em>Leave A Legacy.</em></h1>
@@ -341,90 +325,100 @@
       </p>
       <p class="kst__hero-trust kst-rise" data-delay="4">The Earth Is Not Ours. It Is A Trust.</p>
       <div class="kst__cta-row kst-rise" data-delay="5">
-        <a href="#experience" class="kst__btn kst__btn--primary">Explore the Experience →</a>
-        <a href="#impact-model" class="kst__btn kst__btn--ghost">View Impact Model</a>
+        <a href="#journey" class="kst__btn kst__btn--primary">Explore the Experience →</a>
+        <a href="#ledger" class="kst__btn kst__btn--ghost">View Impact Model</a>
         <a href="#partnership" class="kst__btn kst__btn--gold">Request Partnership</a>
       </div>
     </div>
-    <div class="kst__scrollcue kst-rise" data-delay="5">Scroll to begin<span></span></div>
+    <div class="kst__ticker kst-rise" data-delay="6">
+      {% for f in field_sites %}<span class="kst__field">{{ f.coord }} <b>{{ f.name }}</b></span>{% endfor %}
+    </div>
   </section>
 
-  {# ═══════════════════ Intro strip ═══════════════════ #}
-  <section class="kst__section kst__section--alt" style="padding-top:clamp(56px,7vw,96px);padding-bottom:clamp(56px,7vw,96px)">
-    <div class="kst__wrap kst-reveal">
-      <p class="kst__verse" style="max-width:46ch">
-        Khalifa Tours is designed to transform travel into stewardship. On future expeditions,
-        participants will explore the beauty of Kazakhstan while helping local communities reduce
-        pollution, restore landscapes, improve homes, and build measurable long-term benefit.
+  {# ═══════════════════ 2 · FROM AMANAH TO IMPACT ═══════════════════ #}
+  <section class="kst__section kst__section--alt" id="journey">
+    <div class="kst__wrap">
+      <span class="kst__divider-label kst-reveal">From Amanah to Impact</span>
+      <h2 class="kst__h kst-reveal">Six moments turn a visit into a trust kept.</h2>
+      <p class="kst__verse kst-reveal" data-d="2" style="max-width:42ch;margin-top:6px">
+        "The Earth is not a backdrop for consumption. It is an amanah — a trust."
       </p>
-    </div>
-  </section>
-
-  {# ═══════════════════ 2 · WHAT IS KHALIFA TOURS ═══════════════════ #}
-  <section class="kst__section" id="experience">
-    <div class="kst__wrap">
-      <span class="kst__divider-label kst-reveal">A New Model of Travel</span>
-      <div class="kst__split">
-        <div class="kst-reveal">
-          <h2 class="kst__h">This is not conventional tourism. It is stewardship in motion.</h2>
-          <p class="kst__lead">
-            Khalifa Tours is a new model of travel designed so that every journey leaves a positive
-            mark. Travellers become stewards of the land they visit — exploring Kazakhstan while
-            taking part in practical environmental and community projects.
-          </p>
+      <div class="kst__journey">
+        <div class="kst__jline" aria-hidden="true">
+          <svg viewBox="0 0 1000 2" preserveAspectRatio="none">
+            <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+            <line id="kstJourneyPath" x1="0" y1="1" x2="1000" y2="1" stroke="var(--kst-bright)" stroke-width="2"
+                  pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+          </svg>
         </div>
-        <div class="kst-reveal" data-d="2">
-          <p class="kst__pull">
-            "Instead of travelling only to see beautiful places, participants help protect,
-            restore, and improve them."
-          </p>
+        <div class="kst__jgrid">
+          {% for j in journey %}
+          <div class="kst__jstep kst-reveal" data-d="{{ forloop.counter }}">
+            <div class="kst__jnode">{{ j.icon|safe }}</div>
+            <span class="kst__jname">{{ j.step }}</span>
+            <h3>{{ j.head }}</h3>
+            <p>{{ j.line }}</p>
+          </div>
+          {% endfor %}
         </div>
       </div>
     </div>
   </section>
 
-  {# ═══════════════════ 3 · MEANING OF KHALIFA ═══════════════════ #}
-  <section class="kst__section kst__section--alt">
-    <div class="kst__wrap">
-      <span class="kst__divider-label kst-reveal">The Meaning of Khalifa</span>
-      <div class="kst__split">
-        <div class="kst-reveal">
-          <h2 class="kst__h"><span style="color:var(--kst-gold)">Khalifa</span> means steward, caretaker, trustee.</h2>
-          <p class="kst__lead">
-            In Islamic tradition, humanity is entrusted with caring for the Earth. Khalifa Tours
-            turns this principle into practical action — through travel, service, education and
-            measurable impact. The idea is universal, inclusive, and open to everyone:
-            an invitation to leave a place better than you found it.
-          </p>
-        </div>
-        <div class="kst__meaning-card kst-reveal" data-d="2">
-          <p class="kst__verse" style="margin-bottom:18px">
-            "The Earth is not a possession. It is an <span style="color:var(--kst-gold)">amanah</span> — a trust."
-          </p>
-          <p style="color:var(--kst-muted);font-size:14.5px;margin:0">
-            Whether you arrive as a person of faith or simply as someone who cares for the world,
-            the principle is the same: we are caretakers, not owners. Every traveller is welcome.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  {# ═══════════════════ 4 · KAZAKHSTAN EXPERIENCE ═══════════════════ #}
+  {# ═══════════════════ 3 · ONE JOURNEY, FIVE LEGACIES ═══════════════════ #}
   <section class="kst__section">
+    <div class="kst__topo" data-parallax="0.05" aria-hidden="true">
+      <svg viewBox="0 0 1200 600" preserveAspectRatio="none">
+        <path d="M-50 160 C 300 100 520 240 800 170 S 1130 90 1260 180"/>
+        <path d="M-50 280 C 300 230 540 360 820 290 S 1140 210 1260 300"/>
+        <path d="M-50 420 C 320 370 560 500 840 430 S 1150 350 1260 440"/>
+      </svg>
+    </div>
     <div class="kst__wrap">
-      <span class="kst__divider-label kst-reveal">The Kazakhstan Experience</span>
-      <h2 class="kst__h kst-reveal">A land of mountains, lakes and living heritage — still waiting to be discovered.</h2>
-      <div class="kst__grid kst__grid--3" style="margin-top:38px">
+      <span class="kst__divider-label kst-reveal">One Journey, Five Legacies</span>
+      <h2 class="kst__h kst-reveal">One expedition. Five legacies that outlast it.</h2>
+      <p class="kst__lead kst-reveal" data-d="2">
+        Every Khalifa expedition is designed to generate five distinct, lasting legacies —
+        a single system, ownable and measurable end to end.
+      </p>
+      <div class="kst__legacy-hub kst-reveal" data-d="2" style="margin-top:34px">● One Expedition →</div>
+      <div class="kst__legacy-stage">
+        <div class="kst__lspine" aria-hidden="true">
+          <svg viewBox="0 0 1000 2" preserveAspectRatio="none">
+            <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+            <line id="kstLegacyPath" x1="0" y1="1" x2="1000" y2="1" stroke="var(--kst-gold)" stroke-width="2"
+                  pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+          </svg>
+        </div>
+        <div class="kst__caps">
+          {% for L in legacies %}
+          <article class="kst__cap kst-reveal" data-d="{{ forloop.counter }}" data-tilt>
+            <span class="kst__cap-glow" aria-hidden="true"></span>
+            <span class="kst__cap-idx">0{{ forloop.counter }}</span>
+            <div class="kst__cap-ico">{{ L.icon|safe }}</div>
+            <h3>{{ L.name }}</h3>
+            <p class="kst__cap-line">{{ L.line }}</p>
+            <p>{{ L.body }}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ═══════════════════ 4 · KAZAKHSTAN EXPEDITION LAYER ═══════════════════ #}
+  <section class="kst__section kst__section--alt" id="expedition">
+    <div class="kst__wrap">
+      <span class="kst__divider-label kst-reveal">Field Layer · Kazakhstan</span>
+      <h2 class="kst__h kst-reveal">The terrain you'll read like a field map.</h2>
+      <p class="kst__lead kst-reveal" data-d="2" style="margin-bottom:30px">
+        Not sightseeing stops — operating zones. Each landscape is a place to witness, work and measure.
+      </p>
+      <div class="kst__grid kst__grid--3">
         {% for x in experiences %}
         <article class="kst__xcard kst-reveal" data-d="{{ forloop.counter|divisibleby:3|yesno:'3,2' }}">
-          {% comment %}
-            Placeholder image — replace x.img in core.views with a local static path later.
-            Rendered as a real <img> for accessibility (alt text) with a graceful fallback:
-            on load error the image is hidden and the card's coloured fallback tint shows through.
-          {% endcomment %}
-          <img class="kst__xcard-img" src="{{ x.img }}" alt="{{ x.alt }}"
-               loading="lazy" decoding="async" onerror="this.style.display='none'">
+          {% comment %} Placeholder image — replace x.img in core.views with a local static path later. Real <img> for alt text + graceful coloured fallback on load error. {% endcomment %}
+          <img class="kst__xcard-img" src="{{ x.img }}" alt="{{ x.alt }}" loading="lazy" decoding="async" onerror="this.style.display='none'">
           <div class="kst__xcard-body">
             <span class="kst__xcard-tag">{{ x.tag }}</span>
             <h3>{{ x.title }}</h3>
@@ -437,7 +431,7 @@
   </section>
 
   {# ═══════════════════ 5 · STEWARDSHIP PROJECTS ═══════════════════ #}
-  <section class="kst__section kst__section--alt">
+  <section class="kst__section">
     <div class="kst__wrap">
       <span class="kst__divider-label kst-reveal">Stewardship Projects</span>
       <h2 class="kst__h kst-reveal">Real work, safely supervised — where your journey becomes impact.</h2>
@@ -455,51 +449,84 @@
         {% endfor %}
         <article class="kst__pcard kst-reveal" data-d="5" style="display:flex;flex-direction:column;justify-content:center;background:rgba(0,232,154,.05);border-color:rgba(0,232,154,.25)">
           <h3 style="color:var(--kst-bright)">Every activity is designed to be measured.</h3>
-          <p>No activity is symbolic. Each one is designed to feed verified outcomes into the EcoIQ impact model below.</p>
+          <p>No activity is symbolic. Each one is designed to feed verified outcomes into the Amanah Impact Ledger below.</p>
         </article>
       </div>
     </div>
   </section>
 
-  {# ═══════════════════ 6 · ECOIQ MEASUREMENT ═══════════════════ #}
-  <section class="kst__section" id="impact-model">
+  {# ═══════════════════ 6 · BEFORE / AFTER / RIPPLE ═══════════════════ #}
+  <section class="kst__section kst__section--alt">
+    <div class="kst__wrap">
+      <span class="kst__divider-label kst-reveal">Before · After · Ripple</span>
+      <h2 class="kst__h kst-reveal">One home changes. The effect keeps moving.</h2>
+      <div class="kst__bar">
+        <div class="kst__barflow" aria-hidden="true">
+          <svg viewBox="0 0 1000 2" preserveAspectRatio="none">
+            <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+            <line id="kstRipplePath" x1="0" y1="1" x2="1000" y2="1" stroke="var(--kst-bright)" stroke-width="2"
+                  pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+          </svg>
+        </div>
+        {% for r in ripple %}
+        <div class="kst__panel kst__panel--{{ r.tone }} kst-reveal" data-d="{{ forloop.counter }}">
+          <span class="kst__panel-phase">{{ r.phase }}</span>
+          <h3>{{ r.head }}</h3>
+          <ul>{% for it in r.items %}<li>{{ it }}</li>{% endfor %}</ul>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="kst__lead kst-reveal" style="margin-top:22px;font-size:14px">
+        Indicative of the intended pathway — no exaggerated claims. Real outcomes will be measured per expedition.
+      </p>
+    </div>
+  </section>
+
+  {# ═══════════════════ 7 · AMANAH IMPACT LEDGER ═══════════════════ #}
+  <section class="kst__section" id="ledger">
+    <div class="kst__topo" data-parallax="0.05" aria-hidden="true">
+      <svg viewBox="0 0 1200 600" preserveAspectRatio="none">
+        <path d="M-50 220 C 320 170 540 300 820 230 S 1140 150 1260 240"/>
+        <path d="M-50 360 C 320 310 560 440 840 370 S 1150 290 1260 380"/>
+      </svg>
+    </div>
     <div class="kst__wrap">
       <span class="kst__divider-label kst-reveal">The EcoIQ Difference</span>
-      <h2 class="kst__h kst-reveal">Impact designed to be measured, not just claimed.</h2>
+      <h2 class="kst__h kst-reveal">The Amanah Impact Ledger.</h2>
       <p class="kst__lead kst-reveal" data-d="2" style="margin-bottom:40px">
-        Each expedition is designed to connect to an EcoIQ dashboard — so participants, partners,
-        sponsors and communities can see the projected and verified outcomes of every journey.
+        A trust kept must be a trust counted. Each expedition is designed to post its outcomes to an
+        EcoIQ ledger — so participants, partners, sponsors and communities can read the same numbers.
       </p>
 
-      <div class="kst__dash kst-reveal" data-d="2">
-        <div class="kst__dash-bar">
-          <span class="kst__dash-dot"></span><span class="kst__dash-dot"></span><span class="kst__dash-dot"></span>
-          <span class="kst__dash-title">EcoIQ · Khalifa Tours — Example Impact Model</span>
-          <span class="kst__dash-live kst__dash-live--example"><i></i> Example</span>
+      <div class="kst__ledger kst-reveal" data-d="2">
+        <div class="kst__ledger-bar">
+          <span class="kst__ledger-dot"></span><span class="kst__ledger-dot"></span><span class="kst__ledger-dot"></span>
+          <span class="kst__ledger-name">EcoIQ · Amanah Impact Ledger</span>
+          <span class="kst__badge"><i></i> Illustrative Model</span>
         </div>
-        <p class="kst__dash-note">
-          Illustrative example impact model. All figures below are <strong>designed projections</strong>
-          showing how EcoIQ would measure a future multi-expedition programme — they are not records
-          of completed work.
+        <p class="kst__ledger-note">
+          Illustrative / example figures showing how the ledger is designed to work — these are
+          <strong>modelled projections, not verified results</strong>.
         </p>
-        <div class="kst__metrics">
-          {% for m in metrics %}
-          <div class="kst__metric">
-            <div class="kst__metric-num" data-target="{{ m.value }}" data-suffix="{{ m.suffix }}">0{{ m.suffix }}</div>
-            <div class="kst__metric-label">{{ m.label }}</div>
-            <div class="kst__metric-unit">{{ m.unit }}</div>
+        <div class="kst__ledger-grid">
+          {% for m in ledger %}
+          <div class="kst__row">
+            <div class="kst__row-code"><span>{{ m.code }}</span><span>● model</span></div>
+            <div class="kst__num" data-target="{{ m.value }}" data-suffix="{{ m.suffix }}">0{{ m.suffix }}</div>
+            <div class="kst__row-label">{{ m.label }}</div>
+            <div class="kst__row-unit">{{ m.unit }}</div>
           </div>
           {% endfor %}
         </div>
-        <div class="kst__dash-foot">
-          <span>Figures are <b>illustrative projections</b> for an example impact model — not completed results.</span>
-          <span>Designed to be verified through EcoIQ records on future expeditions</span>
+        <div class="kst__ledger-foot">
+          <span>All values are <b>illustrative projections</b> for an example impact model — not completed results.</span>
+          <span>Future expeditions are designed to connect to verified EcoIQ records</span>
         </div>
       </div>
     </div>
   </section>
 
-  {# ═══════════════════ 7 · TYPICAL EXPEDITION ═══════════════════ #}
+  {# ═══════════════════ 8 · TYPICAL EXPEDITION ═══════════════════ #}
   <section class="kst__section kst__section--alt">
     <div class="kst__wrap">
       <span class="kst__divider-label kst-reveal">An Example 7-Day Expedition</span>
@@ -533,7 +560,7 @@
     </div>
   </section>
 
-  {# ═══════════════════ 8 · WHO IT IS FOR ═══════════════════ #}
+  {# ═══════════════════ 9 · WHO IT IS FOR ═══════════════════ #}
   <section class="kst__section">
     <div class="kst__wrap">
       <span class="kst__divider-label kst-reveal">Who It Is For</span>
@@ -544,7 +571,7 @@
     </div>
   </section>
 
-  {# ═══════════════════ 8b · WHY PARTNERS CARE ═══════════════════ #}
+  {# ═══════════════════ 10 · WHY PARTNERS CARE ═══════════════════ #}
   <section class="kst__section kst__section--alt">
     <div class="kst__wrap">
       <span class="kst__divider-label kst-reveal">Why Partners Care</span>
@@ -567,7 +594,7 @@
     </div>
   </section>
 
-  {# ═══════════════════ 9 · PARTNERSHIP MODEL ═══════════════════ #}
+  {# ═══════════════════ 11 · PARTNERSHIP MODEL ═══════════════════ #}
   <section class="kst__section" id="partnership">
     <div class="kst__wrap">
       <span class="kst__divider-label kst-reveal">Partnership Model</span>
@@ -588,7 +615,7 @@
     </div>
   </section>
 
-  {# ═══════════════════ 10 · TRUST & SAFETY ═══════════════════ #}
+  {# ═══════════════════ 12 · TRUST & SAFETY ═══════════════════ #}
   <section class="kst__section kst__section--alt">
     <div class="kst__wrap">
       <span class="kst__divider-label kst-reveal">Trust &amp; Safety</span>
@@ -607,7 +634,7 @@
     </div>
   </section>
 
-  {# ═══════════════════ 11 · FINAL CTA ═══════════════════ #}
+  {# ═══════════════════ 13 · FINAL CTA ═══════════════════ #}
   <section class="kst__final">
     <div class="kst__final-bg" data-parallax="0.12"></div>
     <div class="kst__wrap kst__final-inner">
@@ -627,79 +654,96 @@
 {% endblock %}
 
 {% block extra_js %}
-{# anime.js — loaded as a progressive enhancement only. All core animations
-   below work with vanilla JS + IntersectionObserver if it fails to load. #}
+{# anime.js — progressive enhancement only. Every animation below has a vanilla
+   JS / CSS fallback, so the page is fully functional if the CDN is blocked. #}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" defer></script>
 <script>
 (function () {
   var root = document.getElementById('kst');
   if (!root) return;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  /* 1 · Hero load reveal */
   requestAnimationFrame(function () { root.classList.add('is-loaded'); });
 
+  function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+
   if (reduce) {
-    // Show everything, set final numbers, skip motion.
     root.querySelectorAll('.kst-reveal').forEach(function (el) { el.classList.add('in'); });
-    root.querySelectorAll('.kst__metric-num').forEach(function (el) {
-      el.textContent = formatNum(+el.dataset.target) + (el.dataset.suffix || '');
+    root.querySelectorAll('[data-target]').forEach(function (el) {
+      el.textContent = fmt(+el.dataset.target) + (el.dataset.suffix || '');
     });
-    var prog = document.getElementById('kstTlProgress'); if (prog) prog.setAttribute('stroke-dashoffset', '0');
+    ['kstJourneyPath','kstLegacyPath','kstRipplePath','kstTlProgress'].forEach(function (id) {
+      var p = document.getElementById(id); if (p) p.setAttribute('stroke-dashoffset', '0');
+    });
     return;
   }
 
-  /* helpers */
-  function formatNum(n) { return Math.round(n).toLocaleString('en-US'); }
-
+  /* Count-up */
   function countUp(el) {
-    var target = +el.dataset.target || 0;
-    var suffix = el.dataset.suffix || '';
+    var target = +el.dataset.target || 0, suffix = el.dataset.suffix || '';
     var start = performance.now(), dur = 1600;
-    function tick(now) {
-      var t = Math.min(1, (now - start) / dur);
-      var eased = 1 - Math.pow(1 - t, 3);          // easeOutCubic
-      el.textContent = formatNum(target * eased) + suffix;
-      if (t < 1) requestAnimationFrame(tick);
-      else el.textContent = formatNum(target) + suffix;
-    }
-    requestAnimationFrame(tick);
+    (function tick(now) {
+      var t = Math.min(1, (now - start) / dur), eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = fmt(target * eased) + suffix;
+      if (t < 1) requestAnimationFrame(tick); else el.textContent = fmt(target) + suffix;
+    })(start);
   }
 
-  /* 2 · Scroll reveal + metric count-up + timeline line */
+  /* Scroll reveal + count-up */
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) {
       if (!e.isIntersecting) return;
       var el = e.target;
       el.classList.add('in');
-      // metric count-up
-      el.querySelectorAll && el.querySelectorAll('.kst__metric-num').forEach(countUp);
+      if (el.querySelectorAll) el.querySelectorAll('[data-target]').forEach(countUp);
       io.unobserve(el);
     });
-  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
-
+  }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
   root.querySelectorAll('.kst-reveal').forEach(function (el) { io.observe(el); });
 
-  /* 3 · Timeline connecting-line draw (anime.js if present, CSS fallback) */
-  var tlProgress = document.getElementById('kstTlProgress');
-  if (tlProgress) {
-    var tlObs = new IntersectionObserver(function (entries) {
+  /* SVG path-draw (anime.js if present, CSS fallback otherwise) */
+  function drawLine(id, anchorSel, duration, easing) {
+    var path = document.getElementById(id); if (!path) return;
+    var anchor = anchorSel ? root.querySelector(anchorSel) : path;
+    if (!anchor) anchor = path;
+    var obs = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (!e.isIntersecting) return;
         if (window.anime) {
-          anime({ targets: tlProgress, strokeDashoffset: [100, 0], easing: 'easeInOutSine', duration: 2600 });
+          anime({ targets: path, strokeDashoffset: [100, 0], easing: easing || 'easeInOutSine', duration: duration || 2200 });
         } else {
-          tlProgress.style.transition = 'stroke-dashoffset 2.4s ease-in-out';
-          tlProgress.setAttribute('stroke-dashoffset', '0');
+          path.style.transition = 'stroke-dashoffset ' + ((duration || 2200) / 1000) + 's ease-in-out';
+          path.setAttribute('stroke-dashoffset', '0');
         }
-        tlObs.disconnect();
+        obs.disconnect();
       });
-    }, { threshold: 0.25 });
-    var tl = root.querySelector('.kst__timeline');
-    if (tl) tlObs.observe(tl);
+    }, { threshold: 0.2 });
+    obs.observe(anchor);
+  }
+  drawLine('kstJourneyPath', '.kst__journey', 2400);
+  drawLine('kstLegacyPath', '.kst__legacy-stage', 2400);
+  drawLine('kstRipplePath', '.kst__bar', 2000);
+  drawLine('kstTlProgress', '.kst__timeline', 2600);
+
+  /* 3D tilt on floating legacy capsules (desktop / fine-pointer only) */
+  if (finePointer) {
+    root.querySelectorAll('[data-tilt]').forEach(function (card) {
+      card.addEventListener('pointermove', function (ev) {
+        var r = card.getBoundingClientRect();
+        var px = (ev.clientX - r.left) / r.width - 0.5;
+        var py = (ev.clientY - r.top) / r.height - 0.5;
+        card.style.transform = 'rotateY(' + (px * 10).toFixed(2) + 'deg) rotateX(' + (-py * 10).toFixed(2) + 'deg) translateY(-6px)';
+        card.style.animationPlayState = 'paused';
+      });
+      card.addEventListener('pointerleave', function () {
+        card.style.transform = '';
+        card.style.animationPlayState = '';
+      });
+    });
   }
 
-  /* 4 · Slow parallax on hero + final backgrounds (rAF-throttled) */
+  /* Slow parallax (rAF-throttled) */
   var layers = Array.prototype.slice.call(root.querySelectorAll('[data-parallax]'));
   if (layers.length) {
     var ticking = false;
@@ -708,9 +752,10 @@
       requestAnimationFrame(function () {
         layers.forEach(function (l) {
           var rect = l.getBoundingClientRect();
-          var speed = parseFloat(l.dataset.parallax) || 0.15;
+          var speed = parseFloat(l.dataset.parallax) || 0.12;
           var offset = (rect.top + rect.height / 2 - window.innerHeight / 2) * -speed;
-          l.style.transform = 'translate3d(0,' + offset.toFixed(1) + 'px,0) scale(1.12)';
+          var base = l.classList.contains('kst__hero-bg') ? ' scale(1.12)' : '';
+          l.style.transform = 'translate3d(0,' + offset.toFixed(1) + 'px,0)' + base;
         });
         ticking = false;
       });
