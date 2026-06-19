@@ -58,8 +58,9 @@ urlpatterns = [
     # Khalifa Heat — coal-to-electric heating retrofit
     path('heating/', include('heating.urls', namespace='heating')),
 
-    # Khalifa Tours — public-facing alias for the dedicated impact story page
-    path('khalifa-tours/', RedirectView.as_view(url='/khalifa-tours-impact/', permanent=False), name='khalifa_tours'),
+    # Khalifa Tours — served by core.urls (Khalifa Stewardship Tours landing page).
+    # The old redirect to /khalifa-tours-impact/ has been retired in favour of the
+    # dedicated landing page (core.views.khalifa_stewardship_tours).
 
     # Manufacturer intelligence — currently surfaced inside the global explorer
     path('manufacturers/', RedirectView.as_view(url='/global-intelligence/', query_string=True, permanent=False), name='manufacturers'),
