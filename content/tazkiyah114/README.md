@@ -38,6 +38,26 @@ draft_reflection → source_needed → translation_pending → tafsir_pending
 A record may only be shown publicly once it reaches `approved_for_public` through the review
 workflow. The current seed is at most preview material, clearly labelled and not scholar-approved.
 
+## Validation
+
+`surah_seeds.json` is guarded by a lightweight validator so future edits cannot silently break
+the 114-surah structure. It checks: valid JSON; exactly 114 records; contiguous and unique
+numbers 1–114; the identical 18-field schema/order on every record; every record marked
+`draft_reflection` / `translation_pending` / `scholar_review_pending`; `_meta.authoritative = false`;
+`_meta.scope` covering all 114 surahs; and a humble safety note on every record. It exits non-zero
+on any failure.
+
+```bash
+# Run the validator directly
+python manage.py validate_tazkiyah114_seeds
+
+# Or as part of the test suite (CI guardrail)
+python manage.py test core.tests_tazkiyah_seeds
+```
+
+Validation logic: `core/management/commands/validate_tazkiyah114_seeds.py`
+(reused by `core/tests_tazkiyah_seeds.py`).
+
 ## Safety notes
 
 - Themes are intentionally **short and cautious**; no detailed tafsir, no invented interpretation.
