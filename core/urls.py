@@ -118,6 +118,9 @@ urlpatterns = [
     # Tazkiyah 114 — STAFF-ONLY Daily Tazkiyah tracker preview (static/demo, not public)
     path('tazkiyah-114-daily-preview/', views.tazkiyah_daily_preview, name='tazkiyah_daily_preview'),
 
+    # Tazkiyah 114 — STAFF-ONLY Qur'an Repair Engine architecture preview (read-only, not public)
+    path('tazkiyah-114-repair-engine-preview/', views.tazkiyah_repair_engine_preview, name='tazkiyah_repair_engine_preview'),
+
     # EcoIQ Video Studio — staff-only video workflow (rendering is offline/build-time)
     path('video-studio/', views.video_studio, name='video_studio'),
 

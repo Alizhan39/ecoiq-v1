@@ -2382,6 +2382,66 @@ def tazkiyah_daily_preview(request):
 
 
 @staff_member_required(login_url='/login/')
+def tazkiyah_repair_engine_preview(request):
+    """
+    /tazkiyah-114-repair-engine-preview/ — STAFF-ONLY internal preview that
+    visualises the Qur'an Repair Engine architecture: struggle → heart wound →
+    false belief → Qur'anic theme → surah pathway → reflection → dua → action →
+    7-day consistency.
+
+    Read-only: loads content/tazkiyah114/repair_engine.json (plus pathways.json
+    for human-readable struggle/pathway labels), runs all three validators
+    first, and presents everything as non-authoritative draft architecture —
+    never tafsir or fatwa. No models, no persistence, not public, not in nav.
+    """
+    from core.management.commands.validate_tazkiyah114_seeds import (
+        validate_seeds, validate_pathways, validate_repair_engine,
+        DEFAULT_REPAIR_ENGINE_PATH, DEFAULT_PATHWAYS_PATH,
+    )
+    errors = validate_seeds() + validate_pathways() + validate_repair_engine()
+    try:
+        engine = _json.loads(DEFAULT_REPAIR_ENGINE_PATH.read_text(encoding='utf-8'))
+        paths = _json.loads(DEFAULT_PATHWAYS_PATH.read_text(encoding='utf-8'))
+    except Exception as exc:  # pragma: no cover - defensive
+        engine, paths = {}, {}
+        errors = errors + [f'Could not read repair engine / pathways files: {exc}']
+
+    struggle_label = {s.get('id'): s.get('label') for s in paths.get('struggles', [])}
+    pathway_title = {p.get('id'): p.get('title') for p in paths.get('pathways', [])}
+
+    # Resolve struggle/pathway ids to readable labels for each heart wound.
+    wounds = []
+    for w in engine.get('heart_wounds', []):
+        w = dict(w)
+        w['struggle_labels'] = [struggle_label.get(i, i) for i in w.get('related_struggle_ids', [])]
+        w['pathway_titles'] = [pathway_title.get(i, i) for i in w.get('related_pathway_ids', [])]
+        wounds.append(w)
+
+    def _human(s):
+        s = str(s).replace('_', ' ').strip()
+        return s[:1].upper() + s[1:] if s else s
+
+    scb = engine.get('sin_cycle_breaker', {})
+    sin_cycle = {
+        'cycle': [_human(x) for x in scb.get('cycle', [])],
+        'repair_cycle': [_human(x) for x in scb.get('repair_cycle', [])],
+        'prompts': scb.get('prompts', []),
+        'caution_note': scb.get('caution_note', ''),
+    }
+
+    ctx = {
+        'meta': engine.get('_meta', {}),
+        'flow_steps': [_human(x) for x in engine.get('repair_flow_steps', [])],
+        'wounds': wounds,
+        'sin_cycle': sin_cycle,
+        'consistency_model': engine.get('consistency_model', []),
+        'validation_ok': not errors,
+        'validation_errors': errors,
+    }
+    return render(request, 'tazkiyah_repair_engine_preview.html', ctx)
+
+
+@staff_member_required(login_url='/login/')
 def video_studio(request):
     """
     /video-studio/ — Staff-only video workflow surface.
