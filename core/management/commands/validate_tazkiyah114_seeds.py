@@ -56,6 +56,10 @@ SAFETY_PHRASE = "reflection inspired by qur'anic themes"
 DEFAULT_PATHWAYS_PATH = (
     Path(__file__).resolve().parents[3] / "content" / "tazkiyah114" / "pathways.json"
 )
+# Repair Engine architecture (reflection architecture, not tafsir/fatwa).
+DEFAULT_REPAIR_ENGINE_PATH = (
+    Path(__file__).resolve().parents[3] / "content" / "tazkiyah114" / "repair_engine.json"
+)
 PATHWAY_FIELDS = [
     "id",
     "title",
@@ -150,6 +154,74 @@ def validate_pathways(path=DEFAULT_PATHWAYS_PATH):
         errors.append("_meta.authoritative must be false.")
     if PATHWAY_HUMBLE not in str(meta.get("notice", "")).lower():
         errors.append(f"_meta.notice must include the humble framing '{PATHWAY_HUMBLE}'.")
+
+    return errors
+
+
+def validate_repair_engine(path=DEFAULT_REPAIR_ENGINE_PATH, pathways_path=DEFAULT_PATHWAYS_PATH):
+    """Validate the Repair Engine architecture file. Returns a list of errors."""
+    errors = []
+    path = Path(path)
+
+    # JSON parses cleanly.
+    if not path.exists():
+        return [f"Repair engine file not found: {path}"]
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [f"JSON does not parse: {exc}"]
+
+    # Valid struggle/pathway ids come from pathways.json.
+    valid_struggle_ids, valid_pathway_ids = set(), set()
+    try:
+        pdata = json.loads(Path(pathways_path).read_text(encoding="utf-8"))
+        valid_struggle_ids = {s.get("id") for s in pdata.get("struggles", [])}
+        valid_pathway_ids = {p.get("id") for p in pdata.get("pathways", [])}
+    except Exception as exc:
+        errors.append(f"Could not read pathways.json for cross-checks: {exc}")
+
+    wounds = data.get("heart_wounds")
+    if not isinstance(wounds, list) or not wounds:
+        errors.append("'heart_wounds' must be a non-empty list.")
+        wounds = []
+
+    for w in wounds:
+        wid = w.get("id", "<no id>") if isinstance(w, dict) else "<not an object>"
+        if not isinstance(w, dict):
+            errors.append(f"Heart wound is not an object: {w!r}.")
+            continue
+        # All related struggle ids exist in pathways.json.
+        for sid in w.get("related_struggle_ids") or []:
+            if valid_struggle_ids and sid not in valid_struggle_ids:
+                errors.append(f"Heart wound '{wid}': related struggle id '{sid}' not in pathways.json.")
+        # All related pathway ids exist in pathways.json.
+        for pid in w.get("related_pathway_ids") or []:
+            if valid_pathway_ids and pid not in valid_pathway_ids:
+                errors.append(f"Heart wound '{wid}': related pathway id '{pid}' not in pathways.json.")
+        # Every heart wound has a caution note.
+        cn = w.get("caution_note")
+        if not isinstance(cn, str) or not cn.strip():
+            errors.append(f"Heart wound '{wid}': missing caution_note.")
+        # Every heart wound is draft_reflection + scholar_review pending.
+        if w.get("status") != "draft_reflection":
+            errors.append(f"Heart wound '{wid}': status must be 'draft_reflection', got {w.get('status')!r}.")
+        if w.get("scholar_review") != "pending":
+            errors.append(f"Heart wound '{wid}': scholar_review must be 'pending', got {w.get('scholar_review')!r}.")
+
+    # Sin cycle and repair cycle are present.
+    scb = data.get("sin_cycle_breaker")
+    if not isinstance(scb, dict):
+        errors.append("'sin_cycle_breaker' is missing.")
+    else:
+        if not scb.get("cycle"):
+            errors.append("sin_cycle_breaker.cycle is missing or empty.")
+        if not scb.get("repair_cycle"):
+            errors.append("sin_cycle_breaker.repair_cycle is missing or empty.")
+
+    # _meta.authoritative is false.
+    meta = data.get("_meta", {})
+    if meta.get("authoritative") is not False:
+        errors.append("_meta.authoritative must be false.")
 
     return errors
 
