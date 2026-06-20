@@ -21,6 +21,7 @@ and long-term tazkiyah.
 | [Transformation Operating System](tazkiyah-114-transformation-operating-system.md) | Full architecture: Surah Map · Struggle Finder · Repair Engine · Daily Mizan · Scholar Review Layer · Community Layer. |
 | [Qur'an Repair Engine](tazkiyah-114-repair-engine.md) | The transformation core: the 8-step engine, modules, content model, and trust rules. |
 | [Modules 31–60](tazkiyah-114-modules-31-60.md) | Structured product concepts for modules 31–60. |
+| [Money & Rizq Pathway](tazkiyah-114-money-rizq-pathway.md) | "Money Without Losing Your Soul" — Qur'anic reflection on money anxiety, halal income, spending, debt, giving, and wealth as amanah. |
 | [Safety & Trust Principles](tazkiyah-114-safety-principles.md) | Binding safety, trust, and anti-vanity rules. |
 | [Implementation Roadmap](tazkiyah-114-implementation-roadmap.md) | Phases 1–6 with gates. |
 
