@@ -2200,6 +2200,62 @@ def visual_lab(request):
 
 
 @staff_member_required(login_url='/login/')
+def tazkiyah_preview(request):
+    """
+    /tazkiyah-114-preview/ — STAFF-ONLY internal preview of the Tazkiyah 114
+    surah seed dataset (content/tazkiyah114/surah_seeds.json).
+
+    Renders all 114 Surah seed cards so staff can visually review them before
+    public release. Not linked in public nav; not public. Pure presentation —
+    reads the seed JSON only, runs the existing validator first, and presents
+    everything as non-authoritative draft reflection (never tafsir or fatwa).
+    """
+    from core.management.commands.validate_tazkiyah114_seeds import (
+        validate_seeds, DEFAULT_SEED_PATH,
+    )
+    errors = validate_seeds()
+    try:
+        data = _json.loads(DEFAULT_SEED_PATH.read_text(encoding='utf-8'))
+    except Exception as exc:  # pragma: no cover - defensive
+        data = {'_meta': {}, 'surahs': []}
+        errors = errors + [f'Could not read seed file: {exc}']
+
+    surahs = data.get('surahs', [])
+    meta = data.get('_meta', {})
+
+    # Display-only enrichment (in-memory; does not touch the seed file).
+    for s in surahs:
+        s['rev_label'] = (s.get('revelation_type') or '').capitalize()
+        s['status_badges'] = [
+            s.get('content_status', '').replace('_', ' '),
+            s.get('translation_status', '').replace('_', ' '),
+            s.get('scholar_review_status', '').replace('_', ' '),
+        ]
+
+    def _count(field, value):
+        return sum(1 for s in surahs if s.get(field) == value)
+
+    stats = {
+        'total': len(surahs),
+        'draft': _count('content_status', 'draft_reflection'),
+        'translation_pending': _count('translation_status', 'translation_pending'),
+        'scholar_pending': _count('scholar_review_status', 'scholar_review_pending'),
+        'authoritative': meta.get('authoritative'),
+    }
+    pathways = sorted({p for s in surahs for p in s.get('life_pathways', [])})
+
+    ctx = {
+        'surahs': surahs,
+        'meta': meta,
+        'stats': stats,
+        'pathways': pathways,
+        'validation_ok': not errors,
+        'validation_errors': errors,
+    }
+    return render(request, 'tazkiyah_preview.html', ctx)
+
+
+@staff_member_required(login_url='/login/')
 def video_studio(request):
     """
     /video-studio/ — Staff-only video workflow surface.

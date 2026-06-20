@@ -109,6 +109,9 @@ urlpatterns = [
     # EcoIQ Visual Lab — staff-only verification page for Visual Intelligence islands
     path('visual-lab/', views.visual_lab, name='visual_lab'),
 
+    # Tazkiyah 114 — STAFF-ONLY internal preview of the surah seed dataset (not public)
+    path('tazkiyah-114-preview/', views.tazkiyah_preview, name='tazkiyah_preview'),
+
     # EcoIQ Video Studio — staff-only video workflow (rendering is offline/build-time)
     path('video-studio/', views.video_studio, name='video_studio'),
 
