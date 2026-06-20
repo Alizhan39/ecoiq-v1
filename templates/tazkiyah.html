@@ -35,6 +35,8 @@
     --tz-serif:  "Cormorant Garamond", Georgia, "Times New Roman", serif;
     --tz-sans:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --tz-arab:   "Amiri", "Times New Roman", serif;
+    --tz-mono:   "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+    --tz-blue:   #5e93b3;
     --tz-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23d4af6a' stroke-opacity='0.14' stroke-width='1'%3E%3Crect x='32' y='32' width='56' height='56'/%3E%3Crect x='32' y='32' width='56' height='56' transform='rotate(45 60 60)'/%3E%3Ccircle cx='60' cy='60' r='28'/%3E%3C/g%3E%3C/svg%3E");
 
     background: var(--tz-ink);
@@ -298,6 +300,47 @@
   .tz__state--pending { background:rgba(212,175,106,.12); color:var(--tz-gold); border:1px solid rgba(212,175,106,.35); }
   .tz__state--na { background:rgba(255,255,255,.05); color:var(--tz-muted); border:1px solid var(--tz-line); }
 
+  /* ════════════════ Content Trust layer ════════════════ */
+  .tz__badge-row { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 4px; }
+  .tz__badge { display:inline-flex; align-items:center; gap:7px; font-family:var(--tz-mono); font-size:10.5px; letter-spacing:.04em; font-weight:600; padding:5px 11px; border-radius:999px; white-space:nowrap; }
+  .tz__badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.9; flex:none; }
+  .tz__badge--amber { color:var(--tz-gold); background:rgba(212,175,106,.10); border:1px solid rgba(212,175,106,.32); }
+  .tz__badge--rose  { color:#e6a3a0; background:rgba(214,120,116,.10); border:1px solid rgba(214,120,116,.34); }
+  .tz__badge--emer  { color:var(--tz-emer); background:rgba(43,183,137,.10); border:1px solid rgba(43,183,137,.32); }
+
+  /* Trust banner (Content Trust System) */
+  .tz__trustbanner { border:1px solid rgba(212,175,106,.28); border-radius:20px; padding:clamp(24px,4vw,38px);
+    background:linear-gradient(180deg, rgba(212,175,106,.06), rgba(255,255,255,.015)); position:relative; overflow:hidden; }
+  .tz__trustbanner::after { content:""; position:absolute; top:-30px; right:-10px; width:180px; height:180px; background-image:var(--tz-star); background-size:100px 100px; opacity:.25; pointer-events:none; }
+  .tz__trustbanner p { color:var(--tz-text); }
+  .tz__trustbanner .tz__tb-lead { font-family:var(--tz-serif); font-size:clamp(17px,2.1vw,22px); color:#fff; line-height:1.5; margin:14px 0 12px; max-width:60ch; }
+  .tz__trustbanner .tz__tb-line { color:var(--tz-cream); font-size:14.5px; max-width:62ch; }
+  .tz__trustbanner .tz__tb-line b { color:var(--tz-gold); font-weight:700; }
+
+  /* Scholar review workflow visual */
+  .tz__flow { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; align-items:stretch; }
+  .tz__flow-step { flex:1 1 150px; min-width:150px; position:relative; background:var(--tz-card); border:1px solid var(--tz-line); border-radius:14px; padding:18px 16px; }
+  .tz__flow-step .tz__flow-n { font-family:var(--tz-mono); font-size:11px; color:var(--tz-gold); }
+  .tz__flow-step h4 { font-family:var(--tz-serif); font-size:16px; color:#fff; margin:3px 0 5px; }
+  .tz__flow-step p { font-size:12px; color:var(--tz-muted); margin:0; }
+  .tz__flow-step--sensitive { border-color:rgba(214,120,116,.34); background:rgba(214,120,116,.05); }
+  .tz__flow-step--final { border-color:rgba(43,183,137,.34); background:rgba(43,183,137,.05); }
+  .tz__flow-step:not(:last-child)::after { content:"→"; position:absolute; right:-12px; top:50%; transform:translateY(-50%); color:var(--tz-muted); font-size:14px; z-index:1; }
+  @media (max-width:760px){ .tz__flow-step:not(:last-child)::after { content:"↓"; right:auto; left:50%; top:auto; bottom:-13px; transform:translateX(-50%); } }
+
+  /* Before Public Launch checklist */
+  .tz__checklist { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:24px; }
+  .tz__check-item { display:grid; grid-template-columns:26px 1fr; gap:12px; align-items:start; padding:14px 16px; background:var(--tz-card); border:1px solid var(--tz-line); border-radius:12px; }
+  .tz__check-item .tz__check-box { width:24px; height:24px; border-radius:7px; border:1.5px solid var(--tz-muted); display:grid; place-items:center; color:var(--tz-muted); font-size:13px; flex:none; }
+  .tz__check-item p { margin:0; font-size:14px; color:var(--tz-text); }
+  .tz__check-item .tz__check-pending { font-family:var(--tz-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--tz-gold); display:block; margin-top:4px; }
+
+  /* Sensitive content safety note */
+  .tz__safety { display:flex; gap:14px; align-items:flex-start; border:1px solid rgba(94,147,179,.30); border-radius:14px; padding:16px 18px; background:rgba(94,147,179,.06); margin-top:18px; }
+  .tz__safety svg { flex:none; margin-top:1px; }
+  .tz__safety p { margin:0; font-size:13.5px; color:var(--tz-cream); line-height:1.6; }
+  .tz__safety b { color:#fff; }
+
   /* Responsive */
   @media (max-width: 980px) {
     .tz__grid--4 { grid-template-columns:repeat(2,1fr); }
@@ -309,6 +352,7 @@
     .tz__nafs { grid-template-columns:1fr; }
     .tz__names { grid-template-columns:1fr; }
     .tz__days { grid-template-columns:1fr; }
+    .tz__checklist { grid-template-columns:1fr; }
   }
   @media (max-width: 620px) {
     .tz__grid--4, .tz__grid--3 { grid-template-columns:1fr; }
@@ -345,6 +389,38 @@
         <b>A gentle note:</b> this is a guided reflection tool inspired by Qur'anic themes —
         not tafsir, not a fatwa, not therapy or diagnosis.
       </p>
+    </div>
+  </section>
+
+  {# ═══════════ CONTENT TRUST SYSTEM ═══════════ #}
+  <section class="tz__section" id="content-trust">
+    <div class="tz__wrap">
+      <span class="tz__divider tz-reveal">Content Trust System</span>
+      <div class="tz__trustbanner tz-reveal" data-d="2">
+        <div class="tz__badge-row">
+          {% for b in trust.badges %}<span class="tz__badge tz__badge--{{ b.tone }}">{{ b.label }}</span>{% endfor %}
+        </div>
+        <p class="tz__tb-lead">
+          Tazkiyah 114 is currently a preview prototype. The reflections shown here are inspired by
+          Qur'anic themes and are not a replacement for tafsir, qualified scholarship, therapy,
+          medical care, or legal fatwa.
+        </p>
+        <p class="tz__tb-line">
+          <b>Every future pathway should pass through source checks, tafsir references, qualified
+          scholar review, and wellbeing review where sensitive.</b>
+        </p>
+        <div class="tz__safety" style="margin-top:20px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3l8 4v5c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V7l8-4z" stroke="var(--tz-blue)" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M12 8v5M12 16h.01" stroke="var(--tz-blue)" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <p>
+            <b>A note on sensitive content.</b> If you are in immediate danger, feel unsafe, or may
+            harm yourself or someone else, seek urgent local emergency or professional support.
+            This tool is for guided reflection only.
+          </p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -410,6 +486,11 @@
   <section class="tz__section tz__section--alt" id="map">
     <div class="tz__wrap">
       <span class="tz__divider tz-reveal">The whole Book, one map</span>
+      <div class="tz__badge-row tz-reveal">
+        <span class="tz__badge tz__badge--amber">Preview Prototype</span>
+        <span class="tz__badge tz__badge--amber">Source Needed</span>
+        <span class="tz__badge tz__badge--amber">Scholar Review Pending</span>
+      </div>
       <h2 class="tz__h tz-reveal">The 114 Surah Map.</h2>
       <p class="tz__lead tz-reveal" data-d="2">
         Every surah, one thematic doorway. Cards marked <b style="color:var(--tz-emer)">Deep card</b>
@@ -462,6 +543,11 @@
             <div class="tz__fnum">Surah {{ f.num }} · {{ f.pathway_name }}</div>
             <h3>{{ f.name }}</h3>
             <div class="tz__fmean">{{ f.meaning }}</div>
+            <div class="tz__badge-row" style="margin-top:10px">
+              <span class="tz__badge tz__badge--amber">Reflection Draft</span>
+              <span class="tz__badge tz__badge--amber">Translation Pending</span>
+              <span class="tz__badge tz__badge--amber">Scholar Review Pending</span>
+            </div>
           </div>
           <div class="tz__farab" lang="ar" dir="rtl">{{ f.arabic }}</div>
         </div>
@@ -517,6 +603,11 @@
   <section class="tz__section tz__section--alt" id="repair-engine">
     <div class="tz__wrap" style="text-align:center">
       <span class="tz__divider tz-reveal" style="justify-content:center">Qur'an Repair Engine</span>
+      <div class="tz__badge-row tz-reveal" style="justify-content:center">
+        <span class="tz__badge tz__badge--amber">Reflection Draft</span>
+        <span class="tz__badge tz__badge--amber">Source Needed</span>
+        <span class="tz__badge tz__badge--amber">Scholar Review Pending</span>
+      </div>
       <h2 class="tz__h tz-reveal" style="margin-left:auto;margin-right:auto">Name the wound. Receive one ayah, one repair.</h2>
       <p class="tz__lead tz-reveal" data-d="2" style="margin:0 auto">
         Choose what you are feeling right now. The engine offers one verse, one reflection, one action
@@ -550,6 +641,10 @@
   <section class="tz__section tz__section--motif" id="crisis">
     <div class="tz__wrap" style="text-align:center">
       <span class="tz__divider tz-reveal" style="justify-content:center">Life Crisis Mode</span>
+      <div class="tz__badge-row tz-reveal" style="justify-content:center">
+        <span class="tz__badge tz__badge--amber">Preview Prototype</span>
+        <span class="tz__badge tz__badge--rose">Wellbeing Review Required</span>
+      </div>
       <h2 class="tz__h tz-reveal" style="margin-left:auto;margin-right:auto">When it is heavy right now.</h2>
       <p class="tz__lead tz-reveal" data-d="2" style="margin:0 auto">
         A calm anchor for a hard moment — a verse to hold, a dua to say, and the next small step.
@@ -576,6 +671,11 @@
   <section class="tz__section" id="nafs">
     <div class="tz__wrap">
       <span class="tz__divider tz-reveal">The states of the self</span>
+      <div class="tz__badge-row tz-reveal">
+        <span class="tz__badge tz__badge--amber">Reflection Draft</span>
+        <span class="tz__badge tz__badge--amber">Tafsir Pending</span>
+        <span class="tz__badge tz__badge--amber">Scholar Review Pending</span>
+      </div>
       <h2 class="tz__h tz-reveal">Nafs patterns.</h2>
       <p class="tz__lead tz-reveal" data-d="2">
         A classical lens from the scholars of tazkiyah — three states of the self named in the Qur'an.
@@ -600,6 +700,11 @@
   <section class="tz__section tz__section--alt" id="names">
     <div class="tz__wrap">
       <span class="tz__divider tz-reveal">Call on Him by His names</span>
+      <div class="tz__badge-row tz-reveal">
+        <span class="tz__badge tz__badge--amber">Reflection Draft</span>
+        <span class="tz__badge tz__badge--amber">Source Needed</span>
+        <span class="tz__badge tz__badge--amber">Scholar Review Pending</span>
+      </div>
       <h2 class="tz__h tz-reveal">99 Names pathways.</h2>
       <p class="tz__lead tz-reveal" data-d="2">
         “To Allah belong the most beautiful names, so call upon Him by them” (Al-A'raf 7:180). A
@@ -626,6 +731,11 @@
   <section class="tz__section" id="plans">
     <div class="tz__wrap">
       <span class="tz__divider tz-reveal">A week at a time</span>
+      <div class="tz__badge-row tz-reveal">
+        <span class="tz__badge tz__badge--amber">Reflection Draft</span>
+        <span class="tz__badge tz__badge--amber">Scholar Review Pending</span>
+        <span class="tz__badge tz__badge--rose">Wellbeing Review Required</span>
+      </div>
       <h2 class="tz__h tz-reveal">7-day repair plans.</h2>
       <p class="tz__lead tz-reveal" data-d="2" style="margin-bottom:8px">
         Small, daily, doable. Pick a plan and take one step a day — Read, Reflect, Act, Make Dua.
@@ -765,15 +875,40 @@
         {% endfor %}
       </div>
 
-      <div class="tz__trust-grid tz-reveal" data-d="2" style="margin-top:24px">
+      {# Scholar review workflow visual #}
+      <div class="tz__divider tz-reveal" data-d="2" style="margin-top:40px">The review workflow</div>
+      <div class="tz__flow tz-reveal" data-d="2">
+        {% for step in trust.workflow %}
+        <div class="tz__flow-step{% if step.key == 'wellbeing' %} tz__flow-step--sensitive{% elif step.key == 'publish' %} tz__flow-step--final{% endif %}">
+          <div class="tz__flow-n">{{ forloop.counter|stringformat:"02d" }}</div>
+          <h4>{{ step.label }}{% if step.key == 'wellbeing' %} *{% endif %}</h4>
+          <p>{{ step.note }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="tz__save-note tz-reveal" style="margin-top:12px">* Wellbeing / safeguarding review is required for sensitive topics (crisis, sin, grief, mental health, money desperation) before they become publishable.</p>
+
+      {# Before Public Launch checklist #}
+      <div class="tz__divider tz-reveal" data-d="2" style="margin-top:40px">Before Public Launch</div>
+      <p class="tz__lead tz-reveal" data-d="2" style="margin-bottom:0">Nothing here is publishable for educational use until all of the following are complete:</p>
+      <div class="tz__checklist tz-reveal" data-d="2">
+        {% for item in trust.launch_checklist %}
+        <div class="tz__check-item">
+          <span class="tz__check-box" aria-hidden="true">○</span>
+          <p>{{ item }}<span class="tz__check-pending">Pending</span></p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="tz__trust-grid tz-reveal" data-d="2" style="margin-top:34px">
         <div class="tz__trust-item">
           <h4>Reflection, not tafsir</h4>
           <p>We say “reflection inspired by Qur'anic themes”, never “this surah means exactly…”. Authoritative meaning belongs to qualified scholarship.</p>
         </div>
         <div class="tz__trust-item">
           <h4>Scholar-reviewed content</h4>
-          <p>Featured reflections and the nafs / 99 Names framing are drafted and being prepared for review.</p>
-          <span class="tz__placeholder">Scholar review — in progress</span>
+          <p>Featured reflections and the nafs / 99 Names framing are drafted and pending review — not yet scholar-approved.</p>
+          <span class="tz__placeholder">Scholar review — pending</span>
         </div>
       </div>
 

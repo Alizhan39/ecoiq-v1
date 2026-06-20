@@ -1745,6 +1745,50 @@ def tazkiyah(request):
         {"key": "journal", "label": "I wrote one journal note", "hint": "A sentence to your future self."},
     ]
 
+    # ── Content Trust layer (static / context-based; no DB model yet) ─────
+    # Placeholder source/review status for the whole prototype. These describe
+    # the CURRENT state of the content honestly — it is a preview, pending
+    # sources, tafsir references, scholar review, and wellbeing review where
+    # sensitive. Nothing here is presented as scholar-approved.
+    trust = {
+        "content_status": "preview_prototype",
+        "source_status": "source_needed",
+        "translation_status": "translation_pending",
+        "tafsir_status": "tafsir_pending",
+        "scholar_review_status": "scholar_review_pending",
+        "wellbeing_review_required": True,
+        # The six steps of the review workflow shown as a calm visual.
+        "workflow": [
+            {"key": "draft", "label": "Draft Reflection", "note": "Authored; inspired by Qur'anic themes."},
+            {"key": "source", "label": "Source Added", "note": "Verified translation source attached."},
+            {"key": "tafsir", "label": "Tafsir Referenced", "note": "Tafsir references cited."},
+            {"key": "scholar", "label": "Scholar Review", "note": "Reviewed by a qualified scholar."},
+            {"key": "wellbeing", "label": "Wellbeing Review", "note": "For sensitive topics, a safeguarding check."},
+            {"key": "publish", "label": "Publishable", "note": "Cleared for public educational use."},
+        ],
+        # Pre-launch checklist (display only).
+        "launch_checklist": [
+            "Verified Qur'an translation source selected",
+            "Tafsir references added",
+            "Scholar review completed",
+            "Sensitive topics reviewed by wellbeing/safeguarding advisor",
+            "Crisis guidance checked for safety",
+            "Journal/tracker privacy reviewed",
+            "Content versioning added",
+            "Clear source citations visible to users",
+        ],
+        # Badge catalogue used across the page (label + tone).
+        "badges": [
+            {"key": "preview",     "label": "Preview Prototype",       "tone": "amber"},
+            {"key": "draft",       "label": "Reflection Draft",        "tone": "amber"},
+            {"key": "source",      "label": "Source Needed",           "tone": "amber"},
+            {"key": "translation", "label": "Translation Pending",     "tone": "amber"},
+            {"key": "tafsir",      "label": "Tafsir Pending",          "tone": "amber"},
+            {"key": "scholar",     "label": "Scholar Review Pending",  "tone": "amber"},
+            {"key": "wellbeing",   "label": "Wellbeing Review Required", "tone": "rose"},
+        ],
+    }
+
     ctx = {
         "surahs_all": surahs_all,
         "pathways": pathways,
@@ -1758,6 +1802,7 @@ def tazkiyah(request):
         "plans": plans,
         "review_status": review_status,
         "tracker": tracker,
+        "trust": trust,
     }
     return render(request, "tazkiyah.html", ctx)
 
