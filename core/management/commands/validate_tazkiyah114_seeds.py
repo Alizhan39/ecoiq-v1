@@ -52,6 +52,107 @@ REQUIRED_STATUS = {
 
 SAFETY_PHRASE = "reflection inspired by qur'anic themes"
 
+# Pathway mapping (product navigation metadata, not tafsir).
+DEFAULT_PATHWAYS_PATH = (
+    Path(__file__).resolve().parents[3] / "content" / "tazkiyah114" / "pathways.json"
+)
+PATHWAY_FIELDS = [
+    "id",
+    "title",
+    "short_description",
+    "related_struggle_ids",
+    "suggested_surah_numbers",
+    "caution_note",
+    "status",
+    "scholar_review",
+]
+PATHWAY_HUMBLE = "suggested pathway inspired by qur'anic themes"
+
+
+def validate_pathways(path=DEFAULT_PATHWAYS_PATH):
+    """Validate the pathway mapping file. Returns a list of error strings."""
+    errors = []
+    path = Path(path)
+
+    # JSON parses cleanly.
+    if not path.exists():
+        return [f"Pathways file not found: {path}"]
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [f"JSON does not parse: {exc}"]
+
+    struggles = data.get("struggles")
+    pathways = data.get("pathways")
+    if not isinstance(struggles, list) or not struggles:
+        errors.append("'struggles' must be a non-empty list.")
+        struggles = []
+    if not isinstance(pathways, list) or not pathways:
+        return errors + ["'pathways' must be a non-empty list."]
+
+    # Struggle ids.
+    struggle_ids = set()
+    for st in struggles:
+        if not isinstance(st, dict) or not st.get("id") or not st.get("label"):
+            errors.append(f"Struggle entry missing id/label: {st!r}.")
+        else:
+            struggle_ids.add(st["id"])
+
+    referenced = set()
+    for p in pathways:
+        pid = p.get("id", "<no id>") if isinstance(p, dict) else "<not an object>"
+        if not isinstance(p, dict):
+            errors.append(f"Pathway is not an object: {p!r}.")
+            continue
+        # Required fields present.
+        for field in PATHWAY_FIELDS:
+            if field not in p:
+                errors.append(f"Pathway '{pid}': missing field '{field}'.")
+        # No pathway is empty (must suggest at least one surah).
+        nums = p.get("suggested_surah_numbers")
+        if not isinstance(nums, list) or not nums:
+            errors.append(f"Pathway '{pid}': suggested_surah_numbers must be a non-empty list.")
+            nums = []
+        # All suggested surah numbers exist in 1-114.
+        for n in nums:
+            if not isinstance(n, int) or not (1 <= n <= 114):
+                errors.append(f"Pathway '{pid}': suggested surah {n!r} is not in 1-114.")
+        # Caution note present and non-empty.
+        cn = p.get("caution_note")
+        if not isinstance(cn, str) or not cn.strip():
+            errors.append(f"Pathway '{pid}': missing caution_note.")
+        # Statuses are draft/pending.
+        if p.get("status") != "draft_pathway":
+            errors.append(f"Pathway '{pid}': status must be 'draft_pathway', got {p.get('status')!r}.")
+        if p.get("scholar_review") != "pending":
+            errors.append(f"Pathway '{pid}': scholar_review must be 'pending', got {p.get('scholar_review')!r}.")
+        # Humble framing on every pathway.
+        desc = str(p.get("short_description", "")).lower()
+        if PATHWAY_HUMBLE not in desc:
+            errors.append(f"Pathway '{pid}': short_description must include '{PATHWAY_HUMBLE}'.")
+        # related_struggle_ids reference real struggles.
+        rels = p.get("related_struggle_ids") or []
+        if not isinstance(rels, list):
+            errors.append(f"Pathway '{pid}': related_struggle_ids must be a list.")
+            rels = []
+        for sid in rels:
+            referenced.add(sid)
+            if struggle_ids and sid not in struggle_ids:
+                errors.append(f"Pathway '{pid}': related struggle id '{sid}' is not defined.")
+
+    # Every defined struggle is referenced by at least one pathway.
+    for sid in sorted(struggle_ids - referenced):
+        errors.append(f"Struggle '{sid}' is not referenced by any pathway.")
+
+    # Non-authoritative.
+    meta = data.get("_meta", {})
+    if meta.get("authoritative") is not False:
+        errors.append("_meta.authoritative must be false.")
+    if PATHWAY_HUMBLE not in str(meta.get("notice", "")).lower():
+        errors.append(f"_meta.notice must include the humble framing '{PATHWAY_HUMBLE}'.")
+
+    return errors
+
 
 def validate_seeds(path=DEFAULT_SEED_PATH):
     """Return a list of error strings. Empty list means the dataset is valid."""
