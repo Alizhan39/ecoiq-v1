@@ -121,6 +121,9 @@ urlpatterns = [
     # Tazkiyah 114 — STAFF-ONLY Qur'an Repair Engine architecture preview (read-only, not public)
     path('tazkiyah-114-repair-engine-preview/', views.tazkiyah_repair_engine_preview, name='tazkiyah_repair_engine_preview'),
 
+    # Tazkiyah 114 — STAFF-ONLY internal dashboard linking all preview tools (not public)
+    path('tazkiyah-114-dashboard/', views.tazkiyah_dashboard, name='tazkiyah_dashboard'),
+
     # EcoIQ Video Studio — staff-only video workflow (rendering is offline/build-time)
     path('video-studio/', views.video_studio, name='video_studio'),
 
