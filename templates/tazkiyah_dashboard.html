@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tazkiyah 114 — Internal Dashboard (staff){% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Staff-only Tazkiyah 114 internal dashboard — scoped under .tzdb */
+  .tzdb {
+    width:100vw; position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw;
+    margin-top:-2rem; margin-bottom:-2rem;
+    --ink:#050d1e; --navy:#0a1832; --navy2:#0e2142; --cream:#f4ecd8; --gold:#d4af6a;
+    --emer:#2bb789; --rose:#d67874; --blue:#5e93b3; --text:#dde5f2; --muted:#92a3bf;
+    --line:rgba(255,255,255,.09); --card:rgba(255,255,255,.035);
+    --serif:"Cormorant Garamond",Georgia,serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+    background:var(--ink); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.55; min-height:100vh; padding:0 0 80px;
+  }
+  .tzdb * { box-sizing:border-box; }
+  .tzdb__wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+
+  .tzdb__warn { background:rgba(214,120,116,.10); border:1px solid rgba(214,120,116,.4); border-radius:14px;
+    padding:18px 22px; margin:28px 0 16px; color:var(--cream); font-size:14px; }
+  .tzdb__warn b { color:#fff; }
+  .tzdb__warn .tag { display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--rose); border:1px solid rgba(214,120,116,.5); border-radius:6px; padding:3px 8px; margin-bottom:8px; }
+  .tzdb__valid { border-radius:12px; padding:12px 18px; margin-bottom:22px; font-size:13.5px; font-family:var(--mono); }
+  .tzdb__valid--ok { background:rgba(43,183,137,.10); border:1px solid rgba(43,183,137,.4); color:var(--emer); }
+  .tzdb__valid--bad { background:rgba(214,120,116,.12); border:1px solid rgba(214,120,116,.5); color:var(--rose); }
+  .tzdb__valid ul { margin:6px 0 0 18px; }
+
+  .tzdb__h { font-family:var(--serif); font-size:clamp(28px,4vw,44px); color:#fff; margin:26px 0 4px; font-weight:600; }
+  .tzdb__sub { color:var(--muted); font-size:14px; font-family:var(--mono); margin-bottom:24px; }
+
+  /* Stats */
+  .tzdb__stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+  .tzdb__stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .tzdb__stat b { display:block; font-family:var(--serif); font-size:30px; color:var(--gold); line-height:1; }
+  .tzdb__stat span { font-size:11.5px; color:var(--muted); font-family:var(--mono); letter-spacing:.04em; }
+  .tzdb__labels { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:28px; }
+  .tzdb__label { font-family:var(--mono); font-size:9.5px; letter-spacing:.04em; text-transform:uppercase; font-weight:600;
+    padding:4px 9px; border-radius:999px; color:var(--gold); background:rgba(212,175,106,.10); border:1px solid rgba(212,175,106,.32); }
+  .tzdb__label--rose { color:var(--rose); background:rgba(214,120,116,.10); border-color:rgba(214,120,116,.34); }
+
+  /* Tool cards */
+  .tzdb__grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .tzdb__card { display:block; text-decoration:none; background:linear-gradient(180deg,var(--navy2),rgba(10,24,50,.4));
+    border:1px solid var(--line); border-radius:16px; padding:22px 24px; transition:transform .25s,border-color .25s,background .25s; }
+  .tzdb__card:hover { transform:translateY(-3px); border-color:rgba(212,175,106,.45); background:rgba(212,175,106,.05); }
+  .tzdb__cnum { font-family:var(--mono); font-size:11px; color:var(--gold); }
+  .tzdb__ctitle { font-family:var(--serif); font-size:23px; color:#fff; margin:3px 0 6px; }
+  .tzdb__cdesc { font-size:13.5px; color:var(--muted); margin:0 0 14px; }
+  .tzdb__curl { font-family:var(--mono); font-size:11.5px; color:var(--blue); }
+  .tzdb__open { float:right; font-family:var(--mono); font-size:11px; color:var(--emer); }
+
+  @media (max-width:820px){ .tzdb__stats{grid-template-columns:repeat(2,1fr);} .tzdb__grid{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tzdb" id="tzdb">
+  <div class="tzdb__wrap">
+
+    <div class="tzdb__warn">
+      <span class="tag">Internal · staff only</span><br>
+      <b>Internal preview only.</b> Not tafsir, not fatwa, not final translation. Scholar review required
+      before publication. All content here is draft and non-authoritative.
+    </div>
+
+    {% if validation_ok %}
+    <div class="tzdb__valid tzdb__valid--ok">✓ Seed + pathway + repair-engine validation passed — non-authoritative draft content.</div>
+    {% else %}
+    <div class="tzdb__valid tzdb__valid--bad">✗ Validation found {{ validation_errors|length }} issue(s):
+      <ul>{% for e in validation_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <h1 class="tzdb__h">Tazkiyah 114 — Internal Dashboard</h1>
+    <div class="tzdb__sub">One private hub for all internal preview tools.</div>
+
+    <div class="tzdb__stats">
+      <div class="tzdb__stat"><b>{{ stats.surahs }}</b><span>surahs</span></div>
+      <div class="tzdb__stat"><b>{{ stats.pathways }}</b><span>pathways</span></div>
+      <div class="tzdb__stat"><b>{{ stats.struggles }}</b><span>struggles</span></div>
+      <div class="tzdb__stat"><b>{{ stats.heart_wounds }}</b><span>heart wounds</span></div>
+    </div>
+    <div class="tzdb__stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+      <div class="tzdb__stat"><b>{{ stats.tools }}</b><span>internal preview tools</span></div>
+    </div>
+    <div class="tzdb__labels">
+      <span class="tzdb__label tzdb__label--rose">all draft / non-authoritative</span>
+      <span class="tzdb__label">scholar review pending</span>
+      <span class="tzdb__label tzdb__label--rose">not tafsir</span>
+      <span class="tzdb__label tzdb__label--rose">not fatwa</span>
+    </div>
+
+    <div class="tzdb__grid">
+      {% for t in tools %}
+      <a class="tzdb__card" href="{% url t.url %}">
+        <span class="tzdb__open">open →</span>
+        <div class="tzdb__cnum">Tool {{ forloop.counter }}</div>
+        <div class="tzdb__ctitle">{{ t.title }}</div>
+        <p class="tzdb__cdesc">{{ t.desc }}</p>
+        <div class="tzdb__curl">{% url t.url %}</div>
+      </a>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

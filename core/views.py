@@ -2442,6 +2442,60 @@ def tazkiyah_repair_engine_preview(request):
 
 
 @staff_member_required(login_url='/login/')
+def tazkiyah_dashboard(request):
+    """
+    /tazkiyah-114-dashboard/ — STAFF-ONLY internal hub linking every Tazkiyah
+    114 preview tool in one place, with summary stats.
+
+    Read-only: runs the three validators (so the dashboard reflects current
+    data health) and derives counts from the seed/pathway/repair-engine files.
+    No models, no persistence, not public, not in nav.
+    """
+    from core.management.commands.validate_tazkiyah114_seeds import (
+        validate_seeds, validate_pathways, validate_repair_engine,
+        DEFAULT_SEED_PATH, DEFAULT_PATHWAYS_PATH, DEFAULT_REPAIR_ENGINE_PATH,
+    )
+    errors = validate_seeds() + validate_pathways() + validate_repair_engine()
+
+    def _safe_load(path):
+        try:
+            return _json.loads(path.read_text(encoding='utf-8'))
+        except Exception:
+            return {}
+
+    seeds = _safe_load(DEFAULT_SEED_PATH)
+    paths = _safe_load(DEFAULT_PATHWAYS_PATH)
+    engine = _safe_load(DEFAULT_REPAIR_ENGINE_PATH)
+
+    tools = [
+        {'title': 'Surah Seed Preview', 'url': 'tazkiyah_preview',
+         'desc': 'Review all 114 Surah cards and safety flags.'},
+        {'title': 'Choose Your Struggle Preview', 'url': 'tazkiyah_struggles_preview',
+         'desc': 'Test struggle → pathway → suggested surahs.'},
+        {'title': 'Daily Tazkiyah Tracker Preview', 'url': 'tazkiyah_daily_preview',
+         'desc': 'Test Read → Reflect → Act → Make Dua → Journal loop.'},
+        {'title': 'Qur’an Repair Engine Preview', 'url': 'tazkiyah_repair_engine_preview',
+         'desc': 'Test Struggle → Heart Wound → False Belief → Repair Action journey.'},
+    ]
+
+    stats = {
+        'surahs': len(seeds.get('surahs', [])),
+        'pathways': len(paths.get('pathways', [])),
+        'struggles': len(paths.get('struggles', [])),
+        'heart_wounds': len(engine.get('heart_wounds', [])),
+        'tools': len(tools),
+    }
+
+    ctx = {
+        'tools': tools,
+        'stats': stats,
+        'validation_ok': not errors,
+        'validation_errors': errors,
+    }
+    return render(request, 'tazkiyah_dashboard.html', ctx)
+
+
+@staff_member_required(login_url='/login/')
 def video_studio(request):
     """
     /video-studio/ — Staff-only video workflow surface.
