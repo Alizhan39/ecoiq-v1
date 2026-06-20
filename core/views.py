@@ -1238,6 +1238,20 @@ def khalifa_tours_impact(request):
     return render(request, 'khalifa_tours_impact.html', {'props': props})
 
 
+def tazkiyah_landing(request):
+    """
+    /tazkiyah-114/ (and /surah-map/) — PUBLIC concept/marketing landing page for
+    Tazkiyah 114.
+
+    Marketing only: explains the product vision and invites a Request Access /
+    waitlist action. Deliberately loads NO seed/pathway/repair-engine data, so
+    no draft Surah content, reflections, ayah text, tafsir, or fatwa is exposed
+    publicly. All detailed previews remain staff-only. Pure presentation; no
+    AI/API calls; safe to serve publicly and to index.
+    """
+    return render(request, 'tazkiyah_landing.html')
+
+
 def tazkiyah(request):
     """
     /tazkiyah/ — Tazkiyah 114 · The Surah Map.

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tazkiyah 114 — The Surah Map | EcoIQ{% endblock %}
+{% block meta_description_content %}Tazkiyah 114 explores all 114 Surahs of the Qur'an as pathways for repairing the heart, restoring purpose, and aligning daily life with Qur'anic guidance. Reflection inspired by Qur'anic themes — scholar review required before public religious guidance.{% endblock %}
+{% block og_title %}Tazkiyah 114 — The Surah Map{% endblock %}
+{% block og_description %}114 Surahs → 114 life pathways. Start from your struggle, reflect, act, make dua, and build consistency. Concept preview — scholar review required.{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Tazkiyah 114 — PUBLIC landing (marketing only). Scoped under .tzl.
+     Loads no draft Surah content. Palette: navy · emerald · soft gold · cream. */
+  .tzl {
+    width:100vw; position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw;
+    margin-top:-2rem; margin-bottom:-2rem;
+    --ink:#050d1e; --navy:#0a1832; --navy2:#0e2142; --cream:#f4ecd8; --gold:#d4af6a; --gold-d:#b8923f;
+    --emer:#2bb789; --blue:#5e93b3; --text:#dde5f2; --muted:#92a3bf; --line:rgba(255,255,255,.09); --card:rgba(255,255,255,.035);
+    --serif:"Cormorant Garamond",Georgia,serif; --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+    --star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23d4af6a' stroke-opacity='0.13' stroke-width='1'%3E%3Crect x='32' y='32' width='56' height='56'/%3E%3Crect x='32' y='32' width='56' height='56' transform='rotate(45 60 60)'/%3E%3Ccircle cx='60' cy='60' r='28'/%3E%3C/g%3E%3C/svg%3E");
+    background:var(--ink); color:var(--text); font-family:var(--sans); line-height:1.65; overflow-x:hidden;
+  }
+  .tzl * { box-sizing:border-box; }
+  .tzl__wrap { max-width:1140px; margin:0 auto; padding:0 24px; }
+  .tzl h1,.tzl h2,.tzl h3 { font-family:var(--serif); font-weight:600; letter-spacing:-.01em; }
+  .tzl__eyebrow { font-size:12px; letter-spacing:.26em; text-transform:uppercase; color:var(--gold); font-weight:700; margin:0 0 16px; font-family:var(--sans); }
+  .tzl h2.tzl__h { font-size:clamp(26px,3.6vw,42px); line-height:1.08; color:#fff; margin:0 0 14px; }
+  .tzl__lead { font-size:clamp(16px,1.6vw,19px); color:var(--muted); max-width:62ch; }
+  .tzl__section { padding:clamp(56px,8vw,108px) 0; position:relative; }
+  .tzl__section--alt { background:linear-gradient(180deg,var(--navy) 0%,var(--ink) 100%); }
+  .tzl__section--motif::before { content:""; position:absolute; inset:0; background-image:var(--star); background-size:120px 120px; opacity:.5; pointer-events:none; }
+  .tzl__section > .tzl__wrap { position:relative; z-index:1; }
+  .tzl__divider { display:inline-flex; align-items:center; gap:12px; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:20px; font-family:var(--mono); }
+  .tzl__divider::before { content:""; width:26px; height:1px; background:var(--gold); }
+
+  .tzl__cta-row { display:flex; flex-wrap:wrap; gap:14px; margin-top:30px; }
+  .tzl__btn { display:inline-flex; align-items:center; gap:9px; padding:14px 26px; border-radius:999px; font-size:14.5px; font-weight:700; text-decoration:none; cursor:pointer; border:1px solid transparent; transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,background .3s,border-color .3s; font-family:var(--sans); }
+  .tzl__btn--gold { background:linear-gradient(120deg,var(--gold),var(--gold-d)); color:#2a1f08; box-shadow:0 12px 40px -14px rgba(212,175,106,.6); }
+  .tzl__btn--gold:hover { transform:translateY(-3px); box-shadow:0 18px 50px -14px rgba(212,175,106,.7); }
+  .tzl__btn--ghost { background:rgba(255,255,255,.04); color:#fff; border-color:var(--line); }
+  .tzl__btn--ghost:hover { transform:translateY(-3px); border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.08); }
+
+  /* Hero */
+  .tzl__hero { position:relative; min-height:82vh; display:flex; align-items:center; overflow:hidden; padding:120px 0 70px;
+    background:radial-gradient(120% 90% at 50% 0%,var(--navy2) 0%,var(--navy) 45%,var(--ink) 100%); }
+  .tzl__hero-motif { position:absolute; inset:0; background-image:var(--star); background-size:140px 140px; opacity:.5; pointer-events:none;
+    -webkit-mask-image:radial-gradient(120% 80% at 50% 30%,#000 0%,transparent 75%); mask-image:radial-gradient(120% 80% at 50% 30%,#000 0%,transparent 75%); }
+  .tzl__hero-glow { position:absolute; inset:0; pointer-events:none; background:radial-gradient(50% 40% at 18% 22%,rgba(212,175,106,.13) 0%,transparent 60%),radial-gradient(45% 40% at 84% 78%,rgba(43,183,137,.13) 0%,transparent 60%); }
+  .tzl__hero-inner { position:relative; z-index:2; }
+  .tzl__hero-brand { font-family:var(--mono); font-size:12px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+  .tzl__hero h1 { font-size:clamp(38px,6.4vw,80px); line-height:1.02; color:#fff; margin:18px 0 18px; max-width:18ch; }
+  .tzl__hero h1 em { font-style:italic; color:var(--gold); }
+  .tzl__hero-sub { font-size:clamp(16px,1.9vw,21px); color:var(--cream); max-width:62ch; opacity:.92; }
+  .tzl__hero-note { margin-top:26px; font-size:12.5px; color:var(--muted); max-width:60ch; }
+
+  /* Core idea */
+  .tzl__big { font-family:var(--serif); font-size:clamp(28px,4.4vw,52px); color:#fff; margin:0 0 18px; }
+  .tzl__big span { color:var(--gold); }
+  .tzl__flow { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+  .tzl__flow span { font-size:14px; padding:9px 18px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--cream); }
+  .tzl__flow b { color:var(--gold); margin:0 4px; }
+
+  /* Chips / cards grids */
+  .tzl__chips { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+  .tzl__chip { padding:13px 20px; border-radius:14px; background:var(--card); border:1px solid var(--line); color:#e7f1ec; font-weight:600; font-size:14.5px; }
+  .tzl__note { margin-top:18px; font-size:12.5px; color:var(--muted); font-family:var(--mono); }
+  .tzl__grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:30px; }
+  .tzl__mcard { background:linear-gradient(180deg,var(--navy2),rgba(10,24,50,.4)); border:1px solid var(--line); border-radius:16px; padding:24px 24px; }
+  .tzl__mcard h3 { font-size:21px; color:#fff; margin:0 0 8px; }
+  .tzl__mcard p { font-size:13.5px; color:var(--muted); margin:0; }
+
+  /* Daily loop */
+  .tzl__loop { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:8px; }
+  .tzl__loop span { font-family:var(--serif); font-size:clamp(18px,2.6vw,26px); color:var(--cream); }
+  .tzl__loop b { color:var(--gold); font-family:var(--sans); font-size:18px; }
+
+  /* Trust */
+  .tzl__trust-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:24px; }
+  .tzl__trust-item { display:flex; gap:12px; align-items:flex-start; padding:16px 18px; background:var(--card); border:1px solid var(--line); border-radius:12px; font-size:14px; color:var(--text); }
+  .tzl__trust-item::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--emer); margin-top:7px; flex:none; }
+  .tzl__disclaimer { margin-top:22px; padding:16px 20px; border:1px dashed var(--line); border-radius:14px; font-size:13px; color:var(--muted); background:rgba(255,255,255,.02); }
+  .tzl__disclaimer b { color:var(--cream); }
+
+  /* Coming soon */
+  .tzl__soon { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+  .tzl__soon span { font-family:var(--mono); font-size:12.5px; padding:10px 16px; border-radius:10px; background:rgba(43,183,137,.07); border:1px solid rgba(43,183,137,.25); color:var(--emer); }
+
+  @media (max-width:900px){ .tzl__grid{grid-template-columns:1fr 1fr;} .tzl__trust-grid{grid-template-columns:1fr;} }
+  @media (max-width:600px){ .tzl__grid{grid-template-columns:1fr;} .tzl__hero{min-height:80vh;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tzl" id="tzl">
+
+  {# 1 · Hero #}
+  <section class="tzl__hero">
+    <div class="tzl__hero-motif"></div>
+    <div class="tzl__hero-glow"></div>
+    <div class="tzl__wrap tzl__hero-inner">
+      <p class="tzl__hero-brand">Tazkiyah 114 · The Surah Map · EcoIQ</p>
+      <h1>The Qur'an is not only read. <em>It is lived.</em></h1>
+      <p class="tzl__hero-sub">
+        Tazkiyah 114 explores all 114 Surahs as pathways for repairing the heart, restoring purpose,
+        and aligning daily life with Qur'anic guidance.
+      </p>
+      <div class="tzl__cta-row">
+        <a href="/request-access/" class="tzl__btn tzl__btn--gold">Request Access →</a>
+        <a href="#concept" class="tzl__btn tzl__btn--ghost">Explore the Concept</a>
+      </div>
+      <p class="tzl__hero-note">
+        A concept preview — reflection inspired by Qur'anic themes. Not tafsir, not a fatwa,
+        not therapy. Scholar review is required before any public religious guidance.
+      </p>
+    </div>
+  </section>
+
+  {# 2 · The Core Idea #}
+  <section class="tzl__section tzl__section--alt" id="concept">
+    <div class="tzl__wrap">
+      <span class="tzl__divider">The core idea</span>
+      <div class="tzl__big">114 Surahs → <span>114 Life Pathways</span></div>
+      <p class="tzl__lead">
+        Instead of starting from a chapter you don't know how to apply, you start from where you
+        really are — and the Qur'an meets you there.
+      </p>
+      <div class="tzl__flow">
+        <span>Start from your <b>struggle</b></span>
+        <span>discover relevant <b>pathways</b></span>
+        <span><b>reflect</b></span>
+        <span><b>act</b></span>
+        <span>make <b>dua</b></span>
+        <span>build <b>consistency</b></span>
+      </div>
+    </div>
+  </section>
+
+  {# 3 · Choose Your Struggle (sample categories only) #}
+  <section class="tzl__section tzl__section--motif">
+    <div class="tzl__wrap">
+      <span class="tzl__divider">Start where you really are</span>
+      <h2 class="tzl__h">Choose your struggle.</h2>
+      <p class="tzl__lead">A few of the starting points the full experience will offer.</p>
+      <div class="tzl__chips">
+        <span class="tzl__chip">I feel lost</span>
+        <span class="tzl__chip">I feel anxious</span>
+        <span class="tzl__chip">I keep returning to sin</span>
+        <span class="tzl__chip">I struggle with discipline</span>
+        <span class="tzl__chip">I fear poverty</span>
+        <span class="tzl__chip">I struggle with family</span>
+        <span class="tzl__chip">I need patience</span>
+        <span class="tzl__chip">I want purpose</span>
+      </div>
+      <p class="tzl__note">Sample categories — the detailed pathways and surah reflections open in the private beta.</p>
+    </div>
+  </section>
+
+  {# 4 · Product Modules #}
+  <section class="tzl__section tzl__section--alt">
+    <div class="tzl__wrap">
+      <span class="tzl__divider">What you'll be able to do</span>
+      <h2 class="tzl__h">Product modules.</h2>
+      <div class="tzl__grid">
+        <div class="tzl__mcard"><h3>Surah Life Map</h3><p>All 114 Surahs framed as life pathways — what each can help repair in the heart.</p></div>
+        <div class="tzl__mcard"><h3>Qur'an Repair Engine</h3><p>Struggle → heart wound → false belief → reflection → dua → one practical action.</p></div>
+        <div class="tzl__mcard"><h3>One Ayah, One Repair</h3><p>One verse, one wound it speaks to, one small step to take today.</p></div>
+        <div class="tzl__mcard"><h3>Daily Tazkiyah Tracker</h3><p>A gentle daily loop and streak — practice over perfection.</p></div>
+        <div class="tzl__mcard"><h3>Heart Reflection Tool</h3><p>A few honest questions that suggest a Qur'anic pathway to begin with.</p></div>
+        <div class="tzl__mcard"><h3>Reflection Journal</h3><p>Private journaling that surfaces your patterns and growth over time.</p></div>
+      </div>
+    </div>
+  </section>
+
+  {# 5 · Daily Loop #}
+  <section class="tzl__section tzl__section--motif">
+    <div class="tzl__wrap">
+      <span class="tzl__divider">A rhythm, not a race</span>
+      <h2 class="tzl__h">The daily loop.</h2>
+      <div class="tzl__loop">
+        <span>Read</span> <b>→</b> <span>Reflect</span> <b>→</b> <span>Act</span> <b>→</b> <span>Make Dua</span> <b>→</b> <span>Repeat</span>
+      </div>
+    </div>
+  </section>
+
+  {# 6 · Trust & Humility #}
+  <section class="tzl__section tzl__section--alt" id="trust">
+    <div class="tzl__wrap">
+      <span class="tzl__divider">Humble by design</span>
+      <h2 class="tzl__h">Trust &amp; humility.</h2>
+      <p class="tzl__lead">The Qur'an is an amanah — a trust. Tazkiyah 114 offers reflection, never a replacement for scholarship.</p>
+      <div class="tzl__trust-grid">
+        <div class="tzl__trust-item">Not tafsir.</div>
+        <div class="tzl__trust-item">Not fatwa.</div>
+        <div class="tzl__trust-item">Not therapy.</div>
+        <div class="tzl__trust-item">Scholar review required before any public religious guidance.</div>
+        <div class="tzl__trust-item">Qur'an translations and tafsir sources will be cited.</div>
+        <div class="tzl__trust-item">Reflections are framed humbly as “inspired by Qur'anic themes”.</div>
+      </div>
+      <div class="tzl__disclaimer">
+        <b>A gentle note:</b> Tazkiyah 114 is a concept preview. All religious guidance content requires
+        verified translations, tafsir references, qualified scholar review, and wellbeing review where
+        sensitive before public educational use. For rulings, consult a qualified scholar; for health or
+        crisis, a qualified professional.
+      </div>
+    </div>
+  </section>
+
+  {# 7 · Coming Soon #}
+  <section class="tzl__section tzl__section--motif">
+    <div class="tzl__wrap">
+      <span class="tzl__divider">On the roadmap</span>
+      <h2 class="tzl__h">Coming soon.</h2>
+      <div class="tzl__soon">
+        <span>Private beta</span>
+        <span>Scholar review workflow</span>
+        <span>Source citations</span>
+        <span>Family mode</span>
+        <span>Maqasid World integration</span>
+      </div>
+      <div class="tzl__cta-row">
+        <a href="/request-access/" class="tzl__btn tzl__btn--gold">Request Access →</a>
+        <a href="{% url 'contact' %}?interest=tazkiyah" class="tzl__btn tzl__btn--ghost">Contact the team</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
