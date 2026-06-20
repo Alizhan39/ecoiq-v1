@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tazkiyah 114 — Internal Seed Preview (staff){% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Staff-only Tazkiyah 114 seed preview — all scoped under .tzp */
+  .tzp {
+    width: 100vw; position: relative; left: 50%; right: 50%;
+    margin-left: -50vw; margin-right: -50vw; margin-top: -2rem; margin-bottom: -2rem;
+    --tzp-ink:#050d1e; --tzp-navy:#0a1832; --tzp-navy2:#0e2142; --tzp-cream:#f4ecd8;
+    --tzp-gold:#d4af6a; --tzp-emer:#2bb789; --tzp-rose:#d67874; --tzp-blue:#5e93b3;
+    --tzp-text:#dde5f2; --tzp-muted:#92a3bf; --tzp-line:rgba(255,255,255,.09); --tzp-card:rgba(255,255,255,.035);
+    --tzp-serif:"Cormorant Garamond",Georgia,serif; --tzp-mono:ui-monospace,Menlo,Consolas,monospace;
+    --tzp-arab:"Amiri",serif;
+    background:var(--tzp-ink); color:var(--tzp-text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.55;
+    min-height:100vh; padding:0 0 80px;
+  }
+  .tzp * { box-sizing:border-box; }
+  .tzp__wrap { max-width:1180px; margin:0 auto; padding:0 24px; }
+
+  /* Warning + validation banners */
+  .tzp__warn { background:rgba(214,120,116,.10); border:1px solid rgba(214,120,116,.4); border-radius:14px;
+    padding:18px 22px; margin:28px 0 16px; color:var(--tzp-cream); font-size:14px; }
+  .tzp__warn b { color:#fff; }
+  .tzp__warn .tzp__tag { display:inline-block; font-family:var(--tzp-mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--tzp-rose); border:1px solid rgba(214,120,116,.5); border-radius:6px; padding:3px 8px; margin-bottom:8px; }
+  .tzp__valid { border-radius:12px; padding:12px 18px; margin-bottom:22px; font-size:13.5px; font-family:var(--tzp-mono); }
+  .tzp__valid--ok { background:rgba(43,183,137,.10); border:1px solid rgba(43,183,137,.4); color:var(--tzp-emer); }
+  .tzp__valid--bad { background:rgba(214,120,116,.12); border:1px solid rgba(214,120,116,.5); color:var(--tzp-rose); }
+  .tzp__valid ul { margin:6px 0 0 18px; }
+
+  .tzp__h { font-family:var(--tzp-serif); font-size:clamp(28px,4vw,42px); color:#fff; margin:30px 0 4px; font-weight:600; }
+  .tzp__sub { color:var(--tzp-muted); font-size:14px; font-family:var(--tzp-mono); }
+
+  /* Stats */
+  .tzp__stats { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:22px 0 24px; }
+  .tzp__stat { background:var(--tzp-card); border:1px solid var(--tzp-line); border-radius:12px; padding:16px 18px; }
+  .tzp__stat b { display:block; font-family:var(--tzp-serif); font-size:30px; color:var(--tzp-gold); line-height:1; }
+  .tzp__stat span { font-size:11.5px; color:var(--tzp-muted); font-family:var(--tzp-mono); letter-spacing:.04em; }
+
+  /* Filters */
+  .tzp__filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:22px; }
+  .tzp__filters input, .tzp__filters select { background:var(--tzp-card); border:1px solid var(--tzp-line); border-radius:10px;
+    padding:10px 14px; color:#fff; font-size:13.5px; font-family:inherit; }
+  .tzp__filters input:focus, .tzp__filters select:focus { outline:none; border-color:rgba(212,175,106,.5); }
+  .tzp__filters input { min-width:200px; flex:1; }
+  .tzp__count { font-family:var(--tzp-mono); font-size:12px; color:var(--tzp-muted); margin-left:auto; }
+
+  /* Badges */
+  .tzp__badges { display:flex; flex-wrap:wrap; gap:6px; }
+  .tzp__badge { font-family:var(--tzp-mono); font-size:9.5px; letter-spacing:.04em; text-transform:uppercase; font-weight:600;
+    padding:4px 9px; border-radius:999px; color:var(--tzp-gold); background:rgba(212,175,106,.10); border:1px solid rgba(212,175,106,.32); }
+  .tzp__badge--rose { color:var(--tzp-rose); background:rgba(214,120,116,.10); border-color:rgba(214,120,116,.34); }
+  .tzp__badge--rev { color:var(--tzp-blue); background:rgba(94,147,179,.10); border-color:rgba(94,147,179,.34); }
+
+  /* Cards grid */
+  .tzp__grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .tzp__card { background:linear-gradient(180deg,var(--tzp-navy2),rgba(10,24,50,.4)); border:1px solid var(--tzp-line);
+    border-radius:16px; padding:20px 22px; }
+  .tzp__card[hidden] { display:none; }
+  .tzp__chead { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; border-bottom:1px solid var(--tzp-line); padding-bottom:12px; margin-bottom:12px; }
+  .tzp__cnum { font-family:var(--tzp-mono); font-size:12px; color:var(--tzp-gold); }
+  .tzp__cname { font-family:var(--tzp-serif); font-size:22px; color:#fff; margin:2px 0 1px; line-height:1.1; }
+  .tzp__cmean { font-size:12.5px; color:var(--tzp-muted); }
+  .tzp__carab { font-family:var(--tzp-arab); font-size:30px; color:var(--tzp-gold); direction:rtl; line-height:1; }
+  .tzp__field { margin-top:12px; }
+  .tzp__field h4 { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--tzp-gold); font-weight:700; margin:0 0 5px; font-family:var(--tzp-mono); }
+  .tzp__field p { margin:0; font-size:13.5px; color:var(--tzp-text); }
+  .tzp__chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .tzp__chip { font-size:11.5px; padding:4px 10px; border-radius:8px; background:rgba(255,255,255,.04); border:1px solid var(--tzp-line); color:var(--tzp-cream); }
+  .tzp__pending { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-top:14px; padding-top:12px; border-top:1px dashed var(--tzp-line); }
+  .tzp__pend-item { font-size:11.5px; color:var(--tzp-muted); }
+  .tzp__pend-item b { display:block; font-family:var(--tzp-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--tzp-muted); margin-bottom:2px; }
+  .tzp__pend-item em { color:var(--tzp-rose); font-style:normal; font-family:var(--tzp-mono); font-size:10.5px; }
+  .tzp__notes { margin-top:14px; padding-top:12px; border-top:1px solid var(--tzp-line); font-size:12.5px; color:var(--tzp-cream); }
+  .tzp__notes b { font-family:var(--tzp-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--tzp-gold); display:block; margin-bottom:4px; }
+
+  @media (max-width:860px){ .tzp__stats{grid-template-columns:repeat(2,1fr);} .tzp__grid{grid-template-columns:1fr;} .tzp__pending{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tzp" id="tzp">
+  <div class="tzp__wrap">
+
+    <div class="tzp__warn">
+      <span class="tzp__tag">Internal · staff only</span><br>
+      <b>Internal preview only.</b> Reflection inspired by Qur'anic themes. Not public tafsir, not fatwa,
+      not final translation. Requires source checks and scholar review before publication.
+    </div>
+
+    {% if validation_ok %}
+    <div class="tzp__valid tzp__valid--ok">✓ Seed validation passed — 114 surahs, schema intact, all draft/pending, non-authoritative.</div>
+    {% else %}
+    <div class="tzp__valid tzp__valid--bad">✗ Seed validation found {{ validation_errors|length }} issue(s):
+      <ul>{% for e in validation_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <h1 class="tzp__h">Tazkiyah 114 — Surah Seed Preview</h1>
+    <div class="tzp__sub">{{ meta.dataset }} · v{{ meta.version }} · {{ meta.scope }}</div>
+
+    <div class="tzp__stats">
+      <div class="tzp__stat"><b>{{ stats.total }}</b><span>surah records</span></div>
+      <div class="tzp__stat"><b>{{ stats.draft }}</b><span>draft reflection</span></div>
+      <div class="tzp__stat"><b>{{ stats.translation_pending }}</b><span>translation pending</span></div>
+      <div class="tzp__stat"><b>{{ stats.scholar_pending }}</b><span>scholar review pending</span></div>
+      <div class="tzp__stat"><b>{{ stats.authoritative|yesno:"true,false,—" }}</b><span>authoritative</span></div>
+    </div>
+
+    <div class="tzp__filters">
+      <input id="tzpSearch" type="search" placeholder="Search number or name…" aria-label="Search">
+      <select id="tzpRev" aria-label="Revelation type">
+        <option value="">All revelation</option>
+        <option value="meccan">Meccan</option>
+        <option value="medinan">Medinan</option>
+      </select>
+      <select id="tzpPath" aria-label="Pathway">
+        <option value="">All pathways</option>
+        {% for p in pathways %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+      </select>
+      <select id="tzpStatus" aria-label="Review status">
+        <option value="">All review status</option>
+        <option value="scholar_review_pending">Scholar review pending</option>
+      </select>
+      <span class="tzp__count" id="tzpCount">{{ stats.total }} shown</span>
+    </div>
+
+    <div class="tzp__grid" id="tzpGrid">
+      {% for s in surahs %}
+      <article class="tzp__card"
+               data-num="{{ s.surah_number }}"
+               data-name="{{ s.surah_name_transliteration|lower }} {{ s.surah_name_translation|lower }}"
+               data-rev="{{ s.revelation_type }}"
+               data-paths="{{ s.life_pathways|join:' ' }}"
+               data-status="{{ s.scholar_review_status }}">
+        <div class="tzp__chead">
+          <div>
+            <div class="tzp__cnum">Surah {{ s.surah_number }} · {{ s.rev_label }}</div>
+            <div class="tzp__cname">{{ s.surah_name_transliteration }}</div>
+            <div class="tzp__cmean">{{ s.surah_name_translation }}</div>
+          </div>
+          <div class="tzp__carab" lang="ar" dir="rtl">{{ s.surah_name_arabic }}</div>
+        </div>
+
+        <div class="tzp__badges">
+          {% for b in s.status_badges %}<span class="tzp__badge">{{ b }}</span>{% endfor %}
+          <span class="tzp__badge tzp__badge--rev">{{ s.rev_label }}</span>
+          <span class="tzp__badge tzp__badge--rose">non-authoritative</span>
+        </div>
+
+        <div class="tzp__field">
+          <h4>Core theme</h4>
+          <p>{{ s.short_theme }}</p>
+        </div>
+        <div class="tzp__field">
+          <h4>What this surah repairs in the heart</h4>
+          <div class="tzp__chips">{% for r in s.repair_areas %}<span class="tzp__chip">{{ r }}</span>{% endfor %}</div>
+        </div>
+        <div class="tzp__field">
+          <h4>Life pathways</h4>
+          <div class="tzp__chips">{% for p in s.life_pathways %}<span class="tzp__chip">{{ p }}</span>{% endfor %}</div>
+        </div>
+
+        {# Fields not yet in the Surah-Card seed — shown as honest placeholders #}
+        <div class="tzp__pending">
+          <div class="tzp__pend-item"><b>Life situations</b><em>pending — Ayah Reflection seed</em></div>
+          <div class="tzp__pend-item"><b>Key ayahs</b><em>{{ s.translation_status|cut:"_" }} · {{ s.tafsir_status|cut:"_" }}</em></div>
+          <div class="tzp__pend-item"><b>Reflection questions</b><em>pending</em></div>
+          <div class="tzp__pend-item"><b>Practical action</b><em>pending</em></div>
+          <div class="tzp__pend-item"><b>Dua prompt</b><em>pending</em></div>
+          <div class="tzp__pend-item"><b>Modern application</b><em>pending</em></div>
+          <div class="tzp__pend-item"><b>Common mistake corrected</b><em>pending</em></div>
+          <div class="tzp__pend-item"><b>Source / scholar</b><em>{{ s.source_status|cut:"_" }} · {{ s.scholar_review_status|cut:"_" }}</em></div>
+        </div>
+
+        <div class="tzp__notes">
+          <b>Notes / safety</b>{{ s.notes }}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var root = document.getElementById('tzp');
+  if (!root) return;
+  var cards = Array.prototype.slice.call(root.querySelectorAll('.tzp__card'));
+  var q = document.getElementById('tzpSearch');
+  var rev = document.getElementById('tzpRev');
+  var path = document.getElementById('tzpPath');
+  var status = document.getElementById('tzpStatus');
+  var count = document.getElementById('tzpCount');
+  function apply() {
+    var term = (q.value || '').trim().toLowerCase();
+    var rv = rev.value, pv = path.value, sv = status.value, shown = 0;
+    cards.forEach(function (c) {
+      var okText = !term || c.getAttribute('data-num') === term || c.getAttribute('data-name').indexOf(term) !== -1;
+      var okRev = !rv || c.getAttribute('data-rev') === rv;
+      var okPath = !pv || (' ' + c.getAttribute('data-paths') + ' ').indexOf(' ' + pv + ' ') !== -1;
+      var okStatus = !sv || c.getAttribute('data-status') === sv;
+      var show = okText && okRev && okPath && okStatus;
+      c.hidden = !show; if (show) shown++;
+    });
+    count.textContent = shown + ' shown';
+  }
+  [q, rev, path, status].forEach(function (el) {
+    el.addEventListener('input', apply); el.addEventListener('change', apply);
+  });
+})();
+</script>
+{% endblock %}
