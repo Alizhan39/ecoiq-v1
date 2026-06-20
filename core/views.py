@@ -2256,6 +2256,73 @@ def tazkiyah_preview(request):
 
 
 @staff_member_required(login_url='/login/')
+def tazkiyah_struggles_preview(request):
+    """
+    /tazkiyah-114-struggles-preview/ — STAFF-ONLY internal preview of the
+    "Choose Your Struggle" product journey: Struggle → Recommended Pathways →
+    Suggested Surahs.
+
+    Joins the existing seed files (content/tazkiyah114/surah_seeds.json and
+    pathways.json) read-only, runs both validators first, and presents
+    everything as non-authoritative suggested pathways (never tafsir/fatwa).
+    Not public; not in nav.
+    """
+    from core.management.commands.validate_tazkiyah114_seeds import (
+        validate_seeds, validate_pathways,
+        DEFAULT_SEED_PATH, DEFAULT_PATHWAYS_PATH,
+    )
+    errors = validate_seeds() + validate_pathways()
+    try:
+        seeds = _json.loads(DEFAULT_SEED_PATH.read_text(encoding='utf-8'))
+        paths = _json.loads(DEFAULT_PATHWAYS_PATH.read_text(encoding='utf-8'))
+    except Exception as exc:  # pragma: no cover - defensive
+        seeds, paths = {'surahs': []}, {'struggles': [], 'pathways': [], '_meta': {}}
+        errors = errors + [f'Could not read seed/pathway files: {exc}']
+
+    surah_by_num = {s.get('surah_number'): s for s in seeds.get('surahs', [])}
+
+    def _resolve(nums):
+        out = []
+        for n in nums or []:
+            s = surah_by_num.get(n)
+            if s:
+                out.append({
+                    'num': n,
+                    'name': s.get('surah_name_transliteration'),
+                    'arabic': s.get('surah_name_arabic'),
+                    'meaning': s.get('surah_name_translation'),
+                    'theme': s.get('short_theme'),
+                })
+        return out
+
+    pathways = paths.get('pathways', [])
+
+    # Build Struggle → Pathways → Surahs for the template.
+    struggle_views = []
+    for st in paths.get('struggles', []):
+        sid = st.get('id')
+        related = []
+        for p in pathways:
+            if sid in (p.get('related_struggle_ids') or []):
+                related.append({
+                    'title': p.get('title'),
+                    'short_description': p.get('short_description'),
+                    'caution_note': p.get('caution_note'),
+                    'status': p.get('status'),
+                    'scholar_review': p.get('scholar_review'),
+                    'surahs': _resolve(p.get('suggested_surah_numbers')),
+                })
+        struggle_views.append({'id': sid, 'label': st.get('label'), 'pathways': related})
+
+    ctx = {
+        'struggle_views': struggle_views,
+        'validation_ok': not errors,
+        'validation_errors': errors,
+    }
+    return render(request, 'tazkiyah_struggles_preview.html', ctx)
+
+
+@staff_member_required(login_url='/login/')
 def video_studio(request):
     """
     /video-studio/ — Staff-only video workflow surface.
