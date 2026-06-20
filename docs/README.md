@@ -25,6 +25,7 @@ and long-term tazkiyah.
 | [Money & Rizq Deep System](tazkiyah-114-money-rizq-deep-system.md) | The full 20-module financial transformation system, sample flows, example cards, UI components, MVP vs later, and crisis safeguards. |
 | [Rizq & Money Advanced Modules](tazkiyah-114-rizq-money-advanced-modules.md) | 15 advanced modules (emergency, halal filter, barakah growth, family, status spending) organised under six master categories — Fear · Halal · Barakah · Justice · Family · Growth. |
 | [Safety & Trust Principles](tazkiyah-114-safety-principles.md) | Binding safety, trust, and anti-vanity rules. |
+| [Content Schema](tazkiyah-114-content-schema.md) | Future content schema for Surah/ayah/repair/crisis/nafs/money records, the review-status lifecycle, safety rules, and the path to JSON seeds → Django models → review dashboard. |
 | [Implementation Roadmap](tazkiyah-114-implementation-roadmap.md) | Phases 1–6 with gates. |
 
 **Seed content:** `content/tazkiyah114/moduleSeeds.ts` — seed-ready structured content for modules 31–60.
