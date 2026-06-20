@@ -1,0 +1,429 @@
+{
+  "_meta": {
+    "dataset": "tazkiyah114_repair_engine",
+    "version": 1,
+    "status": "draft_architecture",
+    "authoritative": false,
+    "scholar_review": "pending",
+    "note": "Product navigation and reflection architecture only. Not tafsir, not fatwa."
+  },
+  "repair_flow_steps": [
+    "choose_struggle",
+    "identify_heart_wound",
+    "name_false_belief",
+    "connect_quranic_theme",
+    "recommend_surah_pathway",
+    "answer_reflection_questions",
+    "choose_repair_action",
+    "make_dua",
+    "track_7_day_consistency"
+  ],
+  "heart_wounds": [
+    {
+      "id": "fear",
+      "title": "Fear",
+      "short_description": "A heart gripped by what might happen, forgetting Who holds the outcome.",
+      "related_struggle_ids": [
+        "anxious"
+      ],
+      "related_pathway_ids": [
+        "healing-anxiety-fear"
+      ],
+      "possible_false_beliefs": [
+        "I am not safe",
+        "The worst will happen",
+        "I have to control everything"
+      ],
+      "quranic_repair_themes": [
+        "Hearts find rest in the remembrance of Allah",
+        "Allah is with those who are mindful",
+        "He is sufficient for the one who trusts Him"
+      ],
+      "suggested_repair_actions": [
+        "Pause and make dhikr for two minutes",
+        "Make one small lawful effort, then release the outcome"
+      ],
+      "dua_prompt": "O Allah, calm my heart and let me trust You with what I cannot control.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use. Not therapy; in a mental-health crisis seek professional help.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "despair",
+      "title": "Despair",
+      "short_description": "A heart that has stopped expecting good from Allah.",
+      "related_struggle_ids": [
+        "returning-to-sin",
+        "need-forgiveness",
+        "need-patience"
+      ],
+      "related_pathway_ids": [
+        "repentance-and-returning",
+        "tests-pain-patience"
+      ],
+      "possible_false_beliefs": [
+        "It is too late for me",
+        "Nothing will change",
+        "Allah has given up on me"
+      ],
+      "quranic_repair_themes": [
+        "Do not despair of the mercy of Allah",
+        "With hardship comes ease",
+        "Allah does not waste the reward of the patient"
+      ],
+      "suggested_repair_actions": [
+        "Name one next small step and take only that",
+        "Recall one past relief Allah sent you"
+      ],
+      "dua_prompt": "O Allah, restore my hope in You and carry me through this.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use. Not therapy; in a mental-health crisis seek professional help.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "jealousy",
+      "title": "Jealousy",
+      "short_description": "A heart that measures itself against others and resents their blessings.",
+      "related_struggle_ids": [
+        "jealous"
+      ],
+      "related_pathway_ids": [
+        "gratitude-and-contentment"
+      ],
+      "possible_false_beliefs": [
+        "Their gain is my loss",
+        "I deserve what they have",
+        "Allah was unfair to me"
+      ],
+      "quranic_repair_themes": [
+        "Provision is apportioned by Allah",
+        "Gratitude increases blessing",
+        "Seek refuge from the harm of envy"
+      ],
+      "suggested_repair_actions": [
+        "Make sincere dua for someone you envy",
+        "Write three blessings you have stopped noticing"
+      ],
+      "dua_prompt": "O Allah, bless them and content my heart with what You have given me.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "arrogance",
+      "title": "Arrogance",
+      "short_description": "A heart that forgets its smallness before Allah and looks down on others.",
+      "related_struggle_ids": [
+        "arrogant"
+      ],
+      "related_pathway_ids": [
+        "justice-and-responsibility"
+      ],
+      "possible_false_beliefs": [
+        "I am better than them",
+        "I earned this by myself",
+        "I do not need anyone"
+      ],
+      "quranic_repair_themes": [
+        "Do not walk on the earth in arrogance",
+        "All honour belongs to Allah",
+        "Humility before the Most High"
+      ],
+      "suggested_repair_actions": [
+        "Do one quiet act of service today",
+        "Acknowledge one person's good and thank them"
+      ],
+      "dua_prompt": "O Allah, clothe my heart in humility and free me from pride.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "heedlessness",
+      "title": "Heedlessness (ghaflah)",
+      "short_description": "A heart distracted from Allah, drifting through the day unaware.",
+      "related_struggle_ids": [
+        "distant"
+      ],
+      "related_pathway_ids": [
+        "finding-allah-again"
+      ],
+      "possible_false_beliefs": [
+        "There is always more time",
+        "Remembering Allah can wait",
+        "This life is all there is"
+      ],
+      "quranic_repair_themes": [
+        "In the remembrance of Allah hearts find rest",
+        "Allah is nearer than the jugular vein",
+        "Reflect on the signs of Allah"
+      ],
+      "suggested_repair_actions": [
+        "Anchor one moment of dhikr before each prayer",
+        "Pause once today to reflect on one blessing"
+      ],
+      "dua_prompt": "O Allah, awaken my heart and keep me mindful of You.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "guilt",
+      "title": "Guilt",
+      "short_description": "A heart weighed down by what it has done, unsure it can return.",
+      "related_struggle_ids": [
+        "returning-to-sin",
+        "need-forgiveness"
+      ],
+      "related_pathway_ids": [
+        "repentance-and-returning"
+      ],
+      "possible_false_beliefs": [
+        "My sin is unforgivable",
+        "I am beyond repair",
+        "There is no point trying again"
+      ],
+      "quranic_repair_themes": [
+        "Allah forgives all sins",
+        "Turn to Allah in sincere repentance",
+        "Good deeds erase misdeeds"
+      ],
+      "suggested_repair_actions": [
+        "Make sincere tawbah for one thing, then do one good deed",
+        "Remove one trigger for 24 hours"
+      ],
+      "dua_prompt": "O Allah, forgive me and make my repentance sincere and lasting.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "anger",
+      "title": "Anger",
+      "short_description": "A heart quick to flare, harming those closest before it cools.",
+      "related_struggle_ids": [
+        "family"
+      ],
+      "related_pathway_ids": [
+        "family-and-character"
+      ],
+      "possible_false_beliefs": [
+        "I have a right to lash out",
+        "They deserve my worst",
+        "I cannot control it"
+      ],
+      "quranic_repair_themes": [
+        "The strong restrain themselves",
+        "Respond to harm with what is better",
+        "Gentleness and forgiveness"
+      ],
+      "suggested_repair_actions": [
+        "Pause and seek refuge before reacting",
+        "Speak to one person with deliberate gentleness today"
+      ],
+      "dua_prompt": "O Allah, cool my anger and make me gentle with those I love.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "attachment_to_dunya",
+      "title": "Attachment to dunya",
+      "short_description": "A heart that clings to this world as if it were lasting.",
+      "related_struggle_ids": [
+        "jealous"
+      ],
+      "related_pathway_ids": [
+        "gratitude-and-contentment",
+        "money-rizq-tawakkul"
+      ],
+      "possible_false_beliefs": [
+        "My worth is what I own",
+        "More will finally be enough",
+        "This world is the goal"
+      ],
+      "quranic_repair_themes": [
+        "This world's adornment versus the lasting good",
+        "Wealth and children are a trial",
+        "Barakah over abundance"
+      ],
+      "suggested_repair_actions": [
+        "Give one thing away quietly today",
+        "Pause one status purchase and sit with 'enough'"
+      ],
+      "dua_prompt": "O Allah, put this world in my hands and not in my heart.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "fear_of_poverty",
+      "title": "Fear of poverty",
+      "short_description": "A heart that believes its security rests in money, not in Ar-Razzaq.",
+      "related_struggle_ids": [
+        "fear-poverty"
+      ],
+      "related_pathway_ids": [
+        "money-rizq-tawakkul"
+      ],
+      "possible_false_beliefs": [
+        "There will not be enough",
+        "My rizq is in people's hands",
+        "I must compromise my deen to survive"
+      ],
+      "quranic_repair_themes": [
+        "Provision is upon Allah",
+        "A way out and provision for the mindful",
+        "Effort with trust, not panic"
+      ],
+      "suggested_repair_actions": [
+        "Make one honest, halal effort and release the outcome",
+        "Give a small sadaqah despite the fear"
+      ],
+      "dua_prompt": "O Allah, You are Ar-Razzaq; free my heart from the fear of want.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use. Not financial advice; for serious debt seek qualified professionals.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "lack_of_discipline",
+      "title": "Lack of discipline",
+      "short_description": "A heart of good intentions that struggles to follow through.",
+      "related_struggle_ids": [
+        "discipline"
+      ],
+      "related_pathway_ids": [
+        "discipline-self-control"
+      ],
+      "possible_false_beliefs": [
+        "I will start tomorrow",
+        "I am just not disciplined",
+        "Small acts do not matter"
+      ],
+      "quranic_repair_themes": [
+        "The four things that save from loss",
+        "Steadfast deeds, even if small",
+        "Night prayer and inner strength"
+      ],
+      "suggested_repair_actions": [
+        "Choose one small consistent act for today only",
+        "Audit one hour and redirect it to good"
+      ],
+      "dua_prompt": "O Allah, bless my time and make me steadfast in small good deeds.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "family_hurt",
+      "title": "Family hurt",
+      "short_description": "A heart carrying wounds and resentment from those closest to it.",
+      "related_struggle_ids": [
+        "family"
+      ],
+      "related_pathway_ids": [
+        "family-and-character"
+      ],
+      "possible_false_beliefs": [
+        "I must accept all harm in the name of patience",
+        "Reconciliation is impossible",
+        "Boundaries are wrong"
+      ],
+      "quranic_repair_themes": [
+        "Kindness to parents and kin",
+        "Justice carried with mercy",
+        "Patience does not mean accepting abuse"
+      ],
+      "suggested_repair_actions": [
+        "Take one step toward a healthy boundary or repair",
+        "Make dua for the one who hurt you"
+      ],
+      "dua_prompt": "O Allah, heal my heart, guide my family, and let me respond with mercy and wisdom.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use. Never a counsel to accept abuse; seek qualified support where there is harm.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    },
+    {
+      "id": "loss_of_purpose",
+      "title": "Loss of purpose",
+      "short_description": "A heart that has forgotten why it is here.",
+      "related_struggle_ids": [
+        "want-purpose",
+        "lost"
+      ],
+      "related_pathway_ids": [
+        "purpose-and-leadership",
+        "finding-allah-again"
+      ],
+      "possible_false_beliefs": [
+        "My life means nothing",
+        "I am only here to consume",
+        "It is too late to matter"
+      ],
+      "quranic_repair_themes": [
+        "Created to worship and know Allah",
+        "Life and death as a test of best deeds",
+        "The honour and trust given to the human"
+      ],
+      "suggested_repair_actions": [
+        "Do one ordinary task today purely for Allah",
+        "Name one way you can benefit someone"
+      ],
+      "dua_prompt": "O Allah, let my life be spent in what pleases You and gives it meaning.",
+      "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use.",
+      "status": "draft_reflection",
+      "scholar_review": "pending"
+    }
+  ],
+  "sin_cycle_breaker": {
+    "cycle": [
+      "trigger",
+      "desire",
+      "sin",
+      "guilt",
+      "despair",
+      "repeat"
+    ],
+    "repair_cycle": [
+      "awareness",
+      "tawbah",
+      "boundary",
+      "replacement_action",
+      "hope_in_Allah",
+      "consistency"
+    ],
+    "prompts": [
+      "What usually triggers me?",
+      "What lie do I believe in that moment?",
+      "What boundary do I need?",
+      "What halal replacement action can I take?",
+      "Which reminder brings me back to hope?",
+      "Who can help me stay accountable?"
+    ],
+    "caution_note": "Suggested reflection only — not tafsir, not fatwa. Requires source checks and qualified scholar review before public use. If a pattern is compulsive or addictive, seek qualified professional support.",
+    "status": "draft_reflection",
+    "scholar_review": "pending"
+  },
+  "consistency_model": [
+    {
+      "id": "1_day_reset",
+      "label": "1-day reset",
+      "description": "Return today: one honest restart, no self-condemnation."
+    },
+    {
+      "id": "3_day_awareness",
+      "label": "3-day awareness",
+      "description": "Three days of noticing the trigger and the lie before acting."
+    },
+    {
+      "id": "7_day_repair",
+      "label": "7-day repair",
+      "description": "A week of one small daily action toward the opposite virtue."
+    },
+    {
+      "id": "30_day_transformation",
+      "label": "30-day transformation",
+      "description": "A month of consistency, letting a new habit settle in the heart."
+    }
+  ]
+}

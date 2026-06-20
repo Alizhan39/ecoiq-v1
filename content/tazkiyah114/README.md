@@ -18,6 +18,7 @@ Seed/structured content for the **Tazkiyah 114 / Surah Map** product concept.
 |---|---|---|
 | `surah_seeds.json` | All 114 surahs (1–114) as Surah-Card seed records (schema-aligned). | `draft_reflection` — all pending scholar review |
 | `pathways.json` | Pathway mapping: 10 Qur'an life pathways + 12 user struggles → suggested surah numbers. Product navigation metadata, not tafsir. | `draft_pathway` — all pending scholar review |
+| `repair_engine.json` | Repair Engine architecture: the repair journey (struggle → heart wound → false belief → Qur'anic theme → surah pathway → reflection → dua → action → 7-day consistency), 12 heart wounds, sin-cycle breaker, consistency model. Reflection architecture, not tafsir/fatwa. | `draft_architecture` — pending scholar review |
 | `moduleSeeds.ts` | Seed concepts for modules 31–60. | `draft_reflection` |
 
 ## Schema
@@ -77,6 +78,24 @@ python manage.py test core.tests_tazkiyah_pathways
 Pathway validation logic: `validate_pathways()` in
 `core/management/commands/validate_tazkiyah114_seeds.py`, exposed via the
 `validate_tazkiyah114_pathways` command and reused by `core/tests_tazkiyah_pathways.py`.
+
+`repair_engine.json` (Repair Engine architecture) has its own validator. It checks: valid JSON;
+every heart wound's `related_struggle_ids` and `related_pathway_ids` exist in `pathways.json`;
+every heart wound has a caution note; every heart wound is `draft_reflection` /
+`scholar_review: pending`; the sin cycle and repair cycle are present; and
+`_meta.authoritative = false`. Exits non-zero on any failure.
+
+```bash
+# Run the repair-engine validator directly
+python manage.py validate_tazkiyah114_repair_engine
+
+# Or as part of the test suite (CI guardrail)
+python manage.py test core.tests_tazkiyah_repair_engine
+```
+
+Repair-engine validation logic: `validate_repair_engine()` in
+`core/management/commands/validate_tazkiyah114_seeds.py`, exposed via the
+`validate_tazkiyah114_repair_engine` command and reused by `core/tests_tazkiyah_repair_engine.py`.
 
 ## Safety notes
 
