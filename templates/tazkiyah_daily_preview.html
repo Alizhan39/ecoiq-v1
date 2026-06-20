@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tazkiyah 114 — Daily Tracker (staff preview){% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Staff-only Daily Tazkiyah tracker preview — scoped under .tzpd */
+  .tzpd {
+    width:100vw; position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw;
+    margin-top:-2rem; margin-bottom:-2rem;
+    --ink:#050d1e; --navy:#0a1832; --navy2:#0e2142; --cream:#f4ecd8; --gold:#d4af6a;
+    --emer:#2bb789; --rose:#d67874; --blue:#5e93b3; --text:#dde5f2; --muted:#92a3bf;
+    --line:rgba(255,255,255,.09); --card:rgba(255,255,255,.035);
+    --serif:"Cormorant Garamond",Georgia,serif; --mono:ui-monospace,Menlo,Consolas,monospace; --arab:"Amiri",serif;
+    background:var(--ink); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.55; min-height:100vh; padding:0 0 80px;
+  }
+  .tzpd * { box-sizing:border-box; }
+  .tzpd__wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
+
+  .tzpd__warn { background:rgba(214,120,116,.10); border:1px solid rgba(214,120,116,.4); border-radius:14px;
+    padding:18px 22px; margin:28px 0 16px; color:var(--cream); font-size:14px; }
+  .tzpd__warn b { color:#fff; }
+  .tzpd__warn .tag { display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--rose); border:1px solid rgba(214,120,116,.5); border-radius:6px; padding:3px 8px; margin-bottom:8px; }
+  .tzpd__valid { border-radius:12px; padding:12px 18px; margin-bottom:22px; font-size:13.5px; font-family:var(--mono); }
+  .tzpd__valid--ok { background:rgba(43,183,137,.10); border:1px solid rgba(43,183,137,.4); color:var(--emer); }
+  .tzpd__valid--bad { background:rgba(214,120,116,.12); border:1px solid rgba(214,120,116,.5); color:var(--rose); }
+  .tzpd__valid ul { margin:6px 0 0 18px; }
+
+  .tzpd__h { font-family:var(--serif); font-size:clamp(28px,4vw,42px); color:#fff; margin:26px 0 4px; font-weight:600; }
+  .tzpd__sub { color:var(--muted); font-size:14px; font-family:var(--mono); margin-bottom:24px; }
+  .tzpd__demo { font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold);
+    border:1px dashed rgba(212,175,106,.4); border-radius:8px; padding:5px 10px; display:inline-block; margin-bottom:22px; }
+
+  /* Loop */
+  .tzpd__loop { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:28px; }
+  .tzpd__step { font-family:var(--serif); font-size:clamp(17px,2.4vw,22px); color:var(--cream);
+    background:var(--card); border:1px solid var(--line); border-radius:999px; padding:9px 20px; }
+  .tzpd__arrow { color:var(--gold); font-size:18px; }
+  .tzpd__repeat { font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+  /* Layout */
+  .tzpd__cols { display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:start; }
+
+  /* Sample daily card */
+  .tzpd__card { background:linear-gradient(180deg,var(--navy2),rgba(10,24,50,.4)); border:1px solid var(--line);
+    border-radius:18px; padding:24px 26px; }
+  .tzpd__chead { display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+    border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:16px; }
+  .tzpd__cnum { font-family:var(--mono); font-size:11.5px; color:var(--gold); }
+  .tzpd__cname { font-family:var(--serif); font-size:24px; color:#fff; margin:2px 0 1px; line-height:1.1; }
+  .tzpd__cmean { font-size:12.5px; color:var(--muted); }
+  .tzpd__carab { font-family:var(--arab); font-size:32px; color:var(--gold); direction:rtl; line-height:1; }
+  .tzpd__field { margin-top:14px; }
+  .tzpd__field h4 { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); font-weight:700; margin:0 0 5px; font-family:var(--mono); }
+  .tzpd__field p { margin:0; font-size:14px; color:var(--text); }
+  .tzpd__field em { color:var(--rose); font-style:normal; font-family:var(--mono); font-size:11.5px; }
+  .tzpd__badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); }
+  .tzpd__badge { font-family:var(--mono); font-size:9.5px; letter-spacing:.04em; text-transform:uppercase; font-weight:600;
+    padding:4px 9px; border-radius:999px; color:var(--gold); background:rgba(212,175,106,.10); border:1px solid rgba(212,175,106,.32); }
+  .tzpd__badge--rose { color:var(--rose); background:rgba(214,120,116,.10); border-color:rgba(214,120,116,.34); }
+
+  /* Checklist + streak */
+  .tzpd__side { display:flex; flex-direction:column; gap:18px; }
+  .tzpd__panel { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px 20px; }
+  .tzpd__panel h3 { font-family:var(--serif); font-size:19px; color:#fff; margin:0 0 4px; }
+  .tzpd__panel .hint { font-size:11.5px; color:var(--muted); font-family:var(--mono); margin-bottom:14px; }
+  .tzpd__check { display:flex; align-items:center; gap:12px; padding:11px 0; border-top:1px solid var(--line); cursor:pointer; }
+  .tzpd__check:first-of-type { border-top:0; }
+  .tzpd__box { width:22px; height:22px; border-radius:6px; border:1.5px solid var(--muted); flex:none; display:grid; place-items:center;
+    color:transparent; font-size:13px; transition:all .2s; }
+  .tzpd__check.done .tzpd__box { background:var(--emer); border-color:var(--emer); color:#04231a; }
+  .tzpd__check-l { font-size:14px; color:#fff; }
+  .tzpd__streak { display:flex; gap:8px; }
+  .tzpd__day { flex:1; text-align:center; }
+  .tzpd__dot { width:100%; aspect-ratio:1; border-radius:9px; border:1px solid var(--line); background:rgba(255,255,255,.03);
+    display:grid; place-items:center; font-family:var(--mono); font-size:13px; color:var(--muted); }
+  .tzpd__day.done .tzpd__dot { background:rgba(43,183,137,.18); border-color:rgba(43,183,137,.5); color:var(--emer); }
+  .tzpd__day small { display:block; font-family:var(--mono); font-size:9.5px; text-transform:uppercase; color:var(--muted); margin-top:5px; }
+  .tzpd__nopersist { font-family:var(--mono); font-size:10.5px; color:var(--muted); margin-top:12px; }
+
+  @media (max-width:760px){ .tzpd__cols{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tzpd" id="tzpd">
+  <div class="tzpd__wrap">
+
+    <div class="tzpd__warn">
+      <span class="tag">Internal · staff only</span><br>
+      <b>Internal preview only.</b> Daily guidance inspired by Qur'anic themes. Not tafsir, not fatwa,
+      not final translation. Requires source checks and scholar review before publication.
+    </div>
+
+    {% if validation_ok %}
+    <div class="tzpd__valid tzpd__valid--ok">✓ Seed validation passed — non-authoritative draft content.</div>
+    {% else %}
+    <div class="tzpd__valid tzpd__valid--bad">✗ Seed validation found {{ validation_errors|length }} issue(s):
+      <ul>{% for e in validation_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <h1 class="tzpd__h">Daily Tazkiyah Tracker — preview</h1>
+    <div class="tzpd__sub">The daily habit loop, demonstrated with existing seed data.</div>
+    <div class="tzpd__demo">Static demo · no persistence · no user data stored</div>
+
+    <div class="tzpd__loop">
+      {% for step in loop %}
+        <span class="tzpd__step">{{ step }}</span>
+        {% if not forloop.last %}<span class="tzpd__arrow">→</span>{% endif %}
+      {% endfor %}
+      <span class="tzpd__arrow">↻</span>
+      <span class="tzpd__repeat">repeat daily</span>
+    </div>
+
+    <div class="tzpd__cols">
+
+      {# Sample daily card (read-only from seed) #}
+      <div class="tzpd__card">
+        <div class="tzpd__chead">
+          <div>
+            <div class="tzpd__cnum">Today's surah · #{{ sample.surah_number }}</div>
+            <div class="tzpd__cname">{{ sample.surah_name_transliteration }}</div>
+            <div class="tzpd__cmean">{{ sample.surah_name_translation }}</div>
+          </div>
+          <div class="tzpd__carab" lang="ar" dir="rtl">{{ sample.surah_name_arabic }}</div>
+        </div>
+
+        <div class="tzpd__field">
+          <h4>Read · core theme</h4>
+          <p>{{ sample.short_theme }}</p>
+        </div>
+        <div class="tzpd__field">
+          <h4>Reflect · reflection question</h4>
+          <p><em>pending — to be authored in the Ayah Reflection seed &amp; scholar-reviewed</em></p>
+        </div>
+        <div class="tzpd__field">
+          <h4>Act · practical action</h4>
+          <p><em>pending — to be authored &amp; scholar-reviewed</em></p>
+        </div>
+        <div class="tzpd__field">
+          <h4>Make Dua · dua prompt</h4>
+          <p><em>pending — dua prompt, not a narrated du'a unless sourced</em></p>
+        </div>
+
+        <div class="tzpd__badges">
+          <span class="tzpd__badge">draft reflection</span>
+          <span class="tzpd__badge">translation pending</span>
+          <span class="tzpd__badge">scholar review pending</span>
+          <span class="tzpd__badge tzpd__badge--rose">non-authoritative</span>
+        </div>
+      </div>
+
+      {# Checklist + streak #}
+      <div class="tzpd__side">
+        <div class="tzpd__panel">
+          <h3>Today's practice</h3>
+          <div class="hint">demo only — selections are not saved</div>
+          {% for item in checklist %}
+          <button class="tzpd__check" type="button">
+            <span class="tzpd__box">✓</span>
+            <span class="tzpd__check-l">{{ item }}</span>
+          </button>
+          {% endfor %}
+        </div>
+
+        <div class="tzpd__panel">
+          <h3>7-day streak</h3>
+          <div class="hint">mockup — illustrative only</div>
+          <div class="tzpd__streak">
+            {% for d in streak_days %}
+            <div class="tzpd__day {% if d.done %}done{% endif %}">
+              <div class="tzpd__dot">{% if d.done %}✓{% else %}·{% endif %}</div>
+              <small>{{ d.label }}</small>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="tzpd__nopersist">No real persistence yet · no database · no user data stored.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // Demo-only toggle. Nothing is persisted or sent anywhere.
+  var root = document.getElementById('tzpd');
+  if (!root) return;
+  root.querySelectorAll('.tzpd__check').forEach(function (btn) {
+    btn.addEventListener('click', function () { btn.classList.toggle('done'); });
+  });
+})();
+</script>
+{% endblock %}
