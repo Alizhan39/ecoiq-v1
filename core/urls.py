@@ -115,6 +115,9 @@ urlpatterns = [
     # Tazkiyah 114 — STAFF-ONLY "Choose Your Struggle" journey preview (not public)
     path('tazkiyah-114-struggles-preview/', views.tazkiyah_struggles_preview, name='tazkiyah_struggles_preview'),
 
+    # Tazkiyah 114 — STAFF-ONLY Daily Tazkiyah tracker preview (static/demo, not public)
+    path('tazkiyah-114-daily-preview/', views.tazkiyah_daily_preview, name='tazkiyah_daily_preview'),
+
     # EcoIQ Video Studio — staff-only video workflow (rendering is offline/build-time)
     path('video-studio/', views.video_studio, name='video_studio'),
 

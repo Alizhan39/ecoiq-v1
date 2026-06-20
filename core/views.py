@@ -2323,6 +2323,65 @@ def tazkiyah_struggles_preview(request):
 
 
 @staff_member_required(login_url='/login/')
+def tazkiyah_daily_preview(request):
+    """
+    /tazkiyah-114-daily-preview/ — STAFF-ONLY internal preview of the Daily
+    Tazkiyah habit loop: Read → Reflect → Act → Make Dua → Journal.
+
+    Static/demo only: builds one sample daily card read-only from the existing
+    seed (content/tazkiyah114/surah_seeds.json) and shows a checklist + a 7-day
+    streak MOCKUP. No database models, no user-data storage, no persistence.
+    Reflection-question / action / dua fields are not in the Surah-Card seed, so
+    they are shown as honest 'pending' placeholders — never fabricated tafsir.
+    Not public; not in nav.
+    """
+    from core.management.commands.validate_tazkiyah114_seeds import (
+        validate_seeds, DEFAULT_SEED_PATH,
+    )
+    errors = validate_seeds()
+    try:
+        seeds = _json.loads(DEFAULT_SEED_PATH.read_text(encoding='utf-8'))
+    except Exception as exc:  # pragma: no cover - defensive
+        seeds = {'surahs': []}
+        errors = errors + [f'Could not read seed file: {exc}']
+
+    # Pick one well-known surah as the sample daily card (Ad-Duha, 93).
+    surahs = seeds.get('surahs', [])
+    sample = next((s for s in surahs if s.get('surah_number') == 93), None)
+    if sample is None and surahs:
+        sample = surahs[0]
+
+    loop = ['Read', 'Reflect', 'Act', 'Make Dua', 'Journal']
+    checklist = [
+        'I read today',
+        'I reflected today',
+        'I acted on one ayah',
+        'I made dua',
+        'I wrote one journal note',
+    ]
+    # 7-day streak MOCKUP only (illustrative; no persistence).
+    streak_days = [
+        {'label': 'Mon', 'done': True},
+        {'label': 'Tue', 'done': True},
+        {'label': 'Wed', 'done': True},
+        {'label': 'Thu', 'done': False},
+        {'label': 'Fri', 'done': False},
+        {'label': 'Sat', 'done': False},
+        {'label': 'Sun', 'done': False},
+    ]
+
+    ctx = {
+        'sample': sample,
+        'loop': loop,
+        'checklist': checklist,
+        'streak_days': streak_days,
+        'validation_ok': not errors,
+        'validation_errors': errors,
+    }
+    return render(request, 'tazkiyah_daily_preview.html', ctx)
+
+
+@staff_member_required(login_url='/login/')
 def video_studio(request):
     """
     /video-studio/ — Staff-only video workflow surface.
