@@ -23,6 +23,7 @@ and long-term tazkiyah.
 | [Modules 31–60](tazkiyah-114-modules-31-60.md) | Structured product concepts for modules 31–60. |
 | [Money & Rizq Pathway](tazkiyah-114-money-rizq-pathway.md) | "Money Without Losing Your Soul" — Qur'anic reflection on money anxiety, halal income, spending, debt, giving, and wealth as amanah. |
 | [Money & Rizq Deep System](tazkiyah-114-money-rizq-deep-system.md) | The full 20-module financial transformation system, sample flows, example cards, UI components, MVP vs later, and crisis safeguards. |
+| [Rizq & Money Advanced Modules](tazkiyah-114-rizq-money-advanced-modules.md) | 15 advanced modules (emergency, halal filter, barakah growth, family, status spending) organised under six master categories — Fear · Halal · Barakah · Justice · Family · Growth. |
 | [Safety & Trust Principles](tazkiyah-114-safety-principles.md) | Binding safety, trust, and anti-vanity rules. |
 | [Implementation Roadmap](tazkiyah-114-implementation-roadmap.md) | Phases 1–6 with gates. |
 
