@@ -17,6 +17,7 @@ Seed/structured content for the **Tazkiyah 114 / Surah Map** product concept.
 | File | Purpose | Status |
 |---|---|---|
 | `surah_seeds.json` | All 114 surahs (1–114) as Surah-Card seed records (schema-aligned). | `draft_reflection` — all pending scholar review |
+| `pathways.json` | Pathway mapping: 10 Qur'an life pathways + 12 user struggles → suggested surah numbers. Product navigation metadata, not tafsir. | `draft_pathway` — all pending scholar review |
 | `moduleSeeds.ts` | Seed concepts for modules 31–60. | `draft_reflection` |
 
 ## Schema
@@ -57,6 +58,25 @@ python manage.py test core.tests_tazkiyah_seeds
 
 Validation logic: `core/management/commands/validate_tazkiyah114_seeds.py`
 (reused by `core/tests_tazkiyah_seeds.py`).
+
+`pathways.json` has its own validator. It checks: valid JSON; non-empty pathways and struggles;
+every pathway has all required fields; all suggested surah numbers exist in 1–114; every pathway
+has a caution note; all statuses are `draft_pathway` / `scholar_review: pending`; the humble
+framing (“suggested pathway inspired by Qur'anic themes”) is on every pathway; related struggle
+ids resolve and every struggle is referenced; and `_meta.authoritative = false`. Exits non-zero
+on any failure.
+
+```bash
+# Run the pathway validator directly
+python manage.py validate_tazkiyah114_pathways
+
+# Or as part of the test suite (CI guardrail)
+python manage.py test core.tests_tazkiyah_pathways
+```
+
+Pathway validation logic: `validate_pathways()` in
+`core/management/commands/validate_tazkiyah114_seeds.py`, exposed via the
+`validate_tazkiyah114_pathways` command and reused by `core/tests_tazkiyah_pathways.py`.
 
 ## Safety notes
 
