@@ -16,7 +16,7 @@ Seed/structured content for the **Tazkiyah 114 / Surah Map** product concept.
 
 | File | Purpose | Status |
 |---|---|---|
-| `surah_seeds.json` | First 45 surahs (1–45) as Surah-Card seed records (schema-aligned). | `draft_reflection` — all pending scholar review |
+| `surah_seeds.json` | First 60 surahs (1–60) as Surah-Card seed records (schema-aligned). | `draft_reflection` — all pending scholar review |
 | `moduleSeeds.ts` | Seed concepts for modules 31–60. | `draft_reflection` |
 
 ## Schema
