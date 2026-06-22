@@ -16,9 +16,9 @@
     rotating globe motif, the build-to-static → island-mount pipeline works.
   </p>
 
-  {# ── Island #1: ImpactGlobe ──
+  {% comment %} ── Island #1: ImpactGlobe ──
      Django owns the data; it embeds JSON props. React renders the visual.
-     The inner markup is a graceful fallback shown if JS/WebGL is unavailable. #}
+     The inner markup is a graceful fallback shown if JS/WebGL is unavailable. {% endcomment %}
   <div
     data-island="ImpactGlobe"
     data-props='{

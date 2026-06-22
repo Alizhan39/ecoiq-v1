@@ -219,9 +219,9 @@
     </span>
   </footer>
 
-  {# ── EcoIQ Visual Intelligence islands ──
+  {% comment %} ── EcoIQ Visual Intelligence islands ──
      Build-time bundle (frontend/app → static/dist). Hydrates any element with
-     data-island="…". No-ops on pages without islands; never blocks render. #}
+     data-island="…". No-ops on pages without islands; never blocks render. {% endcomment %}
   <script type="module" src="{% static 'dist/ecoiq-islands.js' %}" defer></script>
   {% block extra_js %}{% endblock %}
 </body>
