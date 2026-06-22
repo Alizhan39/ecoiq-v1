@@ -27,7 +27,38 @@ main   { max-width: none !important; margin: 0 !important; padding: 0 !important
 .dir-nav-btn{font-size:.72rem;font-weight:600;color:#94a3b8;padding:.28rem .65rem;border-radius:4px;border:1px solid transparent;transition:all .15s;text-decoration:none;white-space:nowrap;}
 .dir-nav-btn:hover{color:#e2e8f0;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08);}
 .dir-nav-btn.active{color:#00e89a;border-color:rgba(0,232,154,.2);background:rgba(0,232,154,.06);}
-@media(max-width:640px){.dir-nav-btn{font-size:.65rem;padding:.22rem .45rem;}}
+.dir-nav-btn.cta{color:#00e89a;border-color:rgba(0,232,154,.25);}
+.dir-nav-btn.cta:hover{background:rgba(0,232,154,.1);}
+
+/* Mobile hamburger toggle (hidden on desktop) */
+.dir-nav-toggle{display:none;margin-left:auto;background:transparent;border:1px solid rgba(255,255,255,.14);border-radius:6px;color:#cbd5e1;width:34px;height:30px;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.dir-nav-toggle:hover{border-color:rgba(255,255,255,.28);color:#fff;}
+.dir-nav-toggle svg{width:18px;height:18px;}
+.dir-nav-toggle:focus-visible,.dir-nav-btn:focus-visible,.dir-crumb a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+@media(max-width:768px){
+  .dir-nav-toggle{display:inline-flex;}
+  /* nav links collapse into a dropdown panel anchored to the sticky bar */
+  .dir-nav-links{
+    position:absolute;top:100%;left:0;right:0;margin-left:0;z-index:210;
+    flex-direction:column;align-items:stretch;gap:.15rem;
+    background:rgba(7,11,15,.99);border-bottom:1px solid rgba(255,255,255,.08);
+    padding:.5rem 1rem 1rem;
+    max-height:0;overflow:hidden;opacity:0;pointer-events:none;
+    transition:max-height .25s ease,opacity .2s ease;
+    box-shadow:0 16px 40px -16px rgba(0,0,0,.8);
+  }
+  .dir-nav.open .dir-nav-links{max-height:85vh;overflow:auto;opacity:1;pointer-events:auto;}
+  .dir-nav-links .dir-nav-btn{width:100%;font-size:.82rem;padding:.55rem .65rem;}
+}
+
+/* Breadcrumb (above the page title) */
+.dir-crumb{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--muted);margin:0 0 1rem;}
+.dir-crumb a{color:var(--muted2);text-decoration:none;}
+.dir-crumb a:hover{color:var(--accent);}
+.dir-crumb .sep{opacity:.5;}
+.dir-crumb [aria-current]{color:var(--text);font-weight:600;}
+@media(max-width:640px){.dir-nav-btn{font-size:.65rem;padding:.22rem .45rem;}.dir-nav-links .dir-nav-btn{font-size:.82rem;}}
 
 :root {
   --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22;
@@ -215,9 +246,47 @@ a{color:inherit;text-decoration:none;}
 
 {% block content %}
 
-<!-- Navigation provided by base.html global header — no duplicate nav here -->
+<!-- Institutional command-bar nav (this page hides the base header; matches the
+     press/investors standalone-surface pattern). Mirrors the global EcoIQ links. -->
+<nav class="dir-nav" aria-label="Primary">
+  <a href="/" class="dir-nav-brand" aria-label="EcoIQ home">
+    <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="40" height="40" rx="9" fill="#070b0f"/>
+      <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2" stroke-linejoin="round"/>
+      <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.08)" stroke="#00e89a" stroke-width="1.4" stroke-linejoin="round"/>
+      <circle cx="20" cy="20" r="2.8" fill="#00e89a"/>
+    </svg>
+    <span>Eco<span style="color:#00e89a">IQ</span></span>
+  </a>
+  <button class="dir-nav-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="dirNavLinks">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <div class="dir-nav-links" id="dirNavLinks">
+    <a href="/companies/" class="dir-nav-btn active" aria-current="page">Rankings</a>
+    <a href="/countries/" class="dir-nav-btn">Countries</a>
+    <a href="/about/" class="dir-nav-btn">About</a>
+    <a href="/methodology/" class="dir-nav-btn">Methodology</a>
+    <a href="/stewardship/" class="dir-nav-btn">Stewardship</a>
+    <a href="/projects/" class="dir-nav-btn">Projects</a>
+    <a href="/heating/" class="dir-nav-btn">Khalifa Heat</a>
+    <a href="/pricing/" class="dir-nav-btn">Pricing</a>
+    <a href="/contact/" class="dir-nav-btn">Contact</a>
+    {% if request.user.is_authenticated %}
+    <a href="/dashboard/" class="dir-nav-btn cta">Dashboard</a>
+    {% else %}
+    <a href="/login/" class="dir-nav-btn cta">Sign In</a>
+    {% endif %}
+  </div>
+</nav>
 
 <div class="page">
+
+  <!-- Breadcrumb -->
+  <nav class="dir-crumb" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span class="sep" aria-hidden="true">→</span>
+    <span aria-current="page">Company Rankings</span>
+  </nav>
 
   <!-- Hero -->
   <div class="hero svb-host">
@@ -232,7 +301,7 @@ a{color:inherit;text-decoration:none;}
     <div class="hero-kpi">
       <div class="hero-stat">
         <span class="hero-stat-val">{{ total_count }}</span>
-        <span class="hero-stat-lbl">Companies Rated</span>
+        <span class="hero-stat-lbl">Companies Ranked</span>
       </div>
       <div class="hero-stat">
         <span class="hero-stat-val">{{ result_count }}</span>
@@ -378,5 +447,23 @@ function ecoiqLogoFallback(img){
   var em = img.parentNode.querySelector('.cc-logo-emoji');
   if (em){ em.hidden = false; }
 }
+
+// Mobile nav: accessible hamburger toggle (open/close, keyboard, close-on-select).
+(function(){
+  var nav = document.querySelector('.dir-nav');
+  var toggle = nav && nav.querySelector('.dir-nav-toggle');
+  if (!nav || !toggle) return;
+  function setOpen(open){
+    nav.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  toggle.addEventListener('click', function(e){ e.stopPropagation(); setOpen(!nav.classList.contains('open')); });
+  // Close after choosing a destination.
+  nav.querySelectorAll('.dir-nav-links a').forEach(function(a){ a.addEventListener('click', function(){ setOpen(false); }); });
+  // Escape closes and returns focus to the toggle.
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && nav.classList.contains('open')){ setOpen(false); toggle.focus(); } });
+  // Click outside closes.
+  document.addEventListener('click', function(e){ if (nav.classList.contains('open') && !nav.contains(e.target)) setOpen(false); });
+})();
 </script>
 {% endblock %}
