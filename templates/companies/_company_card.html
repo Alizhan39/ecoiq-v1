@@ -1,0 +1,99 @@
+{% load company_extras %}
+{% with co=profile.company %}
+{% with score=profile.ecoiq_total_score domain=co.website|domain_of %}
+<div class="cc-card{% if profile.is_verified %} cc-verified{% endif %}">
+
+  <div class="cc-body">
+
+    {# ── LEFT zone: score ring + pillar bars ── #}
+    <div class="cc-left">
+      <div class="cc-ring" style="background:conic-gradient({% if score >= 70 %}var(--accent){% elif score >= 50 %}var(--warn){% else %}var(--danger){% endif %} {{ score }}%, rgba(255,255,255,.06) 0);">
+        <div class="cc-ring-inner" style="color:{% if score >= 70 %}var(--accent){% elif score >= 50 %}var(--warn){% else %}var(--danger){% endif %}">{{ score|floatformat:1 }}</div>
+      </div>
+      <div class="cc-score-cap">{{ profile.score_label }}</div>
+      <div class="cc-bars">
+        <div class="cc-bar"><span class="cc-bar-l">Public</span><span class="cc-bar-t"><span class="cc-bar-f" style="width:{{ profile.public_benefit_score }}%;background:var(--accent);opacity:.75"></span></span></div>
+        <div class="cc-bar"><span class="cc-bar-l">Environ.</span><span class="cc-bar-t"><span class="cc-bar-f" style="width:{{ profile.environmental_responsibility_score }}%;background:var(--accent);opacity:.6"></span></span></div>
+        <div class="cc-bar"><span class="cc-bar-l">Modern.</span><span class="cc-bar-t"><span class="cc-bar-f" style="width:{{ profile.modernization_score }}%;background:var(--info);opacity:.75"></span></span></div>
+        <div class="cc-bar"><span class="cc-bar-l">Gov.</span><span class="cc-bar-t"><span class="cc-bar-f" style="width:{{ profile.transparency_anti_corruption_score }}%;background:var(--warn);opacity:.75"></span></span></div>
+      </div>
+    </div>
+
+    {# ── RIGHT zone: identity header + signal-chip panel ── #}
+    <div class="cc-right">
+      <div class="cc-identity" style="background-image:{{ co.sector|sector_gradient }}">
+        <div class="cc-logo">
+          {% if co.logo_url %}
+            <img class="cc-logo-img" src="{{ co.logo_url }}" alt="{{ co.name }} logo" loading="lazy"
+                 data-favicon="{% if domain %}https://www.google.com/s2/favicons?domain={{ domain }}&sz=64{% endif %}"
+                 onerror="ecoiqLogoFallback(this)">
+            <span class="cc-logo-emoji" hidden>{{ co.sector|sector_emoji }}</span>
+          {% elif domain %}
+            <img class="cc-logo-img" src="https://logo.clearbit.com/{{ domain }}" alt="{{ co.name }} logo" loading="lazy"
+                 data-favicon="https://www.google.com/s2/favicons?domain={{ domain }}&sz=64"
+                 onerror="ecoiqLogoFallback(this)">
+            <span class="cc-logo-emoji" hidden>{{ co.sector|sector_emoji }}</span>
+          {% else %}
+            <span class="cc-logo-emoji">{{ co.sector|sector_emoji }}</span>
+          {% endif %}
+        </div>
+        <div class="cc-id-text">
+          <div class="cc-name">{{ co.name }}</div>
+          <div class="cc-sub">{{ co.get_sector_display }} · {{ co.country }}</div>
+        </div>
+        {# Primary climate-readiness signal #}
+        {% if score >= 80 %}
+          <span class="cc-flag cc-flag-green">🌟 Climate Leader</span>
+        {% elif score >= 65 %}
+          <span class="cc-flag cc-flag-blue">📈 On Track</span>
+        {% elif profile.high_transition_need %}
+          <span class="cc-flag cc-flag-orange">⚡ Urgent Transition</span>
+        {% else %}
+          <span class="cc-flag cc-flag-gray">🔄 In Transition</span>
+        {% endif %}
+      </div>
+
+      {# Signal chips — distinct, scannable status tags (new data, no duplication) #}
+      <div class="cc-chips">
+        {% if profile.moral_label %}
+        <span class="cc-chip" style="--c:{{ profile.moral_label_color }}"><i></i>{{ profile.moral_label_display }}</span>
+        {% endif %}
+        <span class="cc-chip" style="--c:{{ profile.controversy_risk_score|risk_color }}"><i></i>{{ profile.controversy_risk_score|risk_label }}</span>
+        {% if profile.pollution_level %}
+        <span class="cc-chip" style="--c:{{ profile.pollution_color }}"><i></i>{{ profile.get_pollution_level_display }} pollution</span>
+        {% endif %}
+        {% if profile.is_verified %}
+        <span class="cc-chip" style="--c:#14b8a6"><i></i>Verified</span>
+        {% else %}
+        <span class="cc-chip" style="--c:#94a3b8"><i></i>Unverified</span>
+        {% endif %}
+        {% if profile.funding_status == 'funded' or profile.funding_status == 'seeking_partners' or profile.funding_status == 'open_to_funding' %}
+        <span class="cc-chip" style="--c:{{ profile.funding_color }}"><i></i>{{ profile.get_funding_status_display }}</span>
+        {% endif %}
+        <span class="cc-chip cc-chip-muted"><i></i>AI-assisted</span>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── FOOTER: rank + meta, with Claim + View anchored bottom-right ── #}
+  <div class="cc-footer">
+    <span class="cc-rank-meta">
+      <span class="cc-rank">#{{ rank }}</span>
+      {% if co.country %}<span>{{ co.country }}</span>{% endif %}
+      {% if co.get_sector_display %}<span>· {{ co.get_sector_display }}</span>{% endif %}
+    </span>
+    <span class="cc-actions">
+      {% if not profile.is_verified %}
+      <a class="cc-claim"
+         href="mailto:alizhan@ecoiq.uk?subject=Claim+Profile%3A+{{ co.name|urlencode }}&body=I+would+like+to+claim+the+EcoIQ+profile+for+{{ co.name|urlencode }}."
+         title="Claim this company profile">🏷 Claim</a>
+      {% endif %}
+      {# Stretched link: covers the whole card so the entire card → detail page (no nested <a>). #}
+      <a class="cc-view" href="{% url 'companies:detail' co.slug %}">View Profile →</a>
+    </span>
+  </div>
+
+</div>
+{% endwith %}
+{% endwith %}

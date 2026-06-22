@@ -105,78 +105,74 @@ a{color:inherit;text-decoration:none;}
 /* ── Company grid ─────────────────────────────────────────── */
 .co-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(420px,1fr));
   gap:1rem;
 }
 
-/* ── Company card ─────────────────────────────────────────── */
-.co-card{
-  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
-  padding:1.25rem;transition:border-color .2s,transform .15s;
-  cursor:pointer;display:flex;flex-direction:column;gap:.9rem;
-  position:relative;overflow:hidden;
+/* ── Company card (redesigned: two balanced zones, no dead band) ── */
+.cc-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:1.1rem 1.15rem;transition:border-color .2s,transform .15s,box-shadow .2s;
+  cursor:pointer;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;text-decoration:none;color:inherit;
 }
-.co-card:hover{border-color:var(--border2);transform:translateY(-1px);}
-.co-card.verified{border-color:rgba(0,232,154,.25);}
-.co-card.verified::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--accent),transparent);
-}
+.cc-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 10px 30px -14px rgba(0,0,0,.65);}
+.cc-card.cc-verified{border-color:rgba(0,232,154,.25);}
+.cc-card.cc-verified::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);z-index:4;pointer-events:none;}
 
-/* Card top row */
-.card-top{display:flex;align-items:flex-start;gap:.9rem;}
-.card-logo{
-  width:44px;height:44px;border-radius:8px;
-  background:var(--bg3);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.3rem;flex-shrink:0;overflow:hidden;
-}
-.card-logo img{width:100%;height:100%;object-fit:contain;}
-.card-identity{flex:1;min-width:0;}
-.card-name{
-  font-size:.9rem;font-weight:700;letter-spacing:-.01em;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:color .15s;
-}
-.co-card:hover .card-name{color:var(--accent);}
-.card-meta{font-size:.7rem;color:var(--muted);margin-top:.2rem;}
-.card-badges{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem;}
+.cc-body{display:grid;grid-template-columns:150px 1fr;gap:1rem;align-items:start;}
 
-/* Score meter */
-.score-block{display:flex;align-items:center;gap:.75rem;}
-.score-ring{
-  width:52px;height:52px;flex-shrink:0;
-  border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:.9rem;font-weight:800;
-  font-variant-numeric:tabular-nums;
-  position:relative;
-}
-.score-ring-inner{
-  width:44px;height:44px;background:var(--bg2);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:.85rem;font-weight:800;z-index:1;
-}
-.score-details{flex:1;}
-.moral-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem;}
-.score-bars{display:flex;flex-direction:column;gap:.2rem;}
-.mini-bar-row{display:flex;align-items:center;gap:.4rem;}
-.mini-bar-lbl{font-size:.58rem;color:var(--muted);width:52px;text-align:right;flex-shrink:0;}
-.mini-bar-track{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
-.mini-bar-fill{height:100%;border-radius:2px;transition:width .3s;}
+/* LEFT zone: score ring + pillar bars */
+.cc-left{display:flex;flex-direction:column;gap:.5rem;min-width:0;}
+.cc-ring{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;flex-shrink:0;}
+.cc-ring-inner{width:50px;height:50px;background:var(--bg2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.92rem;font-weight:800;}
+.cc-score-cap{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.cc-bars{display:flex;flex-direction:column;gap:.28rem;margin-top:.15rem;}
+.cc-bar{display:flex;align-items:center;gap:.4rem;}
+.cc-bar-l{font-size:.55rem;color:var(--muted);width:46px;text-align:right;flex-shrink:0;}
+.cc-bar-t{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+.cc-bar-f{display:block;height:100%;border-radius:3px;}
 
-/* Card footer */
-.card-footer{
-  display:flex;align-items:center;justify-content:space-between;
-  padding-top:.75rem;border-top:1px solid var(--border);
-  font-size:.68rem;color:var(--muted);
+/* RIGHT zone: identity header + signal chips */
+.cc-right{min-width:0;display:flex;flex-direction:column;gap:.6rem;}
+.cc-identity{position:relative;border:1px solid var(--border);border-radius:10px;padding:.7rem .8rem;display:grid;grid-template-columns:40px 1fr;gap:.6rem;align-items:center;overflow:hidden;}
+.cc-logo{width:40px;height:40px;border-radius:8px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;}
+.cc-logo-img{width:100%;height:100%;object-fit:contain;}
+.cc-id-text{min-width:0;}
+.cc-name{font-size:.92rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;transition:color .15s;}
+.cc-card:hover .cc-name{color:var(--accent);}
+.cc-sub{font-size:.66rem;color:var(--muted2);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cc-flag{grid-column:1 / -1;justify-self:start;font-size:.57rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:5px;margin-top:.1rem;}
+.cc-flag-green{background:rgba(0,232,154,.18);color:#00e89a;}
+.cc-flag-blue{background:rgba(88,166,255,.18);color:#58a6ff;}
+.cc-flag-orange{background:rgba(244,162,97,.18);color:#f4a261;}
+.cc-flag-gray{background:rgba(148,163,184,.18);color:#94a3b8;}
+
+/* Signal chips */
+.cc-chips{display:flex;flex-wrap:wrap;gap:.35rem;}
+.cc-chip{display:inline-flex;align-items:center;gap:.32rem;font-size:.6rem;font-weight:700;letter-spacing:.01em;padding:3px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.025);color:var(--muted2);white-space:nowrap;}
+.cc-chip i{width:6px;height:6px;border-radius:50%;background:var(--c,#888);flex-shrink:0;}
+.cc-chip-muted i{background:#64748b;}
+
+/* Footer */
+.cc-footer{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.9rem;padding-top:.7rem;border-top:1px solid var(--border);font-size:.66rem;color:var(--muted);flex-wrap:wrap;}
+.cc-rank-meta{display:flex;align-items:center;gap:.45rem;min-width:0;flex-wrap:wrap;}
+.cc-rank{font-size:.64rem;font-weight:800;color:var(--muted);background:rgba(255,255,255,.05);padding:1px 6px;border-radius:4px;font-variant-numeric:tabular-nums;}
+.cc-actions{display:flex;align-items:center;gap:.5rem;}
+/* Claim must sit ABOVE the stretched-link overlay so it stays independently clickable. */
+.cc-claim{font-size:.66rem;font-weight:700;color:#58a6ff;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.22);padding:.24rem .6rem;border-radius:6px;text-decoration:none;transition:background .15s;position:relative;z-index:3;}
+.cc-claim:hover{background:rgba(88,166,255,.2);}
+/* "View Profile" is the real detail link; its ::after stretches over the whole card
+   (nearest positioned ancestor is .cc-card, which is position:relative). */
+.cc-view{font-size:.68rem;font-weight:600;padding:.24rem .6rem;border-radius:6px;border:1px solid var(--border2);color:var(--muted2);text-decoration:none;transition:all .15s;}
+.cc-view::after{content:'';position:absolute;inset:0;z-index:1;}
+.cc-card:hover .cc-view{border-color:var(--accent);color:var(--accent);}
+
+@media(max-width:520px){
+  .cc-body{grid-template-columns:1fr;gap:.85rem;}
+  .cc-left{flex-direction:row;align-items:center;flex-wrap:wrap;gap:.75rem;}
+  .cc-bars{flex:1;min-width:150px;}
 }
-.card-view-btn{
-  font-size:.7rem;font-weight:600;padding:.25rem .65rem;
-  border-radius:5px;border:1px solid var(--border2);color:var(--muted2);
-  transition:all .15s;
-}
-.co-card:hover .card-view-btn{border-color:var(--accent);color:var(--accent);}
 
 /* ── Badges ───────────────────────────────────────────────── */
 .badge{
@@ -348,140 +344,7 @@ a{color:inherit;text-decoration:none;}
   {% if profiles %}
   <div class="co-grid">
     {% for profile in profiles %}
-    {% with co=profile.company %}
-    <a href="{% url 'companies:detail' co.slug %}" class="co-card {% if profile.is_verified %}verified{% endif %}">
-
-      <!-- Top row -->
-      <div class="card-top">
-        <div class="card-logo">
-          {% if co.logo_url %}
-          <img src="{{ co.logo_url }}" alt="{{ co.name }}" onerror="this.style.display='none'">
-          {% else %}
-          🏭
-          {% endif %}
-        </div>
-        <div class="card-identity">
-          <div class="card-name">{{ co.name }}</div>
-          <div class="card-meta">{{ co.get_sector_display }} · {{ co.country }}</div>
-          <div class="card-badges">
-            <!-- Transition readiness — primary climate signal -->
-            {% if profile.ecoiq_total_score >= 80 %}
-              <span class="badge badge-green">🌟 Climate Leader</span>
-            {% elif profile.ecoiq_total_score >= 65 %}
-              <span class="badge badge-blue">📈 On Track</span>
-            {% elif profile.high_transition_need %}
-              <span class="badge badge-orange">⚡ Urgent Transition</span>
-            {% else %}
-              <span class="badge badge-gray">🔄 In Transition</span>
-            {% endif %}
-            <!-- Pollution / climate risk -->
-            {% if profile.pollution_level == 'low' %}
-              <span class="badge badge-green">Low Risk</span>
-            {% elif profile.pollution_level == 'medium' %}
-              <span class="badge badge-orange">Moderate Risk</span>
-            {% elif profile.pollution_level == 'high' %}
-              <span class="badge badge-red">High Risk</span>
-            {% elif profile.pollution_level == 'severe' %}
-              <span class="badge badge-red">⚠ Critical Risk</span>
-            {% endif %}
-            <!-- Verified -->
-            {% if profile.is_verified %}<span class="badge badge-teal">✓ Verified</span>{% endif %}
-            <!-- Data quality signals -->
-            <span class="badge badge-gray">AI-assisted</span>
-            {% if not profile.is_verified %}<span class="badge badge-orange">Needs verification</span>{% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Score block -->
-      <div class="score-block">
-        <!-- Circular score indicator -->
-        <div class="score-ring" style="
-          background:conic-gradient(
-            {% if profile.ecoiq_total_score >= 70 %}var(--accent){% elif profile.ecoiq_total_score >= 50 %}var(--warn){% else %}var(--danger){% endif %}
-            {{ profile.ecoiq_total_score }}%,
-            rgba(255,255,255,.06) 0%
-          );
-        ">
-          <div class="score-ring-inner"
-            style="color:{% if profile.ecoiq_total_score >= 70 %}var(--accent){% elif profile.ecoiq_total_score >= 50 %}var(--warn){% else %}var(--danger){% endif %}">
-            {{ profile.ecoiq_total_score|floatformat:1 }}
-          </div>
-        </div>
-
-        <!-- Score details -->
-        <div class="score-details">
-          <div class="moral-label" style="color:{{ profile.moral_label_color }}">
-            {{ profile.moral_label_display }}
-          </div>
-          <div class="score-bars">
-            <div class="mini-bar-row">
-              <span class="mini-bar-lbl">Public</span>
-              <div class="mini-bar-track">
-                <div class="mini-bar-fill" style="width:{{ profile.public_benefit_score }}%;background:var(--accent);opacity:.7;"></div>
-              </div>
-            </div>
-            <div class="mini-bar-row">
-              <span class="mini-bar-lbl">Environ.</span>
-              <div class="mini-bar-track">
-                <div class="mini-bar-fill" style="width:{{ profile.environmental_responsibility_score }}%;background:var(--accent);opacity:.6;"></div>
-              </div>
-            </div>
-            <div class="mini-bar-row">
-              <span class="mini-bar-lbl">Modern.</span>
-              <div class="mini-bar-track">
-                <div class="mini-bar-fill" style="width:{{ profile.modernization_score }}%;background:var(--info);opacity:.7;"></div>
-              </div>
-            </div>
-            <div class="mini-bar-row">
-              <span class="mini-bar-lbl">Gov.</span>
-              <div class="mini-bar-track">
-                <div class="mini-bar-fill" style="width:{{ profile.transparency_anti_corruption_score }}%;background:var(--warn);opacity:.7;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI summary excerpt -->
-      {% if profile.ai_summary %}
-      <p style="font-size:.73rem;color:var(--muted2);line-height:1.55;margin:-0.2rem 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-        {{ profile.ai_summary|truncatechars:130 }}
-      </p>
-      {% elif co.description %}
-      <p style="font-size:.73rem;color:var(--muted2);line-height:1.55;margin:-0.2rem 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-        {{ co.description|truncatechars:130 }}
-      </p>
-      {% endif %}
-
-      <!-- Claim CTA (stopPropagation prevents outer <a> from firing) -->
-      {% if not profile.is_verified %}
-      <div onclick="event.stopPropagation();event.preventDefault();" style="margin:.6rem 0 -.2rem;">
-        <a href="mailto:alizhan@ecoiq.uk?subject=Claim+Profile%3A+{{ co.name|urlencode }}&body=I+would+like+to+claim+the+EcoIQ+profile+for+{{ co.name|urlencode }}."
-           onclick="event.stopPropagation();"
-           style="display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;
-                  color:#58a6ff;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);
-                  padding:.28rem .65rem;border-radius:6px;text-decoration:none;transition:background .15s;"
-           onmouseover="this.style.background='rgba(88,166,255,.18)'"
-           onmouseout="this.style.background='rgba(88,166,255,.08)'"
-           title="Claim this company profile">
-          🏷 Claim this profile →
-        </a>
-      </div>
-      {% endif %}
-
-      <!-- Card footer -->
-      <div class="card-footer">
-        <span style="display:flex;align-items:center;gap:.5rem">
-          <span style="font-size:.65rem;font-weight:800;color:var(--muted);background:rgba(255,255,255,.05);padding:1px 6px;border-radius:4px;font-variant-numeric:tabular-nums">#{{ forloop.counter }}</span>
-          {% if co.country %}<span>{{ co.country }}</span>{% endif %}
-          {% if co.get_sector_display %}<span>· {{ co.get_sector_display }}</span>{% endif %}
-        </span>
-        <span class="card-view-btn">View Profile →</span>
-      </div>
-
-    </a>
-    {% endwith %}
+    {% include "companies/_company_card.html" with profile=profile rank=forloop.counter %}
     {% endfor %}
   </div>
 
@@ -503,4 +366,17 @@ a{color:inherit;text-decoration:none;}
   </div>
 
 </div><!-- /.page -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// One global handler (not per-card): primary logo -> favicon -> sector emoji.
+function ecoiqLogoFallback(img){
+  var fav = img.getAttribute('data-favicon');
+  if (fav && img.src !== fav){ img.setAttribute('data-favicon',''); img.src = fav; return; }
+  img.style.display='none';
+  var em = img.parentNode.querySelector('.cc-logo-emoji');
+  if (em){ em.hidden = false; }
+}
+</script>
 {% endblock %}
