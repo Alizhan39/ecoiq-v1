@@ -1,11 +1,11 @@
-{# ── EcoIQ Financing Intelligence — Matched Pathways Panel ───────────────────
+{% comment %} ── EcoIQ Financing Intelligence — Matched Pathways Panel ───────────────────
    Include in company detail page.
    Context variables required:
      financing_matches       queryset of DirectFinancingMatch (top 6)
      financing_eligible_count  int
      financing_likely_count    int
      financing_total_count     int
-#}
+{% endcomment %}
 {% if financing_total_count %}
 <section class="fin-matches-panel" aria-labelledby="fin-matches-heading">
 

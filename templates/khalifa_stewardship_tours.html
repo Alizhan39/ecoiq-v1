@@ -786,8 +786,8 @@
 {% endblock %}
 
 {% block extra_js %}
-{# anime.js — progressive enhancement only. Every animation below has a vanilla
-   JS / CSS fallback, so the page is fully functional if the CDN is blocked. #}
+{% comment %} anime.js — progressive enhancement only. Every animation below has a vanilla
+   JS / CSS fallback, so the page is fully functional if the CDN is blocked. {% endcomment %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" defer></script>
 <script>
 (function () {

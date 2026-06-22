@@ -1,8 +1,8 @@
-{# ── EcoIQ Improvement Roadmap Panel ───────────────────────────────────────────
+{% comment %} ── EcoIQ Improvement Roadmap Panel ───────────────────────────────────────────
    Include in company detail page below ethics master scores.
    Context variables required:
      ethics_profile  CompanyEthicsProfile instance (or None)
-#}
+{% endcomment %}
 {% if ethics_profile and ethics_profile.milestones.exists %}
 <section class="roadmap-panel" aria-labelledby="roadmap-heading">
 
