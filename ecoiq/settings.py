@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     'notifications',
     'hikma',
     'harvester',
+    'qdf',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

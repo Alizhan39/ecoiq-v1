@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ecoiq.uk/schemas/qdf/decision_questions.schema.json",
+  "title": "EcoIQ Quranic Decision Filter — Question Seed Schema",
+  "description": "Schema for the 10 Quranic Decision Filter questions. Religious framing is a governance lens, not fatwa; review_status must be tracked.",
+  "type": "object",
+  "required": ["_meta", "questions"],
+  "additionalProperties": false,
+  "properties": {
+    "_meta": {
+      "type": "object",
+      "required": ["module", "thesis", "version", "review_status", "disclaimer"],
+      "properties": {
+        "module": { "type": "string" },
+        "thesis": { "type": "string" },
+        "version": { "type": "string" },
+        "review_status": {
+          "type": "string",
+          "enum": ["draft_pending_scholar_review", "under_review", "scholar_reviewed", "approved"]
+        },
+        "disclaimer": { "type": "string" },
+        "scoring": { "type": "string" }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key", "order", "arabic_term", "title_en", "core_question", "weight",
+          "definition", "plain_english", "evidence_required", "red_flags",
+          "scoring_rubric", "ai_prompt", "low_score_actions",
+          "example_company", "example_policy", "example_investment"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": ["niyyah", "halal", "adl", "rahmah", "mizan", "amanah", "maslahah", "darar", "shura", "akhirah"]
+          },
+          "order": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "arabic_term": { "type": "string", "minLength": 2 },
+          "title_en": { "type": "string", "minLength": 2 },
+          "core_question": { "type": "string", "minLength": 4 },
+          "weight": { "type": "number", "minimum": 0.1, "maximum": 3.0 },
+          "definition": { "type": "string", "minLength": 20 },
+          "plain_english": { "type": "string", "minLength": 20 },
+          "evidence_required": {
+            "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 4 }
+          },
+          "red_flags": {
+            "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 4 }
+          },
+          "scoring_rubric": {
+            "type": "object",
+            "required": ["0-2", "3-5", "6-8", "9-10"],
+            "additionalProperties": false,
+            "properties": {
+              "0-2": { "type": "string" },
+              "3-5": { "type": "string" },
+              "6-8": { "type": "string" },
+              "9-10": { "type": "string" }
+            }
+          },
+          "ai_prompt": { "type": "string", "minLength": 40 },
+          "low_score_actions": {
+            "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 4 }
+          },
+          "example_company": { "type": "string", "minLength": 10 },
+          "example_policy": { "type": "string", "minLength": 10 },
+          "example_investment": { "type": "string", "minLength": 10 }
+        }
+      }
+    }
+  }
+}
