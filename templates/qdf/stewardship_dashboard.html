@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Stewardship Dashboard · Decision Integrity · EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="sd-wrap">
+
+  <header class="sd-head">
+    <div class="sd-eyebrow">Quranic Decision Filter · Create Rizq Without Zulm</div>
+    <h1 class="sd-title">Stewardship Dashboard</h1>
+    <p class="sd-sub">Portfolio-wide decision integrity across {{ total }} assessed {{ total|pluralize:"company,companies" }}. AI-assisted &amp; indicative — not a Shariah ruling or investment advice.</p>
+  </header>
+
+  {# ── Headline KPIs ── #}
+  <div class="sd-kpis">
+    <div class="sd-kpi">
+      <span class="sd-kpi-v">{{ avg_integrity }}</span>
+      <span class="sd-kpi-k">Avg Decision Integrity / 100</span>
+    </div>
+    <div class="sd-kpi">
+      <span class="sd-kpi-v">{{ total }}</span>
+      <span class="sd-kpi-k">Companies Assessed</span>
+    </div>
+    <div class="sd-kpi">
+      <span class="sd-kpi-v" style="color:{% if red_line %}#e63946{% else %}#00e89a{% endif %}">{{ red_line }}</span>
+      <span class="sd-kpi-k">Red-Line Breaches</span>
+    </div>
+    <div class="sd-kpi">
+      <span class="sd-kpi-v">{{ avg_confidence }}%</span>
+      <span class="sd-kpi-k">Avg Confidence</span>
+    </div>
+  </div>
+
+  {# ── Verdict distribution ── #}
+  <section class="sd-section">
+    <h2 class="sd-h2">Verdict Distribution</h2>
+    <div class="sd-verdicts">
+      {% for v in verdict_summary %}
+      <div class="sd-verdict">
+        <div class="sd-verdict-top">
+          <span class="sd-verdict-label">{{ v.label }}</span>
+          <span class="sd-verdict-count">{{ v.count }}</span>
+        </div>
+        <div class="sd-verdict-track"><div class="sd-verdict-fill sd-vf-{{ v.key }}" style="width:{{ v.pct }}%"></div></div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="sd-cols">
+    {# ── Leaders ── #}
+    <section class="sd-section">
+      <h2 class="sd-h2">Stewardship Leaders</h2>
+      <div class="sd-list">
+        {% for a in leaders %}
+        <a class="sd-row" href="/decisions/{{ a.profile.company.slug }}/">
+          <span class="sd-row-rank">{{ forloop.counter }}</span>
+          <span class="sd-row-name">{{ a.profile.company.name }}</span>
+          <span class="sd-row-verdict" style="color:{{ a.verdict_color }}">{{ a.verdict_display }}</span>
+          <span class="sd-row-score" style="color:{{ a.integrity_color }}">{{ a.decision_integrity_score|floatformat:0 }}</span>
+        </a>
+        {% empty %}
+        <p class="sd-empty">No assessments yet. Run <code>python manage.py qdf_recompute</code> to populate.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# ── Watchlist ── #}
+    <section class="sd-section">
+      <h2 class="sd-h2">Watchlist <span class="sd-h2-note">lowest integrity</span></h2>
+      <div class="sd-list">
+        {% for a in watchlist %}
+        <a class="sd-row" href="/decisions/{{ a.profile.company.slug }}/">
+          <span class="sd-row-rank">{{ forloop.counter }}</span>
+          <span class="sd-row-name">{{ a.profile.company.name }}</span>
+          <span class="sd-row-verdict" style="color:{{ a.verdict_color }}">{% if a.red_line_breached %}⛔ {% endif %}{{ a.verdict_display }}</span>
+          <span class="sd-row-score" style="color:{{ a.integrity_color }}">{{ a.decision_integrity_score|floatformat:0 }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <p class="sd-disclaimer">
+    Decision integrity is derived from EcoIQ public-signal scores through the 10-question Quranic Decision Filter.
+    AI-assisted and indicative; not fatwa, tafsir, a Shariah ruling, or investment advice. Religious framing pending qualified scholarly review.
+  </p>
+</div>
+
+<style>
+  .sd-wrap{max-width:1180px;margin:-2rem auto 0;padding:2.2rem 1.5rem 4rem;background:#070b0f;color:#e2e8f0;border-radius:14px}
+  main:has(.sd-wrap){max-width:100%;padding:0}
+  .sd-eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.5rem}
+  .sd-title{font-size:2rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin:0 0 .5rem}
+  .sd-sub{font-size:.9rem;color:#64748b;max-width:70ch;line-height:1.55}
+  .sd-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin:1.8rem 0}
+  .sd-kpi{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:1.2rem 1.3rem;display:flex;flex-direction:column;gap:.4rem}
+  .sd-kpi-v{font-size:2.2rem;font-weight:800;color:#fff;letter-spacing:-.03em;line-height:1}
+  .sd-kpi-k{font-size:.74rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+  .sd-section{margin-top:2rem}
+  .sd-h2{font-size:1.15rem;font-weight:800;color:#fff;letter-spacing:-.02em;margin-bottom:1rem}
+  .sd-h2-note{font-size:.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-left:.4rem}
+  .sd-verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+  .sd-verdict-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.4rem}
+  .sd-verdict-label{font-size:.82rem;color:#cbd5e1;font-weight:600}
+  .sd-verdict-count{font-size:1.1rem;font-weight:800;color:#fff}
+  .sd-verdict-track{height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+  .sd-verdict-fill{height:100%;border-radius:4px}
+  .sd-vf-proceed{background:#00e89a}
+  .sd-vf-proceed_conditions{background:#58a6ff}
+  .sd-vf-revise{background:#f4a261}
+  .sd-vf-do_not_proceed{background:#e63946}
+  .sd-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
+  .sd-list{display:flex;flex-direction:column;gap:.4rem}
+  .sd-row{display:flex;align-items:center;gap:.8rem;padding:.7rem .9rem;background:#0d1117;border:1px solid rgba(255,255,255,.06);border-radius:9px;text-decoration:none;transition:border-color .15s}
+  .sd-row:hover{border-color:rgba(0,232,154,.3)}
+  .sd-row-rank{font-size:.78rem;color:#475569;font-family:'SF Mono',ui-monospace,monospace;min-width:1.4rem}
+  .sd-row-name{flex:1;font-size:.9rem;color:#e2e8f0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sd-row-verdict{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+  .sd-row-score{font-size:1.15rem;font-weight:800;min-width:2.2rem;text-align:right}
+  .sd-empty{color:#64748b;font-size:.84rem}
+  .sd-empty code{background:rgba(255,255,255,.06);padding:.1rem .4rem;border-radius:4px;color:#94a3b8}
+  .sd-disclaimer{font-size:.68rem;color:#475569;line-height:1.5;margin-top:2.4rem;max-width:90ch}
+  @media (max-width:760px){.sd-cols{grid-template-columns:1fr}}
+</style>
+{% endblock %}

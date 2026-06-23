@@ -78,6 +78,10 @@ urlpatterns = [
     # EcoIQ Project Intelligence — readiness and pipeline scoring
     path('api/projects/', include('api.projects_urls', namespace='projects')),
 
+    # EcoIQ Quranic Decision Filter — "Create rizq without zulm"
+    path('api/qdf/',    include('qdf.urls',           namespace='qdf')),
+    path('decisions/',  include('qdf.web_urls',       namespace='qdf_web')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

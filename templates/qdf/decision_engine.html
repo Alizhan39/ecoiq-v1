@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}Decision Engine · {{ company.name }} · EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="de-wrap">
+{% if not assessment %}
+  <p class="de-empty">Decision assessment unavailable for {{ company.name }}.</p>
+{% else %}
+
+  {# ── Header ── #}
+  <header class="de-head">
+    <div>
+      <a href="/decisions/" class="de-back">← Stewardship Dashboard</a>
+      <div class="de-eyebrow">Quranic Decision Engine · Create Rizq Without Zulm</div>
+      <h1 class="de-title">{{ company.name }}</h1>
+      <p class="de-summary">{{ assessment.rizq_without_zulm_summary }}</p>
+    </div>
+    <div class="de-score" style="--c:{{ assessment.integrity_color }}">
+      <span class="de-score-val">{{ assessment.decision_integrity_score|floatformat:0 }}</span>
+      <span class="de-score-den">/100 · {{ assessment.integrity_band }}</span>
+      <span class="de-verdict" style="color:{{ assessment.verdict_color }}">{{ assessment.verdict_display }}</span>
+    </div>
+  </header>
+
+  <div class="de-meta-strip">
+    <span>Risk <b style="color:{{ assessment.risk_color }}">{{ assessment.get_risk_level_display }}</b></span>
+    <span>Evidence <b style="color:{{ assessment.evidence_status_color }}">{{ assessment.get_evidence_status_display }}</b></span>
+    <span>Confidence <b>{{ assessment.confidence_pct }}%</b></span>
+    <span>Red flags <b style="color:#e63946">{{ assessment.red_flag_count }}</b></span>
+    <a class="de-profile-link" href="/companies/{{ company.slug }}/">View full profile →</a>
+  </div>
+
+  {# ── Action Queue ── #}
+  <section class="de-section">
+    <h2 class="de-h2">Action Queue <span class="de-count">{{ queue|length }}</span></h2>
+    <p class="de-h2-sub">Ranked by Next-Best-Action priority — impact × urgency ÷ cost. Top of the queue is what to do next.</p>
+    <div class="de-queue">
+      {% for c in queue %}
+      <article class="de-card{% if c.is_red_line %} de-card-rl{% endif %}" style="--sev:{% if c.severity == 'critical' %}#e63946{% elif c.severity == 'high' %}#f4a261{% elif c.severity == 'moderate' %}#58a6ff{% else %}#8b5cf6{% endif %}">
+        <div class="de-card-h">
+          <span class="de-rank">#{{ c.rank }}</span>
+          <div class="de-card-id">
+            <span class="de-card-term">{{ c.arabic_term }} · {{ c.title }}</span>
+            <span class="de-card-q">{{ c.core_question }}</span>
+          </div>
+          <div class="de-card-nums">
+            <span class="de-card-score">{{ c.current_score }}<small>/10</small></span>
+            <span class="de-card-impact">+{{ c.expected_impact_points }} pts</span>
+          </div>
+        </div>
+        <div class="de-card-tags">
+          <span class="de-tag de-tag-sev">{{ c.severity }}</span>
+          {% if c.is_red_line %}<span class="de-tag de-tag-rl">red-line</span>{% endif %}
+          <span class="de-tag">{{ c.horizon_label }}</span>
+          <span class="de-tag">cost {{ c.cost_band }}</span>
+          <span class="de-tag">priority {{ c.priority }}</span>
+        </div>
+        <p class="de-card-detect"><b>Detection:</b> {{ c.detection }}</p>
+        <p class="de-card-cause"><b>Root cause:</b> {{ c.root_cause }}</p>
+        {% if c.risk_signals %}
+        <p class="de-card-cause"><b>Risk signals:</b> {{ c.risk_signals|join:" · " }}</p>
+        {% endif %}
+        <div class="de-card-actions">
+          <span class="de-actions-h">Recommended actions · Owner: {{ c.owner }}</span>
+          <ul>{% for a in c.actions %}<li>{{ a }}</li>{% endfor %}</ul>
+        </div>
+        <div class="de-card-foot">
+          <span>Progress metric: {{ c.progress_metric }}</span>
+        </div>
+      </article>
+      {% empty %}
+      <p class="de-empty">No open decision cards — every dimension is at or above the stewardship target.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── Roadmap ── #}
+  <section class="de-section">
+    <h2 class="de-h2">Roadmap</h2>
+    <p class="de-h2-sub">
+      Baseline <b>{{ roadmap.baseline_integrity }}</b> → projected <b style="color:#00e89a">{{ roadmap.target_integrity }}</b>
+      (<b>+{{ roadmap.total_uplift }}</b> pts) if all carded actions reach target. Projections are indicative.
+    </p>
+    <div class="de-roadmap">
+      {% for col in roadmap.trajectory %}
+      <div class="de-rm-col">
+        <div class="de-rm-head">
+          <span class="de-rm-when">{{ col.horizon_label }}</span>
+          <span class="de-rm-proj">→ {{ col.projected_integrity }}</span>
+        </div>
+        <div class="de-rm-verdict" style="color:{% if col.projected_verdict == 'proceed' %}#00e89a{% elif col.projected_verdict == 'do_not_proceed' %}#e63946{% else %}#58a6ff{% endif %}">{{ col.projected_verdict }}</div>
+        {% for c in col.cards %}
+        <div class="de-rm-card">
+          <span class="de-rm-term">{{ c.arabic_term }}</span>
+          <span class="de-rm-impact">+{{ c.expected_impact_points }}</span>
+        </div>
+        {% empty %}
+        <div class="de-rm-none">—</div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── Scenario Engine ── #}
+  <section class="de-section">
+    <h2 class="de-h2">Scenario Engine</h2>
+    <p class="de-h2-sub">Adjust any dimension (0–10) and re-score. Red-line failures (Halal / Adl / Darar) cap the result.</p>
+    <form method="get" class="de-sim-form">
+      <div class="de-sim-grid">
+        {% for qs in assessment.ordered_scores %}
+        <label class="de-sim-cell">
+          <span>{{ qs.question.arabic_term }}</span>
+          <input type="number" name="sim_{{ qs.question.key }}" min="0" max="10" step="0.5"
+                 value="{{ qs.score|floatformat:1 }}"
+                 placeholder="{{ qs.score|floatformat:1 }}">
+        </label>
+        {% endfor %}
+      </div>
+      <button type="submit" class="de-sim-btn">Re-score scenario →</button>
+    </form>
+
+    {% if scenario %}
+    <div class="de-sim-result" style="--c:{% if scenario.overall >= 65 %}#00e89a{% elif scenario.overall >= 50 %}#58a6ff{% else %}#e63946{% endif %}">
+      <div class="de-sim-r-num">
+        <span class="de-sim-r-val">{{ scenario.overall }}</span><span class="de-sim-r-den">/100</span>
+      </div>
+      <div class="de-sim-r-body">
+        <div>Verdict: <b style="color:var(--c)">{{ scenario.verdict }}</b> · Risk: <b>{{ scenario.risk }}</b></div>
+        <div>Delta vs current: <b style="color:{% if scenario.delta >= 0 %}#00e89a{% else %}#e63946{% endif %}">{{ scenario.delta }}</b> (baseline {{ scenario.baseline }})
+          {% if scenario.red_line %}· <b style="color:#e63946">RED LINE BREACHED</b>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <p class="de-disclaimer">
+    AI-assisted, indicative governance lens inspired by Qur’anic decision principles. Not fatwa, tafsir, a Shariah ruling, or investment advice.
+    Scores are evidence-gated; religious framing pending qualified scholarly review.
+  </p>
+{% endif %}
+</div>
+
+<style>
+  .de-wrap{max-width:1180px;margin:-2rem auto 0;padding:2rem 1.5rem 4rem;background:#070b0f;color:#e2e8f0;border-radius:14px}
+  main:has(.de-wrap){max-width:100%;padding:0}
+  .de-back{font-size:.78rem;color:#64748b;text-decoration:none}
+  .de-eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin:.7rem 0 .4rem}
+  .de-head{display:flex;justify-content:space-between;align-items:flex-start;gap:2rem;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:1.4rem}
+  .de-title{font-size:1.9rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin:0 0 .5rem}
+  .de-summary{font-size:.92rem;color:#94a3b8;max-width:60ch;line-height:1.55}
+  .de-score{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+  .de-score-val{font-size:3.2rem;font-weight:800;color:var(--c);letter-spacing:-.04em}
+  .de-score-den{font-size:.78rem;color:#475569;margin-top:.3rem}
+  .de-verdict{font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-top:.6rem}
+  .de-meta-strip{display:flex;flex-wrap:wrap;gap:1.6rem;align-items:center;padding:1rem 0;font-size:.84rem;color:#64748b;border-bottom:1px solid rgba(255,255,255,.05)}
+  .de-meta-strip b{color:#e2e8f0}
+  .de-profile-link{margin-left:auto;color:#00e89a;text-decoration:none;font-size:.8rem;font-weight:600}
+  .de-section{margin-top:2.4rem}
+  .de-h2{font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:-.02em;display:flex;align-items:center;gap:.6rem}
+  .de-count{font-size:.8rem;background:rgba(255,255,255,.07);color:#94a3b8;padding:.1rem .55rem;border-radius:20px;font-weight:700}
+  .de-h2-sub{font-size:.82rem;color:#64748b;margin:.35rem 0 1.1rem;line-height:1.5}
+  .de-h2-sub b{color:#e2e8f0}
+  .de-queue{display:grid;gap:.9rem}
+  .de-card{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-left:3px solid var(--sev);border-radius:11px;padding:1.1rem 1.2rem}
+  .de-card-rl{background:linear-gradient(180deg,rgba(230,57,70,.05),#0d1117)}
+  .de-card-h{display:flex;align-items:center;gap:.9rem}
+  .de-rank{font-size:1.05rem;font-weight:800;color:#475569;font-family:'SF Mono',ui-monospace,monospace;min-width:2.2rem}
+  .de-card-id{flex:1;min-width:0;display:flex;flex-direction:column}
+  .de-card-term{font-size:1rem;font-weight:800;color:#fff;letter-spacing:-.01em}
+  .de-card-q{font-size:.78rem;color:#64748b;font-style:italic}
+  .de-card-nums{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2}
+  .de-card-score{font-size:1.3rem;font-weight:800;color:#e2e8f0}
+  .de-card-score small{font-size:.62rem;color:#475569}
+  .de-card-impact{font-size:.74rem;font-weight:700;color:#00e89a}
+  .de-card-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0 .6rem}
+  .de-tag{font-size:9px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;padding:.2rem .55rem;border-radius:20px;background:rgba(255,255,255,.05);color:#94a3b8;font-family:'SF Mono',ui-monospace,monospace}
+  .de-tag-sev{background:rgba(88,166,255,.12);color:#58a6ff}
+  .de-tag-rl{background:rgba(230,57,70,.12);color:#fca5a5}
+  .de-card-detect,.de-card-cause{font-size:.78rem;color:#94a3b8;line-height:1.5;margin:.25rem 0}
+  .de-card-detect b,.de-card-cause b{color:#cbd5e1;font-weight:700}
+  .de-card-actions{margin-top:.7rem;padding-top:.6rem;border-top:1px solid rgba(255,255,255,.06)}
+  .de-actions-h{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#475569;font-family:'SF Mono',ui-monospace,monospace}
+  .de-card-actions ul{margin:.35rem 0 0;padding-left:1.1rem}
+  .de-card-actions li{font-size:.8rem;color:#cbd5e1;line-height:1.5;margin-bottom:.2rem}
+  .de-card-foot{margin-top:.6rem;font-size:.72rem;color:#475569}
+  .de-roadmap{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}
+  .de-rm-col{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.9rem}
+  .de-rm-head{display:flex;justify-content:space-between;align-items:baseline}
+  .de-rm-when{font-size:.82rem;font-weight:800;color:#fff}
+  .de-rm-proj{font-size:.9rem;font-weight:800;color:#00e89a}
+  .de-rm-verdict{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin:.2rem 0 .7rem}
+  .de-rm-card{display:flex;justify-content:space-between;font-size:.76rem;padding:.32rem .5rem;background:rgba(255,255,255,.03);border-radius:6px;margin-bottom:.32rem}
+  .de-rm-term{color:#cbd5e1;font-weight:600}
+  .de-rm-impact{color:#00e89a;font-weight:700}
+  .de-rm-none{color:#334155;font-size:1.2rem;text-align:center;padding:.6rem 0}
+  .de-sim-form{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:1.1rem}
+  .de-sim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:.7rem;margin-bottom:1rem}
+  .de-sim-cell{display:flex;flex-direction:column;gap:.3rem;font-size:.72rem;color:#94a3b8}
+  .de-sim-cell input{background:#070b0f;border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#fff;padding:.45rem .5rem;font-size:.85rem;width:100%}
+  .de-sim-btn{background:#00e89a;color:#04140d;font-weight:800;border:none;border-radius:7px;padding:.6rem 1.3rem;font-size:.85rem;cursor:pointer}
+  .de-sim-result{display:flex;align-items:center;gap:1.3rem;margin-top:1rem;padding:1.1rem 1.3rem;background:#0d1117;border:1px solid var(--c);border-radius:11px}
+  .de-sim-r-val{font-size:2.6rem;font-weight:800;color:var(--c);letter-spacing:-.04em}
+  .de-sim-r-den{font-size:.8rem;color:#475569}
+  .de-sim-r-body{font-size:.88rem;color:#cbd5e1;line-height:1.7}
+  .de-disclaimer{font-size:.68rem;color:#475569;line-height:1.5;margin-top:2.4rem;max-width:90ch}
+  .de-empty{color:#64748b;padding:2rem 0;text-align:center}
+  @media (max-width:760px){.de-roadmap{grid-template-columns:1fr 1fr}.de-score{align-items:flex-start}}
+</style>
+{% endblock %}

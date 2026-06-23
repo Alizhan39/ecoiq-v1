@@ -1,0 +1,362 @@
+{
+  "_meta": {
+    "module": "Quranic Decision Filter (QDF)",
+    "thesis": "Create rizq without zulm — create wealth without injustice.",
+    "version": "1.0",
+    "review_status": "draft_pending_scholar_review",
+    "disclaimer": "QDF is an AI-assisted governance lens inspired by Qur'anic decision principles. It is NOT fatwa, tafsir, or a Shariah ruling. Religious framing requires qualified scholarly review; scores are indicative and evidence-gated.",
+    "scoring": "Each of the 10 questions is scored 0-10. The Decision Integrity Score is the weighted mean x 10 (0-1000 internal, displayed 0-100). Red-line questions (Halal, Adl, Darar) cap the overall score when severely failed — justice is never traded off."
+  },
+  "questions": [
+    {
+      "key": "niyyah",
+      "order": 1,
+      "arabic_term": "Niyyah",
+      "title_en": "Intention",
+      "core_question": "Why are we doing this?",
+      "weight": 1.0,
+      "definition": "The underlying intention and purpose behind the decision — whether it is oriented toward genuine benefit and stewardship or toward extraction, vanity, or harm.",
+      "plain_english": "What is the real reason for this decision? Is it to create lasting value and serve people, or to extract short-term gain at others' expense?",
+      "evidence_required": [
+        "Stated purpose / mission tied to the decision",
+        "Alignment between stated purpose and the incentive structure (who profits, how)",
+        "Public-benefit vs private-extraction ratio of expected outcomes"
+      ],
+      "red_flags": [
+        "Purpose is purely extractive or rent-seeking",
+        "Stated mission contradicts the actual incentive structure",
+        "Decision optimises a vanity metric over real outcomes"
+      ],
+      "scoring_rubric": {
+        "0-2": "Purpose is extractive or harmful; no credible benefit intent.",
+        "3-5": "Mixed motives; benefit is secondary to private gain.",
+        "6-8": "Genuine benefit intent, evidenced and incentive-aligned.",
+        "9-10": "Clear stewardship purpose, fully aligned with incentives and disclosed."
+      },
+      "ai_prompt": "Assess the INTENTION (Niyyah) behind this decision. Using only cited evidence, determine whether the primary purpose is genuine public benefit and stewardship or private extraction. Compare the stated purpose against the actual incentive structure (who profits and how). Output: score 0-10, a one-sentence grounded rationale, evidence_status, and any red flags triggered. Do not infer intent without evidence; if intent is unclear, lower confidence rather than guessing.",
+      "low_score_actions": [
+        "Publish an explicit purpose statement for the decision and tie it to measurable benefit outcomes",
+        "Realign the incentive structure so benefit and reward move together",
+        "Add an independent purpose/impact review before approval"
+      ],
+      "example_company": "An energy firm modernises a plant primarily to cut emissions and protect local air quality (high Niyyah), vs. purely to capture a subsidy with no operational change (low Niyyah).",
+      "example_policy": "A housing subsidy designed to house low-income families (high) vs. one structured to enrich a small set of developers (low).",
+      "example_investment": "A fund backing a water-access venture for impact + return (high) vs. a deal whose thesis is regulatory arbitrage alone (low)."
+    },
+    {
+      "key": "halal",
+      "order": 2,
+      "arabic_term": "Halal",
+      "title_en": "Permissibility",
+      "core_question": "Is it permissible?",
+      "weight": 1.2,
+      "definition": "Whether the decision and its means are permissible and free from clearly prohibited activity (exploitation, fraud, riba-dependence at the core, demonstrable harm-for-profit).",
+      "plain_english": "Is the activity itself, and the way it makes money, free from clear wrongdoing?",
+      "evidence_required": [
+        "Core business / activity classification",
+        "Source-of-returns analysis (is value real or extracted via prohibited means)",
+        "Controversy and legal-violation record"
+      ],
+      "red_flags": [
+        "Core model depends on demonstrable exploitation or fraud",
+        "Returns derive primarily from prohibited or harmful activity",
+        "Active, unresolved legal or ethical violations"
+      ],
+      "scoring_rubric": {
+        "0-2": "Core activity is impermissible or harm-for-profit; red line.",
+        "3-5": "Significant impermissibility concerns or unresolved controversies.",
+        "6-8": "Broadly permissible; minor concerns under management.",
+        "9-10": "Clearly permissible activity and means; clean record."
+      },
+      "ai_prompt": "Assess PERMISSIBILITY (Halal) at a governance (not fiqh-ruling) level. Using cited evidence, determine whether the core activity and its source of returns are free from clear exploitation, fraud, or harm-for-profit, and whether there are unresolved legal/ethical violations. This is a screening lens, NOT a Shariah ruling. Output: score 0-10, grounded rationale, evidence_status, red flags. Flag for human/scholar review if the activity is religiously sensitive.",
+      "low_score_actions": [
+        "Commission an independent permissibility / controversy review (flag for scholarly review where relevant)",
+        "Divest or restructure away from the impermissible component",
+        "Remediate and disclose any active legal or ethical violations"
+      ],
+      "example_company": "A manufacturer earning from real productive output (high) vs. a lender whose core returns are predatory interest on the poor (low).",
+      "example_policy": "A tax policy funding public services (high) vs. one legalising a clearly exploitative practice (low).",
+      "example_investment": "Backing a halal-supply-chain logistics firm (high) vs. a payday-lending rollup (low)."
+    },
+    {
+      "key": "adl",
+      "order": 3,
+      "arabic_term": "Adl",
+      "title_en": "Justice",
+      "core_question": "Is it just?",
+      "weight": 1.2,
+      "definition": "Whether the decision distributes benefits and burdens fairly, treats stakeholders equitably, and upholds due process — even against the decider's own interest.",
+      "plain_english": "Is it fair? Are benefits and costs shared justly, or do a few gain while others bear the cost?",
+      "evidence_required": [
+        "Distribution of benefits and burdens across stakeholders",
+        "Fairness of process (contracts, wages, procurement, due process)",
+        "Equity / anti-corruption and transparency record"
+      ],
+      "red_flags": [
+        "Benefits concentrate while costs fall on the vulnerable or the public",
+        "Unfair contracts, wage suppression, or rigged procurement",
+        "Opaque process that prevents fair scrutiny"
+      ],
+      "scoring_rubric": {
+        "0-2": "Structurally unjust; concentrates gain and externalises harm; red line.",
+        "3-5": "Material fairness gaps in distribution or process.",
+        "6-8": "Broadly fair with managed gaps.",
+        "9-10": "Demonstrably just distribution and transparent process."
+      },
+      "ai_prompt": "Assess JUSTICE (Adl). Using cited evidence, evaluate distributive fairness (who gains, who pays) and procedural fairness (contracts, wages, procurement, transparency). Justice may not be traded off against other gains. Output: score 0-10, grounded rationale, evidence_status, red flags. Severe injustice should cap the overall decision score.",
+      "low_score_actions": [
+        "Publish a stakeholder benefit/burden distribution analysis and correct imbalances",
+        "Adopt fair-contract, living-wage, and transparent-procurement standards",
+        "Open an independent grievance and due-process channel"
+      ],
+      "example_company": "A firm sharing transition gains with workers and host communities (high) vs. one externalising pollution onto a poor district (low).",
+      "example_policy": "A progressive carbon dividend returned to households (high) vs. a levy that hits the poorest hardest with no offset (low).",
+      "example_investment": "A deal with fair worker terms and local value capture (high) vs. an asset-strip that offshores gains (low)."
+    },
+    {
+      "key": "rahmah",
+      "order": 4,
+      "arabic_term": "Rahmah",
+      "title_en": "Mercy",
+      "core_question": "Is there mercy and protection for the vulnerable?",
+      "weight": 1.0,
+      "definition": "Whether the decision actively protects the weak, the poor, future generations, workers, and ecosystems that cannot defend themselves.",
+      "plain_english": "Does it protect the people and places least able to protect themselves, or does it put them at risk?",
+      "evidence_required": [
+        "Impact on vulnerable groups (workers, low-income communities, displaced)",
+        "Safeguards for health, safety, and ecosystems",
+        "Community investment and protective measures"
+      ],
+      "red_flags": [
+        "Vulnerable groups bear disproportionate harm",
+        "No safeguards for health, safety, or environment",
+        "Displacement or harm without remedy"
+      ],
+      "scoring_rubric": {
+        "0-2": "Active harm to the vulnerable with no protection.",
+        "3-5": "Weak or partial safeguards.",
+        "6-8": "Meaningful protections in place.",
+        "9-10": "Strong, verified protection and benefit for the vulnerable."
+      },
+      "ai_prompt": "Assess MERCY (Rahmah). Using cited evidence, determine whether the decision protects the vulnerable — workers, the poor, future generations, ecosystems — and whether safeguards exist. Output: score 0-10, grounded rationale, evidence_status, red flags.",
+      "low_score_actions": [
+        "Add explicit safeguards and remedy mechanisms for affected vulnerable groups",
+        "Fund a verified community-protection / just-transition program",
+        "Conduct a vulnerability impact assessment before proceeding"
+      ],
+      "example_company": "A plant funding worker retraining and clinic access during transition (high) vs. mass layoffs with no support (low).",
+      "example_policy": "A reform with a safety net for affected groups (high) vs. austerity falling on the disabled and elderly (low).",
+      "example_investment": "Financing with relocation and livelihood support (high) vs. a project displacing a community without remedy (low)."
+    },
+    {
+      "key": "mizan",
+      "order": 5,
+      "arabic_term": "Mizan",
+      "title_en": "Balance",
+      "core_question": "Does it preserve balance?",
+      "weight": 1.1,
+      "definition": "Whether the decision keeps within environmental and social limits — not transgressing the balance — and avoids waste (israf) and irreversible depletion.",
+      "plain_english": "Does it stay within natural and social limits, or does it overshoot and deplete what can't be replaced?",
+      "evidence_required": [
+        "Environmental footprint vs science-based / regulatory limits",
+        "Resource use and waste (israf) intensity",
+        "Long-term vs short-term balance of outcomes"
+      ],
+      "red_flags": [
+        "Footprint exceeds sustainable limits",
+        "High waste / resource depletion",
+        "Short-term gain at irreversible long-term cost"
+      ],
+      "scoring_rubric": {
+        "0-2": "Transgresses limits; depletes irreversibly.",
+        "3-5": "Over limits in places; weak balance.",
+        "6-8": "Largely within limits.",
+        "9-10": "Demonstrably within limits; regenerative, low-waste."
+      },
+      "ai_prompt": "Assess BALANCE (Mizan). Using cited evidence, determine whether the decision stays within environmental and social limits, avoids waste (israf), and balances short- and long-term outcomes. Output: score 0-10, grounded rationale, evidence_status, red flags.",
+      "low_score_actions": [
+        "Set science-based limits and an abatement/waste-reduction plan",
+        "Add a long-term (intergenerational) balance assessment",
+        "Shift to circular / regenerative resource use"
+      ],
+      "example_company": "A firm operating within a science-based carbon and water budget (high) vs. one overshooting and depleting aquifers (low).",
+      "example_policy": "Land-use rules respecting ecological limits (high) vs. unchecked extraction permits (low).",
+      "example_investment": "A circular-economy venture (high) vs. a single-use, high-waste model (low)."
+    },
+    {
+      "key": "amanah",
+      "order": 6,
+      "arabic_term": "Amanah",
+      "title_en": "Accountability",
+      "core_question": "Who is accountable?",
+      "weight": 1.1,
+      "definition": "Whether responsibility is clearly assigned, custodianship of resources and data is honoured, and there is an auditable trail of accountability.",
+      "plain_english": "Is it clear who is responsible and answerable, with an honest audit trail — or is accountability diffuse and opaque?",
+      "evidence_required": [
+        "Named accountable owner(s) for the decision and its outcomes",
+        "Audit trail, disclosure quality, and governance integrity",
+        "Custody of resources/data (consent, anti-corruption controls)"
+      ],
+      "red_flags": [
+        "No clear accountable owner",
+        "Weak or absent audit trail / disclosure",
+        "History of corruption or breach of custody"
+      ],
+      "scoring_rubric": {
+        "0-2": "Accountability absent; opaque; breach history.",
+        "3-5": "Diffuse accountability; weak controls.",
+        "6-8": "Clear ownership and controls.",
+        "9-10": "Named owners, strong audit trail, clean custody."
+      },
+      "ai_prompt": "Assess ACCOUNTABILITY (Amanah). Using cited evidence, determine whether responsibility is clearly assigned, custody of resources/data is honoured, and an auditable trail exists. Output: score 0-10, grounded rationale, evidence_status, red flags.",
+      "low_score_actions": [
+        "Name accountable owners (RACI) for the decision and outcomes",
+        "Establish an independent audit trail and disclosure standard",
+        "Strengthen anti-corruption and data-custody controls"
+      ],
+      "example_company": "A board with named owners and independent audit (high) vs. concentrated, opaque control (low).",
+      "example_policy": "A program with a named accountable agency and public reporting (high) vs. unaccountable discretionary spend (low).",
+      "example_investment": "A deal with clear fiduciary governance (high) vs. an SPV with hidden beneficial owners (low)."
+    },
+    {
+      "key": "maslahah",
+      "order": 7,
+      "arabic_term": "Maslahah",
+      "title_en": "Public Benefit",
+      "core_question": "What real public benefit does it create?",
+      "weight": 1.1,
+      "definition": "The genuine, verifiable public benefit created — jobs, services, infrastructure, knowledge, health — net of any harm.",
+      "plain_english": "What real good does this create for the public, beyond private profit?",
+      "evidence_required": [
+        "Verifiable public-benefit outcomes (jobs, services, infrastructure, health, knowledge)",
+        "Net benefit after subtracting harms",
+        "Beneficiary reach and durability of benefit"
+      ],
+      "red_flags": [
+        "Claimed benefit is unverified or marketing-only",
+        "Net benefit is negative once harms are counted",
+        "Benefit captured privately, not public"
+      ],
+      "scoring_rubric": {
+        "0-2": "No real public benefit / net-negative.",
+        "3-5": "Limited or unverified benefit.",
+        "6-8": "Clear verified public benefit.",
+        "9-10": "Large, durable, verified public benefit, net-positive."
+      },
+      "ai_prompt": "Assess PUBLIC BENEFIT (Maslahah). Using cited evidence, quantify genuine public benefit (jobs, services, infrastructure, health, knowledge) net of harms, and check it is verified rather than claimed. Output: score 0-10, grounded rationale, evidence_status, red flags.",
+      "low_score_actions": [
+        "Define and measure verifiable public-benefit KPIs with evidence",
+        "Increase net public benefit (reach, durability) and reduce capture",
+        "Independently verify benefit claims before publication"
+      ],
+      "example_company": "A firm creating durable skilled jobs and local infrastructure (high) vs. one with only marketing claims (low).",
+      "example_policy": "A program with measured health/education gains (high) vs. one with no measurable benefit (low).",
+      "example_investment": "Backing essential-services access (high) vs. a speculative play with no public upside (low)."
+    },
+    {
+      "key": "darar",
+      "order": 8,
+      "arabic_term": "Darar",
+      "title_en": "Harm",
+      "core_question": "What harm may occur and to whom?",
+      "weight": 1.2,
+      "definition": "The harm — direct, indirect, and long-tail — that the decision may cause, to whom, and whether it is prevented, mitigated, or remedied. Scored as freedom-from-harm (10 = minimal, well-mitigated harm).",
+      "plain_english": "What could go wrong, who gets hurt, and is that harm prevented or remedied? (A higher score means less unmitigated harm.)",
+      "evidence_required": [
+        "Identified harms (environmental, social, financial, health) and who bears them",
+        "Severity, reversibility, and probability of harm",
+        "Mitigation and remedy measures in place"
+      ],
+      "red_flags": [
+        "Severe or irreversible harm to people or ecosystems",
+        "Harm concentrated on those without voice or remedy",
+        "No mitigation or remedy plan"
+      ],
+      "scoring_rubric": {
+        "0-2": "Severe, irreversible, unmitigated harm; red line.",
+        "3-5": "Material harm with weak mitigation.",
+        "6-8": "Limited harm, mitigated.",
+        "9-10": "Minimal harm, fully mitigated and remediable."
+      },
+      "ai_prompt": "Assess HARM (Darar) as freedom-from-harm. Using cited evidence, identify harms (who, how severe, how reversible, how likely) and whether mitigation/remedy exists. A high score means low, well-mitigated harm. Severe unmitigated harm should cap the overall decision score. Output: score 0-10, grounded rationale, evidence_status, red flags.",
+      "low_score_actions": [
+        "Map all material harms and the parties bearing them",
+        "Add mitigation and remedy plans for each material harm",
+        "Halt or redesign where harm is severe and irreversible"
+      ],
+      "example_company": "A retrofit with closed-loop emissions controls (high) vs. a project venting toxins into a watershed (low).",
+      "example_policy": "A reform with impact mitigation funds (high) vs. one causing irreversible displacement (low).",
+      "example_investment": "Financing with environmental safeguards and insurance (high) vs. a tailings-dam risk with no remedy (low)."
+    },
+    {
+      "key": "shura",
+      "order": 9,
+      "arabic_term": "Shura",
+      "title_en": "Consultation",
+      "core_question": "Were experts and stakeholders consulted?",
+      "weight": 1.0,
+      "definition": "Whether genuine consultation with affected stakeholders and qualified experts informed the decision, with the ability to contest it.",
+      "plain_english": "Did the right people — experts and those affected — actually get a say before this was decided?",
+      "evidence_required": [
+        "Evidence of stakeholder and expert consultation",
+        "Whether affected parties gave informed consent / could contest",
+        "How input changed the decision"
+      ],
+      "red_flags": [
+        "Decision made without consulting affected parties",
+        "Token or after-the-fact consultation",
+        "No mechanism to contest or appeal"
+      ],
+      "scoring_rubric": {
+        "0-2": "No consultation; imposed decision.",
+        "3-5": "Token / partial consultation.",
+        "6-8": "Genuine consultation that shaped the decision.",
+        "9-10": "Deep, documented consultation with consent and contestability."
+      },
+      "ai_prompt": "Assess CONSULTATION (Shura). Using cited evidence, determine whether affected stakeholders and qualified experts were genuinely consulted, could give informed consent, and could contest the decision, and whether their input changed it. Output: score 0-10, grounded rationale, evidence_status, red flags.",
+      "low_score_actions": [
+        "Run genuine stakeholder + expert consultation before finalising",
+        "Document how input changed the decision",
+        "Create a contestation / appeal mechanism (FPIC where relevant)"
+      ],
+      "example_company": "A project co-designed with the host community (high) vs. one imposed without consultation (low).",
+      "example_policy": "Legislation shaped by public consultation and expert review (high) vs. a decree with no input (low).",
+      "example_investment": "A deal vetted by independent experts and affected communities (high) vs. one rushed past scrutiny (low)."
+    },
+    {
+      "key": "akhirah",
+      "order": 10,
+      "arabic_term": "Akhirah",
+      "title_en": "Ultimate Accountability",
+      "core_question": "Can decision-makers answer for this before Allah?",
+      "weight": 1.1,
+      "definition": "The integrity test of ultimate accountability — whether decision-makers could stand behind this decision under the highest moral scrutiny, beyond legal or quarterly horizons.",
+      "plain_english": "Could the people making this decision honestly stand behind it under the highest moral accountability — not just legally, but ultimately?",
+      "evidence_required": [
+        "Coherence of the decision with stated values under scrutiny",
+        "Long-horizon (intergenerational) consequences considered",
+        "Absence of hidden harm, deception, or short-termism"
+      ],
+      "red_flags": [
+        "Decision relies on concealment or deception",
+        "Optimises the short term against long-term / future generations",
+        "Decision-makers would not defend it transparently"
+      ],
+      "scoring_rubric": {
+        "0-2": "Could not be defended under moral scrutiny.",
+        "3-5": "Defensible only on narrow/legal grounds.",
+        "6-8": "Broadly defensible under scrutiny.",
+        "9-10": "Fully defensible; long-horizon, transparent, value-coherent."
+      },
+      "ai_prompt": "Assess ULTIMATE ACCOUNTABILITY (Akhirah) as an integrity synthesis. Using cited evidence and the other nine signals, determine whether the decision could be defended under the highest moral scrutiny, accounts for long-horizon consequences, and is free of concealment or short-termism. Output: score 0-10, grounded rationale, evidence_status, red flags.",
+      "low_score_actions": [
+        "Apply a long-horizon (intergenerational) consequence review",
+        "Remove any reliance on concealment; commit to full transparency",
+        "Require decision-makers to sign a public accountability statement"
+      ],
+      "example_company": "Leadership that publishes both benefits and harms transparently (high) vs. one hiding long-term liabilities (low).",
+      "example_policy": "A reform whose authors defend it openly with full disclosure (high) vs. one buried to avoid scrutiny (low).",
+      "example_investment": "A deal whose backers would defend it to all stakeholders (high) vs. one structured to obscure its true impact (low)."
+    }
+  ]
+}

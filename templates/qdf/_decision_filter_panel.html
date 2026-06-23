@@ -1,0 +1,173 @@
+{% comment %} ── EcoIQ Quranic Decision Filter — Decision Integrity Panel ──────────────────
+   Include in company detail page (or any subject page).
+   Context variable required:
+     qdf_assessment   DecisionAssessment instance (or None)
+   Thesis: "Create rizq without zulm." AI-assisted, indicative — not a Shariah ruling.
+{% endcomment %}
+{% if qdf_assessment %}
+<section class="qdf-panel" aria-labelledby="qdf-heading">
+
+  {# ── Header ── #}
+  <div class="qdf-head">
+    <div class="qdf-head-l">
+      <div class="qdf-eyebrow">Quranic Decision Filter</div>
+      <h2 class="qdf-title" id="qdf-heading">Decision Integrity</h2>
+      <p class="qdf-sub">Evaluated through 10 Qur’anic decision questions. AI-assisted &amp; indicative — not a Shariah ruling.</p>
+    </div>
+    <div class="qdf-score-block" style="--c:{{ qdf_assessment.integrity_color }}">
+      <svg class="qdf-ring" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="qdf-ring-bg" cx="60" cy="60" r="52"></circle>
+        <circle class="qdf-ring-fg" cx="60" cy="60" r="52"
+                style="stroke-dasharray:326.7;stroke-dashoffset:{{ qdf_assessment.decision_integrity_score|add:0|stringformat:'d' }};"
+                data-score="{{ qdf_assessment.decision_integrity_score }}"></circle>
+      </svg>
+      <div class="qdf-score-num">
+        <span class="qdf-score-val">{{ qdf_assessment.decision_integrity_score|floatformat:0 }}</span>
+        <span class="qdf-score-den">/100</span>
+        <span class="qdf-score-band">{{ qdf_assessment.integrity_band }}</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── Verdict strip ── #}
+  <div class="qdf-strip">
+    <div class="qdf-stat">
+      <span class="qdf-stat-k">Verdict</span>
+      <span class="qdf-stat-v" style="color:{{ qdf_assessment.verdict_color }}">{{ qdf_assessment.verdict_display }}</span>
+    </div>
+    <div class="qdf-stat">
+      <span class="qdf-stat-k">Risk Level</span>
+      <span class="qdf-stat-v" style="color:{{ qdf_assessment.risk_color }}">{{ qdf_assessment.get_risk_level_display }}</span>
+    </div>
+    <div class="qdf-stat">
+      <span class="qdf-stat-k">Evidence</span>
+      <span class="qdf-stat-v" style="color:{{ qdf_assessment.evidence_status_color }}">{{ qdf_assessment.get_evidence_status_display }}</span>
+    </div>
+    <div class="qdf-stat">
+      <span class="qdf-stat-k">Confidence</span>
+      <span class="qdf-stat-v">{{ qdf_assessment.confidence_pct }}%</span>
+    </div>
+    {% if qdf_assessment.red_flag_count %}
+    <div class="qdf-stat">
+      <span class="qdf-stat-k">Red Flags</span>
+      <span class="qdf-stat-v" style="color:#e63946">{{ qdf_assessment.red_flag_count }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if qdf_assessment.red_line_breached %}
+  <div class="qdf-redline">⛔ Red line breached — a core permissibility / justice / harm test severely failed. The score is capped until remediated.</div>
+  {% endif %}
+
+  {# ── 10 question cards ── #}
+  <div class="qdf-grid">
+    {% for qs in qdf_assessment.ordered_scores %}
+    <article class="qdf-card{% if qs.question.is_red_line %} qdf-card-redline{% endif %}" style="--qc:{{ qs.score_color }}">
+      <div class="qdf-card-top">
+        <span class="qdf-card-no">{{ qs.question.order }}</span>
+        <div class="qdf-card-id">
+          <span class="qdf-card-term">{{ qs.question.arabic_term }}</span>
+          <span class="qdf-card-title">{{ qs.question.title_en }}</span>
+        </div>
+        <span class="qdf-card-score">{{ qs.score|floatformat:1 }}<small>/10</small></span>
+      </div>
+      <p class="qdf-card-q">{{ qs.question.core_question }}</p>
+      <div class="qdf-card-track"><div class="qdf-card-fill" style="width:{{ qs.score_pct }}%"></div></div>
+      <p class="qdf-card-rationale">{{ qs.rationale }}</p>
+      <div class="qdf-card-meta">
+        <span class="qdf-ev qdf-ev-{{ qs.evidence_status }}">{{ qs.get_evidence_status_display }} evidence</span>
+        {% if qs.question.is_red_line %}<span class="qdf-tag-redline">red-line</span>{% endif %}
+      </div>
+      {% if qs.red_flags_triggered %}
+      <ul class="qdf-flags">
+        {% for f in qs.red_flags_triggered %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if qs.recommended_actions %}
+      <div class="qdf-actions">
+        <span class="qdf-actions-h">Next actions</span>
+        <ul>{% for a in qs.recommended_actions %}<li>{{ a }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+
+  {# ── "Create Rizq Without Zulm" summary ── #}
+  <div class="qdf-summary" style="--c:{{ qdf_assessment.integrity_color }}">
+    <div class="qdf-summary-h">Create Rizq Without Zulm</div>
+    <p class="qdf-summary-body">{{ qdf_assessment.rizq_without_zulm_summary }}</p>
+  </div>
+
+  <p class="qdf-disclaimer">
+    The Quranic Decision Filter is an AI-assisted governance lens inspired by Qur’anic decision principles.
+    It is not fatwa, tafsir, a Shariah ruling, or investment advice. Religious framing is non-authoritative and pending qualified scholarly review.
+  </p>
+</section>
+
+<style>
+  .qdf-panel{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.6rem 1.6rem 1.4rem;margin:2rem 0;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .qdf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1.5rem;flex-wrap:wrap}
+  .qdf-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.45rem}
+  .qdf-title{font-size:1.5rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin:0 0 .35rem}
+  .qdf-sub{font-size:.8rem;color:#64748b;max-width:40ch;line-height:1.5}
+  .qdf-score-block{display:flex;align-items:center;gap:.9rem}
+  .qdf-ring{width:92px;height:92px;transform:rotate(-90deg)}
+  .qdf-ring-bg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:8}
+  .qdf-ring-fg{fill:none;stroke:var(--c);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+  .qdf-score-num{display:flex;flex-direction:column;line-height:1}
+  .qdf-score-val{font-size:2.4rem;font-weight:800;color:var(--c);letter-spacing:-.04em}
+  .qdf-score-den{font-size:.75rem;color:#475569;margin-top:2px}
+  .qdf-score-band{font-size:.72rem;font-weight:700;color:var(--c);text-transform:uppercase;letter-spacing:.06em;margin-top:.4rem}
+  .qdf-strip{display:flex;flex-wrap:wrap;gap:1.6rem;margin:1.4rem 0 .2rem;padding:1rem 1.1rem;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:10px}
+  .qdf-stat{display:flex;flex-direction:column;gap:.25rem}
+  .qdf-stat-k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#475569;font-family:'SF Mono',ui-monospace,monospace}
+  .qdf-stat-v{font-size:.92rem;font-weight:700}
+  .qdf-redline{margin:1rem 0 0;padding:.75rem 1rem;background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.3);border-radius:8px;color:#fca5a5;font-size:.82rem;font-weight:600}
+  .qdf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem;margin:1.4rem 0}
+  .qdf-card{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-left:3px solid var(--qc);border-radius:10px;padding:1rem 1.05rem}
+  .qdf-card-redline{background:linear-gradient(180deg,rgba(230,57,70,.04),#0d1117)}
+  .qdf-card-top{display:flex;align-items:center;gap:.6rem}
+  .qdf-card-no{width:22px;height:22px;flex:none;border-radius:6px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#94a3b8;font-family:'SF Mono',ui-monospace,monospace}
+  .qdf-card-id{display:flex;flex-direction:column;flex:1;min-width:0}
+  .qdf-card-term{font-size:.92rem;font-weight:800;color:#fff;letter-spacing:-.01em}
+  .qdf-card-title{font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+  .qdf-card-score{font-size:1.15rem;font-weight:800;color:var(--qc);letter-spacing:-.02em}
+  .qdf-card-score small{font-size:.62rem;color:#475569;font-weight:600}
+  .qdf-card-q{font-size:.78rem;color:#94a3b8;margin:.6rem 0 .55rem;font-style:italic;line-height:1.45}
+  .qdf-card-track{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+  .qdf-card-fill{height:100%;background:var(--qc);border-radius:3px}
+  .qdf-card-rationale{font-size:.76rem;color:#64748b;line-height:1.5;margin:.6rem 0 .5rem}
+  .qdf-card-meta{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+  .qdf-ev{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:.18rem .5rem;border-radius:20px;font-weight:700;font-family:'SF Mono',ui-monospace,monospace}
+  .qdf-ev-verified{background:rgba(0,232,154,.12);color:#00e89a}
+  .qdf-ev-partial{background:rgba(88,166,255,.12);color:#58a6ff}
+  .qdf-ev-insufficient{background:rgba(244,162,97,.12);color:#f4a261}
+  .qdf-ev-missing{background:rgba(148,163,184,.1);color:#94a3b8}
+  .qdf-tag-redline{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:.18rem .5rem;border-radius:20px;font-weight:700;background:rgba(230,57,70,.12);color:#fca5a5;font-family:'SF Mono',ui-monospace,monospace}
+  .qdf-flags{margin:.6rem 0 0;padding-left:1.1rem;list-style:none}
+  .qdf-flags li{font-size:.72rem;color:#fca5a5;line-height:1.45;position:relative;margin-bottom:.2rem}
+  .qdf-flags li::before{content:"⚠";position:absolute;left:-1.1rem}
+  .qdf-actions{margin-top:.65rem;padding-top:.6rem;border-top:1px solid rgba(255,255,255,.06)}
+  .qdf-actions-h{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#475569;font-family:'SF Mono',ui-monospace,monospace}
+  .qdf-actions ul{margin:.3rem 0 0;padding-left:1rem}
+  .qdf-actions li{font-size:.74rem;color:#94a3b8;line-height:1.45;margin-bottom:.18rem}
+  .qdf-summary{margin-top:.6rem;padding:1.1rem 1.2rem;background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(0,232,154,.03));border:1px solid var(--c);border-radius:10px}
+  .qdf-summary-h{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--c);font-weight:800;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.4rem}
+  .qdf-summary-body{font-size:.92rem;color:#e2e8f0;line-height:1.55;font-weight:500}
+  .qdf-disclaimer{font-size:.68rem;color:#475569;line-height:1.5;margin-top:1rem;max-width:80ch}
+  @media (max-width:640px){.qdf-grid{grid-template-columns:1fr}.qdf-strip{gap:1.1rem}}
+</style>
+
+<script>
+/* QDF score ring — set dashoffset from data-score (0–100 → circumference 326.7) */
+(function(){
+  var els = document.querySelectorAll('.qdf-ring-fg[data-score]');
+  els.forEach(function(c){
+    var s = Math.max(0, Math.min(100, parseFloat(c.getAttribute('data-score')) || 0));
+    var circ = 326.7;
+    c.style.strokeDashoffset = (circ * (1 - s/100)).toFixed(1);
+  });
+})();
+</script>
+{% endif %}

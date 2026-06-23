@@ -578,6 +578,14 @@ def company_detail(request, slug):
     # ── Improvement Pathway ─────────────────────────────────────────────────────
     improvement_pathway = get_improvement_pathway(profile)
 
+    # ── Quranic Decision Filter (Decision Integrity) ────────────────────────────
+    qdf_assessment = None
+    try:
+        from qdf.scoring import get_or_compute as qdf_compute
+        qdf_assessment = qdf_compute(profile)
+    except Exception:
+        pass
+
     # ── Institutional Intelligence Signals ──────────────────────────────────────
     institutional_signals = _get_institutional_signals(profile)
     confidence_label      = _get_confidence_label(ai_confidence, profile.is_verified)
@@ -616,6 +624,8 @@ def company_detail(request, slug):
         'financing_total_count':      financing_total_count,
         # Improvement Pathway
         'improvement_pathway':        improvement_pathway,
+        # Quranic Decision Filter
+        'qdf_assessment':             qdf_assessment,
         # Institutional Intelligence layer
         'institutional_signals':      institutional_signals,
         'confidence_label':           confidence_label,
