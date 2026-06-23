@@ -6,8 +6,10 @@
 #   ecoiq       — Django/Gunicorn web service (starter plan, Oregon)
 #   ecoiq-db    — PostgreSQL database (starter plan, Oregon)
 #
-# All seeding and migration runs inside build.sh on every deploy.
-# No release commands — build.sh is the single source of truth.
+# build.sh is DB-FREE — the build environment cannot reach the private database
+# network (the internal hostname dpg-…-a only resolves at runtime). Migrations +
+# seeding run at runtime via the Pre-Deploy Command (predeploy.sh) and start.sh,
+# both best-effort, so a temporarily-unavailable database never blocks a deploy.
 # Secrets (ANTHROPIC_API_KEY, COMPANIES_HOUSE_API_KEY) must be set
 # manually in the Render dashboard — they are never committed to git.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -19,11 +21,15 @@ services:
     region: oregon
     plan: starter                        # $7/month — persistent disk, no cold starts
     buildCommand: pip install -r requirements.txt && ./build.sh
+    # Pre-Deploy runs once per deploy in the runtime network (internal DB hostname
+    # resolves here) — migrations + seeding live here, not in the build.
+    preDeployCommand: ./predeploy.sh
+    # start.sh runs a fast best-effort migrate (safety net) then launches Gunicorn.
     # 1 worker, 4 threads (gthread) — Render Starter plan is 512 MB RAM.
     # gthread lets 4 requests run concurrently (I/O overlap) without forking
     # a second full Python process. max-requests recycles the worker after
     # 300 requests to prevent WeasyPrint PDF memory from accumulating.
-    startCommand: gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --worker-class gthread --threads 4 --timeout 120 --max-requests 300 --max-requests-jitter 50
+    startCommand: ./start.sh
 
     envVars:
       - key: PYTHON_VERSION
