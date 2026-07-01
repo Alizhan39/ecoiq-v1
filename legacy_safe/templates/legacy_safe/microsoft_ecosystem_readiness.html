@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Microsoft Ecosystem Readiness — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <span class="ls-badge">New AI Agents Module — started today for hackathon</span>
+
+  <h1 class="ls-title">EcoIQ Microsoft Ecosystem Readiness</h1>
+  <p class="ls-sub">
+    Mapping EcoIQ LegacySafe AI to Microsoft-style enterprise AI architecture for industrial
+    modernisation.
+  </p>
+  <p class="ls-disclaimer">{{ top_disclaimer }}</p>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">1. Microsoft-Style AI Project Architecture</h2>
+    <div class="ls-diagram">{{ architecture_diagram }}</div>
+    <p class="ls-p">Mapped onto EcoIQ:</p>
+    <div class="ls-arch-grid">
+      {% for label, items in architecture_mapping.items %}
+      <div class="ls-arch-card">
+        <h3 class="ls-arch-label">{{ label }}</h3>
+        <ul class="ls-list">
+          {% for item in items %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">2. Microsoft Ecosystem Mapping</h2>
+    <table class="ls-table">
+      <thead><tr><th>Microsoft ecosystem layer</th><th>EcoIQ use case</th><th>Why it matters</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for row in ecosystem_mapping %}
+        <tr>
+          <td>{{ row.layer }}</td>
+          <td>{{ row.use_case }}</td>
+          <td>{{ row.why }}</td>
+          <td><span class="ls-chip ls-chip-roadmap">{{ row.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">3. Microsoft Open-Source and Developer Tools</h2>
+    <p class="ls-mvp-note ls-microsoft-note">{{ tools_disclaimer }}</p>
+    <table class="ls-table">
+      <thead><tr><th>Tool</th><th>Use</th><th>EcoIQ agent use</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for repo, use, agent_use, status in open_source_tools %}
+        <tr>
+          <td><code>{{ repo }}</code></td>
+          <td>{{ use }}</td>
+          <td>{{ agent_use }}</td>
+          <td>
+            <span class="ls-chip {% if status == 'Next integration' %}ls-chip-next{% else %}ls-chip-roadmap{% endif %}">{{ status }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">4. Industrial Modernisation Architecture</h2>
+    <p class="ls-p">EcoIQ is not only for energy — it targets the whole industrial transition.</p>
+    <div class="ls-arch-grid">
+      <div class="ls-arch-card">
+        <h3 class="ls-arch-label">Sectors</h3>
+        <ul class="ls-list">{% for s in industrial_sectors %}<li>{{ s }}</li>{% endfor %}</ul>
+      </div>
+      <div class="ls-arch-card">
+        <h3 class="ls-arch-label">EcoIQ modernisation actions</h3>
+        <ul class="ls-list">{% for a in modernisation_actions %}<li>{{ a }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+    <div class="ls-diagram">{{ industrial_architecture_diagram }}</div>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">5. Design Thinking Mapping</h2>
+    <div class="ls-dt-grid">
+      {% for stage in design_thinking %}
+      <div class="ls-dt-card">
+        <h3 class="ls-dt-stage">{{ stage.stage }}</h3>
+        <p class="ls-p">{{ stage.body }}</p>
+        {% if stage.items %}
+        <ul class="ls-list">{% for item in stage.items %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">6. Suggested Microsoft-Supported Pilot</h2>
+    <h3 class="ls-h3">{{ pilot.title }}</h3>
+    <p class="ls-p"><strong>Pilot goal:</strong> {{ pilot.goal }}</p>
+    <div class="ls-arch-grid ls-arch-grid-3">
+      <div class="ls-arch-card">
+        <h3 class="ls-arch-label">Pilot scope</h3>
+        <ul class="ls-list">{% for s in pilot.scope %}<li>{{ s }}</li>{% endfor %}</ul>
+      </div>
+      <div class="ls-arch-card">
+        <h3 class="ls-arch-label">Pilot outputs</h3>
+        <ul class="ls-list">{% for o in pilot.outputs %}<li>{{ o }}</li>{% endfor %}</ul>
+      </div>
+      <div class="ls-arch-card">
+        <h3 class="ls-arch-label">Microsoft stack to explore</h3>
+        <ul class="ls-list">{% for s in pilot.stack %}<li>{{ s }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">7. Enterprise Safety Principles</h2>
+    <ul class="ls-list">
+      {% for p in safety_principles %}<li>{{ p }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">8. Questions for Microsoft Advisers</h2>
+    <ol class="ls-flow">
+      {% for q in adviser_questions %}<li>{{ q }}</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">9. Roadmap</h2>
+    <div class="ls-roadmap-grid">
+      {% for stage, items in roadmap.items %}
+      <div class="ls-arch-card">
+        <h3 class="ls-arch-label">{{ stage }}</h3>
+        <ul class="ls-list">{% for item in items %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <p class="ls-disclaimer ls-disclaimer-bottom">{{ top_disclaimer }}</p>
+</div>
+
+<style>
+  .ls-wrap { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-badge {
+    display: block; width: fit-content; background: #00e89a; color: #06281f; font-weight: 600;
+    font-size: 0.8rem; padding: 0.35rem 0.75rem; border-radius: 999px; margin: 0.75rem 0 1rem;
+  }
+  .ls-title { font-size: 1.85rem; margin: 0 0 0.5rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; max-width: 780px; }
+  .ls-disclaimer {
+    background: #f3f4f6; border-left: 3px solid #6b7280; padding: 0.7rem 1rem;
+    color: #4b5563; font-size: 0.85rem; line-height: 1.6; border-radius: 4px; max-width: 780px;
+    margin-top: 0.75rem;
+  }
+  .ls-disclaimer-bottom { margin-top: 2rem; }
+  .ls-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+  .ls-h2 { font-size: 1.15rem; margin: 0 0 0.6rem; color: #111827; }
+  .ls-h3 { font-size: 0.98rem; margin: 0.5rem 0 0.4rem; color: #111827; }
+  .ls-p { color: #4b5563; line-height: 1.6; }
+  .ls-mvp-note {
+    background: #f0fdf6; border-left: 3px solid #00a876; padding: 0.5rem 0.9rem;
+    color: #166534; font-size: 0.85rem; border-radius: 4px; margin-top: 0.5rem;
+  }
+  .ls-microsoft-note { background: #fffbeb; border-left-color: #f59e0b; color: #7c2d12; }
+  .ls-diagram {
+    margin-top: 1rem; padding: 0.9rem 1.1rem; background: #f3f4f6; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600; color: #374151; line-height: 1.8;
+  }
+  .ls-list { color: #374151; line-height: 1.75; padding-left: 1.2rem; font-size: 0.88rem; }
+  .ls-flow { padding-left: 1.3rem; line-height: 2; color: #374151; font-weight: 600; }
+  .ls-flow li::marker { color: #00a876; }
+  .ls-arch-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  @media (max-width: 1000px) { .ls-arch-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 640px) { .ls-arch-grid { grid-template-columns: 1fr; } }
+  .ls-arch-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 900px) { .ls-arch-grid-3 { grid-template-columns: 1fr; } }
+  .ls-arch-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 0.9rem; }
+  .ls-arch-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: #00a876; margin: 0 0 0.4rem; }
+  .ls-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+  .ls-table th, .ls-table td { border-bottom: 1px solid #e5e7eb; padding: 0.5rem 0.6rem; text-align: left; vertical-align: top; }
+  .ls-table th { color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .ls-table code { background: #f3f4f6; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.82rem; }
+  .ls-chip { padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+  .ls-chip-roadmap { background: #e5e7eb; color: #374151; }
+  .ls-chip-next { background: #dbeafe; color: #1e3a8a; }
+  .ls-dt-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  @media (max-width: 1000px) { .ls-dt-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .ls-dt-grid { grid-template-columns: 1fr; } }
+  .ls-dt-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.9rem 1rem; border-top: 3px solid #00a876; }
+  .ls-dt-stage { font-size: 1rem; margin: 0 0 0.4rem; color: #111827; }
+  .ls-roadmap-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  @media (max-width: 900px) { .ls-roadmap-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .ls-roadmap-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

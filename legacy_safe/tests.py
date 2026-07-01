@@ -334,3 +334,89 @@ class AIAgentEcosystem200PageTests(TestCase):
     def test_page_mentions_azure_openai_ready(self):
         response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
         self.assertContains(response, 'Azure OpenAI-ready')
+
+
+class MicrosoftEcosystemReadinessPageTests(TestCase):
+    def test_page_returns_200(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_mentions_title(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Microsoft Ecosystem Readiness')
+
+    def test_page_mentions_user(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'User')
+
+    def test_page_mentions_data(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Data')
+
+    def test_page_mentions_agent(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Agent')
+
+    def test_page_mentions_model(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Model')
+
+    def test_page_mentions_action(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Action')
+
+    def test_page_mentions_microsoft_fabric(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Microsoft Fabric')
+
+    def test_page_mentions_azure_digital_twins(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Azure Digital Twins')
+
+    def test_page_mentions_azure_iot(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Azure IoT')
+
+    def test_page_mentions_copilot(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Copilot')
+
+    def test_page_mentions_microsoft_entra(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Microsoft Entra')
+
+    def test_page_mentions_power_bi(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Power BI')
+
+    def test_page_mentions_microsoft_autogen(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'microsoft/autogen')
+
+    def test_page_mentions_semantic_kernel(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'semantic-kernel')
+
+    def test_page_mentions_graphrag(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'GraphRAG')
+
+    def test_page_mentions_presidio(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Presidio')
+
+    def test_page_mentions_markitdown(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'MarkItDown')
+
+    def test_page_mentions_justice(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Justice')
+
+    def test_page_mentions_maqasid(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'Maqasid')
+
+    def test_page_mentions_roadmap_ready(self):
+        response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
+        self.assertContains(response, 'roadmap-ready')
