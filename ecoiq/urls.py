@@ -88,6 +88,9 @@ urlpatterns = [
     # EcoIQ Amanah Autopilot — overnight ethical AI agent product module
     path('amanah-autopilot/', include('amanah_autopilot.urls', namespace='amanah_autopilot')),
 
+    # EcoIQ Omnimodal Evidence Panel — live visual evidence interface product module
+    path('omnimodal-evidence-panel/', include('omnimodal_evidence_panel.urls', namespace='omnimodal_evidence_panel')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
