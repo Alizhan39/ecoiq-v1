@@ -8,6 +8,7 @@ from legacy_safe.forms import (
 )
 from legacy_safe.models import AuditLog, DOCUMENT_TYPE_CHOICES, LegacyProject, MemoryChunk, SourceDocument
 from legacy_safe.services import audit
+from legacy_safe.services.agent_repository_map import AGENT_REPOSITORY_MAP
 from legacy_safe.services.graph_builder import build_dependency_graph
 from legacy_safe.services.llm_provider import MockProvider
 from legacy_safe.services.permissions import DEMO_ROLES, can_access, roles_for_demo_role
@@ -227,4 +228,10 @@ def justice_maqasid(request):
     project = _default_project()
     return render(request, 'legacy_safe/justice_maqasid.html', {
         'project': project, 'justice_metrics': JUSTICE_METRICS,
+    })
+
+
+def agent_repository_map(request):
+    return render(request, 'legacy_safe/agent_repository_map.html', {
+        'categories': AGENT_REPOSITORY_MAP,
     })

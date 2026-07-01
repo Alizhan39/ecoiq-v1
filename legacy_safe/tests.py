@@ -242,3 +242,29 @@ class JusticeMaqasidPageTests(TestCase):
     def test_page_mentions_justice_aware(self):
         response = self.client.get('/legacy-safe/justice-maqasid/')
         self.assertContains(response, 'justice-aware')
+
+
+class AgentRepositoryMapPageTests(TestCase):
+    def test_page_returns_200(self):
+        response = self.client.get('/legacy-safe/agent-repository-map/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_mentions_langgraph(self):
+        response = self.client.get('/legacy-safe/agent-repository-map/')
+        self.assertContains(response, 'LangGraph')
+
+    def test_page_mentions_semgrep(self):
+        response = self.client.get('/legacy-safe/agent-repository-map/')
+        self.assertContains(response, 'Semgrep')
+
+    def test_page_mentions_permission_aware(self):
+        response = self.client.get('/legacy-safe/agent-repository-map/')
+        self.assertContains(response, 'permission-aware')
+
+    def test_page_mentions_justice(self):
+        response = self.client.get('/legacy-safe/agent-repository-map/')
+        self.assertContains(response, 'Justice')
+
+    def test_page_mentions_energyplus(self):
+        response = self.client.get('/legacy-safe/agent-repository-map/')
+        self.assertContains(response, 'EnergyPlus')
