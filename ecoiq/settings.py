@@ -94,6 +94,9 @@ INSTALLED_APPS = [
     'hikma',
     'harvester',
     'qdf',
+
+    # Hackathon module (started 2026-07-01) — Conduct AI / BasedAI bounty
+    'legacy_safe',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

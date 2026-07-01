@@ -46,5 +46,8 @@ python manage.py seed_score_history || echo "   (skipped)"
 echo "==> [pre-deploy] Focusing public profiles on UK / Kazakhstan / Saudi Arabia / Türkiye..."
 python manage.py focus_target_markets || echo "   (skipped)"
 
+echo "==> [pre-deploy] Seeding LegacySafe AI hackathon demo (idempotent)..."
+python manage.py seed_legacy_safe || echo "   (skipped)"
+
 echo "==> [pre-deploy] Complete."
 exit 0

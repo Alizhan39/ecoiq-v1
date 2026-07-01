@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ LegacySafe AI — Dashboard{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+
+  <span class="ls-badge">New AI Agents Module — started today for hackathon</span>
+
+  <div class="ls-head">
+    <div class="ls-eyebrow">EcoIQ · Legacy Modernisation</div>
+    <h1 class="ls-title">EcoIQ LegacySafe AI</h1>
+    <p class="ls-sub">
+      EcoIQ already existed as a climate intelligence and industrial modernisation
+      platform. On 2026-07-01 we started building LegacySafe AI as a new AI agents
+      module inside EcoIQ: a permission-aware, agentic change-management layer for
+      enterprise legacy systems.
+    </p>
+    {% if project %}
+    <p class="ls-project">Demo project: <strong>{{ project.name }}</strong> · {{ project.organisation }}</p>
+    {% else %}
+    <p class="ls-project ls-warn">No demo project yet — run <code>python manage.py seed_legacy_safe</code>.</p>
+    {% endif %}
+    <p class="ls-tagline">Model-agnostic by design: switch providers without weakening permission-aware retrieval.</p>
+  </div>
+
+  <section class="ls-checklist">
+    <h2 class="ls-h2">Judge Demo Checklist</h2>
+    <p class="ls-checklist-sub">Everything below is verifiable live, in this module, in under 3 minutes.</p>
+    <ul class="ls-check-list">
+      <li><a href="{% url 'legacy_safe:permission_demo' %}">Same question, different roles — different correct answers</a></li>
+      <li><a href="{% url 'legacy_safe:ask' %}">Restricted evidence named and excluded, never silently dropped</a></li>
+      <li><a href="{% url 'legacy_safe:revocation_demo' %}">Source revoked → its chunks revoked → its derived memory revoked</a></li>
+      <li><a href="{% url 'legacy_safe:audit_logs' %}">Audit log entry created for every ask / permission-demo / revoke</a></li>
+      <li><a href="{% url 'legacy_safe:dependency_graph' %}">Dependency &amp; lineage graph, built with NetworkX</a></li>
+      <li><a href="{% url 'legacy_safe:permission_demo' %}">Prompt-injection document treated as content, not instruction</a></li>
+    </ul>
+  </section>
+
+  <div class="ls-capability-grid">
+    <a class="ls-cap-card" href="{% url 'legacy_safe:ask' %}">
+      <span class="ls-cap-tag ls-tag-conduct">CONDUCT</span>
+      <h3 class="ls-cap-title">Conduct Legacy Modernisation</h3>
+      <p class="ls-cap-desc">Reads legacy documents and produces a controlled modernisation plan from only the allowed evidence.</p>
+    </a>
+    <a class="ls-cap-card" href="{% url 'legacy_safe:permission_demo' %}">
+      <span class="ls-cap-tag ls-tag-basedai">BASEDAI</span>
+      <h3 class="ls-cap-title">BasedAI Permission-Aware Memory</h3>
+      <p class="ls-cap-desc">Every chunk and derived memory carries its own access level — public, engineering, finance, or executive.</p>
+    </a>
+    <a class="ls-cap-card" href="{% url 'legacy_safe:ask' %}">
+      <span class="ls-cap-tag ls-tag-basedai">BASEDAI</span>
+      <h3 class="ls-cap-title">Deterministic Retrieval Guard</h3>
+      <p class="ls-cap-desc">Access is enforced before retrieval by a pure function — never by asking an LLM for permission.</p>
+    </a>
+    <a class="ls-cap-card" href="{% url 'legacy_safe:revocation_demo' %}">
+      <span class="ls-cap-tag ls-tag-basedai">BASEDAI</span>
+      <h3 class="ls-cap-title">Lineage + Revocation</h3>
+      <p class="ls-cap-desc">Revoke a source and every chunk and derived memory built from it goes dark in the same request.</p>
+    </a>
+    <a class="ls-cap-card" href="{% url 'legacy_safe:audit_logs' %}">
+      <span class="ls-cap-tag ls-tag-basedai">BASEDAI</span>
+      <h3 class="ls-cap-title">Audit Logs</h3>
+      <p class="ls-cap-desc">Every question, retrieval, blocked source, allowed source, and revocation is logged as it happens.</p>
+    </a>
+    <a class="ls-cap-card" href="{% url 'legacy_safe:dependency_graph' %}">
+      <span class="ls-cap-tag ls-tag-conduct">CONDUCT</span>
+      <h3 class="ls-cap-title">Dependency Graph</h3>
+      <p class="ls-cap-desc">NetworkX-built map of the project, its documents, and derived memories, exported as JSON.</p>
+    </a>
+  </div>
+
+  <div class="ls-cols">
+    <section class="ls-card">
+      <h2 class="ls-h2">Why Conduct</h2>
+      <ul class="ls-list">
+        <li>Reads legacy documents, code snippets, process manuals, ESG reports, and policy documents</li>
+        <li>Maps dependencies between systems, documents, teams, risks, and required changes</li>
+        <li>Produces controlled change proposals and modernisation plans</li>
+        <li>Supports human-in-the-loop approval</li>
+      </ul>
+    </section>
+    <section class="ls-card">
+      <h2 class="ls-h2">Why BasedAI</h2>
+      <ul class="ls-list">
+        <li>Permission-aware memory — access enforced before retrieval, not after generation</li>
+        <li>Deterministic permission checks — never an LLM decision</li>
+        <li>Source lineage tracked from raw document to derived memory</li>
+        <li>Revocation propagates: source → chunks → derived memories</li>
+        <li>Audit log for every question, retrieval, blocked source, and allowed source</li>
+      </ul>
+    </section>
+  </div>
+
+  <nav class="ls-actions">
+    <a class="ls-btn ls-btn-primary" href="{% url 'legacy_safe:ask' %}">Ask Agent</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:permission_demo' %}">Permission Demo</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:audit_logs' %}">Audit Logs</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:dependency_graph' %}">Dependency Graph</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:revocation_demo' %}">Revocation Demo</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:upload' %}">Upload Document</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:model_integration_readiness' %}">Model + Integration Readiness</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:repository_support' %}">Repository Support</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:process_optimisation' %}">Process Optimisation</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:justice_maqasid' %}">Justice &amp; Maqasid Layer</a>
+  </nav>
+
+  <p class="ls-ip-note">
+    EcoIQ's core platform, brand, and proprietary logic (including the Justice &amp; Maqasid
+    Intelligence framework) are intended to remain founder/company-owned IP, subject to legal
+    registration and professional advice. Selected public-benefit components — such as
+    educational templates and demo data — may be shared separately for NGOs, schools, and
+    community use under an appropriate open or community-use licence.
+  </p>
+
+</div>
+
+<style>
+  .ls-wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-badge {
+    display: inline-block; background: #00e89a; color: #06281f; font-weight: 600;
+    font-size: 0.8rem; padding: 0.35rem 0.75rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ls-eyebrow { color: #58a6ff; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+  .ls-title { font-size: 2rem; margin: 0.25rem 0 0.75rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; max-width: 720px; }
+  .ls-project { margin-top: 0.75rem; font-size: 0.95rem; }
+  .ls-warn { color: #b45309; }
+  .ls-tagline { margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280; font-style: italic; }
+  .ls-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+  @media (max-width: 720px) { .ls-cols { grid-template-columns: 1fr; } }
+  .ls-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem 1.5rem; background: #fff; }
+  .ls-h2 { font-size: 1.05rem; margin: 0 0 0.75rem; }
+  .ls-list { margin: 0; padding-left: 1.1rem; line-height: 1.7; color: #374151; }
+  .ls-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ls-btn {
+    display: inline-block; padding: 0.6rem 1.1rem; border-radius: 8px; text-decoration: none;
+    font-weight: 600; font-size: 0.9rem; background: #f3f4f6; color: #111827; border: 1px solid #e5e7eb;
+  }
+  .ls-btn-primary { background: #00e89a; color: #06281f; border-color: #00e89a; }
+  .ls-ip-note {
+    margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;
+    color: #9ca3af; font-size: 0.75rem; line-height: 1.6; max-width: 780px;
+  }
+
+  .ls-checklist {
+    border: 1px solid #bbf7d0; background: #f0fdf6; border-radius: 10px;
+    padding: 1.25rem 1.5rem; margin-top: 2rem;
+  }
+  .ls-checklist-sub { margin: 0 0 0.75rem; color: #166534; font-size: 0.9rem; }
+  .ls-check-list { margin: 0; padding-left: 1.1rem; line-height: 1.9; color: #14532d; }
+  .ls-check-list a { color: #14532d; }
+  .ls-check-list li::marker { content: '\2611  '; }
+
+  .ls-capability-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0;
+  }
+  @media (max-width: 900px) { .ls-capability-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .ls-capability-grid { grid-template-columns: 1fr; } }
+  .ls-cap-card {
+    display: block; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.1rem 1.25rem;
+    background: #fff; text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s;
+  }
+  .ls-cap-card:hover { border-color: #00e89a; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .ls-cap-tag {
+    display: inline-block; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
+    padding: 0.15rem 0.45rem; border-radius: 4px; margin-bottom: 0.5rem;
+  }
+  .ls-tag-conduct { background: #dbeafe; color: #1e3a8a; }
+  .ls-tag-basedai { background: #ede9fe; color: #4c1d95; }
+  .ls-cap-title { font-size: 0.98rem; margin: 0 0 0.4rem; color: #111827; }
+  .ls-cap-desc { margin: 0; font-size: 0.85rem; color: #4b5563; line-height: 1.5; }
+</style>
+{% endblock %}

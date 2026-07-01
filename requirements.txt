@@ -38,3 +38,9 @@ matplotlib>=3.7
 #   python manage.py shell -c "from django.db import connection; ..."
 # pgvector>=0.2.4
 # sentence-transformers>=2.2.2
+
+# ── EcoIQ LegacySafe AI (hackathon module, started 2026-07-01) ────────────────
+# Permission-aware agentic change-management layer — dependency/lineage graph.
+# Later: langgraph (agent workflow), pyvis (graph rendering), instructor (structured
+# LLM output), pycasbin (policy engine), semgrep/tree-sitter (legacy code scanning).
+networkx>=3.2
