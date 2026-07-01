@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Amanah Autopilot — AI Agents That Do Good While You Sleep{% endblock %}
+{% block meta_description_content %}EcoIQ Amanah Autopilot runs ethical AI agents overnight to detect waste, harm, and imbalance across energy, industry, cities, and communities — preparing modernisation actions, funding routes, supplier shortlists, and impact reports for human approval.{% endblock %}
+
+{% block content %}
+<div class="aa-wrap">
+
+  <span class="aa-badge">New EcoIQ Product Module</span>
+  <h1 class="aa-title">EcoIQ Amanah Autopilot</h1>
+  <p class="aa-subtitle">AI agents that do good while you sleep.</p>
+  <p class="aa-desc">
+    EcoIQ runs ethical AI agents overnight to detect waste, harm and imbalance across energy,
+    industry, cities and communities. While users sleep, the system finds modernisation
+    opportunities, prepares funding routes, drafts reports and tracks verified impact — aligned
+    with Maqasid, Mizan and amanah.
+  </p>
+  <p class="aa-disclaimer">
+    Maqasid and Mizan are used here as an ethical decision-support framework, not a religious
+    ruling or fatwa. Every finding is evidence-linked and requires human approval before any
+    modernisation, funding, or supplier action is taken.
+  </p>
+
+  <div class="aa-cta-block">
+    <a class="aa-btn aa-btn-primary" href="{% url 'leads:request_access' %}">Turn on Amanah Autopilot</a>
+    <p class="aa-cta-text">Let EcoIQ agents search for harm reduction, modernisation and impact opportunities overnight.</p>
+  </div>
+
+  <section class="aa-section">
+    <h2 class="aa-h2">Overnight Workflow</h2>
+    <ol class="aa-timeline">
+      {% for time, label in timeline %}
+      <li class="aa-timeline-item">
+        <span class="aa-timeline-time">{{ time }}</span>
+        <span class="aa-timeline-label">{{ label }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="aa-section">
+    <h2 class="aa-h2">Morning Briefing</h2>
+    <div class="aa-briefing-card">
+      <p class="aa-briefing-text">{{ briefing }}</p>
+      <ul class="aa-verified-list">
+        {% for indicator in verified_indicators %}
+        <li class="aa-verified-item">✓ {{ indicator }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="aa-section">
+    <h2 class="aa-h2">Good Deeds Overnight Report</h2>
+    <p class="aa-note">Demo dashboard — illustrative figures, not live production data.</p>
+    <div class="aa-metrics-grid">
+      {% for label, value in metrics %}
+      <div class="aa-metric-card">
+        <div class="aa-metric-value">{{ value }}</div>
+        <div class="aa-metric-label">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="aa-section">
+    <h2 class="aa-h2">AI Workforce</h2>
+    <p class="aa-p">Eight agents run the overnight pipeline, each scoped to permission-aware, evidence-linked outputs.</p>
+    <div class="aa-agent-grid">
+      {% for agent in agents %}
+      <div class="aa-agent-card">
+        <div class="aa-agent-head">
+          <h3 class="aa-agent-name">{{ agent.name }}</h3>
+          <span class="aa-agent-status {% if agent.status == 'Completed' %}aa-status-done{% else %}aa-status-wait{% endif %}">{{ agent.status }}</span>
+        </div>
+        <p class="aa-agent-field"><strong>Input:</strong> {{ agent.input }}</p>
+        <p class="aa-agent-field"><strong>Output:</strong> {{ agent.output }}</p>
+        <p class="aa-agent-run">Last run: {{ agent.last_run }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="aa-cta-block aa-cta-final">
+    <a class="aa-btn aa-btn-primary" href="{% url 'leads:request_access' %}">Turn on Amanah Autopilot</a>
+    <p class="aa-cta-text">Let EcoIQ agents search for harm reduction, modernisation and impact opportunities overnight.</p>
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --aa-bg: #070b0f; --aa-bg2: #0d1117; --aa-bg3: #161b22;
+    --aa-border: rgba(255,255,255,.08); --aa-text: #e2e8f0; --aa-muted: #94a3b8;
+    --aa-acc: #00e89a; --aa-info: #58a6ff;
+  }
+  .aa-wrap {
+    max-width: 1040px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--aa-bg); color: var(--aa-text); border-radius: 14px;
+  }
+  .aa-badge {
+    display: inline-block; background: rgba(0,232,154,.12); color: var(--aa-acc);
+    border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .aa-title { font-size: 2.1rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .aa-subtitle { font-size: 1.1rem; font-weight: 600; color: var(--aa-info); margin: 0 0 1rem; }
+  .aa-desc { color: var(--aa-muted); line-height: 1.7; max-width: 720px; font-size: 0.95rem; }
+  .aa-disclaimer {
+    background: rgba(244,162,97,.08); border-left: 3px solid #f4a261; color: #f4a261;
+    padding: 0.7rem 1rem; border-radius: 6px; font-size: 0.85rem; line-height: 1.6;
+    max-width: 720px; margin-top: 1rem;
+  }
+  .aa-cta-block {
+    margin-top: 2rem; padding: 1.5rem; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(0,232,154,.1), rgba(88,166,255,.06));
+    border: 1px solid rgba(0,232,154,.25); text-align: center;
+  }
+  .aa-cta-final { margin-top: 3rem; }
+  .aa-btn {
+    display: inline-block; padding: 0.75rem 1.6rem; border-radius: 10px; font-weight: 700;
+    font-size: 0.95rem; text-decoration: none;
+  }
+  .aa-btn-primary { background: var(--aa-acc); color: #06281f; }
+  .aa-cta-text { color: var(--aa-muted); font-size: 0.85rem; margin-top: 0.75rem; }
+  .aa-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--aa-border); }
+  .aa-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .aa-p { color: var(--aa-muted); font-size: 0.9rem; line-height: 1.6; }
+  .aa-note { color: #f4a261; font-size: 0.8rem; font-style: italic; margin: 0 0 0.75rem; }
+  .aa-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+  .aa-timeline-item {
+    display: flex; align-items: center; gap: 1rem; background: var(--aa-bg2);
+    border: 1px solid var(--aa-border); border-radius: 8px; padding: 0.65rem 1rem;
+  }
+  .aa-timeline-time {
+    font-family: 'SF Mono', monospace; font-weight: 700; color: var(--aa-acc);
+    font-size: 0.85rem; min-width: 3.5rem;
+  }
+  .aa-timeline-label { color: var(--aa-text); font-size: 0.9rem; }
+  .aa-briefing-card {
+    background: var(--aa-bg2); border: 1px solid rgba(0,232,154,.2); border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+  .aa-briefing-text { color: var(--aa-text); line-height: 1.7; font-size: 0.92rem; margin: 0 0 1rem; }
+  .aa-verified-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .aa-verified-item {
+    background: rgba(0,232,154,.1); color: var(--aa-acc); border: 1px solid rgba(0,232,154,.25);
+    padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+  }
+  .aa-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; }
+  @media (max-width: 900px) { .aa-metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .aa-metrics-grid { grid-template-columns: 1fr; } }
+  .aa-metric-card {
+    background: var(--aa-bg2); border: 1px solid var(--aa-border); border-radius: 10px;
+    padding: 1.1rem 1rem; text-align: center;
+  }
+  .aa-metric-value { font-size: 1.6rem; font-weight: 800; color: var(--aa-acc); letter-spacing: -0.03em; }
+  .aa-metric-label { font-size: 0.75rem; color: var(--aa-muted); margin-top: 0.35rem; line-height: 1.4; }
+  .aa-agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  @media (max-width: 720px) { .aa-agent-grid { grid-template-columns: 1fr; } }
+  .aa-agent-card {
+    background: var(--aa-bg2); border: 1px solid var(--aa-border); border-radius: 10px;
+    padding: 1rem 1.15rem;
+  }
+  .aa-agent-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .aa-agent-name { font-size: 0.95rem; color: #fff; margin: 0; }
+  .aa-agent-status {
+    font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .aa-status-done { background: rgba(0,232,154,.12); color: var(--aa-acc); }
+  .aa-status-wait { background: rgba(88,166,255,.12); color: var(--aa-info); }
+  .aa-agent-field { color: var(--aa-muted); font-size: 0.82rem; line-height: 1.5; margin: 0.3rem 0; }
+  .aa-agent-run { color: #64748b; font-size: 0.72rem; margin-top: 0.5rem; }
+</style>
+{% endblock %}
