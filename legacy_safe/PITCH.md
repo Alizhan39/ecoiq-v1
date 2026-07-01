@@ -70,7 +70,13 @@ between Claude, OpenAI-compatible endpoints, BasedAPIs, Mistral, GLM, local open
 or future code-focused agents without changing the security model — all roadmap-ready, not
 already integrated, and requiring no external API calls in this hackathon build.
 
-## I. Intellectual property & public benefit
+## I. Full industrial modernisation pathway
+
+LegacySafe AI plans the full EcoIQ modernisation pathway: solar PV, battery storage, heat
+pumps, boiler replacement, insulation, smart meters, IoT sensors, grid optimisation,
+procurement, finance, process optimisation, worker transition, and Justice/Maqasid governance.
+
+## J. Intellectual property & public benefit
 
 EcoIQ's core platform, brand, proprietary scoring logic, and the Justice & Maqasid Intelligence
 framework are intended to remain founder/company-owned IP, subject to legal registration and

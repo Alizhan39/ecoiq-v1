@@ -11,29 +11,39 @@
   <form method="post" class="ls-form">
     {% csrf_token %}
     {{ form.project }}
-    <input class="ls-input" type="text" name="question" value="{{ form.question.value|default:'What is the full modernisation plan?' }}">
+    <input class="ls-input" type="text" name="question" value="{{ form.question.value|default:'What is the full industrial modernisation plan, from solar panels and equipment upgrades to process optimisation?' }}">
     <button class="ls-btn ls-btn-primary" type="submit">Ask</button>
   </form>
 
   {% if result %}
   <section class="ls-result">
-    <h2 class="ls-h2">Answer</h2>
-    <p class="ls-answer">{{ result.answer }}</p>
+    <h2 class="ls-h2">Executive Summary</h2>
+    <p class="ls-answer">{{ result.executive_summary }}</p>
 
+    {% for section in result.sections %}
+    <div class="ls-plan-section">
+      <h3 class="ls-h3">{{ section.title }}</h3>
+      <p class="ls-p">{{ section.content }}</p>
+    </div>
+    {% endfor %}
+
+    {% if result.next_actions.30_day or result.next_actions.60_day or result.next_actions.90_day %}
+    <h3 class="ls-h3">Next 30/60/90 Day Actions</h3>
     <div class="ls-cols">
       <div>
-        <h3 class="ls-h3">Affected systems</h3>
-        <ul class="ls-list">{% for s in result.affected_systems %}<li>{{ s }}</li>{% empty %}<li class="ls-muted">None identified</li>{% endfor %}</ul>
+        <h4 class="ls-h4">30 days</h4>
+        <ul class="ls-list">{% for a in result.next_actions.30_day %}<li>{{ a }}</li>{% empty %}<li class="ls-muted">None identified</li>{% endfor %}</ul>
       </div>
       <div>
-        <h3 class="ls-h3">Risks</h3>
-        <ul class="ls-list">{% for r in result.risks %}<li>{{ r }}</li>{% empty %}<li class="ls-muted">None identified</li>{% endfor %}</ul>
+        <h4 class="ls-h4">60 days</h4>
+        <ul class="ls-list">{% for a in result.next_actions.60_day %}<li>{{ a }}</li>{% empty %}<li class="ls-muted">None identified</li>{% endfor %}</ul>
       </div>
       <div>
-        <h3 class="ls-h3">Recommended actions</h3>
-        <ul class="ls-list">{% for a in result.recommended_actions %}<li>{{ a }}</li>{% empty %}<li class="ls-muted">None identified</li>{% endfor %}</ul>
+        <h4 class="ls-h4">90 days</h4>
+        <ul class="ls-list">{% for a in result.next_actions.90_day %}<li>{{ a }}</li>{% empty %}<li class="ls-muted">None identified</li>{% endfor %}</ul>
       </div>
     </div>
+    {% endif %}
 
     <h3 class="ls-h3">Evidence used (allowed)</h3>
     <ul class="ls-chips">
@@ -76,7 +86,10 @@
   .ls-result { border-top: 1px solid #e5e7eb; padding-top: 1.5rem; margin-top: 1rem; }
   .ls-h2 { font-size: 1.15rem; margin: 0 0 0.5rem; }
   .ls-h3 { font-size: 0.95rem; margin: 1.25rem 0 0.5rem; color: #111827; }
+  .ls-h4 { font-size: 0.8rem; margin: 0 0 0.4rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.02em; }
   .ls-answer { color: #1f2937; line-height: 1.6; }
+  .ls-p { color: #4b5563; line-height: 1.6; font-size: 0.9rem; margin: 0; }
+  .ls-plan-section { padding: 0.75rem 0; border-bottom: 1px dashed #e5e7eb; }
   .ls-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
   @media (max-width: 720px) { .ls-cols { grid-template-columns: 1fr; } }
   .ls-list { margin: 0; padding-left: 1.1rem; line-height: 1.6; color: #374151; font-size: 0.9rem; }

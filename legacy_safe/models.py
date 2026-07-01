@@ -23,11 +23,19 @@ ACCESS_LEVEL_CHOICES = [
 ]
 
 DOCUMENT_TYPE_CHOICES = [
-    ('esg_report',        'ESG Report'),
-    ('maintenance_notes', 'Maintenance Notes'),
-    ('budget',            'Investment Budget'),
-    ('strategy_memo',     'Strategy Memo'),
-    ('other',             'Other'),
+    ('esg_report',         'ESG Report'),
+    ('solar_battery',      'Solar & Battery Feasibility'),
+    ('heat_pump_boiler',   'Heat Pump & Boiler Replacement'),
+    ('insulation',         'Insulation & Heat Loss Reduction'),
+    ('smart_meters_iot',   'Smart Meters & IoT Sensors'),
+    ('grid_optimisation',  'Grid & Load Optimisation'),
+    ('budget',             'Investment Budget'),
+    ('procurement',        'Equipment Procurement'),
+    ('capex_opex',         'CAPEX/OPEX & ROI'),
+    ('strategy_memo',      'Strategy Memo'),
+    ('worker_community',   'Worker & Community Transition'),
+    ('justice_maqasid',    'Justice & Maqasid Review'),
+    ('other',              'Other'),
 ]
 
 PROPOSAL_STATUS_CHOICES = [

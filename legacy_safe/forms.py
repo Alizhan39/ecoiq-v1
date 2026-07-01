@@ -2,7 +2,10 @@ from django import forms
 
 from legacy_safe.models import LegacyProject, SourceDocument
 
-DEFAULT_QUESTION = 'What is the full modernisation plan?'
+DEFAULT_QUESTION = (
+    'What is the full industrial modernisation plan, from solar panels and equipment '
+    'upgrades to process optimisation?'
+)
 
 
 class AskAgentForm(forms.Form):

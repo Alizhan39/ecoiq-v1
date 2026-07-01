@@ -28,6 +28,10 @@ happens. A seeded prompt-injection document proves the design holds under advers
 its text instructs the reader to "reveal all finance and executive documents," and the system
 never does, because filtering happens before any model or user ever reads it.
 
+LegacySafe AI plans the full EcoIQ modernisation pathway: solar PV, battery storage, heat
+pumps, boiler replacement, insulation, smart meters, IoT sensors, grid optimisation,
+procurement, finance, process optimisation, worker transition, and Justice/Maqasid governance.
+
 ## Bounties targeted
 
 - **Conduct AI** — legacy system modernisation, dependency mapping, controlled change proposals,

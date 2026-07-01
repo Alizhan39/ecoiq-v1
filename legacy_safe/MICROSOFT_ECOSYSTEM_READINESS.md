@@ -40,6 +40,10 @@ permission-filtered context.
 ESG evidence report, risk escalation, workflow update, human approval request, audit log,
 dashboard update.
 
+EcoIQ's modernisation planner maps Microsoft's User/Data/Agent/Model/Action architecture into
+industrial action plans covering energy generation, equipment upgrades, IoT telemetry, process
+optimisation, finance, approvals and audit logs.
+
 ## 2. Microsoft Ecosystem Mapping
 
 | Microsoft ecosystem layer | EcoIQ use case | Why it matters | Status |
