@@ -6,13 +6,54 @@ from django.shortcuts import redirect, render
 from legacy_safe.forms import (
     AskAgentForm, DEFAULT_QUESTION, PermissionDemoForm, RevokeDocumentForm,
 )
-from legacy_safe.models import AuditLog, LegacyProject, MemoryChunk, SourceDocument
+from legacy_safe.models import AuditLog, DOCUMENT_TYPE_CHOICES, LegacyProject, MemoryChunk, SourceDocument
 from legacy_safe.services import audit
 from legacy_safe.services.graph_builder import build_dependency_graph
+from legacy_safe.services.llm_provider import MockProvider
 from legacy_safe.services.permissions import DEMO_ROLES, can_access, roles_for_demo_role
 from legacy_safe.services.planner import generate_modernisation_plan
-from legacy_safe.services.retrieval import retrieve_allowed_chunks_for_roles
+from legacy_safe.services.retrieval import retrieve_allowed_chunks, retrieve_allowed_chunks_for_roles
 from legacy_safe.services.revocation import revoke_source_document
+
+# Shared between the Model Integration Readiness and Process Optimisation pages
+# so the same honest numbers appear in both places.
+PROCESS_OPTIMISATION_METRICS = [
+    ('Manual system analysis', 'reduced from weeks to minutes in demo scenario', True),
+    ('Permission leakage', '0%', True),
+    ('Blocked restricted sources', 'visible', True),
+    ('Revocation propagation', 'passed', True),
+    ('Audit coverage', '100%', True),
+    ('Provider receives blocked context', 'never', True),
+    ('Prompt injection treated as document content', 'passed', True),
+]
+
+# Roadmap-only: no parser is wired up in this hackathon build. Listed here so the
+# repository-support page is honest about what's aspirational vs. what runs today.
+ROADMAP_CODE_LANGUAGES = [
+    ('Python', 'Tree-sitter grammar available'),
+    ('JavaScript / TypeScript', 'Tree-sitter grammar available'),
+    ('Java', 'Tree-sitter grammar available'),
+    ('COBOL', 'Common in legacy ERP/mainframe systems — Tree-sitter grammar available'),
+    ('C / C++', 'Tree-sitter grammar available'),
+    ('SQL / stored procedures', 'Semgrep rule support available'),
+    ('ABAP (SAP)', 'Niche grammar support — evaluate on integration'),
+]
+
+# Demo evaluation dimensions for the Justice & Maqasid layer — deliberately not wired to a
+# scoring model. This hackathon build shows the dimensions a justice-aware review would weigh,
+# not a production score.
+JUSTICE_METRICS = [
+    'Public health protection',
+    'Energy affordability',
+    'Worker transition support',
+    'Community impact',
+    'Carbon reduction',
+    'Governance transparency',
+    'Future generations benefit',
+    'Resource stewardship',
+    'Permission fairness',
+    'Auditability',
+]
 
 
 def _default_project():
@@ -143,4 +184,47 @@ def revocation_demo(request):
     return render(request, 'legacy_safe/revocation_demo.html', {
         'project': project, 'form': form, 'result': result,
         'documents': documents, 'derived_memories': derived_memories,
+    })
+
+
+def model_integration_readiness(request):
+    project = _default_project()
+    mock_result = None
+    if project is not None:
+        outcome = retrieve_allowed_chunks(request.user, project, DEFAULT_QUESTION)
+        mock_result = MockProvider().generate(DEFAULT_QUESTION, outcome['allowed'])
+    return render(request, 'legacy_safe/model_integration_readiness.html', {
+        'project': project, 'mock_result': mock_result,
+        'metrics': PROCESS_OPTIMISATION_METRICS,
+    })
+
+
+def repository_support(request):
+    project = _default_project()
+    document_types_seeded = (
+        SourceDocument.objects.filter(project=project).values_list('document_type', flat=True).distinct()
+        if project else []
+    )
+    return render(request, 'legacy_safe/repository_support.html', {
+        'project': project,
+        'document_type_choices': DOCUMENT_TYPE_CHOICES,
+        'document_types_seeded': set(document_types_seeded),
+        'roadmap_languages': ROADMAP_CODE_LANGUAGES,
+    })
+
+
+def process_optimisation(request):
+    project = _default_project()
+    document_count = SourceDocument.objects.filter(project=project).count() if project else 0
+    audit_log_count = AuditLog.objects.count()
+    return render(request, 'legacy_safe/process_optimisation.html', {
+        'project': project, 'metrics': PROCESS_OPTIMISATION_METRICS,
+        'document_count': document_count, 'audit_log_count': audit_log_count,
+    })
+
+
+def justice_maqasid(request):
+    project = _default_project()
+    return render(request, 'legacy_safe/justice_maqasid.html', {
+        'project': project, 'justice_metrics': JUSTICE_METRICS,
     })

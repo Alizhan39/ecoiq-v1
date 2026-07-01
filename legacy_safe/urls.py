@@ -13,4 +13,8 @@ urlpatterns = [
     path('audit-logs/',        views.audit_logs,        name='audit_logs'),
     path('dependency-graph/',  views.dependency_graph,  name='dependency_graph'),
     path('revocation-demo/',   views.revocation_demo,   name='revocation_demo'),
+    path('model-integration-readiness/', views.model_integration_readiness, name='model_integration_readiness'),
+    path('repository-support/', views.repository_support, name='repository_support'),
+    path('process-optimisation/', views.process_optimisation, name='process_optimisation'),
+    path('justice-maqasid/', views.justice_maqasid, name='justice_maqasid'),
 ]

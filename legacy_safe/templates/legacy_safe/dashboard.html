@@ -21,6 +21,7 @@
     {% else %}
     <p class="ls-project ls-warn">No demo project yet — run <code>python manage.py seed_legacy_safe</code>.</p>
     {% endif %}
+    <p class="ls-tagline">Model-agnostic by design: switch providers without weakening permission-aware retrieval.</p>
   </div>
 
   <section class="ls-checklist">
@@ -98,7 +99,19 @@
     <a class="ls-btn" href="{% url 'legacy_safe:dependency_graph' %}">Dependency Graph</a>
     <a class="ls-btn" href="{% url 'legacy_safe:revocation_demo' %}">Revocation Demo</a>
     <a class="ls-btn" href="{% url 'legacy_safe:upload' %}">Upload Document</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:model_integration_readiness' %}">Model + Integration Readiness</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:repository_support' %}">Repository Support</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:process_optimisation' %}">Process Optimisation</a>
+    <a class="ls-btn" href="{% url 'legacy_safe:justice_maqasid' %}">Justice &amp; Maqasid Layer</a>
   </nav>
+
+  <p class="ls-ip-note">
+    EcoIQ's core platform, brand, and proprietary logic (including the Justice &amp; Maqasid
+    Intelligence framework) are intended to remain founder/company-owned IP, subject to legal
+    registration and professional advice. Selected public-benefit components — such as
+    educational templates and demo data — may be shared separately for NGOs, schools, and
+    community use under an appropriate open or community-use licence.
+  </p>
 
 </div>
 
@@ -113,6 +126,7 @@
   .ls-sub { color: #4b5563; line-height: 1.6; max-width: 720px; }
   .ls-project { margin-top: 0.75rem; font-size: 0.95rem; }
   .ls-warn { color: #b45309; }
+  .ls-tagline { margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280; font-style: italic; }
   .ls-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
   @media (max-width: 720px) { .ls-cols { grid-template-columns: 1fr; } }
   .ls-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem 1.5rem; background: #fff; }
@@ -124,6 +138,10 @@
     font-weight: 600; font-size: 0.9rem; background: #f3f4f6; color: #111827; border: 1px solid #e5e7eb;
   }
   .ls-btn-primary { background: #00e89a; color: #06281f; border-color: #00e89a; }
+  .ls-ip-note {
+    margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;
+    color: #9ca3af; font-size: 0.75rem; line-height: 1.6; max-width: 780px;
+  }
 
   .ls-checklist {
     border: 1px solid #bbf7d0; background: #f0fdf6; border-radius: 10px;

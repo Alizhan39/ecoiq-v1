@@ -17,7 +17,17 @@ for the **Conduct AI** and **BasedAI** bounties.
 Everything below in this section (and the `legacy_safe` Django app) is new as of today. The
 rest of this README describes the pre-existing EcoIQ platform. See also
 [`legacy_safe/DEMO_SCRIPT.md`](legacy_safe/DEMO_SCRIPT.md) for the 60-second pitch and 3-minute
-walkthrough.
+walkthrough, [`legacy_safe/PITCH.md`](legacy_safe/PITCH.md) for shorter pitches, and
+[`legacy_safe/SUBMISSION_SUMMARY.md`](legacy_safe/SUBMISSION_SUMMARY.md) for the full hackathon
+submission writeup.
+
+`New AI Agents Module — started today for hackathon`
+&nbsp;·&nbsp; `Conduct-aligned: enterprise legacy modernisation`
+&nbsp;·&nbsp; `BasedAI-aligned: permission-aware memory and model-provider readiness`
+&nbsp;·&nbsp; `Repository-aware`
+&nbsp;·&nbsp; `Language-aware`
+&nbsp;·&nbsp; `Permission-aware`
+&nbsp;·&nbsp; `Model-provider-ready`
 
 ### Project: EcoIQ LegacySafe AI
 
@@ -130,6 +140,99 @@ pgvector (semantic retrieval), LangGraph (agent workflow), LlamaIndex, pycasbin,
 - LangGraph multi-step agent workflow (retrieve → plan → propose → await approval)
 - PyVis interactive rendering of the dependency/lineage graph
 - Legacy code scanning via Semgrep/Tree-sitter feeding into `ChangeProposal`
+
+### Model + Enterprise Integration Readiness
+
+This is our own hackathon MVP, built inside EcoIQ and inspired by the Conduct AI and BasedAI
+bounty requirements — not a clone of either. See the full breakdown at
+`/legacy-safe/model-integration-readiness/`.
+
+**LegacySafe AI is model-agnostic.** The permission layer sits before the model, so we can
+switch between Claude, OpenAI-compatible endpoints, BasedAPIs, Mistral, GLM, local open-weight
+models, or future code-focused agents without changing the security model.
+
+#### Model Switching & Open-Weight Readiness
+
+- The current hackathon MVP uses `MockProvider` — a deterministic provider where needed; no
+  external API calls are required for the demo
+- Future providers can include Anthropic Claude, OpenAI-compatible endpoints, BasedAPIs,
+  Mistral, GLM, and local open-weight models — **roadmap-ready, not already integrated**
+- Future code-focused agents can analyse repositories, but only after permission-aware retrieval
+- The model never receives blocked finance, engineering, or executive memory
+- The same retrieval guard and audit logs apply regardless of model provider
+- This supports lower cost, data sovereignty, and enterprise flexibility
+
+```
+User request → Permission Guard → Allowed context only → Selected model provider → Agent output → Audit log
+```
+
+- **Provider abstraction** — `services/llm_provider.py` defines `LLMProvider`, with `MockProvider`
+  (fully deterministic, no network call, no API key) shipped for the hackathon, and typed stubs
+  for `OpenAICompatibleProvider` and `AnthropicProvider` describing the integration seam
+- **Open-weight model readiness** — the same provider interface accommodates BasedAPIs, Mistral,
+  GLM, or a locally hosted open-weight model; permission filtering never changes based on which
+  provider is plugged in
+- **OpenAI-compatible endpoint readiness** — any drop-in-compatible chat completions server can
+  implement `OpenAICompatibleProvider.generate()` without touching retrieval or permissions
+- **Data sovereignty design** — every provider, including local/air-gapped models, receives only
+  permission-filtered `allowed_context`; no provider ever sees blocked finance, engineering, or
+  executive memory
+- **Enterprise integrations roadmap** — SAP/ERP, Salesforce/CRM, Oracle databases, Workday/HR,
+  Jira, Confluence, ServiceNow, GitHub/GitLab, SAP Signavio, SAP LeanIX, ESG reporting systems,
+  and climate/asset data repositories, each mapped to a specific agent use case and the
+  permission risk it handles
+- **Conduct-style lifecycle mapping** — business change request → classify → find affected
+  systems/documents/code → build dependency graph → generate change proposal → audit trail →
+  human approval → testing checklist
+- **BasedAI-style AI workforce mapping** — five specialised agents (Legacy Scanner, Permission
+  Guard, Dependency Mapper, Modernisation Planner, Audit & Compliance), each with a defined
+  input, output, and optimisation value
+
+### Justice & Maqasid Intelligence Layer
+
+A hackathon MVP and conceptual governance layer — not a certified ethics or compliance
+product — at `/legacy-safe/justice-maqasid/`.
+
+- **Why EcoIQ adds justice beyond efficiency** — most enterprise AI tools optimise
+  modernisation plans for speed, cost, and efficiency alone. EcoIQ adds a justice and
+  stewardship review so plans are also evaluated for human impact, worker transition,
+  community protection, environmental stewardship, fair cost/benefit allocation, future
+  generations, and governance accountability
+- **How this differentiates EcoIQ from normal enterprise AI** — a Justice-Aware Agent Workflow
+  (Permission Guard → Evidence Retrieval → Conduct-style Legacy Analysis → Maqasid Justice
+  Review Agent → Future Generations Impact Agent → Worker & Community Risk Agent → Final Just
+  Transition Plan → Audit Log) runs alongside the existing permission-aware retrieval pipeline,
+  so a modernisation answer isn't just permission-filtered — it's reviewed for fairness before
+  being presented as final
+- **How it supports responsible climate transition** — a coal-to-clean-heat plan, for example,
+  is checked not only for emissions reduction but for whether the transition's costs land
+  unfairly on vulnerable households, workers, or future generations
+- **How it connects to Maqasid, amanah, khalifa stewardship, and intergenerational justice** —
+  presented professionally, not as religious preaching: six evaluation principles (Hifz
+  al-Nafs/life, Hifz al-Aql/intellect, Hifz al-Mal/wealth, Hifz al-Nasl/family & future
+  generations, Hifz al-Din/values, and Amanah/Khalifa stewardship of the Earth) are reframed as
+  plain modernisation-planning questions, each with an example risk and mitigation
+- **Why this matters for emerging markets and industrial modernisation** — coal-to-clean-heat
+  and similar transitions in emerging markets carry real risk of unfair cost transfer to
+  workers and low-income households; a justice-aware review layer surfaces that risk before a
+  plan is finalised, not after
+- Five conceptual agents (Justice Review, Maqasid Impact, Future Generations, Worker &
+  Community, Amanah Stewardship) and a set of demo "Justice Metrics" scorecards — explicitly
+  labelled as demo evaluation dimensions, not final production scores
+
+### Intellectual Property & Public Benefit
+
+EcoIQ's core platform, brand, commercial workflows, proprietary scoring logic, the Justice &
+Maqasid Intelligence framework, enterprise integrations, datasets, and patentable inventions are
+intended to remain founder/company-owned intellectual property, subject to legal registration
+and professional advice. No patents have been filed or granted at this stage, and nothing in
+this repository should be read as claiming otherwise.
+
+Selected public-benefit components — such as educational templates, demo data, community
+climate checklists, and selected non-commercial guides — may be shared for NGOs, schools,
+vulnerable communities, and public benefit under an appropriate open or community-use licence,
+to be determined separately. This repository currently has no `LICENSE` file; no licence terms
+are implied by this note, and none are changed by it.
 
 ---
 

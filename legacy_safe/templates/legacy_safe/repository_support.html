@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Repository &amp; Language Support — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <span class="ls-badge">New AI Agents Module — started today for hackathon</span>
+
+  <h1 class="ls-title">Repository &amp; Language Support</h1>
+  <p class="ls-sub">
+    What LegacySafe AI can ingest today, and what's roadmap-only. This page is deliberately
+    honest: no code parser or static analysis engine is wired up in this hackathon build.
+  </p>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">Working today</h2>
+    <p class="ls-p">
+      Any text content — regardless of source language or format — can be stored as a
+      <code>SourceDocument</code>, tagged with a <code>document_type</code> and an
+      <code>access_level</code>, and chunked into permission-aware memory. Retrieval is plain
+      keyword overlap; there is no code-aware parsing yet.
+    </p>
+    <table class="ls-table">
+      <thead><tr><th>Document type</th><th>Seeded in this demo project?</th></tr></thead>
+      <tbody>
+        {% for key, label in document_type_choices %}
+        <tr>
+          <td>{{ label }}</td>
+          <td>{% if key in document_types_seeded %}<span class="ls-chip ls-chip-allow">yes</span>{% else %}<span class="ls-chip ls-chip-neutral">not seeded</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">Roadmap: language-aware code scanning</h2>
+    <p class="ls-p">
+      Not implemented in this hackathon build. Listed here as the concrete integration seam for
+      real repository support (GitHub/GitLab, per the <a href="{% url 'legacy_safe:model_integration_readiness' %}">Model + Enterprise Integration Readiness</a> page), using Tree-sitter for parsing and Semgrep for pattern-based
+      legacy-risk rules.
+    </p>
+    <table class="ls-table">
+      <thead><tr><th>Language / format</th><th>Planned tooling</th></tr></thead>
+      <tbody>
+        {% for language, note in roadmap_languages %}
+        <tr><td>{{ language }}</td><td>{{ note }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">Security note</h2>
+    <p class="ls-p">
+      When repository ingestion ships, a code file's <code>access_level</code> would gate its
+      visibility exactly like any report or memo does today — the same deterministic
+      <code>can_access()</code> check, no separate code-specific permission path.
+    </p>
+  </section>
+</div>
+
+<style>
+  .ls-wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-badge {
+    display: block; width: fit-content; background: #00e89a; color: #06281f; font-weight: 600;
+    font-size: 0.8rem; padding: 0.35rem 0.75rem; border-radius: 999px; margin: 0.75rem 0 1rem;
+  }
+  .ls-title { font-size: 1.75rem; margin: 0 0 0.6rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; }
+  .ls-section { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid #e5e7eb; }
+  .ls-h2 { font-size: 1.1rem; margin: 0 0 0.6rem; color: #111827; }
+  .ls-p { color: #4b5563; line-height: 1.6; }
+  .ls-p code { background: #f3f4f6; padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85rem; }
+  .ls-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+  .ls-table th, .ls-table td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.6rem; text-align: left; }
+  .ls-table th { color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .ls-chip { padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.78rem; }
+  .ls-chip-allow { background: #d8f3dc; color: #1b4332; }
+  .ls-chip-neutral { background: #e5e7eb; color: #374151; }
+</style>
+{% endblock %}

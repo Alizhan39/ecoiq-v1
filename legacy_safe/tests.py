@@ -7,6 +7,7 @@ from django.contrib.auth.models import AnonymousUser, Group
 from django.test import TestCase
 
 from legacy_safe.models import AuditLog, DerivedMemory, MemoryChunk, SourceDocument
+from legacy_safe.services.llm_provider import MockProvider
 from legacy_safe.services.permissions import can_access, get_user_roles
 from legacy_safe.services.planner import generate_modernisation_plan
 from legacy_safe.services.retrieval import retrieve_allowed_chunks
@@ -151,3 +152,93 @@ class AuditLogTests(TestCase):
         log = AuditLog.objects.latest('created_at')
         self.assertEqual(log.action, 'revoke')
         self.assertEqual(log.decision, 'revoked')
+
+
+class MockProviderTests(TestCase):
+    """MockProvider must be fully offline/deterministic — no external API required."""
+
+    def test_generate_returns_context_count_without_external_api(self):
+        result = MockProvider().generate('any prompt', allowed_context=[{'a': 1}, {'b': 2}])
+        self.assertEqual(result['provider'], 'mock')
+        self.assertEqual(result['context_count'], 2)
+        self.assertIn('answer', result)
+
+
+class ModelIntegrationReadinessPageTests(TestCase):
+    def setUp(self):
+        self.project = create_demo_data()
+
+    def test_page_returns_200(self):
+        response = self.client.get('/legacy-safe/model-integration-readiness/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_mentions_openai_compatible(self):
+        response = self.client.get('/legacy-safe/model-integration-readiness/')
+        self.assertContains(response, 'OpenAI-compatible')
+
+    def test_page_mentions_basedapis(self):
+        response = self.client.get('/legacy-safe/model-integration-readiness/')
+        self.assertContains(response, 'BasedAPIs')
+
+    def test_page_mentions_sap(self):
+        response = self.client.get('/legacy-safe/model-integration-readiness/')
+        self.assertContains(response, 'SAP')
+
+    def test_page_mentions_permission_guard_agent(self):
+        response = self.client.get('/legacy-safe/model-integration-readiness/')
+        self.assertContains(response, 'Permission Guard Agent')
+
+
+class RepositorySupportPageTests(TestCase):
+    def setUp(self):
+        self.project = create_demo_data()
+
+    def test_page_returns_200(self):
+        response = self.client.get('/legacy-safe/repository-support/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_is_honest_about_roadmap_status(self):
+        response = self.client.get('/legacy-safe/repository-support/')
+        self.assertContains(response, 'Not implemented in this hackathon build')
+
+
+class ProcessOptimisationPageTests(TestCase):
+    def setUp(self):
+        self.project = create_demo_data()
+
+    def test_page_returns_200(self):
+        response = self.client.get('/legacy-safe/process-optimisation/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_shows_live_document_count(self):
+        response = self.client.get('/legacy-safe/process-optimisation/')
+        self.assertContains(response, 'Source documents ingested')
+
+
+class JusticeMaqasidPageTests(TestCase):
+    def setUp(self):
+        self.project = create_demo_data()
+
+    def test_page_returns_200(self):
+        response = self.client.get('/legacy-safe/justice-maqasid/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_mentions_maqasid(self):
+        response = self.client.get('/legacy-safe/justice-maqasid/')
+        self.assertContains(response, 'Maqasid')
+
+    def test_page_mentions_amanah(self):
+        response = self.client.get('/legacy-safe/justice-maqasid/')
+        self.assertContains(response, 'Amanah')
+
+    def test_page_mentions_future_generations(self):
+        response = self.client.get('/legacy-safe/justice-maqasid/')
+        self.assertContains(response, 'Future Generations')
+
+    def test_page_mentions_worker_and_community(self):
+        response = self.client.get('/legacy-safe/justice-maqasid/')
+        self.assertContains(response, 'Worker & Community')
+
+    def test_page_mentions_justice_aware(self):
+        response = self.client.get('/legacy-safe/justice-maqasid/')
+        self.assertContains(response, 'justice-aware')

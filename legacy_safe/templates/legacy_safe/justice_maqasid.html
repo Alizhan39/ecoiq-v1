@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Justice &amp; Maqasid Intelligence Layer — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <span class="ls-badge">New AI Agents Module — started today for hackathon</span>
+
+  <h1 class="ls-title">EcoIQ Justice &amp; Maqasid Intelligence Layer</h1>
+  <p class="ls-sub">Ethical AI agents for just, sustainable, and future-ready enterprise modernisation.</p>
+  <p class="ls-disclaimer">
+    This is a hackathon MVP and a conceptual governance layer, not a certified ethics or
+    compliance product. It is presented as an ethical governance, justice, stakeholder-impact,
+    and long-term stewardship lens — inspired by Maqasid al-Shariah, amanah, khalifa
+    stewardship, and intergenerational justice — for professional, inclusive, non-sectarian use
+    in enterprise modernisation decisions.
+  </p>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">1. Why This Layer Exists</h2>
+    <p class="ls-p">
+      Most enterprise AI tools optimise for speed, cost, and efficiency. EcoIQ adds a justice
+      and stewardship layer so that modernisation plans are evaluated for:
+    </p>
+    <ul class="ls-list">
+      <li>Human impact</li>
+      <li>Worker transition</li>
+      <li>Community protection</li>
+      <li>Environmental stewardship</li>
+      <li>Fair allocation of costs and benefits</li>
+      <li>Future generations</li>
+      <li>Governance and accountability</li>
+    </ul>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">2. Maqasid-Inspired Evaluation Framework</h2>
+    <p class="ls-p">
+      Five classical protective principles (Maqasid al-Shariah), plus amanah / khalifa
+      stewardship of the Earth, reframed as modernisation-planning questions.
+    </p>
+    <div class="ls-table-wrap">
+    <table class="ls-table">
+      <thead>
+        <tr><th>Principle</th><th>Meaning</th><th>EcoIQ modernisation question</th><th>Example risk</th><th>Example mitigation</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Hifz al-Nafs</td>
+          <td>Protection of life</td>
+          <td>Does this plan reduce harm to people's health, safety, and living conditions?</td>
+          <td>Pollution, unsafe infrastructure, energy poverty, heating failure</td>
+          <td>Prioritise safety, clean heat, reliable infrastructure, vulnerable households</td>
+        </tr>
+        <tr>
+          <td>Hifz al-Aql</td>
+          <td>Protection of intellect</td>
+          <td>Does this plan improve access to knowledge, transparency, and informed decision-making?</td>
+          <td>Opaque AI decisions, hidden assumptions, poor public understanding</td>
+          <td>Evidence-first reports, audit logs, explainable recommendations</td>
+        </tr>
+        <tr>
+          <td>Hifz al-Mal</td>
+          <td>Protection of wealth and resources</td>
+          <td>Does this plan protect public money, investor capital, and household affordability?</td>
+          <td>Wasteful capex, corruption, stranded assets, unfair tariffs</td>
+          <td>Transparent cost-benefit analysis, phased investment, audit trail</td>
+        </tr>
+        <tr>
+          <td>Hifz al-Nasl</td>
+          <td>Protection of family / community / future generations</td>
+          <td>Does this plan protect families, communities, and future generations?</td>
+          <td>Job losses, regional inequality, unaffordable transition, climate burden passed to children</td>
+          <td>Worker retraining, community transition funds, long-term climate resilience</td>
+        </tr>
+        <tr>
+          <td>Hifz al-Din / Values</td>
+          <td>Protection of values and moral responsibility</td>
+          <td>Does this plan align with trust, accountability, justice, and responsibility?</td>
+          <td>Greenwashing, extractive investment, hidden harm</td>
+          <td>Ethical governance, transparent evidence, stakeholder accountability</td>
+        </tr>
+        <tr>
+          <td>Amanah / Khalifa Stewardship</td>
+          <td>Protection of Earth</td>
+          <td>Does this plan treat natural resources as a trust rather than something to exploit?</td>
+          <td>Water waste, emissions, ecosystem damage, short-term profit over long-term harm</td>
+          <td>Emissions reduction, circular economy, water protection, biodiversity safeguards</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">3. Justice-Aware Agent Workflow</h2>
+    <p class="ls-p">A justice-aware pipeline sits alongside the Conduct-style legacy analysis already in this module.</p>
+    <ol class="ls-flow">
+      <li>Modernisation Plan</li>
+      <li>Permission Guard Agent</li>
+      <li>Evidence Retrieval</li>
+      <li>Conduct-style Legacy Analysis</li>
+      <li>Maqasid Justice Review Agent</li>
+      <li>Future Generations Impact Agent</li>
+      <li>Worker & Community Risk Agent</li>
+      <li>Final Just Transition Plan</li>
+      <li>Audit Log</li>
+    </ol>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">4. Justice &amp; Stewardship Agents</h2>
+    <p class="ls-p">Five conceptual agents extending the AI Workforce described on the <a href="{% url 'legacy_safe:model_integration_readiness' %}">Model + Enterprise Integration Readiness</a> page. Conceptual in this hackathon build — not wired to a live scoring model.</p>
+    <div class="ls-agent-grid">
+      <div class="ls-agent-card">
+        <h3 class="ls-agent-name">Justice Review Agent</h3>
+        <p><strong>Input:</strong> modernisation plan, stakeholders, risks, evidence</p>
+        <p><strong>Output:</strong> justice score, fairness risks, mitigation actions</p>
+      </div>
+      <div class="ls-agent-card">
+        <h3 class="ls-agent-name">Maqasid Impact Agent</h3>
+        <p><strong>Input:</strong> plan and evidence</p>
+        <p><strong>Output:</strong> Maqasid impact matrix</p>
+      </div>
+      <div class="ls-agent-card">
+        <h3 class="ls-agent-name">Future Generations Agent</h3>
+        <p><strong>Input:</strong> long-term climate and infrastructure risks</p>
+        <p><strong>Output:</strong> intergenerational impact warning</p>
+      </div>
+      <div class="ls-agent-card">
+        <h3 class="ls-agent-name">Worker & Community Agent</h3>
+        <p><strong>Input:</strong> affected systems, sectors, regions, workforce risks</p>
+        <p><strong>Output:</strong> just transition recommendations</p>
+      </div>
+      <div class="ls-agent-card">
+        <h3 class="ls-agent-name">Amanah Stewardship Agent</h3>
+        <p><strong>Input:</strong> environmental and resource impact</p>
+        <p><strong>Output:</strong> stewardship recommendations</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">5. Demo Output</h2>
+    <p class="ls-p"><strong>Question:</strong> "Create a modernisation plan for Samruk Energy."</p>
+    <div class="ls-compare">
+      <div class="ls-compare-card">
+        <h3 class="ls-h3">Normal enterprise AI answer</h3>
+        <p class="ls-quote">"Replace legacy coal boilers, optimise grid upgrades, and phase capex."</p>
+      </div>
+      <div class="ls-compare-card ls-compare-highlight">
+        <h3 class="ls-h3">EcoIQ Justice &amp; Maqasid-enhanced answer</h3>
+        <p class="ls-quote">
+          "Replace legacy coal boilers through a phased clean-heat transition, but include
+          worker retraining, household affordability protection, transparent capex governance,
+          public health prioritisation, and long-term emissions reduction. The plan should not
+          transfer costs unfairly to vulnerable households or future generations."
+        </p>
+      </div>
+    </div>
+    <p class="ls-note">Illustrative example, not a live model output.</p>
+  </section>
+
+  <section class="ls-section">
+    <h2 class="ls-h2">6. Justice Metrics</h2>
+    <p class="ls-metrics-label">Demo evaluation dimensions — not final production scores.</p>
+    <div class="ls-metric-grid">
+      {% for metric in justice_metrics %}
+      <div class="ls-metric-card">{{ metric }}</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<style>
+  .ls-wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-badge {
+    display: block; width: fit-content; background: #00e89a; color: #06281f; font-weight: 600;
+    font-size: 0.8rem; padding: 0.35rem 0.75rem; border-radius: 999px; margin: 0.75rem 0 1rem;
+  }
+  .ls-title { font-size: 1.85rem; margin: 0 0 0.4rem; }
+  .ls-sub { color: #374151; font-weight: 600; margin: 0 0 0.75rem; }
+  .ls-disclaimer {
+    background: #f3f4f6; border-left: 3px solid #6b7280; padding: 0.7rem 1rem;
+    color: #4b5563; font-size: 0.85rem; line-height: 1.6; border-radius: 4px; max-width: 780px;
+  }
+  .ls-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+  .ls-h2 { font-size: 1.2rem; margin: 0 0 0.6rem; color: #111827; }
+  .ls-h3 { font-size: 0.95rem; margin: 0 0 0.5rem; }
+  .ls-p { color: #4b5563; line-height: 1.6; }
+  .ls-list { color: #374151; line-height: 1.8; padding-left: 1.2rem; }
+  .ls-table-wrap { overflow-x: auto; }
+  .ls-table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.75rem; }
+  .ls-table th, .ls-table td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.6rem; text-align: left; vertical-align: top; }
+  .ls-table th { color: #6b7280; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .ls-flow { padding-left: 1.3rem; line-height: 2.1; color: #374151; font-weight: 600; }
+  .ls-flow li::marker { color: #00a876; }
+  .ls-agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+  @media (max-width: 900px) { .ls-agent-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .ls-agent-grid { grid-template-columns: 1fr; } }
+  .ls-agent-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.1rem; background: #fff; }
+  .ls-agent-name { font-size: 0.95rem; margin: 0 0 0.5rem; color: #111827; }
+  .ls-agent-card p { font-size: 0.82rem; color: #4b5563; margin: 0.25rem 0; line-height: 1.5; }
+  .ls-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  @media (max-width: 720px) { .ls-compare { grid-template-columns: 1fr; } }
+  .ls-compare-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.1rem; background: #fff; }
+  .ls-compare-highlight { border-color: #00e89a; background: #f0fdf6; }
+  .ls-quote { font-size: 0.88rem; color: #374151; line-height: 1.6; font-style: italic; }
+  .ls-note { color: #6b7280; font-size: 0.82rem; margin-top: 0.6rem; }
+  .ls-metrics-label { color: #6b7280; font-size: 0.82rem; font-style: italic; margin: 0 0 0.75rem; }
+  .ls-metric-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
+  @media (max-width: 900px) { .ls-metric-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .ls-metric-grid { grid-template-columns: repeat(2, 1fr); } }
+  .ls-metric-card {
+    border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 0.6rem; background: #fff;
+    font-size: 0.8rem; font-weight: 600; color: #374151; text-align: center;
+  }
+</style>
+{% endblock %}
