@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Dependency Graph — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <h1 class="ls-title">Dependency &amp; Lineage Graph</h1>
+  <p class="ls-sub">
+    {% if project %}Nodes and edges for <strong>{{ project.name }}</strong>, built with NetworkX.{% else %}No demo project seeded yet.{% endif %}
+    A PyVis-rendered interactive view can layer on top of this same graph later.
+  </p>
+
+  {% if project %}
+  <h2 class="ls-h2">Nodes</h2>
+  <ul class="ls-node-list">
+    {% for n in graph.nodes %}
+    <li class="ls-node ls-node-{{ n.type }} {% if n.is_revoked %}ls-node-revoked{% endif %}">
+      <span class="ls-node-type">{{ n.type }}</span>
+      <span class="ls-node-label">{{ n.label }}</span>
+      <span class="ls-node-access">{{ n.access_level }}</span>
+      {% if n.is_revoked %}<span class="ls-node-flag">revoked</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="ls-h2">Edges</h2>
+  <ul class="ls-edge-list">
+    {% for e in graph.edges %}
+    <li>{{ e.source }} &rarr; {{ e.target }}</li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="ls-h2">Raw JSON</h2>
+  <pre class="ls-json">{{ graph_json }}</pre>
+  {% endif %}
+</div>
+
+<style>
+  .ls-wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-title { font-size: 1.75rem; margin: 0.75rem 0 0.5rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; }
+  .ls-h2 { font-size: 1.05rem; margin: 1.5rem 0 0.75rem; }
+  .ls-node-list, .ls-edge-list { list-style: none; margin: 0; padding: 0; }
+  .ls-node { display: flex; gap: 0.6rem; align-items: center; padding: 0.5rem 0.6rem; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+  .ls-node-type { font-size: 0.7rem; text-transform: uppercase; color: #6b7280; background: #f3f4f6; padding: 0.15rem 0.4rem; border-radius: 4px; }
+  .ls-node-label { font-weight: 600; }
+  .ls-node-access { color: #6b7280; font-size: 0.8rem; }
+  .ls-node-flag { color: #7c2020; background: #ffe0e0; font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 4px; }
+  .ls-node-revoked { opacity: 0.6; }
+  .ls-edge-list li { font-family: monospace; font-size: 0.85rem; padding: 0.3rem 0; color: #374151; }
+  .ls-json { background: #0d1117; color: #d1d5db; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; }
+</style>
+{% endblock %}

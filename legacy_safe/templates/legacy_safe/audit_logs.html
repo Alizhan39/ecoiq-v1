@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Audit Logs — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <h1 class="ls-title">Audit Logs</h1>
+  <p class="ls-sub">Every question, retrieval, blocked source, allowed source, and revocation is recorded here. Most recent 100 entries.</p>
+
+  <table class="ls-table">
+    <thead>
+      <tr>
+        <th>Time</th><th>Action</th><th>Decision</th><th>User</th><th>Question</th>
+        <th>Allowed</th><th>Blocked</th><th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.created_at|date:'Y-m-d H:i:s' }}</td>
+        <td>{{ log.action }}</td>
+        <td>
+          <span class="ls-chip {% if log.decision == 'allowed' %}ls-chip-allow{% elif log.decision == 'blocked' %}ls-chip-block{% else %}ls-chip-neutral{% endif %}">{{ log.decision }}</span>
+        </td>
+        <td>{{ log.user|default:'anonymous' }}</td>
+        <td class="ls-question">{{ log.question|default:'—' }}</td>
+        <td>{{ log.allowed_sources|join:', '|default:'—' }}</td>
+        <td>{{ log.blocked_sources|join:', '|default:'—' }}</td>
+        <td class="ls-reason">{{ log.reason|default:'—' }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="ls-muted">No audit log entries yet — try Ask Agent or Permission Demo.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .ls-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-title { font-size: 1.75rem; margin: 0.75rem 0 0.5rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; }
+  .ls-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.85rem; }
+  .ls-table th, .ls-table td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.6rem; text-align: left; vertical-align: top; }
+  .ls-table th { color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .ls-question, .ls-reason { max-width: 220px; }
+  .ls-chip { padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.75rem; }
+  .ls-chip-allow { background: #d8f3dc; color: #1b4332; }
+  .ls-chip-block { background: #ffe0e0; color: #7c2020; }
+  .ls-chip-neutral { background: #e5e7eb; color: #374151; }
+  .ls-muted { color: #9ca3af; text-align: center; }
+</style>
+{% endblock %}

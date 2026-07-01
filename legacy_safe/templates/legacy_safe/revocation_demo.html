@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Revocation Demo — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <h1 class="ls-title">Revocation Demo</h1>
+  <p class="ls-sub">Revoking a source document cascades: its chunks go dark immediately, and any derived memory built from it is revoked too — a summary can never outlive its source.</p>
+
+  {% if result %}
+  <section class="ls-result">
+    <h2 class="ls-h2">Revocation complete</h2>
+    <ul class="ls-list">
+      <li>Source revoked: <strong>{{ result.source_document }}</strong></li>
+      <li>Chunks revoked: <strong>{{ result.chunks_revoked }}</strong></li>
+      <li>Derived memories revoked:
+        {% if result.derived_memories_revoked %}
+          <strong>{{ result.derived_memories_revoked|join:', ' }}</strong>
+        {% else %}<span class="ls-muted">none</span>{% endif %}
+      </li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if project %}
+  <form method="post" class="ls-form">
+    {% csrf_token %}
+    {{ form.source_document }}
+    <button class="ls-btn ls-btn-danger" type="submit">Revoke selected document</button>
+  </form>
+
+  <h2 class="ls-h2">Source documents</h2>
+  <table class="ls-table">
+    <thead><tr><th>Title</th><th>Access</th><th>Status</th><th>Chunks</th></tr></thead>
+    <tbody>
+      {% for doc in documents %}
+      <tr class="{% if doc.is_revoked %}ls-row-revoked{% endif %}">
+        <td>{{ doc.title }}</td>
+        <td>{{ doc.get_access_level_display }}</td>
+        <td>{% if doc.is_revoked %}<span class="ls-chip ls-chip-block">revoked</span>{% else %}<span class="ls-chip ls-chip-allow">active</span>{% endif %}</td>
+        <td>
+          {% for chunk in doc.chunks.all %}
+            <span class="ls-chip {% if chunk.is_revoked %}ls-chip-block{% else %}ls-chip-neutral{% endif %}">#{{ chunk.chunk_index }}</span>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 class="ls-h2">Derived memories</h2>
+  <table class="ls-table">
+    <thead><tr><th>Title</th><th>Access</th><th>Status</th><th>Lineage</th></tr></thead>
+    <tbody>
+      {% for dm in derived_memories %}
+      <tr class="{% if dm.is_revoked %}ls-row-revoked{% endif %}">
+        <td>{{ dm.title }}</td>
+        <td>{{ dm.get_access_level_display }}</td>
+        <td>{% if dm.is_revoked %}<span class="ls-chip ls-chip-block">revoked</span>{% else %}<span class="ls-chip ls-chip-allow">active</span>{% endif %}</td>
+        <td>{% for l in dm.lineage %}{{ l.source_document_title }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="ls-muted">No derived memories.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<style>
+  .ls-wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-title { font-size: 1.75rem; margin: 0.75rem 0 0.5rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; }
+  .ls-form { display: flex; gap: 0.75rem; margin: 1.5rem 0; flex-wrap: wrap; align-items: center; }
+  .ls-btn { display: inline-block; padding: 0.6rem 1.1rem; border-radius: 8px; border: 1px solid #e5e7eb; background: #f3f4f6; font-weight: 600; cursor: pointer; }
+  .ls-btn-danger { background: #e63946; color: #fff; border-color: #e63946; }
+  .ls-h2 { font-size: 1.05rem; margin: 1.5rem 0 0.75rem; }
+  .ls-list { margin: 0; padding-left: 1.1rem; line-height: 1.7; }
+  .ls-result { border: 1px solid #d8f3dc; background: #f0fdf6; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem; }
+  .ls-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .ls-table th, .ls-table td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.6rem; text-align: left; }
+  .ls-table th { color: #6b7280; font-size: 0.75rem; text-transform: uppercase; }
+  .ls-row-revoked { opacity: 0.55; }
+  .ls-chip { padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.75rem; margin-right: 0.2rem; display: inline-block; }
+  .ls-chip-allow { background: #d8f3dc; color: #1b4332; }
+  .ls-chip-block { background: #ffe0e0; color: #7c2020; }
+  .ls-chip-neutral { background: #e5e7eb; color: #374151; }
+  .ls-muted { color: #9ca3af; }
+</style>
+{% endblock %}

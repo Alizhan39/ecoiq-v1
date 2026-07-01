@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Upload Document — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <h1 class="ls-title">Upload Source Document</h1>
+  <p class="ls-sub">Add a new legacy artefact to {% if project %}<strong>{{ project.name }}</strong>{% else %}the demo project{% endif %}. It becomes one MemoryChunk, permission-tagged by access level.</p>
+
+  {% if project %}
+  <form method="post" class="ls-form">
+    {% csrf_token %}
+    <label class="ls-label">Title
+      <input class="ls-input" type="text" name="title" required>
+    </label>
+    <label class="ls-label">Document type
+      <select class="ls-input" name="document_type">
+        <option value="esg_report">ESG Report</option>
+        <option value="maintenance_notes">Maintenance Notes</option>
+        <option value="budget">Investment Budget</option>
+        <option value="strategy_memo">Strategy Memo</option>
+        <option value="other" selected>Other</option>
+      </select>
+    </label>
+    <label class="ls-label">Access level
+      <select class="ls-input" name="access_level">
+        <option value="public" selected>Public</option>
+        <option value="engineering">Engineering</option>
+        <option value="finance">Finance</option>
+        <option value="executive">Executive</option>
+      </select>
+    </label>
+    <label class="ls-label">Text content
+      <textarea class="ls-input" name="text_content" rows="6" required></textarea>
+    </label>
+    <button class="ls-btn ls-btn-primary" type="submit">Add document</button>
+  </form>
+  {% else %}
+  <p class="ls-warn">No demo project yet — run <code>python manage.py seed_legacy_safe</code> first.</p>
+  {% endif %}
+</div>
+
+<style>
+  .ls-wrap { max-width: 720px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-title { font-size: 1.75rem; margin: 0.75rem 0 0.5rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; }
+  .ls-warn { color: #b45309; }
+  .ls-form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+  .ls-label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; font-weight: 600; color: #111827; }
+  .ls-input { font: inherit; padding: 0.55rem 0.7rem; border: 1px solid #d1d5db; border-radius: 6px; }
+  .ls-btn { display: inline-block; padding: 0.6rem 1.1rem; border-radius: 8px; border: 1px solid #e5e7eb; background: #f3f4f6; font-weight: 600; cursor: pointer; }
+  .ls-btn-primary { background: #00e89a; color: #06281f; border-color: #00e89a; align-self: flex-start; }
+</style>
+{% endblock %}
