@@ -82,6 +82,9 @@ urlpatterns = [
     path('api/qdf/',    include('qdf.urls',           namespace='qdf')),
     path('decisions/',  include('qdf.web_urls',       namespace='qdf_web')),
 
+    # EcoIQ LegacySafe AI — hackathon module (started 2026-07-01), Conduct AI / BasedAI
+    path('legacy-safe/', include('legacy_safe.urls',  namespace='legacy_safe')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
