@@ -85,6 +85,9 @@ urlpatterns = [
     # EcoIQ LegacySafe AI — hackathon module (started 2026-07-01), Conduct AI / BasedAI
     path('legacy-safe/', include('legacy_safe.urls',  namespace='legacy_safe')),
 
+    # EcoIQ Amanah Autopilot — overnight ethical AI agent product module
+    path('amanah-autopilot/', include('amanah_autopilot.urls', namespace='amanah_autopilot')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

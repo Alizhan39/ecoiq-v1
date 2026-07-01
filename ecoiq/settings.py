@@ -97,6 +97,9 @@ INSTALLED_APPS = [
 
     # Hackathon module (started 2026-07-01) — Conduct AI / BasedAI bounty
     'legacy_safe',
+
+    # Overnight ethical AI agent product module
+    'amanah_autopilot',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
