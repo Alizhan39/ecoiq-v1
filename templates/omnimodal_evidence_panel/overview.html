@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Omnimodal Evidence Panel — EcoIQ{% endblock %}
+{% block meta_description_content %}EcoIQ Omnimodal Evidence Panel: a live visual evidence interface showing documents, photos, videos, websites, sensor data, and Maqasid/Mizan meaning while AI agents read, watch, and reason.{% endblock %}
+
+{% block content %}
+<div class="om-wrap">
+
+  <span class="om-badge">EcoIQ Product Module</span>
+  <h1 class="om-title">Omnimodal Evidence Panel</h1>
+  <p class="om-subtitle">When AI reads, the interface shows what it sees.</p>
+  <p class="om-desc">
+    EcoIQ combines documents, photos, videos, websites, sensor data and live inspection streams
+    into one intelligent evidence panel. As agents read, watch and reason, the interface
+    highlights sources, extracts metrics, builds visualisations and shows Maqasid/Mizan meaning
+    in real time.
+  </p>
+  <p class="om-positioning">{{ positioning_line }}</p>
+  <p class="om-connected">
+    Connected to the Multi-Model Intelligence Layer below, the
+    <a href="{% url 'amanah_autopilot:overview' %}">Amanah Autopilot</a> overnight agent system,
+    <a href="{% url 'legacy_safe:dashboard' %}">EcoIQ LegacySafe</a>, and the industrial
+    modernisation planner.
+  </p>
+
+  <section class="om-section">
+    <h2 class="om-h2">Core Capabilities</h2>
+    <div class="om-cap-grid">
+      {% for cap in capabilities %}
+      <div class="om-cap-card">
+        <h3 class="om-cap-title">{{ cap.title }}</h3>
+        {% if cap.chain %}
+        <div class="om-chain">
+          {% for step in cap.chain %}<span class="om-chain-step">{{ step }}</span>{% if not forloop.last %}<span class="om-chain-arrow">→</span>{% endif %}{% endfor %}
+        </div>
+        {% else %}
+        <ul class="om-list">
+          {% for item in cap.items %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="om-section">
+    <h2 class="om-h2">Multi-Model Intelligence Layer</h2>
+    <p class="om-p">Model support cards — which model handles which kind of evidence, and why.</p>
+    <div class="om-model-grid">
+      {% for model in model_cards %}
+      <div class="om-model-card">
+        <h3 class="om-model-name">{{ model.name }}</h3>
+        <p class="om-model-use-label">Use for:</p>
+        <ul class="om-list">
+          {% for use in model.use %}<li>{{ use }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="om-section">
+    <h2 class="om-h2">Model Router Workflow</h2>
+    <div class="om-router-flow">
+      {% for step in router_workflow %}<span class="om-router-step">{{ step }}</span>{% if not forloop.last %}<span class="om-router-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+    <h3 class="om-h3">Routing rules</h3>
+    <ul class="om-list om-rules-list">
+      {% for rule in routing_rules %}<li>{{ rule }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="om-section">
+    <h2 class="om-h2">Split-Screen UI Layout</h2>
+    <div class="om-ui-grid">
+      {% for panel in ui_layout %}
+      <div class="om-ui-card">
+        <h3 class="om-ui-panel-name">{{ panel.panel }}</h3>
+        <ul class="om-list">
+          {% for item in panel.items %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="om-note">Background: a subtle animated evidence flow showing documents, photos, sensors and agents feeding into the recommendation engine.</p>
+  </section>
+
+  <section class="om-section">
+    <h2 class="om-h2">Industrial Examples</h2>
+    <div class="om-example-grid">
+      {% for ex in examples %}
+      <div class="om-example-card">
+        <h3 class="om-example-title">{{ ex.title }}</h3>
+        <div class="om-example-col">
+          <h4 class="om-example-label">Visible evidence</h4>
+          <ul class="om-list">{% for e in ex.evidence %}<li>{{ e }}</li>{% endfor %}</ul>
+        </div>
+        <div class="om-example-col">
+          <h4 class="om-example-label">AI output</h4>
+          <ul class="om-list">{% for o in ex.output %}<li>{{ o }}</li>{% endfor %}</ul>
+        </div>
+        {% if ex.maqasid %}
+        <div class="om-example-col om-example-maqasid">
+          <h4 class="om-example-label">Maqasid/Mizan meaning</h4>
+          <ul class="om-list">{% for m in ex.maqasid %}<li>{{ m }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="om-section">
+    <h2 class="om-h2">Safety and Governance</h2>
+    <ul class="om-list om-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="om-section">
+    <h2 class="om-h2">Integration with Amanah Autopilot</h2>
+    <p class="om-p">
+      While the user sleeps, <a href="{% url 'amanah_autopilot:overview' %}">Amanah Autopilot</a>
+      can scan public reports, uploaded files, photos and monitoring data. In the morning, the
+      Omnimodal Evidence Panel shows what the agents found overnight:
+    </p>
+    <ul class="om-list">
+      {% for item in amanah_integration_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+    <div class="om-briefing-card">
+      <h3 class="om-briefing-title">Good Deeds Overnight Report</h3>
+      <ul class="om-list">
+        {% for item in morning_briefing_items %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  :root {
+    --om-bg: #070b0f; --om-bg2: #0d1117; --om-border: rgba(255,255,255,.08);
+    --om-text: #e2e8f0; --om-muted: #94a3b8; --om-acc: #00e89a; --om-info: #58a6ff;
+  }
+  .om-wrap {
+    max-width: 1060px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--om-bg); color: var(--om-text); border-radius: 14px;
+  }
+  .om-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--om-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .om-title { font-size: 2.1rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .om-subtitle { font-size: 1.1rem; font-weight: 600; color: var(--om-acc); margin: 0 0 1rem; }
+  .om-desc { color: var(--om-muted); line-height: 1.7; max-width: 740px; font-size: 0.95rem; }
+  .om-positioning {
+    font-style: italic; color: #fff; font-size: 1rem; font-weight: 600; margin-top: 1rem;
+    border-left: 3px solid var(--om-acc); padding-left: 0.9rem;
+  }
+  .om-connected { color: var(--om-muted); font-size: 0.85rem; margin-top: 1rem; }
+  .om-connected a { color: var(--om-info); }
+  .om-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--om-border); }
+  .om-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .om-h3 { font-size: 1rem; font-weight: 700; color: #fff; margin: 1.5rem 0 0.75rem; }
+  .om-p { color: var(--om-muted); font-size: 0.9rem; line-height: 1.6; }
+  .om-note { color: #64748b; font-size: 0.8rem; font-style: italic; margin-top: 1rem; }
+  .om-list { color: var(--om-muted); line-height: 1.7; font-size: 0.87rem; padding-left: 1.2rem; margin: 0; }
+
+  .om-cap-grid, .om-model-grid, .om-ui-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  @media (max-width: 720px) { .om-cap-grid, .om-model-grid, .om-ui-grid { grid-template-columns: 1fr; } }
+  .om-cap-card, .om-model-card, .om-ui-card {
+    background: var(--om-bg2); border: 1px solid var(--om-border); border-radius: 10px; padding: 1.1rem 1.25rem;
+  }
+  .om-cap-title, .om-model-name, .om-ui-panel-name { font-size: 0.98rem; color: #fff; margin: 0 0 0.6rem; }
+  .om-model-use-label { color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 0.3rem; }
+
+  .om-chain { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .om-chain-step {
+    background: rgba(0,232,154,.1); color: var(--om-acc); border: 1px solid rgba(0,232,154,.25);
+    padding: 0.3rem 0.6rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+  }
+  .om-chain-arrow { color: #475569; }
+
+  .om-router-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1.25rem; }
+  .om-router-step {
+    background: var(--om-bg2); border: 1px solid var(--om-border); color: var(--om-text);
+    padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+  }
+  .om-router-arrow { color: var(--om-info); font-weight: 700; }
+  .om-rules-list { padding-left: 1.2rem; }
+  .om-rules-list li { margin-bottom: 0.4rem; }
+
+  .om-example-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 900px) { .om-example-grid { grid-template-columns: 1fr; } }
+  .om-example-card { background: var(--om-bg2); border: 1px solid var(--om-border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+  .om-example-title { font-size: 0.95rem; color: #fff; margin: 0 0 0.75rem; }
+  .om-example-col { margin-bottom: 0.9rem; }
+  .om-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: #64748b; margin: 0 0 0.3rem; }
+  .om-example-maqasid .om-example-label { color: var(--om-acc); }
+
+  .om-safety-list li { margin-bottom: 0.4rem; }
+
+  .om-briefing-card {
+    margin-top: 1.25rem; background: var(--om-bg2); border: 1px solid rgba(0,232,154,.2);
+    border-radius: 10px; padding: 1.1rem 1.25rem;
+  }
+  .om-briefing-title { font-size: 1rem; color: var(--om-acc); margin: 0 0 0.6rem; }
+</style>
+{% endblock %}

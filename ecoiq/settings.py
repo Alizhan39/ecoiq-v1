@@ -100,6 +100,9 @@ INSTALLED_APPS = [
 
     # Overnight ethical AI agent product module
     'amanah_autopilot',
+
+    # Live visual evidence interface product module
+    'omnimodal_evidence_panel',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
