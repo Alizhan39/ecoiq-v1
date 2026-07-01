@@ -17,4 +17,5 @@ urlpatterns = [
     path('repository-support/', views.repository_support, name='repository_support'),
     path('process-optimisation/', views.process_optimisation, name='process_optimisation'),
     path('justice-maqasid/', views.justice_maqasid, name='justice_maqasid'),
+    path('agent-repository-map/', views.agent_repository_map, name='agent_repository_map'),
 ]
