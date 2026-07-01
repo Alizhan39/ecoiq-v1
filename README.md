@@ -188,6 +188,18 @@ User request → Permission Guard → Allowed context only → Selected model pr
   Guard, Dependency Mapper, Modernisation Planner, Audit & Compliance), each with a defined
   input, output, and optimisation value
 
+### AI Agent Ecosystem 200
+
+A curated, 17-category roadmap of open-source agent, RAG, permissions, code-analysis, evaluation,
+security, document-ingestion, workflow-automation, frontend, MCP, climate/ESG, geospatial, data
+science, and justice/responsible-AI repositories that could strengthen LegacySafe AI — plus a
+dedicated Microsoft/Enterprise AI Stack section (AutoGen, Semantic Kernel, GraphRAG, Presidio,
+MarkItDown, Playwright, TypeScript, VS Code, and an Azure OpenAI-ready deployment option). Every
+entry is labelled MVP now, Next integration, Roadmap-ready, or Research watchlist — nothing is
+claimed as already integrated beyond what's genuinely true today. See
+[`legacy_safe/AI_AGENT_ECOSYSTEM_200.md`](legacy_safe/AI_AGENT_ECOSYSTEM_200.md) and
+`/legacy-safe/ai-agent-ecosystem-200/`.
+
 ### Justice & Maqasid Intelligence Layer
 
 A hackathon MVP and conceptual governance layer — not a certified ethics or compliance

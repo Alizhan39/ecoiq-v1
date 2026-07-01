@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ AI Agent Ecosystem 200 — LegacySafe AI{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="ls-wrap">
+  <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
+  <span class="ls-badge">New AI Agents Module — started today for hackathon</span>
+
+  <h1 class="ls-title">EcoIQ AI Agent Ecosystem 200</h1>
+  <p class="ls-sub">
+    A curated roadmap of agent, RAG, code-analysis, security, evaluation, enterprise, climate,
+    geospatial and justice-aware libraries that can strengthen EcoIQ LegacySafe AI.
+  </p>
+  <p class="ls-disclaimer">{{ top_disclaimer }}</p>
+  <p class="ls-capability">{{ capability_statement }}</p>
+
+  {% for cat in categories %}
+  <section class="ls-section">
+    <h2 class="ls-h2">{{ cat.title }}</h2>
+    <p class="ls-p"><strong>EcoIQ use:</strong> {{ cat.ecoiq_use }}</p>
+    {% if cat.mvp_note %}<p class="ls-mvp-note">{{ cat.mvp_note }}</p>{% endif %}
+
+    <div class="ls-info-grid">
+      <div class="ls-info-card">
+        <h3 class="ls-info-label">First integration choice</h3>
+        <p>{{ cat.first_choice }}</p>
+      </div>
+      <div class="ls-info-card ls-info-risk">
+        <h3 class="ls-info-label">Risk if integrated badly</h3>
+        <p>{{ cat.risk }}</p>
+      </div>
+      <div class="ls-info-card ls-info-safe">
+        <h3 class="ls-info-label">Safe integration rule</h3>
+        <p>{{ cat.safe_rule }}</p>
+      </div>
+    </div>
+
+    <table class="ls-table">
+      <thead><tr><th>{% if cat.is_products %}Enterprise target{% else %}Repository{% endif %}</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for repo, status in cat.repos %}
+        <tr>
+          <td>{% if cat.is_products %}{{ repo }}{% else %}<code>{{ repo }}</code>{% endif %}</td>
+          <td>
+            <span class="ls-chip
+              {% if status == 'MVP now' %}ls-chip-mvp
+              {% elif status == 'Next integration' %}ls-chip-next
+              {% elif status == 'Research watchlist' %}ls-chip-watch
+              {% else %}ls-chip-roadmap{% endif %}">{{ status }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if forloop.counter == 4 %}
+    </section>
+    <section class="ls-section">
+      <h2 class="ls-h2">{{ microsoft_stack.title }}</h2>
+      <p class="ls-p"><strong>EcoIQ use:</strong> {{ microsoft_stack.ecoiq_use }}</p>
+      <p class="ls-mvp-note ls-microsoft-note">{{ microsoft_stack.disclaimer }}</p>
+      <table class="ls-table">
+        <thead><tr><th>Tool</th><th>Use</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for name, use, status in microsoft_stack.items %}
+          <tr>
+            <td><code>{{ name }}</code></td>
+            <td>{{ use }}</td>
+            <td>
+              <span class="ls-chip
+                {% if status == 'MVP now' %}ls-chip-mvp
+                {% elif status == 'Next integration' %}ls-chip-next
+                {% elif status == 'Research watchlist' %}ls-chip-watch
+                {% else %}ls-chip-roadmap{% endif %}">{{ status }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  <section class="ls-section">
+    <h2 class="ls-h2">EcoIQ Contributions Back to GitHub</h2>
+    <p class="ls-p">EcoIQ can contribute back to the open-source ecosystem it draws from:</p>
+    <ul class="ls-list">
+      {% for item in contributions %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <p class="ls-disclaimer ls-disclaimer-bottom">{{ top_disclaimer }}</p>
+</div>
+
+<style>
+  .ls-wrap { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .ls-back { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  .ls-badge {
+    display: block; width: fit-content; background: #00e89a; color: #06281f; font-weight: 600;
+    font-size: 0.8rem; padding: 0.35rem 0.75rem; border-radius: 999px; margin: 0.75rem 0 1rem;
+  }
+  .ls-title { font-size: 1.85rem; margin: 0 0 0.5rem; }
+  .ls-sub { color: #4b5563; line-height: 1.6; max-width: 780px; }
+  .ls-disclaimer {
+    background: #f3f4f6; border-left: 3px solid #6b7280; padding: 0.7rem 1rem;
+    color: #4b5563; font-size: 0.85rem; line-height: 1.6; border-radius: 4px; max-width: 780px;
+    margin-top: 0.75rem;
+  }
+  .ls-disclaimer-bottom { margin-top: 2rem; }
+  .ls-capability {
+    margin-top: 0.75rem; font-size: 0.9rem; font-weight: 600; color: #14532d;
+    background: #f0fdf6; border-radius: 4px; padding: 0.55rem 0.9rem; max-width: 780px;
+  }
+  .ls-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+  .ls-h2 { font-size: 1.15rem; margin: 0 0 0.6rem; color: #111827; }
+  .ls-p { color: #4b5563; line-height: 1.6; }
+  .ls-mvp-note {
+    background: #f0fdf6; border-left: 3px solid #00a876; padding: 0.5rem 0.9rem;
+    color: #166534; font-size: 0.85rem; border-radius: 4px; margin-top: 0.5rem;
+  }
+  .ls-microsoft-note { background: #fffbeb; border-left-color: #f59e0b; color: #7c2d12; }
+  .ls-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1rem 0; }
+  @media (max-width: 900px) { .ls-info-grid { grid-template-columns: 1fr; } }
+  .ls-info-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 0.9rem; }
+  .ls-info-card p { margin: 0; font-size: 0.83rem; color: #4b5563; line-height: 1.55; }
+  .ls-info-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; margin: 0 0 0.35rem; }
+  .ls-info-risk { border-left: 3px solid #f59e0b; }
+  .ls-info-safe { border-left: 3px solid #00a876; }
+  .ls-list { color: #374151; line-height: 1.8; padding-left: 1.2rem; }
+  .ls-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+  .ls-table th, .ls-table td { border-bottom: 1px solid #e5e7eb; padding: 0.5rem 0.6rem; text-align: left; vertical-align: top; }
+  .ls-table th { color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .ls-table code { background: #f3f4f6; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.82rem; }
+  .ls-chip { padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+  .ls-chip-mvp { background: #d8f3dc; color: #1b4332; }
+  .ls-chip-next { background: #dbeafe; color: #1e3a8a; }
+  .ls-chip-roadmap { background: #e5e7eb; color: #374151; }
+  .ls-chip-watch { background: #ede9fe; color: #4c1d95; }
+</style>
+{% endblock %}
