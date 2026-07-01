@@ -18,4 +18,5 @@ urlpatterns = [
     path('process-optimisation/', views.process_optimisation, name='process_optimisation'),
     path('justice-maqasid/', views.justice_maqasid, name='justice_maqasid'),
     path('agent-repository-map/', views.agent_repository_map, name='agent_repository_map'),
+    path('ai-agent-ecosystem-200/', views.ai_agent_ecosystem_200, name='ai_agent_ecosystem_200'),
 ]

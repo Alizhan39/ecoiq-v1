@@ -268,3 +268,69 @@ class AgentRepositoryMapPageTests(TestCase):
     def test_page_mentions_energyplus(self):
         response = self.client.get('/legacy-safe/agent-repository-map/')
         self.assertContains(response, 'EnergyPlus')
+
+
+class AIAgentEcosystem200PageTests(TestCase):
+    def test_page_returns_200(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_mentions_title(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'EcoIQ AI Agent Ecosystem 200')
+
+    def test_page_mentions_langgraph(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'LangGraph')
+
+    def test_page_mentions_pgvector(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'pgvector')
+
+    def test_page_mentions_casbin(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'Casbin')
+
+    def test_page_mentions_semgrep(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'Semgrep')
+
+    def test_page_mentions_graphrag(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'GraphRAG')
+
+    def test_page_mentions_presidio(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'Presidio')
+
+    def test_page_mentions_energyplus(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'EnergyPlus')
+
+    def test_page_mentions_justice(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'Justice')
+
+    def test_page_mentions_maqasid(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'Maqasid')
+
+    def test_page_mentions_roadmap_ready(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'roadmap-ready')
+
+    def test_page_mentions_microsoft_autogen(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'microsoft/autogen')
+
+    def test_page_mentions_semantic_kernel(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'semantic-kernel')
+
+    def test_page_mentions_markitdown(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'MarkItDown')
+
+    def test_page_mentions_azure_openai_ready(self):
+        response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
+        self.assertContains(response, 'Azure OpenAI-ready')

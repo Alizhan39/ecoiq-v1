@@ -9,6 +9,10 @@ from legacy_safe.forms import (
 from legacy_safe.models import AuditLog, DOCUMENT_TYPE_CHOICES, LegacyProject, MemoryChunk, SourceDocument
 from legacy_safe.services import audit
 from legacy_safe.services.agent_repository_map import AGENT_REPOSITORY_MAP
+from legacy_safe.services.ai_agent_ecosystem_200 import (
+    AI_AGENT_ECOSYSTEM_200, CAPABILITY_STATEMENT, CONTRIBUTIONS_BACK_TO_GITHUB,
+    MICROSOFT_ENTERPRISE_AI_STACK, TOP_DISCLAIMER,
+)
 from legacy_safe.services.graph_builder import build_dependency_graph
 from legacy_safe.services.llm_provider import MockProvider
 from legacy_safe.services.permissions import DEMO_ROLES, can_access, roles_for_demo_role
@@ -234,4 +238,14 @@ def justice_maqasid(request):
 def agent_repository_map(request):
     return render(request, 'legacy_safe/agent_repository_map.html', {
         'categories': AGENT_REPOSITORY_MAP,
+    })
+
+
+def ai_agent_ecosystem_200(request):
+    return render(request, 'legacy_safe/ai_agent_ecosystem_200.html', {
+        'categories': AI_AGENT_ECOSYSTEM_200,
+        'microsoft_stack': MICROSOFT_ENTERPRISE_AI_STACK,
+        'contributions': CONTRIBUTIONS_BACK_TO_GITHUB,
+        'capability_statement': CAPABILITY_STATEMENT,
+        'top_disclaimer': TOP_DISCLAIMER,
     })
