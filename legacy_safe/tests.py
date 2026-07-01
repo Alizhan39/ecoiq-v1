@@ -74,7 +74,7 @@ class RetrievalAndPlannerTests(TestCase):
         blocked_titles = {e['source_title'] for e in result['restricted_evidence_excluded']}
 
         self.assertIn('Public ESG Report', allowed_titles)
-        self.assertIn('Boiler Maintenance Notes', blocked_titles)
+        self.assertIn('Heat Pump and Boiler Replacement Plan', blocked_titles)
         self.assertIn('Investment Budget', blocked_titles)
         self.assertIn('Board Strategy Memo', blocked_titles)
         # Never both allowed and blocked, and never silently omitted.
@@ -420,3 +420,94 @@ class MicrosoftEcosystemReadinessPageTests(TestCase):
     def test_page_mentions_roadmap_ready(self):
         response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
         self.assertContains(response, 'roadmap-ready')
+
+
+class FullIndustrialModernisationPlannerTests(TestCase):
+    """The expanded planner must cover the full EcoIQ modernisation pathway, role-aware."""
+
+    def setUp(self):
+        self.project = create_demo_data()
+
+    @staticmethod
+    def _plan_text(result):
+        parts = [result['executive_summary']]
+        parts += [s['title'] for s in result['sections']]
+        parts += [s['content'] for s in result['sections']]
+        return ' '.join(parts)
+
+    @staticmethod
+    def _user_in_group(username, group_name):
+        user = User.objects.create_user(username, password='x')
+        group, _ = Group.objects.get_or_create(name=group_name)
+        user.groups.add(group)
+        return user
+
+    def test_executive_plan_covers_full_modernisation_pathway(self):
+        exec_user = User.objects.create_superuser('planner_exec', 'planner_exec@example.com', 'x')
+        result = generate_modernisation_plan(
+            exec_user, self.project,
+            'What is the full industrial modernisation plan, from solar panels and equipment '
+            'upgrades to process optimisation?')
+        text = self._plan_text(result)
+        for term in (
+            'solar', 'battery', 'heat pump', 'smart meters', 'IoT',
+            'process optimisation', 'CAPEX', 'Justice', 'Maqasid',
+        ):
+            self.assertIn(term, text, f'expected "{term}" in planner output')
+
+    def test_public_role_excludes_finance_and_executive_evidence(self):
+        result = generate_modernisation_plan(
+            AnonymousUser(), self.project, 'What is the full industrial modernisation plan?')
+        allowed_levels = {e['access_level'] for e in result['evidence_used']}
+        self.assertNotIn('finance', allowed_levels)
+        self.assertNotIn('executive', allowed_levels)
+        self.assertNotIn('engineering', allowed_levels)
+
+    def test_engineering_role_sees_technical_equipment_evidence(self):
+        eng_user = self._user_in_group('planner_eng', 'engineering')
+        result = generate_modernisation_plan(
+            eng_user, self.project, 'What is the full industrial modernisation plan?')
+        allowed_titles = {e['source_title'] for e in result['evidence_used']}
+        self.assertIn('Solar and Battery Feasibility Notes', allowed_titles)
+        self.assertIn('Heat Pump and Boiler Replacement Plan', allowed_titles)
+        allowed_levels = {e['access_level'] for e in result['evidence_used']}
+        self.assertNotIn('finance', allowed_levels)
+        self.assertNotIn('executive', allowed_levels)
+
+    def test_finance_role_sees_budget_and_procurement_evidence(self):
+        fin_user = self._user_in_group('planner_fin', 'finance')
+        result = generate_modernisation_plan(
+            fin_user, self.project, 'What is the full industrial modernisation plan?')
+        allowed_titles = {e['source_title'] for e in result['evidence_used']}
+        self.assertIn('Investment Budget', allowed_titles)
+        self.assertIn('Equipment Procurement Plan', allowed_titles)
+        allowed_levels = {e['access_level'] for e in result['evidence_used']}
+        self.assertNotIn('engineering', allowed_levels)
+        self.assertNotIn('executive', allowed_levels)
+
+    def test_executive_role_sees_the_full_modernisation_plan(self):
+        exec_user = User.objects.create_superuser('planner_exec2', 'planner_exec2@example.com', 'x')
+        result = generate_modernisation_plan(
+            exec_user, self.project, 'What is the full industrial modernisation plan?')
+        self.assertEqual(result['restricted_evidence_excluded'], [])
+        allowed_titles = {e['source_title'] for e in result['evidence_used']}
+        for title in (
+            'Public ESG Report', 'Solar and Battery Feasibility Notes',
+            'Heat Pump and Boiler Replacement Plan', 'Investment Budget',
+            'Board Strategy Memo', 'Worker and Community Transition Plan',
+            'Justice and Maqasid Review',
+        ):
+            self.assertIn(title, allowed_titles)
+
+
+class PermissionDemoAndDashboardContentTests(TestCase):
+    def setUp(self):
+        self.project = create_demo_data()
+
+    def test_permission_demo_page_mentions_same_modernisation_question(self):
+        response = self.client.get('/legacy-safe/permission-demo/')
+        self.assertContains(response, 'same modernisation question')
+
+    def test_dashboard_mentions_full_ecoiq_modernisation_plan(self):
+        response = self.client.get('/legacy-safe/')
+        self.assertContains(response, 'Full EcoIQ Modernisation Plan')

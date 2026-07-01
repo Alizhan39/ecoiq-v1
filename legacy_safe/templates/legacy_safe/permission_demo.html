@@ -7,6 +7,7 @@
   <a class="ls-back" href="{% url 'legacy_safe:dashboard' %}">&larr; LegacySafe AI</a>
   <h1 class="ls-title">Permission Demo</h1>
   <p class="ls-sub">The same question, run as four different roles. Access is enforced deterministically — before retrieval — so each role sees a different, correct slice of the evidence.</p>
+  <p class="ls-sub">The same modernisation question produces different plans because each role receives only the evidence they are allowed to access.</p>
 
   <form method="post" class="ls-form">
     {% csrf_token %}

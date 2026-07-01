@@ -27,6 +27,10 @@ that evaluates enterprise modernisation not only for speed and cost, but also fo
 public harm reduction, resource stewardship, worker transition, community impact, and future
 generations.
 
+LegacySafe AI plans the full EcoIQ modernisation pathway: solar PV, battery storage, heat
+pumps, boiler replacement, insulation, smart meters, IoT sensors, grid optimisation,
+procurement, finance, process optimisation, worker transition, and Justice/Maqasid governance.
+
 ## Conduct bounty alignment
 
 - Reads legacy documents, code snippets, process manuals, ESG reports, and policy documents

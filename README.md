@@ -34,6 +34,10 @@ submission writeup.
 **One-line:** A permission-aware agentic change-management layer that lets enterprises
 modernise legacy systems without ever leaking restricted content through an LLM.
 
+LegacySafe AI plans the full EcoIQ modernisation pathway: solar PV, battery storage, heat
+pumps, boiler replacement, insulation, smart meters, IoT sensors, grid optimisation,
+procurement, finance, process optimisation, worker transition, and Justice/Maqasid governance.
+
 ### Problem
 
 Enterprises sit on decades of legacy systems, code, process manuals, and reports. Modernising
@@ -84,8 +88,9 @@ legacy_safe/
 ### Demo flow
 
 1. **Dashboard** (`/legacy-safe/`) — module overview, Conduct/BasedAI alignment, hackathon badge
-2. **Ask Agent** (`/legacy-safe/ask/`) — ask "What is the full modernisation plan?" and see the
-   answer built only from evidence you're allowed to see
+2. **Ask Agent** (`/legacy-safe/ask/`) — ask "What is the full industrial modernisation plan,
+   from solar panels and equipment upgrades to process optimisation?" and see the answer built
+   only from evidence you're allowed to see
 3. **Permission Demo** (`/legacy-safe/permission-demo/`) — the same question run as four roles
    (public, engineering, finance, executive) side by side
 4. **Audit Logs** (`/legacy-safe/audit-logs/`) — every retrieval decision, logged
