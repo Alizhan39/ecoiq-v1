@@ -15,6 +15,13 @@ from legacy_safe.services.ai_agent_ecosystem_200 import (
 )
 from legacy_safe.services.graph_builder import build_dependency_graph
 from legacy_safe.services.llm_provider import MockProvider
+from legacy_safe.services.microsoft_ecosystem_readiness import (
+    ADVISER_QUESTIONS, ARCHITECTURE_DIAGRAM, ARCHITECTURE_MAPPING, DESIGN_THINKING,
+    ECOSYSTEM_MAPPING, INDUSTRIAL_ARCHITECTURE_DIAGRAM, INDUSTRIAL_SECTORS,
+    MICROSOFT_OPEN_SOURCE_TOOLS, MICROSOFT_TOOLS_DISCLAIMER, MODERNISATION_ACTIONS, PILOT,
+    ROADMAP, SAFETY_PRINCIPLES,
+)
+from legacy_safe.services.microsoft_ecosystem_readiness import TOP_DISCLAIMER as MS_TOP_DISCLAIMER
 from legacy_safe.services.permissions import DEMO_ROLES, can_access, roles_for_demo_role
 from legacy_safe.services.planner import generate_modernisation_plan
 from legacy_safe.services.retrieval import retrieve_allowed_chunks, retrieve_allowed_chunks_for_roles
@@ -248,4 +255,23 @@ def ai_agent_ecosystem_200(request):
         'contributions': CONTRIBUTIONS_BACK_TO_GITHUB,
         'capability_statement': CAPABILITY_STATEMENT,
         'top_disclaimer': TOP_DISCLAIMER,
+    })
+
+
+def microsoft_ecosystem_readiness(request):
+    return render(request, 'legacy_safe/microsoft_ecosystem_readiness.html', {
+        'top_disclaimer': MS_TOP_DISCLAIMER,
+        'architecture_diagram': ARCHITECTURE_DIAGRAM,
+        'architecture_mapping': ARCHITECTURE_MAPPING,
+        'ecosystem_mapping': ECOSYSTEM_MAPPING,
+        'open_source_tools': MICROSOFT_OPEN_SOURCE_TOOLS,
+        'tools_disclaimer': MICROSOFT_TOOLS_DISCLAIMER,
+        'industrial_sectors': INDUSTRIAL_SECTORS,
+        'modernisation_actions': MODERNISATION_ACTIONS,
+        'industrial_architecture_diagram': INDUSTRIAL_ARCHITECTURE_DIAGRAM,
+        'design_thinking': DESIGN_THINKING,
+        'pilot': PILOT,
+        'safety_principles': SAFETY_PRINCIPLES,
+        'adviser_questions': ADVISER_QUESTIONS,
+        'roadmap': ROADMAP,
     })

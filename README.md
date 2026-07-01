@@ -200,6 +200,21 @@ claimed as already integrated beyond what's genuinely true today. See
 [`legacy_safe/AI_AGENT_ECOSYSTEM_200.md`](legacy_safe/AI_AGENT_ECOSYSTEM_200.md) and
 `/legacy-safe/ai-agent-ecosystem-200/`.
 
+### Microsoft Ecosystem Readiness
+
+An architecture-alignment layer mapping LegacySafe AI onto a Microsoft-style enterprise AI
+project pattern (User → Agent → Model, Data → Action) and a Design Thinking flow (Empathise →
+Define → Ideate → Prototype → Test), for industrial modernisation across energy, factories,
+heating, water, mining, logistics, and public-sector infrastructure — not just the Samruk
+Energy demo scenario. Includes a Microsoft ecosystem mapping (Azure AI, Fabric, Digital Twins,
+IoT, Entra ID, Power BI, Teams/Copilot, SharePoint, GitHub Copilot), a Microsoft open-source
+tools table (AutoGen, Semantic Kernel, GraphRAG, Presidio, MarkItDown, Playwright, TypeScript,
+VS Code), a suggested pilot proposal, enterprise safety principles, and questions for Microsoft
+advisers. The current hackathon MVP does not claim full Microsoft/Azure integration — every
+item is marked MVP now, Next integration, Roadmap-ready, or Research watchlist. See
+[`legacy_safe/MICROSOFT_ECOSYSTEM_READINESS.md`](legacy_safe/MICROSOFT_ECOSYSTEM_READINESS.md)
+and `/legacy-safe/microsoft-ecosystem-readiness/`.
+
 ### Justice & Maqasid Intelligence Layer
 
 A hackathon MVP and conceptual governance layer — not a certified ethics or compliance
