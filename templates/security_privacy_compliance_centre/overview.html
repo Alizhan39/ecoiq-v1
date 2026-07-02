@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Security, Privacy & Compliance Centre{% endblock %}
+{% block meta_description_content %}EcoIQ Security, Privacy & Compliance Centre: protect industrial evidence, personal data, approvals and AI workflows.{% endblock %}
+
+{% block content %}
+<div class="spcc-wrap">
+
+  <span class="spcc-badge">EcoIQ Platform Module</span>
+  <h1 class="spcc-title">EcoIQ Security, Privacy & Compliance Centre</h1>
+  <p class="spcc-subtitle">Protect industrial evidence, personal data, approvals and AI workflows.</p>
+  <p class="spcc-desc">
+    EcoIQ Security, Privacy & Compliance Centre provides the governance layer for
+    role-based access, data protection, consent, audit logs, evidence permissions,
+    supplier/funder access, data retention, public reporting controls and AI agent
+    safety. It helps EcoIQ become enterprise-ready for governments, investors,
+    industrial companies, suppliers, Microsoft ecosystem partners and development
+    institutions.
+  </p>
+  <p class="spcc-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="spcc-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="spcc-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="spcc-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">Connected EcoIQ Modules</h2>
+    <div class="spcc-module-grid">
+      {% for m in connected_modules %}
+      <div class="spcc-module-card">
+        <h3 class="spcc-module-name">{{ m.name }}</h3>
+        <p class="spcc-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="spcc-section" id="security-domains">
+    <h2 class="spcc-h2">Security Domains</h2>
+    {% for d in security_domains %}
+    <div class="spcc-domain-card" id="domain-{{ d.number }}">
+      <span class="spcc-domain-number">Domain {{ d.number }}</span>
+      <h3 class="spcc-domain-title">{{ d.title }}</h3>
+      {% for sec in d.sections %}
+      <p class="spcc-sub">{{ sec.label }}</p>
+      <div class="spcc-chip-row">{% for item in sec.items %}<span class="spcc-chip">{{ item }}</span>{% endfor %}</div>
+      {% endfor %}
+      {% if d.note %}
+      <p class="spcc-note">{{ d.note }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="spcc-section" id="dashboard-cards">
+    <h2 class="spcc-h2">Dashboard Cards</h2>
+    <div class="spcc-chip-row">
+      {% for card in dashboard_cards %}<span class="spcc-chip spcc-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">Security Table Fields</h2>
+    <div class="spcc-chip-row">
+      {% for f in security_table_fields %}<span class="spcc-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">Sensitivity Levels</h2>
+    <div class="spcc-chip-row">
+      {% for level in sensitivity_levels %}<span class="spcc-chip spcc-chip-sensitivity">{{ level }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">Data Types</h2>
+    <div class="spcc-chip-row">
+      {% for t in data_types %}<span class="spcc-chip">{{ t }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">Example Scenarios</h2>
+    {% for s in example_scenarios %}
+    <div class="spcc-example-card">
+      <span class="spcc-example-label">Project</span>
+      <h3 class="spcc-example-title">{{ s.project }}</h3>
+      <p class="spcc-p"><strong>Risk:</strong> {{ s.risk }}</p>
+      <p class="spcc-sub">Controls</p>
+      <ul class="spcc-list">{% for c in s.controls %}<li>{{ c }}</li>{% endfor %}</ul>
+      <p class="spcc-status"><strong>Status:</strong> {{ s.status }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="spcc-section" id="microsoft-security-integration">
+    <h2 class="spcc-h2">Microsoft Security Integration</h2>
+    <ul class="spcc-list">{% for item in microsoft_security_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="spcc-note">{{ microsoft_security_wording_note }}</p>
+  </section>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">Amanah Autopilot for Compliance</h2>
+    <p class="spcc-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="spcc-list">{% for item in amanah_compliance_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="spcc-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">No Harm Gate for Security & Privacy</h2>
+    <p class="spcc-p">Before data is shared, published or used externally, check:</p>
+    <ul class="spcc-list spcc-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="spcc-section">
+    <h2 class="spcc-h2">Safety and Governance</h2>
+    <ul class="spcc-list spcc-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="spcc-cta-row spcc-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="spcc-btn spcc-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="spcc-btn spcc-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --spcc-bg: #070b0f; --spcc-bg2: #0d1117; --spcc-border: rgba(255,255,255,.08);
+    --spcc-text: #e2e8f0; --spcc-muted: #94a3b8; --spcc-acc: #00e89a; --spcc-info: #58a6ff;
+  }
+  .spcc-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--spcc-bg); color: var(--spcc-text); border-radius: 14px;
+  }
+  .spcc-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--spcc-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .spcc-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .spcc-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--spcc-acc); margin: 0 0 1rem; }
+  .spcc-desc { color: var(--spcc-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .spcc-purpose { color: var(--spcc-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .spcc-purpose strong { color: var(--spcc-acc); }
+
+  .spcc-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .spcc-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--spcc-border); }
+  .spcc-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--spcc-bg2); color: var(--spcc-text);
+    border: 1px solid var(--spcc-border);
+  }
+  .spcc-btn-primary { background: var(--spcc-acc); color: #06281f; border-color: var(--spcc-acc); }
+  .spcc-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--spcc-border); }
+  .spcc-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .spcc-p { color: var(--spcc-muted); font-size: 0.9rem; line-height: 1.6; }
+  .spcc-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .spcc-list { color: var(--spcc-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .spcc-gate-list li, .spcc-safety-list li { margin-bottom: 0.4rem; }
+
+  .spcc-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .spcc-module-card { background: var(--spcc-bg2); border: 1px solid var(--spcc-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .spcc-module-name { font-size: 0.9rem; color: var(--spcc-info); margin: 0 0 0.4rem; }
+  .spcc-module-role { color: var(--spcc-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .spcc-domain-card { background: var(--spcc-bg2); border: 1px solid var(--spcc-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .spcc-domain-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--spcc-info); font-weight: 700; }
+  .spcc-domain-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+  .spcc-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .spcc-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .spcc-chip { background: rgba(88,166,255,.1); color: var(--spcc-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .spcc-chip-metric { background: rgba(0,232,154,.1); color: var(--spcc-acc); border-color: rgba(0,232,154,.25); }
+  .spcc-chip-sensitivity { background: rgba(244,162,97,.12); color: #f4a261; border-color: rgba(244,162,97,.3); font-weight: 700; }
+
+  .spcc-example-card { background: var(--spcc-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .spcc-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--spcc-info); font-weight: 700; }
+  .spcc-example-title { font-size: 1.05rem; color: #fff; margin: 0.2rem 0 0.85rem; }
+  .spcc-status { color: var(--spcc-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .spcc-status strong { color: var(--spcc-acc); }
+
+  .spcc-briefing { margin-top: 1rem; color: var(--spcc-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--spcc-acc); padding-left: 0.85rem; }
+</style>
+{% endblock %}

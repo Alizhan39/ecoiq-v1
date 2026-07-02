@@ -160,6 +160,9 @@ INSTALLED_APPS = [
 
     # Observability and control layer for AI agents
     'ai_agent_operations_console',
+
+    # Security, privacy and compliance governance layer
+    'security_privacy_compliance_centre',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
