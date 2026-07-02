@@ -106,6 +106,9 @@ INSTALLED_APPS = [
 
     # Microsoft ecosystem readiness architecture module
     'microsoft_core_stack',
+
+    # Living digital passport for industrial assets
+    'asset_passport',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
