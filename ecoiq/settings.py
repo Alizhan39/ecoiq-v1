@@ -145,6 +145,9 @@ INSTALLED_APPS = [
 
     # Commercial productisation and pricing model
     'revenue_pricing_engine',
+
+    # Approved public-facing verified impact reporting
+    'public_trust_impact_portal',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
