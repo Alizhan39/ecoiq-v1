@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Microsoft Ecosystem Core Stack{% endblock %}
+{% block meta_description_content %}EcoIQ Microsoft Ecosystem Core Stack: enterprise-grade AI, data, digital twins and responsible intelligence for industrial modernisation — Microsoft ecosystem-ready.{% endblock %}
+
+{% block content %}
+<div class="mc-wrap">
+
+  <span class="mc-badge">EcoIQ Platform Module</span>
+  <h1 class="mc-title">EcoIQ Microsoft Ecosystem Core Stack</h1>
+  <p class="mc-subtitle">Enterprise-grade AI, data, digital twins and responsible intelligence for industrial modernisation.</p>
+  <p class="mc-desc">
+    EcoIQ is Microsoft ecosystem-ready, combining Agent Framework, Semantic Kernel, GraphRAG,
+    Azure AI Search, Azure Digital Twins, Industrial IoT, Microsoft Fabric, Power BI,
+    Responsible AI tooling and carbon-aware computing to modernise industrial assets, reduce
+    emissions and generate investor-ready transition plans.
+  </p>
+
+  <div class="mc-pitch-card">
+    <h2 class="mc-pitch-title">Microsoft-Ready Pitch</h2>
+    <p class="mc-pitch-text">
+      EcoIQ is <strong>Microsoft ecosystem-ready</strong> — not a Microsoft partner unless a
+      partnership is confirmed. This page documents an architecture that could be built on
+      Microsoft/Azure enterprise infrastructure and specialised Microsoft open-source
+      repositories, so enterprise buyers, Microsoft account teams, and technical reviewers can
+      see exactly how EcoIQ would fit their stack.
+    </p>
+  </div>
+
+  <div class="mc-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="mc-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="mc-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="mc-section" id="stack-layers">
+    <h2 class="mc-h2">Six Stack Layers</h2>
+    {% for layer in stack_layers %}
+    <div class="mc-layer-card" {% if layer.number == 3 %}id="digital-twin-example"{% endif %}>
+      <div class="mc-layer-head">
+        <span class="mc-layer-number">Layer {{ layer.number }}</span>
+        <h3 class="mc-layer-title">{{ layer.title }}</h3>
+      </div>
+      <p class="mc-p">{{ layer.purpose }}</p>
+      <div class="mc-repo-badges">
+        {% for repo, desc in layer.repos %}
+        <span class="mc-repo-badge" title="{{ desc }}"><code>{{ repo }}</code></span>
+        {% endfor %}
+      </div>
+      <ul class="mc-repo-list">
+        {% for repo, desc in layer.repos %}
+        <li><code>{{ repo }}</code> — {{ desc }}</li>
+        {% endfor %}
+      </ul>
+      <p class="mc-use-case"><strong>EcoIQ use case:</strong> {{ layer.use_case }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="mc-section">
+    <h2 class="mc-h2">Final Core Stack: 25 Repositories</h2>
+    <div class="mc-final-grid">
+      {% for repo in final_stack_repos %}
+      <span class="mc-final-badge"><code>{{ repo }}</code></span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="mc-section">
+    <h2 class="mc-h2">Architecture Flow</h2>
+    <div class="mc-flow">
+      {% for step in architecture_flow %}<span class="mc-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="mc-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="mc-section">
+    <h2 class="mc-h2">EcoIQ-Specific Workflow Example</h2>
+    <p class="mc-p"><strong>Company uploads:</strong></p>
+    <div class="mc-upload-chips">
+      {% for u in workflow_uploads %}<span class="mc-upload-chip">{{ u }}</span>{% endfor %}
+    </div>
+    <p class="mc-p" style="margin-top:1rem;"><strong>EcoIQ does:</strong></p>
+    <ol class="mc-workflow-steps">
+      {% for step in workflow_steps %}<li>{{ step }}</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="mc-section">
+    <h2 class="mc-h2">Why Microsoft Matters</h2>
+    <p class="mc-p">Microsoft gives EcoIQ:</p>
+    <ul class="mc-list">
+      {% for item in why_microsoft %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="mc-section">
+    <h2 class="mc-h2">EcoIQ Adds</h2>
+    <p class="mc-p">EcoIQ adds:</p>
+    <ul class="mc-list">
+      {% for item in ecoiq_adds %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="mc-section">
+    <h2 class="mc-h2">Safety and Positioning</h2>
+    <ul class="mc-list mc-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="mc-cta-row mc-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="mc-btn mc-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="mc-btn mc-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --mc-bg: #070b0f; --mc-bg2: #0d1117; --mc-border: rgba(255,255,255,.08);
+    --mc-text: #e2e8f0; --mc-muted: #94a3b8; --mc-acc: #00e89a; --mc-info: #58a6ff;
+  }
+  .mc-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--mc-bg); color: var(--mc-text); border-radius: 14px;
+  }
+  .mc-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--mc-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .mc-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .mc-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--mc-acc); margin: 0 0 1rem; }
+  .mc-desc { color: var(--mc-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .mc-pitch-card {
+    margin-top: 1.5rem; background: linear-gradient(135deg, rgba(88,166,255,.08), rgba(0,232,154,.06));
+    border: 1px solid rgba(88,166,255,.25); border-radius: 10px; padding: 1.25rem 1.5rem;
+  }
+  .mc-pitch-title { font-size: 1rem; color: #fff; margin: 0 0 0.5rem; }
+  .mc-pitch-text { color: var(--mc-muted); font-size: 0.9rem; line-height: 1.65; margin: 0; }
+  .mc-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .mc-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--mc-border); }
+  .mc-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--mc-bg2); color: var(--mc-text);
+    border: 1px solid var(--mc-border);
+  }
+  .mc-btn-primary { background: var(--mc-acc); color: #06281f; border-color: var(--mc-acc); }
+  .mc-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--mc-border); }
+  .mc-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .mc-p { color: var(--mc-muted); font-size: 0.9rem; line-height: 1.6; }
+  .mc-list { color: var(--mc-muted); line-height: 1.7; font-size: 0.87rem; padding-left: 1.2rem; margin: 0; }
+  .mc-safety-list li { margin-bottom: 0.4rem; }
+
+  .mc-layer-card { background: var(--mc-bg2); border: 1px solid var(--mc-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+  .mc-layer-head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .mc-layer-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mc-info); font-weight: 700; }
+  .mc-layer-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .mc-repo-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0; }
+  .mc-repo-badge {
+    background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.25); border-radius: 6px;
+    padding: 0.25rem 0.55rem; font-size: 0.75rem;
+  }
+  .mc-repo-badge code { color: var(--mc-acc); }
+  .mc-repo-list { color: var(--mc-muted); font-size: 0.82rem; line-height: 1.7; padding-left: 1.2rem; margin: 0.5rem 0; }
+  .mc-repo-list code { background: rgba(255,255,255,.06); padding: 0.1rem 0.35rem; border-radius: 4px; color: var(--mc-text); }
+  .mc-use-case { color: var(--mc-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.75rem; }
+
+  .mc-final-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .mc-final-badge {
+    background: var(--mc-bg2); border: 1px solid var(--mc-border); border-radius: 6px;
+    padding: 0.4rem 0.7rem; font-size: 0.78rem;
+  }
+  .mc-final-badge code { color: var(--mc-text); }
+
+  .mc-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .mc-flow-step { background: var(--mc-bg2); border: 1px solid var(--mc-border); color: var(--mc-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+  .mc-flow-arrow { color: var(--mc-info); font-weight: 700; }
+
+  .mc-upload-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .mc-upload-chip { background: rgba(88,166,255,.1); color: var(--mc-info); border: 1px solid rgba(88,166,255,.25); padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+  .mc-workflow-steps { color: var(--mc-muted); line-height: 1.9; font-size: 0.88rem; padding-left: 1.3rem; }
+</style>
+{% endblock %}
