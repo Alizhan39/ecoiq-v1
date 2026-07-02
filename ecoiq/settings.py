@@ -103,6 +103,9 @@ INSTALLED_APPS = [
 
     # Live visual evidence interface product module
     'omnimodal_evidence_panel',
+
+    # Microsoft ecosystem readiness architecture module
+    'microsoft_core_stack',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

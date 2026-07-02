@@ -91,6 +91,9 @@ urlpatterns = [
     # EcoIQ Omnimodal Evidence Panel — live visual evidence interface product module
     path('omnimodal-evidence-panel/', include('omnimodal_evidence_panel.urls', namespace='omnimodal_evidence_panel')),
 
+    # EcoIQ Microsoft Ecosystem Core Stack — Microsoft ecosystem readiness architecture module
+    path('microsoft-ecosystem-core-stack/', include('microsoft_core_stack.urls', namespace='microsoft_core_stack')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
