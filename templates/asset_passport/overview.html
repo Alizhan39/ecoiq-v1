@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Asset Passport{% endblock %}
+{% block meta_description_content %}EcoIQ Asset Passport: a living, evidence-based, finance-ready modernisation record for every industrial asset.{% endblock %}
+
+{% block content %}
+<div class="ap-wrap">
+
+  <span class="ap-badge">EcoIQ Platform Module</span>
+  <h1 class="ap-title">EcoIQ Asset Passport</h1>
+  <p class="ap-subtitle">Every industrial asset becomes a measurable modernisation project.</p>
+  <p class="ap-desc">
+    EcoIQ Asset Passport combines photos, documents, sensor data, digital twin relationships,
+    risk signals, Maqasid/Mizan scoring, finance readiness and verified impact into one living
+    record. It helps factories, cities, investors and communities understand what an asset is,
+    what harm or waste it creates, what should be modernised first and how impact will be proven.
+  </p>
+
+  <div class="ap-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ap-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ap-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ap-section">
+    <h2 class="ap-h2">Connected EcoIQ Modules</h2>
+    <p class="ap-p">The Asset Passport is the record that ties the rest of the platform together:</p>
+    <div class="ap-module-grid">
+      {% for m in connected_modules %}
+      <div class="ap-module-card">
+        <h3 class="ap-module-name">{{ m.name }}</h3>
+        <p class="ap-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ap-section" id="core-fields">
+    <h2 class="ap-h2">Core Fields</h2>
+    <div class="ap-field-grid">
+      {% for field, desc in core_fields %}
+      <div class="ap-field">
+        <span class="ap-field-name">{{ field }}</span>
+        <span class="ap-field-desc">{{ desc }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ap-section">
+    <h2 class="ap-h2">Example Passport</h2>
+    <div class="ap-example-card">
+      <div class="ap-example-head">
+        <div>
+          <span class="ap-example-label">Asset</span>
+          <h3 class="ap-example-asset">{{ example_card.asset }}</h3>
+        </div>
+        <div>
+          <span class="ap-example-label">Location</span>
+          <p class="ap-example-value">{{ example_card.location }}</p>
+        </div>
+        <div>
+          <span class="ap-example-label">Type</span>
+          <p class="ap-example-value">{{ example_card.type }}</p>
+        </div>
+      </div>
+
+      <div class="ap-example-grid">
+        <div>
+          <p class="ap-example-sub">Visible evidence</p>
+          <ul class="ap-list">
+            {% for item in example_card.visible_evidence %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+        </div>
+        <div>
+          <p class="ap-example-sub">Risks</p>
+          <ul class="ap-list ap-risk-list">
+            {% for item in example_card.risks %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <p class="ap-example-sub" style="margin-top:1.25rem;">Recommended pathway</p>
+      <ol class="ap-list ap-pathway-list">
+        {% for step in example_card.pathway %}<li>{{ step }}</li>{% endfor %}
+      </ol>
+
+      <div class="ap-example-meaning">
+        <p><strong>Maqasid meaning:</strong> {{ example_card.maqasid_meaning }}</p>
+        <p><strong>Mizan meaning:</strong> {{ example_card.mizan_meaning }}</p>
+        <p><strong>Finance:</strong> {{ example_card.finance }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ap-section">
+    <h2 class="ap-h2">Dashboard Layout</h2>
+    <div class="ap-dashboard-mock">
+      <div class="ap-dash-left"><strong>Left</strong><p>{{ dashboard_layout.left }}</p></div>
+      <div class="ap-dash-right"><strong>Right</strong><p>{{ dashboard_layout.right }}</p></div>
+      <div class="ap-dash-bottom"><strong>Bottom</strong><p>{{ dashboard_layout.bottom }}</p></div>
+    </div>
+  </section>
+
+  <section class="ap-section" id="lifecycle">
+    <h2 class="ap-h2">Passport Lifecycle</h2>
+    <div class="ap-flow">
+      {% for step in lifecycle %}<span class="ap-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="ap-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="ap-section">
+    <h2 class="ap-h2">Safety and Positioning</h2>
+    <p class="ap-p ap-safety-copy">{{ safety_copy }}</p>
+  </section>
+
+  <div class="ap-cta-row ap-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ap-btn ap-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ap-btn ap-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ap-bg: #070b0f; --ap-bg2: #0d1117; --ap-border: rgba(255,255,255,.08);
+    --ap-text: #e2e8f0; --ap-muted: #94a3b8; --ap-acc: #00e89a; --ap-info: #58a6ff;
+  }
+  .ap-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ap-bg); color: var(--ap-text); border-radius: 14px;
+  }
+  .ap-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ap-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ap-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ap-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ap-acc); margin: 0 0 1rem; }
+  .ap-desc { color: var(--ap-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .ap-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ap-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ap-border); }
+  .ap-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ap-bg2); color: var(--ap-text);
+    border: 1px solid var(--ap-border);
+  }
+  .ap-btn-primary { background: var(--ap-acc); color: #06281f; border-color: var(--ap-acc); }
+  .ap-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ap-border); }
+  .ap-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ap-p { color: var(--ap-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ap-safety-copy { max-width: 720px; }
+
+  .ap-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ap-module-card { background: var(--ap-bg2); border: 1px solid var(--ap-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ap-module-name { font-size: 0.95rem; color: var(--ap-info); margin: 0 0 0.4rem; }
+  .ap-module-role { color: var(--ap-muted); font-size: 0.82rem; line-height: 1.55; margin: 0; }
+
+  .ap-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; margin-top: 1rem; }
+  .ap-field { background: var(--ap-bg2); border: 1px solid var(--ap-border); border-radius: 8px; padding: 0.65rem 0.85rem; display: flex; flex-direction: column; gap: 0.2rem; }
+  .ap-field-name { font-weight: 700; font-size: 0.82rem; color: var(--ap-text); }
+  .ap-field-desc { color: var(--ap-muted); font-size: 0.76rem; line-height: 1.4; }
+
+  .ap-example-card { background: var(--ap-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-top: 1rem; }
+  .ap-example-head { display: flex; flex-wrap: wrap; gap: 1.75rem; margin-bottom: 1.25rem; }
+  .ap-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ap-info); font-weight: 700; }
+  .ap-example-asset { font-size: 1.15rem; color: #fff; margin: 0.2rem 0 0; }
+  .ap-example-value { font-size: 0.95rem; color: var(--ap-text); margin: 0.2rem 0 0; }
+  .ap-example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .ap-example-sub { font-weight: 700; font-size: 0.85rem; color: #fff; margin: 0 0 0.4rem; }
+  .ap-list { color: var(--ap-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ap-risk-list li { color: #f4a261; }
+  .ap-pathway-list { margin-top: 0.4rem; }
+  .ap-example-meaning { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--ap-border); color: var(--ap-muted); font-size: 0.85rem; line-height: 1.8; }
+  .ap-example-meaning strong { color: var(--ap-text); }
+
+  .ap-dashboard-mock { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 1rem; margin-top: 1rem; }
+  .ap-dash-left, .ap-dash-right, .ap-dash-bottom { background: var(--ap-bg2); border: 1px solid var(--ap-border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .ap-dash-bottom { grid-column: 1 / -1; }
+  .ap-dashboard-mock strong { display: block; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ap-info); margin-bottom: 0.4rem; }
+  .ap-dashboard-mock p { color: var(--ap-muted); font-size: 0.85rem; margin: 0; }
+
+  .ap-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .ap-flow-step { background: var(--ap-bg2); border: 1px solid var(--ap-border); color: var(--ap-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+  .ap-flow-arrow { color: var(--ap-info); font-weight: 700; }
+
+  @media (max-width: 640px) {
+    .ap-example-grid, .ap-dashboard-mock { grid-template-columns: 1fr; }
+    .ap-dash-bottom { grid-column: auto; }
+  }
+</style>
+{% endblock %}

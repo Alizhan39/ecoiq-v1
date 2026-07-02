@@ -94,6 +94,9 @@ urlpatterns = [
     # EcoIQ Microsoft Ecosystem Core Stack — Microsoft ecosystem readiness architecture module
     path('microsoft-ecosystem-core-stack/', include('microsoft_core_stack.urls', namespace='microsoft_core_stack')),
 
+    # EcoIQ Asset Passport — living digital passport for industrial assets
+    path('asset-passport/', include('asset_passport.urls', namespace='asset_passport')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
