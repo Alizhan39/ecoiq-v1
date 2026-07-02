@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Industrial Playbook Library{% endblock %}
+{% block meta_description_content %}EcoIQ Industrial Playbook Library: reusable, evidence-based modernisation pathways for energy, industry, mining, agriculture and cities.{% endblock %}
+
+{% block content %}
+<div class="ipl-wrap">
+
+  <span class="ipl-badge">EcoIQ Platform Module</span>
+  <h1 class="ipl-title">EcoIQ Industrial Playbook Library</h1>
+  <p class="ipl-subtitle">Reusable modernisation pathways for energy, industry, mining, agriculture and cities.</p>
+  <p class="ipl-desc">
+    EcoIQ Industrial Playbooks turn repeated industrial problems into structured,
+    evidence-based action plans. Each playbook explains what problem signs to look for,
+    what data is required, which photos and documents prove the issue, which upgrades
+    should be considered, how to estimate CAPEX/OPEX/payback, how to assess Maqasid/Mizan
+    impact and how to verify results through MRV.
+  </p>
+
+  <div class="ipl-formula">
+    {% for step in core_formula %}<span class="ipl-formula-step">{{ step }}</span>{% if not forloop.last %}<span class="ipl-formula-arrow">→</span>{% endif %}{% endfor %}
+  </div>
+
+  <div class="ipl-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ipl-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ipl-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ipl-section">
+    <h2 class="ipl-h2">Connected EcoIQ Modules</h2>
+    <div class="ipl-module-grid">
+      {% for m in connected_modules %}
+      <div class="ipl-module-card">
+        <h3 class="ipl-module-name">{{ m.name }}</h3>
+        <p class="ipl-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ipl-section" id="playbooks">
+    <h2 class="ipl-h2">Playbooks</h2>
+    {% for pb in playbooks %}
+    <div class="ipl-playbook-card">
+      <div class="ipl-playbook-head">
+        <span class="ipl-playbook-number">Playbook {{ pb.number }}</span>
+        <h3 class="ipl-playbook-title">{{ pb.title }}</h3>
+      </div>
+      <p class="ipl-p"><strong>For:</strong> {{ pb.applies_to }}</p>
+
+      <div class="ipl-playbook-grid">
+        <div>
+          <p class="ipl-sub">Problem signs</p>
+          <ul class="ipl-list ipl-risk-list">{% for item in pb.problem_signs %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        <div>
+          <p class="ipl-sub">Evidence needed</p>
+          <ul class="ipl-list">{% for item in pb.evidence_needed %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        <div>
+          <p class="ipl-sub">Recommended actions</p>
+          <ul class="ipl-list ipl-action-list">{% for item in pb.recommended_actions %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+
+      <p class="ipl-meaning"><strong>Maqasid/Mizan meaning:</strong> {{ pb.maqasid_mizan_meaning }}</p>
+
+      <p class="ipl-sub" style="margin-top:0.85rem;">MRV metrics</p>
+      <div class="ipl-chip-row">
+        {% for metric in pb.mrv_metrics %}<span class="ipl-chip">{{ metric }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ipl-section">
+    <h2 class="ipl-h2">Playbook Structure</h2>
+    <p class="ipl-p">Every playbook in the library follows the same structure:</p>
+    <div class="ipl-chip-row">
+      {% for field in playbook_structure_fields %}<span class="ipl-chip ipl-chip-structure">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ipl-section" id="playbook-lifecycle">
+    <h2 class="ipl-h2">Playbook Lifecycle</h2>
+    <ol class="ipl-lifecycle-list">
+      {% for step in playbook_lifecycle %}<li>{{ step }}</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="ipl-section">
+    <h2 class="ipl-h2">How Amanah Autopilot Uses Playbooks</h2>
+    <p class="ipl-p">{{ amanah_uses_playbooks }}</p>
+  </section>
+
+  <section class="ipl-section">
+    <h2 class="ipl-h2">How Microsoft Stack Supports Playbooks</h2>
+    <ul class="ipl-list ipl-microsoft-list">
+      {% for item in microsoft_supports_playbooks %}<li><strong>{{ item.component }}</strong> — {{ item.role }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ipl-section">
+    <h2 class="ipl-h2">Safety and Governance</h2>
+    <ul class="ipl-list ipl-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="ipl-cta-row ipl-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ipl-btn ipl-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ipl-btn ipl-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ipl-bg: #070b0f; --ipl-bg2: #0d1117; --ipl-border: rgba(255,255,255,.08);
+    --ipl-text: #e2e8f0; --ipl-muted: #94a3b8; --ipl-acc: #00e89a; --ipl-info: #58a6ff;
+  }
+  .ipl-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ipl-bg); color: var(--ipl-text); border-radius: 14px;
+  }
+  .ipl-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ipl-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ipl-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ipl-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ipl-acc); margin: 0 0 1rem; }
+  .ipl-desc { color: var(--ipl-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+
+  .ipl-formula { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 1.5rem; }
+  .ipl-formula-step { background: var(--ipl-bg2); border: 1px solid rgba(0,232,154,.3); color: var(--ipl-acc); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700; }
+  .ipl-formula-arrow { color: var(--ipl-info); font-weight: 700; }
+
+  .ipl-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ipl-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ipl-border); }
+  .ipl-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ipl-bg2); color: var(--ipl-text);
+    border: 1px solid var(--ipl-border);
+  }
+  .ipl-btn-primary { background: var(--ipl-acc); color: #06281f; border-color: var(--ipl-acc); }
+  .ipl-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ipl-border); }
+  .ipl-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ipl-p { color: var(--ipl-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ipl-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0 0 0.4rem; }
+  .ipl-list { color: var(--ipl-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ipl-risk-list li { color: #f4a261; }
+  .ipl-action-list li { color: var(--ipl-acc); }
+  .ipl-safety-list li, .ipl-microsoft-list li { margin-bottom: 0.4rem; }
+
+  .ipl-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ipl-module-card { background: var(--ipl-bg2); border: 1px solid var(--ipl-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ipl-module-name { font-size: 0.92rem; color: var(--ipl-info); margin: 0 0 0.4rem; }
+  .ipl-module-role { color: var(--ipl-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .ipl-playbook-card { background: var(--ipl-bg2); border: 1px solid var(--ipl-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+  .ipl-playbook-head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .ipl-playbook-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ipl-info); font-weight: 700; }
+  .ipl-playbook-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .ipl-playbook-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin: 0.85rem 0; }
+  .ipl-meaning { color: var(--ipl-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.75rem; }
+  .ipl-meaning strong { color: var(--ipl-acc); }
+
+  .ipl-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .ipl-chip { background: rgba(88,166,255,.1); color: var(--ipl-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .ipl-chip-structure { background: rgba(0,232,154,.1); color: var(--ipl-acc); border-color: rgba(0,232,154,.25); }
+
+  .ipl-lifecycle-list { color: var(--ipl-muted); line-height: 1.9; font-size: 0.88rem; padding-left: 1.3rem; }
+
+  @media (max-width: 720px) {
+    .ipl-playbook-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
