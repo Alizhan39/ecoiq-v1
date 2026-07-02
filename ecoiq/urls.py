@@ -154,6 +154,9 @@ urlpatterns = [
     # EcoIQ Deployment, DevOps & Reliability Centre — production readiness, monitoring and incident response
     path('deployment-devops-reliability-centre/', include('deployment_devops_reliability_centre.urls', namespace='deployment_devops_reliability_centre')),
 
+    # EcoIQ Knowledge Graph & Relationship Map — connected relationship graph across assets, evidence and impact
+    path('knowledge-graph-relationship-map/', include('knowledge_graph_relationship_map.urls', namespace='knowledge_graph_relationship_map')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
