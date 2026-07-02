@@ -83,6 +83,53 @@ class PublicPageTests(TestCase):
         self.assertEqual(self.c.get(reverse('leads:success')).status_code, 200)
 
 
+class PlatformPageRenderingTests(TestCase):
+    """
+    Regression guard: /platform/ and / must be served through Django's template
+    engine with all template tags/variables resolved — never raw {% %} or {{ }}
+    syntax reaching the browser.
+    """
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_platform_page_200(self):
+        r = self.c.get(reverse('platform'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_platform_page_has_no_raw_template_tags(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        self.assertNotIn('{%', content)
+        self.assertNotIn('{{', content)
+
+    def test_platform_page_shows_five_modules_heading(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Five Modules')
+
+    def test_platform_page_shows_rendered_module_titles(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Country Transition Intelligence')
+        self.assertContains(r, 'Company EcoIQ Assessment')
+
+    def test_platform_page_shows_rendered_company_count(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        self.assertNotIn('{{ company_count_display }}', content)
+        self.assertNotIn('{{ COMPANY_COUNT_DISPLAY }}', content)
+        self.assertRegex(content, r'\d+\+?\s+Companies')
+
+    def test_landing_page_200(self):
+        r = self.c.get(reverse('home'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_landing_page_has_no_raw_template_tags(self):
+        r = self.c.get(reverse('home'))
+        content = r.content.decode()
+        self.assertNotIn('{%', content)
+        self.assertNotIn('{{', content)
+
+
 # ── Auth enforcement ──────────────────────────────────────────────────────────
 
 class AuthEnforcementTests(TestCase):
