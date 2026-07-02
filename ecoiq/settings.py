@@ -148,6 +148,9 @@ INSTALLED_APPS = [
 
     # Approved public-facing verified impact reporting
     'public_trust_impact_portal',
+
+    # Sales, partnership and funder pipeline management
+    'sales_crm_partner_pipeline',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

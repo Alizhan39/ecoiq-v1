@@ -136,6 +136,9 @@ urlpatterns = [
     # EcoIQ Public Trust & Impact Portal — approved public-facing verified impact reporting
     path('public-trust-impact-portal/', include('public_trust_impact_portal.urls', namespace='public_trust_impact_portal')),
 
+    # EcoIQ Sales CRM & Partner Pipeline — sales, partnership and funder pipeline management
+    path('sales-crm-partner-pipeline/', include('sales_crm_partner_pipeline.urls', namespace='sales_crm_partner_pipeline')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
