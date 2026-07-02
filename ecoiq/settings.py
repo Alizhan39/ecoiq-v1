@@ -112,6 +112,9 @@ INSTALLED_APPS = [
 
     # Measurement, reporting and verification of modernisation impact
     'impact_mrv_layer',
+
+    # Reusable industrial modernisation pathways
+    'industrial_playbook_library',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

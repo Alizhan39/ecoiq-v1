@@ -100,6 +100,9 @@ urlpatterns = [
     # EcoIQ Impact MRV Layer — measurement, reporting and verification of modernisation impact
     path('impact-mrv-layer/', include('impact_mrv_layer.urls', namespace='impact_mrv_layer')),
 
+    # EcoIQ Industrial Playbook Library — reusable industrial modernisation pathways
+    path('industrial-playbook-library/', include('industrial_playbook_library.urls', namespace='industrial_playbook_library')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
