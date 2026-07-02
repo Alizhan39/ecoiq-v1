@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Portfolio & Country Transition Atlas{% endblock %}
+{% block meta_description_content %}EcoIQ Portfolio & Country Transition Atlas: map transition risk, finance-ready projects and verified impact across countries and sectors.{% endblock %}
+
+{% block content %}
+<div class="pcta-wrap">
+
+  <span class="pcta-badge">EcoIQ Platform Module</span>
+  <h1 class="pcta-title">EcoIQ Portfolio & Country Transition Atlas</h1>
+  <p class="pcta-subtitle">Map transition risk, finance-ready projects and verified impact across countries and sectors.</p>
+  <p class="pcta-desc">
+    EcoIQ Portfolio & Country Transition Atlas provides a geographic and portfolio-level
+    view of industrial modernisation. It helps investors, governments, development banks,
+    municipalities and industrial groups see where assets are located, where losses and
+    harm are highest, where projects are ready for funding and where verified impact is
+    already being delivered.
+  </p>
+  <p class="pcta-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <p class="pcta-sub">Supported country views</p>
+  <div class="pcta-chip-row">{% for c in supported_countries %}<span class="pcta-chip pcta-chip-country">{{ c }}</span>{% endfor %}</div>
+
+  <div class="pcta-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="pcta-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="pcta-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Connected EcoIQ Modules</h2>
+    <div class="pcta-module-grid">
+      {% for m in connected_modules %}
+      <div class="pcta-module-card">
+        <h3 class="pcta-module-name">{{ m.name }}</h3>
+        <p class="pcta-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Supported Asset Categories</h2>
+    <div class="pcta-chip-row">
+      {% for a in supported_asset_categories %}<span class="pcta-chip">{{ a }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section" id="atlas-views">
+    <h2 class="pcta-h2">Main Atlas Views</h2>
+    {% for view in atlas_views %}
+    <div class="pcta-view-card" id="{{ view.anchor }}">
+      <span class="pcta-view-number">View {{ view.number }}</span>
+      <h3 class="pcta-view-title">{{ view.title }}</h3>
+      <p class="pcta-p">{{ view.description }}</p>
+      <div class="pcta-chip-row">{% for item in view.items %}<span class="pcta-chip">{{ item }}</span>{% endfor %}</div>
+      {% if view.extra_label %}
+      <p class="pcta-sub" style="margin-top:0.85rem;">{{ view.extra_label }}</p>
+      <ul class="pcta-list">{% for item in view.extra_items %}<li>{{ item }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="pcta-section" id="country-cards">
+    <h2 class="pcta-h2">Country Cards</h2>
+    <div class="pcta-module-grid">
+      {% for c in country_cards %}
+      <div class="pcta-module-card">
+        <h3 class="pcta-module-name">{{ c.name }}</h3>
+        <p class="pcta-sub">Priority themes</p>
+        <ul class="pcta-list">{% for t in c.priority_themes %}<li>{{ t }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Region-Level Summary Cards</h2>
+    <p class="pcta-p">Each region should show:</p>
+    <div class="pcta-chip-row">
+      {% for f in region_summary_fields %}<span class="pcta-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Sector Comparison View</h2>
+    <p class="pcta-sub">Compare</p>
+    <div class="pcta-chip-row">{% for s in sector_comparison_sectors %}<span class="pcta-chip pcta-chip-metric">{{ s }}</span>{% endfor %}</div>
+    <p class="pcta-sub" style="margin-top:0.85rem;">For each sector show</p>
+    <div class="pcta-chip-row">{% for f in sector_comparison_fields %}<span class="pcta-chip">{{ f }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Atlas Workflow</h2>
+    <div class="pcta-flow">
+      {% for step in atlas_workflow %}<span class="pcta-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="pcta-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Example Project Clusters</h2>
+    {% for cluster in example_clusters %}
+    <div class="pcta-cluster-card">
+      <h3 class="pcta-view-title">{{ cluster.title }}</h3>
+      <p class="pcta-sub">Examples</p>
+      <div class="pcta-chip-row">{% for e in cluster.examples %}<span class="pcta-chip">{{ e }}</span>{% endfor %}</div>
+      <p class="pcta-sub" style="margin-top:0.85rem;">Show</p>
+      <ul class="pcta-list">{% for s in cluster.shows %}<li>{{ s }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Atlas Dashboard Cards</h2>
+    <div class="pcta-chip-row">
+      {% for card in atlas_dashboard_cards %}<span class="pcta-chip pcta-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Project Table Fields</h2>
+    <div class="pcta-chip-row">
+      {% for field in project_table_fields %}<span class="pcta-chip">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Filters</h2>
+    <div class="pcta-chip-row">
+      {% for f in filters %}<span class="pcta-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Portfolio Scoring Logic</h2>
+    {% for score in scoring_logic %}
+    <div class="pcta-score-card">
+      <h3 class="pcta-view-title">{{ score.title }}</h3>
+      <p class="pcta-p">{{ score.description }}</p>
+    </div>
+    {% endfor %}
+    <p class="pcta-note">{{ scoring_logic_note }}</p>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Atlas Prioritisation Logic</h2>
+    <ul class="pcta-list pcta-rules-list">
+      {% for rule in prioritisation_logic %}<li>{{ rule }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="pcta-section" id="portfolio-pack-outputs">
+    <h2 class="pcta-h2">Portfolio Pack Outputs</h2>
+    <p class="pcta-p">The atlas should support:</p>
+    <div class="pcta-chip-row">
+      {% for pack in portfolio_pack_outputs %}<span class="pcta-chip pcta-chip-metric">{{ pack }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pcta-section" id="microsoft-integration">
+    <h2 class="pcta-h2">Microsoft Integration</h2>
+    <p class="pcta-p">EcoIQ Portfolio & Country Transition Atlas can use:</p>
+    <ul class="pcta-list">{% for item in microsoft_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Amanah Autopilot Integration</h2>
+    <p class="pcta-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="pcta-list">{% for item in amanah_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="pcta-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Country Examples</h2>
+    {% for card in country_example_cards %}
+    <div class="pcta-example-card">
+      <span class="pcta-example-label">Country</span>
+      <h3 class="pcta-example-title">{{ card.country }}</h3>
+      <p class="pcta-sub">Atlas summary</p>
+      <ul class="pcta-list">{% for item in card.summary %}<li>{{ item }}</li>{% endfor %}</ul>
+      <p class="pcta-next-action"><strong>Next action:</strong> {{ card.next_action }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">No Harm Gate for Atlas</h2>
+    <p class="pcta-p">Before showing projects as high-priority, finance-ready or high-impact, check:</p>
+    <ul class="pcta-list pcta-gate-list">
+      {% for item in no_harm_gate_atlas_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="pcta-section">
+    <h2 class="pcta-h2">Safety and Governance</h2>
+    <ul class="pcta-list pcta-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="pcta-cta-row pcta-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="pcta-btn pcta-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="pcta-btn pcta-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --pcta-bg: #070b0f; --pcta-bg2: #0d1117; --pcta-border: rgba(255,255,255,.08);
+    --pcta-text: #e2e8f0; --pcta-muted: #94a3b8; --pcta-acc: #00e89a; --pcta-info: #58a6ff;
+  }
+  .pcta-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--pcta-bg); color: var(--pcta-text); border-radius: 14px;
+  }
+  .pcta-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--pcta-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .pcta-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .pcta-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--pcta-acc); margin: 0 0 1rem; }
+  .pcta-desc { color: var(--pcta-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .pcta-purpose { color: var(--pcta-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .pcta-purpose strong { color: var(--pcta-acc); }
+
+  .pcta-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .pcta-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--pcta-border); }
+  .pcta-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--pcta-bg2); color: var(--pcta-text);
+    border: 1px solid var(--pcta-border);
+  }
+  .pcta-btn-primary { background: var(--pcta-acc); color: #06281f; border-color: var(--pcta-acc); }
+  .pcta-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--pcta-border); }
+  .pcta-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .pcta-p { color: var(--pcta-muted); font-size: 0.9rem; line-height: 1.6; }
+  .pcta-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .pcta-list { color: var(--pcta-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .pcta-rules-list li, .pcta-gate-list li, .pcta-safety-list li { margin-bottom: 0.4rem; }
+  .pcta-note { margin-top: 1rem; color: #f4a261; font-size: 0.8rem; line-height: 1.5; border-left: 3px solid #f4a261; padding-left: 0.85rem; }
+
+  .pcta-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .pcta-module-card { background: var(--pcta-bg2); border: 1px solid var(--pcta-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .pcta-module-name { font-size: 0.92rem; color: var(--pcta-info); margin: 0 0 0.4rem; }
+  .pcta-module-role { color: var(--pcta-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .pcta-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .pcta-chip { background: rgba(88,166,255,.1); color: var(--pcta-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .pcta-chip-metric { background: rgba(0,232,154,.1); color: var(--pcta-acc); border-color: rgba(0,232,154,.25); }
+  .pcta-chip-country { background: rgba(255,255,255,.07); color: #fff; border-color: var(--pcta-border); font-weight: 700; }
+
+  .pcta-view-card, .pcta-cluster-card, .pcta-score-card { background: var(--pcta-bg2); border: 1px solid var(--pcta-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .pcta-view-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pcta-info); font-weight: 700; }
+  .pcta-view-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .pcta-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .pcta-flow-step { background: var(--pcta-bg2); border: 1px solid var(--pcta-border); color: var(--pcta-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+  .pcta-flow-arrow { color: var(--pcta-info); font-weight: 700; }
+
+  .pcta-example-card { background: var(--pcta-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .pcta-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pcta-info); font-weight: 700; }
+  .pcta-example-title { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .pcta-next-action { color: var(--pcta-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .pcta-next-action strong { color: var(--pcta-acc); }
+
+  .pcta-briefing { margin-top: 1rem; color: var(--pcta-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--pcta-acc); padding-left: 0.85rem; }
+</style>
+{% endblock %}
