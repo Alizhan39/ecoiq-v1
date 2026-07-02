@@ -166,6 +166,9 @@ INSTALLED_APPS = [
 
     # Production readiness, monitoring and incident response
     'deployment_devops_reliability_centre',
+
+    # Connected relationship graph across assets, evidence and impact
+    'knowledge_graph_relationship_map',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

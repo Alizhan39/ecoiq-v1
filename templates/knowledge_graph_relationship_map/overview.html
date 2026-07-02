@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Knowledge Graph & Relationship Map{% endblock %}
+{% block meta_description_content %}EcoIQ Knowledge Graph & Relationship Map: connect assets, evidence, risks, finance, suppliers and verified impact.{% endblock %}
+
+{% block content %}
+<div class="kgrm-wrap">
+
+  <span class="kgrm-badge">EcoIQ Platform Module</span>
+  <h1 class="kgrm-title">EcoIQ Knowledge Graph & Relationship Map</h1>
+  <p class="kgrm-subtitle">Connect assets, evidence, risks, finance, suppliers and verified impact.</p>
+  <p class="kgrm-desc">
+    EcoIQ Knowledge Graph & Relationship Map turns scattered project data into an
+    explainable network of relationships. It shows how each asset connects to evidence,
+    risks, playbooks, suppliers, funders, finance models, governance approvals, MRV
+    claims, trust badges, countries, Maqasid/Mizan principles and verified impact. This
+    helps investors, governments, project owners and AI agents understand why a
+    recommendation exists, what evidence supports it and what action should happen next.
+  </p>
+  <p class="kgrm-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="kgrm-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="kgrm-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="kgrm-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Connected EcoIQ Modules</h2>
+    <div class="kgrm-module-grid">
+      {% for m in connected_modules %}
+      <div class="kgrm-module-card">
+        <h3 class="kgrm-module-name">{{ m.name }}</h3>
+        <p class="kgrm-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="kgrm-section" id="node-types">
+    <h2 class="kgrm-h2">Graph Node Types</h2>
+    {% for n in node_types %}
+    <div class="kgrm-node-card">
+      <span class="kgrm-node-number">Node Type {{ n.number }}</span>
+      <h3 class="kgrm-node-title">{{ n.title }}</h3>
+      <p class="kgrm-sub">Examples</p>
+      <div class="kgrm-chip-row">{% for e in n.examples %}<span class="kgrm-chip">{{ e }}</span>{% endfor %}</div>
+      <p class="kgrm-sub">Fields</p>
+      <div class="kgrm-chip-row">{% for f in n.fields %}<span class="kgrm-chip kgrm-chip-metric">{{ f }}</span>{% endfor %}</div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Graph Relationship Types</h2>
+    <div class="kgrm-chip-row">
+      {% for rel in relationship_types %}<span class="kgrm-chip kgrm-chip-code"><code>{{ rel }}</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Relationship Map Views</h2>
+    {% for v in graph_views %}
+    <div class="kgrm-node-card" id="graph-view-{{ v.number }}">
+      <span class="kgrm-node-number">View {{ v.number }}</span>
+      <h3 class="kgrm-node-title">{{ v.title }}</h3>
+      <p class="kgrm-p">{{ v.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="kgrm-section" id="dashboard-cards">
+    <h2 class="kgrm-h2">Graph Dashboard Cards</h2>
+    <div class="kgrm-chip-row">
+      {% for card in dashboard_cards %}<span class="kgrm-chip kgrm-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="kgrm-section" id="graph-completeness-score">
+    <h2 class="kgrm-h2">Graph Completeness Score</h2>
+    <p class="kgrm-sub">Score should check</p>
+    <ul class="kgrm-list">{% for item in completeness_score_checks %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="kgrm-sub" style="margin-top:0.85rem;">Labels</p>
+    <div class="kgrm-chip-row">
+      {% for label in completeness_labels %}<span class="kgrm-chip kgrm-chip-badge">{{ label }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="kgrm-section" id="process-improvement-engine">
+    <h2 class="kgrm-h2">Process Improvement Engine</h2>
+    <p class="kgrm-p">The graph should improve EcoIQ processes by detecting:</p>
+    {% for cat in process_improvement_categories %}
+    <div class="kgrm-node-card">
+      <span class="kgrm-node-number">{{ cat.number }}. {{ cat.title }}</span>
+      <ul class="kgrm-list" style="margin-top:0.5rem;">{% for e in cat.examples %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+    <p class="kgrm-sub" style="margin-top:1rem;">Process improvement recommendations</p>
+    <ul class="kgrm-list kgrm-recommend-list">
+      {% for rec in process_improvement_recommendations %}<li>"{{ rec }}"</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Example Graphs</h2>
+    {% for g in example_graphs %}
+    <div class="kgrm-example-card">
+      <div class="kgrm-example-head">
+        <span class="kgrm-example-label">{{ g.label }}</span>
+        <h3 class="kgrm-example-title">{{ g.name }}</h3>
+      </div>
+      <p class="kgrm-sub">Graph links</p>
+      <ul class="kgrm-list">{% for link in g.graph_links %}<li>{{ link }}</li>{% endfor %}</ul>
+      <p class="kgrm-process"><strong>Process improvement:</strong> {{ g.process_improvement }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Visual UI Concept</h2>
+    <div class="kgrm-panel-grid">
+      {% for panel in ui_panels %}
+      <div class="kgrm-panel-card">
+        <h3 class="kgrm-node-title">{{ panel.position }}</h3>
+        {% if panel.label %}
+        <p class="kgrm-sub">{{ panel.label }}</p>
+        <ul class="kgrm-list">{% for item in panel.items %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if panel.description %}
+        <p class="kgrm-p">{{ panel.description }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Graph Filters</h2>
+    <div class="kgrm-chip-row">
+      {% for f in graph_filters %}<span class="kgrm-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="kgrm-section" id="microsoft-graphrag-integration">
+    <h2 class="kgrm-h2">Microsoft / GraphRAG Integration</h2>
+    <ul class="kgrm-list">{% for item in microsoft_graphrag_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="kgrm-note">{{ microsoft_graphrag_wording_note }}</p>
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">AI Agent Integration</h2>
+    <p class="kgrm-p">EcoIQ agents can use the graph to:</p>
+    <ul class="kgrm-list">{% for item in ai_agent_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Amanah Autopilot for Knowledge Graph</h2>
+    <p class="kgrm-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="kgrm-list">{% for item in amanah_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="kgrm-briefing"><strong>Morning graph briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">No Harm Gate for Knowledge Graph</h2>
+    <p class="kgrm-p">Before using graph outputs externally, check:</p>
+    <ul class="kgrm-list kgrm-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="kgrm-section">
+    <h2 class="kgrm-h2">Safety and Governance</h2>
+    <ul class="kgrm-list kgrm-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="kgrm-cta-row kgrm-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="kgrm-btn kgrm-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="kgrm-btn kgrm-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --kgrm-bg: #070b0f; --kgrm-bg2: #0d1117; --kgrm-border: rgba(255,255,255,.08);
+    --kgrm-text: #e2e8f0; --kgrm-muted: #94a3b8; --kgrm-acc: #00e89a; --kgrm-info: #58a6ff;
+  }
+  .kgrm-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--kgrm-bg); color: var(--kgrm-text); border-radius: 14px;
+  }
+  .kgrm-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--kgrm-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .kgrm-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .kgrm-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--kgrm-acc); margin: 0 0 1rem; }
+  .kgrm-desc { color: var(--kgrm-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .kgrm-purpose { color: var(--kgrm-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .kgrm-purpose strong { color: var(--kgrm-acc); }
+
+  .kgrm-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .kgrm-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--kgrm-border); }
+  .kgrm-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--kgrm-bg2); color: var(--kgrm-text);
+    border: 1px solid var(--kgrm-border);
+  }
+  .kgrm-btn-primary { background: var(--kgrm-acc); color: #06281f; border-color: var(--kgrm-acc); }
+  .kgrm-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--kgrm-border); }
+  .kgrm-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .kgrm-p { color: var(--kgrm-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kgrm-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .kgrm-list { color: var(--kgrm-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .kgrm-gate-list li, .kgrm-safety-list li, .kgrm-recommend-list li { margin-bottom: 0.4rem; }
+  .kgrm-recommend-list li { font-style: italic; color: var(--kgrm-text); }
+  .kgrm-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .kgrm-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .kgrm-module-card { background: var(--kgrm-bg2); border: 1px solid var(--kgrm-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .kgrm-module-name { font-size: 0.9rem; color: var(--kgrm-info); margin: 0 0 0.4rem; }
+  .kgrm-module-role { color: var(--kgrm-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .kgrm-node-card { background: var(--kgrm-bg2); border: 1px solid var(--kgrm-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .kgrm-node-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--kgrm-info); font-weight: 700; }
+  .kgrm-node-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .kgrm-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .kgrm-chip { background: rgba(88,166,255,.1); color: var(--kgrm-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .kgrm-chip-metric { background: rgba(0,232,154,.1); color: var(--kgrm-acc); border-color: rgba(0,232,154,.25); }
+  .kgrm-chip-code { font-family: 'SF Mono', monospace; font-size: 0.7rem; }
+  .kgrm-chip code { color: inherit; }
+  .kgrm-chip-badge { background: rgba(255,255,255,.07); color: #fff; border-color: var(--kgrm-border); font-weight: 700; }
+
+  .kgrm-example-card { background: var(--kgrm-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .kgrm-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .kgrm-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--kgrm-info); font-weight: 700; }
+  .kgrm-example-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .kgrm-process { color: var(--kgrm-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .kgrm-process strong { color: var(--kgrm-acc); }
+
+  .kgrm-panel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .kgrm-panel-card { background: var(--kgrm-bg2); border: 1px solid var(--kgrm-border); border-radius: 10px; padding: 1.1rem 1.3rem; }
+
+  .kgrm-briefing { margin-top: 1rem; color: var(--kgrm-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--kgrm-acc); padding-left: 0.85rem; }
+</style>
+{% endblock %}
