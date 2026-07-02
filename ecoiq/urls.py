@@ -112,6 +112,9 @@ urlpatterns = [
     # EcoIQ Mobile / iPad Inspection Mode — mobile-first field inspection and evidence capture
     path('mobile-inspection-mode/', include('mobile_inspection_mode.urls', namespace='mobile_inspection_mode')),
 
+    # EcoIQ Command Centre — central operational view of the modernisation project pipeline
+    path('command-centre/', include('command_centre.urls', namespace='command_centre')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
