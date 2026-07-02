@@ -148,6 +148,9 @@ urlpatterns = [
     # EcoIQ AI Agent Operations Console — observability and control layer for AI agents
     path('ai-agent-operations-console/', include('ai_agent_operations_console.urls', namespace='ai_agent_operations_console')),
 
+    # EcoIQ Security, Privacy & Compliance Centre — security, privacy and compliance governance layer
+    path('security-privacy-compliance-centre/', include('security_privacy_compliance_centre.urls', namespace='security_privacy_compliance_centre')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
