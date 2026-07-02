@@ -103,6 +103,9 @@ urlpatterns = [
     # EcoIQ Industrial Playbook Library — reusable industrial modernisation pathways
     path('industrial-playbook-library/', include('industrial_playbook_library.urls', namespace='industrial_playbook_library')),
 
+    # EcoIQ Supplier & Funding Marketplace — supplier and funding matching for financed implementation
+    path('supplier-funding-marketplace/', include('supplier_funding_marketplace.urls', namespace='supplier_funding_marketplace')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
