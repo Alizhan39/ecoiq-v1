@@ -115,6 +115,9 @@ urlpatterns = [
     # EcoIQ Command Centre — central operational view of the modernisation project pipeline
     path('command-centre/', include('command_centre.urls', namespace='command_centre')),
 
+    # EcoIQ Governance & Expert Review Board — human-in-the-loop expert review and approval layer
+    path('governance-expert-review-board/', include('governance_expert_review_board.urls', namespace='governance_expert_review_board')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

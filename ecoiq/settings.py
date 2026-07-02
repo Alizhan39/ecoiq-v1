@@ -127,6 +127,9 @@ INSTALLED_APPS = [
 
     # Central operational view of the modernisation project pipeline
     'command_centre',
+
+    # Human-in-the-loop expert review and approval layer
+    'governance_expert_review_board',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
