@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Sales CRM & Partner Pipeline{% endblock %}
+{% block meta_description_content %}EcoIQ Sales CRM & Partner Pipeline: track customers, partners, pilots and funding relationships from lead to contract.{% endblock %}
+
+{% block content %}
+<div class="scpp-wrap">
+
+  <span class="scpp-badge">EcoIQ Platform Module</span>
+  <h1 class="scpp-title">EcoIQ Sales CRM & Partner Pipeline</h1>
+  <p class="scpp-subtitle">Track customers, partners, pilots and funding relationships from lead to contract.</p>
+  <p class="scpp-desc">
+    EcoIQ Sales CRM & Partner Pipeline helps manage the commercial and partnership
+    journey behind every modernisation opportunity. It connects free scans, Asset
+    Passports, investor memos, sponsor packs, supplier matches, country atlas briefs and
+    enterprise pilots into one structured pipeline for sales, partnerships, funding and
+    renewals.
+  </p>
+  <p class="scpp-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="scpp-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="scpp-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="scpp-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Connected EcoIQ Modules</h2>
+    <div class="scpp-module-grid">
+      {% for m in connected_modules %}
+      <div class="scpp-module-card">
+        <h3 class="scpp-module-name">{{ m.name }}</h3>
+        <p class="scpp-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="scpp-section" id="pipeline-stages">
+    <h2 class="scpp-h2">Pipeline Stages</h2>
+    {% for stage in pipeline_stages %}
+    <div class="scpp-stage-card" id="stage-{{ stage.number }}">
+      <span class="scpp-stage-number">Stage {{ stage.number }}</span>
+      <h3 class="scpp-stage-title">{{ stage.title }}</h3>
+      <p class="scpp-p">{{ stage.description }}</p>
+      {% if stage.items %}
+      <div class="scpp-chip-row">{% for item in stage.items %}<span class="scpp-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">CRM Contact Types</h2>
+    <div class="scpp-chip-row">
+      {% for t in crm_contact_types %}<span class="scpp-chip">{{ t }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="scpp-section" id="opportunity-fields">
+    <h2 class="scpp-h2">Opportunity Fields</h2>
+    <div class="scpp-chip-row">
+      {% for f in opportunity_fields %}<span class="scpp-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Product Opportunity Types</h2>
+    <div class="scpp-chip-row">
+      {% for p in product_opportunity_types %}<span class="scpp-chip scpp-chip-metric">{{ p }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Partner Pipeline Views</h2>
+    {% for v in partner_pipeline_views %}
+    <div class="scpp-stage-card">
+      <span class="scpp-stage-number">View {{ v.number }}</span>
+      <h3 class="scpp-stage-title">{{ v.title }}</h3>
+      <p class="scpp-p">{{ v.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Pipeline Dashboard Cards</h2>
+    <div class="scpp-chip-row">
+      {% for card in pipeline_dashboard_cards %}<span class="scpp-chip scpp-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="scpp-section" id="kanban-columns">
+    <h2 class="scpp-h2">Kanban Columns</h2>
+    <div class="scpp-kanban-row">
+      {% for col in kanban_columns %}<span class="scpp-kanban-col">{{ col }}</span>{% endfor %}
+    </div>
+    <p class="scpp-sub" style="margin-top:0.85rem;">Each card shows</p>
+    <div class="scpp-chip-row">{% for c in kanban_card_shows %}<span class="scpp-chip">{{ c }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Scoring Logic</h2>
+    <div class="scpp-score-grid">
+      {% for score in scoring_logic %}
+      <div class="scpp-score-card">
+        <h3 class="scpp-module-name">{{ score.title }}</h3>
+        <ul class="scpp-list">{% for item in score.includes %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="scpp-section" id="outreach-templates">
+    <h2 class="scpp-h2">Outreach Templates</h2>
+    {% for t in outreach_templates %}
+    <div class="scpp-outreach-card" id="outreach-{{ t.number }}">
+      <span class="scpp-stage-number">Template {{ t.number }}</span>
+      <h3 class="scpp-stage-title">{{ t.title }}</h3>
+      <p class="scpp-p"><strong>Subject:</strong> {{ t.subject }}</p>
+      <p class="scpp-p"><strong>Message:</strong> {{ t.message }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Example Opportunities</h2>
+    {% for o in example_opportunities %}
+    <div class="scpp-example-card">
+      <div class="scpp-example-head">
+        <span class="scpp-example-label">Organisation</span>
+        <h3 class="scpp-example-title">{{ o.organisation }}</h3>
+        <span class="scpp-stage-tag">{{ o.stage }}</span>
+      </div>
+      <p class="scpp-p"><strong>Type:</strong> {{ o.type }}</p>
+      <p class="scpp-p"><strong>Interest:</strong> {{ o.interest }}</p>
+      <p class="scpp-p"><strong>Next action:</strong> {{ o.next_action }}</p>
+      {% if o.potential_products %}
+      <p class="scpp-sub">Potential products</p>
+      <div class="scpp-chip-row">{% for p in o.potential_products %}<span class="scpp-chip scpp-chip-metric">{{ p }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Amanah Autopilot for CRM</h2>
+    <p class="scpp-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="scpp-list">{% for item in amanah_crm_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="scpp-briefing"><strong>Morning sales briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="scpp-section" id="microsoft-dynamics-integration">
+    <h2 class="scpp-h2">Microsoft / Dynamics Integration</h2>
+    <ul class="scpp-list">{% for item in microsoft_dynamics_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Data Room Connection</h2>
+    <p class="scpp-p">Each opportunity can link to:</p>
+    <div class="scpp-chip-row">
+      {% for item in data_room_connection_items %}<span class="scpp-chip">{{ item }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">No Harm Gate for Sales</h2>
+    <p class="scpp-p">Before outreach or commercial action, check:</p>
+    <ul class="scpp-list scpp-gate-list">
+      {% for item in no_harm_gate_sales_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="scpp-section">
+    <h2 class="scpp-h2">Safety and Governance</h2>
+    <ul class="scpp-list scpp-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="scpp-cta-row scpp-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="scpp-btn scpp-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="scpp-btn scpp-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --scpp-bg: #070b0f; --scpp-bg2: #0d1117; --scpp-border: rgba(255,255,255,.08);
+    --scpp-text: #e2e8f0; --scpp-muted: #94a3b8; --scpp-acc: #00e89a; --scpp-info: #58a6ff;
+  }
+  .scpp-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--scpp-bg); color: var(--scpp-text); border-radius: 14px;
+  }
+  .scpp-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--scpp-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .scpp-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .scpp-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--scpp-acc); margin: 0 0 1rem; }
+  .scpp-desc { color: var(--scpp-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .scpp-purpose { color: var(--scpp-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .scpp-purpose strong { color: var(--scpp-acc); }
+
+  .scpp-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .scpp-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--scpp-border); }
+  .scpp-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--scpp-bg2); color: var(--scpp-text);
+    border: 1px solid var(--scpp-border);
+  }
+  .scpp-btn-primary { background: var(--scpp-acc); color: #06281f; border-color: var(--scpp-acc); }
+  .scpp-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--scpp-border); }
+  .scpp-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .scpp-p { color: var(--scpp-muted); font-size: 0.9rem; line-height: 1.6; }
+  .scpp-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .scpp-list { color: var(--scpp-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .scpp-gate-list li, .scpp-safety-list li { margin-bottom: 0.4rem; }
+
+  .scpp-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .scpp-module-card { background: var(--scpp-bg2); border: 1px solid var(--scpp-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .scpp-module-name { font-size: 0.9rem; color: var(--scpp-info); margin: 0 0 0.4rem; }
+  .scpp-module-role { color: var(--scpp-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .scpp-stage-card, .scpp-outreach-card { background: var(--scpp-bg2); border: 1px solid var(--scpp-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .scpp-stage-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--scpp-info); font-weight: 700; }
+  .scpp-stage-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .scpp-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .scpp-chip { background: rgba(88,166,255,.1); color: var(--scpp-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .scpp-chip-metric { background: rgba(0,232,154,.1); color: var(--scpp-acc); border-color: rgba(0,232,154,.25); }
+
+  .scpp-kanban-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+  .scpp-kanban-col { background: var(--scpp-bg2); border: 1px solid var(--scpp-border); color: var(--scpp-text); padding: 0.5rem 0.85rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; }
+
+  .scpp-score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.1rem; margin-top: 1rem; }
+  .scpp-score-card { background: var(--scpp-bg2); border: 1px solid var(--scpp-border); border-radius: 10px; padding: 1.1rem 1.3rem; }
+
+  .scpp-example-card { background: var(--scpp-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .scpp-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .scpp-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--scpp-info); font-weight: 700; }
+  .scpp-example-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .scpp-stage-tag { margin-left: auto; background: rgba(0,232,154,.12); color: var(--scpp-acc); border: 1px solid rgba(0,232,154,.3); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+
+  .scpp-briefing { margin-top: 1rem; color: var(--scpp-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--scpp-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 640px) {
+    .scpp-stage-tag { margin-left: 0; }
+  }
+</style>
+{% endblock %}
