@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Impact MRV Layer{% endblock %}
+{% block meta_description_content %}EcoIQ Impact MRV Layer: measurement, reporting and verification turning before/after evidence into credible modernisation impact records.{% endblock %}
+
+{% block content %}
+<div class="imrv-wrap">
+
+  <span class="imrv-badge">EcoIQ Platform Module</span>
+  <h1 class="imrv-title">EcoIQ Impact MRV Layer</h1>
+  <p class="imrv-subtitle">Before, action, after — verified impact.</p>
+  <p class="imrv-desc">
+    EcoIQ Impact MRV tracks the full evidence chain from baseline measurement to verified
+    results. It captures photos, documents, bills, sensor data, invoices and monitoring
+    signals before and after modernisation, then generates credible impact reports showing
+    energy saved, emissions reduced, costs lowered, harm reduced and Maqasid/Mizan scores
+    improved.
+  </p>
+
+  <div class="imrv-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="imrv-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="imrv-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Connected EcoIQ Modules</h2>
+    <p class="imrv-p">The MRV Layer proves the impact these modules generate:</p>
+    <div class="imrv-module-grid">
+      {% for m in connected_modules %}
+      <div class="imrv-module-card">
+        <h3 class="imrv-module-name">{{ m.name }}</h3>
+        <p class="imrv-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="imrv-section" id="mrv-workflow">
+    <h2 class="imrv-h2">MRV Workflow</h2>
+    {% for step in mrv_workflow %}
+    <div class="imrv-step-card">
+      <span class="imrv-step-number">Step {{ step.number }}</span>
+      <h3 class="imrv-step-title">{{ step.title }}</h3>
+      <p class="imrv-p">{{ step.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Evidence Types</h2>
+    <div class="imrv-chip-row">
+      {% for e in evidence_types %}<span class="imrv-chip">{{ e }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Impact Metrics</h2>
+    <div class="imrv-chip-row">
+      {% for m in impact_metrics %}<span class="imrv-chip imrv-chip-metric">{{ m }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Example Project</h2>
+    <div class="imrv-example-card">
+      <span class="imrv-example-label">Project</span>
+      <h3 class="imrv-example-project">{{ example_card.project }}</h3>
+
+      <div class="imrv-example-grid">
+        <div>
+          <p class="imrv-example-sub">Before</p>
+          <ul class="imrv-list">{% for item in example_card.before %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        <div>
+          <p class="imrv-example-sub">Action</p>
+          <ul class="imrv-list">{% for item in example_card.action %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        <div>
+          <p class="imrv-example-sub">After</p>
+          <ul class="imrv-list">{% for item in example_card.after %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+
+      <p class="imrv-example-sub" style="margin-top:1.25rem;">Verified impact</p>
+      <ul class="imrv-list imrv-verified-list">
+        {% for item in example_card.verified_impact %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Impact Evidence Chain</h2>
+    <div class="imrv-flow">
+      {% for step in evidence_chain %}<span class="imrv-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="imrv-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="imrv-section" id="evidence-quality">
+    <h2 class="imrv-h2">Evidence Quality</h2>
+    <div class="imrv-quality-grid">
+      {% for q in evidence_quality_levels %}
+      <div class="imrv-quality-card imrv-quality-{{ forloop.counter }}">
+        <h3 class="imrv-quality-level">{{ q.level }}</h3>
+        <p class="imrv-p">{{ q.description }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="imrv-warning">{{ evidence_warning }}</p>
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Maqasid/Mizan Interpretation</h2>
+    <div class="imrv-meaning-card">
+      <p><strong>Maqasid:</strong> {{ maqasid_interpretation }}</p>
+      <p><strong>Mizan:</strong> {{ mizan_interpretation }}</p>
+    </div>
+  </section>
+
+  <section class="imrv-section" id="dashboard-layout">
+    <h2 class="imrv-h2">Dashboard Layout</h2>
+    <div class="imrv-dashboard-mock">
+      <div class="imrv-dash-top"><strong>Top</strong><p>{{ dashboard_layout.top }}</p></div>
+      <div class="imrv-dash-left"><strong>Left</strong><p>{{ dashboard_layout.left }}</p></div>
+      <div class="imrv-dash-middle"><strong>Middle</strong><p>{{ dashboard_layout.middle }}</p></div>
+      <div class="imrv-dash-right"><strong>Right</strong><p>{{ dashboard_layout.right }}</p></div>
+      <div class="imrv-dash-bottom"><strong>Bottom</strong><p>{{ dashboard_layout.bottom }}</p></div>
+    </div>
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Connection to Amanah Autopilot</h2>
+    <p class="imrv-p">{{ amanah_connection }}</p>
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Connection to Microsoft</h2>
+    <p class="imrv-p">{{ microsoft_connection }}</p>
+  </section>
+
+  <section class="imrv-section">
+    <h2 class="imrv-h2">Safety and Governance</h2>
+    <ul class="imrv-list imrv-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="imrv-cta-row imrv-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="imrv-btn imrv-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="imrv-btn imrv-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --imrv-bg: #070b0f; --imrv-bg2: #0d1117; --imrv-border: rgba(255,255,255,.08);
+    --imrv-text: #e2e8f0; --imrv-muted: #94a3b8; --imrv-acc: #00e89a; --imrv-info: #58a6ff;
+  }
+  .imrv-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--imrv-bg); color: var(--imrv-text); border-radius: 14px;
+  }
+  .imrv-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--imrv-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .imrv-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .imrv-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--imrv-acc); margin: 0 0 1rem; }
+  .imrv-desc { color: var(--imrv-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .imrv-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .imrv-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--imrv-border); }
+  .imrv-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--imrv-bg2); color: var(--imrv-text);
+    border: 1px solid var(--imrv-border);
+  }
+  .imrv-btn-primary { background: var(--imrv-acc); color: #06281f; border-color: var(--imrv-acc); }
+  .imrv-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--imrv-border); }
+  .imrv-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .imrv-p { color: var(--imrv-muted); font-size: 0.9rem; line-height: 1.6; }
+  .imrv-list { color: var(--imrv-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+
+  .imrv-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .imrv-module-card { background: var(--imrv-bg2); border: 1px solid var(--imrv-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .imrv-module-name { font-size: 0.95rem; color: var(--imrv-info); margin: 0 0 0.4rem; }
+  .imrv-module-role { color: var(--imrv-muted); font-size: 0.82rem; line-height: 1.55; margin: 0; }
+
+  .imrv-step-card { background: var(--imrv-bg2); border: 1px solid var(--imrv-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.85rem; }
+  .imrv-step-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--imrv-info); font-weight: 700; }
+  .imrv-step-title { font-size: 1rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .imrv-chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .imrv-chip { background: rgba(88,166,255,.1); color: var(--imrv-info); border: 1px solid rgba(88,166,255,.25); padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+  .imrv-chip-metric { background: rgba(0,232,154,.1); color: var(--imrv-acc); border-color: rgba(0,232,154,.25); }
+
+  .imrv-example-card { background: var(--imrv-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-top: 1rem; }
+  .imrv-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--imrv-info); font-weight: 700; }
+  .imrv-example-project { font-size: 1.15rem; color: #fff; margin: 0.2rem 0 1.25rem; }
+  .imrv-example-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .imrv-example-sub { font-weight: 700; font-size: 0.85rem; color: #fff; margin: 0 0 0.4rem; }
+  .imrv-verified-list li { color: var(--imrv-acc); }
+
+  .imrv-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .imrv-flow-step { background: var(--imrv-bg2); border: 1px solid var(--imrv-border); color: var(--imrv-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+  .imrv-flow-arrow { color: var(--imrv-info); font-weight: 700; }
+
+  .imrv-quality-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .imrv-quality-card { border-radius: 10px; padding: 1rem 1.15rem; border: 1px solid var(--imrv-border); background: var(--imrv-bg2); }
+  .imrv-quality-level { font-size: 0.95rem; margin: 0 0 0.4rem; }
+  .imrv-quality-1 .imrv-quality-level { color: var(--imrv-acc); }
+  .imrv-quality-2 .imrv-quality-level { color: var(--imrv-info); }
+  .imrv-quality-3 .imrv-quality-level { color: #f4a261; }
+  .imrv-warning { margin-top: 1.25rem; color: #f4a261; font-weight: 600; font-size: 0.85rem; border-left: 3px solid #f4a261; padding-left: 0.85rem; }
+
+  .imrv-meaning-card { background: var(--imrv-bg2); border: 1px solid var(--imrv-border); border-radius: 10px; padding: 1.25rem 1.5rem; color: var(--imrv-muted); font-size: 0.88rem; line-height: 1.8; }
+  .imrv-meaning-card strong { color: var(--imrv-text); }
+
+  .imrv-dashboard-mock { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto auto; gap: 1rem; margin-top: 1rem; }
+  .imrv-dash-top, .imrv-dash-left, .imrv-dash-middle, .imrv-dash-right, .imrv-dash-bottom { background: var(--imrv-bg2); border: 1px solid var(--imrv-border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .imrv-dash-top, .imrv-dash-bottom { grid-column: 1 / -1; }
+  .imrv-dashboard-mock strong { display: block; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--imrv-info); margin-bottom: 0.4rem; }
+  .imrv-dashboard-mock p { color: var(--imrv-muted); font-size: 0.85rem; margin: 0; }
+
+  .imrv-safety-list li { margin-bottom: 0.4rem; }
+
+  @media (max-width: 720px) {
+    .imrv-example-grid { grid-template-columns: 1fr; }
+    .imrv-dashboard-mock { grid-template-columns: 1fr; }
+    .imrv-dash-top, .imrv-dash-left, .imrv-dash-middle, .imrv-dash-right, .imrv-dash-bottom { grid-column: auto; }
+  }
+</style>
+{% endblock %}

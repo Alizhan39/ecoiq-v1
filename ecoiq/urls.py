@@ -97,6 +97,9 @@ urlpatterns = [
     # EcoIQ Asset Passport — living digital passport for industrial assets
     path('asset-passport/', include('asset_passport.urls', namespace='asset_passport')),
 
+    # EcoIQ Impact MRV Layer — measurement, reporting and verification of modernisation impact
+    path('impact-mrv-layer/', include('impact_mrv_layer.urls', namespace='impact_mrv_layer')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
