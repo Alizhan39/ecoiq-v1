@@ -142,6 +142,9 @@ INSTALLED_APPS = [
 
     # Investor, board and government decision-pack generation
     'executive_briefing_board_pack_generator',
+
+    # Commercial productisation and pricing model
+    'revenue_pricing_engine',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

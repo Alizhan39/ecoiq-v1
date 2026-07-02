@@ -130,6 +130,9 @@ urlpatterns = [
     # EcoIQ Executive Briefing & Board Pack Generator — investor, board and government decision-pack generation
     path('executive-briefing-board-pack-generator/', include('executive_briefing_board_pack_generator.urls', namespace='executive_briefing_board_pack_generator')),
 
+    # EcoIQ Revenue & Pricing Engine — commercial productisation and pricing model
+    path('revenue-pricing-engine/', include('revenue_pricing_engine.urls', namespace='revenue_pricing_engine')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

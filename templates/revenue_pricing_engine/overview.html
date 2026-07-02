@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Revenue & Pricing Engine{% endblock %}
+{% block meta_description_content %}EcoIQ Revenue & Pricing Engine: turn industrial intelligence into paid products, subscriptions and verified impact services.{% endblock %}
+
+{% block content %}
+<div class="rpe-wrap">
+
+  <span class="rpe-badge">EcoIQ Platform Module</span>
+  <h1 class="rpe-title">EcoIQ Revenue & Pricing Engine</h1>
+  <p class="rpe-subtitle">Turn industrial intelligence into paid products, subscriptions and verified impact services.</p>
+  <p class="rpe-desc">
+    EcoIQ Revenue & Pricing Engine packages the platform into clear commercial products for
+    companies, investors, governments, suppliers, CSR sponsors, Islamic finance providers
+    and development partners. It helps EcoIQ monetise scans, asset passports, MRV packs,
+    finance memos, board packs, country atlases, enterprise subscriptions, marketplace
+    matching and sponsor impact reporting.
+  </p>
+  <p class="rpe-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="rpe-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="rpe-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="rpe-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Connected EcoIQ Modules</h2>
+    <div class="rpe-module-grid">
+      {% for m in connected_modules %}
+      <div class="rpe-module-card">
+        <h3 class="rpe-module-name">{{ m.name }}</h3>
+        <p class="rpe-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="rpe-section" id="revenue-products">
+    <h2 class="rpe-h2">Revenue Products</h2>
+    {% for p in revenue_products %}
+    <div class="rpe-product-card" id="product-{{ p.number }}">
+      <div class="rpe-product-head">
+        <span class="rpe-product-number">Product {{ p.number }}</span>
+        <h3 class="rpe-product-title">{{ p.title }}</h3>
+        <span class="rpe-price-tag">{{ p.price }}</span>
+      </div>
+      <p class="rpe-p"><strong>Audience:</strong> {{ p.audience }}</p>
+      <p class="rpe-sub">Includes</p>
+      <div class="rpe-chip-row">{% for item in p.includes %}<span class="rpe-chip">{{ item }}</span>{% endfor %}</div>
+      {% if p.purpose %}
+      <p class="rpe-p" style="margin-top:0.6rem;"><strong>Purpose:</strong> {{ p.purpose }}</p>
+      {% endif %}
+      {% if p.note %}
+      <p class="rpe-note">{{ p.note }}</p>
+      {% endif %}
+      <a class="rpe-btn rpe-btn-primary rpe-product-cta" href="#product-{{ p.number }}">{{ p.cta }}</a>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Pricing Table</h2>
+    <div class="rpe-tier-grid">
+      {% for tier in pricing_tiers %}
+      <div class="rpe-tier-card">
+        <h3 class="rpe-product-title">{{ tier.title }}</h3>
+        <p class="rpe-p">{{ tier.description }}</p>
+        <ul class="rpe-list">{% for item in tier.includes %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Revenue Model Cards</h2>
+    {% for card in revenue_model_cards %}
+    <div class="rpe-model-card">
+      <span class="rpe-product-number">Model {{ card.number }}</span>
+      <h3 class="rpe-product-title">{{ card.title }}</h3>
+      <p class="rpe-p">{{ card.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Conversion Funnel</h2>
+    <div class="rpe-flow">
+      {% for step in conversion_funnel %}<span class="rpe-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="rpe-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Example Customer Journeys</h2>
+    {% for journey in customer_journeys %}
+    <div class="rpe-journey-card">
+      <h3 class="rpe-product-title">{{ journey.title }}</h3>
+      <ol class="rpe-list">{% for step in journey.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Revenue Dashboard Cards</h2>
+    <div class="rpe-chip-row">
+      {% for card in revenue_dashboard_cards %}<span class="rpe-chip rpe-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Commercial Readiness Fields</h2>
+    <p class="rpe-p">For every project track:</p>
+    <div class="rpe-chip-row">
+      {% for field in commercial_readiness_fields %}<span class="rpe-chip">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Pricing Guardrails</h2>
+    <ul class="rpe-list rpe-guardrail-list">
+      {% for item in pricing_guardrails %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Microsoft and Enterprise Monetisation</h2>
+    <p class="rpe-p">EcoIQ can monetise Microsoft ecosystem readiness through:</p>
+    <ul class="rpe-list">{% for item in microsoft_monetisation_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Amanah Autopilot Revenue Support</h2>
+    <p class="rpe-p">Amanah Autopilot can run overnight and identify:</p>
+    <ul class="rpe-list">{% for item in amanah_revenue_support_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="rpe-briefing"><strong>Morning commercial briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">No Harm Gate for Revenue</h2>
+    <p class="rpe-p">Before monetising, check:</p>
+    <ul class="rpe-list rpe-gate-list">
+      {% for item in no_harm_gate_revenue_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="rpe-section">
+    <h2 class="rpe-h2">Safety and Governance</h2>
+    <ul class="rpe-list rpe-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="rpe-cta-row rpe-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="rpe-btn rpe-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="rpe-btn rpe-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --rpe-bg: #070b0f; --rpe-bg2: #0d1117; --rpe-border: rgba(255,255,255,.08);
+    --rpe-text: #e2e8f0; --rpe-muted: #94a3b8; --rpe-acc: #00e89a; --rpe-info: #58a6ff;
+  }
+  .rpe-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--rpe-bg); color: var(--rpe-text); border-radius: 14px;
+  }
+  .rpe-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--rpe-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .rpe-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .rpe-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--rpe-acc); margin: 0 0 1rem; }
+  .rpe-desc { color: var(--rpe-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .rpe-purpose { color: var(--rpe-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .rpe-purpose strong { color: var(--rpe-acc); }
+
+  .rpe-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .rpe-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--rpe-border); }
+  .rpe-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--rpe-bg2); color: var(--rpe-text);
+    border: 1px solid var(--rpe-border);
+  }
+  .rpe-btn-primary { background: var(--rpe-acc); color: #06281f; border-color: var(--rpe-acc); }
+  .rpe-product-cta { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.8rem; }
+  .rpe-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--rpe-border); }
+  .rpe-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .rpe-p { color: var(--rpe-muted); font-size: 0.9rem; line-height: 1.6; }
+  .rpe-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .rpe-list { color: var(--rpe-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .rpe-guardrail-list li, .rpe-gate-list li, .rpe-safety-list li { margin-bottom: 0.4rem; }
+
+  .rpe-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .rpe-module-card { background: var(--rpe-bg2); border: 1px solid var(--rpe-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .rpe-module-name { font-size: 0.9rem; color: var(--rpe-info); margin: 0 0 0.4rem; }
+  .rpe-module-role { color: var(--rpe-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .rpe-product-card, .rpe-model-card, .rpe-journey-card { background: var(--rpe-bg2); border: 1px solid var(--rpe-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .rpe-product-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .rpe-product-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rpe-info); font-weight: 700; }
+  .rpe-product-title { font-size: 1.02rem; color: #fff; margin: 0; }
+  .rpe-price-tag { margin-left: auto; background: rgba(0,232,154,.1); color: var(--rpe-acc); border: 1px solid rgba(0,232,154,.3); padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+  .rpe-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .rpe-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .rpe-chip { background: rgba(88,166,255,.1); color: var(--rpe-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .rpe-chip-metric { background: rgba(0,232,154,.1); color: var(--rpe-acc); border-color: rgba(0,232,154,.25); }
+
+  .rpe-tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.1rem; margin-top: 1rem; }
+  .rpe-tier-card { background: var(--rpe-bg2); border: 1px solid rgba(0,232,154,.2); border-radius: 10px; padding: 1.1rem 1.3rem; }
+
+  .rpe-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .rpe-flow-step { background: var(--rpe-bg2); border: 1px solid var(--rpe-border); color: var(--rpe-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+  .rpe-flow-arrow { color: var(--rpe-info); font-weight: 700; }
+
+  .rpe-briefing { margin-top: 1rem; color: var(--rpe-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--rpe-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 720px) {
+    .rpe-price-tag { margin-left: 0; }
+  }
+</style>
+{% endblock %}
