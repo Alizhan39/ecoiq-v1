@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Certification & Trust Badge Engine{% endblock %}
+{% block meta_description_content %}EcoIQ Certification & Trust Badge Engine: show readiness, verification and trust status through clear badges.{% endblock %}
+
+{% block content %}
+<div class="ctbe-wrap">
+
+  <span class="ctbe-badge">EcoIQ Platform Module</span>
+  <h1 class="ctbe-title">EcoIQ Certification & Trust Badge Engine</h1>
+  <p class="ctbe-subtitle">Show readiness, verification and trust status through clear badges.</p>
+  <p class="ctbe-desc">
+    EcoIQ Certification & Trust Badge Engine converts evidence, review, MRV, finance,
+    governance and public-reporting status into clear trust badges. It helps investors,
+    governments, suppliers, sponsors, communities and internal teams quickly understand
+    whether a project is draft, evidence-ready, finance-ready, expert-reviewed, MRV
+    verified, public-summary approved or blocked by missing evidence.
+  </p>
+  <p class="ctbe-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="ctbe-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ctbe-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ctbe-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ctbe-section">
+    <h2 class="ctbe-h2">Connected EcoIQ Modules</h2>
+    <div class="ctbe-module-grid">
+      {% for m in connected_modules %}
+      <div class="ctbe-module-card">
+        <h3 class="ctbe-module-name">{{ m.name }}</h3>
+        <p class="ctbe-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ctbe-section" id="badge-categories">
+    <h2 class="ctbe-h2">Badge Categories</h2>
+    {% for cat in badge_categories %}
+    <div class="ctbe-cat-card">
+      <span class="ctbe-cat-number">{{ cat.number }}. {{ cat.title }}</span>
+      <div class="ctbe-chip-row">{% for b in cat.badges %}<span class="ctbe-chip">{{ b }}</span>{% endfor %}</div>
+      <p class="ctbe-rule"><strong>{{ cat.rule_label }}:</strong> {{ cat.rule }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ctbe-section" id="badge-lifecycle">
+    <h2 class="ctbe-h2">Badge Lifecycle</h2>
+    <div class="ctbe-lifecycle-row">
+      {% for stage in badge_lifecycle %}<span class="ctbe-lifecycle-step">{{ stage }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ctbe-section" id="badge-dashboard-cards">
+    <h2 class="ctbe-h2">Badge Dashboard Cards</h2>
+    <div class="ctbe-chip-row">
+      {% for card in badge_dashboard_cards %}<span class="ctbe-chip ctbe-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ctbe-section" id="badge-table-fields">
+    <h2 class="ctbe-h2">Badge Table Fields</h2>
+    <div class="ctbe-chip-row">
+      {% for f in badge_table_fields %}<span class="ctbe-chip">{{ f }}</span>{% endfor %}
+    </div>
+    <p class="ctbe-sub" style="margin-top:0.85rem;">Badge status levels</p>
+    <div class="ctbe-chip-row">
+      {% for s in badge_status_levels %}<span class="ctbe-chip ctbe-chip-badge">{{ s }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ctbe-section">
+    <h2 class="ctbe-h2">Example Project Badge Sets</h2>
+    {% for p in example_project_badges %}
+    <div class="ctbe-example-card">
+      <h3 class="ctbe-example-title">{{ p.name }}</h3>
+      <div class="ctbe-chip-row">{% for b in p.badges %}<span class="ctbe-chip">{{ b }}</span>{% endfor %}</div>
+      <p class="ctbe-next-action"><strong>Next action:</strong> {{ p.next_action }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ctbe-section" id="badge-evidence-requirements">
+    <h2 class="ctbe-h2">Badge Evidence Requirements</h2>
+    <p class="ctbe-p">Every badge should explain:</p>
+    <ul class="ctbe-list">{% for item in badge_evidence_requirements_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ctbe-section" id="public-badge-rules">
+    <h2 class="ctbe-h2">Public Badge Rules</h2>
+    <p class="ctbe-sub">Public badges can be shown only if</p>
+    <ul class="ctbe-list">{% for item in public_badge_rules.public_if %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ctbe-sub" style="margin-top:0.85rem;">Private badges remain internal if they include</p>
+    <ul class="ctbe-list">{% for item in public_badge_rules.private_if %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ctbe-section" id="badge-revocation-rules">
+    <h2 class="ctbe-h2">Badge Revocation Rules</h2>
+    <p class="ctbe-p">A badge can be revoked or downgraded if:</p>
+    <ul class="ctbe-list">{% for item in badge_revocation_rules %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ctbe-section" id="frontend-integration">
+    <h2 class="ctbe-h2">Frontend Integration</h2>
+    <p class="ctbe-sub">Trust badges should be visually reusable across</p>
+    <div class="ctbe-chip-row">{% for s in frontend_integration.surfaces %}<span class="ctbe-chip">{{ s }}</span>{% endfor %}</div>
+    <p class="ctbe-sub" style="margin-top:0.85rem;">Frontend display rules</p>
+    <ul class="ctbe-list">{% for item in frontend_integration.display_rules %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ctbe-section" id="knowledge-graph-integration">
+    <h2 class="ctbe-h2">Knowledge Graph Integration</h2>
+    <p class="ctbe-sub">The Knowledge Graph should use badge nodes and relationships</p>
+    <div class="ctbe-chip-row">
+      {% for rel in knowledge_graph_integration.relationships %}<span class="ctbe-chip ctbe-chip-code"><code>{{ rel }}</code></span>{% endfor %}
+    </div>
+    <p class="ctbe-sub" style="margin-top:0.85rem;">Graph should show</p>
+    <ul class="ctbe-list">{% for item in knowledge_graph_integration.graph_shows %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ctbe-section" id="amanah-autopilot-for-trust-badges">
+    <h2 class="ctbe-h2">Amanah Autopilot for Trust Badges</h2>
+    <p class="ctbe-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="ctbe-list">{% for item in amanah_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ctbe-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="ctbe-section" id="microsoft-integration">
+    <h2 class="ctbe-h2">Microsoft Integration</h2>
+    <ul class="ctbe-list">{% for item in microsoft_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ctbe-note">{{ microsoft_integration_wording_note }}</p>
+  </section>
+
+  <section class="ctbe-section">
+    <h2 class="ctbe-h2">No Harm Gate for Badges</h2>
+    <p class="ctbe-p">Before issuing a badge, check:</p>
+    <ul class="ctbe-list ctbe-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ctbe-section">
+    <h2 class="ctbe-h2">Safety and Governance</h2>
+    <ul class="ctbe-list ctbe-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="ctbe-cta-row ctbe-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ctbe-btn ctbe-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ctbe-btn ctbe-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ctbe-bg: #070b0f; --ctbe-bg2: #0d1117; --ctbe-border: rgba(255,255,255,.08);
+    --ctbe-text: #e2e8f0; --ctbe-muted: #94a3b8; --ctbe-acc: #00e89a; --ctbe-info: #58a6ff;
+  }
+  .ctbe-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ctbe-bg); color: var(--ctbe-text); border-radius: 14px;
+  }
+  .ctbe-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ctbe-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ctbe-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ctbe-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ctbe-acc); margin: 0 0 1rem; }
+  .ctbe-desc { color: var(--ctbe-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .ctbe-purpose { color: var(--ctbe-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .ctbe-purpose strong { color: var(--ctbe-acc); }
+
+  .ctbe-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ctbe-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ctbe-border); }
+  .ctbe-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ctbe-bg2); color: var(--ctbe-text);
+    border: 1px solid var(--ctbe-border);
+  }
+  .ctbe-btn-primary { background: var(--ctbe-acc); color: #06281f; border-color: var(--ctbe-acc); }
+  .ctbe-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ctbe-border); }
+  .ctbe-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ctbe-p { color: var(--ctbe-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ctbe-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .ctbe-list { color: var(--ctbe-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ctbe-gate-list li, .ctbe-safety-list li { margin-bottom: 0.4rem; }
+  .ctbe-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .ctbe-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ctbe-module-card { background: var(--ctbe-bg2); border: 1px solid var(--ctbe-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ctbe-module-name { font-size: 0.9rem; color: var(--ctbe-info); margin: 0 0 0.4rem; }
+  .ctbe-module-role { color: var(--ctbe-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .ctbe-cat-card, .ctbe-example-card { background: var(--ctbe-bg2); border: 1px solid var(--ctbe-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .ctbe-cat-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ctbe-info); font-weight: 700; }
+  .ctbe-example-title { font-size: 1.02rem; color: #fff; margin: 0 0 0.5rem; }
+
+  .ctbe-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .ctbe-chip { background: rgba(88,166,255,.1); color: var(--ctbe-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .ctbe-chip-metric { background: rgba(0,232,154,.1); color: var(--ctbe-acc); border-color: rgba(0,232,154,.25); }
+  .ctbe-chip-code { font-family: 'SF Mono', monospace; font-size: 0.7rem; }
+  .ctbe-chip code { color: inherit; }
+  .ctbe-chip-badge { background: rgba(255,255,255,.07); color: #fff; border-color: var(--ctbe-border); font-weight: 700; }
+
+  .ctbe-rule { margin-top: 0.75rem; color: var(--ctbe-text); font-size: 0.85rem; line-height: 1.6; }
+  .ctbe-rule strong { color: var(--ctbe-acc); }
+  .ctbe-next-action { margin-top: 0.75rem; color: var(--ctbe-text); font-size: 0.85rem; line-height: 1.6; }
+  .ctbe-next-action strong { color: var(--ctbe-acc); }
+
+  .ctbe-lifecycle-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; align-items: center; }
+  .ctbe-lifecycle-step { background: var(--ctbe-bg2); border: 1px solid rgba(0,232,154,.3); color: var(--ctbe-acc); padding: 0.4rem 0.85rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; }
+
+  .ctbe-briefing { margin-top: 1rem; color: var(--ctbe-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--ctbe-acc); padding-left: 0.85rem; }
+</style>
+{% endblock %}

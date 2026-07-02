@@ -172,6 +172,9 @@ INSTALLED_APPS = [
 
     # Visual design system, frontend library stack and Google Stitch prompt library
     'frontend_experience_google_stitch_design_system',
+
+    # Readiness, verification and trust badges across evidence, MRV, finance and governance
+    'certification_trust_badge_engine',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
