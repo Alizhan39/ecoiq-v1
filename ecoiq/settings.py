@@ -157,6 +157,9 @@ INSTALLED_APPS = [
 
     # Platform usage, conversion, revenue and impact analytics
     'product_analytics_kpi_engine',
+
+    # Observability and control layer for AI agents
+    'ai_agent_operations_console',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
