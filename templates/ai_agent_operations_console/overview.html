@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ AI Agent Operations Console{% endblock %}
+{% block meta_description_content %}EcoIQ AI Agent Operations Console: monitor agents, tasks, evidence, costs and human approvals.{% endblock %}
+
+{% block content %}
+<div class="aaoc-wrap">
+
+  <span class="aaoc-badge">EcoIQ Platform Module</span>
+  <h1 class="aaoc-title">EcoIQ AI Agent Operations Console</h1>
+  <p class="aaoc-subtitle">Monitor agents, tasks, evidence, costs and human approvals.</p>
+  <p class="aaoc-desc">
+    EcoIQ AI Agent Operations Console gives teams a transparent control layer for AI
+    agents. It shows agent status, queued tasks, running jobs, failed actions, evidence
+    sources, model usage, estimated cost, confidence, safety gates and human approval
+    requirements across EcoIQ's modernisation workflow.
+  </p>
+  <p class="aaoc-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="aaoc-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="aaoc-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="aaoc-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="aaoc-section">
+    <h2 class="aaoc-h2">Connected EcoIQ Modules</h2>
+    <div class="aaoc-module-grid">
+      {% for m in connected_modules %}
+      <div class="aaoc-module-card">
+        <h3 class="aaoc-module-name">{{ m.name }}</h3>
+        <p class="aaoc-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="aaoc-section" id="agent-categories">
+    <h2 class="aaoc-h2">Agent Categories</h2>
+    {% for a in agent_categories %}
+    <div class="aaoc-agent-card">
+      <span class="aaoc-agent-number">Agent {{ a.number }}</span>
+      <h3 class="aaoc-agent-title">{{ a.title }}</h3>
+      <p class="aaoc-p">{{ a.description }}</p>
+      <p class="aaoc-sub">Tasks</p>
+      <div class="aaoc-chip-row">{% for t in a.tasks %}<span class="aaoc-chip">{{ t }}</span>{% endfor %}</div>
+      {% if a.note %}
+      <p class="aaoc-note">{{ a.note }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="aaoc-section">
+    <h2 class="aaoc-h2">Task Statuses</h2>
+    <div class="aaoc-chip-row">
+      {% for status in task_statuses %}<span class="aaoc-chip aaoc-chip-status">{{ status }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="aaoc-section" id="dashboard-cards">
+    <h2 class="aaoc-h2">Operations Dashboard Cards</h2>
+    <div class="aaoc-chip-row">
+      {% for card in dashboard_cards %}<span class="aaoc-chip aaoc-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="aaoc-section">
+    <h2 class="aaoc-h2">Task Table Fields</h2>
+    <div class="aaoc-chip-row">
+      {% for f in task_table_fields %}<span class="aaoc-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="aaoc-section">
+    <h2 class="aaoc-h2">Agent Run Detail View</h2>
+    <p class="aaoc-p">For every agent run show:</p>
+    <div class="aaoc-chip-row">
+      {% for f in agent_run_detail_fields %}<span class="aaoc-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="aaoc-section" id="evidence-trace">
+    <h2 class="aaoc-h2">Evidence Trace</h2>
+    <p class="aaoc-p">Every agent output should show:</p>
+    <ul class="aaoc-list">{% for item in evidence_trace_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="aaoc-section" id="cost-model-monitoring">
+    <h2 class="aaoc-h2">Cost & Model Monitoring</h2>
+    <div class="aaoc-chip-row">
+      {% for item in cost_model_items %}<span class="aaoc-chip aaoc-chip-metric">{{ item }}</span>{% endfor %}
+    </div>
+    <p class="aaoc-sub" style="margin-top:0.85rem;">Model routing examples</p>
+    <ul class="aaoc-list">{% for ex in model_routing_examples %}<li>{{ ex }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="aaoc-section" id="human-approval-queue">
+    <h2 class="aaoc-h2">Human Approval Queue</h2>
+    <p class="aaoc-p">Show tasks waiting for:</p>
+    <div class="aaoc-chip-row">
+      {% for item in human_approval_queue_items %}<span class="aaoc-chip">{{ item }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="aaoc-section" id="failure-debugging">
+    <h2 class="aaoc-h2">Failure and Debugging</h2>
+    <ul class="aaoc-list aaoc-fail-list">{% for item in failure_debug_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="aaoc-sub" id="recovery-actions">Recovery actions</p>
+    <div class="aaoc-chip-row">{% for item in recovery_actions %}<span class="aaoc-chip aaoc-chip-metric">{{ item }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="aaoc-section">
+    <h2 class="aaoc-h2">Example Agent Runs</h2>
+    {% for run in example_agent_runs %}
+    <div class="aaoc-example-card">
+      <div class="aaoc-example-head">
+        <span class="aaoc-example-label">Agent</span>
+        <h3 class="aaoc-example-title">{{ run.agent }}</h3>
+        <span class="aaoc-status-tag">{{ run.status }}</span>
+      </div>
+      <p class="aaoc-p"><strong>{{ run.run_label }}:</strong> {{ run.run_name }}</p>
+      {% if run.input %}
+      <p class="aaoc-p"><strong>Input:</strong> {{ run.input }}</p>
+      {% endif %}
+      <p class="aaoc-sub">{{ run.output_label }}</p>
+      <ul class="aaoc-list">
+        {% for line in run.output %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+      {% if run.blocker %}
+      <p class="aaoc-p"><strong>Blocker:</strong> {{ run.blocker }}</p>
+      {% endif %}
+      {% if run.next_action %}
+      <p class="aaoc-p"><strong>Next action:</strong> {{ run.next_action }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="aaoc-section" id="amanah-morning-briefing">
+    <h2 class="aaoc-h2">Amanah Autopilot Morning Operations Briefing</h2>
+    <p class="aaoc-briefing">"{{ amanah_morning_operations_briefing }}"</p>
+  </section>
+
+  <section class="aaoc-section" id="microsoft-integration">
+    <h2 class="aaoc-h2">Microsoft Integration</h2>
+    <ul class="aaoc-list">{% for item in microsoft_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="aaoc-section">
+    <h2 class="aaoc-h2">No Harm Gate for Agents</h2>
+    <p class="aaoc-p">Before any agent output is used externally, check:</p>
+    <ul class="aaoc-list aaoc-gate-list">
+      {% for item in no_harm_gate_agents_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="aaoc-section">
+    <h2 class="aaoc-h2">Safety and Governance</h2>
+    <ul class="aaoc-list aaoc-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="aaoc-cta-row aaoc-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="aaoc-btn aaoc-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="aaoc-btn aaoc-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --aaoc-bg: #070b0f; --aaoc-bg2: #0d1117; --aaoc-border: rgba(255,255,255,.08);
+    --aaoc-text: #e2e8f0; --aaoc-muted: #94a3b8; --aaoc-acc: #00e89a; --aaoc-info: #58a6ff;
+  }
+  .aaoc-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--aaoc-bg); color: var(--aaoc-text); border-radius: 14px;
+  }
+  .aaoc-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--aaoc-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .aaoc-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .aaoc-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--aaoc-acc); margin: 0 0 1rem; }
+  .aaoc-desc { color: var(--aaoc-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .aaoc-purpose { color: var(--aaoc-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .aaoc-purpose strong { color: var(--aaoc-acc); }
+
+  .aaoc-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .aaoc-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--aaoc-border); }
+  .aaoc-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--aaoc-bg2); color: var(--aaoc-text);
+    border: 1px solid var(--aaoc-border);
+  }
+  .aaoc-btn-primary { background: var(--aaoc-acc); color: #06281f; border-color: var(--aaoc-acc); }
+  .aaoc-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--aaoc-border); }
+  .aaoc-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .aaoc-p { color: var(--aaoc-muted); font-size: 0.9rem; line-height: 1.6; }
+  .aaoc-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .aaoc-list { color: var(--aaoc-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .aaoc-fail-list li, .aaoc-gate-list li, .aaoc-safety-list li { margin-bottom: 0.4rem; }
+
+  .aaoc-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .aaoc-module-card { background: var(--aaoc-bg2); border: 1px solid var(--aaoc-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .aaoc-module-name { font-size: 0.9rem; color: var(--aaoc-info); margin: 0 0 0.4rem; }
+  .aaoc-module-role { color: var(--aaoc-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .aaoc-agent-card { background: var(--aaoc-bg2); border: 1px solid var(--aaoc-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .aaoc-agent-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--aaoc-info); font-weight: 700; }
+  .aaoc-agent-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+  .aaoc-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .aaoc-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .aaoc-chip { background: rgba(88,166,255,.1); color: var(--aaoc-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .aaoc-chip-metric { background: rgba(0,232,154,.1); color: var(--aaoc-acc); border-color: rgba(0,232,154,.25); }
+  .aaoc-chip-status { background: rgba(255,255,255,.07); color: #fff; border-color: var(--aaoc-border); font-weight: 700; }
+
+  .aaoc-example-card { background: var(--aaoc-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .aaoc-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .aaoc-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--aaoc-info); font-weight: 700; }
+  .aaoc-example-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .aaoc-status-tag { margin-left: auto; background: rgba(0,232,154,.12); color: var(--aaoc-acc); border: 1px solid rgba(0,232,154,.3); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+
+  .aaoc-briefing { color: var(--aaoc-text); font-size: 0.9rem; font-style: italic; line-height: 1.7; border-left: 3px solid var(--aaoc-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 640px) {
+    .aaoc-status-tag { margin-left: 0; }
+  }
+</style>
+{% endblock %}

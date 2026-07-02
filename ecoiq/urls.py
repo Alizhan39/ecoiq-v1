@@ -145,6 +145,9 @@ urlpatterns = [
     # EcoIQ Product Analytics & KPI Engine — platform usage, conversion, revenue and impact analytics
     path('product-analytics-kpi-engine/', include('product_analytics_kpi_engine.urls', namespace='product_analytics_kpi_engine')),
 
+    # EcoIQ AI Agent Operations Console — observability and control layer for AI agents
+    path('ai-agent-operations-console/', include('ai_agent_operations_console.urls', namespace='ai_agent_operations_console')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
