@@ -121,6 +121,9 @@ urlpatterns = [
     # EcoIQ API & Integration Layer — API and enterprise integration connectivity layer
     path('api-integration-layer/', include('api_integration_layer.urls', namespace='api_integration_layer')),
 
+    # EcoIQ Data Room & Evidence Vault — investor-grade evidence and due diligence storage
+    path('data-room-evidence-vault/', include('data_room_evidence_vault.urls', namespace='data_room_evidence_vault')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
