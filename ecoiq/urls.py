@@ -127,6 +127,9 @@ urlpatterns = [
     # EcoIQ Portfolio & Country Transition Atlas — country-scale and portfolio-scale transition mapping
     path('portfolio-country-transition-atlas/', include('portfolio_country_transition_atlas.urls', namespace='portfolio_country_transition_atlas')),
 
+    # EcoIQ Executive Briefing & Board Pack Generator — investor, board and government decision-pack generation
+    path('executive-briefing-board-pack-generator/', include('executive_briefing_board_pack_generator.urls', namespace='executive_briefing_board_pack_generator')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
