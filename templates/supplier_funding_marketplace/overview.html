@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Supplier & Funding Marketplace{% endblock %}
+{% block meta_description_content %}EcoIQ Supplier & Funding Marketplace: connect industrial modernisation projects with qualified suppliers, finance routes and implementation partners.{% endblock %}
+
+{% block content %}
+<div class="sfm-wrap">
+
+  <span class="sfm-badge">EcoIQ Platform Module</span>
+  <h1 class="sfm-title">EcoIQ Supplier & Funding Marketplace</h1>
+  <p class="sfm-subtitle">From recommended action to funded implementation.</p>
+  <p class="sfm-desc">
+    EcoIQ Supplier & Funding Marketplace connects industrial modernisation projects with
+    qualified suppliers, finance routes and implementation partners. Once EcoIQ identifies a
+    loss, harm or upgrade opportunity, the marketplace helps users find who can deliver the
+    solution, how it can be financed and what evidence is required to verify impact.
+  </p>
+  <p class="sfm-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="sfm-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="sfm-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="sfm-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">Connected EcoIQ Modules</h2>
+    <div class="sfm-module-grid">
+      {% for m in connected_modules %}
+      <div class="sfm-module-card">
+        <h3 class="sfm-module-name">{{ m.name }}</h3>
+        <p class="sfm-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">Main Workflow</h2>
+    {% for step in main_workflow %}
+    <div class="sfm-step-card">
+      <span class="sfm-step-number">Step {{ step.number }}</span>
+      <h3 class="sfm-step-title">{{ step.title }}</h3>
+      <p class="sfm-p">{{ step.description }}</p>
+      {% if step.items %}
+      <div class="sfm-chip-row">
+        {% for item in step.items %}<span class="sfm-chip">{{ item }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="sfm-section" id="participants">
+    <h2 class="sfm-h2">Marketplace Participants</h2>
+    <div class="sfm-module-grid">
+      {% for p in participant_cards %}
+      <div class="sfm-module-card">
+        <h3 class="sfm-module-name">{{ p.name }}</h3>
+        <p class="sfm-module-role"><strong>For:</strong> {{ p.applies_to }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="sfm-section" id="supplier-matching">
+    <h2 class="sfm-h2">Supplier Matching Fields</h2>
+    <div class="sfm-chip-row">
+      {% for field in supplier_matching_fields %}<span class="sfm-chip">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="sfm-section" id="funding-matching">
+    <h2 class="sfm-h2">Funding Matching Fields</h2>
+    <div class="sfm-chip-row">
+      {% for field in funding_matching_fields %}<span class="sfm-chip sfm-chip-funding">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">Project Matching Score</h2>
+    <div class="sfm-score-grid">
+      <div class="sfm-score-card">
+        <h3 class="sfm-module-name">Supplier Fit Score</h3>
+        <ul class="sfm-list">{% for item in supplier_fit_score %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      <div class="sfm-score-card">
+        <h3 class="sfm-module-name">Funding Fit Score</h3>
+        <ul class="sfm-list">{% for item in funding_fit_score %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">Example Projects</h2>
+    {% for card in example_cards %}
+    <div class="sfm-example-card">
+      <span class="sfm-example-label">Project</span>
+      <h3 class="sfm-example-project">{{ card.project }}</h3>
+
+      <p class="sfm-sub">Recommended solution</p>
+      <ul class="sfm-list sfm-action-list">{% for item in card.recommended_solution %}<li>{{ item }}</li>{% endfor %}</ul>
+
+      {% if card.supplier_shortlist %}
+      <p class="sfm-sub" style="margin-top:0.85rem;">Supplier shortlist</p>
+      <ol class="sfm-list">{% for item in card.supplier_shortlist %}<li>{{ item }}</li>{% endfor %}</ol>
+      {% endif %}
+
+      <p class="sfm-sub" style="margin-top:0.85rem;">Funding routes</p>
+      <ol class="sfm-list">{% for item in card.funding_routes %}<li>{{ item }}</li>{% endfor %}</ol>
+
+      {% if card.ecoiq_output %}
+      <p class="sfm-sub" style="margin-top:0.85rem;">EcoIQ output</p>
+      <ul class="sfm-list">{% for item in card.ecoiq_output %}<li>{{ item }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if card.maqasid_mizan_meaning %}
+      <p class="sfm-meaning"><strong>Maqasid/Mizan meaning:</strong> {{ card.maqasid_mizan_meaning }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">Marketplace Workflow</h2>
+    <div class="sfm-flow">
+      {% for step in marketplace_workflow %}<span class="sfm-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="sfm-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="sfm-section" id="amanah-integration">
+    <h2 class="sfm-h2">Amanah Autopilot Integration</h2>
+    <p class="sfm-p">{{ amanah_integration_intro }}</p>
+    <ul class="sfm-list">
+      {% for item in amanah_integration_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+    <p class="sfm-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">Microsoft Integration</h2>
+    <ul class="sfm-list">
+      {% for item in microsoft_integration %}<li><strong>{{ item.component }}</strong> — {{ item.role }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">No Harm Gate for Marketplace</h2>
+    <p class="sfm-p">Before moving to implementation, check:</p>
+    <ul class="sfm-list sfm-gate-list">
+      {% for question in no_harm_gate_marketplace %}<li>{{ question }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="sfm-section">
+    <h2 class="sfm-h2">Safety and Governance</h2>
+    <ul class="sfm-list sfm-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="sfm-cta-row sfm-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="sfm-btn sfm-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="sfm-btn sfm-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --sfm-bg: #070b0f; --sfm-bg2: #0d1117; --sfm-border: rgba(255,255,255,.08);
+    --sfm-text: #e2e8f0; --sfm-muted: #94a3b8; --sfm-acc: #00e89a; --sfm-info: #58a6ff;
+  }
+  .sfm-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--sfm-bg); color: var(--sfm-text); border-radius: 14px;
+  }
+  .sfm-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--sfm-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .sfm-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .sfm-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--sfm-acc); margin: 0 0 1rem; }
+  .sfm-desc { color: var(--sfm-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .sfm-purpose { color: var(--sfm-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .sfm-purpose strong { color: var(--sfm-acc); }
+
+  .sfm-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .sfm-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--sfm-border); }
+  .sfm-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--sfm-bg2); color: var(--sfm-text);
+    border: 1px solid var(--sfm-border);
+  }
+  .sfm-btn-primary { background: var(--sfm-acc); color: #06281f; border-color: var(--sfm-acc); }
+  .sfm-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--sfm-border); }
+  .sfm-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .sfm-p { color: var(--sfm-muted); font-size: 0.9rem; line-height: 1.6; }
+  .sfm-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0 0 0.4rem; }
+  .sfm-list { color: var(--sfm-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .sfm-action-list li { color: var(--sfm-acc); }
+  .sfm-gate-list li, .sfm-safety-list li { margin-bottom: 0.4rem; }
+
+  .sfm-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .sfm-module-card { background: var(--sfm-bg2); border: 1px solid var(--sfm-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .sfm-module-name { font-size: 0.92rem; color: var(--sfm-info); margin: 0 0 0.4rem; }
+  .sfm-module-role { color: var(--sfm-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .sfm-step-card { background: var(--sfm-bg2); border: 1px solid var(--sfm-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.85rem; }
+  .sfm-step-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sfm-info); font-weight: 700; }
+  .sfm-step-title { font-size: 1rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .sfm-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .sfm-chip { background: rgba(88,166,255,.1); color: var(--sfm-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .sfm-chip-funding { background: rgba(0,232,154,.1); color: var(--sfm-acc); border-color: rgba(0,232,154,.25); }
+
+  .sfm-score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1rem; }
+  .sfm-score-card { background: var(--sfm-bg2); border: 1px solid var(--sfm-border); border-radius: 10px; padding: 1.1rem 1.3rem; }
+
+  .sfm-example-card { background: var(--sfm-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .sfm-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sfm-info); font-weight: 700; }
+  .sfm-example-project { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .sfm-meaning { color: var(--sfm-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .sfm-meaning strong { color: var(--sfm-acc); }
+
+  .sfm-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .sfm-flow-step { background: var(--sfm-bg2); border: 1px solid var(--sfm-border); color: var(--sfm-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+  .sfm-flow-arrow { color: var(--sfm-info); font-weight: 700; }
+
+  .sfm-briefing { margin-top: 1rem; color: var(--sfm-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--sfm-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 720px) {
+    .sfm-score-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}

@@ -115,6 +115,9 @@ INSTALLED_APPS = [
 
     # Reusable industrial modernisation pathways
     'industrial_playbook_library',
+
+    # Supplier and funding matching for financed implementation
+    'supplier_funding_marketplace',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
