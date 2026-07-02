@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ API & Integration Layer{% endblock %}
+{% block meta_description_content %}EcoIQ API & Integration Layer: connect EcoIQ intelligence to Microsoft, sensors, suppliers, funders and external systems.{% endblock %}
+
+{% block content %}
+<div class="ail-wrap">
+
+  <span class="ail-badge">EcoIQ Platform Module</span>
+  <h1 class="ail-title">EcoIQ API & Integration Layer</h1>
+  <p class="ail-subtitle">Connect EcoIQ intelligence to Microsoft, sensors, suppliers, funders and external systems.</p>
+  <p class="ail-desc">
+    EcoIQ API & Integration Layer allows industrial evidence, asset passports, inspections,
+    playbooks, finance models, supplier matches, expert reviews and MRV outcomes to move
+    securely between EcoIQ and external systems. It turns EcoIQ from a standalone platform
+    into an interoperable industrial modernisation operating system.
+  </p>
+  <p class="ail-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="ail-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ail-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ail-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ail-section">
+    <h2 class="ail-h2">Connected EcoIQ Modules</h2>
+    <div class="ail-module-grid">
+      {% for m in connected_modules %}
+      <div class="ail-module-card">
+        <h3 class="ail-module-name">{{ m.name }}</h3>
+        <p class="ail-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ail-section" id="integration-categories">
+    <h2 class="ail-h2">Integration Categories</h2>
+    {% for cat in integration_categories %}
+    <div class="ail-cat-card">
+      <span class="ail-cat-number">Category {{ cat.number }}</span>
+      <h3 class="ail-cat-title">{{ cat.title }}</h3>
+      <p class="ail-sub">Connect to</p>
+      <div class="ail-chip-row">{% for c in cat.connect_to %}<span class="ail-chip">{{ c }}</span>{% endfor %}</div>
+      <p class="ail-sub" style="margin-top:0.85rem;">Use cases</p>
+      <ul class="ail-list">{% for u in cat.use_cases %}<li>{{ u }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ail-section" id="api-endpoints">
+    <h2 class="ail-h2">API Endpoint Examples</h2>
+    <div class="ail-endpoint-grid">
+      {% for grp in api_endpoint_groups %}
+      <div class="ail-endpoint-card">
+        <h3 class="ail-module-name">{{ grp.title }}</h3>
+        <ul class="ail-endpoint-list">{% for e in grp.endpoints %}<li><code>{{ e }}</code></li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ail-section" id="webhook-events">
+    <h2 class="ail-h2">Webhook Events</h2>
+    <div class="ail-chip-row">
+      {% for event in webhook_events %}<span class="ail-chip ail-chip-code"><code>{{ event }}</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ail-section">
+    <h2 class="ail-h2">Integration Workflow</h2>
+    <div class="ail-flow">
+      {% for step in integration_workflow %}<span class="ail-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="ail-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="ail-section">
+    <h2 class="ail-h2">Security and Permissions</h2>
+    <p class="ail-sub">Includes</p>
+    <div class="ail-chip-row">{% for item in security_items %}<span class="ail-chip">{{ item }}</span>{% endfor %}</div>
+    <p class="ail-sub" style="margin-top:0.85rem;">User roles</p>
+    <div class="ail-chip-row">{% for role in user_roles_api %}<span class="ail-chip ail-chip-role">{{ role }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="ail-section">
+    <h2 class="ail-h2">Data Governance Rules</h2>
+    <ul class="ail-list ail-rules-list">
+      {% for rule in data_governance_rules %}<li>{{ rule }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ail-section">
+    <h2 class="ail-h2">Example Integrations</h2>
+    {% for card in example_cards %}
+    <div class="ail-example-card">
+      <span class="ail-example-label">Integration</span>
+      <h3 class="ail-example-title">{{ card.integration }}</h3>
+      <p class="ail-sub">Connected systems</p>
+      <ul class="ail-list">{% for item in card.connected_systems %}<li>{{ item }}</li>{% endfor %}</ul>
+      <p class="ail-result"><strong>Result:</strong> {{ card.result }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ail-section">
+    <h2 class="ail-h2">Microsoft Integration Blueprint</h2>
+    <div class="ail-flow">
+      {% for step in microsoft_blueprint_flow %}<span class="ail-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="ail-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="ail-section" id="developer-experience">
+    <h2 class="ail-h2">Developer Experience</h2>
+    <p class="ail-p">EcoIQ should support:</p>
+    <ul class="ail-list">{% for item in developer_experience_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ail-section">
+    <h2 class="ail-h2">Safety and Governance</h2>
+    <ul class="ail-list ail-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="ail-cta-row ail-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ail-btn ail-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ail-btn ail-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ail-bg: #070b0f; --ail-bg2: #0d1117; --ail-border: rgba(255,255,255,.08);
+    --ail-text: #e2e8f0; --ail-muted: #94a3b8; --ail-acc: #00e89a; --ail-info: #58a6ff;
+  }
+  .ail-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ail-bg); color: var(--ail-text); border-radius: 14px;
+  }
+  .ail-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ail-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ail-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ail-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ail-acc); margin: 0 0 1rem; }
+  .ail-desc { color: var(--ail-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .ail-purpose { color: var(--ail-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .ail-purpose strong { color: var(--ail-acc); }
+
+  .ail-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ail-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ail-border); }
+  .ail-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ail-bg2); color: var(--ail-text);
+    border: 1px solid var(--ail-border);
+  }
+  .ail-btn-primary { background: var(--ail-acc); color: #06281f; border-color: var(--ail-acc); }
+  .ail-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ail-border); }
+  .ail-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ail-p { color: var(--ail-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ail-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .ail-list { color: var(--ail-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ail-rules-list li, .ail-safety-list li { margin-bottom: 0.4rem; }
+
+  .ail-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ail-module-card { background: var(--ail-bg2); border: 1px solid var(--ail-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ail-module-name { font-size: 0.9rem; color: var(--ail-info); margin: 0 0 0.4rem; }
+  .ail-module-role { color: var(--ail-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .ail-cat-card { background: var(--ail-bg2); border: 1px solid var(--ail-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+  .ail-cat-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ail-info); font-weight: 700; }
+  .ail-cat-title { font-size: 1.05rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .ail-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .ail-chip { background: rgba(88,166,255,.1); color: var(--ail-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .ail-chip-code { font-family: 'SF Mono', monospace; background: rgba(0,232,154,.1); color: var(--ail-acc); border-color: rgba(0,232,154,.25); }
+  .ail-chip-role { background: rgba(255,255,255,.06); color: var(--ail-text); border-color: var(--ail-border); }
+  .ail-chip code { color: inherit; }
+
+  .ail-endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ail-endpoint-card { background: var(--ail-bg2); border: 1px solid var(--ail-border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .ail-endpoint-list { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+  .ail-endpoint-list li { margin-bottom: 0.4rem; }
+  .ail-endpoint-list code { background: rgba(255,255,255,.06); color: var(--ail-acc); padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.78rem; }
+
+  .ail-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .ail-flow-step { background: var(--ail-bg2); border: 1px solid var(--ail-border); color: var(--ail-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+  .ail-flow-arrow { color: var(--ail-info); font-weight: 700; }
+
+  .ail-example-card { background: var(--ail-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .ail-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ail-info); font-weight: 700; }
+  .ail-example-title { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .ail-result { color: var(--ail-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .ail-result strong { color: var(--ail-acc); }
+
+  @media (max-width: 720px) {
+    .ail-endpoint-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}

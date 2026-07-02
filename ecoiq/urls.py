@@ -118,6 +118,9 @@ urlpatterns = [
     # EcoIQ Governance & Expert Review Board — human-in-the-loop expert review and approval layer
     path('governance-expert-review-board/', include('governance_expert_review_board.urls', namespace='governance_expert_review_board')),
 
+    # EcoIQ API & Integration Layer — API and enterprise integration connectivity layer
+    path('api-integration-layer/', include('api_integration_layer.urls', namespace='api_integration_layer')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -130,6 +130,9 @@ INSTALLED_APPS = [
 
     # Human-in-the-loop expert review and approval layer
     'governance_expert_review_board',
+
+    # API and enterprise integration connectivity layer
+    'api_integration_layer',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
