@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Governance & Expert Review Board{% endblock %}
+{% block meta_description_content %}EcoIQ Governance & Expert Review Board: a structured human-in-the-loop approval layer for industrial modernisation decisions.{% endblock %}
+
+{% block content %}
+<div class="gerb-wrap">
+
+  <span class="gerb-badge">EcoIQ Platform Module</span>
+  <h1 class="gerb-title">EcoIQ Governance & Expert Review Board</h1>
+  <p class="gerb-subtitle">AI prepares. Experts review. Humans approve.</p>
+  <p class="gerb-desc">
+    EcoIQ Governance & Expert Review Board provides a structured human-in-the-loop approval
+    layer for industrial modernisation. It ensures that AI-generated recommendations are
+    reviewed by qualified technical, financial, environmental, safety, community and
+    Islamic finance experts before implementation, funding or public reporting.
+  </p>
+  <p class="gerb-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="gerb-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="gerb-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="gerb-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="gerb-section">
+    <h2 class="gerb-h2">Connected EcoIQ Modules</h2>
+    <div class="gerb-module-grid">
+      {% for m in connected_modules %}
+      <div class="gerb-module-card">
+        <h3 class="gerb-module-name">{{ m.name }}</h3>
+        <p class="gerb-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="gerb-section" id="review-roles">
+    <h2 class="gerb-h2">Review Roles</h2>
+    {% for role in review_roles %}
+    <div class="gerb-role-card">
+      <span class="gerb-role-number">Role {{ role.number }}</span>
+      <h3 class="gerb-role-title">{{ role.title }}</h3>
+      <p class="gerb-sub">Reviews</p>
+      <div class="gerb-chip-row">{% for r in role.reviews %}<span class="gerb-chip">{{ r }}</span>{% endfor %}</div>
+      {% if role.note %}
+      <p class="gerb-note">{{ role.note }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="gerb-section" id="review-workflow">
+    <h2 class="gerb-h2">Review Workflow</h2>
+    {% for step in review_workflow %}
+    <div class="gerb-step-card">
+      <span class="gerb-role-number">Step {{ step.number }}</span>
+      <h3 class="gerb-role-title">{{ step.title }}</h3>
+      <p class="gerb-p">{{ step.description }}</p>
+      {% if step.items %}
+      <div class="gerb-chip-row">{% for item in step.items %}<span class="gerb-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="gerb-section">
+    <h2 class="gerb-h2">Approval Badges</h2>
+    <div class="gerb-chip-row">
+      {% for badge in approval_badges %}<span class="gerb-chip gerb-chip-badge">{{ badge }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="gerb-section">
+    <h2 class="gerb-h2">Example Reviews</h2>
+    {% for card in example_cards %}
+    <div class="gerb-example-card">
+      <span class="gerb-example-label">Project</span>
+      <h3 class="gerb-example-project">{{ card.project }}</h3>
+
+      <p class="gerb-p"><strong>AI recommendation:</strong> {{ card.ai_recommendation }}</p>
+
+      <p class="gerb-sub" style="margin-top:0.85rem;">Review required</p>
+      <ul class="gerb-list">{% for item in card.review_required %}<li>{{ item }}</li>{% endfor %}</ul>
+
+      <p class="gerb-status"><strong>Status:</strong> {{ card.status }}</p>
+
+      {% if card.no_harm_gate %}
+      <p class="gerb-sub" style="margin-top:0.85rem;">No Harm Gate</p>
+      <ul class="gerb-list gerb-risk-list">{% for item in card.no_harm_gate %}<li>{{ item }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if card.next_action %}
+      <p class="gerb-p" style="margin-top:0.85rem;"><strong>Next action:</strong> {{ card.next_action }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="gerb-section" id="no-harm-gate-review">
+    <h2 class="gerb-h2">No Harm Gate Review</h2>
+    <p class="gerb-p">{{ no_harm_gate_review_intro }}</p>
+    <ul class="gerb-list gerb-gate-list">
+      {% for item in no_harm_gate_review_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="gerb-section" id="responsible-ai-microsoft">
+    <h2 class="gerb-h2">Responsible AI & Microsoft Integration</h2>
+    <p class="gerb-p">{{ responsible_ai_microsoft_intro }}</p>
+    <ul class="gerb-list">
+      {% for item in responsible_ai_microsoft_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="gerb-section">
+    <h2 class="gerb-h2">Review Board Dashboard</h2>
+    <div class="gerb-chip-row">
+      {% for card in review_board_dashboard_cards %}<span class="gerb-chip gerb-chip-badge">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="gerb-section">
+    <h2 class="gerb-h2">Reviewer Table Fields</h2>
+    <div class="gerb-chip-row">
+      {% for field in reviewer_table_fields %}<span class="gerb-chip">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="gerb-section">
+    <h2 class="gerb-h2">Human Approval Required</h2>
+    <p class="gerb-p">{{ human_approval_required_copy }}</p>
+  </section>
+
+  <section class="gerb-section">
+    <h2 class="gerb-h2">Safety and Governance</h2>
+    <ul class="gerb-list gerb-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="gerb-cta-row gerb-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="gerb-btn gerb-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="gerb-btn gerb-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --gerb-bg: #070b0f; --gerb-bg2: #0d1117; --gerb-border: rgba(255,255,255,.08);
+    --gerb-text: #e2e8f0; --gerb-muted: #94a3b8; --gerb-acc: #00e89a; --gerb-info: #58a6ff;
+  }
+  .gerb-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--gerb-bg); color: var(--gerb-text); border-radius: 14px;
+  }
+  .gerb-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--gerb-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .gerb-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .gerb-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--gerb-acc); margin: 0 0 1rem; }
+  .gerb-desc { color: var(--gerb-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .gerb-purpose { color: var(--gerb-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .gerb-purpose strong { color: var(--gerb-acc); }
+
+  .gerb-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .gerb-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--gerb-border); }
+  .gerb-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--gerb-bg2); color: var(--gerb-text);
+    border: 1px solid var(--gerb-border);
+  }
+  .gerb-btn-primary { background: var(--gerb-acc); color: #06281f; border-color: var(--gerb-acc); }
+  .gerb-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--gerb-border); }
+  .gerb-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .gerb-p { color: var(--gerb-muted); font-size: 0.9rem; line-height: 1.6; }
+  .gerb-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .gerb-list { color: var(--gerb-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .gerb-risk-list li { color: #f4a261; }
+  .gerb-gate-list li, .gerb-safety-list li { margin-bottom: 0.4rem; }
+
+  .gerb-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .gerb-module-card { background: var(--gerb-bg2); border: 1px solid var(--gerb-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .gerb-module-name { font-size: 0.9rem; color: var(--gerb-info); margin: 0 0 0.4rem; }
+  .gerb-module-role { color: var(--gerb-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .gerb-role-card, .gerb-step-card { background: var(--gerb-bg2); border: 1px solid var(--gerb-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.85rem; }
+  .gerb-role-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gerb-info); font-weight: 700; }
+  .gerb-role-title { font-size: 1rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+  .gerb-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .gerb-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .gerb-chip { background: rgba(88,166,255,.1); color: var(--gerb-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .gerb-chip-badge { background: rgba(0,232,154,.1); color: var(--gerb-acc); border-color: rgba(0,232,154,.25); }
+
+  .gerb-example-card { background: var(--gerb-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .gerb-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gerb-info); font-weight: 700; }
+  .gerb-example-project { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .gerb-status { color: var(--gerb-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .gerb-status strong { color: var(--gerb-acc); }
+
+  @media (max-width: 720px) {
+    .gerb-module-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
