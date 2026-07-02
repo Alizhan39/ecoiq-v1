@@ -121,6 +121,9 @@ INSTALLED_APPS = [
 
     # Investor-grade financial modelling and decision memos
     'institutional_finance_engine',
+
+    # Mobile-first field inspection and evidence capture
+    'mobile_inspection_mode',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

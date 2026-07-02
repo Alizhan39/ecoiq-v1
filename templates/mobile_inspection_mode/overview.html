@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Mobile / iPad Inspection Mode{% endblock %}
+{% block meta_description_content %}EcoIQ Mobile / iPad Inspection Mode: capture field evidence on iPhone, iPad, Android, Mac or Teams and generate modernisation intelligence instantly.{% endblock %}
+
+{% block content %}
+<div class="mim-wrap">
+
+  <span class="mim-badge">EcoIQ Platform Module</span>
+  <h1 class="mim-title">EcoIQ Mobile / iPad Inspection Mode</h1>
+  <p class="mim-subtitle">Capture evidence on site. Generate modernisation intelligence instantly.</p>
+  <p class="mim-desc">
+    EcoIQ Mobile / iPad Inspection Mode lets field teams inspect boilers, factories, farms,
+    mines, buildings, heat networks and energy assets directly from a mobile device. Users
+    can take photos, record videos, upload bills, capture meter readings, add voice notes
+    and trigger AI agents that create Asset Passports, match playbooks, detect risks,
+    prepare finance logic and start MRV tracking.
+  </p>
+  <p class="mim-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="mim-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="mim-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="mim-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="mim-section">
+    <h2 class="mim-h2">Connected EcoIQ Modules</h2>
+    <div class="mim-module-grid">
+      {% for m in connected_modules %}
+      <div class="mim-module-card">
+        <h3 class="mim-module-name">{{ m.name }}</h3>
+        <p class="mim-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="mim-section" id="primary-workflow">
+    <h2 class="mim-h2">Primary Workflow</h2>
+    {% for step in primary_workflow %}
+    <div class="mim-step-card">
+      <span class="mim-step-number">Step {{ step.number }}</span>
+      <h3 class="mim-step-title">{{ step.title }}</h3>
+      <p class="mim-p">{{ step.description }}</p>
+      {% if step.items %}
+      <div class="mim-chip-row">{% for item in step.items %}<span class="mim-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="mim-section">
+    <h2 class="mim-h2">Mobile Screen Mockups</h2>
+    <div class="mim-screen-grid">
+      {% for screen in mobile_screens %}
+      <div class="mim-screen-card" id="{{ screen.anchor }}">
+        <span class="mim-step-number">Screen {{ screen.number }}</span>
+        <h3 class="mim-step-title">{{ screen.title }}</h3>
+        <p class="mim-sub">{{ screen.label }}</p>
+        <ul class="mim-list">{% for item in screen.items %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="mim-section">
+    <h2 class="mim-h2">Example Inspections</h2>
+    {% for card in example_cards %}
+    <div class="mim-example-card">
+      <span class="mim-example-label">Inspection</span>
+      <h3 class="mim-example-title">{{ card.inspection }}</h3>
+
+      <div class="mim-example-grid">
+        <div>
+          <p class="mim-sub">Captured</p>
+          <ul class="mim-list">{% for item in card.captured %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        <div>
+          <p class="mim-sub">AI findings</p>
+          <ul class="mim-list mim-risk-list">{% for item in card.ai_findings %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+
+      <p class="mim-p" style="margin-top:0.85rem;"><strong>Recommended playbook:</strong> {{ card.recommended_playbook }}</p>
+
+      <p class="mim-sub" style="margin-top:0.85rem;">Next actions</p>
+      <ol class="mim-list">{% for item in card.next_actions %}<li>{{ item }}</li>{% endfor %}</ol>
+
+      {% if card.maqasid_mizan %}
+      <p class="mim-meaning"><strong>Maqasid/Mizan:</strong> {{ card.maqasid_mizan }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="mim-section">
+    <h2 class="mim-h2">Offline / Low-Connectivity Mode</h2>
+    <p class="mim-p">{{ offline_mode_intro }}</p>
+    <ul class="mim-list">{% for item in offline_mode_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="mim-section" id="microsoft-device-workflow">
+    <h2 class="mim-h2">Microsoft Device Workflow</h2>
+    <p class="mim-p">EcoIQ can run on:</p>
+    <ul class="mim-list">{% for item in microsoft_device_workflow %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="mim-sub" style="margin-top:1rem;">Microsoft integration</p>
+    <ul class="mim-list">
+      {% for item in microsoft_integration %}<li><strong>{{ item.component }}</strong> — {{ item.role }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="mim-section">
+    <h2 class="mim-h2">Omnimodal / Gemini Live-Style Inspection</h2>
+    <p class="mim-p">{{ omnimodal_live_inspection_intro }}</p>
+    <ul class="mim-list">{% for item in omnimodal_live_inspection_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="mim-concept-note">{{ omnimodal_live_inspection_note }}</p>
+  </section>
+
+  <section class="mim-section">
+    <h2 class="mim-h2">Field Inspection Checklist</h2>
+    <p class="mim-p">Before leaving the site, user should capture:</p>
+    <ul class="mim-list mim-checklist">
+      {% for item in field_inspection_checklist %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="mim-section">
+    <h2 class="mim-h2">Safety and Governance</h2>
+    <ul class="mim-list mim-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="mim-cta-row mim-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="mim-btn mim-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="mim-btn mim-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --mim-bg: #070b0f; --mim-bg2: #0d1117; --mim-border: rgba(255,255,255,.08);
+    --mim-text: #e2e8f0; --mim-muted: #94a3b8; --mim-acc: #00e89a; --mim-info: #58a6ff;
+  }
+  .mim-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--mim-bg); color: var(--mim-text); border-radius: 14px;
+  }
+  .mim-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--mim-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .mim-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .mim-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--mim-acc); margin: 0 0 1rem; }
+  .mim-desc { color: var(--mim-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .mim-purpose { color: var(--mim-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .mim-purpose strong { color: var(--mim-acc); }
+
+  .mim-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .mim-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--mim-border); }
+  .mim-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--mim-bg2); color: var(--mim-text);
+    border: 1px solid var(--mim-border);
+  }
+  .mim-btn-primary { background: var(--mim-acc); color: #06281f; border-color: var(--mim-acc); }
+  .mim-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--mim-border); }
+  .mim-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .mim-p { color: var(--mim-muted); font-size: 0.9rem; line-height: 1.6; }
+  .mim-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .mim-list { color: var(--mim-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .mim-risk-list li { color: #f4a261; }
+  .mim-safety-list li, .mim-checklist li { margin-bottom: 0.4rem; }
+
+  .mim-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .mim-module-card { background: var(--mim-bg2); border: 1px solid var(--mim-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .mim-module-name { font-size: 0.9rem; color: var(--mim-info); margin: 0 0 0.4rem; }
+  .mim-module-role { color: var(--mim-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .mim-step-card { background: var(--mim-bg2); border: 1px solid var(--mim-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.85rem; }
+  .mim-step-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mim-info); font-weight: 700; }
+  .mim-step-title { font-size: 1rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .mim-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .mim-chip { background: rgba(88,166,255,.1); color: var(--mim-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+
+  .mim-screen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .mim-screen-card { background: var(--mim-bg2); border: 1px solid rgba(0,232,154,.2); border-radius: 10px; padding: 1rem 1.25rem; }
+
+  .mim-example-card { background: var(--mim-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .mim-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mim-info); font-weight: 700; }
+  .mim-example-title { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .mim-example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .mim-meaning { color: var(--mim-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .mim-meaning strong { color: var(--mim-acc); }
+
+  .mim-concept-note { margin-top: 0.85rem; color: var(--mim-info); font-size: 0.82rem; font-style: italic; }
+
+  @media (max-width: 720px) {
+    .mim-example-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
