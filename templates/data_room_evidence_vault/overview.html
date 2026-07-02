@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Data Room & Evidence Vault{% endblock %}
+{% block meta_description_content %}EcoIQ Data Room & Evidence Vault: investor-grade storage for evidence, approvals, reports and verified impact.{% endblock %}
+
+{% block content %}
+<div class="drev-wrap">
+
+  <span class="drev-badge">EcoIQ Platform Module</span>
+  <h1 class="drev-title">EcoIQ Data Room & Evidence Vault</h1>
+  <p class="drev-subtitle">Investor-grade storage for evidence, approvals, reports and verified impact.</p>
+  <p class="drev-desc">
+    EcoIQ Data Room & Evidence Vault securely organises every file, proof, approval and
+    report behind an industrial modernisation project. It gives investors, governments,
+    funders, suppliers and expert reviewers a structured due diligence space where asset
+    evidence, financial models, supplier quotes, MRV records and approval history can be
+    reviewed with permissions, version control and audit trails.
+  </p>
+  <p class="drev-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="drev-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="drev-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="drev-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Connected EcoIQ Modules</h2>
+    <div class="drev-module-grid">
+      {% for m in connected_modules %}
+      <div class="drev-module-card">
+        <h3 class="drev-module-name">{{ m.name }}</h3>
+        <p class="drev-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="drev-section" id="vault-categories">
+    <h2 class="drev-h2">Main Vault Categories</h2>
+    {% for cat in vault_categories %}
+    <div class="drev-cat-card">
+      <span class="drev-cat-number">Category {{ cat.number }}</span>
+      <h3 class="drev-cat-title">{{ cat.title }}</h3>
+      <p class="drev-sub">Stores</p>
+      <div class="drev-chip-row">{% for s in cat.stores %}<span class="drev-chip">{{ s }}</span>{% endfor %}</div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Vault Workflow</h2>
+    {% for step in vault_workflow %}
+    <div class="drev-step-card">
+      <span class="drev-cat-number">Step {{ step.number }}</span>
+      <h3 class="drev-cat-title">{{ step.title }}</h3>
+      <p class="drev-p">{{ step.description }}</p>
+      {% if step.items %}
+      <div class="drev-chip-row">{% for item in step.items %}<span class="drev-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Data Room Dashboard Cards</h2>
+    <div class="drev-chip-row">
+      {% for card in dashboard_cards %}<span class="drev-chip drev-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Document Table Fields</h2>
+    <div class="drev-chip-row">
+      {% for field in document_table_fields %}<span class="drev-chip">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Filters</h2>
+    <div class="drev-chip-row">
+      {% for f in filters %}<span class="drev-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Permission Levels</h2>
+    {% for level in permission_levels %}
+    <div class="drev-permission-card">
+      <span class="drev-cat-number">Level {{ level.number }}</span>
+      <h3 class="drev-cat-title">{{ level.title }}</h3>
+      <p class="drev-p">{{ level.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="drev-section" id="evidence-pack-builder">
+    <h2 class="drev-h2">Evidence Pack Builder</h2>
+    <p class="drev-sub">Users can create</p>
+    <div class="drev-chip-row">{% for t in evidence_pack_types %}<span class="drev-chip drev-chip-metric">{{ t }}</span>{% endfor %}</div>
+    <p class="drev-sub" style="margin-top:0.85rem;">Each pack should include</p>
+    <ul class="drev-list">{% for c in evidence_pack_contents %}<li>{{ c }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Example Projects</h2>
+    {% for card in example_cards %}
+    <div class="drev-example-card">
+      <span class="drev-example-label">Project</span>
+      <h3 class="drev-example-project">{{ card.project }}</h3>
+
+      <p class="drev-sub">Vault contents</p>
+      <ul class="drev-list">{% for item in card.vault_contents %}<li>{{ item }}</li>{% endfor %}</ul>
+
+      <p class="drev-status"><strong>Evidence status:</strong> {{ card.evidence_status }}</p>
+
+      {% if card.generated_pack %}
+      <p class="drev-p" style="margin-top:0.5rem;"><strong>Generated pack:</strong> {{ card.generated_pack }}</p>
+      {% endif %}
+
+      {% if card.next_action %}
+      <p class="drev-p" style="margin-top:0.5rem;"><strong>Next action:</strong> {{ card.next_action }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="drev-section" id="microsoft-integration">
+    <h2 class="drev-h2">Microsoft Integration</h2>
+    <p class="drev-p">EcoIQ Data Room & Evidence Vault can use:</p>
+    <ul class="drev-list">{% for item in microsoft_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">API &amp; Integration Layer Connection</h2>
+    <p class="drev-p">EcoIQ APIs can:</p>
+    <ul class="drev-list">{% for item in api_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="drev-sub" style="margin-top:0.85rem;">API examples</p>
+    <ul class="drev-endpoint-list">{% for e in api_examples %}<li><code>{{ e }}</code></li>{% endfor %}</ul>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Webhook Events</h2>
+    <div class="drev-chip-row">
+      {% for event in webhook_events %}<span class="drev-chip drev-chip-code"><code>{{ event }}</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="drev-section" id="evidence-completeness-score">
+    <h2 class="drev-h2">Evidence Completeness Score</h2>
+    <p class="drev-p">Score should check:</p>
+    <ul class="drev-list">{% for item in evidence_completeness_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Trust &amp; Audit Trail</h2>
+    <p class="drev-p">Every file should store:</p>
+    <div class="drev-chip-row">{% for item in trust_audit_trail_items %}<span class="drev-chip">{{ item }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Amanah Autopilot Integration</h2>
+    <p class="drev-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="drev-list">{% for item in amanah_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="drev-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">No Harm Gate for Evidence</h2>
+    <p class="drev-p">Before sharing or reporting evidence, check:</p>
+    <ul class="drev-list drev-gate-list">
+      {% for item in no_harm_gate_evidence_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="drev-section">
+    <h2 class="drev-h2">Safety and Governance</h2>
+    <ul class="drev-list drev-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="drev-cta-row drev-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="drev-btn drev-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="drev-btn drev-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --drev-bg: #070b0f; --drev-bg2: #0d1117; --drev-border: rgba(255,255,255,.08);
+    --drev-text: #e2e8f0; --drev-muted: #94a3b8; --drev-acc: #00e89a; --drev-info: #58a6ff;
+  }
+  .drev-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--drev-bg); color: var(--drev-text); border-radius: 14px;
+  }
+  .drev-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--drev-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .drev-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .drev-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--drev-acc); margin: 0 0 1rem; }
+  .drev-desc { color: var(--drev-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .drev-purpose { color: var(--drev-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .drev-purpose strong { color: var(--drev-acc); }
+
+  .drev-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .drev-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--drev-border); }
+  .drev-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--drev-bg2); color: var(--drev-text);
+    border: 1px solid var(--drev-border);
+  }
+  .drev-btn-primary { background: var(--drev-acc); color: #06281f; border-color: var(--drev-acc); }
+  .drev-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--drev-border); }
+  .drev-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .drev-p { color: var(--drev-muted); font-size: 0.9rem; line-height: 1.6; }
+  .drev-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .drev-list { color: var(--drev-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .drev-gate-list li, .drev-safety-list li { margin-bottom: 0.4rem; }
+
+  .drev-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .drev-module-card { background: var(--drev-bg2); border: 1px solid var(--drev-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .drev-module-name { font-size: 0.9rem; color: var(--drev-info); margin: 0 0 0.4rem; }
+  .drev-module-role { color: var(--drev-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .drev-cat-card, .drev-step-card, .drev-permission-card { background: var(--drev-bg2); border: 1px solid var(--drev-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .drev-cat-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--drev-info); font-weight: 700; }
+  .drev-cat-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .drev-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .drev-chip { background: rgba(88,166,255,.1); color: var(--drev-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .drev-chip-metric { background: rgba(0,232,154,.1); color: var(--drev-acc); border-color: rgba(0,232,154,.25); }
+  .drev-chip-code { font-family: 'SF Mono', monospace; }
+  .drev-chip code { color: inherit; }
+
+  .drev-endpoint-list { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+  .drev-endpoint-list li { margin-bottom: 0.4rem; }
+  .drev-endpoint-list code { background: rgba(255,255,255,.06); color: var(--drev-acc); padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.78rem; }
+
+  .drev-example-card { background: var(--drev-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .drev-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--drev-info); font-weight: 700; }
+  .drev-example-project { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .drev-status { color: var(--drev-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .drev-status strong { color: var(--drev-acc); }
+
+  .drev-briefing { margin-top: 1rem; color: var(--drev-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--drev-acc); padding-left: 0.85rem; }
+</style>
+{% endblock %}

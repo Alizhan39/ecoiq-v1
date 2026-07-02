@@ -133,6 +133,9 @@ INSTALLED_APPS = [
 
     # API and enterprise integration connectivity layer
     'api_integration_layer',
+
+    # Investor-grade evidence and due diligence storage
+    'data_room_evidence_vault',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
