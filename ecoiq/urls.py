@@ -106,6 +106,9 @@ urlpatterns = [
     # EcoIQ Supplier & Funding Marketplace — supplier and funding matching for financed implementation
     path('supplier-funding-marketplace/', include('supplier_funding_marketplace.urls', namespace='supplier_funding_marketplace')),
 
+    # EcoIQ Institutional Finance Engine — investor-grade financial modelling and decision memos
+    path('institutional-finance-engine/', include('institutional_finance_engine.urls', namespace='institutional_finance_engine')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

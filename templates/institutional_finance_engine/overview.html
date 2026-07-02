@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Institutional Finance Engine{% endblock %}
+{% block meta_description_content %}EcoIQ Institutional Finance Engine: converts industrial evidence into investor-grade financial models and investment-ready decision memos.{% endblock %}
+
+{% block content %}
+<div class="ife-wrap">
+
+  <span class="ife-badge">EcoIQ Platform Module</span>
+  <h1 class="ife-title">EcoIQ Institutional Finance Engine</h1>
+  <p class="ife-subtitle">From industrial evidence to investment-ready decisions.</p>
+  <p class="ife-desc">
+    EcoIQ Institutional Finance Engine converts asset evidence, playbooks, supplier quotes,
+    funding routes and MRV assumptions into investor-grade financial models and decision
+    memos. It helps users evaluate CAPEX, OPEX savings, payback, IRR, NPV, risk-adjusted
+    return, grant fit, CSR fit, Islamic finance fit and Maqasid/Mizan impact before
+    committing capital.
+  </p>
+  <p class="ife-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="ife-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ife-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ife-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ife-section">
+    <h2 class="ife-h2">Connected EcoIQ Modules</h2>
+    <div class="ife-module-grid">
+      {% for m in connected_modules %}
+      <div class="ife-module-card">
+        <h3 class="ife-module-name">{{ m.name }}</h3>
+        <p class="ife-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ife-section">
+    <h2 class="ife-h2">Five Finance Layers</h2>
+    {% for layer in finance_layers %}
+    <div class="ife-layer-card" id="{% if layer.number == 3 %}valuation-layer{% endif %}">
+      <span class="ife-layer-number">Layer {{ layer.number }}</span>
+      <h3 class="ife-layer-title">{{ layer.title }}</h3>
+      <p class="ife-p">{{ layer.purpose }}</p>
+
+      {% if layer.capabilities %}
+      <p class="ife-sub">Capabilities</p>
+      <div class="ife-chip-row">{% for c in layer.capabilities %}<span class="ife-chip">{{ c }}</span>{% endfor %}</div>
+      {% endif %}
+
+      {% if layer.example_good_question %}
+      <div class="ife-example-box">
+        <p class="ife-p">Instead of asking: <em>"{{ layer.example_bad_question }}"</em></p>
+        <p class="ife-p">EcoIQ asks: <strong>"{{ layer.example_good_question }}"</strong></p>
+      </div>
+      {% endif %}
+
+      {% if layer.example_sectors %}
+      <p class="ife-sub">Example sectors</p>
+      <div class="ife-chip-row">{% for s in layer.example_sectors %}<span class="ife-chip">{{ s }}</span>{% endfor %}</div>
+      {% endif %}
+
+      {% if layer.metrics %}
+      <p class="ife-sub">Metrics</p>
+      <div class="ife-chip-row">{% for m in layer.metrics %}<span class="ife-chip ife-chip-metric">{{ m }}</span>{% endfor %}</div>
+      <p class="ife-sub" style="margin-top:0.85rem;">Formulas</p>
+      <div class="ife-formula-cards">
+        {% for f in layer.formulas %}<div class="ife-formula-card">{{ f }}</div>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if layer.scenarios %}
+      <p class="ife-sub">Scenario examples</p>
+      <div class="ife-chip-row">{% for s in layer.scenarios %}<span class="ife-chip">{{ s }}</span>{% endfor %}</div>
+      <p class="ife-sub" style="margin-top:0.85rem;">Modelling workflows</p>
+      <ul class="ife-list">{% for w in layer.workflows %}<li>{{ w }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if layer.outputs %}
+      <p class="ife-sub">Outputs</p>
+      <div class="ife-chip-row">{% for o in layer.outputs %}<span class="ife-chip ife-chip-metric">{{ o }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ife-section" id="financial-decision-cards">
+    <h2 class="ife-h2">Financial Decision Cards</h2>
+    <div class="ife-score-grid">
+      {% for card in financial_decision_cards %}
+      <div class="ife-score-card" {% if card.title == 'Islamic Finance Fit' %}id="islamic-finance-fit"{% endif %}>
+        <h3 class="ife-module-name">{{ card.title }}</h3>
+        <ul class="ife-list">{% for item in card.includes %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% if card.title == 'Islamic Finance Fit' %}
+        <p class="ife-disclaimer">{{ islamic_finance_disclaimer }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ife-section">
+    <h2 class="ife-h2">Example Projects</h2>
+    {% for card in example_cards %}
+    <div class="ife-example-card">
+      <span class="ife-example-label">Project</span>
+      <h3 class="ife-example-project">{{ card.project }}</h3>
+
+      <p class="ife-sub">Evidence</p>
+      <ul class="ife-list ife-risk-list">{% for item in card.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
+
+      {% if card.scenarios %}
+      <div class="ife-scenario-grid">
+        {% for s in card.scenarios %}
+        <div class="ife-scenario-card">
+          <p class="ife-sub">Scenario {{ s.letter }}: {{ s.title }}</p>
+          <ul class="ife-list">{% for d in s.details %}<li>{{ d }}</li>{% endfor %}</ul>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if card.finance_output %}
+      <p class="ife-meaning"><strong>Finance output — recommended pathway:</strong> {{ card.finance_output }}</p>
+      {% endif %}
+
+      {% if card.example_metrics %}
+      <p class="ife-sub" style="margin-top:0.85rem;">Example metrics</p>
+      <div class="ife-chip-row">{% for m in card.example_metrics %}<span class="ife-chip">{{ m }}</span>{% endfor %}</div>
+      {% endif %}
+
+      {% if card.finance_logic %}
+      <p class="ife-meaning"><strong>Finance logic:</strong> {{ card.finance_logic }}</p>
+      {% endif %}
+
+      {% if card.finance_routes %}
+      <p class="ife-sub" style="margin-top:0.85rem;">Finance routes</p>
+      <ol class="ife-list">{% for r in card.finance_routes %}<li>{{ r }}</li>{% endfor %}</ol>
+      {% endif %}
+
+      {% if card.maqasid_mizan_meaning %}
+      <p class="ife-meaning"><strong>Maqasid/Mizan meaning:</strong> {{ card.maqasid_mizan_meaning }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ife-section" id="memo-builder">
+    <h2 class="ife-h2">Institutional Memo Builder</h2>
+    <p class="ife-p">Memo structure:</p>
+    <ol class="ife-list ife-memo-list">
+      {% for item in memo_structure %}<li>{{ item }}</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="ife-section">
+    <h2 class="ife-h2">Finance Workflow</h2>
+    <div class="ife-flow">
+      {% for step in finance_workflow %}<span class="ife-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="ife-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="ife-section">
+    <h2 class="ife-h2">Amanah Autopilot Integration</h2>
+    <p class="ife-p">{{ amanah_integration_intro }}</p>
+    <ul class="ife-list">{% for item in amanah_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ife-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="ife-section" id="microsoft-integration">
+    <h2 class="ife-h2">Microsoft Integration</h2>
+    <ul class="ife-list">
+      {% for item in microsoft_integration %}<li><strong>{{ item.component }}</strong> — {{ item.role }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ife-section">
+    <h2 class="ife-h2">No Harm Gate for Finance</h2>
+    <p class="ife-p">Before financing, check:</p>
+    <ul class="ife-list ife-gate-list">
+      {% for question in no_harm_gate_finance %}<li>{{ question }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ife-section">
+    <h2 class="ife-h2">Safety and Governance</h2>
+    <ul class="ife-list ife-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="ife-cta-row ife-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ife-btn ife-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ife-btn ife-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ife-bg: #070b0f; --ife-bg2: #0d1117; --ife-border: rgba(255,255,255,.08);
+    --ife-text: #e2e8f0; --ife-muted: #94a3b8; --ife-acc: #00e89a; --ife-info: #58a6ff;
+  }
+  .ife-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ife-bg); color: var(--ife-text); border-radius: 14px;
+  }
+  .ife-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ife-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ife-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ife-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ife-acc); margin: 0 0 1rem; }
+  .ife-desc { color: var(--ife-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .ife-purpose { color: var(--ife-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .ife-purpose strong { color: var(--ife-acc); }
+
+  .ife-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ife-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ife-border); }
+  .ife-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ife-bg2); color: var(--ife-text);
+    border: 1px solid var(--ife-border);
+  }
+  .ife-btn-primary { background: var(--ife-acc); color: #06281f; border-color: var(--ife-acc); }
+  .ife-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ife-border); }
+  .ife-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ife-p { color: var(--ife-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ife-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .ife-list { color: var(--ife-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ife-risk-list li { color: #f4a261; }
+  .ife-gate-list li, .ife-safety-list li, .ife-memo-list li { margin-bottom: 0.4rem; }
+
+  .ife-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ife-module-card { background: var(--ife-bg2); border: 1px solid var(--ife-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ife-module-name { font-size: 0.92rem; color: var(--ife-info); margin: 0 0 0.4rem; }
+  .ife-module-role { color: var(--ife-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .ife-layer-card { background: var(--ife-bg2); border: 1px solid var(--ife-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+  .ife-layer-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ife-info); font-weight: 700; }
+  .ife-layer-title { font-size: 1.05rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .ife-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .ife-chip { background: rgba(88,166,255,.1); color: var(--ife-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .ife-chip-metric { background: rgba(0,232,154,.1); color: var(--ife-acc); border-color: rgba(0,232,154,.25); }
+
+  .ife-example-box { background: rgba(0,0,0,.25); border-left: 3px solid var(--ife-info); border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; }
+
+  .ife-formula-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem; margin-top: 0.5rem; }
+  .ife-formula-card { background: rgba(0,0,0,.25); border: 1px solid var(--ife-border); border-radius: 6px; padding: 0.6rem 0.85rem; font-family: 'SF Mono', monospace; font-size: 0.78rem; color: var(--ife-acc); }
+
+  .ife-score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; margin-top: 1rem; }
+  .ife-score-card { background: var(--ife-bg2); border: 1px solid var(--ife-border); border-radius: 10px; padding: 1.1rem 1.3rem; }
+  .ife-disclaimer { margin-top: 0.85rem; color: #f4a261; font-size: 0.78rem; line-height: 1.55; border-top: 1px solid var(--ife-border); padding-top: 0.65rem; }
+
+  .ife-example-card { background: var(--ife-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .ife-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ife-info); font-weight: 700; }
+  .ife-example-project { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .ife-meaning { color: var(--ife-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .ife-meaning strong { color: var(--ife-acc); }
+
+  .ife-scenario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+  .ife-scenario-card { background: rgba(0,0,0,.2); border: 1px solid var(--ife-border); border-radius: 8px; padding: 0.85rem 1rem; }
+
+  .ife-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .ife-flow-step { background: var(--ife-bg2); border: 1px solid var(--ife-border); color: var(--ife-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+  .ife-flow-arrow { color: var(--ife-info); font-weight: 700; }
+
+  .ife-briefing { margin-top: 1rem; color: var(--ife-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--ife-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 720px) {
+    .ife-score-grid, .ife-scenario-grid, .ife-formula-cards { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}

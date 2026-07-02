@@ -118,6 +118,9 @@ INSTALLED_APPS = [
 
     # Supplier and funding matching for financed implementation
     'supplier_funding_marketplace',
+
+    # Investor-grade financial modelling and decision memos
+    'institutional_finance_engine',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
