@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Deployment, DevOps & Reliability Centre{% endblock %}
+{% block meta_description_content %}EcoIQ Deployment, DevOps & Reliability Centre: operate EcoIQ safely with monitoring, backups, releases and incident response.{% endblock %}
+
+{% block content %}
+<div class="ddrc-wrap">
+
+  <span class="ddrc-badge">EcoIQ Platform Module</span>
+  <h1 class="ddrc-title">EcoIQ Deployment, DevOps & Reliability Centre</h1>
+  <p class="ddrc-subtitle">Operate EcoIQ safely with monitoring, backups, releases and incident response.</p>
+  <p class="ddrc-desc">
+    EcoIQ Deployment, DevOps & Reliability Centre gives the team a production-readiness
+    layer for releases, uptime, database health, backups, environment checks, incident
+    response, rollback planning and operational monitoring. It helps EcoIQ become
+    reliable for investors, enterprises, municipalities, suppliers, funders and
+    Microsoft ecosystem partners.
+  </p>
+  <p class="ddrc-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="ddrc-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ddrc-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ddrc-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ddrc-section">
+    <h2 class="ddrc-h2">Connected EcoIQ Modules</h2>
+    <div class="ddrc-module-grid">
+      {% for m in connected_modules %}
+      <div class="ddrc-module-card">
+        <h3 class="ddrc-module-name">{{ m.name }}</h3>
+        <p class="ddrc-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ddrc-section" id="reliability-domains">
+    <h2 class="ddrc-h2">Reliability Domains</h2>
+    {% for d in reliability_domains %}
+    <div class="ddrc-domain-card" id="domain-{{ d.number }}">
+      <span class="ddrc-domain-number">Domain {{ d.number }}</span>
+      <h3 class="ddrc-domain-title">{{ d.title }}</h3>
+      {% for sec in d.sections %}
+      <p class="ddrc-sub">{{ sec.label }}</p>
+      <div class="ddrc-chip-row">{% for item in sec.items %}<span class="ddrc-chip">{{ item }}</span>{% endfor %}</div>
+      {% endfor %}
+      {% if d.note %}
+      <p class="ddrc-note">{{ d.note }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ddrc-section">
+    <h2 class="ddrc-h2">Dashboard Cards</h2>
+    <div class="ddrc-chip-row">
+      {% for card in dashboard_cards %}<span class="ddrc-chip ddrc-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ddrc-section" id="route-verification-table">
+    <h2 class="ddrc-h2">Route Verification Table</h2>
+    <p class="ddrc-sub">Fields</p>
+    <div class="ddrc-chip-row">
+      {% for f in route_table_fields %}<span class="ddrc-chip">{{ f }}</span>{% endfor %}
+    </div>
+    <p class="ddrc-sub" style="margin-top:0.85rem;">Routes tracked</p>
+    <div class="ddrc-chip-row">
+      {% for r in routes_tracked %}<span class="ddrc-chip ddrc-chip-code"><code>{{ r }}</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ddrc-section">
+    <h2 class="ddrc-h2">Example Incidents</h2>
+    {% for inc in example_incidents %}
+    <div class="ddrc-example-card">
+      <div class="ddrc-example-head">
+        <span class="ddrc-example-label">Incident</span>
+        <h3 class="ddrc-example-title">{{ inc.incident }}</h3>
+        <span class="ddrc-severity-tag">{{ inc.severity }}</span>
+      </div>
+      <p class="ddrc-p"><strong>Cause:</strong> {{ inc.cause }}</p>
+      <p class="ddrc-p"><strong>Resolution:</strong> {{ inc.resolution }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ddrc-section">
+    <h2 class="ddrc-h2">Amanah Autopilot for Reliability</h2>
+    <p class="ddrc-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="ddrc-list">{% for item in amanah_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ddrc-briefing"><strong>Morning reliability briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="ddrc-section" id="microsoft-azure-integration">
+    <h2 class="ddrc-h2">Microsoft / Azure Operations Integration</h2>
+    <ul class="ddrc-list">{% for item in microsoft_azure_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ddrc-note">{{ microsoft_azure_wording_note }}</p>
+  </section>
+
+  <section class="ddrc-section">
+    <h2 class="ddrc-h2">No Harm Gate for Reliability</h2>
+    <p class="ddrc-p">Before release or deployment, check:</p>
+    <ul class="ddrc-list ddrc-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ddrc-section">
+    <h2 class="ddrc-h2">Safety and Governance</h2>
+    <ul class="ddrc-list ddrc-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="ddrc-cta-row ddrc-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ddrc-btn ddrc-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ddrc-btn ddrc-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ddrc-bg: #070b0f; --ddrc-bg2: #0d1117; --ddrc-border: rgba(255,255,255,.08);
+    --ddrc-text: #e2e8f0; --ddrc-muted: #94a3b8; --ddrc-acc: #00e89a; --ddrc-info: #58a6ff;
+  }
+  .ddrc-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ddrc-bg); color: var(--ddrc-text); border-radius: 14px;
+  }
+  .ddrc-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ddrc-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ddrc-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ddrc-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ddrc-acc); margin: 0 0 1rem; }
+  .ddrc-desc { color: var(--ddrc-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .ddrc-purpose { color: var(--ddrc-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .ddrc-purpose strong { color: var(--ddrc-acc); }
+
+  .ddrc-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ddrc-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ddrc-border); }
+  .ddrc-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ddrc-bg2); color: var(--ddrc-text);
+    border: 1px solid var(--ddrc-border);
+  }
+  .ddrc-btn-primary { background: var(--ddrc-acc); color: #06281f; border-color: var(--ddrc-acc); }
+  .ddrc-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ddrc-border); }
+  .ddrc-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ddrc-p { color: var(--ddrc-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ddrc-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .ddrc-list { color: var(--ddrc-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ddrc-gate-list li, .ddrc-safety-list li { margin-bottom: 0.4rem; }
+
+  .ddrc-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ddrc-module-card { background: var(--ddrc-bg2); border: 1px solid var(--ddrc-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ddrc-module-name { font-size: 0.9rem; color: var(--ddrc-info); margin: 0 0 0.4rem; }
+  .ddrc-module-role { color: var(--ddrc-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .ddrc-domain-card { background: var(--ddrc-bg2); border: 1px solid var(--ddrc-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .ddrc-domain-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ddrc-info); font-weight: 700; }
+  .ddrc-domain-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+  .ddrc-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .ddrc-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .ddrc-chip { background: rgba(88,166,255,.1); color: var(--ddrc-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .ddrc-chip-metric { background: rgba(0,232,154,.1); color: var(--ddrc-acc); border-color: rgba(0,232,154,.25); }
+  .ddrc-chip-code { font-family: 'SF Mono', monospace; }
+  .ddrc-chip code { color: inherit; }
+
+  .ddrc-example-card { background: var(--ddrc-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .ddrc-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .ddrc-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ddrc-info); font-weight: 700; }
+  .ddrc-example-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .ddrc-severity-tag { margin-left: auto; background: rgba(244,162,97,.12); color: #f4a261; border: 1px solid rgba(244,162,97,.3); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+
+  .ddrc-briefing { margin-top: 1rem; color: var(--ddrc-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--ddrc-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 640px) {
+    .ddrc-severity-tag { margin-left: 0; }
+  }
+</style>
+{% endblock %}
