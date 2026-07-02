@@ -154,6 +154,9 @@ INSTALLED_APPS = [
 
     # Post-sale customer success, health scoring and renewal
     'customer_success_renewal_engine',
+
+    # Platform usage, conversion, revenue and impact analytics
+    'product_analytics_kpi_engine',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
