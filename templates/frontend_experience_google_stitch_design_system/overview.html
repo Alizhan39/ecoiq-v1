@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Frontend Experience & Google Stitch Design System{% endblock %}
+{% block meta_description_content %}EcoIQ Frontend Experience & Google Stitch Design System: a visual, mobile-first, Microsoft-ready interface for industrial intelligence.{% endblock %}
+
+{% block content %}
+<div class="fegs-wrap">
+
+  <span class="fegs-badge">EcoIQ Platform Module</span>
+  <h1 class="fegs-title">EcoIQ Frontend Experience & Google Stitch Design System</h1>
+  <p class="fegs-subtitle">A visual, mobile-first, Microsoft-ready interface for industrial intelligence.</p>
+  <p class="fegs-desc">
+    EcoIQ Frontend Experience & Google Stitch Design System defines how EcoIQ should look,
+    feel and behave across Command Centre dashboards, Asset Passports, Country Atlas maps,
+    Knowledge Graphs, Mobile Inspection, Public Trust Portal, Data Room, MRV, Finance Engine
+    and Microsoft-style enterprise workflows. It uses Google Stitch/Figma-style prototyping
+    for UI concepts and production-ready frontend libraries for implementation.
+  </p>
+  <p class="fegs-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="fegs-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="fegs-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="fegs-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="fegs-section">
+    <h2 class="fegs-h2">Connected EcoIQ Modules</h2>
+    <div class="fegs-module-grid">
+      {% for m in connected_modules %}
+      <div class="fegs-module-card">
+        <h3 class="fegs-module-name">{{ m.name }}</h3>
+        <p class="fegs-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="fegs-section" id="frontend-stacks">
+    <h2 class="fegs-h2">Frontend Library Stack</h2>
+    {% for stack in frontend_stacks %}
+    <div class="fegs-stack-card">
+      <span class="fegs-stack-number">{{ stack.number }}. {{ stack.title }}</span>
+      <div class="fegs-chip-row">{% for item in stack.items %}<span class="fegs-chip">{{ item }}</span>{% endfor %}</div>
+      <p class="fegs-purpose-line"><strong>Purpose:</strong> {{ stack.purpose }}</p>
+      {% if stack.note %}
+      <p class="fegs-note">{{ stack.note }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fegs-section">
+    <h2 class="fegs-h2">Visual Style</h2>
+    <div class="fegs-chip-row">
+      {% for s in visual_style %}<span class="fegs-chip fegs-chip-style">{{ s }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="fegs-section">
+    <h2 class="fegs-h2">Design Principles</h2>
+    {% for p in design_principles %}
+    <div class="fegs-principle-card">
+      <span class="fegs-stack-number">{{ p.number }}. {{ p.title }}</span>
+      <p class="fegs-p">{{ p.description }}</p>
+      {% if p.items %}
+      <ul class="fegs-list">{% for item in p.items %}<li>{{ item }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fegs-section">
+    <h2 class="fegs-h2">Main UI Screens</h2>
+    {% for screen in ui_screens %}
+    <div class="fegs-node-card" id="screen-{{ screen.number }}">
+      <span class="fegs-stack-number">Screen {{ screen.number }}</span>
+      <h3 class="fegs-node-title">{{ screen.title }}</h3>
+      <ul class="fegs-list">{% for item in screen.items %}<li>{{ item }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fegs-section" id="stitch-prompts">
+    <h2 class="fegs-h2">Google Stitch Prompt Library</h2>
+    <p class="fegs-p">Copyable prompt blocks for fast UI concepting in Google Stitch:</p>
+    {% for prompt in stitch_prompts %}
+    <div class="fegs-prompt-card">
+      <span class="fegs-stack-number">Prompt {{ prompt.number }}: {{ prompt.title }}</span>
+      <pre class="fegs-prompt-text">{{ prompt.prompt }}</pre>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fegs-section" id="microsoft-partner-frontend-pack">
+    <h2 class="fegs-h2">Microsoft Partner Frontend Pack</h2>
+    <ul class="fegs-list">{% for item in microsoft_partner_pack_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="fegs-section">
+    <h2 class="fegs-h2">Frontend Process Improvement</h2>
+    <p class="fegs-p">The design system should improve the whole EcoIQ process by:</p>
+    <ul class="fegs-list">{% for item in frontend_process_improvement_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="fegs-section">
+    <h2 class="fegs-h2">UX Quality Checklist</h2>
+    <ul class="fegs-list fegs-gate-list">
+      {% for item in ux_quality_checklist %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="fegs-section">
+    <h2 class="fegs-h2">Safety and Governance</h2>
+    <ul class="fegs-list fegs-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="fegs-cta-row fegs-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="fegs-btn fegs-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="fegs-btn fegs-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --fegs-bg: #070b0f; --fegs-bg2: #0d1117; --fegs-border: rgba(255,255,255,.08);
+    --fegs-text: #e2e8f0; --fegs-muted: #94a3b8; --fegs-acc: #00e89a; --fegs-info: #58a6ff;
+  }
+  .fegs-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--fegs-bg); color: var(--fegs-text); border-radius: 14px;
+  }
+  .fegs-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--fegs-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .fegs-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .fegs-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--fegs-acc); margin: 0 0 1rem; }
+  .fegs-desc { color: var(--fegs-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .fegs-purpose { color: var(--fegs-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .fegs-purpose strong { color: var(--fegs-acc); }
+
+  .fegs-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .fegs-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--fegs-border); }
+  .fegs-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--fegs-bg2); color: var(--fegs-text);
+    border: 1px solid var(--fegs-border);
+  }
+  .fegs-btn-primary { background: var(--fegs-acc); color: #06281f; border-color: var(--fegs-acc); }
+  .fegs-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--fegs-border); }
+  .fegs-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .fegs-p { color: var(--fegs-muted); font-size: 0.9rem; line-height: 1.6; }
+  .fegs-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .fegs-list { color: var(--fegs-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .fegs-gate-list li, .fegs-safety-list li { margin-bottom: 0.4rem; }
+  .fegs-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+  .fegs-purpose-line { margin-top: 0.85rem; color: var(--fegs-text); font-size: 0.85rem; line-height: 1.6; }
+  .fegs-purpose-line strong { color: var(--fegs-acc); }
+
+  .fegs-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .fegs-module-card { background: var(--fegs-bg2); border: 1px solid var(--fegs-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .fegs-module-name { font-size: 0.9rem; color: var(--fegs-info); margin: 0 0 0.4rem; }
+  .fegs-module-role { color: var(--fegs-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .fegs-stack-card, .fegs-principle-card, .fegs-node-card, .fegs-prompt-card {
+    background: var(--fegs-bg2); border: 1px solid var(--fegs-border); border-radius: 10px;
+    padding: 1.1rem 1.4rem; margin-bottom: 0.85rem;
+  }
+  .fegs-stack-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fegs-info); font-weight: 700; }
+  .fegs-node-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .fegs-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .fegs-chip { background: rgba(88,166,255,.1); color: var(--fegs-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .fegs-chip-style { background: rgba(0,232,154,.1); color: var(--fegs-acc); border-color: rgba(0,232,154,.25); }
+
+  .fegs-prompt-text {
+    white-space: pre-wrap; word-break: break-word; background: var(--fegs-bg);
+    border: 1px solid var(--fegs-border); border-radius: 8px; padding: 1rem;
+    margin-top: 0.6rem; font-family: 'SF Mono', monospace; font-size: 0.78rem;
+    color: var(--fegs-text); line-height: 1.6;
+  }
+</style>
+{% endblock %}

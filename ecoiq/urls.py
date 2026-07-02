@@ -157,6 +157,9 @@ urlpatterns = [
     # EcoIQ Knowledge Graph & Relationship Map — connected relationship graph across assets, evidence and impact
     path('knowledge-graph-relationship-map/', include('knowledge_graph_relationship_map.urls', namespace='knowledge_graph_relationship_map')),
 
+    # EcoIQ Frontend Experience & Google Stitch Design System — visual design system and frontend library stack
+    path('frontend-experience-google-stitch-design-system/', include('frontend_experience_google_stitch_design_system.urls', namespace='frontend_experience_google_stitch_design_system')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

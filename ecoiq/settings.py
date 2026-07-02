@@ -169,6 +169,9 @@ INSTALLED_APPS = [
 
     # Connected relationship graph across assets, evidence and impact
     'knowledge_graph_relationship_map',
+
+    # Visual design system, frontend library stack and Google Stitch prompt library
+    'frontend_experience_google_stitch_design_system',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
