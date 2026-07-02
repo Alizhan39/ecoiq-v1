@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Command Centre{% endblock %}
+{% block meta_description_content %}EcoIQ Command Centre: one dashboard for industrial modernisation, finance and verified impact across every project in the pipeline.{% endblock %}
+
+{% block content %}
+<div class="cc-wrap">
+
+  <span class="cc-badge">EcoIQ Platform Module</span>
+  <h1 class="cc-title">EcoIQ Command Centre</h1>
+  <p class="cc-subtitle">One dashboard for industrial modernisation, finance and verified impact.</p>
+  <p class="cc-desc">
+    EcoIQ Command Centre gives investors, governments, industrial companies and project
+    teams a single operational view of every modernisation opportunity. It tracks assets
+    from first inspection to diagnosis, playbook matching, finance preparation, supplier
+    selection, implementation and MRV-verified impact.
+  </p>
+  <p class="cc-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="cc-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="cc-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="cc-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="cc-section">
+    <h2 class="cc-h2">Connected EcoIQ Modules</h2>
+    <div class="cc-module-grid">
+      {% for m in connected_modules %}
+      <div class="cc-module-card">
+        <h3 class="cc-module-name">{{ m.name }}</h3>
+        <p class="cc-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="cc-section">
+    <h2 class="cc-h2">Pipeline Stages</h2>
+    {% for stage in pipeline_stages %}
+    <div class="cc-stage-card">
+      <span class="cc-stage-number">Stage {{ stage.number }}</span>
+      <h3 class="cc-stage-title">{{ stage.title }}</h3>
+      <p class="cc-p">{{ stage.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="cc-section" id="dashboard-summary">
+    <h2 class="cc-h2">Dashboard Summary Cards</h2>
+    <div class="cc-chip-row">
+      {% for card in dashboard_summary_cards %}<span class="cc-chip cc-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="cc-section" id="project-table">
+    <h2 class="cc-h2">Project Table Fields</h2>
+    <div class="cc-chip-row">
+      {% for field in project_table_fields %}<span class="cc-chip">{{ field }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="cc-section" id="filters">
+    <h2 class="cc-h2">Filters</h2>
+    <div class="cc-chip-row">
+      {% for f in filters %}<span class="cc-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="cc-section">
+    <h2 class="cc-h2">Map View</h2>
+    <p class="cc-p">{{ map_view_intro }}</p>
+    <div class="cc-chip-row">{% for a in map_view_asset_types %}<span class="cc-chip">{{ a }}</span>{% endfor %}</div>
+    <p class="cc-sub" style="margin-top:0.85rem;">Map markers should show</p>
+    <div class="cc-chip-row">{% for m in map_view_marker_shows %}<span class="cc-chip cc-chip-metric">{{ m }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="cc-section" id="kanban-view">
+    <h2 class="cc-h2">Kanban View</h2>
+    <div class="cc-kanban-row">
+      {% for col in kanban_columns %}<span class="cc-kanban-col">{{ col }}</span>{% endfor %}
+    </div>
+    <p class="cc-sub" style="margin-top:0.85rem;">Each card shows</p>
+    <div class="cc-chip-row">{% for c in kanban_card_shows %}<span class="cc-chip">{{ c }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="cc-section" id="morning-briefing">
+    <h2 class="cc-h2">Morning Command Briefing</h2>
+    <p class="cc-p">Amanah Autopilot overnight summary:</p>
+    <ul class="cc-list">{% for item in morning_briefing_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="cc-briefing"><strong>Example:</strong> "{{ morning_briefing_example }}"</p>
+  </section>
+
+  <section class="cc-section">
+    <h2 class="cc-h2">Example Projects</h2>
+    <div class="cc-project-grid">
+      {% for p in example_projects %}
+      <div class="cc-project-card">
+        <h3 class="cc-project-name">{{ p.project }}</h3>
+        <p class="cc-stage-tag">{{ p.stage }}</p>
+        <p class="cc-p"><strong>Playbook:</strong> {{ p.playbook }}</p>
+        {% if p.details %}
+        <ul class="cc-list">{% for d in p.details %}<li>{{ d }}</li>{% endfor %}</ul>
+        {% endif %}
+        <p class="cc-next-action"><strong>Next action:</strong> {{ p.next_action }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="cc-section" id="microsoft-integration">
+    <h2 class="cc-h2">Microsoft Integration</h2>
+    <ul class="cc-list">
+      {% for item in microsoft_integration %}<li><strong>{{ item.component }}</strong> — {{ item.role }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="cc-section">
+    <h2 class="cc-h2">User Roles</h2>
+    <div class="cc-module-grid">
+      {% for r in user_roles %}
+      <div class="cc-module-card">
+        <h3 class="cc-module-name">{{ r.role }}</h3>
+        <ul class="cc-list">{% for s in r.sees %}<li>{{ s }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="cc-section">
+    <h2 class="cc-h2">Decision Rules</h2>
+    <p class="cc-p">Prioritisation logic:</p>
+    <ul class="cc-list cc-rules-list">
+      {% for rule in decision_rules %}<li>{{ rule }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="cc-section" id="no-harm-gate-alerts">
+    <h2 class="cc-h2">No Harm Gate Alerts</h2>
+    <p class="cc-p">Flag projects when:</p>
+    <ul class="cc-list cc-alert-list">
+      {% for alert in no_harm_gate_alerts %}<li>{{ alert }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="cc-section">
+    <h2 class="cc-h2">Safety and Governance</h2>
+    <ul class="cc-list cc-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="cc-cta-row cc-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="cc-btn cc-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="cc-btn cc-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --cc-bg: #070b0f; --cc-bg2: #0d1117; --cc-border: rgba(255,255,255,.08);
+    --cc-text: #e2e8f0; --cc-muted: #94a3b8; --cc-acc: #00e89a; --cc-info: #58a6ff;
+  }
+  .cc-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--cc-bg); color: var(--cc-text); border-radius: 14px;
+  }
+  .cc-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--cc-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .cc-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .cc-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--cc-acc); margin: 0 0 1rem; }
+  .cc-desc { color: var(--cc-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .cc-purpose { color: var(--cc-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .cc-purpose strong { color: var(--cc-acc); }
+
+  .cc-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .cc-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--cc-border); }
+  .cc-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--cc-bg2); color: var(--cc-text);
+    border: 1px solid var(--cc-border);
+  }
+  .cc-btn-primary { background: var(--cc-acc); color: #06281f; border-color: var(--cc-acc); }
+  .cc-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--cc-border); }
+  .cc-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .cc-p { color: var(--cc-muted); font-size: 0.9rem; line-height: 1.6; }
+  .cc-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .cc-list { color: var(--cc-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .cc-rules-list li, .cc-alert-list li, .cc-safety-list li { margin-bottom: 0.4rem; }
+  .cc-alert-list li { color: #f4a261; }
+
+  .cc-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .cc-module-card { background: var(--cc-bg2); border: 1px solid var(--cc-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .cc-module-name { font-size: 0.9rem; color: var(--cc-info); margin: 0 0 0.4rem; }
+  .cc-module-role { color: var(--cc-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .cc-stage-card { background: var(--cc-bg2); border: 1px solid var(--cc-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.85rem; }
+  .cc-stage-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--cc-info); font-weight: 700; }
+  .cc-stage-title { font-size: 1rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .cc-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .cc-chip { background: rgba(88,166,255,.1); color: var(--cc-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .cc-chip-metric { background: rgba(0,232,154,.1); color: var(--cc-acc); border-color: rgba(0,232,154,.25); }
+
+  .cc-kanban-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+  .cc-kanban-col { background: var(--cc-bg2); border: 1px solid var(--cc-border); color: var(--cc-text); padding: 0.5rem 0.85rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; }
+
+  .cc-briefing { margin-top: 1rem; color: var(--cc-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--cc-acc); padding-left: 0.85rem; }
+
+  .cc-project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; margin-top: 1rem; }
+  .cc-project-card { background: var(--cc-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.25rem 1.4rem; }
+  .cc-project-name { font-size: 1rem; color: #fff; margin: 0 0 0.4rem; }
+  .cc-stage-tag { display: inline-block; background: rgba(0,232,154,.12); color: var(--cc-acc); border: 1px solid rgba(0,232,154,.3); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .cc-next-action { color: var(--cc-text); font-size: 0.82rem; line-height: 1.55; margin-top: 0.75rem; }
+  .cc-next-action strong { color: var(--cc-info); }
+
+  @media (max-width: 720px) {
+    .cc-project-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}

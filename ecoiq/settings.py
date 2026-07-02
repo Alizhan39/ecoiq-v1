@@ -124,6 +124,9 @@ INSTALLED_APPS = [
 
     # Mobile-first field inspection and evidence capture
     'mobile_inspection_mode',
+
+    # Central operational view of the modernisation project pipeline
+    'command_centre',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
