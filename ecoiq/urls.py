@@ -151,6 +151,9 @@ urlpatterns = [
     # EcoIQ Security, Privacy & Compliance Centre — security, privacy and compliance governance layer
     path('security-privacy-compliance-centre/', include('security_privacy_compliance_centre.urls', namespace='security_privacy_compliance_centre')),
 
+    # EcoIQ Deployment, DevOps & Reliability Centre — production readiness, monitoring and incident response
+    path('deployment-devops-reliability-centre/', include('deployment_devops_reliability_centre.urls', namespace='deployment_devops_reliability_centre')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -163,6 +163,9 @@ INSTALLED_APPS = [
 
     # Security, privacy and compliance governance layer
     'security_privacy_compliance_centre',
+
+    # Production readiness, monitoring and incident response
+    'deployment_devops_reliability_centre',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
