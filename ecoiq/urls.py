@@ -142,6 +142,9 @@ urlpatterns = [
     # EcoIQ Customer Success & Renewal Engine — post-sale customer success, health scoring and renewal
     path('customer-success-renewal-engine/', include('customer_success_renewal_engine.urls', namespace='customer_success_renewal_engine')),
 
+    # EcoIQ Product Analytics & KPI Engine — platform usage, conversion, revenue and impact analytics
+    path('product-analytics-kpi-engine/', include('product_analytics_kpi_engine.urls', namespace='product_analytics_kpi_engine')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

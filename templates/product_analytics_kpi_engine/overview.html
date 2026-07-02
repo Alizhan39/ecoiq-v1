@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Product Analytics & KPI Engine{% endblock %}
+{% block meta_description_content %}EcoIQ Product Analytics & KPI Engine: track usage, conversion, revenue, impact and product performance.{% endblock %}
+
+{% block content %}
+<div class="pake-wrap">
+
+  <span class="pake-badge">EcoIQ Platform Module</span>
+  <h1 class="pake-title">EcoIQ Product Analytics & KPI Engine</h1>
+  <p class="pake-subtitle">Track usage, conversion, revenue, impact and product performance.</p>
+  <p class="pake-desc">
+    EcoIQ Product Analytics & KPI Engine helps the EcoIQ team understand what is working
+    across the platform. It tracks user behaviour, module adoption, scan-to-sale
+    conversion, Asset Passport completion, MRV progress, report revenue, country
+    pipeline, customer health, partner activity and verified impact performance.
+  </p>
+  <p class="pake-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="pake-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="pake-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="pake-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="pake-section">
+    <h2 class="pake-h2">Connected EcoIQ Modules</h2>
+    <div class="pake-module-grid">
+      {% for m in connected_modules %}
+      <div class="pake-module-card">
+        <h3 class="pake-module-name">{{ m.name }}</h3>
+        <p class="pake-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="pake-section">
+    <h2 class="pake-h2">Analytics Categories</h2>
+    {% for cat in analytics_categories %}
+    <div class="pake-cat-card" id="category-{{ cat.number }}">
+      <span class="pake-cat-number">Category {{ cat.number }}</span>
+      <h3 class="pake-cat-title">{{ cat.title }}</h3>
+      {% if cat.track %}
+      <p class="pake-sub">Track</p>
+      <div class="pake-chip-row">{% for item in cat.track %}<span class="pake-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+      {% if cat.funnel %}
+      <p class="pake-sub">Track funnel</p>
+      <div class="pake-flow">
+        {% for step in cat.funnel %}<span class="pake-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="pake-flow-arrow">→</span>{% endif %}{% endfor %}
+      </div>
+      <p class="pake-sub" style="margin-top:0.85rem;">Metrics</p>
+      <div class="pake-chip-row">{% for m in cat.metrics %}<span class="pake-chip pake-chip-metric">{{ m }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="pake-section" id="kpi-dashboard-cards">
+    <h2 class="pake-h2">KPI Dashboard Cards</h2>
+    <div class="pake-chip-row">
+      {% for card in kpi_dashboard_cards %}<span class="pake-chip pake-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pake-section" id="module-performance-table">
+    <h2 class="pake-h2">Module Performance Table Fields</h2>
+    <div class="pake-chip-row">
+      {% for f in module_performance_fields %}<span class="pake-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pake-section">
+    <h2 class="pake-h2">Event Tracking Examples</h2>
+    <div class="pake-chip-row">
+      {% for event in event_tracking_examples %}<span class="pake-chip pake-chip-code"><code>{{ event }}</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="pake-section" id="funnel-dashboard">
+    <h2 class="pake-h2">Funnel Dashboard</h2>
+    <div class="pake-flow">
+      {% for stage in funnel_stages %}<span class="pake-flow-step">{{ stage }}</span>{% if not forloop.last %}<span class="pake-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+    <p class="pake-sub" style="margin-top:0.85rem;">For each stage show</p>
+    <div class="pake-chip-row">{% for s in funnel_shows %}<span class="pake-chip">{{ s }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="pake-section">
+    <h2 class="pake-h2">Example Insights</h2>
+    {% for insight in example_insights %}
+    <div class="pake-insight-card">
+      <span class="pake-cat-number">Insight {{ insight.number }}</span>
+      <p class="pake-p">{{ insight.insight }}</p>
+      <p class="pake-action"><strong>Recommended action:</strong> {{ insight.recommended_action }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="pake-section" id="amanah-analytics">
+    <h2 class="pake-h2">Amanah Autopilot for Analytics</h2>
+    <p class="pake-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="pake-list">{% for item in amanah_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="pake-briefing"><strong>Morning KPI briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="pake-section" id="microsoft-powerbi-integration">
+    <h2 class="pake-h2">Microsoft / Power BI Integration</h2>
+    <ul class="pake-list">{% for item in microsoft_powerbi_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="pake-section">
+    <h2 class="pake-h2">No Harm Gate for Analytics</h2>
+    <p class="pake-p">Before using analytics for decisions, check:</p>
+    <ul class="pake-list pake-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="pake-section">
+    <h2 class="pake-h2">Safety and Governance</h2>
+    <ul class="pake-list pake-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="pake-cta-row pake-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="pake-btn pake-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="pake-btn pake-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --pake-bg: #070b0f; --pake-bg2: #0d1117; --pake-border: rgba(255,255,255,.08);
+    --pake-text: #e2e8f0; --pake-muted: #94a3b8; --pake-acc: #00e89a; --pake-info: #58a6ff;
+  }
+  .pake-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--pake-bg); color: var(--pake-text); border-radius: 14px;
+  }
+  .pake-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--pake-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .pake-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .pake-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--pake-acc); margin: 0 0 1rem; }
+  .pake-desc { color: var(--pake-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .pake-purpose { color: var(--pake-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .pake-purpose strong { color: var(--pake-acc); }
+
+  .pake-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .pake-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--pake-border); }
+  .pake-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--pake-bg2); color: var(--pake-text);
+    border: 1px solid var(--pake-border);
+  }
+  .pake-btn-primary { background: var(--pake-acc); color: #06281f; border-color: var(--pake-acc); }
+  .pake-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--pake-border); }
+  .pake-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .pake-p { color: var(--pake-muted); font-size: 0.9rem; line-height: 1.6; }
+  .pake-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .pake-list { color: var(--pake-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .pake-gate-list li, .pake-safety-list li { margin-bottom: 0.4rem; }
+
+  .pake-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .pake-module-card { background: var(--pake-bg2); border: 1px solid var(--pake-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .pake-module-name { font-size: 0.9rem; color: var(--pake-info); margin: 0 0 0.4rem; }
+  .pake-module-role { color: var(--pake-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .pake-cat-card, .pake-insight-card { background: var(--pake-bg2); border: 1px solid var(--pake-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .pake-cat-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pake-info); font-weight: 700; }
+  .pake-cat-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .pake-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .pake-chip { background: rgba(88,166,255,.1); color: var(--pake-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .pake-chip-metric { background: rgba(0,232,154,.1); color: var(--pake-acc); border-color: rgba(0,232,154,.25); }
+  .pake-chip-code { font-family: 'SF Mono', monospace; }
+  .pake-chip code { color: inherit; }
+
+  .pake-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+  .pake-flow-step { background: var(--pake-bg2); border: 1px solid var(--pake-border); color: var(--pake-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+  .pake-flow-arrow { color: var(--pake-info); font-weight: 700; }
+
+  .pake-action { color: var(--pake-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.6rem; }
+  .pake-action strong { color: var(--pake-acc); }
+
+  .pake-briefing { margin-top: 1rem; color: var(--pake-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--pake-acc); padding-left: 0.85rem; }
+</style>
+{% endblock %}
