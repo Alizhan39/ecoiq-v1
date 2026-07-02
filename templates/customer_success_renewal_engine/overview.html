@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Customer Success & Renewal Engine{% endblock %}
+{% block meta_description_content %}EcoIQ Customer Success & Renewal Engine: turn pilots into renewals, expansion and verified long-term impact.{% endblock %}
+
+{% block content %}
+<div class="csre-wrap">
+
+  <span class="csre-badge">EcoIQ Platform Module</span>
+  <h1 class="csre-title">EcoIQ Customer Success & Renewal Engine</h1>
+  <p class="csre-subtitle">Turn pilots into renewals, expansion and verified long-term impact.</p>
+  <p class="csre-desc">
+    EcoIQ Customer Success & Renewal Engine helps project owners, municipalities,
+    investors, suppliers and sponsors get value after purchase. It tracks onboarding,
+    module usage, evidence completeness, MRV progress, report delivery, stakeholder
+    reviews, renewal readiness and expansion opportunities across every account.
+  </p>
+  <p class="csre-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="csre-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="csre-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="csre-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Connected EcoIQ Modules</h2>
+    <div class="csre-module-grid">
+      {% for m in connected_modules %}
+      <div class="csre-module-card">
+        <h3 class="csre-module-name">{{ m.name }}</h3>
+        <p class="csre-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Customer Lifecycle Stages</h2>
+    {% for stage in lifecycle_stages %}
+    <div class="csre-stage-card" id="stage-{{ stage.number }}">
+      <span class="csre-stage-number">Stage {{ stage.number }}</span>
+      <h3 class="csre-stage-title">{{ stage.title }}</h3>
+      <p class="csre-p">{{ stage.description }}</p>
+      {% if stage.items %}
+      <div class="csre-chip-row">{% for item in stage.items %}<span class="csre-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="csre-section" id="account-health-score">
+    <h2 class="csre-h2">Account Health Score</h2>
+    <div class="csre-chip-row">
+      {% for item in health_score_items %}<span class="csre-chip">{{ item }}</span>{% endfor %}
+    </div>
+    <p class="csre-sub" style="margin-top:0.85rem;">Health labels</p>
+    <div class="csre-chip-row">
+      {% for label in health_labels %}<span class="csre-chip csre-chip-badge">{{ label }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="csre-section" id="renewal-risk-signals">
+    <h2 class="csre-h2">Renewal Risk Signals</h2>
+    <ul class="csre-list csre-risk-list">
+      {% for item in renewal_risk_signals %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="csre-section" id="expansion-signals">
+    <h2 class="csre-h2">Expansion Signals</h2>
+    <ul class="csre-list csre-expansion-list">
+      {% for item in expansion_signals %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="csre-section" id="dashboard-cards">
+    <h2 class="csre-h2">Customer Success Dashboard Cards</h2>
+    <div class="csre-chip-row">
+      {% for card in dashboard_cards %}<span class="csre-chip csre-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Account Table Fields</h2>
+    <div class="csre-chip-row">
+      {% for f in account_table_fields %}<span class="csre-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Customer Types</h2>
+    <div class="csre-chip-row">
+      {% for t in customer_types %}<span class="csre-chip">{{ t }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Customer Success Playbooks</h2>
+    {% for p in playbooks %}
+    <div class="csre-stage-card" id="playbook-{{ p.number }}">
+      <span class="csre-stage-number">Playbook {{ p.number }}</span>
+      <h3 class="csre-stage-title">{{ p.title }}</h3>
+      <ol class="csre-list">{% for step in p.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Example Accounts</h2>
+    {% for a in example_accounts %}
+    <div class="csre-example-card">
+      <div class="csre-example-head">
+        <span class="csre-example-label">Account</span>
+        <h3 class="csre-example-title">{{ a.account }}</h3>
+        <span class="csre-health-tag">{{ a.health }}</span>
+      </div>
+      <p class="csre-p"><strong>Package:</strong> {{ a.package }}</p>
+      {% if a.issue %}
+      <p class="csre-p"><strong>Issue:</strong> {{ a.issue }}</p>
+      {% endif %}
+      {% if a.value_delivered %}
+      <p class="csre-p"><strong>Value delivered:</strong> {{ a.value_delivered }}</p>
+      {% endif %}
+      <p class="csre-p"><strong>Next action:</strong> {{ a.next_action }}</p>
+      {% if a.expansion_opportunity %}
+      <p class="csre-p"><strong>Expansion opportunity:</strong> {{ a.expansion_opportunity }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Amanah Autopilot for Customer Success</h2>
+    <p class="csre-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="csre-list">{% for item in amanah_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="csre-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="csre-section" id="microsoft-dynamics-integration">
+    <h2 class="csre-h2">Microsoft / Dynamics Integration</h2>
+    <ul class="csre-list">{% for item in microsoft_dynamics_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="csre-section" id="value-review-summary">
+    <h2 class="csre-h2">Value Review Summary</h2>
+    <p class="csre-p">For each account generate:</p>
+    <div class="csre-chip-row">
+      {% for item in value_review_summary_items %}<span class="csre-chip">{{ item }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">No Harm Gate for Customer Success</h2>
+    <p class="csre-p">Before renewal or upsell, check:</p>
+    <ul class="csre-list csre-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="csre-section">
+    <h2 class="csre-h2">Safety and Governance</h2>
+    <ul class="csre-list csre-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="csre-cta-row csre-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="csre-btn csre-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="csre-btn csre-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --csre-bg: #070b0f; --csre-bg2: #0d1117; --csre-border: rgba(255,255,255,.08);
+    --csre-text: #e2e8f0; --csre-muted: #94a3b8; --csre-acc: #00e89a; --csre-info: #58a6ff;
+  }
+  .csre-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--csre-bg); color: var(--csre-text); border-radius: 14px;
+  }
+  .csre-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--csre-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .csre-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .csre-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--csre-acc); margin: 0 0 1rem; }
+  .csre-desc { color: var(--csre-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .csre-purpose { color: var(--csre-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .csre-purpose strong { color: var(--csre-acc); }
+
+  .csre-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .csre-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--csre-border); }
+  .csre-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--csre-bg2); color: var(--csre-text);
+    border: 1px solid var(--csre-border);
+  }
+  .csre-btn-primary { background: var(--csre-acc); color: #06281f; border-color: var(--csre-acc); }
+  .csre-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--csre-border); }
+  .csre-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .csre-p { color: var(--csre-muted); font-size: 0.9rem; line-height: 1.6; }
+  .csre-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .csre-list { color: var(--csre-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .csre-risk-list li { color: #f4a261; margin-bottom: 0.3rem; }
+  .csre-expansion-list li { color: var(--csre-acc); margin-bottom: 0.3rem; }
+  .csre-gate-list li, .csre-safety-list li { margin-bottom: 0.4rem; }
+
+  .csre-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .csre-module-card { background: var(--csre-bg2); border: 1px solid var(--csre-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .csre-module-name { font-size: 0.9rem; color: var(--csre-info); margin: 0 0 0.4rem; }
+  .csre-module-role { color: var(--csre-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .csre-stage-card { background: var(--csre-bg2); border: 1px solid var(--csre-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .csre-stage-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--csre-info); font-weight: 700; }
+  .csre-stage-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .csre-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .csre-chip { background: rgba(88,166,255,.1); color: var(--csre-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .csre-chip-metric { background: rgba(0,232,154,.1); color: var(--csre-acc); border-color: rgba(0,232,154,.25); }
+  .csre-chip-badge { background: rgba(255,255,255,.07); color: #fff; border-color: var(--csre-border); font-weight: 700; }
+
+  .csre-example-card { background: var(--csre-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .csre-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .csre-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--csre-info); font-weight: 700; }
+  .csre-example-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .csre-health-tag { margin-left: auto; background: rgba(0,232,154,.12); color: var(--csre-acc); border: 1px solid rgba(0,232,154,.3); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+
+  .csre-briefing { margin-top: 1rem; color: var(--csre-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--csre-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 640px) {
+    .csre-health-tag { margin-left: 0; }
+  }
+</style>
+{% endblock %}

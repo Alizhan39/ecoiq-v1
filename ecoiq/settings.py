@@ -151,6 +151,9 @@ INSTALLED_APPS = [
 
     # Sales, partnership and funder pipeline management
     'sales_crm_partner_pipeline',
+
+    # Post-sale customer success, health scoring and renewal
+    'customer_success_renewal_engine',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

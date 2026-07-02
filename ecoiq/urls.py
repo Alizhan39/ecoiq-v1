@@ -139,6 +139,9 @@ urlpatterns = [
     # EcoIQ Sales CRM & Partner Pipeline — sales, partnership and funder pipeline management
     path('sales-crm-partner-pipeline/', include('sales_crm_partner_pipeline.urls', namespace='sales_crm_partner_pipeline')),
 
+    # EcoIQ Customer Success & Renewal Engine — post-sale customer success, health scoring and renewal
+    path('customer-success-renewal-engine/', include('customer_success_renewal_engine.urls', namespace='customer_success_renewal_engine')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
