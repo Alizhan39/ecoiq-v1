@@ -11,7 +11,7 @@ CONNECTED_MODULES = [
     {'name': 'Command Centre', 'role': 'Surfaces graph completeness across the live project pipeline.'},
     {'name': 'Portfolio & Country Transition Atlas', 'role': 'Supplies the country/region nodes and clusters.'},
     {'name': 'Governance & Expert Review Board', 'role': 'Supplies the governance review nodes and approval decisions.'},
-    {'name': 'Certification & Trust Badge Engine', 'role': 'Supplies the trust badge nodes shown on projects, where built.'},
+    {'name': 'Certification & Trust Badge Engine', 'role': 'Supplies the trust badge nodes shown on projects.'},
     {'name': 'AI Agent Operations Console', 'role': 'Supplies the agent trace nodes showing which agent generated which output.'},
     {'name': 'Product Analytics & KPI Engine', 'role': 'Consumes graph completeness as part of platform-wide KPIs.'},
     {'name': 'Public Trust & Impact Portal', 'role': 'Publishes only approved graph nodes as public claims.'},

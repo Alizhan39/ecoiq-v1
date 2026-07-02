@@ -11,7 +11,7 @@ CONNECTED_MODULES = [
     {'name': 'Data Room & Evidence Vault', 'role': 'Frontend defines the evidence and document review interface.'},
     {'name': 'Impact MRV Layer', 'role': 'Frontend defines how estimated vs verified impact is shown.'},
     {'name': 'Institutional Finance Engine', 'role': 'Frontend defines the finance-ready and investor memo views.'},
-    {'name': 'Certification & Trust Badge Engine', 'role': 'Frontend defines the trust badge display, where built.'},
+    {'name': 'Certification & Trust Badge Engine', 'role': 'Frontend defines the trust badge display.'},
     {'name': 'Microsoft Ecosystem Core Stack', 'role': 'Supplies the Microsoft-ready building blocks the frontend can integrate with.'},
     {'name': 'AI Agent Operations Console', 'role': 'Frontend defines how agent traces and approvals are displayed.'},
     {'name': 'Security, Privacy & Compliance Centre', 'role': 'Constrains which frontend views may show which data to which viewer.'},

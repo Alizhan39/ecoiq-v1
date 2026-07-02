@@ -160,6 +160,9 @@ urlpatterns = [
     # EcoIQ Frontend Experience & Google Stitch Design System — visual design system and frontend library stack
     path('frontend-experience-google-stitch-design-system/', include('frontend_experience_google_stitch_design_system.urls', namespace='frontend_experience_google_stitch_design_system')),
 
+    # EcoIQ Certification & Trust Badge Engine — readiness, verification and trust badges
+    path('certification-trust-badge-engine/', include('certification_trust_badge_engine.urls', namespace='certification_trust_badge_engine')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
