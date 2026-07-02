@@ -124,6 +124,9 @@ urlpatterns = [
     # EcoIQ Data Room & Evidence Vault — investor-grade evidence and due diligence storage
     path('data-room-evidence-vault/', include('data_room_evidence_vault.urls', namespace='data_room_evidence_vault')),
 
+    # EcoIQ Portfolio & Country Transition Atlas — country-scale and portfolio-scale transition mapping
+    path('portfolio-country-transition-atlas/', include('portfolio_country_transition_atlas.urls', namespace='portfolio_country_transition_atlas')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

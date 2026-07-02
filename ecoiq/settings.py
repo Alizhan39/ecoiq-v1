@@ -136,6 +136,9 @@ INSTALLED_APPS = [
 
     # Investor-grade evidence and due diligence storage
     'data_room_evidence_vault',
+
+    # Country-scale and portfolio-scale transition mapping
+    'portfolio_country_transition_atlas',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
