@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Executive Briefing & Board Pack Generator{% endblock %}
+{% block meta_description_content %}EcoIQ Executive Briefing & Board Pack Generator: generate investor, board, government and impact packs from verified evidence.{% endblock %}
+
+{% block content %}
+<div class="ebpg-wrap">
+
+  <span class="ebpg-badge">EcoIQ Platform Module</span>
+  <h1 class="ebpg-title">EcoIQ Executive Briefing & Board Pack Generator</h1>
+  <p class="ebpg-subtitle">Generate investor, board, government and impact packs from verified evidence.</p>
+  <p class="ebpg-desc">
+    EcoIQ Executive Briefing & Board Pack Generator turns complex industrial modernisation
+    data into clear decision-ready documents. It creates investor memos, board packs,
+    akimat/government briefs, CSR sponsor packs, Islamic finance summaries, country
+    transition briefs and verified impact reports using evidence from Asset Passports, Data
+    Room, MRV, Finance Engine, Governance Review and Country Atlas.
+  </p>
+  <p class="ebpg-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="ebpg-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ebpg-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ebpg-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">Connected EcoIQ Modules</h2>
+    <div class="ebpg-module-grid">
+      {% for m in connected_modules %}
+      <div class="ebpg-module-card">
+        <h3 class="ebpg-module-name">{{ m.name }}</h3>
+        <p class="ebpg-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ebpg-section" id="pack-types">
+    <h2 class="ebpg-h2">Briefing Pack Types</h2>
+    {% for pack in pack_types %}
+    <div class="ebpg-pack-card" id="pack-{{ pack.number }}">
+      <span class="ebpg-pack-number">Pack {{ pack.number }}</span>
+      <h3 class="ebpg-pack-title">{{ pack.title }}</h3>
+      <p class="ebpg-p"><strong>For:</strong> {{ pack.for_ }}</p>
+      <p class="ebpg-sub">Includes</p>
+      <div class="ebpg-chip-row">{% for item in pack.includes %}<span class="ebpg-chip">{{ item }}</span>{% endfor %}</div>
+      {% if pack.note %}
+      <p class="ebpg-note">{{ pack.note }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ebpg-section" id="generator-workflow">
+    <h2 class="ebpg-h2">Generator Workflow</h2>
+    {% for step in generator_workflow %}
+    <div class="ebpg-step-card">
+      <span class="ebpg-pack-number">Step {{ step.number }}</span>
+      <h3 class="ebpg-pack-title">{{ step.title }}</h3>
+      <p class="ebpg-p">{{ step.description }}</p>
+      {% if step.items %}
+      <div class="ebpg-chip-row">{% for item in step.items %}<span class="ebpg-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">Report Sections Template</h2>
+    <p class="ebpg-p">Every executive pack should include:</p>
+    <div class="ebpg-chip-row">
+      {% for item in report_sections_template %}<span class="ebpg-chip ebpg-chip-metric">{{ item }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">Dashboard Cards</h2>
+    <div class="ebpg-chip-row">
+      {% for card in dashboard_cards %}<span class="ebpg-chip ebpg-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">Example Packs</h2>
+    {% for card in example_packs %}
+    <div class="ebpg-example-card">
+      <span class="ebpg-example-label">Pack</span>
+      <h3 class="ebpg-example-title">{{ card.pack }}</h3>
+      <p class="ebpg-p"><strong>Audience:</strong> {{ card.audience }}</p>
+      <p class="ebpg-sub">Includes</p>
+      <ul class="ebpg-list">{% for item in card.includes %}<li>{{ item }}</li>{% endfor %}</ul>
+      <p class="ebpg-decision"><strong>Decision requested:</strong> {{ card.decision_requested }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">AI Writing Guardrails</h2>
+    <p class="ebpg-p">The generator must:</p>
+    <ul class="ebpg-list ebpg-guardrail-list">
+      {% for item in ai_writing_guardrails %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ebpg-section" id="microsoft-integration">
+    <h2 class="ebpg-h2">Microsoft Integration</h2>
+    <p class="ebpg-p">EcoIQ Executive Briefing & Board Pack Generator can use:</p>
+    <ul class="ebpg-list">{% for item in microsoft_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">Amanah Autopilot Integration</h2>
+    <p class="ebpg-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="ebpg-list">{% for item in amanah_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ebpg-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">No Harm Gate for Briefings</h2>
+    <p class="ebpg-p">Before any pack is shared, check:</p>
+    <ul class="ebpg-list ebpg-gate-list">
+      {% for item in no_harm_gate_briefings_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ebpg-section">
+    <h2 class="ebpg-h2">Safety and Governance</h2>
+    <ul class="ebpg-list ebpg-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="ebpg-cta-row ebpg-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ebpg-btn ebpg-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ebpg-btn ebpg-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ebpg-bg: #070b0f; --ebpg-bg2: #0d1117; --ebpg-border: rgba(255,255,255,.08);
+    --ebpg-text: #e2e8f0; --ebpg-muted: #94a3b8; --ebpg-acc: #00e89a; --ebpg-info: #58a6ff;
+  }
+  .ebpg-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ebpg-bg); color: var(--ebpg-text); border-radius: 14px;
+  }
+  .ebpg-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ebpg-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ebpg-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ebpg-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ebpg-acc); margin: 0 0 1rem; }
+  .ebpg-desc { color: var(--ebpg-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .ebpg-purpose { color: var(--ebpg-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .ebpg-purpose strong { color: var(--ebpg-acc); }
+
+  .ebpg-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ebpg-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ebpg-border); }
+  .ebpg-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ebpg-bg2); color: var(--ebpg-text);
+    border: 1px solid var(--ebpg-border);
+  }
+  .ebpg-btn-primary { background: var(--ebpg-acc); color: #06281f; border-color: var(--ebpg-acc); }
+  .ebpg-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ebpg-border); }
+  .ebpg-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ebpg-p { color: var(--ebpg-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ebpg-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .ebpg-list { color: var(--ebpg-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ebpg-guardrail-list li, .ebpg-gate-list li, .ebpg-safety-list li { margin-bottom: 0.4rem; }
+
+  .ebpg-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ebpg-module-card { background: var(--ebpg-bg2); border: 1px solid var(--ebpg-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ebpg-module-name { font-size: 0.9rem; color: var(--ebpg-info); margin: 0 0 0.4rem; }
+  .ebpg-module-role { color: var(--ebpg-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .ebpg-pack-card, .ebpg-step-card { background: var(--ebpg-bg2); border: 1px solid var(--ebpg-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .ebpg-pack-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ebpg-info); font-weight: 700; }
+  .ebpg-pack-title { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+  .ebpg-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .ebpg-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .ebpg-chip { background: rgba(88,166,255,.1); color: var(--ebpg-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .ebpg-chip-metric { background: rgba(0,232,154,.1); color: var(--ebpg-acc); border-color: rgba(0,232,154,.25); }
+
+  .ebpg-example-card { background: var(--ebpg-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .ebpg-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ebpg-info); font-weight: 700; }
+  .ebpg-example-title { font-size: 1.1rem; color: #fff; margin: 0.2rem 0 1rem; }
+  .ebpg-decision { color: var(--ebpg-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.85rem; }
+  .ebpg-decision strong { color: var(--ebpg-acc); }
+
+  .ebpg-briefing { margin-top: 1rem; color: var(--ebpg-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--ebpg-acc); padding-left: 0.85rem; }
+</style>
+{% endblock %}

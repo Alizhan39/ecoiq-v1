@@ -139,6 +139,9 @@ INSTALLED_APPS = [
 
     # Country-scale and portfolio-scale transition mapping
     'portfolio_country_transition_atlas',
+
+    # Investor, board and government decision-pack generation
+    'executive_briefing_board_pack_generator',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
