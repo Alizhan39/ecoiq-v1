@@ -109,6 +109,9 @@ INSTALLED_APPS = [
 
     # Living digital passport for industrial assets
     'asset_passport',
+
+    # Measurement, reporting and verification of modernisation impact
+    'impact_mrv_layer',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
