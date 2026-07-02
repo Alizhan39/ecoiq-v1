@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Public Trust & Impact Portal{% endblock %}
+{% block meta_description_content %}EcoIQ Public Trust & Impact Portal: show verified impact publicly without exposing sensitive evidence.{% endblock %}
+
+{% block content %}
+<div class="ptip-wrap">
+
+  <span class="ptip-badge">EcoIQ Platform Module</span>
+  <h1 class="ptip-title">EcoIQ Public Trust & Impact Portal</h1>
+  <p class="ptip-subtitle">Show verified impact publicly without exposing sensitive evidence.</p>
+  <p class="ptip-desc">
+    EcoIQ Public Trust & Impact Portal turns approved MRV results into public-facing
+    impact stories, country progress pages, sponsor reports and before/after summaries.
+    It helps communities, donors, CSR sponsors, governments and investors see what
+    changed, what harm was reduced and which projects have verified impact, while
+    protecting confidential documents, personal data, financial records and sensitive
+    industrial information.
+  </p>
+  <p class="ptip-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="ptip-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ptip-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ptip-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Connected EcoIQ Modules</h2>
+    <div class="ptip-module-grid">
+      {% for m in connected_modules %}
+      <div class="ptip-module-card">
+        <h3 class="ptip-module-name">{{ m.name }}</h3>
+        <p class="ptip-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ptip-section" id="verified-impact-map">
+    <h2 class="ptip-h2">Verified Impact Map</h2>
+    <p class="ptip-p">Show approved public project locations and progress:</p>
+    <div class="ptip-chip-row">{% for s in verified_impact_map_shows %}<span class="ptip-chip">{{ s }}</span>{% endfor %}</div>
+    <p class="ptip-sub">Public marker fields</p>
+    <div class="ptip-chip-row">{% for f in public_marker_fields %}<span class="ptip-chip ptip-chip-metric">{{ f }}</span>{% endfor %}</div>
+    <p class="ptip-sub">Do not show</p>
+    <ul class="ptip-list ptip-danger-list">{% for item in do_not_show_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ptip-section" id="before-after-stories">
+    <h2 class="ptip-h2">Before / After Impact Stories</h2>
+    <p class="ptip-p">For each approved story show:</p>
+    <div class="ptip-chip-row">
+      {% for f in before_after_story_fields %}<span class="ptip-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ptip-section" id="country-progress">
+    <h2 class="ptip-h2">Country Progress Pages</h2>
+    <div class="ptip-chip-row">{% for c in country_progress_countries %}<span class="ptip-chip ptip-chip-country">{{ c }}</span>{% endfor %}</div>
+    <p class="ptip-sub" style="margin-top:0.85rem;">Each country page should show</p>
+    <ul class="ptip-list">{% for f in country_progress_fields %}<li>{{ f }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ptip-section" id="sponsor-csr-pages">
+    <h2 class="ptip-h2">Sponsor / CSR Impact Pages</h2>
+    <p class="ptip-p">For approved sponsors show:</p>
+    <ul class="ptip-list">{% for s in sponsor_csr_shows %}<li>{{ s }}</li>{% endfor %}</ul>
+    <p class="ptip-note">{{ sponsor_csr_note }}</p>
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Community Impact Summaries</h2>
+    <div class="ptip-chip-row">{% for s in community_impact_shows %}<span class="ptip-chip ptip-chip-metric">{{ s }}</span>{% endfor %}</div>
+    <p class="ptip-note">{{ community_impact_note }}</p>
+  </section>
+
+  <section class="ptip-section" id="public-mrv-registry">
+    <h2 class="ptip-h2">Public MRV Registry</h2>
+    <p class="ptip-p">Show approved records:</p>
+    <div class="ptip-chip-row">
+      {% for f in public_mrv_registry_fields %}<span class="ptip-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Public Project Pipeline</h2>
+    <div class="ptip-chip-row">
+      {% for label in public_project_pipeline_labels %}<span class="ptip-chip ptip-chip-metric">{{ label }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Public Trust Labels</h2>
+    <div class="ptip-chip-row">
+      {% for label in public_trust_labels %}<span class="ptip-chip ptip-chip-badge">{{ label }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ptip-section" id="public-impact-metrics">
+    <h2 class="ptip-h2">Public Impact Metrics</h2>
+    <div class="ptip-chip-row">
+      {% for metric in public_impact_metrics %}<span class="ptip-chip ptip-chip-metric">{{ metric }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="ptip-section" id="approval-workflow">
+    <h2 class="ptip-h2">Approval Workflow</h2>
+    <div class="ptip-flow">
+      {% for step in approval_workflow %}<span class="ptip-flow-step">{{ step }}</span>{% if not forloop.last %}<span class="ptip-flow-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Example Public Projects</h2>
+    {% for card in example_projects %}
+    <div class="ptip-example-card">
+      <div class="ptip-example-head">
+        <span class="ptip-example-label">Project</span>
+        <h3 class="ptip-example-title">{{ card.project }}</h3>
+        <span class="ptip-country-tag">{{ card.country }}</span>
+      </div>
+      <p class="ptip-p"><strong>Before:</strong> {{ card.before }}</p>
+      <p class="ptip-p"><strong>Action:</strong> {{ card.action }}</p>
+      <p class="ptip-p"><strong>After:</strong> {{ card.after }}</p>
+      <p class="ptip-status"><strong>Status:</strong> {{ card.status }}</p>
+      {% if card.public_label %}
+      <span class="ptip-chip ptip-chip-badge">{{ card.public_label }}</span>
+      {% endif %}
+      {% if card.maqasid_mizan_meaning %}
+      <p class="ptip-p" style="margin-top:0.6rem;"><strong>Maqasid/Mizan meaning:</strong> {{ card.maqasid_mizan_meaning }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Maqasid/Mizan Public Explanation</h2>
+    <p class="ptip-p">{{ maqasid_mizan_public_explanation }}</p>
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Microsoft Integration</h2>
+    <ul class="ptip-list">{% for item in microsoft_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Amanah Autopilot Integration</h2>
+    <p class="ptip-p">Amanah Autopilot can run overnight and:</p>
+    <ul class="ptip-list">{% for item in amanah_integration_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="ptip-briefing"><strong>Morning briefing example:</strong> "{{ amanah_morning_briefing_example }}"</p>
+  </section>
+
+  <section class="ptip-section" id="no-harm-gate-public">
+    <h2 class="ptip-h2">No Harm Gate for Public Reporting</h2>
+    <p class="ptip-p">Before publishing, check:</p>
+    <ul class="ptip-list ptip-gate-list">
+      {% for item in no_harm_gate_public_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="ptip-section">
+    <h2 class="ptip-h2">Safety and Governance</h2>
+    <ul class="ptip-list ptip-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="ptip-cta-row ptip-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="ptip-btn ptip-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="ptip-btn ptip-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --ptip-bg: #070b0f; --ptip-bg2: #0d1117; --ptip-border: rgba(255,255,255,.08);
+    --ptip-text: #e2e8f0; --ptip-muted: #94a3b8; --ptip-acc: #00e89a; --ptip-info: #58a6ff;
+  }
+  .ptip-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--ptip-bg); color: var(--ptip-text); border-radius: 14px;
+  }
+  .ptip-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--ptip-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .ptip-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .ptip-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--ptip-acc); margin: 0 0 1rem; }
+  .ptip-desc { color: var(--ptip-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .ptip-purpose { color: var(--ptip-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .ptip-purpose strong { color: var(--ptip-acc); }
+
+  .ptip-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .ptip-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--ptip-border); }
+  .ptip-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--ptip-bg2); color: var(--ptip-text);
+    border: 1px solid var(--ptip-border);
+  }
+  .ptip-btn-primary { background: var(--ptip-acc); color: #06281f; border-color: var(--ptip-acc); }
+  .ptip-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--ptip-border); }
+  .ptip-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .ptip-p { color: var(--ptip-muted); font-size: 0.9rem; line-height: 1.6; }
+  .ptip-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .ptip-list { color: var(--ptip-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .ptip-gate-list li, .ptip-safety-list li { margin-bottom: 0.4rem; }
+  .ptip-danger-list li { color: #f4a261; }
+  .ptip-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .ptip-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .ptip-module-card { background: var(--ptip-bg2); border: 1px solid var(--ptip-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .ptip-module-name { font-size: 0.9rem; color: var(--ptip-info); margin: 0 0 0.4rem; }
+  .ptip-module-role { color: var(--ptip-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .ptip-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .ptip-chip { background: rgba(88,166,255,.1); color: var(--ptip-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .ptip-chip-metric { background: rgba(0,232,154,.1); color: var(--ptip-acc); border-color: rgba(0,232,154,.25); }
+  .ptip-chip-country { background: rgba(255,255,255,.07); color: #fff; border-color: var(--ptip-border); font-weight: 700; }
+  .ptip-chip-badge { background: rgba(0,232,154,.14); color: var(--ptip-acc); border-color: rgba(0,232,154,.35); font-weight: 700; }
+
+  .ptip-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .ptip-flow-step { background: var(--ptip-bg2); border: 1px solid var(--ptip-border); color: var(--ptip-text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+  .ptip-flow-arrow { color: var(--ptip-info); font-weight: 700; }
+
+  .ptip-example-card { background: var(--ptip-bg2); border: 1px solid rgba(0,232,154,.25); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .ptip-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; margin-bottom: 0.85rem; }
+  .ptip-example-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ptip-info); font-weight: 700; }
+  .ptip-example-title { font-size: 1.05rem; color: #fff; margin: 0; }
+  .ptip-country-tag { margin-left: auto; background: rgba(255,255,255,.07); color: var(--ptip-text); border: 1px solid var(--ptip-border); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+  .ptip-status { color: var(--ptip-text); font-size: 0.85rem; line-height: 1.6; margin-top: 0.6rem; }
+  .ptip-status strong { color: var(--ptip-acc); }
+
+  .ptip-briefing { margin-top: 1rem; color: var(--ptip-text); font-size: 0.85rem; font-style: italic; border-left: 3px solid var(--ptip-acc); padding-left: 0.85rem; }
+
+  @media (max-width: 640px) {
+    .ptip-country-tag { margin-left: 0; }
+  }
+</style>
+{% endblock %}

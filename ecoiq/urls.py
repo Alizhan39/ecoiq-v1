@@ -133,6 +133,9 @@ urlpatterns = [
     # EcoIQ Revenue & Pricing Engine — commercial productisation and pricing model
     path('revenue-pricing-engine/', include('revenue_pricing_engine.urls', namespace='revenue_pricing_engine')),
 
+    # EcoIQ Public Trust & Impact Portal — approved public-facing verified impact reporting
+    path('public-trust-impact-portal/', include('public_trust_impact_portal.urls', namespace='public_trust_impact_portal')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
