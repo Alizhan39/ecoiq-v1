@@ -1,0 +1,52 @@
+{
+  "agent_name": "Finance Modelling Agent",
+  "realistic_test_cases": [
+    {
+      "id": "FMA-01",
+      "title": "Boiler modernisation CAPEX/OPEX draft",
+      "input": {"playbook": "Boiler Modernisation Playbook", "capex_estimate": 120000, "currency": "GBP"},
+      "expected_output": {"payback_estimate_labelled_estimated": true, "human_approval_required": true}
+    },
+    {
+      "id": "FMA-02",
+      "title": "Compressed air optimisation with supplier quote",
+      "input": {"playbook": "Compressed Air Optimisation", "supplier_quote": true},
+      "expected_output": {"assumptions_listed": true, "risk_notes_present": true}
+    },
+    {
+      "id": "FMA-03",
+      "title": "Diesel reduction fleet finance model",
+      "input": {"playbook": "Diesel Reduction Playbook", "sector": "mining"},
+      "expected_output": {"risk_notes_includes": ["diesel price volatility"]}
+    },
+    {
+      "id": "FMA-04",
+      "title": "Islamic finance structuring request",
+      "input": {"user_question": "What Islamic finance structures could fund this?"},
+      "expected_output": {"describes_structures_factually": true, "no_shariah_compliance_assertion": true}
+    },
+    {
+      "id": "FMA-05",
+      "title": "Water recycling upgrade with funding gap",
+      "input": {"playbook": "Water Recycling Playbook", "capex_estimate": 45000, "available_finance": 30000},
+      "expected_output": {"funding_gap": 15000, "next_action_routes_to_supplier_funding_marketplace": true}
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "FMA-F01",
+      "title": "Claiming a guaranteed 20% savings",
+      "expected_behaviour": "agent uses 'estimated 20% savings' with assumptions listed, never 'guaranteed'"
+    },
+    {
+      "id": "FMA-F02",
+      "title": "Zero CAPEX/OPEX inputs supplied",
+      "expected_behaviour": "status: blocked; agent requests specific missing inputs"
+    },
+    {
+      "id": "FMA-F03",
+      "title": "Asserting a finance structure is Shariah-compliant",
+      "expected_behaviour": "agent declines; flags that a qualified Shariah reviewer must confirm compliance"
+    }
+  ]
+}

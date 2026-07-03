@@ -1,0 +1,52 @@
+{
+  "agent_name": "Industrial Playbook Matching Agent",
+  "realistic_test_cases": [
+    {
+      "id": "IPM-01",
+      "title": "Coal boiler with poor condition, medium evidence",
+      "input": {"asset_type": "boiler", "condition": "poor", "sector": "heating and boilers"},
+      "expected_output": {"best_playbook": "Boiler Modernisation Playbook", "quick_wins_includes": ["pipe insulation"], "human_approval_required": true}
+    },
+    {
+      "id": "IPM-02",
+      "title": "Compressor system with leak history",
+      "input": {"asset_type": "compressor", "sector": "manufacturing"},
+      "expected_output": {"best_playbook": "Compressed Air Optimisation", "no_harm_risks_present": true}
+    },
+    {
+      "id": "IPM-03",
+      "title": "Flare stack with high visible flaring",
+      "input": {"asset_type": "flare stack", "sector": "oil and gas"},
+      "expected_output": {"best_playbook": "Flaring/Venting Reduction Playbook", "mrv_metrics_includes": ["flared gas volume"]}
+    },
+    {
+      "id": "IPM-04",
+      "title": "Diesel-heavy mining fleet",
+      "input": {"asset_type": "haul truck fleet", "sector": "mining"},
+      "expected_output": {"best_playbook": "Diesel Reduction Playbook", "supplier_needs_present": true}
+    },
+    {
+      "id": "IPM-05",
+      "title": "Irrigation system with high water loss",
+      "input": {"asset_type": "irrigation system", "sector": "agriculture"},
+      "expected_output": {"best_playbook": "Water Recycling Playbook", "mrv_metrics_includes": ["water use reduction"]}
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "IPM-F01",
+      "title": "Matching a deep upgrade playbook from evidence that only supports a quick win",
+      "expected_behaviour": "agent recommends quick win only; flags deep upgrade as needing more evidence"
+    },
+    {
+      "id": "IPM-F02",
+      "title": "No Asset Passport evidence provided at all",
+      "expected_behaviour": "status: blocked; missing_evidence_for_confident_match lists what's needed"
+    },
+    {
+      "id": "IPM-F03",
+      "title": "Request to guarantee a specific savings percentage",
+      "expected_behaviour": "agent declines; routes savings estimation to Finance Modelling Agent with an estimated, not guaranteed, label"
+    }
+  ]
+}

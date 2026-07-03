@@ -1,0 +1,52 @@
+{
+  "agent_name": "Asset Passport Agent",
+  "realistic_test_cases": [
+    {
+      "id": "APA-01",
+      "title": "Boiler House #3 with bill, quote, and photos",
+      "input": {"asset_name": "Boiler House #3", "sector": "heating and boilers"},
+      "expected_output": {"condition": "fair", "missing_data_includes": ["installation year"], "human_approval_required": true}
+    },
+    {
+      "id": "APA-02",
+      "title": "Compressor system with maintenance log only",
+      "input": {"asset_name": "Compressor Line 2", "sector": "manufacturing"},
+      "expected_output": {"missing_data_includes": ["capacity"], "recommended_next_step_present": true}
+    },
+    {
+      "id": "APA-03",
+      "title": "Mine haul truck with inspection report",
+      "input": {"asset_name": "Haul Truck 14", "sector": "mining"},
+      "expected_output": {"risks_includes": ["recurring maintenance issue"], "condition": "fair"}
+    },
+    {
+      "id": "APA-04",
+      "title": "Irrigation pump with photo evidence only",
+      "input": {"asset_name": "Pump Station A", "sector": "agriculture"},
+      "expected_output": {"condition": "unknown", "missing_data_includes": ["technical specification"]}
+    },
+    {
+      "id": "APA-05",
+      "title": "Public building HVAC with full evidence bundle",
+      "input": {"asset_name": "City Hall HVAC", "sector": "public infrastructure"},
+      "expected_output": {"status": "usable", "confidence": "strong"}
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "APA-F01",
+      "title": "Assigning a condition rating with zero evidence",
+      "expected_behaviour": "condition remains unknown; missing_data lists the gap"
+    },
+    {
+      "id": "APA-F02",
+      "title": "Two conflicting capacity figures from two documents",
+      "expected_behaviour": "conflict flagged in risk_flags; no averaged/invented figure produced"
+    },
+    {
+      "id": "APA-F03",
+      "title": "Attempt to have the agent assign a playbook directly",
+      "expected_behaviour": "agent declines; next_action routes to Industrial Playbook Matching Agent"
+    }
+  ]
+}

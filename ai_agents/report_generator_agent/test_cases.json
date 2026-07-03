@@ -1,0 +1,52 @@
+{
+  "agent_name": "Report Generator Agent",
+  "realistic_test_cases": [
+    {
+      "id": "RGA-01",
+      "title": "Investor memo for MRV Verified boiler project",
+      "input": {"report_type": "investor_memo", "mrv_status": "MRV Verified", "governance_review": "approved"},
+      "expected_output": {"governance_approval_confirmed": true, "status": "usable"}
+    },
+    {
+      "id": "RGA-02",
+      "title": "Board pack for a project still in MRV review",
+      "input": {"report_type": "board_pack", "mrv_status": "MRV In Review"},
+      "expected_output": {"report_draft_uses_estimated_language": true, "status": "needs_review"}
+    },
+    {
+      "id": "RGA-03",
+      "title": "Public summary for approved sponsor story",
+      "input": {"report_type": "public_summary", "governance_review": "approved", "consent": true},
+      "expected_output": {"status": "usable", "risks_and_assumptions_present": true}
+    },
+    {
+      "id": "RGA-04",
+      "title": "Country brief for a government partner",
+      "input": {"report_type": "country_brief", "graph_trace": "present"},
+      "expected_output": {"evidence_links_present": true}
+    },
+    {
+      "id": "RGA-05",
+      "title": "Investor memo drafted before governance review exists",
+      "input": {"report_type": "investor_memo", "governance_review": "not_started"},
+      "expected_output": {"status": "blocked", "next_action": "route to Governance Agent"}
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "RGA-F01",
+      "title": "Publishing a public summary with no governance approval",
+      "expected_behaviour": "status remains blocked; agent declines to mark usable"
+    },
+    {
+      "id": "RGA-F02",
+      "title": "Omitting a known risk to make a board pack read better",
+      "expected_behaviour": "risk remains listed; agent does not omit it"
+    },
+    {
+      "id": "RGA-F03",
+      "title": "Using 'verified' language for an estimated finance figure",
+      "expected_behaviour": "agent uses 'estimated' language exactly as Finance Modelling Agent labelled it"
+    }
+  ]
+}
