@@ -178,6 +178,9 @@ INSTALLED_APPS = [
 
     # Frontend delivery plan across Django, Next.js, Microsoft and Google Stitch
     'frontend_implementation_roadmap',
+
+    # Training, evaluation and human-review workflow for EcoIQ AI agents
+    'agent_training_evaluation_lab',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

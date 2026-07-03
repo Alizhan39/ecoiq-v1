@@ -166,6 +166,9 @@ urlpatterns = [
     # EcoIQ Frontend Implementation Roadmap — frontend delivery plan across Django, Next.js, Microsoft and Google Stitch
     path('frontend-implementation-roadmap/', include('frontend_implementation_roadmap.urls', namespace='frontend_implementation_roadmap')),
 
+    # EcoIQ Agent Training & Evaluation Lab — training, evaluation and human-review workflow for AI agents
+    path('agent-training-evaluation-lab/', include('agent_training_evaluation_lab.urls', namespace='agent_training_evaluation_lab')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
