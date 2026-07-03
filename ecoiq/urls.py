@@ -169,6 +169,9 @@ urlpatterns = [
     # EcoIQ Agent Training & Evaluation Lab — training, evaluation and human-review workflow for AI agents
     path('agent-training-evaluation-lab/', include('agent_training_evaluation_lab.urls', namespace='agent_training_evaluation_lab')),
 
+    # EcoIQ Document Reader Agent Training Pack — training pack for evidence-extraction agent
+    path('document-reader-agent-training-pack/', include('document_reader_agent_training_pack.urls', namespace='document_reader_agent_training_pack')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
