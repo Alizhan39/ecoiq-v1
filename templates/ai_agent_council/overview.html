@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ AI Agent Council{% endblock %}
+{% block meta_description_content %}EcoIQ AI Agent Council: ten operationally trained agents, four next-stage agents, one governed intelligence system.{% endblock %}
+
+{% block content %}
+<div class="acnl-wrap">
+
+  <span class="acnl-badge">EcoIQ Platform Module</span>
+  <h1 class="acnl-title">EcoIQ AI Agent Council</h1>
+  <p class="acnl-subtitle">Ten operationally trained agents. Four next-stage agents. One governed intelligence system.</p>
+  <p class="acnl-desc">
+    EcoIQ AI Agent Council presents how EcoIQ's specialised AI agents work
+    together across industrial research, document reading, visual evidence,
+    asset intelligence, playbook matching, finance, MRV, governance, reporting
+    and overnight supervision. It shows which agents already have full
+    operational training packs, which agents are next to be trained, how
+    agents hand work to one another and where human approval is required.
+  </p>
+  <p class="acnl-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="acnl-hero-metrics">
+    {% for m in hero_metrics %}
+    <div class="acnl-metric-card">
+      {% if m.value %}<div class="acnl-metric-val">{{ m.value }}</div>{% endif %}
+      <div class="acnl-metric-label">{{ m.label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="acnl-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="acnl-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="acnl-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Connected EcoIQ Modules</h2>
+    <div class="acnl-module-grid">
+      {% for m in connected_modules %}
+      <div class="acnl-module-card">
+        <h3 class="acnl-module-name">{{ m.name }}</h3>
+        <p class="acnl-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="acnl-section" id="operationally-trained-agents">
+    <h2 class="acnl-h2">Operationally Trained Agents</h2>
+    <p class="acnl-p">
+      {{ repo_state.operational_folder_count }} agents currently have a full
+      10-file operational training pack in the repository
+      (<code>ai_agents/&lt;agent_name&gt;/</code>), read live from the repository
+      state — {{ repo_state.total_training_files }} agent training files in total.
+    </p>
+    {% for a in operational_agents %}
+    <div class="acnl-agent-card" id="agent-{{ a.number }}">
+      <div class="acnl-agent-head">
+        <span class="acnl-agent-number">Agent {{ a.number }}</span>
+        <span class="iq-badge iq-badge-verified">{{ operational_status_label }}</span>
+      </div>
+      <h3 class="acnl-agent-name">{{ a.name }}</h3>
+      <p class="acnl-p">{{ a.role }}</p>
+      {% if a.handoffs %}
+      <p class="acnl-sub">Primary handoff</p>
+      <div class="acnl-chip-row">{% for h in a.handoffs %}<span class="acnl-chip">→ {{ h }}</span>{% endfor %}</div>
+      {% endif %}
+      {% if a.important %}
+      <p class="acnl-note">{{ a.important }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="acnl-section" id="next-stage-agents">
+    <h2 class="acnl-h2">Next-Stage Agents</h2>
+    <p class="acnl-p">
+      These {{ next_stage_agents|length }} agents do not yet have the same
+      full operational training-pack structure as the 10 agents above.
+    </p>
+    {% for a in next_stage_agents %}
+    <div class="acnl-agent-card acnl-agent-card-pending">
+      <div class="acnl-agent-head">
+        <span class="acnl-agent-number">Agent {{ a.number }}</span>
+        <span class="iq-badge iq-badge-review">{{ next_stage_status_label }}</span>
+      </div>
+      <h3 class="acnl-agent-name">{{ a.name }}</h3>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="acnl-section" id="council-workflow">
+    <h2 class="acnl-h2">Council Workflow</h2>
+    <div class="acnl-workflow-row">
+      {% for step in council_workflow_steps %}
+      <span class="acnl-workflow-step">{{ step }}</span>{% if not forloop.last %}<span class="acnl-workflow-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+    <p class="acnl-sub" style="margin-top:1.25rem;">Amanah Autopilot Supervisor runs across the workflow</p>
+    <ul class="acnl-list">{% for item in amanah_oversight_items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="acnl-section" id="agent-council-handoffs">
+    <h2 class="acnl-h2">Agent Council Handoffs</h2>
+    <p class="acnl-p">Every handoff should preserve:</p>
+    <div class="acnl-chip-row">
+      {% for item in handoff_preserved_items %}<span class="acnl-chip acnl-chip-metric">{{ item }}</span>{% endfor %}
+    </div>
+    <p class="acnl-note">{{ handoff_critical_rule }}</p>
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Agent Council Decision Protocol</h2>
+    <p class="acnl-p">Before a high-impact output moves forward:</p>
+    <ol class="acnl-list">{% for step in decision_protocol_steps %}<li>{{ step }}</li>{% endfor %}</ol>
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Council Views</h2>
+    {% for v in council_views %}
+    <div class="acnl-view-card" id="view-{{ v.number }}">
+      <span class="acnl-agent-number">{{ v.number }}. {{ v.title }}</span>
+      <p class="acnl-p">{{ v.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Council Dashboard Cards</h2>
+    <div class="acnl-chip-row">
+      {% for card in dashboard_cards %}<span class="acnl-chip acnl-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Example Council Case</h2>
+    <p class="acnl-p"><strong>Project:</strong> {{ example_council_case.project }}</p>
+    <ol class="acnl-list acnl-case-list">
+      {% for s in example_council_case.steps %}<li><strong>{{ s.agent }}:</strong> {{ s.action }}</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Why the Council Matters</h2>
+    <p class="acnl-p">{{ why_council_matters.explanation }}</p>
+    <p class="acnl-sub">The Council model</p>
+    <ul class="acnl-list">{% for item in why_council_matters.items %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Microsoft Ecosystem Integration</h2>
+    <p class="acnl-p">EcoIQ AI Agent Council is designed to integrate with:</p>
+    <div class="acnl-chip-row">
+      {% for item in microsoft_integration.items %}<span class="acnl-chip">{{ item }}</span>{% endfor %}
+    </div>
+    <p class="acnl-sub" style="margin-top:1rem;">Does not claim</p>
+    <div class="acnl-chip-row">
+      {% for item in microsoft_integration.do_not_claim %}<span class="iq-badge iq-badge-blocked">{{ item }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="acnl-section acnl-presentation" id="presentation-mode">
+    <h2 class="acnl-h2">Presentation Mode</h2>
+    <p class="acnl-headline">{{ presentation_mode.headline }}</p>
+    <p class="acnl-subheadline">{{ presentation_mode.subheadline }}</p>
+    <div class="acnl-story-grid">
+      {% for s in presentation_mode.story_cards %}
+      <div class="acnl-story-card">
+        <span class="acnl-agent-number">Story {{ s.number }}</span>
+        <h3 class="acnl-module-name">{{ s.title }}</h3>
+        <div class="acnl-workflow-row acnl-workflow-row-vertical">
+          {% for step in s.flow %}
+          <span class="acnl-workflow-step">{{ step }}</span>{% if not forloop.last %}<span class="acnl-workflow-arrow">→</span>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="acnl-section" id="training-pack-repository-layout">
+    <h2 class="acnl-h2">Training Pack Repository Layout</h2>
+    <p class="acnl-p">
+      Every operational agent's full training pack lives at
+      <code>ai_agents/&lt;agent_name&gt;/</code> in the repository, and the
+      master index at <code>ai_agents/ai_agent_training_index.md</code>
+      explains execution order, handoffs and demo narratives in full.
+    </p>
+    <div class="acnl-chip-row">
+      {% for name in repo_state.operational_folder_names %}<span class="acnl-chip acnl-chip-code"><code>ai_agents/{{ name }}/</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Safety and Governance</h2>
+    <ul class="acnl-list acnl-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="acnl-cta-row acnl-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="acnl-btn acnl-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="acnl-btn acnl-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --acnl-bg: #070b0f; --acnl-bg2: #0d1117; --acnl-border: rgba(255,255,255,.08);
+    --acnl-text: #e2e8f0; --acnl-muted: #94a3b8; --acnl-acc: #00e89a; --acnl-info: #58a6ff;
+  }
+  .acnl-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--acnl-bg); color: var(--acnl-text); border-radius: 14px;
+  }
+  .acnl-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--acnl-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .acnl-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .acnl-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--acnl-acc); margin: 0 0 1rem; }
+  .acnl-desc { color: var(--acnl-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .acnl-purpose { color: var(--acnl-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .acnl-purpose strong { color: var(--acnl-acc); }
+
+  .acnl-hero-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-top: 1.5rem; }
+  .acnl-metric-card { background: var(--acnl-bg2); border: 1px solid var(--acnl-border); border-radius: 10px; padding: 1rem 1.1rem; }
+  .acnl-metric-val { font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.2rem; }
+  .acnl-metric-label { font-size: 0.72rem; color: var(--acnl-muted); line-height: 1.5; }
+
+  .acnl-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .acnl-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--acnl-border); }
+  .acnl-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--acnl-bg2); color: var(--acnl-text);
+    border: 1px solid var(--acnl-border);
+  }
+  .acnl-btn-primary { background: var(--acnl-acc); color: #06281f; border-color: var(--acnl-acc); }
+  .acnl-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--acnl-border); }
+  .acnl-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .acnl-p { color: var(--acnl-muted); font-size: 0.9rem; line-height: 1.6; }
+  .acnl-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .acnl-list { color: var(--acnl-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .acnl-safety-list li, .acnl-case-list li { margin-bottom: 0.4rem; }
+  .acnl-case-list strong { color: var(--acnl-text); }
+  .acnl-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .acnl-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .acnl-module-card { background: var(--acnl-bg2); border: 1px solid var(--acnl-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .acnl-module-name { font-size: 0.9rem; color: var(--acnl-info); margin: 0 0 0.4rem; }
+  .acnl-module-role { color: var(--acnl-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .acnl-agent-card, .acnl-view-card, .acnl-story-card { background: var(--acnl-bg2); border: 1px solid var(--acnl-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .acnl-agent-card-pending { border-style: dashed; }
+  .acnl-agent-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .acnl-agent-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--acnl-info); font-weight: 700; }
+  .acnl-agent-name { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .acnl-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .acnl-chip { background: rgba(88,166,255,.1); color: var(--acnl-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .acnl-chip-metric { background: rgba(0,232,154,.1); color: var(--acnl-acc); border-color: rgba(0,232,154,.25); }
+  .acnl-chip-code { font-family: 'SF Mono', monospace; font-size: 0.7rem; }
+  .acnl-chip code { color: inherit; }
+
+  .acnl-workflow-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.75rem; }
+  .acnl-workflow-row-vertical { margin-top: 0.6rem; }
+  .acnl-workflow-step { background: rgba(0,232,154,.1); color: var(--acnl-acc); border: 1px solid rgba(0,232,154,.25); padding: 0.3rem 0.7rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; }
+  .acnl-workflow-arrow { color: var(--acnl-muted); font-size: 0.85rem; }
+
+  .acnl-presentation { background: rgba(0,232,154,.03); border-radius: 12px; padding: 1.75rem; margin-top: 2.75rem; }
+  .acnl-headline { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; }
+  .acnl-subheadline { color: var(--acnl-muted); font-size: 0.92rem; margin-bottom: 1.25rem; }
+  .acnl-story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
+</style>
+{% endblock %}

@@ -175,6 +175,9 @@ urlpatterns = [
     # EcoIQ MRV Agent Training Pack — training pack for the estimated-vs-verified impact agent
     path('mrv-agent-training-pack/', include('mrv_agent_training_pack.urls', namespace='mrv_agent_training_pack')),
 
+    # EcoIQ AI Agent Council — public presentation and control page for the multi-agent system
+    path('ai-agent-council/', include('ai_agent_council.urls', namespace='ai_agent_council')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
