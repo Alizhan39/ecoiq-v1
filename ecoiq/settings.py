@@ -187,6 +187,9 @@ INSTALLED_APPS = [
 
     # Training pack for the agent that separates estimated impact from verified impact
     'mrv_agent_training_pack',
+
+    # Public presentation and control page for the EcoIQ multi-agent Council
+    'ai_agent_council',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
