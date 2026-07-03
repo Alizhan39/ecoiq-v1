@@ -22,6 +22,39 @@ CONNECTED_MODULES = [
 
 CORE_PURPOSE = 'Make EcoIQ trust status visible, explainable and evidence-backed.'
 
+# Maps each badge label to a readiness-status pill class (see the "Trust Badge
+# Pills" component in static/css/ecoiq-institutional.css): verified | ready |
+# review | blocked | msready. These are visual readiness/status labels, not
+# formal certification.
+BADGE_STATUS_CLASS = {
+    'Evidence Missing': 'blocked', 'Evidence Weak': 'review', 'Evidence Medium': 'review',
+    'Evidence Strong': 'verified', 'Data Room Complete': 'ready', 'Evidence Pack Ready': 'ready',
+    'MRV Not Started': 'blocked', 'Baseline Captured': 'review', 'After-Data Pending': 'review',
+    'MRV In Review': 'review', 'MRV Verified': 'verified', 'Verified Impact Published': 'verified',
+    'Finance Not Ready': 'blocked', 'Finance Model Drafted': 'review', 'Funding Route Matched': 'review',
+    'Investor Memo Ready': 'ready', 'Finance Ready': 'ready', 'Investment Committee Ready': 'ready',
+    'AI Draft': 'review', 'Needs Expert Review': 'review', 'Technical Reviewed': 'verified',
+    'Finance Reviewed': 'verified', 'Environmental Reviewed': 'verified', 'Safety Reviewed': 'verified',
+    'Maqasid/Mizan Reviewed': 'verified', 'Expert Reviewed': 'verified', 'Human Approved': 'verified',
+    'Public Reporting Blocked': 'blocked', 'Needs Consent': 'review', 'Sensitive Data Redacted': 'ready',
+    'Public Summary Drafted': 'review', 'Public Summary Approved': 'verified', 'Sponsor Approved': 'verified',
+    'Public Impact Story Published': 'verified',
+    'Supplier Match Draft': 'review', 'Supplier Shortlisted': 'review',
+    'Supplier Due Diligence Pending': 'review', 'Supplier Approved for Outreach': 'ready',
+    'Sponsor Ready': 'ready', 'Grant Ready': 'ready', 'Islamic Finance Review Required': 'review',
+    'Microsoft Ecosystem Ready': 'msready', 'Power BI Ready': 'msready', 'Teams Approval Ready': 'msready',
+    'SharePoint Evidence Pack Ready': 'msready', 'API Integration Ready': 'msready',
+    'Enterprise Pilot Ready': 'msready',
+    'No Harm Gate Not Checked': 'blocked', 'No Harm Gate Warning': 'review',
+    'No Harm Gate Needs Review': 'review', 'No Harm Gate Passed': 'verified',
+    'High-Risk Expert Review Required': 'blocked',
+}
+
+
+def _classified(labels):
+    return [{'label': label, 'cls': BADGE_STATUS_CLASS.get(label, 'review')} for label in labels]
+
+
 BADGE_CATEGORIES = [
     {
         'number': 1,
@@ -303,15 +336,21 @@ CTA_BUTTONS = [
 
 
 def overview(request):
+    badge_categories = [
+        {**cat, 'badges': _classified(cat['badges'])} for cat in BADGE_CATEGORIES
+    ]
+    example_project_badges = [
+        {**p, 'badges': _classified(p['badges'])} for p in EXAMPLE_PROJECT_BADGES
+    ]
     return render(request, 'certification_trust_badge_engine/overview.html', {
         'connected_modules': CONNECTED_MODULES,
         'core_purpose': CORE_PURPOSE,
-        'badge_categories': BADGE_CATEGORIES,
+        'badge_categories': badge_categories,
         'badge_lifecycle': BADGE_LIFECYCLE,
         'badge_dashboard_cards': BADGE_DASHBOARD_CARDS,
         'badge_table_fields': BADGE_TABLE_FIELDS,
         'badge_status_levels': BADGE_STATUS_LEVELS,
-        'example_project_badges': EXAMPLE_PROJECT_BADGES,
+        'example_project_badges': example_project_badges,
         'badge_evidence_requirements_items': BADGE_EVIDENCE_REQUIREMENTS_ITEMS,
         'public_badge_rules': PUBLIC_BADGE_RULES,
         'badge_revocation_rules': BADGE_REVOCATION_RULES,

@@ -55,6 +55,42 @@
     .card-hover:hover { border-color: rgba(0,232,154,.25) !important; transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
     .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(90px); }
 
+    /* Trust badge pills — readiness/status labels, not formal certification.
+       Mirrors the shared component in static/css/ecoiq-institutional.css. */
+    .iq-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .72rem; font-weight: 700; letter-spacing: .01em;
+      padding: .28rem .7rem; border-radius: 999px; white-space: nowrap;
+      border: 1px solid transparent;
+    }
+    .iq-badge-verified { background: rgba(0,232,154,.12); color: #00e89a; border-color: rgba(0,232,154,.35); }
+    .iq-badge-ready    { background: rgba(6,182,212,.12); color: #06b6d4; border-color: rgba(6,182,212,.32); }
+    .iq-badge-review   { background: rgba(244,162,97,.12); color: #f4a261; border-color: rgba(244,162,97,.32); }
+    .iq-badge-blocked  { background: rgba(230,57,70,.12); color: #e63946; border-color: rgba(230,57,70,.32); }
+    .iq-badge-msready  { background: rgba(168,85,247,.12); color: #a855f7; border-color: rgba(168,85,247,.32); }
+    .iq-badge-note { font-size: .68rem; color: rgba(148,163,184,.55); font-style: italic; line-height: 1.55; }
+
+    /* Category cards for the Platform Modules Directory */
+    .iq-cat-card {
+      background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 14px; padding: 1.5rem;
+    }
+    .iq-cat-title {
+      font-size: .8rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+      color: var(--acc); margin-bottom: 1rem;
+    }
+    .iq-mod-pill {
+      display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+      font-size: .82rem; color: #e2e8f0; text-decoration: none; font-weight: 600;
+      padding: .55rem .7rem; border-radius: 8px; border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.015); margin-bottom: .5rem; transition: all .15s;
+    }
+    .iq-mod-pill:hover { border-color: rgba(0,232,154,.3); background: rgba(0,232,154,.05); }
+    .iq-mod-pill .iq-new {
+      flex-shrink: 0; font-size: .6rem; font-weight: 800; letter-spacing: .05em;
+      color: #06281f; background: var(--acc); padding: .12rem .4rem; border-radius: 4px;
+    }
+
     @media (max-width: 640px) { .hide-sm { display: none !important; } }
   </style>
 </head>
@@ -250,6 +286,124 @@
   </div>
 </section>
 {% endfor %}
+
+
+<!-- ═══════════════════════════════════ PLATFORM DASHBOARD — QUICK ACTIONS ═══ -->
+<section style="padding:2rem 1.5rem;background:#070b0f;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);">
+  <div style="max-width:1100px;margin:0 auto;display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;">
+    <a href="#platform-modules-directory" style="display:inline-flex;align-items:center;background:var(--acc);color:#000;font-weight:700;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Platform Dashboard</a>
+    <a href="{% url 'certification_trust_badge_engine:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View Trust Badges</a>
+    <a href="{% url 'knowledge_graph_relationship_map:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Knowledge Graph</a>
+    <a href="{% url 'portfolio_country_transition_atlas:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View Country Atlas</a>
+    <a href="{% url 'command_centre:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Command Centre</a>
+    <a href="{% url 'public_trust_impact_portal:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Public Trust Portal</a>
+    <a href="{% url 'frontend_experience_google_stitch_design_system:overview' %}#stitch-prompts" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Copy Google Stitch Prompts</a>
+    <a href="{% url 'frontend_experience_google_stitch_design_system:overview' %}#microsoft-partner-frontend-pack" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View Microsoft-Ready UI</a>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════ PLATFORM MODULES DIRECTORY ═══════════ -->
+<section id="platform-modules-directory" style="padding:5rem 1.5rem;background:#06080e;border-bottom:1px solid rgba(255,255,255,.06);">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="text-align:center;max-width:700px;margin:0 auto 1rem;" class="reveal">
+      <div class="chip" style="margin-bottom:1rem;">Platform Modules Directory</div>
+      <h2 style="font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem;">One Enterprise Dashboard, Not Separate Static Pages</h2>
+      <p style="color:#64748b;font-size:.92rem;line-height:1.7;">
+        Every module below links to a real, working route, grouped by what it does — core
+        intelligence, day-to-day operations, trust and governance, commercial workflows and
+        the visual/frontend layer itself.
+      </p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;margin:2.5rem 0;">
+
+      <div class="iq-cat-card reveal">
+        <div class="iq-cat-title">Core Intelligence</div>
+        <a class="iq-mod-pill" href="{% url 'asset_passport:overview' %}">Asset Passport</a>
+        <a class="iq-mod-pill" href="{% url 'impact_mrv_layer:overview' %}">Impact MRV Layer</a>
+        <a class="iq-mod-pill" href="{% url 'industrial_playbook_library:overview' %}">Industrial Playbook Library</a>
+        <a class="iq-mod-pill" href="{% url 'knowledge_graph_relationship_map:overview' %}">Knowledge Graph & Relationship Map <span class="iq-new">NEW</span></a>
+        <a class="iq-mod-pill" href="{% url 'portfolio_country_transition_atlas:overview' %}">Portfolio & Country Transition Atlas</a>
+      </div>
+
+      <div class="iq-cat-card reveal">
+        <div class="iq-cat-title">Operations</div>
+        <a class="iq-mod-pill" href="{% url 'command_centre:overview' %}">Command Centre</a>
+        <a class="iq-mod-pill" href="{% url 'mobile_inspection_mode:overview' %}">Mobile / iPad Inspection Mode</a>
+        <a class="iq-mod-pill" href="{% url 'supplier_funding_marketplace:overview' %}">Supplier & Funding Marketplace</a>
+        <a class="iq-mod-pill" href="{% url 'institutional_finance_engine:overview' %}">Institutional Finance Engine</a>
+        <a class="iq-mod-pill" href="{% url 'api_integration_layer:overview' %}">API & Integration Layer</a>
+        <a class="iq-mod-pill" href="{% url 'deployment_devops_reliability_centre:overview' %}">Deployment, DevOps & Reliability Centre</a>
+        <a class="iq-mod-pill" href="{% url 'ai_agent_operations_console:overview' %}">AI Agent Operations Console</a>
+        <a class="iq-mod-pill" href="{% url 'amanah_autopilot:overview' %}">Amanah Autopilot</a>
+      </div>
+
+      <div class="iq-cat-card reveal">
+        <div class="iq-cat-title">Trust & Governance</div>
+        <a class="iq-mod-pill" href="{% url 'governance_expert_review_board:overview' %}">Governance & Expert Review Board</a>
+        <a class="iq-mod-pill" href="{% url 'data_room_evidence_vault:overview' %}">Data Room & Evidence Vault</a>
+        <a class="iq-mod-pill" href="{% url 'security_privacy_compliance_centre:overview' %}">Security, Privacy & Compliance Centre</a>
+        <a class="iq-mod-pill" href="{% url 'certification_trust_badge_engine:overview' %}">Certification & Trust Badge Engine <span class="iq-new">NEW</span></a>
+      </div>
+
+      <div class="iq-cat-card reveal">
+        <div class="iq-cat-title">Commercial</div>
+        <a class="iq-mod-pill" href="{% url 'revenue_pricing_engine:overview' %}">Revenue & Pricing Engine</a>
+        <a class="iq-mod-pill" href="{% url 'public_trust_impact_portal:overview' %}">Public Trust & Impact Portal</a>
+        <a class="iq-mod-pill" href="{% url 'sales_crm_partner_pipeline:overview' %}">Sales CRM & Partner Pipeline</a>
+        <a class="iq-mod-pill" href="{% url 'customer_success_renewal_engine:overview' %}">Customer Success & Renewal Engine</a>
+        <a class="iq-mod-pill" href="{% url 'product_analytics_kpi_engine:overview' %}">Product Analytics & KPI Engine</a>
+        <a class="iq-mod-pill" href="{% url 'executive_briefing_board_pack_generator:overview' %}">Executive Briefing & Board Pack Generator</a>
+      </div>
+
+      <div class="iq-cat-card reveal">
+        <div class="iq-cat-title">Frontend & UX</div>
+        <a class="iq-mod-pill" href="{% url 'frontend_experience_google_stitch_design_system:overview' %}">Frontend Experience & Google Stitch Design System <span class="iq-new">NEW</span></a>
+        <a class="iq-mod-pill" href="{% url 'omnimodal_evidence_panel:overview' %}">Omnimodal Evidence Panel</a>
+        <a class="iq-mod-pill" href="{% url 'microsoft_core_stack:overview' %}">Microsoft Ecosystem Core Stack</a>
+      </div>
+
+    </div>
+
+    <!-- Trust badge visual components -->
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:1rem;" class="reveal">
+      <div style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Trust Badge Status Labels</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
+        <span class="iq-badge iq-badge-verified">MRV Verified</span>
+        <span class="iq-badge iq-badge-ready">Finance Ready</span>
+        <span class="iq-badge iq-badge-ready">Data Room Complete</span>
+        <span class="iq-badge iq-badge-verified">Expert Reviewed</span>
+        <span class="iq-badge iq-badge-verified">Public Summary Approved</span>
+        <span class="iq-badge iq-badge-verified">No Harm Gate Passed</span>
+        <span class="iq-badge iq-badge-msready">Microsoft Ecosystem Ready</span>
+      </div>
+      <p class="iq-badge-note">These are internal readiness/evidence-status labels from the Certification & Trust Badge Engine — not formal third-party certification unless separately obtained.</p>
+    </div>
+
+    <!-- Evidence-first UI pattern -->
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:2.5rem;" class="reveal">
+      <div style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Evidence-First UI Pattern</div>
+      <p style="color:#64748b;font-size:.88rem;line-height:1.7;margin-bottom:1rem;max-width:760px;">
+        Every dashboard section across EcoIQ should clearly show:
+      </p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <span class="chip">Evidence quality</span><span class="chip">Missing evidence</span>
+        <span class="chip">Human approval</span><span class="chip">MRV status</span>
+        <span class="chip">Public/private status</span><span class="chip">Next action</span>
+      </div>
+    </div>
+
+    <!-- Microsoft-ready & Google Stitch positioning -->
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:2.5rem;" class="reveal">
+      <p style="color:#94a3b8;font-size:.85rem;line-height:1.7;margin-bottom:.75rem;">
+        EcoIQ is <strong style="color:#e2e8f0;">Microsoft ecosystem-ready</strong> — designed to integrate with Microsoft Fabric, Power BI, Teams, SharePoint and Azure Digital Twins, and can use Microsoft-style enterprise workflows.
+      </p>
+      <p class="iq-badge-note">Google Stitch is a design prototyping workflow for fast UI concepts and mockup direction — it is not a production guarantee or a deployed frontend system. Production UI is implemented, reviewed and tested in code (Django templates now, Next.js later).</p>
+    </div>
+
+  </div>
+</section>
 
 
 <!-- ═══════════════════════════════ OMNIMODAL EVIDENCE PANEL ═════════════════ -->
@@ -499,6 +653,18 @@
       — showing investors, governments and industrial groups where harm is highest, where
       projects are finance-ready and where verified impact is already being delivered.
     </p>
+    <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.25rem;">
+      <span class="iq-badge iq-badge-ready">Kazakhstan</span>
+      <span class="iq-badge iq-badge-ready">United Kingdom</span>
+      <span class="iq-badge iq-badge-ready">Saudi Arabia</span>
+      <span class="iq-badge iq-badge-ready">Türkiye</span>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem;">
+      <span class="iq-badge iq-badge-ready">Finance-Ready Pipeline</span>
+      <span class="iq-badge iq-badge-blocked">Highest-Harm Zones</span>
+      <span class="iq-badge iq-badge-review">Highest-Impact Opportunities</span>
+      <span class="iq-badge iq-badge-verified">Verified Impact</span>
+    </div>
     <a href="{% url 'portfolio_country_transition_atlas:overview' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.9rem;padding:.7rem 1.6rem;border-radius:8px;text-decoration:none;">
       Explore the Portfolio & Country Transition Atlas →
     </a>
@@ -694,6 +860,36 @@
       evidence, risks, playbooks, suppliers, funders, finance models, governance
       approvals, MRV claims, trust badges, countries and Maqasid/Mizan principles.
     </p>
+
+    <div style="text-align:left;max-width:660px;margin:0 auto 1.75rem;">
+      <div style="font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.5rem;">Node types</div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.1rem;">
+        <span class="chip">Asset</span><span class="chip">Evidence</span><span class="chip">Risk</span>
+        <span class="chip">Project</span><span class="chip">Finance</span><span class="chip">Trust Badge</span>
+      </div>
+
+      <div style="font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.5rem;">Relationship types</div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.1rem;">
+        <span class="chip" style="font-family:'SF Mono',monospace;text-transform:none;letter-spacing:0;">ASSET_HAS_EVIDENCE</span>
+        <span class="chip" style="font-family:'SF Mono',monospace;text-transform:none;letter-spacing:0;">MRV_CLAIM_BACKED_BY_EVIDENCE</span>
+        <span class="chip" style="font-family:'SF Mono',monospace;text-transform:none;letter-spacing:0;">PROJECT_HAS_BADGE</span>
+      </div>
+
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-bottom:1.1rem;">
+        <span style="font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Graph completeness score</span>
+        <span class="iq-badge iq-badge-verified">Strong Graph</span>
+      </div>
+
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1.1rem;">
+        <span class="iq-badge iq-badge-blocked">3 Missing Links</span>
+        <span style="color:#64748b;font-size:.82rem;">e.g. MRV claim has no after-data</span>
+      </div>
+
+      <p style="color:#94a3b8;font-size:.82rem;font-style:italic;border-left:2px solid var(--acc);padding-left:.75rem;margin:0;">
+        Process improvement: "Collect 12 months of fuel data and request technical review to unlock Finance Ready."
+      </p>
+    </div>
+
     <a href="{% url 'knowledge_graph_relationship_map:overview' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:var(--acc);color:#000;font-weight:700;font-size:.9rem;padding:.7rem 1.6rem;border-radius:8px;text-decoration:none;">
       Explore the Knowledge Graph & Relationship Map →
     </a>

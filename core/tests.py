@@ -117,6 +117,64 @@ class PlatformPageRenderingTests(TestCase):
         content = r.content.decode()
         self.assertNotIn('{{ company_count_display }}', content)
         self.assertNotIn('{{ COMPANY_COUNT_DISPLAY }}', content)
+
+
+class PlatformPageVisualDashboardUpgradeTests(TestCase):
+    """
+    Regression guard for the Visual Dashboard UI Upgrade: the categorised
+    Platform Modules Directory, trust badge pills and Microsoft/Google
+    Stitch positioning copy must render on /platform/ without raw template
+    syntax and without unsupported certification claims.
+    """
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_platform_page_has_no_raw_template_tags(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        self.assertNotIn('{%', content)
+        self.assertNotIn('{{', content)
+
+    def test_platform_page_mentions_knowledge_graph(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Knowledge Graph')
+
+    def test_platform_page_mentions_certification_trust_badge_engine(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Certification & Trust Badge Engine')
+
+    def test_platform_page_mentions_frontend_experience_google_stitch_design_system(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Frontend Experience & Google Stitch Design System')
+
+    def test_platform_page_mentions_mrv_verified(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'MRV Verified')
+
+    def test_platform_page_mentions_finance_ready(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Finance Ready')
+
+    def test_platform_page_mentions_microsoft_ecosystem_ready(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Microsoft ecosystem-ready')
+
+    def test_platform_page_has_no_unsupported_microsoft_certified_claim(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        idx = content.find('Microsoft certified')
+        while idx != -1:
+            context = content[max(0, idx - 60):idx + 40]
+            self.assertIn('not', context, 'unsupported "Microsoft certified" claim found without a negation nearby')
+            idx = content.find('Microsoft certified', idx + 1)
+
+    def test_platform_page_has_no_unsupported_fatwa_or_shariah_certification_claim(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        self.assertNotIn('is a fatwa', content)
+        self.assertNotIn('Shariah certified', content)
+        self.assertNotIn('Shariah certification', content)
         self.assertRegex(content, r'\d+\+?\s+Companies')
 
     def test_landing_page_200(self):

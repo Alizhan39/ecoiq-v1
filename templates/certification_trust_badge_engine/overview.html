@@ -41,10 +41,11 @@
 
   <section class="ctbe-section" id="badge-categories">
     <h2 class="ctbe-h2">Badge Categories</h2>
+    <p class="iq-badge-note">Badges are readiness/status labels, not formal certification unless separately obtained.</p>
     {% for cat in badge_categories %}
     <div class="ctbe-cat-card">
       <span class="ctbe-cat-number">{{ cat.number }}. {{ cat.title }}</span>
-      <div class="ctbe-chip-row">{% for b in cat.badges %}<span class="ctbe-chip">{{ b }}</span>{% endfor %}</div>
+      <div class="ctbe-chip-row">{% for b in cat.badges %}<span class="iq-badge iq-badge-{{ b.cls }}">{{ b.label }}</span>{% endfor %}</div>
       <p class="ctbe-rule"><strong>{{ cat.rule_label }}:</strong> {{ cat.rule }}</p>
     </div>
     {% endfor %}
@@ -80,7 +81,7 @@
     {% for p in example_project_badges %}
     <div class="ctbe-example-card">
       <h3 class="ctbe-example-title">{{ p.name }}</h3>
-      <div class="ctbe-chip-row">{% for b in p.badges %}<span class="ctbe-chip">{{ b }}</span>{% endfor %}</div>
+      <div class="ctbe-chip-row">{% for b in p.badges %}<span class="iq-badge iq-badge-{{ b.cls }}">{{ b.label }}</span>{% endfor %}</div>
       <p class="ctbe-next-action"><strong>Next action:</strong> {{ p.next_action }}</p>
     </div>
     {% endfor %}
