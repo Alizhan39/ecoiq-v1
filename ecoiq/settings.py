@@ -184,6 +184,9 @@ INSTALLED_APPS = [
 
     # Training pack for the agent that extracts facts from bills, reports and MRV evidence
     'document_reader_agent_training_pack',
+
+    # Training pack for the agent that separates estimated impact from verified impact
+    'mrv_agent_training_pack',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

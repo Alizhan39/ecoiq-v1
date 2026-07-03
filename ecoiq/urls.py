@@ -172,6 +172,9 @@ urlpatterns = [
     # EcoIQ Document Reader Agent Training Pack — training pack for evidence-extraction agent
     path('document-reader-agent-training-pack/', include('document_reader_agent_training_pack.urls', namespace='document_reader_agent_training_pack')),
 
+    # EcoIQ MRV Agent Training Pack — training pack for the estimated-vs-verified impact agent
+    path('mrv-agent-training-pack/', include('mrv_agent_training_pack.urls', namespace='mrv_agent_training_pack')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
