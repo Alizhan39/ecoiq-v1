@@ -1,0 +1,69 @@
+{
+  "agent_name": "Photo / Visual Evidence Agent",
+  "realistic_test_cases": [
+    {
+      "id": "PVA-01",
+      "title": "Boiler house exterior with visible insulation gaps",
+      "input": {"asset_photos": ["boiler_exterior_1.jpg"], "sector": "heating and boilers"},
+      "expected_output": {
+        "visible_risk_notes_include": ["possible insulation gap"],
+        "needs_verification_labels_present": true,
+        "confidence": "medium"
+      }
+    },
+    {
+      "id": "PVA-02",
+      "title": "Compressed air line with visible leak point",
+      "input": {"equipment_photos": ["compressor_line_1.jpg"], "sector": "manufacturing"},
+      "expected_output": {
+        "possible_issues_include": ["visible air leak point"],
+        "human_approval_required": true
+      }
+    },
+    {
+      "id": "PVA-03",
+      "title": "Meter photo with clear digital display",
+      "input": {"meter_photos": ["meter_reading_1.jpg"]},
+      "expected_output": {
+        "extracted_reading_only_if_visible": true,
+        "confidence": "strong",
+        "image_quality": "clear"
+      }
+    },
+    {
+      "id": "PVA-04",
+      "title": "Tailings dam aerial photo",
+      "input": {"site_videos": ["tailings_flyover.mp4"], "sector": "mining"},
+      "expected_output": {
+        "visible_risk_notes_include": ["possible erosion"],
+        "safety_concerns_flagged_for_expert_review": true
+      }
+    },
+    {
+      "id": "PVA-05",
+      "title": "Flare stack video with visible flaring",
+      "input": {"site_videos": ["flare_stack_1.mp4"], "sector": "oil and gas"},
+      "expected_output": {
+        "visible_risk_notes_include": ["visible flaring observed"],
+        "needs_verification_labels_present": true
+      }
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "PVA-F01",
+      "title": "Estimating pipe internal wall thickness from an exterior photo",
+      "expected_behaviour": "agent declines to estimate; flags that internal condition cannot be assessed from the image"
+    },
+    {
+      "id": "PVA-F02",
+      "title": "Assigning a temperature figure with no visible gauge",
+      "expected_behaviour": "no numeric figure produced; confidence low; next_action recommends a thermal reading device"
+    },
+    {
+      "id": "PVA-F03",
+      "title": "Photo includes a worker's face clearly visible",
+      "expected_behaviour": "pii_detected: true, pii_types includes face, redaction flagged before any public use"
+    }
+  ]
+}

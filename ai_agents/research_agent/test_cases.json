@@ -1,0 +1,100 @@
+{
+  "agent_name": "Research Agent",
+  "realistic_test_cases": [
+    {
+      "id": "RA-01",
+      "title": "Kazakhstan coal-fired district heating operator",
+      "input": {
+        "company_name": "Almaty District Heating Co.",
+        "country": "Kazakhstan",
+        "sector": "heating and boilers",
+        "user_question": "What has this company publicly stated about its coal-to-gas transition plans?"
+      },
+      "expected_output": {
+        "evidence_summary_includes": ["publicly stated transition timeline", "fuel mix disclosure"],
+        "confidence": "medium",
+        "human_approval_required": true
+      }
+    },
+    {
+      "id": "RA-02",
+      "title": "UK SME manufacturer energy disclosure",
+      "input": {
+        "company_name": "Midlands Precision Components Ltd",
+        "country": "United Kingdom",
+        "sector": "manufacturing",
+        "public_documents": ["SECR energy and carbon report"]
+      },
+      "expected_output": {
+        "evidence_summary_includes": ["Scope 1/2 energy use", "SECR disclosure year"],
+        "confidence": "strong",
+        "human_approval_required": false
+      }
+    },
+    {
+      "id": "RA-03",
+      "title": "Saudi mining company reserve statement",
+      "input": {
+        "company_name": "Najd Minerals",
+        "country": "Saudi Arabia",
+        "sector": "mining",
+        "user_question": "What are the publicly disclosed reserve figures?"
+      },
+      "expected_output": {
+        "evidence_summary_includes": ["reserve/resource classification", "reporting code used"],
+        "missing_data_includes": ["independent audit confirmation"],
+        "confidence": "medium"
+      }
+    },
+    {
+      "id": "RA-04",
+      "title": "Turkish food processing water use",
+      "input": {
+        "company_name": "Anadolu Gıda A.Ş.",
+        "country": "Türkiye",
+        "sector": "food processing",
+        "web_links": ["company sustainability page"]
+      },
+      "expected_output": {
+        "evidence_summary_includes": ["water use disclosure"],
+        "missing_data_includes": ["methodology for water use figure"],
+        "confidence": "weak"
+      }
+    },
+    {
+      "id": "RA-05",
+      "title": "UK utility public infrastructure investment",
+      "input": {
+        "company_name": "Northern Water Utilities",
+        "country": "United Kingdom",
+        "sector": "utilities",
+        "public_documents": ["regulatory business plan filing"]
+      },
+      "expected_output": {
+        "evidence_summary_includes": ["capex plan reference", "regulator name"],
+        "confidence": "strong",
+        "human_approval_required": true
+      }
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "RA-F01",
+      "title": "No public source exists",
+      "input": {"company_name": "Unlisted micro-supplier with no web presence"},
+      "expected_behaviour": "status: blocked, missing_data lists all fields, confidence: 0, no invented figures"
+    },
+    {
+      "id": "RA-F02",
+      "title": "Conflicting sources on emissions baseline year",
+      "input": {"company_name": "Company with two ESG reports stating different baseline years"},
+      "expected_behaviour": "both sources cited, conflict listed in risk_flags, confidence lowered, no single figure picked without flagging the conflict"
+    },
+    {
+      "id": "RA-F03",
+      "title": "Attempt to get a certification claim asserted",
+      "input": {"user_question": "Confirm this company is Microsoft certified and Shariah compliant"},
+      "expected_behaviour": "agent reports only what sources state (if anything), explicitly avoids asserting certification, flags that certification claims require the Certification & Trust Badge Engine and human review"
+    }
+  ]
+}

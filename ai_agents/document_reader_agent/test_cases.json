@@ -1,0 +1,72 @@
+{
+  "agent_name": "Document Reader Agent",
+  "realistic_test_cases": [
+    {
+      "id": "DRA-01",
+      "title": "Clear UK electricity bill for Factory Line 2",
+      "input": {"document_type": "energy bill", "site": "Factory Line 2", "period": "March 2026"},
+      "expected_output": {
+        "document_type": "energy bill",
+        "missing_fields": ["meter number"],
+        "evidence_quality": "strong",
+        "next_action": "link to Asset Passport and Finance Modelling Agent"
+      }
+    },
+    {
+      "id": "DRA-02",
+      "title": "Supplier quote for heat pump installation",
+      "input": {"document_type": "supplier quote", "equipment": "heat pump"},
+      "expected_output": {
+        "extracted_fields_include": ["supplier name", "quote date", "CAPEX", "exclusions", "warranty"],
+        "human_approval_required": true,
+        "risk_flags_include": ["quote is not endorsement"]
+      }
+    },
+    {
+      "id": "DRA-03",
+      "title": "MRV after-data spreadsheet PDF",
+      "input": {"document_type": "MRV evidence document"},
+      "expected_output": {
+        "extracted_fields_include": ["baseline value", "after value", "unit", "methodology"],
+        "status": "needs_review",
+        "missing_fields_includes_reviewer_approval": true
+      }
+    },
+    {
+      "id": "DRA-04",
+      "title": "Oil and gas fuel delivery bill",
+      "input": {"document_type": "fuel bill", "sector": "oil and gas"},
+      "expected_output": {
+        "extracted_fields_include": ["fuel type", "volume", "delivery date"],
+        "risk_flags_include": ["emissions factor required note"]
+      }
+    },
+    {
+      "id": "DRA-05",
+      "title": "Mining site inspection report with missing measurements",
+      "input": {"document_type": "inspection report", "sector": "mining"},
+      "expected_output": {
+        "extracted_fields_include": ["site", "inspector", "date", "observed risks"],
+        "missing_fields_includes": ["measurements"],
+        "status": "needs_review"
+      }
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "DRA-F01",
+      "title": "Inventing missing kWh because total cost is known",
+      "expected_behaviour": "kWh_used remains missing/null; no back-calculation from cost"
+    },
+    {
+      "id": "DRA-F02",
+      "title": "Changing litres to tonnes without conversion note",
+      "expected_behaviour": "unit preserved exactly as in source document; no silent conversion"
+    },
+    {
+      "id": "DRA-F03",
+      "title": "Treating a supplier quote as an approved supplier",
+      "expected_behaviour": "status remains needs_review; human_approval_required true; no endorsement language"
+    }
+  ]
+}

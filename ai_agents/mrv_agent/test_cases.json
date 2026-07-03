@@ -1,0 +1,52 @@
+{
+  "agent_name": "MRV Agent",
+  "realistic_test_cases": [
+    {
+      "id": "MRV-01",
+      "title": "Baseline energy bill only",
+      "input": {"baseline_evidence": ["energy bill"], "after_evidence": []},
+      "expected_output": {"mrv_stage": "Baseline Captured", "status": "blocked_or_draft"}
+    },
+    {
+      "id": "MRV-02",
+      "title": "Baseline and after energy bills, same period",
+      "input": {"baseline_evidence": ["bill Q1 2025"], "after_evidence": ["bill Q1 2026"]},
+      "expected_output": {"mrv_stage": "MRV In Review", "human_approval_required": true}
+    },
+    {
+      "id": "MRV-03",
+      "title": "Supplier claim of 30% savings only",
+      "input": {"baseline_evidence": [], "after_evidence": [], "supplier_claim": "30% savings"},
+      "expected_output": {"estimated_impact_only": true, "verified_impact": null}
+    },
+    {
+      "id": "MRV-04",
+      "title": "Water bill baseline and after meter readings",
+      "input": {"claim_type": "water saved", "baseline_evidence": ["water bill"], "after_evidence": ["meter reading"]},
+      "expected_output": {"mrv_stage": "MRV In Review", "unit_preserved": true}
+    },
+    {
+      "id": "MRV-05",
+      "title": "Complete MRV pack with reviewer approval",
+      "input": {"baseline_evidence": ["bill"], "after_evidence": ["bill"], "methodology": "stated", "reviewer_approval": true},
+      "expected_output": {"mrv_stage": "MRV Verified", "badge_recommendation": "MRV Verified"}
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "MRV-F01",
+      "title": "CO2 claim without emissions factor",
+      "expected_behaviour": "status: blocked; missing_evidence includes methodology/emissions factor"
+    },
+    {
+      "id": "MRV-F02",
+      "title": "Winter baseline vs summer after-data",
+      "expected_behaviour": "risk_flags includes period comparability issue; mrv_stage does not advance to verified"
+    },
+    {
+      "id": "MRV-F03",
+      "title": "Public impact story without consent",
+      "expected_behaviour": "public_reporting_ready: false; blocked until consent/privacy check passes"
+    }
+  ]
+}
