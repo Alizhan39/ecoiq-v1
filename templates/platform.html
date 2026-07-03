@@ -91,6 +91,55 @@
       color: #06281f; background: var(--acc); padding: .12rem .4rem; border-radius: 4px;
     }
 
+    /* Richer module cards — title, description, status, connected hint, CTA */
+    .iq-mod-card {
+      display: block; text-decoration: none; color: inherit;
+      background: rgba(255,255,255,.015); border: 1px solid rgba(255,255,255,.06);
+      border-radius: 10px; padding: .9rem 1rem; margin-bottom: .6rem; transition: all .15s;
+    }
+    .iq-mod-card:hover { border-color: rgba(0,232,154,.3); background: rgba(0,232,154,.04); }
+    .iq-mod-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; margin-bottom: .35rem; }
+    .iq-mod-card-title { font-size: .86rem; font-weight: 700; color: #fff; line-height: 1.3; }
+    .iq-mod-card-desc { font-size: .74rem; color: #64748b; line-height: 1.55; margin-bottom: .45rem; }
+    .iq-mod-card-connected { font-size: .68rem; color: #475569; margin-bottom: .5rem; }
+    .iq-mod-card-connected strong { color: #94a3b8; font-weight: 600; }
+    .iq-mod-card-cta {
+      display: inline-flex; align-items: center; gap: .3rem; font-size: .74rem; font-weight: 700;
+      color: var(--acc);
+    }
+    .iq-route-live {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;
+      font-size: .6rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--acc); white-space: nowrap;
+    }
+    .iq-route-live::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--acc); display: inline-block; }
+
+    /* Hero KPI cards */
+    .iq-kpi-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: .75rem; }
+    .iq-kpi-card {
+      background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 10px; padding: 1rem 1.1rem; text-align: left;
+    }
+    .iq-kpi-val { font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: -.02em; margin-bottom: .2rem; }
+    .iq-kpi-label { font-size: .68rem; color: #64748b; line-height: 1.5; }
+
+    /* Country cards for the Country Atlas teaser */
+    .iq-country-card {
+      background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; padding: 1.1rem 1.25rem;
+    }
+    .iq-country-name { font-size: .95rem; font-weight: 700; color: #fff; margin-bottom: .6rem; }
+    .iq-country-row { font-size: .74rem; color: #64748b; line-height: 1.6; margin-bottom: .25rem; }
+    .iq-country-row strong { color: #94a3b8; font-weight: 600; }
+
+    /* Visual System Components grid */
+    .iq-vsc-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: .75rem; }
+    .iq-vsc-card {
+      background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06);
+      border-radius: 10px; padding: .9rem 1rem;
+    }
+    .iq-vsc-label { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #475569; margin-bottom: .5rem; }
+
     @media (max-width: 640px) { .hide-sm { display: none !important; } }
   </style>
 </head>
@@ -288,8 +337,40 @@
 {% endfor %}
 
 
+<!-- ═══════════════════════════════════ PLATFORM DASHBOARD HERO ══════════════ -->
+<section style="padding:4rem 1.5rem 2.5rem;background:#070b0f;border-top:1px solid rgba(255,255,255,.06);">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="text-align:center;max-width:760px;margin:0 auto 2rem;" class="reveal">
+      <div class="chip" style="margin-bottom:1rem;">Platform Dashboard</div>
+      <h2 style="font-size:clamp(1.6rem,3.2vw,2.3rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem;">EcoIQ Industrial Intelligence Platform</h2>
+      <p style="color:#94a3b8;font-size:.98rem;line-height:1.7;">
+        Evidence-first modernisation intelligence for assets, finance, MRV, governance and verified impact.
+      </p>
+    </div>
+
+    <div class="iq-kpi-row reveal" style="margin-bottom:2rem;">
+      <div class="iq-kpi-card"><div class="iq-kpi-val">26+</div><div class="iq-kpi-label">Modules live</div></div>
+      <div class="iq-kpi-card"><div class="iq-kpi-val">Evidence-First</div><div class="iq-kpi-label">Every recommendation traces to evidence</div></div>
+      <div class="iq-kpi-card"><div class="iq-kpi-val">4</div><div class="iq-kpi-label">Countries covered</div></div>
+      <div class="iq-kpi-card"><div class="iq-kpi-val">40+</div><div class="iq-kpi-label">Trust badges</div></div>
+      <div class="iq-kpi-card"><div class="iq-kpi-val">AI + Human</div><div class="iq-kpi-label">AI + human review on every recommendation</div></div>
+      <div class="iq-kpi-card"><div class="iq-kpi-val">Ecosystem-Ready</div><div class="iq-kpi-label">Microsoft ecosystem-ready</div></div>
+    </div>
+
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;">
+      <a href="{% url 'command_centre:overview' %}" style="display:inline-flex;align-items:center;background:var(--acc);color:#000;font-weight:700;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Command Centre</a>
+      <a href="{% url 'knowledge_graph_relationship_map:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View Knowledge Graph</a>
+      <a href="{% url 'certification_trust_badge_engine:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Trust Badges</a>
+      <a href="{% url 'portfolio_country_transition_atlas:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View Country Atlas</a>
+      <a href="{% url 'public_trust_impact_portal:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Public Trust Portal</a>
+      <a href="{% url 'frontend_experience_google_stitch_design_system:overview' %}#stitch-prompts" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Copy Google Stitch Prompts</a>
+    </div>
+  </div>
+</section>
+
+
 <!-- ═══════════════════════════════════ PLATFORM DASHBOARD — QUICK ACTIONS ═══ -->
-<section style="padding:2rem 1.5rem;background:#070b0f;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);">
+<section style="padding:1.5rem 1.5rem 2rem;background:#070b0f;border-bottom:1px solid rgba(255,255,255,.06);">
   <div style="max-width:1100px;margin:0 auto;display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;">
     <a href="#platform-modules-directory" style="display:inline-flex;align-items:center;background:var(--acc);color:#000;font-weight:700;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Platform Dashboard</a>
     <a href="{% url 'certification_trust_badge_engine:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View Trust Badges</a>
@@ -299,6 +380,8 @@
     <a href="{% url 'public_trust_impact_portal:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Public Trust Portal</a>
     <a href="{% url 'frontend_experience_google_stitch_design_system:overview' %}#stitch-prompts" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Copy Google Stitch Prompts</a>
     <a href="{% url 'frontend_experience_google_stitch_design_system:overview' %}#microsoft-partner-frontend-pack" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View Microsoft-Ready UI</a>
+    <a href="{% url 'data_room_evidence_vault:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">Open Data Room</a>
+    <a href="{% url 'impact_mrv_layer:overview' %}" style="display:inline-flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;font-weight:600;font-size:.83rem;padding:.55rem 1.1rem;border-radius:7px;text-decoration:none;">View MRV Layer</a>
   </div>
 </section>
 
@@ -310,65 +393,189 @@
       <div class="chip" style="margin-bottom:1rem;">Platform Modules Directory</div>
       <h2 style="font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem;">One Enterprise Dashboard, Not Separate Static Pages</h2>
       <p style="color:#64748b;font-size:.92rem;line-height:1.7;">
-        Every module below links to a real, working route, grouped by what it does — core
-        intelligence, day-to-day operations, trust and governance, commercial workflows and
-        the visual/frontend layer itself.
+        Every module below links to a real, working route, grouped by what it does. Nothing
+        below is a text-only placeholder — every card shown here has a live route.
       </p>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;margin:2.5rem 0;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin:2.5rem 0;">
 
       <div class="iq-cat-card reveal">
         <div class="iq-cat-title">Core Intelligence</div>
-        <a class="iq-mod-pill" href="{% url 'asset_passport:overview' %}">Asset Passport</a>
-        <a class="iq-mod-pill" href="{% url 'impact_mrv_layer:overview' %}">Impact MRV Layer</a>
-        <a class="iq-mod-pill" href="{% url 'industrial_playbook_library:overview' %}">Industrial Playbook Library</a>
-        <a class="iq-mod-pill" href="{% url 'knowledge_graph_relationship_map:overview' %}">Knowledge Graph & Relationship Map <span class="iq-new">NEW</span></a>
-        <a class="iq-mod-pill" href="{% url 'portfolio_country_transition_atlas:overview' %}">Portfolio & Country Transition Atlas</a>
+        <a class="iq-mod-card" href="{% url 'asset_passport:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Asset Passport</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Living digital record for one industrial asset — condition, evidence, risk and readiness in one place.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Data Room & Evidence Vault</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'impact_mrv_layer:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Impact MRV Layer</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Measurement, reporting and verification — separating estimated impact from verified impact.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Certification & Trust Badge Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'industrial_playbook_library:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Industrial Playbook Library</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Reusable modernisation pathways matched to asset type and sector.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Asset Passport</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'knowledge_graph_relationship_map:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Knowledge Graph & Relationship Map</span><span class="iq-new">NEW</span></div>
+          <p class="iq-mod-card-desc">Explainable relationship graph connecting assets, evidence, risk and verified impact.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Certification & Trust Badge Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'portfolio_country_transition_atlas:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Portfolio & Country Transition Atlas</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Country and portfolio-level view of transition risk and finance-ready projects.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Institutional Finance Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'omnimodal_evidence_panel:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Omnimodal Evidence Panel</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Live visual evidence interface combining photo, video, sensor and document reasoning.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Mobile / iPad Inspection Mode</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
       </div>
 
       <div class="iq-cat-card reveal">
         <div class="iq-cat-title">Operations</div>
-        <a class="iq-mod-pill" href="{% url 'command_centre:overview' %}">Command Centre</a>
-        <a class="iq-mod-pill" href="{% url 'mobile_inspection_mode:overview' %}">Mobile / iPad Inspection Mode</a>
-        <a class="iq-mod-pill" href="{% url 'supplier_funding_marketplace:overview' %}">Supplier & Funding Marketplace</a>
-        <a class="iq-mod-pill" href="{% url 'institutional_finance_engine:overview' %}">Institutional Finance Engine</a>
-        <a class="iq-mod-pill" href="{% url 'api_integration_layer:overview' %}">API & Integration Layer</a>
-        <a class="iq-mod-pill" href="{% url 'deployment_devops_reliability_centre:overview' %}">Deployment, DevOps & Reliability Centre</a>
-        <a class="iq-mod-pill" href="{% url 'ai_agent_operations_console:overview' %}">AI Agent Operations Console</a>
-        <a class="iq-mod-pill" href="{% url 'amanah_autopilot:overview' %}">Amanah Autopilot</a>
+        <a class="iq-mod-card" href="{% url 'command_centre:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Command Centre</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Central operational view of the live modernisation project pipeline.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Governance & Expert Review Board</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'mobile_inspection_mode:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Mobile / iPad Inspection Mode</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Mobile-first field inspection and evidence capture.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Omnimodal Evidence Panel</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'ai_agent_operations_console:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">AI Agent Operations Console</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Observability and control layer for every AI agent EcoIQ runs.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Amanah Autopilot</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'product_analytics_kpi_engine:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Product Analytics & KPI Engine</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Platform usage, conversion, revenue and impact analytics.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Revenue & Pricing Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'customer_success_renewal_engine:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Customer Success & Renewal Engine</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Post-sale account health, renewal and expansion tracking.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Sales CRM & Partner Pipeline</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'deployment_devops_reliability_centre:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Deployment, DevOps & Reliability Centre</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Production readiness, monitoring and incident response.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Security, Privacy & Compliance Centre</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
       </div>
 
       <div class="iq-cat-card reveal">
         <div class="iq-cat-title">Trust & Governance</div>
-        <a class="iq-mod-pill" href="{% url 'governance_expert_review_board:overview' %}">Governance & Expert Review Board</a>
-        <a class="iq-mod-pill" href="{% url 'data_room_evidence_vault:overview' %}">Data Room & Evidence Vault</a>
-        <a class="iq-mod-pill" href="{% url 'security_privacy_compliance_centre:overview' %}">Security, Privacy & Compliance Centre</a>
-        <a class="iq-mod-pill" href="{% url 'certification_trust_badge_engine:overview' %}">Certification & Trust Badge Engine <span class="iq-new">NEW</span></a>
+        <a class="iq-mod-card" href="{% url 'governance_expert_review_board:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Governance & Expert Review Board</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Human-in-the-loop expert review and approval layer.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Certification & Trust Badge Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'security_privacy_compliance_centre:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Security, Privacy & Compliance Centre</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Security, privacy and compliance governance layer.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Deployment, DevOps & Reliability Centre</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'certification_trust_badge_engine:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Certification & Trust Badge Engine</span><span class="iq-new">NEW</span></div>
+          <p class="iq-mod-card-desc">Converts evidence and review status into clear readiness/trust badges.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Knowledge Graph & Relationship Map</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'data_room_evidence_vault:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Data Room & Evidence Vault</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Investor-grade evidence and due diligence storage.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Asset Passport</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'public_trust_impact_portal:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Public Trust & Impact Portal</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Approved public-facing verified impact reporting.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Impact MRV Layer</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <p style="font-size:.72rem;color:#475569;line-height:1.6;margin-top:.5rem;">No Harm Gate and Maqasid/Mizan ethical scoring run across every module above — see the Knowledge Graph and Certification & Trust Badge Engine for details.</p>
       </div>
 
       <div class="iq-cat-card reveal">
-        <div class="iq-cat-title">Commercial</div>
-        <a class="iq-mod-pill" href="{% url 'revenue_pricing_engine:overview' %}">Revenue & Pricing Engine</a>
-        <a class="iq-mod-pill" href="{% url 'public_trust_impact_portal:overview' %}">Public Trust & Impact Portal</a>
-        <a class="iq-mod-pill" href="{% url 'sales_crm_partner_pipeline:overview' %}">Sales CRM & Partner Pipeline</a>
-        <a class="iq-mod-pill" href="{% url 'customer_success_renewal_engine:overview' %}">Customer Success & Renewal Engine</a>
-        <a class="iq-mod-pill" href="{% url 'product_analytics_kpi_engine:overview' %}">Product Analytics & KPI Engine</a>
-        <a class="iq-mod-pill" href="{% url 'executive_briefing_board_pack_generator:overview' %}">Executive Briefing & Board Pack Generator</a>
+        <div class="iq-cat-title">Finance & Commercial</div>
+        <a class="iq-mod-card" href="{% url 'institutional_finance_engine:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Institutional Finance Engine</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Investor-grade financial modelling and decision memos.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Portfolio & Country Transition Atlas</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'supplier_funding_marketplace:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Supplier & Funding Marketplace</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Supplier and funding matching for financed implementation.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Institutional Finance Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'revenue_pricing_engine:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Revenue & Pricing Engine</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Commercial productisation and pricing model.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Sales CRM & Partner Pipeline</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'sales_crm_partner_pipeline:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Sales CRM & Partner Pipeline</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Sales, partnership and funder pipeline management.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Customer Success & Renewal Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'executive_briefing_board_pack_generator:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Executive Briefing & Board Pack Generator</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Investor, board and government decision-pack generation.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Data Room & Evidence Vault</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
       </div>
 
       <div class="iq-cat-card reveal">
-        <div class="iq-cat-title">Frontend & UX</div>
-        <a class="iq-mod-pill" href="{% url 'frontend_experience_google_stitch_design_system:overview' %}">Frontend Experience & Google Stitch Design System <span class="iq-new">NEW</span></a>
-        <a class="iq-mod-pill" href="{% url 'omnimodal_evidence_panel:overview' %}">Omnimodal Evidence Panel</a>
-        <a class="iq-mod-pill" href="{% url 'microsoft_core_stack:overview' %}">Microsoft Ecosystem Core Stack</a>
+        <div class="iq-cat-title">Frontend & Ecosystem</div>
+        <a class="iq-mod-card" href="{% url 'microsoft_core_stack:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Microsoft Ecosystem Core Stack</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">Microsoft ecosystem-ready architecture — designed to integrate with Microsoft Fabric, Power BI, Teams and SharePoint.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Frontend Experience & Google Stitch Design System</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'api_integration_layer:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">API & Integration Layer</span><span class="iq-route-live">Live</span></div>
+          <p class="iq-mod-card-desc">API and enterprise integration connectivity layer.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Microsoft Ecosystem Core Stack</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
+        <a class="iq-mod-card" href="{% url 'frontend_experience_google_stitch_design_system:overview' %}">
+          <div class="iq-mod-card-head"><span class="iq-mod-card-title">Frontend Experience & Google Stitch Design System</span><span class="iq-new">NEW</span></div>
+          <p class="iq-mod-card-desc">Visual design system, frontend library stack and Google Stitch prompt library.</p>
+          <p class="iq-mod-card-connected">Connects to: <strong>Certification & Trust Badge Engine</strong></p>
+          <span class="iq-mod-card-cta">Open →</span>
+        </a>
       </div>
 
     </div>
 
     <!-- Trust badge visual components -->
     <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:1rem;" class="reveal">
-      <div style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Trust Badge Status Labels</div>
+      <h3 style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Trust Badge Status Labels</h3>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
         <span class="iq-badge iq-badge-verified">MRV Verified</span>
         <span class="iq-badge iq-badge-ready">Finance Ready</span>
@@ -377,29 +584,92 @@
         <span class="iq-badge iq-badge-verified">Public Summary Approved</span>
         <span class="iq-badge iq-badge-verified">No Harm Gate Passed</span>
         <span class="iq-badge iq-badge-msready">Microsoft Ecosystem Ready</span>
+        <span class="iq-badge iq-badge-review">Needs Verification</span>
+        <span class="iq-badge iq-badge-verified">Evidence Strong</span>
+        <span class="iq-badge iq-badge-blocked">Evidence Weak</span>
       </div>
-      <p class="iq-badge-note">These are internal readiness/evidence-status labels from the Certification & Trust Badge Engine — not formal third-party certification unless separately obtained.</p>
+      <p class="iq-badge-note">EcoIQ trust badges are evidence-status and readiness labels unless a formal third-party certification is separately obtained.</p>
     </div>
 
     <!-- Evidence-first UI pattern -->
     <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:2.5rem;" class="reveal">
-      <div style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Evidence-First UI Pattern</div>
+      <h3 style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Evidence-First UI Pattern</h3>
       <p style="color:#64748b;font-size:.88rem;line-height:1.7;margin-bottom:1rem;max-width:760px;">
-        Every dashboard section across EcoIQ should clearly show:
+        Every dashboard section across EcoIQ should clearly show evidence quality, missing
+        evidence, human approval status, MRV status, public/private status and next action:
       </p>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-        <span class="chip">Evidence quality</span><span class="chip">Missing evidence</span>
-        <span class="chip">Human approval</span><span class="chip">MRV status</span>
-        <span class="chip">Public/private status</span><span class="chip">Next action</span>
+        <span class="iq-badge iq-badge-verified">Evidence Strong</span>
+        <span class="iq-badge iq-badge-review">Evidence Medium</span>
+        <span class="iq-badge iq-badge-blocked">Evidence Weak</span>
+        <span class="iq-badge iq-badge-review">Needs Verification</span>
+        <span class="iq-badge iq-badge-review">Human Review Required</span>
+        <span class="iq-badge iq-badge-verified">MRV Verified</span>
+        <span class="iq-badge iq-badge-review">Estimated Impact</span>
+        <span class="iq-badge iq-badge-verified">Public Summary Approved</span>
+        <span class="chip">Private Evidence</span>
       </div>
+    </div>
+
+    <!-- Visual System Components -->
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:2.5rem;" class="reveal">
+      <h3 style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Visual System Components</h3>
+      <div class="iq-vsc-grid">
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Score card</div><div class="iq-kpi-val" style="font-size:1.1rem;">82 / 100</div></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Risk card</div><span class="iq-badge iq-badge-blocked">Fuel Waste — High</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Evidence card</div><span class="chip">8 photos · 1 fuel bill</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Trust badge</div><span class="iq-badge iq-badge-verified">MRV Verified</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Country card</div><div style="font-size:.82rem;font-weight:700;color:#fff;">Kazakhstan</div></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Graph node card</div><span class="chip" style="font-family:'SF Mono',monospace;text-transform:none;">Asset · Boiler House #3</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">MRV status card</div><span class="iq-badge iq-badge-review">After-Data Pending</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Finance readiness card</div><span class="iq-badge iq-badge-ready">Finance Ready</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Public/private label</div><span class="iq-badge iq-badge-verified">Public Summary Approved</span> <span class="chip">Private Evidence</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">No Harm Gate alert</div><span class="iq-badge iq-badge-blocked">No Harm Gate Needs Review</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Microsoft-ready integration card</div><span class="iq-badge iq-badge-msready">Microsoft Ecosystem Ready</span></div>
+        <div class="iq-vsc-card"><div class="iq-vsc-label">Google Stitch prompt card</div><span style="font-size:.72rem;color:#64748b;font-style:italic;">"Create an enterprise SaaS dashboard for EcoIQ…"</span></div>
+      </div>
+    </div>
+
+    <!-- Frontend Process Improvement -->
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:2.5rem;" class="reveal">
+      <h3 style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Frontend Process Improvement</h3>
+      <p style="color:#64748b;font-size:.88rem;line-height:1.7;margin-bottom:1rem;max-width:760px;">This visual upgrade improves the EcoIQ process by:</p>
+      <ul style="color:#64748b;font-size:.85rem;line-height:1.85;padding-left:1.2rem;columns:2;column-gap:2rem;">
+        <li>Reducing user confusion</li>
+        <li>Showing missing evidence earlier</li>
+        <li>Making next actions obvious</li>
+        <li>Making finance readiness visible</li>
+        <li>Making MRV status visible</li>
+        <li>Making public/private boundaries clear</li>
+        <li>Making trust badges visible</li>
+        <li>Helping field teams upload correct evidence</li>
+        <li>Helping investors understand project readiness</li>
+        <li>Helping governments see country priorities visually</li>
+        <li>Helping Microsoft ecosystem partners understand integration points</li>
+      </ul>
     </div>
 
     <!-- Microsoft-ready & Google Stitch positioning -->
     <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:2.5rem;" class="reveal">
       <p style="color:#94a3b8;font-size:.85rem;line-height:1.7;margin-bottom:.75rem;">
-        EcoIQ is <strong style="color:#e2e8f0;">Microsoft ecosystem-ready</strong> — designed to integrate with Microsoft Fabric, Power BI, Teams, SharePoint and Azure Digital Twins, and can use Microsoft-style enterprise workflows.
+        EcoIQ is <strong style="color:#e2e8f0;">Microsoft ecosystem-ready</strong> — designed to integrate with Microsoft Fabric, Power BI, Teams, SharePoint and Azure Digital Twins, and can use Microsoft-style enterprise workflows. Board packs and investor memos are shipped as a Power BI / Teams / SharePoint ready concept.
       </p>
-      <p class="iq-badge-note">Google Stitch is a design prototyping workflow for fast UI concepts and mockup direction — it is not a production guarantee or a deployed frontend system. Production UI is implemented, reviewed and tested in code (Django templates now, Next.js later).</p>
+      <p class="iq-badge-note">Google Stitch is for prototyping; production UI must be implemented, reviewed and tested in code (Django templates now, Next.js later). Google Stitch is a design exploration and mockup-direction workflow — not a production guarantee or a deployed frontend system.</p>
+    </div>
+
+    <!-- Safety copy -->
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:2.5rem;margin-top:2.5rem;" class="reveal">
+      <h3 style="font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);margin-bottom:1rem;">Safety and Governance</h3>
+      <ul style="color:#64748b;font-size:.83rem;line-height:1.8;padding-left:1.2rem;">
+        <li>EcoIQ visual dashboards are decision-support interfaces.</li>
+        <li>Visual labels must not hide uncertainty, missing evidence or risk.</li>
+        <li>Trust badges are evidence-status/readiness labels unless formal certification is separately obtained.</li>
+        <li>Microsoft ecosystem-ready does not mean Microsoft certified or Microsoft partner.</li>
+        <li>Google Stitch is for prototyping; production UI must be implemented, reviewed and tested in code.</li>
+        <li>Maqasid/Mizan is ethical decision-support, not a fatwa.</li>
+        <li>Verified impact must be clearly separated from estimated impact.</li>
+        <li>Public UI must protect sensitive data.</li>
+      </ul>
     </div>
 
   </div>
@@ -653,11 +923,39 @@
       — showing investors, governments and industrial groups where harm is highest, where
       projects are finance-ready and where verified impact is already being delivered.
     </p>
-    <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.25rem;">
-      <span class="iq-badge iq-badge-ready">Kazakhstan</span>
-      <span class="iq-badge iq-badge-ready">United Kingdom</span>
-      <span class="iq-badge iq-badge-ready">Saudi Arabia</span>
-      <span class="iq-badge iq-badge-ready">Türkiye</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;text-align:left;max-width:900px;margin:0 auto 1.75rem;">
+      <div class="iq-country-card">
+        <div class="iq-country-name">Kazakhstan</div>
+        <p class="iq-country-row"><strong>Priority sectors:</strong> boilers, district heating, mining</p>
+        <p class="iq-country-row"><strong>Finance-ready:</strong> village clean heating clusters</p>
+        <p class="iq-country-row"><strong>Public impact theme:</strong> coal-to-clean heating</p>
+        <p class="iq-country-row"><span class="iq-badge iq-badge-review" style="margin:.15rem 0;">MRV: pilots in progress</span></p>
+        <p class="iq-country-row"><strong>Next action:</strong> prioritise finance-ready heating projects</p>
+      </div>
+      <div class="iq-country-card">
+        <div class="iq-country-name">United Kingdom</div>
+        <p class="iq-country-row"><strong>Priority sectors:</strong> SME manufacturing, compressed air</p>
+        <p class="iq-country-row"><strong>Finance-ready:</strong> SME efficiency portfolio</p>
+        <p class="iq-country-row"><strong>Public impact theme:</strong> energy efficiency retrofit</p>
+        <p class="iq-country-row"><span class="iq-badge iq-badge-ready" style="margin:.15rem 0;">MRV: after-data pending</span></p>
+        <p class="iq-country-row"><strong>Next action:</strong> complete after-data for MRV Verified</p>
+      </div>
+      <div class="iq-country-card">
+        <div class="iq-country-name">Saudi Arabia</div>
+        <p class="iq-country-row"><strong>Priority sectors:</strong> industrial heat, water systems</p>
+        <p class="iq-country-row"><strong>Finance-ready:</strong> waste heat recovery pipeline</p>
+        <p class="iq-country-row"><strong>Public impact theme:</strong> industrial decarbonisation</p>
+        <p class="iq-country-row"><span class="iq-badge iq-badge-review" style="margin:.15rem 0;">MRV: baseline capture</span></p>
+        <p class="iq-country-row"><strong>Next action:</strong> confirm technical review sign-off</p>
+      </div>
+      <div class="iq-country-card">
+        <div class="iq-country-name">Türkiye</div>
+        <p class="iq-country-row"><strong>Priority sectors:</strong> factories, public buildings</p>
+        <p class="iq-country-row"><strong>Finance-ready:</strong> factory compressed air optimisation</p>
+        <p class="iq-country-row"><strong>Public impact theme:</strong> public building retrofit</p>
+        <p class="iq-country-row"><span class="iq-badge iq-badge-verified" style="margin:.15rem 0;">MRV: verified pilot</span></p>
+        <p class="iq-country-row"><strong>Next action:</strong> publish verified impact story</p>
+      </div>
     </div>
     <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem;">
       <span class="iq-badge iq-badge-ready">Finance-Ready Pipeline</span>
@@ -883,6 +1181,18 @@
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1.1rem;">
         <span class="iq-badge iq-badge-blocked">3 Missing Links</span>
         <span style="color:#64748b;font-size:.82rem;">e.g. MRV claim has no after-data</span>
+      </div>
+
+      <div style="font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.5rem;">Evidence trace</div>
+      <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:.75rem 1rem;margin-bottom:1.1rem;font-size:.8rem;color:#94a3b8;">
+        Public claim → MRV report → after-data → baseline → evidence upload — every step traceable back to source.
+      </div>
+
+      <div style="font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.5rem;">Example linked pairs</div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.1rem;">
+        <span class="chip">Assets → Evidence</span><span class="chip">Risks → Mitigations</span>
+        <span class="chip">Finance → Assumptions</span><span class="chip">MRV claims → Proof</span>
+        <span class="chip">Public summaries → Approval</span><span class="chip">Maqasid/Mizan → Impact</span>
       </div>
 
       <p style="color:#94a3b8;font-size:.82rem;font-style:italic;border-left:2px solid var(--acc);padding-left:.75rem;margin:0;">

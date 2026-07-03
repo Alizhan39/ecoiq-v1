@@ -181,6 +181,64 @@ class PlatformPageVisualDashboardUpgradeTests(TestCase):
         r = self.c.get(reverse('home'))
         self.assertEqual(r.status_code, 200)
 
+
+class PlatformPageVisualDashboardUpgradeExpandedTests(TestCase):
+    """
+    Regression guard for the expanded Visual Dashboard UI Upgrade: the new
+    hero, renamed category groups (Finance & Commercial / Frontend &
+    Ecosystem), Data Room Complete badge example and Google Stitch
+    prototyping copy must all render on /platform/.
+    """
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_platform_page_has_no_raw_template_tags(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        self.assertNotIn('{%', content)
+        self.assertNotIn('{{', content)
+
+    def test_platform_page_mentions_hero_title(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'EcoIQ Industrial Intelligence Platform')
+
+    def test_platform_page_mentions_category_groups(self):
+        r = self.c.get(reverse('platform'))
+        for label in (
+            'Core Intelligence', 'Operations', 'Trust & Governance',
+            'Finance & Commercial', 'Frontend & Ecosystem',
+        ):
+            self.assertContains(r, label)
+
+    def test_platform_page_mentions_knowledge_graph_relationship_map(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Knowledge Graph & Relationship Map')
+
+    def test_platform_page_mentions_data_room_complete(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Data Room Complete')
+
+    def test_platform_page_mentions_google_stitch_is_for_prototyping(self):
+        r = self.c.get(reverse('platform'))
+        self.assertContains(r, 'Google Stitch is for prototyping')
+
+    def test_platform_page_has_no_unsupported_microsoft_partner_claim(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        idx = content.find('Microsoft partner')
+        while idx != -1:
+            context = content[max(0, idx - 60):idx + 40]
+            self.assertIn('not', context, 'unsupported "Microsoft partner" claim found without a negation nearby')
+            idx = content.find('Microsoft partner', idx + 1)
+
+    def test_platform_page_has_no_unsupported_fatwa_or_shariah_claim(self):
+        r = self.c.get(reverse('platform'))
+        content = r.content.decode()
+        self.assertNotIn('is a fatwa', content)
+        self.assertNotIn('Shariah certified', content)
+        self.assertNotIn('Shariah certification', content)
+
     def test_landing_page_has_no_raw_template_tags(self):
         r = self.c.get(reverse('home'))
         content = r.content.decode()
