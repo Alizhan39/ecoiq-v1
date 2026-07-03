@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Agent Training & Evaluation Lab{% endblock %}
+{% block meta_description_content %}EcoIQ Agent Training & Evaluation Lab: train, test and improve EcoIQ AI agents with examples, rules and human review.{% endblock %}
+
+{% block content %}
+<div class="atel-wrap">
+
+  <span class="atel-badge">EcoIQ Platform Module</span>
+  <h1 class="atel-title">EcoIQ Agent Training & Evaluation Lab</h1>
+  <p class="atel-subtitle">Train, test and improve EcoIQ AI agents with examples, rules and human review.</p>
+  <p class="atel-desc">
+    EcoIQ Agent Training & Evaluation Lab defines how each AI agent should behave,
+    what inputs it accepts, what outputs it must produce, how it is evaluated, when it
+    must ask for human approval and how it avoids unsupported claims. It helps EcoIQ
+    improve agent reliability without pretending that every agent is already a fully
+    autonomous production system.
+  </p>
+  <p class="atel-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+  <p class="atel-note">{{ important_clarification }}</p>
+
+  <div class="atel-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="atel-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="atel-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="atel-section" id="agent-rollout">
+    <h2 class="atel-h2">{{ agents_required_qa.question }}</h2>
+    <p class="atel-p">{{ agents_required_qa.answer }}</p>
+    {% for group in agent_rollout_groups %}
+    <p class="atel-sub" style="margin-top:1rem;">{{ group.title }}</p>
+    <div class="atel-chip-row">{% for a in group.agents %}<span class="atel-chip">{{ a }}</span>{% endfor %}</div>
+    {% endfor %}
+  </section>
+
+  <section class="atel-section" id="agent-cards">
+    <h2 class="atel-h2">Agent Training Cards</h2>
+    {% for a in agent_cards %}
+    <div class="atel-agent-card" id="agent-{{ a.number }}">
+      <span class="atel-agent-number">Agent {{ a.number }}</span>
+      <h3 class="atel-agent-name">{{ a.name }}</h3>
+      <p class="atel-p"><strong>Purpose:</strong> {{ a.purpose }}</p>
+      <p class="atel-sub">Inputs</p>
+      <div class="atel-chip-row">{% for i in a.inputs %}<span class="atel-chip">{{ i }}</span>{% endfor %}</div>
+      <p class="atel-sub">Outputs</p>
+      <div class="atel-chip-row">{% for o in a.outputs %}<span class="atel-chip atel-chip-metric">{{ o }}</span>{% endfor %}</div>
+      {% if a.good_output %}
+      <p class="atel-good"><strong>Good output:</strong> {{ a.good_output }}</p>
+      {% endif %}
+      {% if a.bad_output %}
+      <p class="atel-bad"><strong>Bad output:</strong> {{ a.bad_output }}</p>
+      {% endif %}
+      {% if a.human_approval %}
+      <p class="atel-note"><strong>Human approval required when:</strong> {{ a.human_approval }}</p>
+      {% endif %}
+      {% if a.rules %}
+      <p class="atel-note"><strong>Rules:</strong> {{ a.rules }}</p>
+      {% endif %}
+      {% if a.important %}
+      <p class="atel-note"><strong>Important:</strong> {{ a.important }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="atel-section">
+    <h2 class="atel-h2">Agent Training Method</h2>
+    <ol class="atel-list">{% for step in agent_training_method %}<li>{{ step }}</li>{% endfor %}</ol>
+  </section>
+
+  <section class="atel-section" id="golden-test-cases">
+    <h2 class="atel-h2">Golden Test Cases</h2>
+    <p class="atel-p">Each agent should have golden examples. Example: {{ golden_test_case_example.scenario }}</p>
+    <p class="atel-sub">Expected output</p>
+    <ul class="atel-list">{% for item in golden_test_case_example.expected_output %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="atel-sub">Bad output</p>
+    <ul class="atel-list atel-bad-list">{% for item in golden_test_case_example.bad_output %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="atel-section">
+    <h2 class="atel-h2">Agent Output Schemas</h2>
+    <p class="atel-p">Every agent output should include:</p>
+    <div class="atel-chip-row">
+      {% for f in agent_output_schema_fields %}<span class="atel-chip atel-chip-code"><code>{{ f }}</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="atel-section" id="evaluation-metrics">
+    <h2 class="atel-h2">Evaluation Metrics</h2>
+    <div class="atel-chip-row">
+      {% for m in evaluation_metrics %}<span class="atel-chip atel-chip-metric">{{ m }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="atel-section" id="agent-dashboard-cards">
+    <h2 class="atel-h2">Agent Training Dashboard Cards</h2>
+    <div class="atel-chip-row">
+      {% for card in agent_dashboard_cards %}<span class="atel-chip atel-chip-metric">{{ card }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="atel-section" id="prompt-library">
+    <h2 class="atel-h2">Prompt Library</h2>
+    <p class="atel-p">For each agent, store:</p>
+    <div class="atel-chip-row">
+      {% for f in prompt_library_fields %}<span class="atel-chip">{{ f }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="atel-section" id="human-review-rules">
+    <h2 class="atel-h2">Human Review Rules</h2>
+    <p class="atel-p">Human approval is required for:</p>
+    <ul class="atel-list">{% for item in human_review_triggers %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="atel-section">
+    <h2 class="atel-h2">No Harm Gate for Agent Training</h2>
+    <p class="atel-p">Before deploying or using an agent output, check:</p>
+    <ul class="atel-list atel-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="atel-section">
+    <h2 class="atel-h2">Implementation Options</h2>
+    <p class="atel-p">EcoIQ agents can later be implemented using:</p>
+    <div class="atel-chip-row">
+      {% for item in implementation_options %}<span class="atel-chip">{{ item }}</span>{% endfor %}
+    </div>
+    <p class="atel-note">{{ implementation_options_note }}</p>
+  </section>
+
+  <section class="atel-section">
+    <h2 class="atel-h2">GitHub Agents vs EcoIQ Agents</h2>
+    <p class="atel-p">{{ github_vs_ecoiq_agents_text }}</p>
+  </section>
+
+  <section class="atel-section">
+    <h2 class="atel-h2">Safety and Governance</h2>
+    <ul class="atel-list atel-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="atel-cta-row atel-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="atel-btn atel-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="atel-btn atel-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --atel-bg: #070b0f; --atel-bg2: #0d1117; --atel-border: rgba(255,255,255,.08);
+    --atel-text: #e2e8f0; --atel-muted: #94a3b8; --atel-acc: #00e89a; --atel-info: #58a6ff;
+  }
+  .atel-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--atel-bg); color: var(--atel-text); border-radius: 14px;
+  }
+  .atel-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--atel-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .atel-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .atel-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--atel-acc); margin: 0 0 1rem; }
+  .atel-desc { color: var(--atel-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .atel-purpose { color: var(--atel-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .atel-purpose strong { color: var(--atel-acc); }
+
+  .atel-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .atel-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--atel-border); }
+  .atel-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--atel-bg2); color: var(--atel-text);
+    border: 1px solid var(--atel-border);
+  }
+  .atel-btn-primary { background: var(--atel-acc); color: #06281f; border-color: var(--atel-acc); }
+  .atel-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--atel-border); }
+  .atel-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .atel-p { color: var(--atel-muted); font-size: 0.9rem; line-height: 1.6; }
+  .atel-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .atel-list { color: var(--atel-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .atel-gate-list li, .atel-safety-list li, .atel-bad-list li { margin-bottom: 0.4rem; }
+  .atel-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+  .atel-good { margin-top: 0.75rem; color: var(--atel-acc); font-size: 0.85rem; line-height: 1.6; }
+  .atel-good strong { color: #fff; }
+  .atel-bad { margin-top: 0.5rem; color: #e63946; font-size: 0.85rem; line-height: 1.6; }
+  .atel-bad strong { color: #fff; }
+
+  .atel-agent-card { background: var(--atel-bg2); border: 1px solid var(--atel-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .atel-agent-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--atel-info); font-weight: 700; }
+  .atel-agent-name { font-size: 1.02rem; color: #fff; margin: 0.3rem 0 0.5rem; }
+
+  .atel-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .atel-chip { background: rgba(88,166,255,.1); color: var(--atel-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .atel-chip-metric { background: rgba(0,232,154,.1); color: var(--atel-acc); border-color: rgba(0,232,154,.25); }
+  .atel-chip-code { font-family: 'SF Mono', monospace; font-size: 0.7rem; }
+  .atel-chip code { color: inherit; }
+</style>
+{% endblock %}
