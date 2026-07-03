@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Frontend Implementation Roadmap{% endblock %}
+{% block meta_description_content %}EcoIQ Frontend Implementation Roadmap: plan Django, Next.js, Microsoft and Google Stitch frontend delivery.{% endblock %}
+
+{% block content %}
+<div class="fir-wrap">
+
+  <span class="fir-badge">EcoIQ Platform Module</span>
+  <h1 class="fir-title">EcoIQ Frontend Implementation Roadmap</h1>
+  <p class="fir-subtitle">Plan Django, Next.js, Microsoft and Google Stitch frontend delivery.</p>
+  <p class="fir-desc">
+    EcoIQ Frontend Implementation Roadmap defines how EcoIQ should evolve from the
+    current Django template interface into a polished enterprise SaaS product. It
+    explains which pages should stay in Django, which should later move to
+    Next.js/React, how Google Stitch mockups become production UI, and how Microsoft
+    ecosystem interfaces such as Teams, Power BI, SharePoint and Fluent UI should fit
+    into the product.
+  </p>
+  <p class="fir-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="fir-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="fir-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="fir-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">Connected EcoIQ Modules</h2>
+    <div class="fir-module-grid">
+      {% for m in connected_modules %}
+      <div class="fir-module-card">
+        <h3 class="fir-module-name">{{ m.name }}</h3>
+        <p class="fir-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="fir-section" id="roadmap-phases">
+    <h2 class="fir-h2">Roadmap Phases</h2>
+    {% for p in roadmap_phases %}
+    <div class="fir-phase-card" id="phase-{{ p.number }}">
+      <h3 class="fir-phase-title">{{ p.title }}</h3>
+      <p class="fir-p"><strong>Goal:</strong> {{ p.goal }}</p>
+      {% if p.use %}
+      <p class="fir-sub">Use</p>
+      <div class="fir-chip-row">{% for item in p.use %}<span class="fir-chip">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+      {% if p.best_for %}
+      <p class="fir-sub">Best for</p>
+      <ul class="fir-list">{% for item in p.best_for %}<li>{{ item }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if p.deliverables %}
+      <p class="fir-sub">Deliverables</p>
+      <div class="fir-chip-row">{% for item in p.deliverables %}<span class="fir-chip fir-chip-metric">{{ item }}</span>{% endfor %}</div>
+      {% endif %}
+      {% if p.workflow %}
+      <p class="fir-sub">Workflow</p>
+      <ol class="fir-list">{% for step in p.workflow %}<li>{{ step }}</li>{% endfor %}</ol>
+      {% endif %}
+      {% if p.important %}
+      <p class="fir-note">{{ p.important }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">Page-by-Page Frontend Decision Table</h2>
+    <p class="fir-sub">Pages to keep in Django first</p>
+    <div class="fir-chip-row">{% for item in page_decision_table.django_first %}<span class="fir-chip">{{ item }}</span>{% endfor %}</div>
+    <p class="fir-sub" style="margin-top:1rem;">Pages to make interactive in Django first</p>
+    <div class="fir-chip-row">{% for item in page_decision_table.django_interactive %}<span class="fir-chip fir-chip-metric">{{ item }}</span>{% endfor %}</div>
+    <p class="fir-sub" style="margin-top:1rem;">Pages to move to Next.js later</p>
+    <div class="fir-chip-row">{% for item in page_decision_table.nextjs_later %}<span class="fir-chip fir-chip-code">{{ item }}</span>{% endfor %}</div>
+    <p class="fir-sub" style="margin-top:1rem;">Pages to integrate with Microsoft later</p>
+    <div class="fir-chip-row">{% for item in page_decision_table.microsoft_later %}<span class="fir-chip fir-chip-badge">{{ item }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="fir-section" id="library-matrix">
+    <h2 class="fir-h2">Frontend Library Decision Matrix</h2>
+    <p class="fir-p">The frontend library decision matrix below shows use case, phase, priority, risk and why it matters for every library under consideration.</p>
+    <div class="fir-table-wrap">
+      <table class="fir-table">
+        <thead>
+          <tr>
+            <th>Library</th><th>Use case</th><th>Phase</th><th>Priority</th><th>Risk</th><th>Why it matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lib in library_matrix %}
+          <tr>
+            <td>{{ lib.name }}</td>
+            <td>{{ lib.use_case }}</td>
+            <td>{{ lib.phase }}</td>
+            <td>{{ lib.priority }}</td>
+            <td>{{ lib.risk }}</td>
+            <td>{{ lib.why }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">Design-to-Code Rules</h2>
+    <ul class="fir-list fir-rules-list">
+      {% for rule in design_to_code_rules %}<li>{{ rule }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">UI Implementation Priorities</h2>
+    {% for pr in ui_priorities %}
+    <div class="fir-priority-card">
+      <span class="fir-phase-number">Priority {{ pr.number }}</span>
+      <div class="fir-chip-row">{% for item in pr.items %}<span class="fir-chip">{{ item }}</span>{% endfor %}</div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">Example Implementation Plan</h2>
+    {% for plan in implementation_plan %}
+    <div class="fir-plan-card">
+      <span class="fir-phase-number">{{ plan.days }} days</span>
+      <ul class="fir-list">{% for item in plan.items %}<li>{{ item }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">Microsoft Partner Demo Flow</h2>
+    <p class="fir-p"><strong>{{ microsoft_demo.title }}</strong></p>
+    <ol class="fir-list">{% for step in microsoft_demo.flow %}<li>{{ step }}</li>{% endfor %}</ol>
+    <p class="fir-note">{{ microsoft_demo.wording_note }}</p>
+  </section>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">Google Stitch Prompt Management</h2>
+    <p class="fir-sub">Prompt categories</p>
+    <div class="fir-chip-row">{% for cat in stitch_prompt_categories %}<span class="fir-chip">{{ cat }}</span>{% endfor %}</div>
+    <p class="fir-sub" style="margin-top:1rem;">Each prompt should store</p>
+    <div class="fir-chip-row">{% for f in stitch_prompt_fields %}<span class="fir-chip fir-chip-metric">{{ f }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="fir-section">
+    <h2 class="fir-h2">Safety and Governance</h2>
+    <ul class="fir-list fir-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="fir-cta-row fir-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="fir-btn fir-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="fir-btn fir-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --fir-bg: #070b0f; --fir-bg2: #0d1117; --fir-border: rgba(255,255,255,.08);
+    --fir-text: #e2e8f0; --fir-muted: #94a3b8; --fir-acc: #00e89a; --fir-info: #58a6ff;
+  }
+  .fir-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--fir-bg); color: var(--fir-text); border-radius: 14px;
+  }
+  .fir-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--fir-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .fir-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .fir-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--fir-acc); margin: 0 0 1rem; }
+  .fir-desc { color: var(--fir-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .fir-purpose { color: var(--fir-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .fir-purpose strong { color: var(--fir-acc); }
+
+  .fir-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .fir-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--fir-border); }
+  .fir-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--fir-bg2); color: var(--fir-text);
+    border: 1px solid var(--fir-border);
+  }
+  .fir-btn-primary { background: var(--fir-acc); color: #06281f; border-color: var(--fir-acc); }
+  .fir-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--fir-border); }
+  .fir-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .fir-p { color: var(--fir-muted); font-size: 0.9rem; line-height: 1.6; }
+  .fir-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .fir-list { color: var(--fir-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .fir-rules-list li, .fir-safety-list li { margin-bottom: 0.4rem; }
+  .fir-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .fir-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .fir-module-card { background: var(--fir-bg2); border: 1px solid var(--fir-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .fir-module-name { font-size: 0.9rem; color: var(--fir-info); margin: 0 0 0.4rem; }
+  .fir-module-role { color: var(--fir-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .fir-phase-card, .fir-priority-card, .fir-plan-card { background: var(--fir-bg2); border: 1px solid var(--fir-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .fir-phase-title { font-size: 1.02rem; color: #fff; margin: 0 0 0.5rem; }
+  .fir-phase-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fir-info); font-weight: 700; }
+
+  .fir-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .fir-chip { background: rgba(88,166,255,.1); color: var(--fir-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .fir-chip-metric { background: rgba(0,232,154,.1); color: var(--fir-acc); border-color: rgba(0,232,154,.25); }
+  .fir-chip-code { font-family: 'SF Mono', monospace; font-size: 0.72rem; }
+  .fir-chip-badge { background: rgba(168,85,247,.1); color: #a855f7; border-color: rgba(168,85,247,.25); }
+
+  .fir-table-wrap { overflow-x: auto; margin-top: 1rem; }
+  .fir-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .fir-table th, .fir-table td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--fir-border); text-align: left; white-space: nowrap; }
+  .fir-table td:nth-child(2), .fir-table td:nth-child(6) { white-space: normal; min-width: 200px; }
+  .fir-table th { color: #fff; font-weight: 700; text-transform: uppercase; font-size: 0.66rem; letter-spacing: 0.04em; }
+  .fir-table td { color: var(--fir-muted); }
+</style>
+{% endblock %}

@@ -163,6 +163,9 @@ urlpatterns = [
     # EcoIQ Certification & Trust Badge Engine — readiness, verification and trust badges
     path('certification-trust-badge-engine/', include('certification_trust_badge_engine.urls', namespace='certification_trust_badge_engine')),
 
+    # EcoIQ Frontend Implementation Roadmap — frontend delivery plan across Django, Next.js, Microsoft and Google Stitch
+    path('frontend-implementation-roadmap/', include('frontend_implementation_roadmap.urls', namespace='frontend_implementation_roadmap')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

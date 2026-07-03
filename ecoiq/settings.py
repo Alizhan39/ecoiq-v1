@@ -175,6 +175,9 @@ INSTALLED_APPS = [
 
     # Readiness, verification and trust badges across evidence, MRV, finance and governance
     'certification_trust_badge_engine',
+
+    # Frontend delivery plan across Django, Next.js, Microsoft and Google Stitch
+    'frontend_implementation_roadmap',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
