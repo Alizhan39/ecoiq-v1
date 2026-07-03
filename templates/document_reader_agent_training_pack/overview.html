@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Document Reader Agent Training Pack{% endblock %}
+{% block meta_description_content %}EcoIQ Document Reader Agent Training Pack: train the agent that reads bills, PDFs, reports, supplier quotes and MRV evidence.{% endblock %}
+
+{% block content %}
+<div class="drat-wrap">
+
+  <span class="drat-badge">EcoIQ Platform Module</span>
+  <h1 class="drat-title">EcoIQ Document Reader Agent Training Pack</h1>
+  <p class="drat-subtitle">Train the agent that reads bills, PDFs, reports, supplier quotes and MRV evidence.</p>
+  <p class="drat-desc">
+    EcoIQ Document Reader Agent Training Pack defines how the Document Reader Agent
+    extracts reliable structured facts from uploaded documents. It trains the agent
+    to read energy bills, fuel bills, water bills, annual reports, maintenance logs,
+    inspection reports, technical documents, supplier quotes, invoices, MRV evidence
+    and public disclosures without guessing missing data or creating unsupported
+    claims.
+  </p>
+  <p class="drat-purpose"><strong>Core purpose:</strong> {{ core_purpose }}</p>
+
+  <div class="drat-cta-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="drat-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="drat-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Connected EcoIQ Modules</h2>
+    <div class="drat-module-grid">
+      {% for m in connected_modules %}
+      <div class="drat-module-card">
+        <h3 class="drat-module-name">{{ m.name }}</h3>
+        <p class="drat-module-role">{{ m.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Why Document Reader Agent Comes First</h2>
+    <p class="drat-p">{{ why_first.explanation }}</p>
+    <p class="drat-sub">It supports</p>
+    <div class="drat-chip-row">{% for item in why_first.supports %}<span class="drat-chip">{{ item }}</span>{% endfor %}</div>
+    <p class="drat-note">{{ why_first.risk_note }}</p>
+  </section>
+
+  <section class="drat-section" id="document-types">
+    <h2 class="drat-h2">Document Types</h2>
+    {% for d in document_types %}
+    <div class="drat-doc-card" id="doc-type-{{ d.number }}">
+      <span class="drat-doc-number">{{ d.number }}. {{ d.title }}</span>
+      <p class="drat-sub">Fields to extract</p>
+      <div class="drat-chip-row">{% for f in d.fields %}<span class="drat-chip drat-chip-metric">{{ f }}</span>{% endfor %}</div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="drat-section" id="output-schema">
+    <h2 class="drat-h2">Required Output Schema</h2>
+    <p class="drat-p">Every extraction must output:</p>
+    <pre class="drat-schema">{{ output_schema_json }}</pre>
+    <p class="drat-sub">Rules</p>
+    <ul class="drat-list">{% for rule in output_schema_rules %}<li>{{ rule }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Extraction Confidence Rules</h2>
+    {% for c in confidence_levels %}
+    <p class="drat-sub">{{ c.level }}</p>
+    <ul class="drat-list">{% for item in c.items %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% endfor %}
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Good Extraction Examples</h2>
+    {% for ex in good_extraction_examples %}
+    <div class="drat-example-card">
+      <span class="drat-doc-number">Example {{ ex.number }}</span>
+      <p class="drat-p"><strong>Input:</strong> {{ ex.input }}</p>
+      <p class="drat-sub">Good output</p>
+      <ul class="drat-list">{% for item in ex.good_output %}<li>{{ item }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="drat-section" id="bad-extraction-examples">
+    <h2 class="drat-h2">Bad Extraction Examples</h2>
+    <ul class="drat-list drat-bad-list">
+      {% for item in bad_extraction_examples %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Document-Specific Safety Rules</h2>
+    {% for cat in document_safety_rules %}
+    <p class="drat-sub">{{ cat.category }}</p>
+    <ul class="drat-list">{% for rule in cat.rules %}<li>{{ rule }}</li>{% endfor %}</ul>
+    {% endfor %}
+  </section>
+
+  <section class="drat-section" id="human-approval-triggers">
+    <h2 class="drat-h2">Human Approval Triggers</h2>
+    <p class="drat-p">Human approval required if extracted facts are used for:</p>
+    <div class="drat-chip-row">
+      {% for item in human_approval_triggers %}<span class="drat-chip">{{ item }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="drat-section" id="pii-detection">
+    <h2 class="drat-h2">PII and Sensitive Data Detection</h2>
+    <p class="drat-sub">Flag</p>
+    <div class="drat-chip-row">{% for item in pii_detection.flag_items %}<span class="drat-chip">{{ item }}</span>{% endfor %}</div>
+    <p class="drat-sub" style="margin-top:1rem;">Output</p>
+    <div class="drat-chip-row">{% for item in pii_detection.output_fields %}<span class="drat-chip drat-chip-code"><code>{{ item }}</code></span>{% endfor %}</div>
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Document Reader to Knowledge Graph Mapping</h2>
+    <div class="drat-chip-row">
+      {% for rel in kg_mapping %}<span class="drat-chip drat-chip-code"><code>{{ rel }}</code></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="drat-section" id="golden-test-cases">
+    <h2 class="drat-h2">Training Golden Test Cases</h2>
+    <div class="drat-table-wrap">
+      <table class="drat-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Input type</th><th>Expected fields</th><th>Expected missing</th>
+            <th>Risk flags</th><th>Human approval</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in golden_test_cases %}
+          <tr>
+            <td>{{ g.number }}</td>
+            <td>{{ g.input_type }}</td>
+            <td>{{ g.expected_fields }}</td>
+            <td>{{ g.expected_missing }}</td>
+            <td>{{ g.expected_risk_flags }}</td>
+            <td>{{ g.expected_human_approval }}</td>
+            <td>{{ g.expected_status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="drat-section" id="evaluation-metrics">
+    <h2 class="drat-h2">Evaluation Metrics</h2>
+    <div class="drat-chip-row">
+      {% for m in evaluation_metrics %}<span class="drat-chip drat-chip-metric">{{ m }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Prompt Template</h2>
+    <p class="drat-sub">System prompt</p>
+    <p class="drat-p">{{ prompt_template.system_prompt }}</p>
+    <p class="drat-sub">Task prompt</p>
+    <p class="drat-p">{{ prompt_template.task_prompt }}</p>
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">No Harm Gate for Document Reading</h2>
+    <p class="drat-p">Before using extraction downstream, check:</p>
+    <ul class="drat-list drat-gate-list">
+      {% for item in no_harm_gate_items %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="drat-section">
+    <h2 class="drat-h2">Safety and Governance</h2>
+    <ul class="drat-list drat-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <div class="drat-cta-row drat-cta-final">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="drat-btn drat-btn-primary" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% else %}
+    <a class="drat-btn drat-btn-primary" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  :root {
+    --drat-bg: #070b0f; --drat-bg2: #0d1117; --drat-border: rgba(255,255,255,.08);
+    --drat-text: #e2e8f0; --drat-muted: #94a3b8; --drat-acc: #00e89a; --drat-info: #58a6ff;
+  }
+  .drat-wrap {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--drat-bg); color: var(--drat-text); border-radius: 14px;
+  }
+  .drat-badge {
+    display: inline-block; background: rgba(88,166,255,.12); color: var(--drat-info);
+    border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem;
+    padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
+  }
+  .drat-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .drat-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--drat-acc); margin: 0 0 1rem; }
+  .drat-desc { color: var(--drat-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .drat-purpose { color: var(--drat-text); font-size: 0.9rem; margin-top: 0.85rem; }
+  .drat-purpose strong { color: var(--drat-acc); }
+
+  .drat-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .drat-cta-final { margin-top: 3rem; padding-top: 1.75rem; border-top: 1px solid var(--drat-border); }
+  .drat-btn {
+    display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700;
+    font-size: 0.85rem; text-decoration: none; background: var(--drat-bg2); color: var(--drat-text);
+    border: 1px solid var(--drat-border);
+  }
+  .drat-btn-primary { background: var(--drat-acc); color: #06281f; border-color: var(--drat-acc); }
+  .drat-section { margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid var(--drat-border); }
+  .drat-h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .drat-p { color: var(--drat-muted); font-size: 0.9rem; line-height: 1.6; }
+  .drat-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .drat-list { color: var(--drat-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .drat-gate-list li, .drat-safety-list li, .drat-bad-list li { margin-bottom: 0.4rem; }
+  .drat-note { margin-top: 0.85rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; border-left: 3px solid #f4a261; padding-left: 0.75rem; }
+
+  .drat-module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .drat-module-card { background: var(--drat-bg2); border: 1px solid var(--drat-border); border-radius: 10px; padding: 1rem 1.15rem; }
+  .drat-module-name { font-size: 0.9rem; color: var(--drat-info); margin: 0 0 0.4rem; }
+  .drat-module-role { color: var(--drat-muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+
+  .drat-doc-card, .drat-example-card { background: var(--drat-bg2); border: 1px solid var(--drat-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .drat-doc-number { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--drat-info); font-weight: 700; }
+
+  .drat-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .drat-chip { background: rgba(88,166,255,.1); color: var(--drat-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .drat-chip-metric { background: rgba(0,232,154,.1); color: var(--drat-acc); border-color: rgba(0,232,154,.25); }
+  .drat-chip-code { font-family: 'SF Mono', monospace; font-size: 0.7rem; }
+  .drat-chip code { color: inherit; }
+
+  .drat-schema {
+    background: var(--drat-bg2); border: 1px solid var(--drat-border); border-radius: 8px;
+    padding: 1rem; margin-top: 0.75rem; font-family: 'SF Mono', monospace; font-size: 0.78rem;
+    color: var(--drat-text); line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+  }
+
+  .drat-table-wrap { overflow-x: auto; margin-top: 1rem; }
+  .drat-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .drat-table th, .drat-table td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--drat-border); text-align: left; }
+  .drat-table th { color: #fff; font-weight: 700; text-transform: uppercase; font-size: 0.64rem; letter-spacing: 0.04em; white-space: nowrap; }
+  .drat-table td { color: var(--drat-muted); }
+</style>
+{% endblock %}

@@ -181,6 +181,9 @@ INSTALLED_APPS = [
 
     # Training, evaluation and human-review workflow for EcoIQ AI agents
     'agent_training_evaluation_lab',
+
+    # Training pack for the agent that extracts facts from bills, reports and MRV evidence
+    'document_reader_agent_training_pack',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
