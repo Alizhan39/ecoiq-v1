@@ -178,6 +178,9 @@ urlpatterns = [
     # EcoIQ AI Agent Council — public presentation and control page for the multi-agent system
     path('ai-agent-council/', include('ai_agent_council.urls', namespace='ai_agent_council')),
 
+    # EcoIQ Agent Runtime & Model Router — governed execution layer connecting training packs to the Council
+    path('agent-runtime-model-router/', include('agent_runtime_model_router.urls', namespace='agent_runtime_model_router')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

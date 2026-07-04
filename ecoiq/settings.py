@@ -190,6 +190,9 @@ INSTALLED_APPS = [
 
     # Public presentation and control page for the EcoIQ multi-agent Council
     'ai_agent_council',
+
+    # Governed execution layer connecting agent training packs to the Council runtime
+    'agent_runtime_model_router',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -303,6 +306,14 @@ ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # AI Findings Engine — model selection (override in .env if needed)
 ECOIQ_AI_MODEL = os.environ.get('ECOIQ_AI_MODEL', 'claude-opus-4-5')
+
+# Agent Runtime & Model Router — live-provider credentials. Blank by default,
+# same pattern as ANTHROPIC_API_KEY above: live adapters must fail safely
+# (not silently substitute simulated output) whenever these are unset.
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+AZURE_OPENAI_API_KEY = os.environ.get('AZURE_OPENAI_API_KEY', '')
+AZURE_OPENAI_ENDPOINT = os.environ.get('AZURE_OPENAI_ENDPOINT', '')
 
 # ── Site URL (used for og:image and share links) ──────────────────────────────
 # (Wagtail settings removed — Wagtail uninstalled June 2026)
