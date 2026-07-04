@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Agent Training Lab — EcoIQ AI Agent Council{% endblock %}
+{% block meta_description_content %}The Agent Training Lab: real test_cases.json counts and a heuristic scenario-category cross-reference for every operational EcoIQ agent.{% endblock %}
+
+{% block content %}
+<div class="acnl-wrap">
+  <a class="acnl-back" href="{% url 'ai_agent_council:overview' %}">← Back to AI Agent Council</a>
+  <span class="acnl-badge">Council Runtime</span>
+  <h1 class="acnl-title">Agent Training Lab</h1>
+  <p class="acnl-subtitle">Real training-pack test cases per agent, and a heuristic cross-reference against 8 scenario categories.</p>
+  <p class="iq-badge iq-badge-note">
+    Scenario-category matches below are keyword-matched against existing fixture text — a
+    heuristic categorisation, not a coverage count the training pack itself promises.
+  </p>
+
+  {% for row in agent_rows %}
+  <section class="acnl-section" id="agent-{{ row.agent.number }}">
+    <div class="acnl-agent-head">
+      <h2 class="acnl-h2" style="margin:0;">{{ row.agent.name }}</h2>
+      <span class="iq-badge iq-badge-ready">Stage {{ row.maturity.stage }} — {{ row.maturity.stage_label }}</span>
+    </div>
+    <p class="acnl-p">{{ row.agent.role }}</p>
+
+    <div class="acnl-chip-row">
+      <span class="acnl-chip acnl-chip-metric">{{ row.cases.realistic_count }} realistic test cases</span>
+      <span class="acnl-chip acnl-chip-metric">{{ row.cases.failure_count }} failure cases</span>
+    </div>
+
+    {% if row.maturity.blocked_reason %}
+    <p class="acnl-note">{{ row.maturity.blocked_reason }}</p>
+    {% endif %}
+
+    <p class="acnl-sub">Scenario categories these fixtures illustrate (heuristic)</p>
+    <div class="acnl-chip-row">
+      {% for category, matches in row.cases.scenario_category_matches.items %}
+      {% if matches %}<span class="acnl-chip">{{ category }} ({{ matches|length }})</span>{% endif %}
+      {% endfor %}
+    </div>
+
+    <details class="acnl-details">
+      <summary class="acnl-sub" style="cursor:pointer;">Maturity gates</summary>
+      <ul class="acnl-list">
+        {% for gate in row.maturity.gates %}
+        <li>{% if gate.passed %}✓{% else %}✗{% endif %} Stage {{ gate.stage }} — {{ gate.label }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+  </section>
+  {% endfor %}
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Next-Stage Agents</h2>
+    <p class="acnl-p">These agents have no training pack on disk yet — Stage 0 (Defined) only.</p>
+    <div class="acnl-chip-row">
+      {% for a in next_stage_agents %}<span class="iq-badge iq-badge-blocked">{{ a.name }}</span>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<style>
+  :root {
+    --acnl-bg: #070b0f; --acnl-bg2: #0d1117; --acnl-border: rgba(255,255,255,.08);
+    --acnl-text: #e2e8f0; --acnl-muted: #94a3b8; --acnl-acc: #00e89a; --acnl-info: #58a6ff;
+  }
+  .acnl-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--acnl-bg); color: var(--acnl-text); border-radius: 14px; }
+  .acnl-back { color: var(--acnl-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .acnl-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--acnl-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .acnl-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .acnl-subtitle { font-size: 1rem; color: var(--acnl-muted); margin: 0 0 1rem; }
+  .acnl-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--acnl-border); }
+  .acnl-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
+  .acnl-p { color: var(--acnl-muted); font-size: 0.9rem; line-height: 1.6; }
+  .acnl-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .acnl-list { color: var(--acnl-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .acnl-note { margin-top: 0.6rem; color: #f4a261; font-size: 0.8rem; }
+  .acnl-agent-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .acnl-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .acnl-chip { background: rgba(88,166,255,.1); color: var(--acnl-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .acnl-chip-metric { background: rgba(0,232,154,.1); color: var(--acnl-acc); border-color: rgba(0,232,154,.25); }
+  .acnl-details { margin-top: 0.75rem; }
+</style>
+{% endblock %}

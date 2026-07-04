@@ -37,6 +37,49 @@
     {% endfor %}
   </div>
 
+  <section class="acnl-section acnl-control-room" id="council-control-room">
+    <h2 class="acnl-h2">Council Control Room — Live State</h2>
+    <p class="acnl-note">
+      These are real, live-queried counts from this database, not illustrative
+      numbers — every value reads 0 until
+      <code>python manage.py seed_council_demo_run</code> has been run.
+    </p>
+    <div class="acnl-hero-metrics">
+      <div class="acnl-metric-card">
+        <div class="acnl-metric-val">{{ control_room.active_runs }}</div>
+        <div class="acnl-metric-label">active council runs</div>
+      </div>
+      <div class="acnl-metric-card">
+        <div class="acnl-metric-val">{{ control_room.open_disagreements }}</div>
+        <div class="acnl-metric-label">open disagreements</div>
+      </div>
+      <div class="acnl-metric-card">
+        <div class="acnl-metric-val">{{ control_room.awaiting_human_review }}</div>
+        <div class="acnl-metric-label">decisions awaiting human review</div>
+      </div>
+      <div class="acnl-metric-card">
+        <div class="acnl-metric-val">{{ control_room.low_confidence_decisions }}</div>
+        <div class="acnl-metric-label">low-confidence decisions (under 70%)</div>
+      </div>
+    </div>
+
+    {% if demo_runs %}
+    <p class="acnl-sub" style="margin-top:1.25rem;">Seeded Council runs</p>
+    <div class="acnl-chip-row">
+      {% for run in demo_runs %}
+      <a class="acnl-btn" href="{% url 'ai_agent_council:run_detail' run.slug %}">{{ run.title }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="acnl-sub" style="margin-top:1.25rem;">Council Runtime pages</p>
+    <div class="acnl-cta-row" style="margin-top:0;">
+      <a class="acnl-btn" href="{% url 'ai_agent_council:training' %}">Agent Training Lab</a>
+      <a class="acnl-btn" href="{% url 'ai_agent_council:reliability' %}">Agent Reliability &amp; Maturity</a>
+      <a class="acnl-btn" href="{% url 'ai_agent_council:memory' %}">Council Memory</a>
+    </div>
+  </section>
+
   <section class="acnl-section">
     <h2 class="acnl-h2">Connected EcoIQ Modules</h2>
     <div class="acnl-module-grid">
@@ -111,6 +154,25 @@
       {% for item in handoff_preserved_items %}<span class="acnl-chip acnl-chip-metric">{{ item }}</span>{% endfor %}
     </div>
     <p class="acnl-note">{{ handoff_critical_rule }}</p>
+  </section>
+
+  <section class="acnl-section" id="agent-interdependency-map">
+    <h2 class="acnl-h2">Agent Interdependency Map</h2>
+    <p class="acnl-p">Real mechanisms between real agents — not an org chart of imagined connections.</p>
+    {% for node in agent_interdependency_map %}
+    <div class="acnl-agent-card{% if node.status == 'blocked' %} acnl-agent-card-pending{% endif %}">
+      <div class="acnl-agent-head">
+        <span class="acnl-agent-name" style="margin:0;">{{ node.label }}</span>
+        {% if node.status == 'blocked' %}
+        <span class="iq-badge iq-badge-blocked">Not yet trained</span>
+        {% else %}
+        <span class="iq-badge iq-badge-verified">Active</span>
+        {% endif %}
+      </div>
+      <div class="acnl-chip-row">{% for a in node.agents %}<span class="acnl-chip">{{ a }}</span>{% endfor %}</div>
+      <p class="acnl-p" style="margin-top:0.5rem;">{{ node.description }}</p>
+    </div>
+    {% endfor %}
   </section>
 
   <section class="acnl-section">

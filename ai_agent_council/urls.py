@@ -7,4 +7,8 @@ app_name = 'ai_agent_council'
 
 urlpatterns = [
     path('', views.overview, name='overview'),
+    path('run/<slug:slug>/', views.run_detail, name='run_detail'),
+    path('training/', views.training, name='training'),
+    path('reliability/', views.reliability, name='reliability'),
+    path('memory/', views.memory, name='memory'),
 ]

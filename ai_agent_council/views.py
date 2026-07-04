@@ -1,44 +1,29 @@
-from pathlib import Path
+from django.shortcuts import get_object_or_404, render
 
-from django.conf import settings
-from django.shortcuts import render
+from ai_agent_council.models import (
+    AgentTask, CouncilDecision, CouncilDisagreement, CouncilRun,
+)
+from ai_agent_council.services.maturity import compute_maturity
+from ai_agent_council.services.reliability import compute_reliability
+from ai_agent_council.services.training_lab import load_agent_test_cases
 
-# The 10 files every operational agent training pack must contain.
-REQUIRED_AGENT_FILES = [
-    'README.md', 'system_prompt.md', 'role.md', 'inputs.md', 'outputs.md',
-    'tools.md', 'safety_rules.md', 'test_cases.json', 'evals.md', 'demo_scenarios.md',
-]
-
-MASTER_INDEX_FILENAME = 'ai_agent_training_index.md'
-
-
-def _scan_ai_agents_repo_state():
-    """
-    Read the real ai_agents/ directory on disk so the counts shown on this
-    page always reflect the actual repository state rather than a hardcoded
-    number that could go stale if the repo structure changes.
-    """
-    base = Path(settings.BASE_DIR) / 'ai_agents'
-    operational_folder_names = []
-    total_training_files = 0
-
-    if base.is_dir():
-        for entry in sorted(base.iterdir()):
-            if entry.is_dir():
-                present = [f for f in REQUIRED_AGENT_FILES if (entry / f).is_file()]
-                if present:
-                    operational_folder_names.append(entry.name)
-                    total_training_files += len(present)
-
-    master_index_exists = (base / MASTER_INDEX_FILENAME).is_file()
-
-    return {
-        'operational_folder_names': operational_folder_names,
-        'operational_folder_count': len(operational_folder_names),
-        'total_training_files': total_training_files,
-        'master_index_exists': master_index_exists,
-    }
-
+# Agent roster, repository scan and related constants now live in agents.py
+# (shared with services/*.py to avoid a circular import). Re-exported here
+# under their original names so existing imports/tests are unaffected —
+# e.g. `from ai_agent_council.views import _scan_ai_agents_repo_state`.
+from ai_agent_council.agents import (  # noqa: F401 (re-exported for existing imports)
+    AGENT_NAME_TO_FOLDER,
+    MASTER_INDEX_FILENAME,
+    NEXT_STAGE_AGENT_NAMES,
+    NEXT_STAGE_AGENTS,
+    NEXT_STAGE_STATUS_LABEL,
+    OPERATIONAL_AGENT_FOLDERS,
+    OPERATIONAL_AGENT_NAMES,
+    OPERATIONAL_AGENTS,
+    OPERATIONAL_STATUS_LABEL,
+    REQUIRED_AGENT_FILES,
+    _scan_ai_agents_repo_state,
+)
 
 CORE_PURPOSE = (
     "Give investors, Microsoft ecosystem stakeholders, governments, industrial "
@@ -62,73 +47,6 @@ CONNECTED_MODULES = [
     {'name': 'Data Room & Evidence Vault', 'role': 'Stores the evidence every agent handoff links back to.'},
     {'name': 'Microsoft Ecosystem Core Stack', 'role': 'Supplies the Microsoft-ready building blocks the Council is designed to integrate with.'},
 ]
-
-OPERATIONAL_AGENTS = [
-    {
-        'number': 1, 'name': 'Research Agent', 'folder': 'research_agent',
-        'role': 'Finds, compares and summarises trusted evidence.',
-        'handoffs': ['Document Reader Agent'], 'important': '',
-    },
-    {
-        'number': 2, 'name': 'Document Reader Agent', 'folder': 'document_reader_agent',
-        'role': 'Extracts facts from bills, PDFs, reports, technical documents and supplier quotes.',
-        'handoffs': ['Asset Passport Agent', 'Finance Modelling Agent', 'MRV Agent'], 'important': '',
-    },
-    {
-        'number': 3, 'name': 'Photo / Visual Evidence Agent', 'folder': 'photo_visual_evidence_agent',
-        'role': 'Analyses inspection photos and videos while labelling findings as hypotheses until verified.',
-        'handoffs': ['Asset Passport Agent', 'Governance Agent'], 'important': '',
-    },
-    {
-        'number': 4, 'name': 'Asset Passport Agent', 'folder': 'asset_passport_agent',
-        'role': 'Creates the structured digital record of each industrial asset.',
-        'handoffs': ['Industrial Playbook Matching Agent'], 'important': '',
-    },
-    {
-        'number': 5, 'name': 'Industrial Playbook Matching Agent', 'folder': 'industrial_playbook_matching_agent',
-        'role': 'Matches assets to modernisation pathways, quick wins and deeper upgrades.',
-        'handoffs': ['Finance Modelling Agent', 'Supplier / Funding Match Agent later'], 'important': '',
-    },
-    {
-        'number': 6, 'name': 'Finance Modelling Agent', 'folder': 'finance_modelling_agent',
-        'role': 'Prepares draft CAPEX, OPEX, payback, funding gap and finance-readiness logic.',
-        'handoffs': ['Governance Agent', 'Report Generator Agent'], 'important': '',
-    },
-    {
-        'number': 7, 'name': 'MRV Agent', 'folder': 'mrv_agent',
-        'role': 'Separates estimated impact from verified impact and checks baseline/after-data readiness.',
-        'handoffs': ['Governance Agent', 'Public Trust workflows'], 'important': '',
-    },
-    {
-        'number': 8, 'name': 'Governance Agent', 'folder': 'governance_agent',
-        'role': 'Routes high-impact outputs to technical, finance, MRV, safety, privacy and ethical review.',
-        'handoffs': ['Report Generator Agent'], 'important': '',
-    },
-    {
-        'number': 9, 'name': 'Report Generator Agent', 'folder': 'report_generator_agent',
-        'role': 'Builds evidence-linked investor memos, board packs, country briefs and public summaries.',
-        'handoffs': ['Human approval', 'External output'], 'important': '',
-    },
-    {
-        'number': 10, 'name': 'Amanah Autopilot Supervisor', 'folder': 'amanah_autopilot_supervisor',
-        'role': 'Runs overnight checks, finds missing evidence, prepares review queues and generates the morning briefing.',
-        'handoffs': [],
-        'important': (
-            'Amanah Autopilot prepares actions for human review. It must not be '
-            'presented as independently making high-impact decisions.'
-        ),
-    },
-]
-
-NEXT_STAGE_AGENTS = [
-    {'number': 11, 'name': 'Supplier / Funding Match Agent'},
-    {'number': 12, 'name': 'Customer Success Agent'},
-    {'number': 13, 'name': 'Sales CRM Agent'},
-    {'number': 14, 'name': 'Analytics Agent'},
-]
-
-OPERATIONAL_STATUS_LABEL = 'Operational Training Pack Ready'
-NEXT_STAGE_STATUS_LABEL = 'Next Training Pack'
 
 COUNCIL_WORKFLOW_STEPS = [
     'Research', 'Document Reader', 'Photo / Visual Evidence', 'Asset Passport',
@@ -236,6 +154,33 @@ SAFETY_PRINCIPLES = [
     'Microsoft ecosystem-ready does not mean Microsoft certified or Microsoft partner.',
 ]
 
+AGENT_INTERDEPENDENCY_MAP = [
+    {
+        'label': 'Evidence Verification',
+        'agents': ['Research Agent', 'Document Reader Agent', 'Photo / Visual Evidence Agent'],
+        'description': 'Cross-checks public context, extracted documents and visual findings against each other before Asset Passport builds a record.',
+        'status': 'active',
+    },
+    {
+        'label': 'Transition Risk',
+        'agents': ['Asset Passport Agent', 'Industrial Playbook Matching Agent'],
+        'description': 'Surfaces risk_flags (e.g. transition/procurement/baseline risk) that Governance must route for review.',
+        'status': 'active',
+    },
+    {
+        'label': 'Investor Intelligence',
+        'agents': ['Finance Modelling Agent', 'Report Generator Agent'],
+        'description': 'Combines draft finance modelling with the evidence-linked memo an investor or board actually reads.',
+        'status': 'active',
+    },
+    {
+        'label': 'Funding Match',
+        'agents': ['Supplier / Funding Match Agent'],
+        'description': 'Not yet trained — next-stage agent with no operational training pack. Shown blocked, not simulated.',
+        'status': 'blocked',
+    },
+]
+
 CTA_BUTTONS = [
     {'label': 'Open AI Agent Council', 'anchor': '#council-workflow'},
     {'label': 'View Operational Agents', 'anchor': '#operationally-trained-agents'},
@@ -248,6 +193,26 @@ CTA_BUTTONS = [
     {'label': 'View Training Index', 'anchor': '#training-pack-repository-layout'},
     {'label': 'Open Next-Stage Agents', 'anchor': '#next-stage-agents'},
 ]
+
+
+def _council_control_room_stats():
+    """
+    Real counts, not illustrative numbers — every value is 0 until
+    `python manage.py seed_council_demo_run` has been run.
+    """
+    return {
+        'active_runs': CouncilRun.objects.exclude(status='closed').count(),
+        # "Open" = still needs more evidence or a human, as opposed to a
+        # disagreement that was auto-resolved, escalated to another agent,
+        # or preserved purely as a recorded minority view.
+        'open_disagreements': CouncilDisagreement.objects.filter(
+            resolution_method__in=['require_human_review', 'request_more_evidence'],
+        ).count(),
+        'awaiting_human_review': CouncilDecision.objects.filter(
+            human_approval_required=True, human_approved__isnull=True,
+        ).count(),
+        'low_confidence_decisions': CouncilDecision.objects.filter(confidence__lt=70).count(),
+    }
 
 
 def overview(request):
@@ -284,4 +249,67 @@ def overview(request):
         'presentation_mode': PRESENTATION_MODE,
         'safety_principles': SAFETY_PRINCIPLES,
         'cta_buttons': CTA_BUTTONS,
+        'control_room': _council_control_room_stats(),
+        'agent_interdependency_map': AGENT_INTERDEPENDENCY_MAP,
+        'demo_runs': CouncilRun.objects.all(),
+    })
+
+
+def run_detail(request, slug):
+    run = get_object_or_404(CouncilRun, slug=slug)
+    decision = getattr(run, 'decision', None)
+    memory_entry = getattr(decision, 'memory_entry', None) if decision else None
+
+    return render(request, 'ai_agent_council/run_detail.html', {
+        'run': run,
+        'tasks': run.tasks.all(),
+        'handoffs': run.handoffs.all(),
+        'disagreements': run.disagreements.select_related('position_a', 'position_b').all(),
+        'cross_examinations': run.cross_examinations.all(),
+        'decision': decision,
+        'memory_entry': memory_entry,
+    })
+
+
+def training(request):
+    repo_state = _scan_ai_agents_repo_state()
+
+    agent_rows = []
+    for agent in OPERATIONAL_AGENTS:
+        agent_rows.append({
+            'agent': agent,
+            'cases': load_agent_test_cases(agent['folder']),
+            'maturity': compute_maturity(agent['name'], repo_state),
+        })
+
+    return render(request, 'ai_agent_council/training.html', {
+        'agent_rows': agent_rows,
+        'next_stage_agents': NEXT_STAGE_AGENTS,
+    })
+
+
+def reliability(request):
+    repo_state = _scan_ai_agents_repo_state()
+
+    reliability_rows = [compute_reliability(name) for name in OPERATIONAL_AGENT_NAMES]
+    maturity_rows = [
+        compute_maturity(name, repo_state)
+        for name in OPERATIONAL_AGENT_NAMES + NEXT_STAGE_AGENT_NAMES
+    ]
+
+    return render(request, 'ai_agent_council/reliability.html', {
+        'reliability_rows': reliability_rows,
+        'maturity_rows': maturity_rows,
+    })
+
+
+def memory(request):
+    decisions = (
+        CouncilDecision.objects
+        .select_related('run', 'memory_entry')
+        .order_by('-run__created_at')
+    )
+
+    return render(request, 'ai_agent_council/memory.html', {
+        'decisions': decisions,
     })

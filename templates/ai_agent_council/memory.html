@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Council Memory — EcoIQ AI Agent Council{% endblock %}
+{% block meta_description_content %}Council Memory: every EcoIQ Council decision, its preserved minority opinions, open questions and reopening history.{% endblock %}
+
+{% block content %}
+<div class="acnl-wrap">
+  <a class="acnl-back" href="{% url 'ai_agent_council:overview' %}">← Back to AI Agent Council</a>
+  <span class="acnl-badge">Council Runtime</span>
+  <h1 class="acnl-title">Council Memory</h1>
+  <p class="acnl-subtitle">Every decision this Council has made, why, what remains open, and how it can be reopened.</p>
+
+  {% for decision in decisions %}
+  <section class="acnl-section">
+    <div class="acnl-agent-head">
+      <h2 class="acnl-h2" style="margin:0;"><a class="acnl-link" href="{% url 'ai_agent_council:run_detail' decision.run.slug %}">{{ decision.run.title }}</a></h2>
+      <span class="iq-badge iq-badge-ready">{{ decision.get_status_display }}</span>
+    </div>
+    <p class="acnl-p">{{ decision.summary }}</p>
+
+    {% with memory_entry=decision.memory_entry %}
+    {% if memory_entry %}
+    <p class="acnl-sub">Open questions</p>
+    <ul class="acnl-list">{% for q in memory_entry.open_questions %}<li>{{ q }}</li>{% empty %}<li>None recorded.</li>{% endfor %}</ul>
+
+    {% if memory_entry.unresolved_risks %}
+    <p class="acnl-sub">Unresolved risks</p>
+    <ul class="acnl-list">{% for risk in memory_entry.unresolved_risks %}<li>{{ risk }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <p class="acnl-sub">Review trigger</p>
+    <p class="acnl-p">{{ memory_entry.review_trigger }}</p>
+
+    {% if memory_entry.reopened %}
+    <div class="acnl-reopened">
+      <span class="iq-badge iq-badge-review">Reopened {{ memory_entry.reopened_at|date:"Y-m-d" }}</span>
+      <p class="acnl-p" style="margin-top:0.6rem;"><strong>Original:</strong> {{ memory_entry.original_decision_summary }}</p>
+      <p class="acnl-p"><strong>New evidence:</strong> {{ memory_entry.new_evidence_summary }}</p>
+      <p class="acnl-p"><strong>Updated:</strong> {{ memory_entry.updated_decision_summary }}</p>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% endwith %}
+  </section>
+  {% empty %}
+  <p class="acnl-p">No decisions recorded yet — run <code>python manage.py seed_council_demo_run</code>.</p>
+  {% endfor %}
+</div>
+
+<style>
+  :root {
+    --acnl-bg: #070b0f; --acnl-bg2: #0d1117; --acnl-border: rgba(255,255,255,.08);
+    --acnl-text: #e2e8f0; --acnl-muted: #94a3b8; --acnl-acc: #00e89a; --acnl-info: #58a6ff;
+  }
+  .acnl-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--acnl-bg); color: var(--acnl-text); border-radius: 14px; }
+  .acnl-back { color: var(--acnl-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .acnl-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--acnl-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .acnl-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .acnl-subtitle { font-size: 1rem; color: var(--acnl-muted); margin: 0 0 1rem; }
+  .acnl-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--acnl-border); }
+  .acnl-h2 { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .acnl-link { color: var(--acnl-info); text-decoration: none; }
+  .acnl-p { color: var(--acnl-muted); font-size: 0.9rem; line-height: 1.6; }
+  .acnl-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .acnl-list { color: var(--acnl-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .acnl-agent-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .acnl-reopened { margin-top: 0.85rem; padding: 0.85rem 1rem; background: rgba(244,162,97,.06); border-left: 3px solid #f4a261; border-radius: 6px; }
+</style>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Agent Reliability &amp; Maturity — EcoIQ AI Agent Council{% endblock %}
+{% block meta_description_content %}Real, queried reliability statistics and Stage 0-7 training maturity for every EcoIQ Council agent.{% endblock %}
+
+{% block content %}
+<div class="acnl-wrap">
+  <a class="acnl-back" href="{% url 'ai_agent_council:overview' %}">← Back to AI Agent Council</a>
+  <span class="acnl-badge">Council Runtime</span>
+  <h1 class="acnl-title">Agent Reliability &amp; Training Maturity</h1>
+  <p class="iq-badge iq-badge-note">Computed from currently-seeded demonstration runs in this database, not production telemetry — there is no production traffic for these agents yet.</p>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Agent Reliability</h2>
+    <table class="acnl-table">
+      <thead><tr><th>Agent</th><th>Tasks</th><th>Avg. confidence</th><th>Disagreements</th><th>Cross-examinations</th></tr></thead>
+      <tbody>
+        {% for r in reliability_rows %}
+        <tr>
+          <td>{{ r.agent_name }}</td>
+          <td>{{ r.agent_task_count }}</td>
+          <td>{% if r.average_confidence %}{{ r.average_confidence }}%{% else %}—{% endif %}</td>
+          <td>{{ r.disagreement_appearance_count }}</td>
+          <td>{{ r.cross_examination_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="acnl-section">
+    <h2 class="acnl-h2">Training Maturity Scorecard</h2>
+    <p class="acnl-p">Stage 7 (Production Monitored) is permanently unreachable today — this repository has no live production telemetry.</p>
+    {% for m in maturity_rows %}
+    <div class="acnl-agent-card">
+      <div class="acnl-agent-head">
+        <span class="acnl-agent-name" style="margin:0;">{{ m.agent_name }}</span>
+        <span class="iq-badge iq-badge-ready">Stage {{ m.stage }} — {{ m.stage_label }}</span>
+      </div>
+      {% if m.blocked_reason %}<p class="acnl-note">{{ m.blocked_reason }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+</div>
+
+<style>
+  :root {
+    --acnl-bg: #070b0f; --acnl-bg2: #0d1117; --acnl-border: rgba(255,255,255,.08);
+    --acnl-text: #e2e8f0; --acnl-muted: #94a3b8; --acnl-acc: #00e89a; --acnl-info: #58a6ff;
+  }
+  .acnl-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--acnl-bg); color: var(--acnl-text); border-radius: 14px; }
+  .acnl-back { color: var(--acnl-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .acnl-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--acnl-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .acnl-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .acnl-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--acnl-border); }
+  .acnl-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .acnl-p { color: var(--acnl-muted); font-size: 0.9rem; line-height: 1.6; }
+  .acnl-note { margin-top: 0.5rem; color: #f4a261; font-size: 0.8rem; }
+  .acnl-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .acnl-table th, .acnl-table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--acnl-border); color: var(--acnl-muted); }
+  .acnl-table th { color: #fff; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .acnl-agent-card { background: var(--acnl-bg2); border: 1px solid var(--acnl-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+  .acnl-agent-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .acnl-agent-name { font-size: 0.95rem; color: #fff; }
+</style>
+{% endblock %}
