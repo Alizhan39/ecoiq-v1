@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{{ decision.intervention.title }} — EcoIQ Waste-to-Value Engine{% endblock %}
+{% block meta_description_content %}A governed capital allocation decision: intervention economics, funding gap, capital route matches and verified outcome.{% endblock %}
+
+{% block content %}
+<div class="wtv-wrap">
+  <a class="wtv-back" href="{% url 'waste_to_value_capital_allocation_engine:overview' %}">← Back to Waste-to-Value Capital Allocation Engine</a>
+
+  <span class="wtv-badge">Capital Allocation Decision</span>
+  <h1 class="wtv-title">{{ decision.intervention.title }}</h1>
+  <p class="wtv-subtitle">{{ decision.intervention.operational_loss.title }}</p>
+
+  <div class="wtv-chip-row">
+    <span class="iq-badge iq-badge-ready">{{ decision.get_approval_status_display }}</span>
+    {% if decision.council_case %}<span class="wtv-chip">Council case: {{ decision.council_case.title }}</span>{% endif %}
+  </div>
+
+  <section class="wtv-section" id="decision">
+    <h2 class="wtv-h2">Decision</h2>
+    <p class="wtv-p">{{ decision.decision }}</p>
+    {% if decision.conditions %}
+    <p class="wtv-sub">Conditions</p>
+    <ul class="wtv-list">{% for c in decision.conditions %}<li>{{ c }}</li>{% endfor %}</ul>
+    {% endif %}
+    <p class="wtv-sub">Confidence</p>
+    <p class="wtv-headline">{% if decision.confidence %}{{ decision.confidence|floatformat:0 }}%{% else %}—{% endif %}</p>
+  </section>
+
+  <section class="wtv-section" id="economics">
+    <h2 class="wtv-h2">Intervention Economics</h2>
+    <div class="wtv-chip-row">
+      <span class="wtv-chip">CAPEX: £{{ decision.intervention.capex_estimate|floatformat:0 }}</span>
+      <span class="wtv-chip">Estimated annual savings: £{{ decision.intervention.estimated_annual_savings|floatformat:0 }}</span>
+      <span class="wtv-chip">Estimated loss avoided: £{{ decision.intervention.estimated_loss_avoided|floatformat:0 }}</span>
+      <span class="wtv-chip">Estimated payback: {{ decision.intervention.estimated_payback_months|default:'—' }} months</span>
+    </div>
+    <p class="iq-badge iq-badge-note">Estimated, not verified — never presented as a guaranteed return.</p>
+  </section>
+
+  {% if funding_gap %}
+  <section class="wtv-section" id="funding-gap">
+    <h2 class="wtv-h2">Funding Gap</h2>
+    <div class="wtv-chip-row">
+      <span class="wtv-chip">Total required: £{{ funding_gap.total_capital_required|floatformat:0 }}</span>
+      <span class="wtv-chip">Remaining gap: £{{ funding_gap.remaining_gap|floatformat:0 }}</span>
+      <span class="wtv-chip">Status: {{ funding_gap.get_status_display }}</span>
+    </div>
+
+    {% if route_matches %}
+    <p class="wtv-sub">Candidate capital routes (matching is not approval)</p>
+    <ul class="wtv-list">
+      {% for match in route_matches %}
+      <li>{{ match.get_route_type_display }} — suitability {{ match.suitability_score|floatformat:0 }}% — {{ match.get_eligibility_status_display }} — {{ match.match_reason }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if verified_outcome %}
+  <section class="wtv-section" id="verified-outcome">
+    <h2 class="wtv-h2">Verified Outcome</h2>
+    <span class="iq-badge {% if verified_outcome.verified_status == 'verified' %}iq-badge-verified{% else %}iq-badge-review{% endif %}">{{ verified_outcome.get_verified_status_display }}</span>
+    <div class="wtv-chip-row" style="margin-top:0.75rem;">
+      <span class="wtv-chip">Loss avoided (actual): £{{ verified_outcome.loss_avoided_actual|floatformat:0 }}</span>
+      <span class="wtv-chip">Value recovered (actual): £{{ verified_outcome.value_recovered_actual|floatformat:0 }}</span>
+      <span class="wtv-chip">MRV status: {{ verified_outcome.get_mrv_status_display }}</span>
+    </div>
+  </section>
+  {% else %}
+  <section class="wtv-section" id="verified-outcome">
+    <h2 class="wtv-h2">Verified Outcome</h2>
+    <p class="wtv-p">Not yet available — this decision's conditions require collecting after-data before MRV can verify the outcome.</p>
+  </section>
+  {% endif %}
+
+</div>
+
+<style>
+  :root {
+    --wtv-bg: #070b0f; --wtv-bg2: #0d1117; --wtv-border: rgba(255,255,255,.08);
+    --wtv-text: #e2e8f0; --wtv-muted: #94a3b8; --wtv-acc: #00e89a; --wtv-info: #58a6ff;
+  }
+  .wtv-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--wtv-bg); color: var(--wtv-text); border-radius: 14px; }
+  .wtv-back { color: var(--wtv-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .wtv-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--wtv-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; margin-right: 0.5rem; }
+  .wtv-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .wtv-subtitle { font-size: 1rem; color: var(--wtv-muted); margin: 0 0 1rem; }
+  .wtv-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--wtv-border); }
+  .wtv-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .wtv-p { color: var(--wtv-muted); font-size: 0.9rem; line-height: 1.6; }
+  .wtv-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .wtv-list { color: var(--wtv-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .wtv-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .wtv-chip { background: rgba(88,166,255,.1); color: var(--wtv-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .wtv-headline { font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0.25rem 0; }
+</style>
+{% endblock %}

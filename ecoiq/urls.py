@@ -181,6 +181,9 @@ urlpatterns = [
     # EcoIQ Agent Runtime & Model Router — governed execution layer connecting training packs to the Council
     path('agent-runtime-model-router/', include('agent_runtime_model_router.urls', namespace='agent_runtime_model_router')),
 
+    # EcoIQ Waste-to-Value Capital Allocation Engine — fintech / capital-allocation layer for operational waste
+    path('waste-to-value-capital-allocation/', include('waste_to_value_capital_allocation_engine.urls', namespace='waste_to_value_capital_allocation_engine')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
