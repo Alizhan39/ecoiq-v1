@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}{{ run.title }} — EcoIQ AI Agent Council{% endblock %}
+{% block meta_description_content %}{{ run.title }}: a real, seeded Council Run showing agent routing, disagreement, cross-examination and a governed decision.{% endblock %}
+
+{% block content %}
+<div class="acnl-wrap">
+
+  <a class="acnl-back" href="{% url 'ai_agent_council:overview' %}">← Back to AI Agent Council</a>
+
+  <span class="acnl-badge">Council Run</span>
+  {% if run.is_simulated %}<span class="iq-badge iq-badge-note">Simulated demonstration run — not live agent execution</span>{% endif %}
+  <h1 class="acnl-title">{{ run.title }}</h1>
+  <p class="acnl-subtitle">{{ run.question }}</p>
+  <div class="acnl-chip-row">
+    <span class="acnl-chip">Task category: {{ run.task_category }}</span>
+    <span class="acnl-chip">Status: {{ run.get_status_display }}</span>
+  </div>
+
+  <section class="acnl-section" id="agent-routing">
+    <h2 class="acnl-h2">Agent Routing — Why These Agents</h2>
+    <p class="acnl-p">Not every task activates every agent. Every selection and exclusion has a stated reason.</p>
+    {% for entry in run.selected_agents %}
+    <div class="acnl-routing-row {% if entry.selected %}acnl-routing-selected{% endif %}">
+      <span class="iq-badge {% if entry.selected %}iq-badge-verified{% else %}iq-badge-blocked{% endif %}">
+        {% if entry.selected %}Selected{% else %}Not selected{% endif %}
+      </span>
+      <span class="acnl-routing-agent">{{ entry.agent_name }}</span>
+      <span class="acnl-routing-reason">{{ entry.reason }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="acnl-section" id="agent-tasks">
+    <h2 class="acnl-h2">Agent Tasks &amp; Collaboration Modes</h2>
+    {% for task in tasks %}
+    <div class="acnl-agent-card">
+      <div class="acnl-agent-head">
+        <span class="acnl-agent-name" style="margin:0;">{{ task.agent_name }}</span>
+        <span class="acnl-chip">{{ task.get_collaboration_mode_display }}</span>
+      </div>
+      <p class="acnl-p">{{ task.position_summary }}</p>
+      {% if task.risk_flags %}
+      <div class="acnl-chip-row">{% for flag in task.risk_flags %}<span class="iq-badge iq-badge-review">{{ flag }}</span>{% endfor %}</div>
+      {% endif %}
+      {% if task.missing_data %}
+      <div class="acnl-chip-row">{% for item in task.missing_data %}<span class="iq-badge iq-badge-blocked">Missing: {{ item }}</span>{% endfor %}</div>
+      {% endif %}
+      {% include 'ai_agent_council/_confidence_breakdown.html' with breakdown=task.confidence_breakdown %}
+    </div>
+    {% endfor %}
+  </section>
+
+  {% if handoffs %}
+  <section class="acnl-section" id="handoffs">
+    <h2 class="acnl-h2">Handoffs</h2>
+    {% for h in handoffs %}
+    <div class="acnl-agent-card">
+      <p class="acnl-p"><strong>{{ h.sender_agent }}</strong> → <strong>{{ h.receiver_agent }}</strong></p>
+      <p class="acnl-p">{{ h.reason }}</p>
+      {% if h.unresolved_questions %}
+      <p class="acnl-sub">Unresolved questions carried forward</p>
+      <ul class="acnl-list">{% for q in h.unresolved_questions %}<li>{{ q }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="acnl-section" id="disagreements">
+    <h2 class="acnl-h2">Disagreement Panel</h2>
+    <p class="acnl-note">Dissenting opinions are never hidden — every disagreement below is shown regardless of how it was resolved.</p>
+    {% for d in disagreements %}
+    <div class="acnl-agent-card">
+      <div class="acnl-agent-head">
+        <span class="acnl-chip">{{ d.get_conflict_type_display }}</span>
+        <span class="iq-badge iq-badge-review">{{ d.get_resolution_method_display }}</span>
+      </div>
+      <div class="acnl-position-pair">
+        <div class="acnl-position">
+          <p class="acnl-sub">{{ d.position_a.agent_name }} ({{ d.position_a.confidence }}%)</p>
+          <p class="acnl-p">{{ d.position_a.position_summary }}</p>
+        </div>
+        <div class="acnl-position">
+          <p class="acnl-sub">{{ d.position_b.agent_name }} ({{ d.position_b.confidence }}%)</p>
+          <p class="acnl-p">{{ d.position_b.position_summary }}</p>
+        </div>
+      </div>
+      <p class="acnl-p">{{ d.final_decision_summary }}</p>
+      {% if d.minority_opinion_retained %}
+      <span class="iq-badge iq-badge-note">Minority opinion retained</span>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p class="acnl-p">No disagreements were recorded for this run.</p>
+    {% endfor %}
+  </section>
+
+  {% if cross_examinations %}
+  <section class="acnl-section" id="cross-examination">
+    <h2 class="acnl-h2">Council Debate — Cross-Examination Timeline</h2>
+    <ol class="acnl-list acnl-case-list">
+      {% for x in cross_examinations %}
+      <li>
+        <strong>{{ x.questioner_agent }} → {{ x.target_agent }}</strong> ({{ x.challenge_type }})<br>
+        {{ x.reason }}<br>
+        <span class="acnl-sub">Response:</span> {{ x.response_answer }}
+        {% if x.unresolved_uncertainty %}<br><span class="iq-badge iq-badge-note">Unresolved: {{ x.unresolved_uncertainty }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  {% if decision %}
+  <section class="acnl-section" id="decision-panel">
+    <h2 class="acnl-h2">Decision Panel</h2>
+    <div class="acnl-agent-card">
+      <span class="iq-badge iq-badge-ready">{{ decision.get_status_display }}</span>
+      <p class="acnl-p" style="margin-top:0.75rem;">{{ decision.summary }}</p>
+
+      <p class="acnl-sub">Majority</p>
+      <div class="acnl-chip-row">{% for a in decision.majority_agents %}<span class="acnl-chip acnl-chip-metric">{{ a }}</span>{% endfor %}</div>
+
+      {% if decision.minority_agents %}
+      <p class="acnl-sub">Minority (preserved, not overridden)</p>
+      <div class="acnl-chip-row">{% for a in decision.minority_agents %}<span class="iq-badge iq-badge-review">{{ a }}</span>{% endfor %}</div>
+      <p class="acnl-note">{{ decision.minority_reason }}</p>
+      {% endif %}
+
+      {% if decision.conditions %}
+      <p class="acnl-sub">Conditions</p>
+      <ul class="acnl-list">{% for c in decision.conditions %}<li>{{ c }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% include 'ai_agent_council/_confidence_breakdown.html' with breakdown=decision.confidence_breakdown %}
+
+      <p class="acnl-sub">Human approval</p>
+      {% if decision.human_approved is True %}
+      <span class="iq-badge iq-badge-verified">Human approved</span>
+      {% elif decision.human_approved is False %}
+      <span class="iq-badge iq-badge-blocked">Human rejected</span>
+      {% else %}
+      <span class="iq-badge iq-badge-review">Awaiting human review</span>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if memory_entry %}
+  <section class="acnl-section" id="decision-memory">
+    <h2 class="acnl-h2">Decision Memory</h2>
+    <div class="acnl-agent-card">
+      <p class="acnl-sub">Original decision</p>
+      <p class="acnl-p">{{ memory_entry.original_decision_summary }}</p>
+      <p class="acnl-sub">Review trigger</p>
+      <p class="acnl-p">{{ memory_entry.review_trigger }}</p>
+      {% if memory_entry.reopened %}
+      <span class="iq-badge iq-badge-review">Reopened {{ memory_entry.reopened_at|date:"Y-m-d" }}</span>
+      <p class="acnl-p" style="margin-top:0.6rem;"><strong>Why:</strong> {{ memory_entry.reopened_reason }}</p>
+      <p class="acnl-p"><strong>New evidence:</strong> {{ memory_entry.new_evidence_summary }}</p>
+      <p class="acnl-p"><strong>Updated decision:</strong> {{ memory_entry.updated_decision_summary }}</p>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+
+<style>
+  :root {
+    --acnl-bg: #070b0f; --acnl-bg2: #0d1117; --acnl-border: rgba(255,255,255,.08);
+    --acnl-text: #e2e8f0; --acnl-muted: #94a3b8; --acnl-acc: #00e89a; --acnl-info: #58a6ff;
+  }
+  .acnl-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--acnl-bg); color: var(--acnl-text); border-radius: 14px; }
+  .acnl-back { color: var(--acnl-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .acnl-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--acnl-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; margin-right: 0.5rem; }
+  .acnl-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .acnl-subtitle { font-size: 1rem; font-weight: 500; color: var(--acnl-muted); margin: 0 0 1rem; }
+  .acnl-section { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--acnl-border); }
+  .acnl-h2 { font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .acnl-p { color: var(--acnl-muted); font-size: 0.9rem; line-height: 1.6; }
+  .acnl-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .acnl-list { color: var(--acnl-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .acnl-case-list li { margin-bottom: 0.75rem; }
+  .acnl-note { margin-top: 0.6rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; }
+  .acnl-agent-card { background: var(--acnl-bg2); border: 1px solid var(--acnl-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .acnl-agent-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .acnl-agent-name { font-size: 1.02rem; color: #fff; }
+  .acnl-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .acnl-chip { background: rgba(88,166,255,.1); color: var(--acnl-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .acnl-chip-metric { background: rgba(0,232,154,.1); color: var(--acnl-acc); border-color: rgba(0,232,154,.25); }
+  .acnl-routing-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding: 0.55rem 0; border-bottom: 1px solid var(--acnl-border); font-size: 0.85rem; }
+  .acnl-routing-agent { font-weight: 700; color: #fff; min-width: 220px; }
+  .acnl-routing-reason { color: var(--acnl-muted); }
+  .acnl-position-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+  .acnl-position { background: rgba(255,255,255,.03); border-radius: 8px; padding: 0.75rem 0.9rem; }
+  .acnl-confidence-breakdown { margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--acnl-border); }
+</style>
+{% endblock %}

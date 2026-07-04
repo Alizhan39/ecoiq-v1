@@ -1,0 +1,16 @@
+{% if breakdown.final %}
+<div class="acnl-confidence-breakdown">
+  <p class="acnl-sub" style="margin-top:0;">Why this confidence? — {{ breakdown.final }}%</p>
+  <ul class="acnl-list">
+    <li>Evidence coverage: {{ breakdown.evidence_coverage }}%</li>
+    <li>Source quality: {{ breakdown.source_quality }}%</li>
+    <li>Consistency: {{ breakdown.consistency }}%</li>
+    <li>Missing data penalty: -{{ breakdown.missing_data_penalty }}%</li>
+    <li>Contradiction penalty: -{{ breakdown.contradiction_penalty }}%</li>
+    <li>Historical reliability adjustment: {{ breakdown.historical_reliability_adjustment }}%</li>
+  </ul>
+  <p class="iq-badge iq-badge-note">Deterministic calibration on seeded fixture data — not a live model output.</p>
+</div>
+{% else %}
+<p class="iq-badge iq-badge-note">No calibration breakdown recorded for this task.</p>
+{% endif %}
