@@ -29,9 +29,9 @@ class AiAgentCouncilPageTests(TestCase):
         response = self.client.get('/ai-agent-council/')
         self.assertContains(response, 'EcoIQ AI Agent Council')
 
-    def test_page_mentions_ten_operationally_trained_agents(self):
+    def test_page_mentions_eleven_operationally_trained_agents(self):
         response = self.client.get('/ai-agent-council/')
-        self.assertContains(response, 'Ten operationally trained agents')
+        self.assertContains(response, 'Eleven operationally trained agents')
 
     def test_page_mentions_four_next_stage_agents(self):
         response = self.client.get('/ai-agent-council/')
@@ -57,6 +57,8 @@ class AiAgentCouncilPageTests(TestCase):
             'Report Generator Agent', 'Amanah Autopilot Supervisor',
         ):
             self.assertContains(response, name)
+        # "&" is HTML-escaped by Django's template auto-escaping.
+        self.assertContains(response, 'Waste &amp; Leakage Agent')
 
     def test_page_mentions_supplier_funding_match_agent_as_next_stage(self):
         response = self.client.get('/ai-agent-council/')
@@ -120,13 +122,13 @@ class AiAgentCouncilPageTests(TestCase):
 class AiAgentCouncilRepoValidationTests(TestCase):
     """Validates the live repository state the Council page reads from."""
 
-    def test_exactly_ten_operational_agent_folders(self):
+    def test_exactly_eleven_operational_agent_folders(self):
         repo_state = _scan_ai_agents_repo_state()
-        self.assertEqual(repo_state['operational_folder_count'], 10)
+        self.assertEqual(repo_state['operational_folder_count'], 11)
 
-    def test_exactly_one_hundred_agent_training_files(self):
+    def test_exactly_one_hundred_and_ten_agent_training_files(self):
         repo_state = _scan_ai_agents_repo_state()
-        self.assertEqual(repo_state['total_training_files'], 100)
+        self.assertEqual(repo_state['total_training_files'], 110)
 
     def test_master_index_exists(self):
         repo_state = _scan_ai_agents_repo_state()

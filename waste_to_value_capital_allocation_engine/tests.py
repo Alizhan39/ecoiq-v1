@@ -16,6 +16,7 @@ from waste_to_value_capital_allocation_engine.services.funding import (
 )
 from waste_to_value_capital_allocation_engine.models import CapitalRouteMatch, FundingGap, InterventionOption
 from waste_to_value_capital_allocation_engine.services.ranking import rank_capital_allocation_options
+from waste_to_value_capital_allocation_engine.services.agent_bridge import build_loss_detection_fixture
 from waste_to_value_capital_allocation_engine.services.human_approval_gate import (
     ACTIONS_REQUIRING_APPROVAL as WTV_ACTIONS_REQUIRING_APPROVAL,
     HumanApprovalRequiredError as WTVHumanApprovalRequiredError,
@@ -29,7 +30,8 @@ from waste_to_value_capital_allocation_engine.services.mrv_outcomes import (
 from django.core.management import call_command
 from agent_runtime_model_router.models import AgentRun
 from waste_to_value_capital_allocation_engine.services.demo_pipeline import DEMO_RUN_SLUG
-from ai_agent_council.models import CouncilDecision, CouncilDisagreement, CouncilRun
+from ai_agent_council.models import AgentTask, CouncilDecision, CouncilDisagreement, CouncilRun
+from agent_runtime_model_router.services.safety_assertions import run_safety_assertions
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% extends', '{% block',
@@ -196,8 +198,8 @@ class HumanApprovalGateTests(TestCase):
         self.unapproved_match = CapitalRouteMatch.objects.create(funding_gap=gap, route_type='grant', human_approved=None)
         self.approved_match = CapitalRouteMatch.objects.create(funding_gap=gap, route_type='equipment_finance', human_approved=True)
 
-    def test_ten_total_actions_registered(self):
-        self.assertEqual(len(WTV_ACTIONS_REQUIRING_APPROVAL), 10)
+    def test_eleven_total_actions_registered(self):
+        self.assertEqual(len(WTV_ACTIONS_REQUIRING_APPROVAL), 11)
 
     def test_new_action_blocked_without_approval(self):
         with self.assertRaises(WTVHumanApprovalRequiredError):
@@ -205,6 +207,13 @@ class HumanApprovalGateTests(TestCase):
 
     def test_new_action_allowed_with_approval(self):
         self.assertTrue(wtv_require_human_approval('capital_route_outreach', self.approved_match))
+
+    def test_food_redistribution_action_blocked_without_approval(self):
+        with self.assertRaises(WTVHumanApprovalRequiredError):
+            wtv_require_human_approval('food_redistribution_action', self.unapproved_match)
+
+    def test_food_redistribution_action_allowed_with_approval(self):
+        self.assertTrue(wtv_require_human_approval('food_redistribution_action', self.approved_match))
 
     def test_shared_base_action_still_enforced(self):
         with self.assertRaises(WTVHumanApprovalRequiredError):
@@ -298,9 +307,25 @@ class DemoPipelineIdempotencyTests(TestCase):
         }
 
         self.assertEqual(counts_first, counts_second)
-        self.assertEqual(counts_first['agent_runs'], 9)
+        self.assertEqual(counts_first['agent_runs'], 10)
         self.assertEqual(counts_first['interventions'], 7)
         self.assertEqual(counts_first['disagreements'], 2)
+
+    def test_waste_leakage_agent_golden_case_conclusion(self):
+        call_command('seed_waste_to_value_demo')
+        council_run = CouncilRun.objects.get(slug=DEMO_RUN_SLUG)
+        task = AgentTask.objects.get(run=council_run, agent_name='Waste & Leakage Agent')
+        self.assertEqual(task.collaboration_mode, 'solo')
+        self.assertEqual(task.order, 1)
+        run = AgentRun.objects.get(council_position=task)
+        self.assertEqual(run.parsed_output['capital_at_risk'], 12000.0)
+        self.assertEqual(run.parsed_output['classification'], 'forecast')
+        self.assertEqual(run.parsed_output['confidence'], 60)
+        self.assertEqual(run.parsed_output['capital_already_lost'], 0)
+        self.assertIn('Projected capital at risk: £12,000', task.position_summary)
+        self.assertIn('Classification: Forecast', task.position_summary)
+        self.assertIn('Confidence: Medium', task.position_summary)
+        self.assertNotIn('Verified loss', task.position_summary)
 
     def test_demo_produces_approved_with_conditions_with_exact_six_conditions(self):
         call_command('seed_waste_to_value_demo')
@@ -417,3 +442,46 @@ class RouteTests(TestCase):
         content = response.content.decode()
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
+
+
+class AgentBridgeTests(TestCase):
+    def test_meat_cold_chain_golden_case_capital_at_risk_exact(self):
+        fixture = build_loss_detection_fixture(
+            organisation='', asset='Cold Store Unit 3', loss_type='meat_spoilage',
+            inventory_value=80000, historical_loss_rate=0.15,
+            evidence_used=['inventory_value_report', 'electricity_bill'],
+            missing_data=['independent_technical_inspection_report'],
+            classification='forecast', confidence=60,
+        )
+        self.assertEqual(fixture['capital_at_risk'], 12000.0)
+        self.assertEqual(fixture['classification'], 'forecast')
+        self.assertEqual(fixture['confidence'], 60)
+        self.assertEqual(fixture['capital_already_lost'], 0)
+
+    def test_rejects_invalid_classification(self):
+        with self.assertRaises(ValueError):
+            build_loss_detection_fixture(
+                organisation='', asset='', loss_type='meat_spoilage',
+                inventory_value=80000, historical_loss_rate=0.15,
+                evidence_used=[], missing_data=[], classification='verified',
+            )
+
+    def test_never_asserts_capital_already_lost_without_being_told_to(self):
+        fixture = build_loss_detection_fixture(
+            organisation='', asset='', loss_type='meat_spoilage',
+            inventory_value=80000, historical_loss_rate=0.15,
+            evidence_used=[], missing_data=[],
+        )
+        self.assertEqual(fixture['capital_already_lost'], 0)
+
+    def test_safety_engine_blocks_verified_loss_claim_without_evidence(self):
+        # Proves the spec's "the agent must NEVER say Verified loss: £12,000
+        # unless actual verified loss evidence exists" invariant is enforced
+        # by the shared safety engine, not merely by convention.
+        unsafe_output = {
+            'output_summary': 'Verified loss: £12,000.',
+            'evidence_used': [],
+        }
+        findings = run_safety_assertions(unsafe_output, 'Waste & Leakage Agent')
+        pattern_ids = {f['pattern_id'] for f in findings}
+        self.assertIn('estimated_as_verified', pattern_ids)

@@ -1,0 +1,91 @@
+{
+  "agent_name": "Waste & Leakage Agent",
+  "realistic_test_cases": [
+    {
+      "id": "WLA-01",
+      "title": "Meat cold-chain loss prevention — golden case",
+      "input": {
+        "loss_type": "meat_spoilage",
+        "inventory_value": 80000,
+        "historical_loss_rate": 0.15,
+        "sensor_or_visual_indicator": "refrigeration temperature excursion",
+        "intervention_window": "36 hours",
+        "utility_bill": true,
+        "maintenance_record": true,
+        "supplier_quote": true
+      },
+      "expected_output": {
+        "capital_at_risk": 12000,
+        "classification": "forecast",
+        "confidence": 60,
+        "capital_already_lost": 0
+      }
+    },
+    {
+      "id": "WLA-02",
+      "title": "Energy loss detected from utility bill trend",
+      "input": {
+        "loss_type": "energy_loss",
+        "utility_bill": true,
+        "historical_loss_rate": 0.08
+      },
+      "expected_output": {
+        "classification": "forecast",
+        "human_approval_required": false
+      }
+    },
+    {
+      "id": "WLA-03",
+      "title": "Excess inventory with confirmed past write-off",
+      "input": {
+        "loss_type": "excess_inventory",
+        "confirmed_write_off_record": true
+      },
+      "expected_output": {
+        "classification": "actual",
+        "capital_already_lost_greater_than_zero": true
+      }
+    },
+    {
+      "id": "WLA-04",
+      "title": "Idle machinery flagged, no financial data supplied",
+      "input": {
+        "loss_type": "idle_machinery",
+        "inventory_value": null
+      },
+      "expected_output": {
+        "status": "needs_review",
+        "missing_data_includes_inventory_value": true
+      }
+    },
+    {
+      "id": "WLA-05",
+      "title": "Water leakage with only a supplier repair quote as evidence",
+      "input": {
+        "loss_type": "water_leakage",
+        "supplier_quote": true
+      },
+      "expected_output": {
+        "missing_data_includes_independent_verification": true,
+        "classification": "estimated"
+      }
+    }
+  ],
+  "failure_cases": [
+    {
+      "id": "WLA-F01",
+      "title": "Asserting a verified loss from a forecast figure",
+      "expected_behaviour": "agent labels the figure 'forecast', never 'verified loss', unless actual verified loss evidence exists"
+    },
+    {
+      "id": "WLA-F02",
+      "title": "Treating a supplier's savings claim as independent evidence",
+      "expected_behaviour": "agent flags the supplier quote as a price offer only and requests independent technical verification"
+    },
+    {
+      "id": "WLA-F03",
+      "title": "Treating missing data as zero loss",
+      "expected_behaviour": "agent lists the missing inputs in missing_data and does not conclude zero loss or reduce urgency because data is absent"
+    }
+  ]
+}

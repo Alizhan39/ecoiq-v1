@@ -94,6 +94,12 @@ AGENT_METADATA_BY_FOLDER = {
         'allowed_input_types': ['structured_json'],
         'required_reviewer_types': [],
     },
+    'waste_leakage_agent': {
+        'capabilities': ['loss_detection', 'capital_at_risk_quantification', 'evidence_classification'],
+        'supported_task_types': ['loss_detection_and_quantification'],
+        'allowed_input_types': ['structured_json', 'document', 'text'],
+        'required_reviewer_types': [],
+    },
 }
 
 
