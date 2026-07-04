@@ -4,11 +4,17 @@ Meat Cold-Chain Loss Prevention end-to-end demo.
 
 Structurally mirrors agent_runtime_model_router/services/demo_pipeline.py's
 Boiler House #3 demo: a DEDICATED CouncilRun (slug
-'meat-cold-chain-loss-prevention-demo'), 9 agents run through the real
+'meat-cold-chain-loss-prevention-demo'), 10 agents run through the real
 create_agent_run -> execute_agent -> submit_agent_position_to_council
 pipeline (never hand-authored AgentTask rows), producing the exact
 Finance/MRV/Governance disagreement and APPROVE WITH CONDITIONS decision
 from the spec.
+
+The Waste & Leakage Agent runs first, solo, before Document Reader Agent —
+its job is to decide whether there is something worth the Council's
+attention at all. Its capital-at-risk figure is computed by the real
+`calculate_capital_at_risk()` service via `services/agent_bridge.py`, not
+hand-derived, so it is guaranteed to match the platform's own arithmetic.
 
 This app's own OperationalLoss/InterventionOption/FundingGap/
 CapitalRouteMatch/CapitalAllocationDecision rows are created for the same
@@ -27,6 +33,7 @@ from agent_runtime_model_router.services.execution import (
     create_agent_run, execute_agent, submit_agent_position_to_council,
 )
 from waste_to_value_capital_allocation_engine.models import FundingGap, OperationalLoss
+from waste_to_value_capital_allocation_engine.services.agent_bridge import build_loss_detection_fixture
 from waste_to_value_capital_allocation_engine.services.funding import (
     calculate_funding_gap, match_capital_routes,
 )
@@ -37,6 +44,29 @@ DEMO_RUN_SLUG = 'meat-cold-chain-loss-prevention-demo'
 
 # (agent_name, task_type, collaboration_mode, fixture_output, evidence_provenance, calibration_signals)
 PIPELINE_STEPS = [
+    (
+        'Waste & Leakage Agent', 'loss_detection_and_quantification', 'solo',
+        build_loss_detection_fixture(
+            organisation='', asset='Cold Store Unit 3', loss_type='meat_spoilage',
+            inventory_value=80000, historical_loss_rate=0.15,
+            evidence_used=[
+                'inventory_value_report', 'electricity_bill', 'maintenance_record', 'supplier_quote_coldchain',
+            ],
+            missing_data=['independent_technical_inspection_report'],
+            classification='forecast', confidence=60,
+            risk_flags=['temperature_excursion_detected'],
+            recoverable_value_note='Finance Modelling Agent to model recovery options once intervention options exist.',
+            next_action='Route to Document Reader Agent and Finance Modelling Agent for full evidence extraction and CAPEX/OPEX modelling.',
+            human_approval_required=False, status='completed',
+        ),
+        [
+            {'evidence_id': 'inventory_value_report', 'source_document': 'Inventory Value Report.xlsx', 'source_ref': 'sheet 1', 'quality': 'strong', 'missing_data_warning': False, 'visibility': 'private'},
+            {'evidence_id': 'electricity_bill', 'source_document': 'Electricity Bill.pdf', 'source_ref': 'p1', 'quality': 'medium', 'missing_data_warning': False, 'visibility': 'private'},
+            {'evidence_id': 'maintenance_record', 'source_document': 'Refrigeration Maintenance Record.pdf', 'source_ref': 'p1-3', 'quality': 'medium', 'missing_data_warning': False, 'visibility': 'private'},
+            {'evidence_id': 'supplier_quote_coldchain', 'source_document': 'Cold-Chain Supplier Quote.pdf', 'source_ref': 'p1-2', 'quality': 'medium', 'missing_data_warning': False, 'visibility': 'private'},
+        ],
+        {'evidence_quality_score': 55, 'unresolved_disagreements': 0, 'contradiction_severity': 'none', 'reviewer_status': 'pending'},
+    ),
     (
         'Document Reader Agent', 'inventory_and_bill_extraction', 'parallel',
         {

@@ -103,13 +103,18 @@ OPERATIONAL_AGENTS = [
             'presented as independently making high-impact decisions.'
         ),
     },
+    {
+        'number': 11, 'name': 'Waste & Leakage Agent', 'folder': 'waste_leakage_agent',
+        'role': 'Detects operational loss, quantifies financial exposure, and keeps actual/estimated/forecast figures visibly separate.',
+        'handoffs': ['Document Reader Agent', 'Finance Modelling Agent'], 'important': '',
+    },
 ]
 
 NEXT_STAGE_AGENTS = [
-    {'number': 11, 'name': 'Supplier / Funding Match Agent'},
-    {'number': 12, 'name': 'Customer Success Agent'},
-    {'number': 13, 'name': 'Sales CRM Agent'},
-    {'number': 14, 'name': 'Analytics Agent'},
+    {'number': 12, 'name': 'Supplier / Funding Match Agent'},
+    {'number': 13, 'name': 'Customer Success Agent'},
+    {'number': 14, 'name': 'Sales CRM Agent'},
+    {'number': 15, 'name': 'Analytics Agent'},
 ]
 
 OPERATIONAL_STATUS_LABEL = 'Operational Training Pack Ready'

@@ -39,11 +39,11 @@ RAW_TEMPLATE_TOKENS = [
 
 
 class RegistryDiscoveryTests(TestCase):
-    def test_discovers_ten_operational_and_four_next_stage(self):
+    def test_discovers_eleven_operational_and_four_next_stage(self):
         discovered = discover_agents()
         operational = [d for d in discovered if not d['is_next_stage']]
         next_stage = [d for d in discovered if d['is_next_stage']]
-        self.assertEqual(len(operational), 10)
+        self.assertEqual(len(operational), 11)
         self.assertEqual(len(next_stage), 4)
 
     def test_operational_agents_have_real_content_hash(self):
@@ -61,9 +61,9 @@ class RegistryDiscoveryTests(TestCase):
 
 
 class RegistrySyncTests(TestCase):
-    def test_sync_creates_fourteen_entries(self):
+    def test_sync_creates_fifteen_entries(self):
         sync_registry()
-        self.assertEqual(AgentRegistryEntry.objects.count(), 14)
+        self.assertEqual(AgentRegistryEntry.objects.count(), 15)
 
     def test_sync_is_idempotent(self):
         sync_registry()
@@ -114,7 +114,7 @@ class TrainingPackLoaderTests(TestCase):
         self.assertFalse(result['valid'])
         self.assertEqual(len(result['missing_files']), 10)
 
-    def test_validate_all_ten_operational_agents(self):
+    def test_validate_all_operational_agents(self):
         from ai_agent_council.agents import OPERATIONAL_AGENT_NAMES
         for name in OPERATIONAL_AGENT_NAMES:
             result = validate_training_pack(name)

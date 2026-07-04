@@ -5,7 +5,10 @@ reuses agent_runtime_model_router's gate directly rather than forking it.
 The base gate is a pure function that only reads `.human_approved`/`.pk` off
 whatever object it's given, so it works unchanged for this app's
 `CapitalRouteMatch`/`CapitalAllocationDecision` objects, not just `AgentRun`.
-This module only adds 2 new action types not covered by the base 8.
+This module adds 3 action types not covered by the base 8: 2 from the
+original Waste-to-Value engine, plus `food_redistribution_action` for the
+Waste & Leakage Agent (food redistribution requires food-safety and legal
+review before it can proceed).
 """
 from agent_runtime_model_router.services.human_approval_gate import (
     ACTIONS_REQUIRING_APPROVAL as _BASE_ACTIONS,
@@ -16,6 +19,7 @@ from agent_runtime_model_router.services.human_approval_gate import (
 ADDITIONAL_ACTIONS_REQUIRING_APPROVAL = frozenset({
     'capital_route_outreach',
     'islamic_finance_claim_publication',
+    'food_redistribution_action',
 })
 
 ACTIONS_REQUIRING_APPROVAL = _BASE_ACTIONS | ADDITIONAL_ACTIONS_REQUIRING_APPROVAL
