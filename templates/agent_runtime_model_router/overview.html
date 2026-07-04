@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Agent Runtime & Model Router{% endblock %}
+{% block meta_description_content %}EcoIQ Agent Runtime & Model Router: the governed execution layer connecting agent training packs to the AI Agent Council.{% endblock %}
+
+{% block content %}
+<div class="armr-wrap">
+
+  <span class="armr-badge">EcoIQ Platform Module</span>
+  <h1 class="armr-title">EcoIQ Agent Runtime & Model Router</h1>
+  <p class="armr-subtitle">{{ presentation_headline }}</p>
+  <p class="armr-desc">{{ core_purpose }}</p>
+
+  <div class="armr-chip-row">
+    <a class="armr-btn" href="{% url 'ai_agent_council:overview' %}">Open AI Agent Council</a>
+    {% if demo_case %}
+    <a class="armr-btn armr-btn-primary" href="{% url 'agent_runtime_model_router:case_trace' demo_case.slug %}">View Boiler House #3 Full Trace</a>
+    {% endif %}
+  </div>
+
+  <section class="armr-section" id="pipeline">
+    <h2 class="armr-h2">Execution Pipeline</h2>
+    <div class="armr-workflow-row">
+      {% for step in pipeline_steps %}
+      <span class="armr-workflow-step">{{ step }}</span>{% if not forloop.last %}<span class="armr-workflow-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="armr-section" id="dashboard">
+    <h2 class="armr-h2">Runtime Dashboard</h2>
+    <div class="armr-metric-grid">
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.registered_agents }}</div><div class="armr-metric-label">registered agents</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.live_enabled_agents }}</div><div class="armr-metric-label">live-enabled agents</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.deterministic_test_runs }}</div><div class="armr-metric-label">deterministic test runs</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.simulated_demo_runs }}</div><div class="armr-metric-label">simulated demo runs</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.successful_runs }}</div><div class="armr-metric-label">successful runs</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.schema_failures }}</div><div class="armr-metric-label">schema failures</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.safety_blocks }}</div><div class="armr-metric-label">safety blocks</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.human_reviews_required }}</div><div class="armr-metric-label">human reviews required</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{% if stats.average_calibrated_confidence %}{{ stats.average_calibrated_confidence|floatformat:0 }}%{% else %}—{% endif %}</div><div class="armr-metric-label">average calibrated confidence</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{{ stats.fallback_events }}</div><div class="armr-metric-label">fallback events</div></div>
+      <div class="armr-metric-card"><div class="armr-metric-val">{% if stats.estimated_model_cost_usd %}${{ stats.estimated_model_cost_usd|floatformat:2 }}{% else %}$0.00{% endif %}</div><div class="armr-metric-label">estimated model cost</div></div>
+    </div>
+    <p class="iq-badge iq-badge-note">All cost figures are estimated (token-count based), never a claim of actual provider billing.</p>
+  </section>
+
+  <section class="armr-section" id="execution-mode">
+    <h2 class="armr-h2">Execution Mode Honesty</h2>
+    <p class="armr-p">{{ execution_mode_note }}</p>
+  </section>
+
+  <section class="armr-section" id="safety-assertion-engine">
+    <h2 class="armr-h2">Safety Assertion Engine</h2>
+    <p class="armr-p">{{ safety_engine_note }}</p>
+  </section>
+
+  <section class="armr-section" id="structured-output-validation">
+    <h2 class="armr-h2">Structured Output Validation</h2>
+    <p class="armr-p">
+      Invalid output is never silently "fixed" — it remains stored, is marked invalid, shows its
+      validation errors, and cannot enter Council reasoning as a trusted position.
+    </p>
+  </section>
+
+  {% if recent_runs %}
+  <section class="armr-section" id="recent-runs">
+    <h2 class="armr-h2">Recent Agent Runs</h2>
+    <table class="armr-table">
+      <thead><tr><th>Agent</th><th>Execution Mode</th><th>Status</th><th>Confidence</th><th></th></tr></thead>
+      <tbody>
+        {% for run in recent_runs %}
+        <tr>
+          <td>{{ run.agent.agent_name }}</td>
+          <td>{{ run.get_execution_mode_used_display|default:run.get_execution_mode_requested_display }}</td>
+          <td>{{ run.get_status_display }}</td>
+          <td>{% if run.calibrated_confidence %}{{ run.calibrated_confidence|floatformat:0 }}%{% else %}—{% endif %}</td>
+          <td><a class="armr-link" href="{% url 'agent_runtime_model_router:run_detail' run.id %}">View →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <section class="armr-section armr-presentation" id="presentation-view">
+    <h2 class="armr-h2">Presentation View</h2>
+    <p class="armr-headline">{{ presentation_headline }}</p>
+    <div class="armr-workflow-row">
+      {% for step in presentation_pipeline %}
+      <span class="armr-workflow-step">{{ step }}</span>{% if not forloop.last %}<span class="armr-workflow-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+
+<style>
+  :root {
+    --armr-bg: #070b0f; --armr-bg2: #0d1117; --armr-border: rgba(255,255,255,.08);
+    --armr-text: #e2e8f0; --armr-muted: #94a3b8; --armr-acc: #00e89a; --armr-info: #58a6ff;
+  }
+  .armr-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--armr-bg); color: var(--armr-text); border-radius: 14px; }
+  .armr-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--armr-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .armr-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .armr-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--armr-acc); margin: 0 0 1rem; }
+  .armr-desc { color: var(--armr-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .armr-chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+  .armr-btn { display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none; background: var(--armr-bg2); color: var(--armr-text); border: 1px solid var(--armr-border); }
+  .armr-btn-primary { background: var(--armr-acc); color: #06281f; border-color: var(--armr-acc); }
+  .armr-section { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--armr-border); }
+  .armr-h2 { font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .armr-p { color: var(--armr-muted); font-size: 0.9rem; line-height: 1.6; }
+  .armr-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+  .armr-metric-card { background: var(--armr-bg2); border: 1px solid var(--armr-border); border-radius: 10px; padding: 1rem 1.1rem; }
+  .armr-metric-val { font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.2rem; }
+  .armr-metric-label { font-size: 0.72rem; color: var(--armr-muted); line-height: 1.5; }
+  .armr-workflow-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.75rem; }
+  .armr-workflow-step { background: rgba(0,232,154,.1); color: var(--armr-acc); border: 1px solid rgba(0,232,154,.25); padding: 0.3rem 0.7rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; }
+  .armr-workflow-arrow { color: var(--armr-muted); font-size: 0.85rem; }
+  .armr-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+  .armr-table th, .armr-table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--armr-border); color: var(--armr-muted); }
+  .armr-table th { color: #fff; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .armr-link { color: var(--armr-info); text-decoration: none; }
+  .armr-presentation { background: rgba(0,232,154,.03); border-radius: 12px; padding: 1.75rem; }
+  .armr-headline { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+</style>
+{% endblock %}

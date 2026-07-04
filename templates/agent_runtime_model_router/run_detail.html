@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}{{ run.agent.agent_name }} run #{{ run.id }} — EcoIQ Agent Runtime{% endblock %}
+{% block meta_description_content %}Full trace of one Agent Run: routing, execution mode, schema validation, safety assertions and confidence calibration.{% endblock %}
+
+{% block content %}
+<div class="armr-wrap">
+  <a class="armr-back" href="{% url 'agent_runtime_model_router:overview' %}">← Back to Agent Runtime & Model Router</a>
+
+  <span class="armr-badge">Agent Run #{{ run.id }}</span>
+  <h1 class="armr-title">{{ run.agent.agent_name }}</h1>
+  <p class="armr-subtitle">{{ run.task_type }}{% if run.council_case %} — {{ run.council_case.title }}{% endif %}</p>
+
+  <div class="armr-chip-row">
+    <span class="iq-badge iq-badge-note">Execution Mode requested: {{ run.get_execution_mode_requested_display }}</span>
+    <span class="iq-badge {% if run.execution_mode_used == run.execution_mode_requested %}iq-badge-verified{% else %}iq-badge-review{% endif %}">Execution Mode used: {{ run.get_execution_mode_used_display|default:'—' }}</span>
+    <span class="armr-chip">Status: {{ run.get_status_display }}</span>
+  </div>
+
+  <section class="armr-section" id="routing">
+    <h2 class="armr-h2">Model Router Decision</h2>
+    <p class="armr-p"><strong>{{ run.model_provider }} / {{ run.model_name }}</strong> — {{ run.routing_reason }}</p>
+    <div class="armr-chip-row">
+      <span class="armr-chip">Sensitivity: {{ run.sensitivity_level }}</span>
+      <span class="armr-chip">Required capability: {{ run.required_capability }}</span>
+      <span class="armr-chip">Cost class: {{ run.cost_class }}</span>
+      {% if run.fallback_route %}<span class="armr-chip">Fallback route: {{ run.fallback_route }}</span>{% endif %}
+    </div>
+    {% if run.rejected_routes %}
+    <p class="armr-sub">Rejected alternatives</p>
+    <ul class="armr-list">
+      {% for alt in run.rejected_routes %}<li>{{ alt.provider }} / {{ alt.model }} — {{ alt.reason_rejected }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if run.fallback_chain %}
+    <p class="armr-sub">Fallback chain</p>
+    <ul class="armr-list">
+      {% for step in run.fallback_chain %}<li>{{ step.provider }} / {{ step.model }} — {{ step.outcome }} ({{ step.reason }})</li>{% endfor %}
+    </ul>
+    {% if run.fallback_reason %}<p class="armr-note">{{ run.fallback_reason }}</p>{% endif %}
+    {% endif %}
+  </section>
+
+  <section class="armr-section" id="training-pack-provenance">
+    <h2 class="armr-h2">Training Pack Provenance</h2>
+    <div class="armr-chip-row">
+      <span class="armr-chip">Path: <code>{{ run.training_pack_path }}</code></span>
+      <span class="armr-chip">Version: {{ run.training_pack_version }}</span>
+      <span class="armr-chip">Prompt: {{ run.prompt_version }}</span>
+      <span class="armr-chip">Schema: {{ run.schema_version }}</span>
+      <span class="armr-chip">Safety rules: {{ run.safety_rules_version }}</span>
+      <span class="armr-chip">Golden tests: {{ run.golden_test_version }}</span>
+    </div>
+    <p class="armr-sub">Content hash</p>
+    <p class="armr-p"><code>{{ run.training_pack_content_hash|default:'—' }}</code></p>
+  </section>
+
+  <section class="armr-section" id="output">
+    <h2 class="armr-h2">Raw &amp; Parsed Output</h2>
+    <p class="armr-sub">Raw output</p>
+    <pre class="armr-pre">{{ run.raw_output|default:'—' }}</pre>
+    <p class="armr-sub">Parsed output</p>
+    <pre class="armr-pre">{{ run.parsed_output }}</pre>
+  </section>
+
+  <section class="armr-section" id="structured-output-validation">
+    <h2 class="armr-h2">Structured Output Validation</h2>
+    {% if run.schema_valid %}
+    <span class="iq-badge iq-badge-verified">Schema valid</span>
+    {% else %}
+    <span class="iq-badge iq-badge-blocked">Schema invalid — cannot enter Council reasoning as a trusted position</span>
+    {% endif %}
+    {% if run.validation_errors %}
+    <ul class="armr-list">{% for err in run.validation_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+
+  <section class="armr-section" id="evidence">
+    <h2 class="armr-h2">Evidence</h2>
+    <div class="armr-chip-row">{% for e in run.evidence_used %}<span class="armr-chip">{{ e }}</span>{% endfor %}</div>
+    {% if run.missing_data %}
+    <p class="armr-sub">Missing data</p>
+    <div class="armr-chip-row">{% for m in run.missing_data %}<span class="iq-badge iq-badge-blocked">{{ m }}</span>{% endfor %}</div>
+    {% endif %}
+    {% if run.evidence_provenance %}
+    <p class="armr-sub">Evidence provenance</p>
+    <ul class="armr-list">
+      {% for item in run.evidence_provenance %}
+      <li>{{ item.evidence_id }} — {{ item.source_document }} ({{ item.source_ref }}) — quality: {{ item.quality }} — {{ item.visibility }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+
+  <section class="armr-section" id="safety-assertion-engine">
+    <h2 class="armr-h2">Safety Assertion Engine</h2>
+    <span class="iq-badge {% if run.safety_status == 'pass' %}iq-badge-verified{% elif run.safety_status == 'blocking' %}iq-badge-blocked{% else %}iq-badge-review{% endif %}">{{ run.get_safety_status_display }}</span>
+    {% if run.safety_findings %}
+    <ul class="armr-list">
+      {% for f in run.safety_findings %}<li><strong>{{ f.severity }}</strong> — {{ f.detail }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+
+  <section class="armr-section" id="confidence-calibration">
+    <h2 class="armr-h2">Confidence Calibration</h2>
+    <p class="armr-p">Raw model confidence: {% if run.raw_confidence %}{{ run.raw_confidence }}%{% else %}—{% endif %} — never trusted directly.</p>
+    <p class="armr-headline">Calibrated confidence: {% if run.calibrated_confidence %}{{ run.calibrated_confidence }}%{% else %}—{% endif %}</p>
+    {% if run.confidence_calibration_explanation.explanation %}
+    <ul class="armr-list">
+      {% for line in run.confidence_calibration_explanation.explanation %}<li>{{ line }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+
+  <section class="armr-section" id="approval">
+    <h2 class="armr-h2">Human Approval</h2>
+    {% if run.human_approved is True %}
+    <span class="iq-badge iq-badge-verified">Human approved</span>
+    {% elif run.human_approved is False %}
+    <span class="iq-badge iq-badge-blocked">Human rejected</span>
+    {% else %}
+    <span class="iq-badge iq-badge-review">{% if run.human_approval_required %}Awaiting human review{% else %}Not required{% endif %}</span>
+    {% endif %}
+  </section>
+
+  <section class="armr-section" id="cost">
+    <h2 class="armr-h2">Cost &amp; Usage</h2>
+    <div class="armr-chip-row">
+      <span class="armr-chip">Estimated input tokens: {{ run.estimated_input_tokens|default:'—' }}</span>
+      <span class="armr-chip">Estimated output tokens: {{ run.estimated_output_tokens|default:'—' }}</span>
+      <span class="armr-chip">Estimated cost: ${{ run.estimated_cost_usd|default:'0.00' }}</span>
+    </div>
+    <p class="iq-badge iq-badge-note">Estimated, not actual provider-billed cost.</p>
+    {% if run.actual_usage %}
+    <p class="armr-sub">Actual usage (provider-reported)</p>
+    <pre class="armr-pre">{{ run.actual_usage }}</pre>
+    {% endif %}
+    {% if run.budget_exceeded %}<span class="iq-badge iq-badge-blocked">Budget exceeded</span>{% endif %}
+  </section>
+
+  {% if run.council_position %}
+  <section class="armr-section" id="council-position">
+    <h2 class="armr-h2">Resulting Council Position</h2>
+    <p class="armr-p">This run's output was submitted as a real Council position on <strong>{{ run.council_case.title }}</strong>.</p>
+    {% if run.council_case %}
+    <a class="armr-btn" href="{% url 'agent_runtime_model_router:case_trace' run.council_case.slug %}">View full case trace →</a>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="armr-section" id="audit-trail">
+    <h2 class="armr-h2">Audit Trail</h2>
+    <ul class="armr-list">
+      {% for entry in run.audit_trail %}<li>{{ entry.ts }} — {{ entry.event }}{% if entry.detail %}: {{ entry.detail }}{% endif %}</li>{% endfor %}
+    </ul>
+    {% if run.idempotency_key %}<p class="armr-p"><code>idempotency_key: {{ run.idempotency_key }}</code></p>{% endif %}
+    {% if run.rerun_of %}<p class="armr-p">Rerun of run #{{ run.rerun_of_id }} — reason: {{ run.rerun_reason }}</p>{% endif %}
+  </section>
+
+</div>
+
+<style>
+  :root {
+    --armr-bg: #070b0f; --armr-bg2: #0d1117; --armr-border: rgba(255,255,255,.08);
+    --armr-text: #e2e8f0; --armr-muted: #94a3b8; --armr-acc: #00e89a; --armr-info: #58a6ff;
+  }
+  .armr-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--armr-bg); color: var(--armr-text); border-radius: 14px; }
+  .armr-back { color: var(--armr-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .armr-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--armr-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; margin-right: 0.5rem; }
+  .armr-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .armr-subtitle { font-size: 1rem; color: var(--armr-muted); margin: 0 0 1rem; }
+  .armr-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--armr-border); }
+  .armr-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .armr-p { color: var(--armr-muted); font-size: 0.9rem; line-height: 1.6; }
+  .armr-sub { font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0.85rem 0 0.4rem; }
+  .armr-list { color: var(--armr-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .armr-note { margin-top: 0.6rem; color: #f4a261; font-size: 0.8rem; }
+  .armr-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .armr-chip { background: rgba(88,166,255,.1); color: var(--armr-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .armr-pre { background: var(--armr-bg2); border: 1px solid var(--armr-border); border-radius: 8px; padding: 0.85rem 1rem; font-size: 0.78rem; color: var(--armr-text); overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  .armr-headline { font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0.5rem 0; }
+  .armr-btn { display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none; background: var(--armr-bg2); color: var(--armr-text); border: 1px solid var(--armr-border); margin-top: 0.5rem; }
+</style>
+{% endblock %}
