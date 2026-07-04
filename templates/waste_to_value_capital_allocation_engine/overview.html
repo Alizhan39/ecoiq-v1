@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Waste-to-Value Capital Allocation Engine{% endblock %}
+{% block meta_description_content %}EcoIQ Waste-to-Value Capital Allocation Engine: turn operational waste into finance-ready investment opportunities.{% endblock %}
+
+{% block content %}
+<div class="wtv-wrap">
+
+  <span class="wtv-badge">EcoIQ Platform Module</span>
+  <h1 class="wtv-title">EcoIQ Waste-to-Value Capital Allocation Engine</h1>
+  <p class="wtv-subtitle">Turn operational waste into finance-ready investment opportunities.</p>
+  <p class="wtv-desc">{{ core_purpose }}</p>
+
+  <div class="wtv-chip-row">
+    {% for cta in cta_buttons %}
+    {% if cta.anchor %}
+    <a class="wtv-btn" href="{{ cta.anchor }}">{{ cta.label }}</a>
+    {% elif cta.url_arg %}
+    <a class="wtv-btn" href="{% url cta.url_name cta.url_arg %}">{{ cta.label }}</a>
+    {% else %}
+    <a class="wtv-btn" href="{% url cta.url_name %}">{{ cta.label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="wtv-section" id="lifecycle">
+    <h2 class="wtv-h2">Core Economic Lifecycle</h2>
+    <div class="wtv-workflow-row">
+      {% for step in lifecycle_steps %}
+      <span class="wtv-workflow-step">{{ step }}</span>{% if not forloop.last %}<span class="wtv-workflow-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="wtv-section" id="dashboard">
+    <h2 class="wtv-h2">Runtime Dashboard</h2>
+    <div class="wtv-metric-grid">
+      <div class="wtv-metric-card"><div class="wtv-metric-val">£{{ stats.total_capital_at_risk|floatformat:0 }}</div><div class="wtv-metric-label">total capital at risk</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">£{{ stats.estimated_recoverable_value|floatformat:0 }}</div><div class="wtv-metric-label">estimated recoverable value</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">{{ stats.operational_losses_detected }}</div><div class="wtv-metric-label">operational losses detected</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">{{ stats.urgent_interventions }}</div><div class="wtv-metric-label">urgent interventions</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">{{ stats.investment_opportunities }}</div><div class="wtv-metric-label">investment opportunities</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">£{{ stats.estimated_capex_required|floatformat:0 }}</div><div class="wtv-metric-label">estimated CAPEX required</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">£{{ stats.funding_gap|floatformat:0 }}</div><div class="wtv-metric-label">funding gap</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">{{ stats.finance_ready_opportunities }}</div><div class="wtv-metric-label">finance-ready opportunities</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">{{ stats.mrv_verified_outcomes }}</div><div class="wtv-metric-label">MRV verified outcomes</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">£{{ stats.verified_value_recovered|floatformat:0 }}</div><div class="wtv-metric-label">verified value recovered</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">£{{ stats.working_capital_released|floatformat:0 }}</div><div class="wtv-metric-label">working capital released</div></div>
+      <div class="wtv-metric-card"><div class="wtv-metric-val">{{ stats.projects_awaiting_approval }}</div><div class="wtv-metric-label">projects awaiting approval</div></div>
+    </div>
+    <p class="iq-badge iq-badge-note">Estimated financial outcomes are not guaranteed. Funding routes are not funding commitments. Predicted waste reduction is not verified impact.</p>
+  </section>
+
+  <section class="wtv-section" id="next-pound">
+    <h2 class="wtv-h2">{{ next_pound_headline }}</h2>
+    <p class="wtv-p">Ranked capital allocation candidates — a governed recommendation for human review, never an automatic financial decision.</p>
+    <table class="wtv-table">
+      <thead><tr><th>Rank</th><th>Intervention</th><th>Approval Status</th><th>Confidence</th><th>Council Case</th><th></th></tr></thead>
+      <tbody>
+        {% for decision in decisions %}
+        <tr>
+          <td>{{ decision.ranking|default:'—' }}</td>
+          <td>{{ decision.intervention.title }}</td>
+          <td>{{ decision.get_approval_status_display }}</td>
+          <td>{% if decision.confidence %}{{ decision.confidence|floatformat:0 }}%{% else %}—{% endif %}</td>
+          <td>{{ decision.council_case.title|default:'—' }}</td>
+          <td><a class="wtv-link" href="{% url 'waste_to_value_capital_allocation_engine:decision_detail' decision.id %}">View →</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No capital allocation decisions yet — run <code>python manage.py seed_waste_to_value_demo</code>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="wtv-section wtv-presentation" id="presentation-mode">
+    <h2 class="wtv-h2">Presentation Mode</h2>
+    <p class="wtv-headline">{{ presentation_headline }}</p>
+    <p class="wtv-subheadline">{{ presentation_subheadline }}</p>
+    <div class="wtv-workflow-row">
+      {% for step in presentation_pipeline %}
+      <span class="wtv-workflow-step">{{ step }}</span>{% if not forloop.last %}<span class="wtv-workflow-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+    <p class="wtv-headline" style="margin-top:1.5rem;">{{ second_headline }}</p>
+    <p class="wtv-subheadline">{{ third_headline }}</p>
+  </section>
+
+  <section class="wtv-section" id="safety">
+    <h2 class="wtv-h2">Safety and Claims</h2>
+    <ul class="wtv-list wtv-safety-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+
+</div>
+
+<style>
+  :root {
+    --wtv-bg: #070b0f; --wtv-bg2: #0d1117; --wtv-border: rgba(255,255,255,.08);
+    --wtv-text: #e2e8f0; --wtv-muted: #94a3b8; --wtv-acc: #00e89a; --wtv-info: #58a6ff;
+  }
+  .wtv-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--wtv-bg); color: var(--wtv-text); border-radius: 14px; }
+  .wtv-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--wtv-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .wtv-title { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.02em; color: #fff; }
+  .wtv-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--wtv-acc); margin: 0 0 1rem; }
+  .wtv-desc { color: var(--wtv-muted); line-height: 1.7; max-width: 780px; font-size: 0.95rem; }
+  .wtv-chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+  .wtv-btn { display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none; background: var(--wtv-bg2); color: var(--wtv-text); border: 1px solid var(--wtv-border); }
+  .wtv-section { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--wtv-border); }
+  .wtv-h2 { font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .wtv-p { color: var(--wtv-muted); font-size: 0.9rem; line-height: 1.6; }
+  .wtv-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
+  .wtv-metric-card { background: var(--wtv-bg2); border: 1px solid var(--wtv-border); border-radius: 10px; padding: 1rem 1.1rem; }
+  .wtv-metric-val { font-size: 1.3rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.2rem; }
+  .wtv-metric-label { font-size: 0.72rem; color: var(--wtv-muted); line-height: 1.5; }
+  .wtv-workflow-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.75rem; }
+  .wtv-workflow-step { background: rgba(0,232,154,.1); color: var(--wtv-acc); border: 1px solid rgba(0,232,154,.25); padding: 0.3rem 0.7rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; }
+  .wtv-workflow-arrow { color: var(--wtv-muted); font-size: 0.85rem; }
+  .wtv-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+  .wtv-table th, .wtv-table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--wtv-border); color: var(--wtv-muted); }
+  .wtv-table th { color: #fff; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .wtv-link { color: var(--wtv-info); text-decoration: none; }
+  .wtv-presentation { background: rgba(0,232,154,.03); border-radius: 12px; padding: 1.75rem; }
+  .wtv-headline { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; }
+  .wtv-subheadline { color: var(--wtv-muted); font-size: 0.92rem; margin-bottom: 1rem; }
+  .wtv-list { color: var(--wtv-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .wtv-safety-list li { margin-bottom: 0.4rem; }
+</style>
+{% endblock %}
