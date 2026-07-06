@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Subscription — EcoIQ Financial Intelligence Cloud{% endblock %}
+{% block meta_description_content %}Starter, Professional and Institutional subscription tiers for the EcoIQ Financial Intelligence Cloud.{% endblock %}
+
+{% block content %}
+<div class="fic-wrap">
+  <a class="fic-back" href="{% url 'financial_intelligence_cloud:overview' %}">← Back to Financial Intelligence Cloud</a>
+  <span class="fic-badge">Subscription</span>
+  <h1 class="fic-title">Choose your tier</h1>
+
+  <div class="fic-tier-row">
+    <div class="fic-card">
+      <p class="fic-sub">Starter</p>
+      <p class="fic-p">Small accounting and advisory firms.</p>
+      <ul class="fic-list">{% for f in tier_features.starter %}<li>{{ f }}</li>{% endfor %}</ul>
+    </div>
+    <div class="fic-card">
+      <p class="fic-sub">Professional</p>
+      <p class="fic-p">Larger accounting firms, family offices, investment teams.</p>
+      <ul class="fic-list">{% for f in tier_features.professional %}<li>{{ f }}</li>{% endfor %}</ul>
+    </div>
+    <div class="fic-card">
+      <p class="fic-sub">Institutional</p>
+      <p class="fic-p">Banks, private equity, asset managers, development finance, large networks.</p>
+      <ul class="fic-list">{% for f in tier_features.institutional %}<li>{{ f }}</li>{% endfor %}</ul>
+      <p class="fic-headline">Contact / Custom</p>
+    </div>
+  </div>
+
+  <a class="fic-cta" href="{% url 'financial_intelligence_cloud:overview' %}">Request Institutional Pilot →</a>
+</div>
+
+<style>
+  :root { --fic-bg: #070b0f; --fic-bg2: #0d1117; --fic-border: rgba(255,255,255,.08); --fic-text: #e2e8f0; --fic-muted: #94a3b8; --fic-acc: #00e89a; --fic-info: #58a6ff; }
+  .fic-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--fic-bg); color: var(--fic-text); border-radius: 14px; }
+  .fic-back { color: var(--fic-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .fic-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--fic-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .fic-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0 1.5rem; color: #fff; }
+  .fic-tier-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .fic-card { background: var(--fic-bg2); border: 1px solid var(--fic-border); border-radius: 10px; padding: 1.25rem; flex: 1 1 260px; }
+  .fic-sub { font-weight: 700; font-size: 1.1rem; color: #fff; margin: 0 0 0.4rem; }
+  .fic-p { color: var(--fic-muted); font-size: 0.9rem; line-height: 1.6; }
+  .fic-list { color: var(--fic-muted); font-size: 0.85rem; line-height: 1.8; padding-left: 1.2rem; margin: 0.5rem 0; }
+  .fic-headline { font-size: 1.2rem; font-weight: 800; color: var(--fic-acc); margin: 0.5rem 0 0; }
+  .fic-cta { display: inline-block; background: var(--fic-acc); color: #000; font-weight: 700; font-size: 0.85rem; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; margin-top: 1.5rem; }
+</style>
+{% endblock %}

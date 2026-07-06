@@ -196,6 +196,9 @@ INSTALLED_APPS = [
 
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
+
+    # Commercial subscription layer: institutional accounts, portfolios, ranked opportunities
+    'financial_intelligence_cloud',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

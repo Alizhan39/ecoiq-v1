@@ -184,6 +184,9 @@ urlpatterns = [
     # EcoIQ Waste-to-Value Capital Allocation Engine — fintech / capital-allocation layer for operational waste
     path('waste-to-value-capital-allocation/', include('waste_to_value_capital_allocation_engine.urls', namespace='waste_to_value_capital_allocation_engine')),
 
+    # EcoIQ Financial Intelligence Cloud — commercial subscription layer for accounting firms, financial institutions and investment portfolios
+    path('financial-intelligence-cloud/', include('financial_intelligence_cloud.urls', namespace='financial_intelligence_cloud')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Opportunity Feed — EcoIQ Financial Intelligence Cloud{% endblock %}
+{% block meta_description_content %}The continuously ranked feed of new signals and opportunities across your portfolio.{% endblock %}
+
+{% block content %}
+<div class="fic-wrap">
+  <a class="fic-back" href="{% url 'financial_intelligence_cloud:overview' %}">← Back to Financial Intelligence Cloud</a>
+  <span class="fic-badge">AI Opportunity Feed</span>
+  <h1 class="fic-title">{{ account.firm_name }}'s Opportunity Feed</h1>
+  <p class="fic-subtitle">What changed since yesterday?</p>
+
+  {% for item in items %}
+  <div class="fic-card">
+    <span class="iq-badge {% if item.item_type == 'human_approval_needed' %}iq-badge-review{% else %}iq-badge-note{% endif %}">{{ item.get_item_type_display }}</span>
+    <p class="fic-sub">{{ item.headline }}</p>
+    <p class="fic-p">{{ item.detail }}</p>
+    <p class="fic-p" style="font-size:0.75rem;">{{ item.occurred_at }}</p>
+  </div>
+  {% empty %}
+  <p class="fic-p">No feed items yet — run the seed command to generate demo signals.</p>
+  {% endfor %}
+</div>
+
+<style>
+  :root { --fic-bg: #070b0f; --fic-bg2: #0d1117; --fic-border: rgba(255,255,255,.08); --fic-text: #e2e8f0; --fic-muted: #94a3b8; --fic-acc: #00e89a; --fic-info: #58a6ff; }
+  .fic-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--fic-bg); color: var(--fic-text); border-radius: 14px; }
+  .fic-back { color: var(--fic-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .fic-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--fic-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .fic-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .fic-subtitle { font-size: 1rem; color: var(--fic-muted); margin: 0 0 1.5rem; }
+  .fic-sub { font-weight: 700; font-size: 1rem; color: #fff; margin: 0.25rem 0; }
+  .fic-p { color: var(--fic-muted); font-size: 0.9rem; line-height: 1.6; }
+  .fic-card { background: var(--fic-bg2); border: 1px solid var(--fic-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+</style>
+{% endblock %}

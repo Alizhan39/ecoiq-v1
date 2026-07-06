@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Financial Intelligence Cloud{% endblock %}
+{% block meta_description_content %}Continuous risk, opportunity and capital intelligence for accounting firms, financial institutions and investment portfolios.{% endblock %}
+
+{% block content %}
+<div class="fic-wrap">
+  <span class="fic-badge">EcoIQ Platform Module</span>
+  <h1 class="fic-title">EcoIQ Financial Intelligence Cloud</h1>
+  <p class="fic-subtitle">Continuous risk, opportunity and capital intelligence for accounting firms, financial institutions and investment portfolios.</p>
+  <p class="fic-p">{{ core_purpose }}</p>
+
+  <section class="fic-section" id="questions">
+    <h2 class="fic-h2">What this answers</h2>
+    <ul class="fic-list">
+      {% for q in questions_answered %}<li>{{ q }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="fic-section" id="stats">
+    <h2 class="fic-h2">Demo Portfolio — Live State</h2>
+    <p class="fic-p">These are real, live-queried counts from this database, not illustrative numbers.</p>
+    <div class="fic-chip-row">
+      <span class="fic-chip">{{ stats.entities_analysed }} entities analysed</span>
+      <span class="fic-chip">£{{ stats.assets_under_analysis|floatformat:0 }} assets under analysis</span>
+      <span class="fic-chip">£{{ stats.total_capital_at_risk|floatformat:0 }} capital at risk</span>
+      <span class="fic-chip">£{{ stats.total_potential_recoverable_value|floatformat:0 }} potentially recoverable value</span>
+      <span class="fic-chip">{{ stats.opportunities_detected }} opportunities detected</span>
+      <span class="fic-chip">{{ stats.finance_ready_cases }} finance-ready cases</span>
+      <span class="fic-chip">{{ stats.approvals_required }} approvals required</span>
+      <span class="fic-chip">£{{ stats.verified_value_recovered|floatformat:0 }} verified value recovered</span>
+    </div>
+  </section>
+
+  <section class="fic-section" id="accounts">
+    <h2 class="fic-h2">Demo Accounts</h2>
+    {% for account in accounts %}
+    <div class="fic-card">
+      <span class="iq-badge iq-badge-note">DEMO</span>
+      <p class="fic-sub">{{ account.firm_name }} — {{ account.get_account_type_display }}</p>
+      <p class="fic-p">Subscription: {{ account.get_subscription_tier_display }} ({{ account.subscription_price_label }})</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="fic-section" id="ctas">
+    <h2 class="fic-h2">Explore</h2>
+    <div class="fic-chip-row">
+      {% for cta in cta_buttons %}
+      <a class="fic-cta" href="{% url cta.url_name %}">{{ cta.label }} →</a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="fic-section" id="safety">
+    <h2 class="fic-h2">Claim Safety</h2>
+    <ul class="fic-list">
+      {% for principle in safety_principles %}<li>{{ principle }}</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+
+<style>
+  :root {
+    --fic-bg: #070b0f; --fic-bg2: #0d1117; --fic-border: rgba(255,255,255,.08);
+    --fic-text: #e2e8f0; --fic-muted: #94a3b8; --fic-acc: #00e89a; --fic-info: #58a6ff;
+  }
+  .fic-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--fic-bg); color: var(--fic-text); border-radius: 14px; }
+  .fic-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--fic-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .fic-title { font-size: 1.9rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .fic-subtitle { font-size: 1rem; font-weight: 600; color: var(--fic-acc); margin: 0 0 1rem; }
+  .fic-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--fic-border); }
+  .fic-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .fic-p { color: var(--fic-muted); font-size: 0.9rem; line-height: 1.6; }
+  .fic-sub { font-weight: 700; font-size: 0.9rem; color: #fff; margin: 0.25rem 0; }
+  .fic-list { color: var(--fic-muted); font-size: 0.85rem; line-height: 1.8; padding-left: 1.2rem; margin: 0; }
+  .fic-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .fic-chip { background: rgba(88,166,255,.1); color: var(--fic-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .fic-cta { display: inline-block; background: var(--fic-acc); color: #000; font-weight: 700; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; margin: 0.2rem; }
+  .fic-card { background: var(--fic-bg2); border: 1px solid var(--fic-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+  .fic-headline { font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0.25rem 0; }
+</style>
+{% endblock %}
