@@ -199,6 +199,9 @@ INSTALLED_APPS = [
 
     # Commercial subscription layer: institutional accounts, portfolios, ranked opportunities
     'financial_intelligence_cloud',
+
+    # EcoIQ mission layer: AI-planned, human-led, financed and verified stewardship tours
+    'khalifa_stewardship_tour_operating_system',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

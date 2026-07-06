@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Tours — Khalifa Stewardship Tour Operating System{% endblock %}
+{% block meta_description_content %}All stewardship tours, their status, funding and MRV state.{% endblock %}
+
+{% block content %}
+<div class="kh-wrap">
+  <a class="kh-back" href="{% url 'khalifa_stewardship_tour_operating_system:overview' %}">← Back to Khalifa Tours Operating System</a>
+  <span class="kh-badge">Tours</span>
+  <h1 class="kh-title">All Stewardship Tours</h1>
+
+  {% for tour in tours %}
+  <div class="kh-card">
+    <a href="{% url 'khalifa_stewardship_tour_operating_system:tour_detail' tour.slug %}" class="kh-link">{{ tour.title }}</a>
+    <span class="iq-badge iq-badge-ready">{{ tour.get_status_display }}</span>
+    <p class="kh-p">{{ tour.get_tour_type_display }} — {{ tour.region }}{% if tour.country %} ({{ tour.country.name }}){% endif %}</p>
+    <div class="kh-chip-row">
+      <span class="kh-chip">Capacity: {{ tour.participant_capacity }}</span>
+      {% if tour.funding_plan %}<span class="kh-chip">Funding gap: £{{ tour.funding_plan.funding_gap|floatformat:0 }}</span>{% endif %}
+      {% if tour.mrv_plan %}<span class="kh-chip">MRV: {{ tour.mrv_plan.get_verification_status_display }}</span>{% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <p class="kh-p">No tours yet — run the seed command to generate the Kazakhstan demo.</p>
+  {% endfor %}
+</div>
+
+<style>
+  :root { --kh-bg: #070b0f; --kh-bg2: #0d1117; --kh-border: rgba(255,255,255,.08); --kh-text: #e2e8f0; --kh-muted: #94a3b8; --kh-acc: #00e89a; --kh-info: #58a6ff; }
+  .kh-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--kh-bg); color: var(--kh-text); border-radius: 14px; }
+  .kh-back { color: var(--kh-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .kh-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .kh-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0 1.5rem; color: #fff; }
+  .kh-card { background: var(--kh-bg2); border: 1px solid var(--kh-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+  .kh-link { color: #fff; font-weight: 700; text-decoration: none; margin-right: 0.5rem; }
+  .kh-p { color: var(--kh-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kh-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .kh-chip { background: rgba(88,166,255,.1); color: var(--kh-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+</style>
+{% endblock %}
