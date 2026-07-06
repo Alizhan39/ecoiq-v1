@@ -4,7 +4,7 @@ Meat Cold-Chain Loss Prevention end-to-end demo.
 
 Structurally mirrors agent_runtime_model_router/services/demo_pipeline.py's
 Boiler House #3 demo: a DEDICATED CouncilRun (slug
-'meat-cold-chain-loss-prevention-demo'), 10 agents run through the real
+'meat-cold-chain-loss-prevention-demo'), 11 agents run through the real
 create_agent_run -> execute_agent -> submit_agent_position_to_council
 pipeline (never hand-authored AgentTask rows), producing the exact
 Finance/MRV/Governance disagreement and APPROVE WITH CONDITIONS decision
@@ -17,8 +17,13 @@ attention at all. Its capital-at-risk figure is computed by the real
 hand-derived, so it is guaranteed to match the platform's own arithmetic.
 
 This app's own OperationalLoss/InterventionOption/FundingGap/
-CapitalRouteMatch/CapitalAllocationDecision rows are created for the same
-case, with CapitalAllocationDecision.council_case pointing at the new
+CapitalRouteMatch rows are created BEFORE the 10-agent PIPELINE_STEPS loop
+runs (rather than after), so the Capital Allocation Agent — the 11th and
+final step, built dynamically rather than as a static PIPELINE_STEPS tuple
+— can rank the real, already-persisted InterventionOption rows via
+`services/capital_allocation_bridge.py`. CapitalAllocationDecision.ranking
+is the real rank that agent computed for the equipment option, not a
+hardcoded value. CapitalAllocationDecision.council_case points at the new
 CouncilRun. No VerifiedCapitalOutcome is created here — the Council's own
 conditions require collecting after-data first, so an outcome genuinely
 doesn't exist yet; creating one would silently turn a projected result into
@@ -34,6 +39,9 @@ from agent_runtime_model_router.services.execution import (
 )
 from waste_to_value_capital_allocation_engine.models import FundingGap, OperationalLoss
 from waste_to_value_capital_allocation_engine.services.agent_bridge import build_loss_detection_fixture
+from waste_to_value_capital_allocation_engine.services.capital_allocation_bridge import (
+    build_capital_allocation_fixture,
+)
 from waste_to_value_capital_allocation_engine.services.funding import (
     calculate_funding_gap, match_capital_routes,
 )
@@ -230,6 +238,50 @@ def build_meat_cold_chain_demo():
     council_run.status = 'decided'
     council_run.save()
 
+    # This app's own domain models for the same case — created before the
+    # agent-execution loop so the Capital Allocation Agent (the 11th step,
+    # after the loop) can rank the real, already-persisted InterventionOption
+    # rows rather than waiting for them to exist.
+    loss, _ = OperationalLoss.objects.get_or_create(
+        title='Meat Cold-Chain Spoilage Risk',
+        defaults={'loss_type': 'meat_spoilage', 'financial_loss_amount': 0},
+    )
+    loss.loss_type = 'meat_spoilage'
+    loss.asset = 'Cold Store Unit 3'
+    loss.project = 'Meat Cold-Chain Loss Prevention'
+    loss.description = 'Perishable meat inventory at risk of spoilage within a 36-hour intervention window.'
+    loss.quantity_lost = None
+    loss.unit = ''
+    loss.financial_loss_amount = 0  # nothing has actually been lost yet — this is a projected risk, not an incurred loss.
+    loss.projected_future_loss = 12000
+    loss.currency = 'GBP'
+    loss.period = 'Current inventory cycle'
+    loss.evidence_quality = 'medium'
+    loss.confidence = 60
+    loss.avoidability_score = 70
+    loss.urgency_score = 90
+    loss.time_horizon = '36 hours'
+    loss.intervention_readiness = 'ready'
+    loss.finance_readiness = 'needs_review'
+    loss.mrv_readiness = 'draft'
+    loss.status = 'modelled'
+    loss.save()
+
+    options = model_interventions(loss, INTERVENTION_CANDIDATES)
+    equipment_option = next(o for o in options if o.title == 'Cold-chain equipment intervention')
+
+    funding_gap_figures = calculate_funding_gap(
+        total_capital_required=equipment_option.capex_estimate,
+        owner_contribution=3000, supplier_finance_potential=6000,
+    )
+    funding_gap, _ = FundingGap.objects.get_or_create(intervention=equipment_option, defaults={})
+    for field, value in funding_gap_figures.items():
+        setattr(funding_gap, field, value)
+    funding_gap.currency = 'GBP'
+    funding_gap.status = 'under_review'
+    funding_gap.save()
+    match_capital_routes(funding_gap)
+
     tasks_by_agent = {}
     for order, (agent_name, task_type, collaboration_mode, fixture, evidence_provenance, signals) in enumerate(
         PIPELINE_STEPS, start=1,
@@ -246,6 +298,30 @@ def build_meat_cold_chain_demo():
             agent_run.refresh_from_db()
 
         tasks_by_agent[agent_name] = agent_run.council_position
+
+    # Capital Allocation Agent — the 11th step, built dynamically (not a
+    # static PIPELINE_STEPS tuple) because it ranks the real InterventionOption
+    # rows created above, which don't exist yet at module import time.
+    capital_allocation_fixture = build_capital_allocation_fixture(loss)
+    capital_allocation_run = create_agent_run(
+        'Capital Allocation Agent', 'capital_allocation_ranking', council_case=council_run,
+        execution_mode='simulated_demo',
+        input_summary='Meat Cold-Chain Loss Prevention — capital_allocation_ranking',
+        evidence_provenance=[],
+    )
+    if capital_allocation_run.status != 'completed':
+        capital_allocation_run = execute_agent(
+            capital_allocation_run, fixture_output=capital_allocation_fixture,
+            evidence_quality_score=75, unresolved_disagreements=0, contradiction_severity='none',
+            reviewer_status='pending',
+        )
+    if (
+        capital_allocation_run.status == 'completed' and capital_allocation_run.schema_valid
+        and not capital_allocation_run.council_position_id
+    ):
+        submit_agent_position_to_council(capital_allocation_run, collaboration_mode='council', order=11)
+        capital_allocation_run.refresh_from_db()
+    tasks_by_agent['Capital Allocation Agent'] = capital_allocation_run.council_position
 
     finance_task = tasks_by_agent.get('Finance Modelling Agent')
     mrv_task = tasks_by_agent.get('MRV Agent')
@@ -328,47 +404,6 @@ def build_meat_cold_chain_demo():
     memory_entry.reopened = False
     memory_entry.save()
 
-    # This app's own domain models for the same case.
-    loss, _ = OperationalLoss.objects.get_or_create(
-        title='Meat Cold-Chain Spoilage Risk',
-        defaults={'loss_type': 'meat_spoilage', 'financial_loss_amount': 0},
-    )
-    loss.loss_type = 'meat_spoilage'
-    loss.asset = 'Cold Store Unit 3'
-    loss.project = 'Meat Cold-Chain Loss Prevention'
-    loss.description = 'Perishable meat inventory at risk of spoilage within a 36-hour intervention window.'
-    loss.quantity_lost = None
-    loss.unit = ''
-    loss.financial_loss_amount = 0  # nothing has actually been lost yet — this is a projected risk, not an incurred loss.
-    loss.projected_future_loss = 12000
-    loss.currency = 'GBP'
-    loss.period = 'Current inventory cycle'
-    loss.evidence_quality = 'medium'
-    loss.confidence = 60
-    loss.avoidability_score = 70
-    loss.urgency_score = 90
-    loss.time_horizon = '36 hours'
-    loss.intervention_readiness = 'ready'
-    loss.finance_readiness = 'needs_review'
-    loss.mrv_readiness = 'draft'
-    loss.status = 'modelled'
-    loss.save()
-
-    options = model_interventions(loss, INTERVENTION_CANDIDATES)
-    equipment_option = next(o for o in options if o.title == 'Cold-chain equipment intervention')
-
-    funding_gap_figures = calculate_funding_gap(
-        total_capital_required=equipment_option.capex_estimate,
-        owner_contribution=3000, supplier_finance_potential=6000,
-    )
-    funding_gap, _ = FundingGap.objects.get_or_create(intervention=equipment_option, defaults={})
-    for field, value in funding_gap_figures.items():
-        setattr(funding_gap, field, value)
-    funding_gap.currency = 'GBP'
-    funding_gap.status = 'under_review'
-    funding_gap.save()
-    match_capital_routes(funding_gap)
-
     decision_record = create_governed_investment_case(
         equipment_option, council_case=council_run,
         decision_text='APPROVE WITH CONDITIONS',
@@ -380,7 +415,10 @@ def build_meat_cold_chain_demo():
         confidence=finance_task.confidence if finance_task else None,
         human_approval_required=True, approval_status='approved_with_conditions',
     )
-    decision_record.ranking = 1
+    # Real rank computed by the Capital Allocation Agent above, not hardcoded.
+    decision_record.ranking = next(
+        o['rank'] for o in capital_allocation_fixture['ranked_options'] if o['title'] == equipment_option.title
+    )
     decision_record.save()
 
     return council_run

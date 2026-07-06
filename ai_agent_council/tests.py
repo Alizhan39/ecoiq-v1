@@ -29,9 +29,9 @@ class AiAgentCouncilPageTests(TestCase):
         response = self.client.get('/ai-agent-council/')
         self.assertContains(response, 'EcoIQ AI Agent Council')
 
-    def test_page_mentions_eleven_operationally_trained_agents(self):
+    def test_page_mentions_twelve_operationally_trained_agents(self):
         response = self.client.get('/ai-agent-council/')
-        self.assertContains(response, 'Eleven operationally trained agents')
+        self.assertContains(response, 'Twelve operationally trained agents')
 
     def test_page_mentions_four_next_stage_agents(self):
         response = self.client.get('/ai-agent-council/')
@@ -54,7 +54,7 @@ class AiAgentCouncilPageTests(TestCase):
             'Research Agent', 'Document Reader Agent', 'Photo / Visual Evidence Agent',
             'Asset Passport Agent', 'Industrial Playbook Matching Agent',
             'Finance Modelling Agent', 'MRV Agent', 'Governance Agent',
-            'Report Generator Agent', 'Amanah Autopilot Supervisor',
+            'Report Generator Agent', 'Amanah Autopilot Supervisor', 'Capital Allocation Agent',
         ):
             self.assertContains(response, name)
         # "&" is HTML-escaped by Django's template auto-escaping.
@@ -83,7 +83,7 @@ class AiAgentCouncilPageTests(TestCase):
 
     def test_page_mentions_presentation_mode_headline(self):
         response = self.client.get('/ai-agent-council/')
-        self.assertContains(response, '10 trained operational agents working as one governed system')
+        self.assertContains(response, '12 trained operational agents working as one governed system')
 
     def test_page_has_no_claim_all_14_have_full_training_packs(self):
         response = self.client.get('/ai-agent-council/')
@@ -122,13 +122,13 @@ class AiAgentCouncilPageTests(TestCase):
 class AiAgentCouncilRepoValidationTests(TestCase):
     """Validates the live repository state the Council page reads from."""
 
-    def test_exactly_eleven_operational_agent_folders(self):
+    def test_exactly_twelve_operational_agent_folders(self):
         repo_state = _scan_ai_agents_repo_state()
-        self.assertEqual(repo_state['operational_folder_count'], 11)
+        self.assertEqual(repo_state['operational_folder_count'], 12)
 
-    def test_exactly_one_hundred_and_ten_agent_training_files(self):
+    def test_exactly_one_hundred_and_twenty_agent_training_files(self):
         repo_state = _scan_ai_agents_repo_state()
-        self.assertEqual(repo_state['total_training_files'], 110)
+        self.assertEqual(repo_state['total_training_files'], 120)
 
     def test_master_index_exists(self):
         repo_state = _scan_ai_agents_repo_state()

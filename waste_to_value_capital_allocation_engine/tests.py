@@ -16,7 +16,9 @@ from waste_to_value_capital_allocation_engine.services.funding import (
 )
 from waste_to_value_capital_allocation_engine.models import CapitalRouteMatch, FundingGap, InterventionOption
 from waste_to_value_capital_allocation_engine.services.ranking import rank_capital_allocation_options
+from waste_to_value_capital_allocation_engine.services.capital_allocation_scoring import score_intervention_option
 from waste_to_value_capital_allocation_engine.services.agent_bridge import build_loss_detection_fixture
+from waste_to_value_capital_allocation_engine.services.capital_allocation_bridge import build_capital_allocation_fixture
 from waste_to_value_capital_allocation_engine.services.human_approval_gate import (
     ACTIONS_REQUIRING_APPROVAL as WTV_ACTIONS_REQUIRING_APPROVAL,
     HumanApprovalRequiredError as WTVHumanApprovalRequiredError,
@@ -159,15 +161,19 @@ class FundingTests(TestCase):
 class RankingTests(TestCase):
     CANDIDATES = [
         {'name': 'Cold-chain optimisation', 'financial_return': 85, 'capital_efficiency': 80, 'loss_avoided': 90,
+         'recoverable_value': 88,
          'payback': 85, 'downside_risk': 80, 'evidence_quality': 85, 'mrv_readiness': 80, 'funding_readiness': 75,
          'asset_life_extension': 60, 'human_need_served': 50, 'harm_reduced': 50, 'maqasid_mizan_score': 60},
         {'name': 'Waste heat recovery', 'financial_return': 70, 'capital_efficiency': 65, 'loss_avoided': 70,
+         'recoverable_value': 68,
          'payback': 60, 'downside_risk': 70, 'evidence_quality': 65, 'mrv_readiness': 60, 'funding_readiness': 65,
          'asset_life_extension': 70, 'human_need_served': 40, 'harm_reduced': 55, 'maqasid_mizan_score': 55},
         {'name': 'Boiler modernisation', 'financial_return': 60, 'capital_efficiency': 55, 'loss_avoided': 55,
+         'recoverable_value': 55,
          'payback': 50, 'downside_risk': 60, 'evidence_quality': 60, 'mrv_readiness': 55, 'funding_readiness': 55,
          'asset_life_extension': 65, 'human_need_served': 35, 'harm_reduced': 45, 'maqasid_mizan_score': 50},
         {'name': 'Expansion project', 'financial_return': 50, 'capital_efficiency': 40, 'loss_avoided': 20,
+         'recoverable_value': 25,
          'payback': 30, 'downside_risk': 40, 'evidence_quality': 45, 'mrv_readiness': 30, 'funding_readiness': 40,
          'asset_life_extension': 50, 'human_need_served': 30, 'harm_reduced': 20, 'maqasid_mizan_score': 35},
     ]
@@ -190,6 +196,81 @@ class RankingTests(TestCase):
         self.assertIn('rank', ranked[0])
 
 
+class CapitalAllocationScoringTests(TestCase):
+    """
+    Real 7 Meat Cold-Chain candidates (same shape as demo_pipeline.py's
+    INTERVENTION_CANDIDATES) scored and ranked end-to-end — the load-bearing
+    regression guard that a future formula "simplification" cannot silently
+    invert without breaking a test.
+    """
+    CAPITAL_AT_RISK_CEILING = 12000
+    INVENTORY_VALUE_CEILING = 80000
+
+    CANDIDATES = [
+        {'title': 'Dynamic discount now', 'intervention_type': 'prevention',
+         'capex_estimate': 200, 'estimated_value_recovered': 3000, 'estimated_loss_avoided': 3000,
+         'risk_level': 'low', 'technical_readiness': 'ready'},
+        {'title': 'Transfer to another branch (dynamic, discounted resale)', 'intervention_type': 'transfer_redistribution',
+         'capex_estimate': 1200, 'estimated_value_recovered': 8500, 'estimated_loss_avoided': 8500,
+         'risk_level': 'low', 'technical_readiness': 'ready'},
+        {'title': 'Sell to processor', 'intervention_type': 'resale',
+         'capex_estimate': 500, 'estimated_value_recovered': 6000, 'estimated_loss_avoided': 6000,
+         'risk_level': 'low', 'technical_readiness': 'ready'},
+        {'title': 'Safe donation where appropriate', 'intervention_type': 'transfer_redistribution',
+         'capex_estimate': 300, 'estimated_value_recovered': 1500, 'estimated_loss_avoided': 1500,
+         'risk_level': 'medium', 'technical_readiness': 'needs_review'},
+        {'title': 'Freeze / reprocess', 'intervention_type': 'processing_recovery',
+         'capex_estimate': 800, 'estimated_value_recovered': 4500, 'estimated_loss_avoided': 4500,
+         'risk_level': 'low', 'technical_readiness': 'ready'},
+        {'title': 'Cold-chain equipment intervention', 'intervention_type': 'equipment_upgrade',
+         'capex_estimate': 9000, 'estimated_annual_savings': 12000, 'estimated_loss_avoided': 12000,
+         'estimated_payback_months': 9.0,  # capex/(annual_savings/12) = 9000/(12000/12), as computed by model_interventions()
+         'risk_level': 'medium', 'technical_readiness': 'ready', 'finance_readiness': 'needs_review',
+         'mrv_readiness': 'draft', 'status': 'recommended'},
+        {'title': 'Anaerobic digestion as last resort', 'intervention_type': 'disposal',
+         'capex_estimate': 200, 'estimated_value_recovered': 300, 'estimated_loss_avoided': 300,
+         'risk_level': 'low', 'technical_readiness': 'ready'},
+    ]
+
+    def _scored_candidates(self):
+        scored = []
+        for candidate in self.CANDIDATES:
+            scores = score_intervention_option(
+                candidate, self.CAPITAL_AT_RISK_CEILING, self.INVENTORY_VALUE_CEILING,
+            )
+            scored.append({**candidate, **scores})
+        return scored
+
+    def test_equipment_option_scores_expected_sub_scores(self):
+        equipment = next(c for c in self.CANDIDATES if c['title'] == 'Cold-chain equipment intervention')
+        scores = score_intervention_option(equipment, self.CAPITAL_AT_RISK_CEILING, self.INVENTORY_VALUE_CEILING)
+        self.assertEqual(scores['financial_return'], 100)  # 12000/12000*100, capped at 100
+        self.assertEqual(scores['recoverable_value'], 0)  # value_recovered=0 by design — it prevents future loss, doesn't salvage this cycle's inventory
+        self.assertEqual(scores['payback'], 73)  # round(100 - 9.0*3)
+        self.assertEqual(scores['downside_risk'], 60)  # medium risk
+
+    def test_dynamic_discount_scores_expected_sub_scores(self):
+        discount = next(c for c in self.CANDIDATES if c['title'] == 'Dynamic discount now')
+        scores = score_intervention_option(discount, self.CAPITAL_AT_RISK_CEILING, self.INVENTORY_VALUE_CEILING)
+        self.assertEqual(scores['payback'], 65)  # no payback_months -> same-cycle tactical action
+        self.assertEqual(scores['downside_risk'], 90)  # low risk
+
+    def test_equipment_option_ranks_first_among_real_candidates(self):
+        ranked = rank_capital_allocation_options(self._scored_candidates())
+        self.assertEqual(ranked[0]['title'], 'Cold-chain equipment intervention')
+        self.assertEqual(ranked[0]['rank'], 1)
+
+    def test_dynamic_discount_has_highest_capital_efficiency(self):
+        """
+        Reported honestly even though it isn't the top-ranked option overall
+        — highest capital efficiency and highest overall ranking are not the
+        same claim.
+        """
+        scored = self._scored_candidates()
+        by_efficiency = sorted(scored, key=lambda c: c['capital_efficiency'], reverse=True)
+        self.assertEqual(by_efficiency[0]['title'], 'Dynamic discount now')
+
+
 class HumanApprovalGateTests(TestCase):
     def setUp(self):
         loss = OperationalLoss.objects.create(title='Test loss', loss_type='meat_spoilage', financial_loss_amount=1000)
@@ -198,8 +279,15 @@ class HumanApprovalGateTests(TestCase):
         self.unapproved_match = CapitalRouteMatch.objects.create(funding_gap=gap, route_type='grant', human_approved=None)
         self.approved_match = CapitalRouteMatch.objects.create(funding_gap=gap, route_type='equipment_finance', human_approved=True)
 
-    def test_eleven_total_actions_registered(self):
-        self.assertEqual(len(WTV_ACTIONS_REQUIRING_APPROVAL), 11)
+    def test_twelve_total_actions_registered(self):
+        self.assertEqual(len(WTV_ACTIONS_REQUIRING_APPROVAL), 12)
+
+    def test_autonomous_capital_movement_blocked_without_approval(self):
+        with self.assertRaises(WTVHumanApprovalRequiredError):
+            wtv_require_human_approval('autonomous_capital_movement', self.unapproved_match)
+
+    def test_autonomous_capital_movement_allowed_with_approval(self):
+        self.assertTrue(wtv_require_human_approval('autonomous_capital_movement', self.approved_match))
 
     def test_new_action_blocked_without_approval(self):
         with self.assertRaises(WTVHumanApprovalRequiredError):
@@ -307,7 +395,7 @@ class DemoPipelineIdempotencyTests(TestCase):
         }
 
         self.assertEqual(counts_first, counts_second)
-        self.assertEqual(counts_first['agent_runs'], 10)
+        self.assertEqual(counts_first['agent_runs'], 11)
         self.assertEqual(counts_first['interventions'], 7)
         self.assertEqual(counts_first['disagreements'], 2)
 
@@ -356,6 +444,19 @@ class DemoPipelineIdempotencyTests(TestCase):
         self.assertEqual(decision.intervention.title, 'Cold-chain equipment intervention')
         self.assertEqual(decision.intervention.estimated_payback_months, 9.0)
         self.assertEqual(decision.approval_status, 'approved_with_conditions')
+        # Real rank computed by the Capital Allocation Agent, not hardcoded.
+        self.assertEqual(decision.ranking, 1)
+
+    def test_demo_creates_capital_allocation_agent_position(self):
+        call_command('seed_waste_to_value_demo')
+        council_run = CouncilRun.objects.get(slug=DEMO_RUN_SLUG)
+        task = AgentTask.objects.get(run=council_run, agent_name='Capital Allocation Agent')
+        self.assertEqual(task.order, 11)
+        self.assertEqual(task.collaboration_mode, 'council')
+        run = AgentRun.objects.get(council_position=task)
+        self.assertEqual(run.parsed_output['top_ranked_option'], 'Cold-chain equipment intervention')
+        self.assertIn('Cold-chain equipment intervention', task.position_summary)
+        self.assertIn('never an autonomous investment decision', run.parsed_output['why_top_ranked'])
 
 
 REQUIRED_TEXT = [
@@ -485,3 +586,57 @@ class AgentBridgeTests(TestCase):
         findings = run_safety_assertions(unsafe_output, 'Waste & Leakage Agent')
         pattern_ids = {f['pattern_id'] for f in findings}
         self.assertIn('estimated_as_verified', pattern_ids)
+
+
+class CapitalAllocationBridgeTests(TestCase):
+    CANDIDATES = [
+        {'title': 'Dynamic discount now', 'intervention_type': 'prevention',
+         'capex_estimate': 200, 'estimated_value_recovered': 3000, 'estimated_loss_avoided': 3000,
+         'risk_level': 'low', 'technical_readiness': 'ready'},
+        {'title': 'Cold-chain equipment intervention', 'intervention_type': 'equipment_upgrade',
+         'capex_estimate': 9000, 'estimated_annual_savings': 12000, 'estimated_loss_avoided': 12000,
+         'risk_level': 'medium', 'technical_readiness': 'ready', 'finance_readiness': 'needs_review',
+         'mrv_readiness': 'draft', 'status': 'recommended'},
+    ]
+
+    def setUp(self):
+        self.loss = OperationalLoss.objects.create(
+            title='Meat Cold-Chain Spoilage Risk', loss_type='meat_spoilage',
+            financial_loss_amount=0, projected_future_loss=12000,
+        )
+        model_interventions(self.loss, self.CANDIDATES)
+
+    def test_fixture_recommends_equipment_option_first(self):
+        fixture = build_capital_allocation_fixture(self.loss)
+        self.assertEqual(fixture['top_ranked_option'], 'Cold-chain equipment intervention')
+        self.assertEqual(fixture['ranked_options'][0]['rank'], 1)
+
+    def test_fixture_answers_all_ten_questions(self):
+        fixture = build_capital_allocation_fixture(self.loss)
+        for field in (
+            'top_ranked_option', 'why_top_ranked', 'evidence_supporting_ranking', 'assumptions',
+            'unresolved_risks', 'highest_capital_efficiency_option', 'fastest_value_recovery_option',
+            'longest_term_capex_option', 'human_approval_required_for', 'mrv_measurement_recommendation',
+        ):
+            self.assertTrue(fixture[field], f'{field} must not be empty')
+
+    def test_fixture_never_states_autonomous_decision(self):
+        fixture = build_capital_allocation_fixture(self.loss)
+        self.assertIn('never an autonomous investment decision', fixture['why_top_ranked'])
+        self.assertTrue(fixture['human_approval_required'])
+
+    def test_fixture_includes_output_summary(self):
+        # submit_agent_position_to_council() falls back to the generic
+        # input_summary if output_summary is missing — guard against
+        # repeating that bug for this agent too.
+        fixture = build_capital_allocation_fixture(self.loss)
+        self.assertIn('output_summary', fixture)
+        self.assertTrue(fixture['output_summary'])
+
+    def test_fastest_value_recovery_is_not_the_equipment_option(self):
+        fixture = build_capital_allocation_fixture(self.loss)
+        self.assertEqual(fixture['fastest_value_recovery_option'], 'Dynamic discount now')
+
+    def test_longest_term_capex_is_the_equipment_option(self):
+        fixture = build_capital_allocation_fixture(self.loss)
+        self.assertEqual(fixture['longest_term_capex_option'], 'Cold-chain equipment intervention')

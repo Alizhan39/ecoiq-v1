@@ -39,11 +39,11 @@ RAW_TEMPLATE_TOKENS = [
 
 
 class RegistryDiscoveryTests(TestCase):
-    def test_discovers_eleven_operational_and_four_next_stage(self):
+    def test_discovers_twelve_operational_and_four_next_stage(self):
         discovered = discover_agents()
         operational = [d for d in discovered if not d['is_next_stage']]
         next_stage = [d for d in discovered if d['is_next_stage']]
-        self.assertEqual(len(operational), 11)
+        self.assertEqual(len(operational), 12)
         self.assertEqual(len(next_stage), 4)
 
     def test_operational_agents_have_real_content_hash(self):
@@ -61,9 +61,9 @@ class RegistryDiscoveryTests(TestCase):
 
 
 class RegistrySyncTests(TestCase):
-    def test_sync_creates_fifteen_entries(self):
+    def test_sync_creates_sixteen_entries(self):
         sync_registry()
-        self.assertEqual(AgentRegistryEntry.objects.count(), 15)
+        self.assertEqual(AgentRegistryEntry.objects.count(), 16)
 
     def test_sync_is_idempotent(self):
         sync_registry()

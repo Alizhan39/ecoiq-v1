@@ -77,8 +77,8 @@ DECISION_PROTOCOL_STEPS = [
 ]
 
 COUNCIL_VIEWS = [
-    {'number': 1, 'title': 'Architecture View', 'description': 'Shows all 14 agents and statuses.'},
-    {'number': 2, 'title': 'Operational View', 'description': 'Shows only the 10 agents with full operational training packs.'},
+    {'number': 1, 'title': 'Architecture View', 'description': 'Shows all 16 agents and statuses.'},
+    {'number': 2, 'title': 'Operational View', 'description': 'Shows only the 12 agents with full operational training packs.'},
     {'number': 3, 'title': 'Handoff View', 'description': 'Shows how data moves between agents.'},
     {'number': 4, 'title': 'Approval View', 'description': 'Shows where human review is mandatory.'},
     {'number': 5, 'title': 'Evidence View', 'description': 'Shows which agents consume and produce evidence.'},
@@ -131,7 +131,7 @@ MICROSOFT_INTEGRATION = {
 }
 
 PRESENTATION_MODE = {
-    'headline': '10 trained operational agents working as one governed system.',
+    'headline': '12 trained operational agents working as one governed system.',
     'subheadline': (
         'From evidence collection to finance, MRV, governance and reporting — '
         'with human approval at high-impact points.'
@@ -145,7 +145,7 @@ PRESENTATION_MODE = {
 
 SAFETY_PRINCIPLES = [
     'EcoIQ AI agents are specialised decision-support workflows, not fully autonomous decision-makers.',
-    'Ten agents currently have full operational training packs in the repository.',
+    'Twelve agents currently have full operational training packs in the repository.',
     'Four additional agents are next-stage and do not yet have the same full training-pack structure.',
     'High-impact industrial, financial, MRV, public reporting and Islamic finance outputs require human review.',
     'Visual findings remain hypotheses until verified.',

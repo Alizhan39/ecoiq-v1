@@ -100,6 +100,12 @@ AGENT_METADATA_BY_FOLDER = {
         'allowed_input_types': ['structured_json', 'document', 'text'],
         'required_reviewer_types': [],
     },
+    'capital_allocation_agent': {
+        'capabilities': ['capital_ranking', 'multi_dimensional_scoring', 'governed_recommendation'],
+        'supported_task_types': ['capital_allocation_ranking'],
+        'allowed_input_types': ['structured_json'],
+        'required_reviewer_types': [],
+    },
 }
 
 
