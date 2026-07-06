@@ -108,13 +108,23 @@ OPERATIONAL_AGENTS = [
         'role': 'Detects operational loss, quantifies financial exposure, and keeps actual/estimated/forecast figures visibly separate.',
         'handoffs': ['Document Reader Agent', 'Finance Modelling Agent'], 'important': '',
     },
+    {
+        'number': 12, 'name': 'Capital Allocation Agent', 'folder': 'capital_allocation_agent',
+        'role': 'Ranks finance-modelled intervention options across 13 dimensions to recommend where the next £1 of capital should go.',
+        'handoffs': ['Report Generator Agent', 'Governance Agent'],
+        'important': (
+            'Capital Allocation Agent produces a governed ranking for human and '
+            'Council review. It must not be presented as making an autonomous '
+            'investment decision.'
+        ),
+    },
 ]
 
 NEXT_STAGE_AGENTS = [
-    {'number': 12, 'name': 'Supplier / Funding Match Agent'},
-    {'number': 13, 'name': 'Customer Success Agent'},
-    {'number': 14, 'name': 'Sales CRM Agent'},
-    {'number': 15, 'name': 'Analytics Agent'},
+    {'number': 13, 'name': 'Supplier / Funding Match Agent'},
+    {'number': 14, 'name': 'Customer Success Agent'},
+    {'number': 15, 'name': 'Sales CRM Agent'},
+    {'number': 16, 'name': 'Analytics Agent'},
 ]
 
 OPERATIONAL_STATUS_LABEL = 'Operational Training Pack Ready'
