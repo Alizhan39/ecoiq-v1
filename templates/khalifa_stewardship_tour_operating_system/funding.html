@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Funding — Khalifa Stewardship Tour Operating System{% endblock %}
+{% block meta_description_content %}Tour funding plans: total required, contribution sources and remaining funding gap.{% endblock %}
+
+{% block content %}
+<div class="kh-wrap">
+  <a class="kh-back" href="{% url 'khalifa_stewardship_tour_operating_system:overview' %}">← Back to Khalifa Tours Operating System</a>
+  <span class="kh-badge">Funding</span>
+  <h1 class="kh-title">Tour Funding Plans</h1>
+
+  {% for plan in plans %}
+  <div class="kh-card">
+    <p class="kh-sub">{{ plan.tour.title }}</p>
+    <div class="kh-chip-row">
+      <span class="kh-chip">Total required: £{{ plan.total_required|floatformat:0 }}</span>
+      <span class="kh-chip">Participant: £{{ plan.participant_contribution|floatformat:0 }}</span>
+      <span class="kh-chip">Sponsor: £{{ plan.sponsor_contribution|floatformat:0 }}</span>
+      <span class="kh-chip">Grant: £{{ plan.grant_contribution|floatformat:0 }}</span>
+      <span class="kh-chip">Local partner: £{{ plan.local_partner_contribution|floatformat:0 }}</span>
+      <span class="kh-chip">Funding gap: £{{ plan.funding_gap|floatformat:0 }}</span>
+      <span class="kh-chip">{{ plan.get_status_display }}</span>
+    </div>
+  </div>
+  {% empty %}
+  <p class="kh-p">No funding plans yet — run the seed command to generate the Kazakhstan demo.</p>
+  {% endfor %}
+
+  <section class="kh-section">
+    <h2 class="kh-h2">Claim Safety</h2>
+    <ul class="kh-list">{% for p in claim_safety_principles %}<li>{{ p }}</li>{% endfor %}</ul>
+  </section>
+</div>
+
+<style>
+  :root { --kh-bg: #070b0f; --kh-bg2: #0d1117; --kh-border: rgba(255,255,255,.08); --kh-text: #e2e8f0; --kh-muted: #94a3b8; --kh-acc: #00e89a; --kh-info: #58a6ff; }
+  .kh-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--kh-bg); color: var(--kh-text); border-radius: 14px; }
+  .kh-back { color: var(--kh-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .kh-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .kh-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0 1.5rem; color: #fff; }
+  .kh-sub { font-weight: 700; font-size: 1rem; color: #fff; margin: 0 0 0.4rem; }
+  .kh-p { color: var(--kh-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kh-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--kh-border); }
+  .kh-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .kh-list { color: var(--kh-muted); font-size: 0.85rem; line-height: 1.8; padding-left: 1.2rem; margin: 0; }
+  .kh-card { background: var(--kh-bg2); border: 1px solid var(--kh-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+  .kh-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .kh-chip { background: rgba(88,166,255,.1); color: var(--kh-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+</style>
+{% endblock %}

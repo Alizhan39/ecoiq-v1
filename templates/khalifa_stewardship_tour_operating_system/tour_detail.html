@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}{{ tour.title }} — Khalifa Stewardship Tour Operating System{% endblock %}
+{% block meta_description_content %}{{ tour.title }} — problems, interventions, funding, participant roles, local partners and MRV plan.{% endblock %}
+
+{% block content %}
+<div class="kh-wrap">
+  <a class="kh-back" href="{% url 'khalifa_stewardship_tour_operating_system:tours' %}">← Back to Tours</a>
+  <span class="iq-badge iq-badge-ready">{{ tour.get_status_display }}</span>
+  <h1 class="kh-title">{{ tour.title }}</h1>
+  <p class="kh-subtitle">{{ tour.get_tour_type_display }} — {{ tour.region }}{% if tour.country %} ({{ tour.country.name }}){% endif %}</p>
+  <p class="kh-p">{{ tour.description }}</p>
+
+  <section class="kh-section">
+    <h2 class="kh-h2">Problems &amp; Interventions</h2>
+    {% for problem in problems %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ problem.title }}</p>
+      <p class="kh-p">{{ problem.description }}</p>
+      <div class="kh-chip-row">
+        <span class="kh-chip">Evidence: {{ problem.get_evidence_quality_display }}</span>
+        <span class="kh-chip">Urgency: {{ problem.urgency_score|floatformat:0 }}</span>
+      </div>
+      <ul class="kh-list">
+        {% for i in problem.interventions.all %}
+        <li>{{ i.title }} — capex £{{ i.capex_estimate|floatformat:0 }}, estimated benefit £{{ i.estimated_benefit|floatformat:0|default:'—' }}/year ({{ i.get_status_display }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  {% if funding_plan %}
+  <section class="kh-section">
+    <h2 class="kh-h2">Funding Plan</h2>
+    <div class="kh-chip-row">
+      <span class="kh-chip">Total required: £{{ funding_plan.total_required|floatformat:0 }}</span>
+      <span class="kh-chip">Funding gap: £{{ funding_plan.funding_gap|floatformat:0 }}</span>
+      <span class="kh-chip">{{ funding_plan.get_status_display }}</span>
+    </div>
+    <p class="iq-badge iq-badge-note">A funding plan is never the same as funding secured.</p>
+  </section>
+  {% endif %}
+
+  {% if participant_roles %}
+  <section class="kh-section">
+    <h2 class="kh-h2">Participant Roles</h2>
+    {% for role in participant_roles %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ role.role_name }}</p>
+      <p class="kh-p"><strong>Allowed:</strong> {{ role.allowed_actions|join:", " }}</p>
+      <p class="kh-p"><strong>Blocked:</strong> {{ role.blocked_actions|join:", " }}</p>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if local_partners %}
+  <section class="kh-section">
+    <h2 class="kh-h2">Local Partners</h2>
+    {% for partner in local_partners %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ partner.partner_name }}</p>
+      <div class="kh-chip-row">
+        <span class="kh-chip">{{ partner.get_partner_type_display }}</span>
+        <span class="kh-chip">Due diligence: {{ partner.get_due_diligence_status_display }}</span>
+        <span class="kh-chip">{{ partner.get_approval_status_display }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if mrv_plan %}
+  <section class="kh-section">
+    <h2 class="kh-h2">MRV Plan</h2>
+    <p class="kh-p">{{ mrv_plan.methodology }}</p>
+    <span class="iq-badge iq-badge-review">{{ mrv_plan.get_verification_status_display }}</span>
+  </section>
+  {% endif %}
+
+  <section class="kh-section">
+    <h2 class="kh-h2">Legacy</h2>
+    {% if legacy_record %}
+    <p class="kh-p">{{ legacy_record.verified_outcome_summary }}</p>
+    {% else %}
+    <p class="kh-p">Not yet available — this tour has not run and MRV has not verified an outcome yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="kh-section">
+    <h2 class="kh-h2">Claim Safety</h2>
+    <ul class="kh-list">{% for p in claim_safety_principles %}<li>{{ p }}</li>{% endfor %}</ul>
+  </section>
+</div>
+
+<style>
+  :root { --kh-bg: #070b0f; --kh-bg2: #0d1117; --kh-border: rgba(255,255,255,.08); --kh-text: #e2e8f0; --kh-muted: #94a3b8; --kh-acc: #00e89a; --kh-info: #58a6ff; }
+  .kh-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--kh-bg); color: var(--kh-text); border-radius: 14px; }
+  .kh-back { color: var(--kh-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .kh-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .kh-subtitle { font-size: 1rem; color: var(--kh-muted); margin: 0 0 0.5rem; }
+  .kh-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--kh-border); }
+  .kh-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .kh-p { color: var(--kh-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kh-sub { font-weight: 700; font-size: 1rem; color: #fff; margin: 0.25rem 0; }
+  .kh-list { color: var(--kh-muted); font-size: 0.85rem; line-height: 1.8; padding-left: 1.2rem; margin: 0; }
+  .kh-card { background: var(--kh-bg2); border: 1px solid var(--kh-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+  .kh-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .kh-chip { background: rgba(88,166,255,.1); color: var(--kh-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+</style>
+{% endblock %}

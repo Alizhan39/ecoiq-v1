@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Presentation — Khalifa Stewardship Tour Operating System{% endblock %}
+{% block meta_description_content %}Travel today often consumes a place. Khalifa Stewardship Tours are designed to leave a place better than we found it.{% endblock %}
+
+{% block content %}
+<div class="kh-wrap" style="text-align:center;">
+  <span class="kh-badge">Presentation Mode</span>
+  <h1 class="kh-title">Travel today often consumes a place.</h1>
+  <p class="kh-subtitle">Khalifa Stewardship Tours are designed to leave a place better than we found it.</p>
+  <p class="kh-p" style="max-width:640px;margin:0 auto;">
+    EcoIQ does not send people randomly to "do good." EcoIQ uses evidence, AI agents, finance modelling,
+    governance and MRV to plan a responsible intervention. One place. One problem. One journey. One verified legacy.
+  </p>
+
+  <section class="kh-section">
+    <h2 class="kh-h2">The Pipeline</h2>
+    <div class="kh-pipeline">
+      {% for step in pipeline_visual %}
+      <span class="kh-pipeline-step">{{ step }}</span>{% if not forloop.last %}<span class="kh-pipeline-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="kh-section">
+    <h2 class="kh-h2">World Scale</h2>
+    <div class="kh-grid">
+      {% for w in world_scale %}
+      <div class="kh-card" style="text-align:left;">
+        <p class="kh-sub">{{ w.country }}</p>
+        <span class="iq-badge {% if w.status == 'Operational (demo)' %}iq-badge-ready{% else %}iq-badge-note{% endif %}">{{ w.status }}</span>
+        <p class="kh-p">{{ w.focus }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <p class="kh-closing">{{ core_phrase|upper }}</p>
+</div>
+
+<style>
+  :root { --kh-bg: #070b0f; --kh-bg2: #0d1117; --kh-border: rgba(255,255,255,.08); --kh-text: #e2e8f0; --kh-muted: #94a3b8; --kh-acc: #00e89a; --kh-info: #58a6ff; }
+  .kh-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--kh-bg); color: var(--kh-text); border-radius: 14px; }
+  .kh-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .kh-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .kh-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--kh-acc); margin: 0 0 1rem; }
+  .kh-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--kh-border); }
+  .kh-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .kh-p { color: var(--kh-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kh-sub { font-weight: 700; font-size: 1rem; color: #fff; margin: 0 0 0.4rem; }
+  .kh-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 1rem; }
+  .kh-card { background: var(--kh-bg2); border: 1px solid var(--kh-border); border-radius: 10px; padding: 1rem; }
+  .kh-pipeline { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.4rem; }
+  .kh-pipeline-step { background: rgba(0,232,154,.1); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.3); padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+  .kh-pipeline-arrow { color: var(--kh-muted); }
+  .kh-closing { text-align: center; font-size: 1.4rem; font-weight: 800; color: var(--kh-acc); margin-top: 2.5rem; letter-spacing: 0.03em; }
+</style>
+{% endblock %}

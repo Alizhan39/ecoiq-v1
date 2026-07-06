@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Khalifa Stewardship Tour Operating System — EcoIQ{% endblock %}
+{% block meta_description_content %}AI-planned, human-led, financed and verified stewardship tours. Travel should leave a place better than you found it.{% endblock %}
+
+{% block content %}
+<div class="kh-wrap">
+  <span class="kh-badge">EcoIQ Mission Layer</span>
+  <h1 class="kh-title">Khalifa Stewardship Tour Operating System</h1>
+  <p class="kh-subtitle">{{ core_thesis }}</p>
+  <p class="kh-p">AI-planned, human-led, financed and verified stewardship tours — starting in Kazakhstan, then scaling to the world.</p>
+
+  <section class="kh-section" id="stats">
+    <h2 class="kh-h2">Live Operating State</h2>
+    <div class="kh-chip-row">
+      <span class="kh-chip">{{ stats.upcoming_tours }} upcoming tours</span>
+      <span class="kh-chip">{{ stats.problems_under_review }} problems under review</span>
+      <span class="kh-chip">{{ stats.approved_interventions }} approved interventions</span>
+      <span class="kh-chip">{{ stats.funding_gaps_open }} funding gaps open</span>
+      <span class="kh-chip">{{ stats.participant_capacity }} participant capacity</span>
+      <span class="kh-chip">{{ stats.local_partners }} local partners</span>
+      <span class="kh-chip">{{ stats.mrv_pending }} MRV pending</span>
+      <span class="kh-chip">{{ stats.verified_legacy_records }} verified legacy records</span>
+    </div>
+  </section>
+
+  <section class="kh-section" id="categories">
+    <h2 class="kh-h2">Tour Categories</h2>
+    <div class="kh-grid">
+      {% for cat in tour_categories %}
+      <div class="kh-card">
+        <p class="kh-sub">{{ cat.title }}</p>
+        <p class="kh-p">{{ cat.problem }}</p>
+        <div class="kh-chip-row">
+          {% for i in cat.interventions %}<span class="kh-chip-sm">{{ i }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="kh-section" id="tours">
+    <h2 class="kh-h2">Tours</h2>
+    {% for tour in tours %}
+    <div class="kh-card">
+      <a href="{% url 'khalifa_stewardship_tour_operating_system:tour_detail' tour.slug %}" class="kh-link">{{ tour.title }}</a>
+      <span class="iq-badge iq-badge-ready">{{ tour.get_status_display }}</span>
+    </div>
+    {% empty %}
+    <p class="kh-p">No tours yet — run the seed command to generate the Kazakhstan demo.</p>
+    {% endfor %}
+  </section>
+
+  <section class="kh-section" id="ctas">
+    <h2 class="kh-h2">Explore</h2>
+    <div class="kh-chip-row">
+      {% for cta in cta_buttons %}
+      <a class="kh-cta" href="{% url cta.url_name %}">{{ cta.label }} →</a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <p class="kh-closing">{{ core_phrase }}</p>
+</div>
+
+<style>
+  :root { --kh-bg: #070b0f; --kh-bg2: #0d1117; --kh-border: rgba(255,255,255,.08); --kh-text: #e2e8f0; --kh-muted: #94a3b8; --kh-acc: #00e89a; --kh-info: #58a6ff; }
+  .kh-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--kh-bg); color: var(--kh-text); border-radius: 14px; }
+  .kh-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .kh-title { font-size: 1.9rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .kh-subtitle { font-size: 1rem; font-weight: 600; color: var(--kh-acc); margin: 0 0 1rem; }
+  .kh-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--kh-border); }
+  .kh-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .kh-p { color: var(--kh-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kh-sub { font-weight: 700; font-size: 1rem; color: #fff; margin: 0 0 0.4rem; }
+  .kh-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 1rem; }
+  .kh-card { background: var(--kh-bg2); border: 1px solid var(--kh-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+  .kh-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .kh-chip { background: rgba(88,166,255,.1); color: var(--kh-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .kh-chip-sm { background: rgba(255,255,255,.05); color: var(--kh-muted); border: 1px solid var(--kh-border); padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.7rem; }
+  .kh-cta { display: inline-block; background: var(--kh-acc); color: #000; font-weight: 700; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; margin: 0.2rem; }
+  .kh-link { color: #fff; font-weight: 700; text-decoration: none; margin-right: 0.5rem; }
+  .kh-closing { text-align: center; font-size: 1.2rem; font-weight: 800; color: var(--kh-acc); margin-top: 2.5rem; letter-spacing: 0.02em; }
+</style>
+{% endblock %}

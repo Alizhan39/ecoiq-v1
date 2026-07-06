@@ -187,6 +187,9 @@ urlpatterns = [
     # EcoIQ Financial Intelligence Cloud — commercial subscription layer for accounting firms, financial institutions and investment portfolios
     path('financial-intelligence-cloud/', include('financial_intelligence_cloud.urls', namespace='financial_intelligence_cloud')),
 
+    # EcoIQ Khalifa Stewardship Tour Operating System — the mission layer: AI-planned, human-led, financed and verified stewardship tours
+    path('khalifa-tour-operating-system/', include('khalifa_stewardship_tour_operating_system.urls', namespace='khalifa_stewardship_tour_operating_system')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

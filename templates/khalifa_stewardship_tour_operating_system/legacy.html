@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Legacy — Khalifa Stewardship Tour Operating System{% endblock %}
+{% block meta_description_content %}Verified legacy records — the outcomes tours leave behind, confirmed by MRV.{% endblock %}
+
+{% block content %}
+<div class="kh-wrap">
+  <a class="kh-back" href="{% url 'khalifa_stewardship_tour_operating_system:overview' %}">← Back to Khalifa Tours Operating System</a>
+  <span class="kh-badge">Legacy</span>
+  <h1 class="kh-title">Verified Legacy Records</h1>
+  <p class="kh-subtitle">{{ core_phrase|default:"Tourists leave. EcoIQ stays." }}</p>
+
+  {% for tour in tours_with_legacy %}
+  <div class="kh-card">
+    <p class="kh-sub">{{ tour.title }}</p>
+    <p class="kh-p">{{ tour.legacy_record.verified_outcome_summary }}</p>
+    <span class="iq-badge iq-badge-verified">{{ tour.legacy_record.get_mrv_status_display }}</span>
+  </div>
+  {% empty %}
+  <p class="kh-p">No verified legacy records yet. This is honest: a legacy record is only created after a tour has actually run and MRV has verified the outcome — never before.</p>
+  {% endfor %}
+</div>
+
+<style>
+  :root { --kh-bg: #070b0f; --kh-bg2: #0d1117; --kh-border: rgba(255,255,255,.08); --kh-text: #e2e8f0; --kh-muted: #94a3b8; --kh-acc: #00e89a; --kh-info: #58a6ff; }
+  .kh-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--kh-bg); color: var(--kh-text); border-radius: 14px; }
+  .kh-back { color: var(--kh-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .kh-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .kh-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .kh-subtitle { font-size: 1rem; font-weight: 600; color: var(--kh-acc); margin: 0 0 1.5rem; }
+  .kh-sub { font-weight: 700; font-size: 1rem; color: #fff; margin: 0 0 0.4rem; }
+  .kh-p { color: var(--kh-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kh-card { background: var(--kh-bg2); border: 1px solid var(--kh-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+</style>
+{% endblock %}
