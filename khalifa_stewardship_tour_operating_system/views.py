@@ -4,6 +4,34 @@ from khalifa_stewardship_tour_operating_system.models import (
     StewardshipProblem, StewardshipTour, TourFundingPlan, TourLocalPartner, TourMRVPlan, TourParticipantRole,
 )
 
+PILOT_BOARD = [
+    {
+        'phase': 'Week 1', 'title': 'Ground Truth',
+        'tasks': ['Identify a real household', 'Obtain real consent', 'Commission a real technical inspection', 'Collect a real heating bill and supplier quote'],
+        'owner': 'Local Partner', 'evidence': 'Consent record, inspection note, heating bill',
+    },
+    {
+        'phase': 'Week 2', 'title': 'Governance',
+        'tasks': ['Complete real partner/installer due diligence', 'Confirm insurance/legal cover', 'Log evidence via the existing evidence-provenance pattern'],
+        'owner': 'Local Partner / EcoIQ', 'evidence': 'Due-diligence record, insurance evidence',
+    },
+    {
+        'phase': 'Week 3', 'title': 'Finance & Participants',
+        'tasks': ['Finalize a line-itemized budget', 'Confirm a real sponsor commitment', 'Open a manual participant-contribution process', 'Issue and file waivers by hand'],
+        'owner': 'EcoIQ / Tour Coordinator', 'evidence': 'Budget lines, sponsor confirmation, signed waivers',
+    },
+    {
+        'phase': 'Week 4', 'title': 'Launch Readiness',
+        'tasks': ['Run the MRV baseline for real', 'Clear every item in the manual launch checklist', 'Record explicit human sign-off before Ready to Launch'],
+        'owner': 'EcoIQ / Human Reviewer', 'evidence': 'MRV baseline data, checklist completion, human_approved=True',
+    },
+    {
+        'phase': 'Post-Tour', 'title': 'MRV & Legacy',
+        'tasks': ['Collect real after-data', 'Verify via MRV', 'Only then create the TourLegacyRecord'],
+        'owner': 'EcoIQ', 'evidence': 'After-data, MRV verification, legacy record',
+    },
+]
+
 CORE_PHRASE = 'Tourists leave. EcoIQ stays.'
 CORE_THESIS = 'Travel should leave a place better than you found it.'
 
@@ -191,4 +219,66 @@ def kazakhstan_demo(request):
         'ranked_interventions': ranked_interventions,
         'no_harm_gate_checks': NO_HARM_GATE_CHECKS,
         'human_approval_required_before': HUMAN_APPROVAL_REQUIRED_BEFORE,
+    })
+
+
+def _public_beneficiary_view(beneficiary):
+    """
+    The concrete privacy mechanism: an explicit whitelist. private_contact_reference,
+    address_reference and vulnerability_notes_private are never touched here,
+    so the template layer can never render them even by accident.
+    """
+    if beneficiary is None:
+        return None
+    return {
+        'display_reference': beneficiary.display_reference,
+        'household_or_beneficiary_type': beneficiary.get_household_or_beneficiary_type_display(),
+        'region': beneficiary.region,
+        'country': beneficiary.country.name if beneficiary.country else '',
+        'consent_status': beneficiary.get_consent_status_display(),
+        'eligibility_status': beneficiary.get_eligibility_status_display(),
+        'intake_status': beneficiary.get_intake_status_display(),
+    }
+
+
+def real_pilot_readiness(request):
+    from khalifa_stewardship_tour_operating_system.services.launch_readiness import (
+        calculate_mrv_baseline_readiness, calculate_tour_launch_readiness,
+    )
+
+    tour = get_object_or_404(
+        StewardshipTour.objects.select_related('country', 'funding_plan', 'mrv_plan'),
+        slug='kazakhstan-clean-heat',
+    )
+    problem = tour.problems.first()
+    beneficiary = problem.beneficiaries.first() if problem else None
+
+    readiness = calculate_tour_launch_readiness(tour)
+    mrv_readiness = calculate_mrv_baseline_readiness(tour)
+
+    checklist_by_category = {}
+    for item in tour.launch_checklist_items.all().order_by('checklist_category', 'item_key'):
+        checklist_by_category.setdefault(item.get_checklist_category_display(), []).append(item)
+
+    supplier_quotes = []
+    if problem:
+        for intervention in problem.interventions.all():
+            supplier_quotes.extend(intervention.supplier_quotes.all())
+
+    local_partner = tour.local_partners.first()
+    consent_records = beneficiary.consent_records.all() if beneficiary else []
+
+    return render(request, 'khalifa_stewardship_tour_operating_system/real_pilot_readiness.html', {
+        'tour': tour,
+        'beneficiary': _public_beneficiary_view(beneficiary),
+        'consent_records': consent_records,
+        'supplier_quotes': supplier_quotes,
+        'local_partner': local_partner,
+        'funding_plan': getattr(tour, 'funding_plan', None),
+        'participant_roles': tour.participant_roles.all(),
+        'mrv_plan': getattr(tour, 'mrv_plan', None),
+        'mrv_readiness': mrv_readiness,
+        'readiness': readiness,
+        'checklist_by_category': checklist_by_category,
+        'pilot_board': PILOT_BOARD,
     })

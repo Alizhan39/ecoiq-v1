@@ -38,6 +38,10 @@ from khalifa_stewardship_tour_operating_system.services.tours import (
     add_local_partner, add_participant_role, create_funding_plan, create_mrv_plan,
     create_stewardship_intervention, create_stewardship_problem, create_stewardship_tour,
 )
+from khalifa_stewardship_tour_operating_system.services.pilot_readiness_records import (
+    create_supplier_quote, create_tour_beneficiary, record_consent,
+)
+from khalifa_stewardship_tour_operating_system.services.launch_readiness import ensure_launch_checklist
 
 DEMO_RUN_SLUG = 'kazakhstan-clean-heat-stewardship-demo'
 TOUR_SLUG = 'kazakhstan-clean-heat'
@@ -361,7 +365,11 @@ def build_kazakhstan_clean_heat_demo():
         tour, 'Participant',
         description='General stewardship-tour participant.',
         allowed_actions=['observe', 'assist_safe_preparation', 'community_cleanup', 'learning_session', 'greenhouse_support_if_approved'],
-        blocked_actions=['electrical_work', 'heating_installation', 'technical_repairs', 'work_without_supervision', 'filming_vulnerable_people_without_consent'],
+        blocked_actions=[
+            'electrical_work', 'heating_installation', 'technical_repairs', 'plumbing_intervention',
+            'structural_work', 'unsupervised_hazardous_work', 'work_without_supervision',
+            'filming_vulnerable_people_without_consent',
+        ],
         safety_requirements='Supervised at all times by a qualified professional.',
         supervision_required=True,
     )
@@ -378,6 +386,15 @@ def build_kazakhstan_clean_heat_demo():
         tour, 'Almaty Region Community Cooperative', partner_type='cooperative',
         role='Household liaison, consent coordination and local due diligence.',
         due_diligence_status='in_progress', approval_status='pending', contact_status='contacted',
+        legal_name='Not yet verified — pilot readiness phase',
+        local_registration_reference='Not yet verified — pilot readiness phase',
+        named_contact='Not yet identified',
+        contact_role='',
+        email_or_phone_reference='Not yet verified — pilot readiness phase',
+        safeguarding_review_status='not_started',
+        insurance_evidence_status='not_provided',
+        conflict_of_interest_status='not_assessed',
+        human_approved=None,
     )
 
     create_mrv_plan(
@@ -391,3 +408,51 @@ def build_kazakhstan_clean_heat_demo():
     )
 
     return council_run
+
+
+def build_kazakhstan_pilot_readiness_layer():
+    """
+    Seeds the real pilot readiness layer for the Kazakhstan Clean Heat demo
+    tour — deliberately in HONEST, mostly-incomplete states. The point of
+    this function is that calculate_tour_launch_readiness() must honestly
+    return ready_to_launch=False afterwards: real consent has not been
+    obtained, the supplier quote has not been verified or approved, and
+    almost every launch checklist item starts life as 'missing'. Idempotent:
+    re-running produces identical rows.
+    """
+    from khalifa_stewardship_tour_operating_system.models import StewardshipTour
+
+    tour = StewardshipTour.objects.get(slug=TOUR_SLUG)
+    problem = tour.problems.get(title='Household uses inefficient coal heating and loses heat through poor insulation')
+    equipment_intervention = problem.interventions.get(title='Clean heating + insulation package')
+
+    beneficiary = create_tour_beneficiary(
+        problem, 'Demo Household A — Almaty Region',
+        household_or_beneficiary_type='household', country=tour.country,
+        region=tour.region, locality='Demo village',
+        private_contact_reference='INTERNAL ONLY: not yet collected — pilot readiness phase',
+        address_reference='INTERNAL ONLY: not yet collected — pilot readiness phase',
+        vulnerability_notes_private='Not yet assessed — pilot readiness phase.',
+        language_preference='Kazakh / Russian (to be confirmed)',
+        consent_status='not_started', eligibility_status='pending', intake_status='identified',
+    )
+
+    # Honest states: real consent has not actually been obtained yet.
+    record_consent(beneficiary, tour, 'data_processing', status='requested')
+    record_consent(beneficiary, tour, 'intervention', status='not_requested')
+
+    # A clearly fictional demo supplier, deliberately not yet verified or approved.
+    create_supplier_quote(
+        equipment_intervention, 'Demo Clean Heat Supplier Ltd', 1400,
+        quote_reference='DEMO-QUOTE-001', currency='GBP',
+        inclusions=['heating unit', 'installation labour'],
+        exclusions=['permits', 'structural repairs', 'electrical rewiring'],
+        assumptions='Assumes standard single-storey household access.',
+        technical_scope='Supply and fit one clean-heating unit with basic insulation upgrade.',
+        evidence_reference='Not yet independently verified.',
+        verification_status='not_started', approval_status='pending',
+    )
+
+    ensure_launch_checklist(tour)
+
+    return tour
