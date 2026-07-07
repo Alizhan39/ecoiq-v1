@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Real Pilot Readiness — Khalifa Stewardship Tour Operating System{% endblock %}
+{% block meta_description_content %}Kazakhstan Clean Heat Pilot — the auditable, computed answer to whether this tour is ready to launch.{% endblock %}
+
+{% block content %}
+<div class="kh-wrap">
+  <a class="kh-back" href="{% url 'khalifa_stewardship_tour_operating_system:overview' %}">← Back to Khalifa Tours Operating System</a>
+  <span class="iq-badge iq-badge-note">DEMO</span>
+  <span class="kh-badge">Real Pilot Readiness</span>
+  <h1 class="kh-title">{{ tour.title }}</h1>
+
+  {% if readiness.ready_to_launch %}
+    <div class="kh-status-banner kh-status-ready">READY TO LAUNCH</div>
+  {% else %}
+    <div class="kh-status-banner kh-status-not-ready">NOT READY TO LAUNCH</div>
+  {% endif %}
+
+  <section class="kh-section" id="why-not-ready">
+    <h2 class="kh-h2">Why This Tour Cannot Launch Yet</h2>
+    {% if readiness.reasons_not_ready %}
+    <ul class="kh-list">{% for reason in readiness.reasons_not_ready %}<li>{{ reason }}</li>{% endfor %}</ul>
+    {% else %}
+    <p class="kh-p">No blocking reasons — every required item is complete.</p>
+    {% endif %}
+    <div class="kh-chip-row">
+      <span class="kh-chip">{{ readiness.completed_items }} / {{ readiness.total_required_items }} checklist items complete</span>
+      <span class="kh-chip">Human approval: {{ readiness.human_approval_status|yesno:"Yes,No,Not recorded" }}</span>
+      <span class="kh-chip">Technical work authorized: {{ readiness.technical_authorization_status|yesno:"Yes,No" }}</span>
+      <span class="kh-chip">MRV baseline ready: {{ readiness.mrv_baseline_status.ready|yesno:"Yes,No" }}</span>
+    </div>
+  </section>
+
+  <section class="kh-section" id="beneficiary">
+    <h2 class="kh-h2">Beneficiary</h2>
+    {% if beneficiary %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ beneficiary.display_reference }}</p>
+      <div class="kh-chip-row">
+        <span class="kh-chip">{{ beneficiary.household_or_beneficiary_type }}</span>
+        <span class="kh-chip">{{ beneficiary.region }}{% if beneficiary.country %} — {{ beneficiary.country }}{% endif %}</span>
+        <span class="kh-chip">Consent: {{ beneficiary.consent_status }}</span>
+        <span class="kh-chip">Eligibility: {{ beneficiary.eligibility_status }}</span>
+        <span class="kh-chip">Intake: {{ beneficiary.intake_status }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p class="kh-p">No beneficiary identified yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="kh-section" id="consent">
+    <h2 class="kh-h2">Consent</h2>
+    <p class="iq-badge iq-badge-note">Consent to one purpose is never consent to another.</p>
+    {% for c in consent_records %}
+    <div class="kh-card">
+      <span class="kh-chip">{{ c.get_consent_type_display }}</span>
+      <span class="kh-chip">{{ c.get_status_display }}</span>
+    </div>
+    {% empty %}
+    <p class="kh-p">No consent records yet.</p>
+    {% endfor %}
+  </section>
+
+  <section class="kh-section" id="supplier-quote">
+    <h2 class="kh-h2">Supplier Quote</h2>
+    <p class="iq-badge iq-badge-note">A supplier quote is never an approved project cost. A quote received is never a supplier selected. A supplier selected is never technical authorization.</p>
+    {% for q in supplier_quotes %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ q.supplier_name }}</p>
+      <div class="kh-chip-row">
+        <span class="kh-chip">Quoted: £{{ q.amount|floatformat:0 }}</span>
+        <span class="kh-chip">Verification: {{ q.get_verification_status_display }}</span>
+        <span class="kh-chip">Approval: {{ q.get_approval_status_display }}</span>
+      </div>
+      {% if q.exclusions %}<p class="kh-p">Exclusions: {{ q.exclusions|join:", " }}</p>{% endif %}
+    </div>
+    {% empty %}
+    <p class="kh-p">No supplier quote yet.</p>
+    {% endfor %}
+  </section>
+
+  <section class="kh-section" id="local-partner">
+    <h2 class="kh-h2">Local Partner</h2>
+    {% if local_partner %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ local_partner.partner_name }}</p>
+      <div class="kh-chip-row">
+        <span class="kh-chip">Due diligence: {{ local_partner.get_due_diligence_status_display }}</span>
+        <span class="kh-chip">Safeguarding: {{ local_partner.get_safeguarding_review_status_display }}</span>
+        <span class="kh-chip">Insurance: {{ local_partner.get_insurance_evidence_status_display }}</span>
+        <span class="kh-chip">Conflict of interest: {{ local_partner.get_conflict_of_interest_status_display }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p class="kh-p">No local partner identified yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="kh-section" id="funding">
+    <h2 class="kh-h2">Funding</h2>
+    {% if funding_plan %}
+    <div class="kh-chip-row">
+      <span class="kh-chip">Total required: £{{ funding_plan.total_required|floatformat:0 }}</span>
+      <span class="kh-chip">Funding gap: £{{ funding_plan.funding_gap|floatformat:0 }}</span>
+    </div>
+    <p class="iq-badge iq-badge-note">A funding plan is never the same as funding secured.</p>
+    {% endif %}
+  </section>
+
+  <section class="kh-section" id="participant-safety">
+    <h2 class="kh-h2">Participant Safety</h2>
+    {% for role in participant_roles %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ role.role_name }}</p>
+      <p class="kh-p"><strong>Blocked:</strong> {{ role.blocked_actions|join:", " }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="kh-section" id="mrv">
+    <h2 class="kh-h2">MRV Baseline</h2>
+    <div class="kh-chip-row">
+      <span class="kh-chip">Methodology defined: {{ mrv_readiness.methodology_defined|yesno:"Yes,No" }}</span>
+      <span class="kh-chip">Evidence requirements defined: {{ mrv_readiness.evidence_requirements_defined|yesno:"Yes,No" }}</span>
+      <span class="kh-chip">Baseline data collected: {{ mrv_readiness.baseline_data_collected|yesno:"Yes,No" }}</span>
+    </div>
+  </section>
+
+  <section class="kh-section" id="human-approval">
+    <h2 class="kh-h2">Human Approval</h2>
+    <p class="kh-p">{{ readiness.human_approval_status|yesno:"Recorded,Not recorded,Not recorded" }}</p>
+  </section>
+
+  <section class="kh-section" id="checklist">
+    <h2 class="kh-h2">Launch Checklist</h2>
+    {% for category, items in checklist_by_category.items %}
+    <p class="kh-sub">{{ category }}</p>
+    {% for item in items %}
+    <div class="kh-card">
+      <span class="iq-badge {% if item.status == 'complete' %}iq-badge-ready{% elif item.status == 'blocked' %}iq-badge-review{% elif item.status == 'in_review' %}iq-badge-note{% endif %}">{{ item.get_status_display }}</span>
+      {{ item.label }}
+    </div>
+    {% endfor %}
+    {% endfor %}
+  </section>
+
+  <section class="kh-section" id="pilot-board">
+    <h2 class="kh-h2">30-Day Pilot Board</h2>
+    {% for phase in pilot_board %}
+    <div class="kh-card">
+      <p class="kh-sub">{{ phase.phase }} — {{ phase.title }}</p>
+      <ul class="kh-list">{% for t in phase.tasks %}<li>{{ t }}</li>{% endfor %}</ul>
+      <div class="kh-chip-row">
+        <span class="kh-chip">Owner: {{ phase.owner }}</span>
+        <span class="kh-chip">Evidence: {{ phase.evidence }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+</div>
+
+<style>
+  :root { --kh-bg: #070b0f; --kh-bg2: #0d1117; --kh-border: rgba(255,255,255,.08); --kh-text: #e2e8f0; --kh-muted: #94a3b8; --kh-acc: #00e89a; --kh-info: #58a6ff; }
+  .kh-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--kh-bg); color: var(--kh-text); border-radius: 14px; }
+  .kh-back { color: var(--kh-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .kh-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; margin-left: 0.4rem; }
+  .kh-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .kh-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--kh-border); }
+  .kh-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .kh-p { color: var(--kh-muted); font-size: 0.9rem; line-height: 1.6; }
+  .kh-sub { font-weight: 700; font-size: 1rem; color: #fff; margin: 0.5rem 0 0.25rem; }
+  .kh-list { color: var(--kh-muted); font-size: 0.85rem; line-height: 1.8; padding-left: 1.2rem; margin: 0; }
+  .kh-card { background: var(--kh-bg2); border: 1px solid var(--kh-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+  .kh-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .kh-chip { background: rgba(88,166,255,.1); color: var(--kh-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .kh-status-banner { text-align: center; font-weight: 800; font-size: 1.3rem; padding: 1rem; border-radius: 10px; margin: 1rem 0 1.5rem; letter-spacing: 0.03em; }
+  .kh-status-not-ready { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.35); }
+  .kh-status-ready { background: rgba(0,232,154,.12); color: var(--kh-acc); border: 1px solid rgba(0,232,154,.35); }
+</style>
+{% endblock %}

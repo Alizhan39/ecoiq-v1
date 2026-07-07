@@ -9,7 +9,7 @@ from khalifa_stewardship_tour_operating_system.services.agent_bridge import (
     build_finance_modelling_fixture, build_waste_leakage_fixture,
 )
 from khalifa_stewardship_tour_operating_system.services.demo_flagship_pipeline import (
-    DEMO_RUN_SLUG, build_kazakhstan_clean_heat_demo,
+    DEMO_RUN_SLUG, build_kazakhstan_clean_heat_demo, build_kazakhstan_pilot_readiness_layer,
 )
 from agent_runtime_model_router.services.registry import sync_registry
 from agent_runtime_model_router.models import AgentRun
@@ -18,6 +18,14 @@ from khalifa_stewardship_tour_operating_system.services.human_approval_gate impo
     ACTIONS_REQUIRING_APPROVAL, HumanApprovalRequiredError, require_human_approval,
 )
 from khalifa_stewardship_tour_operating_system.models import StewardshipTour
+from khalifa_stewardship_tour_operating_system.services.pilot_readiness_records import (
+    create_supplier_quote, create_tour_beneficiary, record_consent, report_incident, withdraw_consent,
+)
+from khalifa_stewardship_tour_operating_system.services.launch_readiness import (
+    CHECKLIST_DEFINITION, LaunchNotReadyError, calculate_mrv_baseline_readiness,
+    calculate_tour_launch_readiness, ensure_launch_checklist, is_technical_work_authorized,
+    mark_tour_ready_to_launch, update_checklist_item,
+)
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% extends', '{% block',
@@ -244,6 +252,7 @@ class RouteTests(TestCase):
     def setUpTestData(cls):
         sync_registry()
         build_kazakhstan_clean_heat_demo()
+        build_kazakhstan_pilot_readiness_layer()
 
     def test_overview_returns_200(self):
         response = self.client.get('/khalifa-tour-operating-system/')
@@ -288,6 +297,23 @@ class RouteTests(TestCase):
         self.assertContains(response, 'Approved with Conditions')
         self.assertContains(response, 'Clean heating + insulation package')
 
+    def test_real_pilot_readiness_returns_200_and_shows_not_ready_banner(self):
+        response = self.client.get('/khalifa-tour-operating-system/real-pilot-readiness/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'NOT READY TO LAUNCH')
+        self.assertContains(response, 'Demo Household A')
+
+    def test_real_pilot_readiness_never_leaks_private_beneficiary_fields(self):
+        response = self.client.get('/khalifa-tour-operating-system/real-pilot-readiness/')
+        content = response.content.decode()
+        self.assertNotIn('INTERNAL ONLY', content)
+
+    def test_real_pilot_readiness_shows_why_not_ready_reasons(self):
+        response = self.client.get('/khalifa-tour-operating-system/real-pilot-readiness/')
+        self.assertContains(response, 'Why This Tour Cannot Launch Yet')
+        content = response.content.decode()
+        self.assertIn('checklist items are not complete', content)
+
     def test_no_raw_template_tags_across_all_routes(self):
         routes = [
             '/khalifa-tour-operating-system/', '/khalifa-tour-operating-system/presentation/',
@@ -295,6 +321,7 @@ class RouteTests(TestCase):
             '/khalifa-tour-operating-system/problems/', '/khalifa-tour-operating-system/funding/',
             '/khalifa-tour-operating-system/mrv/', '/khalifa-tour-operating-system/legacy/',
             '/khalifa-tour-operating-system/kazakhstan-clean-heat-demo/',
+            '/khalifa-tour-operating-system/real-pilot-readiness/',
         ]
         for route in routes:
             response = self.client.get(route)
@@ -316,10 +343,13 @@ class RouteTests(TestCase):
         routes = [
             '/khalifa-tour-operating-system/', '/khalifa-tour-operating-system/tour/kazakhstan-clean-heat/',
             '/khalifa-tour-operating-system/kazakhstan-clean-heat-demo/',
+            '/khalifa-tour-operating-system/real-pilot-readiness/',
         ]
         for route in routes:
             content = self.client.get(route).content.decode().lower()
             self._assert_negated_everywhere(content, 'funding secured')
+            self._assert_negated_everywhere(content, 'approved project cost')
+            self._assert_negated_everywhere(content, 'supplier selected')
             self.assertNotIn('verified outcome achieved', content)
             self.assertNotIn('fully autonomous', content)
             self.assertNotIn('technical installation approved', content)
@@ -352,3 +382,200 @@ class SeedCommandTests(TestCase):
         )
         self.assertEqual(first, second)
         self.assertEqual(first, (1, 12))
+
+
+class PilotReadinessRecordsTests(TestCase):
+    def setUp(self):
+        self.tour = create_stewardship_tour('kazakhstan-clean-heat', 'Kazakhstan Clean Heat Stewardship Tour', 'clean_heat')
+        self.problem = create_stewardship_problem(self.tour, 'inefficient_heating', 'Household uses inefficient coal heating')
+        self.intervention = create_stewardship_intervention(
+            self.problem, 'Clean heating + insulation package', 'clean_heating_upgrade', capex_estimate=1400,
+        )
+        self.beneficiary = create_tour_beneficiary(
+            self.problem, 'Demo Household A — Almaty Region',
+            private_contact_reference='INTERNAL ONLY: contact via local partner',
+            address_reference='INTERNAL ONLY: on file with local partner',
+            vulnerability_notes_private='INTERNAL ONLY: none noted',
+        )
+
+    def test_create_tour_beneficiary_is_idempotent(self):
+        create_tour_beneficiary(self.problem, 'Demo Household A — Almaty Region')
+        from khalifa_stewardship_tour_operating_system.models import TourBeneficiary
+        self.assertEqual(TourBeneficiary.objects.filter(stewardship_problem=self.problem).count(), 1)
+
+    def test_record_consent_is_idempotent_per_type(self):
+        record_consent(self.beneficiary, self.tour, 'data_processing', status='requested')
+        record_consent(self.beneficiary, self.tour, 'data_processing', status='requested')
+        self.assertEqual(self.beneficiary.consent_records.filter(consent_type='data_processing').count(), 1)
+
+    def test_consent_is_specific_per_type(self):
+        """Consent to intervention must never satisfy consent to photography."""
+        record_consent(self.beneficiary, self.tour, 'intervention', status='granted')
+        photography_consent = self.beneficiary.consent_records.filter(tour=self.tour, consent_type='photography').first()
+        self.assertIsNone(photography_consent)
+
+    def test_withdraw_consent_preserves_row_not_deletes(self):
+        record_consent(self.beneficiary, self.tour, 'photography', status='granted')
+        withdraw_consent(self.beneficiary, self.tour, 'photography')
+        consent = self.beneficiary.consent_records.get(consent_type='photography')
+        self.assertEqual(consent.status, 'withdrawn')
+        self.assertIsNotNone(consent.withdrawn_at)
+
+    def test_supplier_quote_has_no_approved_cost_field(self):
+        from khalifa_stewardship_tour_operating_system.models import SupplierQuote
+        self.assertNotIn('approved_cost', [f.name for f in SupplierQuote._meta.get_fields()])
+
+    def test_create_supplier_quote_is_idempotent(self):
+        create_supplier_quote(self.intervention, 'Demo Clean Heat Supplier Ltd', 1400, exclusions=['permits'])
+        create_supplier_quote(self.intervention, 'Demo Clean Heat Supplier Ltd', 1400, exclusions=['permits'])
+        self.assertEqual(self.intervention.supplier_quotes.count(), 1)
+
+    def test_low_severity_incident_does_not_require_escalation(self):
+        incident = report_incident(self.tour, 'transport_issue', 'Minor delay.', severity='low')
+        self.assertEqual(incident.escalated_to, '')
+
+    def test_high_severity_incident_requires_escalation(self):
+        with self.assertRaises(ValueError):
+            report_incident(self.tour, 'participant_injury', 'Minor scrape.', severity='high')
+
+    def test_high_severity_incident_with_escalation_succeeds(self):
+        incident = report_incident(
+            self.tour, 'participant_injury', 'Minor scrape.', severity='high', escalated_to='Tour Coordinator',
+        )
+        self.assertEqual(incident.escalated_to, 'Tour Coordinator')
+
+    def test_no_incidents_exist_for_demo_tour(self):
+        sync_registry()
+        build_kazakhstan_clean_heat_demo()
+        tour = StewardshipTour.objects.get(slug='kazakhstan-clean-heat')
+        self.assertEqual(tour.incident_reports.count(), 0)
+
+
+class LaunchReadinessTests(TestCase):
+    def setUp(self):
+        self.tour = create_stewardship_tour('kazakhstan-clean-heat', 'Kazakhstan Clean Heat Stewardship Tour', 'clean_heat')
+        self.problem = create_stewardship_problem(self.tour, 'inefficient_heating', 'Household uses inefficient coal heating')
+        self.intervention = create_stewardship_intervention(
+            self.problem, 'Clean heating + insulation package', 'clean_heating_upgrade', capex_estimate=1400,
+        )
+        create_mrv_plan(self.tour)
+
+    def test_ensure_launch_checklist_creates_all_defined_items(self):
+        items = ensure_launch_checklist(self.tour)
+        self.assertEqual(len(items), len(CHECKLIST_DEFINITION))
+        self.assertEqual(self.tour.launch_checklist_items.count(), len(CHECKLIST_DEFINITION))
+
+    def test_ensure_launch_checklist_is_idempotent(self):
+        ensure_launch_checklist(self.tour)
+        ensure_launch_checklist(self.tour)
+        self.assertEqual(self.tour.launch_checklist_items.count(), len(CHECKLIST_DEFINITION))
+
+    def test_fresh_tour_is_not_ready_to_launch(self):
+        readiness = calculate_tour_launch_readiness(self.tour)
+        self.assertFalse(readiness['ready_to_launch'])
+        self.assertGreater(len(readiness['reasons_not_ready']), 0)
+
+    def test_technical_work_not_authorized_by_default(self):
+        authorized, reasons = is_technical_work_authorized(self.tour)
+        self.assertFalse(authorized)
+        self.assertGreater(len(reasons), 0)
+
+    def test_technical_work_authorized_once_all_five_conditions_met(self):
+        ensure_launch_checklist(self.tour)
+        update_checklist_item(self.tour, 'named_professional_verified', status='complete')
+        update_checklist_item(self.tour, 'technical_inspection_complete', status='complete')
+        update_checklist_item(self.tour, 'technical_scope_approved', status='complete')
+        create_supplier_quote(
+            self.intervention, 'Demo Clean Heat Supplier Ltd', 1400, approval_status='approved',
+        )
+        self.tour.human_approved = True
+        self.tour.save()
+        authorized, reasons = is_technical_work_authorized(self.tour)
+        self.assertTrue(authorized)
+        self.assertEqual(reasons, [])
+
+    def test_technical_work_still_blocked_if_quote_only_pending(self):
+        ensure_launch_checklist(self.tour)
+        update_checklist_item(self.tour, 'named_professional_verified', status='complete')
+        update_checklist_item(self.tour, 'technical_inspection_complete', status='complete')
+        update_checklist_item(self.tour, 'technical_scope_approved', status='complete')
+        create_supplier_quote(self.intervention, 'Demo Clean Heat Supplier Ltd', 1400, approval_status='pending')
+        self.tour.human_approved = True
+        self.tour.save()
+        authorized, reasons = is_technical_work_authorized(self.tour)
+        self.assertFalse(authorized)
+
+    def test_mrv_baseline_not_ready_until_methodology_and_data_exist(self):
+        readiness = calculate_mrv_baseline_readiness(self.tour)
+        self.assertFalse(readiness['ready'])
+
+    def test_mrv_baseline_ready_once_methodology_and_baseline_data_exist(self):
+        self.tour.mrv_plan.methodology = 'Before/after heating cost survey.'
+        self.tour.mrv_plan.evidence_required = ['heating_cost', 'comfort_survey']
+        self.tour.mrv_plan.verification_status = 'baseline_collected'
+        self.tour.mrv_plan.save()
+        readiness = calculate_mrv_baseline_readiness(self.tour)
+        self.assertTrue(readiness['ready'])
+
+    def test_mark_tour_ready_to_launch_raises_when_not_ready(self):
+        with self.assertRaises(LaunchNotReadyError):
+            mark_tour_ready_to_launch(self.tour)
+
+    def test_mark_tour_ready_to_launch_succeeds_once_everything_complete(self):
+        ensure_launch_checklist(self.tour)
+        for _, item_key, _ in CHECKLIST_DEFINITION:
+            update_checklist_item(self.tour, item_key, status='complete')
+        create_supplier_quote(self.intervention, 'Demo Clean Heat Supplier Ltd', 1400, approval_status='approved')
+        self.tour.mrv_plan.methodology = 'Before/after heating cost survey.'
+        self.tour.mrv_plan.evidence_required = ['heating_cost']
+        self.tour.mrv_plan.verification_status = 'baseline_collected'
+        self.tour.mrv_plan.save()
+        self.tour.human_approved = True
+        self.tour.save()
+        tour = mark_tour_ready_to_launch(self.tour)
+        self.assertEqual(tour.status, 'ready_to_launch')
+
+
+class DemoPilotReadinessLayerTests(TestCase):
+    def setUp(self):
+        sync_registry()
+        build_kazakhstan_clean_heat_demo()
+
+    def test_seeds_one_beneficiary(self):
+        from khalifa_stewardship_tour_operating_system.models import TourBeneficiary
+        build_kazakhstan_pilot_readiness_layer()
+        self.assertEqual(TourBeneficiary.objects.count(), 1)
+
+    def test_is_idempotent(self):
+        from khalifa_stewardship_tour_operating_system.models import (
+            ConsentRecord, SupplierQuote, TourBeneficiary,
+        )
+        build_kazakhstan_pilot_readiness_layer()
+        first = (TourBeneficiary.objects.count(), ConsentRecord.objects.count(), SupplierQuote.objects.count())
+        build_kazakhstan_pilot_readiness_layer()
+        second = (TourBeneficiary.objects.count(), ConsentRecord.objects.count(), SupplierQuote.objects.count())
+        self.assertEqual(first, second)
+
+    def test_consent_is_never_pre_granted(self):
+        from khalifa_stewardship_tour_operating_system.models import ConsentRecord
+        build_kazakhstan_pilot_readiness_layer()
+        self.assertFalse(ConsentRecord.objects.filter(status='granted').exists())
+
+    def test_supplier_quote_is_not_pre_approved(self):
+        from khalifa_stewardship_tour_operating_system.models import SupplierQuote
+        build_kazakhstan_pilot_readiness_layer()
+        quote = SupplierQuote.objects.get()
+        self.assertEqual(quote.approval_status, 'pending')
+        self.assertEqual(quote.verification_status, 'not_started')
+
+    def test_demo_tour_is_honestly_not_ready_to_launch(self):
+        tour = build_kazakhstan_pilot_readiness_layer()
+        readiness = calculate_tour_launch_readiness(tour)
+        self.assertFalse(readiness['ready_to_launch'])
+        self.assertGreater(len(readiness['reasons_not_ready']), 0)
+
+    def test_participant_blocks_expanded_hazardous_actions(self):
+        tour = build_kazakhstan_pilot_readiness_layer()
+        role = tour.participant_roles.get(role_name='Participant')
+        for action in ('plumbing_intervention', 'structural_work', 'unsupervised_hazardous_work'):
+            self.assertIn(action, role.blocked_actions)

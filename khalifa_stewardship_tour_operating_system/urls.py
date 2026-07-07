@@ -15,4 +15,5 @@ urlpatterns = [
     path('mrv/', views.mrv, name='mrv'),
     path('legacy/', views.legacy, name='legacy'),
     path('kazakhstan-clean-heat-demo/', views.kazakhstan_demo, name='kazakhstan_demo'),
+    path('real-pilot-readiness/', views.real_pilot_readiness, name='real_pilot_readiness'),
 ]
