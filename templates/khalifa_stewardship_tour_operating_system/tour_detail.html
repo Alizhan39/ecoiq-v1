@@ -10,6 +10,8 @@
   <p class="kh-subtitle">{{ tour.get_tour_type_display }} — {{ tour.region }}{% if tour.country %} ({{ tour.country.name }}){% endif %}</p>
   <p class="kh-p">{{ tour.description }}</p>
 
+  {% include 'partials/agents_working_on_this_case.html' %}
+
   <section class="kh-section">
     <h2 class="kh-h2">Problems &amp; Interventions</h2>
     {% for problem in problems %}

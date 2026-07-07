@@ -98,8 +98,15 @@ def opportunity_feed(request):
 
 def portfolio_view(request):
     accounts = InstitutionalAccount.objects.filter(is_demo=True).prefetch_related('portfolios')
+
+    from ai_agent_council.models import CouncilRun
+    freshbridge_council_run = CouncilRun.objects.filter(
+        slug='freshbridge-foods-advisory-demo',
+    ).prefetch_related('tasks').first()
+
     return render(request, 'financial_intelligence_cloud/portfolio.html', {
         'accounts': accounts, 'stats': _demo_stats(),
+        'freshbridge_council_run': freshbridge_council_run,
     })
 
 

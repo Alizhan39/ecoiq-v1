@@ -163,11 +163,18 @@ def tour_detail(request, slug):
     local_partners = tour.local_partners.all()
     mrv_plan = getattr(tour, 'mrv_plan', None)
     legacy_record = getattr(tour, 'legacy_record', None)
+
+    council_run = None
+    if tour.slug == 'kazakhstan-clean-heat':
+        from ai_agent_council.models import CouncilRun
+        council_run = CouncilRun.objects.filter(slug='kazakhstan-clean-heat-stewardship-demo').prefetch_related('tasks').first()
+
     return render(request, 'khalifa_stewardship_tour_operating_system/tour_detail.html', {
         'tour': tour, 'problems': problems, 'funding_plan': funding_plan,
         'participant_roles': participant_roles, 'local_partners': local_partners,
         'mrv_plan': mrv_plan, 'legacy_record': legacy_record,
         'claim_safety_principles': CLAIM_SAFETY_PRINCIPLES,
+        'council_run': council_run,
     })
 
 

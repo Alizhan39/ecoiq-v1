@@ -178,6 +178,18 @@ def landing(request):
     except Exception:
         pass  # DB not ready on first migration
 
+    # AI Agent Workbench — real counts, never hardcoded so this can never drift
+    ai_agent_count = 0
+    ai_council_available = False
+    try:
+        from ai_agent_council.agents import OPERATIONAL_AGENTS
+        from ai_agent_council.models import CouncilRun
+
+        ai_agent_count = len(OPERATIONAL_AGENTS)
+        ai_council_available = CouncilRun.objects.filter(status='decided').exists()
+    except Exception:
+        pass  # DB not ready on first migration
+
     pillars_meta = [
         {'icon': '🌍', 'label': 'Public Benefit',              'desc': 'Employment quality, regional development, community investment, national value', 'weight': '25%'},
         {'icon': '♻️', 'label': 'Environmental Stewardship',   'desc': 'Pollution intensity, waste management, water stewardship, biodiversity',          'weight': '25%'},
@@ -194,6 +206,8 @@ def landing(request):
         'company_count':        company_count,
         'company_count_display': f"{company_count}+",
         'market_count':         market_count,
+        'ai_agent_count':       ai_agent_count,
+        'ai_council_available': ai_council_available,
         'pillars_meta':   pillars_meta,
         'audience_labels': ['Investors', 'Governments', 'Companies', 'Climate Programmes', 'Development Banks'],
         # Review CTA context

@@ -194,6 +194,10 @@ INSTALLED_APPS = [
     # Governed execution layer connecting agent training packs to the Council runtime
     'agent_runtime_model_router',
 
+    # Homepage discovery + interactive testing layer for the 12 operational AI agents
+    # (presentation-only: reuses the registry, runtime and Council models above)
+    'ai_agent_workbench',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 

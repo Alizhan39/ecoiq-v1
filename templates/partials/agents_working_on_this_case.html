@@ -1,0 +1,23 @@
+{% load static %}
+{% comment %}
+partials/agents_working_on_this_case.html — reusable "AGENTS WORKING ON THIS
+CASE" widget. Expects a `council_run` (ai_agent_council.CouncilRun) in
+context. Every agent name links to its real profile and its real run/Council
+page — never hidden behind generic "AI analysis" text.
+{% endcomment %}
+{% if council_run %}
+<div class="awotc" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.3rem 1.5rem;margin:1.25rem 0;">
+  <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:.75rem;">
+    Agents working on this case ({{ council_run.tasks.count }})
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+    {% for task in council_run.tasks.all %}
+    <a href="/ai-agents/agent/{{ task.agent_name|slugify }}/" style="text-decoration:none;background:rgba(88,166,255,.1);color:#58a6ff;border:1px solid rgba(88,166,255,.25);padding:.32rem .75rem;border-radius:999px;font-size:.76rem;font-weight:600;">{{ task.agent_name }}</a>
+    {% endfor %}
+  </div>
+  <div style="margin-top:.9rem;">
+    <a href="{% url 'ai_agent_council:run_detail' council_run.slug %}" style="font-size:.78rem;font-weight:700;color:#00e89a;text-decoration:none;">Watch this Council →</a>
+    <a href="{% url 'agent_runtime_model_router:case_trace' council_run.slug %}" style="font-size:.78rem;font-weight:700;color:#00e89a;text-decoration:none;margin-left:1rem;">Why this decision happened →</a>
+  </div>
+</div>
+{% endif %}

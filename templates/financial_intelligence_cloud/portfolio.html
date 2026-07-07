@@ -30,6 +30,10 @@
       {% for portfolio in account.portfolios.all %}
       <p class="fic-p">{{ portfolio.name }} — {{ portfolio.entity_count }} entities, £{{ portfolio.assets_under_analysis|floatformat:0 }} under analysis</p>
       {% endfor %}
+      {% if account.slug == 'northstar-advisory' %}
+      <p class="fic-p">FreshBridge Foods is the one client this portfolio runs through the real Council agent pipeline.</p>
+      {% include 'partials/agents_working_on_this_case.html' with council_run=freshbridge_council_run %}
+      {% endif %}
     </div>
     {% endfor %}
   </section>

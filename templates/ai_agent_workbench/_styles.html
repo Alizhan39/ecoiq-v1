@@ -1,0 +1,38 @@
+<style>
+  :root {
+    --aiwb-bg: #070b0f; --aiwb-bg2: #0d1117; --aiwb-border: rgba(255,255,255,.08);
+    --aiwb-text: #e2e8f0; --aiwb-muted: #94a3b8; --aiwb-acc: #00e89a; --aiwb-info: #58a6ff;
+  }
+  .aiwb-wrap { max-width: 1180px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--aiwb-bg); color: var(--aiwb-text); border-radius: 14px; }
+  .aiwb-back { color: var(--aiwb-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .aiwb-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--aiwb-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .aiwb-title { font-size: 2rem; font-weight: 800; margin: 0.4rem 0 0.6rem; color: #fff; letter-spacing: -0.02em; }
+  .aiwb-subtitle { font-size: 1.02rem; color: var(--aiwb-muted); margin: 0 0 1.5rem; max-width: 720px; line-height: 1.6; }
+  .aiwb-pipeline { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 2rem; }
+  .aiwb-pipeline-step { background: var(--aiwb-bg2); border: 1px solid var(--aiwb-border); border-radius: 999px; padding: 0.4rem 0.9rem; font-size: 0.78rem; font-weight: 700; color: var(--aiwb-text); white-space: nowrap; }
+  .aiwb-pipeline-arrow { color: var(--aiwb-muted); }
+  .aiwb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.1rem; }
+  .aiwb-card { background: var(--aiwb-bg2); border: 1px solid var(--aiwb-border); border-radius: 12px; padding: 1.3rem 1.4rem; display: flex; flex-direction: column; }
+  .aiwb-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.5rem; }
+  .aiwb-card-number { font-family: 'SF Mono', monospace; font-size: 0.72rem; color: var(--aiwb-muted); }
+  .aiwb-card-name { font-size: 1.08rem; font-weight: 700; color: #fff; margin: 0 0 0.35rem; }
+  .aiwb-card-role { color: var(--aiwb-muted); font-size: 0.85rem; line-height: 1.55; margin: 0 0 0.5rem; }
+  .aiwb-card-question { color: var(--aiwb-acc); font-size: 0.85rem; font-style: italic; margin: 0 0 0.6rem; }
+  .aiwb-sub { font-weight: 700; font-size: 0.76rem; text-transform: uppercase; letter-spacing: .04em; color: #fff; margin: 0.7rem 0 0.35rem; }
+  .aiwb-p { color: var(--aiwb-muted); font-size: 0.85rem; line-height: 1.6; margin: 0; }
+  .aiwb-chip-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.3rem; }
+  .aiwb-chip { background: rgba(88,166,255,.1); color: var(--aiwb-info); border: 1px solid rgba(88,166,255,.25); padding: 0.24rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+  .aiwb-card-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--aiwb-border); }
+  .aiwb-btn { display: inline-block; padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.76rem; text-decoration: none; background: rgba(255,255,255,.03); color: var(--aiwb-text); border: 1px solid var(--aiwb-border); }
+  .aiwb-btn-primary { background: var(--aiwb-acc); color: #06231a; border-color: var(--aiwb-acc); }
+  .aiwb-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--aiwb-border); }
+  .aiwb-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .aiwb-note { margin-top: 0.6rem; color: #f4a261; font-size: 0.8rem; line-height: 1.55; }
+  .aiwb-pre { background: var(--aiwb-bg); border: 1px solid var(--aiwb-border); border-radius: 8px; padding: 0.85rem 1rem; font-size: 0.78rem; color: var(--aiwb-text); overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  .aiwb-list { color: var(--aiwb-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+  .aiwb-panel { background: var(--aiwb-bg2); border: 1px solid var(--aiwb-border); border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.85rem; }
+  .aiwb-3col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; align-items: start; }
+  .aiwb-select { background: var(--aiwb-bg); color: var(--aiwb-text); border: 1px solid var(--aiwb-border); border-radius: 8px; padding: 0.5rem 0.7rem; font-size: 0.85rem; }
+  .aiwb-input { background: var(--aiwb-bg); color: var(--aiwb-text); border: 1px solid var(--aiwb-border); border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.9rem; width: 100%; }
+  .aiwb-form-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 0.75rem; }
+</style>
