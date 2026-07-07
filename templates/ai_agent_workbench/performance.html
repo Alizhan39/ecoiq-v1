@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Agent Performance — EcoIQ AI Agent Workbench{% endblock %}
+{% block meta_description_content %}Real, persisted performance metrics for the 12 EcoIQ agents — never fabricated. Where nothing has been measured yet, it says so.{% endblock %}
+
+{% block content %}
+<div class="aiwb-wrap">
+  <a class="aiwb-back" href="{% url 'ai_agent_workbench:directory' %}">← Back to Agent Directory</a>
+
+  <span class="aiwb-badge">Agent Performance</span>
+  <h1 class="aiwb-title">Real performance, honestly reported</h1>
+  <p class="aiwb-subtitle">Every figure below is read from persisted runs. Where nothing has been measured yet, this page says <strong>NOT YET MEASURED</strong> instead of guessing.</p>
+
+  <div class="aiwb-grid">
+    {% for row in agent_rows %}
+    <div class="aiwb-card">
+      <h2 class="aiwb-card-name">{{ row.name }}</h2>
+      <p class="aiwb-sub">Golden tests</p>
+      <p class="aiwb-p">{{ row.golden_test_count }}</p>
+
+      <p class="aiwb-sub">Schema-validity rate</p>
+      <p class="aiwb-p">{% if row.run_stats.schema_validity_rate is not None %}{{ row.run_stats.schema_validity_rate }}%{% else %}NOT YET MEASURED{% endif %}</p>
+
+      <p class="aiwb-sub">Reviewer / evaluation score</p>
+      <p class="aiwb-p">{{ row.evaluation_status }}</p>
+
+      <p class="aiwb-sub">Recent run count</p>
+      <p class="aiwb-p">{{ row.run_stats.run_count }}</p>
+
+      <p class="aiwb-sub">Recent failure count</p>
+      <p class="aiwb-p">{{ row.run_stats.failure_count }}</p>
+
+      <p class="aiwb-sub">Missing-data detection</p>
+      <p class="aiwb-p">{% if row.run_stats.run_count > 0 %}Exercised in {{ row.run_stats.run_count }} recorded run{{ row.run_stats.run_count|pluralize }}{% else %}NOT YET MEASURED{% endif %}</p>
+
+      <a class="aiwb-btn" style="margin-top:0.75rem;" href="{% url 'ai_agent_workbench:agent_profile' row.slug %}">View profile →</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% include 'ai_agent_workbench/_styles.html' %}
+{% endblock %}

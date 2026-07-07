@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Presentation Mode — EcoIQ AI Agent Workbench{% endblock %}
+{% block meta_description_content %}Most AI gives one answer. EcoIQ uses specialised agents that can disagree, a Council that preserves dissent, and humans who approve high-impact action.{% endblock %}
+
+{% block content %}
+<div class="aiwb-wrap">
+  <span class="aiwb-badge">Presentation Mode</span>
+  <h1 class="aiwb-title" style="font-size:2.4rem;">Most AI gives one answer.</h1>
+  <p class="aiwb-subtitle" style="font-size:1.15rem;">EcoIQ uses specialised agents. One finds the loss. One models the economics. One challenges whether the outcome is verified. One checks governance. They can disagree. The Council preserves dissent. Humans approve high-impact action.</p>
+
+  <div class="aiwb-pipeline" style="margin:2rem 0;">
+    {% for stage in pipeline_stages %}
+    <span class="aiwb-pipeline-step" style="font-size:0.95rem;padding:0.6rem 1.1rem;">{{ stage }}</span>{% if not forloop.last %}<span class="aiwb-pipeline-arrow">→</span>{% endif %}
+    {% endfor %}
+  </div>
+
+  {% if walkthrough_case %}
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">Walkthrough: {{ walkthrough_case.title }}</h2>
+    <p class="aiwb-p">{{ walkthrough_case.question }}</p>
+    <div class="aiwb-chip-row">
+      <span class="aiwb-chip">{{ walkthrough_case.tasks.count }} agents</span>
+      <span class="aiwb-chip">{{ walkthrough_case.disagreements.count }} disagreements</span>
+      {% if walkthrough_case.decision %}<span class="iq-badge iq-badge-note">{{ walkthrough_case.decision.get_status_display }}</span>{% endif %}
+    </div>
+    <a class="aiwb-btn aiwb-btn-primary" style="margin-top:1rem;" href="{% url 'ai_agent_council:run_detail' walkthrough_case.slug %}">Watch this Council →</a>
+  </section>
+  {% endif %}
+
+  <section class="aiwb-section" style="text-align:center;padding:2.5rem 0;">
+    <h2 class="aiwb-title" style="font-size:1.6rem;">SEE WHAT THE AI SAW.</h2>
+    <h2 class="aiwb-title" style="font-size:1.6rem;">UNDERSTAND WHY THE DECISION HAPPENED.</h2>
+    <a class="aiwb-btn aiwb-btn-primary" style="margin-top:1rem;" href="{% url 'ai_agent_workbench:workbench' %}">Try the AI Agents →</a>
+  </section>
+</div>
+
+{% include 'ai_agent_workbench/_styles.html' %}
+{% endblock %}

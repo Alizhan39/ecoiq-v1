@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Agent not found — EcoIQ AI Agent Workbench{% endblock %}
+{% block content %}
+<div class="aiwb-wrap">
+  <span class="aiwb-badge">Not found</span>
+  <h1 class="aiwb-title">No agent matches “{{ slug }}”</h1>
+  <p class="aiwb-subtitle">This isn't one of the 12 operational EcoIQ agents.</p>
+  <a class="aiwb-btn aiwb-btn-primary" href="{% url 'ai_agent_workbench:directory' %}">← Back to Agent Directory</a>
+</div>
+{% include 'ai_agent_workbench/_styles.html' %}
+{% endblock %}

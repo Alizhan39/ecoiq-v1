@@ -119,4 +119,5 @@ def decision_detail(request, decision_id):
         'funding_gap': funding_gap,
         'route_matches': route_matches,
         'verified_outcome': verified_outcome,
+        'council_run': decision.council_case,
     })

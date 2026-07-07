@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Watch the AI Agent Council — EcoIQ{% endblock %}
+{% block meta_description_content %}Choose a real, seeded Council case and watch specialised agents disagree, cross-examine, and reach a governed decision.{% endblock %}
+
+{% block content %}
+<div class="aiwb-wrap">
+  <a class="aiwb-back" href="{% url 'ai_agent_workbench:workbench' %}">← Back to the Workbench</a>
+
+  <span class="aiwb-badge">Watch the Agent Council</span>
+  <h1 class="aiwb-title">Watch the AI Agent Council disagree</h1>
+  <p class="aiwb-subtitle">Every case below is a real, persisted Council Run — not a scripted chat reply. Choose one to see agent positions, disagreement, cross-examination and the governed decision.</p>
+
+  <div class="aiwb-grid">
+    {% for case in cases %}
+    <div class="aiwb-card">
+      <h2 class="aiwb-card-name">{{ case.title }}</h2>
+      {% if case.run %}
+      <p class="aiwb-card-role">{{ case.run.question }}</p>
+      <div class="aiwb-chip-row">
+        <span class="aiwb-chip">{{ case.run.tasks.count }} agent tasks</span>
+        <span class="aiwb-chip">{{ case.run.disagreements.count }} disagreements</span>
+        {% if case.run.decision %}<span class="iq-badge iq-badge-note">{{ case.run.decision.get_status_display }}</span>{% endif %}
+      </div>
+      <div class="aiwb-card-actions">
+        <a class="aiwb-btn aiwb-btn-primary" href="{% url 'ai_agent_council:run_detail' case.run.slug %}">Watch this Council →</a>
+        <a class="aiwb-btn" href="{% url 'agent_runtime_model_router:case_trace' case.run.slug %}">Why this decision happened →</a>
+      </div>
+      {% else %}
+      <p class="aiwb-note">Not seeded in this environment yet.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% include 'ai_agent_workbench/_styles.html' %}
+{% endblock %}

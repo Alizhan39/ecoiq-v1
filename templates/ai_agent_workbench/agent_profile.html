@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ agent.name }} — EcoIQ AI Agent Workbench{% endblock %}
+{% block meta_description_content %}{{ agent.name }}: purpose, evidence types, versions, golden tests, recent runs and handoffs.{% endblock %}
+
+{% block content %}
+<div class="aiwb-wrap">
+  <a class="aiwb-back" href="{% url 'ai_agent_workbench:directory' %}">← Back to Agent Directory</a>
+
+  <span class="aiwb-badge">Agent #{{ agent.number }}</span>
+  <h1 class="aiwb-title">{{ agent.name }}</h1>
+  <p class="aiwb-subtitle">{{ agent.role }}</p>
+  {% if agent.main_question %}<p class="aiwb-card-question">“{{ agent.main_question }}”</p>{% endif %}
+
+  <div class="aiwb-chip-row">
+    <span class="iq-badge {% if agent.status == 'Operational' %}iq-badge-verified{% else %}iq-badge-note{% endif %}">{{ agent.status }}</span>
+    <span class="aiwb-chip">Training pack: {{ agent.registry_entry.training_pack_version }}</span>
+    <span class="aiwb-chip">Content hash: {{ agent.registry_entry.content_hash|slice:":12"|default:"—" }}</span>
+    <span class="aiwb-chip">Golden tests: {{ agent.golden_test_count }}</span>
+    <span class="aiwb-chip">Evaluation: {{ agent.evaluation_status }}</span>
+  </div>
+
+  <a class="aiwb-btn aiwb-btn-primary" style="margin-top:1rem;" href="{% url 'ai_agent_workbench:workbench' %}?agent={{ agent.slug }}">Test this agent →</a>
+
+  <section class="aiwb-section" id="capabilities">
+    <h2 class="aiwb-h2">Supported Tasks &amp; Evidence</h2>
+    {% if agent.metadata.supported_task_types %}
+    <p class="aiwb-sub">Supported task types</p>
+    <div class="aiwb-chip-row">{% for t in agent.metadata.supported_task_types %}<span class="aiwb-chip">{{ t }}</span>{% endfor %}</div>
+    {% endif %}
+    {% if agent.metadata.allowed_input_types %}
+    <p class="aiwb-sub">Evidence types</p>
+    <div class="aiwb-chip-row">{% for t in agent.metadata.allowed_input_types %}<span class="aiwb-chip">{{ t }}</span>{% endfor %}</div>
+    {% endif %}
+    {% if agent.output_types %}
+    <p class="aiwb-sub">Output types</p>
+    <div class="aiwb-chip-row">{% for t in agent.output_types %}<span class="aiwb-chip">{{ t }}</span>{% endfor %}</div>
+    {% endif %}
+    {% if agent.metadata.required_reviewer_types %}
+    <p class="aiwb-sub">Required reviewer types</p>
+    <div class="aiwb-chip-row">{% for t in agent.metadata.required_reviewer_types %}<span class="iq-badge iq-badge-review">{{ t }}</span>{% endfor %}</div>
+    {% endif %}
+    {% if agent.important %}<p class="aiwb-note">{{ agent.important }}</p>{% endif %}
+  </section>
+
+  <section class="aiwb-section" id="handoffs">
+    <h2 class="aiwb-h2">Typical Handoffs</h2>
+    {% if agent.handoffs %}
+    <p class="aiwb-p">{{ agent.name }} typically hands work to: {{ agent.handoffs|join:", " }}</p>
+    {% else %}
+    <p class="aiwb-p">No further handoff — this is typically a terminal step (human approval or external output).</p>
+    {% endif %}
+  </section>
+
+  <section class="aiwb-section" id="recent-runs">
+    <h2 class="aiwb-h2">Recent Runs</h2>
+    <p class="aiwb-p">
+      {{ agent.run_stats.run_count }} run{{ agent.run_stats.run_count|pluralize }} recorded,
+      {{ agent.run_stats.failure_count }} not completed.
+      {% if agent.run_stats.schema_validity_rate is not None %}Schema-validity rate: {{ agent.run_stats.schema_validity_rate }}%.{% else %}Schema-validity rate: NOT YET MEASURED.{% endif %}
+    </p>
+    {% for run in agent.recent_runs %}
+    <div class="aiwb-panel">
+      <div class="aiwb-chip-row">
+        <span class="aiwb-chip">#{{ run.id }}</span>
+        <span class="aiwb-chip">{{ run.task_type }}</span>
+        <span class="iq-badge iq-badge-note">Requested: {{ run.get_execution_mode_requested_display }}</span>
+        <span class="iq-badge {% if run.execution_mode_used == run.execution_mode_requested %}iq-badge-verified{% else %}iq-badge-review{% endif %}">Used: {{ run.get_execution_mode_used_display|default:'—' }}</span>
+        {% if run.human_approval_required %}<span class="iq-badge iq-badge-review">Human approval required</span>{% endif %}
+      </div>
+      {% if run.council_case %}<p class="aiwb-p" style="margin-top:0.5rem;">Case: {{ run.council_case.title }}</p>{% endif %}
+      <a class="aiwb-btn" style="margin-top:0.6rem;" href="{% url 'agent_runtime_model_router:run_detail' run.id %}">View full run trace →</a>
+    </div>
+    {% empty %}
+    <p class="aiwb-p">No runs recorded yet for this agent.</p>
+    {% endfor %}
+  </section>
+</div>
+
+{% include 'ai_agent_workbench/_styles.html' %}
+{% endblock %}

@@ -15,6 +15,8 @@
     {% if decision.council_case %}<span class="wtv-chip">Council case: {{ decision.council_case.title }}</span>{% endif %}
   </div>
 
+  {% include 'partials/agents_working_on_this_case.html' %}
+
   <section class="wtv-section" id="decision">
     <h2 class="wtv-h2">Decision</h2>
     <p class="wtv-p">{{ decision.decision }}</p>

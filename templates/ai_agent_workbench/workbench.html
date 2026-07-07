@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% block title %}Workbench — EcoIQ AI Agent Workbench{% endblock %}
+{% block meta_description_content %}Test a specialised EcoIQ agent against a real demo case: see model routing, evidence, missing data, confidence and safety validation.{% endblock %}
+
+{% block content %}
+<div class="aiwb-wrap">
+  <a class="aiwb-back" href="{% url 'ai_agent_workbench:directory' %}">← Back to Agent Directory</a>
+
+  <span class="aiwb-badge">AI Agent Workbench</span>
+  <h1 class="aiwb-title">Test a specialised agent</h1>
+  <p class="aiwb-subtitle">See what the AI sees. Test specialised agents. Watch them disagree. Understand why a decision happened.</p>
+
+  <section class="aiwb-section" style="margin-top:1rem;padding-top:1rem;">
+    <h2 class="aiwb-h2">Ask an EcoIQ agent</h2>
+    <form method="get" class="aiwb-form-row">
+      <input type="text" name="ask" class="aiwb-input" style="max-width:420px;" placeholder="e.g. Where is value being lost?" value="{{ ask_text }}">
+      {% if demo_case %}<input type="hidden" name="case" value="{{ demo_case.slug }}">{% endif %}
+      <button type="submit" class="aiwb-btn aiwb-btn-primary">Recommend an agent</button>
+    </form>
+    {% if recommendation %}
+    <div class="aiwb-panel">
+      <p class="aiwb-p">Recommended: <strong style="color:#fff;">{{ recommendation.agent_name }}</strong></p>
+      <p class="aiwb-p">Why: {{ recommendation.why }}</p>
+      {% if recommendation.supporting_agents %}<p class="aiwb-p">Possible supporting agents: {{ recommendation.supporting_agents|join:", " }}</p>{% endif %}
+      <a class="aiwb-btn aiwb-btn-primary" style="margin-top:0.6rem;"
+         href="{% url 'ai_agent_workbench:workbench' %}?{% if demo_case %}case={{ demo_case.slug }}&{% endif %}agent={{ recommendation.agent_name|slugify }}">Confirm &amp; open this agent →</a>
+      <p class="aiwb-note">This only opens the workbench pre-filled — nothing runs automatically.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">Choose a demo case &amp; agent</h2>
+    <form method="get" class="aiwb-form-row">
+      <select name="case" class="aiwb-select" onchange="this.form.submit()">
+        <option value="">— choose a demo case —</option>
+        {% for case in demo_cases %}
+        <option value="{{ case.slug }}" {% if demo_case.slug == case.slug %}selected{% endif %}>{{ case.title }}</option>
+        {% endfor %}
+      </select>
+      <select name="agent" class="aiwb-select" onchange="this.form.submit()">
+        <option value="">— choose an agent —</option>
+        {% for row in agent_rows %}
+        <option value="{{ row.slug }}" {% if selected_agent_row.slug == row.slug %}selected{% endif %}>{{ row.name }}</option>
+        {% endfor %}
+      </select>
+      <noscript><button type="submit" class="aiwb-btn">Go</button></noscript>
+    </form>
+
+    {% if demo_case %}
+    <div class="aiwb-panel">
+      <p class="aiwb-sub">{{ demo_case.title }}</p>
+      <p class="aiwb-p">{{ demo_case.question }}</p>
+      {% if demo_case.known_facts %}
+      <div class="aiwb-chip-row">{% for f in demo_case.known_facts %}<span class="aiwb-chip">{{ f }}</span>{% endfor %}</div>
+      {% endif %}
+      <p class="aiwb-sub">Agents involved ({{ demo_case.agents_involved|length }})</p>
+      <div class="aiwb-chip-row">
+        {% for name in demo_case.agents_involved %}
+        <a class="aiwb-chip" style="text-decoration:none;" href="{% url 'ai_agent_workbench:workbench' %}?case={{ demo_case.slug }}&agent={{ name|slugify }}">{{ name }}</a>
+        {% endfor %}
+      </div>
+      {% if not council_run and demo_case.council_run_slug %}
+      <p class="aiwb-note">This demo case hasn't been seeded in this environment yet — run the platform's seed command to populate it.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  {% if demo_case.slug == 'investment-portfolio' %}
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">Capital Allocation Agent — ranked options</h2>
+    <p class="aiwb-p">Real, already-ranked output from the same <code>rank_capital_allocation_options()</code> service the Capital Allocation Agent uses elsewhere on the platform — a governed recommendation for human/Council review, never an autonomous investment decision.</p>
+    {% for opp in ranked_options %}
+    <div class="aiwb-panel">
+      <div class="aiwb-chip-row">
+        <span class="iq-badge iq-badge-verified">Rank #{{ forloop.counter }}</span>
+        <span class="aiwb-chip">Composite score: {{ opp.priority_score }}</span>
+        {% if opp.requires_human_review %}<span class="iq-badge iq-badge-review">Human review required</span>{% endif %}
+      </div>
+      <p class="aiwb-sub">{{ opp.portfolio_entity.name }}</p>
+      <p class="aiwb-p">{{ opp.rationale }}</p>
+    </div>
+    {% empty %}
+    <p class="aiwb-p">This demo hasn't been seeded in this environment yet — run <code>seed_financial_intelligence_cloud_demo</code>.</p>
+    {% endfor %}
+  </section>
+
+  {% elif demo_case and selected_agent_row %}
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">{{ selected_agent_row.name }} — {{ demo_case.title }}</h2>
+
+    {% if not agent_available_for_case %}
+    <p class="aiwb-note">{{ selected_agent_row.name }} was not part of this demo case's agent chain. Choose one of the agents involved above.</p>
+    {% elif not run_context.agent_run %}
+    <p class="aiwb-note">No persisted run exists yet for this agent in this demo case — the seed command for this case may not have run in this environment.</p>
+    {% else %}
+    {% with run=run_context.agent_run task=run_context.task %}
+    <div class="aiwb-3col">
+
+      <div>
+        <p class="aiwb-sub">Task &amp; evidence input</p>
+        <div class="aiwb-panel">
+          <p class="aiwb-p">{{ run.task_type }}</p>
+          <p class="aiwb-p">{{ run.input_summary|default:"—" }}</p>
+          <div class="aiwb-chip-row">{% for e in run.evidence_used %}<span class="aiwb-chip">{{ e }}</span>{% endfor %}</div>
+        </div>
+        {% if run_context.handoffs_in %}
+        <p class="aiwb-sub">Received from</p>
+        {% for h in run_context.handoffs_in %}
+        <div class="aiwb-panel"><p class="aiwb-p"><strong>{{ h.sender_agent }}</strong> → {{ h.receiver_agent }}: {{ h.reason }}</p></div>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      <div>
+        <p class="aiwb-sub">Agent execution</p>
+        <div class="aiwb-panel">
+          <div class="aiwb-chip-row">
+            <span class="iq-badge iq-badge-note">Requested: {{ run.get_execution_mode_requested_display }}</span>
+            <span class="iq-badge {% if run.execution_mode_used == run.execution_mode_requested %}iq-badge-verified{% else %}iq-badge-review{% endif %}">Used: {{ run.get_execution_mode_used_display|default:'—' }}</span>
+          </div>
+          <p class="aiwb-sub">Model routing</p>
+          <p class="aiwb-p"><strong>{{ run.model_provider }} / {{ run.model_name }}</strong></p>
+          <p class="aiwb-p">{{ run.routing_reason }}</p>
+          <p class="aiwb-sub">Training pack</p>
+          <div class="aiwb-chip-row">
+            <span class="aiwb-chip">Version {{ run.training_pack_version }}</span>
+            <span class="aiwb-chip">Schema {{ run.schema_version }}</span>
+            <span class="aiwb-chip">Safety {{ run.safety_rules_version }}</span>
+          </div>
+          <p class="aiwb-p" style="margin-top:0.4rem;"><code style="font-size:0.72rem;">{{ run.training_pack_content_hash|slice:":16"|default:'—' }}</code></p>
+          <p class="aiwb-sub">Structured output validation</p>
+          {% if run.schema_valid %}<span class="iq-badge iq-badge-verified">Schema valid</span>{% else %}<span class="iq-badge iq-badge-blocked">Schema invalid</span>{% endif %}
+          <p class="aiwb-sub">Safety validation</p>
+          <span class="iq-badge {% if run.safety_status == 'pass' %}iq-badge-verified{% elif run.safety_status == 'blocking' %}iq-badge-blocked{% else %}iq-badge-review{% endif %}">{{ run.get_safety_status_display }}</span>
+          <p class="aiwb-sub">Confidence</p>
+          <p class="aiwb-p">Raw: {{ run.raw_confidence|default:'—' }}% → Calibrated: <strong style="color:#fff;">{{ run.calibrated_confidence|default:'—' }}%</strong></p>
+          <p class="aiwb-sub">Cost</p>
+          <p class="aiwb-p">Estimated: ${{ run.estimated_cost_usd|default:'0.00' }}{% if run.actual_usage %} — actual usage reported by provider{% endif %}</p>
+          <p class="aiwb-sub">Output summary</p>
+          <p class="aiwb-p">{{ task.position_summary|default:run.parsed_output.output_summary|default:'—' }}</p>
+        </div>
+        {% if run_context.handoffs_out %}
+        <p class="aiwb-sub">Recommended next agents</p>
+        {% for h in run_context.handoffs_out %}
+        <div class="aiwb-panel"><p class="aiwb-p">→ <strong>{{ h.receiver_agent }}</strong>: {{ h.reason }}</p></div>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      <div>
+        <p class="aiwb-sub">What the AI saw</p>
+        {% for item in run.evidence_provenance %}
+        <div class="aiwb-panel">
+          <p class="aiwb-p"><strong style="color:#fff;">{{ item.evidence_id }}</strong> — {{ item.source_document }} ({{ item.source_ref }})</p>
+          <div class="aiwb-chip-row">
+            <span class="aiwb-chip">Quality: {{ item.quality }}</span>
+            <span class="aiwb-chip">{{ item.visibility }}</span>
+          </div>
+        </div>
+        {% empty %}
+        <p class="aiwb-p">No detailed evidence provenance recorded for this run.</p>
+        {% endfor %}
+
+        <p class="aiwb-sub">What the AI is not sure about</p>
+        <div class="aiwb-panel">
+          {% if run.missing_data %}
+          <p class="aiwb-p">Missing:</p>
+          <div class="aiwb-chip-row">{% for m in run.missing_data %}<span class="iq-badge iq-badge-blocked">{{ m }}</span>{% endfor %}</div>
+          {% endif %}
+          {% if run.risk_flags %}
+          <p class="aiwb-p" style="margin-top:0.5rem;">Risk flags:</p>
+          <div class="aiwb-chip-row">{% for f in run.risk_flags %}<span class="iq-badge iq-badge-review">{{ f }}</span>{% endfor %}</div>
+          {% endif %}
+          {% if not run.missing_data and not run.risk_flags %}<p class="aiwb-p">No unresolved gaps recorded for this run.</p>{% endif %}
+          {% if run.confidence_calibration_explanation %}
+          <p class="aiwb-p" style="margin-top:0.5rem;">Why confidence was calibrated:</p>
+          <ul class="aiwb-list">{% for line in run.confidence_calibration_explanation %}<li>{{ line }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+
+        <p class="aiwb-sub">Human approval</p>
+        {% if run.human_approved is True %}
+        <span class="iq-badge iq-badge-verified">Human approved</span>
+        {% elif run.human_approved is False %}
+        <span class="iq-badge iq-badge-blocked">Human rejected</span>
+        {% else %}
+        <span class="iq-badge iq-badge-review">{% if run.human_approval_required %}Awaiting human review{% else %}Not required{% endif %}</span>
+        {% endif %}
+
+        <a class="aiwb-btn" style="margin-top:1rem;" href="{% url 'agent_runtime_model_router:run_detail' run.id %}">View full run trace →</a>
+      </div>
+    </div>
+    {% endwith %}
+
+    {% if council_run %}
+    <div class="aiwb-panel" style="margin-top:1.5rem;">
+      <p class="aiwb-p">Ready to see how the full Council reasons about this case — every agent's position, disagreement and the governed decision?</p>
+      <a class="aiwb-btn aiwb-btn-primary" href="{% url 'ai_agent_council:run_detail' council_run.slug %}">Send to Council →</a>
+      <a class="aiwb-btn" href="{% url 'agent_runtime_model_router:case_trace' council_run.slug %}">Why this decision happened →</a>
+    </div>
+    {% endif %}
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+
+{% include 'ai_agent_workbench/_styles.html' %}
+{% endblock %}
