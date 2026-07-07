@@ -36,6 +36,10 @@
       <span class="wtv-chip">Estimated loss avoided: £{{ decision.intervention.estimated_loss_avoided|floatformat:0 }}</span>
       <span class="wtv-chip">Estimated payback: {{ decision.intervention.estimated_payback_months|default:'—' }} months</span>
     </div>
+    <div class="wtv-chip-row">
+      <span class="iq-badge iq-badge-note">Classification: Forecast</span>
+      <span class="iq-badge iq-badge-review">Verification Status: Not Verified</span>
+    </div>
     <p class="iq-badge iq-badge-note">Estimated, not verified — never presented as a guaranteed return.</p>
   </section>
 

@@ -41,9 +41,15 @@ def build_loss_detection_fixture(organisation, asset, loss_type, inventory_value
     capital_at_risk = calculate_capital_at_risk(inventory_value, historical_loss_rate)
     confidence_label = _confidence_label(confidence)
 
+    # Classification (type of estimate) and verification status (has it been
+    # independently confirmed) are two separate concepts — never conflate
+    # "Forecast" with "Verified Loss". This agent never verifies anything
+    # itself (that is the MRV Agent's job), so verification status is always
+    # 'Not Verified' here regardless of classification.
     output_summary = (
         f'Projected capital at risk: £{capital_at_risk:,.0f}. '
         f'Classification: {classification.capitalize()}. '
+        f'Verification Status: Not Verified. '
         f'Confidence: {confidence_label}.'
     )
 

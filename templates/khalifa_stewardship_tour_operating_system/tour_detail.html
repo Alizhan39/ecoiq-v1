@@ -12,6 +12,21 @@
 
   {% include 'partials/agents_working_on_this_case.html' %}
 
+  {% if council_run.decision %}
+  <div class="kh-card" style="margin-top:-0.25rem;margin-bottom:1.25rem;">
+    <p class="kh-sub">Council Decision</p>
+    <span class="iq-badge iq-badge-note">{{ council_run.decision.get_status_display }}</span>
+  </div>
+  {% endif %}
+
+  {% if tour.slug == 'kazakhstan-clean-heat' %}
+  <div class="kh-card" style="border-color:rgba(244,162,97,.35);background:rgba(244,162,97,.05);margin-bottom:1.5rem;">
+    <p class="kh-p">The tour is not ready to launch yet. Review the real evidence, approvals and launch blockers still required.</p>
+    <a class="kh-btn" style="display:inline-block;margin-top:0.6rem;background:#f4a261;color:#1a1200;font-weight:700;padding:0.55rem 1.1rem;border-radius:8px;text-decoration:none;"
+       href="{% url 'khalifa_stewardship_tour_operating_system:real_pilot_readiness' %}">SEE WHAT STILL BLOCKS LAUNCH →</a>
+  </div>
+  {% endif %}
+
   <section class="kh-section">
     <h2 class="kh-h2">Problems &amp; Interventions</h2>
     {% for problem in problems %}
