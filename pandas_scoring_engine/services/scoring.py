@@ -288,3 +288,25 @@ def compute_company_intelligence_score(company_profile):
         'confidence': final_confidence,
         'explanation': explanation,
     }
+
+
+def compute_country_geo_components(country_profile):
+    """
+    Public entry point reusing the exact same country-level Geo Intelligence
+    component functions compute_company_intelligence_score() uses internally
+    — so intelligence_analytics_engine's country feature vectors are built
+    from identical logic, not a second reimplementation. Returns
+    {climate_risk_score, investment_opportunity_score,
+    modernisation_priority_score, geo_exposure_score}, each None if that
+    component has no real underlying Geo Intelligence data for this country.
+    """
+    climate_risk = _component_climate_risk(country_profile)
+    investment_opportunity = _component_investment_opportunity(country_profile)
+    modernisation_priority = _component_modernisation_priority(country_profile)
+    geo_exposure = _component_geo_exposure(country_profile)
+    return {
+        'climate_risk_score': climate_risk['normalized'] if climate_risk else None,
+        'investment_opportunity_score': investment_opportunity['normalized'] if investment_opportunity else None,
+        'modernisation_priority_score': modernisation_priority['normalized'] if modernisation_priority else None,
+        'geo_exposure_score': geo_exposure['normalized'] if geo_exposure else None,
+    }
