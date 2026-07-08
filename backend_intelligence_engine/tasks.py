@@ -1,0 +1,218 @@
+"""
+backend_intelligence_engine/tasks.py — the three real background workflows.
+
+Every task follows the same shape: create a BackgroundTaskRun row first
+(status='queued' -> 'running', already saved before any real work starts),
+then mark it 'completed' or 'failed' at the end — never leave a task
+invisible. Each wraps EXISTING EcoIQ services; no task here contains new
+scoring, climate, or agent execution logic of its own.
+
+Every invocation — including each automatic retry — creates its own
+BackgroundTaskRun row rather than trying to find and mutate a previous
+attempt's row: Celery does not guarantee a stable task id across
+`autoretry_for` retries across versions, so correlating by id would be
+fragile. `retry_count` on each row (from `self.request.retries`) makes the
+retry sequence for one target fully reconstructable via `target_reference`
+without relying on that guarantee.
+
+Retries are bounded and explicit (`autoretry_for`, `max_retries`,
+`retry_backoff`) — nothing retries forever, per the platform-wide safety
+requirement.
+"""
+import logging
+
+from celery import shared_task
+
+from backend_intelligence_engine.models import BackgroundTaskRun
+
+logger = logging.getLogger(__name__)
+
+
+def _start_run(task_type, target_repr, target_reference, request, task_kwargs=None):
+    run = BackgroundTaskRun.objects.create(
+        task_type=task_type, target_repr=target_repr, target_reference=target_reference,
+        task_kwargs=task_kwargs or {}, celery_task_id=request.id or '', retry_count=request.retries,
+    )
+    run.mark_running()
+    return run
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def company_intelligence_refresh(self, company_profile_id):
+    """
+    Company Intelligence Refresh — reuses, in order:
+      intelligence.compute.check_monitor_target(watch)   — evidence refresh
+      companies.scoring.recalculate_and_save(profile)    — score recalculation
+      CompanyScoreSnapshot.create_from_profile(...)       — intelligence snapshot
+    No new scoring or evidence logic is introduced here.
+    """
+    from companies.models import CompanyProfile, CompanyScoreSnapshot
+    from companies.scoring import recalculate_and_save
+    from intelligence.compute import check_monitor_target
+
+    target_reference = f'companies.CompanyProfile:{company_profile_id}'
+
+    try:
+        profile = CompanyProfile.objects.select_related('company').get(pk=company_profile_id)
+    except CompanyProfile.DoesNotExist:
+        run = _start_run(
+            'company_intelligence_refresh', f'CompanyProfile #{company_profile_id} (not found)',
+            target_reference, self.request, task_kwargs={'company_profile_id': company_profile_id},
+        )
+        run.mark_failed(f'CompanyProfile {company_profile_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    run = _start_run(
+        'company_intelligence_refresh', profile.company.name if profile.company_id else f'Profile #{profile.pk}',
+        target_reference, self.request, task_kwargs={'company_profile_id': company_profile_id},
+    )
+
+    score_before = profile.ecoiq_total_score
+    watches_checked = 0
+    watches_changed = 0
+
+    if profile.company_id:
+        for watch in profile.company.monitors.all():
+            watches_checked += 1
+            if check_monitor_target(watch):
+                watches_changed += 1
+
+    recalculate_and_save(profile)
+    profile.refresh_from_db()
+
+    snapshot = CompanyScoreSnapshot.create_from_profile(
+        profile, trigger='background_refresh',
+        notes=f'Automated background refresh (Celery task {self.request.id}).',
+    )
+
+    result_summary = {
+        'score_before': score_before, 'score_after': profile.ecoiq_total_score,
+        'watches_checked': watches_checked, 'watches_changed': watches_changed,
+        'snapshot_id': snapshot.pk,
+    }
+    run.mark_completed(result_summary)
+
+    # Only surface a notification for a real, meaningful change — not noise
+    # on every routine refresh where nothing moved.
+    score_delta = abs((profile.ecoiq_total_score or 0) - (score_before or 0))
+    if score_delta >= 2.0:
+        from notifications.models import create_notification
+        create_notification(
+            title=f'{profile.company.name if profile.company_id else profile}: score moved {score_delta:.1f} points',
+            source_type='background_task', message=f'EcoIQ total score: {score_before} → {profile.ecoiq_total_score}.',
+            priority='normal', metadata=result_summary,
+        )
+
+    return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def geo_intelligence_refresh(self, city_name=None):
+    """
+    Geo Intelligence Refresh — reuses geo_intelligence.services.weather
+    exactly as the Phase 1 map page does. Proactively re-warms the 24h
+    Django cache Meteostat already sits behind (see weather.py), so a
+    visitor never pays the live-fetch cost the cache is meant to avoid.
+    Creates no new persistence: this app's own Phase 1 design intentionally
+    does not store a climate time-series, and this task does not change
+    that — "last successful refresh" is this BackgroundTaskRun row itself.
+    """
+    from geo_intelligence.services import weather
+
+    unknown = city_name and city_name not in weather.KAZAKHSTAN_CITIES
+    target_reference = f'geo_intelligence.city:{city_name or "all"}'
+    run = _start_run(
+        'geo_intelligence_refresh', city_name or 'All Kazakhstan reference cities',
+        target_reference, self.request, task_kwargs={'city_name': city_name},
+    )
+
+    if unknown:
+        run.mark_failed(f'"{city_name}" is not a supported Geo Intelligence city.')
+        return {'status': 'failed', 'reason': 'unsupported_city'}
+
+    cities = {city_name: weather.KAZAKHSTAN_CITIES[city_name]} if city_name else weather.KAZAKHSTAN_CITIES
+    refreshed = {}
+    for name, coords in cities.items():
+        summary = weather.get_city_climate_summary(name, coords['latitude'], coords['longitude'], coords.get('elevation', 0))
+        refreshed[name] = {'available': summary['available'], 'reason': summary.get('reason', '')}
+
+    result_summary = {'cities': refreshed}
+    if any(r['available'] for r in refreshed.values()):
+        run.mark_completed(result_summary)
+        return {'status': 'completed', **result_summary}
+
+    # Every city's live fetch failed (e.g. no network) — an honest failure,
+    # never papered over with fabricated data.
+    run.result_summary = result_summary
+    run.mark_failed('Meteostat fetch unavailable for every requested city — see result_summary.')
+    return {'status': 'failed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='deterministic_test', input_summary=''):
+    """
+    AI Analysis Background Task — reuses the existing, already-complete
+    execution pipeline exactly as-is:
+      create_agent_run -> execute_agent -> submit_agent_position_to_council
+    No duplicate execution architecture. Persists through the real
+    AgentRun/AgentTask/CouncilRun models the AI Agent Workbench already
+    reads — a completed run here is immediately visible there, at
+    /ai-agents/workbench/?case=<case_slug>&agent=<agent_slug>.
+
+    execution_mode='live' is honestly supported: without ANTHROPIC_API_KEY
+    configured it will legitimately end as 'needs_human_review' (missing
+    credentials, not fabricated success) — see agent_runtime_model_router's
+    own adapters, which this task does not modify.
+    """
+    from django.utils.text import slugify
+
+    from ai_agent_council.agents import OPERATIONAL_AGENTS
+    from ai_agent_workbench.services import demo_cases
+    from agent_runtime_model_router.services.execution import (
+        create_agent_run, execute_agent, submit_agent_position_to_council,
+    )
+
+    agent_entry = next((a for a in OPERATIONAL_AGENTS if slugify(a['name']) == agent_slug), None)
+    target_reference = f'ai_agent_workbench.agent:{agent_slug}:{case_slug or ""}'
+    run = _start_run(
+        'ai_analysis', f'{agent_entry["name"] if agent_entry else agent_slug} — {case_slug or "standalone"}',
+        target_reference, self.request,
+        task_kwargs={'agent_slug': agent_slug, 'case_slug': case_slug, 'execution_mode': execution_mode},
+    )
+
+    if agent_entry is None:
+        run.mark_failed(f'"{agent_slug}" is not a real operational agent slug.')
+        return {'status': 'failed', 'reason': 'unknown_agent'}
+
+    demo_case = demo_cases.get_demo_case(case_slug) if case_slug else None
+    council_run = demo_cases.council_run_for_case(demo_case) if demo_case else None
+
+    task_type = f'background_analysis_{agent_slug}'
+    agent_run = create_agent_run(
+        agent_entry['name'], task_type, council_case=council_run, execution_mode=execution_mode,
+        input_summary=input_summary or f'Background analysis requested via Celery task {self.request.id}.',
+    )
+    agent_run = execute_agent(agent_run)
+
+    council_task_id = None
+    if agent_run.status == 'completed' and agent_run.schema_valid and council_run is not None:
+        next_order = council_run.tasks.count() + 1
+        council_task = submit_agent_position_to_council(agent_run, collaboration_mode='solo', order=next_order)
+        council_task_id = council_task.pk
+
+    result_summary = {
+        'agent_run_id': agent_run.pk, 'agent_run_status': agent_run.status,
+        'schema_valid': agent_run.schema_valid, 'safety_status': agent_run.safety_status,
+        'council_task_id': council_task_id,
+    }
+
+    if agent_run.status == 'failed':
+        run.result_summary = result_summary
+        run.mark_failed(agent_run.failure_reason or 'Agent execution failed.')
+        return {'status': 'failed', **result_summary}
+
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}

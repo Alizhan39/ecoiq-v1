@@ -415,12 +415,13 @@ class CompanySource(models.Model):
 # ── CompanyScoreSnapshot ───────────────────────────────────────────────────────
 
 SNAPSHOT_TRIGGER_CHOICES = [
-    ('manual',        'Manual (Admin)'),
-    ('annual_review', 'Annual Review'),
-    ('report_update', 'New Report / Evidence'),
-    ('verification',  'Profile Verification'),
-    ('transition',    'Transition Milestone'),
-    ('seed',          'Initial Seed Score'),
+    ('manual',            'Manual (Admin)'),
+    ('annual_review',     'Annual Review'),
+    ('report_update',     'New Report / Evidence'),
+    ('verification',      'Profile Verification'),
+    ('transition',        'Transition Milestone'),
+    ('seed',              'Initial Seed Score'),
+    ('background_refresh', 'Automated Background Refresh'),
 ]
 
 
