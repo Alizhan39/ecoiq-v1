@@ -588,11 +588,11 @@ class CompanyScoreSnapshotInline(admin.TabularInline):
 @admin.register(CompanyScoreSnapshot)
 class CompanyScoreSnapshotAdmin(admin.ModelAdmin):
     list_display  = ('company_name', 'total_score_display', 'tier_label',
-                     'trigger', 'date', 'notes_short')
+                     'intelligence_score', 'trigger', 'date', 'notes_short')
     list_filter   = ('trigger',)
     search_fields = ('profile__company__name',)
     ordering      = ('-date',)
-    readonly_fields = ('created_at',)
+    readonly_fields = ('created_at', 'intelligence_score_explanation')
     actions       = ['action_snapshot_selected']
 
     def company_name(self, obj):

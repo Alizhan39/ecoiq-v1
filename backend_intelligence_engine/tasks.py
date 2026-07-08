@@ -44,12 +44,18 @@ def company_intelligence_refresh(self, company_profile_id):
     Company Intelligence Refresh — reuses, in order:
       intelligence.compute.check_monitor_target(watch)   — evidence refresh
       companies.scoring.recalculate_and_save(profile)    — score recalculation
+      pandas_scoring_engine...compute_company_intelligence_score(profile) —
+        explainable intelligence-score recalculation, attached to the SAME
+        snapshot below (not a second snapshot) — this is the "company
+        intelligence refresh should be able to trigger score recalculation"
+        connection point.
       CompanyScoreSnapshot.create_from_profile(...)       — intelligence snapshot
     No new scoring or evidence logic is introduced here.
     """
     from companies.models import CompanyProfile, CompanyScoreSnapshot
     from companies.scoring import recalculate_and_save
     from intelligence.compute import check_monitor_target
+    from pandas_scoring_engine.services.scoring import compute_company_intelligence_score
 
     target_reference = f'companies.CompanyProfile:{company_profile_id}'
 
@@ -81,15 +87,17 @@ def company_intelligence_refresh(self, company_profile_id):
     recalculate_and_save(profile)
     profile.refresh_from_db()
 
+    intelligence_scores = compute_company_intelligence_score(profile)
     snapshot = CompanyScoreSnapshot.create_from_profile(
         profile, trigger='background_refresh',
         notes=f'Automated background refresh (Celery task {self.request.id}).',
+        intelligence_scores=intelligence_scores,
     )
 
     result_summary = {
         'score_before': score_before, 'score_after': profile.ecoiq_total_score,
         'watches_checked': watches_checked, 'watches_changed': watches_changed,
-        'snapshot_id': snapshot.pk,
+        'snapshot_id': snapshot.pk, 'intelligence_score': intelligence_scores['intelligence_score'],
     }
     run.mark_completed(result_summary)
 
@@ -296,5 +304,53 @@ def refresh_evidence_memory(self, company_profile_id, limit=50):
             failed += 1
 
     result_summary = {'evidence_processed': embedded + failed, 'embedded': embedded, 'failed': failed}
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def recalculate_scores_background(self, company_profile_id=None, limit=25):
+    """
+    Intelligence Score Recalculation — reuses pandas_scoring_engine.services.
+    scoring.compute_company_intelligence_score() exactly as the management
+    command does, and records each result as a new CompanyScoreSnapshot (not
+    a new/duplicate scoring model). `limit` bounds the batch when no single
+    company_profile_id is given (cost control — never "every company" by
+    accident; matches recalculate_ecoiq_scores' own default).
+    """
+    from companies.models import CompanyProfile, CompanyScoreSnapshot
+    from pandas_scoring_engine.services.scoring import compute_company_intelligence_score
+
+    if company_profile_id is not None:
+        queryset = CompanyProfile.objects.filter(pk=company_profile_id).select_related('company')
+        target_reference = f'companies.CompanyProfile:{company_profile_id}'
+        target_repr_default = f'CompanyProfile #{company_profile_id}'
+    else:
+        queryset = CompanyProfile.objects.filter(status__in=('public', 'verified')).select_related('company')[:limit]
+        target_reference = f'companies.CompanyProfile:batch:{limit}'
+        target_repr_default = f'Batch of up to {limit} companies'
+
+    run = _start_run(
+        'intelligence_score_recalculation', target_repr_default, target_reference, self.request,
+        task_kwargs={'company_profile_id': company_profile_id, 'limit': limit},
+    )
+
+    if company_profile_id is not None and not queryset.exists():
+        run.mark_failed(f'CompanyProfile {company_profile_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    processed, snapshot_ids = 0, []
+    for profile in queryset:
+        scores = compute_company_intelligence_score(profile)
+        snapshot = CompanyScoreSnapshot.create_from_profile(
+            profile, trigger='intelligence_score_recalc',
+            notes=f'Background recalculation (Celery task {self.request.id}).',
+            intelligence_scores=scores,
+        )
+        snapshot_ids.append(snapshot.pk)
+        processed += 1
+
+    result_summary = {'companies_processed': processed, 'snapshot_ids': snapshot_ids}
     run.mark_completed(result_summary)
     return {'status': 'completed', **result_summary}
