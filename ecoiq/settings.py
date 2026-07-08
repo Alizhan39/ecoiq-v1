@@ -198,6 +198,10 @@ INSTALLED_APPS = [
     # (presentation-only: reuses the registry, runtime and Council models above)
     'ai_agent_workbench',
 
+    # Geo-spatial climate intelligence: company/asset locations, climate risk
+    # zones and investment opportunities on an interactive map (Phase 1: Kazakhstan)
+    'geo_intelligence',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 

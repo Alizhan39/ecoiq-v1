@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Geo Intelligence — Kazakhstan{% endblock %}
+{% block meta_description_content %}See where climate risk, infrastructure exposure and investment opportunity exist across Kazakhstan on an interactive EcoIQ map.{% endblock %}
+
+{% block content %}
+<div class="gi-wrap">
+
+  <div class="gi-hero">
+    <span class="gi-eyebrow">ECOIQ GEO INTELLIGENCE</span>
+    <h1 class="gi-h1">Understand where risk, opportunity and impact exist.</h1>
+    <form method="get" class="gi-search-row">
+      <input type="text" name="q" class="gi-search-input" value="{{ query }}" placeholder="Search company, city, region or asset…">
+      <button type="submit" class="gi-btn gi-btn-primary">Search →</button>
+    </form>
+    <div class="gi-quick-actions">
+      <a class="gi-chip" href="?layer=climate_risk">Explore Climate Risk</a>
+      <a class="gi-chip" href="?layer=investment">Find Investment Opportunities</a>
+      <a class="gi-chip" href="?risk_level=high">Modernisation Priorities</a>
+      <a class="gi-chip" href="?layer=companies">Infrastructure Exposure</a>
+      <a class="gi-chip" href="{% url 'khalifa_stewardship_tour_operating_system:tour_detail' 'kazakhstan-clean-heat' %}">Stewardship Impact</a>
+    </div>
+    <p class="gi-proof-strip"><strong>{{ asset_count }}</strong> assets · <strong>{{ risk_zone_count }}</strong> risk zones · <strong>{{ opportunity_count }}</strong> investment opportunities</p>
+  </div>
+
+  <div class="gi-workspace">
+    <aside class="gi-filters">
+      <p class="gi-filters-title">Filters</p>
+      <form method="get">
+        <input type="hidden" name="q" value="{{ query }}">
+        <label class="gi-label">Region</label>
+        <select name="region" class="gi-select" onchange="this.form.submit()">
+          <option value="">All regions</option>
+          {% for r in all_regions %}
+          <option value="{{ r }}" {% if region_filter == r %}selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select>
+
+        <label class="gi-label">Intelligence layer</label>
+        <select name="layer" class="gi-select" onchange="this.form.submit()">
+          <option value="">All layers</option>
+          <option value="companies" {% if layer_filter == 'companies' %}selected{% endif %}>Companies &amp; Assets</option>
+          <option value="climate_risk" {% if layer_filter == 'climate_risk' %}selected{% endif %}>Climate Risk</option>
+          <option value="investment" {% if layer_filter == 'investment' %}selected{% endif %}>Investment Opportunities</option>
+        </select>
+
+        <label class="gi-label">Risk / opportunity level</label>
+        <select name="risk_level" class="gi-select" onchange="this.form.submit()">
+          <option value="">Any level</option>
+          <option value="low" {% if risk_level_filter == 'low' %}selected{% endif %}>Low</option>
+          <option value="medium" {% if risk_level_filter == 'medium' %}selected{% endif %}>Medium</option>
+          <option value="high" {% if risk_level_filter == 'high' %}selected{% endif %}>High</option>
+        </select>
+        <noscript><button type="submit" class="gi-btn" style="margin-top:0.75rem;">Apply</button></noscript>
+      </form>
+      {% if region_filter or layer_filter or risk_level_filter or query %}
+      <a class="gi-clear" href="{% url 'geo_intelligence:command_centre' %}">Clear filters</a>
+      {% endif %}
+    </aside>
+
+    <div class="gi-map-panel">
+      {{ map_html|safe }}
+    </div>
+
+    <aside class="gi-panel">
+      <p class="gi-panel-title">Dynamic Intelligence Panel</p>
+
+      {% if opportunities %}
+      <p class="gi-section-label">Investment Opportunities ({{ opportunities|length }})</p>
+      {% for opp in opportunities %}
+      <div class="gi-card">
+        <div class="gi-card-row">
+          <strong>{{ opp.title }}</strong>
+          {% if opp.is_demo %}<span class="iq-badge iq-badge-note">Demo Data</span>{% endif %}
+        </div>
+        <p class="gi-card-sub">{{ opp.opportunity_type_display }} · {{ opp.region }}</p>
+        {% if opp.estimated_impact %}<p class="gi-card-p">{{ opp.estimated_impact }}</p>{% endif %}
+        <div class="gi-chip-row">
+          <span class="gi-chip-sm">Score: {% if opp.investment_score is not None %}{{ opp.investment_score|floatformat:0 }}/100{% else %}not yet measured{% endif %}</span>
+          <span class="gi-chip-sm">Risk: {{ opp.risk_level_display }}</span>
+          {% if opp.confidence %}<span class="gi-chip-sm">Confidence: {{ opp.confidence|floatformat:0 }}%</span>{% endif %}
+        </div>
+        {% if opp.recommended_action %}<p class="gi-card-action">→ {{ opp.recommended_action }}</p>{% endif %}
+        <div class="gi-card-actions">
+          {% if opp.workbench_case_slug %}
+          <a class="gi-btn gi-btn-primary" href="{% url 'ai_agent_workbench:workbench' %}?case={{ opp.workbench_case_slug }}&agent={{ opp.workbench_agent_slug }}">Analyse with EcoIQ AI</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if risk_zones %}
+      <p class="gi-section-label">Climate Risk Zones ({{ risk_zones|length }})</p>
+      {% for zone in risk_zones %}
+      <div class="gi-card">
+        <div class="gi-card-row">
+          <strong>{{ zone.name }}</strong>
+          {% if zone.is_demo %}<span class="iq-badge iq-badge-note">Demo Data</span>{% endif %}
+        </div>
+        <p class="gi-card-sub">{{ zone.risk_type_display }} · {{ zone.region }}</p>
+        <div class="gi-chip-row">
+          <span class="iq-badge {% if zone.severity == 'high' %}iq-badge-blocked{% elif zone.severity == 'medium' %}iq-badge-review{% else %}iq-badge-verified{% endif %}">{{ zone.severity_display }}</span>
+          {% if zone.confidence %}<span class="gi-chip-sm">Confidence: {{ zone.confidence|floatformat:0 }}%</span>{% endif %}
+        </div>
+        <p class="gi-card-sub">Source: {{ zone.source|default:"—" }}</p>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if assets %}
+      <p class="gi-section-label">Companies &amp; Assets ({{ assets|length }})</p>
+      {% for asset in assets %}
+      <div class="gi-card">
+        <div class="gi-card-row">
+          <strong>{{ asset.name }}</strong>
+          {% if asset.is_demo %}<span class="iq-badge iq-badge-note">Demo Data</span>{% endif %}
+        </div>
+        <p class="gi-card-sub">{{ asset.asset_type_display }}{% if asset.region %} · {{ asset.region }}{% endif %}</p>
+        <div class="gi-chip-row">
+          <span class="gi-chip-sm">Modernisation: {{ asset.modernisation_priority_display }}</span>
+          <span class="gi-chip-sm">Climate exposure: {% if asset.climate_exposure_score is not None %}{{ asset.climate_exposure_score|floatformat:0 }}/100{% else %}not yet measured{% endif %}</span>
+        </div>
+        <div class="gi-card-actions">
+          {% if asset.workbench_case_slug %}
+          <a class="gi-btn gi-btn-primary" href="{% url 'ai_agent_workbench:workbench' %}?case={{ asset.workbench_case_slug }}&agent={{ asset.workbench_agent_slug }}">Analyse with EcoIQ AI</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if not assets and not risk_zones and not opportunities %}
+      <p class="gi-card-p">No results for the current filters.</p>
+      {% endif %}
+    </aside>
+  </div>
+
+  <section class="gi-section">
+    <h2 class="gi-h2">Climate Trend — Almaty Region</h2>
+    {% if almaty_climate.available %}
+    <div class="gi-score-row">
+      <div class="gi-score-card">
+        <p class="gi-score-label">Average temperature</p>
+        <p class="gi-score-value">{{ almaty_climate.avg_temp_current_year }}°C</p>
+        <p class="gi-card-sub">{{ almaty_climate.years.1 }} (was {{ almaty_climate.avg_temp_previous_year }}°C in {{ almaty_climate.years.0 }})</p>
+      </div>
+      <div class="gi-score-card">
+        <p class="gi-score-label">Extreme heat days</p>
+        <p class="gi-score-value">{{ almaty_climate.extreme_heat_days_current_year }}</p>
+        <p class="gi-card-sub">{{ almaty_climate.years.1 }} (was {{ almaty_climate.extreme_heat_days_previous_year }} in {{ almaty_climate.years.0 }})</p>
+      </div>
+      <div class="gi-score-card">
+        <p class="gi-score-label">Precipitation</p>
+        <p class="gi-score-value">{{ almaty_climate.precipitation_current_year_mm|floatformat:0 }}mm</p>
+        <p class="gi-card-sub">{{ almaty_climate.years.1 }} (was {{ almaty_climate.precipitation_previous_year_mm|floatformat:0 }}mm in {{ almaty_climate.years.0 }})</p>
+      </div>
+    </div>
+    <p class="gi-source-note">Source: {{ almaty_climate.source }} — real historical station data, fetched live and cached for 24 hours.</p>
+    {% else %}
+    <p class="gi-card-p">Climate data temporarily unavailable ({{ almaty_climate.reason }}). Never fabricated — shown honestly as unavailable rather than estimated.</p>
+    {% endif %}
+  </section>
+
+  <section class="gi-section">
+    <h2 class="gi-h2">What should I do next?</h2>
+    <div class="gi-next-actions">
+      <a class="gi-next-action" href="{% url 'ai_agent_workbench:workbench' %}?case=kazakhstan-clean-heat&agent=research-agent">Analyse with EcoIQ AI →<span>Open the AI Agent Workbench for the Kazakhstan Clean Heat case.</span></a>
+      <a class="gi-next-action" href="{% url 'khalifa_stewardship_tour_operating_system:tour_detail' 'kazakhstan-clean-heat' %}">View Stewardship Tour →<span>Full agent chain, Council decision and launch readiness.</span></a>
+      <a class="gi-next-action" href="{% url 'ai_agent_workbench:directory' %}">Explore all 12 AI agents →<span>The full EcoIQ agent directory.</span></a>
+    </div>
+  </section>
+
+</div>
+
+{% include 'geo_intelligence/_styles.html' %}
+{% endblock %}
