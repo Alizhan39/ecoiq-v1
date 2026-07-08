@@ -44,3 +44,15 @@ matplotlib>=3.7
 # Later: langgraph (agent workflow), pyvis (graph rendering), instructor (structured
 # LLM output), pycasbin (policy engine), semgrep/tree-sitter (legacy code scanning).
 networkx>=3.2
+
+# ── EcoIQ Geo Intelligence (Phase 1 — Kazakhstan) ─────────────────────────────
+# Plain lat/lng FloatFields on regular Django models — no GeoDjango/PostGIS.
+# geopandas/shapely: spatial joins, buffers, projected-distance calculations.
+# folium: server-rendered interactive Leaflet map, embedded as static HTML.
+# meteostat: real historical weather (pinned to the mature 1.x API — the 2.x
+# line is a very recent rewrite with a different, less battle-tested API).
+# rasterio intentionally NOT added yet — no raster dataset exists to justify it.
+geopandas>=1.1
+shapely>=2.1
+folium>=0.20
+meteostat==1.7.6

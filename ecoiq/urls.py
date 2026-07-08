@@ -193,6 +193,9 @@ urlpatterns = [
     # EcoIQ Khalifa Stewardship Tour Operating System — the mission layer: AI-planned, human-led, financed and verified stewardship tours
     path('khalifa-tour-operating-system/', include('khalifa_stewardship_tour_operating_system.urls', namespace='khalifa_stewardship_tour_operating_system')),
 
+    # EcoIQ Geo Intelligence — geo-spatial climate/risk/investment map (Phase 1: Kazakhstan)
+    path('geo-intelligence/', include('geo_intelligence.urls', namespace='geo_intelligence')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
