@@ -67,3 +67,24 @@ meteostat==1.7.6
 celery>=5.6
 redis>=8.0
 httpx>=0.28
+
+# ── EcoIQ Evidence Memory + Vector Search (Phase 1) ───────────────────────────
+# Separate from, and does not complete, the older incomplete company-search
+# scaffold above (build_embeddings.py / api/views.py semantic_search) — that
+# one embeds one vector per league.Company via sentence-transformers (a real
+# ML model, still commented out, untouched here). This feature embeds
+# individual evidence/finding text chunks, one row per chunk, and deliberately
+# does NOT add sentence-transformers/torch: embeddings are produced by
+# scikit-learn's HashingVectorizer (already a dependency, stateless, no
+# training/model weights) — a real, deterministic vectorization, not a
+# fabricated one, chosen specifically to satisfy "no new ML models" in Phase 1.
+#
+# pgvector.django.VectorField works transparently on SQLite too (confirmed:
+# stores/reads a plain list, no crash) — only the actual similarity-search SQL
+# functions (CosineDistance etc.) are Postgres-only, so evidence_memory's
+# search service branches on connection.vendor with a real (if slower) Python
+# fallback for SQLite/tests. VectorExtension() safely no-ops on non-Postgres
+# backends (it's Django's own django.contrib.postgres.operations.CreateExtension
+# under the hood, which checks connection.vendor itself) — confirmed empirically
+# against a local PostgreSQL 17 + pgvector 0.8.4 instance and against SQLite.
+pgvector>=0.5

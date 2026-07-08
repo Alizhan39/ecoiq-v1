@@ -24,6 +24,7 @@ class BackgroundTaskRun(models.Model):
         ('company_intelligence_refresh', 'Company Intelligence Refresh'),
         ('geo_intelligence_refresh', 'Geo Intelligence Refresh'),
         ('ai_analysis', 'AI Analysis'),
+        ('evidence_memory_refresh', 'Evidence Memory Refresh'),
     ]
     STATUS_CHOICES = [
         ('queued', 'Queued'),
