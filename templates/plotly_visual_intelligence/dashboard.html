@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}EcoIQ Intelligence Dashboard{% endblock %}
+{% block meta_description_content %}The visual decision-intelligence layer over EcoIQ's scoring, evidence, geo and analytics engines — what's happening, where the risk and opportunity are, and what to do next.{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+NOT defer: each chart fragment below embeds an inline <script>Plotly.newPlot(...)</script>
+that runs synchronously as the parser reaches it, so plotly.min.js must have already
+executed by then — a deferred/async load would race the very first chart.
+{% endcomment %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="eid-wrap">
+  <span class="eid-badge">EcoIQ Intelligence Dashboard</span>
+  <h1 class="eid-title">Decision Intelligence Command Centre</h1>
+  <p class="eid-subtitle">What is happening, where risk and opportunity exist, why EcoIQ produced a score, what the agents discovered, how confident EcoIQ is, and what should happen next — all from real, already-computed intelligence.</p>
+
+  <form method="get" class="eid-entity-form">
+    <label for="eid-company-select" style="font-size:0.8rem;color:var(--eid-muted);">Focus company:</label>
+    <select id="eid-company-select" name="company_id" class="eid-select" onchange="this.form.submit()">
+      {% for choice in company_choices %}
+      <option value="{{ choice.id }}" {% if focus_profile.pk == choice.id %}selected{% endif %}>{{ choice.name }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button type="submit" class="eid-btn">Go</button></noscript>
+  </form>
+
+  <section class="eid-section" style="margin-top:0;padding-top:0;border-top:none;">
+    <h2 class="eid-h2">1. Intelligence overview</h2>
+    <div class="eid-kpi-row">
+      {% for card in kpi_cards %}
+      <div class="eid-kpi-card">
+        <p class="eid-kpi-label">{{ card.label }}</p>
+        {% if card.available %}
+        <p class="eid-kpi-value">{{ card.value|floatformat:1 }}{{ card.unit }}</p>
+        {% else %}
+        <p class="eid-kpi-value unavailable">Not yet measured</p>
+        {% endif %}
+        {% if card.link %}<a class="eid-kpi-link" href="{{ card.link }}">View →</a>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="eid-section">
+    <h2 class="eid-h2">2. Why this score — explainable contribution chart</h2>
+    <p class="eid-section-note">Every bar is a real component already computed and stored by the Pandas Scoring Engine — input → normalized score → weight → contribution to the final score.</p>
+    {% if score_chart %}
+    <div class="eid-panel">
+      <div class="eid-chart-container">{{ score_chart.html|safe }}</div>
+    </div>
+    {% else %}
+    <div class="eid-empty">No intelligence score explanation available yet for {{ focus_profile.company.name|default:"this company" }}.</div>
+    {% endif %}
+  </section>
+
+  <section class="eid-section">
+    <h2 class="eid-h2">3. Risk vs opportunity matrix</h2>
+    <p class="eid-section-note">Only companies with both a real climate risk score and a real investment opportunity score are plotted — marker size = modernisation priority, color = confidence, diamond = statistical outlier.</p>
+    {% if risk_opportunity_chart %}
+    <div class="eid-panel">
+      <div class="eid-chart-container">{{ risk_opportunity_chart.html|safe }}</div>
+      <p class="eid-section-note" style="margin:0.5rem 0 0;">{{ risk_opportunity_chart.count }} of {{ risk_opportunity_chart.total_candidates }} scored companies have both dimensions available.</p>
+    </div>
+    {% else %}
+    <div class="eid-empty">No company yet has both a real climate risk score and a real investment opportunity score — Geo Intelligence's Phase 1 coverage is Kazakhstan-only, so this fills in as more companies gain a real country-level link.</div>
+    {% endif %}
+  </section>
+
+  <div class="eid-grid-2">
+    <section class="eid-section" id="eid-similarity-section">
+      <h2 class="eid-h2">4. Most similar companies</h2>
+      <p class="eid-section-note">sklearn.neighbors.NearestNeighbors over standardized EcoIQ pillar scores — never invented.</p>
+      {% if similarity_chart %}
+      <div class="eid-panel"><div class="eid-chart-container">{{ similarity_chart.html|safe }}</div></div>
+      {% else %}
+      <div class="eid-empty">Not enough comparable companies yet.</div>
+      {% endif %}
+    </section>
+
+    <section class="eid-section">
+      <h2 class="eid-h2">5. Climate risk clusters</h2>
+      <p class="eid-section-note">sklearn.cluster.KMeans over country-level Geo Intelligence data.</p>
+      {% if cluster_chart %}
+      <div class="eid-panel"><div class="eid-chart-container">{{ cluster_chart.html|safe }}</div></div>
+      {% else %}
+      <div class="eid-empty">Fewer than 3 countries have real Geo Intelligence climate data yet — clustering would be meaningless, so this honestly shows nothing rather than a fabricated grouping.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="eid-section">
+    <h2 class="eid-h2">6. Evidence intelligence</h2>
+    <p class="eid-section-note">
+      Memory coverage: {{ evidence_context.companies_with_memory }} of {{ evidence_context.total_companies }} companies
+      {% if evidence_context.coverage_pct %}({{ evidence_context.coverage_pct }}%){% endif %} have at least one Evidence Memory record.
+    </p>
+    <div class="eid-coverage-bar"><div class="eid-coverage-fill" style="width:{{ evidence_context.coverage_pct|default:0 }}%;"></div></div>
+    <div class="eid-grid-2" style="margin-top:1rem;">
+      <div>
+        {% if evidence_chart %}
+        <div class="eid-panel"><div class="eid-chart-container">{{ evidence_chart.html|safe }}</div></div>
+        {% else %}
+        <div class="eid-empty">No Evidence Memory records with a confidence value exist yet.</div>
+        {% endif %}
+      </div>
+      <div>
+        {% if evidence_chart.by_source_html %}
+        <div class="eid-panel"><div class="eid-chart-container">{{ evidence_chart.by_source_html|safe }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="eid-section">
+    <h2 class="eid-h2">7. AI orchestration trace</h2>
+    <p class="eid-section-note">
+      {% if orchestration_chart %}
+        A real, already-completed LangGraph run — never a simulated "live" animation. Grey = skipped by routing (a genuine outcome, e.g. a country target never runs company scoring), green = executed, red = failed.
+      {% endif %}
+    </p>
+    {% if orchestration_chart %}
+    <div class="eid-panel">
+      <div class="eid-chart-container">{{ orchestration_chart.html|safe }}</div>
+      <a class="eid-btn" style="margin-top:0.6rem;" href="{% url 'ai_agent_workbench:orchestration_detail' focus_run.pk %}">View full orchestration result →</a>
+    </div>
+    {% else %}
+    <div class="eid-empty">No LangGraph orchestration run has completed yet.</div>
+    {% endif %}
+  </section>
+
+  <section class="eid-section">
+    <h2 class="eid-h2">8. Recommendations</h2>
+    {% if recommendations_result and recommendations_result.available %}
+      <div class="eid-action-row" style="margin-bottom:1rem;">
+        <a class="eid-btn eid-btn-primary" href="{% url 'ai_agent_workbench:workbench' %}">Analyse with EcoIQ AI</a>
+        <a class="eid-btn" href="{% url 'ai_agent_workbench:directory' %}">Open in AI Workbench</a>
+        <a class="eid-btn" href="{% url 'geo_intelligence:command_centre' %}">View Geo Intelligence</a>
+        <a class="eid-btn" href="/admin/evidence_memory/evidencememory/?company__id__exact={{ focus_profile.pk }}">View Evidence</a>
+        <a class="eid-btn" href="#eid-similarity-section">Compare Similar Entities</a>
+      </div>
+      {% for rec in recommendations_result.recommendations %}
+      <div class="eid-rec-card">
+        <p class="eid-rec-type">{{ rec.type|default:"finding" }}</p>
+        <p class="eid-rec-summary">{{ rec.summary }}</p>
+        {% if rec.basis %}<p class="eid-rec-basis">Why: {{ rec.basis }}</p>{% endif %}
+        {% if rec.ai_agent_workbench_suggestion %}
+        <div class="eid-action-row">
+          <a class="eid-btn" href="{{ rec.ai_agent_workbench_suggestion.workbench_url }}">Ask {{ rec.ai_agent_workbench_suggestion.recommended_agent }} →</a>
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div class="eid-empty">No recommendations yet for this company.</div>
+      {% endfor %}
+    {% else %}
+    <div class="eid-empty">Select a company above to see recommendations.</div>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'plotly_visual_intelligence/_styles.html' %}
+{% endblock %}

@@ -98,3 +98,14 @@ pgvector>=0.5
 # create_agent_run/execute_agent pipeline the Backend Intelligence Engine
 # already uses.
 langgraph>=1.0
+
+# ── EcoIQ Plotly Visual Intelligence (Phase 1) ────────────────────────────────
+# Chart.js (CDN) is the platform's existing de-facto charting library
+# (companies/league/audit/intelligence templates) — Plotly is a deliberate,
+# separate choice for this module specifically (explicit requirement), not a
+# replacement. plotly.min.js is vendored locally under static/js/vendor/,
+# matching the existing precedent for large JS libraries (three.min.js /
+# three-globe.min.js are already vendored there rather than CDN-loaded) —
+# whitenoise's CompressedManifestStaticFilesStorage gzips it at collectstatic
+# time the same way.
+plotly>=6.0
