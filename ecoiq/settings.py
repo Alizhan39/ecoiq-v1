@@ -222,6 +222,13 @@ INSTALLED_APPS = [
     # of its own, no dashboards yet (Phase 1)
     'intelligence_analytics_engine',
 
+    # LangGraph Orchestration — coordinates the existing intelligence modules
+    # (Evidence Memory, Geo Intelligence, Pandas Scoring Engine, Intelligence
+    # Analytics Engine, the agent execution pipeline) into one structured
+    # workflow per request. Does not create new agents/runtime — every node
+    # calls an existing service (Phase 1)
+    'langgraph_orchestration',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 

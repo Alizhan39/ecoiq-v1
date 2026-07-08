@@ -88,3 +88,13 @@ httpx>=0.28
 # under the hood, which checks connection.vendor itself) — confirmed empirically
 # against a local PostgreSQL 17 + pgvector 0.8.4 instance and against SQLite.
 pgvector>=0.5
+
+# ── EcoIQ LangGraph Orchestration (Phase 1) ───────────────────────────────────
+# Coordinates existing services (Evidence Memory, Geo Intelligence, Pandas
+# Scoring Engine, Intelligence Analytics Engine, the agent execution
+# pipeline) as nodes in one structured graph per request — does not create a
+# second agent runtime or a new LLM call of its own; every node either calls
+# an existing Django service directly or (for run_agent_analysis) the same
+# create_agent_run/execute_agent pipeline the Backend Intelligence Engine
+# already uses.
+langgraph>=1.0

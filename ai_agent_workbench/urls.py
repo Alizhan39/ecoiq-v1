@@ -13,4 +13,5 @@ urlpatterns = [
     path('council-demo/', views.council_demo, name='council_demo'),
     path('agent/<slug:slug>/', views.agent_profile, name='agent_profile'),
     path('run/<int:run_id>/', views.run_alias, name='run_alias'),
+    path('orchestration/<int:run_id>/', views.orchestration_detail, name='orchestration_detail'),
 ]

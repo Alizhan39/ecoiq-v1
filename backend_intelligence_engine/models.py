@@ -26,6 +26,7 @@ class BackgroundTaskRun(models.Model):
         ('ai_analysis', 'AI Analysis'),
         ('evidence_memory_refresh', 'Evidence Memory Refresh'),
         ('intelligence_score_recalculation', 'Intelligence Score Recalculation'),
+        ('langgraph_intelligence_workflow', 'LangGraph Intelligence Workflow'),
     ]
     STATUS_CHOICES = [
         ('queued', 'Queued'),
