@@ -1,0 +1,48 @@
+<style>
+  :root {
+    --eid-bg: #070b0f; --eid-bg2: #0d1117; --eid-border: rgba(255,255,255,.08);
+    --eid-text: #e2e8f0; --eid-muted: #94a3b8; --eid-acc: #00e89a; --eid-info: #58a6ff;
+    --eid-warn: #f4a261; --eid-danger: #e63946; --eid-purple: #a855f7; --eid-cyan: #06b6d4;
+  }
+  .eid-wrap { max-width: 1280px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--eid-bg); color: var(--eid-text); border-radius: 14px; }
+  .eid-badge { display: inline-block; background: rgba(0,232,154,.12); color: var(--eid-acc); border: 1px solid rgba(0,232,154,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
+  .eid-title { font-size: 2rem; font-weight: 800; margin: 0.4rem 0 0.6rem; color: #fff; letter-spacing: -0.02em; }
+  .eid-subtitle { font-size: 1.02rem; color: var(--eid-muted); margin: 0 0 1.5rem; max-width: 760px; line-height: 1.6; }
+
+  .eid-entity-form { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 1.5rem; }
+  .eid-select { background: var(--eid-bg2); color: var(--eid-text); border: 1px solid var(--eid-border); border-radius: 8px; padding: 0.5rem 0.7rem; font-size: 0.85rem; }
+
+  .eid-kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.9rem; margin-bottom: 2rem; }
+  .eid-kpi-card { background: var(--eid-bg2); border: 1px solid var(--eid-border); border-radius: 12px; padding: 1.1rem 1.3rem; }
+  .eid-kpi-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--eid-muted); }
+  .eid-kpi-value { font-size: 1.65rem; font-weight: 800; color: #fff; margin: 0.3rem 0; }
+  .eid-kpi-value.unavailable { color: var(--eid-muted); font-size: 1rem; font-weight: 600; }
+  .eid-kpi-link { font-size: 0.74rem; color: var(--eid-info); text-decoration: none; }
+
+  .eid-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--eid-border); }
+  .eid-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
+  .eid-section-note { color: var(--eid-muted); font-size: 0.85rem; line-height: 1.6; margin: 0 0 1rem; max-width: 720px; }
+  .eid-panel { background: var(--eid-bg2); border: 1px solid var(--eid-border); border-radius: 10px; padding: 1.1rem 1.3rem; margin-bottom: 0.85rem; }
+  .eid-empty { color: var(--eid-muted); font-size: 0.85rem; padding: 1.5rem; text-align: center; background: var(--eid-bg2); border: 1px dashed var(--eid-border); border-radius: 10px; }
+  .eid-chart-container { width: 100%; overflow-x: auto; }
+
+  .eid-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .eid-grid-2 { grid-template-columns: 1fr; } }
+
+  .eid-rec-card { background: var(--eid-bg2); border: 1px solid var(--eid-border); border-radius: 10px; padding: 1.1rem 1.3rem; margin-bottom: 0.85rem; }
+  .eid-rec-type { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--eid-purple); }
+  .eid-rec-summary { color: #fff; font-size: 0.92rem; margin: 0.3rem 0; }
+  .eid-rec-basis { color: var(--eid-muted); font-size: 0.8rem; margin: 0.2rem 0; }
+  .eid-action-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+  .eid-btn { display: inline-block; padding: 0.4rem 0.8rem; border-radius: 8px; font-weight: 700; font-size: 0.74rem; text-decoration: none; background: rgba(255,255,255,.03); color: var(--eid-text); border: 1px solid var(--eid-border); }
+  .eid-btn-primary { background: var(--eid-acc); color: #06231a; border-color: var(--eid-acc); }
+  .eid-btn:hover { border-color: var(--eid-acc); }
+
+  .eid-coverage-bar { background: rgba(255,255,255,.06); border-radius: 999px; height: 8px; overflow: hidden; margin: 0.5rem 0; }
+  .eid-coverage-fill { height: 100%; background: linear-gradient(90deg, var(--eid-info), var(--eid-acc)); }
+
+  @media (max-width: 720px) {
+    .eid-wrap { padding: 1.5rem 1rem 3rem; }
+    .eid-entity-form { flex-direction: column; align-items: stretch; }
+  }
+</style>

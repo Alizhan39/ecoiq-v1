@@ -229,6 +229,13 @@ INSTALLED_APPS = [
     # calls an existing service (Phase 1)
     'langgraph_orchestration',
 
+    # Plotly Visual Intelligence — the visual decision-intelligence layer over
+    # every module above: KPI overview, explainable score charts, risk/
+    # opportunity matrix, similarity, clusters, evidence distribution and the
+    # LangGraph orchestration trace. No new models — reads existing data only
+    # (Phase 1)
+    'plotly_visual_intelligence',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 

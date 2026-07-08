@@ -196,6 +196,11 @@ urlpatterns = [
     # EcoIQ Geo Intelligence — geo-spatial climate/risk/investment map (Phase 1: Kazakhstan)
     path('geo-intelligence/', include('geo_intelligence.urls', namespace='geo_intelligence')),
 
+    # EcoIQ Intelligence Dashboard — Plotly visual decision-intelligence layer
+    # over Evidence Memory, Geo Intelligence, Pandas Scoring Engine,
+    # Intelligence Analytics Engine and LangGraph Orchestration (Phase 1)
+    path('intelligence-dashboard/', include('plotly_visual_intelligence.urls', namespace='plotly_visual_intelligence')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
