@@ -210,6 +210,12 @@ INSTALLED_APPS = [
     # searchable via pgvector, so agents can reuse prior knowledge (Phase 1)
     'evidence_memory',
 
+    # Pandas Scoring Engine — explainable composite intelligence score
+    # (climate risk, evidence quality, investment opportunity, modernisation
+    # priority, governance/ESG, geo exposure, confidence). No models of its
+    # own — persists onto the existing companies.CompanyScoreSnapshot (Phase 1)
+    'pandas_scoring_engine',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 

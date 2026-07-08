@@ -457,6 +457,23 @@ class CompanyScoreSnapshot(models.Model):
     notes       = models.TextField(blank=True,
                                    help_text='Context — event, data source, milestone')
 
+    # ── EcoIQ Intelligence Score (pandas_scoring_engine, Phase 1) ─────────────
+    # A separate, additive composite — NOT a replacement for the six-pillar
+    # governance/ESG score above (total_score), which remains the one used
+    # for ranking order. Every *_score field is null until a real value has
+    # actually been computed for at least one contributing input; never
+    # fabricated to fill a gap. See pandas_scoring_engine/services/scoring.py
+    # for how each is derived and intelligence_score_explanation for the full
+    # input -> normalized score -> weight -> contribution trace.
+    intelligence_score              = models.FloatField(null=True, blank=True)
+    climate_risk_score              = models.FloatField(null=True, blank=True)
+    evidence_quality_score          = models.FloatField(null=True, blank=True)
+    investment_opportunity_score    = models.FloatField(null=True, blank=True)
+    modernisation_priority_score    = models.FloatField(null=True, blank=True)
+    geo_exposure_score              = models.FloatField(null=True, blank=True)
+    intelligence_confidence         = models.FloatField(null=True, blank=True)
+    intelligence_score_explanation  = models.JSONField(default=dict, blank=True)
+
     created_at  = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -491,9 +508,15 @@ class CompanyScoreSnapshot(models.Model):
         return '#b91c1c'
 
     @classmethod
-    def create_from_profile(cls, profile, trigger='manual', notes=''):
-        """Convenience factory — take current scores from a live profile."""
+    def create_from_profile(cls, profile, trigger='manual', notes='', intelligence_scores=None):
+        """
+        Convenience factory — take current scores from a live profile.
+        intelligence_scores: optional dict from pandas_scoring_engine.services.
+        scoring.compute_company_intelligence_score() — every key is optional,
+        so existing callers that never pass this keep working unchanged.
+        """
         import datetime
+        intelligence_scores = intelligence_scores or {}
         return cls.objects.create(
             profile                  = profile,
             date                     = datetime.date.today(),
@@ -508,6 +531,14 @@ class CompanyScoreSnapshot(models.Model):
             harm_penalty             = profile.harm_penalty,
             moral_label              = profile.moral_label,
             notes                    = notes,
+            intelligence_score             = intelligence_scores.get('intelligence_score'),
+            climate_risk_score             = intelligence_scores.get('climate_risk_score'),
+            evidence_quality_score         = intelligence_scores.get('evidence_quality_score'),
+            investment_opportunity_score   = intelligence_scores.get('investment_opportunity_score'),
+            modernisation_priority_score   = intelligence_scores.get('modernisation_priority_score'),
+            geo_exposure_score              = intelligence_scores.get('geo_exposure_score'),
+            intelligence_confidence         = intelligence_scores.get('confidence'),
+            intelligence_score_explanation  = intelligence_scores.get('explanation', {}),
         )
 
 
