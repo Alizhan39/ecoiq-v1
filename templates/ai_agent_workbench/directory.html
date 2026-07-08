@@ -1,14 +1,32 @@
 {% extends 'base.html' %}
-{% block title %}AI Agent Directory — EcoIQ AI Agent Workbench{% endblock %}
-{% block meta_description_content %}All 12 operational EcoIQ AI agents: purpose, evidence types, versions, golden tests and human approval requirements.{% endblock %}
+{% load agent_icons %}
+{% block title %}EcoIQ Intelligence — AI Agent Directory{% endblock %}
+{% block meta_description_content %}12 specialised EcoIQ AI agents: choose what you want to understand, watch them investigate, and see why a decision happened.{% endblock %}
 
 {% block content %}
 <div class="aiwb-wrap">
-  <a class="aiwb-back" href="{% url 'ai_agent_workbench:workbench' %}">← Open the Workbench</a>
 
-  <span class="aiwb-badge">AI Agent Directory</span>
-  <h1 class="aiwb-title">Meet the EcoIQ AI Agents</h1>
-  <p class="aiwb-subtitle">12 specialised agents investigate evidence, challenge assumptions and help humans make better decisions.</p>
+  <div class="aiwb-hero">
+    <span class="aiwb-hero-eyebrow">EcoIQ Intelligence</span>
+    <h1 class="aiwb-hero-q">What would you like to understand?</h1>
+
+    <form method="get" action="{% url 'ai_agent_workbench:workbench' %}" class="aiwb-hero-form">
+      <input type="text" name="ask" class="aiwb-hero-input"
+             placeholder="Analyse a company, a country, a project — or ask a question in your own words…">
+      <button type="submit" class="aiwb-btn aiwb-btn-primary" style="padding:0 1.4rem;">Ask →</button>
+    </form>
+
+    <div class="aiwb-action-chips">
+      <a class="aiwb-action-chip" href="{% url 'ai_agent_workbench:workbench' %}?case=investment-portfolio">Find Investment Opportunities</a>
+      <a class="aiwb-action-chip" href="{% url 'ai_agent_workbench:workbench' %}?case=meat-cold-chain-loss&agent=waste-leakage-agent">Assess Value at Risk</a>
+      <a class="aiwb-action-chip" href="{% url 'ai_agent_workbench:workbench' %}?case=kazakhstan-clean-heat&agent=research-agent">Explore a Stewardship Case</a>
+      <a class="aiwb-action-chip" href="{% url 'ai_agent_workbench:workbench' %}?case=meat-cold-chain-loss&agent=industrial-playbook-matching-agent">Modernisation Plan</a>
+      <a class="aiwb-action-chip" href="{% url 'ai_agent_workbench:workbench' %}?case=meat-cold-chain-loss&agent=report-generator-agent">Investor Brief</a>
+      <a class="aiwb-action-chip" href="{% url 'ai_agent_workbench:workbench' %}?case=meat-cold-chain-loss&agent=mrv-agent">Verify Findings</a>
+    </div>
+
+    <p class="aiwb-proof-strip"><strong>{{ agent_rows|length }}</strong> operational agents · Agent Council available · Human approval enforced</p>
+  </div>
 
   <div class="aiwb-pipeline">
     {% for stage in pipeline_stages %}
@@ -16,14 +34,22 @@
     {% endfor %}
   </div>
 
+  <h2 class="aiwb-h2" style="margin-top:2rem;">Meet the 12 specialised agents</h2>
+  <p class="aiwb-subtitle" style="margin-bottom:1.4rem;">Every agent below is real and testable — pick one directly, or let a question above find the right one for you.</p>
+
   <div class="aiwb-grid">
     {% for row in agent_rows %}
-    <div class="aiwb-card">
-      <div class="aiwb-card-head">
-        <span class="aiwb-card-number">#{{ row.number }}</span>
-        <span class="iq-badge {% if row.status == 'Operational' %}iq-badge-verified{% elif row.status == 'Human Review Required' %}iq-badge-review{% else %}iq-badge-note{% endif %}">{{ row.status }}</span>
+    <div class="aiwb-card aiwb-reveal">
+      <div class="aiwb-card-top">
+        <span class="aiwb-avatar">{% agent_icon_for_name row.name 44 %}</span>
+        <div style="flex:1;min-width:0;">
+          <div class="aiwb-card-head" style="margin-bottom:0.15rem;">
+            <span class="aiwb-card-number">#{{ row.number }}</span>
+            <span class="iq-badge {% if row.status == 'Operational' %}iq-badge-verified{% elif row.status == 'Human Review Required' %}iq-badge-review{% else %}iq-badge-note{% endif %}">{{ row.status }}</span>
+          </div>
+          <h3 class="aiwb-card-name" style="margin:0;">{{ row.name }}</h3>
+        </div>
       </div>
-      <h2 class="aiwb-card-name">{{ row.name }}</h2>
       <p class="aiwb-card-role">{{ row.role }}</p>
       {% if row.main_question %}<p class="aiwb-card-question">“{{ row.main_question }}”</p>{% endif %}
 

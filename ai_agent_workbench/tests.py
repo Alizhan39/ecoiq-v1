@@ -59,6 +59,25 @@ class AgentDirectoryTests(TestCase):
         resp = self.client.get(reverse('ai_agent_workbench:agent_profile', args=['not-a-real-agent']))
         self.assertEqual(resp.status_code, 404)
 
+    def test_directory_is_action_first_command_centre(self):
+        resp = self.client.get(reverse('ai_agent_workbench:directory'))
+        body = resp.content.decode()
+        self.assertContains(resp, 'What would you like to understand?')
+        # Six real action chips, each deep-linking into a real agent/case combination.
+        for chip in (
+            'Find Investment Opportunities', 'Assess Value at Risk', 'Explore a Stewardship Case',
+            'Modernisation Plan', 'Investor Brief', 'Verify Findings',
+        ):
+            self.assertIn(chip, body)
+        # Every agent card carries a distinct abstract avatar (no emoji, no generic icon reuse).
+        self.assertEqual(body.count('class="aiwb-avatar"'), 12)
+
+    def test_directory_avatars_all_render_without_template_leak(self):
+        resp = self.client.get(reverse('ai_agent_workbench:directory'))
+        body = resp.content.decode()
+        self.assertFalse(TEMPLATE_LEAK_RE.search(body))
+        self.assertIn('<svg', body)
+
 
 class WorkbenchTests(TestCase):
     @classmethod
@@ -160,6 +179,32 @@ class WorkbenchTests(TestCase):
         self.assertContains(resp, 'Leakage Agent')
         self.assertContains(resp, 'nothing runs automatically')
 
+    def test_simple_advanced_toggle_present_and_technical_detail_gated(self):
+        resp = self.client.get(
+            reverse('ai_agent_workbench:workbench'),
+            {'case': 'meat-cold-chain-loss', 'agent': 'waste-leakage-agent'},
+        )
+        body = resp.content.decode()
+        self.assertIn('data-aiwb-mode="simple"', body)
+        self.assertIn('data-aiwb-mode="advanced"', body)
+        # Model routing / training-pack hash / cost sit behind the Advanced toggle,
+        # not shown by default to a non-technical visitor.
+        self.assertIn('data-aiwb-advanced-only', body)
+        self.assertIn('Model routing', body)
+
+    def test_agent_pipeline_map_shows_every_agent_in_the_case_honestly(self):
+        resp = self.client.get(
+            reverse('ai_agent_workbench:workbench'), {'case': 'meat-cold-chain-loss'},
+        )
+        body = resp.content.decode()
+        # Replaying real, already-completed governed runs — never a false "live" claim.
+        self.assertIn('Replaying the governed agent sequence', body)
+        from django.utils.html import escape
+        from ai_agent_workbench.services import demo_cases
+        case = demo_cases.get_demo_case('meat-cold-chain-loss')
+        for name in case['agents_involved']:
+            self.assertIn(escape(name), body)
+
 
 class CouncilDemoAndPresentationTests(TestCase):
     @classmethod
@@ -234,6 +279,13 @@ class HomepageIntegrationTests(TestCase):
         from ai_agent_council.agents import OPERATIONAL_AGENTS
         resp = self.client.get(reverse('home'))
         self.assertContains(resp, f'{len(OPERATIONAL_AGENTS)} operational agents')
+
+    def test_global_nav_has_ask_ecoiq_ai_entry_point(self):
+        # The AI agents must be reachable from anywhere on the platform, not just the homepage.
+        for url in (reverse('home'), '/about/', '/pricing/'):
+            resp = self.client.get(url)
+            self.assertContains(resp, 'Ask EcoIQ AI')
+            self.assertContains(resp, '/ai-agents/')
 
 
 class ProductPageIntegrationTests(TestCase):
