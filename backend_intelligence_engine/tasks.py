@@ -152,7 +152,8 @@ def geo_intelligence_refresh(self, city_name=None):
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
              max_retries=2, retry_jitter=True)
-def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='deterministic_test', input_summary=''):
+def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='deterministic_test', input_summary='',
+                     company_profile_id=None, country_slug=None):
     """
     AI Analysis Background Task — reuses the existing, already-complete
     execution pipeline exactly as-is:
@@ -166,6 +167,13 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     configured it will legitimately end as 'needs_human_review' (missing
     credentials, not fabricated success) — see agent_runtime_model_router's
     own adapters, which this task does not modify.
+
+    Evidence Memory integration: relevant prior memory (scoped to
+    company_profile_id/country_slug when given) is retrieved and appended to
+    input_summary BEFORE execute_agent runs, so it genuinely reaches the
+    agent's prompt (see build_agent_instruction, which builds the prompt
+    directly from input_summary) — not decoration, real context. On success,
+    the finding is saved back to memory so the next run has more to draw on.
     """
     from django.utils.text import slugify
 
@@ -174,26 +182,49 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     from agent_runtime_model_router.services.execution import (
         create_agent_run, execute_agent, submit_agent_position_to_council,
     )
+    from evidence_memory.services.memory import create_memory_from_agent_run, search_similar
 
     agent_entry = next((a for a in OPERATIONAL_AGENTS if slugify(a['name']) == agent_slug), None)
     target_reference = f'ai_agent_workbench.agent:{agent_slug}:{case_slug or ""}'
     run = _start_run(
         'ai_analysis', f'{agent_entry["name"] if agent_entry else agent_slug} — {case_slug or "standalone"}',
         target_reference, self.request,
-        task_kwargs={'agent_slug': agent_slug, 'case_slug': case_slug, 'execution_mode': execution_mode},
+        task_kwargs={
+            'agent_slug': agent_slug, 'case_slug': case_slug, 'execution_mode': execution_mode,
+            'company_profile_id': company_profile_id, 'country_slug': country_slug,
+        },
     )
 
     if agent_entry is None:
         run.mark_failed(f'"{agent_slug}" is not a real operational agent slug.')
         return {'status': 'failed', 'reason': 'unknown_agent'}
 
+    company = None
+    if company_profile_id is not None:
+        from companies.models import CompanyProfile
+        company = CompanyProfile.objects.filter(pk=company_profile_id).first()
+    country = None
+    if country_slug:
+        from countries.models import CountryProfile
+        country = CountryProfile.objects.filter(slug=country_slug).first()
+
     demo_case = demo_cases.get_demo_case(case_slug) if case_slug else None
     council_run = demo_cases.council_run_for_case(demo_case) if demo_case else None
+
+    base_input = input_summary or f'Background analysis requested via Celery task {self.request.id}.'
+    memory_query = input_summary or (demo_case['question'] if demo_case else agent_entry['name'])
+    relevant_memories = search_similar(memory_query, top_k=3, company=company, country=country)
+    memory_ids = [m.pk for m in relevant_memories]
+    if relevant_memories:
+        memory_context = '\n'.join(f'- {m.text_chunk}' for m in relevant_memories)
+        full_input_summary = f'{base_input}\n\nRelevant prior evidence (from EcoIQ memory):\n{memory_context}'
+    else:
+        full_input_summary = base_input
 
     task_type = f'background_analysis_{agent_slug}'
     agent_run = create_agent_run(
         agent_entry['name'], task_type, council_case=council_run, execution_mode=execution_mode,
-        input_summary=input_summary or f'Background analysis requested via Celery task {self.request.id}.',
+        input_summary=full_input_summary,
     )
     agent_run = execute_agent(agent_run)
 
@@ -203,10 +234,15 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
         council_task = submit_agent_position_to_council(agent_run, collaboration_mode='solo', order=next_order)
         council_task_id = council_task.pk
 
+    memory_saved_id = None
+    if agent_run.status in ('completed', 'needs_human_review') and agent_run.parsed_output:
+        memory_saved_id = create_memory_from_agent_run(agent_run, company=company, country=country).pk
+
     result_summary = {
         'agent_run_id': agent_run.pk, 'agent_run_status': agent_run.status,
         'schema_valid': agent_run.schema_valid, 'safety_status': agent_run.safety_status,
         'council_task_id': council_task_id,
+        'memories_retrieved': memory_ids, 'memory_saved_id': memory_saved_id,
     }
 
     if agent_run.status == 'failed':
@@ -214,5 +250,51 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
         run.mark_failed(agent_run.failure_reason or 'Agent execution failed.')
         return {'status': 'failed', **result_summary}
 
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def refresh_evidence_memory(self, company_profile_id, limit=50):
+    """
+    Evidence Memory Refresh — reuses evidence_memory.services.memory.
+    create_memory_from_evidence() over a company's real, already-harvested
+    and deduplicated harvester.Evidence rows. `limit` bounds the batch size
+    (cost control: this never processes "every company's every evidence
+    row" in one task — see Backend Intelligence Engine's own cost-control
+    precedent). Idempotent — re-running just updates existing memory rows
+    for evidence already seen (get_or_create on source_reference).
+    """
+    from companies.models import CompanyProfile
+    from evidence_memory.services.memory import create_memory_from_evidence
+    from harvester.models import Evidence
+
+    target_reference = f'evidence_memory.company:{company_profile_id}'
+    try:
+        profile = CompanyProfile.objects.get(pk=company_profile_id)
+    except CompanyProfile.DoesNotExist:
+        run = _start_run(
+            'evidence_memory_refresh', f'CompanyProfile #{company_profile_id} (not found)',
+            target_reference, self.request, task_kwargs={'company_profile_id': company_profile_id, 'limit': limit},
+        )
+        run.mark_failed(f'CompanyProfile {company_profile_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    run = _start_run(
+        'evidence_memory_refresh', profile.company.name if profile.company_id else f'Profile #{profile.pk}',
+        target_reference, self.request, task_kwargs={'company_profile_id': company_profile_id, 'limit': limit},
+    )
+
+    evidence_qs = Evidence.objects.filter(company=profile).order_by('-retrieved_at')[:limit]
+    embedded, failed = 0, 0
+    for evidence in evidence_qs:
+        memory = create_memory_from_evidence(evidence)
+        if memory.embedding_status == 'embedded':
+            embedded += 1
+        else:
+            failed += 1
+
+    result_summary = {'evidence_processed': embedded + failed, 'embedded': embedded, 'failed': failed}
     run.mark_completed(result_summary)
     return {'status': 'completed', **result_summary}

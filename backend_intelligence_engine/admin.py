@@ -8,19 +8,20 @@ from django.contrib import admin, messages
 from backend_intelligence_engine.models import BackgroundTaskRun
 
 # task_type -> the Celery task to re-dispatch on retry. A plain dict, not a
-# dynamic import-by-string registry — three tasks total, no need for more.
+# dynamic import-by-string registry — four tasks total, no need for more.
 _RETRY_TASK_BY_TYPE = {}
 
 
 def _task_registry():
     if not _RETRY_TASK_BY_TYPE:
         from backend_intelligence_engine.tasks import (
-            company_intelligence_refresh, geo_intelligence_refresh, run_ai_analysis,
+            company_intelligence_refresh, geo_intelligence_refresh, refresh_evidence_memory, run_ai_analysis,
         )
         _RETRY_TASK_BY_TYPE.update({
             'company_intelligence_refresh': company_intelligence_refresh,
             'geo_intelligence_refresh': geo_intelligence_refresh,
             'ai_analysis': run_ai_analysis,
+            'evidence_memory_refresh': refresh_evidence_memory,
         })
     return _RETRY_TASK_BY_TYPE
 

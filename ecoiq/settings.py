@@ -206,6 +206,10 @@ INSTALLED_APPS = [
     # observability for company/geo/AI refresh workflows (Phase 1)
     'backend_intelligence_engine',
 
+    # Evidence Memory + Vector Search — evidence/finding chunks embedded and
+    # searchable via pgvector, so agents can reuse prior knowledge (Phase 1)
+    'evidence_memory',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 
