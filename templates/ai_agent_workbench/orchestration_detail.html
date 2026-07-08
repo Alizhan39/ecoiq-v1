@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Orchestration Result — EcoIQ AI Agent Workbench{% endblock %}
+{% block meta_description_content %}One LangGraph-coordinated intelligence run: evidence, geo, scoring, analytics and agent findings, verified and traced.{% endblock %}
+
+{% block content %}
+<div class="aiwb-wrap">
+  <a class="aiwb-back" href="{% url 'ai_agent_workbench:workbench' %}">← Back to Workbench</a>
+
+  <span class="aiwb-badge">LangGraph Intelligence Workflow</span>
+  <h1 class="aiwb-title">{{ run.target_repr|default:"Orchestration Result" }}</h1>
+  <p class="aiwb-subtitle">{{ run.user_request|default:"—" }}</p>
+
+  <div class="aiwb-chip-row" style="margin-bottom:1.5rem;">
+    <span class="iq-badge {% if run.status == 'completed' %}iq-badge-verified{% elif run.status == 'needs_human_review' %}iq-badge-review{% elif run.status == 'failed' %}iq-badge-blocked{% else %}iq-badge-note{% endif %}">{{ run.get_status_display }}</span>
+    <span class="aiwb-chip">Target: {{ run.get_target_type_display }}</span>
+    {% if run.confidence is not None %}<span class="aiwb-chip">Confidence: {{ run.confidence }}%</span>{% else %}<span class="iq-badge iq-badge-blocked">No confidence signal</span>{% endif %}
+    {% if run.human_review_required %}<span class="iq-badge iq-badge-review">Human review required</span>{% endif %}
+  </div>
+
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">Nodes executed</h2>
+    <div class="aiwb-chip-row">
+      {% for node in run.nodes_executed %}<span class="aiwb-chip">{{ forloop.counter }}. {{ node }}</span>{% endfor %}
+    </div>
+    {% if run.failed_node %}<p class="aiwb-note">Failed at: {{ run.failed_node }} — {{ run.error_summary }}</p>{% endif %}
+  </section>
+
+  {% if run.result.verification_notes %}
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">Verification notes</h2>
+    <ul class="aiwb-list">{% for note in run.result.verification_notes %}<li>{{ note }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  {% if run.result.final_recommendations %}
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">Final recommendations</h2>
+    {% for rec in run.result.final_recommendations %}
+    <div class="aiwb-panel">
+      <p class="aiwb-p" style="color:#fff;">{{ rec.summary }}</p>
+      {% if rec.basis %}<p class="aiwb-p">Basis: {{ rec.basis }}</p>{% endif %}
+      {% if rec.source %}<div class="aiwb-chip-row"><span class="aiwb-chip">{{ rec.source }}</span></div>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if run.result.next_actions %}
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">What should I do next?</h2>
+    <div class="aiwb-next-actions">
+      {% for action in run.result.next_actions %}
+      <div class="aiwb-next-action">{{ action }}</div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="aiwb-section">
+    <h2 class="aiwb-h2">Raw structured result</h2>
+    <p class="aiwb-note">Advanced — the full state every node in the graph produced.</p>
+    <pre class="aiwb-pre">{{ run.result|pprint }}</pre>
+  </section>
+</div>
+
+{% include 'ai_agent_workbench/_styles.html' %}
+{% endblock %}

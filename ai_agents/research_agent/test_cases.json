@@ -12,7 +12,7 @@
       },
       "expected_output": {
         "evidence_summary_includes": ["publicly stated transition timeline", "fuel mix disclosure"],
-        "confidence": "medium",
+        "confidence": 65,
         "human_approval_required": true
       }
     },
@@ -27,7 +27,7 @@
       },
       "expected_output": {
         "evidence_summary_includes": ["Scope 1/2 energy use", "SECR disclosure year"],
-        "confidence": "strong",
+        "confidence": 85,
         "human_approval_required": false
       }
     },
@@ -43,7 +43,7 @@
       "expected_output": {
         "evidence_summary_includes": ["reserve/resource classification", "reporting code used"],
         "missing_data_includes": ["independent audit confirmation"],
-        "confidence": "medium"
+        "confidence": 65
       }
     },
     {
@@ -58,7 +58,7 @@
       "expected_output": {
         "evidence_summary_includes": ["water use disclosure"],
         "missing_data_includes": ["methodology for water use figure"],
-        "confidence": "weak"
+        "confidence": 40
       }
     },
     {
@@ -72,7 +72,7 @@
       },
       "expected_output": {
         "evidence_summary_includes": ["capex plan reference", "regulator name"],
-        "confidence": "strong",
+        "confidence": 85,
         "human_approval_required": true
       }
     }

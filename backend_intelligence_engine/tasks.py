@@ -354,3 +354,63 @@ def recalculate_scores_background(self, company_profile_id=None, limit=25):
     result_summary = {'companies_processed': processed, 'snapshot_ids': snapshot_ids}
     run.mark_completed(result_summary)
     return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def run_langgraph_intelligence_workflow(self, user_request='', target_id=None, target_type=None,
+                                         latitude=None, longitude=None, execution_mode='deterministic_test'):
+    """
+    LangGraph Intelligence Workflow — reuses langgraph_orchestration.graph.
+    run_orchestration() exactly; this task's only job is Celery-level
+    tracking (BackgroundTaskRun) plus a langgraph_orchestration.models.
+    OrchestrationRun row for graph-level detail (which nodes ran, which one
+    failed, the full structured result) — the orchestrator itself contains
+    no scoring/evidence/geo/agent logic of its own, every node it runs calls
+    an existing service.
+
+    A raised exception from run_orchestration() itself (as opposed to a node
+    inside the graph failing, which the graph already catches per-node) is
+    genuinely unexpected — this task's own autoretry/BackgroundTaskRun
+    failure path still applies, same as every other task in this module.
+    """
+    from langgraph_orchestration.graph import run_orchestration
+    from langgraph_orchestration.models import OrchestrationRun
+
+    target_reference = f'langgraph_orchestration:{target_type or "location"}:{target_id or f"{latitude},{longitude}"}'
+    run = _start_run(
+        'langgraph_intelligence_workflow', user_request[:80] or 'Untitled request',
+        target_reference, self.request,
+        task_kwargs={
+            'user_request': user_request, 'target_id': target_id, 'target_type': target_type,
+            'latitude': latitude, 'longitude': longitude, 'execution_mode': execution_mode,
+        },
+    )
+
+    orchestration_run = OrchestrationRun.objects.create(
+        user_request=user_request, target_type=target_type or 'unknown',
+        target_reference=target_reference, celery_task_id=self.request.id or '',
+    )
+
+    final_state = run_orchestration(
+        user_request=user_request, target_id=target_id, target_type=target_type,
+        latitude=latitude, longitude=longitude, execution_mode=execution_mode,
+    )
+
+    target_repr = (final_state.get('company') or final_state.get('country') or {}).get('name', final_state.get('target_type', ''))
+    orchestration_run.target_repr = target_repr
+    orchestration_run.mark_completed(final_state)
+
+    result_summary = {
+        'orchestration_run_id': orchestration_run.pk, 'status': final_state.get('status'),
+        'confidence': final_state.get('confidence'), 'nodes_executed': final_state.get('nodes_executed'),
+        'failed_node': final_state.get('failed_node'),
+    }
+
+    if final_state.get('status') == 'failed':
+        run.result_summary = result_summary
+        run.mark_failed(f'Graph node "{final_state.get("failed_node")}" failed — see OrchestrationRun #{orchestration_run.pk}.')
+        return {'status': 'failed', **result_summary}
+
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}

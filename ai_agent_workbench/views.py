@@ -122,3 +122,17 @@ def presentation(request):
 
 def run_alias(request, run_id):
     return redirect(reverse('agent_runtime_model_router:run_detail', args=[run_id]))
+
+
+def orchestration_detail(request, run_id):
+    """
+    Lets the Workbench open a LangGraph-powered analysis result — reads the
+    existing langgraph_orchestration.OrchestrationRun directly, no new
+    orchestration model or duplicate result storage here.
+    """
+    from django.shortcuts import get_object_or_404
+
+    from langgraph_orchestration.models import OrchestrationRun
+
+    run = get_object_or_404(OrchestrationRun, pk=run_id)
+    return render(request, 'ai_agent_workbench/orchestration_detail.html', {'run': run})
