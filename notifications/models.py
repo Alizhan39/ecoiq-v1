@@ -24,6 +24,7 @@ SOURCE_TYPE_CHOICES = [
     ('profile_claim',     'Company Profile Claim'),
     ('newsletter',        'Newsletter Signup'),
     ('contact',           'Contact Form'),
+    ('background_task',   'Background Intelligence Task'),
     ('other',             'Other'),
 ]
 

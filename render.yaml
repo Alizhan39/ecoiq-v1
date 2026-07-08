@@ -67,6 +67,10 @@ services:
       - key: COMPANIES_HOUSE_API_KEY
         sync: false                      # set manually in Render dashboard — never in git
 
+# REDIS_URL is intentionally NOT added as a live env var above — see the
+# Backend Intelligence Engine block at the end of this file for why, and
+# what to add (to both this service and the new worker) to enable it.
+
 # ── Database ──────────────────────────────────────────────────────────────────
 databases:
   - name: ecoiq-db
@@ -74,3 +78,51 @@ databases:
     user: ecoiq
     plan: starter                        # $7/month PostgreSQL — 1 GB storage
     region: oregon                       # same region as web service for low latency
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Backend Intelligence Engine (Celery + Redis) — NOT enabled by default.
+#
+# Uncomment the two blocks below to actually run background tasks in
+# production. This is a real, additional cost decision, not something that
+# should ship silently as a side effect of this PR:
+#   - a Render Key Value (Redis) instance: from ~$10/month (Starter)
+#   - a Render Background Worker running `celery -A ecoiq worker`: from
+#     ~$7/month (Starter, same plan tier as the web service)
+#
+# Until uncommented, `python manage.py shell` / management commands can still
+# call a task's `.apply()` (synchronous, in-process, no broker needed) —
+# only `.delay()`/`.apply_async()` require these services to actually exist.
+#
+# services:
+#   - type: redis
+#     name: ecoiq-redis
+#     region: oregon
+#     plan: starter
+#     ipAllowList: []                    # internal-only — no public network access
+#
+#   - type: worker
+#     name: ecoiq-celery-worker
+#     env: python
+#     region: oregon
+#     plan: starter
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: celery -A ecoiq worker --loglevel=info --concurrency=2 --max-tasks-per-child=100
+#     envVars:
+#       - key: PYTHON_VERSION
+#         value: "3.11.0"
+#       - key: DJANGO_SETTINGS_MODULE
+#         value: ecoiq.settings
+#       - key: DJANGO_SECRET_KEY
+#         sync: false                    # copy the same value as the `ecoiq` web service
+#       - key: DATABASE_URL
+#         fromDatabase:
+#           name: ecoiq-db
+#           property: connectionString
+#       - key: REDIS_URL
+#         fromService:
+#           name: ecoiq-redis
+#           type: redis
+#           property: connectionString
+#       - key: ANTHROPIC_API_KEY
+#         sync: false
+# ══════════════════════════════════════════════════════════════════════════════

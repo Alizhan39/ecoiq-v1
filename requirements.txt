@@ -56,3 +56,14 @@ geopandas>=1.1
 shapely>=2.1
 folium>=0.20
 meteostat==1.7.6
+
+# ── EcoIQ Backend Intelligence Engine (Phase 1) ───────────────────────────────
+# Celery + Redis: real background execution for company/geo/AI refresh
+# workflows that were previously either synchronous-only or (in the case of
+# process_harvest_jobs/process_refresh_jobs) an ad-hoc "no broker required"
+# polling stand-in explicitly written to be replaced by a real queue.
+# httpx: already an indirect dependency (via the anthropic SDK) — now used
+# directly for the shared external-intelligence HTTP client.
+celery>=5.6
+redis>=8.0
+httpx>=0.28

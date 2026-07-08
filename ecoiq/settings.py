@@ -202,6 +202,10 @@ INSTALLED_APPS = [
     # zones and investment opportunities on an interactive map (Phase 1: Kazakhstan)
     'geo_intelligence',
 
+    # Backend Intelligence Engine — Celery/Redis background execution + task
+    # observability for company/geo/AI refresh workflows (Phase 1)
+    'backend_intelligence_engine',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 
@@ -413,3 +417,52 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
 }
+
+# ── EcoIQ Backend Intelligence Engine — Celery + Redis ────────────────────────
+# REDIS_URL is the single source of truth for both broker and result backend
+# (one dependency, not two) — set in Render's dashboard for production, or in
+# .env locally. Never hardcoded. Defaults to a plain local Redis instance so
+# `redis-server` on localhost:6379 (the standard homebrew/apt default) just
+# works in development with zero configuration.
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Hard ceilings so a stuck task can never run forever: soft limit raises an
+# exception the task can catch and record; hard limit kills it unconditionally
+# 30s later. Both intentionally generous (5 min) — these wrap real network
+# calls (Meteostat, Anthropic, company-website monitors), not instant jobs.
+CELERY_TASK_SOFT_TIME_LIMIT = 270
+CELERY_TASK_TIME_LIMIT = 300
+
+# Bounded, explicit retries only — no task in this codebase retries forever.
+# Every real task sets its own autoretry_for/retry_backoff/max_retries directly
+# on the @shared_task decorator (see backend_intelligence_engine/tasks.py) —
+# deliberately NOT also set here via CELERY_TASK_ANNOTATIONS, which overrides
+# (not merely defaults) a task's own decorator kwargs and would silently
+# change a task's real retry ceiling out from under it.
+
+# A worker takes on one task at a time and re-fetches only after finishing —
+# safer for the mix of short (cache-only) and slower (network/LLM) tasks here
+# than Celery's default prefetch-4 behaviour, which can let a slow task starve
+# others queued behind it on the same worker.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# Restart each worker process after 100 tasks — the same "recycle to avoid
+# creeping memory" defence start.sh already applies to gunicorn workers.
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
+
+# Track when a task starts executing (not just when it finishes) — needed so
+# BackgroundTaskRun can honestly distinguish QUEUED from RUNNING.
+CELERY_TASK_TRACK_STARTED = True
+
+# Available for any code path that calls `.delay()`/`.apply_async()` and
+# needs it to run inline without a broker (e.g. a one-off script). The test
+# suite itself doesn't rely on this — it calls `task.apply(...)`, Celery's
+# own always-synchronous test entrypoint, regardless of this setting.
+CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_TASK_ALWAYS_EAGER', 'False') == 'True'
+CELERY_TASK_EAGER_PROPAGATES = True
