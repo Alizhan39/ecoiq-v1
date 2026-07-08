@@ -216,6 +216,12 @@ INSTALLED_APPS = [
     # own — persists onto the existing companies.CompanyScoreSnapshot (Phase 1)
     'pandas_scoring_engine',
 
+    # Intelligence Analytics Engine — explainable classical ML (scikit-learn):
+    # similarity, clustering, ranking, distribution and outlier analysis over
+    # existing scoring/evidence/geo data. Stateless service layer, no models
+    # of its own, no dashboards yet (Phase 1)
+    'intelligence_analytics_engine',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 
