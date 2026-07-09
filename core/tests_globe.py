@@ -224,7 +224,7 @@ class GlobeIntelligenceLayersTests(TestCase):
         actions = d["actions"]
         self.assertEqual(actions["country_intelligence"], "/countries/kazakhstan/")
         self.assertEqual(actions["geo_intelligence"], "/geo-intelligence/")
-        self.assertEqual(actions["decision_studio"], "/decision-studio/")
+        self.assertTrue(actions["decision_studio"].startswith("/decision-studio/?q="))
         self.assertTrue(actions["ai_agents"].startswith("/ai-agents/workbench/?ask="))
         self.assertTrue(actions["evidence"].startswith("/evidence/"))
 

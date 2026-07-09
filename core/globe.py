@@ -387,17 +387,21 @@ def _agent_activity_for_country(cp, iso):
     """
     Real "which EcoIQ agent has looked at this country" signal — reuses the
     already-existing, already-seeded workbench_case_slug/workbench_agent_slug
-    soft references on GeoAsset/GeoRiskZone/InvestmentGeoOpportunity (a real
-    cross-app pointer that already existed for this exact purpose) joined to
-    that agent's real, most recent AgentRun. Never fabricates an agent run
-    that didn't happen — an agent with a real geo reference but zero real
-    AgentRun rows is reported as `has_run=False`, not a fake one.
+    soft references on GeoAsset/InvestmentGeoOpportunity (a real cross-app
+    pointer that already existed for this exact purpose) joined to that
+    agent's real, most recent AgentRun. GeoRiskZone carries no such field
+    (only GeoAsset and InvestmentGeoOpportunity do — see geo_intelligence/
+    models.py) so it's not queried here; inventing one would be exactly the
+    kind of fabricated field this platform's conventions forbid. Never
+    fabricates an agent run that didn't happen — an agent with a real geo
+    reference but zero real AgentRun rows is reported as `has_run=False`,
+    not a fake one.
     """
     from agent_runtime_model_router.models import AgentRegistryEntry, AgentRun
-    from geo_intelligence.models import GeoAsset, GeoRiskZone, InvestmentGeoOpportunity
+    from geo_intelligence.models import GeoAsset, InvestmentGeoOpportunity
 
     agent_slugs = set()
-    for model in (GeoAsset, GeoRiskZone, InvestmentGeoOpportunity):
+    for model in (GeoAsset, InvestmentGeoOpportunity):
         agent_slugs |= set(
             model.objects.filter(country=cp).exclude(workbench_agent_slug="").values_list("workbench_agent_slug", flat=True)
         )
