@@ -256,6 +256,278 @@ def _recommended_next_action(intelligence):
     return "No specific action yet — evidence still developing for this country."
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 — Global Intelligence Command Globe
+# ---------------------------------------------------------------------------
+
+def _featured_country_profiles():
+    """{iso: CountryProfile} for the 4 featured markets that actually exist."""
+    from countries.models import CountryProfile
+
+    profiles = {}
+    for _slug, iso, _clat, _clng in FEATURED:
+        cp = CountryProfile.objects.filter(iso_code=iso).first()
+        if cp is not None:
+            profiles[iso] = cp
+    return profiles
+
+
+def _numeric_country_scores(cp, iso):
+    """
+    Real, numeric (0-100 or None) scores for the heatmap and country
+    comparison — reuses pandas_scoring_engine's existing country-level Geo
+    Intelligence components (the same function intelligence_analytics_engine
+    builds its country feature vectors from) rather than re-deriving a
+    second scoring path. Never a fabricated number: None when the underlying
+    component has no real data for this country yet.
+    """
+    from pandas_scoring_engine.services.scoring import compute_country_geo_components
+
+    geo = compute_country_geo_components(cp)
+    ecoiq_score = cp.national_ecoiq_index
+    if ecoiq_score in (None, 0, 0.0):
+        ecoiq_score = None
+    return {
+        "climate_risk": geo["climate_risk_score"],
+        "investment_opportunity": geo["investment_opportunity_score"],
+        "modernisation_priority": geo["modernisation_priority_score"],
+        "evidence_strength": _evidence_strength_layer(cp, iso)["value"],
+        "ecoiq_score": ecoiq_score,
+    }
+
+
+def globe_heatmap(request):
+    """
+    GET /api/globe/heatmap/ — Phase 7: real numeric scores per featured
+    country for 5 heatmap layers. A country with no real data for a given
+    metric stays null ("neutral") — the front end must never invent a score
+    to fill the map. Includes the real min/max actually observed (over
+    non-null values only) so the front end can build an honest colour scale.
+    """
+    profiles = _featured_country_profiles()
+    countries = []
+    for slug, iso, _clat, _clng in FEATURED:
+        cp = profiles.get(iso)
+        if cp is None:
+            continue
+        countries.append({
+            "slug": slug, "iso": iso, "name": cp.name,
+            "scores": _numeric_country_scores(cp, iso),
+        })
+
+    metrics = ["climate_risk", "investment_opportunity", "modernisation_priority", "evidence_strength", "ecoiq_score"]
+    ranges = {}
+    for metric in metrics:
+        values = [c["scores"][metric] for c in countries if c["scores"][metric] is not None]
+        ranges[metric] = {"min": min(values), "max": max(values)} if values else None
+
+    return JsonResponse({
+        "countries": countries, "metrics": metrics, "ranges": ranges,
+        "disclaimer": "Countries with no real data for a metric are shown neutral, never a fabricated score.",
+    })
+
+
+def globe_compare(request):
+    """
+    GET /api/globe/compare/?iso=KZ&iso=GB&iso=TR — Phase 3: 2-3 featured
+    countries side by side. Headline metrics reuse the same real
+    intelligence layers/scores as the country panel; "key differences" call
+    into intelligence_analytics_engine's existing Country Similarity Engine
+    (compare_countries()) rather than a new comparison engine.
+    """
+    from intelligence_analytics_engine.services.similarity import compare_countries
+
+    isos = [v.upper() for v in request.GET.getlist("iso") if v]
+    featured_isos = {iso for _s, iso, _la, _ln in FEATURED}
+    unknown = [iso for iso in isos if iso not in featured_isos]
+    if unknown or not (2 <= len(isos) <= 3):
+        return JsonResponse({
+            "available": False,
+            "reason": "Select 2 or 3 of the featured countries (GB, KZ, SA, TR) to compare.",
+        }, status=400)
+
+    profiles = _featured_country_profiles()
+    countries = []
+    for iso in isos:
+        cp = profiles.get(iso)
+        if cp is None:
+            continue
+        slug = next(s for s, i, _la, _ln in FEATURED if i == iso)
+        intelligence = _intelligence_layers(cp, iso)
+        overall = cp.national_ecoiq_index
+        if overall in (None, 0, 0.0):
+            overall = None
+        countries.append({
+            "iso": iso, "slug": slug, "name": cp.name, "pk": cp.pk,
+            "ecoiq_score": overall,
+            "intelligence": intelligence,
+        })
+
+    if len(countries) < 2:
+        return JsonResponse({"available": False, "reason": "Not enough of the requested countries exist yet."}, status=400)
+
+    key_differences = compare_countries([c["pk"] for c in countries])
+    for c in countries:
+        del c["pk"]   # internal only, never exposed
+
+    return JsonResponse({"available": True, "countries": countries, "key_differences": key_differences})
+
+
+PERIOD_DAYS = {"latest": 2, "7d": 7, "30d": 30, "1y": 365}
+
+
+def _signal(signal_type, iso, title, detail, timestamp, link, severity=None):
+    return {
+        "type": signal_type, "iso": iso, "title": title, "detail": detail,
+        "timestamp": timestamp.isoformat() if timestamp else None, "link": link, "severity": severity,
+    }
+
+
+def _agent_activity_for_country(cp, iso):
+    """
+    Real "which EcoIQ agent has looked at this country" signal — reuses the
+    already-existing, already-seeded workbench_case_slug/workbench_agent_slug
+    soft references on GeoAsset/GeoRiskZone/InvestmentGeoOpportunity (a real
+    cross-app pointer that already existed for this exact purpose) joined to
+    that agent's real, most recent AgentRun. Never fabricates an agent run
+    that didn't happen — an agent with a real geo reference but zero real
+    AgentRun rows is reported as `has_run=False`, not a fake one.
+    """
+    from agent_runtime_model_router.models import AgentRegistryEntry, AgentRun
+    from geo_intelligence.models import GeoAsset, GeoRiskZone, InvestmentGeoOpportunity
+
+    agent_slugs = set()
+    for model in (GeoAsset, GeoRiskZone, InvestmentGeoOpportunity):
+        agent_slugs |= set(
+            model.objects.filter(country=cp).exclude(workbench_agent_slug="").values_list("workbench_agent_slug", flat=True)
+        )
+
+    findings = []
+    for agent_slug in sorted(agent_slugs):
+        entry = AgentRegistryEntry.objects.filter(agent_id=agent_slug).first()
+        if entry is None:
+            continue
+        last_run = AgentRun.objects.filter(agent=entry).order_by("-created_at").first()
+        findings.append({
+            "agent_name": entry.agent_name, "agent_slug": agent_slug,
+            "has_run": last_run is not None,
+            "last_run_id": last_run.pk if last_run else None,
+            "last_run_status": last_run.status if last_run else None,
+            "last_run_at": last_run.created_at.isoformat() if last_run else None,
+            "link": f"/ai-agents/agent/{agent_slug}/",
+        })
+    return findings
+
+
+def globe_signals(request):
+    """
+    GET /api/globe/signals/?period=latest|7d|30d|1y — Phase 1 (signals) +
+    Phase 9 (alerts, which are simply the most recent/severe of these same
+    signals — no separate notification engine). Every signal is derived
+    from a real, already-persisted row; nothing here executes new analysis.
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from geo_intelligence.models import GeoAsset, GeoRiskZone, InvestmentGeoOpportunity
+    from harvester.models import Evidence, RegistryCompany
+
+    period = request.GET.get("period", "latest")
+    if period not in PERIOD_DAYS:
+        period = "latest"
+    since = timezone.now() - timedelta(days=PERIOD_DAYS[period])
+
+    profiles = _featured_country_profiles()
+    iso_by_cp_pk = {cp.pk: iso for iso, cp in profiles.items()}
+    signals = []
+    oldest_timestamp = None
+
+    def _track_oldest(ts):
+        nonlocal oldest_timestamp
+        if ts is not None and (oldest_timestamp is None or ts < oldest_timestamp):
+            oldest_timestamp = ts
+
+    zones = GeoRiskZone.objects.filter(country__pk__in=iso_by_cp_pk.keys())
+    for z in zones:
+        _track_oldest(z.last_updated)
+        if z.last_updated and z.last_updated >= since:
+            signals.append(_signal(
+                "risk", iso_by_cp_pk[z.country_id], f"{z.get_severity_display()} risk: {z.name}",
+                z.get_risk_type_display(), z.last_updated, "/geo-intelligence/", severity=z.severity,
+            ))
+
+    opportunities = InvestmentGeoOpportunity.objects.filter(country__pk__in=iso_by_cp_pk.keys())
+    for o in opportunities:
+        _track_oldest(o.created_at)
+        if o.created_at and o.created_at >= since:
+            signals.append(_signal(
+                "opportunity", iso_by_cp_pk[o.country_id], o.title,
+                o.get_opportunity_type_display(), o.created_at, "/geo-intelligence/",
+            ))
+
+    assets = GeoAsset.objects.filter(country__pk__in=iso_by_cp_pk.keys()).exclude(modernisation_priority="not_assessed")
+    for a in assets:
+        _track_oldest(a.updated_at)
+        if a.updated_at and a.updated_at >= since:
+            signals.append(_signal(
+                "change", iso_by_cp_pk[a.country_id], f"{a.get_modernisation_priority_display()} modernisation priority: {a.name}",
+                a.get_asset_type_display(), a.updated_at, "/geo-intelligence/",
+            ))
+
+    company_country = dict(RegistryCompany.objects.filter(country__in=iso_by_cp_pk.values(), is_active=True).values_list("slug", "country"))
+    if company_country:
+        evidence_qs = Evidence.objects.filter(company_slug__in=company_country.keys()).order_by("-retrieved_at")[:40]
+        for e in evidence_qs:
+            _track_oldest(e.retrieved_at)
+            if e.retrieved_at and e.retrieved_at >= since:
+                signals.append(_signal(
+                    "evidence_update", company_country[e.company_slug], e.title or "New evidence",
+                    e.get_category_display() if hasattr(e, "get_category_display") else e.category,
+                    e.retrieved_at, f"/evidence/{e.company_slug}/",
+                ))
+
+    for iso, cp in profiles.items():
+        for finding in _agent_activity_for_country(cp, iso):
+            if not finding["has_run"]:
+                continue
+            run_at = finding["last_run_at"]
+            from datetime import datetime as _dt
+            run_dt = _dt.fromisoformat(run_at) if run_at else None
+            _track_oldest(run_dt)
+            if run_dt and run_dt >= since:
+                signals.append(_signal(
+                    "agent_finding", iso, f"{finding['agent_name']} → {cp.name}",
+                    f"Status: {finding['last_run_status']}", run_dt,
+                    f"/ai-agents/run/{finding['last_run_id']}/",
+                ))
+
+    signals.sort(key=lambda s: s["timestamp"] or "", reverse=True)
+
+    historical_coverage_developing = oldest_timestamp is not None and oldest_timestamp >= since and period != "latest"
+
+    return JsonResponse({
+        "period": period, "signals": signals[:50], "signal_count": len(signals),
+        "oldest_data_timestamp": oldest_timestamp.isoformat() if oldest_timestamp else None,
+        "historical_coverage_developing": historical_coverage_developing,
+        "disclaimer": "Every signal is derived from a real, already-persisted EcoIQ record — never fabricated activity.",
+    })
+
+
+def globe_agent_activity(request):
+    """GET /api/globe/agent-activity/ — Phase 6: real per-country agent
+    findings (see _agent_activity_for_country). Honest empty state when a
+    country has no real geo-intelligence-to-agent reference at all."""
+    profiles = _featured_country_profiles()
+    countries = []
+    for slug, iso, _clat, _clng in FEATURED:
+        cp = profiles.get(iso)
+        if cp is None:
+            continue
+        countries.append({"slug": slug, "iso": iso, "name": cp.name, "findings": _agent_activity_for_country(cp, iso)})
+    return JsonResponse({"countries": countries})
+
+
 def globe_country(request, slug):
     """GET /api/globe/country/<slug>/ — Country Twin payload (read-only, real).
 
@@ -319,7 +591,7 @@ def globe_country(request, slug):
     actions = {
         "country_intelligence": "/countries/%s/" % slug,
         "geo_intelligence": "/geo-intelligence/",
-        "decision_studio": "/decision-studio/",
+        "decision_studio": "/decision-studio/?q=" + quote(f"What is the investment opportunity in {cp.name}?"),
         "ai_agents": "/ai-agents/workbench/?ask=" + quote(f"What is the investment opportunity in {cp.name}?"),
         "evidence": "/evidence/" + ("?" if slugs else ""),
     }

@@ -17,6 +17,11 @@ urlpatterns = [
     # Living Infrastructure Earth — read-only globe data (Phase 0 + 2)
     path('api/globe/layers/', globe_views.globe_layers, name='globe_layers'),
     path('api/globe/country/<slug:slug>/', globe_views.globe_country, name='globe_country'),
+    # Global Intelligence Command Globe (Phase 2)
+    path('api/globe/heatmap/', globe_views.globe_heatmap, name='globe_heatmap'),
+    path('api/globe/compare/', globe_views.globe_compare, name='globe_compare'),
+    path('api/globe/signals/', globe_views.globe_signals, name='globe_signals'),
+    path('api/globe/agent-activity/', globe_views.globe_agent_activity, name='globe_agent_activity'),
 
     # WHY Engine — explainability (Boardroom Mode + Decision Defense Pack + API)
     path('why/country/<slug:slug>/', why_views.why_country_page, name='why_country'),

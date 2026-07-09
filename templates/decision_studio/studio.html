@@ -10,7 +10,7 @@
 
   <form method="post" action="{% url 'decision_studio:ask' %}" class="ds-ask-form">
     {% csrf_token %}
-    <input type="text" name="question" class="ds-ask-input" placeholder="e.g. Which companies have the strongest investment opportunity and modernisation potential?" maxlength="500" required>
+    <input type="text" name="question" class="ds-ask-input" placeholder="e.g. Which companies have the strongest investment opportunity and modernisation potential?" maxlength="500" required value="{{ prefill_question }}">
     <button type="submit" class="ds-btn">Ask →</button>
   </form>
 

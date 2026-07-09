@@ -50,8 +50,13 @@ def studio(request):
     if not request.session.session_key:
         request.session.save()
     recent_queries = DecisionQuery.objects.filter(session_key=request.session.session_key)[:10]
+    # Optional prefill only — e.g. from the globe's "Ask EcoIQ about the
+    # world" action. Never auto-submits; the user still presses Ask, so the
+    # existing rate-limit/cost-control path in ask() is untouched.
+    prefill_question = request.GET.get('q', '').strip()[:MAX_QUESTION_LENGTH]
     return render(request, 'decision_studio/studio.html', {
         'suggested_questions': SUGGESTED_QUESTIONS, 'recent_queries': recent_queries,
+        'prefill_question': prefill_question,
     })
 
 
