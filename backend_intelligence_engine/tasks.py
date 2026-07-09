@@ -414,3 +414,138 @@ def run_langgraph_intelligence_workflow(self, user_request='', target_id=None, t
 
     run.mark_completed(result_summary)
     return {'status': 'completed', **result_summary}
+
+
+# Cost control: never ingest an unbounded number of sources in one task run.
+INGEST_ENABLED_SOURCES_LIMIT = 20
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def ingest_source(self, source_id):
+    """
+    Data Ingestion Engine — fetches, validates, deduplicates and stores
+    evidence for ONE harvester.Source row, reusing harvester.services.
+    ingestion_pipeline.ingest_source() exactly (no duplicate fetch/dedup
+    logic here). Records both a BackgroundTaskRun (this Celery task's own
+    lifecycle) and a harvester.IngestionRun (what the fetch actually found)
+    — two different, complementary granularities, matching the same pattern
+    already used for OrchestrationRun alongside BackgroundTaskRun.
+    """
+    from harvester.models import Source
+    from harvester.services.ingestion_pipeline import ingest_source as run_ingestion
+
+    target_reference = f'harvester.Source:{source_id}'
+    try:
+        source = Source.objects.select_related('company__company').get(pk=source_id)
+    except Source.DoesNotExist:
+        run = _start_run(
+            'ingest_source', f'Source #{source_id} (not found)', target_reference, self.request,
+            task_kwargs={'source_id': source_id},
+        )
+        run.mark_failed(f'Source {source_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    run = _start_run(
+        'ingest_source', source.name, target_reference, self.request, task_kwargs={'source_id': source_id},
+    )
+
+    ingestion_run = run_ingestion(source, triggered_by=f'celery:{self.request.id}')
+    result_summary = {
+        'ingestion_run_id': ingestion_run.pk, 'ingestion_status': ingestion_run.status,
+        'evidence_created': ingestion_run.evidence_created_count, 'evidence_updated': ingestion_run.evidence_updated_count,
+        'memory_records_created': ingestion_run.memory_records_created,
+    }
+
+    if ingestion_run.status == 'failed':
+        run.result_summary = result_summary
+        run.mark_failed(ingestion_run.error_message or 'Ingestion failed.')
+        return {'status': 'failed', **result_summary}
+
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def ingest_enabled_sources(self, limit=INGEST_ENABLED_SOURCES_LIMIT):
+    """
+    Batch ingestion — iterates enabled harvester.Source rows, calling
+    ingest_source's own pipeline for each. `limit` bounds the batch (cost
+    control, matches every other batch task in this module) — never "every
+    source" unboundedly.
+    """
+    from harvester.models import Source
+    from harvester.services.ingestion_pipeline import ingest_source as run_ingestion
+
+    sources = Source.objects.filter(is_active=True).select_related('company__company')[:limit]
+    target_reference = f'harvester.Source:batch:{limit}'
+    run = _start_run(
+        'ingest_enabled_sources', f'Batch of up to {limit} enabled sources', target_reference, self.request,
+        task_kwargs={'limit': limit},
+    )
+
+    outcomes = {'new': 0, 'updated': 0, 'unchanged': 0, 'failed': 0, 'skipped': 0}
+    ingestion_run_ids = []
+    for source in sources:
+        ingestion_run = run_ingestion(source, triggered_by=f'celery:{self.request.id}')
+        outcomes[ingestion_run.status] += 1
+        ingestion_run_ids.append(ingestion_run.pk)
+
+    result_summary = {'sources_processed': len(sources), 'outcomes': outcomes, 'ingestion_run_ids': ingestion_run_ids}
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def refresh_entity_evidence(self, company_profile_id):
+    """
+    Downstream-refresh eligibility — ingests every enabled Source linked to
+    one company, and ONLY when genuinely new or updated evidence resulted,
+    queues the existing, already-built downstream refresh (score
+    recalculation) rather than running it unconditionally. This is the
+    explicit "do not automatically run the entire expensive pipeline after
+    every tiny change" eligibility rule the spec requires — an
+    'unchanged'/'failed'/'skipped' outcome never triggers a recalculation.
+    """
+    from companies.models import CompanyProfile
+    from harvester.models import Source
+    from harvester.services.ingestion_pipeline import ingest_source as run_ingestion
+
+    target_reference = f'companies.CompanyProfile:{company_profile_id}'
+    try:
+        profile = CompanyProfile.objects.select_related('company').get(pk=company_profile_id)
+    except CompanyProfile.DoesNotExist:
+        run = _start_run(
+            'refresh_entity_evidence', f'CompanyProfile #{company_profile_id} (not found)',
+            target_reference, self.request, task_kwargs={'company_profile_id': company_profile_id},
+        )
+        run.mark_failed(f'CompanyProfile {company_profile_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    run = _start_run(
+        'refresh_entity_evidence', profile.company.name if profile.company_id else f'Profile #{profile.pk}',
+        target_reference, self.request, task_kwargs={'company_profile_id': company_profile_id},
+    )
+
+    sources = Source.objects.filter(company=profile, is_active=True)
+    genuinely_changed = False
+    ingestion_run_ids = []
+    for source in sources:
+        ingestion_run = run_ingestion(source, triggered_by=f'celery:{self.request.id}')
+        ingestion_run_ids.append(ingestion_run.pk)
+        if ingestion_run.status in ('new', 'updated'):
+            genuinely_changed = True
+
+    scoring_task_id = None
+    if genuinely_changed:
+        recalculate_scores_background.delay(company_profile_id=profile.pk)
+        scoring_task_id = 'queued'
+
+    result_summary = {
+        'sources_ingested': len(ingestion_run_ids), 'ingestion_run_ids': ingestion_run_ids,
+        'genuinely_changed': genuinely_changed, 'score_recalculation': scoring_task_id,
+    }
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}
