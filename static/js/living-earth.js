@@ -22,13 +22,23 @@
   };
   var LAYER_PRIORITY = ['capital', 'carbon', 'energy', 'water', 'infrastructure'];
   var active = { energy: true, infrastructure: true, capital: true, carbon: true, water: true };
+  var intelActive = {};   // which "intelligence layers" toggles are on (empty = no emphasis filter)
   var revealMax = 5;   // layers revealed (staggered during a country flight)
   var DATA = null;
+
+  var INTEL_LABELS = {
+    climate_risk: 'Climate Risk', investment_opportunity: 'Investment Opportunity',
+    modernisation_priority: 'Modernisation Priority', evidence_strength: 'Evidence Strength',
+    stewardship_impact: 'Stewardship / Impact',
+  };
 
   // ── 1. Always: fetch live data → populate the DOM HUD (works without WebGL) ──
   fetch(endpoint, { headers: { Accept: 'application/json' } })
     .then(function (r) { return r.json(); })
-    .then(function (d) { DATA = d; renderStats(d.stats); wireToggles(); wireChips(d.countries); bootGlobe(); })
+    .then(function (d) {
+      DATA = d; renderStats(d.stats); wireToggles(); wireIntelLayers(d.intelligence_layers_available);
+      wireChips(d.countries); wireJump(d.countries); wirePanelDrag(); bootGlobe();
+    })
     .catch(function () { /* HUD shows skeleton; globe stays as poster */ });
 
   function setText(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
@@ -45,29 +55,62 @@
       btn.addEventListener('click', function () {
         var L = btn.dataset.layer; active[L] = !active[L];
         btn.classList.toggle('off', !active[L]);
+        btn.setAttribute('aria-pressed', active[L] ? 'true' : 'false');
         applyLayers();
       });
     });
   }
+
+  // Intelligence-layer toggles are only ever shown when at least one featured
+  // country genuinely has data for them (server-computed availability) — a
+  // layer with zero real rows anywhere is never rendered as a toggle at all.
+  function wireIntelLayers(availability) {
+    root.querySelectorAll('[data-intel-layer]').forEach(function (btn) {
+      var key = btn.dataset.intelLayer;
+      if (!availability || !availability[key]) return;   // stays hidden
+      btn.hidden = false;
+      btn.addEventListener('click', function () {
+        intelActive[key] = !intelActive[key];
+        btn.classList.toggle('off', !intelActive[key]);
+        btn.setAttribute('aria-pressed', intelActive[key] ? 'true' : 'false');
+        applyIntelEmphasis();
+      });
+    });
+  }
+
   var focusISO = null;
+  function focusCountry(iso, countries) {
+    if (focusISO === iso) { closeCountry(); return; }
+    focusISO = iso;
+    root.querySelectorAll('[data-iso]').forEach(function (c) { c.classList.toggle('active', c.dataset.iso === iso); });
+    var jump = document.getElementById('le-jump'); if (jump) jump.value = iso;
+    applyLayers();
+    if (window.__leFlyTo) window.__leFlyTo(iso);   // desktop globe flight (no-op on mobile)
+    openCountry(iso, countries);
+  }
+
   function wireChips(countries) {
     root.querySelectorAll('[data-iso]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var iso = chip.dataset.iso;
-        if (focusISO === iso) { closeCountry(); return; }
-        focusISO = iso;
-        root.querySelectorAll('[data-iso]').forEach(function (c) { c.classList.toggle('active', c.dataset.iso === iso); });
-        applyLayers();
-        if (window.__leFlyTo) window.__leFlyTo(iso);   // desktop globe flight (no-op on mobile)
-        openCountry(iso, countries);
-      });
+      chip.addEventListener('click', function () { focusCountry(chip.dataset.iso, countries); });
     });
     var closeBtn = document.getElementById('le-panel-close');
     if (closeBtn) closeBtn.addEventListener('click', closeCountry);
   }
 
+  // Simple, dependency-free "quick jump" — a native <select> works well on
+  // mobile (large tap target, built-in accessibility) without inventing a
+  // search/autocomplete widget from scratch for just 4 countries.
+  function wireJump(countries) {
+    var jump = document.getElementById('le-jump');
+    if (!jump) return;
+    jump.addEventListener('change', function () {
+      if (jump.value) focusCountry(jump.value, countries);
+    });
+  }
+
   function closeCountry() {
     focusISO = null;
+    var jump = document.getElementById('le-jump'); if (jump) jump.value = '';
     root.querySelectorAll('[data-iso]').forEach(function (c) { c.classList.remove('active'); });
     var panel = document.getElementById('le-panel');
     if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
@@ -134,6 +177,80 @@
     document.querySelectorAll('#le-panel-scores .why').forEach(function (b) {
       b.addEventListener('click', function () { showWhy(b.dataset.why); });
     });
+
+    // intelligence layers — real per-country data, honest fallback text when absent
+    setHTML('le-panel-intel', Object.keys(INTEL_LABELS).map(function (key) {
+      var layer = (d.intelligence || {})[key] || {};
+      var detail = layer.available
+        ? '<span class="d">' + esc(layer.label) + '</span>'
+        : '<span class="d na">' + esc(layer.label || 'Limited EcoIQ coverage') + '</span>';
+      var demoBadge = layer.is_demo ? '<span class="badge demo">demo</span>' : '';
+      return '<div class="le-intel-row" data-intel-key="' + key + '"><span class="lab">' + esc(INTEL_LABELS[key]) + detail + '</span>' + demoBadge + '</div>';
+    }).join(''));
+    applyIntelEmphasis();
+
+    // recommended next action — deterministic, never fabricated (see core/globe.py)
+    var actionBox = document.getElementById('le-panel-action');
+    if (d.recommended_next_action) {
+      actionBox.hidden = false;
+      actionBox.innerHTML = '<h5>Recommended next action</h5><p>' + esc(d.recommended_next_action) + '</p>';
+    } else {
+      actionBox.hidden = true;
+    }
+
+    // action links — every href is a real, existing EcoIQ route (see core/globe.py actions block)
+    var ACTION_LABELS = {
+      country_intelligence: 'Open Country Intelligence', geo_intelligence: 'View Geo Intelligence',
+      decision_studio: 'Ask EcoIQ Decision Studio', ai_agents: 'Analyse with AI Agents', evidence: 'View Evidence',
+    };
+    setHTML('le-panel-actions', Object.keys(ACTION_LABELS).map(function (key) {
+      var href = (d.actions || {})[key];
+      if (!href) return '';
+      return '<a href="' + esc(href) + '">' + esc(ACTION_LABELS[key]) + ' →</a>';
+    }).join(''));
+  }
+
+  // Toggling an intelligence layer emphasises that metric row in the open
+  // panel (dims the rest) — a lightweight visual filter, no 3D dependency,
+  // so it works identically with or without the WebGL globe.
+  function applyIntelEmphasis() {
+    var anyActive = Object.keys(intelActive).some(function (k) { return intelActive[k]; });
+    document.querySelectorAll('#le-panel-intel .le-intel-row').forEach(function (row) {
+      var isActive = !!intelActive[row.dataset.intelKey];
+      row.classList.toggle('dim', anyActive && !isActive);
+      row.classList.toggle('emph', isActive);
+    });
+  }
+
+  // Mobile bottom-sheet: swipe down to dismiss, without blocking normal page
+  // scroll elsewhere on the page (touch-action:none is scoped to the panel
+  // itself in CSS, only while it's open).
+  function wirePanelDrag() {
+    var panel = document.getElementById('le-panel');
+    var handle = panel && panel.querySelector('.le-panel-drag');
+    if (!panel || !handle) return;
+    var startY = 0, dragging = false, panelHeight = 0;
+    handle.addEventListener('pointerdown', function (e) {
+      if (!panel.classList.contains('open')) return;
+      dragging = true; startY = e.clientY; panelHeight = panel.getBoundingClientRect().height;
+      panel.classList.add('le-dragging');
+      handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var dy = Math.max(0, e.clientY - startY);
+      panel.style.transform = 'translateY(' + dy + 'px)';
+    });
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      panel.classList.remove('le-dragging');
+      var dy = Math.max(0, (e.clientY || startY) - startY);
+      panel.style.transform = '';
+      if (panelHeight && dy > panelHeight * 0.25) closeCountry();
+    }
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
   }
 
   function visibleMarkers() {

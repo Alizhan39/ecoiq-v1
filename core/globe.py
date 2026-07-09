@@ -17,6 +17,7 @@ deterministically:
 from __future__ import annotations
 
 import hashlib
+from urllib.parse import quote
 
 from django.http import JsonResponse
 
@@ -101,12 +102,27 @@ def globe_layers(request):
                 "datapoint_count": len(dp_metrics),
             })
 
+    # A layer toggle is only ever shown if at least one featured country
+    # genuinely has data for it — never a toggle for a layer with zero rows
+    # anywhere. This is computed once per request (only 4 featured countries).
+    intelligence_layers_available = {key: False for key in INTELLIGENCE_LAYERS}
+    for slug, iso, clat, clng in FEATURED:
+        cp = CountryProfile.objects.filter(iso_code=iso).first()
+        if cp is None:
+            continue
+        layers = _intelligence_layers(cp, iso)
+        for key, result in layers.items():
+            if result["available"]:
+                intelligence_layers_available[key] = True
+
     return JsonResponse({
         "stats": stats,
         "countries": countries,
         "markers": markers,
         "markers_representative": True,   # honesty flag — not real coordinates
         "layers": ["energy", "infrastructure", "capital", "carbon", "water"],
+        "intelligence_layers": INTELLIGENCE_LAYERS,
+        "intelligence_layers_available": intelligence_layers_available,
         "disclaimer": ("Markers are representative (country-centroid clusters), "
                        "not precise asset coordinates. All counts are live and real."),
     })
@@ -122,6 +138,122 @@ _SCORE_FIELDS = [
     ("transparency", "Transparency", "transparency_score"),
     ("industrial", "Industrial modernisation", "industrial_modernization_score"),
 ]
+
+# The 5 "intelligence layers" a country card/toggle can surface. Each is
+# grounded in a real model that already carries a `country` FK — never a new
+# score invented for the globe. A layer is `available=False` (never a
+# fabricated 0/low) when the country genuinely has no rows in that model yet.
+INTELLIGENCE_LAYERS = ["climate_risk", "investment_opportunity", "modernisation_priority", "evidence_strength", "stewardship_impact"]
+
+LIMITED_COVERAGE = "Limited EcoIQ coverage"
+EVIDENCE_DEVELOPING = "Evidence still developing"
+
+
+def _climate_risk_layer(cp):
+    from geo_intelligence.models import GeoRiskZone
+
+    zones = list(GeoRiskZone.objects.filter(country=cp))
+    if not zones:
+        return {"available": False, "label": LIMITED_COVERAGE, "value": None, "is_demo": None}
+    order = {"high": 3, "medium": 2, "low": 1}
+    worst = max(zones, key=lambda z: order.get(z.severity, 0))
+    confidences = [z.confidence for z in zones if z.confidence is not None]
+    return {
+        "available": True,
+        "label": f"{worst.get_severity_display()} risk — {len(zones)} zone{'s' if len(zones) != 1 else ''} tracked",
+        "value": worst.severity,
+        "confidence": round(sum(confidences) / len(confidences), 1) if confidences else None,
+        "is_demo": all(z.is_demo for z in zones),
+    }
+
+
+def _investment_opportunity_layer(cp):
+    from geo_intelligence.models import InvestmentGeoOpportunity
+
+    opportunities = list(InvestmentGeoOpportunity.objects.filter(country=cp).order_by("-investment_score"))
+    if not opportunities:
+        return {"available": False, "label": LIMITED_COVERAGE, "value": None, "is_demo": None, "recommended_action": None}
+    top = opportunities[0]
+    return {
+        "available": True,
+        "label": f"{top.title} ({top.get_opportunity_type_display()})",
+        "value": top.investment_score,
+        "confidence": top.confidence,
+        "is_demo": all(o.is_demo for o in opportunities),
+        "recommended_action": top.recommended_action or None,
+    }
+
+
+def _modernisation_priority_layer(cp):
+    from geo_intelligence.models import GeoAsset
+
+    assets = list(GeoAsset.objects.filter(country=cp).exclude(modernisation_priority="not_assessed"))
+    if not assets:
+        return {"available": False, "label": LIMITED_COVERAGE, "value": None, "is_demo": None}
+    order = {"high": 3, "medium": 2, "low": 1}
+    worst = max(assets, key=lambda a: order.get(a.modernisation_priority, 0))
+    return {
+        "available": True,
+        "label": f"{worst.get_modernisation_priority_display()} priority — {len(assets)} asset{'s' if len(assets) != 1 else ''} assessed",
+        "value": worst.modernisation_priority,
+        "is_demo": all(a.is_demo for a in assets),
+    }
+
+
+def _evidence_strength_layer(cp, iso):
+    from harvester.models import Evidence, RegistryCompany
+
+    slugs = list(RegistryCompany.objects.filter(country=iso, is_active=True).values_list("slug", flat=True))
+    total = Evidence.objects.filter(company_slug__in=slugs).count() if slugs else 0
+    if not total:
+        return {"available": False, "label": EVIDENCE_DEVELOPING, "value": None}
+    verified = Evidence.objects.filter(company_slug__in=slugs, verification_status="VERIFIED").count()
+    rate = round(100 * verified / total, 1)
+    return {
+        "available": True,
+        "label": f"{rate}% verified — {total} evidence item{'s' if total != 1 else ''}",
+        "value": rate,
+    }
+
+
+def _stewardship_impact_layer(cp):
+    from khalifa_stewardship_tour_operating_system.models import StewardshipTour
+
+    tours = list(StewardshipTour.objects.filter(country=cp))
+    if not tours:
+        return {"available": False, "label": EVIDENCE_DEVELOPING, "value": None}
+    latest = tours[0]
+    return {
+        "available": True,
+        "label": f"{latest.get_status_display()} — {len(tours)} tour{'s' if len(tours) != 1 else ''}, {latest.participant_capacity} participant capacity",
+        "value": latest.status,
+    }
+
+
+def _intelligence_layers(cp, iso):
+    return {
+        "climate_risk": _climate_risk_layer(cp),
+        "investment_opportunity": _investment_opportunity_layer(cp),
+        "modernisation_priority": _modernisation_priority_layer(cp),
+        "evidence_strength": _evidence_strength_layer(cp, iso),
+        "stewardship_impact": _stewardship_impact_layer(cp),
+    }
+
+
+def _recommended_next_action(intelligence):
+    """Deterministic, rule-based — never an LLM call, never invented text.
+    Prefers a real, human-authored InvestmentGeoOpportunity.recommended_action
+    when one exists; otherwise a plain rule over the same real layer data."""
+    investment = intelligence["investment_opportunity"]
+    if investment["available"] and investment.get("recommended_action"):
+        return investment["recommended_action"]
+    if intelligence["climate_risk"]["available"] and intelligence["climate_risk"]["value"] == "high":
+        return "Prioritise climate-risk mitigation for the highest-severity zone before further investment."
+    if intelligence["modernisation_priority"]["available"] and intelligence["modernisation_priority"]["value"] == "high":
+        return "Review high-priority modernisation assets with the AI Agent Workbench."
+    if not intelligence["evidence_strength"]["available"]:
+        return "Expand evidence coverage before drawing conclusions for this country."
+    return "No specific action yet — evidence still developing for this country."
 
 
 def globe_country(request, slug):
@@ -176,6 +308,22 @@ def globe_country(request, slug):
         {"label": "Independently verified evidence", "ok": verified},
     ]
 
+    intelligence = _intelligence_layers(cp, iso)
+    recommended_next_action = _recommended_next_action(intelligence)
+
+    # Every action link points at a real, existing route — never a new one
+    # invented for the globe. Decision Studio and Evidence Explorer have no
+    # country-level filter today, so they're linked unscoped rather than
+    # faking a filter that doesn't exist; the AI Agent Workbench genuinely
+    # accepts a free-text `ask` query param (ai_agent_workbench.views.workbench).
+    actions = {
+        "country_intelligence": "/countries/%s/" % slug,
+        "geo_intelligence": "/geo-intelligence/",
+        "decision_studio": "/decision-studio/",
+        "ai_agents": "/ai-agents/workbench/?ask=" + quote(f"What is the investment opportunity in {cp.name}?"),
+        "evidence": "/evidence/" + ("?" if slugs else ""),
+    }
+
     return JsonResponse({
         "slug": slug, "name": cp.name, "iso": iso, "centroid": centroid,
         "published": bool(cp.is_published),
@@ -188,6 +336,9 @@ def globe_country(request, slug):
             "last_updated": intel["last_updated"].isoformat() if intel["last_updated"] else None,
         },
         "layers": layers,
+        "intelligence": intelligence,
+        "recommended_next_action": recommended_next_action,
+        "actions": actions,
         "companies": intel["companies"][:8],
         "why": {"confidence_basis": "evidence verification coverage",
                 "checklist": checklist,
