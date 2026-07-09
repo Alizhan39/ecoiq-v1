@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Decision Studio — EcoIQ{% endblock %}
+{% block meta_description_content %}Ask EcoIQ a complex institutional decision question — compare, rank, assess, prioritise or investigate — and get a routed, explainable, evidence-backed answer.{% endblock %}
+
+{% block content %}
+<div class="ds-wrap">
+  <span class="ds-badge">Decision Studio</span>
+  <h1 class="ds-title">What decision are you trying to make?</h1>
+  <p class="ds-subtitle">EcoIQ routes your question through the intelligence modules it actually needs — evidence, scoring, analytics, specialised agents and Council synthesis — and returns an explainable, evidence-backed answer with visible confidence and uncertainty.</p>
+
+  <form method="post" action="{% url 'decision_studio:ask' %}" class="ds-ask-form">
+    {% csrf_token %}
+    <input type="text" name="question" class="ds-ask-input" placeholder="e.g. Which companies have the strongest investment opportunity and modernisation potential?" maxlength="500" required>
+    <button type="submit" class="ds-btn">Ask →</button>
+  </form>
+
+  <div class="ds-suggested-row">
+    {% for q in suggested_questions %}
+    <button type="submit" form="ds-suggested-form-{{ forloop.counter }}" class="ds-suggested-chip" style="border:1px solid var(--ds-border);background:var(--ds-bg2);cursor:pointer;">{{ q }}</button>
+    <form id="ds-suggested-form-{{ forloop.counter }}" method="post" action="{% url 'decision_studio:ask' %}" style="display:none;">
+      {% csrf_token %}<input type="hidden" name="question" value="{{ q }}">
+    </form>
+    {% endfor %}
+  </div>
+
+  <p style="color:var(--ds-muted);font-size:0.8rem;">EcoIQ does not run every module for every question — the Decision Trace on each result shows exactly what ran and why, and honestly labels what data was too thin to answer confidently.</p>
+
+  {% if recent_queries %}
+  <section class="ds-section">
+    <h2 class="ds-h2">Recent questions (this session)</h2>
+    {% for q in recent_queries %}
+    <a href="{% url 'decision_studio:result_detail' q.pk %}" class="ds-panel" style="display:block;text-decoration:none;">
+      <p style="color:#fff;font-size:0.9rem;margin:0;">{{ q.question_text }}</p>
+      <div class="ds-chip-row">
+        <span class="ds-chip">{{ q.get_intent_display }}</span>
+        <span class="ds-confidence-badge ds-confidence-{{ q.confidence_label }}">{{ q.get_confidence_label_display }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+
+{% include 'decision_studio/_styles.html' %}
+{% endblock %}

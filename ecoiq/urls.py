@@ -201,6 +201,11 @@ urlpatterns = [
     # Intelligence Analytics Engine and LangGraph Orchestration (Phase 1)
     path('intelligence-dashboard/', include('plotly_visual_intelligence.urls', namespace='plotly_visual_intelligence')),
 
+    # EcoIQ Natural-Language Decision Studio — the user-facing orchestration
+    # layer: turns a free-text decision question into a routed, explainable,
+    # evidence-backed answer (Phase 1)
+    path('decision-studio/', include('decision_studio.urls', namespace='decision_studio')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Please slow down — EcoIQ Decision Studio{% endblock %}
+
+{% block content %}
+<div class="ds-wrap">
+  <span class="ds-badge">Decision Studio</span>
+  <h1 class="ds-title">Please slow down</h1>
+  <div class="ds-executive-answer">
+    You've asked {{ max_requests }} questions in the last {{ window_minutes }} minutes. To keep the Decision Studio responsive for everyone, please wait a few minutes before asking another question.
+  </div>
+  <a class="ds-back" href="{% url 'decision_studio:studio' %}">← Back to Decision Studio</a>
+</div>
+
+{% include 'decision_studio/_styles.html' %}
+{% endblock %}
