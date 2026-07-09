@@ -70,3 +70,50 @@ def find_similar_countries(country_profile_id, top_n=5):
     df = build_country_features()
     feature_columns = COMPANY_CORE_COLUMNS  # country-level averages of the same pillars
     return _nearest_neighbors_explained(df, country_profile_id, feature_columns, top_n)
+
+
+def compare_countries(country_profile_ids):
+    """
+    Direct 2-3-country comparison — the Interactive Globe's "Country
+    Comparison" feature calls this rather than standing up a second
+    comparison engine. Reuses the exact same standardized-feature technique
+    as find_similar_countries()/find_similar_companies() (prepare_matrix +
+    per-feature standardized distance), just applied to a specific requested
+    set instead of a nearest-neighbour search.
+    """
+    ids = list(dict.fromkeys(country_profile_ids))   # de-dupe, preserve request order
+    if not (2 <= len(ids) <= 3):
+        return {'available': False, 'reason': 'Select 2 or 3 countries to compare.'}
+
+    from countries.models import CountryProfile
+
+    df = build_country_features(CountryProfile.objects.filter(pk__in=ids))
+    df = df.loc[[pk for pk in ids if pk in df.index]]   # keep only the requested countries, in request order
+    if len(df) < 2 or not has_enough_variation(df, COMPANY_CORE_COLUMNS, minimum_rows=2):
+        return {'available': False, 'reason': 'Not enough real data across these countries yet to compare.'}
+
+    matrix, imputed_mask, _scaler = prepare_matrix(df, COMPANY_CORE_COLUMNS)
+    names = list(df['name'])
+    pks = list(df.index)
+
+    pairs = []
+    for i in range(len(pks)):
+        for j in range(i + 1, len(pks)):
+            diff = np.abs(matrix[i] - matrix[j])
+            ranked = sorted(zip(COMPANY_CORE_COLUMNS, diff), key=lambda pair: pair[1], reverse=True)
+            pairs.append({
+                'a': names[i], 'b': names[j],
+                'most_different_on': [f for f, _ in ranked[:3]],
+                'most_similar_on': [f for f, _ in ranked[-2:]],
+            })
+
+    return {
+        'available': True,
+        'countries': [{'id': int(pk), 'name': name} for pk, name in zip(pks, names)],
+        'features_used': COMPANY_CORE_COLUMNS,
+        'imputed_features_by_country': {
+            names[i]: list(imputed_mask.loc[pks[i]][imputed_mask.loc[pks[i]]].index) for i in range(len(pks))
+        },
+        'method': 'sklearn-standardized per-feature distance (same engine as find_similar_countries)',
+        'pairs': pairs,
+    }
