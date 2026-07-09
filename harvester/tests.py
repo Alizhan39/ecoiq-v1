@@ -960,3 +960,322 @@ class IntlRegistryTests(TestCase):
         call_command("seed_country_registries", stdout=StringIO())
         self.assertEqual(Evidence.objects.count(), 0)
         self.assertEqual(Datapoint.objects.count(), 0)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Data Ingestion Engine (Phase 1) — SOURCE -> FETCH -> VALIDATE -> NORMALISE ->
+# DEDUPLICATE -> ATTRIBUTE -> CONFIDENCE -> STORE -> MEMORY
+# ═══════════════════════════════════════════════════════════════════════════
+from unittest.mock import patch
+
+from backend_intelligence_engine.services.http_client import HTTPFetchResult
+from harvester.models import IngestionRun
+from harvester.services import fetchers
+from harvester.services.ingestion_pipeline import ingest_source
+
+
+def _ok_result(json_data=None, text='', content=b'x', content_type='application/json'):
+    return HTTPFetchResult(
+        success=True, status_code=200, content=content or b'x', text=text,
+        json_data=json_data, attempts=1, elapsed_seconds=0.01,
+        headers={'content-type': content_type},
+    )
+
+
+def _fail_result(error='Connection error'):
+    return HTTPFetchResult(success=False, status_code=None, error=error, attempts=3, elapsed_seconds=1.0)
+
+
+class SourceRegistryFieldsTests(TestCase):
+    def test_source_tracks_fetch_history_honestly(self):
+        source = Source.objects.create(name='Test Source', source_type='companies_house', confidence_base=0.9)
+        self.assertIsNone(source.last_success_at)
+        self.assertIsNone(source.last_failure_at)
+        self.assertEqual(source.last_failure_reason, '')
+
+    def test_existing_registry_fields_cover_most_of_the_spec(self):
+        # name, source_type, base URL, target company, enabled, refresh
+        # frequency, reliability were all already on Source before Phase 1 —
+        # confirms the audit finding that only fetch-history was missing.
+        source = Source.objects.create(
+            name='Test', source_type='companies_house', source_url='https://example.com',
+            company=None, is_active=True, update_frequency='annual', confidence_base=0.9,
+        )
+        for field in ('name', 'source_type', 'source_url', 'company', 'is_active', 'update_frequency', 'confidence_base'):
+            self.assertTrue(hasattr(source, field))
+
+
+class CompaniesHouseIngestionTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='National Grid', slug='national-grid', country='United Kingdom')
+        self.profile = CompanyProfile.objects.create(company=self.company)
+        self.source = Source.objects.create(
+            company=self.profile, source_type='companies_house', name='Companies House', confidence_base=0.92,
+        )
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_json_api_ingestion_creates_evidence_with_attribution(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(json_data={
+            'company_status': 'active', 'sic_codes': ['35110'], 'jurisdiction': 'england-wales',
+            'company_name': 'NATIONAL GRID PLC',
+        })
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key-for-test'):
+            run = ingest_source(self.source)
+
+        self.assertEqual(run.status, 'new')
+        evidence = Evidence.objects.get(company_slug='national-grid')
+        self.assertEqual(evidence.source.source_type, 'companies_house')
+        self.assertIn('active', evidence.excerpt)
+        self.assertEqual(run.evidence_created_count, 1)
+        self.assertEqual(run.memory_records_created, 1)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_unchanged_content_on_rerun_does_not_duplicate(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(json_data={
+            'company_status': 'active', 'sic_codes': ['35110'], 'jurisdiction': 'england-wales',
+            'company_name': 'NATIONAL GRID PLC',
+        })
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key-for-test'):
+            first_run = ingest_source(self.source)
+            second_run = ingest_source(self.source)
+
+        self.assertEqual(first_run.status, 'new')
+        self.assertEqual(second_run.status, 'unchanged')
+        self.assertEqual(Evidence.objects.filter(company_slug='national-grid').count(), 1)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_changed_content_is_classified_as_updated(self, mock_fetch):
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key-for-test'):
+            mock_fetch.return_value = _ok_result(json_data={
+                'company_status': 'active', 'sic_codes': ['35110'], 'jurisdiction': 'england-wales',
+                'company_name': 'NATIONAL GRID PLC',
+            })
+            first_run = ingest_source(self.source)
+
+            mock_fetch.return_value = _ok_result(json_data={
+                'company_status': 'dissolved', 'sic_codes': ['35110'], 'jurisdiction': 'england-wales',
+                'company_name': 'NATIONAL GRID PLC',
+            })
+            second_run = ingest_source(self.source)
+
+        self.assertEqual(first_run.status, 'new')
+        self.assertEqual(second_run.status, 'updated')
+        self.assertEqual(Evidence.objects.filter(company_slug='national-grid').count(), 2)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_http_failure_recorded_honestly_not_silently(self, mock_fetch):
+        mock_fetch.return_value = _fail_result('ConnectTimeout: timed out')
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key-for-test'):
+            run = ingest_source(self.source)
+
+        self.assertEqual(run.status, 'failed')
+        self.assertIn('timed out', run.error_message)
+        self.source.refresh_from_db()
+        self.assertIsNotNone(self.source.last_failure_at)
+        self.assertIsNotNone(self.source.last_failure_reason)
+
+    def test_missing_api_key_is_skipped_not_faked(self):
+        with self.settings(COMPANIES_HOUSE_API_KEY=''):
+            run = ingest_source(self.source)
+        self.assertEqual(run.status, 'skipped')
+        self.assertEqual(Evidence.objects.count(), 0)
+
+    def test_no_company_number_mapping_is_skipped(self):
+        unmapped_company = Company.objects.create(name='Totally Unmapped Co', slug='totally-unmapped-co', country='United Kingdom')
+        unmapped_profile = CompanyProfile.objects.create(company=unmapped_company)
+        source = Source.objects.create(company=unmapped_profile, source_type='companies_house', name='CH', confidence_base=0.9)
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key'):
+            run = ingest_source(source)
+        self.assertEqual(run.status, 'skipped')
+
+    def test_disabled_source_is_skipped(self):
+        self.source.is_active = False
+        self.source.save()
+        run = ingest_source(self.source)
+        self.assertEqual(run.status, 'skipped')
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_invalid_content_type_rejected(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(json_data=None, content_type='text/html')
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key-for-test'):
+            run = ingest_source(self.source)
+        self.assertEqual(run.status, 'failed')
+        self.assertIn('content-type', run.error_message)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_oversized_response_rejected(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(json_data={'company_status': 'active'}, content=b'x' * (fetchers.MAX_RESPONSE_BYTES + 1))
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key-for-test'):
+            run = ingest_source(self.source)
+        self.assertEqual(run.status, 'failed')
+        self.assertIn('too large', run.error_message)
+
+
+class CSVIngestionTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='CSV Test Co', slug='csv-test-co', country='United Kingdom')
+        self.profile = CompanyProfile.objects.create(company=self.company)
+        self.source = Source.objects.create(
+            company=self.profile, source_type='csv_dataset', source_url='https://example.com/data.csv',
+            name='Test CSV', confidence_base=0.6,
+        )
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_csv_ingestion_creates_one_evidence_per_row(self, mock_fetch):
+        csv_bytes = b'statement\nCompany reported strong Q1 results.\nCompany announced new solar farm.\n'
+        mock_fetch.return_value = _ok_result(text=csv_bytes.decode(), content=csv_bytes, content_type='text/csv')
+        run = ingest_source(self.source)
+        self.assertEqual(run.status, 'new')
+        self.assertEqual(Evidence.objects.filter(company_slug='csv-test-co', source__source_type='csv_dataset').count(), 2)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_csv_with_no_text_column_fails_honestly(self, mock_fetch):
+        csv_bytes = b'value,amount\n1,2\n3,4\n'
+        mock_fetch.return_value = _ok_result(text=csv_bytes.decode(), content=csv_bytes, content_type='text/csv')
+        run = ingest_source(self.source)
+        self.assertEqual(run.status, 'failed')
+        self.assertIn('text column', run.error_message)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_malformed_csv_fails_honestly(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(text='not,valid\n"unterminated quote', content=b'not,valid\n"unterminated quote', content_type='text/csv')
+        run = ingest_source(self.source)
+        self.assertIn(run.status, ('failed',))
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_empty_csv_fails_honestly(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(text='statement\n', content=b'statement\n', content_type='text/csv')
+        run = ingest_source(self.source)
+        self.assertEqual(run.status, 'failed')
+
+
+class URLRecheckIngestionTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='HTML Test Co', slug='html-test-co', country='United Kingdom')
+        self.profile = CompanyProfile.objects.create(company=self.company)
+        self.source = Source.objects.create(
+            company=self.profile, source_type='press_release', source_url='https://example.com/press',
+            name='Press page recheck', confidence_base=0.6,
+        )
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=True)
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_permitted_html_ingestion_extracts_text(self, mock_fetch, mock_robots):
+        html = '<html><body><p>Company announces record renewable energy investment.</p></body></html>'
+        mock_fetch.return_value = _ok_result(text=html, content=html.encode(), content_type='text/html; charset=utf-8')
+        run = ingest_source(self.source)
+        self.assertEqual(run.status, 'new')
+        evidence = Evidence.objects.get(company_slug='html-test-co')
+        self.assertIn('renewable energy', evidence.excerpt)
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=False)
+    def test_disallowed_robots_txt_is_skipped_never_fetched(self, mock_robots):
+        with patch('harvester.services.fetchers.http_fetch') as mock_fetch:
+            run = ingest_source(self.source)
+            mock_fetch.assert_not_called()
+        self.assertEqual(run.status, 'skipped')
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=True)
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_empty_html_body_fails_honestly(self, mock_fetch, mock_robots):
+        html = '<html><body></body></html>'
+        mock_fetch.return_value = _ok_result(text=html, content=html.encode(), content_type='text/html')
+        run = ingest_source(self.source)
+        self.assertEqual(run.status, 'failed')
+
+
+class IngestionRunObservabilityTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='Obs Co', slug='obs-co', country='United Kingdom')
+        self.profile = CompanyProfile.objects.create(company=self.company)
+        self.source = Source.objects.create(company=self.profile, source_type='companies_house', name='CH', confidence_base=0.9)
+
+    def test_every_attempt_creates_a_run_row_even_when_skipped(self):
+        count_before = IngestionRun.objects.count()
+        ingest_source(self.source)  # no API key configured -> skipped
+        self.assertEqual(IngestionRun.objects.count(), count_before + 1)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_confidence_and_source_attribution_preserved_on_evidence(self, mock_fetch):
+        # 'national-grid' is a real, mapped Companies House slug — required
+        # for the fetch to actually proceed (unlike 'obs-co', used by the
+        # skip test above, which is deliberately unmapped).
+        mapped_company = Company.objects.create(name='National Grid', slug='national-grid', country='United Kingdom')
+        mapped_profile = CompanyProfile.objects.create(company=mapped_company)
+        mapped_source = Source.objects.create(company=mapped_profile, source_type='companies_house', name='CH', confidence_base=0.9)
+
+        mock_fetch.return_value = _ok_result(json_data={'company_status': 'active', 'sic_codes': [], 'company_name': 'National Grid'})
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key'):
+            ingest_source(mapped_source)
+        evidence = Evidence.objects.get(company_slug='national-grid')
+        self.assertEqual(evidence.source_id, mapped_source.pk)
+        self.assertGreater(evidence.confidence, 0)  # verification engine ran, real score, not fabricated zero
+
+
+class BackgroundIntelligenceIngestionTaskTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='Task Co', slug='task-co', country='United Kingdom')
+        self.profile = CompanyProfile.objects.create(company=self.company)
+        self.source = Source.objects.create(company=self.profile, source_type='companies_house', name='CH', confidence_base=0.9)
+
+    def test_ingest_source_task_creates_background_task_run(self):
+        from backend_intelligence_engine.models import BackgroundTaskRun
+        from backend_intelligence_engine.tasks import ingest_source as ingest_source_task
+
+        result = ingest_source_task.apply(args=[self.source.pk]).get()
+        self.assertEqual(result['status'], 'completed')  # skipped ingestion still completes the Celery task itself
+        self.assertTrue(BackgroundTaskRun.objects.filter(task_type='ingest_source').exists())
+
+    def test_ingest_source_task_unknown_source_fails_honestly(self):
+        from backend_intelligence_engine.tasks import ingest_source as ingest_source_task
+
+        result = ingest_source_task.apply(args=[999999999]).get()
+        self.assertEqual(result['status'], 'failed')
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_ingest_enabled_sources_respects_limit(self, mock_fetch):
+        mock_fetch.return_value = _fail_result('no network in test')
+        from backend_intelligence_engine.tasks import ingest_enabled_sources
+
+        for i in range(5):
+            company = Company.objects.create(name=f'Bulk Co {i}', slug=f'bulk-co-{i}', country='United Kingdom')
+            profile = CompanyProfile.objects.create(company=company)
+            Source.objects.create(company=profile, source_type='companies_house', name=f'CH {i}', confidence_base=0.9)
+
+        result = ingest_enabled_sources.apply(kwargs={'limit': 3}).get()
+        self.assertEqual(result['status'], 'completed')
+        self.assertEqual(result['sources_processed'], 3)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_refresh_entity_evidence_triggers_score_recalc_only_on_real_change(self, mock_fetch):
+        from backend_intelligence_engine.tasks import refresh_entity_evidence
+
+        # 'national-grid' is a real, mapped Companies House slug — needed so
+        # the fetch actually proceeds (unlike self.profile's unmapped slug,
+        # which correctly always skips, exercised by the test below instead).
+        mapped_company = Company.objects.create(name='National Grid', slug='national-grid', country='United Kingdom')
+        mapped_profile = CompanyProfile.objects.create(company=mapped_company)
+        Source.objects.create(company=mapped_profile, source_type='companies_house', name='CH', confidence_base=0.9)
+
+        mock_fetch.return_value = _ok_result(json_data={'company_status': 'active', 'sic_codes': [], 'company_name': 'National Grid'})
+        with self.settings(COMPANIES_HOUSE_API_KEY='fake-key'):
+            result = refresh_entity_evidence.apply(args=[mapped_profile.pk]).get()
+
+        self.assertEqual(result['status'], 'completed')
+        self.assertTrue(result['genuinely_changed'])
+        self.assertEqual(result['score_recalculation'], 'queued')
+
+    def test_refresh_entity_evidence_no_change_does_not_queue_recalc(self):
+        # No API key -> every source skipped -> genuinely_changed must be False
+        from backend_intelligence_engine.tasks import refresh_entity_evidence
+
+        result = refresh_entity_evidence.apply(args=[self.profile.pk]).get()
+        self.assertEqual(result['status'], 'completed')
+        self.assertFalse(result['genuinely_changed'])
+        self.assertIsNone(result['score_recalculation'])
+
+    def test_refresh_entity_evidence_unknown_company_fails_honestly(self):
+        from backend_intelligence_engine.tasks import refresh_entity_evidence
+
+        result = refresh_entity_evidence.apply(args=[999999999]).get()
+        self.assertEqual(result['status'], 'failed')

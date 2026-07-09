@@ -63,6 +63,12 @@ class Source(models.Model):
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Data Ingestion Engine (Phase 1) — real fetch history for this source.
+    # Never fabricated: both stay null until an actual fetch attempt happens.
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    last_failure_at = models.DateTimeField(null=True, blank=True)
+    last_failure_reason = models.TextField(blank=True)
+
     class Meta:
         db_table = "harvester_source"
         ordering = ["source_type", "name"]
@@ -384,3 +390,77 @@ class BatchHarvestRun(models.Model):
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }
+
+
+class IngestionRun(models.Model):
+    """
+    Data Ingestion Engine (Phase 1) — one real fetch attempt against one
+    Source row. A different granularity from both HarvestJob (one
+    company-wide offline harvest across many source types at once, no
+    network) and backend_intelligence_engine.BackgroundTaskRun (Celery-task
+    lifecycle, not what a fetch actually found) — this is the "did fetching
+    THIS source right now yield new/updated/unchanged/failed content" record
+    the admin visibility requirement needs, and nothing existing captures it.
+
+    status is never inferred loosely: NEW/UPDATED mean a canonical
+    harvester.Evidence row was genuinely created (see services/
+    ingestion_pipeline.py), UNCHANGED means the exact same fact was found
+    again, FAILED means the fetch/validation itself errored, SKIPPED means
+    the source was never fetched at all (disabled, robots.txt disallowed, no
+    mapping found) — never silently conflated.
+    """
+    STATUS_CHOICES = [
+        ("new", "New"),
+        ("updated", "Updated"),
+        ("unchanged", "Unchanged"),
+        ("failed", "Failed"),
+        ("skipped", "Skipped"),
+    ]
+
+    source = models.ForeignKey(
+        Source, null=True, blank=True, on_delete=models.SET_NULL, related_name="ingestion_runs",
+    )
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="skipped")
+    triggered_by = models.CharField(max_length=80, blank=True, help_text='e.g. "celery:ingest_source" or "manual"')
+
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    evidence_created_count = models.IntegerField(default=0)
+    evidence_updated_count = models.IntegerField(default=0)
+    refs_attached_count = models.IntegerField(default=0)
+    memory_records_created = models.IntegerField(default=0)
+
+    error_message = models.TextField(blank=True)
+    retry_count = models.IntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_ingestion_run"
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status"]), models.Index(fields=["source"])]
+
+    def __str__(self):
+        return f"IngestionRun({self.source_id}, {self.status})"
+
+    @property
+    def duration_seconds(self):
+        if self.started_at and self.completed_at:
+            return round((self.completed_at - self.started_at).total_seconds(), 2)
+        return None
+
+    def mark_completed(self, status, **counts):
+        from django.utils import timezone
+        self.status = status
+        self.completed_at = timezone.now()
+        for field, value in counts.items():
+            setattr(self, field, value)
+        self.save()
+
+    def mark_failed(self, error_message):
+        from django.utils import timezone
+        self.status = "failed"
+        self.error_message = error_message
+        self.completed_at = timezone.now()
+        self.save(update_fields=["status", "error_message", "completed_at"])

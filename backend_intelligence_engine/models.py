@@ -27,6 +27,9 @@ class BackgroundTaskRun(models.Model):
         ('evidence_memory_refresh', 'Evidence Memory Refresh'),
         ('intelligence_score_recalculation', 'Intelligence Score Recalculation'),
         ('langgraph_intelligence_workflow', 'LangGraph Intelligence Workflow'),
+        ('ingest_source', 'Ingest Source'),
+        ('ingest_enabled_sources', 'Ingest Enabled Sources'),
+        ('refresh_entity_evidence', 'Refresh Entity Evidence'),
     ]
     STATUS_CHOICES = [
         ('queued', 'Queued'),
