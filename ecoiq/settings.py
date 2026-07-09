@@ -236,6 +236,13 @@ INSTALLED_APPS = [
     # (Phase 1)
     'plotly_visual_intelligence',
 
+    # Natural-Language Decision Studio — the user-facing orchestration layer
+    # above every module in this list: turns a free-text decision question
+    # into intent + resolved entities + an explicit capability plan, then
+    # calls the existing services directly (never a second orchestrator, a
+    # second vector search, or a second scoring formula) (Phase 1)
+    'decision_studio',
+
     # Fintech / capital-allocation layer: operational waste -> financial loss -> governed investment decision
     'waste_to_value_capital_allocation_engine',
 

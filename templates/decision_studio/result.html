@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Decision Result — EcoIQ Decision Studio{% endblock %}
+{% block meta_description_content %}{{ query.question_text }}{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+NOT defer — each chart fragment embeds an inline <script>Plotly.newPlot(...)</script>
+that runs synchronously as the parser reaches it, so plotly.min.js must already
+have executed by then (same convention as plotly_visual_intelligence/dashboard.html).
+{% endcomment %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="ds-wrap">
+  <a class="ds-back" href="{% url 'decision_studio:studio' %}">← Ask another question</a>
+
+  <span class="ds-badge">{{ query.get_intent_display }}</span>
+  <h1 class="ds-title">{{ query.question_text }}</h1>
+
+  <div class="ds-executive-answer">{{ result.executive_answer }}</div>
+
+  <div class="ds-chip-row" style="margin-bottom:1.5rem;">
+    <span class="ds-confidence-badge ds-confidence-{{ query.confidence_label }}">Confidence: {{ query.get_confidence_label_display }}{% if query.confidence_score %} ({{ query.confidence_score }}%){% endif %}</span>
+    <span class="ds-chip">Data availability: {{ query.get_data_availability_status_display }}</span>
+    {% if query.scope.country %}<span class="ds-chip">{{ query.scope.country }}</span>{% endif %}
+    {% if query.scope.sector %}<span class="ds-chip">{{ query.scope.sector }}</span>{% endif %}
+  </div>
+
+  {% if result.uncertainty_notes or result.data_gaps %}
+  <section class="ds-section">
+    <h2 class="ds-h2">Where EcoIQ is uncertain</h2>
+    {% if result.uncertainty_notes %}
+    <ul class="ds-uncertainty-list">{% for note in result.uncertainty_notes %}<li>{{ note }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if result.data_gaps %}
+    <p class="ds-h2" style="font-size:0.85rem;margin-top:0.8rem;">Data gaps</p>
+    <ul class="ds-gap-list">{% for gap in result.data_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if result.ranking %}
+  <section class="ds-section">
+    <h2 class="ds-h2">Ranking</h2>
+    <table class="ds-ranking-table">
+      <thead><tr><th>Rank</th><th>Company</th><th>{{ result.ranking.0.dimension|default:"Score" }}</th><th>Confidence</th></tr></thead>
+      <tbody>
+        {% for row in result.ranking|slice:":10" %}
+        <tr>
+          <td>{{ row.rank|default:"—" }}</td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.value|default:"Not yet measured" }}</td>
+          <td>{{ row.confidence|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if result.visualizations %}
+  <section class="ds-section">
+    <h2 class="ds-h2">Visual Intelligence</h2>
+    {% for viz in result.visualizations %}
+    <p class="ds-h2" style="font-size:0.9rem;">{{ viz.title }}</p>
+    <div class="ds-chart-container">{{ viz.chart.html|safe }}</div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if result.risks or result.opportunities %}
+  <section class="ds-section">
+    <h2 class="ds-h2">Risks &amp; Opportunities</h2>
+    {% for risk in result.risks %}<div class="ds-panel" style="border-left:3px solid var(--ds-danger);">{{ risk }}</div>{% endfor %}
+    {% for opp in result.opportunities %}<div class="ds-panel" style="border-left:3px solid var(--ds-acc);">{{ opp }}</div>{% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="ds-section">
+    <h2 class="ds-h2">Supporting Evidence</h2>
+    {% if result.supporting_evidence %}
+      {% for item in result.supporting_evidence|slice:":10" %}
+      <div class="ds-evidence-card">
+        <div class="ds-chip-row" style="margin-bottom:0.4rem;">
+          <span class="ds-chip">{{ item.source_type }}</span>
+          {% if item.entity %}<span class="ds-chip">{{ item.entity }}</span>{% endif %}
+          {% if item.confidence %}<span class="ds-chip">Confidence: {{ item.confidence|floatformat:0 }}%</span>{% endif %}
+          {% if item.is_demo %}<span class="ds-chip">Demo data</span>{% endif %}
+        </div>
+        <p style="margin:0;color:var(--ds-text);font-size:0.88rem;">{{ item.excerpt }}</p>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="ds-empty">No supporting evidence was retrieved for this question.</div>
+    {% endif %}
+  </section>
+
+  <section class="ds-section">
+    <h2 class="ds-h2">How EcoIQ reached this answer</h2>
+    <div class="ds-trace-row">
+      {% for step in query.capability_plan %}
+      <span class="ds-trace-step {% if step.executed %}executed{% else %}skipped{% endif %}" title="{{ step.reason }}">
+        <span class="ds-trace-dot"></span>{{ step.capability|title }}
+      </span>
+      {% if not forloop.last %}<span class="ds-trace-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+    <div class="ds-chip-row">
+      {% for module in result.modules_used %}<span class="ds-chip">{{ module }}</span>{% endfor %}
+    </div>
+    {% if result.agents_used %}
+    <p class="ds-h2" style="font-size:0.85rem;margin-top:0.8rem;">Agents used</p>
+    <div class="ds-chip-row">{% for agent in result.agents_used %}<span class="ds-chip">{{ agent }}</span>{% endfor %}</div>
+    {% endif %}
+  </section>
+
+  <section class="ds-section">
+    <h2 class="ds-h2">Ask a follow-up question</h2>
+    <div class="ds-follow-up-form">
+      {% for follow_up in result.follow_up_questions %}
+      <form method="post" action="{% url 'decision_studio:ask' %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="question" value="{{ follow_up }}">
+        <input type="hidden" name="parent_query_id" value="{{ query.pk }}">
+        <button type="submit" class="ds-follow-up-chip">{{ follow_up }}</button>
+      </form>
+      {% endfor %}
+    </div>
+    <form method="post" action="{% url 'decision_studio:ask' %}" class="ds-ask-form" style="margin-top:1rem;">
+      {% csrf_token %}
+      <input type="hidden" name="parent_query_id" value="{{ query.pk }}">
+      <input type="text" name="question" class="ds-ask-input" placeholder="Ask your own follow-up…" maxlength="500" required>
+      <button type="submit" class="ds-btn">Ask →</button>
+    </form>
+  </section>
+</div>
+
+{% include 'decision_studio/_styles.html' %}
+{% endblock %}
