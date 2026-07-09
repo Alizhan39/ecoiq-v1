@@ -21,6 +21,7 @@
     carbon: '#a855f7', water: '#38bdf8',
   };
   var LAYER_PRIORITY = ['capital', 'carbon', 'energy', 'water', 'infrastructure'];
+  var FEATURED_ISO_ORDER = ['GB', 'KZ', 'SA', 'TR'];
   var active = { energy: true, infrastructure: true, capital: true, carbon: true, water: true };
   var intelActive = {};   // which "intelligence layers" toggles are on (empty = no emphasis filter)
   var revealMax = 5;   // layers revealed (staggered during a country flight)
@@ -37,7 +38,8 @@
     .then(function (r) { return r.json(); })
     .then(function (d) {
       DATA = d; renderStats(d.stats); wireToggles(); wireIntelLayers(d.intelligence_layers_available);
-      wireChips(d.countries); wireJump(d.countries); wirePanelDrag(); bootGlobe();
+      wireChips(d.countries); wireJump(d.countries); wirePanelDrag(); wirePanelSwipe(d.countries);
+      wireResetView(); wireSignalsFeed(); bootGlobe();
     })
     .catch(function () { /* HUD shows skeleton; globe stays as poster */ });
 
@@ -106,6 +108,80 @@
     jump.addEventListener('change', function () {
       if (jump.value) focusCountry(jump.value, countries);
     });
+  }
+
+  // "Reset view" — clears country focus and any active intelligence-layer
+  // emphasis, returning every toggle to its default on-state. No page
+  // reload: same lightweight DOM-only path as closeCountry()/applyLayers().
+  function wireResetView() {
+    var btn = document.getElementById('le-reset-view');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      closeCountry();
+      Object.keys(intelActive).forEach(function (k) { intelActive[k] = false; });
+      root.querySelectorAll('[data-intel-layer]').forEach(function (b) {
+        b.classList.remove('off'); b.setAttribute('aria-pressed', 'false');
+      });
+      Object.keys(active).forEach(function (k) { active[k] = true; });
+      root.querySelectorAll('[data-layer]').forEach(function (b) {
+        b.classList.remove('off'); b.setAttribute('aria-pressed', 'true');
+      });
+      applyLayers();
+    });
+  }
+
+  // ── Live intelligence signals feed (Phase 2) — real, already-persisted
+  // EcoIQ records only (risk zones, opportunities, modernisation changes,
+  // evidence, real agent activity). See core/globe.py globe_signals(). ──
+  var SIGNAL_TYPE_LABEL = {
+    risk: 'Risk', opportunity: 'Opportunity', change: 'Change',
+    evidence_update: 'Evidence Update', agent_finding: 'Agent Finding',
+  };
+  function wireSignalsFeed() {
+    var list = document.getElementById('le-signals-list');
+    if (!list) return;
+    var currentPeriod = 'latest';
+
+    function load(period) {
+      currentPeriod = period;
+      setHTML('le-signals-list', '<div class="le-signals-empty">Loading…</div>');
+      fetch('/api/globe/signals/?period=' + encodeURIComponent(period), { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(renderSignals)
+        .catch(function () { setHTML('le-signals-list', '<div class="le-signals-empty">Signals temporarily unavailable.</div>'); });
+    }
+
+    function renderSignals(d) {
+      var note = document.getElementById('le-signals-note');
+      if (d.historical_coverage_developing) {
+        note.hidden = false;
+        note.textContent = 'Historical intelligence coverage is still developing.';
+      } else {
+        note.hidden = true;
+      }
+      if (!d.signals || !d.signals.length) {
+        setHTML('le-signals-list', '<div class="le-signals-empty">No real signals recorded for this period yet.</div>');
+        return;
+      }
+      setHTML('le-signals-list', d.signals.map(function (s) {
+        var tagLabel = SIGNAL_TYPE_LABEL[s.type] || s.type;
+        var inner = '<span class="le-sig-tag ' + esc(s.type) + '">' + esc(tagLabel) + '</span>' +
+          '<span class="le-signal-body"><span class="le-signal-title">' + esc(s.title) + '</span>' +
+          '<span class="le-signal-detail">' + esc(s.iso) + (s.detail ? ' · ' + esc(s.detail) : '') + '</span></span>';
+        return s.link ? '<div class="le-signal"><a href="' + esc(s.link) + '">' + inner + '</a></div>'
+          : '<div class="le-signal">' + inner + '</div>';
+      }).join(''));
+    }
+
+    root.querySelectorAll('.le-period').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        root.querySelectorAll('.le-period').forEach(function (b) {
+          b.classList.toggle('active', b === btn); b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+        load(btn.dataset.period);
+      });
+    });
+    load(currentPeriod);
   }
 
   function closeCountry() {
@@ -208,6 +284,68 @@
       if (!href) return '';
       return '<a href="' + esc(href) + '">' + esc(ACTION_LABELS[key]) + ' →</a>';
     }).join(''));
+
+    renderEconomicSignals(d.economic_signals);
+    renderCapitalFlows(d.capital_flows);
+    renderTradeAndRevenue(d.trade_and_revenue_composition);
+  }
+
+  function factRow(label, value, formatter) {
+    var v = (value === null || value === undefined)
+      ? '<span class="val na">Insufficient evidence</span>'
+      : '<span class="val">' + esc(formatter ? formatter(value) : value) + '</span>';
+    return '<div class="le-fact"><span class="lab">' + esc(label) + '</span>' + v + '</div>';
+  }
+  function fmtUsd(n) {
+    if (n >= 1e12) return '$' + (n / 1e12).toFixed(1) + 'T';
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+    return '$' + n;
+  }
+  function fmtPct(n) { return n + '%'; }
+
+  // Real CountryProfile macro fields only (core/globe.py _economic_signals) —
+  // never computed or invented here.
+  function renderEconomicSignals(e) {
+    var el = document.getElementById('le-panel-economic');
+    if (!el) return;
+    if (!e) { el.innerHTML = '<div class="le-honest-stub">Limited EcoIQ coverage.</div>'; return; }
+    el.innerHTML =
+      factRow('GDP', e.gdp_usd, fmtUsd) +
+      factRow('GDP growth', e.gdp_growth_pct, fmtPct) +
+      factRow('Inflation', e.inflation_pct, fmtPct) +
+      factRow('Population', e.population_millions, function (v) { return v + 'M'; }) +
+      factRow('Industrial share of GDP', e.industrial_gdp_share, fmtPct) +
+      factRow('Renewable electricity share', e.renewable_energy_share, fmtPct) +
+      factRow('Fossil fuel dependency', e.fossil_fuel_dependency, fmtPct) +
+      factRow('CO₂ (megatonnes/yr)', e.co2_megatonnes) +
+      (e.data_sources ? '<div class="le-panel-source">Source: ' + esc(e.data_sources) + '</div>' : '');
+  }
+
+  // Real CountryProfile financing fields + the country's real top
+  // InvestmentGeoOpportunity (core/globe.py _capital_flows) — never a
+  // fabricated inflow/outflow figure.
+  function renderCapitalFlows(c) {
+    var el = document.getElementById('le-panel-capital');
+    if (!el) return;
+    if (!c) { el.innerHTML = '<div class="le-honest-stub">Limited EcoIQ coverage.</div>'; return; }
+    var html = factRow('Estimated transition financing gap', c.estimated_transition_gap_usd, fmtUsd) +
+      factRow('Green finance available', c.green_finance_available_usd, fmtUsd);
+    if (c.top_opportunity) {
+      html += '<div class="le-fact"><span class="lab">Top real opportunity</span>' +
+        '<span class="val">' + esc(c.top_opportunity.title) + ' (' + esc(c.top_opportunity.investment_score) + '/100)</span></div>';
+    }
+    el.innerHTML = html;
+  }
+
+  // Government revenue composition and exports/imports have no real EcoIQ
+  // data source today (see core/globe.py _trade_and_revenue_composition) —
+  // this renders the honest "not yet available" reason, never a fabricated
+  // pie chart or trade figure.
+  function renderTradeAndRevenue(t) {
+    var el = document.getElementById('le-panel-trade');
+    if (!el) return;
+    el.innerHTML = '<div class="le-honest-stub">' + esc((t && t.reason) || 'Not yet available.') + '</div>';
   }
 
   // Toggling an intelligence layer emphasises that metric row in the open
@@ -253,16 +391,64 @@
     handle.addEventListener('pointercancel', endDrag);
   }
 
+  // Mobile: swipe left/right on the panel header to move between the 4
+  // featured countries (wraps around) — a real touch gesture distinct from
+  // the drag-to-dismiss handle above (different element, horizontal axis only).
+  function wirePanelSwipe(countries) {
+    var panel = document.getElementById('le-panel');
+    var head = panel && panel.querySelector('.le-panel-head');
+    if (!panel || !head) return;
+    var startX = 0, startY = 0, tracking = false;
+    head.addEventListener('pointerdown', function (e) { tracking = true; startX = e.clientX; startY = e.clientY; });
+    head.addEventListener('pointerup', function (e) {
+      if (!tracking) return;
+      tracking = false;
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;   // not a clear horizontal swipe
+      var order = FEATURED_ISO_ORDER;
+      var i = order.indexOf(focusISO);
+      if (i === -1) return;
+      var next = dx < 0 ? order[(i + 1) % order.length] : order[(i - 1 + order.length) % order.length];
+      focusCountry(next, countries);
+    });
+  }
+
+  // Simple grid-based clustering + LOD: when many markers would render at
+  // once, nearby markers (within ~3° lat/lng — roughly the same jitter
+  // radius core/globe.py's representative offsets already use) are merged
+  // into a single point sized by count, instead of drawing every point.
+  // Keeps the point-count (and therefore render cost) bounded regardless of
+  // how many real companies a future data expansion adds.
+  var CLUSTER_THRESHOLD = 12;    // only cluster once there's enough real markers to matter
+  var CLUSTER_CELL_DEGREES = 3;
+  function clusterMarkers(markers) {
+    if (markers.length <= CLUSTER_THRESHOLD) return markers;
+    var cells = {};
+    markers.forEach(function (m) {
+      var key = Math.round(m.lat / CLUSTER_CELL_DEGREES) + ':' + Math.round(m.lng / CLUSTER_CELL_DEGREES);
+      if (!cells[key]) cells[key] = [];
+      cells[key].push(m);
+    });
+    return Object.keys(cells).map(function (key) {
+      var group = cells[key];
+      if (group.length === 1) return group[0];
+      var lat = group.reduce(function (s, m) { return s + m.lat; }, 0) / group.length;
+      var lng = group.reduce(function (s, m) { return s + m.lng; }, 0) / group.length;
+      return { lat: lat, lng: lng, color: group[0].color, name: group.length + ' markers', count: group.length };
+    });
+  }
+
   function visibleMarkers() {
     if (!DATA) return [];
     var revealed = LAYER_PRIORITY.slice(0, revealMax);
-    return DATA.markers.filter(function (m) {
+    var markers = DATA.markers.filter(function (m) {
       if (focusISO && m.country !== focusISO) return false;
       return m.layers.some(function (L) { return active[L] && revealed.indexOf(L) >= 0; });
     }).map(function (m) {
       var primary = LAYER_PRIORITY.find(function (L) { return m.layers.indexOf(L) >= 0 && active[L]; }) || m.layers[0];
       return { lat: m.lat, lng: m.lng, color: LAYER_COLOR[primary] || '#94a3b8', name: m.name };
     });
+    return clusterMarkers(markers);
   }
   var applyLayers = function () {};   // replaced once globe boots
 
@@ -307,7 +493,8 @@
       var globe = new ThreeGlobe({ animateIn: true })
         .globeImageUrl(U.texNight)
         .showAtmosphere(true).atmosphereColor('#00e89a').atmosphereAltitude(0.18)
-        .pointColor('color').pointLat('lat').pointLng('lng').pointAltitude(0.02).pointRadius(0.45);
+        .pointColor('color').pointLat('lat').pointLng('lng').pointAltitude(0.02)
+        .pointRadius(function (m) { return m.count ? Math.min(0.45 + m.count * 0.05, 1.1) : 0.45; });
       if (U.texBump) globe.bumpImageUrl(U.texBump);
       scene.add(globe);
 

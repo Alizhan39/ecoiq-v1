@@ -272,6 +272,68 @@ def _featured_country_profiles():
     return profiles
 
 
+def _none_if_unset(value):
+    return None if value in (None, 0, 0.0) else value
+
+
+def _economic_signals(cp):
+    """
+    Real macro-economic fields already stored on CountryProfile — every
+    value here was populated when the country profile was seeded from a
+    real source (data_sources/data_last_updated), never computed or
+    invented here. None where the platform genuinely has no figure yet.
+    """
+    return {
+        "gdp_usd": _none_if_unset(cp.gdp_usd),
+        "gdp_growth_pct": _none_if_unset(cp.gdp_growth_pct),
+        "inflation_pct": _none_if_unset(cp.inflation_pct),
+        "population_millions": _none_if_unset(cp.population_millions),
+        "industrial_gdp_share": _none_if_unset(cp.industrial_gdp_share),
+        "renewable_energy_share": _none_if_unset(cp.renewable_energy_share),
+        "fossil_fuel_dependency": _none_if_unset(cp.fossil_fuel_dependency),
+        "co2_megatonnes": _none_if_unset(cp.co2_megatonnes),
+        "data_sources": cp.data_sources or None,
+        "data_last_updated": cp.data_last_updated.isoformat() if cp.data_last_updated else None,
+    }
+
+
+def _capital_flows(cp):
+    """
+    Real financing figures already on CountryProfile (estimated_transition_gap_usd,
+    green_finance_available_usd) plus the country's real top InvestmentGeoOpportunity
+    (already used elsewhere in this module) — genuine capital-allocation signals,
+    never a fabricated inflow/outflow figure.
+    """
+    from geo_intelligence.models import InvestmentGeoOpportunity
+
+    top_opportunity = (
+        InvestmentGeoOpportunity.objects.filter(country=cp, investment_score__isnull=False)
+        .order_by("-investment_score").first()
+    )
+    return {
+        "estimated_transition_gap_usd": _none_if_unset(cp.estimated_transition_gap_usd),
+        "green_finance_available_usd": _none_if_unset(cp.green_finance_available_usd),
+        "top_opportunity": {
+            "title": top_opportunity.title, "investment_score": top_opportunity.investment_score,
+            "estimated_impact": top_opportunity.estimated_impact or None,
+        } if top_opportunity else None,
+    }
+
+
+# Government revenue composition and exports/imports (trade) have no real
+# data source anywhere in this platform today (no model, no field, no
+# ingestion pipeline) — confirmed by audit before writing this module.
+# Returning a fabricated pie chart here would violate the platform's core
+# honesty convention, so this is an explicit, permanent "not yet available"
+# stub rather than invented numbers. Wire a real source into this function
+# the day one exists; until then it must keep returning available=False.
+def _trade_and_revenue_composition(cp):
+    return {
+        "available": False,
+        "reason": "EcoIQ does not yet ingest government revenue composition or trade (exports/imports) data for any country.",
+    }
+
+
 def _numeric_country_scores(cp, iso):
     """
     Real, numeric (0-100 or None) scores for the heatmap and country
@@ -586,6 +648,9 @@ def globe_country(request, slug):
 
     intelligence = _intelligence_layers(cp, iso)
     recommended_next_action = _recommended_next_action(intelligence)
+    economic_signals = _economic_signals(cp)
+    capital_flows = _capital_flows(cp)
+    trade_and_revenue_composition = _trade_and_revenue_composition(cp)
 
     # Every action link points at a real, existing route — never a new one
     # invented for the globe. Decision Studio and Evidence Explorer have no
@@ -613,6 +678,9 @@ def globe_country(request, slug):
         },
         "layers": layers,
         "intelligence": intelligence,
+        "economic_signals": economic_signals,
+        "capital_flows": capital_flows,
+        "trade_and_revenue_composition": trade_and_revenue_composition,
         "recommended_next_action": recommended_next_action,
         "actions": actions,
         "companies": intel["companies"][:8],

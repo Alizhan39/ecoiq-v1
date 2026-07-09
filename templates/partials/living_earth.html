@@ -83,11 +83,43 @@ Data: /api/globe/layers/ (real). No fly-to twin, no scoring, no fabrication.
     .le-note{ position:relative; z-index:2; max-width:1240px; margin:.6rem auto 0; padding:0 1.5rem 1.5rem;
       font-family:var(--mono); font-size:.62rem; color:var(--muted); }
 
+    .le-reset-btn{ margin-top:.7rem; width:100%; font-family:var(--mono); font-size:.68rem; text-transform:uppercase;
+      letter-spacing:.06em; background:transparent; border:1px solid var(--border); color:var(--muted2);
+      border-radius:6px; padding:.5rem; cursor:pointer; min-height:36px; }
+    .le-reset-btn:hover{ border-color:var(--accent); color:var(--accent); }
+
+    /* live signals feed */
+    .le-signals{ position:relative; z-index:2; max-width:1240px; margin:1.2rem auto 0; padding:0 1.5rem; }
+    .le-signals-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.6rem; }
+    .le-signals-head h4{ font-family:var(--mono); font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0; }
+    .le-timeline{ display:flex; gap:.4rem; flex-wrap:wrap; }
+    .le-period{ font-family:var(--mono); font-size:.66rem; background:transparent; border:1px solid var(--border);
+      color:var(--muted2); border-radius:5px; padding:.35rem .6rem; cursor:pointer; min-height:32px; }
+    .le-period.active{ border-color:var(--accent); color:var(--accent); }
+    .le-signals-legend{ display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.6rem; }
+    .le-sig-tag{ font-family:var(--mono); font-size:.6rem; padding:.15rem .5rem; border-radius:4px; text-transform:uppercase; letter-spacing:.04em; }
+    .le-sig-tag.risk{ color:#f4a261; background:rgba(244,162,97,.1); border:1px solid rgba(244,162,97,.3); }
+    .le-sig-tag.opportunity{ color:#00e89a; background:rgba(0,232,154,.1); border:1px solid rgba(0,232,154,.3); }
+    .le-sig-tag.change{ color:#58a6ff; background:rgba(88,166,255,.1); border:1px solid rgba(88,166,255,.3); }
+    .le-sig-tag.evidence_update{ color:#38bdf8; background:rgba(56,189,248,.1); border:1px solid rgba(56,189,248,.3); }
+    .le-sig-tag.agent_finding{ color:#a855f7; background:rgba(168,85,247,.1); border:1px solid rgba(168,85,247,.3); }
+    .le-signals-list{ margin-top:.7rem; max-height:220px; overflow-y:auto; }
+    .le-signal{ display:flex; align-items:flex-start; gap:.6rem; padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.8rem; }
+    .le-signal .le-sig-tag{ flex-shrink:0; margin-top:.1rem; }
+    .le-signal-body{ flex:1; min-width:0; }
+    .le-signal-title{ color:#fff; }
+    .le-signal-detail{ color:var(--muted2); font-family:var(--mono); font-size:.68rem; margin-top:.15rem; }
+    .le-signal a{ color:inherit; text-decoration:none; }
+    .le-signal a:hover .le-signal-title{ color:var(--accent); }
+    .le-signals-note{ font-family:var(--mono); font-size:.68rem; color:var(--muted); margin-top:.6rem; }
+    .le-signals-empty{ font-family:var(--mono); font-size:.72rem; color:var(--muted); padding:.6rem 0; }
+
     /* mobile: larger tap targets, no horizontal overflow anywhere in this section */
     @media (max-width:860px){
       .le{ overflow-x:hidden; }
       .le-layer{ min-height:44px; font-size:.88rem; }
       .le-btn{ min-height:44px; display:inline-flex; align-items:center; }
+      .le-period{ min-height:40px; }
     }
   </style>
 
@@ -104,6 +136,7 @@ Data: /api/globe/layers/ (real). No fly-to twin, no scoring, no fabrication.
         <a class="le-btn primary" href="/countries/">Explore countries →</a>
         <a class="le-btn" href="/evidence/">View evidence</a>
         <a class="le-btn" href="/ai-agents/workbench/">Try the AI agents →</a>
+        <a class="le-btn" id="le-ask-planet" href="/decision-studio/?q={{ 'Where are the strongest modernisation opportunities?'|urlencode }}">Ask EcoIQ about the world →</a>
       </div>
       <p class="le-agent-proof">{{ ai_agent_count|default:12 }} specialised AI agents → governed by evidence → allowed to disagree → human approval for high-impact actions</p>
       <div class="le-agent-strip">
@@ -130,7 +163,29 @@ Data: /api/globe/layers/ (real). No fly-to twin, no scoring, no fabrication.
       <button class="le-layer le-intel" data-intel-layer="modernisation_priority" aria-pressed="false" hidden><span class="le-dot" style="background:#58a6ff"></span> Modernisation Priority</button>
       <button class="le-layer le-intel" data-intel-layer="evidence_strength" aria-pressed="false" hidden><span class="le-dot" style="background:#38bdf8"></span> Evidence Strength</button>
       <button class="le-layer le-intel" data-intel-layer="stewardship_impact" aria-pressed="false" hidden><span class="le-dot" style="background:#a855f7"></span> Stewardship / Impact</button>
+      <button class="le-reset-btn" id="le-reset-view" type="button">Reset view</button>
     </div>
+  </div>
+
+  <div class="le-signals" aria-label="Live intelligence signals">
+    <div class="le-signals-head">
+      <h4>Live intelligence signals</h4>
+      <div class="le-timeline" role="group" aria-label="Time period">
+        <button class="le-period active" data-period="latest" aria-pressed="true">Latest</button>
+        <button class="le-period" data-period="7d" aria-pressed="false">7 days</button>
+        <button class="le-period" data-period="30d" aria-pressed="false">30 days</button>
+        <button class="le-period" data-period="1y" aria-pressed="false">1 year</button>
+      </div>
+    </div>
+    <div class="le-signals-legend">
+      <span class="le-sig-tag risk">Risk</span>
+      <span class="le-sig-tag opportunity">Opportunity</span>
+      <span class="le-sig-tag change">Change</span>
+      <span class="le-sig-tag evidence_update">Evidence Update</span>
+      <span class="le-sig-tag agent_finding">Agent Finding</span>
+    </div>
+    <div id="le-signals-list" class="le-signals-list" aria-live="polite"></div>
+    <div id="le-signals-note" class="le-signals-note" hidden></div>
   </div>
 
   <div class="le-chips" role="group" aria-label="Featured countries">
@@ -175,6 +230,9 @@ Data: /api/globe/layers/ (real). No fly-to twin, no scoring, no fabrication.
     <div class="le-panel-section"><h4>Intelligence layers</h4><div id="le-panel-intel"></div></div>
     <div id="le-panel-action" class="le-panel-action" hidden></div>
     <div id="le-panel-why" class="le-panel-why" hidden></div>
+    <div class="le-panel-section"><h4>Economic signals</h4><div id="le-panel-economic"></div></div>
+    <div class="le-panel-section"><h4>Capital flows</h4><div id="le-panel-capital"></div></div>
+    <div class="le-panel-section"><h4>Trade &amp; government revenue</h4><div id="le-panel-trade"></div></div>
     <div class="le-panel-section"><h4>Companies tracked</h4><div id="le-panel-companies"></div></div>
     <div id="le-panel-actions" class="le-panel-actions" role="group" aria-label="Country actions"></div>
     <a id="le-panel-link" class="le-panel-link" href="#">Open full country workspace →</a>
@@ -243,6 +301,14 @@ Data: /api/globe/layers/ (real). No fly-to twin, no scoring, no fabrication.
       .le-panel-close{ width:44px; height:44px; }
       .le-panel-actions a{ min-height:44px; }
     }
+
+    .le-fact{ display:flex; align-items:center; gap:.7rem; padding:.35rem 0; border-bottom:1px solid var(--border); }
+    .le-fact .lab{ flex:1; font-size:.78rem; color:var(--muted2); }
+    .le-fact .val{ font-family:var(--mono); font-weight:700; color:#fff; font-size:.82rem; }
+    .le-fact .val.na{ color:var(--muted); font-weight:400; font-size:.7rem; }
+    .le-panel-source{ font-family:var(--mono); font-size:.62rem; color:var(--muted); margin-top:.5rem; line-height:1.5; }
+    .le-honest-stub{ font-family:var(--mono); font-size:.72rem; color:var(--muted); background:rgba(255,255,255,.02);
+      border:1px dashed var(--border); border-radius:6px; padding:.6rem .7rem; line-height:1.5; }
   </style>
 
   <script src="{% static 'js/living-earth.js' %}" defer></script>

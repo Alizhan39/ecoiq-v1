@@ -70,6 +70,15 @@ class CountrySimilarityTests(TestCase):
         result = similarity.find_similar_countries(uk.pk, top_n=3)
         self.assertTrue(result['available'])
 
+    def test_compare_countries_reuses_the_same_engine_against_real_seeded_data(self):
+        # Interactive Globe country comparison — same real dataset this
+        # class already seeds for find_similar_countries(), just compared
+        # directly instead of via nearest-neighbour search.
+        countries = list(CountryProfile.objects.filter(name__in=['United Kingdom', 'Kazakhstan'])[:2])
+        result = similarity.compare_countries([c.pk for c in countries])
+        self.assertTrue(result['available'])
+        self.assertEqual(len(result['pairs']), 1)
+
 
 class ClusteringTests(TestCase):
     @classmethod

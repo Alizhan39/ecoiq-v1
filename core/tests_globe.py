@@ -320,3 +320,432 @@ class LivingEarthTemplateTests(TestCase):
         content = r.content.decode()
         self.assertNotIn("{%", content)
         self.assertNotIn("{{", content)
+
+
+class GlobeHeatmapEndpointTests(TestCase):
+    """
+    Global Intelligence Command Globe — Phase 2 heatmap. Real numeric scores
+    reused from pandas_scoring_engine's country-level Geo Intelligence
+    components; a country with no real data for a metric stays null
+    ("neutral"), never a fabricated score to fill the map.
+    """
+
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+        self.kz = CountryProfile.objects.create(name="Kazakhstan", slug="kazakhstan", iso_code="KZ", is_published=True, national_ecoiq_index=29.8)
+        CountryProfile.objects.create(name="United Kingdom", slug="united-kingdom", iso_code="GB", is_published=True)
+
+    def test_country_with_no_data_is_neutral_not_fabricated(self):
+        d = self.client.get("/api/globe/heatmap/").json()
+        gb = next(c for c in d["countries"] if c["iso"] == "GB")
+        for metric in d["metrics"]:
+            self.assertIsNone(gb["scores"][metric])
+
+    def test_ecoiq_score_reflects_real_national_ecoiq_index(self):
+        d = self.client.get("/api/globe/heatmap/").json()
+        kz = next(c for c in d["countries"] if c["iso"] == "KZ")
+        self.assertEqual(kz["scores"]["ecoiq_score"], 29.8)
+
+    def test_climate_risk_score_reflects_real_geo_risk_zones(self):
+        from geo_intelligence.models import GeoRiskZone
+        GeoRiskZone.objects.create(name="Test Zone", risk_type="drought", country=self.kz, latitude=43.2, longitude=76.9, severity="high")
+        d = self.client.get("/api/globe/heatmap/").json()
+        kz = next(c for c in d["countries"] if c["iso"] == "KZ")
+        self.assertIsNotNone(kz["scores"]["climate_risk"])
+
+    def test_ranges_computed_only_over_real_non_null_values(self):
+        d = self.client.get("/api/globe/heatmap/").json()
+        # only KZ has a real ecoiq_score in this fixture, so min == max == 29.8
+        self.assertEqual(d["ranges"]["ecoiq_score"], {"min": 29.8, "max": 29.8})
+        # no country has climate_risk data at all yet in this fixture
+        self.assertIsNone(d["ranges"]["climate_risk"])
+
+    def test_metrics_list_matches_the_five_named_heatmap_layers(self):
+        d = self.client.get("/api/globe/heatmap/").json()
+        self.assertEqual(
+            set(d["metrics"]),
+            {"climate_risk", "investment_opportunity", "modernisation_priority", "evidence_strength", "ecoiq_score"},
+        )
+
+    def test_read_only(self):
+        from countries.models import CountryProfile as CP
+        before = CP.objects.count()
+        self.client.get("/api/globe/heatmap/")
+        self.assertEqual(CP.objects.count(), before)
+
+
+class GlobeCompareEndpointTests(TestCase):
+    """
+    Phase 3 country comparison — connects to intelligence_analytics_engine's
+    real Country Similarity Engine (compare_countries()) rather than a new
+    comparison engine. Only the 4 featured countries can be compared, and
+    only 2-3 at a time.
+    """
+
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+        CountryProfile.objects.create(
+            name="Kazakhstan", slug="kazakhstan", iso_code="KZ", is_published=True,
+            national_ecoiq_index=29.8, industrial_modernization_score=38.0,
+        )
+        CountryProfile.objects.create(
+            name="United Kingdom", slug="united-kingdom", iso_code="GB", is_published=True,
+            national_ecoiq_index=62.4, industrial_modernization_score=55.0,
+        )
+        CountryProfile.objects.create(name="Saudi Arabia", slug="saudi-arabia", iso_code="SA", is_published=True)
+        # compare_countries() (intelligence_analytics_engine) averages real
+        # CompanyProfile pillar scores per country — real companies are the
+        # data source it needs, matching how build_country_features() works.
+        kz_co = Company.objects.create(name="KazMunayGas", slug="kazmunaygas-cmp", sector="energy", country="Kazakhstan")
+        CompanyProfile.objects.create(company=kz_co, status="public", ecoiq_total_score=38.0)
+        gb_co = Company.objects.create(name="National Grid plc", slug="national-grid-cmp", sector="energy", country="United Kingdom")
+        CompanyProfile.objects.create(company=gb_co, status="public", ecoiq_total_score=62.0)
+
+    def test_two_countries_returns_headline_metrics(self):
+        d = self.client.get("/api/globe/compare/", {"iso": ["KZ", "GB"]}).json()
+        self.assertTrue(d["available"])
+        isos = {c["iso"] for c in d["countries"]}
+        self.assertEqual(isos, {"KZ", "GB"})
+
+    def test_requires_at_least_two_countries(self):
+        r = self.client.get("/api/globe/compare/", {"iso": ["KZ"]})
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.json()["available"])
+
+    def test_rejects_more_than_three_countries(self):
+        r = self.client.get("/api/globe/compare/", {"iso": ["KZ", "GB", "SA", "TR"]})
+        self.assertEqual(r.status_code, 400)
+
+    def test_rejects_non_featured_country(self):
+        r = self.client.get("/api/globe/compare/", {"iso": ["KZ", "FR"]})
+        self.assertEqual(r.status_code, 400)
+
+    def test_headline_intelligence_reuses_the_same_layer_logic_as_country_panel(self):
+        d = self.client.get("/api/globe/compare/", {"iso": ["KZ", "GB"]}).json()
+        kz = next(c for c in d["countries"] if c["iso"] == "KZ")
+        self.assertIn("intelligence", kz)
+        self.assertIn("climate_risk", kz["intelligence"])
+
+    def test_key_differences_delegates_to_real_similarity_engine(self):
+        d = self.client.get("/api/globe/compare/", {"iso": ["KZ", "GB"]}).json()
+        self.assertIn("method", d["key_differences"])
+        self.assertIn("sklearn", d["key_differences"]["method"])
+
+    def test_read_only(self):
+        from countries.models import CountryProfile as CP
+        before = CP.objects.count()
+        self.client.get("/api/globe/compare/", {"iso": ["KZ", "GB"]})
+        self.assertEqual(CP.objects.count(), before)
+
+
+class GlobeSignalsEndpointTests(TestCase):
+    """
+    Phase 1 (signals) / Phase 9 (alerts, same feed) — every signal is a real,
+    already-persisted EcoIQ record. Period filtering never fabricates a
+    historical trend; when the real data doesn't reach back as far as the
+    requested period, historical_coverage_developing is honestly True.
+    """
+
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+        self.kz = CountryProfile.objects.create(name="Kazakhstan", slug="kazakhstan", iso_code="KZ", is_published=True)
+        CountryProfile.objects.create(name="United Kingdom", slug="united-kingdom", iso_code="GB", is_published=True)
+
+    def test_invalid_period_falls_back_to_latest(self):
+        d = self.client.get("/api/globe/signals/", {"period": "not-a-real-period"}).json()
+        self.assertEqual(d["period"], "latest")
+
+    def test_risk_zone_produces_a_real_risk_signal(self):
+        from geo_intelligence.models import GeoRiskZone
+        GeoRiskZone.objects.create(name="Almaty Heat Zone", risk_type="extreme_heat", country=self.kz, latitude=43.2, longitude=76.9, severity="high")
+        d = self.client.get("/api/globe/signals/", {"period": "latest"}).json()
+        risk_signals = [s for s in d["signals"] if s["type"] == "risk"]
+        self.assertEqual(len(risk_signals), 1)
+        self.assertEqual(risk_signals[0]["iso"], "KZ")
+
+    def test_investment_opportunity_produces_a_real_opportunity_signal(self):
+        from geo_intelligence.models import InvestmentGeoOpportunity
+        InvestmentGeoOpportunity.objects.create(title="Clean heating", country=self.kz, latitude=43.2, longitude=76.9, investment_score=50.0)
+        d = self.client.get("/api/globe/signals/", {"period": "latest"}).json()
+        opp_signals = [s for s in d["signals"] if s["type"] == "opportunity"]
+        self.assertEqual(len(opp_signals), 1)
+
+    def test_modernisation_asset_produces_a_real_change_signal(self):
+        from geo_intelligence.models import GeoAsset
+        GeoAsset.objects.create(name="Boiler House #3", asset_type="heating_unit", country=self.kz, latitude=43.2, longitude=76.9, modernisation_priority="high")
+        d = self.client.get("/api/globe/signals/", {"period": "latest"}).json()
+        change_signals = [s for s in d["signals"] if s["type"] == "change"]
+        self.assertEqual(len(change_signals), 1)
+
+    def test_no_real_data_means_empty_signals_not_fabricated(self):
+        d = self.client.get("/api/globe/signals/", {"period": "latest"}).json()
+        self.assertEqual(d["signals"], [])
+        self.assertEqual(d["signal_count"], 0)
+
+    def test_historical_coverage_developing_is_honest(self):
+        from geo_intelligence.models import GeoRiskZone
+        GeoRiskZone.objects.create(name="Test Zone", risk_type="drought", country=self.kz, latitude=43.2, longitude=76.9)
+        d = self.client.get("/api/globe/signals/", {"period": "1y"}).json()
+        # the zone was just created (last_updated=now), so it's nowhere near
+        # a year old — real 1-year coverage genuinely doesn't exist yet
+        self.assertTrue(d["historical_coverage_developing"])
+
+    def test_read_only(self):
+        from geo_intelligence.models import GeoRiskZone
+        before = GeoRiskZone.objects.count()
+        self.client.get("/api/globe/signals/")
+        self.assertEqual(GeoRiskZone.objects.count(), before)
+
+
+class GlobeAgentActivityEndpointTests(TestCase):
+    """
+    Phase 6 — real "which agent has looked at this country" via the
+    already-existing workbench_agent_slug soft reference on GeoAsset /
+    InvestmentGeoOpportunity (GeoRiskZone has no such field and is correctly
+    excluded — see core/globe.py _agent_activity_for_country). Never
+    fabricates a run that didn't happen: has_run=False when the mapped agent
+    genuinely has zero real AgentRun rows.
+    """
+
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+        self.kz = CountryProfile.objects.create(name="Kazakhstan", slug="kazakhstan", iso_code="KZ", is_published=True)
+        CountryProfile.objects.create(name="United Kingdom", slug="united-kingdom", iso_code="GB", is_published=True)
+
+    def test_no_geo_reference_means_empty_findings(self):
+        d = self.client.get("/api/globe/agent-activity/").json()
+        gb = next(c for c in d["countries"] if c["iso"] == "GB")
+        self.assertEqual(gb["findings"], [])
+
+    def test_unknown_agent_slug_is_skipped_not_fabricated(self):
+        from geo_intelligence.models import GeoAsset
+        GeoAsset.objects.create(
+            name="Test Asset", asset_type="other", country=self.kz, latitude=43.2, longitude=76.9,
+            workbench_agent_slug="not-a-real-agent-id",
+        )
+        d = self.client.get("/api/globe/agent-activity/").json()
+        kz = next(c for c in d["countries"] if c["iso"] == "KZ")
+        self.assertEqual(kz["findings"], [])
+
+    def test_real_agent_with_no_runs_reports_has_run_false(self):
+        from agent_runtime_model_router.models import AgentRegistryEntry
+        from geo_intelligence.models import GeoAsset
+        AgentRegistryEntry.objects.create(agent_id="research-agent", agent_name="Research Agent")
+        GeoAsset.objects.create(
+            name="Test Asset", asset_type="other", country=self.kz, latitude=43.2, longitude=76.9,
+            workbench_agent_slug="research-agent",
+        )
+        d = self.client.get("/api/globe/agent-activity/").json()
+        kz = next(c for c in d["countries"] if c["iso"] == "KZ")
+        self.assertEqual(len(kz["findings"]), 1)
+        self.assertFalse(kz["findings"][0]["has_run"])
+        self.assertIsNone(kz["findings"][0]["last_run_id"])
+
+    def test_real_agent_with_a_real_run_reports_it_honestly(self):
+        from agent_runtime_model_router.models import AgentRegistryEntry, AgentRun
+        from geo_intelligence.models import InvestmentGeoOpportunity
+        entry = AgentRegistryEntry.objects.create(agent_id="capital-allocation-agent", agent_name="Capital Allocation Agent")
+        run = AgentRun.objects.create(agent=entry, task_type="demo", execution_mode_requested="deterministic_test", status="completed")
+        InvestmentGeoOpportunity.objects.create(
+            title="Test Opportunity", country=self.kz, latitude=43.2, longitude=76.9,
+            workbench_agent_slug="capital-allocation-agent",
+        )
+        d = self.client.get("/api/globe/agent-activity/").json()
+        kz = next(c for c in d["countries"] if c["iso"] == "KZ")
+        self.assertEqual(len(kz["findings"]), 1)
+        self.assertTrue(kz["findings"][0]["has_run"])
+        self.assertEqual(kz["findings"][0]["last_run_id"], run.pk)
+        self.assertEqual(kz["findings"][0]["link"], "/ai-agents/agent/capital-allocation-agent/")
+
+    def test_georiskzone_has_no_workbench_field_and_is_never_queried(self):
+        # regression guard for the exact bug fixed on rebase: GeoRiskZone has
+        # no workbench_agent_slug field at all, so it must never be queried
+        # for one — this must not raise FieldError.
+        from geo_intelligence.models import GeoRiskZone
+        GeoRiskZone.objects.create(name="Test Zone", risk_type="drought", country=self.kz, latitude=43.2, longitude=76.9)
+        r = self.client.get("/api/globe/agent-activity/")
+        self.assertEqual(r.status_code, 200)
+
+
+class GlobeEconomicAndCapitalSignalsTests(TestCase):
+    """
+    Phase 2 — economic signals and capital flows reuse real CountryProfile
+    macro/financing fields (never computed here). Government revenue
+    composition and trade (exports/imports) have no real EcoIQ data source
+    anywhere in the platform today — the honest, permanent "not yet
+    available" stub must never be replaced with a fabricated figure.
+    """
+
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+        self.kz = CountryProfile.objects.create(
+            name="Kazakhstan", slug="kazakhstan", iso_code="KZ", is_published=True,
+            gdp_usd=259000000000, gdp_growth_pct=4.6, population_millions=21.1,
+            estimated_transition_gap_usd=35000000000, green_finance_available_usd=2800000000,
+        )
+        CountryProfile.objects.create(name="United Kingdom", slug="united-kingdom", iso_code="GB", is_published=True)
+
+    def test_economic_signals_are_real_countryprofile_fields(self):
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        e = d["economic_signals"]
+        self.assertEqual(e["gdp_usd"], 259000000000)
+        self.assertEqual(e["gdp_growth_pct"], 4.6)
+        self.assertEqual(e["population_millions"], 21.1)
+
+    def test_unset_economic_field_is_null_not_fabricated(self):
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        self.assertIsNone(d["economic_signals"]["inflation_pct"])
+
+    def test_country_with_no_macro_data_is_all_null(self):
+        d = self.client.get("/api/globe/country/united-kingdom/").json()
+        e = d["economic_signals"]
+        for key in ("gdp_usd", "gdp_growth_pct", "inflation_pct", "population_millions"):
+            self.assertIsNone(e[key])
+
+    def test_capital_flows_are_real_countryprofile_financing_fields(self):
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        c = d["capital_flows"]
+        self.assertEqual(c["estimated_transition_gap_usd"], 35000000000)
+        self.assertEqual(c["green_finance_available_usd"], 2800000000)
+
+    def test_capital_flows_surfaces_real_top_investment_opportunity(self):
+        from geo_intelligence.models import InvestmentGeoOpportunity
+        InvestmentGeoOpportunity.objects.create(
+            title="Clean heating", country=self.kz, latitude=43.2, longitude=76.9,
+            investment_score=50.0, estimated_impact="GBP 700 estimated annual benefit",
+        )
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        top = d["capital_flows"]["top_opportunity"]
+        self.assertEqual(top["title"], "Clean heating")
+        self.assertEqual(top["investment_score"], 50.0)
+
+    def test_no_opportunity_means_null_top_opportunity_not_fabricated(self):
+        d = self.client.get("/api/globe/country/united-kingdom/").json()
+        self.assertIsNone(d["capital_flows"]["top_opportunity"])
+
+    def test_trade_and_revenue_composition_is_an_honest_permanent_stub(self):
+        d = self.client.get("/api/globe/country/kazakhstan/").json()
+        t = d["trade_and_revenue_composition"]
+        self.assertFalse(t["available"])
+        self.assertIn("does not yet ingest", t["reason"])
+
+
+class CompareCountriesServiceTests(TestCase):
+    """intelligence_analytics_engine.services.similarity.compare_countries()
+    — the Interactive Globe's country comparison calls straight into this
+    real, existing engine rather than a duplicate one."""
+
+    def setUp(self):
+        self.kz = CountryProfile.objects.create(
+            name="Kazakhstan", slug="kazakhstan", iso_code="KZ", is_published=True,
+            industrial_modernization_score=38.0,
+        )
+        self.gb = CountryProfile.objects.create(
+            name="United Kingdom", slug="united-kingdom", iso_code="GB", is_published=True,
+            industrial_modernization_score=55.0,
+        )
+        self.sa = CountryProfile.objects.create(name="Saudi Arabia", slug="saudi-arabia", iso_code="SA", is_published=True)
+        kz_co = Company.objects.create(name="KazMunayGas", slug="kazmunaygas-svc", sector="energy", country="Kazakhstan")
+        CompanyProfile.objects.create(company=kz_co, status="public", ecoiq_total_score=38.0)
+        gb_co = Company.objects.create(name="National Grid plc", slug="national-grid-svc", sector="energy", country="United Kingdom")
+        CompanyProfile.objects.create(company=gb_co, status="public", ecoiq_total_score=62.0)
+        sa_co = Company.objects.create(name="Saudi Aramco", slug="saudi-aramco-svc", sector="energy", country="Saudi Arabia")
+        CompanyProfile.objects.create(company=sa_co, status="public", ecoiq_total_score=30.0)
+
+    def test_requires_two_or_three_countries(self):
+        from intelligence_analytics_engine.services.similarity import compare_countries
+        result = compare_countries([self.kz.pk])
+        self.assertFalse(result["available"])
+
+    def test_rejects_more_than_three(self):
+        from intelligence_analytics_engine.services.similarity import compare_countries
+        result = compare_countries([self.kz.pk, self.gb.pk, self.sa.pk, 9999])
+        self.assertFalse(result["available"])
+
+    def test_two_real_countries_returns_a_real_pairwise_difference(self):
+        from intelligence_analytics_engine.services.similarity import compare_countries
+        result = compare_countries([self.kz.pk, self.gb.pk])
+        self.assertTrue(result["available"])
+        self.assertEqual(len(result["pairs"]), 1)
+        self.assertEqual({result["pairs"][0]["a"], result["pairs"][0]["b"]}, {"Kazakhstan", "United Kingdom"})
+
+    def test_three_real_countries_returns_three_pairs(self):
+        from intelligence_analytics_engine.services.similarity import compare_countries
+        result = compare_countries([self.kz.pk, self.gb.pk, self.sa.pk])
+        self.assertTrue(result["available"])
+        self.assertEqual(len(result["pairs"]), 3)
+
+    def test_method_names_the_real_reused_technique(self):
+        from intelligence_analytics_engine.services.similarity import compare_countries
+        result = compare_countries([self.kz.pk, self.gb.pk])
+        self.assertIn("same engine as find_similar_countries", result["method"])
+
+
+class DecisionStudioPrefillTests(TestCase):
+    """Optional ?q= prefill added for the globe's "Ask EcoIQ about the
+    world" action — never auto-submits, never bypasses the existing
+    rate-limit/cost-control path in ask()."""
+
+    def test_no_prefill_by_default(self):
+        r = self.client.get(reverse("decision_studio:studio"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'value=""')
+
+    def test_prefill_appears_in_the_input_value(self):
+        r = self.client.get(reverse("decision_studio:studio"), {"q": "Where are the strongest modernisation opportunities?"})
+        self.assertContains(r, "Where are the strongest modernisation opportunities?")
+
+    def test_prefill_is_escaped_not_a_stored_or_executed_value(self):
+        r = self.client.get(reverse("decision_studio:studio"), {"q": '<script>alert(1)</script>'})
+        self.assertNotContains(r, "<script>alert(1)</script>")
+
+    def test_prefill_is_truncated_to_max_question_length(self):
+        from decision_studio.views import MAX_QUESTION_LENGTH
+        long_q = "a" * (MAX_QUESTION_LENGTH + 50)
+        r = self.client.get(reverse("decision_studio:studio"), {"q": long_q})
+        content = r.content.decode()
+        self.assertNotIn("a" * (MAX_QUESTION_LENGTH + 1), content)
+
+
+class LivingEarthPhase2TemplateTests(TestCase):
+    """Homepage markup for Phase 2: Ask-the-planet CTA, live signals feed +
+    timeline control, reset view, and the new country panel sections."""
+
+    def setUp(self):
+        self.client = Client(SERVER_NAME="localhost")
+
+    def test_ask_planet_cta_links_to_decision_studio(self):
+        r = self.client.get(reverse("home"))
+        content = r.content.decode()
+        self.assertIn('id="le-ask-planet"', content)
+        self.assertIn('href="/decision-studio/?q=', content)
+
+    def test_signals_feed_present_with_timeline_control(self):
+        r = self.client.get(reverse("home"))
+        content = r.content.decode()
+        self.assertIn('id="le-signals-list"', content)
+        for period in ("latest", "7d", "30d", "1y"):
+            self.assertIn('data-period="%s"' % period, content)
+
+    def test_signal_type_legend_present(self):
+        r = self.client.get(reverse("home"))
+        content = r.content.decode()
+        for tag in ("risk", "opportunity", "change", "evidence_update", "agent_finding"):
+            self.assertIn('le-sig-tag %s' % tag, content)
+
+    def test_reset_view_control_present(self):
+        r = self.client.get(reverse("home"))
+        content = r.content.decode()
+        self.assertIn('id="le-reset-view"', content)
+
+    def test_new_panel_sections_present(self):
+        r = self.client.get(reverse("home"))
+        content = r.content.decode()
+        for el_id in ("le-panel-economic", "le-panel-capital", "le-panel-trade"):
+            self.assertIn('id="%s"' % el_id, content)
+
+    def test_no_raw_template_tags_leak(self):
+        r = self.client.get(reverse("home"))
+        content = r.content.decode()
+        self.assertNotIn("{%", content)
+        self.assertNotIn("{{", content)
