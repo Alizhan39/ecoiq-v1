@@ -15,8 +15,9 @@ _RETRY_TASK_BY_TYPE = {}
 def _task_registry():
     if not _RETRY_TASK_BY_TYPE:
         from backend_intelligence_engine.tasks import (
-            company_intelligence_refresh, geo_intelligence_refresh, ingest_enabled_sources, ingest_source,
-            recalculate_scores_background, refresh_entity_evidence, refresh_evidence_memory, run_ai_analysis,
+            company_intelligence_refresh, detect_agent_regressions, geo_intelligence_refresh,
+            ingest_enabled_sources, ingest_source, recalculate_scores_background, refresh_entity_evidence,
+            refresh_evidence_memory, run_agent_benchmark, run_agent_evaluation, run_ai_analysis,
             run_langgraph_intelligence_workflow,
         )
         _RETRY_TASK_BY_TYPE.update({
@@ -29,6 +30,9 @@ def _task_registry():
             'ingest_source': ingest_source,
             'ingest_enabled_sources': ingest_enabled_sources,
             'refresh_entity_evidence': refresh_entity_evidence,
+            'run_agent_evaluation': run_agent_evaluation,
+            'run_agent_benchmark': run_agent_benchmark,
+            'detect_agent_regressions': detect_agent_regressions,
         })
     return _RETRY_TASK_BY_TYPE
 

@@ -142,6 +142,40 @@ def agent_directory_rows():
     return rows
 
 
+def _evaluation_summary(registry_entry):
+    """
+    Reads agent_training_evaluation_lab's real, already-computed evaluation
+    data for this agent — creates nothing, computes nothing itself. Used only
+    on the agent profile page (minimum necessary UI, not a Workbench redesign).
+    """
+    from agent_training_evaluation_lab.models import AgentEvaluationRun, AgentHumanFeedback, AgentRegression
+
+    evaluation_history = list(
+        AgentEvaluationRun.objects.filter(agent=registry_entry).order_by('-started_at')[:5]
+    )
+    latest = evaluation_history[0] if evaluation_history else None
+    score_trend = (latest.score_delta or {}).get('overall_score') if latest else None
+
+    open_regressions = AgentRegression.objects.filter(agent=registry_entry, is_acknowledged=False).order_by('-detected_at')
+
+    feedback_qs = AgentHumanFeedback.objects.filter(agent_run__agent=registry_entry)
+    feedback_counts = {}
+    for classification, label in AgentHumanFeedback.CLASSIFICATION_CHOICES:
+        count = feedback_qs.filter(classification=classification).count()
+        if count:
+            feedback_counts[label] = count
+
+    return {
+        'latest': latest,
+        'history': evaluation_history,
+        'score_trend': score_trend,
+        'open_regression_count': open_regressions.count(),
+        'open_regressions': list(open_regressions[:5]),
+        'feedback_counts': feedback_counts,
+        'feedback_total': feedback_qs.count(),
+    }
+
+
 def agent_profile_context(slug):
     """Full detail for one agent's profile page, or None if not a real operational agent."""
     for row in agent_directory_rows():
@@ -151,5 +185,6 @@ def agent_profile_context(slug):
                 'council_case',
             ).order_by('-created_at')[:8]
             row['recent_runs'] = recent_runs
+            row['evaluation'] = _evaluation_summary(registry_entry)
             return row
     return None

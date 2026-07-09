@@ -549,3 +549,121 @@ def refresh_entity_evidence(self, company_profile_id):
     }
     run.mark_completed(result_summary)
     return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def run_agent_evaluation(self, agent_id, evaluation_version='v1'):
+    """
+    Agent Evaluation Engine — reuses agent_training_evaluation_lab.services.
+    evaluation_engine.run_agent_evaluation() exactly: computes real metrics
+    from the agent's already-persisted AgentRun history, never runs a new
+    agent execution itself. Recorded via the same BackgroundTaskRun pattern
+    as every other task in this module.
+    """
+    from agent_runtime_model_router.models import AgentRegistryEntry
+    from agent_training_evaluation_lab.services.evaluation_engine import run_agent_evaluation as run_evaluation
+
+    target_reference = f'agent_runtime_model_router.AgentRegistryEntry:{agent_id}'
+    try:
+        entry = AgentRegistryEntry.objects.get(pk=agent_id)
+    except AgentRegistryEntry.DoesNotExist:
+        run = _start_run(
+            'run_agent_evaluation', f'AgentRegistryEntry #{agent_id} (not found)', target_reference, self.request,
+            task_kwargs={'agent_id': agent_id, 'evaluation_version': evaluation_version},
+        )
+        run.mark_failed(f'AgentRegistryEntry {agent_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    run = _start_run(
+        'run_agent_evaluation', entry.agent_name, target_reference, self.request,
+        task_kwargs={'agent_id': agent_id, 'evaluation_version': evaluation_version},
+    )
+
+    evaluation = run_evaluation(entry, evaluation_version=evaluation_version)
+    result_summary = {
+        'evaluation_run_id': evaluation.pk, 'overall_score': evaluation.overall_score,
+        'runs_evaluated_count': evaluation.runs_evaluated_count,
+        'golden_cases_passed': evaluation.golden_cases_passed, 'golden_cases_checked': evaluation.golden_cases_checked,
+    }
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def detect_agent_regressions(self, evaluation_run_id):
+    """
+    Regression Detection — reuses agent_training_evaluation_lab.services.
+    regression_detection.detect_regressions() exactly. Never modifies the
+    agent, its training pack, or any production configuration — a
+    regression is a human-observable AgentRegression row only.
+    """
+    from agent_training_evaluation_lab.models import AgentEvaluationRun
+    from agent_training_evaluation_lab.services.regression_detection import detect_regressions
+
+    target_reference = f'agent_training_evaluation_lab.AgentEvaluationRun:{evaluation_run_id}'
+    try:
+        evaluation = AgentEvaluationRun.objects.select_related('agent').get(pk=evaluation_run_id)
+    except AgentEvaluationRun.DoesNotExist:
+        run = _start_run(
+            'detect_agent_regressions', f'AgentEvaluationRun #{evaluation_run_id} (not found)', target_reference,
+            self.request, task_kwargs={'evaluation_run_id': evaluation_run_id},
+        )
+        run.mark_failed(f'AgentEvaluationRun {evaluation_run_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    run = _start_run(
+        'detect_agent_regressions', evaluation.agent.agent_name, target_reference, self.request,
+        task_kwargs={'evaluation_run_id': evaluation_run_id},
+    )
+
+    findings = detect_regressions(evaluation)
+    result_summary = {'regressions_found': len(findings), 'regression_ids': [f.pk for f in findings]}
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
+             max_retries=2, retry_jitter=True)
+def run_agent_benchmark(self, agent_id, evaluation_version='v1'):
+    """
+    Agent Benchmarking — the combined workflow: evaluate, then detect
+    regressions against the immediately-prior evaluation, then generate
+    improvement recommendations. Reuses run_agent_evaluation +
+    detect_agent_regressions (this same module) and agent_training_
+    evaluation_lab.services.recommendations.generate_recommendations() —
+    no separate benchmarking execution path.
+    """
+    from agent_runtime_model_router.models import AgentRegistryEntry
+    from agent_training_evaluation_lab.services.evaluation_engine import run_agent_evaluation as run_evaluation
+    from agent_training_evaluation_lab.services.recommendations import generate_recommendations
+    from agent_training_evaluation_lab.services.regression_detection import detect_regressions
+
+    target_reference = f'agent_runtime_model_router.AgentRegistryEntry:{agent_id}'
+    try:
+        entry = AgentRegistryEntry.objects.get(pk=agent_id)
+    except AgentRegistryEntry.DoesNotExist:
+        run = _start_run(
+            'run_agent_benchmark', f'AgentRegistryEntry #{agent_id} (not found)', target_reference, self.request,
+            task_kwargs={'agent_id': agent_id, 'evaluation_version': evaluation_version},
+        )
+        run.mark_failed(f'AgentRegistryEntry {agent_id} does not exist.')
+        return {'status': 'failed', 'reason': 'not_found'}
+
+    run = _start_run(
+        'run_agent_benchmark', entry.agent_name, target_reference, self.request,
+        task_kwargs={'agent_id': agent_id, 'evaluation_version': evaluation_version},
+    )
+
+    evaluation = run_evaluation(entry, evaluation_version=evaluation_version)
+    regressions = detect_regressions(evaluation)
+    recommendations = generate_recommendations(evaluation)
+
+    result_summary = {
+        'evaluation_run_id': evaluation.pk, 'overall_score': evaluation.overall_score,
+        'score_delta': evaluation.score_delta.get('overall_score'),
+        'regressions_found': len(regressions), 'recommendations_generated': len(recommendations),
+    }
+    run.mark_completed(result_summary)
+    return {'status': 'completed', **result_summary}

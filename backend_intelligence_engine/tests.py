@@ -29,6 +29,11 @@ class CeleryConfigurationTests(TestCase):
             self.assertEqual(task.max_retries, 2)
             self.assertIn(Exception, task.autoretry_for)
 
+    def test_agent_evaluation_task_types_are_registered(self):
+        task_types = dict(BackgroundTaskRun.TASK_TYPE_CHOICES)
+        for task_type in ('run_agent_evaluation', 'run_agent_benchmark', 'detect_agent_regressions'):
+            self.assertIn(task_type, task_types)
+
     def test_task_time_limits_are_set(self):
         from django.conf import settings
         self.assertEqual(settings.CELERY_TASK_TIME_LIMIT, 300)
@@ -308,6 +313,19 @@ class AdminOperationsTests(TestCase):
         response = self.client.get('/admin/backend_intelligence_engine/backgroundtaskrun/add/')
         self.assertEqual(response.status_code, 403)
 
+    def test_retry_action_requeues_failed_agent_evaluation_task(self):
+        failed = BackgroundTaskRun.objects.create(
+            task_type='run_agent_evaluation', target_repr='Some Agent', status='failed',
+            task_kwargs={'agent_id': 42},
+        )
+        with patch('backend_intelligence_engine.tasks.run_agent_evaluation.delay') as mock_delay:
+            response = self.client.post('/admin/backend_intelligence_engine/backgroundtaskrun/', {
+                'action': 'retry_failed_tasks',
+                '_selected_action': [str(failed.pk)],
+            }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        mock_delay.assert_called_once_with(agent_id=42)
+
 
 class WorkbenchStatusConnectionTests(TestCase):
     """The Phase 1 backend connection point for a future Workbench status
@@ -351,3 +369,61 @@ class WorkbenchStatusConnectionTests(TestCase):
         found = status.latest_task_run_for_agent_run(result['agent_run_id'])
         self.assertIsNotNone(found)
         self.assertEqual(found.status, 'completed')
+
+
+class AgentEvaluationBackgroundTaskTests(TestCase):
+    """
+    run_agent_evaluation / run_agent_benchmark / detect_agent_regressions —
+    reuse agent_training_evaluation_lab's services exactly (no duplicate
+    scoring logic here), and each creates exactly one BackgroundTaskRun row,
+    same as every other task in this module.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from agent_runtime_model_router.models import AgentRegistryEntry, AgentRun
+        cls.agent = AgentRegistryEntry.objects.create(agent_id='bg-eval-test-agent', agent_name='BG Eval Test Agent')
+        AgentRun.objects.create(
+            agent=cls.agent, task_type='demo', execution_mode_requested='deterministic_test',
+            status='completed', safety_status='pass', schema_valid=True, evidence_used=['source-a'],
+        )
+
+    def test_run_agent_evaluation_creates_a_background_task_run(self):
+        result = tasks.run_agent_evaluation.apply(kwargs={'agent_id': self.agent.pk}).get()
+        self.assertEqual(result['status'], 'completed')
+        run = BackgroundTaskRun.objects.get(task_type='run_agent_evaluation', target_reference=f'agent_runtime_model_router.AgentRegistryEntry:{self.agent.pk}')
+        self.assertEqual(run.status, 'completed')
+
+    def test_run_agent_evaluation_unknown_agent_fails_honestly(self):
+        result = tasks.run_agent_evaluation.apply(kwargs={'agent_id': 9999999}).get()
+        self.assertEqual(result['status'], 'failed')
+        self.assertEqual(result['reason'], 'not_found')
+
+    def test_run_agent_benchmark_evaluates_and_checks_regressions(self):
+        result = tasks.run_agent_benchmark.apply(kwargs={'agent_id': self.agent.pk}).get()
+        self.assertEqual(result['status'], 'completed')
+        self.assertIn('evaluation_run_id', result)
+        self.assertIn('regressions_found', result)
+        self.assertIn('recommendations_generated', result)
+
+    def test_run_agent_benchmark_unknown_agent_fails_honestly(self):
+        result = tasks.run_agent_benchmark.apply(kwargs={'agent_id': 9999999}).get()
+        self.assertEqual(result['status'], 'failed')
+
+    def test_detect_agent_regressions_runs_against_a_real_evaluation(self):
+        evaluation_result = tasks.run_agent_evaluation.apply(kwargs={'agent_id': self.agent.pk}).get()
+        result = tasks.detect_agent_regressions.apply(
+            kwargs={'evaluation_run_id': evaluation_result['evaluation_run_id']},
+        ).get()
+        self.assertEqual(result['status'], 'completed')
+        self.assertEqual(result['regressions_found'], 0)  # first evaluation, nothing to compare against
+
+    def test_detect_agent_regressions_unknown_evaluation_fails_honestly(self):
+        result = tasks.detect_agent_regressions.apply(kwargs={'evaluation_run_id': 9999999}).get()
+        self.assertEqual(result['status'], 'failed')
+        self.assertEqual(result['reason'], 'not_found')
+
+    def test_all_three_tasks_have_bounded_retries(self):
+        for task in (tasks.run_agent_evaluation, tasks.run_agent_benchmark, tasks.detect_agent_regressions):
+            self.assertEqual(task.max_retries, 2)
+            self.assertIn(Exception, task.autoretry_for)

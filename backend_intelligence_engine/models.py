@@ -30,6 +30,9 @@ class BackgroundTaskRun(models.Model):
         ('ingest_source', 'Ingest Source'),
         ('ingest_enabled_sources', 'Ingest Enabled Sources'),
         ('refresh_entity_evidence', 'Refresh Entity Evidence'),
+        ('run_agent_evaluation', 'Run Agent Evaluation'),
+        ('run_agent_benchmark', 'Run Agent Benchmark'),
+        ('detect_agent_regressions', 'Detect Agent Regressions'),
     ]
     STATUS_CHOICES = [
         ('queued', 'Queued'),
