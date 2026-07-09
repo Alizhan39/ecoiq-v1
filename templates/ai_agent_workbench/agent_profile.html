@@ -51,6 +51,48 @@
     {% endif %}
   </section>
 
+  <section class="aiwb-section" id="evaluation">
+    <h2 class="aiwb-h2">Evaluation &amp; Quality</h2>
+    {% with evaluation=agent.evaluation %}
+    {% if evaluation.latest %}
+    <div class="aiwb-chip-row">
+      <span class="aiwb-chip">Latest score: {{ evaluation.latest.overall_score|default:"NOT YET MEASURED" }}{% if evaluation.latest.overall_score is not None %}/100{% endif %}</span>
+      <span class="aiwb-chip">
+        Benchmark trend:
+        {% if evaluation.score_trend is not None %}{% if evaluation.score_trend > 0 %}+{% endif %}{{ evaluation.score_trend }} vs previous evaluation{% else %}no prior evaluation to compare{% endif %}
+      </span>
+      <span class="iq-badge {% if evaluation.open_regression_count %}iq-badge-review{% else %}iq-badge-verified{% endif %}">
+        {% if evaluation.open_regression_count %}{{ evaluation.open_regression_count }} unacknowledged regression{{ evaluation.open_regression_count|pluralize }}{% else %}No open regressions{% endif %}
+      </span>
+      <span class="aiwb-chip">Golden cases: {{ evaluation.latest.golden_cases_passed }}/{{ evaluation.latest.golden_cases_checked }} matched</span>
+    </div>
+
+    {% if evaluation.open_regressions %}
+    <p class="aiwb-sub">Open regressions</p>
+    {% for regression in evaluation.open_regressions %}
+    <p class="aiwb-p">{{ regression.metric_name }}: {{ regression.previous_value }} → {{ regression.current_value }} ({{ regression.get_severity_display }}, evaluation #{{ regression.evaluation_run_id }})</p>
+    {% endfor %}
+    {% endif %}
+
+    <p class="aiwb-sub">Evaluation history</p>
+    {% for evaluation_run in evaluation.history %}
+    <p class="aiwb-p">{{ evaluation_run.evaluation_version }} — {{ evaluation_run.overall_score|default:"NOT YET MEASURED" }}{% if evaluation_run.overall_score is not None %}/100{% endif %} ({{ evaluation_run.runs_evaluated_count }} run{{ evaluation_run.runs_evaluated_count|pluralize }} evaluated, {{ evaluation_run.started_at|date:"Y-m-d H:i" }})</p>
+    {% endfor %}
+    {% else %}
+    <p class="aiwb-p">NOT YET MEASURED — no evaluation run has been recorded for this agent yet.</p>
+    {% endif %}
+
+    <p class="aiwb-sub">Human review</p>
+    {% if evaluation.feedback_total %}
+    <div class="aiwb-chip-row">
+      {% for label, count in evaluation.feedback_counts.items %}<span class="aiwb-chip">{{ label }}: {{ count }}</span>{% endfor %}
+    </div>
+    {% else %}
+    <p class="aiwb-p">No human review recorded yet for this agent's runs.</p>
+    {% endif %}
+    {% endwith %}
+  </section>
+
   <section class="aiwb-section" id="recent-runs">
     <h2 class="aiwb-h2">Recent Runs</h2>
     <p class="aiwb-p">

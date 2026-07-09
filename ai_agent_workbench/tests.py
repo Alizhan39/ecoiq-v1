@@ -334,3 +334,82 @@ class AllRoutesReturn200Tests(TestCase):
                 resp = self.client.get(url)
                 self.assertEqual(resp.status_code, 200)
                 self.assertFalse(TEMPLATE_LEAK_RE.search(resp.content.decode()))
+
+
+class EvaluationWorkbenchIntegrationTests(TestCase):
+    """
+    Phase 9 — the minimum necessary UI: latest quality score, benchmark
+    trend, regression status, evaluation history, human review status.
+    Reads agent_training_evaluation_lab's real models directly; adds no new
+    evaluation logic and does not redesign the Workbench.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        _seed_all()
+
+    def test_agent_with_no_evaluation_shows_honest_not_yet_measured(self):
+        resp = self.client.get(reverse('ai_agent_workbench:agent_profile', args=['research-agent']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'NOT YET MEASURED')
+
+    def test_agent_profile_shows_latest_score_and_history(self):
+        from agent_training_evaluation_lab.models import AgentEvaluationRun
+
+        entry = AgentRegistryEntry.objects.get(agent_id='waste-leakage-agent')
+        AgentEvaluationRun.objects.create(agent=entry, evaluation_version='v1', overall_score=72.3, completed_at=None)
+
+        resp = self.client.get(reverse('ai_agent_workbench:agent_profile', args=['waste-leakage-agent']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, '72.3')
+        self.assertContains(resp, 'v1')
+
+    def test_agent_profile_shows_benchmark_trend_vs_previous(self):
+        from agent_training_evaluation_lab.models import AgentEvaluationRun
+
+        entry = AgentRegistryEntry.objects.get(agent_id='waste-leakage-agent')
+        first = AgentEvaluationRun.objects.create(agent=entry, evaluation_version='v1', overall_score=70.0)
+        AgentEvaluationRun.objects.create(
+            agent=entry, evaluation_version='v2', overall_score=75.0,
+            previous_evaluation=first, score_delta={'overall_score': 5.0},
+        )
+
+        resp = self.client.get(reverse('ai_agent_workbench:agent_profile', args=['waste-leakage-agent']))
+        self.assertContains(resp, '+5.0')
+
+    def test_agent_profile_shows_open_regression_status(self):
+        from agent_training_evaluation_lab.models import AgentEvaluationRun, AgentRegression
+
+        entry = AgentRegistryEntry.objects.get(agent_id='waste-leakage-agent')
+        evaluation = AgentEvaluationRun.objects.create(agent=entry, evaluation_version='v1', overall_score=70.0)
+        AgentRegression.objects.create(
+            agent=entry, evaluation_run=evaluation, metric_name='overall_score',
+            previous_value=90.0, current_value=70.0, threshold=5.0, severity='high',
+        )
+
+        resp = self.client.get(reverse('ai_agent_workbench:agent_profile', args=['waste-leakage-agent']))
+        self.assertContains(resp, 'unacknowledged regression')
+
+    def test_agent_profile_hides_acknowledged_regressions_from_open_count(self):
+        from agent_training_evaluation_lab.models import AgentEvaluationRun, AgentRegression
+
+        entry = AgentRegistryEntry.objects.get(agent_id='waste-leakage-agent')
+        evaluation = AgentEvaluationRun.objects.create(agent=entry, evaluation_version='v1', overall_score=70.0)
+        AgentRegression.objects.create(
+            agent=entry, evaluation_run=evaluation, metric_name='overall_score',
+            previous_value=90.0, current_value=70.0, threshold=5.0, severity='high', is_acknowledged=True,
+        )
+
+        resp = self.client.get(reverse('ai_agent_workbench:agent_profile', args=['waste-leakage-agent']))
+        self.assertContains(resp, 'No open regressions')
+
+    def test_agent_profile_shows_human_review_status(self):
+        from agent_training_evaluation_lab.models import AgentHumanFeedback
+        from agent_runtime_model_router.models import AgentRun
+
+        entry = AgentRegistryEntry.objects.get(agent_id='waste-leakage-agent')
+        run = AgentRun.objects.filter(agent=entry).first()
+        AgentHumanFeedback.objects.create(agent_run=run, classification='APPROVED')
+
+        resp = self.client.get(reverse('ai_agent_workbench:agent_profile', args=['waste-leakage-agent']))
+        self.assertContains(resp, 'Approved: 1')
