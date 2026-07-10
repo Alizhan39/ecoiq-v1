@@ -12,8 +12,8 @@ from .models import Assessment, Finding
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _make_assessment(company='Test Corp', status=Assessment.STATUS_COMPLETE):
-    return Assessment.objects.create(company_name=company, status=status)
+def _make_assessment(company='Test Corp', status=Assessment.STATUS_COMPLETE, created_by=None):
+    return Assessment.objects.create(company_name=company, status=status, created_by=created_by)
 
 
 def _make_finding(assessment, overall=60):
@@ -288,6 +288,111 @@ class AuthEnforcementTests(TestCase):
         _make_finding(self.assessment)
         self._assert_login_redirect(
             reverse('report_pdf', args=[self.assessment.pk]))
+
+
+# ── Assessment ownership (Phase 0 privacy fix) ─────────────────────────────────
+
+class AssessmentOwnershipTests(TestCase):
+    """
+    Assessment previously had no owner field, so index/detail/questionnaire/
+    report/report_pdf showed every user's assessments to every other logged-in
+    user. These tests prove: (1) a normal user cannot see another normal
+    user's assessment via any of those five views, (2) staff retain full
+    visibility, (3) pre-existing rows with created_by=None are staff-only
+    until reviewed, (4) unauthenticated access is still blocked (unchanged
+    behaviour, covered again here for completeness alongside the new checks).
+    """
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+        self.owner = User.objects.create_user('owner', password='x')
+        self.other = User.objects.create_user('other', password='x')
+        self.staff = User.objects.create_user('staffer', password='x', is_staff=True)
+        self.owned = _make_assessment(company='Owner Co', created_by=self.owner)
+        _make_finding(self.owned)
+        self.legacy = _make_assessment(company='Legacy Co', created_by=None)
+
+    def _detail_urls(self, assessment):
+        return {
+            'assessment_detail': reverse('assessment_detail', args=[assessment.pk]),
+            'questionnaire':     reverse('questionnaire', args=[assessment.pk]),
+            'report':            reverse('report', args=[assessment.pk]),
+            'report_pdf':        reverse('report_pdf', args=[assessment.pk]),
+        }
+
+    # -- one normal user cannot see another normal user's assessment --------
+
+    def test_other_user_cannot_view_owner_assessment_via_any_detail_view(self):
+        self.c.login(username='other', password='x')
+        for name, url in self._detail_urls(self.owned).items():
+            with self.subTest(view=name):
+                r = self.c.get(url)
+                self.assertEqual(r.status_code, 404, msg=f'{name} should 404 for a non-owner, got {r.status_code}')
+
+    def test_other_user_does_not_see_owner_assessment_in_index(self):
+        self.c.login(username='other', password='x')
+        r = self.c.get(reverse('index'))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Owner Co')
+
+    def test_owner_can_view_their_own_assessment(self):
+        self.c.login(username='owner', password='x')
+        r = self.c.get(reverse('assessment_detail', args=[self.owned.pk]))
+        self.assertEqual(r.status_code, 200)
+        r = self.c.get(reverse('report', args=[self.owned.pk]))
+        self.assertEqual(r.status_code, 200)
+
+    def test_owner_sees_their_own_assessment_in_index(self):
+        self.c.login(username='owner', password='x')
+        r = self.c.get(reverse('index'))
+        self.assertContains(r, 'Owner Co')
+
+    # -- legacy rows with no recorded owner ----------------------------------
+
+    def test_legacy_assessment_with_no_owner_is_invisible_to_a_normal_user(self):
+        self.c.login(username='other', password='x')
+        r = self.c.get(reverse('assessment_detail', args=[self.legacy.pk]))
+        self.assertEqual(r.status_code, 404)
+        r = self.c.get(reverse('index'))
+        self.assertNotContains(r, 'Legacy Co')
+
+    # -- staff retain full visibility -----------------------------------------
+
+    def test_staff_can_view_any_users_assessment_via_any_detail_view(self):
+        self.c.login(username='staffer', password='x')
+        for name, url in self._detail_urls(self.owned).items():
+            with self.subTest(view=name):
+                r = self.c.get(url)
+                self.assertEqual(r.status_code, 200, msg=f'{name} should be visible to staff, got {r.status_code}')
+
+    def test_staff_sees_every_users_assessment_in_index(self):
+        self.c.login(username='staffer', password='x')
+        r = self.c.get(reverse('index'))
+        self.assertContains(r, 'Owner Co')
+        self.assertContains(r, 'Legacy Co')
+
+    def test_staff_can_view_legacy_assessment_with_no_owner(self):
+        self.c.login(username='staffer', password='x')
+        r = self.c.get(reverse('assessment_detail', args=[self.legacy.pk]))
+        self.assertEqual(r.status_code, 200)
+
+    # -- unauthenticated access is still blocked (unchanged behaviour) -------
+
+    def test_unauthenticated_user_is_redirected_to_login_not_shown_404(self):
+        for name, url in self._detail_urls(self.owned).items():
+            with self.subTest(view=name):
+                r = self.c.get(url)
+                self.assertEqual(r.status_code, 302, msg=f'{name} should redirect anon to login, got {r.status_code}')
+                self.assertIn('/login/', r['Location'])
+
+    # -- upload() records the real owner -------------------------------------
+
+    def test_upload_sets_created_by_to_the_uploading_user(self):
+        self.c.login(username='owner', password='x')
+        r = self.c.post(reverse('upload'), {'company_name': 'New Upload Co', 'notes': ''})
+        self.assertEqual(r.status_code, 302)
+        created = Assessment.objects.get(company_name='New Upload Co')
+        self.assertEqual(created.created_by, self.owner)
 
 
 # ── Login flow ────────────────────────────────────────────────────────────────

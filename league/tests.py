@@ -3,6 +3,7 @@ EcoIQ Good Deeds League — test suite.
 Run with: python manage.py test league --verbosity=2
 """
 import datetime
+import json
 from decimal import Decimal
 
 from django.test import TestCase, Client
@@ -176,6 +177,22 @@ class LeaderboardViewTests(TestCase):
         r = self.client.get(reverse('league:leaderboard') + '?sector=mining')
         self.assertContains(r, 'Miner')
         self.assertNotContains(r, 'Oil Co')
+
+    def test_leaderboard_chart_companies_respects_sector_filter(self):
+        """
+        Regression guard for the root cause specifically: the 'Top Companies'
+        chart data used to be built from an unfiltered queryset, so it leaked
+        other sectors' company names into the page even when the main table
+        was correctly filtered. Assert directly on the chart_companies context
+        value (not just page text), so a future template change can't mask
+        this class of bug from the test suite again.
+        """
+        _make_company('Oil Co', sector='oil_gas')
+        _make_company('Miner', sector='mining')
+        r = self.client.get(reverse('league:leaderboard') + '?sector=mining')
+        chart_names = [c['name'] for c in json.loads(r.context['chart_companies'])]
+        self.assertIn('Miner', chart_names)
+        self.assertNotIn('Oil Co', chart_names)
 
     def test_leaderboard_is_public(self):
         """No login required."""
