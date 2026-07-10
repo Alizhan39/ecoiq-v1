@@ -251,6 +251,12 @@ INSTALLED_APPS = [
 
     # EcoIQ mission layer: AI-planned, human-led, financed and verified stewardship tours
     'khalifa_stewardship_tour_operating_system',
+
+    # EcoIQ's first flagship vertical: institutional-grade gold mining investment
+    # intelligence, built entirely on the engines above (Geo Intelligence, Pandas
+    # Scoring, Intelligence Analytics, Evidence Memory, AI Agent Workbench,
+    # Decision Studio, Plotly Visual Intelligence) — no duplicate engines.
+    'gold_intelligence',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

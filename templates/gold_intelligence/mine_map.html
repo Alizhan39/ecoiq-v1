@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Gold Mine Map — EcoIQ Gold Intelligence{% endblock %}
+{% block meta_description_content %}Interactive map of gold deposits, active mines, processing plants, exploration licences, and supporting transport/power/water infrastructure.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE</span>
+  <h1 class="gold-h1">Interactive Gold Mine Map</h1>
+  <p class="gold-sub">Deposits, active mines, processing plants, exploration licences, and the transport/power/water infrastructure around them — the same real, interactive Geo Intelligence map engine used across EcoIQ.</p>
+  <p class="gold-sub" style="font-family:'SF Mono',monospace;font-size:0.78rem;"><strong>{{ asset_count }}</strong> assets · <strong>{{ zone_count }}</strong> risk zones · <strong>{{ opportunity_count }}</strong> investment opportunities</p>
+
+  <div class="gold-map-panel">{{ map_html|safe }}</div>
+
+  <div class="gold-section">
+    <h2 class="gold-h2">Projects</h2>
+    {% for project in projects %}
+    <a class="gold-project-card" href="{% url 'gold_intelligence:investor_view' project.slug %}">
+      <span class="gold-project-name">{{ project.name }}</span>{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}
+      <div class="gold-project-meta">{{ project.get_status_display }} · {{ project.country.name|default:"Country not set" }}</div>
+    </a>
+    {% empty %}
+    <p class="gold-honest-stub">No gold projects recorded yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

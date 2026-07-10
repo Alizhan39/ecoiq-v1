@@ -265,3 +265,121 @@ def orchestration_trace_chart(run):
     fig.update_yaxes(visible=False)
 
     return {'html': theme.to_html_fragment(fig, 'orchestration-trace-chart'), 'status': run.status, 'is_live_claim': False}
+
+
+def sensitivity_tornado_chart(sensitivity_result):
+    """
+    Gold Intelligence — Investment Dashboard sensitivity (tornado) chart.
+    Reads gold_intelligence.services.project_finance.run_sensitivity_analysis()
+    output directly — every bar is a real IRR range computed by that
+    Newton's-method engine, nothing recomputed or invented here.
+    """
+    if not sensitivity_result or not sensitivity_result.get('available'):
+        return None
+    variables = sensitivity_result['variables']
+    if not variables:
+        return None
+
+    base_irr = sensitivity_result['base_irr_pct']
+    names = [v['variable'] for v in variables]
+    lows = [v['low_irr_pct'] if v['low_irr_pct'] is not None else base_irr for v in variables]
+    highs = [v['high_irr_pct'] if v['high_irr_pct'] is not None else base_irr for v in variables]
+    hover = [
+        f"<b>{v['variable']}</b><br>±{v['swing_pct']:.0f}% swing<br>"
+        f"Low: {v['low_irr_pct']}% IRR<br>High: {v['high_irr_pct']}% IRR"
+        for v in variables
+    ]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=[h - l for h, l in zip(highs, lows)], y=names, base=lows, orientation='h',
+        marker={'color': theme.IQ_ACCENT}, hovertext=hover, hoverinfo='text', name='IRR range',
+    ))
+    fig.add_vline(x=base_irr, line_dash='dash', line_color=theme.IQ_WARN, annotation_text=f'Base case: {base_irr}%')
+    fig.update_layout(**theme.base_layout(title='Sensitivity — IRR range by variable (±20%)', height=320, showlegend=False))
+    fig.update_xaxes(title='IRR (%)')
+
+    return {'html': theme.to_html_fragment(fig, 'gold-sensitivity-tornado-chart'), 'base_irr_pct': base_irr}
+
+
+def scenario_comparison_chart(scenario_result):
+    """
+    Gold Intelligence — scenario analysis comparison. Reads
+    project_finance.run_scenario_analysis() output directly — each bar is a
+    real, stored ScenarioAssumption re-run through the same economics engine
+    as the base case, never a fabricated projection.
+    """
+    if not scenario_result or not scenario_result.get('available') or not scenario_result.get('scenarios'):
+        return None
+
+    base = scenario_result['base_case']
+    labels, irrs, colors, hover = ['Base Case'], [base.get('irr_pct')], [theme.IQ_INFO], ['Base case']
+    for s in scenario_result['scenarios']:
+        labels.append(s['name'])
+        irrs.append(s.get('irr_pct'))
+        colors.append(theme.IQ_ACCENT if s.get('available') else theme.IQ_MUTED)
+        hover.append(s['notes'] or s['name'])
+
+    if all(v is None for v in irrs):
+        return None
+
+    fig = go.Figure(go.Bar(
+        x=labels, y=[v if v is not None else 0 for v in irrs], marker={'color': colors},
+        text=[f'{v}%' if v is not None else 'n/a' for v in irrs], textposition='outside',
+        hovertext=hover, hoverinfo='text',
+    ))
+    fig.update_layout(**theme.base_layout(title='Scenario comparison — IRR (%)', height=320, showlegend=False))
+    fig.update_yaxes(title='IRR (%)')
+
+    return {'html': theme.to_html_fragment(fig, 'gold-scenario-comparison-chart'), 'scenario_count': len(scenario_result['scenarios'])}
+
+
+def capital_tracker_chart(capital_summary):
+    """
+    Gold Intelligence — Capital Tracker planned/committed/spent bar chart.
+    Reads gold_intelligence.services.aggregates.capital_tracker_summary()
+    output directly — real CapitalBudgetLine sums, never invented.
+    """
+    if not capital_summary or not capital_summary.get('available') or not capital_summary.get('lines'):
+        return None
+
+    lines = capital_summary['lines']
+    labels = [line.label for line in lines]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(name='Planned', x=labels, y=[line.planned_usd or 0 for line in lines], marker={'color': theme.IQ_INFO}))
+    fig.add_trace(go.Bar(name='Committed', x=labels, y=[line.committed_usd or 0 for line in lines], marker={'color': theme.IQ_WARN}))
+    fig.add_trace(go.Bar(name='Spent', x=labels, y=[line.spent_usd or 0 for line in lines], marker={'color': theme.IQ_ACCENT}))
+    fig.update_layout(**theme.base_layout(title='Capital Tracker — Planned vs. Committed vs. Spent (USD)', height=360, showlegend=True))
+    fig.update_layout(barmode='group')
+
+    return {'html': theme.to_html_fragment(fig, 'gold-capital-tracker-chart')}
+
+
+def mine_timeline_chart(milestones):
+    """
+    Gold Intelligence — Mine Timeline Gantt-style chart. Reads real
+    MineTimelineMilestone rows directly; a milestone with no real planned
+    dates yet is honestly omitted from the chart rather than plotted with
+    an invented date range.
+    """
+    plottable = [m for m in milestones if m.planned_start and m.planned_end]
+    if not plottable:
+        return None
+
+    status_colors = {
+        'not_started': theme.IQ_MUTED, 'in_progress': theme.IQ_INFO,
+        'complete': theme.IQ_ACCENT, 'delayed': theme.IQ_DANGER,
+    }
+    fig = go.Figure()
+    for m in plottable:
+        duration_ms = (m.planned_end - m.planned_start).days * 24 * 3600 * 1000
+        fig.add_trace(go.Bar(
+            x=[duration_ms], y=[m.get_phase_display()], base=[m.planned_start.isoformat()],
+            orientation='h', marker={'color': status_colors.get(m.status, theme.IQ_MUTED)},
+            hovertext=f'{m.get_phase_display()}: {m.planned_start} → {m.planned_end} ({m.get_status_display()})',
+            hoverinfo='text', showlegend=False,
+        ))
+    fig.update_layout(**theme.base_layout(title='Mine Timeline', height=80 + 50 * len(plottable), showlegend=False))
+    fig.update_xaxes(title='Date', type='date')
+
+    return {'html': theme.to_html_fragment(fig, 'gold-mine-timeline-chart'), 'plotted_count': len(plottable), 'skipped_count': len(milestones) - len(plottable)}

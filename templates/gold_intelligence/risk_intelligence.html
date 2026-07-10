@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }} — Risk Intelligence — EcoIQ Gold Intelligence{% endblock %}
+{% block meta_description_content %}{{ project.name }}: political, environmental, climate, water, energy, infrastructure, community, supply chain, financial, construction and operational risk.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE · RISK INTELLIGENCE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'gold_intelligence/_nav.html' with active_tab='risk' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Risk Dimensions</h2>
+    <div class="gold-list">
+      {% for row in rows %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ row.label }}</span>
+        {% if row.available %}
+        <span class="gold-risk-badge {{ row.level }}">{{ row.level|title }}</span>
+        {% else %}
+        <span class="gold-risk-badge na">Data source required</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:1rem;">
+      {% for row in rows %}
+      {% if row.available %}
+      <p class="gold-sub" style="font-size:0.8rem;"><strong>{{ row.label }}:</strong> {{ row.detail }}</p>
+      {% else %}
+      <p class="gold-sub" style="font-size:0.8rem;"><strong>{{ row.label }}:</strong> {{ row.reason }}</p>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

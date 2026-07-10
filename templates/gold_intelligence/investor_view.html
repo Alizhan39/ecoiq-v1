@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Investor View — EcoIQ Gold Intelligence{% endblock %}
+{% block meta_description_content %}{{ project.name }}: one-page investor summary — economics, top risks, capital and timeline status.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE · INVESTOR VIEW</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">{{ project.get_status_display }} · {{ project.country.name|default:"Country not set" }}{% if project.region %} · {{ project.region }}{% endif %}</p>
+  {% if project.description %}<p class="gold-sub">{{ project.description }}</p>{% endif %}
+
+  {% include 'gold_intelligence/_nav.html' with active_tab='investor' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Key Economics</h2>
+    {% if economics.available %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">CAPEX</div><div class="gold-card-value">${{ economics.capex_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">IRR</div><div class="gold-card-value {% if economics.irr_pct is None %}na{% endif %}">{% if economics.irr_pct is not None %}{{ economics.irr_pct }}%{% else %}Not computable{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">NPV</div><div class="gold-card-value {% if economics.npv_usd is None %}na{% endif %}">{% if economics.npv_usd is not None %}${{ economics.npv_usd|floatformat:0|intcomma }}{% else %}{{ economics.npv_unavailable_reason }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Payback</div><div class="gold-card-value {% if economics.payback_years is None %}na{% endif %}">{% if economics.payback_years is not None %}{{ economics.payback_years }} yrs{% else %}Not computable{% endif %}</div></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">{{ economics.reason }}</p>
+    {% endif %}
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'gold_intelligence:investment_dashboard' project.slug %}">Full Investment Dashboard →</a></div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Top Risks</h2>
+    {% if top_risks %}
+    <div class="gold-list">
+      {% for r in top_risks %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ r.label }}</span>
+        <span class="gold-risk-badge {{ r.level }}">{{ r.level|title }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No real risk data recorded for this project yet.</p>
+    {% endif %}
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'gold_intelligence:risk_intelligence' project.slug %}">Full Risk Intelligence →</a></div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital &amp; Timeline Status</h2>
+    <div class="gold-grid">
+      <div class="gold-card">
+        <div class="gold-card-label">Capital planned</div>
+        <div class="gold-card-value {% if not capital.available %}na{% endif %}">{% if capital.available %}${{ capital.planned_usd|default_if_none:"—"|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div>
+        <div class="gold-card-sub">{% if capital.available %}${{ capital.remaining_usd|default_if_none:"—"|floatformat:0|intcomma }} remaining{% endif %}</div>
+      </div>
+      <div class="gold-card">
+        <div class="gold-card-label">Equipment specified</div>
+        <div class="gold-card-value {% if not equipment.available %}na{% endif %}">{% if equipment.available %}{{ equipment.equipment_count }}{% else %}Data source required{% endif %}</div>
+      </div>
+      <div class="gold-card">
+        <div class="gold-card-label">Timeline phases recorded</div>
+        <div class="gold-card-value {% if not timeline.available %}na{% endif %}">{% if timeline.available %}{{ timeline.milestones|length }}{% else %}Data source required{% endif %}</div>
+      </div>
+    </div>
+    <div class="gold-btn-row">
+      <a class="gold-btn" href="{% url 'gold_intelligence:capital_tracker' project.slug %}">Capital Tracker →</a>
+      <a class="gold-btn" href="{% url 'gold_intelligence:timeline' project.slug %}">Timeline →</a>
+      <a class="gold-btn" href="{% url 'gold_intelligence:equipment_intelligence' project.slug %}">Equipment Intelligence →</a>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Ask EcoIQ</h2>
+    <div class="gold-btn-row">
+      {% for link in decision_studio_links %}
+      <a class="gold-btn" href="{{ link.href }}">{{ link.question }} →</a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

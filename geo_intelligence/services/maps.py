@@ -16,7 +16,12 @@ SEVERITY_COLORS = {'low': '#58a6ff', 'medium': '#f4a261', 'high': '#e63946'}
 PRIORITY_COLORS = {'not_assessed': '#94a3b8', 'low': '#58a6ff', 'medium': '#f4a261', 'high': '#e63946'}
 ASSET_ICON_COLORS = {
     'city': 'lightgray', 'company_office': 'blue', 'factory': 'darkred', 'power_plant': 'orange',
-    'cold_store': 'cadetblue', 'heating_unit': 'red', 'stewardship_site': 'green', 'other': 'gray',
+    'cold_store': 'cadetblue', 'heating_unit': 'red', 'stewardship_site': 'green',
+    # Gold Intelligence vertical
+    'gold_deposit': 'beige', 'active_mine': 'darkpurple', 'processing_plant': 'darkblue',
+    'exploration_licence': 'lightblue', 'transport_hub': 'darkgreen', 'rail': 'black',
+    'road': 'gray', 'airport': 'purple', 'water_source': 'lightgreen',
+    'other': 'gray',
 }
 
 

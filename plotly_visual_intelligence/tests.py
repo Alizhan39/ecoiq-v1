@@ -285,3 +285,47 @@ class MobileTemplateStructureTests(TestCase):
         response = self.client.get(reverse('plotly_visual_intelligence:dashboard'))
         body = response.content.decode()
         self.assertIn('"responsive": true', body)
+
+
+class GoldIntelligenceChartTests(TestCase):
+    """
+    The 4 chart functions added for the Gold Intelligence vertical
+    (sensitivity tornado, scenario comparison, capital tracker, mine
+    timeline). Every function reads real service output directly — these
+    tests confirm honest None-return on empty/unavailable input, and real
+    rendering on real input, never a fabricated chart.
+    """
+
+    def test_sensitivity_tornado_none_when_unavailable(self):
+        self.assertIsNone(charts.sensitivity_tornado_chart({'available': False, 'reason': 'x'}))
+
+    def test_sensitivity_tornado_none_when_no_variables(self):
+        self.assertIsNone(charts.sensitivity_tornado_chart({'available': True, 'base_irr_pct': 10.0, 'variables': []}))
+
+    def test_sensitivity_tornado_renders_with_real_variables(self):
+        result = charts.sensitivity_tornado_chart({
+            'available': True, 'base_irr_pct': 44.45,
+            'variables': [{'variable': 'Gold Price', 'field': 'gold_price_assumption_usd_per_oz', 'base_value': 2000, 'low_irr_pct': 20.0, 'high_irr_pct': 60.0, 'swing_pct': 20.0}],
+        })
+        self.assertIsNotNone(result)
+        self.assertIn('gold-sensitivity-tornado-chart', result['html'])
+
+    def test_scenario_comparison_none_when_no_scenarios(self):
+        self.assertIsNone(charts.scenario_comparison_chart({'available': True, 'base_case': {}, 'scenarios': []}))
+
+    def test_scenario_comparison_renders_with_real_scenarios(self):
+        result = charts.scenario_comparison_chart({
+            'available': True, 'base_case': {'irr_pct': 44.45},
+            'scenarios': [{'name': 'Gold price -20%', 'notes': '', 'available': True, 'irr_pct': 20.0}],
+        })
+        self.assertIsNotNone(result)
+        self.assertEqual(result['scenario_count'], 1)
+
+    def test_capital_tracker_chart_none_when_no_lines(self):
+        self.assertIsNone(charts.capital_tracker_chart({'available': False, 'lines': []}))
+
+    def test_mine_timeline_chart_none_when_no_dated_milestones(self):
+        class _Milestone:
+            planned_start = None
+            planned_end = None
+        self.assertIsNone(charts.mine_timeline_chart([_Milestone()]))
