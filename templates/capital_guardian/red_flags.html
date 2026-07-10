@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Red Flag Engine — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: transparent, rule-based red flags detected from real capital, equipment, insurance and approval data.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · RED FLAG ENGINE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub" style="font-size:0.78rem;">Every warning below is detected by a transparent, deterministic rule over real stored data — never a fabricated AI prediction.</p>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='red_flags' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Red Flags</h2>
+    {% if flags %}
+    {% for flag in flags %}
+    <div class="gc-flag-card {{ flag.severity }}">
+      <div class="gc-flag-head">
+        <span><strong>{{ flag.category|title }}</strong> — {{ flag.description }}</span>
+        <span class="gold-risk-badge {{ flag.severity }}">{{ flag.get_severity_display }}</span>
+      </div>
+      <div class="gc-flag-meta">
+        Capital exposure: {% if flag.capital_exposure_usd is not None %}${{ flag.capital_exposure_usd|floatformat:0|intcomma }}{% else %}Not quantified{% endif %} ·
+        Responsible: {{ flag.responsible_party|default:"Not recorded" }} ·
+        Status: {{ flag.get_resolution_status_display }} ·
+        Detected: {{ flag.detected_at|date:"Y-m-d H:i" }}
+      </div>
+      {% if flag.recommended_action %}<p class="gold-sub" style="font-size:0.8rem;margin-top:0.5rem;"><strong>Recommended action:</strong> {{ flag.recommended_action }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No red flags detected for this project.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

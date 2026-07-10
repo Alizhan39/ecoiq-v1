@@ -383,3 +383,77 @@ def mine_timeline_chart(milestones):
     fig.update_xaxes(title='Date', type='date')
 
     return {'html': theme.to_html_fragment(fig, 'gold-mine-timeline-chart'), 'plotted_count': len(plottable), 'skipped_count': len(milestones) - len(plottable)}
+
+
+def capital_deployment_chart(committed_usd, deployed_usd, remaining_usd):
+    """
+    Capital Guardian — Investor Dashboard capital deployment bar. Reads real
+    committed/deployed/remaining figures directly (committed from
+    gold_intelligence.GoldProject, deployed from a real sum over
+    capital_guardian.CapitalTraceEntry, remaining derived from both) — never
+    fabricated when one of the three is unavailable.
+    """
+    labels, values, colors = [], [], []
+    for label, value, color in (
+        ('Committed', committed_usd, theme.IQ_INFO),
+        ('Deployed', deployed_usd, theme.IQ_ACCENT),
+        ('Remaining', remaining_usd, theme.IQ_WARN),
+    ):
+        if value is None:
+            continue
+        labels.append(label); values.append(value); colors.append(color)
+    if not values:
+        return None
+
+    fig = go.Figure(go.Bar(
+        x=labels, y=values, marker={'color': colors},
+        text=[f'${v:,.0f}' for v in values], textposition='outside',
+    ))
+    fig.update_layout(**theme.base_layout(title='Capital Deployment (USD)', height=320, showlegend=False))
+    return {'html': theme.to_html_fragment(fig, 'gc-capital-deployment-chart')}
+
+
+def capital_guardian_gauge_chart(value, title, div_id):
+    """
+    Capital Guardian — a single real 0-100 value rendered as a gauge
+    (Project Completion, Capital Protection Score, Insurance Coverage
+    ratio). Returns None — never a fabricated needle position — when the
+    real value is not yet available.
+    """
+    if value is None:
+        return None
+    color = theme.IQ_ACCENT if value >= 70 else theme.IQ_WARN if value >= 40 else theme.IQ_DANGER
+    fig = go.Figure(go.Indicator(
+        mode='gauge+number', value=value,
+        gauge={
+            'axis': {'range': [0, 100], 'tickcolor': theme.IQ_MUTED},
+            'bar': {'color': color},
+            'bgcolor': theme.IQ_BG2, 'borderwidth': 1, 'bordercolor': theme.IQ_BORDER,
+        },
+        number={'suffix': '%', 'font': {'color': '#fff'}},
+    ))
+    fig.update_layout(**theme.base_layout(title=title, height=240, showlegend=False))
+    return {'html': theme.to_html_fragment(fig, div_id), 'value': value}
+
+
+def capital_guardian_risk_distribution_chart(red_flags):
+    """
+    Capital Guardian — Red Flag Engine severity distribution. Reads real,
+    already-detected RedFlag rows directly (see
+    capital_guardian.services.red_flag_engine.detect_red_flags) — never a
+    fabricated risk count.
+    """
+    if not red_flags:
+        return None
+    counts = {'high': 0, 'medium': 0, 'low': 0}
+    for flag in red_flags:
+        counts[flag.severity] = counts.get(flag.severity, 0) + 1
+    colors = {'high': theme.IQ_DANGER, 'medium': theme.IQ_WARN, 'low': theme.IQ_INFO}
+    labels = [k.title() for k in counts]
+    fig = go.Figure(go.Bar(
+        x=labels, y=list(counts.values()), marker={'color': [colors[k] for k in counts]},
+        text=list(counts.values()), textposition='outside',
+    ))
+    fig.update_layout(**theme.base_layout(title='Red Flag Severity Distribution', height=280, showlegend=False))
+    fig.update_yaxes(title='Count', dtick=1)
+    return {'html': theme.to_html_fragment(fig, 'gc-risk-distribution-chart'), 'total': len(red_flags)}

@@ -329,3 +329,39 @@ class GoldIntelligenceChartTests(TestCase):
             planned_start = None
             planned_end = None
         self.assertIsNone(charts.mine_timeline_chart([_Milestone()]))
+
+
+class CapitalGuardianChartTests(TestCase):
+    """
+    The 3 chart functions added for Capital Guardian (capital deployment,
+    the generic gauge, red flag risk distribution). Honest None on empty/
+    unavailable input, real rendering on real input — never fabricated.
+    """
+
+    def test_capital_deployment_chart_none_with_all_values_missing(self):
+        self.assertIsNone(charts.capital_deployment_chart(None, None, None))
+
+    def test_capital_deployment_chart_renders_with_partial_real_values(self):
+        result = charts.capital_deployment_chart(100_000_000, 42_300_000, None)
+        self.assertIsNotNone(result)
+        self.assertIn('gc-capital-deployment-chart', result['html'])
+
+    def test_gauge_chart_none_when_value_unavailable(self):
+        self.assertIsNone(charts.capital_guardian_gauge_chart(None, 'Test Gauge', 'gc-test-gauge'))
+
+    def test_gauge_chart_renders_with_real_value(self):
+        result = charts.capital_guardian_gauge_chart(86.0, 'Capital Protection Score', 'gc-protection-gauge')
+        self.assertIsNotNone(result)
+        self.assertEqual(result['value'], 86.0)
+        self.assertIn('gc-protection-gauge', result['html'])
+
+    def test_risk_distribution_chart_none_with_no_flags(self):
+        self.assertIsNone(charts.capital_guardian_risk_distribution_chart([]))
+
+    def test_risk_distribution_chart_renders_with_real_flags(self):
+        class _Flag:
+            def __init__(self, severity):
+                self.severity = severity
+        result = charts.capital_guardian_risk_distribution_chart([_Flag('high'), _Flag('medium'), _Flag('medium')])
+        self.assertIsNotNone(result)
+        self.assertEqual(result['total'], 3)

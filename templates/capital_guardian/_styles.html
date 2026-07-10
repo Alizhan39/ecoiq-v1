@@ -1,0 +1,56 @@
+<style>
+  /* Capital Guardian reuses gold_intelligence's --gold-* tokens (included
+     alongside this file on every page) for visual consistency — these are
+     only the genuinely new UI patterns Capital Guardian needs. */
+  .gc-synthetic-banner {
+    display: flex; align-items: center; gap: 0.6rem; background: rgba(244,162,97,.08);
+    border: 1px solid rgba(244,162,97,.35); border-radius: 8px; padding: 0.7rem 1rem;
+    margin: 1rem 0; font-family: 'SF Mono', monospace; font-size: 0.76rem; color: #f4a261; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+
+  .gc-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 1.2rem 0; }
+  .gc-flow-step {
+    background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 999px;
+    padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; color: var(--gold-text); white-space: nowrap;
+  }
+  .gc-flow-step.done { border-color: var(--gold-acc); color: var(--gold-acc); }
+  .gc-flow-step.pending { color: var(--gold-muted); }
+  .gc-flow-arrow { color: var(--gold-muted); }
+  .gc-flow.vertical { flex-direction: column; align-items: flex-start; }
+  .gc-flow.vertical .gc-flow-arrow { margin-left: 1.2rem; }
+
+  .gc-gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.9rem; }
+  .gc-gauge-card { background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 12px; padding: 0.5rem; overflow-x: auto; }
+
+  .gc-process-stages { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.2rem 0; }
+  .gc-process-stage {
+    background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 10px;
+    padding: 0.7rem 1.1rem; cursor: pointer; font-weight: 700; color: var(--gold-text); font-size: 0.85rem;
+    min-height: 44px;
+  }
+  .gc-process-stage.active { border-color: var(--gold-acc); color: var(--gold-acc); background: rgba(212,175,55,.08); }
+  .gc-process-detail { background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 12px; padding: 1.2rem; margin-top: 1rem; }
+  .gc-process-detail[hidden] { display: none; }
+
+  .gc-metric-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.7rem; margin: 1rem 0; }
+  .gc-metric { background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 10px; padding: 0.8rem 1rem; }
+  .gc-metric-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold-muted); }
+  .gc-metric-value { font-family: 'SF Mono', monospace; font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 0.2rem; }
+  .gc-env-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; }
+  .gc-env-status.green { background: var(--gold-acc); }
+  .gc-env-status.amber { background: var(--gold-medium); }
+  .gc-env-status.red { background: var(--gold-high); }
+
+  .gc-flag-card { background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 0.8rem; border-left: 4px solid var(--gold-muted); }
+  .gc-flag-card.high { border-left-color: var(--gold-high); }
+  .gc-flag-card.medium { border-left-color: var(--gold-medium); }
+  .gc-flag-card.low { border-left-color: var(--gold-low); }
+  .gc-flag-head { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .gc-flag-meta { font-family: 'SF Mono', monospace; font-size: 0.7rem; color: var(--gold-muted); margin-top: 0.4rem; }
+
+  @media (max-width: 760px) {
+    .gc-process-stages { flex-direction: column; }
+    .gc-process-stage { width: 100%; }
+  }
+</style>
