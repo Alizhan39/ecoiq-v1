@@ -212,7 +212,14 @@ def leaderboard(request):
         for s, v in _sector_scores.items()
     ], key=lambda x: x['avg'], reverse=True))
 
-    _all_ranked = list(all_cos.order_by('rank', '-ecoiq_score')[:15])
+    # Bug fix: this used to read from `all_cos` (unfiltered), so the "Top
+    # Companies" chart always showed platform-wide top companies even when
+    # `?sector=` was applied — leaking other sectors' company names onto an
+    # otherwise correctly-filtered leaderboard page. It must reuse the same
+    # sector-filtered `qs` the main table uses. `chart_sectors`/`total_*`
+    # below are intentionally left platform-wide — they're cross-sector
+    # comparison/overview figures, not part of the "current sector" table.
+    _all_ranked = list(qs.order_by('rank', '-ecoiq_score')[:15])
     chart_companies = json.dumps([
         {
             'name':         co.name[:22] + ('…' if len(co.name) > 22 else ''),

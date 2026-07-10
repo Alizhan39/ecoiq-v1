@@ -235,10 +235,27 @@ HOW_IT_WORKS = [
 ]
 
 
+def _assessments_visible_to(user):
+    """
+    Phase 0 privacy fix. Assessment previously had no owner field, so every
+    logged-in user's list/detail/questionnaire/report views showed every
+    OTHER user's assessments too (a real IDOR/privacy bug). Staff keep full
+    visibility (they already have the only route that triggers a paid
+    Anthropic call, via @staff_member_required on run_analysis, and may need
+    to review/action any user's assessment). A regular user sees only
+    assessments they created — including pre-existing rows with
+    created_by=None, which are staff-only-visible until reviewed rather than
+    guessed at or assigned to anyone.
+    """
+    if user.is_staff:
+        return Assessment.objects.all()
+    return Assessment.objects.filter(created_by=user)
+
+
 @login_required
 def index(request):
     # Limit to the 50 most-recent assessments — avoids loading all rows into memory.
-    assessments = Assessment.objects.order_by('-created_at')[:50]
+    assessments = _assessments_visible_to(request.user).order_by('-created_at')[:50]
     return render(request, 'core/index.html', {
         'pillars':     PILLARS,
         'assessments': assessments,
@@ -252,6 +269,7 @@ def upload(request):
         form = AssessmentUploadForm(request.POST, request.FILES)
         if form.is_valid():
             assessment = form.save(commit=False)
+            assessment.created_by = request.user
             if assessment.uploaded_file:
                 try:
                     assessment.extracted_text = extract_text(assessment.uploaded_file)
@@ -274,7 +292,7 @@ def upload(request):
 
 @login_required
 def questionnaire(request, pk):
-    assessment = get_object_or_404(Assessment, pk=pk)
+    assessment = get_object_or_404(_assessments_visible_to(request.user), pk=pk)
 
     # Pre-load any saved answers so the form re-fills on revisit
     saved = {r.question_key: r.answer
@@ -369,7 +387,7 @@ def run_analysis(request, pk):
 
 @login_required
 def assessment_detail(request, pk):
-    assessment = get_object_or_404(Assessment, pk=pk)
+    assessment = get_object_or_404(_assessments_visible_to(request.user), pk=pk)
     scores = []
     pillar_notes = []
     if hasattr(assessment, 'finding'):
@@ -531,7 +549,7 @@ def _build_report_ctx(assessment):
 
 @login_required
 def report(request, pk):
-    assessment = get_object_or_404(Assessment, pk=pk)
+    assessment = get_object_or_404(_assessments_visible_to(request.user), pk=pk)
     if not hasattr(assessment, 'finding'):
         raise Http404("No findings yet for this assessment.")
     ctx = _build_report_ctx(assessment)
@@ -550,7 +568,7 @@ def share_report(request, token):
 
 @login_required
 def report_pdf(request, pk):
-    assessment = get_object_or_404(Assessment, pk=pk)
+    assessment = get_object_or_404(_assessments_visible_to(request.user), pk=pk)
     if not hasattr(assessment, 'finding'):
         raise Http404("No findings yet for this assessment.")
 

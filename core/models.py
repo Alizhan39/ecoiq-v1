@@ -1,4 +1,5 @@
 import uuid
+from django.conf import settings
 from django.db import models
 
 
@@ -25,6 +26,15 @@ class Assessment(models.Model):
     uploaded_file = models.FileField(upload_to='uploads/', blank=True, null=True)
     extracted_text = models.TextField(blank=True)
     notes        = models.TextField(blank=True)
+    # Phase 0 privacy fix — this model previously had no owner at all, so
+    # every logged-in user's assessment list/detail/report views showed
+    # every OTHER user's assessments too. Nullable/SET_NULL so existing rows
+    # (created before this field existed) are never deleted or reassigned —
+    # they simply become staff-only-visible until reviewed, never exposed
+    # to the wrong regular user (see core/views.py's _assessments_visible_to).
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='assessments',
+    )
 
     class Meta:
         ordering = ['-created_at']
