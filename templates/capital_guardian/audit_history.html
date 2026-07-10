@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Audit History — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: change history for governance, milestones, CAPEX budget, equipment, red flags and evidence verification.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · AUDIT HISTORY</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <div class="gc-synthetic-banner" style="color:#58a6ff;border-color:rgba(88,166,255,.35);background:rgba(88,166,255,.08);">
+    ⚠ THIS IS A CHANGE HISTORY, NOT A CRYPTOGRAPHICALLY IMMUTABLE OR BLOCKCHAIN-VERIFIED RECORD.
+  </div>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='audit' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Filter by Event Type</h2>
+    <form method="get" class="gold-btn-row">
+      <select name="event_type" class="gold-btn" style="cursor:pointer;">
+        <option value="">All event types</option>
+        {% for key, label in event_types %}<option value="{{ key }}" {% if selected_event_type == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="gold-btn gold-btn-primary">Apply</button>
+      <a class="gold-btn" href="{% url 'capital_guardian:audit_history' project.slug %}">Reset</a>
+    </form>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Change History ({{ entries|length }})</h2>
+    {% if entries %}
+    <div class="gc-audit-timeline">
+      {% for entry in entries %}
+      <div class="gc-audit-entry">
+        <div class="gc-audit-time">{{ entry.created_at|date:"Y-m-d H:i" }} · {{ entry.get_event_type_display }}</div>
+        <div class="gc-audit-body">
+          <strong style="color:#fff;">{{ entry.object_description }}</strong> — {{ entry.field_name }}
+          <div class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">
+            {% if entry.field_name == '(created)' %}
+              Created{% if entry.new_value %} — {{ entry.new_value }}{% endif %}
+            {% else %}
+              <span style="color:var(--gold-high);">{{ entry.previous_value|default:"—" }}</span>
+              →
+              <span style="color:var(--gold-acc);">{{ entry.new_value|default:"—" }}</span>
+            {% endif %}
+          </div>
+          <div class="gc-flag-meta">
+            Changed by: {{ entry.changed_by.get_username|default:"Not recorded" }}
+            {% if entry.reason %} · Reason: {{ entry.reason }}{% endif %}
+            {% if entry.approval_status %} · Approval status: {{ entry.approval_status }}{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No recorded changes for this project yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

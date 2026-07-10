@@ -53,4 +53,24 @@
     .gc-process-stages { flex-direction: column; }
     .gc-process-stage { width: 100%; }
   }
+
+  /* Phase 2 */
+  .gc-compare-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 900px; }
+  .gc-compare-table th { text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: .04em; color: var(--gold-muted); padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--gold-border); white-space: nowrap; }
+  .gc-compare-table td { padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--gold-border); color: var(--gold-text); white-space: nowrap; }
+  .gc-compare-table tbody tr:hover { background: rgba(255,255,255,.02); }
+  .gc-compare-table a { color: var(--gold-acc); text-decoration: none; font-weight: 700; }
+
+  .gc-evidence-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 0.6rem; }
+  .gc-evidence-field-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gold-muted); }
+  .gc-evidence-field-value { font-size: 0.82rem; color: var(--gold-text); margin-top: 0.15rem; }
+  .gc-tier-badge { display: inline-block; font-family: 'SF Mono', monospace; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid var(--gold-border); color: var(--gold-muted); }
+  .gc-tier-badge.human_reviewed, .gc-tier-badge.independently_verified { color: var(--gold-acc); border-color: var(--gold-acc); }
+
+  .gc-audit-timeline { position: relative; padding-left: 1.4rem; border-left: 2px solid var(--gold-border); }
+  .gc-audit-entry { position: relative; margin-bottom: 1.1rem; }
+  .gc-audit-entry::before { content: ''; position: absolute; left: -1.72rem; top: 0.25rem; width: 10px; height: 10px; border-radius: 50%; background: var(--gold-acc); }
+  .gc-audit-time { font-family: 'SF Mono', monospace; font-size: 0.68rem; color: var(--gold-muted); }
+  .gc-audit-body { background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 10px; padding: 0.7rem 0.9rem; margin-top: 0.3rem; }
+
 </style>

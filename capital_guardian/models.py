@@ -28,6 +28,23 @@ ProjectGovernance, CapitalTraceEntry, RedFlag, OperationalSnapshot.
 `is_demo` follows the exact convention already established by
 geo_intelligence/gold_intelligence: a demo/illustrative row must never be
 presented as a verified real-world claim.
+
+--- Phase 2 additions ---
+
+Two more models are genuinely new here, because nothing in the platform
+already represents a configurable risk-rule threshold or a generic change-
+history entry: RedFlagRuleConfig, AuditLogEntry. (An audit of the platform
+for an existing history/versioning pattern found `audit` — an unrelated
+facility-energy-audit app — and `legacy_safe.AuditLog` — a narrow AI
+retrieval-decision log; neither is a change-history mechanism for arbitrary
+model fields, and no django-simple-history-style package is installed, so a
+small, purpose-built model is the right amount of new code here, not an
+over-build.)
+
+RedFlag/OperationalSnapshot are EXTENDED in place (actual_value/
+threshold_value on RedFlag, confidence on OperationalSnapshot) rather than
+duplicated, matching the same "extend, don't parallel-build" discipline
+used on gold_intelligence's models in Phase 1.
 """
 from django.conf import settings
 from django.db import models
@@ -148,7 +165,8 @@ class RedFlag(models.Model):
     that create these rows from real, already-stored data."""
     SEVERITY_CHOICES = [('low', 'Low'), ('medium', 'Medium'), ('high', 'High')]
     RESOLUTION_STATUS_CHOICES = [
-        ('open', 'Open'), ('acknowledged', 'Acknowledged'), ('resolved', 'Resolved'),
+        ('open', 'Open'), ('acknowledged', 'Acknowledged'), ('under_review', 'Under Review'),
+        ('resolved', 'Resolved'), ('false_positive', 'False Positive'),
     ]
 
     project = models.ForeignKey(GoldProject, on_delete=models.CASCADE, related_name='red_flags')
@@ -156,6 +174,11 @@ class RedFlag(models.Model):
     severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
     category = models.CharField(max_length=60)
     description = models.TextField()
+    # Phase 2 — the real measured value and the configured threshold it was
+    # compared against (see services/red_flag_engine.py), so the UI can show
+    # "Actual Value" / "Threshold" honestly instead of only prose.
+    actual_value = models.FloatField(null=True, blank=True)
+    threshold_value = models.FloatField(null=True, blank=True)
     capital_exposure_usd = models.FloatField(null=True, blank=True)
     recommended_action = models.TextField(blank=True)
     responsible_party = models.CharField(max_length=200, blank=True)
@@ -183,6 +206,103 @@ class RedFlag(models.Model):
     def __str__(self):
         return f'{self.project.name}: {self.category} ({self.get_severity_display()})'
 
+    @property
+    def evidence_documents(self):
+        from evidence_memory.models import EvidenceMemory
+        if not self.pk:
+            return EvidenceMemory.objects.none()
+        return EvidenceMemory.objects.filter(source_reference=f'capital_guardian.RedFlag:{self.pk}')
+
+
+class RedFlagRuleConfig(models.Model):
+    """
+    A configurable warning/critical threshold for one red-flag rule —
+    genuinely new (Phase 1's thresholds were hardcoded module constants in
+    red_flag_engine.py). `project=None` is a platform-wide default row;
+    a project-scoped row overrides it. Resolution order (see
+    services/red_flag_engine.get_thresholds): project row → platform-default
+    row → the rule's hardcoded fallback constant — so the engine always has
+    a real, explainable number to compare against, never an unconfigured gap.
+    """
+    RULE_KEY_CHOICES = [
+        ('capex_variance', 'CAPEX Variance'),
+        ('insurance_renewal_due', 'Insurance Expiry'),
+        ('equipment_availability', 'Equipment Availability'),
+        ('recovery_rate', 'Recovery Rate vs. Target'),
+        ('water_recycled', 'Water Recycling'),
+    ]
+
+    project = models.ForeignKey(
+        GoldProject, null=True, blank=True, on_delete=models.CASCADE, related_name='red_flag_rule_configs',
+        help_text='Leave blank for a platform-wide default applied to every project without its own override.',
+    )
+    rule_key = models.CharField(max_length=40, choices=RULE_KEY_CHOICES)
+    enabled = models.BooleanField(default=True)
+    warning_threshold = models.FloatField(null=True, blank=True)
+    critical_threshold = models.FloatField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ['rule_key']
+        constraints = [models.UniqueConstraint(fields=['project', 'rule_key'], name='uniq_project_rule_config')]
+
+    def __str__(self):
+        scope = self.project.name if self.project_id else 'Platform default'
+        return f'{scope}: {self.get_rule_key_display()}'
+
+
+class AuditLogEntry(models.Model):
+    """
+    An investor-facing change-history entry — "Audit History"/"Change
+    History", explicitly NOT claimed to be cryptographically immutable or
+    blockchain-verified (see the disclaimer on the Audit History page).
+    Rows are created automatically by capital_guardian/signals.py whenever a
+    tracked field changes on ProjectGovernance, MineTimelineMilestone,
+    EquipmentSpec, CapitalBudgetLine, GoldProject's capital/insurance fields,
+    RedFlag.resolution_status, or EvidenceMemory.verification_status for
+    evidence scoped to this project — never hand-authored, so the log can't
+    silently omit a real change.
+    """
+    EVENT_TYPE_CHOICES = [
+        ('governance', 'Governance'),
+        ('milestone', 'Milestone'),
+        ('capex', 'CAPEX Budget'),
+        ('capital', 'Capital / Insurance'),
+        ('equipment', 'Equipment'),
+        ('red_flag', 'Red Flag Status'),
+        ('evidence', 'Evidence Verification'),
+    ]
+
+    project = models.ForeignKey(GoldProject, on_delete=models.CASCADE, related_name='audit_log_entries')
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES)
+    object_description = models.CharField(max_length=250, help_text='e.g. "Milestone: Construction", "Governance: Escrow Account".')
+    field_name = models.CharField(max_length=100)
+    previous_value = models.CharField(max_length=250, blank=True)
+    new_value = models.CharField(max_length=250, blank=True)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    reason = models.TextField(blank=True)
+    # Best-effort, only ever a real derived value (e.g. a RedFlag's own
+    # resolution_status) — left blank when there is nothing honest to show.
+    approval_status = models.CharField(max_length=100, blank=True)
+    # Soft pointer to the changed row, e.g. "gold_intelligence.MineTimelineMilestone:12".
+    source_reference = models.CharField(max_length=200, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.project.name}: {self.object_description} — {self.field_name}'
+
+    @property
+    def evidence_documents(self):
+        from evidence_memory.models import EvidenceMemory
+        if not self.pk:
+            return EvidenceMemory.objects.none()
+        return EvidenceMemory.objects.filter(source_reference=f'capital_guardian.AuditLogEntry:{self.pk}')
+
 
 class OperationalSnapshot(models.Model):
     """One day's real (or, for the demo project, clearly-flagged synthetic)
@@ -204,6 +324,13 @@ class OperationalSnapshot(models.Model):
     water_recycled_pct = models.FloatField(null=True, blank=True)
     environmental_status = models.CharField(max_length=10, choices=ENVIRONMENTAL_STATUS_CHOICES, blank=True)
 
+    # Phase 2 — a real per-reading quality/confidence score, only ever
+    # populated by an actual telemetry/QA source. Null (never a fabricated
+    # 100%) for every demo snapshot below, since a synthetic reading has no
+    # real sensor-confidence to report — the field exists so a future SCADA
+    # integration can populate it without a schema change.
+    confidence = models.FloatField(null=True, blank=True)
+
     is_demo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -213,3 +340,10 @@ class OperationalSnapshot(models.Model):
 
     def __str__(self):
         return f'{self.project.name}: {self.date}'
+
+    @property
+    def evidence_documents(self):
+        from evidence_memory.models import EvidenceMemory
+        if not self.pk:
+            return EvidenceMemory.objects.none()
+        return EvidenceMemory.objects.filter(source_reference=f'capital_guardian.OperationalSnapshot:{self.pk}')

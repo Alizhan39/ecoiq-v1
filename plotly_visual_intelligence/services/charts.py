@@ -436,6 +436,89 @@ def capital_guardian_gauge_chart(value, title, div_id):
     return {'html': theme.to_html_fragment(fig, div_id), 'value': value}
 
 
+def portfolio_risk_matrix_chart(rows):
+    """
+    Capital Guardian Phase 2 — Portfolio Risk Matrix. `rows` are real
+    capital_guardian.services.portfolio.project_summary() dicts — x=real
+    completion %, y=real Capital Protection Score, size=real committed
+    capital, color=the deterministic on_track/monitor/at_risk status
+    already computed by portfolio.project_status(). A project missing
+    either axis value is honestly excluded, never plotted at a guessed
+    coordinate.
+    """
+    plottable = [r for r in rows if r['completion_pct'] is not None and r['protection_score'] is not None]
+    if not plottable:
+        return None
+
+    status_colors = {'on_track': theme.IQ_ACCENT, 'monitor': theme.IQ_WARN, 'at_risk': theme.IQ_DANGER, 'unknown': theme.IQ_MUTED}
+    sizes = [max(14, ((r['committed_usd'] or 0) / 1_000_000) / 2) for r in plottable]
+    colors = [status_colors.get(r['status'], theme.IQ_MUTED) for r in plottable]
+    hover = [
+        f"<b>{r['project'].name}</b><br>Completion: {r['completion_pct']}%<br>"
+        f"Protection score: {r['protection_score']}<br>"
+        + (f"Committed: ${r['committed_usd']:,.0f}<br>" if r['committed_usd'] is not None else '')
+        + f"Status: {r['status_label']}<br>Active red flags: {r['active_red_flags']}"
+        for r in plottable
+    ]
+
+    fig = go.Figure(go.Scatter(
+        x=[r['completion_pct'] for r in plottable], y=[r['protection_score'] for r in plottable],
+        mode='markers+text', text=[r['project'].name for r in plottable], textposition='top center',
+        textfont={'size': 9, 'color': theme.IQ_MUTED},
+        marker={'size': sizes, 'color': colors, 'line': {'width': 1, 'color': theme.IQ_BG}},
+        hovertext=hover, hoverinfo='text',
+    ))
+    fig.update_layout(**theme.base_layout(title='Portfolio Risk Matrix — Completion vs. Capital Protection', height=420, showlegend=False))
+    fig.update_xaxes(title='Project completion (%) →', range=[0, 100])
+    fig.update_yaxes(title='Capital Protection Score →', range=[0, 100])
+
+    return {'html': theme.to_html_fragment(fig, 'gc-portfolio-risk-matrix'), 'count': len(plottable), 'total_projects': len(rows)}
+
+
+def operational_time_series_chart(snapshots, field, label, div_id, target_value=None, unit=''):
+    """
+    Capital Guardian Phase 2 — Mining Digital Twin time-series. `snapshots`
+    are real, already-stored OperationalSnapshot rows for one project
+    (ascending by date) — a metric with no real recorded value on a given
+    day is simply absent from the line, never interpolated/invented. When
+    `target_value` is real (e.g. the project's own declared recovery-rate
+    assumption, or a configured RedFlagRuleConfig threshold), a reference
+    line is drawn — never a fabricated benchmark.
+    `customdata` on each point carries [date, value, target, variance,
+    confidence, evidence_count] for the click-to-inspect panel — every
+    value real, `confidence`/`evidence_count` honestly None/0 when not
+    recorded rather than fabricated.
+    """
+    plottable = [(s.date, getattr(s, field)) for s in snapshots if getattr(s, field) is not None]
+    if not plottable:
+        return None
+
+    dates = [d.isoformat() for d, _ in plottable]
+    values = [v for _, v in plottable]
+    by_date = {s.date: s for s in snapshots}
+    customdata = []
+    for d, v in plottable:
+        snap = by_date.get(d)
+        variance = round(v - target_value, 2) if target_value is not None else None
+        evidence_count = snap.evidence_documents.count() if snap is not None else 0
+        customdata.append([d.isoformat(), v, target_value, variance, snap.confidence if snap else None, evidence_count])
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=dates, y=values, mode='lines+markers', name=label, line={'color': theme.IQ_ACCENT},
+        marker={'size': 7}, customdata=customdata,
+        hovertemplate=f'<b>{label}</b><br>%{{x}}: %{{y}}{unit}<extra></extra>',
+    ))
+    if target_value is not None:
+        fig.add_hline(y=target_value, line_dash='dash', line_color=theme.IQ_WARN, annotation_text=f'Target: {target_value}{unit}')
+
+    fig.update_layout(**theme.base_layout(title=label, height=300, showlegend=False))
+    fig.update_xaxes(title='Date', type='date')
+    fig.update_yaxes(title=f'{label}{f" ({unit.strip()})" if unit else ""}')
+
+    return {'html': theme.to_html_fragment(fig, div_id), 'point_count': len(plottable), 'target_value': target_value}
+
+
 def capital_guardian_risk_distribution_chart(red_flags):
     """
     Capital Guardian — Red Flag Engine severity distribution. Reads real,

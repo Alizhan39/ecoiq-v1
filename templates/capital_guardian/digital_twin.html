@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load static humanize %}
 {% block title %}{{ project.name }} — Mining Digital Twin — EcoIQ Capital Guardian{% endblock %}
 {% block meta_description_content %}{{ project.name }}: operational metrics and process-stage view connecting physical assets to capital, evidence, milestones and risk.{% endblock %}
 
 {% block content %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
 <div class="gold-wrap">
   <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · MINING DIGITAL TWIN</span>
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
@@ -63,6 +64,32 @@
     </div>
     {% endfor %}
   </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Operational Time-Series</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">
+      SYNTHETIC DEMONSTRATION DATA — {{ history_count }} recorded day{{ history_count|pluralize }} in this range.
+      OperationalSnapshot is a once-daily reading, so "Last 24 Hours" shows the latest recorded snapshot, never invented intraday telemetry.
+      Click a point on any chart to inspect it.
+    </p>
+    <div class="gold-btn-row">
+      {% for key, meta in ranges.items %}
+      <a class="gold-btn {% if key == range_key %}gold-btn-primary{% endif %}" href="?range={{ key }}">{{ meta.0 }}</a>
+      {% endfor %}
+    </div>
+    {% if time_series_charts %}
+    <div id="gc-ts-detail" class="gc-process-detail" style="margin-top:1rem;">
+      <p class="gold-sub" style="font-size:0.8rem;">Click a data point above to see its detail here.</p>
+    </div>
+    <div class="gc-gauges" style="margin-top:1rem;">
+      {% for chart in time_series_charts %}
+      <div class="gc-gauge-card">{{ chart.html|safe }}</div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No operational snapshots recorded in this range.</p>
+    {% endif %}
+  </section>
 </div>
 
 <script>
@@ -71,12 +98,32 @@
   stages.forEach(function (btn) {
     btn.addEventListener('click', function () {
       stages.forEach(function (b) { b.classList.remove('active'); });
-      document.querySelectorAll('.gc-process-detail').forEach(function (d) { d.hidden = true; });
+      document.querySelectorAll('.gc-process-detail[id^="gc-stage-"]').forEach(function (d) { d.hidden = true; });
       btn.classList.add('active');
       var detail = document.getElementById('gc-stage-' + btn.dataset.stage);
       if (detail) detail.hidden = false;
     });
   });
+
+  var detailPanel = document.getElementById('gc-ts-detail');
+  if (detailPanel && window.Plotly) {
+    document.querySelectorAll('.gc-gauge-card .js-plotly-plot').forEach(function (plotDiv) {
+      plotDiv.on('plotly_click', function (data) {
+        var point = data.points[0];
+        var cd = point.customdata || [];
+        var html = '<p class="gold-sub" style="font-size:0.8rem;"><strong>' + (point.data.name || point.data.hovertemplate) + '</strong></p>'
+          + '<div class="gold-list">'
+          + '<div class="gold-list-row"><span class="gold-list-label">Date</span><span class="gold-list-value">' + (cd[0] || point.x) + '</span></div>'
+          + '<div class="gold-list-row"><span class="gold-list-label">Actual Value</span><span class="gold-list-value">' + (cd[1] != null ? cd[1] : point.y) + '</span></div>'
+          + '<div class="gold-list-row"><span class="gold-list-label">Target Value</span><span class="gold-list-value">' + (cd[2] != null ? cd[2] : 'Data source required') + '</span></div>'
+          + '<div class="gold-list-row"><span class="gold-list-label">Variance vs. Target</span><span class="gold-list-value">' + (cd[3] != null ? cd[3] : 'Data source required') + '</span></div>'
+          + '<div class="gold-list-row"><span class="gold-list-label">Confidence</span><span class="gold-list-value">' + (cd[4] != null ? cd[4] : 'Data source required (synthetic reading)') + '</span></div>'
+          + '<div class="gold-list-row"><span class="gold-list-label">Evidence Documents</span><span class="gold-list-value">' + (cd[5] != null ? cd[5] : 0) + '</span></div>'
+          + '</div>';
+        detailPanel.innerHTML = html;
+      });
+    });
+  }
 })();
 </script>
 

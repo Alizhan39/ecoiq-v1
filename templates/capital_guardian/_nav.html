@@ -5,6 +5,8 @@
   <a class="gold-tab {% if active_tab == 'equipment' %}active{% endif %}" href="{% url 'capital_guardian:equipment_insurance' project.slug %}">Equipment &amp; Insurance</a>
   <a class="gold-tab {% if active_tab == 'twin' %}active{% endif %}" href="{% url 'capital_guardian:digital_twin' project.slug %}">Mining Digital Twin</a>
   <a class="gold-tab {% if active_tab == 'milestones' %}active{% endif %}" href="{% url 'capital_guardian:milestone_control' project.slug %}">Milestone Control</a>
-  <a class="gold-tab {% if active_tab == 'red_flags' %}active{% endif %}" href="{% url 'capital_guardian:red_flags' project.slug %}">Red Flag Engine</a>
+  <a class="gold-tab {% if active_tab == 'red_flags' %}active{% endif %}" href="{% url 'capital_guardian:red_flags' project.slug %}">Risk Intelligence</a>
+  <a class="gold-tab {% if active_tab == 'evidence' %}active{% endif %}" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre</a>
+  <a class="gold-tab {% if active_tab == 'audit' %}active{% endif %}" href="{% url 'capital_guardian:audit_history' project.slug %}">Audit History</a>
   <a class="gold-tab {% if active_tab == 'decision' %}active{% endif %}" href="{% url 'capital_guardian:decision_intelligence' project.slug %}">Decision Intelligence</a>
 </nav>

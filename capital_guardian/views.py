@@ -7,15 +7,36 @@ processor — every view here is read-only monitoring/governance/decision-
 intelligence over real, already-stored data. Decision Studio and the AI
 Agent Workbench are linked to directly (?q=/?ask=) — no second Q&A or
 orchestration path is created here.
+
+Phase 2 adds: portfolio_view (multi-project rollup), evidence_centre_view,
+audit_history_view, and extends digital_twin_view with historical
+time-series ranges — no second orchestration/scoring/evidence system.
 """
+import datetime
 from urllib.parse import quote
 
 from django.shortcuts import get_object_or_404, render
 
 from gold_intelligence.models import GoldProject
 
+from capital_guardian.services import evidence as evidence_service
+from capital_guardian.services import portfolio as portfolio_service
 from capital_guardian.services import red_flag_engine
 from capital_guardian.services import investor_dashboard as investor_dashboard_service
+
+TIME_SERIES_RANGES = {
+    '24h': ('Last 24 Hours', 1), '7d': ('Last 7 Days', 7), '30d': ('Last 30 Days', 30),
+    '90d': ('Last 90 Days', 90), '1y': ('Last Year', 365),
+}
+TIME_SERIES_METRICS = [
+    ('ore_mined_tonnes', 'Ore Mined (tonnes)', 't', None),
+    ('plant_throughput_tph', 'Plant Throughput (tph)', ' tph', None),
+    ('recovery_rate_pct', 'Recovery Rate', '%', 'recovery_rate'),
+    ('dore_produced_kg', 'Doré Produced (kg)', ' kg', None),
+    ('equipment_availability_pct', 'Equipment Availability', '%', 'equipment_availability'),
+    ('energy_use_mwh', 'Energy Use (MWh)', ' MWh', None),
+    ('water_recycled_pct', 'Water Recycled', '%', 'water_recycled'),
+]
 
 DECISION_INTELLIGENCE_QUESTIONS = [
     'Where has investor capital been deployed?',
@@ -56,6 +77,37 @@ def _project_or_404(slug):
 def directory(request):
     projects = GoldProject.objects.select_related('country').all()
     return render(request, 'capital_guardian/directory.html', {'projects': projects})
+
+
+def portfolio_view(request):
+    """Phase 2 — Multi-Project Investor Portfolio. Every project on the
+    platform is included (not just capital_guardian-flagged ones): a
+    GoldProject with no Capital Guardian data yet simply shows honest
+    'Data source required' cells, matching the rest of the app's convention."""
+    projects = list(GoldProject.objects.select_related('country').all())
+    rows = portfolio_service.build_portfolio(projects)
+
+    country = request.GET.get('country') or ''
+    commodity = request.GET.get('commodity') or ''
+    status = request.GET.get('status') or ''
+    sort_key = request.GET.get('sort') or ''
+
+    filtered_rows = portfolio_service.filter_rows(rows, country=country, commodity=commodity, status=status)
+    if sort_key:
+        filtered_rows = portfolio_service.sort_rows(filtered_rows, sort_key)
+
+    totals = portfolio_service.portfolio_totals(rows)
+
+    from plotly_visual_intelligence.services import charts
+
+    return render(request, 'capital_guardian/portfolio.html', {
+        'rows': filtered_rows, 'all_rows_count': len(rows), 'totals': totals,
+        'countries': sorted({r['project'].country for r in rows if r['project'].country_id}, key=lambda c: c.name),
+        'commodities': GoldProject.COMMODITY_CHOICES,
+        'statuses': [(k, v) for k, v in portfolio_service.STATUS_LABELS.items() if k != 'unknown'],
+        'selected_country': country, 'selected_commodity': commodity, 'selected_status': status, 'selected_sort': sort_key,
+        'risk_matrix_chart': charts.portfolio_risk_matrix_chart(rows),
+    })
 
 
 def investor_dashboard(request, slug):
@@ -144,8 +196,37 @@ def digital_twin_view(request, slug):
             'risks': risks_for_stage,
         })
 
+    # --- Phase 2: historical time-series over real OperationalSnapshot rows.
+    # OperationalSnapshot is a once-daily reading (see its model docstring),
+    # so "24 Hours" honestly means "the latest recorded snapshot", not
+    # invented intraday data — never presented as live telemetry.
+    range_key = request.GET.get('range', '30d')
+    if range_key not in TIME_SERIES_RANGES:
+        range_key = '30d'
+    range_label, range_days = TIME_SERIES_RANGES[range_key]
+    since = datetime.date.today() - datetime.timedelta(days=range_days)
+    history = list(project.operational_snapshots.filter(date__gte=since).order_by('date'))
+
+    from capital_guardian.services.red_flag_engine import get_thresholds
+    from plotly_visual_intelligence.services import charts
+
+    time_series_charts = []
+    for field, label, unit, rule_key in TIME_SERIES_METRICS:
+        target_value = None
+        if rule_key == 'recovery_rate' and project.recovery_rate_pct is not None:
+            warning, _critical = get_thresholds(project, 'recovery_rate')
+            target_value = project.recovery_rate_pct
+        elif rule_key in ('equipment_availability', 'water_recycled'):
+            warning, _critical = get_thresholds(project, rule_key)
+            target_value = warning
+        chart = charts.operational_time_series_chart(history, field, label, f'gc-ts-{field}', target_value=target_value, unit=unit)
+        if chart is not None:
+            time_series_charts.append(chart)
+
     return render(request, 'capital_guardian/digital_twin.html', {
         'project': project, 'snapshot': latest_snapshot, 'stages': stages,
+        'range_key': range_key, 'range_label': range_label, 'ranges': TIME_SERIES_RANGES,
+        'history_count': len(history), 'time_series_charts': time_series_charts,
     })
 
 
@@ -166,4 +247,43 @@ def decision_intelligence_view(request, slug):
     project = _project_or_404(slug)
     return render(request, 'capital_guardian/decision_intelligence.html', {
         'project': project, 'links': _decision_studio_links(project),
+    })
+
+
+def evidence_centre_view(request, slug):
+    """Phase 2 — every real EvidenceMemory row attached to anything
+    belonging to this project, with an honest verification-status
+    breakdown. Never marks anything verified itself."""
+    project = _project_or_404(slug)
+    evidence_qs = evidence_service.evidence_for_project(project).select_related('reviewer')
+    status_filter = request.GET.get('status') or ''
+    if status_filter:
+        evidence_qs = evidence_qs.filter(verification_status=status_filter)
+    evidence_rows = list(evidence_qs)
+    summary = evidence_service.verification_summary(evidence_service.evidence_for_project(project))
+
+    rows = [{'evidence': e, 'related_label': evidence_service.related_object_label(e.source_reference)} for e in evidence_rows]
+
+    from evidence_memory.models import EvidenceMemory
+
+    return render(request, 'capital_guardian/evidence_centre.html', {
+        'project': project, 'rows': rows, 'summary': summary,
+        'status_choices': EvidenceMemory.VERIFICATION_STATUS_CHOICES,
+        'selected_status': status_filter,
+    })
+
+
+def audit_history_view(request, slug):
+    """Phase 2 — 'Audit History'/'Change History', not a claim of
+    cryptographic immutability. Every row was written automatically by
+    capital_guardian/signals.py when a real tracked field actually changed."""
+    project = _project_or_404(slug)
+    event_type_filter = request.GET.get('event_type') or ''
+    entries = project.audit_log_entries.select_related('changed_by').all()
+    if event_type_filter:
+        entries = entries.filter(event_type=event_type_filter)
+    from capital_guardian.models import AuditLogEntry
+    return render(request, 'capital_guardian/audit_history.html', {
+        'project': project, 'entries': list(entries), 'event_types': AuditLogEntry.EVENT_TYPE_CHOICES,
+        'selected_event_type': event_type_filter,
     })

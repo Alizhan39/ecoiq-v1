@@ -365,3 +365,80 @@ class CapitalGuardianChartTests(TestCase):
         result = charts.capital_guardian_risk_distribution_chart([_Flag('high'), _Flag('medium'), _Flag('medium')])
         self.assertIsNotNone(result)
         self.assertEqual(result['total'], 3)
+
+
+class CapitalGuardianPhase2ChartTests(TestCase):
+    """The 2 chart functions added for Capital Guardian Phase 2 (portfolio
+    risk matrix, digital twin time-series). Honest None on empty/unavailable
+    input, real rendering with real customdata on real input."""
+
+    def _row(self, name, completion_pct, protection_score, committed_usd=100_000_000, status='on_track', flags=0):
+        class _Project:
+            pass
+        project = _Project()
+        project.name = name
+        return {
+            'project': project, 'completion_pct': completion_pct, 'protection_score': protection_score,
+            'committed_usd': committed_usd, 'status': status, 'status_label': status.replace('_', ' ').title(),
+            'active_red_flags': flags,
+        }
+
+    def test_risk_matrix_none_with_no_rows(self):
+        self.assertIsNone(charts.portfolio_risk_matrix_chart([]))
+
+    def test_risk_matrix_none_when_no_row_has_both_axes(self):
+        rows = [self._row('A', None, 80), self._row('B', 50, None)]
+        self.assertIsNone(charts.portfolio_risk_matrix_chart(rows))
+
+    def test_risk_matrix_excludes_incomplete_rows_but_plots_complete_ones(self):
+        rows = [self._row('A', 40, 80), self._row('B', None, 90)]
+        result = charts.portfolio_risk_matrix_chart(rows)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['count'], 1)
+        self.assertEqual(result['total_projects'], 2)
+
+    def test_risk_matrix_renders_with_missing_committed_capital(self):
+        rows = [self._row('A', 40, 80, committed_usd=None)]
+        result = charts.portfolio_risk_matrix_chart(rows)
+        self.assertIsNotNone(result)
+
+    def test_operational_time_series_none_with_no_snapshots(self):
+        self.assertIsNone(charts.operational_time_series_chart([], 'recovery_rate_pct', 'Recovery Rate', 'div1'))
+
+    def test_operational_time_series_renders_with_real_snapshots(self):
+        import datetime as _dt
+
+        class _Snapshot:
+            def __init__(self, date, value):
+                self.date = date
+                self.recovery_rate_pct = value
+                self.confidence = None
+
+            def evidence_documents(self):
+                return []
+
+        class _QS(list):
+            def count(self):
+                return len(self)
+
+        snap1 = _Snapshot(_dt.date.today() - _dt.timedelta(days=1), 88.0)
+        snap1.evidence_documents = _QS()
+        snap2 = _Snapshot(_dt.date.today(), 90.0)
+        snap2.evidence_documents = _QS()
+        result = charts.operational_time_series_chart([snap1, snap2], 'recovery_rate_pct', 'Recovery Rate', 'gc-ts-recovery', target_value=92.0, unit='%')
+        self.assertIsNotNone(result)
+        self.assertEqual(result['point_count'], 2)
+        self.assertEqual(result['target_value'], 92.0)
+
+    def test_operational_time_series_skips_snapshots_with_no_real_value(self):
+        import datetime as _dt
+
+        class _Snapshot:
+            def __init__(self, date, value):
+                self.date = date
+                self.recovery_rate_pct = value
+                self.confidence = None
+                self.evidence_documents = type('QS', (list,), {'count': lambda s: 0})()
+
+        snaps = [_Snapshot(_dt.date.today(), None)]
+        self.assertIsNone(charts.operational_time_series_chart(snaps, 'recovery_rate_pct', 'Recovery Rate', 'gc-ts-recovery'))

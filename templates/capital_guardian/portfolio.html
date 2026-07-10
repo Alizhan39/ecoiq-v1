@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+{% block title %}Investor Portfolio — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Multi-project institutional investor portfolio: committed/deployed capital, weighted Capital Protection Score, red flags, insurance and evidence coverage across every Capital Guardian project.{% endblock %}
+
+{% block content %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · INVESTOR PORTFOLIO</span>
+  <h1 class="gold-h1">Investor Portfolio</h1>
+  <p class="gold-sub">Every project below is a real gold_intelligence.GoldProject — commodities/sectors other than gold (copper, infrastructure) reuse the exact same project, capital trace, red flag and scoring architecture. Projects flagged DEMO are synthetic demonstration data.</p>
+
+  <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:directory' %}">← All Projects</a></div>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Portfolio Overview</h2>
+    {% if totals.available %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Total Capital Committed</div><div class="gold-card-value {% if totals.total_committed_usd is None %}na{% endif %}">{% if totals.total_committed_usd is not None %}${{ totals.total_committed_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Total Capital Deployed</div><div class="gold-card-value {% if totals.total_deployed_usd is None %}na{% endif %}">{% if totals.total_deployed_usd is not None %}${{ totals.total_deployed_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Total Capital Remaining</div><div class="gold-card-value {% if totals.total_remaining_usd is None %}na{% endif %}">{% if totals.total_remaining_usd is not None %}${{ totals.total_remaining_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Weighted Capital Protection Score</div><div class="gold-card-value {% if totals.weighted_protection_score is None %}na{% endif %}">{% if totals.weighted_protection_score is not None %}{{ totals.weighted_protection_score }}/100{% else %}Data source required{% endif %}</div><div class="gold-card-sub">{{ totals.weighted_protection_score_basis }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Projects On Track</div><div class="gold-card-value">{{ totals.on_track_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Projects Requiring Attention</div><div class="gold-card-value {% if totals.attention_count > 0 %}na{% endif %}">{{ totals.attention_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Active Red Flags</div><div class="gold-card-value">{{ totals.active_red_flags }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Upcoming Milestone Payments</div><div class="gold-card-value {% if totals.upcoming_milestone_payments_usd is None %}na{% endif %}">{% if totals.upcoming_milestone_payments_usd is not None %}${{ totals.upcoming_milestone_payments_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Total Insurance Coverage</div><div class="gold-card-value {% if totals.total_insurance_usd is None %}na{% endif %}">{% if totals.total_insurance_usd is not None %}${{ totals.total_insurance_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Coverage</div><div class="gold-card-value {% if not totals.evidence_coverage.total %}na{% endif %}">{% if totals.evidence_coverage.total %}{{ totals.evidence_coverage.with_evidence }}/{{ totals.evidence_coverage.total }}{% else %}No capital movements recorded{% endif %}</div></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">{{ totals.reason }}</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Portfolio Risk Matrix</h2>
+    {% if risk_matrix_chart %}
+    <div class="gold-chart">{{ risk_matrix_chart.html|safe }}</div>
+    <p class="gold-sub" style="font-size:0.72rem;">{{ risk_matrix_chart.count }} of {{ risk_matrix_chart.total_projects }} project(s) plotted — bubble size is committed capital; a project missing a completion % or Capital Protection Score is honestly excluded rather than plotted at a guessed position.</p>
+    {% else %}
+    <p class="gold-honest-stub">Not enough projects with both a real completion % and a real Capital Protection Score yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Filter &amp; Sort</h2>
+    <form method="get" class="gold-btn-row" style="align-items:center;">
+      <select name="country" class="gold-btn" style="cursor:pointer;">
+        <option value="">All countries</option>
+        {% for c in countries %}<option value="{{ c.pk }}" {% if selected_country == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <select name="commodity" class="gold-btn" style="cursor:pointer;">
+        <option value="">All commodities / sectors</option>
+        {% for key, label in commodities %}<option value="{{ key }}" {% if selected_commodity == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <select name="status" class="gold-btn" style="cursor:pointer;">
+        <option value="">All statuses</option>
+        {% for key, label in statuses %}<option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <select name="sort" class="gold-btn" style="cursor:pointer;">
+        <option value="">Default order</option>
+        <option value="protection_score" {% if selected_sort == 'protection_score' %}selected{% endif %}>Protection Score</option>
+        <option value="completion_pct" {% if selected_sort == 'completion_pct' %}selected{% endif %}>Completion</option>
+        <option value="deployed_usd" {% if selected_sort == 'deployed_usd' %}selected{% endif %}>Capital Deployed</option>
+        <option value="red_flag_count" {% if selected_sort == 'red_flag_count' %}selected{% endif %}>Red Flag Count</option>
+        <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Project Name</option>
+      </select>
+      <button type="submit" class="gold-btn gold-btn-primary">Apply</button>
+      <a class="gold-btn" href="{% url 'capital_guardian:portfolio' %}">Reset</a>
+    </form>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Project Comparison ({{ rows|length }} of {{ all_rows_count }})</h2>
+    {% if rows %}
+    <div style="overflow-x:auto;">
+    <table class="gc-compare-table">
+      <thead>
+        <tr>
+          <th>Project</th><th>Country</th><th>Commodity / Sector</th><th>Committed</th><th>Deployed</th>
+          <th>Completion</th><th>Protection Score</th><th>Evidence</th><th>Insurance</th><th>Red Flags</th><th>Next Milestone</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td><a href="{% url 'capital_guardian:investor_dashboard' row.project.slug %}">{{ row.project.name }}</a>{% if row.project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</td>
+          <td>{{ row.project.country.name|default:"—" }}</td>
+          <td>{{ row.project.get_commodity_display }}</td>
+          <td>{% if row.committed_usd is not None %}${{ row.committed_usd|floatformat:0|intcomma }}{% else %}—{% endif %}</td>
+          <td>{% if row.deployed_usd is not None %}${{ row.deployed_usd|floatformat:0|intcomma }}{% else %}—{% endif %}</td>
+          <td>{% if row.completion_pct is not None %}{{ row.completion_pct }}%{% else %}—{% endif %}</td>
+          <td>{% if row.protection_score is not None %}{{ row.protection_score }}{% else %}—{% endif %}</td>
+          <td>{% if row.evidence_coverage.total %}{{ row.evidence_coverage.with_evidence }}/{{ row.evidence_coverage.total }}{% else %}—{% endif %}</td>
+          <td>{% if row.insurance_ratio_pct is not None %}{{ row.insurance_ratio_pct|floatformat:0 }}%{% else %}—{% endif %}</td>
+          <td>{{ row.active_red_flags }}</td>
+          <td>{% if row.next_milestone %}{{ row.next_milestone.get_phase_display }}{% else %}—{% endif %}</td>
+          <td><span class="gold-risk-badge {% if row.status == 'on_track' %}low{% elif row.status == 'monitor' %}medium{% elif row.status == 'at_risk' %}high{% else %}na{% endif %}">{{ row.status_label }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No projects match the selected filters.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}
