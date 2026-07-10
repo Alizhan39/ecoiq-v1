@@ -50,6 +50,14 @@
         Related milestone: {% if entry.related_milestone %}{{ entry.related_milestone.get_phase_display }}{% else %}None linked{% endif %} ·
         Risk flags: {{ entry.red_flags.count }}
       </div>
+      {% if entry.evidence_documents.exists %}
+      <div class="gold-list" style="margin-top:0.6rem;">
+        {% for doc in entry.evidence_documents.all %}
+        <div class="gold-list-row"><span class="gold-list-label">{{ doc.text_chunk|truncatechars:60 }}</span><span class="gold-list-value"><span class="gold-risk-badge {% if doc.verification_status == 'verified' %}low{% elif doc.verification_status == 'rejected' or doc.verification_status == 'expired' %}high{% else %}medium{% endif %}">{{ doc.get_verification_status_display }}</span></span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="gold-btn-row" style="margin-top:0.5rem;"><a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">View in Evidence Centre →</a></div>
     </div>
     {% endfor %}
     {% else %}

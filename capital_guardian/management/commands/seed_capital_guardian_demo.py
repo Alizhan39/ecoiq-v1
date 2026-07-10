@@ -159,6 +159,10 @@ class Command(BaseCommand):
             trace_entries[purpose] = entry
 
         # --- Real evidence documents for the verified capital movements ---
+        # Phase 2: verification_status/review_tier/document_category reflect
+        # the same real state as the trace entry they support — never a
+        # stronger claim (e.g. "independently_verified") than what the demo
+        # data actually represents.
         from evidence_memory.models import EvidenceMemory
 
         for purpose in ('Crusher Deposit', 'SAG Mill Engineering Payment', 'Geological Drilling Campaign', 'Insurance Premium', 'Independent Technical Adviser'):
@@ -168,10 +172,39 @@ class Command(BaseCommand):
                 defaults=dict(
                     text_chunk=f'Synthetic demonstration evidence document supporting the "{purpose}" capital movement ({entry.trace_id}).',
                     source_type='manual', confidence=80.0, is_demo=True,
+                    verification_status='verified', review_tier='human_reviewed', document_category='payment_confirmation',
                 ),
             )
 
-        # --- Mining Digital Twin operational snapshot ---
+        # --- Mining Digital Twin operational snapshot (today) + 89 days of
+        # synthetic history so Digital Twin time-series charts have real
+        # rows to plot across every supported range. Deterministic (seeded
+        # RNG, not true randomness) so re-running the command is reproducible;
+        # `confidence` is left null throughout — a synthetic reading has no
+        # real sensor-confidence to report.
+        import random
+        rng = random.Random(42)
+        baseline = dict(
+            ore_mined_tonnes=18_400, plant_throughput_tph=780, gold_grade_g_per_tonne=1.8,
+            recovery_rate_pct=91.7, dore_produced_kg=42, equipment_availability_pct=94.0,
+            energy_use_mwh=22.4, water_recycled_pct=76.0,
+        )
+        for offset in range(89, 0, -1):
+            day = today - datetime.timedelta(days=offset)
+            OperationalSnapshot.objects.update_or_create(
+                project=project, date=day,
+                defaults=dict(
+                    ore_mined_tonnes=round(baseline['ore_mined_tonnes'] * rng.uniform(0.9, 1.05), 0),
+                    plant_throughput_tph=round(baseline['plant_throughput_tph'] * rng.uniform(0.92, 1.04), 0),
+                    gold_grade_g_per_tonne=round(baseline['gold_grade_g_per_tonne'] * rng.uniform(0.9, 1.08), 2),
+                    recovery_rate_pct=round(baseline['recovery_rate_pct'] * rng.uniform(0.95, 1.01), 1),
+                    dore_produced_kg=round(baseline['dore_produced_kg'] * rng.uniform(0.85, 1.1), 1),
+                    equipment_availability_pct=round(baseline['equipment_availability_pct'] * rng.uniform(0.9, 1.02), 1),
+                    energy_use_mwh=round(baseline['energy_use_mwh'] * rng.uniform(0.9, 1.1), 1),
+                    water_recycled_pct=round(baseline['water_recycled_pct'] * rng.uniform(0.92, 1.05), 1),
+                    environmental_status='green', is_demo=True,
+                ),
+            )
         OperationalSnapshot.objects.update_or_create(
             project=project, date=today,
             defaults=dict(
@@ -181,11 +214,30 @@ class Command(BaseCommand):
             ),
         )
 
+        # --- Platform-wide default configurable red-flag thresholds (Phase
+        # 2). A project-scoped RedFlagRuleConfig row overrides these; these
+        # exist so the admin UI has real, editable rows from day one instead
+        # of only an invisible hardcoded fallback.
+        from capital_guardian.models import RedFlagRuleConfig
+
+        for rule_key, warning, critical in (
+            ('capex_variance', 2.0, 10.0),
+            ('insurance_renewal_due', 60, 30),
+            ('equipment_availability', 90.0, 80.0),
+            ('recovery_rate', 3.0, 6.0),
+            ('water_recycled', 70.0, 55.0),
+        ):
+            RedFlagRuleConfig.objects.update_or_create(
+                project=None, rule_key=rule_key,
+                defaults=dict(warning_threshold=warning, critical_threshold=critical, enabled=True),
+            )
+
         # --- Red Flag Engine: real detection over the data just seeded ---
         flags = detect_red_flags(project)
 
         self.stdout.write(self.style.SUCCESS(
             f'Capital Guardian demo ready: project "{project.name}" '
             f'({project.capital_trace_entries.count()} capital movements, {project.equipment_specs.count()} equipment items, '
-            f'{project.timeline_milestones.count()} milestones, {len(flags)} red flags detected).',
+            f'{project.timeline_milestones.count()} milestones, {project.operational_snapshots.count()} operational snapshots, '
+            f'{len(flags)} red flags detected).',
         ))

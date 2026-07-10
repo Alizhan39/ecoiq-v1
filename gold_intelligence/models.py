@@ -40,8 +40,25 @@ class GoldProject(models.Model):
         ('expansion', 'Expansion'),
     ]
 
+    # Capital Guardian Phase 2 (capital_guardian app) — every field/service
+    # written for "gold" already treats every number as an optional real
+    # input rather than assuming gold-specific units, so a non-gold project
+    # (copper, infrastructure, energy, agriculture) can reuse this exact
+    # model for its portfolio-level identity rather than a second Project
+    # model per commodity. Gold-specific fields below (ore_grade_g_per_tonne,
+    # gold_price_assumption_usd_per_oz, etc.) simply stay null for those.
+    COMMODITY_CHOICES = [
+        ('gold', 'Gold'),
+        ('copper', 'Copper'),
+        ('infrastructure', 'Infrastructure'),
+        ('energy', 'Energy'),
+        ('agriculture', 'Agriculture'),
+        ('other', 'Other'),
+    ]
+
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True)
+    commodity = models.CharField(max_length=20, choices=COMMODITY_CHOICES, default='gold')
     country = models.ForeignKey(
         'countries.CountryProfile', null=True, blank=True, on_delete=models.SET_NULL, related_name='gold_projects',
     )

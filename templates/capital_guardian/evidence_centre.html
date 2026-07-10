@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Evidence Centre — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: every real evidence document attached to capital movements, equipment, milestones, governance and operational snapshots, with an honest verification-status breakdown.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · EVIDENCE CENTRE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">This app never marks a document independently verified itself — every status below is a real, human- or system-recorded value on the underlying EvidenceMemory row.</p>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='evidence' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Verification Summary</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Total Evidence Documents</div><div class="gold-card-value">{{ summary.total }}</div></div>
+      {% for status_key, count in summary.by_status.items %}
+      <div class="gold-card"><div class="gold-card-label">{{ status_key|title }}</div><div class="gold-card-value">{{ count }}</div></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Filter by Verification Status</h2>
+    <form method="get" class="gold-btn-row">
+      <select name="status" class="gold-btn" style="cursor:pointer;">
+        <option value="">All statuses</option>
+        {% for key, label in status_choices %}<option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="gold-btn gold-btn-primary">Apply</button>
+      <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Reset</a>
+    </form>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence Documents ({{ rows|length }})</h2>
+    {% if rows %}
+    {% for row in rows %}
+    {% with e=row.evidence %}
+    <div class="gc-evidence-row">
+      <div><div class="gc-evidence-field-label">Document</div><div class="gc-evidence-field-value">{{ e.text_chunk|truncatechars:70 }}</div></div>
+      <div><div class="gc-evidence-field-label">Type</div><div class="gc-evidence-field-value">{{ e.get_document_category_display }}</div></div>
+      <div><div class="gc-evidence-field-label">Related</div><div class="gc-evidence-field-value">{{ row.related_label }}</div></div>
+      <div><div class="gc-evidence-field-label">Recorded</div><div class="gc-evidence-field-value">{{ e.date_collected|default:e.created_at|date:"Y-m-d" }}</div></div>
+      <div><div class="gc-evidence-field-label">Verification</div><div class="gc-evidence-field-value"><span class="gold-risk-badge {% if e.verification_status == 'verified' %}low{% elif e.verification_status == 'rejected' or e.verification_status == 'expired' %}high{% elif e.verification_status == 'requires_review' %}medium{% else %}na{% endif %}">{{ e.get_verification_status_display }}</span></div></div>
+      <div><div class="gc-evidence-field-label">Review Tier</div><div class="gc-evidence-field-value"><span class="gc-tier-badge {{ e.review_tier }}">{{ e.get_review_tier_display }}</span></div></div>
+      <div><div class="gc-evidence-field-label">Confidence</div><div class="gc-evidence-field-value">{% if e.confidence is not None %}{{ e.confidence }}%{% else %}Data source required{% endif %}</div></div>
+      <div><div class="gc-evidence-field-label">Expiry</div><div class="gc-evidence-field-value">{% if e.expiry_date %}{{ e.expiry_date }}{% if e.is_expired %} (expired){% endif %}{% else %}Not applicable{% endif %}</div></div>
+      <div><div class="gc-evidence-field-label">Reviewer</div><div class="gc-evidence-field-value">{{ e.reviewer.get_username|default:"Not yet reviewed" }}</div></div>
+      <div><div class="gc-evidence-field-label">Integrity Reference</div><div class="gc-evidence-field-value" style="font-family:'SF Mono',monospace;font-size:0.68rem;" title="SHA-256 of this record's stored text — confirms this record hasn't changed, not that a source document is authentic.">{{ e.integrity_reference|slice:":16" }}…</div></div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No evidence documents recorded for this project yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">The Evidence Chain</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">Open any transaction on the <a href="{% url 'capital_guardian:capital_trace' project.slug %}" style="color:var(--gold-acc);">Capital Trace</a> page to see its full real evidence chain: Investor Capital → Payment → Supplier → Contract → Equipment → Inspection → Milestone → Production.</p>
+    <div class="gc-flow">
+      <div class="gc-flow-step done">Investor Capital</div><div class="gc-flow-arrow">→</div>
+      <div class="gc-flow-step done">Payment</div><div class="gc-flow-arrow">→</div>
+      <div class="gc-flow-step done">Supplier</div><div class="gc-flow-arrow">→</div>
+      <div class="gc-flow-step done">Contract</div><div class="gc-flow-arrow">→</div>
+      <div class="gc-flow-step done">Equipment</div><div class="gc-flow-arrow">→</div>
+      <div class="gc-flow-step done">Inspection</div><div class="gc-flow-arrow">→</div>
+      <div class="gc-flow-step done">Milestone</div><div class="gc-flow-arrow">→</div>
+      <div class="gc-flow-step done">Production</div>
+    </div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}
