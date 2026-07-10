@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ entry.trace_id }} — {{ project.name }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: full detail for capital movement {{ entry.trace_id }} — invoice, contract, insurance, inspection, supplier, approval chain and audit trail.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · CAPITAL PROTECTION</span>
+  <h1 class="gold-h1">{{ entry.trace_id }} — {{ entry.purpose }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:capital_trace' project.slug %}">← All Capital Movements</a></div>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Summary</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Amount</div><div class="gold-card-value">{{ entry.currency }} {{ entry.amount_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Date</div><div class="gold-card-value">{{ entry.date }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Supplier</div><div class="gold-card-value">{{ entry.supplier|default:"Not recorded" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Insurance</div><div class="gold-card-value">{{ entry.get_insurance_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Inspection</div><div class="gold-card-value">{% if entry.related_equipment %}{{ entry.related_equipment.get_inspection_status_display }}{% else %}Not applicable — no linked equipment{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Payment Status</div><div class="gold-card-value">{{ entry.get_payment_status_display }}</div></div>
+    </div>
+    <p class="gold-sub" style="font-size:0.74rem;margin-top:0.6rem;">Photos and GPS capture are not connected to any real data source for this demo — honestly omitted rather than shown with a stock image or invented coordinate.</p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Approval Chain</h2>
+    <div class="gold-chip-row" style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+      <span class="gold-risk-badge {% if entry.approval_status == 'approved' %}low{% elif entry.approval_status == 'rejected' %}high{% else %}medium{% endif %}">Board Approval: {{ entry.get_approval_status_display }}</span>
+      <span class="gold-risk-badge {% if entry.investor_approval_status == 'approved' %}low{% elif entry.investor_approval_status == 'pending' %}medium{% elif entry.investor_approval_status == 'rejected' %}high{% else %}na{% endif %}">Investor Approval: {{ entry.get_investor_approval_status_display }}</span>
+      <span class="gold-risk-badge {% if entry.verification_status == 'verified' %}low{% else %}medium{% endif %}">Independent Verification: {{ entry.get_verification_status_display }}</span>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital Protection Chain</h2>
+    <div class="gc-flow">
+      {% for step in chain %}
+      <span class="gc-flow-step {% if step.complete %}done{% else %}pending{% endif %}">{{ step.step }}: {{ step.detail }}</span>
+      {% if not forloop.last %}<span class="gc-flow-arrow">→</span>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Invoice / Contract (Evidence Documents)</h2>
+    {% if evidence_documents %}
+    <div class="gold-list">
+      {% for doc in evidence_documents %}
+      <div class="gold-list-row"><span class="gold-list-label">{{ doc.get_document_category_display }}: {{ doc.text_chunk|truncatechars:70 }}</span><span class="gold-list-value"><span class="gold-risk-badge {% if doc.verification_status == 'verified' %}low{% elif doc.verification_status == 'rejected' or doc.verification_status == 'expired' %}high{% else %}medium{% endif %}">{{ doc.get_verification_status_display }}</span></span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No evidence documents recorded for this capital movement yet.</p>
+    {% endif %}
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">View in Evidence Centre →</a></div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Audit Trail</h2>
+    {% if audit_trail %}
+    <div class="gc-audit-timeline">
+      {% for entry_log in audit_trail %}
+      <div class="gc-audit-entry">
+        <div class="gc-audit-time">{{ entry_log.created_at|date:"Y-m-d H:i" }}</div>
+        <div class="gc-audit-body">
+          <strong style="color:#fff;">{{ entry_log.field_name }}</strong>
+          <div class="gold-sub" style="font-size:0.78rem;margin-top:0.3rem;">
+            <span style="color:var(--gold-high);">{{ entry_log.previous_value|default:"—" }}</span> → <span style="color:var(--gold-acc);">{{ entry_log.new_value|default:"—" }}</span>
+          </div>
+          <div class="gc-flag-meta">Changed by: {{ entry_log.changed_by.get_username|default:"Not recorded" }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No recorded changes to this capital movement's status fields yet.</p>
+    {% endif %}
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:audit_history' project.slug %}">Full Audit History →</a></div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

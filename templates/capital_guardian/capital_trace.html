@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 {% load humanize %}
-{% block title %}{{ project.name }} — Capital Trace — EcoIQ Capital Guardian{% endblock %}
+{% block title %}{{ project.name }} — Capital Protection — EcoIQ Capital Guardian{% endblock %}
 {% block meta_description_content %}{{ project.name }}: every capital movement traced from investor capital to physical asset to independent verification to project milestone.{% endblock %}
 
 {% block content %}
 <div class="gold-wrap">
-  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · CAPITAL TRACE</span>
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · CAPITAL PROTECTION</span>
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">Every dollar. Every invoice. Every payment. Every approval. Every supplier. Every insurance. Every warranty. Every document. Every audit. Every milestone. Click any payment below to open its full detail.</p>
 
   {% include 'capital_guardian/_nav.html' with active_tab='trace' %}
 
@@ -31,7 +32,7 @@
     {% for entry in entries %}
     <div class="gold-card" style="margin-bottom:0.8rem;">
       <div class="gold-list-row" style="border:none;padding:0;">
-        <span class="gold-list-label"><strong>{{ entry.trace_id }}</strong> — {{ entry.purpose }}</span>
+        <span class="gold-list-label"><a href="{% url 'capital_guardian:capital_trace_entry_detail' project.slug entry.pk %}" style="color:var(--gold-acc);text-decoration:none;"><strong>{{ entry.trace_id }}</strong> — {{ entry.purpose }} →</a></span>
         <span class="gold-list-value">{{ entry.currency }} {{ entry.amount_usd|floatformat:0|intcomma }}</span>
       </div>
       <div class="gold-card-sub" style="margin-top:0.5rem;">

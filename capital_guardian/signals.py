@@ -80,6 +80,11 @@ BUDGET_LINE_FIELDS = ['planned_usd', 'committed_usd', 'spent_usd']
 GOLDPROJECT_FIELDS = ['total_committed_capital_usd', 'insurance_coverage_usd', 'insurance_expiry_date']
 REDFLAG_FIELDS = ['resolution_status']
 EVIDENCE_FIELDS = ['verification_status']
+# Phase 3 — CapitalTraceEntry's real workflow-state transitions, feeding the
+# Capital Protection page's per-payment "Audit Trail".
+CAPITAL_TRACE_ENTRY_FIELDS = [
+    'approval_status', 'investor_approval_status', 'verification_status', 'insurance_status', 'payment_status',
+]
 
 
 def _resolve_project_from_source_reference(source_reference):
@@ -112,7 +117,7 @@ def _resolve_project_from_source_reference(source_reference):
 
 
 def connect():
-    from capital_guardian.models import ProjectGovernance, RedFlag
+    from capital_guardian.models import CapitalTraceEntry, ProjectGovernance, RedFlag
     from evidence_memory.models import EvidenceMemory
     from gold_intelligence.models import CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone
 
@@ -163,4 +168,18 @@ def connect():
             field_labels={'verification_status': 'Verification Status'},
         ),
         sender=EvidenceMemory, dispatch_uid='cg_audit_post_evidence',
+    )
+
+    pre_save.connect(_snapshot(CapitalTraceEntry, CAPITAL_TRACE_ENTRY_FIELDS), sender=CapitalTraceEntry, dispatch_uid='cg_audit_pre_trace')
+    post_save.connect(
+        _log(
+            CAPITAL_TRACE_ENTRY_FIELDS, 'capital_trace', lambda i: i.project, lambda i: f'{i.purpose} ({i.trace_id})',
+            lambda i: f'capital_guardian.CapitalTraceEntry:{i.pk}',
+            field_labels={
+                'approval_status': 'Approval Status', 'investor_approval_status': 'Investor Approval Status',
+                'verification_status': 'Verification Status', 'insurance_status': 'Insurance Status',
+                'payment_status': 'Payment Status',
+            },
+        ),
+        sender=CapitalTraceEntry, dispatch_uid='cg_audit_post_trace',
     )

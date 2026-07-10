@@ -436,6 +436,22 @@ def capital_guardian_gauge_chart(value, title, div_id):
     return {'html': theme.to_html_fragment(fig, div_id), 'value': value}
 
 
+def ownership_donut_chart(founder_pct, investor_pct):
+    """
+    Capital Guardian Phase 3 — Project Ownership donut. Reads real
+    ProjectGovernance.founder_holdco_pct/investor_spv_pct directly — None
+    when either real percentage is missing, never a fabricated 50/50 split.
+    """
+    if founder_pct is None or investor_pct is None:
+        return None
+    fig = go.Figure(go.Pie(
+        labels=['Founder HoldCo', 'Investor SPV'], values=[founder_pct, investor_pct], hole=0.55,
+        marker={'colors': [theme.IQ_INFO, theme.IQ_ACCENT]}, textinfo='label+percent',
+    ))
+    fig.update_layout(**theme.base_layout(title='Project Ownership', height=320, showlegend=True))
+    return {'html': theme.to_html_fragment(fig, 'gc-ownership-donut')}
+
+
 def portfolio_risk_matrix_chart(rows):
     """
     Capital Guardian Phase 2 — Portfolio Risk Matrix. `rows` are real

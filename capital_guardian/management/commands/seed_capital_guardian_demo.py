@@ -48,6 +48,17 @@ class Command(BaseCommand):
                 ),
                 total_committed_capital_usd=100_000_000, total_capex_usd=86_000_000,
                 insurance_coverage_usd=62_000_000, insurance_expiry_date=today + datetime.timedelta(days=47),
+                # Phase 3 — project-finance ASSUMPTION inputs (the model's
+                # existing field names already say "assumption"/"expected" —
+                # these are declared analyst inputs, not measured facts,
+                # exactly like every other GoldProject economics field
+                # gold_intelligence's own Investment Dashboard already
+                # reports). Setting them lets Enterprise Value/Equity Value/
+                # IRR Forecast/Current Gold Price compute for real instead
+                # of showing "Data source required" for a flagship demo project.
+                gold_price_assumption_usd_per_oz=2_000, aisc_usd_per_oz=950,
+                expected_annual_production_oz=120_000, mine_life_years=10, discount_rate_pct=8,
+                recovery_rate_pct=91.7, ore_grade_g_per_tonne=1.8,
                 data_sources='Synthetic demonstration figures only — not real project data.',
                 data_last_updated=today, is_demo=True,
             ),
@@ -62,6 +73,10 @@ class Command(BaseCommand):
                 reserved_matters_active=True, escrow_account_active=True, investor_first_waterfall_active=True,
                 quarterly_audit_active=True, independent_technical_adviser_active=True,
                 insurance_monitoring_active=True, milestone_based_capital_release_active=True,
+                dividend_policy_notes=(
+                    'Illustrative demo policy: distributions to the Investor SPV only after the Investor-First '
+                    'Waterfall senior capital return threshold is met, subject to board approval each quarter.'
+                ),
                 is_demo=True,
             ),
         )
@@ -99,20 +114,27 @@ class Command(BaseCommand):
             milestones[phase] = m
 
         # --- Equipment (manufacturer names are illustrative examples only) ---
+        # Trailing (country, commissioned_days_ago, expected_lifespan_years)
+        # — commissioned_date/expected_lifespan_years are only ever set for
+        # equipment whose commissioning_status is genuinely 'complete';
+        # everything still in progress honestly has no real commissioning
+        # date yet, so Remaining Useful Life reports "Data source required"
+        # rather than a fabricated estimate.
         equipment_spec = [
-            ('crusher', 'Primary Crusher', 'Metso', 'Metso Outotec Kazakhstan (illustrative)', 12_000_000, 6_000_000, 10, 'complete', 'passed', 'complete', 'complete', 'in_progress', 'not_started'),
-            ('mill', 'SAG Mill', 'FLSmidth', 'FLSmidth Central Asia (illustrative)', 5_600_000, 5_600_000, 14, 'in_progress', 'not_started', 'not_started', 'not_started', 'not_started', 'not_started'),
-            ('mill', 'Ball Mill', 'Metso', 'Metso Outotec Kazakhstan (illustrative)', 8_200_000, 2_000_000, 14, 'in_progress', 'not_started', 'not_started', 'not_started', 'not_started', 'not_started'),
-            ('conveyor', 'Overland Conveyor System', 'ABB', 'ABB Kazakhstan (illustrative)', 4_100_000, 1_000_000, 8, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started'),
-            ('cil', 'Leaching Tanks (CIL Circuit)', 'Weir', 'Weir Minerals (illustrative)', 9_800_000, 2_500_000, 12, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started'),
-            ('electrowinning', 'Electrowinning Cells', 'Siemens', 'Siemens Process Systems (illustrative)', 2_400_000, 500_000, 9, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started'),
-            ('smelting_furnace', 'Smelting Furnace', 'ABB', 'ABB Kazakhstan (illustrative)', 3_200_000, 800_000, 11, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started'),
-            ('haul_truck', 'CAT Haul Trucks (fleet of 6)', 'Caterpillar', 'Caterpillar Kazakhstan (illustrative)', 7_800_000, 7_800_000, 6, 'complete', 'passed', 'complete', 'complete', 'complete', 'complete'),
-            ('excavator', 'Hydraulic Excavators (fleet of 3)', 'Komatsu', 'Komatsu Central Asia (illustrative)', 4_500_000, 4_500_000, 5, 'complete', 'passed', 'complete', 'complete', 'complete', 'complete'),
+            ('crusher', 'Primary Crusher', 'Metso', 'Metso Outotec Kazakhstan (illustrative)', 12_000_000, 6_000_000, 10, 'complete', 'passed', 'complete', 'complete', 'in_progress', 'not_started', 'Finland', None, None),
+            ('mill', 'SAG Mill', 'FLSmidth', 'FLSmidth Central Asia (illustrative)', 5_600_000, 5_600_000, 14, 'in_progress', 'not_started', 'not_started', 'not_started', 'not_started', 'not_started', 'Denmark', None, None),
+            ('mill', 'Ball Mill', 'Metso', 'Metso Outotec Kazakhstan (illustrative)', 8_200_000, 2_000_000, 14, 'in_progress', 'not_started', 'not_started', 'not_started', 'not_started', 'not_started', 'Finland', None, None),
+            ('conveyor', 'Overland Conveyor System', 'ABB', 'ABB Kazakhstan (illustrative)', 4_100_000, 1_000_000, 8, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started', 'Switzerland', None, None),
+            ('cil', 'Leaching Tanks (CIL Circuit)', 'Weir', 'Weir Minerals (illustrative)', 9_800_000, 2_500_000, 12, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started', 'United Kingdom', None, None),
+            ('electrowinning', 'Electrowinning Cells', 'Siemens', 'Siemens Process Systems (illustrative)', 2_400_000, 500_000, 9, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started', 'Germany', None, None),
+            ('smelting_furnace', 'Smelting Furnace', 'ABB', 'ABB Kazakhstan (illustrative)', 3_200_000, 800_000, 11, 'not_started', 'not_applicable', 'not_started', 'not_started', 'not_started', 'not_started', 'Switzerland', None, None),
+            ('haul_truck', 'CAT Haul Trucks (fleet of 6)', 'Caterpillar', 'Caterpillar Kazakhstan (illustrative)', 7_800_000, 7_800_000, 6, 'complete', 'passed', 'complete', 'complete', 'complete', 'complete', 'United States', 400, 8),
+            ('excavator', 'Hydraulic Excavators (fleet of 3)', 'Komatsu', 'Komatsu Central Asia (illustrative)', 4_500_000, 4_500_000, 5, 'complete', 'passed', 'complete', 'complete', 'complete', 'complete', 'Japan', 380, 10),
         ]
         equipment = {}
         for (equipment_type, label, manufacturer, supplier, capex, deposit, lead_time,
-             manufacturing_status, fat_status, shipping_status, delivery_status, installation_status, commissioning_status) in equipment_spec:
+             manufacturing_status, fat_status, shipping_status, delivery_status, installation_status, commissioning_status,
+             country, commissioned_days_ago, expected_lifespan_years) in equipment_spec:
             e, _ = EquipmentSpec.objects.update_or_create(
                 project=project, label=label,
                 defaults=dict(
@@ -126,6 +148,11 @@ class Command(BaseCommand):
                     insurance_status='in_progress' if deposit else 'not_started',
                     maintenance_status='in_progress' if commissioning_status == 'complete' else 'not_applicable',
                     inspection_status='passed' if commissioning_status == 'complete' else 'not_started',
+                    country=country,
+                    commissioned_date=(today - datetime.timedelta(days=commissioned_days_ago)) if commissioned_days_ago else None,
+                    expected_lifespan_years=expected_lifespan_years,
+                    spare_parts_available=commissioning_status == 'complete',
+                    maintenance_contract_active=commissioning_status == 'complete',
                 ),
             )
             equipment[label] = e
@@ -211,6 +238,7 @@ class Command(BaseCommand):
                 ore_mined_tonnes=18_400, plant_throughput_tph=780, gold_grade_g_per_tonne=1.8,
                 recovery_rate_pct=91.7, dore_produced_kg=42, equipment_availability_pct=94.0,
                 energy_use_mwh=22.4, water_recycled_pct=76.0, environmental_status='green', is_demo=True,
+                dore_inventory_kg=118, truck_fleet_utilization_pct=87.0, tailings_stored_tonnes=214_000, water_stored_m3=48_500,
             ),
         )
 

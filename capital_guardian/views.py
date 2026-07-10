@@ -11,6 +11,16 @@ orchestration path is created here.
 Phase 2 adds: portfolio_view (multi-project rollup), evidence_centre_view,
 audit_history_view, and extends digital_twin_view with historical
 time-series ranges — no second orchestration/scoring/evidence system.
+
+Phase 3 adds: per-entry Capital Protection detail (invoice/contract/
+insurance/inspection/supplier/approval-chain/audit-trail — never
+photos/GPS, since no real capture of either exists), a per-equipment detail
+page (with a deterministic remaining-useful-life estimate, never an ML
+prediction), a project-independent Supplier Comparison page (synthetic,
+heavily-disclaimed ratings — see models.SupplierProfile's docstring), a
+Live Cameras page (honest 'no live feed connected' state), a Govern hub,
+and an AI Project Director briefing (a narrative template over real data,
+not a second AI system).
 """
 import datetime
 from urllib.parse import quote
@@ -19,9 +29,12 @@ from django.shortcuts import get_object_or_404, render
 
 from gold_intelligence.models import GoldProject
 
+from capital_guardian.services import ai_director as ai_director_service
+from capital_guardian.services import equipment_health
 from capital_guardian.services import evidence as evidence_service
 from capital_guardian.services import portfolio as portfolio_service
 from capital_guardian.services import red_flag_engine
+from capital_guardian.services import supplier_comparison as supplier_comparison_service
 from capital_guardian.services import investor_dashboard as investor_dashboard_service
 
 TIME_SERIES_RANGES = {
@@ -36,6 +49,11 @@ TIME_SERIES_METRICS = [
     ('equipment_availability_pct', 'Equipment Availability', '%', 'equipment_availability'),
     ('energy_use_mwh', 'Energy Use (MWh)', ' MWh', None),
     ('water_recycled_pct', 'Water Recycled', '%', 'water_recycled'),
+    # Phase 3 — Live Digital Twin production extras.
+    ('dore_inventory_kg', 'Doré Inventory (kg)', ' kg', None),
+    ('truck_fleet_utilization_pct', 'Truck Fleet Utilization', '%', None),
+    ('tailings_stored_tonnes', 'Tailings Stored (tonnes)', 't', None),
+    ('water_stored_m3', 'Water Stored (m³)', ' m³', None),
 ]
 
 DECISION_INTELLIGENCE_QUESTIONS = [
@@ -143,6 +161,10 @@ def investor_dashboard(request, slug):
         insurance_ratio, 'Insurance Coverage (% of Deployed Capital)', 'gc-insurance-gauge',
     )
     context['risk_distribution_chart'] = charts.capital_guardian_risk_distribution_chart(context['active_red_flags'])
+    context['health_gauge'] = charts.capital_guardian_gauge_chart(
+        context['project_health']['score'] if context['project_health']['available'] else None,
+        'Project Health Score', 'gc-health-gauge',
+    )
 
     return render(request, 'capital_guardian/investor_dashboard.html', context)
 
@@ -153,10 +175,33 @@ def capital_trace_view(request, slug):
     return render(request, 'capital_guardian/capital_trace.html', {'project': project, 'entries': entries})
 
 
+def capital_trace_entry_detail_view(request, slug, entry_id):
+    """Phase 3 — 'clicking a payment' detail: Invoice/Contract (evidence
+    documents), Insurance, Inspection (equipment.inspection_status),
+    Supplier, Approval Chain, Audit Trail (real AuditLogEntry rows for this
+    exact entry). Photos/GPS are honestly omitted — no real capture of
+    either exists; never a stock photo or fabricated coordinate."""
+    from capital_guardian.services import capital_trace as capital_trace_service
+
+    project = _project_or_404(slug)
+    entry = get_object_or_404(
+        project.capital_trace_entries.select_related('budget_category', 'related_equipment', 'related_milestone'),
+        pk=entry_id,
+    )
+    audit_trail = project.audit_log_entries.filter(source_reference=f'capital_guardian.CapitalTraceEntry:{entry.pk}')
+    return render(request, 'capital_guardian/capital_trace_entry_detail.html', {
+        'project': project, 'entry': entry,
+        'chain': capital_trace_service.capital_protection_chain_for_entry(entry),
+        'evidence_documents': list(entry.evidence_documents.all()),
+        'audit_trail': list(audit_trail),
+    })
+
+
 def governance_view(request, slug):
     project = _project_or_404(slug)
     governance = getattr(project, 'governance', None)
     controls = []
+    ownership_donut = None
     if governance:
         controls = [
             ('Reserved Matters', governance.reserved_matters_active),
@@ -167,13 +212,91 @@ def governance_view(request, slug):
             ('Insurance Monitoring', governance.insurance_monitoring_active),
             ('Milestone-Based Capital Release', governance.milestone_based_capital_release_active),
         ]
-    return render(request, 'capital_guardian/governance.html', {'project': project, 'governance': governance, 'controls': controls})
+        from plotly_visual_intelligence.services import charts
+        ownership_donut = charts.ownership_donut_chart(governance.founder_holdco_pct, governance.investor_spv_pct)
+    return render(request, 'capital_guardian/governance.html', {
+        'project': project, 'governance': governance, 'controls': controls, 'ownership_donut': ownership_donut,
+    })
 
 
 def equipment_insurance_view(request, slug):
     project = _project_or_404(slug)
     equipment = list(project.equipment_specs.all())
     return render(request, 'capital_guardian/equipment_insurance.html', {'project': project, 'equipment': equipment})
+
+
+def equipment_detail_view(request, slug, equipment_id):
+    """Phase 3 — per-equipment deep-dive. Live telemetry (temperature/
+    vibration/utilization/energy/carbon), live cameras and drone inspection
+    are honestly shown as 'no live feed connected' — no fabricated sensor
+    readings or stock imagery. The 'AI Prediction / Expected Failure Date'
+    field is a deterministic remaining-useful-life estimate (see
+    services/equipment_health.py), never a black-box ML prediction."""
+    project = _project_or_404(slug)
+    equipment = get_object_or_404(project.equipment_specs, pk=equipment_id)
+    maintenance_history = project.audit_log_entries.filter(source_reference=f'gold_intelligence.EquipmentSpec:{equipment.pk}')
+    return render(request, 'capital_guardian/equipment_detail.html', {
+        'project': project, 'equipment': equipment,
+        'rul': equipment_health.remaining_useful_life(equipment),
+        'maintenance_recommendation': equipment_health.maintenance_recommendation(equipment),
+        'maintenance_history': list(maintenance_history),
+        'capital_trace_entries': list(equipment.capital_trace_entries.all()),
+        'open_red_flags': list(equipment.red_flags.filter(resolution_status='open')),
+    })
+
+
+def supplier_comparison_view(request):
+    """Phase 3 — project-independent Supplier Comparison. See
+    models.SupplierProfile's docstring: illustrative_* ratings are SYNTHETIC,
+    never a real assessment of the named company — the template carries a
+    prominent disclaimer on every row."""
+    from capital_guardian.models import SupplierProfile
+
+    suppliers = list(SupplierProfile.objects.all())
+    rows = [{'supplier': s, 'equipment_in_use': list(supplier_comparison_service.equipment_using_supplier(s.name))} for s in suppliers]
+    return render(request, 'capital_guardian/supplier_comparison.html', {'rows': rows})
+
+
+def live_cameras_view(request, slug):
+    """Phase 3 — honest empty state. No real camera/drone/satellite feed
+    exists yet; this is the UI shell a future integration would populate,
+    never a fake video or stock photo presented as live."""
+    project = _project_or_404(slug)
+    zones = [
+        'Open Pit', 'Crusher', 'Mill', 'Processing Plant', 'Gold Room', 'Warehouse',
+        'Control Room', 'Drone View', 'Satellite View',
+    ]
+    return render(request, 'capital_guardian/live_cameras.html', {'project': project, 'zones': zones})
+
+
+def govern_hub_view(request, slug):
+    """Phase 3 — a hub linking to the real governance/evidence/audit pages
+    that already exist, plus real rollups (insurance, approvals) computed
+    here, plus honestly-stubbed sections (Legal/Compliance/ESG/Licences)
+    for which no real data source is connected yet."""
+    project = _project_or_404(slug)
+    entries = list(project.capital_trace_entries.all())
+    pending_investor_approvals = [e for e in entries if e.investor_approval_status == 'pending']
+    uninsured_entries = [e for e in entries if e.insurance_status == 'uninsured']
+    return render(request, 'capital_guardian/govern_hub.html', {
+        'project': project,
+        'governance': getattr(project, 'governance', None),
+        'pending_investor_approvals': pending_investor_approvals,
+        'uninsured_entries': uninsured_entries,
+        'insurance_coverage_usd': project.insurance_coverage_usd,
+        'insurance_expiry_date': project.insurance_expiry_date,
+    })
+
+
+def ai_director_view(request, slug):
+    """Phase 3 — AI Project Director Morning Briefing. A deterministic
+    narrative template over real data already computed elsewhere — never a
+    second AI/LLM system. See services/ai_director.py."""
+    project = _project_or_404(slug)
+    return render(request, 'capital_guardian/ai_director.html', {
+        'project': project, 'briefing': ai_director_service.build_morning_briefing(project),
+        'decision_studio_links': _decision_studio_links(project)[:4],
+    })
 
 
 def digital_twin_view(request, slug):
