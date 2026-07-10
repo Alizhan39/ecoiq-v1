@@ -10,6 +10,7 @@ from django.contrib import admin, messages
 
 from capital_guardian.models import (
     AuditLogEntry, CapitalTraceEntry, OperationalSnapshot, ProjectGovernance, RedFlag, RedFlagRuleConfig,
+    SupplierProfile,
 )
 
 
@@ -114,3 +115,13 @@ class AuditLogEntryAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(SupplierProfile)
+class SupplierProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'country', 'equipment_specialty', 'illustrative_risk_rating',
+        'illustrative_financial_rating', 'illustrative_esg_rating', 'is_demo',
+    )
+    list_filter = ('country', 'is_demo')
+    search_fields = ('name', 'equipment_specialty')

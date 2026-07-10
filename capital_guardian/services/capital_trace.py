@@ -73,3 +73,60 @@ def trace_chain_for_entry(entry):
             'detail': str(entry.related_milestone) if entry.related_milestone_id else 'No linked milestone',
         },
     ]
+
+
+def capital_protection_chain_for_entry(entry):
+    """
+    Phase 3 — the Capital Protection page's granular chain: Investor →
+    Escrow → Board Approval → Supplier → Factory → Shipment → Site →
+    Commissioning → Operating Asset. When a real EquipmentSpec is linked,
+    the last 5 steps read its REAL manufacturing/shipping/delivery/
+    installation/commissioning status fields directly — a genuinely more
+    granular view than trace_chain_for_entry's generic "Physical Asset"
+    step, not a duplicate of it. Falls back to the generic 3-step ending
+    (Physical Asset / Verification / Milestone) when no equipment is linked.
+    """
+    governance = getattr(entry.project, 'governance', None)
+    chain = [
+        {'step': 'Investor Capital', 'complete': True, 'detail': f'{entry.currency} {entry.amount_usd:,.0f}'},
+        {
+            'step': 'Escrow / Controlled Account', 'complete': bool(governance and governance.escrow_account_active),
+            'detail': 'Active' if governance and governance.escrow_account_active else 'Not confirmed active',
+        },
+        {
+            'step': 'Board Approval', 'complete': entry.approval_status == 'approved',
+            'detail': entry.get_approval_status_display(),
+        },
+        {
+            'step': 'Supplier', 'complete': bool(entry.supplier),
+            'detail': entry.supplier or 'Not recorded',
+        },
+    ]
+    equipment = entry.related_equipment
+    if equipment is not None:
+        chain += [
+            {'step': 'Factory', 'complete': equipment.manufacturing_status == 'complete', 'detail': equipment.get_manufacturing_status_display()},
+            {'step': 'Shipment', 'complete': equipment.shipping_status == 'complete', 'detail': equipment.get_shipping_status_display()},
+            {'step': 'Site', 'complete': equipment.delivery_status == 'complete', 'detail': equipment.get_delivery_status_display()},
+            {'step': 'Commissioning', 'complete': equipment.commissioning_status == 'complete', 'detail': equipment.get_commissioning_status_display()},
+            {
+                'step': 'Operating Asset', 'complete': equipment.installation_status == 'complete' and equipment.commissioning_status == 'complete',
+                'detail': str(equipment),
+            },
+        ]
+    else:
+        chain += [
+            {
+                'step': 'Physical Asset or Service', 'complete': False,
+                'detail': 'No linked equipment',
+            },
+            {
+                'step': 'Independent Verification', 'complete': entry.verification_status == 'verified',
+                'detail': entry.get_verification_status_display(),
+            },
+            {
+                'step': 'Operating Asset', 'complete': entry.related_milestone_id is not None,
+                'detail': str(entry.related_milestone) if entry.related_milestone_id else 'No linked milestone',
+            },
+        ]
+    return chain

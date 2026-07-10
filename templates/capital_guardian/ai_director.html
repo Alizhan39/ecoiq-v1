@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }} — AI Project Director — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: a morning briefing assembled from real production, finance, maintenance, supply chain and risk data.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · AI PROJECT DIRECTOR</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub" style="font-size:0.8rem;">This briefing is a deterministic summary of real, already-stored data — not a second AI/LLM system, and never a fabricated prediction. Ask Decision Studio below for open-ended questions.</p>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='ai_director' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Morning Briefing</h2>
+
+    <div class="gc-briefing-section">
+      <h3>Production{% if briefing.production.date %} — {{ briefing.production.date }}{% endif %}</h3>
+      {% if briefing.production.available %}
+      {% for line in briefing.production.lines %}<div class="gc-briefing-line">{{ line }}</div>{% endfor %}
+      {% else %}
+      <p class="gold-honest-stub">{{ briefing.production.reason|default:"No real production data recorded yet." }}</p>
+      {% endif %}
+    </div>
+
+    <div class="gc-briefing-section">
+      <h3>Finance</h3>
+      {% if briefing.finance.available %}
+      {% for line in briefing.finance.lines %}<div class="gc-briefing-line">{{ line }}</div>{% endfor %}
+      {% else %}
+      <p class="gold-honest-stub">No real finance data recorded yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="gc-briefing-section">
+      <h3>Maintenance</h3>
+      {% if briefing.maintenance.available %}
+      {% for line in briefing.maintenance.lines %}<div class="gc-briefing-line">{{ line }}</div>{% endfor %}
+      {% else %}
+      <p class="gold-honest-stub">No equipment currently due for service based on declared commissioning dates and expected lifespans.</p>
+      {% endif %}
+    </div>
+
+    <div class="gc-briefing-section">
+      <h3>Supply Chain</h3>
+      {% if briefing.supply_chain.available %}
+      {% for line in briefing.supply_chain.lines %}<div class="gc-briefing-line">{{ line }}</div>{% endfor %}
+      {% else %}
+      <p class="gold-honest-stub">No equipment deliveries currently outstanding.</p>
+      {% endif %}
+    </div>
+
+    <div class="gc-briefing-section">
+      <h3>Risk ({{ briefing.risk.total_open }} open)</h3>
+      {% if briefing.risk.available %}
+      {% for line in briefing.risk.lines %}<div class="gc-briefing-line">{{ line }}</div>{% endfor %}
+      {% else %}
+      <p class="gold-honest-stub">No open red flags detected.</p>
+      {% endif %}
+      <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:red_flags' project.slug %}">Full Risk Intelligence →</a></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Ask a Question</h2>
+    <div class="gold-btn-row">
+      {% for link in decision_studio_links %}
+      <a class="gold-btn" href="{{ link.href }}">{{ link.question }} →</a>
+      {% endfor %}
+    </div>
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:decision_intelligence' project.slug %}">All Decision Intelligence Questions →</a></div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

@@ -306,6 +306,17 @@ class EquipmentSpec(models.Model):
     maintenance_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_applicable')
     inspection_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
 
+    # Capital Guardian Phase 3 — real inputs a deterministic remaining-
+    # useful-life / "recommended service window" estimate can be computed
+    # from (see capital_guardian/services/equipment_health.py). Never an ML
+    # prediction — both fields are null until a real commissioning date and
+    # a real declared expected lifespan exist.
+    country = models.CharField(max_length=100, blank=True, help_text='Illustrative label in demo data — not a claim of real involvement.')
+    commissioned_date = models.DateField(null=True, blank=True)
+    expected_lifespan_years = models.FloatField(null=True, blank=True)
+    spare_parts_available = models.BooleanField(default=False)
+    maintenance_contract_active = models.BooleanField(default=False)
+
     class Meta:
         ordering = ['equipment_type']
 

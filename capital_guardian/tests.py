@@ -19,10 +19,11 @@ from gold_intelligence.models import CapitalBudgetLine, EquipmentSpec, GoldProje
 
 from capital_guardian.models import (
     AuditLogEntry, CapitalTraceEntry, OperationalSnapshot, ProjectGovernance, RedFlag, RedFlagRuleConfig,
+    SupplierProfile,
 )
 from capital_guardian.services import (
-    audit_log, capital_protection, capital_trace, evidence as evidence_service, investor_dashboard,
-    portfolio, red_flag_engine,
+    ai_director, audit_log, capital_protection, capital_trace, equipment_health, evidence as evidence_service,
+    investor_dashboard, portfolio, project_health, red_flag_engine, supplier_comparison,
 )
 
 
@@ -952,3 +953,378 @@ class PortfolioSeedCommandTests(TestCase):
         self.assertIn('kz-gold-project-01', slugs)
         self.assertIn('kz-copper-project-02', slugs)
         self.assertIn('uk-infrastructure-project-01', slugs)
+
+
+# ============================================================================
+# Phase 3: Discover/Invest/Operate/Govern/AI institutional operating system.
+# ============================================================================
+
+class EquipmentHealthServiceTests(TestCase):
+    def setUp(self):
+        self.project = GoldProject.objects.create(name='Equip Health Test', slug='equip-health-test')
+
+    def test_remaining_useful_life_none_with_no_real_inputs(self):
+        e = EquipmentSpec.objects.create(project=self.project, equipment_type='crusher', label='Crusher')
+        years, end_date = equipment_health.remaining_useful_life(e)
+        self.assertIsNone(years)
+        self.assertIsNone(end_date)
+
+    def test_remaining_useful_life_computed_from_real_inputs(self):
+        e = EquipmentSpec.objects.create(
+            project=self.project, equipment_type='crusher', label='Crusher',
+            commissioned_date=datetime.date.today() - datetime.timedelta(days=365), expected_lifespan_years=10,
+        )
+        years, end_date = equipment_health.remaining_useful_life(e)
+        self.assertAlmostEqual(years, 9.0, delta=0.1)
+        self.assertIsNotNone(end_date)
+
+    def test_maintenance_recommendation_unavailable_with_no_real_inputs(self):
+        e = EquipmentSpec.objects.create(project=self.project, equipment_type='crusher', label='Crusher')
+        rec = equipment_health.maintenance_recommendation(e)
+        self.assertFalse(rec['available'])
+
+    def test_maintenance_recommendation_overdue(self):
+        e = EquipmentSpec.objects.create(
+            project=self.project, equipment_type='crusher', label='Old Crusher',
+            commissioned_date=datetime.date.today() - datetime.timedelta(days=365 * 12), expected_lifespan_years=10,
+        )
+        rec = equipment_health.maintenance_recommendation(e)
+        self.assertTrue(rec['available'])
+        self.assertEqual(rec['urgency'], 'overdue')
+
+    def test_maintenance_recommendation_due_soon(self):
+        e = EquipmentSpec.objects.create(
+            project=self.project, equipment_type='crusher', label='Aging Crusher',
+            commissioned_date=datetime.date.today() - datetime.timedelta(days=365 * 9.5), expected_lifespan_years=10,
+        )
+        rec = equipment_health.maintenance_recommendation(e)
+        self.assertTrue(rec['available'])
+        self.assertEqual(rec['urgency'], 'due_soon')
+
+    def test_maintenance_recommendation_ok(self):
+        e = EquipmentSpec.objects.create(
+            project=self.project, equipment_type='crusher', label='New Crusher',
+            commissioned_date=datetime.date.today(), expected_lifespan_years=10,
+        )
+        rec = equipment_health.maintenance_recommendation(e)
+        self.assertTrue(rec['available'])
+        self.assertEqual(rec['urgency'], 'ok')
+
+
+class ProjectHealthServiceTests(TestCase):
+    def setUp(self):
+        self.project = GoldProject.objects.create(name='Health Score Test', slug='health-score-test')
+
+    def test_unavailable_with_zero_real_data(self):
+        result = project_health.compute_project_health_score(self.project)
+        self.assertFalse(result['available'])
+        self.assertIsNone(result['score'])
+
+    def test_available_with_equipment_availability_only(self):
+        OperationalSnapshot.objects.create(project=self.project, date=datetime.date.today(), equipment_availability_pct=95.0)
+        result = project_health.compute_project_health_score(self.project)
+        self.assertTrue(result['available'])
+        self.assertEqual(result['score'], 95.0)
+
+    def test_environmental_status_scores_real_mapping(self):
+        OperationalSnapshot.objects.create(project=self.project, date=datetime.date.today(), environmental_status='red')
+        result = project_health.compute_project_health_score(self.project)
+        self.assertEqual(result['components']['environmental_status']['normalized'], 20.0)
+
+    def test_recovery_vs_target_requires_both_real_target_and_reading(self):
+        self.project.recovery_rate_pct = 95.0
+        self.project.save()
+        result = project_health.compute_project_health_score(self.project)
+        self.assertIsNone(result['components']['recovery_vs_target'])
+
+    def test_equipment_lifecycle_component_reflects_real_service_status(self):
+        EquipmentSpec.objects.create(
+            project=self.project, equipment_type='crusher', label='Crusher',
+            commissioned_date=datetime.date.today() - datetime.timedelta(days=365 * 12), expected_lifespan_years=10,
+        )
+        result = project_health.compute_project_health_score(self.project)
+        self.assertEqual(result['components']['equipment_lifecycle']['normalized'], 0.0)
+
+    def test_different_from_capital_protection_score(self):
+        # Same project, different real inputs feed each score — confirms
+        # these are genuinely two different composites, not aliases.
+        OperationalSnapshot.objects.create(project=self.project, date=datetime.date.today(), equipment_availability_pct=95.0)
+        CapitalBudgetLine.objects.create(project=self.project, label='x', planned_usd=100, committed_usd=200)
+        health = project_health.compute_project_health_score(self.project)
+        protection = capital_protection.compute_capital_protection_score(self.project)
+        self.assertTrue(health['available'])
+        self.assertTrue(protection['available'])
+        self.assertNotEqual(health['score'], protection['score'])
+
+
+class AIDirectorServiceTests(TestCase):
+    def setUp(self):
+        self.project = GoldProject.objects.create(name='AI Director Test', slug='ai-director-test')
+
+    def test_production_section_unavailable_with_no_snapshot(self):
+        briefing = ai_director.build_morning_briefing(self.project)
+        self.assertFalse(briefing['production']['available'])
+
+    def test_production_section_reflects_real_snapshot(self):
+        OperationalSnapshot.objects.create(project=self.project, date=datetime.date.today(), recovery_rate_pct=90.0)
+        briefing = ai_director.build_morning_briefing(self.project)
+        self.assertTrue(briefing['production']['available'])
+        self.assertTrue(any('90.0' in line for line in briefing['production']['lines']))
+
+    def test_maintenance_section_only_flags_due_soon_or_overdue(self):
+        EquipmentSpec.objects.create(
+            project=self.project, equipment_type='crusher', label='Old Crusher',
+            commissioned_date=datetime.date.today() - datetime.timedelta(days=365 * 12), expected_lifespan_years=10,
+        )
+        EquipmentSpec.objects.create(
+            project=self.project, equipment_type='mill', label='New Mill',
+            commissioned_date=datetime.date.today(), expected_lifespan_years=10,
+        )
+        briefing = ai_director.build_morning_briefing(self.project)
+        self.assertTrue(briefing['maintenance']['available'])
+        self.assertEqual(len(briefing['maintenance']['lines']), 1)
+
+    def test_risk_section_reflects_real_open_flags(self):
+        CapitalBudgetLine.objects.create(project=self.project, label='x', planned_usd=100_000_000, committed_usd=120_000_000)
+        briefing = ai_director.build_morning_briefing(self.project)
+        self.assertTrue(briefing['risk']['available'])
+        self.assertGreater(briefing['risk']['total_open'], 0)
+
+    def test_never_writes_to_database(self):
+        original = self.project.name
+        ai_director.build_morning_briefing(self.project)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.name, original)
+
+
+class InvestorDashboardPhase3Tests(TestCase):
+    def setUp(self):
+        self.project = GoldProject.objects.create(name='Invest P3 Test', slug='invest-p3-test', gold_price_assumption_usd_per_oz=2000)
+
+    def test_equity_value_none_with_missing_inputs(self):
+        self.assertIsNone(investor_dashboard.equity_value_usd(None, 50))
+        self.assertIsNone(investor_dashboard.equity_value_usd(1000, None))
+
+    def test_equity_value_real_proportional_share(self):
+        self.assertEqual(investor_dashboard.equity_value_usd(1_000_000, 50), 500_000.0)
+
+    def test_todays_gold_estimate_none_with_no_snapshot(self):
+        gold_oz, revenue = investor_dashboard.todays_gold_estimate(self.project)
+        self.assertIsNone(gold_oz)
+        self.assertIsNone(revenue)
+
+    def test_todays_gold_estimate_real_conversion(self):
+        OperationalSnapshot.objects.create(project=self.project, date=datetime.date.today(), dore_produced_kg=31.1034768)
+        gold_oz, revenue = investor_dashboard.todays_gold_estimate(self.project)
+        self.assertEqual(gold_oz, 1000.0)
+        self.assertEqual(revenue, 2_000_000.0)
+
+    def test_construction_progress_uses_construction_milestone_when_present(self):
+        MineTimelineMilestone.objects.create(project=self.project, phase='construction', status='in_progress', completion_pct_override=42.0)
+        MineTimelineMilestone.objects.create(project=self.project, phase='licensing', status='complete')
+        self.assertEqual(investor_dashboard.construction_progress_pct(self.project), 42.0)
+
+    def test_construction_progress_falls_back_to_overall_completion(self):
+        MineTimelineMilestone.objects.create(project=self.project, phase='licensing', status='complete')
+        self.assertEqual(investor_dashboard.construction_progress_pct(self.project), 100.0)
+
+
+class CapitalProtectionChainTests(TestCase):
+    def setUp(self):
+        self.project = GoldProject.objects.create(name='Chain Test', slug='chain-test')
+
+    def test_chain_without_equipment_uses_generic_ending(self):
+        entry = CapitalTraceEntry.objects.create(project=self.project, date=datetime.date.today(), amount_usd=1, purpose='a')
+        chain = capital_trace.capital_protection_chain_for_entry(entry)
+        steps = [c['step'] for c in chain]
+        self.assertIn('Physical Asset or Service', steps)
+        self.assertNotIn('Factory', steps)
+
+    def test_chain_with_equipment_uses_granular_lifecycle_steps(self):
+        equipment = EquipmentSpec.objects.create(
+            project=self.project, equipment_type='crusher', label='Crusher',
+            manufacturing_status='complete', shipping_status='complete',
+            delivery_status='in_progress', commissioning_status='not_started',
+        )
+        entry = CapitalTraceEntry.objects.create(project=self.project, date=datetime.date.today(), amount_usd=1, purpose='a', related_equipment=equipment)
+        chain = capital_trace.capital_protection_chain_for_entry(entry)
+        by_step = {c['step']: c for c in chain}
+        self.assertIn('Factory', by_step)
+        self.assertTrue(by_step['Factory']['complete'])
+        self.assertFalse(by_step['Site']['complete'])
+        self.assertFalse(by_step['Operating Asset']['complete'])
+
+
+class SupplierComparisonTests(TestCase):
+    def test_rating_pairs_passes_through_real_and_none_values(self):
+        s = SupplierProfile.objects.create(name='Test Supplier Co', illustrative_risk_rating=80.0)
+        pairs = dict(s.rating_pairs)
+        self.assertEqual(pairs['Risk'], 80.0)
+        self.assertIsNone(pairs['ESG'])
+
+    def test_equipment_using_supplier_real_cross_reference(self):
+        project = GoldProject.objects.create(name='Supplier XRef Test', slug='supplier-xref-test')
+        EquipmentSpec.objects.create(project=project, equipment_type='crusher', label='Crusher', manufacturer='Metso')
+        EquipmentSpec.objects.create(project=project, equipment_type='mill', label='Mill', manufacturer='FLSmidth')
+        results = supplier_comparison.equipment_using_supplier('Metso')
+        self.assertEqual(results.count(), 1)
+        self.assertEqual(results.first().label, 'Crusher')
+
+    def test_equipment_using_supplier_case_insensitive(self):
+        project = GoldProject.objects.create(name='Supplier XRef Test 2', slug='supplier-xref-test-2')
+        EquipmentSpec.objects.create(project=project, equipment_type='crusher', label='Crusher', manufacturer='metso')
+        self.assertEqual(supplier_comparison.equipment_using_supplier('Metso').count(), 1)
+
+
+class CapitalTraceEntryAuditTests(TestCase):
+    """Phase 3 — signals.py now also tracks CapitalTraceEntry's workflow fields."""
+    def setUp(self):
+        self.project = GoldProject.objects.create(name='CTE Audit Test', slug='cte-audit-test')
+
+    def test_creating_entry_logs_creation(self):
+        CapitalTraceEntry.objects.create(project=self.project, date=datetime.date.today(), amount_usd=1, purpose='a')
+        entries = AuditLogEntry.objects.filter(project=self.project, event_type='capital_trace')
+        self.assertEqual(entries.count(), 1)
+
+    def test_changing_payment_status_is_logged(self):
+        entry = CapitalTraceEntry.objects.create(project=self.project, date=datetime.date.today(), amount_usd=1, purpose='a', payment_status='pending')
+        AuditLogEntry.objects.filter(project=self.project).delete()
+        entry.payment_status = 'paid'
+        entry.save()
+        logged = AuditLogEntry.objects.filter(project=self.project, event_type='capital_trace', field_name='Payment Status').first()
+        self.assertIsNotNone(logged)
+        self.assertEqual(logged.previous_value, 'pending')
+        self.assertEqual(logged.new_value, 'paid')
+
+
+class Phase3ViewTests(TestCase):
+    def setUp(self):
+        self.client = Client(SERVER_NAME='localhost')
+        self.kz = CountryProfile.objects.create(name='Kazakhstan', slug='kazakhstan-p3', iso_code='KZ', is_published=True)
+        self.project = GoldProject.objects.create(
+            name='Phase3 View Test Project', slug='cg-p3-view-test-project', country=self.kz, is_demo=True,
+            gold_price_assumption_usd_per_oz=2000,
+        )
+        ProjectGovernance.objects.create(project=self.project, founder_holdco_pct=50, investor_spv_pct=50)
+        self.equipment = EquipmentSpec.objects.create(project=self.project, equipment_type='crusher', label='Crusher')
+        self.entry = CapitalTraceEntry.objects.create(project=self.project, date=datetime.date.today(), amount_usd=100, purpose='Test Payment')
+
+    def test_capital_trace_entry_detail_returns_200(self):
+        r = self.client.get(reverse('capital_guardian:capital_trace_entry_detail', args=[self.project.slug, self.entry.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Test Payment')
+
+    def test_capital_trace_entry_detail_omits_photos_and_gps(self):
+        r = self.client.get(reverse('capital_guardian:capital_trace_entry_detail', args=[self.project.slug, self.entry.pk]))
+        self.assertContains(r, 'not connected to any real data source')
+
+    def test_equipment_detail_returns_200(self):
+        r = self.client.get(reverse('capital_guardian:equipment_detail', args=[self.project.slug, self.equipment.pk]))
+        self.assertEqual(r.status_code, 200)
+
+    def test_equipment_detail_honest_no_live_telemetry(self):
+        r = self.client.get(reverse('capital_guardian:equipment_detail', args=[self.project.slug, self.equipment.pk]))
+        self.assertContains(r, 'No live sensor feed connected')
+
+    def test_equipment_detail_honest_no_live_cameras(self):
+        r = self.client.get(reverse('capital_guardian:equipment_detail', args=[self.project.slug, self.equipment.pk]))
+        self.assertContains(r, 'No live feed connected')
+
+    def test_supplier_comparison_returns_200(self):
+        r = self.client.get(reverse('capital_guardian:supplier_comparison'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_supplier_comparison_shows_disclaimer(self):
+        SupplierProfile.objects.create(name='Disclaimer Test Co')
+        r = self.client.get(reverse('capital_guardian:supplier_comparison'))
+        self.assertContains(r, 'SYNTHETIC / ILLUSTRATIVE RATINGS')
+
+    def test_live_cameras_returns_200_and_honest(self):
+        r = self.client.get(reverse('capital_guardian:live_cameras', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'No live feed connected')
+
+    def test_govern_hub_returns_200(self):
+        r = self.client.get(reverse('capital_guardian:govern_hub', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+
+    def test_ai_director_returns_200(self):
+        r = self.client.get(reverse('capital_guardian:ai_director', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+
+    def test_ai_director_states_not_a_second_ai_system(self):
+        r = self.client.get(reverse('capital_guardian:ai_director', args=[self.project.slug]))
+        self.assertContains(r, 'not a second AI/LLM system')
+
+    def test_investor_dashboard_shows_new_phase3_cards(self):
+        r = self.client.get(reverse('capital_guardian:investor_dashboard', args=[self.project.slug]))
+        self.assertContains(r, 'Enterprise Value')
+        self.assertContains(r, 'Current Gold Price')
+        self.assertContains(r, 'Project Health Score')
+
+    def test_governance_page_shows_ownership_heading(self):
+        r = self.client.get(reverse('capital_guardian:governance', args=[self.project.slug]))
+        self.assertContains(r, 'Beneficial Ownership')
+        self.assertContains(r, 'not legal advice')
+
+    def test_all_phase3_pages_no_raw_template_tags_leak(self):
+        urls = [
+            reverse('capital_guardian:capital_trace_entry_detail', args=[self.project.slug, self.entry.pk]),
+            reverse('capital_guardian:equipment_detail', args=[self.project.slug, self.equipment.pk]),
+            reverse('capital_guardian:supplier_comparison'),
+            reverse('capital_guardian:live_cameras', args=[self.project.slug]),
+            reverse('capital_guardian:govern_hub', args=[self.project.slug]),
+            reverse('capital_guardian:ai_director', args=[self.project.slug]),
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                r = self.client.get(url)
+                content = r.content.decode()
+                self.assertNotIn('{%', content)
+                self.assertNotIn('{{', content)
+
+    def test_nav_groups_present_on_dashboard(self):
+        r = self.client.get(reverse('capital_guardian:investor_dashboard', args=[self.project.slug]))
+        for label in ('Discover', 'Invest', 'Operate', 'Govern', 'AI'):
+            self.assertContains(r, label)
+
+
+class SuppliersSeedCommandTests(TestCase):
+    def test_seed_creates_supplier_profiles(self):
+        call_command('seed_capital_guardian_suppliers_demo')
+        self.assertGreaterEqual(SupplierProfile.objects.count(), 10)
+        self.assertTrue(SupplierProfile.objects.filter(name='Metso').exists())
+
+    def test_seed_is_idempotent(self):
+        call_command('seed_capital_guardian_suppliers_demo')
+        count_after_first = SupplierProfile.objects.count()
+        call_command('seed_capital_guardian_suppliers_demo')
+        self.assertEqual(SupplierProfile.objects.count(), count_after_first)
+
+    def test_seeded_suppliers_are_flagged_demo(self):
+        call_command('seed_capital_guardian_suppliers_demo')
+        self.assertFalse(SupplierProfile.objects.exclude(is_demo=True).exists())
+
+
+class Phase3SeedCommandFieldTests(TestCase):
+    def setUp(self):
+        call_command('seed_countries')
+
+    def test_commissioned_equipment_has_real_rul_inputs(self):
+        call_command('seed_capital_guardian_demo')
+        project = GoldProject.objects.get(slug='kz-gold-project-01')
+        haul_trucks = project.equipment_specs.get(label__icontains='Haul Trucks')
+        self.assertIsNotNone(haul_trucks.commissioned_date)
+        self.assertIsNotNone(haul_trucks.expected_lifespan_years)
+
+    def test_not_yet_commissioned_equipment_has_no_fabricated_rul_inputs(self):
+        call_command('seed_capital_guardian_demo')
+        project = GoldProject.objects.get(slug='kz-gold-project-01')
+        sag_mill = project.equipment_specs.get(label='SAG Mill')
+        self.assertIsNone(sag_mill.commissioned_date)
+        self.assertIsNone(sag_mill.expected_lifespan_years)
+
+    def test_governance_has_dividend_policy_notes(self):
+        call_command('seed_capital_guardian_demo')
+        project = GoldProject.objects.get(slug='kz-gold-project-01')
+        self.assertTrue(project.governance.dividend_policy_notes)

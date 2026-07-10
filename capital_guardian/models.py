@@ -45,6 +45,24 @@ RedFlag/OperationalSnapshot are EXTENDED in place (actual_value/
 threshold_value on RedFlag, confidence on OperationalSnapshot) rather than
 duplicated, matching the same "extend, don't parallel-build" discipline
 used on gold_intelligence's models in Phase 1.
+
+--- Phase 3 additions ---
+
+`SupplierProfile` is the one genuinely new model this phase — a project-
+independent equipment-supplier reference/catalog row. Its `illustrative_*`
+rating fields (risk, financial, ESG) are explicitly synthetic scores
+attached to a real, named company for demonstration purposes only — every
+template surfacing them carries a prominent "SYNTHETIC / ILLUSTRATIVE —
+NOT A REAL ASSESSMENT" disclaimer (see templates/capital_guardian/
+supplier_comparison.html), and the field names themselves are prefixed so
+no future reader of this code mistakes them for a real rating feed.
+
+Everything else is additive fields on already-existing models: a
+dividend-policy note on ProjectGovernance, a commissioned date/expected
+lifespan/spare-parts/maintenance-contract/country on EquipmentSpec (real
+inputs a deterministic remaining-useful-life estimate can be computed
+from — never a black-box ML prediction), and doré inventory/truck fleet/
+tailings/water-stored readings on OperationalSnapshot.
 """
 from django.conf import settings
 from django.db import models
@@ -75,6 +93,10 @@ class ProjectGovernance(models.Model):
     milestone_based_capital_release_active = models.BooleanField(default=False)
 
     notes = models.TextField(blank=True)
+    # Phase 3 — real, if informal, free-text description of how distributions
+    # are intended to work. Left blank (never a fabricated policy) unless a
+    # real one has actually been recorded.
+    dividend_policy_notes = models.TextField(blank=True)
     is_demo = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -273,6 +295,7 @@ class AuditLogEntry(models.Model):
         ('equipment', 'Equipment'),
         ('red_flag', 'Red Flag Status'),
         ('evidence', 'Evidence Verification'),
+        ('capital_trace', 'Capital Trace Entry'),
     ]
 
     project = models.ForeignKey(GoldProject, on_delete=models.CASCADE, related_name='audit_log_entries')
@@ -324,6 +347,12 @@ class OperationalSnapshot(models.Model):
     water_recycled_pct = models.FloatField(null=True, blank=True)
     environmental_status = models.CharField(max_length=10, choices=ENVIRONMENTAL_STATUS_CHOICES, blank=True)
 
+    # Phase 3 — additional real readings for the Live Digital Twin production view.
+    dore_inventory_kg = models.FloatField(null=True, blank=True, help_text='Doré held in the gold vault, not yet shipped/refined.')
+    truck_fleet_utilization_pct = models.FloatField(null=True, blank=True)
+    tailings_stored_tonnes = models.FloatField(null=True, blank=True)
+    water_stored_m3 = models.FloatField(null=True, blank=True)
+
     # Phase 2 — a real per-reading quality/confidence score, only ever
     # populated by an actual telemetry/QA source. Null (never a fabricated
     # 100%) for every demo snapshot below, since a synthetic reading has no
@@ -347,3 +376,64 @@ class OperationalSnapshot(models.Model):
         if not self.pk:
             return EvidenceMemory.objects.none()
         return EvidenceMemory.objects.filter(source_reference=f'capital_guardian.OperationalSnapshot:{self.pk}')
+
+
+class SupplierProfile(models.Model):
+    """
+    Phase 3 — a project-independent equipment-supplier reference/catalog
+    row for the Supplier Comparison page.
+
+    IMPORTANT: `name` is a real, named company used as a clearly-labelled
+    illustrative example (same convention as EquipmentSpec.manufacturer) —
+    never a claim that the company is actually involved in any real project.
+    The `illustrative_*` rating fields are SYNTHETIC scores invented for
+    demonstration purposes only, NOT a real assessment of that company's
+    actual risk, financial standing, or ESG performance — every template
+    that displays them carries a prominent disclaimer, and the field names
+    themselves are prefixed so this is unmistakable in code too.
+    """
+    name = models.CharField(max_length=150, unique=True)
+    country = models.CharField(max_length=100, blank=True)
+    equipment_specialty = models.CharField(max_length=200, blank=True, help_text='e.g. "Crushers, Mills", illustrative.')
+
+    # Illustrative specs (same convention as EquipmentSpec's existing fields).
+    typical_lead_time_weeks = models.PositiveIntegerField(null=True, blank=True)
+    typical_warranty_years = models.PositiveIntegerField(null=True, blank=True)
+    performance_guarantee_years = models.PositiveIntegerField(null=True, blank=True)
+    insurance_backed = models.BooleanField(default=False)
+
+    # Synthetic ratings — 0-100, never a real assessment (see docstring).
+    illustrative_price_index = models.FloatField(null=True, blank=True, help_text='Relative price positioning, 0-100 (lower = cheaper). Synthetic.')
+    illustrative_service_rating = models.FloatField(null=True, blank=True)
+    illustrative_availability_rating = models.FloatField(null=True, blank=True)
+    illustrative_energy_efficiency_rating = models.FloatField(null=True, blank=True)
+    illustrative_co2_rating = models.FloatField(null=True, blank=True, help_text='Higher = lower relative emissions. Synthetic.')
+    illustrative_risk_rating = models.FloatField(null=True, blank=True, help_text='Higher = lower relative risk. Synthetic.')
+    illustrative_financial_rating = models.FloatField(null=True, blank=True)
+    illustrative_esg_rating = models.FloatField(null=True, blank=True)
+    why_selected_notes = models.TextField(blank=True)
+
+    is_demo = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def rating_pairs(self):
+        """(label, value) for each synthetic rating — a real None passes
+        through untouched so the template shows 'Data source required'
+        rather than a fabricated bar."""
+        return [
+            ('Price Index', self.illustrative_price_index),
+            ('Service', self.illustrative_service_rating),
+            ('Availability', self.illustrative_availability_rating),
+            ('Energy Efficiency', self.illustrative_energy_efficiency_rating),
+            ('CO2', self.illustrative_co2_rating),
+            ('Risk', self.illustrative_risk_rating),
+            ('Financial', self.illustrative_financial_rating),
+            ('ESG', self.illustrative_esg_rating),
+        ]

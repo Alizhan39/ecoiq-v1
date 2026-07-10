@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static humanize %}
-{% block title %}{{ project.name }} — Mining Digital Twin — EcoIQ Capital Guardian{% endblock %}
-{% block meta_description_content %}{{ project.name }}: operational metrics and process-stage view connecting physical assets to capital, evidence, milestones and risk.{% endblock %}
+{% block title %}{{ project.name }} — Digital Twin — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: an isometric plant-layout view connecting physical assets to capital, evidence, milestones and risk, plus real-time production data.{% endblock %}
 
 {% block content %}
 <script src="{% static 'js/vendor/plotly.min.js' %}"></script>
@@ -25,6 +25,10 @@
       <div class="gc-metric"><div class="gc-metric-label">Energy Use</div><div class="gc-metric-value">{% if snapshot.energy_use_mwh is not None %}{{ snapshot.energy_use_mwh }} MWh{% else %}—{% endif %}</div></div>
       <div class="gc-metric"><div class="gc-metric-label">Water Recycled</div><div class="gc-metric-value">{% if snapshot.water_recycled_pct is not None %}{{ snapshot.water_recycled_pct }}%{% else %}—{% endif %}</div></div>
       <div class="gc-metric"><div class="gc-metric-label">Environmental Status</div><div class="gc-metric-value">{% if snapshot.environmental_status %}<span class="gc-env-status {{ snapshot.environmental_status }}"></span>{{ snapshot.get_environmental_status_display }}{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Doré Inventory</div><div class="gc-metric-value">{% if snapshot.dore_inventory_kg is not None %}{{ snapshot.dore_inventory_kg|floatformat:0 }} kg{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Truck Fleet Utilization</div><div class="gc-metric-value">{% if snapshot.truck_fleet_utilization_pct is not None %}{{ snapshot.truck_fleet_utilization_pct }}%{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Tailings Stored</div><div class="gc-metric-value">{% if snapshot.tailings_stored_tonnes is not None %}{{ snapshot.tailings_stored_tonnes|floatformat:0|intcomma }} t{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Water Stored</div><div class="gc-metric-value">{% if snapshot.water_stored_m3 is not None %}{{ snapshot.water_stored_m3|floatformat:0|intcomma }} m³{% else %}—{% endif %}</div></div>
     </div>
     {% else %}
     <p class="gold-honest-stub">No operational snapshot recorded for this project yet.</p>
@@ -32,11 +36,14 @@
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Process Flow</h2>
-    <p class="gold-sub" style="font-size:0.8rem;">Click a stage to inspect its equipment, capital deployed, evidence and risks.</p>
-    <div class="gc-process-stages" role="group" aria-label="Mining process stages">
+    <h2 class="gold-h2">Plant Layout</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">Click a zone to inspect its equipment, capital deployed, evidence and risks. MINE → HAULAGE → CRUSHING → GRINDING → PROCESSING → RECOVERY → DORÉ PRODUCTION.</p>
+    <div class="gc-isometric-plant" role="group" aria-label="Mining process zones">
       {% for stage in stages %}
-      <button type="button" class="gc-process-stage {% if forloop.first %}active{% endif %}" data-stage="{{ stage.key }}">{{ stage.label }}{% if not forloop.last %} →{% endif %}</button>
+      <button type="button" class="gc-process-stage gc-iso-zone {% if forloop.first %}active{% endif %}" data-stage="{{ stage.key }}">
+        <div class="gc-iso-zone-label">{{ stage.label }}</div>
+        <div class="gc-iso-zone-sub">{{ stage.equipment|length }} equipment item{{ stage.equipment|length|pluralize }}{% if stage.risks %} · {{ stage.risks|length }} risk{{ stage.risks|length|pluralize }}{% endif %}</div>
+      </button>
       {% endfor %}
     </div>
     {% for stage in stages %}
@@ -49,7 +56,7 @@
       <p class="gold-sub" style="font-size:0.8rem;"><strong>Equipment:</strong></p>
       <div class="gold-list">
         {% for item in stage.equipment %}
-        <div class="gold-list-row"><span class="gold-list-label">{{ item }}</span><span class="gold-list-value">{{ item.get_installation_status_display }}</span></div>
+        <div class="gold-list-row"><span class="gold-list-label"><a href="{% url 'capital_guardian:equipment_detail' project.slug item.pk %}" style="color:var(--gold-acc);text-decoration:none;">{{ item }} →</a></span><span class="gold-list-value">{{ item.get_installation_status_display }}</span></div>
         {% endfor %}
       </div>
       {% else %}

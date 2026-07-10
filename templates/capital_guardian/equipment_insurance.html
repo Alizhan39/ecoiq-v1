@@ -18,8 +18,8 @@
       {% for item in equipment %}
       <div class="gold-card">
         <div class="gold-card-label">{{ item.get_equipment_type_display }}</div>
-        <div class="gold-card-value" style="font-size:1rem;">{{ item.label|default:item.get_equipment_type_display }}</div>
-        <div class="gold-card-sub">{% if item.manufacturer %}Manufacturer: {{ item.manufacturer }}{% endif %}{% if item.supplier %} · Supplier: {{ item.supplier }}{% endif %}</div>
+        <div class="gold-card-value" style="font-size:1rem;"><a href="{% url 'capital_guardian:equipment_detail' project.slug item.pk %}" style="color:#fff;text-decoration:none;">{{ item.label|default:item.get_equipment_type_display }} →</a></div>
+        <div class="gold-card-sub">{% if item.manufacturer %}Manufacturer: {{ item.manufacturer }}{% endif %}{% if item.supplier %} · Supplier: {{ item.supplier }}{% endif %}{% if item.country %} · {{ item.country }}{% endif %}</div>
         <div class="gold-card-sub" style="margin-top:0.4rem;">
           Contract value: {% if item.capex_usd is not None %}${{ item.capex_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}<br>
           Deposit paid: {% if item.deposit_paid_usd is not None %}${{ item.deposit_paid_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}<br>

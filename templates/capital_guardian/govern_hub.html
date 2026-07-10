@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Govern — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: board, audit, insurance, documents, approvals and compliance in one place.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · GOVERN</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">A single hub for board, audit, insurance, evidence, compliance and approvals — every section here either links to a real, already-built page or reports an honest 'Data source required' where no real input exists yet.</p>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='govern' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Board &amp; Voting</h2>
+    {% if governance %}
+    <p class="gold-sub" style="font-size:0.85rem;">Founder HoldCo {{ governance.founder_holdco_pct|default:"—" }}% · Investor SPV {{ governance.investor_spv_pct|default:"—" }}% · {{ governance.active_controls_count }} of 7 governance controls active.</p>
+    {% else %}
+    <p class="gold-honest-stub">No governance structure recorded yet.</p>
+    {% endif %}
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:governance' project.slug %}">Full Ownership &amp; Board →</a></div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Insurance</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Coverage</div><div class="gold-card-value {% if insurance_coverage_usd is None %}na{% endif %}">{% if insurance_coverage_usd is not None %}${{ insurance_coverage_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expiry</div><div class="gold-card-value {% if insurance_expiry_date is None %}na{% endif %}">{{ insurance_expiry_date|default:"Data source required" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Uninsured Capital Movements</div><div class="gold-card-value {% if uninsured_entries %}na{% endif %}">{{ uninsured_entries|length }}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Approvals</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">{{ pending_investor_approvals|length }} capital movement(s) currently pending investor approval.</p>
+    {% if pending_investor_approvals %}
+    <div class="gold-list">
+      {% for entry in pending_investor_approvals %}
+      <div class="gold-list-row"><span class="gold-list-label"><a href="{% url 'capital_guardian:capital_trace_entry_detail' project.slug entry.pk %}" style="color:var(--gold-acc);text-decoration:none;">{{ entry.trace_id }} — {{ entry.purpose }}</a></span><span class="gold-list-value">${{ entry.amount_usd|floatformat:0|intcomma }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Documents &amp; Audit</h2>
+    <div class="gold-btn-row">
+      <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre (Documents) →</a>
+      <a class="gold-btn" href="{% url 'capital_guardian:audit_history' project.slug %}">Audit History →</a>
+      <a class="gold-btn" href="{% url 'capital_guardian:red_flags' project.slug %}">Risk Intelligence →</a>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Legal, Compliance &amp; ESG</h2>
+    <p class="gold-honest-stub">Government Compliance, Environmental Compliance, ESG, Licences, Investor Rights and Shareholder Agreements are not yet connected to a real data source for this project — no figures are fabricated here. These are the natural next data integrations for a future phase.</p>
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'gold_intelligence:risk_intelligence' project.slug %}">Gold Intelligence — Risk Dimensions →</a></div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

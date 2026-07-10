@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ equipment }} — {{ project.name }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ equipment }}: lifecycle status, contract value, remaining useful life, maintenance history and linked capital movements.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · OPERATE · EQUIPMENT</span>
+  <h1 class="gold-h1">{{ equipment }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub" style="font-size:0.76rem;">Manufacturer/supplier names shown are illustrative examples only — they are not actually involved in this synthetic project.</p>
+  <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:equipment_insurance' project.slug %}">← All Equipment</a></div>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Specification</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Manufacturer</div><div class="gold-card-value" style="font-size:1rem;">{{ equipment.manufacturer|default:"Data source required" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Supplier</div><div class="gold-card-value" style="font-size:1rem;">{{ equipment.supplier|default:"Data source required" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Country</div><div class="gold-card-value" style="font-size:1rem;">{{ equipment.country|default:"Data source required" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Contract Value</div><div class="gold-card-value {% if equipment.capex_usd is None %}na{% endif %}">{% if equipment.capex_usd is not None %}${{ equipment.capex_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Deposit Paid</div><div class="gold-card-value {% if equipment.deposit_paid_usd is None %}na{% endif %}">{% if equipment.deposit_paid_usd is not None %}${{ equipment.deposit_paid_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Remaining Balance</div><div class="gold-card-value {% if equipment.remaining_balance_usd is None %}na{% endif %}">{% if equipment.remaining_balance_usd is not None %}${{ equipment.remaining_balance_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Spare Parts Available</div><div class="gold-card-value">{% if equipment.spare_parts_available %}Yes{% else %}No{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Maintenance Contract</div><div class="gold-card-value">{% if equipment.maintenance_contract_active %}Active{% else %}Not Active{% endif %}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Lifecycle Status</h2>
+    <div class="gold-chip-row" style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+      <span class="gold-risk-badge {% if equipment.manufacturing_status == 'complete' %}low{% else %}medium{% endif %}">Manufacturing: {{ equipment.get_manufacturing_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.fat_status == 'passed' %}low{% elif equipment.fat_status == 'failed' %}high{% else %}medium{% endif %}">FAT: {{ equipment.get_fat_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.shipping_status == 'complete' %}low{% else %}medium{% endif %}">Shipping: {{ equipment.get_shipping_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.delivery_status == 'complete' %}low{% else %}medium{% endif %}">Delivery: {{ equipment.get_delivery_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.installation_status == 'complete' %}low{% else %}medium{% endif %}">Installation: {{ equipment.get_installation_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.commissioning_status == 'complete' %}low{% else %}medium{% endif %}">Commissioning: {{ equipment.get_commissioning_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.warranty_status == 'complete' %}low{% elif equipment.warranty_status == 'not_applicable' %}na{% else %}medium{% endif %}">Warranty: {{ equipment.get_warranty_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.performance_guarantee_status == 'complete' %}low{% elif equipment.performance_guarantee_status == 'not_applicable' %}na{% else %}medium{% endif %}">Performance Guarantee: {{ equipment.get_performance_guarantee_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.insurance_status == 'complete' %}low{% else %}medium{% endif %}">Insurance: {{ equipment.get_insurance_status_display }}</span>
+      <span class="gold-risk-badge {% if equipment.inspection_status == 'passed' %}low{% elif equipment.inspection_status == 'failed' %}high{% else %}medium{% endif %}">Inspection: {{ equipment.get_inspection_status_display }}</span>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Remaining Useful Life &amp; Service Recommendation</h2>
+    <p class="gold-sub" style="font-size:0.74rem;">A deterministic estimate from real inputs (commissioned date + declared expected lifespan) — never a machine-learning prediction.</p>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Commissioned Date</div><div class="gold-card-value" style="font-size:1rem;">{{ equipment.commissioned_date|default:"Data source required" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Lifespan</div><div class="gold-card-value" style="font-size:1rem;">{% if equipment.expected_lifespan_years %}{{ equipment.expected_lifespan_years }} years{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Remaining Useful Life</div><div class="gold-card-value {% if rul.0 is None %}na{% endif %}">{% if rul.0 is not None %}{{ rul.0 }} years{% else %}Data source required{% endif %}</div><div class="gold-card-sub">{% if rul.1 %}Declared end date: {{ rul.1 }}{% endif %}</div></div>
+    </div>
+    {% if maintenance_recommendation.available %}
+    <div class="gc-flag-card {% if maintenance_recommendation.urgency == 'overdue' %}high{% elif maintenance_recommendation.urgency == 'due_soon' %}medium{% else %}low{% endif %}" style="margin-top:0.8rem;">
+      {{ maintenance_recommendation.message }}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub" style="margin-top:0.8rem;">{{ maintenance_recommendation.reason }}</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Live Telemetry</h2>
+    <p class="gold-honest-stub">No live sensor feed connected — temperature, vibration, utilization, energy consumption and carbon emissions require a future SCADA/IoT integration. Never fabricated.</p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Live Cameras &amp; Drone Inspection</h2>
+    <div class="gc-camera-grid">
+      <div class="gc-camera-tile"><span class="gc-camera-tile-empty"><span class="gc-camera-tile-dot"></span>No live feed connected</span></div>
+      <div class="gc-camera-tile"><span class="gc-camera-tile-empty"><span class="gc-camera-tile-dot"></span>No drone inspection connected</span></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Linked Capital Movements ({{ capital_trace_entries|length }})</h2>
+    {% if capital_trace_entries %}
+    <div class="gold-list">
+      {% for entry in capital_trace_entries %}
+      <div class="gold-list-row"><span class="gold-list-label"><a href="{% url 'capital_guardian:capital_trace_entry_detail' project.slug entry.pk %}" style="color:var(--gold-acc);text-decoration:none;">{{ entry.trace_id }} — {{ entry.purpose }}</a></span><span class="gold-list-value">${{ entry.amount_usd|floatformat:0|intcomma }}</span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No capital movements linked to this equipment yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Open Risks ({{ open_red_flags|length }})</h2>
+    {% for risk in open_red_flags %}
+    <div class="gc-flag-card {{ risk.severity }}"><div class="gc-flag-head"><span>{{ risk.description }}</span><span class="gold-risk-badge {{ risk.severity }}">{{ risk.get_severity_display }}</span></div></div>
+    {% empty %}
+    <p class="gold-honest-stub">No open risks linked to this equipment.</p>
+    {% endfor %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Maintenance History</h2>
+    {% if maintenance_history %}
+    <div class="gc-audit-timeline">
+      {% for entry in maintenance_history %}
+      <div class="gc-audit-entry">
+        <div class="gc-audit-time">{{ entry.created_at|date:"Y-m-d H:i" }}</div>
+        <div class="gc-audit-body">
+          <strong style="color:#fff;">{{ entry.field_name }}</strong>
+          <div class="gold-sub" style="font-size:0.78rem;margin-top:0.3rem;">
+            <span style="color:var(--gold-high);">{{ entry.previous_value|default:"—" }}</span> → <span style="color:var(--gold-acc);">{{ entry.new_value|default:"—" }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No recorded status changes for this equipment yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

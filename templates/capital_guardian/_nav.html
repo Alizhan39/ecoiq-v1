@@ -1,12 +1,50 @@
-<nav class="gold-nav" aria-label="Capital Guardian sections">
-  <a class="gold-tab {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'capital_guardian:investor_dashboard' project.slug %}">Investor Dashboard</a>
-  <a class="gold-tab {% if active_tab == 'trace' %}active{% endif %}" href="{% url 'capital_guardian:capital_trace' project.slug %}">Capital Trace</a>
-  <a class="gold-tab {% if active_tab == 'governance' %}active{% endif %}" href="{% url 'capital_guardian:governance' project.slug %}">SPV &amp; Governance</a>
-  <a class="gold-tab {% if active_tab == 'equipment' %}active{% endif %}" href="{% url 'capital_guardian:equipment_insurance' project.slug %}">Equipment &amp; Insurance</a>
-  <a class="gold-tab {% if active_tab == 'twin' %}active{% endif %}" href="{% url 'capital_guardian:digital_twin' project.slug %}">Mining Digital Twin</a>
-  <a class="gold-tab {% if active_tab == 'milestones' %}active{% endif %}" href="{% url 'capital_guardian:milestone_control' project.slug %}">Milestone Control</a>
-  <a class="gold-tab {% if active_tab == 'red_flags' %}active{% endif %}" href="{% url 'capital_guardian:red_flags' project.slug %}">Risk Intelligence</a>
-  <a class="gold-tab {% if active_tab == 'evidence' %}active{% endif %}" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre</a>
-  <a class="gold-tab {% if active_tab == 'audit' %}active{% endif %}" href="{% url 'capital_guardian:audit_history' project.slug %}">Audit History</a>
-  <a class="gold-tab {% if active_tab == 'decision' %}active{% endif %}" href="{% url 'capital_guardian:decision_intelligence' project.slug %}">Decision Intelligence</a>
+<nav class="gc-nav-groups" aria-label="Capital Guardian sections">
+  <div class="gc-nav-group">
+    <span class="gc-nav-group-label">Discover</span>
+    <div class="gc-nav-group-row">
+      <a class="gold-tab" href="{% url 'geo_intelligence:command_centre' %}">Geo Intelligence</a>
+      <a class="gold-tab" href="{% url 'gold_intelligence:mine_map' %}">Mine Maps</a>
+      <a class="gold-tab" href="{% url 'gold_intelligence:directory' %}">Projects</a>
+      {% if project %}<a class="gold-tab" href="{% url 'gold_intelligence:risk_intelligence' project.slug %}">Risk</a>{% endif %}
+    </div>
+  </div>
+
+  <div class="gc-nav-group">
+    <span class="gc-nav-group-label">Invest</span>
+    <div class="gc-nav-group-row">
+      <a class="gold-tab {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'capital_guardian:investor_dashboard' project.slug %}">Investor Dashboard</a>
+      <a class="gold-tab {% if active_tab == 'trace' %}active{% endif %}" href="{% url 'capital_guardian:capital_trace' project.slug %}">Capital Protection</a>
+      <a class="gold-tab {% if active_tab == 'governance' %}active{% endif %}" href="{% url 'capital_guardian:governance' project.slug %}">Ownership</a>
+      <a class="gold-tab" href="{% url 'capital_guardian:portfolio' %}">Portfolio</a>
+    </div>
+  </div>
+
+  <div class="gc-nav-group">
+    <span class="gc-nav-group-label">Operate</span>
+    <div class="gc-nav-group-row">
+      <a class="gold-tab {% if active_tab == 'twin' %}active{% endif %}" href="{% url 'capital_guardian:digital_twin' project.slug %}">Digital Twin</a>
+      <a class="gold-tab {% if active_tab == 'equipment' %}active{% endif %}" href="{% url 'capital_guardian:equipment_insurance' project.slug %}">Equipment</a>
+      <a class="gold-tab" href="{% url 'capital_guardian:supplier_comparison' %}">Suppliers</a>
+      <a class="gold-tab {% if active_tab == 'cameras' %}active{% endif %}" href="{% url 'capital_guardian:live_cameras' project.slug %}">Live Cameras</a>
+      <a class="gold-tab {% if active_tab == 'milestones' %}active{% endif %}" href="{% url 'capital_guardian:milestone_control' project.slug %}">Milestone Control</a>
+    </div>
+  </div>
+
+  <div class="gc-nav-group">
+    <span class="gc-nav-group-label">Govern</span>
+    <div class="gc-nav-group-row">
+      <a class="gold-tab {% if active_tab == 'govern' %}active{% endif %}" href="{% url 'capital_guardian:govern_hub' project.slug %}">Govern Hub</a>
+      <a class="gold-tab {% if active_tab == 'red_flags' %}active{% endif %}" href="{% url 'capital_guardian:red_flags' project.slug %}">Risk Intelligence</a>
+      <a class="gold-tab {% if active_tab == 'evidence' %}active{% endif %}" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre</a>
+      <a class="gold-tab {% if active_tab == 'audit' %}active{% endif %}" href="{% url 'capital_guardian:audit_history' project.slug %}">Audit History</a>
+    </div>
+  </div>
+
+  <div class="gc-nav-group">
+    <span class="gc-nav-group-label">AI</span>
+    <div class="gc-nav-group-row">
+      <a class="gold-tab {% if active_tab == 'ai_director' %}active{% endif %}" href="{% url 'capital_guardian:ai_director' project.slug %}">AI Project Director</a>
+      <a class="gold-tab {% if active_tab == 'decision' %}active{% endif %}" href="{% url 'capital_guardian:decision_intelligence' project.slug %}">Decision Intelligence</a>
+    </div>
+  </div>
 </nav>

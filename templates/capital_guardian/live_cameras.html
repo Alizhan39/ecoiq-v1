@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }} — Live Cameras — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: live camera, drone and satellite feed status.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · OPERATE · LIVE CAMERAS</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">No real camera, drone or satellite feed is connected to this demo project yet. This page is the interface a future integration would populate — never a fake video or stock photo presented as live.</p>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='cameras' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Camera Zones</h2>
+    <div class="gc-camera-grid">
+      {% for zone in zones %}
+      <div class="gc-camera-tile">
+        <span class="gc-camera-tile-label">{{ zone }}</span>
+        <span class="gc-camera-tile-empty"><span class="gc-camera-tile-dot"></span>No live feed connected</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}{{ project.name }} — SPV &amp; Governance — EcoIQ Capital Guardian{% endblock %}
-{% block meta_description_content %}{{ project.name }}: ownership structure, board composition, and institutional governance controls.{% endblock %}
+{% load static %}
+{% block title %}{{ project.name }} — Ownership — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: ownership structure, board composition, voting rights, and institutional governance controls.{% endblock %}
 
 {% block content %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
 <div class="gold-wrap">
-  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · SPV &amp; GOVERNANCE</span>
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · OWNERSHIP</span>
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
   <div class="gc-synthetic-banner">⚠ Conceptual demo governance structure — not legal advice and not a substitute for professional legal structuring.</div>
 
@@ -12,24 +14,26 @@
 
   {% if governance %}
   <section class="gold-section">
-    <h2 class="gold-h2">Ownership</h2>
+    <h2 class="gold-h2">Beneficial Ownership</h2>
     <div class="gold-grid">
       <div class="gold-card"><div class="gold-card-label">Founder HoldCo</div><div class="gold-card-value {% if governance.founder_holdco_pct is None %}na{% endif %}">{% if governance.founder_holdco_pct is not None %}{{ governance.founder_holdco_pct }}%{% else %}Data source required{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">Investor SPV</div><div class="gold-card-value {% if governance.investor_spv_pct is None %}na{% endif %}">{% if governance.investor_spv_pct is not None %}{{ governance.investor_spv_pct }}%{% else %}Data source required{% endif %}</div></div>
     </div>
+    {% if ownership_donut %}<div class="gold-chart">{{ ownership_donut.html|safe }}</div>{% endif %}
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Board Composition</h2>
+    <h2 class="gold-h2">Board Composition &amp; Voting Rights</h2>
     <div class="gold-grid">
       <div class="gold-card"><div class="gold-card-label">Founder Seats</div><div class="gold-card-value {% if governance.founder_board_seats is None %}na{% endif %}">{{ governance.founder_board_seats|default:"Data source required" }}</div></div>
       <div class="gold-card"><div class="gold-card-label">Investor Seats</div><div class="gold-card-value {% if governance.investor_board_seats is None %}na{% endif %}">{{ governance.investor_board_seats|default:"Data source required" }}</div></div>
       <div class="gold-card"><div class="gold-card-label">Independent Chair</div><div class="gold-card-value {% if governance.independent_chair_seats is None %}na{% endif %}">{{ governance.independent_chair_seats|default:"Data source required" }}</div></div>
     </div>
+    <p class="gold-sub" style="font-size:0.8rem;margin-top:0.6rem;">Voting rights follow board seat composition above; Reserved Matters (below) list decisions requiring investor board sign-off regardless of ordinary majority.</p>
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Governance Controls</h2>
+    <h2 class="gold-h2">Governance Controls (incl. Reserved Matters &amp; Waterfall)</h2>
     <div class="gold-list">
       {% for label, active in controls %}
       <div class="gold-list-row">
@@ -39,6 +43,15 @@
       {% endfor %}
     </div>
   </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Dividend Policy</h2>
+    {% if governance.dividend_policy_notes %}
+    <p class="gold-sub" style="font-size:0.85rem;">{{ governance.dividend_policy_notes }}</p>
+    {% else %}
+    <p class="gold-honest-stub">No dividend policy recorded for this project yet.</p>
+    {% endif %}
+  </section>
   {% else %}
   <section class="gold-section">
     <p class="gold-honest-stub">No governance structure recorded for this project yet.</p>
@@ -46,7 +59,7 @@
   {% endif %}
 
   <section class="gold-section">
-    <h2 class="gold-h2">Structure</h2>
+    <h2 class="gold-h2">Company Structure</h2>
     <div class="gc-flow vertical">
       <span class="gc-flow-step">Investor</span><span class="gc-flow-arrow">↓</span>
       <span class="gc-flow-step">Investor SPV{% if governance.investor_spv_pct is not None %} ({{ governance.investor_spv_pct }}%){% endif %}</span>

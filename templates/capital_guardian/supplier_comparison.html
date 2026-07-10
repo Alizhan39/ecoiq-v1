@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Supplier Comparison — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Compare equipment suppliers by price, lead time, warranty, service, availability, energy efficiency, CO2, performance guarantee, insurance and rating.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · OPERATE · SUPPLIER COMPARISON</span>
+  <h1 class="gold-h1">Supplier Comparison</h1>
+  <div class="gc-disclaimer-banner">
+    ⚠ SYNTHETIC / ILLUSTRATIVE RATINGS — the price, service, availability, energy, CO2, risk, financial and ESG figures below are NOT a real assessment of any named company. They exist only to demonstrate this comparison interface. Company names are real, used as clearly-labelled illustrative examples — not a claim these companies are actually involved in any real project.
+  </div>
+
+  <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:directory' %}">← All Projects</a></div>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Suppliers ({{ rows|length }})</h2>
+    {% if rows %}
+    {% for row in rows %}
+    {% with s=row.supplier %}
+    <div class="gold-card" style="margin-bottom:1rem;">
+      <div class="gold-list-row" style="border:none;padding:0;">
+        <span class="gold-list-label" style="font-size:1.05rem;font-weight:800;color:#fff;">{{ s.name }}</span>
+        <span class="gold-list-value">{{ s.country|default:"Country not recorded" }}</span>
+      </div>
+      <div class="gold-card-sub" style="margin-top:0.3rem;">{{ s.equipment_specialty|default:"Specialty not recorded" }}</div>
+
+      <div class="gold-grid" style="margin-top:0.8rem;">
+        <div class="gold-card"><div class="gold-card-label">Lead Time</div><div class="gold-card-value" style="font-size:0.95rem;">{% if s.typical_lead_time_weeks %}{{ s.typical_lead_time_weeks }} weeks{% else %}Data source required{% endif %}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Warranty</div><div class="gold-card-value" style="font-size:0.95rem;">{% if s.typical_warranty_years %}{{ s.typical_warranty_years }} years{% else %}Data source required{% endif %}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Performance Guarantee</div><div class="gold-card-value" style="font-size:0.95rem;">{% if s.performance_guarantee_years %}{{ s.performance_guarantee_years }} years{% else %}Data source required{% endif %}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Insurance Backed</div><div class="gold-card-value" style="font-size:0.95rem;">{% if s.insurance_backed %}Yes{% else %}No{% endif %}</div></div>
+      </div>
+
+      <p class="gold-sub" style="font-size:0.66rem;margin-top:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#58a6ff;">Synthetic illustrative ratings (0-100)</p>
+      <div class="gold-grid">
+        {% for label, value in s.rating_pairs %}
+        <div>
+          <div class="gold-card-sub">{{ label }}{% if value is not None %}: {{ value|floatformat:0 }}{% endif %}</div>
+          <div class="gc-rating-bar-track"><div class="gc-rating-bar-fill" style="width:{{ value|default:0 }}%;"></div></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if s.why_selected_notes %}<p class="gold-sub" style="font-size:0.8rem;margin-top:0.8rem;"><strong>Why selected (illustrative):</strong> {{ s.why_selected_notes }}</p>{% endif %}
+
+      <div class="gold-card-sub" style="margin-top:0.6rem;">Used on {{ row.equipment_in_use|length }} equipment item(s) across the platform.</div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No supplier profiles recorded yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

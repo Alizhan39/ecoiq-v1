@@ -6,8 +6,12 @@
 {% block content %}
 <script src="{% static 'js/vendor/plotly.min.js' %}"></script>
 <div class="gold-wrap">
-  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · INVESTOR DASHBOARD</span>
-  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · INVEST</span>
+  <h1 class="gold-h1">
+    PROJECT — {{ project.name }}
+    {% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}
+    <span class="gc-status-badge">{{ project.get_status_display|upper }}</span>
+  </h1>
   {% if project.is_demo %}
   <div class="gc-synthetic-banner">⚠ SYNTHETIC DEMONSTRATION PROJECT — not a real investment or real project data.</div>
   {% endif %}
@@ -17,15 +21,24 @@
   <section class="gold-section">
     <h2 class="gold-h2">Executive Overview</h2>
     <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Enterprise Value (NPV)</div><div class="gold-card-value {% if enterprise_value_usd is None %}na{% endif %}">{% if enterprise_value_usd is not None %}${{ enterprise_value_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div><div class="gold-card-sub">Modeled project NPV — not a market valuation.</div></div>
+      <div class="gold-card"><div class="gold-card-label">Current Equity Value</div><div class="gold-card-value {% if equity_value_usd is None %}na{% endif %}">{% if equity_value_usd is not None %}${{ equity_value_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div><div class="gold-card-sub">Investor's modeled ownership share of NPV.</div></div>
+      <div class="gold-card"><div class="gold-card-label">Investor Ownership</div><div class="gold-card-value {% if investor_ownership_pct is None %}na{% endif %}">{% if investor_ownership_pct is not None %}{{ investor_ownership_pct }}%{% else %}Data source required{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">Total Committed Capital</div><div class="gold-card-value {% if capital_committed_usd is None %}na{% endif %}">{% if capital_committed_usd is not None %}${{ capital_committed_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">Capital Deployed</div><div class="gold-card-value {% if capital_deployed_usd is None %}na{% endif %}">{% if capital_deployed_usd is not None %}${{ capital_deployed_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
-      <div class="gold-card"><div class="gold-card-label">Capital Remaining</div><div class="gold-card-value {% if capital_remaining_usd is None %}na{% endif %}">{% if capital_remaining_usd is not None %}${{ capital_remaining_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Cash Position</div><div class="gold-card-value {% if capital_remaining_usd is None %}na{% endif %}">{% if capital_remaining_usd is not None %}${{ capital_remaining_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div><div class="gold-card-sub">Undeployed committed capital.</div></div>
+      <div class="gold-card"><div class="gold-card-label">Insurance Coverage</div><div class="gold-card-value {% if insurance_coverage_usd is None %}na{% endif %}">{% if insurance_coverage_usd is not None %}${{ insurance_coverage_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Capital Protection Score</div><div class="gold-card-value {% if not capital_protection.available %}na{% endif %}">{% if capital_protection.available %}{{ capital_protection.score }}/100{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">IRR Forecast</div><div class="gold-card-value {% if irr_forecast_pct is None %}na{% endif %}">{% if irr_forecast_pct is not None %}{{ irr_forecast_pct }}%{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Annual Free Cash Flow</div><div class="gold-card-value {% if annual_free_cash_flow_usd is None %}na{% endif %}">{% if annual_free_cash_flow_usd is not None %}${{ annual_free_cash_flow_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div><div class="gold-card-sub">Modeled, steady-state.</div></div>
+      <div class="gold-card"><div class="gold-card-label">Today's Gold Produced</div><div class="gold-card-value {% if todays_gold_produced_oz is None %}na{% endif %}">{% if todays_gold_produced_oz is not None %}{{ todays_gold_produced_oz }} oz{% else %}Data source required{% endif %}</div><div class="gold-card-sub">From latest doré reading.</div></div>
+      <div class="gold-card"><div class="gold-card-label">Today's Revenue</div><div class="gold-card-value {% if todays_revenue_usd is None %}na{% endif %}">{% if todays_revenue_usd is not None %}${{ todays_revenue_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div><div class="gold-card-sub">Illustrative — assumes 100% doré gold content.</div></div>
+      <div class="gold-card"><div class="gold-card-label">Current Gold Price</div><div class="gold-card-value {% if current_gold_price_usd_per_oz is None %}na{% endif %}">{% if current_gold_price_usd_per_oz is not None %}${{ current_gold_price_usd_per_oz|floatformat:0|intcomma }}/oz{% else %}Data source required{% endif %}</div><div class="gold-card-sub">Assumption used for project economics — not a live market feed.</div></div>
+      <div class="gold-card"><div class="gold-card-label">Project Health Score</div><div class="gold-card-value {% if not project_health.available %}na{% endif %}">{% if project_health.available %}{{ project_health.score }}/100{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Construction Progress</div><div class="gold-card-value {% if construction_progress_pct is None %}na{% endif %}">{% if construction_progress_pct is not None %}{{ construction_progress_pct }}%{% else %}Data source required{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">CAPEX Budget</div><div class="gold-card-value {% if capex_summary.planned_usd is None %}na{% endif %}">{% if capex_summary.available and capex_summary.planned_usd is not None %}${{ capex_summary.planned_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">CAPEX Actual (Spent)</div><div class="gold-card-value {% if capex_summary.spent_usd is None %}na{% endif %}">{% if capex_summary.available and capex_summary.spent_usd is not None %}${{ capex_summary.spent_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">Budget Variance</div><div class="gold-card-value {% if capex_summary.variance_usd is None %}na{% endif %}">{% if capex_summary.available and capex_summary.variance_usd is not None %}${{ capex_summary.variance_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
-      <div class="gold-card"><div class="gold-card-label">Project Completion</div><div class="gold-card-value {% if completion_pct is None %}na{% endif %}">{% if completion_pct is not None %}{{ completion_pct }}%{% else %}Data source required{% endif %}</div></div>
-      <div class="gold-card"><div class="gold-card-label">Capital Protection Score</div><div class="gold-card-value {% if not capital_protection.available %}na{% endif %}">{% if capital_protection.available %}{{ capital_protection.score }}/100{% else %}Data source required{% endif %}</div></div>
-      <div class="gold-card"><div class="gold-card-label">Insurance Coverage</div><div class="gold-card-value {% if insurance_coverage_usd is None %}na{% endif %}">{% if insurance_coverage_usd is not None %}${{ insurance_coverage_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">Next Milestone Payment</div><div class="gold-card-value {% if not next_milestone or next_milestone.capital_required_usd is None %}na{% endif %}">{% if next_milestone and next_milestone.capital_required_usd is not None %}${{ next_milestone.capital_required_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div><div class="gold-card-sub">{% if next_milestone %}{{ next_milestone.get_phase_display }}{% endif %}</div></div>
       <div class="gold-card"><div class="gold-card-label">Active Red Flags</div><div class="gold-card-value">{{ active_red_flags|length }}</div></div>
       <div class="gold-card"><div class="gold-card-label">Evidence Coverage</div><div class="gold-card-value {% if not evidence_coverage.total %}na{% endif %}">{% if evidence_coverage.total %}{{ evidence_coverage.with_evidence }}/{{ evidence_coverage.total }}{% else %}No capital movements recorded{% endif %}</div></div>
@@ -44,10 +57,11 @@
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Completion, Protection &amp; Insurance</h2>
+    <h2 class="gold-h2">Completion, Protection, Health &amp; Insurance</h2>
     <div class="gc-gauges">
       <div class="gc-gauge-card">{% if completion_gauge %}{{ completion_gauge.html|safe }}{% else %}<p class="gold-honest-stub">Project Completion: Data source required.</p>{% endif %}</div>
       <div class="gc-gauge-card">{% if protection_gauge %}{{ protection_gauge.html|safe }}{% else %}<p class="gold-honest-stub">Capital Protection Score: Data source required.</p>{% endif %}</div>
+      <div class="gc-gauge-card">{% if health_gauge %}{{ health_gauge.html|safe }}{% else %}<p class="gold-honest-stub">Project Health Score: Data source required.</p>{% endif %}</div>
       <div class="gc-gauge-card">{% if insurance_gauge %}{{ insurance_gauge.html|safe }}{% else %}<p class="gold-honest-stub">Insurance Coverage: Data source required.</p>{% endif %}</div>
     </div>
   </section>
@@ -61,7 +75,7 @@
   <section class="gold-section">
     <h2 class="gold-h2">Risk Distribution</h2>
     {% if risk_distribution_chart %}<div class="gold-chart">{{ risk_distribution_chart.html|safe }}</div>{% else %}<p class="gold-honest-stub">No active red flags recorded.</p>{% endif %}
-    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:red_flags' project.slug %}">Full Red Flag Engine →</a></div>
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:red_flags' project.slug %}">Full Risk Intelligence →</a></div>
   </section>
 
   <section class="gold-section">
