@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Capital Trace — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: every capital movement traced from investor capital to physical asset to independent verification to project milestone.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · CAPITAL TRACE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='trace' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">The Traceability Chain</h2>
+    <p class="gold-sub">Every capital movement below is intended to make this chain visible and checkable:</p>
+    <div class="gc-flow">
+      <span class="gc-flow-step">Investor Capital</span><span class="gc-flow-arrow">→</span>
+      <span class="gc-flow-step">Project SPV</span><span class="gc-flow-arrow">→</span>
+      <span class="gc-flow-step">Escrow / Controlled Account</span><span class="gc-flow-arrow">→</span>
+      <span class="gc-flow-step">Approved Budget</span><span class="gc-flow-arrow">→</span>
+      <span class="gc-flow-step">Supplier / Contractor</span><span class="gc-flow-arrow">→</span>
+      <span class="gc-flow-step">Physical Asset or Service</span><span class="gc-flow-arrow">→</span>
+      <span class="gc-flow-step">Independent Verification</span><span class="gc-flow-arrow">→</span>
+      <span class="gc-flow-step">Project Milestone</span>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital Movements</h2>
+    {% if entries %}
+    {% for entry in entries %}
+    <div class="gold-card" style="margin-bottom:0.8rem;">
+      <div class="gold-list-row" style="border:none;padding:0;">
+        <span class="gold-list-label"><strong>{{ entry.trace_id }}</strong> — {{ entry.purpose }}</span>
+        <span class="gold-list-value">{{ entry.currency }} {{ entry.amount_usd|floatformat:0|intcomma }}</span>
+      </div>
+      <div class="gold-card-sub" style="margin-top:0.5rem;">
+        {{ entry.date }}{% if entry.budget_category %} · {{ entry.budget_category.get_category_display }}{% endif %} · Supplier: {{ entry.supplier|default:"Not recorded" }}
+      </div>
+      <div class="gold-chip-row" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;">
+        <span class="gold-risk-badge {% if entry.approval_status == 'approved' %}low{% elif entry.approval_status == 'rejected' %}high{% else %}medium{% endif %}">Approval: {{ entry.get_approval_status_display }}</span>
+        <span class="gold-risk-badge {% if entry.investor_approval_status == 'approved' %}low{% elif entry.investor_approval_status == 'pending' %}medium{% elif entry.investor_approval_status == 'rejected' %}high{% else %}na{% endif %}">Investor: {{ entry.get_investor_approval_status_display }}</span>
+        <span class="gold-risk-badge {% if entry.verification_status == 'verified' %}low{% else %}medium{% endif %}">Verification: {{ entry.get_verification_status_display }}</span>
+        <span class="gold-risk-badge {% if entry.insurance_status == 'insured' %}low{% elif entry.insurance_status == 'uninsured' %}high{% else %}na{% endif %}">Insurance: {{ entry.get_insurance_status_display }}</span>
+        <span class="gold-risk-badge {% if entry.payment_status == 'paid' %}low{% elif entry.payment_status == 'failed' %}high{% else %}medium{% endif %}">Payment: {{ entry.get_payment_status_display }}</span>
+      </div>
+      <div class="gold-card-sub" style="margin-top:0.5rem;">
+        Evidence documents: {{ entry.evidence_documents.count }} ·
+        Related equipment: {% if entry.related_equipment %}{{ entry.related_equipment }}{% else %}None linked{% endif %} ·
+        Related milestone: {% if entry.related_milestone %}{{ entry.related_milestone.get_phase_display }}{% else %}None linked{% endif %} ·
+        Risk flags: {{ entry.red_flags.count }}
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No capital movements recorded for this project yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

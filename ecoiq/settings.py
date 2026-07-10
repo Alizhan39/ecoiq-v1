@@ -257,6 +257,12 @@ INSTALLED_APPS = [
     # Scoring, Intelligence Analytics, Evidence Memory, AI Agent Workbench,
     # Decision Studio, Plotly Visual Intelligence) — no duplicate engines.
     'gold_intelligence',
+
+    # Investor transparency and capital intelligence layer over gold_intelligence
+    # projects — capital traceability, SPV/governance, equipment & insurance
+    # lifecycle, a mining digital twin, milestone-based capital control, a
+    # deterministic red flag engine and Decision Studio integration.
+    'capital_guardian',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Mining Digital Twin — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: operational metrics and process-stage view connecting physical assets to capital, evidence, milestones and risk.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · MINING DIGITAL TWIN</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='twin' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Latest Operational Snapshot</h2>
+    {% if snapshot %}
+    <p class="gold-sub" style="font-size:0.78rem;">{{ snapshot.date }}{% if snapshot.is_demo %} · synthetic demonstration data{% endif %}</p>
+    <div class="gc-metric-strip">
+      <div class="gc-metric"><div class="gc-metric-label">Ore Mined Today</div><div class="gc-metric-value">{% if snapshot.ore_mined_tonnes is not None %}{{ snapshot.ore_mined_tonnes|floatformat:0|intcomma }} t{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Plant Throughput</div><div class="gc-metric-value">{% if snapshot.plant_throughput_tph is not None %}{{ snapshot.plant_throughput_tph|floatformat:0 }} tph{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Gold Grade</div><div class="gc-metric-value">{% if snapshot.gold_grade_g_per_tonne is not None %}{{ snapshot.gold_grade_g_per_tonne }} g/t{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Recovery Rate</div><div class="gc-metric-value">{% if snapshot.recovery_rate_pct is not None %}{{ snapshot.recovery_rate_pct }}%{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Doré Produced</div><div class="gc-metric-value">{% if snapshot.dore_produced_kg is not None %}{{ snapshot.dore_produced_kg|floatformat:0 }} kg{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Equipment Availability</div><div class="gc-metric-value">{% if snapshot.equipment_availability_pct is not None %}{{ snapshot.equipment_availability_pct }}%{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Energy Use</div><div class="gc-metric-value">{% if snapshot.energy_use_mwh is not None %}{{ snapshot.energy_use_mwh }} MWh{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Water Recycled</div><div class="gc-metric-value">{% if snapshot.water_recycled_pct is not None %}{{ snapshot.water_recycled_pct }}%{% else %}—{% endif %}</div></div>
+      <div class="gc-metric"><div class="gc-metric-label">Environmental Status</div><div class="gc-metric-value">{% if snapshot.environmental_status %}<span class="gc-env-status {{ snapshot.environmental_status }}"></span>{{ snapshot.get_environmental_status_display }}{% else %}—{% endif %}</div></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No operational snapshot recorded for this project yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Process Flow</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">Click a stage to inspect its equipment, capital deployed, evidence and risks.</p>
+    <div class="gc-process-stages" role="group" aria-label="Mining process stages">
+      {% for stage in stages %}
+      <button type="button" class="gc-process-stage {% if forloop.first %}active{% endif %}" data-stage="{{ stage.key }}">{{ stage.label }}{% if not forloop.last %} →{% endif %}</button>
+      {% endfor %}
+    </div>
+    {% for stage in stages %}
+    <div class="gc-process-detail" id="gc-stage-{{ stage.key }}" {% if not forloop.first %}hidden{% endif %}>
+      <h3 style="margin:0 0 0.8rem;color:#fff;">{{ stage.label }}</h3>
+      <p class="gold-sub" style="font-size:0.8rem;">
+        Capital deployed against this stage's equipment: {% if stage.capital_deployed_usd %}${{ stage.capital_deployed_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}
+      </p>
+      {% if stage.equipment %}
+      <p class="gold-sub" style="font-size:0.8rem;"><strong>Equipment:</strong></p>
+      <div class="gold-list">
+        {% for item in stage.equipment %}
+        <div class="gold-list-row"><span class="gold-list-label">{{ item }}</span><span class="gold-list-value">{{ item.get_installation_status_display }}</span></div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="gold-honest-stub">No equipment recorded for this stage yet.</p>
+      {% endif %}
+      {% if stage.risks %}
+      <p class="gold-sub" style="font-size:0.8rem;margin-top:0.8rem;"><strong>Open risks:</strong></p>
+      {% for risk in stage.risks %}
+      <div class="gc-flag-card {{ risk.severity }}"><div class="gc-flag-head"><span>{{ risk.description }}</span><span class="gold-risk-badge {{ risk.severity }}">{{ risk.get_severity_display }}</span></div></div>
+      {% endfor %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+</div>
+
+<script>
+(function () {
+  var stages = document.querySelectorAll('.gc-process-stage');
+  stages.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      stages.forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.gc-process-detail').forEach(function (d) { d.hidden = true; });
+      btn.classList.add('active');
+      var detail = document.getElementById('gc-stage-' + btn.dataset.stage);
+      if (detail) detail.hidden = false;
+    });
+  });
+})();
+</script>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

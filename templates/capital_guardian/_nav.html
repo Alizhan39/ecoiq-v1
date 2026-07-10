@@ -1,0 +1,10 @@
+<nav class="gold-nav" aria-label="Capital Guardian sections">
+  <a class="gold-tab {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'capital_guardian:investor_dashboard' project.slug %}">Investor Dashboard</a>
+  <a class="gold-tab {% if active_tab == 'trace' %}active{% endif %}" href="{% url 'capital_guardian:capital_trace' project.slug %}">Capital Trace</a>
+  <a class="gold-tab {% if active_tab == 'governance' %}active{% endif %}" href="{% url 'capital_guardian:governance' project.slug %}">SPV &amp; Governance</a>
+  <a class="gold-tab {% if active_tab == 'equipment' %}active{% endif %}" href="{% url 'capital_guardian:equipment_insurance' project.slug %}">Equipment &amp; Insurance</a>
+  <a class="gold-tab {% if active_tab == 'twin' %}active{% endif %}" href="{% url 'capital_guardian:digital_twin' project.slug %}">Mining Digital Twin</a>
+  <a class="gold-tab {% if active_tab == 'milestones' %}active{% endif %}" href="{% url 'capital_guardian:milestone_control' project.slug %}">Milestone Control</a>
+  <a class="gold-tab {% if active_tab == 'red_flags' %}active{% endif %}" href="{% url 'capital_guardian:red_flags' project.slug %}">Red Flag Engine</a>
+  <a class="gold-tab {% if active_tab == 'decision' %}active{% endif %}" href="{% url 'capital_guardian:decision_intelligence' project.slug %}">Decision Intelligence</a>
+</nav>

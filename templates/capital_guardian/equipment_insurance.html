@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Equipment &amp; Insurance — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: equipment manufacturing, delivery, installation, commissioning, warranty and insurance lifecycle status.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · EQUIPMENT &amp; INSURANCE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  {% if project.is_demo %}<p class="gold-sub" style="font-size:0.76rem;">Manufacturer/supplier names shown are illustrative examples only — they are not actually involved in this synthetic project.</p>{% endif %}
+
+  {% include 'capital_guardian/_nav.html' with active_tab='equipment' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Equipment</h2>
+    {% if equipment %}
+    <div class="gold-grid">
+      {% for item in equipment %}
+      <div class="gold-card">
+        <div class="gold-card-label">{{ item.get_equipment_type_display }}</div>
+        <div class="gold-card-value" style="font-size:1rem;">{{ item.label|default:item.get_equipment_type_display }}</div>
+        <div class="gold-card-sub">{% if item.manufacturer %}Manufacturer: {{ item.manufacturer }}{% endif %}{% if item.supplier %} · Supplier: {{ item.supplier }}{% endif %}</div>
+        <div class="gold-card-sub" style="margin-top:0.4rem;">
+          Contract value: {% if item.capex_usd is not None %}${{ item.capex_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}<br>
+          Deposit paid: {% if item.deposit_paid_usd is not None %}${{ item.deposit_paid_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}<br>
+          Remaining balance: {% if item.remaining_balance_usd is not None %}${{ item.remaining_balance_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}
+        </div>
+        <div class="gold-chip-row" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.6rem;">
+          <span class="gold-risk-badge {% if item.manufacturing_status == 'complete' %}low{% elif item.manufacturing_status == 'failed' %}high{% else %}medium{% endif %}">Manufacturing: {{ item.get_manufacturing_status_display }}</span>
+          <span class="gold-risk-badge {% if item.fat_status == 'passed' %}low{% elif item.fat_status == 'failed' %}high{% else %}medium{% endif %}">FAT: {{ item.get_fat_status_display }}</span>
+          <span class="gold-risk-badge {% if item.shipping_status == 'complete' %}low{% else %}medium{% endif %}">Shipping: {{ item.get_shipping_status_display }}</span>
+          <span class="gold-risk-badge {% if item.delivery_status == 'complete' %}low{% else %}medium{% endif %}">Delivery: {{ item.get_delivery_status_display }}</span>
+          <span class="gold-risk-badge {% if item.installation_status == 'complete' %}low{% else %}medium{% endif %}">Installation: {{ item.get_installation_status_display }}</span>
+          <span class="gold-risk-badge {% if item.commissioning_status == 'complete' %}low{% else %}medium{% endif %}">Commissioning: {{ item.get_commissioning_status_display }}</span>
+          <span class="gold-risk-badge {% if item.warranty_status == 'complete' %}low{% elif item.warranty_status == 'not_applicable' %}na{% else %}medium{% endif %}">Warranty: {{ item.get_warranty_status_display }}</span>
+          <span class="gold-risk-badge {% if item.performance_guarantee_status == 'complete' %}low{% elif item.performance_guarantee_status == 'not_applicable' %}na{% else %}medium{% endif %}">Performance Guarantee: {{ item.get_performance_guarantee_status_display }}</span>
+          <span class="gold-risk-badge {% if item.insurance_status == 'complete' %}low{% else %}medium{% endif %}">Insurance: {{ item.get_insurance_status_display }}</span>
+          <span class="gold-risk-badge {% if item.maintenance_status == 'complete' %}low{% elif item.maintenance_status == 'not_applicable' %}na{% else %}medium{% endif %}">Maintenance: {{ item.get_maintenance_status_display }}</span>
+          <span class="gold-risk-badge {% if item.inspection_status == 'passed' %}low{% elif item.inspection_status == 'failed' %}high{% else %}medium{% endif %}">Inspection: {{ item.get_inspection_status_display }}</span>
+        </div>
+        <div class="gold-card-sub" style="margin-top:0.5rem;">Evidence coverage: {{ item.capital_trace_entries.count }} linked capital movement(s)</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No equipment specs recorded for this project yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

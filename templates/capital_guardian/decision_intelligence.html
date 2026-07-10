@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }} — Decision Intelligence — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: ask investor questions routed into the existing EcoIQ Natural-Language Decision Studio.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · DECISION INTELLIGENCE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">These questions route directly into EcoIQ's existing Natural-Language Decision Studio — Capital Guardian does not run a second Q&amp;A or orchestration system.</p>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='decision' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Ask EcoIQ</h2>
+    <div class="gold-btn-row">
+      {% for link in links %}
+      <a class="gold-btn" href="{{ link.href }}">{{ link.question }} →</a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

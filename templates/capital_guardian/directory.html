@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Capital Guardian — Investor Transparency &amp; Capital Intelligence{% endblock %}
+{% block meta_description_content %}Institutional investor transparency and capital intelligence: capital traceability, SPV governance, equipment lifecycle, mining digital twin, milestone control and red flag monitoring.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN</span>
+  <h1 class="gold-h1">Investor Transparency &amp; Capital Intelligence</h1>
+  <p class="gold-sub">Every dollar should be traceable. Investor Capital → Approval → Controlled Deployment → Supplier → Physical Asset → Independent Evidence → Insurance → Project Milestone → Operational Production.</p>
+  <p class="gold-sub">This is a governance, monitoring and decision-intelligence module — not a fundraising platform, investment marketplace, or payment processor.</p>
+
+  <div class="gold-section">
+    <h2 class="gold-h2">Projects</h2>
+    {% for project in projects %}
+    <a class="gold-project-card" href="{% url 'capital_guardian:investor_dashboard' project.slug %}">
+      <span class="gold-project-name">{{ project.name }}</span>{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}
+      <div class="gold-project-meta">{{ project.get_status_display }} · {{ project.country.name|default:"Country not set" }}{% if project.region %} · {{ project.region }}{% endif %}</div>
+    </a>
+    {% empty %}
+    <p class="gold-honest-stub">No projects recorded yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

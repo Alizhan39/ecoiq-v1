@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Milestone Control — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: milestone-based capital release, verification status, and delay risk.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · MILESTONE CONTROL</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='milestones' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Milestones</h2>
+    {% if milestones %}
+    {% for m in milestones %}
+    <div class="gold-card" style="margin-bottom:0.8rem;">
+      <div class="gold-list-row" style="border:none;padding:0;">
+        <span class="gold-list-label"><strong>{{ m.get_phase_display }}</strong></span>
+        <span class="gold-risk-badge {% if m.status == 'complete' %}low{% elif m.status == 'delayed' %}high{% elif m.status == 'in_progress' %}medium{% else %}na{% endif %}">{{ m.get_status_display }}</span>
+      </div>
+      <div class="gold-card-sub" style="margin-top:0.4rem;">
+        Planned: {{ m.planned_start|default:"—" }} → {{ m.planned_end|default:"—" }} ·
+        Actual: {{ m.actual_start|default:"—" }} → {{ m.actual_end|default:"—" }} ·
+        Completion: {% if m.completion_pct is not None %}{{ m.completion_pct }}%{% else %}Data source required{% endif %}
+      </div>
+      <div class="gold-card-sub" style="margin-top:0.3rem;">
+        Capital required: {% if m.capital_required_usd is not None %}${{ m.capital_required_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %} ·
+        Capital released: {% if m.capital_released_usd is not None %}${{ m.capital_released_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}
+      </div>
+      <div class="gold-chip-row" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;">
+        <span class="gold-risk-badge {% if not m.verification_required %}na{% elif m.verification_status == 'verified' %}low{% elif m.verification_status == 'failed' %}high{% else %}medium{% endif %}">Verification: {% if m.verification_required %}{{ m.get_verification_status_display }}{% else %}Not Required{% endif %}</span>
+        <span class="gold-risk-badge {% if not m.delay_risk %}na{% else %}{{ m.delay_risk }}{% endif %}">Delay Risk: {{ m.get_delay_risk_display|default:"Not assessed" }}</span>
+      </div>
+      <div class="gold-card-sub" style="margin-top:0.5rem;">Evidence coverage: {{ m.capital_trace_entries.count }} linked capital movement(s) · Responsible: {{ m.responsible_party|default:"Not recorded" }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No milestones recorded for this project yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

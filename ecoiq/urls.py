@@ -212,6 +212,12 @@ urlpatterns = [
     # AI Agent Workbench, Decision Studio and Plotly Visual Intelligence.
     path('gold-intelligence/', include('gold_intelligence.urls', namespace='gold_intelligence')),
 
+    # EcoIQ Capital Guardian — investor transparency and capital intelligence
+    # over a real gold_intelligence.GoldProject: capital traceability, SPV/
+    # governance, equipment & insurance lifecycle, a mining digital twin,
+    # milestone-based capital control, and a deterministic red flag engine.
+    path('capital-guardian/', include('capital_guardian.urls', namespace='capital_guardian')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

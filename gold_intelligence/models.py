@@ -69,6 +69,15 @@ class GoldProject(models.Model):
     data_sources = models.TextField(blank=True, help_text='Citation string, e.g. "NI 43-101 technical report, 2024".')
     data_last_updated = models.DateField(null=True, blank=True)
 
+    # Capital Guardian (capital_guardian app) — real investor-capital inputs.
+    # Distinct from total_capex_usd (the capital-expenditure budget): this is
+    # the total equity/debt actually committed by investors, which can
+    # legitimately exceed or trail the CAPEX budget (e.g. it also funds
+    # working capital, contingency, fees).
+    total_committed_capital_usd = models.FloatField(null=True, blank=True, help_text='Total capital committed by investors, USD.')
+    insurance_coverage_usd = models.FloatField(null=True, blank=True, help_text='Total insurance policy coverage for the project, USD.')
+    insurance_expiry_date = models.DateField(null=True, blank=True)
+
     is_demo = models.BooleanField(default=True, help_text='Illustrative/demonstration project — never presented as verified real-world market data.')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -160,6 +169,17 @@ class MineTimelineMilestone(models.Model):
         ('complete', 'Complete'),
         ('delayed', 'Delayed'),
     ]
+    VERIFICATION_STATUS_CHOICES = [
+        ('not_required', 'Not Required'),
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('failed', 'Failed'),
+    ]
+    DELAY_RISK_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
 
     project = models.ForeignKey(GoldProject, on_delete=models.CASCADE, related_name='timeline_milestones')
     phase = models.CharField(max_length=20, choices=PHASE_CHOICES)
@@ -168,6 +188,19 @@ class MineTimelineMilestone(models.Model):
     planned_end = models.DateField(null=True, blank=True)
     actual_start = models.DateField(null=True, blank=True)
     actual_end = models.DateField(null=True, blank=True)
+    # Only set when a real, reported completion figure exists — 'complete'/
+    # 'not_started' status alone already implies 100%/0% (see completion_pct
+    # property below); this field is for a real reported in-progress %.
+    completion_pct_override = models.FloatField(null=True, blank=True)
+
+    # Capital Guardian (capital_guardian app) — milestone-based capital release.
+    capital_required_usd = models.FloatField(null=True, blank=True, help_text='Capital required to complete this milestone, USD.')
+    capital_released_usd = models.FloatField(null=True, blank=True, help_text='Capital actually released against this milestone, USD.')
+    verification_required = models.BooleanField(default=False)
+    verification_status = models.CharField(max_length=15, choices=VERIFICATION_STATUS_CHOICES, default='not_required')
+    delay_risk = models.CharField(max_length=10, choices=DELAY_RISK_CHOICES, blank=True)
+    responsible_party = models.CharField(max_length=200, blank=True)
+
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -175,6 +208,32 @@ class MineTimelineMilestone(models.Model):
 
     def __str__(self):
         return f'{self.project.name}: {self.get_phase_display()}'
+
+    @property
+    def completion_pct(self):
+        """Honest completion: a real reported override if one exists,
+        otherwise only the unambiguous 0%/100% implied by status — never an
+        invented in-between percentage."""
+        if self.completion_pct_override is not None:
+            return self.completion_pct_override
+        if self.status == 'complete':
+            return 100.0
+        if self.status == 'not_started':
+            return 0.0
+        return None
+
+
+# Capital Guardian (capital_guardian app) — one shared lifecycle-status
+# vocabulary reused across every equipment lifecycle stage field below,
+# rather than a bespoke choices list per field.
+LIFECYCLE_STATUS_CHOICES = [
+    ('not_started', 'Not Started'),
+    ('in_progress', 'In Progress'),
+    ('complete', 'Complete'),
+    ('passed', 'Passed'),
+    ('failed', 'Failed'),
+    ('not_applicable', 'Not Applicable'),
+]
 
 
 class EquipmentSpec(models.Model):
@@ -193,6 +252,11 @@ class EquipmentSpec(models.Model):
         ('filter_press', 'Filter Press'),
         ('tailings', 'Tailings Storage Facility'),
         ('power_plant', 'Power Plant'),
+        ('conveyor', 'Conveyor'),
+        ('electrowinning', 'Electrowinning Cells'),
+        ('smelting_furnace', 'Smelting Furnace'),
+        ('haul_truck', 'Haul Truck'),
+        ('excavator', 'Hydraulic Excavator'),
     ]
 
     project = models.ForeignKey(GoldProject, on_delete=models.CASCADE, related_name='equipment_specs')
@@ -206,11 +270,36 @@ class EquipmentSpec(models.Model):
     notes = models.TextField(blank=True)
     data_source = models.CharField(max_length=200, blank=True)
 
+    # Capital Guardian (capital_guardian app) — supplier/lifecycle tracking.
+    # `manufacturer`/`supplier` are illustrative labels only in demo data —
+    # never a claim that a named real manufacturer is actually involved.
+    manufacturer = models.CharField(max_length=150, blank=True)
+    supplier = models.CharField(max_length=150, blank=True)
+    deposit_paid_usd = models.FloatField(null=True, blank=True)
+
+    manufacturing_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
+    fat_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started', help_text='Factory Acceptance Test status.')
+    shipping_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
+    delivery_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
+    installation_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
+    commissioning_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
+    warranty_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_applicable')
+    performance_guarantee_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_applicable')
+    insurance_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
+    maintenance_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_applicable')
+    inspection_status = models.CharField(max_length=20, choices=LIFECYCLE_STATUS_CHOICES, default='not_started')
+
     class Meta:
         ordering = ['equipment_type']
 
     def __str__(self):
         return self.label or self.get_equipment_type_display()
+
+    @property
+    def remaining_balance_usd(self):
+        if self.capex_usd is None or self.deposit_paid_usd is None:
+            return None
+        return round(self.capex_usd - self.deposit_paid_usd, 2)
 
 
 class ScenarioAssumption(models.Model):
