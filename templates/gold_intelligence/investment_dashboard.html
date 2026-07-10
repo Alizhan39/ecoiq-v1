@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+{% block title %}{{ project.name }} — Investment Dashboard — EcoIQ Gold Intelligence{% endblock %}
+{% block meta_description_content %}{{ project.name }}: CAPEX, OPEX, IRR, NPV, payback, recovery, ore grade, expected production, cash cost, AISC, sensitivity and scenario analysis.{% endblock %}
+
+{% block content %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE · INVESTMENT DASHBOARD</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'gold_intelligence/_nav.html' with active_tab='dashboard' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Technical Inputs</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Ore Grade</div><div class="gold-card-value {% if project.ore_grade_g_per_tonne is None %}na{% endif %}">{% if project.ore_grade_g_per_tonne is not None %}{{ project.ore_grade_g_per_tonne }} g/t{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Resource</div><div class="gold-card-value {% if project.resource_tonnes is None %}na{% endif %}">{% if project.resource_tonnes is not None %}{{ project.resource_tonnes|floatformat:0|intcomma }} t{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Recovery</div><div class="gold-card-value {% if project.recovery_rate_pct is None %}na{% endif %}">{% if project.recovery_rate_pct is not None %}{{ project.recovery_rate_pct }}%{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Production</div><div class="gold-card-value {% if project.expected_annual_production_oz is None %}na{% endif %}">{% if project.expected_annual_production_oz is not None %}{{ project.expected_annual_production_oz|floatformat:0|intcomma }} oz/yr{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Mine Life</div><div class="gold-card-value {% if project.mine_life_years is None %}na{% endif %}">{% if project.mine_life_years is not None %}{{ project.mine_life_years }} yrs{% else %}Data source required{% endif %}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Cost Basis</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Cash Cost</div><div class="gold-card-value {% if project.cash_cost_usd_per_oz is None %}na{% endif %}">{% if project.cash_cost_usd_per_oz is not None %}${{ project.cash_cost_usd_per_oz|floatformat:0|intcomma }}/oz{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">AISC</div><div class="gold-card-value {% if project.aisc_usd_per_oz is None %}na{% endif %}">{% if project.aisc_usd_per_oz is not None %}${{ project.aisc_usd_per_oz|floatformat:0|intcomma }}/oz{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Gold Price Assumption</div><div class="gold-card-value {% if project.gold_price_assumption_usd_per_oz is None %}na{% endif %}">{% if project.gold_price_assumption_usd_per_oz is not None %}${{ project.gold_price_assumption_usd_per_oz|floatformat:0|intcomma }}/oz{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Annual OPEX</div><div class="gold-card-value {% if project.annual_opex_usd is None %}na{% endif %}">{% if project.annual_opex_usd is not None %}${{ project.annual_opex_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Project Economics</h2>
+    {% if economics.available %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">CAPEX</div><div class="gold-card-value">${{ economics.capex_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">IRR</div><div class="gold-card-value {% if economics.irr_pct is None %}na{% endif %}">{% if economics.irr_pct is not None %}{{ economics.irr_pct }}%{% else %}Not computable from current cash flows{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">NPV @ {{ project.discount_rate_pct|default:"—" }}%</div><div class="gold-card-value {% if economics.npv_usd is None %}na{% endif %}">{% if economics.npv_usd is not None %}${{ economics.npv_usd|floatformat:0|intcomma }}{% else %}{{ economics.npv_unavailable_reason }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Payback</div><div class="gold-card-value {% if economics.payback_years is None %}na{% endif %}">{% if economics.payback_years is not None %}{{ economics.payback_years }} yrs{% else %}Not computable{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Annual Net Cash Flow</div><div class="gold-card-value">${{ economics.annual_net_cash_flow_usd|floatformat:0|intcomma }}</div><div class="gold-card-sub">Cost basis: {{ economics.cost_basis|upper }}</div></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">{{ economics.reason }}</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Sensitivity Analysis</h2>
+    {% if sensitivity_chart %}
+    <div class="gold-chart">{{ sensitivity_chart.html|safe }}</div>
+    {% elif sensitivity.available %}
+    <p class="gold-honest-stub">No sensitivity variables have real base-case values yet.</p>
+    {% else %}
+    <p class="gold-honest-stub">{{ sensitivity.reason }}</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Scenario Analysis</h2>
+    {% if scenario_chart %}
+    <div class="gold-chart">{{ scenario_chart.html|safe }}</div>
+    {% else %}
+    <p class="gold-honest-stub">No scenarios recorded for this project yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

@@ -1,0 +1,9 @@
+<nav class="gold-nav" aria-label="Gold project sections">
+  <a class="gold-tab {% if active_tab == 'investor' %}active{% endif %}" href="{% url 'gold_intelligence:investor_view' project.slug %}">Investor View</a>
+  <a class="gold-tab {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'gold_intelligence:investment_dashboard' project.slug %}">Investment Dashboard</a>
+  <a class="gold-tab {% if active_tab == 'risk' %}active{% endif %}" href="{% url 'gold_intelligence:risk_intelligence' project.slug %}">Risk Intelligence</a>
+  <a class="gold-tab {% if active_tab == 'timeline' %}active{% endif %}" href="{% url 'gold_intelligence:timeline' project.slug %}">Timeline</a>
+  <a class="gold-tab {% if active_tab == 'capital' %}active{% endif %}" href="{% url 'gold_intelligence:capital_tracker' project.slug %}">Capital Tracker</a>
+  <a class="gold-tab {% if active_tab == 'equipment' %}active{% endif %}" href="{% url 'gold_intelligence:equipment_intelligence' project.slug %}">Equipment</a>
+  <a class="gold-tab" href="{% url 'gold_intelligence:mine_map' %}">Mine Map</a>
+</nav>

@@ -206,6 +206,12 @@ urlpatterns = [
     # evidence-backed answer (Phase 1)
     path('decision-studio/', include('decision_studio.urls', namespace='decision_studio')),
 
+    # EcoIQ Gold Intelligence — first flagship vertical: institutional-grade
+    # Kazakhstan gold mining investment intelligence, built on top of Geo
+    # Intelligence, Pandas Scoring, Intelligence Analytics, Evidence Memory,
+    # AI Agent Workbench, Decision Studio and Plotly Visual Intelligence.
+    path('gold-intelligence/', include('gold_intelligence.urls', namespace='gold_intelligence')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

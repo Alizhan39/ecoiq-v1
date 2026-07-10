@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ project.name }} — Mine Timeline — EcoIQ Gold Intelligence{% endblock %}
+{% block meta_description_content %}{{ project.name }}: exploration, licensing, construction, processing plant, production and expansion timeline.{% endblock %}
+
+{% block content %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE · MINE TIMELINE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'gold_intelligence/_nav.html' with active_tab='timeline' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Timeline</h2>
+    {% if timeline_chart %}
+    <div class="gold-chart" style="margin-bottom:1.2rem;">{{ timeline_chart.html|safe }}</div>
+    {% endif %}
+    {% if timeline.available %}
+    <div class="gold-timeline">
+      {% for m in timeline.milestones %}
+      <div class="gold-milestone">
+        <span class="gold-milestone-phase">{{ m.get_phase_display }}</span>
+        <span class="gold-milestone-status {{ m.status }}">{{ m.get_status_display }}</span>
+        <span class="gold-milestone-dates">
+          {% if m.planned_start and m.planned_end %}{{ m.planned_start }} → {{ m.planned_end }}{% else %}Data source required{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No timeline milestones recorded for this project yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

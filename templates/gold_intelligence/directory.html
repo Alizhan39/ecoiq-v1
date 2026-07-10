@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Gold Intelligence — Kazakhstan Gold Investment Intelligence{% endblock %}
+{% block meta_description_content %}Institutional-grade gold mining investment intelligence: CAPEX/OPEX/IRR/NPV, risk intelligence, mine timeline, capital tracker and equipment intelligence.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE</span>
+  <h1 class="gold-h1">Kazakhstan Gold Investment Intelligence</h1>
+  <p class="gold-sub">Institutional-grade investment intelligence for gold mining projects — built entirely on EcoIQ's existing Geo Intelligence, Explainable Scoring, Intelligence Analytics, Evidence Memory, AI Agent Workbench and Decision Studio.</p>
+
+  <div class="gold-btn-row">
+    <a class="gold-btn gold-btn-primary" href="{% url 'gold_intelligence:mine_map' %}">Open Mine Map →</a>
+  </div>
+
+  <div class="gold-section">
+    <h2 class="gold-h2">Projects</h2>
+    {% for project in projects %}
+    <a class="gold-project-card" href="{% url 'gold_intelligence:investor_view' project.slug %}">
+      <span class="gold-project-name">{{ project.name }}</span>{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}
+      <div class="gold-project-meta">{{ project.get_status_display }} · {{ project.country.name|default:"Country not set" }}{% if project.region %} · {{ project.region }}{% endif %}</div>
+    </a>
+    {% empty %}
+    <p class="gold-honest-stub">No gold projects recorded yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

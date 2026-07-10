@@ -33,6 +33,19 @@ class GeoAsset(models.Model):
         ('cold_store', 'Cold Store'),
         ('heating_unit', 'Heating Unit'),
         ('stewardship_site', 'Stewardship Site'),
+        # Gold Intelligence vertical (gold_intelligence app) reuses this same
+        # GeoAsset model for its map — added here rather than a second
+        # location model, per this module's existing "one plain-field model
+        # per mappable site" convention.
+        ('gold_deposit', 'Gold Deposit'),
+        ('active_mine', 'Active Mine'),
+        ('processing_plant', 'Processing Plant'),
+        ('exploration_licence', 'Exploration Licence'),
+        ('transport_hub', 'Transport Hub'),
+        ('rail', 'Rail'),
+        ('road', 'Road'),
+        ('airport', 'Airport'),
+        ('water_source', 'Water Source'),
         ('other', 'Other'),
     ]
     MODERNISATION_PRIORITY_CHOICES = [

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Equipment Intelligence — EcoIQ Gold Intelligence{% endblock %}
+{% block meta_description_content %}{{ project.name }}: crusher, mill, CIL, heap leach, gravity, flotation, autoclave, thickener, filter press, tailings and power plant equipment specs.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE · EQUIPMENT INTELLIGENCE</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'gold_intelligence/_nav.html' with active_tab='equipment' %}
+
+  {% if equipment.available %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Summary</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Equipment Items</div><div class="gold-card-value">{{ equipment.equipment_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Total CAPEX</div><div class="gold-card-value {% if equipment.total_capex_usd is None %}na{% endif %}">{% if equipment.total_capex_usd is not None %}${{ equipment.total_capex_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Total Power Usage</div><div class="gold-card-value {% if equipment.total_power_usage_kw is None %}na{% endif %}">{% if equipment.total_power_usage_kw is not None %}{{ equipment.total_power_usage_kw|floatformat:0|intcomma }} kW{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Total Water Usage</div><div class="gold-card-value {% if equipment.total_water_usage_m3_per_hour is None %}na{% endif %}">{% if equipment.total_water_usage_m3_per_hour is not None %}{{ equipment.total_water_usage_m3_per_hour|floatformat:0|intcomma }} m³/h{% else %}Data source required{% endif %}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Equipment Specs</h2>
+    <div class="gold-list">
+      {% for spec in equipment.specs %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ spec.get_equipment_type_display }}{% if spec.label %} — {{ spec.label }}{% endif %}</span>
+        <span class="gold-list-value">
+          {% if spec.capex_usd is not None %}${{ spec.capex_usd|floatformat:0|intcomma }}{% else %}CAPEX: —{% endif %}
+          {% if spec.lead_time_months is not None %}· {{ spec.lead_time_months }} mo lead time{% endif %}
+          {% if spec.recovery_pct is not None %}· {{ spec.recovery_pct }}% recovery{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="gold-section">
+    <p class="gold-honest-stub">{{ equipment.reason }}</p>
+  </section>
+  {% endif %}
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

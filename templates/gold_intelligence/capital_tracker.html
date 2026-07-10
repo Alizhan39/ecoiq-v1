@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+{% block title %}{{ project.name }} — Capital Tracker — EcoIQ Gold Intelligence{% endblock %}
+{% block meta_description_content %}{{ project.name }}: planned, committed, spent, remaining capital and budget variance by category.{% endblock %}
+
+{% block content %}
+<script src="{% static 'js/vendor/plotly.min.js' %}"></script>
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE · CAPITAL TRACKER</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+
+  {% include 'gold_intelligence/_nav.html' with active_tab='capital' %}
+
+  {% if capital.available %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Summary</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Planned</div><div class="gold-card-value {% if capital.planned_usd is None %}na{% endif %}">{% if capital.planned_usd is not None %}${{ capital.planned_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Committed</div><div class="gold-card-value {% if capital.committed_usd is None %}na{% endif %}">{% if capital.committed_usd is not None %}${{ capital.committed_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Spent</div><div class="gold-card-value {% if capital.spent_usd is None %}na{% endif %}">{% if capital.spent_usd is not None %}${{ capital.spent_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Remaining</div><div class="gold-card-value {% if capital.remaining_usd is None %}na{% endif %}">{% if capital.remaining_usd is not None %}${{ capital.remaining_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Budget Variance</div><div class="gold-card-value {% if capital.variance_usd is None %}na{% endif %}">{% if capital.variance_usd is not None %}${{ capital.variance_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+    </div>
+  </section>
+
+  {% if capital_chart %}
+  <section class="gold-section">
+    <h2 class="gold-h2">By Category</h2>
+    <div class="gold-chart">{{ capital_chart.html|safe }}</div>
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Budget Lines</h2>
+    <div class="gold-list">
+      {% for line in capital.lines %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ line.get_category_display }} — {{ line.label }}</span>
+        <span class="gold-list-value">
+          Planned: {% if line.planned_usd is not None %}${{ line.planned_usd|floatformat:0|intcomma }}{% else %}—{% endif %}
+          · Spent: {% if line.spent_usd is not None %}${{ line.spent_usd|floatformat:0|intcomma }}{% else %}—{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="gold-section">
+    <p class="gold-honest-stub">{{ capital.reason }}</p>
+  </section>
+  {% endif %}
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

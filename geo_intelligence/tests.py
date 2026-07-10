@@ -135,6 +135,16 @@ class GeoIntelligenceModelTests(TestCase):
         opp = InvestmentGeoOpportunity.objects.create(title='Test Opportunity', latitude=1.0, longitude=2.0)
         self.assertEqual(str(opp), 'Test Opportunity')
 
+    def test_gold_intelligence_asset_types_are_registered(self):
+        # gold_intelligence reuses GeoAsset for its mine map rather than a
+        # second location model — these choices must exist.
+        choices = dict(GeoAsset.ASSET_TYPE_CHOICES)
+        for key in (
+            'gold_deposit', 'active_mine', 'processing_plant', 'exploration_licence',
+            'transport_hub', 'rail', 'road', 'airport', 'water_source',
+        ):
+            self.assertIn(key, choices)
+
 
 class SeedCommandTests(TestCase):
     def test_seed_is_idempotent_and_uses_real_tour_figures(self):
