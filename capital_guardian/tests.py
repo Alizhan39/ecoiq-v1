@@ -25,7 +25,7 @@ from capital_guardian.services import (
     ai_director, audit_log, capital_protection, capital_trace, equipment_health, evidence as evidence_service,
     investor_dashboard, portfolio, project_health, red_flag_engine, supplier_comparison,
 )
-from waste_to_value_capital_allocation_engine.models import LossEvidence, OperationalLoss
+from waste_to_value_capital_allocation_engine.models import InterventionOption, LossEvidence, OperationalLoss
 
 
 class ProjectGovernanceModelTests(TestCase):
@@ -2152,3 +2152,458 @@ class AnalysisToValueLossBridgeTests(TestCase):
         loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
         self.assertEqual(loss.project, self.project.name)
         self.assertEqual(LossEvidence.objects.filter(operational_loss=loss).count(), 1)
+
+
+class InterventionSafetyGateTests(TestCase):
+    """Vertical-slice PR 4 — classify_intervention_safety()."""
+
+    def setUp(self):
+        from capital_guardian.services.intervention_safety_gate import classify_intervention_safety
+        self.classify = classify_intervention_safety
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        loss = OperationalLoss.objects.create(title='Loss', loss_type='heat_loss', financial_loss_amount=1000)
+        self.loss = loss
+
+    def _option(self, title, intervention_type, description=''):
+        return InterventionOption(operational_loss=self.loss, title=title, intervention_type=intervention_type, description=description)
+
+    def test_insulation_is_eligible(self):
+        option = self._option('Insulation Retrofit', 'prevention')
+        result = self.classify(self.project, option, classification='real')
+        self.assertEqual(result['status'], 'eligible')
+
+    def test_heat_pump_is_eligible(self):
+        option = self._option('Heat Pump Retrofit', 'equipment_upgrade')
+        result = self.classify(self.project, option, classification='real')
+        self.assertEqual(result['status'], 'eligible')
+
+    def test_district_heating_is_eligible(self):
+        option = self._option('District Heating Connection', 'infrastructure_upgrade')
+        result = self.classify(self.project, option, classification='real')
+        self.assertEqual(result['status'], 'eligible')
+
+    def test_baseline_is_eligible(self):
+        option = self._option('Continue Current Coal Heating', 'do_nothing')
+        result = self.classify(self.project, option, classification='real')
+        self.assertEqual(result['status'], 'eligible')
+
+    def test_raw_coal_fertiliser_is_blocked(self):
+        option = self._option('Sell raw coal as fertiliser', 'resale')
+        result = self.classify(self.project, option, classification='estimated')
+        self.assertEqual(result['status'], 'blocked')
+        self.assertIn('not a validated fertiliser', result['reason'])
+
+    def test_coal_ash_reuse_is_conditional(self):
+        option = self._option('Reuse coal ash', 'resale', description='Explore ash by-product options.')
+        result = self.classify(self.project, option, classification='estimated')
+        self.assertEqual(result['status'], 'conditional')
+
+    def test_burning_coal_to_create_ash_is_conditional_not_recommended(self):
+        option = self._option('Burn more coal to produce ash for construction', 'resale')
+        result = self.classify(self.project, option, classification='estimated')
+        self.assertIn(result['status'], ('conditional', 'blocked'))
+        self.assertNotEqual(result['status'], 'eligible')
+
+    def test_unreviewed_intervention_type_defaults_conditional(self):
+        option = self._option('Some other approach', 'disposal')
+        result = self.classify(self.project, option, classification='real')
+        self.assertEqual(result['status'], 'conditional')
+
+    def test_illustrative_classification_downgrades_to_conditional(self):
+        option = self._option('Heat Pump Retrofit', 'equipment_upgrade')
+        result = self.classify(self.project, option, classification='illustrative')
+        self.assertEqual(result['status'], 'conditional')
+        self.assertIn('illustrative', result['reason'].lower())
+
+    def test_deterministic(self):
+        option = self._option('Insulation Retrofit', 'prevention')
+        r1 = self.classify(self.project, option, classification='real')
+        r2 = self.classify(self.project, option, classification='real')
+        self.assertEqual(r1, r2)
+
+
+class BetterWayComparisonTests(TestCase):
+    """Vertical-slice PR 4 — compare_interventions() reusing the real scoring/ranking services."""
+
+    def setUp(self):
+        from capital_guardian.services.better_way import compare_interventions, tag_classification
+        self.compare = compare_interventions
+        self.tag = tag_classification
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=10000, projected_future_loss=12000,
+        )
+
+    def _make_option(self, title, intervention_type, classification='estimated', **fields):
+        defaults = dict(
+            capex_estimate=0, opex_change=0, estimated_loss_avoided=0, estimated_value_recovered=0,
+            estimated_annual_savings=0, technical_readiness='not_ready', finance_readiness='not_ready',
+            mrv_readiness='not_ready', risk_level='medium',
+        )
+        defaults.update(fields)
+        return InterventionOption.objects.create(
+            operational_loss=self.loss, title=title, intervention_type=intervention_type,
+            description=self.tag('desc', classification), **defaults,
+        )
+
+    def test_reuses_real_ranking_no_duplicate_scoring(self):
+        """Confirms the composite score matches what the real shared scorer/ranker would produce directly."""
+        from waste_to_value_capital_allocation_engine.services.capital_allocation_scoring import score_intervention_option
+        from waste_to_value_capital_allocation_engine.services.ranking import rank_capital_allocation_options
+
+        option = self._make_option('Insulation', 'prevention', capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000)
+        result = self.compare(self.project, self.loss)
+
+        ceiling = self.loss.projected_future_loss
+        expected_scores = score_intervention_option(option, ceiling, 80000)
+        expected_ranked = rank_capital_allocation_options([{'option': option, **expected_scores}])
+        self.assertEqual(result.ranked[0]['composite_score'], expected_ranked[0]['composite_score'])
+
+    def test_deterministic_ranking_same_inputs_same_order(self):
+        self._make_option('Insulation', 'prevention', capex_estimate=2000, estimated_annual_savings=1500)
+        self._make_option('Heat Pump', 'equipment_upgrade', capex_estimate=8000, estimated_annual_savings=2500)
+        r1 = self.compare(self.project, self.loss)
+        r2 = self.compare(self.project, self.loss)
+        self.assertEqual([c['option'].pk for c in r1.ranked], [c['option'].pk for c in r2.ranked])
+
+    def test_baseline_does_not_win_merely_because_capex_is_zero(self):
+        self._make_option('Continue Current Coal Heating', 'do_nothing', classification='real', risk_level='high')
+        self._make_option('Insulation', 'prevention', capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000, technical_readiness='ready', finance_readiness='ready')
+        result = self.compare(self.project, self.loss)
+        self.assertFalse(result.baseline_ranked_first)
+        self.assertNotEqual(result.ranked[0]['option'].intervention_type, 'do_nothing')
+
+    def test_baseline_flagged_if_it_does_rank_first(self):
+        """If every real option is weak enough, the baseline's true composite score can still legitimately win — must be flagged, never silently presented."""
+        self._make_option('Continue Current Coal Heating', 'do_nothing', classification='real')
+        result = self.compare(self.project, self.loss)  # baseline is the ONLY option
+        self.assertTrue(result.baseline_ranked_first)
+        self.assertIn('does not mean continuing is recommended', result.baseline_warning)
+
+    def test_blocked_option_excluded_from_ranking(self):
+        self._make_option('Insulation', 'prevention', capex_estimate=2000, estimated_annual_savings=1500)
+        self._make_option('Sell coal ash as fertiliser', 'resale')
+        result = self.compare(self.project, self.loss)
+        self.assertEqual(len(result.blocked), 1)
+        ranked_titles = [c['option'].title for c in result.ranked]
+        self.assertNotIn('Sell coal ash as fertiliser', ranked_titles)
+
+    def test_conditional_option_included_with_reason(self):
+        self._make_option('Insulation', 'prevention', capex_estimate=2000, estimated_annual_savings=1500)
+        self._make_option('Heat Pump', 'equipment_upgrade', classification='illustrative', capex_estimate=8000)
+        result = self.compare(self.project, self.loss)
+        conditional = [c for c in result.ranked if c['safety_status'] == 'conditional']
+        self.assertEqual(len(conditional), 1)
+        self.assertTrue(conditional[0]['safety_reason'])
+
+    def test_missing_financial_values_handled_honestly(self):
+        self._make_option('Bare option', 'prevention')  # all zeros
+        result = self.compare(self.project, self.loss)
+        self.assertEqual(len(result.ranked), 1)
+
+    def test_zero_options_returns_empty_ranking(self):
+        result = self.compare(self.project, self.loss)
+        self.assertEqual(result.ranked, [])
+        self.assertFalse(result.baseline_ranked_first)
+
+    def test_trade_offs_present_for_multiple_options(self):
+        self._make_option('Insulation', 'prevention', capex_estimate=2000, estimated_annual_savings=1500, estimated_payback_months=16)
+        self._make_option('Heat Pump', 'equipment_upgrade', capex_estimate=8000, estimated_annual_savings=2500, estimated_payback_months=38)
+        result = self.compare(self.project, self.loss)
+        self.assertIn('highest_capital_efficiency', result.trade_offs)
+        self.assertIn('lowest_capex', result.trade_offs)
+
+
+class InterventionOptionCreationViewTests(TestCase):
+    """Vertical-slice PR 4 — staff-only intervention option creation."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_opt', 'staff_opt@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_opt', 'normal_opt@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
+        )
+        self.other_project = GoldProject.objects.create(name='Other Project', slug='other-project-opt')
+        self.other_loss = OperationalLoss.objects.create(
+            project=self.other_project.name, title='Other loss', loss_type='energy_loss', financial_loss_amount=500,
+        )
+
+    def _confirm_url(self, project=None, loss=None):
+        return reverse('capital_guardian:create_intervention_option_confirm', args=[(project or self.project).slug, (loss or self.loss).pk])
+
+    def _execute_url(self, project=None, loss=None):
+        return reverse('capital_guardian:create_intervention_option_execute', args=[(project or self.project).slug, (loss or self.loss).pk])
+
+    def _valid_data(self, **overrides):
+        data = {
+            'title': 'Insulation Retrofit', 'intervention_type': 'prevention', 'description': 'Insulate homes.',
+            'capex_estimate': '2000', 'opex_change': '0', 'estimated_loss_avoided': '3000',
+            'estimated_value_recovered': '0', 'estimated_annual_savings': '1500',
+            'technical_readiness': 'ready', 'finance_readiness': 'ready', 'mrv_readiness': 'draft',
+            'risk_level': 'low', 'classification': 'estimated',
+        }
+        data.update(overrides)
+        return data
+
+    # ── Authentication and authorization ────────────────────────────────────
+
+    def test_staff_can_open_confirm(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 200)
+
+    def test_non_staff_blocked_from_confirm(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_anonymous_blocked_from_confirm(self):
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 302)
+
+    def test_non_staff_blocked_from_execute(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(InterventionOption.objects.count(), 0)
+
+    def test_anonymous_blocked_from_execute(self):
+        r = self.client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(InterventionOption.objects.count(), 0)
+
+    # ── HTTP safety ──────────────────────────────────────────────────────────
+
+    def test_get_cannot_create_option(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._execute_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(InterventionOption.objects.count(), 0)
+
+    def test_csrf_enforced(self):
+        csrf_client = Client(enforce_csrf_checks=True, SERVER_NAME='localhost')
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(r.status_code, 403)
+
+    def test_invalid_loss_returns_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:create_intervention_option_confirm', args=[self.project.slug, 999999]))
+        self.assertEqual(r.status_code, 404)
+
+    def test_invalid_form_rejected(self):
+        self.client.force_login(self.staff)
+        data = self._valid_data()
+        del data['title']
+        r = self.client.post(self._execute_url(), data)
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(InterventionOption.objects.count(), 0)
+
+    # ── IDOR — loss belonging to a different project ────────────────────────
+
+    def test_loss_from_different_project_returns_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url(project=self.project, loss=self.other_loss))
+        self.assertEqual(r.status_code, 404)
+
+    # ── Content correctness ──────────────────────────────────────────────────
+
+    def test_option_created_with_correct_association(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        option = InterventionOption.objects.get(title='Insulation Retrofit')
+        self.assertEqual(option.operational_loss_id, self.loss.pk)
+
+    def test_classification_tag_recorded(self):
+        from capital_guardian.services.better_way import extract_classification
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data(classification='illustrative'))
+        option = InterventionOption.objects.get(title='Insulation Retrofit')
+        self.assertEqual(extract_classification(option.description), 'illustrative')
+
+    def test_duplicate_identical_title_updates_not_duplicates(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        self.client.post(self._execute_url(), self._valid_data(capex_estimate='2500'))
+        self.assertEqual(InterventionOption.objects.filter(operational_loss=self.loss, title='Insulation Retrofit').count(), 1)
+        option = InterventionOption.objects.get(operational_loss=self.loss, title='Insulation Retrofit')
+        self.assertEqual(option.capex_estimate, 2500)
+
+    def test_distinct_variant_titles_create_separate_rows(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data(title='Heat Pump — Supplier A'))
+        self.client.post(self._execute_url(), self._valid_data(title='Heat Pump — Supplier B'))
+        self.assertEqual(InterventionOption.objects.filter(operational_loss=self.loss).count(), 2)
+
+    def test_no_raw_exception_leakage(self):
+        from unittest import mock
+        self.client.force_login(self.staff)
+        with mock.patch(
+            'waste_to_value_capital_allocation_engine.services.intervention_finance.model_interventions',
+            side_effect=RuntimeError('unexpected internal boom'),
+        ):
+            r = self.client.post(self._execute_url(), self._valid_data(), follow=True)
+        self.assertNotContains(r, 'unexpected internal boom')
+        self.assertNotContains(r, 'Traceback')
+
+
+class BetterWayViewTests(TestCase):
+    """Vertical-slice PR 4 — operational_loss_detail + run_better_way_comparison views."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_bw', 'staff_bw@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_bw', 'normal_bw@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+
+    def _detail_url(self):
+        return reverse('capital_guardian:operational_loss_detail', args=[self.project.slug, self.loss.pk])
+
+    def _compare_url(self):
+        return reverse('capital_guardian:run_better_way_comparison', args=[self.project.slug, self.loss.pk])
+
+    def test_loss_detail_page_public(self):
+        r = self.client.get(self._detail_url())
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Insulation')
+
+    def test_create_button_only_for_staff(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._detail_url())
+        self.assertContains(r, 'Create Intervention Option')
+
+    def test_create_button_absent_for_anonymous(self):
+        r = self.client.get(self._detail_url())
+        self.assertNotContains(r, 'Create Intervention Option')
+
+    def test_non_staff_cannot_run_comparison(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._compare_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_anonymous_cannot_run_comparison(self):
+        r = self.client.post(self._compare_url())
+        self.assertEqual(r.status_code, 302)
+
+    def test_get_cannot_run_comparison(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._compare_url())
+        self.assertEqual(r.status_code, 302)
+
+    def test_staff_post_runs_comparison(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._compare_url())
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'The Better Way')
+        self.assertContains(r, 'Insulation')
+
+    def test_score_breakdown_and_ranking_shown(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._compare_url())
+        self.assertContains(r, 'Composite Score')
+        self.assertContains(r, '#1')
+
+    def test_stewardship_comparison_shown(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._compare_url())
+        self.assertContains(r, 'Hisab')
+        self.assertContains(r, 'not a religious ruling')
+
+    def test_mixed_safety_states_displayed(self):
+        InterventionOption.objects.create(
+            operational_loss=self.loss, title='Sell coal ash as fertiliser', intervention_type='resale',
+        )
+        self.client.force_login(self.staff)
+        r = self.client.post(self._compare_url())
+        self.assertContains(r, 'Excluded (Blocked) Options')
+
+    def test_invalid_loss_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:operational_loss_detail', args=[self.project.slug, 999999]))
+        self.assertEqual(r.status_code, 404)
+
+
+class BetterWayIntegrationTests(TestCase):
+    """Full real-service integration: GoldProject -> EvidenceMemory -> Project Analysis
+    -> Resource Purpose Review -> OperationalLoss -> InterventionOptions -> Ranking -> The Better Way page."""
+
+    def test_full_chain(self):
+        from django.contrib.auth import get_user_model
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        from capital_guardian.services.project_analysis import analyse_project
+        from capital_guardian.services.resource_purpose_review import review_resource_purpose
+
+        User = get_user_model()
+        staff = User.objects.create_user('staff_full', 'staff_full@ecoiq.uk', 'password123', is_staff=True)
+        client = Client(SERVER_NAME='localhost')
+        client.force_login(staff)
+
+        project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        create_memory_from_manual_project_evidence(
+            project, title='Real evidence', text='Verified technical evidence for the pilot.',
+            verification_status='verified', review_tier='human_reviewed',
+        )
+        analysis = analyse_project(project)
+        review = review_resource_purpose(project, analysis)
+        self.assertTrue(review.misuse_or_value_loss_condition_exists)
+
+        loss_url = reverse('capital_guardian:create_value_loss_confirm', args=[project.slug])
+        client.get(loss_url)
+        execute_url = reverse('capital_guardian:create_value_loss_execute', args=[project.slug])
+        r = client.post(execute_url, {
+            'title': 'Avoidable coal heating inefficiency', 'loss_type': 'heat_loss',
+            'financial_loss_amount': '15000', 'avoidability_score': '60', 'urgency_score': '55',
+            'classification': 'estimated',
+        }, follow=True)
+        self.assertEqual(r.status_code, 200)
+
+        loss = OperationalLoss.objects.get(title='Avoidable coal heating inefficiency')
+
+        option_url = reverse('capital_guardian:create_intervention_option_execute', args=[project.slug, loss.pk])
+        client.post(option_url, {
+            'title': 'Insulation Retrofit', 'intervention_type': 'prevention', 'description': 'Insulate.',
+            'capex_estimate': '2000', 'opex_change': '0', 'estimated_loss_avoided': '3000',
+            'estimated_value_recovered': '0', 'estimated_annual_savings': '1500',
+            'technical_readiness': 'ready', 'finance_readiness': 'ready', 'mrv_readiness': 'draft',
+            'risk_level': 'low', 'classification': 'real',
+        })
+        client.post(option_url, {
+            'title': 'Continue Current Coal Heating', 'intervention_type': 'do_nothing', 'description': 'Baseline.',
+            'capex_estimate': '0', 'opex_change': '0', 'estimated_loss_avoided': '0',
+            'estimated_value_recovered': '0', 'estimated_annual_savings': '0',
+            'technical_readiness': 'ready', 'finance_readiness': 'not_ready', 'mrv_readiness': 'not_ready',
+            'risk_level': 'high', 'classification': 'real',
+        })
+        self.assertEqual(InterventionOption.objects.filter(operational_loss=loss).count(), 2)
+
+        compare_url = reverse('capital_guardian:run_better_way_comparison', args=[project.slug, loss.pk])
+        r = client.post(compare_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Insulation Retrofit')
+        self.assertContains(r, 'BASELINE / CURRENT STATE')

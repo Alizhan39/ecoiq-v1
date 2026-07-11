@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{{ loss.title }} — {{ project.name }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Operational loss detail and human-reviewed intervention options for {{ project.name }}.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">← Back to Evidence Centre</a>
+
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · OPERATIONAL LOSS</span>
+  <h1 class="gold-h1">{{ loss.title }}</h1>
+  <p class="gold-sub">{{ project.name }} — {{ loss.get_loss_type_display }}</p>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Loss Summary</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Financial Loss Amount</div><div class="gold-card-value">£{{ loss.financial_loss_amount|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Quality</div><div class="gold-card-value">{{ loss.get_evidence_quality_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Confidence</div><div class="gold-card-value">{{ loss.confidence|floatformat:0 }}%</div></div>
+      <div class="gold-card"><div class="gold-card-label">Avoidability</div><div class="gold-card-value">{{ loss.avoidability_score|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Urgency</div><div class="gold-card-value">{{ loss.urgency_score|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Status</div><div class="gold-card-value">{{ loss.get_status_display }}</div></div>
+    </div>
+    <p class="iq-badge iq-badge-review" style="margin-top:0.75rem;">This record is human-confirmed, not automatically verified.</p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Intervention Options ({{ rows|length }})</h2>
+    {% if rows %}
+    {% for row in rows %}
+    <div class="gc-evidence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
+      <div>
+        <div class="gc-evidence-field-label">Option</div>
+        <div class="gc-evidence-field-value">
+          <a href="#" style="color:inherit;">{{ row.option.title }}</a> — {{ row.option.get_intervention_type_display }}
+        </div>
+      </div>
+      <div><div class="gc-evidence-field-label">CAPEX</div><div class="gc-evidence-field-value">£{{ row.option.capex_estimate|floatformat:0 }}</div></div>
+      <div><div class="gc-evidence-field-label">Annual Savings</div><div class="gc-evidence-field-value">£{{ row.option.estimated_annual_savings|floatformat:0 }}</div></div>
+      <div>
+        <div class="gc-evidence-field-label">Safety Status</div>
+        <div class="gc-evidence-field-value">
+          <span class="gold-risk-badge {% if row.safety.status == 'eligible' %}low{% elif row.safety.status == 'conditional' %}medium{% else %}high{% endif %}">{{ row.safety.status|upper }}</span>
+        </div>
+      </div>
+    </div>
+    {% if row.safety.reason %}<p class="gold-sub" style="font-size:0.76rem;margin:-0.4rem 0 0.6rem;">{{ row.safety.reason }}</p>{% endif %}
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No intervention options created yet.</p>
+    {% endif %}
+
+    {% if request.user.is_staff %}
+    <div class="gold-chip-row" style="margin-top:1rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
+      <a class="wtv-confirm-btn" href="{% url 'capital_guardian:create_intervention_option_confirm' project.slug loss.pk %}">Create Intervention Option</a>
+      {% if rows|length >= 1 %}
+      <form method="post" action="{% url 'capital_guardian:run_better_way_comparison' project.slug loss.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="wtv-confirm-btn" style="cursor:pointer;">Compare / The Better Way</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .wtv-confirm-btn { display: inline-block; background: #00e89a; color: #06120c; font-weight: 800; font-size: 0.9rem; padding: 0.65rem 1.4rem; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; }
+  .wtv-confirm-btn:hover { filter: brightness(1.08); }
+</style>
+{% endblock %}

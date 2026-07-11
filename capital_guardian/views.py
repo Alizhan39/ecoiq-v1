@@ -573,7 +573,166 @@ def create_value_loss_execute(request, slug):
         request,
         f'Human-reviewed value loss "{loss.title}" created (evidence quality: {loss.get_evidence_quality_display()}).',
     )
-    return redirect('capital_guardian:evidence_centre', slug=slug)
+    return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss.pk)
+
+
+def _loss_or_404(project, loss_id):
+    """
+    OperationalLoss has no FK to GoldProject (it's a free-text `project`
+    name field — see waste_to_value's own models.py docstring). Matching the
+    name here, rather than trusting the URL's loss_id alone, stops a loss
+    belonging to a different project from being displayed/acted on under
+    this project's URL.
+    """
+    from django.http import Http404
+    from waste_to_value_capital_allocation_engine.models import OperationalLoss
+
+    loss = get_object_or_404(OperationalLoss, pk=loss_id)
+    if loss.project != project.name:
+        raise Http404('No operational loss found for this project.')
+    return loss
+
+
+def operational_loss_detail(request, slug, loss_id):
+    """
+    Vertical-slice PR 4 — read-only, public (same convention as
+    waste_to_value's own decision_detail: viewing is public, only
+    creating/comparing actions are staff-gated). Shows one real
+    OperationalLoss and its real InterventionOption children with their
+    safety status.
+    """
+    from capital_guardian.services.intervention_safety_gate import classify_intervention_safety
+    from capital_guardian.services.better_way import extract_classification
+
+    project = _project_or_404(slug)
+    loss = _loss_or_404(project, loss_id)
+
+    options = list(loss.interventions.all())
+    rows = [
+        {
+            'option': option,
+            'safety': classify_intervention_safety(project, option, classification=extract_classification(option.description)),
+        }
+        for option in options
+    ]
+
+    return render(request, 'capital_guardian/operational_loss_detail.html', {
+        'project': project, 'loss': loss, 'rows': rows,
+    })
+
+
+def _build_intervention_option_form(data=None):
+    from capital_guardian.forms import InterventionOptionForm
+    return InterventionOptionForm(data)
+
+
+@staff_member_required(login_url='/login/')
+def create_intervention_option_confirm(request, slug, loss_id):
+    """GET-only, staff-only. Read-only form render — nothing is created here."""
+    project = _project_or_404(slug)
+    loss = _loss_or_404(project, loss_id)
+    form = _build_intervention_option_form()
+    return render(request, 'capital_guardian/create_intervention_option_confirm.html', {
+        'project': project, 'loss': loss, 'form': form,
+    })
+
+
+@staff_member_required(login_url='/login/')
+def create_intervention_option_execute(request, slug, loss_id):
+    """
+    POST-only, staff-only. Independently re-resolves project and loss from
+    the URL (never trusts anything else), then reuses the existing,
+    unmodified intervention_finance.model_interventions() to persist the
+    option — no creation logic is duplicated here. model_interventions()
+    itself is idempotent on (operational_loss, title), so resubmitting the
+    exact same title updates that row in place rather than duplicating it;
+    genuinely different titles (e.g. two heat-pump options from different
+    suppliers) remain distinct rows, which is correct.
+    """
+    project = _project_or_404(slug)
+    loss = _loss_or_404(project, loss_id)
+    if request.method != 'POST':
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    from capital_guardian.services.better_way import tag_classification
+    from waste_to_value_capital_allocation_engine.services.intervention_finance import model_interventions
+
+    form = _build_intervention_option_form(data=request.POST)
+    if not form.is_valid():
+        return render(request, 'capital_guardian/create_intervention_option_confirm.html', {
+            'project': project, 'loss': loss, 'form': form,
+        }, status=400)
+
+    data = form.cleaned_data
+    description = tag_classification(data['description'], data['classification'])
+    description += f"\nEntered by: {request.user.get_username()} at {timezone.now():%Y-%m-%d %H:%M} UTC."
+
+    try:
+        options = model_interventions(loss, [{
+            'title': data['title'],
+            'intervention_type': data['intervention_type'],
+            'description': description,
+            'capex_estimate': data['capex_estimate'],
+            'opex_change': data['opex_change'],
+            'estimated_loss_avoided': data['estimated_loss_avoided'],
+            'estimated_value_recovered': data['estimated_value_recovered'],
+            'estimated_annual_savings': data['estimated_annual_savings'],
+            'implementation_time': data.get('implementation_time', ''),
+            'technical_readiness': data['technical_readiness'],
+            'finance_readiness': data['finance_readiness'],
+            'mrv_readiness': data['mrv_readiness'],
+            'risk_level': data['risk_level'],
+            'status': 'proposed',
+        }])
+        # model_interventions() always computes estimated_payback_months
+        # itself from capex/annual_savings (None when annual_savings is 0,
+        # which is already correct for a 'do_nothing' baseline). If the
+        # human explicitly entered a more specific real figure (e.g. from a
+        # supplier quote), that override takes precedence.
+        option = options[0]
+        if data.get('estimated_payback_months') is not None:
+            option.estimated_payback_months = data['estimated_payback_months']
+            option.save(update_fields=['estimated_payback_months'])
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure creating InterventionOption for OperationalLoss %s', loss.pk,
+        )
+        messages.error(request, 'Something went wrong creating the intervention option. No option was created.')
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    messages.success(request, f'Intervention option "{option.title}" created.')
+    return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+
+@staff_member_required(login_url='/login/')
+def run_better_way_comparison(request, slug, loss_id):
+    """
+    POST-only, staff-only. Deterministic, real-time computation over
+    already-stored InterventionOption rows — nothing persisted, so
+    re-running it is harmless. Reuses capital_guardian.services.better_way,
+    which itself reuses the existing scoring/ranking services unmodified.
+    """
+    project = _project_or_404(slug)
+    loss = _loss_or_404(project, loss_id)
+    if request.method != 'POST':
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    from capital_guardian.services.better_way import compare_interventions
+
+    try:
+        result = compare_interventions(project, loss)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure comparing interventions for OperationalLoss %s', loss.pk,
+        )
+        messages.error(request, 'Something went wrong running the comparison. No result was produced.')
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    return render(request, 'capital_guardian/better_way_result.html', {
+        'project': project, 'loss': loss, 'result': result,
+    })
 
 
 @staff_member_required(login_url='/login/')

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Create Intervention Option — {{ loss.title }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Human-reviewed intervention option creation against a real operational loss.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:operational_loss_detail' project.slug loss.pk %}">← Back to Operational Loss</a>
+
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · CREATE INTERVENTION OPTION</span>
+  <h1 class="gold-h1">Create Intervention Option</h1>
+  <p class="gold-sub">{{ project.name }} — {{ loss.title }}</p>
+
+  <section class="gold-section">
+    <p class="iq-badge iq-badge-review">
+      Every financial field defaults to zero, not a guess. Enter only what is actually known or estimated,
+      and classify honestly below.
+    </p>
+    {% if form.non_field_errors %}<p class="gold-honest-stub" style="color:#e07b7b;">{{ form.non_field_errors }}</p>{% endif %}
+    <form method="post" action="{% url 'capital_guardian:create_intervention_option_execute' project.slug loss.pk %}" class="gc-intake-form">
+      {% csrf_token %}
+      <div class="gc-intake-field"><label for="id_title">Title</label>{{ form.title }}{{ form.title.errors }}</div>
+      <div class="gc-intake-grid">
+        <div class="gc-intake-field"><label for="id_intervention_type">Intervention type</label>{{ form.intervention_type }}{{ form.intervention_type.errors }}</div>
+        <div class="gc-intake-field"><label for="id_classification">Classification</label>{{ form.classification }}{{ form.classification.errors }}</div>
+      </div>
+      <div class="gc-intake-field"><label for="id_description">Description</label>{{ form.description }}{{ form.description.errors }}</div>
+
+      <div class="gc-intake-grid">
+        <div class="gc-intake-field"><label for="id_capex_estimate">CAPEX estimate (£)</label>{{ form.capex_estimate }}{{ form.capex_estimate.errors }}</div>
+        <div class="gc-intake-field"><label for="id_opex_change">OPEX change (£, + = increase)</label>{{ form.opex_change }}{{ form.opex_change.errors }}</div>
+        <div class="gc-intake-field"><label for="id_estimated_annual_savings">Estimated annual savings (£)</label>{{ form.estimated_annual_savings }}{{ form.estimated_annual_savings.errors }}</div>
+        <div class="gc-intake-field"><label for="id_estimated_loss_avoided">Estimated loss avoided (£)</label>{{ form.estimated_loss_avoided }}{{ form.estimated_loss_avoided.errors }}</div>
+        <div class="gc-intake-field"><label for="id_estimated_value_recovered">Estimated value recovered (£)</label>{{ form.estimated_value_recovered }}{{ form.estimated_value_recovered.errors }}</div>
+        <div class="gc-intake-field"><label for="id_estimated_payback_months">Payback months (optional override)</label>{{ form.estimated_payback_months }}{{ form.estimated_payback_months.errors }}</div>
+        <div class="gc-intake-field"><label for="id_implementation_time">Implementation time</label>{{ form.implementation_time }}{{ form.implementation_time.errors }}</div>
+        <div class="gc-intake-field"><label for="id_risk_level">Risk level</label>{{ form.risk_level }}{{ form.risk_level.errors }}</div>
+        <div class="gc-intake-field"><label for="id_technical_readiness">Technical readiness</label>{{ form.technical_readiness }}{{ form.technical_readiness.errors }}</div>
+        <div class="gc-intake-field"><label for="id_finance_readiness">Finance readiness</label>{{ form.finance_readiness }}{{ form.finance_readiness.errors }}</div>
+        <div class="gc-intake-field"><label for="id_mrv_readiness">MRV readiness</label>{{ form.mrv_readiness }}{{ form.mrv_readiness.errors }}</div>
+      </div>
+
+      <button type="submit" class="gold-btn gold-btn-primary" style="margin-top:0.75rem;">Create Intervention Option</button>
+    </form>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .gc-intake-form { max-width: 760px; }
+  .gc-intake-field { margin-bottom: 0.85rem; }
+  .gc-intake-field label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gold-muted); margin-bottom: 0.3rem; }
+  .gc-intake-field input, .gc-intake-field select, .gc-intake-field textarea {
+    width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 6px; color: inherit; padding: 0.5rem 0.65rem; font-size: 0.85rem; font-family: inherit;
+  }
+  .gc-intake-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; }
+  .gc-intake-field .errorlist { color: #e07b7b; font-size: 0.75rem; margin: 0.25rem 0 0; padding-left: 1rem; }
+</style>
+{% endblock %}
