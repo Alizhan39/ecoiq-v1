@@ -23,6 +23,7 @@ urlpatterns = [
     path('<slug:slug>/red-flags/', views.red_flag_view, name='red_flags'),
     path('<slug:slug>/evidence/', views.evidence_centre_view, name='evidence_centre'),
     path('<slug:slug>/evidence/add/', views.add_project_evidence, name='add_project_evidence'),
+    path('<slug:slug>/analysis/run/', views.run_project_analysis, name='run_project_analysis'),
     path('<slug:slug>/audit-history/', views.audit_history_view, name='audit_history'),
     path('<slug:slug>/govern/', views.govern_hub_view, name='govern_hub'),
     path('<slug:slug>/ai-director/', views.ai_director_view, name='ai_director'),

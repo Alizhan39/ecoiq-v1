@@ -57,6 +57,21 @@
     {% endif %}
   </section>
 
+  {% if can_run_analysis %}
+  <section class="gold-section" id="run-analysis">
+    <h2 class="gold-h2">Project Analysis (staff)</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">
+      Runs the existing Mizan project scorer over this project's real, already-stored evidence.
+      No live AI call, nothing is persisted, and this is indicative scoring only — not a religious
+      ruling or certification of any kind.
+    </p>
+    <form method="post" action="{% url 'capital_guardian:run_project_analysis' project.slug %}">
+      {% csrf_token %}
+      <button type="submit" class="gold-btn gold-btn-primary">Run Project Analysis</button>
+    </form>
+  </section>
+  {% endif %}
+
   {% if intake_form %}
   <section class="gold-section" id="add-evidence">
     <h2 class="gold-h2">Add Evidence (staff)</h2>

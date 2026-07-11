@@ -1514,3 +1514,306 @@ class AddProjectEvidenceViewTests(TestCase):
         self.assertEqual(row.verification_status, 'verified')
         self.assertEqual(row.reviewer, self.staff)
         self.assertFalse(row.is_demo)
+
+
+class ProjectAnalysisAdapterTests(TestCase):
+    """Vertical-slice PR 2 — build_project_input_from_evidence() adapter."""
+
+    def setUp(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        self.create_evidence = create_memory_from_manual_project_evidence
+        self.kz = CountryProfile.objects.create(name='Kazakhstan', slug='kz-analysis-test', iso_code='KZ')
+        self.project = GoldProject.objects.create(
+            name='Analysis Test Project', slug='analysis-test-project',
+            commodity='energy', country=self.kz, total_capex_usd=500000, is_demo=True,
+        )
+
+    def test_zero_evidence_produces_honest_warning(self):
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        project_input, meta = build_project_input_from_evidence(self.project)
+        self.assertEqual(meta.evidence_references, [])
+        self.assertTrue(any('No project-scoped evidence' in w for w in meta.warnings))
+
+    def test_real_project_fields_map_directly(self):
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        project_input, meta = build_project_input_from_evidence(self.project)
+        self.assertEqual(project_input.name, 'Analysis Test Project')
+        self.assertEqual(project_input.sector, 'energy')
+        self.assertEqual(project_input.country, 'Kazakhstan')
+        self.assertEqual(project_input.budget_usd, 500000)
+
+    def test_missing_country_handled_honestly(self):
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        no_country_project = GoldProject.objects.create(name='No Country Project', slug='no-country-project')
+        project_input, meta = build_project_input_from_evidence(no_country_project)
+        self.assertEqual(project_input.country, '')
+        self.assertTrue(any('no linked country' in w for w in meta.warnings))
+
+    def test_missing_budget_reported_not_fabricated(self):
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        no_budget_project = GoldProject.objects.create(name='No Budget Project', slug='no-budget-project')
+        project_input, meta = build_project_input_from_evidence(no_budget_project)
+        self.assertIsNone(project_input.budget_usd)
+        self.assertIn('total_capex_usd', meta.missing_project_fields)
+
+    def test_verified_real_technical_report_sets_environmental_assessment(self):
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        self.create_evidence(
+            self.project, title='EIA', text='Environmental impact assessment completed.',
+            document_category='technical_report', verification_status='verified', review_tier='human_reviewed', is_demo=False,
+        )
+        project_input, meta = build_project_input_from_evidence(self.project)
+        self.assertTrue(project_input.environmental_assessment)
+        self.assertTrue(meta.has_real_verified_technical_report)
+
+    def test_pending_technical_report_does_not_set_environmental_assessment(self):
+        """Pending/estimated evidence must never be treated as verified."""
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        self.create_evidence(
+            self.project, title='EIA draft', text='Draft environmental assessment, not yet reviewed.',
+            document_category='technical_report', verification_status='pending', is_demo=False,
+        )
+        project_input, meta = build_project_input_from_evidence(self.project)
+        self.assertFalse(project_input.environmental_assessment)
+        self.assertFalse(meta.has_real_verified_technical_report)
+
+    def test_demo_technical_report_does_not_set_environmental_assessment(self):
+        """Illustrative/demo evidence must never inflate a real declared input, even if 'verified'."""
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        self.create_evidence(
+            self.project, title='Illustrative EIA', text='Illustrative example environmental assessment.',
+            document_category='technical_report', verification_status='verified', review_tier='human_reviewed', is_demo=True,
+        )
+        project_input, meta = build_project_input_from_evidence(self.project)
+        self.assertFalse(project_input.environmental_assessment)
+        self.assertFalse(meta.has_real_verified_technical_report)
+
+    def test_mixed_evidence_all_references_returned(self):
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        self.create_evidence(self.project, title='A', text='Verified real evidence.', verification_status='verified', review_tier='human_reviewed')
+        self.create_evidence(self.project, title='B', text='Pending evidence not yet reviewed.', verification_status='pending')
+        self.create_evidence(self.project, title='C', text='Illustrative demo evidence example.', is_demo=True)
+        project_input, meta = build_project_input_from_evidence(self.project)
+        self.assertEqual(len(meta.evidence_references), 3)
+
+    def test_project_a_evidence_not_used_for_project_b(self):
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        other = GoldProject.objects.create(name='Other Analysis Project', slug='other-analysis-project')
+        self.create_evidence(self.project, title='A', text='Project A only evidence.')
+        project_input, meta = build_project_input_from_evidence(other)
+        self.assertEqual(meta.evidence_references, [])
+
+
+class ProjectAnalysisScoringTests(TestCase):
+    """Vertical-slice PR 2 — analyse_project() reuses the real mizan scorer, no duplication."""
+
+    def setUp(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        self.create_evidence = create_memory_from_manual_project_evidence
+        self.project = GoldProject.objects.create(
+            name='Scoring Test Project', slug='scoring-test-project', commodity='energy', total_capex_usd=1000000,
+        )
+
+    def test_real_score_project_is_called_not_duplicated(self):
+        from capital_guardian.services.project_analysis import analyse_project, build_project_input_from_evidence
+        from mizan.project import score_project
+
+        result = analyse_project(self.project)
+        project_input, _ = build_project_input_from_evidence(self.project)
+        direct = score_project(project_input)
+
+        self.assertEqual(result.public_benefit_score, direct.public_benefit_score)
+        self.assertEqual(result.harm_reduction_score, direct.harm_reduction_score)
+        self.assertEqual(result.justice_distribution_score, direct.justice_distribution_score)
+        self.assertEqual(result.transparency_accountability_score, direct.transparency_accountability_score)
+        self.assertEqual(result.stewardship_score, direct.stewardship_score)
+        self.assertEqual(result.evidence_confidence_score, direct.evidence_confidence_score)
+        self.assertEqual(result.final_mizan_score, direct.final_mizan_score)
+        self.assertEqual(result.methodology, direct.methodology)
+
+    def test_deterministic_same_evidence_same_score(self):
+        from capital_guardian.services.project_analysis import analyse_project
+        r1 = analyse_project(self.project)
+        r2 = analyse_project(self.project)
+        self.assertEqual(r1.final_mizan_score, r2.final_mizan_score)
+        self.assertEqual(r1.mizan_label, r2.mizan_label)
+
+    def test_scorer_confidence_is_always_model_estimate(self):
+        """score_project()'s own confidence field is a fixed constant — verify the adapter preserves this honestly rather than upgrading it."""
+        from capital_guardian.services.project_analysis import analyse_project
+        result = analyse_project(self.project)
+        self.assertEqual(result.scorer_confidence, 'model-estimate')
+
+    def test_demo_only_evidence_reflected_in_demo_count_not_score_inflation(self):
+        from capital_guardian.services.project_analysis import analyse_project
+        self.create_evidence(
+            self.project, title='Demo EIA', text='Illustrative example only.',
+            document_category='technical_report', verification_status='verified', review_tier='human_reviewed', is_demo=True,
+        )
+        result = analyse_project(self.project)
+        self.assertEqual(result.demo_evidence_count, 1)
+        # Demo evidence must not have flipped environmental_assessment, so harm_reduction
+        # should match the no-EIA baseline, not the +10 EIA bonus.
+        no_evidence_result = analyse_project(GoldProject.objects.create(name='Baseline', slug='baseline-no-evidence', commodity='energy', total_capex_usd=1000000))
+        self.assertEqual(result.harm_reduction_score, no_evidence_result.harm_reduction_score)
+
+    def test_pending_evidence_not_treated_as_verified_in_counts(self):
+        from capital_guardian.services.project_analysis import analyse_project
+        self.create_evidence(self.project, title='P', text='Pending real evidence, not yet reviewed.', verification_status='pending')
+        result = analyse_project(self.project)
+        self.assertEqual(result.pending_evidence_count, 1)
+        self.assertEqual(result.verified_evidence_count, 0)
+
+    def test_verified_evidence_counted_correctly(self):
+        from capital_guardian.services.project_analysis import analyse_project
+        self.create_evidence(self.project, title='V', text='Verified evidence.', verification_status='verified', review_tier='human_reviewed')
+        result = analyse_project(self.project)
+        self.assertEqual(result.verified_evidence_count, 1)
+
+    def test_methodology_and_limitations_present(self):
+        from capital_guardian.services.project_analysis import analyse_project
+        result = analyse_project(self.project)
+        self.assertIn('Mizan Engine', result.methodology)
+        self.assertTrue(len(result.limitations) > 0)
+        self.assertTrue(any('not a religious ruling' in lim for lim in result.limitations))
+
+    def test_full_integration_real_services_end_to_end(self):
+        """GoldProject -> EvidenceMemory -> evidence_for_project() -> build_project_input_from_evidence() -> score_project()."""
+        from capital_guardian.services.evidence import evidence_for_project
+        from capital_guardian.services.project_analysis import build_project_input_from_evidence
+        from mizan.project import score_project
+
+        self.create_evidence(self.project, title='Real', text='Real, verified evidence for integration test.', verification_status='verified', review_tier='human_reviewed')
+
+        evidence_qs = evidence_for_project(self.project)
+        self.assertEqual(evidence_qs.count(), 1)
+
+        project_input, meta = build_project_input_from_evidence(self.project)
+        self.assertEqual(len(meta.evidence_references), 1)
+
+        result = score_project(project_input)
+        self.assertIsNotNone(result.final_mizan_score)
+        self.assertEqual(result.data_source, 'project_model')
+
+
+class RunProjectAnalysisViewTests(TestCase):
+    """Vertical-slice PR 2 — staff-only 'Run Project Analysis' UI."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_analysis', 'staff_a@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_analysis', 'user_a@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(name='Analysis View Test', slug='analysis-view-test', commodity='energy')
+
+    def _run_url(self, project=None):
+        return reverse('capital_guardian:run_project_analysis', args=[(project or self.project).slug])
+
+    def _centre_url(self, project=None):
+        return reverse('capital_guardian:evidence_centre', args=[(project or self.project).slug])
+
+    # ── Authentication and authorization ────────────────────────────────────
+
+    def test_anonymous_cannot_trigger_analysis(self):
+        r = self.client.post(self._run_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_cannot_trigger_analysis(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._run_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_idor_normal_user_with_known_slug_blocked(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._run_url(), follow=True)
+        self.assertNotContains(r, 'Final Mizan Score')
+
+    def test_staff_can_access_and_button_visible(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._centre_url())
+        self.assertContains(r, 'Run Project Analysis')
+
+    def test_non_staff_does_not_see_run_button(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self._centre_url())
+        self.assertNotContains(r, 'Run Project Analysis')
+
+    # ── HTTP safety ──────────────────────────────────────────────────────────
+
+    def test_get_does_not_trigger_analysis(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._run_url())
+        self.assertEqual(r.status_code, 302)
+
+    def test_post_triggers_analysis(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._run_url())
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Final Mizan Score')
+
+    def test_csrf_enforced(self):
+        csrf_client = Client(enforce_csrf_checks=True, SERVER_NAME='localhost')
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._run_url())
+        self.assertEqual(r.status_code, 403)
+
+    def test_invalid_project_returns_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(reverse('capital_guardian:run_project_analysis', args=['does-not-exist']))
+        self.assertEqual(r.status_code, 404)
+
+    def test_no_raw_exception_leakage(self):
+        from unittest import mock
+        self.client.force_login(self.staff)
+        with mock.patch(
+            'capital_guardian.services.project_analysis.analyse_project',
+            side_effect=RuntimeError('unexpected internal boom'),
+        ):
+            r = self.client.post(self._run_url(), follow=True)
+        self.assertContains(r, 'Something went wrong running the project analysis')
+        self.assertNotContains(r, 'unexpected internal boom')
+        self.assertNotContains(r, 'Traceback')
+
+    # ── Content ──────────────────────────────────────────────────────────────
+
+    def test_evidence_references_visible(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(self.project, title='T', text='Some real evidence for visibility test.')
+        self.client.force_login(self.staff)
+        r = self.client.post(self._run_url())
+        self.assertContains(r, f'gold_intelligence.GoldProject:{self.project.pk}')
+
+    def test_warnings_visible(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._run_url())
+        self.assertContains(r, 'No project-scoped evidence exists yet')
+
+    def test_methodology_visible(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._run_url())
+        self.assertContains(r, 'Mizan Engine')
+
+    def test_demo_evidence_count_visible(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(self.project, title='T', text='Illustrative demo example only.', is_demo=True)
+        self.client.force_login(self.staff)
+        r = self.client.post(self._run_url())
+        self.assertContains(r, 'Illustrative / Demo')
+
+    def test_no_forbidden_religious_ruling_language(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._run_url(), follow=True)
+        body = r.content.decode()
+        for forbidden in ('Shariah-compliant', 'Quranically approved', 'Officially validated', 'AI verified'):
+            self.assertNotIn(forbidden, body)
+
+    def test_no_cross_project_evidence_in_analysis(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        other = GoldProject.objects.create(name='Other Analysis View Project', slug='other-analysis-view-project')
+        create_memory_from_manual_project_evidence(other, title='T', text='Belongs only to the other project.')
+        self.client.force_login(self.staff)
+        r = self.client.post(self._run_url())
+        self.assertNotContains(r, f'gold_intelligence.GoldProject:{other.pk}')
