@@ -479,3 +479,66 @@ class AdminTests(TestCase):
         r = self.client.get('/admin/gold_intelligence/capitalbudgetline/')
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Test Line')
+
+
+class SeedCleanHeatingPilotTests(TestCase):
+    """Vertical-slice PR 1 — the Almaty Clean Heating Pilot project anchor."""
+
+    PILOT_SLUG = 'almaty-clean-heating-pilot-200-homes'
+
+    def test_creates_the_pilot_project(self):
+        call_command('seed_clean_heating_pilot')
+        project = GoldProject.objects.get(slug=self.PILOT_SLUG)
+        self.assertEqual(project.name, 'Almaty Clean Heating Pilot — 200 Homes')
+        self.assertEqual(project.commodity, 'other')
+        self.assertTrue(project.is_demo)
+
+    def test_idempotent_no_duplicates(self):
+        call_command('seed_clean_heating_pilot')
+        call_command('seed_clean_heating_pilot')
+        self.assertEqual(GoldProject.objects.filter(slug=self.PILOT_SLUG).count(), 1)
+
+    def test_no_gold_specific_fields_populated(self):
+        """The pilot must never carry fabricated gold/technical/financial figures."""
+        call_command('seed_clean_heating_pilot')
+        project = GoldProject.objects.get(slug=self.PILOT_SLUG)
+        for field in (
+            'ore_grade_g_per_tonne', 'resource_tonnes', 'recovery_rate_pct',
+            'mine_life_years', 'expected_annual_production_oz',
+            'total_capex_usd', 'annual_opex_usd', 'cash_cost_usd_per_oz',
+            'aisc_usd_per_oz', 'gold_price_assumption_usd_per_oz', 'discount_rate_pct',
+            'total_committed_capital_usd', 'insurance_coverage_usd',
+        ):
+            self.assertIsNone(getattr(project, field), f'{field} must be null, never fabricated')
+
+    def test_rerun_resets_hand_edited_fabricated_value_to_null(self):
+        call_command('seed_clean_heating_pilot')
+        project = GoldProject.objects.get(slug=self.PILOT_SLUG)
+        project.total_capex_usd = 999999.0
+        project.save(update_fields=['total_capex_usd'])
+        call_command('seed_clean_heating_pilot')
+        project.refresh_from_db()
+        self.assertIsNone(project.total_capex_usd)
+
+    def test_attaches_kazakhstan_country_when_present(self):
+        call_command('seed_countries')
+        call_command('seed_clean_heating_pilot')
+        project = GoldProject.objects.get(slug=self.PILOT_SLUG)
+        self.assertIsNotNone(project.country)
+        self.assertEqual(project.country.iso_code, 'KZ')
+
+    def test_degrades_safely_without_kazakhstan_country(self):
+        from io import StringIO
+        out = StringIO()
+        call_command('seed_clean_heating_pilot', stdout=out)
+        project = GoldProject.objects.get(slug=self.PILOT_SLUG)
+        self.assertIsNone(project.country)
+        self.assertIn('creating the pilot without a country link', out.getvalue())
+
+    def test_output_reports_created_then_updated(self):
+        from io import StringIO
+        out1, out2 = StringIO(), StringIO()
+        call_command('seed_clean_heating_pilot', stdout=out1)
+        call_command('seed_clean_heating_pilot', stdout=out2)
+        self.assertIn('created', out1.getvalue())
+        self.assertIn('already existed', out2.getvalue())

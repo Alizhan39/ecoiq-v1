@@ -557,6 +557,31 @@ class EvidenceServiceTests(TestCase):
         self.assertEqual(evidence_service.related_object_label(''), 'Not linked')
         self.assertEqual(evidence_service.related_object_label('some.Unknown:9'), 'some.Unknown #9')
 
+    def test_evidence_for_project_gathers_manual_project_evidence(self):
+        """Vertical-slice PR 1 — project-level manual evidence (no child object) is retrieved too."""
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(self.project, title='T', text='Manual project-level evidence.')
+        self.assertEqual(evidence_service.evidence_for_project(self.project).count(), 1)
+
+    def test_evidence_for_project_no_cross_project_leakage_for_manual_evidence(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        other = GoldProject.objects.create(name='Other Evidence Test', slug='other-evidence-test')
+        create_memory_from_manual_project_evidence(self.project, title='T', text='Project A evidence.')
+        create_memory_from_manual_project_evidence(other, title='T', text='Project B evidence.')
+        self.assertEqual(evidence_service.evidence_for_project(self.project).count(), 1)
+        self.assertEqual(evidence_service.evidence_for_project(other).count(), 1)
+
+    def test_evidence_for_project_zero_evidence_is_honest_empty_queryset(self):
+        empty_project = GoldProject.objects.create(name='No Evidence Project', slug='no-evidence-project')
+        self.assertEqual(evidence_service.evidence_for_project(empty_project).count(), 0)
+
+    def test_evidence_for_project_orders_and_returns_all_multiple_rows(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(self.project, title='T1', text='First piece of evidence.')
+        create_memory_from_manual_project_evidence(self.project, title='T2', text='Second piece of evidence.')
+        create_memory_from_manual_project_evidence(self.project, title='T3', text='Third piece of evidence.')
+        self.assertEqual(evidence_service.evidence_for_project(self.project).count(), 3)
+
 
 class EvidenceMemoryModelPhase2Tests(TestCase):
     def test_integrity_reference_computed_on_save(self):
@@ -1328,3 +1353,164 @@ class Phase3SeedCommandFieldTests(TestCase):
         call_command('seed_capital_guardian_demo')
         project = GoldProject.objects.get(slug='kz-gold-project-01')
         self.assertTrue(project.governance.dividend_policy_notes)
+
+
+class AddProjectEvidenceViewTests(TestCase):
+    """Vertical-slice PR 1 — staff-only manual project evidence intake UI."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_evidence', 'staff@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_evidence', 'user@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(name='Evidence Intake Test', slug='evidence-intake-test')
+        self.other_project = GoldProject.objects.create(name='Other Intake Project', slug='other-intake-project')
+
+    def _centre_url(self, project=None):
+        return reverse('capital_guardian:evidence_centre', args=[(project or self.project).slug])
+
+    def _add_url(self, project=None):
+        return reverse('capital_guardian:add_project_evidence', args=[(project or self.project).slug])
+
+    def _valid_data(self, **overrides):
+        data = {
+            'title': 'Coal usage estimate', 'text': 'Approx. 2 tonnes of coal per household per winter.',
+            'source_url': '', 'source_type': 'manual', 'document_category': 'other',
+            'verification_status': 'pending', 'review_tier': 'uploaded', 'classification': 'estimated',
+        }
+        data.update(overrides)
+        return data
+
+    # ── Authentication and authorization ────────────────────────────────────
+
+    def test_anonymous_cannot_create_evidence(self):
+        r = self.client.post(self._add_url(), self._valid_data())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertEqual(EvidenceMemory.objects.count(), 0)
+
+    def test_non_staff_user_cannot_create_evidence(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._add_url(), self._valid_data())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertEqual(EvidenceMemory.objects.count(), 0)
+
+    def test_staff_user_sees_intake_form_on_evidence_centre(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._centre_url())
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Add Evidence Record')
+
+    def test_non_staff_user_does_not_see_intake_form(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self._centre_url())
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Add Evidence Record')
+
+    def test_idor_normal_user_with_known_project_slug_is_blocked(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._add_url(), self._valid_data())
+        self.assertEqual(EvidenceMemory.objects.count(), 0)
+
+    # ── HTTP safety ──────────────────────────────────────────────────────────
+
+    def test_get_to_add_url_does_not_create_evidence(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._add_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(EvidenceMemory.objects.count(), 0)
+
+    def test_post_creates_evidence(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(), self._valid_data())
+        self.assertEqual(EvidenceMemory.objects.count(), 1)
+
+    def test_csrf_enforced(self):
+        csrf_client = Client(enforce_csrf_checks=True, SERVER_NAME='localhost')
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._add_url(), self._valid_data())
+        self.assertEqual(r.status_code, 403)
+
+    def test_invalid_project_slug_returns_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:evidence_centre', args=['does-not-exist']))
+        self.assertEqual(r.status_code, 404)
+        r2 = self.client.post(reverse('capital_guardian:add_project_evidence', args=['does-not-exist']), self._valid_data())
+        self.assertEqual(r2.status_code, 404)
+
+    def test_invalid_form_rejected_safely(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._add_url(), self._valid_data(title=''))
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(EvidenceMemory.objects.count(), 0)
+
+    def test_verified_without_review_rejected_safely(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._add_url(), self._valid_data(verification_status='verified', review_tier='uploaded'))
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(EvidenceMemory.objects.count(), 0)
+
+    # ── UX ───────────────────────────────────────────────────────────────────
+
+    def test_success_message_shown(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._add_url(), self._valid_data(), follow=True)
+        self.assertContains(r, 'Evidence added')
+
+    def test_created_evidence_visible_on_project_page(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(), self._valid_data(title='Coal usage estimate'), follow=True)
+        r = self.client.get(self._centre_url())
+        self.assertContains(r, 'Coal usage estimate')
+
+    def test_demo_label_visible_for_illustrative_evidence(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(), self._valid_data(classification='illustrative'))
+        r = self.client.get(self._centre_url())
+        self.assertContains(r, 'ILLUSTRATIVE / DEMO')
+
+    def test_no_demo_label_for_real_evidence(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(), self._valid_data(classification='real'))
+        r = self.client.get(self._centre_url())
+        self.assertNotContains(r, 'ILLUSTRATIVE / DEMO')
+
+    def test_no_raw_exception_leakage_on_unexpected_failure(self):
+        from unittest import mock
+        self.client.force_login(self.staff)
+        with mock.patch(
+            'evidence_memory.services.memory.create_memory_from_manual_project_evidence',
+            side_effect=RuntimeError('unexpected internal boom'),
+        ):
+            r = self.client.post(self._add_url(), self._valid_data(), follow=True)
+        self.assertContains(r, 'Something went wrong adding this evidence')
+        self.assertNotContains(r, 'unexpected internal boom')
+        self.assertNotContains(r, 'Traceback')
+        self.assertEqual(EvidenceMemory.objects.count(), 0)
+
+    def test_project_a_evidence_not_visible_on_project_b_page(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(self.project), self._valid_data(title='Only in project A'))
+        r = self.client.get(self._centre_url(self.other_project))
+        self.assertNotContains(r, 'Only in project A')
+
+    # ── Integration (real service, real retrieval) ──────────────────────────
+
+    def test_full_integration_real_service_and_real_retrieval(self):
+        from capital_guardian.services import evidence as evidence_service
+        self.client.force_login(self.staff)
+        r = self.client.post(self._add_url(), self._valid_data(
+            title='Household coal survey', text='Field survey of coal consumption across the pilot area.',
+            verification_status='verified', review_tier='human_reviewed', classification='real',
+        ), follow=True)
+        self.assertEqual(r.status_code, 200)
+
+        evidence_qs = evidence_service.evidence_for_project(self.project)
+        self.assertEqual(evidence_qs.count(), 1)
+        row = evidence_qs.first()
+        self.assertIn('Household coal survey', row.text_chunk)
+        self.assertEqual(row.verification_status, 'verified')
+        self.assertEqual(row.reviewer, self.staff)
+        self.assertFalse(row.is_demo)

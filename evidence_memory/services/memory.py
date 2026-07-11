@@ -153,6 +153,75 @@ def create_memory_from_league_evidence(evidence):
     return memory
 
 
+# Review tiers that can honestly back a 'verified' status — a row whose
+# strongest recorded scrutiny is 'uploaded'/'system_checked' has not been
+# verified by anyone, and this service refuses to store that contradiction.
+_TIERS_SUPPORTING_VERIFIED = {'human_reviewed', 'independently_verified'}
+
+
+def create_memory_from_manual_project_evidence(
+    project, *, title, text, source_url='', source_type='manual',
+    document_category='other', verification_status='pending',
+    review_tier='uploaded', is_demo=False, date_collected=None, reviewer=None,
+):
+    """
+    Manual/document-assisted evidence intake for a project anchored on a
+    gold_intelligence.GoldProject row (the temporary generic project anchor
+    per docs/adr-0001). Vertical-slice PR 1.
+
+    Unlike the harvester/hikma/league syncs above, MANY manual evidence rows
+    legitimately share one project, so (source_type, source_reference) can't
+    be the idempotency key here. Instead the key is
+    (source_reference, sha256(text_chunk)) — submitting the exact same text
+    for the same project updates the existing row's metadata rather than
+    duplicating it, while genuinely different text always creates a new row.
+    The hash is the same computation EvidenceMemory.save() stores as
+    integrity_reference, so the dedup key and the stored integrity value can
+    never disagree.
+
+    No company FK is ever set — a project is not a companies.CompanyProfile,
+    and league-style pk-confusion is exactly what the soft-reference
+    convention exists to avoid. `country` IS set from project.country when
+    present: GoldProject.country and EvidenceMemory.country are the same
+    real model (countries.CountryProfile), and evidence about a project in
+    Kazakhstan genuinely is Kazakhstan-scoped evidence.
+    """
+    import hashlib
+
+    if verification_status == 'verified' and review_tier not in _TIERS_SUPPORTING_VERIFIED:
+        raise ValueError(
+            f"verification_status='verified' requires review_tier in "
+            f"{sorted(_TIERS_SUPPORTING_VERIFIED)} — got {review_tier!r}. A row nobody "
+            f"has reviewed cannot honestly be stored as verified."
+        )
+
+    title = (title or '').strip()
+    text = (text or '').strip()
+    if not text:
+        raise ValueError('Evidence text is required — an empty evidence record has no value to store.')
+    text_chunk = f'{title} — {text}' if title else text
+
+    source_reference = f'gold_intelligence.GoldProject:{project.pk}'
+    content_hash = hashlib.sha256(text_chunk.encode('utf-8')).hexdigest()
+
+    memory, _ = EvidenceMemory.objects.get_or_create(
+        source_reference=source_reference, integrity_reference=content_hash,
+        defaults={'text_chunk': text_chunk, 'source_type': source_type},
+    )
+    memory.text_chunk = text_chunk
+    memory.source_type = source_type
+    memory.source_url = source_url or ''
+    memory.document_category = document_category
+    memory.verification_status = verification_status
+    memory.review_tier = review_tier
+    memory.is_demo = is_demo
+    memory.country = project.country
+    memory.date_collected = date_collected
+    memory.reviewer = reviewer
+    _embed_and_save(memory)
+    return memory
+
+
 def _embed_and_save(memory):
     try:
         embedding = compute_embedding(memory.text_chunk)
