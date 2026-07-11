@@ -880,3 +880,277 @@ def audit_history_view(request, slug):
         'project': project, 'entries': list(entries), 'event_types': AuditLogEntry.EVENT_TYPE_CHOICES,
         'selected_event_type': event_type_filter,
     })
+
+
+# ── Vertical-slice PR 6 — Real-World Monitoring + Verified Capital Outcome ──
+# CAPITAL GUARDIAN -> HUMAN-ENTERED IMPLEMENTATION MONITORING -> EXPECTED VS
+# ACTUAL -> HUMAN-REVIEWED VERIFIED CAPITAL OUTCOME. See PR6 audit (capital_
+# guardian/services/execution_monitoring.py docstring) for why no schema
+# changes were needed and why EquipmentSpec is deliberately not used here.
+
+def _monitoring_context(request, project, *, trace_form=None, milestone_form=None, evidence_form=None):
+    from capital_guardian.services import execution_monitoring
+
+    decisions = list(execution_monitoring.capital_decisions_for_project(project))
+    decision_rows = [
+        {'decision': d, 'expected_vs_actual': execution_monitoring.expected_vs_actual(d)}
+        for d in decisions
+    ]
+    red_flag_engine.detect_red_flags(project)
+    return {
+        'project': project,
+        'governance': getattr(project, 'governance', None),
+        'capital_summary': execution_monitoring.capital_summary(project),
+        'milestones': list(project.timeline_milestones.all()),
+        'insurance_coverage_usd': project.insurance_coverage_usd,
+        'insurance_expiry_date': project.insurance_expiry_date,
+        'open_red_flags': list(project.red_flags.filter(resolution_status='open')),
+        'implementation_evidence': list(evidence_service.evidence_for_project(project).select_related('reviewer')),
+        'decision_rows': decision_rows,
+        'recent_audit_entries': list(project.audit_log_entries.select_related('changed_by')[:10]),
+        'is_staff': request.user.is_staff,
+        'trace_form': trace_form if request.user.is_staff else None,
+        'milestone_form': milestone_form if request.user.is_staff else None,
+        'evidence_form': evidence_form if request.user.is_staff else None,
+    }
+
+
+def project_monitoring_view(request, slug):
+    """
+    The Task 3 monitoring page: PROJECT STATUS, CAPITAL COMMITTED/DEPLOYED/
+    REMAINING, MILESTONES, INSURANCE, OPEN RED FLAGS, IMPLEMENTATION EVIDENCE,
+    EXPECTED VS ACTUAL OUTCOME, VERIFICATION STATUS, AUDIT HISTORY — one
+    continuous "Capital Guardian tracks execution after approval" workflow.
+    Read-only for everyone; mutation forms are rendered only for staff (the
+    real authorization check lives on each POST-only view below, never in
+    the template).
+    """
+    from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
+
+    project = _project_or_404(slug)
+    context = _monitoring_context(
+        request, project,
+        trace_form=CapitalTraceEntryForm(project=project),
+        milestone_form=MilestoneForm(),
+        evidence_form=ImplementationEvidenceForm(),
+    )
+    return render(request, 'capital_guardian/project_monitoring.html', context)
+
+
+@staff_member_required(login_url='/login/')
+def add_capital_trace_entry(request, slug):
+    """Staff-only, POST-only. Adds one real, human-entered CapitalTraceEntry
+    — never auto-approved (approval_status/payment_status default to their
+    least-claimed honest values in the form itself)."""
+    from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
+    from capital_guardian.models import CapitalTraceEntry
+
+    project = _project_or_404(slug)
+    if request.method != 'POST':
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    form = CapitalTraceEntryForm(request.POST, project=project)
+    if not form.is_valid():
+        context = _monitoring_context(
+            request, project, trace_form=form, milestone_form=MilestoneForm(), evidence_form=ImplementationEvidenceForm(),
+        )
+        return render(request, 'capital_guardian/project_monitoring.html', context)
+
+    try:
+        CapitalTraceEntry.objects.create(project=project, **form.cleaned_data)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure creating CapitalTraceEntry for project %s', project.pk)
+        messages.error(request, 'Something went wrong recording this capital movement. Nothing was saved.')
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    messages.success(request, 'Capital trace entry recorded.')
+    return redirect('capital_guardian:project_monitoring', slug=slug)
+
+
+@staff_member_required(login_url='/login/')
+def add_milestone(request, slug):
+    """Staff-only, POST-only. Creates one real, human-entered milestone —
+    never seeded as complete (MilestoneForm.clean() refuses a 'complete'
+    status without a real actual_end date)."""
+    from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
+    from gold_intelligence.models import MineTimelineMilestone
+
+    project = _project_or_404(slug)
+    if request.method != 'POST':
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    form = MilestoneForm(request.POST)
+    if not form.is_valid():
+        context = _monitoring_context(
+            request, project, trace_form=CapitalTraceEntryForm(project=project), milestone_form=form,
+            evidence_form=ImplementationEvidenceForm(),
+        )
+        return render(request, 'capital_guardian/project_monitoring.html', context)
+
+    try:
+        MineTimelineMilestone.objects.create(project=project, **form.cleaned_data)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure creating milestone for project %s', project.pk)
+        messages.error(request, 'Something went wrong recording this milestone. Nothing was saved.')
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    messages.success(request, 'Milestone recorded.')
+    return redirect('capital_guardian:project_monitoring', slug=slug)
+
+
+def _milestone_or_404(project, milestone_id):
+    return get_object_or_404(project.timeline_milestones, pk=milestone_id)
+
+
+@staff_member_required(login_url='/login/')
+def update_milestone(request, slug, milestone_id):
+    """Staff-only, POST-only. Updates an existing, project-scoped milestone
+    (e.g. moving it from 'in_progress' to 'complete' once a real actual_end
+    date is known, or to 'delayed'). Never silently completes a milestone —
+    the same MilestoneForm.clean() guard applies."""
+    from capital_guardian.forms import MilestoneForm
+
+    project = _project_or_404(slug)
+    milestone = _milestone_or_404(project, milestone_id)
+    if request.method != 'POST':
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    form = MilestoneForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, 'Could not update milestone — please check the form and try again.')
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    for field, value in form.cleaned_data.items():
+        setattr(milestone, field, value)
+    milestone.save()
+    messages.success(request, 'Milestone updated.')
+    return redirect('capital_guardian:project_monitoring', slug=slug)
+
+
+@staff_member_required(login_url='/login/')
+def add_implementation_evidence(request, slug):
+    """Staff-only, POST-only. Reuses evidence_memory's existing manual-
+    evidence-intake service exactly (see PR1) — implementation evidence is
+    an ordinary, project-scoped EvidenceMemory row, not a second model."""
+    from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+
+    from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
+
+    project = _project_or_404(slug)
+    if request.method != 'POST':
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    form = ImplementationEvidenceForm(request.POST)
+    if not form.is_valid():
+        context = _monitoring_context(
+            request, project, trace_form=CapitalTraceEntryForm(project=project), milestone_form=MilestoneForm(),
+            evidence_form=form,
+        )
+        return render(request, 'capital_guardian/project_monitoring.html', context)
+
+    data = form.cleaned_data
+    try:
+        memory = create_memory_from_manual_project_evidence(
+            project, title=data['title'], text=data['text'], source_url=data['source_url'],
+            document_category=data['document_category'], verification_status=data['verification_status'],
+            review_tier=data['review_tier'], is_demo=(data['classification'] == 'illustrative'),
+            reviewer=request.user if data['review_tier'] in ('human_reviewed', 'independently_verified') else None,
+        )
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure recording implementation evidence for project %s', project.pk)
+        messages.error(request, 'Something went wrong recording this evidence. Nothing was saved.')
+        return redirect('capital_guardian:project_monitoring', slug=slug)
+
+    messages.success(request, f'Implementation evidence recorded ({memory.get_verification_status_display()}).')
+    return redirect('capital_guardian:project_monitoring', slug=slug)
+
+
+def _monitoring_decision_or_404(project, decision_id):
+    """Independently confirms the decision's free-text project name matches
+    this exact project — never trusts a client-submitted (slug, decision_id)
+    pair (the same discipline as _loss_or_404/_option_or_404 in PR3/PR4)."""
+    from django.http import Http404
+
+    from waste_to_value_capital_allocation_engine.models import CapitalAllocationDecision
+
+    decision = get_object_or_404(
+        CapitalAllocationDecision.objects.select_related('intervention', 'verified_outcome'), pk=decision_id,
+    )
+    if decision.project != project.name:
+        raise Http404('No capital allocation decision found for this project.')
+    return decision
+
+
+@staff_member_required(login_url='/login/')
+def record_outcome_confirm(request, slug, decision_id):
+    """GET-only, staff-only. Read-only preview of the expected-vs-actual
+    comparison and the outcome-recording form — nothing is persisted here."""
+    from capital_guardian.forms import OutcomeMonitoringForm
+    from capital_guardian.services import execution_monitoring
+
+    project = _project_or_404(slug)
+    decision = _monitoring_decision_or_404(project, decision_id)
+    return render(request, 'capital_guardian/record_outcome_confirm.html', {
+        'project': project, 'decision': decision,
+        'expected_vs_actual': execution_monitoring.expected_vs_actual(decision),
+        'governance': getattr(project, 'governance', None),
+        'outcome_form': OutcomeMonitoringForm(),
+    })
+
+
+@staff_member_required(login_url='/login/')
+def record_outcome_execute(request, slug, decision_id):
+    """
+    POST-only, staff-only. Independently re-resolves project/decision from
+    the URL and delegates all persistence to capital_guardian.services.
+    execution_monitoring.record_monitoring_outcome(), which itself delegates
+    to the existing, unmodified record_verified_outcome() service. mrv_status
+    can never be 'verified' from this form (see PR6 audit) — that transition
+    happens only through the existing VerifiedCapitalOutcome admin page.
+    """
+    from capital_guardian.forms import OutcomeMonitoringForm
+    from capital_guardian.services import execution_monitoring
+
+    project = _project_or_404(slug)
+    decision = _monitoring_decision_or_404(project, decision_id)
+    if request.method != 'POST':
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    form = OutcomeMonitoringForm(request.POST)
+    if not form.is_valid():
+        return render(request, 'capital_guardian/record_outcome_confirm.html', {
+            'project': project, 'decision': decision,
+            'expected_vs_actual': execution_monitoring.expected_vs_actual(decision),
+            'governance': getattr(project, 'governance', None),
+            'outcome_form': form,
+        })
+
+    data = form.cleaned_data
+    try:
+        execution_monitoring.record_monitoring_outcome(
+            decision, mrv_status=data['mrv_status'], evidence_quality=data['evidence_quality'],
+            capex_actual=data['capex_actual'], opex_actual=data['opex_actual'] or 0,
+            loss_avoided_actual=data['loss_avoided_actual'], savings_actual=data['savings_actual'] or 0,
+            reviewer_note=data['reviewer_note'],
+        )
+    except execution_monitoring.VerificationNotAllowedHereError as exc:
+        messages.error(request, str(exc))
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure recording outcome for decision %s', decision_id)
+        messages.error(request, 'Something went wrong recording this outcome. Nothing was saved.')
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    messages.success(
+        request,
+        'Outcome recorded. This is an estimated/reported result, not an independently verified one — '
+        'independent verification is a separate action.',
+    )
+    return redirect('capital_guardian:project_monitoring', slug=slug)

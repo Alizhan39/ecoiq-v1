@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Record Outcome — {{ decision.intervention.title }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Human-entered actual implementation outcome for {{ decision.intervention.title }} — reported, not automatically verified.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:project_monitoring' project.slug %}">← Back to Monitoring</a>
+
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · RECORD OUTCOME</span>
+  <h1 class="gold-h1">Record Outcome</h1>
+  <p class="gold-sub">{{ project.name }} — {{ decision.intervention.title }}</p>
+
+  {% if messages %}
+  <ul style="list-style:none;padding:0;">
+    {% for message in messages %}<li class="iq-badge iq-badge-review" style="margin-bottom:0.5rem;">{{ message }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Expected (from the approved Capital Allocation Decision)</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Expected CAPEX</div><div class="gold-card-value">£{{ expected_vs_actual.expected_capex|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Annual Savings</div><div class="gold-card-value">£{{ expected_vs_actual.expected_savings|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Loss Avoided</div><div class="gold-card-value">£{{ expected_vs_actual.expected_loss_avoided|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Payback</div><div class="gold-card-value">{{ expected_vs_actual.expected_payback_months|default:"—" }} months</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Enter Actual Results</h2>
+    <p class="gold-sub" style="font-size:0.82rem;">
+      This creates or updates a real VerifiedCapitalOutcome record, always linked to this exact decision (at most one
+      per decision). Submitting this form can never mark the result <strong>independently verified</strong> —
+      "Verified" status is only ever set through a separate, existing review action. Illustrative/demo evidence or
+      missing evidence can never honestly support a verified claim.
+    </p>
+    <form method="post" action="{% url 'capital_guardian:record_outcome_execute' project.slug decision.pk %}" style="margin-top:1rem;display:grid;gap:0.6rem;max-width:520px;">
+      {% csrf_token %}
+      {{ outcome_form.as_p }}
+      <button type="submit" class="gold-btn gold-btn-primary">Record Outcome</button>
+    </form>
+  </section>
+
+  {% if governance %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Governance Context</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">This project is under active Capital Guardian monitoring (governance record exists).</p>
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:governance' project.slug %}">View Governance →</a></div>
+  </section>
+  {% endif %}
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}
