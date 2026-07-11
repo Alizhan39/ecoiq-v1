@@ -87,6 +87,25 @@ CAPITAL_TRACE_ENTRY_FIELDS = [
 ]
 
 
+def _resolve_verified_outcome_project(pk):
+    """Vertical-slice PR 7 — a VerifiedCapitalOutcome has no direct GoldProject
+    FK (CapitalAllocationDecision.project is a plain-text name, see PR5's
+    capital_guardian_handoff.py docstring); resolved via the same public,
+    exact-match find_matching_gold_project() rather than a second lookup."""
+    from waste_to_value_capital_allocation_engine.models import VerifiedCapitalOutcome
+    from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+        AmbiguousProjectMatchError, find_matching_gold_project,
+    )
+
+    outcome = VerifiedCapitalOutcome.objects.filter(pk=pk).select_related('decision').first()
+    if outcome is None:
+        return None
+    try:
+        return find_matching_gold_project(outcome.decision)
+    except AmbiguousProjectMatchError:
+        return None
+
+
 def _resolve_project_from_source_reference(source_reference):
     """Best-effort project lookup for an EvidenceMemory row's soft pointer —
     returns None (never guesses) for anything outside Capital Guardian's
@@ -106,6 +125,7 @@ def _resolve_project_from_source_reference(source_reference):
         'capital_guardian.RedFlag': lambda: getattr(RedFlag.objects.filter(pk=pk).first(), 'project', None),
         'capital_guardian.OperationalSnapshot': lambda: getattr(OperationalSnapshot.objects.filter(pk=pk).first(), 'project', None),
         'capital_guardian.ProjectGovernance': lambda: getattr(ProjectGovernance.objects.filter(pk=pk).first(), 'project', None),
+        'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome': lambda: _resolve_verified_outcome_project(pk),
     }
     resolver = resolvers.get(key)
     if resolver is None:

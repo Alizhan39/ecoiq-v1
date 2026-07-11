@@ -48,6 +48,39 @@
     <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:governance' project.slug %}">View Governance →</a></div>
   </section>
   {% endif %}
+
+  {% if learning_feedback.outcome_exists %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Learning Feedback</h2>
+    <p class="gold-sub" style="font-size:0.82rem;">
+      Make this reviewed outcome available as evidence for future EcoIQ decisions. This stores a real summary of
+      this outcome for retrieval — it does not retrain any model, and EcoIQ does not learn automatically.
+    </p>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Outcome Status</div><div class="gold-card-value">{{ learning_feedback.outcome.get_verified_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">In Evidence Memory?</div><div class="gold-card-value">{% if learning_feedback.already_synced %}Yes{% else %}Not yet{% endif %}</div></div>
+      {% if learning_feedback.memory %}
+      <div class="gold-card"><div class="gold-card-label">Memory Evidence Status</div><div class="gold-card-value">{{ learning_feedback.memory.get_verification_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Demo / Illustrative?</div><div class="gold-card-value">{% if learning_feedback.memory.is_demo %}Yes{% else %}No{% endif %}</div></div>
+      {% endif %}
+    </div>
+    {% if learning_feedback.blockers %}
+    <ul class="gc-plain-list" style="margin-top:0.6rem;">{% for b in learning_feedback.blockers %}<li>{{ b }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if learning_feedback.memory %}
+    <p class="gold-sub" style="font-size:0.8rem;margin-top:0.6rem;">
+      Eligible for retrieval by future projects: {% if learning_feedback.memory.verification_status == 'rejected' %}No (rejected){% else %}Yes{% endif %}
+    </p>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">View in Evidence Centre →</a>
+    </div>
+    {% endif %}
+    <form method="post" action="{% url 'capital_guardian:sync_outcome_to_evidence_memory' project.slug decision.pk %}" style="margin-top:0.75rem;">
+      {% csrf_token %}
+      <button type="submit" class="gold-btn gold-btn-primary">{% if learning_feedback.already_synced %}Update Evidence Memory{% else %}Add Outcome to Evidence Memory{% endif %}</button>
+    </form>
+  </section>
+  {% endif %}
 </div>
 
 {% include 'gold_intelligence/_styles.html' %}

@@ -3596,3 +3596,250 @@ class MonitoringHonestyTests(TestCase):
         content = r.content.decode()
         for phrase in self.FORBIDDEN_PHRASES:
             self.assertNotIn(phrase, content)
+
+
+class SyncOutcomeToEvidenceMemoryViewTests(TestCase):
+    """Vertical-slice PR 7 — sync_outcome_to_evidence_memory view."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_pr7_sync', 'staff_pr7_sync@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_pr7_sync', 'normal_pr7_sync@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(name='Other PR7 Project', slug='other-pr7-project', commodity='other')
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='Pending decision')
+        self.decision.approval_status = 'approved'
+        self.decision.save(update_fields=['approval_status'])
+        from capital_guardian.services.execution_monitoring import record_monitoring_outcome
+        self.outcome = record_monitoring_outcome(
+            self.decision, mrv_status='baseline_only', capex_actual=21000, loss_avoided_actual=9500,
+        )
+
+    def _sync_url(self, project=None, decision=None):
+        return reverse('capital_guardian:sync_outcome_to_evidence_memory', args=[
+            (project or self.project).slug, (decision or self.decision).pk,
+        ])
+
+    def _confirm_url(self):
+        return reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, self.decision.pk])
+
+    def test_staff_can_sync(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._sync_url(), follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(VerifiedCapitalOutcome.objects.filter(pk=self.outcome.pk).exists())
+        self.assertTrue(EvidenceMemory.objects.filter(
+            source_reference=f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{self.outcome.pk}',
+        ).exists())
+
+    def test_non_staff_blocked(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._sync_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertFalse(EvidenceMemory.objects.filter(
+            source_reference=f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{self.outcome.pk}',
+        ).exists())
+
+    def test_anonymous_blocked(self):
+        r = self.client.post(self._sync_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_get_cannot_sync(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._sync_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(EvidenceMemory.objects.filter(
+            source_reference=f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{self.outcome.pk}',
+        ).exists())
+
+    def test_csrf_enforced(self):
+        csrf_client = Client(SERVER_NAME='localhost', enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._sync_url())
+        self.assertEqual(r.status_code, 403)
+
+    def test_cross_project_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._sync_url(project=self.other_project))
+        self.assertEqual(r.status_code, 404)
+
+    def test_missing_outcome_handled_safely(self):
+        other_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='No outcome yet', intervention_type='prevention',
+        )
+        other_decision = create_governed_investment_case(other_option, decision_text='No outcome')
+        self.client.force_login(self.staff)
+        r = self.client.post(self._sync_url(decision=other_decision), follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(EvidenceMemory.objects.filter(
+            source_reference__contains=f'VerifiedCapitalOutcome:{other_decision.pk}',
+        ).exists())
+
+    def test_idempotent_repeated_sync_no_duplicate(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._sync_url())
+        self.client.post(self._sync_url())
+        self.assertEqual(EvidenceMemory.objects.filter(
+            source_reference=f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{self.outcome.pk}',
+        ).count(), 1)
+
+    def test_already_synced_state_shown_on_confirm_page(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url())
+        self.assertContains(r, 'Add Outcome to Evidence Memory')
+        self.assertNotContains(r, 'Update Evidence Memory')
+
+        self.client.post(self._sync_url())
+        r = self.client.get(self._confirm_url())
+        self.assertContains(r, 'Update Evidence Memory')
+
+
+class ProjectAnalysisRetrievalTests(TestCase):
+    """Vertical-slice PR 7 — Task 8: relevant verified outcome retrieval on the Project Analysis page."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_user('staff_pr7_analysis', 'staff_pr7_analysis@ecoiq.uk', 'password123', is_staff=True)
+        self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.staff)
+
+        self.prior_project = GoldProject.objects.create(
+            name='Prior Analysis Project', slug='prior-analysis-project', commodity='other', is_demo=False,
+        )
+        loss = OperationalLoss.objects.create(
+            project=self.prior_project.name, title='Prior coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
+        )
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='Prior insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='Prior decision')
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+        # A 'verified' status only ever happens via the existing admin change
+        # form in production (PR6's execution_monitoring safety gate refuses
+        # it) — calling the underlying service directly here to set up an
+        # already-verified fixture is the honest equivalent of that admin action.
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        outcome = record_verified_outcome(
+            decision, option, loss_avoided_actual=9500, capex_actual=21000, mrv_status='verified', evidence_quality='strong',
+        )
+        from evidence_memory.services.memory import create_memory_from_verified_outcome
+        self.memory = create_memory_from_verified_outcome(outcome)
+
+        self.new_project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+
+    def test_analysis_page_shows_relevant_outcomes_section(self):
+        r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.new_project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Relevant Verified Outcomes from Prior Projects')
+
+    def test_no_guarantee_language_on_analysis_page(self):
+        r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.new_project.slug]))
+        content = r.content.decode()
+        self.assertNotIn('Guaranteed recommendation', content)
+        self.assertIn('not a guaranteed recommendation', content.lower())
+
+
+class OutcomeMemoryHonestyTests(TestCase):
+    """Vertical-slice PR 7 — Task 10: no automatic-learning claims anywhere in the new flow."""
+
+    FORBIDDEN_PHRASES = [
+        'Train the AI', 'Retrain the model', 'EcoIQ learned automatically',
+        'EcoIQ retrained itself', 'AI learned automatically', 'Model improved autonomously',
+        'guarantees future success',
+    ]
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_pr7_honesty', 'staff_pr7_honesty@ecoiq.uk', 'password123', is_staff=True)
+        self.client.force_login(self.staff)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='Pending decision')
+        self.decision.approval_status = 'approved'
+        self.decision.save(update_fields=['approval_status'])
+        from capital_guardian.services.execution_monitoring import record_monitoring_outcome
+        record_monitoring_outcome(self.decision, mrv_status='baseline_only', capex_actual=21000, loss_avoided_actual=9500)
+
+    def test_no_forbidden_claims_on_record_outcome_confirm_page(self):
+        r = self.client.get(reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, self.decision.pk]))
+        content = r.content.decode()
+        for phrase in self.FORBIDDEN_PHRASES:
+            self.assertNotIn(phrase, content)
+
+    def test_no_forbidden_claims_on_analysis_page(self):
+        r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.project.slug]))
+        content = r.content.decode()
+        for phrase in self.FORBIDDEN_PHRASES:
+            self.assertNotIn(phrase, content)
+
+
+class EvidenceMemoryLearningIntegrationTests(TestCase):
+    """Vertical-slice PR 7 — full chain: GoldProject -> ... -> VerifiedCapitalOutcome
+    -> EvidenceMemory -> Relevant Historical Outcome Retrieval."""
+
+    def test_full_chain(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        staff = User.objects.create_user('staff_pr7_full', 'staff_pr7_full@ecoiq.uk', 'password123', is_staff=True)
+        client = Client(SERVER_NAME='localhost')
+        client.force_login(staff)
+
+        project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+            is_demo=False,
+        )
+        loss = OperationalLoss.objects.create(
+            project=project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='Insulation Retrofit', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='Approved decision')
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+
+        client.post(reverse('capital_guardian:record_outcome_execute', args=[project.slug, decision.pk]), {
+            'capex_actual': '21000', 'opex_actual': '0', 'loss_avoided_actual': '9500', 'savings_actual': '0',
+            'mrv_status': 'baseline_only', 'evidence_quality': 'strong', 'reviewer_note': '',
+        })
+        client.post(reverse('capital_guardian:sync_outcome_to_evidence_memory', args=[project.slug, decision.pk]))
+
+        outcome = VerifiedCapitalOutcome.objects.get(decision=decision)
+        source_reference = f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{outcome.pk}'
+        self.assertTrue(EvidenceMemory.objects.filter(source_reference=source_reference).exists())
+
+        second_project = GoldProject.objects.create(
+            name='Second Heating Pilot', slug='second-heating-pilot', commodity='other',
+        )
+        r = client.post(reverse('capital_guardian:run_project_analysis', args=[second_project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Relevant Verified Outcomes from Prior Projects')

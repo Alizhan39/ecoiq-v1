@@ -423,6 +423,7 @@ def run_project_analysis(request, slug):
 
     from capital_guardian.services.project_analysis import analyse_project
     from capital_guardian.services.resource_purpose_review import review_resource_purpose
+    from evidence_memory.services.memory import retrieve_relevant_verified_outcomes
 
     try:
         result = analyse_project(project)
@@ -435,8 +436,17 @@ def run_project_analysis(request, slug):
         messages.error(request, 'Something went wrong running the project analysis. No result was produced.')
         return redirect('capital_guardian:evidence_centre', slug=slug)
 
+    # Vertical-slice PR 7 — Task 8: real historical evidence retrieval, never
+    # a guaranteed predictor. Read-only, deterministic, never fails the page.
+    try:
+        relevant_outcomes = retrieve_relevant_verified_outcomes(project)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure retrieving relevant verified outcomes for %s', project.pk)
+        relevant_outcomes = []
+
     return render(request, 'capital_guardian/project_analysis_result.html', {
-        'project': project, 'result': result, 'review': review,
+        'project': project, 'result': result, 'review': review, 'relevant_outcomes': relevant_outcomes,
     })
 
 
@@ -1087,6 +1097,36 @@ def _monitoring_decision_or_404(project, decision_id):
     return decision
 
 
+def _learning_feedback_context(decision):
+    """
+    Vertical-slice PR 7 — Task 6's "LEARNING FEEDBACK" section. Read-only:
+    reports whether this decision's VerifiedCapitalOutcome (if any) already
+    has a matching EvidenceMemory row, and its honest current state — never
+    triggers a sync itself.
+    """
+    from evidence_memory.models import EvidenceMemory
+
+    outcome = getattr(decision, 'verified_outcome', None)
+    if outcome is None:
+        return {'outcome_exists': False}
+
+    source_reference = f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{outcome.pk}'
+    memory = EvidenceMemory.objects.filter(source_reference=source_reference).first()
+    blockers = []
+    if decision.approval_status == 'rejected':
+        blockers.append('This decision was rejected — it can never become positive learning evidence.')
+    if outcome.evidence_quality == 'missing':
+        blockers.append('Evidence quality is "Missing" — this cannot support a verified status.')
+
+    return {
+        'outcome_exists': True,
+        'outcome': outcome,
+        'memory': memory,
+        'already_synced': memory is not None,
+        'blockers': blockers,
+    }
+
+
 @staff_member_required(login_url='/login/')
 def record_outcome_confirm(request, slug, decision_id):
     """GET-only, staff-only. Read-only preview of the expected-vs-actual
@@ -1101,6 +1141,7 @@ def record_outcome_confirm(request, slug, decision_id):
         'expected_vs_actual': execution_monitoring.expected_vs_actual(decision),
         'governance': getattr(project, 'governance', None),
         'outcome_form': OutcomeMonitoringForm(),
+        'learning_feedback': _learning_feedback_context(decision),
     })
 
 
@@ -1129,6 +1170,7 @@ def record_outcome_execute(request, slug, decision_id):
             'expected_vs_actual': execution_monitoring.expected_vs_actual(decision),
             'governance': getattr(project, 'governance', None),
             'outcome_form': form,
+            'learning_feedback': _learning_feedback_context(decision),
         })
 
     data = form.cleaned_data
@@ -1154,3 +1196,43 @@ def record_outcome_execute(request, slug, decision_id):
         'independent verification is a separate action.',
     )
     return redirect('capital_guardian:project_monitoring', slug=slug)
+
+
+@staff_member_required(login_url='/login/')
+def sync_outcome_to_evidence_memory(request, slug, decision_id):
+    """
+    Vertical-slice PR 7 — Task 5/6. Staff-only, POST-only, explicit human
+    action: "Add Outcome to Evidence Memory". Never runs automatically for
+    every outcome. Idempotent — calling this again on an already-synced
+    outcome updates the same EvidenceMemory row to reflect the outcome's
+    CURRENT state (e.g. if the decision was rejected since the last sync),
+    never creates a duplicate row.
+    """
+    from evidence_memory.services.memory import create_memory_from_verified_outcome
+
+    project = _project_or_404(slug)
+    decision = _monitoring_decision_or_404(project, decision_id)
+    if request.method != 'POST':
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    outcome = getattr(decision, 'verified_outcome', None)
+    if outcome is None:
+        messages.error(request, 'No outcome has been recorded for this decision yet — nothing to add to Evidence Memory.')
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    try:
+        memory = create_memory_from_verified_outcome(outcome, actor=request.user)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure syncing VerifiedCapitalOutcome %s to EvidenceMemory', outcome.pk,
+        )
+        messages.error(request, 'Something went wrong adding this outcome to Evidence Memory. Nothing was changed.')
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    messages.success(
+        request,
+        f'This reviewed outcome is now available as evidence for future EcoIQ decisions '
+        f'({memory.get_verification_status_display()}).',
+    )
+    return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)

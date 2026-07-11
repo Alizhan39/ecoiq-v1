@@ -153,6 +153,151 @@ def create_memory_from_league_evidence(evidence):
     return memory
 
 
+# Vertical-slice PR 7 — closes the loop: VERIFIED CAPITAL OUTCOME -> EVIDENCE
+# MEMORY -> RETRIEVAL FOR FUTURE DECISIONS. "Learning" here means retrieval of
+# real historical evidence, never automatic model retraining or weight
+# updates — see create_memory_from_verified_outcome()'s docstring.
+#
+# Deterministic eligibility tier -> (verification_status, review_tier).
+# Never upgraded automatically; a demo/illustrative source project can never
+# reach 'verified' regardless of its own MRV status (see the is_demo check
+# inside create_memory_from_verified_outcome()).
+_OUTCOME_TIER_MAPPING = {
+    'rejected':       ('rejected', 'uploaded'),
+    'disputed':       ('requires_review', 'system_checked'),
+    'verified':       ('verified', 'independently_verified'),
+    'human_reviewed': ('requires_review', 'human_reviewed'),
+    'reported':       ('pending', 'system_checked'),
+    'estimated':      ('pending', 'uploaded'),
+}
+
+
+def _outcome_eligibility_tier(outcome):
+    """
+    decision.approval_status == 'rejected' -> never positive learning evidence.
+    mrv_status == 'disputed' -> a genuine MRV discrepancy, flagged for review,
+    never silently treated as either verified or safe to discard.
+    verified_status == 'verified' (and evidence isn't 'missing') -> the
+    outcome's own MRV process already asserts this; evidence_quality=='missing'
+    can never support 'verified', by definition.
+    A real, human-typed reviewer note (see execution_monitoring.
+    record_monitoring_outcome()'s reviewer_note -> next_capital_allocation_
+    signal convention) is the only honest "a human reviewed this specific
+    outcome" signal available on this model — used to distinguish REPORTED
+    (real after-data, no reviewer commentary yet) from HUMAN-REVIEWED.
+    """
+    decision = outcome.decision
+    if decision.approval_status == 'rejected':
+        return 'rejected'
+    if outcome.mrv_status == 'disputed':
+        return 'disputed'
+    if outcome.verified_status == 'verified' and outcome.evidence_quality != 'missing':
+        return 'verified'
+    if '[Reviewer note]' in (outcome.next_capital_allocation_signal or ''):
+        return 'human_reviewed'
+    if outcome.mrv_status == 'after_data_pending':
+        return 'reported'
+    return 'estimated'
+
+
+def _fmt_amount(value, currency='£'):
+    return f'{currency}{value:,.0f}' if value is not None else 'NOT YET REPORTED'
+
+
+def create_memory_from_verified_outcome(outcome, actor=None):
+    """
+    outcome: a waste_to_value_capital_allocation_engine.models.
+    VerifiedCapitalOutcome instance. Idempotent on (source_type='other',
+    source_reference) — the same one-row-per-source-object pattern as
+    create_memory_from_evidence()/hikma/league above, NOT the content-hash
+    pattern used by create_memory_from_manual_project_evidence(): there is
+    exactly one VerifiedCapitalOutcome per CapitalAllocationDecision (a real
+    OneToOneField), so a repeated sync must update the SAME memory row as the
+    outcome's real state changes over time, never accumulate stale duplicate
+    versions of it.
+
+    Never claims machine learning: this stores a real, human-readable summary
+    of a real outcome as retrievable evidence. It never retrains a model,
+    updates a scoring weight, or runs automatically for every outcome — see
+    the staff-only sync_outcome_to_evidence_memory() view, the only caller.
+
+    source_type='other': none of EvidenceMemory's existing SOURCE_TYPE_CHOICES
+    honestly describe a verified capital outcome record (see PR7 audit) —
+    'other' is the safest existing choice; source_reference disambiguates.
+    document_category='technical_report' — the closest existing choice for a
+    structured monitoring/outcome summary.
+
+    is_demo propagates from the matched GoldProject (via the same public
+    find_matching_gold_project() used by capital_guardian_handoff/PR5) — a
+    demo/illustrative project's outcome can never be stored as 'verified'
+    evidence, however strong its own recorded MRV status looks in isolation.
+    Ambiguous or missing project matches are treated as real (not demo) but
+    with no country scoping, never guessed.
+    """
+    decision = outcome.decision
+    intervention = decision.intervention
+    loss = intervention.operational_loss
+
+    tier = _outcome_eligibility_tier(outcome)
+    verification_status, review_tier = _OUTCOME_TIER_MAPPING[tier]
+
+    from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+        AmbiguousProjectMatchError, find_matching_gold_project,
+    )
+    try:
+        matched_project = find_matching_gold_project(decision)
+    except AmbiguousProjectMatchError:
+        matched_project = None
+
+    is_demo = bool(matched_project.is_demo) if matched_project is not None else False
+    if is_demo and tier == 'verified':
+        verification_status, review_tier = _OUTCOME_TIER_MAPPING['human_reviewed']
+
+    reviewer_note = ''
+    signal_text = outcome.next_capital_allocation_signal or ''
+    if '[Reviewer note]' in signal_text:
+        reviewer_note = signal_text.split('[Reviewer note]', 1)[1].strip(' ]').strip()
+
+    text_chunk = '\n'.join([
+        f'PROJECT: {decision.project or "Not recorded"}',
+        f'ORIGINAL VALUE LOSS: {loss.title} ({loss.get_loss_type_display()}) — financial loss {_fmt_amount(loss.financial_loss_amount)}',
+        f'SELECTED INTERVENTION: {intervention.title} ({intervention.get_intervention_type_display()})',
+        f'EXPECTED CAPEX: {_fmt_amount(intervention.capex_estimate)}',
+        f'ACTUAL CAPEX: {_fmt_amount(outcome.capex_actual)}',
+        f'EXPECTED SAVINGS: {_fmt_amount(intervention.estimated_annual_savings)}',
+        f'ACTUAL SAVINGS: {_fmt_amount(outcome.savings_actual)}',
+        f'EXPECTED LOSS AVOIDED: {_fmt_amount(intervention.estimated_loss_avoided)}',
+        f'ACTUAL LOSS AVOIDED: {_fmt_amount(outcome.loss_avoided_actual)}',
+        f'EXPECTED PAYBACK: {intervention.estimated_payback_months} months' if intervention.estimated_payback_months is not None else 'EXPECTED PAYBACK: NOT YET REPORTED',
+        f'ACTUAL PAYBACK: {outcome.payback_actual} months' if outcome.payback_actual is not None else 'ACTUAL PAYBACK: NOT YET REPORTED',
+        f'IMPLEMENTATION STATUS: {outcome.get_mrv_status_display()}',
+        f'VERIFICATION STATUS: {outcome.get_verified_status_display()} (evidence quality: {outcome.get_evidence_quality_display()})',
+        'EVIDENCE LIMITATIONS: Figures are human-entered monitoring data, not an independent third-party '
+        'audit unless explicitly reviewer-confirmed; a single pilot result does not guarantee outcomes elsewhere.',
+        f'REVIEW NOTES: {reviewer_note}' if reviewer_note else 'REVIEW NOTES: None recorded.',
+    ])
+
+    source_reference = f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{outcome.pk}'
+    # Not get_or_create(): that helper's own internal .save() would fire
+    # before `actor` could be attached to the instance for a brand-new row,
+    # silently losing the "who triggered this" audit attribution for every
+    # first-time sync. Constructing (or fetching) the instance first lets
+    # _cg_changed_by be set before the ONE save() call that actually persists it.
+    memory = EvidenceMemory.objects.filter(source_type='other', source_reference=source_reference).first()
+    if memory is None:
+        memory = EvidenceMemory(source_type='other', source_reference=source_reference)
+    memory.text_chunk = text_chunk
+    memory.verification_status = verification_status
+    memory.review_tier = review_tier
+    memory.document_category = 'technical_report'
+    memory.is_demo = is_demo
+    memory.country = matched_project.country if matched_project is not None else None
+    if actor is not None:
+        memory._cg_changed_by = actor
+    _embed_and_save(memory)
+    return memory
+
+
 # Review tiers that can honestly back a 'verified' status — a row whose
 # strongest recorded scrutiny is 'uploaded'/'system_checked' has not been
 # verified by anyone, and this service refuses to store that contradiction.
@@ -238,22 +383,17 @@ def _cosine_similarity(a, b):
     return float(np.dot(a, b) / denom)
 
 
-def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None):
-    """
-    Returns up to top_k EvidenceMemory rows most similar to query_text,
-    optionally scoped to a company and/or country. Rows without a real
-    embedding yet (embedding_status != 'embedded') are never returned — an
-    un-embedded row has nothing meaningful to compare against.
-    """
+def _rank_candidates(query_text, candidates, top_k):
+    """The one real ranking engine — Postgres pgvector CosineDistance, or a
+    genuine Python-side cosine-similarity fallback on SQLite. Shared by
+    search_similar() and retrieve_relevant_verified_outcomes() below so the
+    latter is a different candidate queryset over the SAME ranking logic,
+    never a second vector-search engine."""
     query_vector = compute_embedding(query_text)
     if query_vector is None:
         return EvidenceMemory.objects.none()
 
-    candidates = EvidenceMemory.objects.filter(embedding_status='embedded')
-    if company is not None:
-        candidates = candidates.filter(company=company)
-    if country is not None:
-        candidates = candidates.filter(country=country)
+    candidates = candidates.filter(embedding_status='embedded')
 
     if connection.vendor == 'postgresql':
         from pgvector.django import CosineDistance
@@ -264,9 +404,91 @@ def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None):
     return [memory for _, memory in scored[:top_k]]
 
 
+def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None):
+    """
+    Returns up to top_k EvidenceMemory rows most similar to query_text,
+    optionally scoped to a company and/or country. Rows without a real
+    embedding yet (embedding_status != 'embedded') are never returned — an
+    un-embedded row has nothing meaningful to compare against.
+    """
+    candidates = EvidenceMemory.objects.all()
+    if company is not None:
+        candidates = candidates.filter(company=company)
+    if country is not None:
+        candidates = candidates.filter(country=country)
+    return _rank_candidates(query_text, candidates, top_k)
+
+
 def search_company_memory(company, query_text, top_k=DEFAULT_TOP_K):
     return search_similar(query_text, top_k=top_k, company=company)
 
 
 def search_country_memory(country, query_text, top_k=DEFAULT_TOP_K):
     return search_similar(query_text, top_k=top_k, country=country)
+
+
+# Vertical-slice PR 7 — RETRIEVAL FOR FUTURE DECISIONS. "Learning" here means
+# retrieving real historical evidence, never automatic model retraining.
+OUTCOME_SOURCE_PREFIX = 'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:'
+
+# Priority order for presentation — verified/human-reviewed evidence is
+# surfaced ahead of merely estimated/reported evidence at equal similarity
+# rank; rejected rows are excluded from the candidate queryset entirely
+# (never returned as "relevant historical evidence" at all).
+_RETRIEVAL_STATUS_PRIORITY = {'verified': 0, 'requires_review': 1, 'pending': 2}
+
+
+def default_outcome_query_for_project(project):
+    """
+    A deterministic, non-AI-generated query string built from real,
+    already-stored project attributes — no live/uncontrolled AI query
+    generation (see PR7 brief). Sector/resource/intervention terms are drawn
+    directly from the project's own declared fields; nothing is invented.
+    """
+    parts = [
+        project.get_commodity_display() if project.commodity else '',
+        project.region or '',
+        project.country.name if project.country_id else '',
+        project.description or '',
+    ]
+    return ' '.join(p for p in parts if p).strip()
+
+
+def retrieve_relevant_verified_outcomes(project, query=None, limit=DEFAULT_TOP_K):
+    """
+    Retrieves up to `limit` EvidenceMemory rows created from a
+    VerifiedCapitalOutcome (see create_memory_from_verified_outcome()) that
+    are relevant to `project` — real historical outcomes a human can consult
+    while reviewing a NEW project's analysis, never a guaranteed predictor
+    and never proof that EcoIQ "learned" anything automatically.
+
+    Rejected outcomes are excluded from the candidate set entirely — they
+    never surface as "relevant historical evidence". Among the remainder,
+    verified/human-reviewed rows are prioritised ahead of merely estimated/
+    reported ones at comparable similarity rank; demo/illustrative rows are
+    never excluded outright (a demo pilot's evidence can still be
+    instructive) but remain honestly labelled via is_demo on the returned
+    row — the caller/template must never present one as guaranteed.
+
+    query: an optional caller-supplied search string; if omitted, a
+    deterministic query is built from the project's own real declared
+    attributes (see default_outcome_query_for_project()) — never an
+    uncontrolled live-AI-generated query.
+    """
+    query_text = query or default_outcome_query_for_project(project)
+    if not query_text:
+        return []
+
+    candidates = (
+        EvidenceMemory.objects
+        .filter(source_reference__startswith=OUTCOME_SOURCE_PREFIX)
+        .exclude(verification_status='rejected')
+    )
+    # Over-fetch so the priority re-sort below has real similarity-ranked
+    # material to reorder within, without ever inventing extra candidates.
+    ranked = _rank_candidates(query_text, candidates, top_k=max(limit * 3, limit))
+    ranked = sorted(
+        ranked,
+        key=lambda m: _RETRIEVAL_STATUS_PRIORITY.get(m.verification_status, 3),
+    )
+    return ranked[:limit]
