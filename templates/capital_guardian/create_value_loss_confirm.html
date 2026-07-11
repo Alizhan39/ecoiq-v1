@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Value Loss — {{ project.name }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Human confirmation before creating a real Waste-to-Value operational loss record for {{ project.name }}.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">← Back to Evidence Centre</a>
+
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · CONFIRM VALUE LOSS</span>
+  <h1 class="gold-h1">Create Human-Reviewed Value Loss</h1>
+  <p class="gold-sub">{{ project.name }} — {{ review.primary_resource|default:"Resource" }}: {{ review.current_use|default:"current use" }}</p>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Identified Concern</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">{{ review.recommended_next_action }}</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Avoidability:</strong> {{ review.avoidability }}</p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence Used and Gaps</h2>
+    {% if review.evidence_used %}
+    <ul class="gc-plain-list">{% for ref in review.evidence_used %}<li style="font-family:'SF Mono',monospace;font-size:0.72rem;">{{ ref }}</li>{% endfor %}</ul>
+    {% else %}
+    <p class="gold-honest-stub">No project-scoped evidence exists yet.</p>
+    {% endif %}
+    {% if review.evidence_gaps %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">Gaps:</p>
+    <ul class="gc-plain-list">{% for gap in review.evidence_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.78rem;">Review confidence: {{ review.review_confidence|upper }} — the evidence quality on the created record will be derived from this, never set higher.</p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Confirm and Edit Proposed Loss Record</h2>
+    <p class="iq-badge iq-badge-review">
+      This record will be human-confirmed, not automatically verified. Review and edit every field before submitting.
+    </p>
+    {% if form.non_field_errors %}<p class="gold-honest-stub" style="color:#e07b7b;">{{ form.non_field_errors }}</p>{% endif %}
+    <form method="post" action="{% url 'capital_guardian:create_value_loss_execute' project.slug %}" class="gc-intake-form">
+      {% csrf_token %}
+      <div class="gc-intake-field"><label for="id_title">Title</label>{{ form.title }}{{ form.title.errors }}</div>
+      <div class="gc-intake-grid">
+        <div class="gc-intake-field"><label for="id_loss_type">Loss type</label>{{ form.loss_type }}{{ form.loss_type.errors }}</div>
+        <div class="gc-intake-field"><label for="id_classification">Classification</label>{{ form.classification }}{{ form.classification.errors }}</div>
+      </div>
+      <div class="gc-intake-field">
+        <label for="id_financial_loss_amount">Financial loss amount (required — must be entered or confirmed by you)</label>
+        {{ form.financial_loss_amount }}{{ form.financial_loss_amount.errors }}
+      </div>
+      <div class="gc-intake-grid">
+        <div class="gc-intake-field"><label for="id_quantity_lost">Quantity lost (optional)</label>{{ form.quantity_lost }}{{ form.quantity_lost.errors }}</div>
+        <div class="gc-intake-field"><label for="id_unit">Unit (optional, e.g. tonnes coal, MWh, kWh)</label>{{ form.unit }}{{ form.unit.errors }}</div>
+      </div>
+      <div class="gc-intake-grid">
+        <div class="gc-intake-field"><label for="id_avoidability_score">Avoidability score (0–100)</label>{{ form.avoidability_score }}{{ form.avoidability_score.errors }}</div>
+        <div class="gc-intake-field"><label for="id_urgency_score">Urgency score (0–100)</label>{{ form.urgency_score }}{{ form.urgency_score.errors }}</div>
+      </div>
+      <button type="submit" class="gold-btn gold-btn-primary" style="margin-top:0.75rem;">Confirm and Create Value Loss</button>
+    </form>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .gc-plain-list { color: var(--gold-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0.5rem 0 0; }
+  .gc-intake-form { max-width: 720px; }
+  .gc-intake-field { margin-bottom: 0.85rem; }
+  .gc-intake-field label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gold-muted); margin-bottom: 0.3rem; }
+  .gc-intake-field input, .gc-intake-field select {
+    width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 6px; color: inherit; padding: 0.5rem 0.65rem; font-size: 0.85rem; font-family: inherit;
+  }
+  .gc-intake-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+  .gc-intake-field .errorlist { color: #e07b7b; font-size: 0.75rem; margin: 0.25rem 0 0; padding-left: 1rem; }
+</style>
+{% endblock %}

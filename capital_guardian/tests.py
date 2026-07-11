@@ -25,6 +25,7 @@ from capital_guardian.services import (
     ai_director, audit_log, capital_protection, capital_trace, equipment_health, evidence as evidence_service,
     investor_dashboard, portfolio, project_health, red_flag_engine, supplier_comparison,
 )
+from waste_to_value_capital_allocation_engine.models import LossEvidence, OperationalLoss
 
 
 class ProjectGovernanceModelTests(TestCase):
@@ -1817,3 +1818,337 @@ class RunProjectAnalysisViewTests(TestCase):
         self.client.force_login(self.staff)
         r = self.client.post(self._run_url())
         self.assertNotContains(r, f'gold_intelligence.GoldProject:{other.pk}')
+
+
+class ResourcePurposeReviewTests(TestCase):
+    """Vertical-slice PR 3 — review_resource_purpose()."""
+
+    PILOT_SLUG = 'almaty-clean-heating-pilot-200-homes'
+
+    def setUp(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        self.create_evidence = create_memory_from_manual_project_evidence
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug=self.PILOT_SLUG, commodity='other',
+        )
+
+    def _review(self, project=None):
+        from capital_guardian.services.project_analysis import analyse_project
+        from capital_guardian.services.resource_purpose_review import review_resource_purpose
+        project = project or self.project
+        return review_resource_purpose(project, analyse_project(project))
+
+    def test_reviewed_profile_for_pilot(self):
+        review = self._review()
+        self.assertTrue(review.has_reviewed_profile)
+        self.assertEqual(review.primary_resource, 'Coal')
+        self.assertIn('space heating', review.current_use.lower())
+        self.assertIn('warmth', review.intended_service.lower())
+
+    def test_zero_evidence_review_confidence_low(self):
+        review = self._review()
+        self.assertEqual(review.review_confidence, 'low')
+
+    def test_verified_evidence_raises_confidence(self):
+        self.create_evidence(
+            self.project, title='E1', text='Real verified evidence.',
+            verification_status='verified', review_tier='human_reviewed',
+        )
+        review = self._review()
+        self.assertIn(review.review_confidence, ('medium', 'high'))
+
+    def test_pending_estimated_evidence_stays_low_confidence(self):
+        self.create_evidence(self.project, title='E1', text='Pending, not yet reviewed evidence.', verification_status='pending')
+        review = self._review()
+        self.assertEqual(review.review_confidence, 'low')
+
+    def test_illustrative_demo_only_evidence_stays_low_confidence(self):
+        self.create_evidence(self.project, title='E1', text='Illustrative example only.', is_demo=True, verification_status='pending')
+        review = self._review()
+        self.assertEqual(review.review_confidence, 'low')
+
+    def test_mixed_evidence_reflected_honestly(self):
+        self.create_evidence(self.project, title='E1', text='Verified real evidence.', verification_status='verified', review_tier='human_reviewed')
+        self.create_evidence(self.project, title='E2', text='Pending unreviewed evidence.', verification_status='pending')
+        self.create_evidence(self.project, title='E3', text='Illustrative example.', is_demo=True)
+        review = self._review()
+        self.assertEqual(len(review.evidence_used), 3)
+        self.assertEqual(review.review_confidence, 'medium')
+
+    def test_cross_project_isolation(self):
+        other = GoldProject.objects.create(name='Other Pilot', slug='other-pilot-project')
+        self.create_evidence(self.project, title='E1', text='Belongs only to the pilot.')
+        other_review = self._review(other)
+        self.assertEqual(other_review.evidence_used, [])
+
+    def test_no_unsafe_raw_coal_fertiliser_recommendation(self):
+        review = self._review()
+        fertiliser = next(p for p in review.alternative_pathways if 'fertiliser' in p['name'].lower())
+        self.assertEqual(fertiliser['status'], 'blocked')
+        self.assertIn('not a fertiliser', fertiliser['notes'])
+
+    def test_no_blanket_coal_ash_safe_claim(self):
+        review = self._review()
+        ash = next(p for p in review.alternative_pathways if 'ash' in p['name'].lower())
+        self.assertEqual(ash['status'], 'conditional')
+        self.assertIn('leaching testing', ash['notes'])
+        self.assertNotIn('is safe', ash['notes'].lower())
+
+    def test_no_recommendation_to_burn_coal_to_create_ash(self):
+        review = self._review()
+        ash = next(p for p in review.alternative_pathways if 'ash' in p['name'].lower())
+        self.assertIn('never a reason to burn more coal', ash['notes'])
+
+    def test_alternatives_shown_as_conditional_where_required(self):
+        review = self._review()
+        statuses = {p['name']: p['status'] for p in review.alternative_pathways}
+        self.assertEqual(statuses['Coal ash in construction materials'], 'conditional')
+        self.assertEqual(statuses['Agricultural reuse of combustion by-products'], 'conditional')
+        self.assertEqual(statuses['Reuse of other industrial by-products'], 'conditional')
+        self.assertEqual(statuses['Heat pumps'], 'open')
+
+    def test_deterministic_output(self):
+        r1 = self._review()
+        r2 = self._review()
+        self.assertEqual(r1.avoidability, r2.avoidability)
+        self.assertEqual(r1.misuse_or_value_loss_condition_exists, r2.misuse_or_value_loss_condition_exists)
+        self.assertEqual(r1.alternative_pathways, r2.alternative_pathways)
+
+    def test_evidence_gaps_shown(self):
+        review = self._review()
+        self.assertTrue(any('technical report' in g for g in review.evidence_gaps))
+
+    def test_stewardship_questions_shown(self):
+        review = self._review()
+        names = {q['name'] for q in review.stewardship_questions}
+        self.assertEqual(names, {'Amanah', 'Mizan', 'Adl', 'Israf', 'Prevention of Harm', 'Maslaha', 'Hisab'})
+
+    def test_no_religious_ruling_language(self):
+        """
+        The disclaimer legitimately names 'fatwa'/'Shariah determination' in
+        order to disclaim them — that's correct, honest language. What must
+        never appear is an affirmative claim asserting one of these.
+        """
+        review = self._review()
+        full_text = review.stewardship_disclaimer + ' '.join(q['question'] for q in review.stewardship_questions)
+        for forbidden_claim in ('Quranically approved', 'Shariah-compliant', 'halal.', 'haram.', 'this is a fatwa'):
+            self.assertNotIn(forbidden_claim, full_text)
+        self.assertIn('not a religious ruling', review.stewardship_disclaimer)
+        self.assertIn('Qualified scholars are required', review.stewardship_disclaimer)
+
+    def test_fallback_profile_for_unknown_project(self):
+        other = GoldProject.objects.create(name='Unreviewed Project', slug='unreviewed-project')
+        review = self._review(other)
+        self.assertFalse(review.has_reviewed_profile)
+        self.assertFalse(review.misuse_or_value_loss_condition_exists)
+        self.assertEqual(review.alternative_pathways, [])
+
+
+class AnalysisToValueLossBridgeTests(TestCase):
+    """Vertical-slice PR 3 — human-reviewed OperationalLoss creation."""
+
+    PILOT_SLUG = 'almaty-clean-heating-pilot-200-homes'
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_loss', 'staff_l@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_loss', 'user_l@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug=self.PILOT_SLUG, commodity='other',
+        )
+        self.no_profile_project = GoldProject.objects.create(name='No Profile Project', slug='no-profile-project')
+
+    def _confirm_url(self, project=None):
+        return reverse('capital_guardian:create_value_loss_confirm', args=[(project or self.project).slug])
+
+    def _execute_url(self, project=None):
+        return reverse('capital_guardian:create_value_loss_execute', args=[(project or self.project).slug])
+
+    def _valid_data(self, **overrides):
+        data = {
+            'title': 'Avoidable coal-based household heating inefficiency', 'loss_type': 'heat_loss',
+            'financial_loss_amount': '5000', 'avoidability_score': '60', 'urgency_score': '55',
+            'classification': 'illustrative',
+        }
+        data.update(overrides)
+        return data
+
+    # ── Review does not create loss automatically ───────────────────────────
+
+    def test_review_does_not_create_loss_automatically(self):
+        from capital_guardian.services.project_analysis import analyse_project
+        from capital_guardian.services.resource_purpose_review import review_resource_purpose
+        review_resource_purpose(self.project, analyse_project(self.project))
+        self.assertEqual(OperationalLoss.objects.count(), 0)
+
+    # ── Authentication and authorization ────────────────────────────────────
+
+    def test_staff_can_open_confirmation(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 200)
+
+    def test_non_staff_blocked_from_confirmation(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_anonymous_blocked_from_confirmation(self):
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_blocked_from_execute(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(OperationalLoss.objects.count(), 0)
+
+    def test_anonymous_blocked_from_execute(self):
+        r = self.client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(OperationalLoss.objects.count(), 0)
+
+    def test_idor_normal_user_with_known_slug_blocked(self):
+        self.client.force_login(self.normal)
+        self.client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(OperationalLoss.objects.count(), 0)
+
+    # ── HTTP safety ──────────────────────────────────────────────────────────
+
+    def test_get_cannot_create_loss(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._execute_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(OperationalLoss.objects.count(), 0)
+
+    def test_post_valid_creates_loss(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(), self._valid_data(), follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(OperationalLoss.objects.count(), 1)
+
+    def test_missing_financial_amount_rejected(self):
+        self.client.force_login(self.staff)
+        data = self._valid_data()
+        del data['financial_loss_amount']
+        r = self.client.post(self._execute_url(), data)
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(OperationalLoss.objects.count(), 0)
+
+    def test_csrf_enforced(self):
+        csrf_client = Client(enforce_csrf_checks=True, SERVER_NAME='localhost')
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(r.status_code, 403)
+
+    def test_invalid_project_returns_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:create_value_loss_confirm', args=['does-not-exist']))
+        self.assertEqual(r.status_code, 404)
+
+    def test_no_loss_created_when_no_misuse_condition(self):
+        """A project with no reviewed resource-purpose profile must never allow loss creation, even via direct POST."""
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(self.no_profile_project), self._valid_data(), follow=True)
+        self.assertEqual(OperationalLoss.objects.count(), 0)
+        self.assertContains(r, 'No reviewed resource-misuse/value-loss condition')
+
+    def test_no_raw_exception_leakage(self):
+        from unittest import mock
+        self.client.force_login(self.staff)
+        with mock.patch(
+            'capital_guardian.services.resource_purpose_review.review_resource_purpose',
+            side_effect=RuntimeError('unexpected internal boom'),
+        ):
+            r = self.client.post(self._execute_url(), self._valid_data(), follow=True)
+        self.assertNotContains(r, 'unexpected internal boom')
+        self.assertNotContains(r, 'Traceback')
+
+    # ── Content correctness ──────────────────────────────────────────────────
+
+    def test_project_field_matches_goldproject_name_exactly(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertEqual(loss.project, self.project.name)
+
+    def test_correct_loss_type(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data(loss_type='energy_loss'))
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertEqual(loss.loss_type, 'energy_loss')
+
+    def test_evidence_quality_not_overstated_with_no_evidence(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertEqual(loss.evidence_quality, 'weak')
+        self.assertEqual(loss.confidence, 30)
+
+    def test_evidence_quality_reflects_verified_evidence(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(
+            self.project, title='V', text='Real verified technical evidence.',
+            verification_status='verified', review_tier='human_reviewed',
+        )
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertIn(loss.evidence_quality, ('medium', 'strong'))
+
+    def test_no_financial_loss_fabricated(self):
+        """financial_loss_amount always comes from the human-submitted form field, never a default guess."""
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data(financial_loss_amount='42424'))
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertEqual(loss.financial_loss_amount, 42424)
+
+    def test_duplicate_submissions_handled_safely(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        self.client.post(self._execute_url(), self._valid_data())
+        self.assertEqual(OperationalLoss.objects.filter(title=self._valid_data()['title']).count(), 2)
+
+    def test_loss_evidence_rows_created_for_each_reference(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(self.project, title='E1', text='First real evidence for the pilot.')
+        create_memory_from_manual_project_evidence(self.project, title='E2', text='Second real evidence for the pilot.')
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertEqual(LossEvidence.objects.filter(operational_loss=loss).count(), 2)
+
+    def test_provenance_note_in_description(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self._valid_data())
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertIn('staff_loss', loss.description)
+        self.assertIn('human-confirmed, not automatically verified', loss.description)
+
+    # ── Full integration (real services end to end) ─────────────────────────
+
+    def test_full_integration_real_services(self):
+        """GoldProject -> EvidenceMemory -> Project Analysis -> Resource Purpose Review -> Human Confirmation -> OperationalLoss."""
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        from capital_guardian.services.project_analysis import analyse_project
+        from capital_guardian.services.resource_purpose_review import review_resource_purpose
+
+        create_memory_from_manual_project_evidence(
+            self.project, title='Real evidence', text='Verified real technical evidence for integration test.',
+            verification_status='verified', review_tier='human_reviewed',
+        )
+        analysis = analyse_project(self.project)
+        review = review_resource_purpose(self.project, analysis)
+        self.assertTrue(review.misuse_or_value_loss_condition_exists)
+
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(), self._valid_data(classification='real'), follow=True)
+        self.assertEqual(r.status_code, 200)
+
+        loss = OperationalLoss.objects.get(title=self._valid_data()['title'])
+        self.assertEqual(loss.project, self.project.name)
+        self.assertEqual(LossEvidence.objects.filter(operational_loss=loss).count(), 1)
