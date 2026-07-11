@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:project_command_centre' project.slug %}">← Command Centre</a>
   <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · EVIDENCE CENTRE</span>
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
   <p class="gold-sub">This app never marks a document independently verified itself — every status below is a real, human- or system-recorded value on the underlying EvidenceMemory row.</p>

@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Command Centre — EcoIQ{% endblock %}
+{% block meta_description_content %}{{ project.name }}: one continuous view of the full EcoIQ evidence-to-outcome workflow — evidence, analysis, value loss, capital decision, monitoring, and verified outcome.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap cc-wrap">
+  <span class="gold-eyebrow">ECOIQ · PROJECT COMMAND CENTRE</span>
+
+  <div class="cc-header">
+    <div>
+      <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+      <p class="gold-sub" style="font-size:0.85rem;">
+        {{ project.country.name|default:"Country not recorded" }}{% if project.region %} — {{ project.region }}{% endif %}
+        · {{ project.get_commodity_display }} · {{ project.get_status_display }}
+      </p>
+    </div>
+    <div class="cc-completion">
+      <div class="cc-completion-value">{{ workflow_completion_pct }}%</div>
+      <div class="cc-completion-label">Workflow stages started</div>
+    </div>
+  </div>
+
+  <div class="gold-grid">
+    <div class="gold-card"><div class="gold-card-label">Classification</div><div class="gold-card-value">{% if project.is_demo %}Demo / Illustrative{% else %}Real{% endif %}</div></div>
+    <div class="gold-card"><div class="gold-card-label">Current Stage</div><div class="gold-card-value">{{ next_action.label|default:"—" }}</div></div>
+    <div class="gold-card"><div class="gold-card-label">Last Updated</div><div class="gold-card-value">{{ project.updated_at|date:"Y-m-d H:i" }}</div></div>
+    <div class="gold-card"><div class="gold-card-label">Open Red Flags</div><div class="gold-card-value {% if open_red_flags %}na{% endif %}">{{ open_red_flags|length }}</div></div>
+  </div>
+
+  {% if next_action %}
+  <section class="gold-section cc-next-action">
+    <span class="gold-eyebrow">NEXT REQUIRED ACTION</span>
+    <div class="cc-next-action-row">
+      <h2 class="gold-h2" style="margin:0;">{{ next_action.label }}</h2>
+      {% if next_action.url %}<a class="gold-btn gold-btn-primary" href="{{ next_action.url }}">Go →</a>{% endif %}
+    </div>
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">
+      This is a guide to the next existing action a human should take — nothing here executes automatically.
+    </p>
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Workflow</h2>
+    <div class="cc-timeline">
+      {% for stage in stages %}
+      <a class="cc-stage cc-stage-{{ stage.status_css }}" href="{{ stage.url|default:'#' }}">
+        <span class="cc-stage-index">{{ forloop.counter }}</span>
+        <span class="cc-stage-label">{{ stage.label }}</span>
+        <span class="gold-risk-badge {{ stage.status_css }}">{{ stage.status_display }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Total</div><div class="gold-card-value">{{ evidence_summary.total }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Verified</div><div class="gold-card-value">{{ evidence_summary.by_status.verified }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Pending / Requires Review</div><div class="gold-card-value">{{ evidence_summary.by_status.pending|add:evidence_summary.by_status.requires_review }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Rejected / Expired</div><div class="gold-card-value">{{ evidence_summary.by_status.rejected|add:evidence_summary.by_status.expired }}</div></div>
+    </div>
+    {% if evidence_rows %}
+    <div class="cc-list" style="margin-top:0.75rem;">
+      {% for row in evidence_rows %}
+      <div class="gold-list-row"><span class="gold-list-label">{{ row.evidence.title|default:row.evidence.text_chunk|truncatechars:70 }}</span><span class="gold-list-value">{{ row.evidence.get_verification_status_display }}{% if row.evidence.is_demo %} · DEMO{% endif %}</span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No evidence recorded for this project yet.</p>
+    {% endif %}
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre →</a>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Project Analysis &amp; Resource Purpose Review</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">Methodology: {{ analysis.methodology }}. Indicative scoring only — not a religious ruling or certification of any kind.</p>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Mizan Score</div><div class="gold-card-value">{{ analysis.final_mizan_score|floatformat:1 }} ({{ analysis.mizan_label }})</div></div>
+      <div class="gold-card"><div class="gold-card-label">Public Benefit</div><div class="gold-card-value">{{ analysis.public_benefit_score|floatformat:1 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Harm Reduction</div><div class="gold-card-value">{{ analysis.harm_reduction_score|floatformat:1 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Confidence</div><div class="gold-card-value">{{ analysis.evidence_confidence_score|floatformat:1 }}</div></div>
+    </div>
+    {% if review.has_reviewed_profile %}
+    <div class="cc-list" style="margin-top:0.75rem;">
+      <div class="gold-list-row"><span class="gold-list-label">Primary Resource</span><span class="gold-list-value">{{ review.primary_resource }}</span></div>
+      <div class="gold-list-row"><span class="gold-list-label">Current Use</span><span class="gold-list-value">{{ review.current_use }}</span></div>
+      <div class="gold-list-row"><span class="gold-list-label">Intended Service</span><span class="gold-list-value">{{ review.intended_service }}</span></div>
+      <div class="gold-list-row"><span class="gold-list-label">Avoidability</span><span class="gold-list-value">{{ review.avoidability }}</span></div>
+      <div class="gold-list-row"><span class="gold-list-label">Review Confidence</span><span class="gold-list-value">{{ review.review_confidence|upper }}</span></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub" style="margin-top:0.6rem;">No reviewed resource-purpose profile exists yet for this project.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Operational Loss &amp; The Better Way</h2>
+    {% if loss %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Loss</div><div class="gold-card-value">{{ loss.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Financial Loss</div><div class="gold-card-value">£{{ loss.financial_loss_amount|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Quality</div><div class="gold-card-value">{{ loss.get_evidence_quality_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Urgency</div><div class="gold-card-value">{{ loss.urgency_score|floatformat:0 }}</div></div>
+    </div>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:operational_loss_detail' project.slug loss.pk %}">View Operational Loss →</a>
+    </div>
+    {% if better_way_result %}
+    <div class="cc-list" style="margin-top:0.75rem;">
+      {% for c in better_way_result.ranked|slice:":3" %}
+      <div class="gold-list-row"><span class="gold-list-label">#{{ c.rank }} {{ c.option.title }}{% if c.option.intervention_type == 'do_nothing' %} (baseline){% endif %}</span><span class="gold-list-value"><span class="gold-risk-badge {% if c.safety_status == 'eligible' %}low{% else %}medium{% endif %}">{{ c.safety_status|upper }}</span></span></div>
+      {% endfor %}
+      {% if better_way_result.blocked %}<p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">{{ better_way_result.blocked|length }} option(s) blocked on safety grounds.</p>{% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="gold-honest-stub">No operational loss recorded for this project yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital Decision &amp; Human Approval</h2>
+    {% if decision %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Selected Intervention</div><div class="gold-card-value">{{ decision.intervention.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Approval Status</div><div class="gold-card-value">{{ decision.get_approval_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Confidence</div><div class="gold-card-value">{% if decision.confidence %}{{ decision.confidence|floatformat:0 }}%{% else %}—{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">In Capital Guardian?</div><div class="gold-card-value">{% if governance %}Yes{% else %}Not yet{% endif %}</div></div>
+    </div>
+    {% if decision.conditions %}
+    <ul class="gc-plain-list" style="margin-top:0.5rem;">{% for c in decision.conditions %}<li>{{ c }}</li>{% endfor %}</ul>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">Recommended ≠ approved. Approved ≠ funded. Promotion into Capital Guardian ≠ project implementation.</p>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'waste_to_value_capital_allocation_engine:decision_detail' decision.pk %}">View Capital Decision →</a>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No capital allocation decision has been created for this project yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital Guardian Monitoring</h2>
+    {% if governance %}
+    {% if capital_summary %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Capital Committed</div><div class="gold-card-value">${{ capital_summary.capital_committed_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Capital Deployed</div><div class="gold-card-value">${{ capital_summary.capital_deployed_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Capital Remaining</div><div class="gold-card-value">${{ capital_summary.capital_remaining_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Milestones</div><div class="gold-card-value">{{ milestones|length }}</div></div>
+    </div>
+    {% endif %}
+    {% if recent_trace_entries %}
+    <div class="cc-list" style="margin-top:0.75rem;">
+      {% for e in recent_trace_entries %}
+      <div class="gold-list-row"><span class="gold-list-label">{{ e.trace_id }} — {{ e.purpose }}</span><span class="gold-list-value">${{ e.amount_usd|floatformat:0|intcomma }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if open_red_flags %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">{{ open_red_flags|length }} open red flag(s).</p>
+    {% endif %}
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:project_monitoring' project.slug %}">Full Monitoring Page →</a>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">This project is not yet under active Capital Guardian monitoring.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Verified Outcome &amp; Learning Feedback</h2>
+    {% if expected_vs_actual %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">CAPEX (Expected → Actual)</div><div class="gold-card-value">£{{ expected_vs_actual.expected_capex|floatformat:0 }} → {% if expected_vs_actual.actual_capex == 'NOT YET REPORTED' %}Not yet reported{% else %}£{{ expected_vs_actual.actual_capex|floatformat:0 }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Loss Avoided (Expected → Actual)</div><div class="gold-card-value">£{{ expected_vs_actual.expected_loss_avoided|floatformat:0 }} → {% if expected_vs_actual.actual_loss_avoided == 'NOT YET REPORTED' %}Not yet reported{% else %}£{{ expected_vs_actual.actual_loss_avoided|floatformat:0 }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Verification Status</div><div class="gold-card-value">{{ expected_vs_actual.verified_status }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">MRV Status</div><div class="gold-card-value">{{ expected_vs_actual.mrv_status }}</div></div>
+    </div>
+    {% if learning_feedback.outcome_exists %}
+    <div class="cc-list" style="margin-top:0.75rem;">
+      <div class="gold-list-row"><span class="gold-list-label">In Evidence Memory?</span><span class="gold-list-value">{% if learning_feedback.already_synced %}Yes{% else %}Not yet{% endif %}</span></div>
+      {% if learning_feedback.memory %}
+      <div class="gold-list-row"><span class="gold-list-label">Memory Evidence Status</span><span class="gold-list-value">{{ learning_feedback.memory.get_verification_status_display }}{% if learning_feedback.memory.is_demo %} · DEMO{% endif %}</span></div>
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:record_outcome_confirm' project.slug decision.pk %}">Outcome &amp; Learning Feedback →</a>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No verified outcome has been recorded for this project yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Relevant Historical Evidence</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">
+      Historical evidence is decision support, not a guaranteed prediction. EcoIQ retrieves real, previously-recorded
+      outcomes; it does not retrain a model or learn automatically.
+    </p>
+    {% if relevant_outcomes %}
+    <div class="cc-list">
+      {% for m in relevant_outcomes %}
+      <div class="gold-list-row"><span class="gold-list-label">{{ m.text_chunk|truncatechars:80 }}</span><span class="gold-list-value"><span class="gold-risk-badge {% if m.verification_status == 'verified' %}low{% elif m.verification_status == 'requires_review' %}medium{% else %}na{% endif %}">{{ m.get_verification_status_display }}{% if m.is_demo %} · DEMO{% endif %}</span></span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No relevant historical evidence is available yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .cc-wrap { max-width: 1280px; }
+  .cc-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; }
+  .cc-completion { text-align: right; }
+  .cc-completion-value { font-size: 2.2rem; font-weight: 800; color: var(--gold-acc); line-height: 1; }
+  .cc-completion-label { font-size: 0.72rem; color: var(--gold-muted); margin-top: 0.25rem; }
+  .cc-next-action { border: 1px solid var(--gold-acc); background: rgba(212,175,55,0.06); }
+  .cc-next-action-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+  .cc-timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
+  .cc-stage { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--gold-border); background: var(--gold-bg2); text-decoration: none; color: inherit; transition: border-color 0.15s ease; }
+  .cc-stage:hover { border-color: var(--gold-acc); }
+  .cc-stage-index { font-size: 0.7rem; color: var(--gold-muted); font-weight: 700; }
+  .cc-stage-label { font-size: 0.85rem; font-weight: 700; color: var(--gold-text); }
+  .cc-list { display: flex; flex-direction: column; gap: 0.3rem; }
+  .gc-plain-list { color: var(--gold-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+</style>
+{% endblock %}

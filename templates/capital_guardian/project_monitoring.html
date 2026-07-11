@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:project_command_centre' project.slug %}">← Command Centre</a>
   <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · MONITORING</span>
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
   <p class="gold-sub" style="font-size:0.85rem;">

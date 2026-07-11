@@ -5,6 +5,7 @@
 {% block content %}
 <div class="gold-wrap">
   <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">← Back to Evidence Centre</a>
+  <a class="gold-btn" href="{% url 'capital_guardian:project_command_centre' project.slug %}" style="margin-left:0.5rem;">← Command Centre</a>
 
   <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · PROJECT ANALYSIS</span>
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>

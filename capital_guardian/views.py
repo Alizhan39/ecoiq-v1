@@ -1236,3 +1236,31 @@ def sync_outcome_to_evidence_memory(request, slug, decision_id):
         f'({memory.get_verification_status_display()}).',
     )
     return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+
+# ── Project Command Centre ───────────────────────────────────────────────
+# One read-oriented orchestration page over the complete PR1-PR7 vertical
+# slice. See capital_guardian/services/command_centre.py's module docstring
+# for why this is never a new source of truth — every value here is read
+# directly from an existing model or delegated to an existing service.
+
+@staff_member_required(login_url='/login/')
+def project_command_centre(request, slug):
+    """
+    Staff-only, read-only. Kept under the same permission model as the rest
+    of this vertical slice (see PR8 audit/report) — a future externally-
+    facing version will need real project/tenant-level authorization, which
+    does not exist anywhere in this codebase yet.
+    """
+    from capital_guardian.services.command_centre import build_command_centre_context
+
+    project = _project_or_404(slug)
+    try:
+        context = build_command_centre_context(project)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure building Command Centre for project %s', project.pk)
+        messages.error(request, 'Something went wrong loading the Command Centre for this project.')
+        return redirect('capital_guardian:investor_dashboard', slug=slug)
+
+    return render(request, 'capital_guardian/command_centre.html', context)

@@ -12,6 +12,7 @@ urlpatterns = [
     path('portfolio/', views.portfolio_view, name='portfolio'),
     path('suppliers/', views.supplier_comparison_view, name='supplier_comparison'),
     path('<slug:slug>/', views.investor_dashboard, name='investor_dashboard'),
+    path('<slug:slug>/command-centre/', views.project_command_centre, name='project_command_centre'),
     path('<slug:slug>/trace/', views.capital_trace_view, name='capital_trace'),
     path('<slug:slug>/trace/<int:entry_id>/', views.capital_trace_entry_detail_view, name='capital_trace_entry_detail'),
     path('<slug:slug>/governance/', views.governance_view, name='governance'),
