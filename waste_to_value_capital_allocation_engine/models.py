@@ -17,6 +17,40 @@ Honesty note, enforced throughout this app's services and templates:
 no real Company/Asset model exists elsewhere in this repo with rows that
 would honestly back this domain, so free text is more honest than a
 fabricated relationship.
+
+--- Phase 1A: internal logical boundaries (documentation only) ---
+
+This one Django app deliberately covers two responsibilities that the
+Canonical Architecture Decision Analysis names "Waste-to-Value" and "Capital
+Allocation." They stay ONE app (they already share models, one lifecycle,
+and one set of tests) but are two distinct logical layers within it:
+
+  LOSS DETECTION — "where is value being lost, and what could recover it?"
+    Models:   OperationalLoss, LossEvidence, FundingGap
+    Services: loss_intake.py (detect + quantify exposure),
+              capital_risk.py (capital-at-risk + recoverable-value estimates)
+    Answers:  identifying inefficiencies, identifying wasted capital/
+              resources, generating candidate intervention opportunities.
+
+  ALLOCATION DECISION — "given those opportunities, where should capital go?"
+    Models:   InterventionOption, InterventionScenario,
+              CapitalAllocationDecision, CapitalRouteMatch
+    Services: intervention_finance.py (compare interventions, CAPEX/OPEX,
+              payback), capital_allocation_scoring.py + ranking.py (score
+              and rank), funding.py (match capital routes), governance.py
+              (persist the governed case), human_approval_gate.py (enforce
+              the human-approval gate before anything downstream fires).
+    Answers:  financial/impact comparison, ranking, the recorded
+              CapitalAllocationDecision, and its human-approval state.
+
+  VerifiedCapitalOutcome + services/mrv_outcomes.py sit downstream of BOTH
+  layers (post-implementation MRV verification and the capital-reallocation
+  feedback signal) — they are not part of either boundary above.
+
+No files moved, no imports changed, no behaviour changed by this note — it
+only names what already exists so a future reader (or the Phase 1A ADR) can
+reason about the two responsibilities without mistaking this for a
+justification to split them into separate Django apps.
 """
 from django.db import models
 from django.utils import timezone
@@ -155,6 +189,10 @@ VERIFIED_STATUS_CHOICES = [('estimated', 'Estimated'), ('verified', 'Verified')]
 PUBLIC_PRIVATE_CHOICES = [('public', 'Public'), ('private', 'Private')]
 
 
+# ── LOSS DETECTION ───────────────────────────────────────────────────────────
+# "Where is value being lost, and what could recover it?" — see module
+# docstring for the full logical-boundary note.
+
 class OperationalLoss(models.Model):
     """One identified pocket of operational waste, treated as lost economic value."""
     organisation = models.CharField(max_length=200, blank=True)
@@ -223,6 +261,10 @@ class LossEvidence(models.Model):
         return f'{self.evidence_reference} ({self.operational_loss.title})'
 
 
+# ── ALLOCATION DECISION ──────────────────────────────────────────────────────
+# "Given those opportunities, where should capital go?" — see module
+# docstring for the full logical-boundary note.
+
 class InterventionOption(models.Model):
     """One candidate action against an OperationalLoss (e.g. one of several lettered options in a demo case)."""
     operational_loss = models.ForeignKey(OperationalLoss, on_delete=models.CASCADE, related_name='interventions')
@@ -278,6 +320,10 @@ class InterventionScenario(models.Model):
         return f'{self.scenario_name} ({self.get_sensitivity_case_display()}) — {self.intervention.title}'
 
 
+# Logically grouped with LOSS DETECTION (per the Phase 1A boundary note in
+# this module's docstring) even though it's a structural OneToOne child of
+# an ALLOCATION DECISION model — it answers "how much of the lost value is
+# still unfunded?", which is a loss-detection-flavoured question.
 class FundingGap(models.Model):
     """The capital-required-vs-available analysis for one InterventionOption."""
     intervention = models.OneToOneField(InterventionOption, on_delete=models.CASCADE, related_name='funding_gap')
@@ -358,6 +404,9 @@ class CapitalAllocationDecision(models.Model):
         return f'{self.intervention.title} — {self.get_approval_status_display()}'
 
 
+# ── Downstream of both boundaries above (not itself part of either) ─────────
+# Post-implementation MRV verification + the capital-reallocation feedback
+# signal — see module docstring.
 class VerifiedCapitalOutcome(models.Model):
     """The real, MRV-verified outcome of an implemented CapitalAllocationDecision."""
     decision      = models.OneToOneField(CapitalAllocationDecision, on_delete=models.CASCADE, related_name='verified_outcome')

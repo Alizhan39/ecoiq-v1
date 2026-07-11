@@ -8,6 +8,11 @@ architecture into a product: Client Opportunity Radar (who should I call
 today?), Portfolio Intelligence (where is value at risk?), Capital
 Allocation (where should the next £1 go?).
 
+Phase 1A (Canonical Architecture Decision Analysis): this app is the real
+institutional intelligence interface for EcoIQ going forward —
+institutional_finance_engine (a 100% static mock with no models) is
+deprecated in its favour; see institutional_finance_engine/apps.py.
+
 Honesty note, enforced throughout this app's services and templates:
 - capital_at_risk != verified_recovered_value
 - potential_recoverable_value != verified_recovered_value
