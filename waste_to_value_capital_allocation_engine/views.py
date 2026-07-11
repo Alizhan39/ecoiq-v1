@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from waste_to_value_capital_allocation_engine.models import (
     CapitalAllocationDecision, FundingGap, InterventionOption, OperationalLoss,
@@ -124,6 +125,23 @@ def decision_detail(request, decision_id):
     route_matches = funding_gap.route_matches.all() if funding_gap else []
     verified_outcome = getattr(decision, 'verified_outcome', None)
 
+    # Vertical-slice PR 5 — best-effort traceability link back to the real
+    # GoldProject/OperationalLoss this decision came from, so the founder's
+    # "one continuous workflow" journey can be followed both ways. Never
+    # fabricated: silently omitted (not guessed) if no matching project
+    # exists or the match is ambiguous — the decision page itself is
+    # unaffected either way.
+    originating_loss_url = None
+    try:
+        matched_project = find_matching_gold_project(decision)
+        if matched_project is not None:
+            originating_loss_url = reverse(
+                'capital_guardian:operational_loss_detail',
+                kwargs={'slug': matched_project.slug, 'loss_id': decision.intervention.operational_loss_id},
+            )
+    except AmbiguousProjectMatchError:
+        originating_loss_url = None
+
     return render(request, 'waste_to_value_capital_allocation_engine/decision_detail.html', {
         'decision': decision,
         'funding_gap': funding_gap,
@@ -134,6 +152,7 @@ def decision_detail(request, decision_id):
         # both true; the real authorization/eligibility check happens again,
         # independently, server-side in promote_confirm()/promote_execute().
         'eligible_for_promotion': decision.approval_status in APPROVED_STATUSES,
+        'originating_loss_url': originating_loss_url,
     })
 
 

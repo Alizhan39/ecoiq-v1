@@ -5,6 +5,9 @@
 {% block content %}
 <div class="wtv-wrap">
   <a class="wtv-back" href="{% url 'waste_to_value_capital_allocation_engine:overview' %}">← Back to Waste-to-Value Capital Allocation Engine</a>
+  {% if originating_loss_url %}
+  <a class="wtv-back" href="{{ originating_loss_url }}" style="margin-left:1.25rem;">← Back to Operational Loss (Capital Guardian)</a>
+  {% endif %}
 
   <span class="wtv-badge">Capital Allocation Decision</span>
   <h1 class="wtv-title">{{ decision.intervention.title }}</h1>
