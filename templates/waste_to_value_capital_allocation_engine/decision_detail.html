@@ -15,6 +15,12 @@
     {% if decision.council_case %}<span class="wtv-chip">Council case: {{ decision.council_case.title }}</span>{% endif %}
   </div>
 
+  {% if eligible_for_promotion and request.user.is_staff %}
+  <div class="wtv-chip-row" style="margin-top:1rem;">
+    <a class="wtv-confirm-btn" href="{% url 'waste_to_value_capital_allocation_engine:promote_confirm' decision.pk %}">Promote to Capital Guardian</a>
+  </div>
+  {% endif %}
+
   {% include 'partials/agents_working_on_this_case.html' %}
 
   <section class="wtv-section" id="decision">
@@ -100,5 +106,7 @@
   .wtv-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
   .wtv-chip { background: rgba(88,166,255,.1); color: var(--wtv-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
   .wtv-headline { font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0.25rem 0; }
+  .wtv-confirm-btn { display: inline-block; background: var(--wtv-acc); color: #06120c; font-weight: 800; font-size: 0.95rem; padding: 0.7rem 1.5rem; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; }
+  .wtv-confirm-btn:hover { filter: brightness(1.08); }
 </style>
 {% endblock %}

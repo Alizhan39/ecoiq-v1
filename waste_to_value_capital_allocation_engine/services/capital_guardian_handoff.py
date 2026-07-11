@@ -27,6 +27,8 @@ the real human-approval mechanism for this model; this is not a new one.
 from dataclasses import dataclass
 from typing import Optional
 
+from django.db import IntegrityError
+
 APPROVED_STATUSES = {'approved', 'approved_with_conditions'}
 
 
@@ -45,11 +47,13 @@ class PromotionResult:
     message: str = ''
 
 
-class _AmbiguousMatch(Exception):
-    """Internal signal only — more than one GoldProject shares this name."""
+class AmbiguousProjectMatchError(Exception):
+    """More than one GoldProject shares the decision's project name. Public
+    (not internal-only) so callers previewing a match — e.g. a confirmation
+    UI — can catch it the same way promote_to_capital_guardian() does."""
 
 
-def _find_matching_gold_project(decision):
+def find_matching_gold_project(decision):
     """
     Matches on CapitalAllocationDecision.project — a plain text field (see
     waste_to_value's models.py docstring: no trustworthy Project model
@@ -61,6 +65,9 @@ def _find_matching_gold_project(decision):
     than one row can share a name. Silently taking the first match (e.g.
     .first()) could route capital monitoring to the wrong physical asset —
     an ambiguous match is treated the same as no match at all, never guessed.
+
+    Public: also used by the promotion confirmation view to preview which
+    project a decision would match, without duplicating this logic.
     """
     from gold_intelligence.models import GoldProject
 
@@ -69,7 +76,7 @@ def _find_matching_gold_project(decision):
         return None
     matches = list(GoldProject.objects.filter(name__iexact=project_name)[:2])
     if len(matches) > 1:
-        raise _AmbiguousMatch(project_name)
+        raise AmbiguousProjectMatchError(project_name)
     return matches[0] if matches else None
 
 
@@ -103,8 +110,8 @@ def promote_to_capital_guardian(decision, actor=None):
         )
 
     try:
-        project = _find_matching_gold_project(decision)
-    except _AmbiguousMatch:
+        project = find_matching_gold_project(decision)
+    except AmbiguousProjectMatchError:
         return PromotionResult(
             status='ambiguous_project_match',
             message=(
@@ -138,7 +145,21 @@ def promote_to_capital_guardian(decision, actor=None):
         # (which reads this attribute at save time) attributes the creation
         # AuditLogEntry to the real approving user, not changed_by=None.
         governance._cg_changed_by = actor
-    governance.save()
+    try:
+        governance.save()
+    except IntegrityError:
+        # Lost a genuine concurrent-write race (e.g. a double-click, or two
+        # requests promoting the same decision at once) — another request's
+        # save() won between our existence check above and this save().
+        # ProjectGovernance.project is a real OneToOneField, so the database
+        # itself is what actually prevents the duplicate row; this just
+        # reports the same honest 'already_promoted' outcome instead of
+        # surfacing a raw database error to the caller.
+        existing = ProjectGovernance.objects.get(project=project)
+        return PromotionResult(
+            status='already_promoted', project=project, governance=existing,
+            message=f'{project.name} is already under Capital Guardian monitoring.',
+        )
 
     return PromotionResult(
         status='promoted', project=project, governance=governance,
