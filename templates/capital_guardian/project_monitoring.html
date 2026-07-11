@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Monitoring — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}{{ project.name }}: real-world implementation monitoring, expected vs. actual outcomes, and verification status — human-entered, never automatically verified.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · MONITORING</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub" style="font-size:0.85rem;">
+    Capital Guardian tracks execution <strong>after</strong> a capital decision has been approved. Every figure below is
+    either a real, human-entered record or an honest "Data source required" / "Not yet reported" — nothing here is
+    fabricated, and nothing becomes "independently verified" merely because a result was reported.
+  </p>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='monitoring' %}
+
+  {% if messages %}
+  <ul style="list-style:none;padding:0;">
+    {% for message in messages %}<li class="iq-badge iq-badge-review" style="margin-bottom:0.5rem;">{{ message }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Project Status &amp; Capital</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Project Status</div><div class="gold-card-value">{{ project.get_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Capital Committed</div><div class="gold-card-value">${{ capital_summary.capital_committed_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Capital Deployed</div><div class="gold-card-value">${{ capital_summary.capital_deployed_usd|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Capital Remaining (Committed − Deployed)</div><div class="gold-card-value">${{ capital_summary.capital_remaining_usd|floatformat:0|intcomma }}</div></div>
+    </div>
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">
+      "Committed" = internally approved capital movements. "Deployed" = capital actually paid. Capital deployed does not
+      mean equipment delivered; equipment delivered does not mean installed; installed does not mean operational.
+    </p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital Trace</h2>
+    <p class="gold-sub" style="font-size:0.8rem;"><a href="{% url 'capital_guardian:capital_trace' project.slug %}" style="color:var(--gold-acc);">View full Capital Protection trace →</a></p>
+    {% if trace_form %}
+    <details style="margin-top:0.75rem;">
+      <summary style="cursor:pointer;font-weight:700;color:var(--gold-acc);">+ Record a capital movement</summary>
+      <form method="post" action="{% url 'capital_guardian:add_capital_trace_entry' project.slug %}" style="margin-top:0.75rem;display:grid;gap:0.6rem;max-width:520px;">
+        {% csrf_token %}
+        {{ trace_form.as_p }}
+        <button type="submit" class="gold-btn gold-btn-primary">Record Capital Movement</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Milestones ({{ milestones|length }})</h2>
+    {% if milestones %}
+    {% for m in milestones %}
+    <div class="gold-card" style="margin-bottom:0.7rem;">
+      <div class="gold-list-row" style="border:none;padding:0;">
+        <span class="gold-list-label"><strong>{{ m.notes|truncatechars:70|default:m.get_phase_display }}</strong> <span class="gold-sub" style="font-size:0.72rem;">({{ m.get_phase_display }})</span></span>
+        <span class="gold-risk-badge {% if m.status == 'complete' %}low{% elif m.status == 'delayed' %}high{% elif m.status == 'in_progress' %}medium{% else %}na{% endif %}">{{ m.get_status_display }}</span>
+      </div>
+      <div class="gold-card-sub" style="margin-top:0.4rem;">
+        Planned: {{ m.planned_start|default:"—" }} → {{ m.planned_end|default:"—" }} ·
+        Actual: {{ m.actual_start|default:"—" }} → {{ m.actual_end|default:"—" }}
+      </div>
+      {% if milestone_form %}
+      <form method="post" action="{% url 'capital_guardian:update_milestone' project.slug m.pk %}" style="margin-top:0.6rem;font-size:0.82rem;">
+        {% csrf_token %}
+        <details><summary style="cursor:pointer;color:var(--gold-acc);">Update this milestone</summary>
+          <div style="margin-top:0.5rem;display:grid;gap:0.4rem;max-width:480px;">{{ milestone_form.as_p }}</div>
+          <button type="submit" class="gold-btn" style="margin-top:0.4rem;">Save Update</button>
+        </details>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No milestones recorded for this project yet.</p>
+    {% endif %}
+
+    {% if milestone_form %}
+    <details style="margin-top:0.5rem;">
+      <summary style="cursor:pointer;font-weight:700;color:var(--gold-acc);">+ Add a planned milestone</summary>
+      <form method="post" action="{% url 'capital_guardian:add_milestone' project.slug %}" style="margin-top:0.75rem;display:grid;gap:0.6rem;max-width:520px;">
+        {% csrf_token %}
+        {{ milestone_form.as_p }}
+        <button type="submit" class="gold-btn gold-btn-primary">Add Milestone</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Insurance</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Coverage</div><div class="gold-card-value {% if insurance_coverage_usd is None %}na{% endif %}">{% if insurance_coverage_usd is not None %}${{ insurance_coverage_usd|floatformat:0|intcomma }}{% else %}Data source required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expiry</div><div class="gold-card-value {% if insurance_expiry_date is None %}na{% endif %}">{{ insurance_expiry_date|default:"Data source required" }}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Open Red Flags ({{ open_red_flags|length }})</h2>
+    {% if open_red_flags %}
+    {% for f in open_red_flags %}
+    <div class="gold-list-row">
+      <span class="gold-list-label"><span class="gold-risk-badge {{ f.severity }}">{{ f.get_severity_display }}</span> {{ f.category|title }}: {{ f.description }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No open red flags detected for this project.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Implementation Evidence ({{ implementation_evidence|length }})</h2>
+    {% if implementation_evidence %}
+    {% for e in implementation_evidence %}
+    <div class="gold-list-row">
+      <span class="gold-list-label">{{ e.title|default:e.text_chunk|truncatechars:70 }} <span class="gold-sub" style="font-size:0.72rem;">({{ e.get_document_category_display }})</span></span>
+      <span class="gold-risk-badge {% if e.verification_status == 'verified' %}low{% elif e.verification_status == 'rejected' %}high{% else %}medium{% endif %}">{{ e.get_verification_status_display }}{% if e.is_demo %} · DEMO{% endif %}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No implementation evidence recorded yet.</p>
+    {% endif %}
+
+    {% if evidence_form %}
+    <details style="margin-top:0.75rem;">
+      <summary style="cursor:pointer;font-weight:700;color:var(--gold-acc);">+ Add implementation evidence</summary>
+      <form method="post" action="{% url 'capital_guardian:add_implementation_evidence' project.slug %}" style="margin-top:0.75rem;display:grid;gap:0.6rem;max-width:520px;">
+        {% csrf_token %}
+        {{ evidence_form.as_p }}
+        <button type="submit" class="gold-btn gold-btn-primary">Add Evidence</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Expected vs. Actual Outcome</h2>
+    {% if decision_rows %}
+    {% for row in decision_rows %}
+    <div class="gold-card" style="margin-bottom:1rem;">
+      <div class="gold-list-row" style="border:none;padding:0;">
+        <span class="gold-list-label"><strong>{{ row.decision.intervention.title }}</strong></span>
+        <span class="gold-risk-badge {% if row.decision.approval_status == 'approved' or row.decision.approval_status == 'approved_with_conditions' %}low{% elif row.decision.approval_status == 'rejected' %}high{% else %}medium{% endif %}">{{ row.decision.get_approval_status_display }}</span>
+      </div>
+      <div class="gold-grid" style="margin-top:0.6rem;">
+        <div class="gold-card"><div class="gold-card-label">CAPEX (Expected → Actual)</div><div class="gold-card-value">£{{ row.expected_vs_actual.expected_capex|floatformat:0 }} → {% if row.expected_vs_actual.actual_capex == 'NOT YET REPORTED' %}<span class="gold-honest-stub">Not yet reported</span>{% else %}£{{ row.expected_vs_actual.actual_capex|floatformat:0 }}{% endif %}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Savings (Expected → Actual)</div><div class="gold-card-value">£{{ row.expected_vs_actual.expected_savings|floatformat:0 }} → {% if row.expected_vs_actual.actual_savings == 'NOT YET REPORTED' %}<span class="gold-honest-stub">Not yet reported</span>{% else %}£{{ row.expected_vs_actual.actual_savings|floatformat:0 }}{% endif %}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Loss Avoided (Expected → Actual)</div><div class="gold-card-value">£{{ row.expected_vs_actual.expected_loss_avoided|floatformat:0 }} → {% if row.expected_vs_actual.actual_loss_avoided == 'NOT YET REPORTED' %}<span class="gold-honest-stub">Not yet reported</span>{% else %}£{{ row.expected_vs_actual.actual_loss_avoided|floatformat:0 }}{% endif %}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Payback months (Expected → Actual)</div><div class="gold-card-value">{{ row.expected_vs_actual.expected_payback_months|default:"—" }} → {% if row.expected_vs_actual.actual_payback_months == 'NOT YET REPORTED' %}<span class="gold-honest-stub">Not yet reported</span>{% else %}{{ row.expected_vs_actual.actual_payback_months|floatformat:1 }}{% endif %}</div></div>
+      </div>
+      <div class="gold-chip-row" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.7rem;">
+        <span class="gold-risk-badge {% if row.expected_vs_actual.verified_status == 'Verified' %}low{% else %}medium{% endif %}">Verification: {{ row.expected_vs_actual.verified_status }}</span>
+        <span class="gold-risk-badge na">MRV: {{ row.expected_vs_actual.mrv_status }}</span>
+        {% if row.expected_vs_actual.evidence_quality %}<span class="gold-risk-badge na">Evidence quality: {{ row.expected_vs_actual.evidence_quality }}</span>{% endif %}
+      </div>
+      {% if is_staff %}
+      <div class="gold-btn-row" style="margin-top:0.75rem;">
+        <a class="gold-btn" href="{% url 'capital_guardian:record_outcome_confirm' project.slug row.decision.pk %}">Record Outcome →</a>
+        <a class="gold-btn" href="{% url 'waste_to_value_capital_allocation_engine:decision_detail' row.decision.pk %}">View Decision →</a>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No capital allocation decisions are associated with this project yet.</p>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.75rem;margin-top:0.5rem;">
+      Reported ≠ reviewed. Reviewed ≠ independently verified. Estimated ≠ actual. Actual ≠ verified.
+      An outcome recorded through this page is never automatically marked independently verified.
+    </p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Recent Audit History</h2>
+    {% if recent_audit_entries %}
+    <div class="gold-list">
+      {% for e in recent_audit_entries %}
+      <div class="gold-list-row"><span class="gold-list-label">{{ e.get_event_type_display }}: {{ e.object_description }} — {{ e.field_name }}</span><span class="gold-list-value">{{ e.created_at|date:"Y-m-d H:i" }}</span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No audit history recorded for this project yet.</p>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.8rem;margin-top:0.5rem;"><a href="{% url 'capital_guardian:audit_history' project.slug %}" style="color:var(--gold-acc);">View full Audit History →</a></p>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}

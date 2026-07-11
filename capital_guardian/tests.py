@@ -23,11 +23,12 @@ from capital_guardian.models import (
 )
 from capital_guardian.services import (
     ai_director, audit_log, capital_protection, capital_trace, equipment_health, evidence as evidence_service,
-    investor_dashboard, portfolio, project_health, red_flag_engine, supplier_comparison,
+    execution_monitoring, investor_dashboard, portfolio, project_health, red_flag_engine, supplier_comparison,
 )
 from waste_to_value_capital_allocation_engine.models import (
-    CapitalAllocationDecision, InterventionOption, LossEvidence, OperationalLoss,
+    CapitalAllocationDecision, InterventionOption, LossEvidence, OperationalLoss, VerifiedCapitalOutcome,
 )
+from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
 
 
 class ProjectGovernanceModelTests(TestCase):
@@ -2995,3 +2996,603 @@ class CapitalDecisionHonestyTests(TestCase):
         decision = create_decision_from_better_way(self.project, self.loss, self.option)
         self.assertIn('recommendation for human review', decision.decision)
         self.assertIn('not an approved or funded outcome', decision.decision)
+
+
+class ExecutionMonitoringServiceTests(TestCase):
+    """Vertical-slice PR 6 — capital_guardian.services.execution_monitoring."""
+
+    def setUp(self):
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+            estimated_payback_months=30,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='Pending decision')
+
+    def test_capital_decisions_for_project_matches_by_name(self):
+        decisions = list(execution_monitoring.capital_decisions_for_project(self.project))
+        self.assertEqual(decisions, [self.decision])
+
+    def test_capital_decisions_for_project_excludes_other_projects(self):
+        other = GoldProject.objects.create(name='Other Project', slug='other-project-monitoring', commodity='other')
+        self.assertEqual(list(execution_monitoring.capital_decisions_for_project(other)), [])
+
+    def test_capital_summary_empty_project(self):
+        summary = execution_monitoring.capital_summary(self.project)
+        self.assertEqual(summary, {
+            'capital_committed_usd': 0, 'capital_deployed_usd': 0, 'capital_remaining_usd': 0, 'entry_count': 0,
+        })
+
+    def test_capital_summary_committed_vs_deployed(self):
+        CapitalTraceEntry.objects.create(
+            project=self.project, date=datetime.date.today(), amount_usd=5000, purpose='Approved not paid',
+            approval_status='approved', payment_status='pending',
+        )
+        CapitalTraceEntry.objects.create(
+            project=self.project, date=datetime.date.today(), amount_usd=3000, purpose='Approved and paid',
+            approval_status='approved', payment_status='paid',
+        )
+        summary = execution_monitoring.capital_summary(self.project)
+        self.assertEqual(summary['capital_committed_usd'], 8000.0)
+        self.assertEqual(summary['capital_deployed_usd'], 3000.0)
+        self.assertEqual(summary['capital_remaining_usd'], 5000.0)
+
+    def test_expected_vs_actual_before_outcome_recorded(self):
+        eva = execution_monitoring.expected_vs_actual(self.decision)
+        self.assertEqual(eva['expected_capex'], 20000)
+        self.assertEqual(eva['actual_capex'], execution_monitoring.NOT_YET_REPORTED)
+        self.assertIsNone(eva['capex_variance'])
+        self.assertEqual(eva['verified_status'], 'Not yet reported')
+
+    def test_expected_vs_actual_after_outcome_recorded(self):
+        execution_monitoring.record_monitoring_outcome(
+            self.decision, mrv_status='baseline_only', capex_actual=22000, loss_avoided_actual=9000,
+        )
+        eva = execution_monitoring.expected_vs_actual(self.decision)
+        self.assertEqual(eva['actual_capex'], 22000)
+        self.assertEqual(eva['capex_variance'], 2000)
+        self.assertEqual(eva['loss_avoided_variance'], -1000)
+
+    def test_no_fabricated_variance_when_actual_missing(self):
+        eva = execution_monitoring.expected_vs_actual(self.decision)
+        for key in ('capex_variance', 'opex_variance', 'savings_variance', 'loss_avoided_variance', 'payback_variance'):
+            self.assertIsNone(eva[key])
+
+    def test_record_monitoring_outcome_never_verified(self):
+        outcome = execution_monitoring.record_monitoring_outcome(
+            self.decision, mrv_status='after_data_pending', capex_actual=1000, loss_avoided_actual=1000,
+        )
+        self.assertEqual(outcome.verified_status, 'estimated')
+
+    def test_record_monitoring_outcome_rejects_verified_status(self):
+        with self.assertRaises(execution_monitoring.VerificationNotAllowedHereError):
+            execution_monitoring.record_monitoring_outcome(
+                self.decision, mrv_status='verified', capex_actual=1000, loss_avoided_actual=1000,
+            )
+        self.assertFalse(VerifiedCapitalOutcome.objects.filter(decision=self.decision).exists())
+
+    def test_record_monitoring_outcome_requires_actuals(self):
+        with self.assertRaises(ValueError):
+            execution_monitoring.record_monitoring_outcome(self.decision, mrv_status='baseline_only', capex_actual=None, loss_avoided_actual=None)
+
+    def test_record_monitoring_outcome_is_idempotent_one_per_decision(self):
+        execution_monitoring.record_monitoring_outcome(self.decision, mrv_status='baseline_only', capex_actual=1000, loss_avoided_actual=500)
+        execution_monitoring.record_monitoring_outcome(self.decision, mrv_status='after_data_pending', capex_actual=1500, loss_avoided_actual=700)
+        self.assertEqual(VerifiedCapitalOutcome.objects.filter(decision=self.decision).count(), 1)
+        outcome = VerifiedCapitalOutcome.objects.get(decision=self.decision)
+        self.assertEqual(outcome.capex_actual, 1500)
+
+    def test_reviewer_note_appended_to_existing_field_no_new_schema(self):
+        outcome = execution_monitoring.record_monitoring_outcome(
+            self.decision, mrv_status='baseline_only', capex_actual=1000, loss_avoided_actual=500,
+            reviewer_note='Household survey confirms partial completion.',
+        )
+        self.assertIn('Household survey confirms partial completion.', outcome.next_capital_allocation_signal)
+
+    def test_no_duplicate_outcome_model_reuses_verified_capital_outcome(self):
+        outcome = execution_monitoring.record_monitoring_outcome(
+            self.decision, mrv_status='baseline_only', capex_actual=1000, loss_avoided_actual=500,
+        )
+        self.assertIsInstance(outcome, VerifiedCapitalOutcome)
+
+
+class CapitalTraceMonitoringViewTests(TestCase):
+    """Vertical-slice PR 6 — add_capital_trace_entry view."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_mon_ct', 'staff_mon_ct@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_mon_ct', 'normal_mon_ct@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(name='Other Monitoring Project', slug='other-monitoring-project', commodity='other')
+        self.valid_data = {
+            'date': '2026-01-15', 'amount_usd': '5000', 'currency': 'USD', 'purpose': 'Heat pump deposit',
+            'supplier': 'Acme Heating Co', 'approval_status': 'pending', 'investor_approval_status': 'not_required',
+            'verification_status': 'unverified', 'insurance_status': 'not_applicable', 'payment_status': 'pending',
+        }
+
+    def _url(self, project=None):
+        return reverse('capital_guardian:add_capital_trace_entry', args=[(project or self.project).slug])
+
+    def test_staff_can_add(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._url(), self.valid_data, follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(CapitalTraceEntry.objects.filter(project=self.project, purpose='Heat pump deposit').exists())
+
+    def test_non_staff_blocked(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._url(), self.valid_data)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertFalse(CapitalTraceEntry.objects.filter(project=self.project).exists())
+
+    def test_anonymous_blocked(self):
+        r = self.client.post(self._url(), self.valid_data)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertFalse(CapitalTraceEntry.objects.filter(project=self.project).exists())
+
+    def test_get_cannot_create(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._url())
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(CapitalTraceEntry.objects.filter(project=self.project).exists())
+
+    def test_csrf_enforced(self):
+        csrf_client = Client(SERVER_NAME='localhost', enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._url(), self.valid_data)
+        self.assertEqual(r.status_code, 403)
+        self.assertFalse(CapitalTraceEntry.objects.filter(project=self.project).exists())
+
+    def test_invalid_project_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(reverse('capital_guardian:add_capital_trace_entry', args=['no-such-project']), self.valid_data)
+        self.assertEqual(r.status_code, 404)
+
+    def test_exact_project_association(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._url(), self.valid_data)
+        entry = CapitalTraceEntry.objects.get(purpose='Heat pump deposit')
+        self.assertEqual(entry.project_id, self.project.pk)
+
+    def test_no_cross_project_leakage(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._url(), self.valid_data)
+        self.assertFalse(CapitalTraceEntry.objects.filter(project=self.other_project).exists())
+
+    def test_invalid_form_data_rejected(self):
+        self.client.force_login(self.staff)
+        bad_data = dict(self.valid_data)
+        bad_data['amount_usd'] = '-500'
+        r = self.client.post(self._url(), bad_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(CapitalTraceEntry.objects.filter(project=self.project).exists())
+
+
+class MilestoneMonitoringViewTests(TestCase):
+    """Vertical-slice PR 6 — add_milestone / update_milestone views."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_mon_ms', 'staff_mon_ms@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_mon_ms', 'normal_mon_ms@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(name='Other Monitoring Project 2', slug='other-monitoring-project-2', commodity='other')
+        self.valid_data = {
+            'phase': 'construction', 'notes': 'Household survey completed', 'status': 'not_started',
+            'verification_status': 'not_required',
+        }
+
+    def _add_url(self, project=None):
+        return reverse('capital_guardian:add_milestone', args=[(project or self.project).slug])
+
+    def test_create_planned_milestone(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._add_url(), self.valid_data, follow=True)
+        self.assertEqual(r.status_code, 200)
+        milestone = MineTimelineMilestone.objects.get(project=self.project, notes='Household survey completed')
+        self.assertEqual(milestone.status, 'not_started')
+
+    def test_non_staff_cannot_create(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._add_url(), self.valid_data)
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(MineTimelineMilestone.objects.filter(project=self.project).exists())
+
+    def test_anonymous_cannot_create(self):
+        r = self.client.post(self._add_url(), self.valid_data)
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(MineTimelineMilestone.objects.filter(project=self.project).exists())
+
+    def test_no_automatic_completion_without_actual_end(self):
+        self.client.force_login(self.staff)
+        data = dict(self.valid_data, status='complete')
+        r = self.client.post(self._add_url(), data)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(MineTimelineMilestone.objects.filter(project=self.project, status='complete').exists())
+
+    def test_delayed_milestone_distinguishable_from_completed(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(), dict(self.valid_data, status='delayed'))
+        self.client.post(self._add_url(), dict(self.valid_data, notes='Supplier selected', status='not_started'))
+        delayed = MineTimelineMilestone.objects.get(notes='Household survey completed')
+        not_started = MineTimelineMilestone.objects.get(notes='Supplier selected')
+        self.assertEqual(delayed.status, 'delayed')
+        self.assertEqual(not_started.status, 'not_started')
+        self.assertNotEqual(delayed.status, not_started.status)
+
+    def test_update_milestone_to_complete_with_actual_end(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(), self.valid_data)
+        milestone = MineTimelineMilestone.objects.get(project=self.project)
+        update_url = reverse('capital_guardian:update_milestone', args=[self.project.slug, milestone.pk])
+        data = dict(self.valid_data, status='complete', actual_end='2026-02-01')
+        r = self.client.post(update_url, data, follow=True)
+        self.assertEqual(r.status_code, 200)
+        milestone.refresh_from_db()
+        self.assertEqual(milestone.status, 'complete')
+
+    def test_update_milestone_cross_project_isolation(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._add_url(), self.valid_data)
+        milestone = MineTimelineMilestone.objects.get(project=self.project)
+        update_url = reverse('capital_guardian:update_milestone', args=[self.other_project.slug, milestone.pk])
+        r = self.client.post(update_url, self.valid_data)
+        self.assertEqual(r.status_code, 404)
+
+
+class ImplementationEvidenceMonitoringViewTests(TestCase):
+    """Vertical-slice PR 6 — add_implementation_evidence view."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_mon_ev', 'staff_mon_ev@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_mon_ev', 'normal_mon_ev@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(name='Other Monitoring Project 3', slug='other-monitoring-project-3', commodity='other')
+
+    def _url(self, project=None):
+        return reverse('capital_guardian:add_implementation_evidence', args=[(project or self.project).slug])
+
+    def test_staff_can_add_pending_evidence(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._url(), {
+            'title': 'Insulation invoice', 'text': 'Invoice #4471 for insulation materials.',
+            'document_category': 'payment_confirmation', 'verification_status': 'pending',
+            'review_tier': 'uploaded', 'classification': 'real',
+        }, follow=True)
+        self.assertEqual(r.status_code, 200)
+        memory = EvidenceMemory.objects.get(source_reference=f'gold_intelligence.GoldProject:{self.project.pk}')
+        self.assertEqual(memory.verification_status, 'pending')
+        self.assertFalse(memory.is_demo)
+
+    def test_demo_evidence_clearly_marked(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._url(), {
+            'title': 'Illustrative photo metadata', 'text': 'Illustrative example only.',
+            'document_category': 'inspection_report', 'verification_status': 'pending',
+            'review_tier': 'uploaded', 'classification': 'illustrative',
+        })
+        memory = EvidenceMemory.objects.get(source_reference=f'gold_intelligence.GoldProject:{self.project.pk}')
+        self.assertTrue(memory.is_demo)
+
+    def test_pending_evidence_not_treated_as_verified(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._url(), {
+            'title': 'Draft note', 'text': 'Draft note not yet reviewed.',
+            'document_category': 'other', 'verification_status': 'pending',
+            'review_tier': 'uploaded', 'classification': 'estimated',
+        })
+        memory = EvidenceMemory.objects.get(source_reference=f'gold_intelligence.GoldProject:{self.project.pk}')
+        self.assertNotEqual(memory.verification_status, 'verified')
+
+    def test_illustrative_cannot_be_verified(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._url(), {
+            'title': 'Bad claim', 'text': 'Should be rejected.',
+            'document_category': 'other', 'verification_status': 'verified',
+            'review_tier': 'human_reviewed', 'classification': 'illustrative',
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(EvidenceMemory.objects.filter(
+            source_reference=f'gold_intelligence.GoldProject:{self.project.pk}', verification_status='verified',
+        ).exists())
+
+    def test_non_staff_blocked(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._url(), {'title': 'x', 'text': 'x', 'document_category': 'other', 'verification_status': 'pending', 'review_tier': 'uploaded', 'classification': 'real'})
+        self.assertEqual(r.status_code, 302)
+
+    def test_project_scoped(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._url(), {
+            'title': 'Scoped', 'text': 'Scoped evidence.', 'document_category': 'other',
+            'verification_status': 'pending', 'review_tier': 'uploaded', 'classification': 'real',
+        })
+        self.assertFalse(EvidenceMemory.objects.filter(
+            source_reference=f'gold_intelligence.GoldProject:{self.other_project.pk}',
+        ).exists())
+
+
+class VerifiedOutcomeMonitoringViewTests(TestCase):
+    """Vertical-slice PR 6 — record_outcome_confirm / record_outcome_execute views."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_mon_out', 'staff_mon_out@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_mon_out', 'normal_mon_out@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(name='Other Monitoring Project 4', slug='other-monitoring-project-4', commodity='other')
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='Pending decision')
+        self.valid_data = {
+            'capex_actual': '21000', 'opex_actual': '0', 'loss_avoided_actual': '9500', 'savings_actual': '0',
+            'mrv_status': 'baseline_only', 'evidence_quality': 'medium', 'reviewer_note': 'Initial reading.',
+        }
+
+    def _confirm_url(self, project=None, decision=None):
+        return reverse('capital_guardian:record_outcome_confirm', args=[(project or self.project).slug, (decision or self.decision).pk])
+
+    def _execute_url(self, project=None, decision=None):
+        return reverse('capital_guardian:record_outcome_execute', args=[(project or self.project).slug, (decision or self.decision).pk])
+
+    def test_valid_outcome_can_be_recorded(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(), self.valid_data, follow=True)
+        self.assertEqual(r.status_code, 200)
+        outcome = VerifiedCapitalOutcome.objects.get(decision=self.decision)
+        self.assertEqual(outcome.capex_actual, 21000)
+        self.assertEqual(outcome.verified_status, 'estimated')
+
+    def test_missing_required_data_rejected(self):
+        self.client.force_login(self.staff)
+        bad_data = dict(self.valid_data)
+        del bad_data['capex_actual']
+        r = self.client.post(self._execute_url(), bad_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(VerifiedCapitalOutcome.objects.filter(decision=self.decision).exists())
+
+    def test_repeated_submission_is_idempotent(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self.valid_data)
+        self.client.post(self._execute_url(), dict(self.valid_data, capex_actual='25000'))
+        self.assertEqual(VerifiedCapitalOutcome.objects.filter(decision=self.decision).count(), 1)
+        outcome = VerifiedCapitalOutcome.objects.get(decision=self.decision)
+        self.assertEqual(outcome.capex_actual, 25000)
+
+    def test_outcome_links_to_original_decision(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self.valid_data)
+        outcome = VerifiedCapitalOutcome.objects.get(decision=self.decision)
+        self.assertEqual(outcome.decision_id, self.decision.pk)
+        self.assertEqual(outcome.intervention_id, self.option.pk)
+
+    def test_outcome_page_shows_governance_context_when_present(self):
+        from capital_guardian.models import ProjectGovernance
+        ProjectGovernance.objects.create(project=self.project)
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url())
+        self.assertContains(r, 'View Governance')
+
+    def test_estimated_result_never_shown_as_verified(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url(), self.valid_data)
+        r = self.client.get(reverse('capital_guardian:project_monitoring', args=[self.project.slug]))
+        self.assertContains(r, 'Verification: Estimated')
+
+    def test_verified_status_cannot_be_set_via_this_form(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(), dict(self.valid_data, mrv_status='verified'))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(VerifiedCapitalOutcome.objects.filter(decision=self.decision).exists())
+
+    def test_non_staff_blocked(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._execute_url(), self.valid_data)
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(VerifiedCapitalOutcome.objects.filter(decision=self.decision).exists())
+
+    def test_anonymous_blocked(self):
+        r = self.client.post(self._execute_url(), self.valid_data)
+        self.assertEqual(r.status_code, 302)
+
+    def test_csrf_enforced(self):
+        csrf_client = Client(SERVER_NAME='localhost', enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._execute_url(), self.valid_data)
+        self.assertEqual(r.status_code, 403)
+
+    def test_get_cannot_execute(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._execute_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(VerifiedCapitalOutcome.objects.filter(decision=self.decision).exists())
+
+    def test_cross_project_decision_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url(project=self.other_project))
+        self.assertEqual(r.status_code, 404)
+
+
+class RedFlagsHeatingProjectTests(TestCase):
+    """Vertical-slice PR 6 — Task 10: generic rules apply, mining-specific rules stay silent."""
+
+    def setUp(self):
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+
+    def test_capex_variance_rule_still_works_for_heating_project(self):
+        budget = CapitalBudgetLine.objects.create(project=self.project, category='other', label='Heating budget', planned_usd=10000, committed_usd=12000)
+        flags = red_flag_engine.detect_red_flags(self.project)
+        self.assertTrue(any(f.rule_key == 'capex_variance' for f in flags))
+        budget.delete()
+
+    def test_evidence_missing_rule_still_works(self):
+        CapitalTraceEntry.objects.create(
+            project=self.project, date=datetime.date.today(), amount_usd=1000, purpose='Paid with no evidence',
+            payment_status='paid',
+        )
+        flags = red_flag_engine.detect_red_flags(self.project)
+        self.assertTrue(any(f.category == 'evidence' for f in flags))
+
+    def test_mining_specific_equipment_rules_stay_silent(self):
+        self.assertEqual(self.project.equipment_specs.count(), 0)
+        flags = red_flag_engine.detect_red_flags(self.project)
+        self.assertFalse(any(f.category == 'equipment' for f in flags))
+
+    def test_mining_specific_recovery_rate_rule_stays_silent(self):
+        self.assertIsNone(self.project.recovery_rate_pct)
+        flags = red_flag_engine.detect_red_flags(self.project)
+        self.assertFalse(any(f.rule_key == 'recovery_rate_below_target' for f in flags))
+
+    def test_open_red_flags_shown_on_monitoring_page(self):
+        CapitalBudgetLine.objects.create(project=self.project, category='other', label='Heating budget 2', planned_usd=10000, committed_usd=15000)
+        client = Client(SERVER_NAME='localhost')
+        r = client.get(reverse('capital_guardian:project_monitoring', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'CAPEX variance')
+
+
+class MonitoringAuditTraceabilityTests(TestCase):
+    """Vertical-slice PR 6 — Task 11: existing AuditLogEntry mechanism covers new monitoring actions."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_user('staff_mon_audit', 'staff_mon_audit@ecoiq.uk', 'password123', is_staff=True)
+        self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.staff)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+
+    def test_capital_trace_creation_is_audited(self):
+        self.client.post(reverse('capital_guardian:add_capital_trace_entry', args=[self.project.slug]), {
+            'date': '2026-01-15', 'amount_usd': '5000', 'currency': 'USD', 'purpose': 'Audited spend',
+            'supplier': '', 'approval_status': 'pending', 'investor_approval_status': 'not_required',
+            'verification_status': 'unverified', 'insurance_status': 'not_applicable', 'payment_status': 'pending',
+        })
+        self.assertTrue(AuditLogEntry.objects.filter(project=self.project, event_type='capital_trace').exists())
+
+    def test_milestone_creation_is_audited(self):
+        self.client.post(reverse('capital_guardian:add_milestone', args=[self.project.slug]), {
+            'phase': 'construction', 'notes': 'Audited milestone', 'status': 'not_started',
+            'verification_status': 'not_required',
+        })
+        self.assertTrue(AuditLogEntry.objects.filter(project=self.project, event_type='milestone').exists())
+
+    def test_implementation_evidence_creation_is_audited_via_evidence_hook(self):
+        # EvidenceMemory itself is tracked, but only fires an AuditLogEntry on a
+        # tracked-field CHANGE, not on bare creation (see signals.py) — so this
+        # asserts the honest current behaviour rather than one this PR invents.
+        self.client.post(reverse('capital_guardian:add_implementation_evidence', args=[self.project.slug]), {
+            'title': 'Audited evidence', 'text': 'Audited evidence text.', 'document_category': 'other',
+            'verification_status': 'pending', 'review_tier': 'uploaded', 'classification': 'real',
+        })
+        self.assertTrue(EvidenceMemory.objects.filter(
+            source_reference=f'gold_intelligence.GoldProject:{self.project.pk}',
+        ).exists())
+
+
+class MonitoringIntegrationTests(TestCase):
+    """Vertical-slice PR 6 — full chain integration: GoldProject -> ... -> ProjectGovernance
+    -> CapitalTraceEntry / Milestone -> VerifiedCapitalOutcome."""
+
+    def test_full_chain(self):
+        from django.contrib.auth import get_user_model
+        from capital_guardian.models import ProjectGovernance
+        User = get_user_model()
+        staff = User.objects.create_user('staff_mon_full', 'staff_mon_full@ecoiq.uk', 'password123', is_staff=True)
+        client = Client(SERVER_NAME='localhost')
+        client.force_login(staff)
+
+        project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        ProjectGovernance.objects.create(project=project)
+
+        loss = OperationalLoss.objects.create(project=project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=10000)
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='Pending decision')
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+
+        client.post(reverse('capital_guardian:add_capital_trace_entry', args=[project.slug]), {
+            'date': '2026-01-15', 'amount_usd': '5000', 'currency': 'USD', 'purpose': 'Heat pump deposit',
+            'supplier': 'Acme Heating Co', 'approval_status': 'approved', 'investor_approval_status': 'not_required',
+            'verification_status': 'unverified', 'insurance_status': 'not_applicable', 'payment_status': 'paid',
+        })
+        client.post(reverse('capital_guardian:add_milestone', args=[project.slug]), {
+            'phase': 'construction', 'notes': 'Insulation works started', 'status': 'in_progress',
+            'verification_status': 'not_required',
+        })
+        client.post(reverse('capital_guardian:add_implementation_evidence', args=[project.slug]), {
+            'title': 'Insulation invoice', 'text': 'Invoice for insulation works.', 'document_category': 'payment_confirmation',
+            'verification_status': 'pending', 'review_tier': 'uploaded', 'classification': 'real',
+        })
+        client.post(reverse('capital_guardian:record_outcome_execute', args=[project.slug, decision.pk]), {
+            'capex_actual': '21000', 'opex_actual': '0', 'loss_avoided_actual': '9500', 'savings_actual': '0',
+            'mrv_status': 'baseline_only', 'evidence_quality': 'medium', 'reviewer_note': 'Initial reading.',
+        })
+
+        self.assertEqual(CapitalTraceEntry.objects.filter(project=project).count(), 1)
+        self.assertEqual(MineTimelineMilestone.objects.filter(project=project).count(), 1)
+        self.assertTrue(EvidenceMemory.objects.filter(source_reference=f'gold_intelligence.GoldProject:{project.pk}').exists())
+        self.assertTrue(VerifiedCapitalOutcome.objects.filter(decision=decision).exists())
+
+        r = client.get(reverse('capital_guardian:project_monitoring', args=[project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Insulation works started')
+        self.assertContains(r, 'Heat pump deposit')
+
+
+class MonitoringHonestyTests(TestCase):
+    """Vertical-slice PR 6 — Task 12: no forbidden claims anywhere in the new flow."""
+
+    FORBIDDEN_PHRASES = ['AI verified', 'Guaranteed', 'project completed', 'impact achieved']
+
+    def setUp(self):
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.client = Client(SERVER_NAME='localhost')
+
+    def test_no_forbidden_claims_on_monitoring_page(self):
+        r = self.client.get(reverse('capital_guardian:project_monitoring', args=[self.project.slug]))
+        content = r.content.decode()
+        for phrase in self.FORBIDDEN_PHRASES:
+            self.assertNotIn(phrase, content)

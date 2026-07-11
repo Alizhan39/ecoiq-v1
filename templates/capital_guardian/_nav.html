@@ -34,6 +34,7 @@
     <span class="gc-nav-group-label">Govern</span>
     <div class="gc-nav-group-row">
       <a class="gold-tab {% if active_tab == 'govern' %}active{% endif %}" href="{% url 'capital_guardian:govern_hub' project.slug %}">Govern Hub</a>
+      <a class="gold-tab {% if active_tab == 'monitoring' %}active{% endif %}" href="{% url 'capital_guardian:project_monitoring' project.slug %}">Monitoring</a>
       <a class="gold-tab {% if active_tab == 'red_flags' %}active{% endif %}" href="{% url 'capital_guardian:red_flags' project.slug %}">Risk Intelligence</a>
       <a class="gold-tab {% if active_tab == 'evidence' %}active{% endif %}" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre</a>
       <a class="gold-tab {% if active_tab == 'audit' %}active{% endif %}" href="{% url 'capital_guardian:audit_history' project.slug %}">Audit History</a>
