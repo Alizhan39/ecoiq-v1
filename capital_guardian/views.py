@@ -735,6 +735,78 @@ def run_better_way_comparison(request, slug, loss_id):
     })
 
 
+def _option_or_404(loss, option_id):
+    """Independently confirms the option belongs to this exact loss —
+    never trusts a client-submitted (loss_id, option_id) pair."""
+    from waste_to_value_capital_allocation_engine.models import InterventionOption
+
+    option = get_object_or_404(InterventionOption, pk=option_id)
+    if option.operational_loss_id != loss.pk:
+        from django.http import Http404
+        raise Http404('No intervention option found for this operational loss.')
+    return option
+
+
+@staff_member_required(login_url='/login/')
+def create_capital_decision_confirm(request, slug, loss_id, option_id):
+    """GET-only, staff-only. Read-only preview — nothing is created here."""
+    from capital_guardian.services.better_way import compare_interventions
+
+    project = _project_or_404(slug)
+    loss = _loss_or_404(project, loss_id)
+    option = _option_or_404(loss, option_id)
+    result = compare_interventions(project, loss)
+    candidate = next((c for c in result.ranked if c['option'].pk == option.pk), None)
+    blocked_entry = next((b for b in result.blocked if b['option'].pk == option.pk), None)
+
+    return render(request, 'capital_guardian/create_capital_decision_confirm.html', {
+        'project': project, 'loss': loss, 'option': option, 'candidate': candidate, 'blocked_entry': blocked_entry,
+    })
+
+
+@staff_member_required(login_url='/login/')
+def create_capital_decision_execute(request, slug, loss_id, option_id):
+    """
+    POST-only, staff-only. Independently re-resolves project/loss/option
+    from the URL and re-runs the real comparison inside the bridge itself
+    (capital_decision_bridge.create_decision_from_better_way) — never trusts
+    anything about safety/ranking carried over from the confirmation page.
+    A blocked intervention can never reach CapitalAllocationDecision.
+    """
+    project = _project_or_404(slug)
+    loss = _loss_or_404(project, loss_id)
+    option = _option_or_404(loss, option_id)
+    if request.method != 'POST':
+        return redirect('capital_guardian:create_capital_decision_confirm', slug=slug, loss_id=loss_id, option_id=option_id)
+
+    from capital_guardian.services.capital_decision_bridge import (
+        BlockedInterventionError, InterventionNotInComparisonError, create_decision_from_better_way,
+    )
+
+    try:
+        decision = create_decision_from_better_way(project, loss, option)
+    except BlockedInterventionError as exc:
+        messages.error(request, f'This option is blocked and cannot become a capital decision: {exc}')
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+    except InterventionNotInComparisonError:
+        messages.error(request, 'This option could not be matched to the current comparison. No decision was created.')
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure creating CapitalAllocationDecision for InterventionOption %s', option.pk,
+        )
+        messages.error(request, 'Something went wrong creating the capital decision. No decision was created.')
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    messages.success(
+        request,
+        f'Capital allocation decision created for "{option.title}" ({decision.get_approval_status_display()}). '
+        f'Human approval is required before this can be promoted into Capital Guardian.',
+    )
+    return redirect('waste_to_value_capital_allocation_engine:decision_detail', decision_id=decision.pk)
+
+
 @staff_member_required(login_url='/login/')
 def add_project_evidence(request, slug):
     """

@@ -30,6 +30,14 @@ urlpatterns = [
     path('<slug:slug>/losses/<int:loss_id>/interventions/add/', views.create_intervention_option_confirm, name='create_intervention_option_confirm'),
     path('<slug:slug>/losses/<int:loss_id>/interventions/add/execute/', views.create_intervention_option_execute, name='create_intervention_option_execute'),
     path('<slug:slug>/losses/<int:loss_id>/better-way/', views.run_better_way_comparison, name='run_better_way_comparison'),
+    path(
+        '<slug:slug>/losses/<int:loss_id>/interventions/<int:option_id>/decision/',
+        views.create_capital_decision_confirm, name='create_capital_decision_confirm',
+    ),
+    path(
+        '<slug:slug>/losses/<int:loss_id>/interventions/<int:option_id>/decision/execute/',
+        views.create_capital_decision_execute, name='create_capital_decision_execute',
+    ),
     path('<slug:slug>/audit-history/', views.audit_history_view, name='audit_history'),
     path('<slug:slug>/govern/', views.govern_hub_view, name='govern_hub'),
     path('<slug:slug>/ai-director/', views.ai_director_view, name='ai_director'),

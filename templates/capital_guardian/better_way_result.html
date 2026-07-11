@@ -46,6 +46,11 @@
       </div>
     </div>
     {% if c.safety_status == 'conditional' %}<p class="gold-sub" style="font-size:0.76rem;margin:-0.4rem 0 0.6rem;">Unmet condition: {{ c.safety_reason }}</p>{% endif %}
+    {% if request.user.is_staff %}
+    <div style="margin:-0.3rem 0 0.9rem;">
+      <a class="wtv-confirm-btn" style="font-size:0.78rem;padding:0.4rem 0.9rem;" href="{% url 'capital_guardian:create_capital_decision_confirm' project.slug loss.pk c.option.pk %}">Create Capital Decision</a>
+    </div>
+    {% endif %}
     {% endfor %}
     {% else %}
     <p class="gold-honest-stub">No eligible or conditional options to rank yet.</p>
@@ -101,5 +106,7 @@
 {% include 'capital_guardian/_styles.html' %}
 <style>
   .gc-plain-list { color: var(--gold-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0.5rem 0 0; }
+  .wtv-confirm-btn { display: inline-block; background: #00e89a; color: #06120c; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; }
+  .wtv-confirm-btn:hover { filter: brightness(1.08); }
 </style>
 {% endblock %}

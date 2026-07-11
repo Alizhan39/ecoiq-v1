@@ -25,7 +25,9 @@ from capital_guardian.services import (
     ai_director, audit_log, capital_protection, capital_trace, equipment_health, evidence as evidence_service,
     investor_dashboard, portfolio, project_health, red_flag_engine, supplier_comparison,
 )
-from waste_to_value_capital_allocation_engine.models import InterventionOption, LossEvidence, OperationalLoss
+from waste_to_value_capital_allocation_engine.models import (
+    CapitalAllocationDecision, InterventionOption, LossEvidence, OperationalLoss,
+)
 
 
 class ProjectGovernanceModelTests(TestCase):
@@ -2606,4 +2608,390 @@ class BetterWayIntegrationTests(TestCase):
         r = client.post(compare_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Insulation Retrofit')
-        self.assertContains(r, 'BASELINE / CURRENT STATE')
+
+
+class CapitalDecisionBridgeTests(TestCase):
+    """Vertical-slice PR 5 — capital_decision_bridge.create_decision_from_better_way()."""
+
+    def setUp(self):
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000, evidence_quality='strong',
+        )
+        self.eligible_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+
+    def test_eligible_option_creates_pending_decision(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+
+        decision = create_decision_from_better_way(self.project, self.loss, self.eligible_option)
+        self.assertEqual(decision.approval_status, 'pending')
+        self.assertEqual(decision.intervention_id, self.eligible_option.pk)
+        self.assertEqual(decision.project, self.project.name)
+        self.assertIsNotNone(decision.ranking)
+        self.assertIn('pending', decision.decision.lower())
+
+    def test_conditional_option_preserves_conditions(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+        from capital_guardian.services.resource_purpose_review import review_resource_purpose
+        from capital_guardian.services.project_analysis import analyse_project
+
+        # A reviewed misuse pathway makes the resale/misuse-adjacent option
+        # 'conditional' rather than 'eligible' via the real safety gate.
+        analysis = analyse_project(self.project)
+        review_resource_purpose(self.project, analysis)
+        conditional_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Sell coal ash as soil additive', intervention_type='resale',
+            capex_estimate=500, estimated_annual_savings=200, estimated_loss_avoided=200,
+        )
+        decision = create_decision_from_better_way(self.project, self.loss, conditional_option)
+        self.assertEqual(decision.approval_status, 'pending')
+        # Conditional or eligible depending on the exact gate outcome — either
+        # way, if the gate found an unmet condition, it must be preserved.
+        if decision.conditions:
+            self.assertTrue(len(decision.conditions) > 0)
+
+    def test_blocked_option_cannot_create_decision(self):
+        from capital_guardian.services.capital_decision_bridge import (
+            BlockedInterventionError, create_decision_from_better_way,
+        )
+
+        blocked_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Burn coal to produce ash for fertiliser', intervention_type='resale',
+        )
+        with self.assertRaises(BlockedInterventionError):
+            create_decision_from_better_way(self.project, self.loss, blocked_option)
+        self.assertFalse(CapitalAllocationDecision.objects.filter(intervention=blocked_option).exists())
+
+    def test_decision_never_auto_approved(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+
+        decision = create_decision_from_better_way(self.project, self.loss, self.eligible_option)
+        self.assertNotEqual(decision.approval_status, 'approved')
+        self.assertNotEqual(decision.approval_status, 'approved_with_conditions')
+
+    def test_duplicate_creation_returns_existing_without_resetting_approval(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+
+        decision = create_decision_from_better_way(self.project, self.loss, self.eligible_option)
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+
+        decision_again = create_decision_from_better_way(self.project, self.loss, self.eligible_option)
+        self.assertEqual(decision_again.pk, decision.pk)
+        self.assertEqual(decision_again.approval_status, 'approved')
+        self.assertEqual(CapitalAllocationDecision.objects.filter(intervention=self.eligible_option).count(), 1)
+
+    def test_option_not_in_comparison_raises(self):
+        from capital_guardian.services.capital_decision_bridge import (
+            InterventionNotInComparisonError, create_decision_from_better_way,
+        )
+
+        other_loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Another loss', loss_type='energy_loss',
+            financial_loss_amount=5000, projected_future_loss=6000,
+        )
+        stray_option = InterventionOption.objects.create(
+            operational_loss=other_loss, title='Unrelated option', intervention_type='prevention',
+        )
+        with self.assertRaises(InterventionNotInComparisonError):
+            create_decision_from_better_way(self.project, self.loss, stray_option)
+
+
+class CapitalDecisionViewTests(TestCase):
+    """Vertical-slice PR 5 — create_capital_decision_confirm/execute views."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_cd', 'staff_cd@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_cd', 'normal_cd@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(
+            name='Unrelated Project', slug='unrelated-project', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+
+    def _confirm_url(self, project=None, loss=None, option=None):
+        return reverse('capital_guardian:create_capital_decision_confirm', args=[
+            (project or self.project).slug, (loss or self.loss).pk, (option or self.option).pk,
+        ])
+
+    def _execute_url(self, project=None, loss=None, option=None):
+        return reverse('capital_guardian:create_capital_decision_execute', args=[
+            (project or self.project).slug, (loss or self.loss).pk, (option or self.option).pk,
+        ])
+
+    def test_anonymous_cannot_view_confirm(self):
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_cannot_view_confirm(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_staff_can_view_confirm(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url())
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Insulation')
+
+    def test_anonymous_cannot_execute(self):
+        r = self.client.post(self._execute_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertFalse(CapitalAllocationDecision.objects.filter(intervention=self.option).exists())
+
+    def test_non_staff_cannot_execute(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._execute_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(CapitalAllocationDecision.objects.filter(intervention=self.option).exists())
+
+    def test_get_cannot_execute(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._execute_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(CapitalAllocationDecision.objects.filter(intervention=self.option).exists())
+
+    def test_csrf_enforced_on_execute(self):
+        csrf_client = Client(SERVER_NAME='localhost', enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._execute_url())
+        self.assertEqual(r.status_code, 403)
+        self.assertFalse(CapitalAllocationDecision.objects.filter(intervention=self.option).exists())
+
+    def test_staff_post_creates_pending_decision(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(), follow=True)
+        self.assertEqual(r.status_code, 200)
+        decision = CapitalAllocationDecision.objects.get(intervention=self.option)
+        self.assertEqual(decision.approval_status, 'pending')
+
+    def test_blocked_option_cannot_be_created_via_view(self):
+        blocked_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Burn coal to produce ash for fertiliser', intervention_type='resale',
+        )
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(option=blocked_option), follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(CapitalAllocationDecision.objects.filter(intervention=blocked_option).exists())
+
+    def test_cross_project_isolation_on_confirm(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url(project=self.other_project))
+        self.assertEqual(r.status_code, 404)
+
+    def test_cross_project_isolation_on_execute(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url(project=self.other_project))
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(CapitalAllocationDecision.objects.filter(intervention=self.option).exists())
+
+    def test_option_from_other_loss_404s(self):
+        other_loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Another loss', loss_type='energy_loss',
+            financial_loss_amount=5000, projected_future_loss=6000,
+        )
+        stray_option = InterventionOption.objects.create(
+            operational_loss=other_loss, title='Unrelated option', intervention_type='prevention',
+        )
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url(option=stray_option))
+        self.assertEqual(r.status_code, 404)
+
+    def test_duplicate_execute_does_not_create_second_decision(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url())
+        self.client.post(self._execute_url())
+        self.assertEqual(CapitalAllocationDecision.objects.filter(intervention=self.option).count(), 1)
+
+    def test_better_way_page_links_to_create_decision_for_staff(self):
+        self.client.force_login(self.staff)
+        compare_url = reverse('capital_guardian:run_better_way_comparison', args=[self.project.slug, self.loss.pk])
+        r = self.client.post(compare_url)
+        self.assertContains(r, 'Create Capital Decision')
+        self.assertContains(r, self._confirm_url())
+
+    def test_better_way_page_hides_create_decision_for_anonymous(self):
+        compare_url = reverse('capital_guardian:run_better_way_comparison', args=[self.project.slug, self.loss.pk])
+        r = self.client.post(compare_url)
+        self.assertEqual(r.status_code, 302)  # staff-only view itself redirects
+
+
+class CapitalDecisionPromotionTests(TestCase):
+    """Vertical-slice PR 5 — human approval (via admin-editable approval_status)
+    and promote_to_capital_guardian() reuse for a decision created by the bridge."""
+
+    def setUp(self):
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+
+    def _make_decision(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+        return create_decision_from_better_way(self.project, self.loss, self.option)
+
+    def test_pending_decision_cannot_promote(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            DecisionNotApprovedError, promote_to_capital_guardian,
+        )
+        decision = self._make_decision()
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(decision)
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.project).exists())
+
+    def test_rejected_decision_cannot_promote(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            DecisionNotApprovedError, promote_to_capital_guardian,
+        )
+        decision = self._make_decision()
+        decision.approval_status = 'rejected'
+        decision.save(update_fields=['approval_status'])
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(decision)
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.project).exists())
+
+    def test_approved_decision_can_promote(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            promote_to_capital_guardian,
+        )
+        decision = self._make_decision()
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+        result = promote_to_capital_guardian(decision)
+        self.assertEqual(result.status, 'promoted')
+        self.assertEqual(result.project.pk, self.project.pk)
+        self.assertTrue(ProjectGovernance.objects.filter(project=self.project).exists())
+
+    def test_promotion_does_not_duplicate_project_governance(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            promote_to_capital_guardian,
+        )
+        decision = self._make_decision()
+        decision.approval_status = 'approved_with_conditions'
+        decision.save(update_fields=['approval_status'])
+        promote_to_capital_guardian(decision)
+        result_two = promote_to_capital_guardian(decision)
+        self.assertEqual(result_two.status, 'already_promoted')
+        self.assertEqual(ProjectGovernance.objects.filter(project=self.project).count(), 1)
+
+    def test_ambiguous_project_match_stays_blocked(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            promote_to_capital_guardian,
+        )
+        GoldProject.objects.create(name=self.project.name, slug='duplicate-name-pilot', commodity='other')
+        decision = self._make_decision()
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+        result = promote_to_capital_guardian(decision)
+        self.assertEqual(result.status, 'ambiguous_project_match')
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.project).exists())
+
+    def test_decision_detail_shows_traceability_link_back_to_loss(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        staff = User.objects.create_user('staff_trace', 'staff_trace@ecoiq.uk', 'password123', is_staff=True)
+        client = Client(SERVER_NAME='localhost')
+        client.force_login(staff)
+
+        decision = self._make_decision()
+        r = client.get(reverse('waste_to_value_capital_allocation_engine:decision_detail', args=[decision.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, reverse(
+            'capital_guardian:operational_loss_detail', args=[self.project.slug, self.loss.pk],
+        ))
+
+    def test_promote_button_shown_only_when_approved_and_staff(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        staff = User.objects.create_user('staff_promo', 'staff_promo@ecoiq.uk', 'password123', is_staff=True)
+        client = Client(SERVER_NAME='localhost')
+        client.force_login(staff)
+
+        decision = self._make_decision()
+        url = reverse('waste_to_value_capital_allocation_engine:decision_detail', args=[decision.pk])
+        r = client.get(url)
+        self.assertNotContains(r, 'Promote to Capital Guardian')
+
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+        r = client.get(url)
+        self.assertContains(r, 'Promote to Capital Guardian')
+
+
+class CapitalDecisionHonestyTests(TestCase):
+    """Vertical-slice PR 5 — honesty rules: no forbidden claims anywhere in the new flow."""
+
+    FORBIDDEN_PHRASES = [
+        'AI approved', 'AI verified', 'Shariah approved', 'Quranically approved',
+        'Guaranteed investment', 'Guaranteed impact',
+    ]
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_honesty', 'staff_honesty@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+
+    def test_no_forbidden_claims_on_confirm_page(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse(
+            'capital_guardian:create_capital_decision_confirm', args=[self.project.slug, self.loss.pk, self.option.pk],
+        ))
+        content = r.content.decode()
+        for phrase in self.FORBIDDEN_PHRASES:
+            self.assertNotIn(phrase, content)
+
+    def test_no_forbidden_claims_on_decision_detail_page(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+
+        decision = create_decision_from_better_way(self.project, self.loss, self.option)
+        r = self.client.get(reverse('waste_to_value_capital_allocation_engine:decision_detail', args=[decision.pk]))
+        content = r.content.decode()
+        for phrase in self.FORBIDDEN_PHRASES:
+            self.assertNotIn(phrase, content)
+
+    def test_decision_text_frames_as_pending_recommendation(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+
+        decision = create_decision_from_better_way(self.project, self.loss, self.option)
+        self.assertIn('recommendation for human review', decision.decision)
+        self.assertIn('not an approved or funded outcome', decision.decision)

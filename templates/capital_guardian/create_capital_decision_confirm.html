@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Create Capital Decision — {{ option.title }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Human confirmation before creating a real, pending capital allocation decision.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:operational_loss_detail' project.slug loss.pk %}">← Back to Operational Loss</a>
+
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · CREATE CAPITAL DECISION</span>
+  <h1 class="gold-h1">Create Capital Decision</h1>
+  <p class="gold-sub">{{ project.name }} — {{ loss.title }} — {{ option.title }}</p>
+
+  {% if blocked_entry %}
+  <section class="gold-section">
+    <p class="iq-badge iq-badge-review">
+      This option is blocked and cannot become a capital decision: {{ blocked_entry.reason }}
+    </p>
+  </section>
+  {% elif candidate %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Selected Option</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Rank</div><div class="gold-card-value">#{{ candidate.rank }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Composite Score</div><div class="gold-card-value">{{ candidate.composite_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Safety Status</div><div class="gold-card-value">{{ candidate.safety_status|upper }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">CAPEX</div><div class="gold-card-value">£{{ option.capex_estimate|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Annual Savings</div><div class="gold-card-value">£{{ option.estimated_annual_savings|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Quality</div><div class="gold-card-value">{{ loss.get_evidence_quality_display }}</div></div>
+    </div>
+    {% if candidate.safety_status == 'conditional' %}
+    <p class="iq-badge iq-badge-review" style="margin-top:0.75rem;">Unmet condition (will be preserved on the decision): {{ candidate.safety_reason }}</p>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.8rem;margin-top:0.75rem;">
+      Based on the currently entered evidence and assumptions. This will create a real capital allocation
+      decision that begins <strong>pending</strong> — it is never automatically approved. A human must
+      explicitly approve, approve with conditions, or reject it before it can be promoted into Capital
+      Guardian monitoring.
+    </p>
+
+    <form method="post" action="{% url 'capital_guardian:create_capital_decision_execute' project.slug loss.pk option.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit" class="gold-btn gold-btn-primary">Create Capital Decision (Pending)</button>
+    </form>
+  </section>
+  {% else %}
+  <section class="gold-section">
+    <p class="gold-honest-stub">This option could not be matched to the current comparison for this loss.</p>
+  </section>
+  {% endif %}
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+{% endblock %}
