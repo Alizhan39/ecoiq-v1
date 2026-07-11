@@ -401,6 +401,39 @@ def evidence_centre_view(request, slug):
         # RENDERED for staff; the actual authorization check lives on
         # add_project_evidence below, never in the template.
         'intake_form': ProjectEvidenceIntakeForm() if request.user.is_staff else None,
+        # Vertical-slice PR 2 — "Run Project Analysis" button, staff-only display.
+        'can_run_analysis': request.user.is_staff,
+    })
+
+
+@staff_member_required(login_url='/login/')
+def run_project_analysis(request, slug):
+    """
+    Vertical-slice PR 2 — staff-only, POST-only trigger for the real
+    mizan.project.score_project() analysis over this project's real
+    evidence. Nothing is persisted: this is a deterministic, real-time
+    computation over already-stored data, not a live AI call, so re-running
+    it (e.g. on refresh) is harmless and never creates duplicate records.
+    The project is independently re-resolved from the URL slug.
+    """
+    project = _project_or_404(slug)
+    if request.method != 'POST':
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    from capital_guardian.services.project_analysis import analyse_project
+
+    try:
+        result = analyse_project(project)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure running project analysis for GoldProject %s', project.pk,
+        )
+        messages.error(request, 'Something went wrong running the project analysis. No result was produced.')
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    return render(request, 'capital_guardian/project_analysis_result.html', {
+        'project': project, 'result': result,
     })
 
 

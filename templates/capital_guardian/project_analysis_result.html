@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Project Analysis — {{ project.name }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Mizan project analysis for {{ project.name }}: real evidence-derived scoring, warnings, and limitations. Indicative only — not a religious ruling or certification.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">← Back to Evidence Centre</a>
+
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · PROJECT ANALYSIS</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">
+    Analysed {{ result.analysed_at|date:"Y-m-d H:i" }} using {{ result.methodology }}. Indicative scoring only —
+    not a religious ruling, Shariah determination, or certification of any kind, and not independently verified.
+  </p>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Mizan Score</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Final Mizan Score</div><div class="gold-card-value">{{ result.final_mizan_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Label</div><div class="gold-card-value">{{ result.mizan_label }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Scorer Confidence</div><div class="gold-card-value">{{ result.scorer_confidence }}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Dimension Scores</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">These six dimensions are exactly what the existing Mizan scorer computes — no additional "readiness", "impact", or "risk" score is invented here.</p>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Public Benefit</div><div class="gold-card-value">{{ result.public_benefit_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Harm Reduction</div><div class="gold-card-value">{{ result.harm_reduction_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Justice &amp; Distribution</div><div class="gold-card-value">{{ result.justice_distribution_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Transparency &amp; Accountability</div><div class="gold-card-value">{{ result.transparency_accountability_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Stewardship</div><div class="gold-card-value">{{ result.stewardship_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Confidence (declared inputs)</div><div class="gold-card-value">{{ result.evidence_confidence_score }}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence Used</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">{{ result.evidence_quality_summary }}</p>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Total Evidence</div><div class="gold-card-value">{{ result.evidence_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Verified</div><div class="gold-card-value">{{ result.verified_evidence_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Pending</div><div class="gold-card-value">{{ result.pending_evidence_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Rejected / Expired</div><div class="gold-card-value">{{ result.rejected_or_expired_evidence_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Illustrative / Demo</div><div class="gold-card-value">{{ result.demo_evidence_count }}</div></div>
+    </div>
+    {% if result.evidence_references %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.75rem;">Evidence references used:</p>
+    <ul class="gc-plain-list">
+      {% for ref in result.evidence_references %}<li style="font-family:'SF Mono',monospace;font-size:0.72rem;">{{ ref }}</li>{% endfor %}
+    </ul>
+    {% else %}
+    <p class="gold-honest-stub">No evidence records were available for this analysis.</p>
+    {% endif %}
+  </section>
+
+  {% if result.risk_flags %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Warnings &amp; Risk Flags</h2>
+    <ul class="gc-plain-list">{% for flag in result.risk_flags %}<li>{{ flag }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  {% if result.recommended_next_actions %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Recommended Next Actions</h2>
+    <ul class="gc-plain-list">{% for action in result.recommended_next_actions %}<li>{{ action }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Methodology &amp; Limitations</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">Methodology: {{ result.methodology }}</p>
+    <ul class="gc-plain-list">
+      {% for limitation in result.limitations %}<li>{{ limitation }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Future Analysis Direction</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">
+      This section is descriptive only — nothing below is calculated by this analysis. Future EcoIQ
+      versions may evaluate, once real methodologies and evidence exist to support them: whether a
+      resource is being used for its intended purpose, whether demand can be reduced before extraction
+      or investment, whether extraction or consumption can be avoided altogether, whether waste can be
+      safely redirected to a better use, whether safer substitutes exist, the full lifecycle impact of a
+      chosen intervention, its social consequences, and broader stewardship questions about resource use.
+      None of these are scored today.
+    </p>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .gc-plain-list { color: var(--gold-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0.5rem 0 0; }
+</style>
+{% endblock %}
