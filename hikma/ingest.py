@@ -135,7 +135,7 @@ def ingest_for_profile(profile) -> dict:
         if Evidence.objects.filter(content_hash=h).exists():
             skipped += 1
             continue
-        Evidence.objects.create(
+        ev = Evidence.objects.create(
             company=profile, subject_type="company", subject_ref=company.slug,
             kind=r["kind"], statement=r["statement"],
             metric_name=r["metric_name"], metric_value=r["metric_value"], metric_unit=r["metric_unit"],
@@ -143,5 +143,7 @@ def ingest_for_profile(profile) -> dict:
             confidence_tier=r["confidence_tier"], confidence_score=r["confidence_score"],
             content_hash=h, scholar_review_required=True,
         )
+        from evidence_memory.services.memory import create_memory_from_hikma_evidence
+        create_memory_from_hikma_evidence(ev)
         created += 1
     return {"created": created, "skipped": skipped, "sources_seen": out["sources_seen"]}

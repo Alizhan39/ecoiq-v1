@@ -1,3 +1,9 @@
+"""
+institutional_finance_engine/views.py — DEPRECATED (Phase 1A). See
+apps.py's module docstring: 100% static content, zero real functionality.
+financial_intelligence_cloud is the real institutional intelligence
+interface going forward. Not to be extended with new content or logic.
+"""
 from django.shortcuts import render
 
 # Connected EcoIQ modules — the Finance Engine turns verified evidence into investable decisions

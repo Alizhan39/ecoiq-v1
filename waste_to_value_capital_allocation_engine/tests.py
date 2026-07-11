@@ -34,6 +34,9 @@ from agent_runtime_model_router.models import AgentRun
 from waste_to_value_capital_allocation_engine.services.demo_pipeline import DEMO_RUN_SLUG
 from ai_agent_council.models import AgentTask, CouncilDecision, CouncilDisagreement, CouncilRun
 from agent_runtime_model_router.services.safety_assertions import run_safety_assertions
+from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+    DecisionNotApprovedError, promote_to_capital_guardian,
+)
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% extends', '{% block',
@@ -640,3 +643,164 @@ class CapitalAllocationBridgeTests(TestCase):
     def test_longest_term_capex_is_the_equipment_option(self):
         fixture = build_capital_allocation_fixture(self.loss)
         self.assertEqual(fixture['longest_term_capex_option'], 'Cold-chain equipment intervention')
+
+
+class CapitalGuardianHandoffTests(TestCase):
+    """
+    Phase 1A, Task 7 — the first real connection from a human-approved
+    CapitalAllocationDecision to capital_guardian.ProjectGovernance.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject
+
+        User = get_user_model()
+        self.actor = User.objects.create_user('approver', 'approver@example.com', 'password123')
+
+        self.gold_project = GoldProject.objects.create(name='KZ Gold Project 01', slug='kz-gold-project-01')
+
+        self.loss = OperationalLoss.objects.create(
+            title='Test loss', loss_type='meat_spoilage', financial_loss_amount=1000,
+            project='KZ Gold Project 01',
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Test option', intervention_type='equipment_upgrade',
+        )
+
+    def _make_decision(self, approval_status='approved'):
+        return create_governed_investment_case(
+            self.option, decision_text='APPROVE', scores={'financial_return_score': 80},
+            approval_status=approval_status,
+        )
+
+    def test_approved_decision_with_matching_project_promotes(self):
+        from capital_guardian.models import ProjectGovernance
+
+        decision = self._make_decision(approval_status='approved')
+        result = promote_to_capital_guardian(decision, actor=self.actor)
+
+        self.assertEqual(result.status, 'promoted')
+        self.assertEqual(result.project.pk, self.gold_project.pk)
+        self.assertTrue(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+        self.assertFalse(result.governance.is_demo)
+
+    def test_approved_with_conditions_also_promotes(self):
+        decision = self._make_decision(approval_status='approved_with_conditions')
+        result = promote_to_capital_guardian(decision, actor=self.actor)
+        self.assertEqual(result.status, 'promoted')
+
+    def test_creation_is_audit_logged_with_real_actor(self):
+        from capital_guardian.models import AuditLogEntry
+
+        decision = self._make_decision(approval_status='approved')
+        result = promote_to_capital_guardian(decision, actor=self.actor)
+
+        entry = AuditLogEntry.objects.filter(
+            project=self.gold_project, event_type='governance',
+            source_reference=f'capital_guardian.ProjectGovernance:{result.governance.pk}',
+        ).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.changed_by, self.actor)
+
+    def test_unapproved_decision_raises(self):
+        decision = self._make_decision(approval_status='pending')
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(decision, actor=self.actor)
+
+    def test_rejected_decision_raises(self):
+        decision = self._make_decision(approval_status='rejected')
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(decision, actor=self.actor)
+
+    def test_unapproved_decision_creates_no_governance_record(self):
+        from capital_guardian.models import ProjectGovernance
+
+        decision = self._make_decision(approval_status='pending')
+        try:
+            promote_to_capital_guardian(decision, actor=self.actor)
+        except DecisionNotApprovedError:
+            pass
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+
+    def test_already_promoted_decision_is_idempotent(self):
+        from capital_guardian.models import ProjectGovernance
+
+        decision = self._make_decision(approval_status='approved')
+        first = promote_to_capital_guardian(decision, actor=self.actor)
+        second = promote_to_capital_guardian(decision, actor=self.actor)
+
+        self.assertEqual(first.status, 'promoted')
+        self.assertEqual(second.status, 'already_promoted')
+        self.assertEqual(first.governance.pk, second.governance.pk)
+        self.assertEqual(ProjectGovernance.objects.filter(project=self.gold_project).count(), 1)
+
+    def test_duplicate_invocation_creates_no_extra_audit_entries(self):
+        from capital_guardian.models import AuditLogEntry
+
+        decision = self._make_decision(approval_status='approved')
+        promote_to_capital_guardian(decision, actor=self.actor)
+        promote_to_capital_guardian(decision, actor=self.actor)
+
+        count = AuditLogEntry.objects.filter(
+            project=self.gold_project, event_type='governance', field_name='(created)',
+        ).count()
+        self.assertEqual(count, 1)
+
+    def test_no_matching_gold_project_returns_honest_result(self):
+        from capital_guardian.models import ProjectGovernance
+
+        self.loss.project = 'Some Other Project That Does Not Exist'
+        self.loss.save(update_fields=['project'])
+        decision = self._make_decision(approval_status='approved')
+
+        result = promote_to_capital_guardian(decision, actor=self.actor)
+
+        self.assertEqual(result.status, 'no_matching_project')
+        self.assertIsNone(result.governance)
+        self.assertEqual(ProjectGovernance.objects.count(), 0)
+
+    def test_no_matching_project_never_fabricates_a_gold_project(self):
+        from gold_intelligence.models import GoldProject
+
+        self.loss.project = 'Nonexistent Project'
+        self.loss.save(update_fields=['project'])
+        decision = self._make_decision(approval_status='approved')
+
+        before = GoldProject.objects.count()
+        promote_to_capital_guardian(decision, actor=self.actor)
+        self.assertEqual(GoldProject.objects.count(), before)
+
+    def test_ambiguous_project_name_refuses_to_guess(self):
+        from gold_intelligence.models import GoldProject
+        from capital_guardian.models import ProjectGovernance
+
+        GoldProject.objects.create(name='KZ Gold Project 01', slug='kz-gold-project-01-duplicate')
+        decision = self._make_decision(approval_status='approved')
+
+        result = promote_to_capital_guardian(decision, actor=self.actor)
+
+        self.assertEqual(result.status, 'ambiguous_project_match')
+        self.assertIsNone(result.governance)
+        self.assertEqual(ProjectGovernance.objects.count(), 0)
+
+    def test_blank_project_field_returns_no_matching_project(self):
+        self.loss.project = ''
+        self.loss.save(update_fields=['project'])
+        decision = self._make_decision(approval_status='approved')
+
+        result = promote_to_capital_guardian(decision, actor=self.actor)
+        self.assertEqual(result.status, 'no_matching_project')
+
+    def test_actor_is_optional(self):
+        """A promotion with no real actor known must still work honestly (changed_by=None), never guessing a user."""
+        from capital_guardian.models import AuditLogEntry
+
+        decision = self._make_decision(approval_status='approved')
+        result = promote_to_capital_guardian(decision, actor=None)
+
+        self.assertEqual(result.status, 'promoted')
+        entry = AuditLogEntry.objects.filter(
+            project=self.gold_project, event_type='governance', field_name='(created)',
+        ).first()
+        self.assertIsNone(entry.changed_by)

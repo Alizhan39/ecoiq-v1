@@ -564,6 +564,7 @@ def apply_approved_findings(job, company) -> dict:
 
     Returns a summary dict.
     """
+    from audit.models import AIScoreEstimate
     from league.models import EnvironmentalProject, Evidence, ScoreHistory
     from league.scoring import rerank_all
 
@@ -618,7 +619,7 @@ def apply_approved_findings(job, company) -> dict:
 
     # ── 2. Evidence — one record per job document ─────────────────────────────
     try:
-        Evidence.objects.create(
+        evidence = Evidence.objects.create(
             company=company,
             doc_type='audit_report',
             title=f"AI Analysis: {job.original_filename}",
@@ -633,6 +634,8 @@ def apply_approved_findings(job, company) -> dict:
                 f"{job.executive_summary[:500]}"
             ),
         )
+        from evidence_memory.services.memory import create_memory_from_league_evidence
+        create_memory_from_league_evidence(evidence)
         summary['evidence_created'] = 1
     except Exception as exc:
         summary['errors'].append(f"Evidence creation: {exc}")

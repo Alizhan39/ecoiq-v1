@@ -68,6 +68,91 @@ def create_memory_from_agent_run(agent_run, company=None, country=None):
     return memory
 
 
+_HIKMA_REVIEW_TIER = {
+    'verified': 'independently_verified',
+    'analyst-reviewed': 'human_reviewed',
+    'ai-seeded': 'system_checked',
+    'model-estimate': 'system_checked',
+}
+
+
+def _hikma_verification_state(evidence):
+    """
+    Maps hikma's own confidence_tier + scholar_review_required onto
+    EvidenceMemory's verification workflow without ever claiming a stronger
+    tier than hikma itself asserts. scholar_review_required is True on every
+    row the current ingest pipeline creates (hikma/ingest.py), so today this
+    always resolves to 'requires_review' — that will change honestly, on its
+    own, once a real scholar-review workflow starts clearing the flag.
+    """
+    review_tier = _HIKMA_REVIEW_TIER.get(evidence.confidence_tier, 'system_checked')
+    if evidence.scholar_review_required:
+        return 'requires_review', review_tier
+    if evidence.confidence_tier in ('verified', 'analyst-reviewed'):
+        return 'verified', review_tier
+    return 'pending', review_tier
+
+
+def create_memory_from_hikma_evidence(evidence):
+    """
+    evidence: a hikma.models.Evidence instance — a normalised SAY/DO/SHOW
+    statement about a company (or, in future, another subject type). This is
+    additive alongside create_memory_from_evidence(), not a replacement —
+    hikma.Evidence has its own identity/dedup scheme (subject_type/subject_ref
+    + content_hash, see hikma/ingest.py) distinct from harvester.Evidence's,
+    and remains its own normalised evidence store; this only projects it into
+    the shared semantic index, same as the harvester sync does.
+    Idempotent on (source_type, source_reference).
+    """
+    text_chunk = evidence.statement
+    source_type = 'company_report' if evidence.subject_type == 'company' else 'other'
+    source_reference = f'hikma.Evidence:{evidence.pk}'
+
+    memory, _ = EvidenceMemory.objects.get_or_create(
+        source_type=source_type, source_reference=source_reference,
+        defaults={'text_chunk': text_chunk},
+    )
+    memory.text_chunk = text_chunk
+    memory.source_url = evidence.source_url or ''
+    memory.company_id = evidence.company_id  # hikma.Evidence.company is a real FK to companies.CompanyProfile
+    memory.confidence = evidence.confidence_score
+    memory.date_collected = evidence.published_at or evidence.created_at.date()
+    memory.verification_status, memory.review_tier = _hikma_verification_state(evidence)
+    memory.is_demo = False  # hikma ingestion is derived from real CompanyProfile data, never demo
+    _embed_and_save(memory)
+    return memory
+
+
+def create_memory_from_league_evidence(evidence):
+    """
+    evidence: a league.models.Evidence instance — a real project-verification
+    document (permit, audit report, invoice, ...) attached to a league.Company
+    and/or league.EnvironmentalProject. league.Company is a wholly separate
+    model from companies.CompanyProfile (different app, different schema) —
+    no `company` FK is set on the memory here, since setting company_id to a
+    league.Company's pk would silently point at the wrong table's row.
+    Provenance is carried entirely through source_reference instead.
+    Idempotent on (source_type, source_reference).
+    """
+    text_chunk = evidence.notes or evidence.title
+    source_reference = f'league.Evidence:{evidence.pk}'
+
+    memory, _ = EvidenceMemory.objects.get_or_create(
+        source_type='company_report', source_reference=source_reference,
+        defaults={'text_chunk': text_chunk},
+    )
+    memory.text_chunk = text_chunk
+    memory.source_url = evidence.url or ''
+    memory.date_collected = evidence.date_issued or evidence.created_at.date()
+    # league.Evidence.verification_status choices (pending/verified/rejected) are
+    # a strict subset of EvidenceMemory's, so this is a direct, honest mapping.
+    memory.verification_status = evidence.verification_status
+    memory.review_tier = 'human_reviewed' if evidence.verification_status == 'verified' else 'uploaded'
+    memory.is_demo = False  # only wired into league's real, non-seed write paths — see callers
+    _embed_and_save(memory)
+    return memory
+
+
 def _embed_and_save(memory):
     try:
         embedding = compute_embedding(memory.text_chunk)

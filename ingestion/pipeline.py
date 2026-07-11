@@ -873,7 +873,7 @@ Rules:
             # Evidence for the project source URL
             src_url = p.get('source_url', '')
             if src_url:
-                Evidence.objects.get_or_create(
+                evidence, _ = Evidence.objects.get_or_create(
                     company=company,
                     project=proj,
                     url=src_url[:2000],
@@ -883,6 +883,8 @@ Rules:
                         'verification_status': 'pending',
                     },
                 )
+                from evidence_memory.services.memory import create_memory_from_league_evidence
+                create_memory_from_league_evidence(evidence)
             projects_saved += 1
 
         _progress(self.job_pk, 96, f'Saved {projects_saved} projects.')
@@ -900,7 +902,7 @@ Rules:
                 'web':           'press_release',
             }
             doc_type = doc_map.get(src['source_type'], 'other')
-            Evidence.objects.get_or_create(
+            evidence, _ = Evidence.objects.get_or_create(
                 company=company,
                 url=src['url'][:2000],
                 defaults={
@@ -910,6 +912,8 @@ Rules:
                     'verification_status': 'pending',
                 },
             )
+            from evidence_memory.services.memory import create_memory_from_league_evidence
+            create_memory_from_league_evidence(evidence)
 
         # ── ScoreHistory ──────────────────────────────────────────────────────
         today = date.today()

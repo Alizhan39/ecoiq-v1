@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.test import TestCase
 
 from evidence_memory.models import EMBEDDING_DIMENSIONS, EvidenceMemory
@@ -84,6 +86,326 @@ class CreateMemoryFromEvidenceTests(TestCase):
         evidence = self._make_evidence(excerpt='', full_text='The full document text goes here.')
         m = memory.create_memory_from_evidence(evidence)
         self.assertIn('full document text', m.text_chunk)
+
+
+class HarvesterSyncCharacterizationTests(TestCase):
+    """
+    Phase 1A, Task 1 — locks in the CURRENT behaviour of
+    create_memory_from_evidence() before Tasks 2/3 extend the same service
+    layer to hikma.Evidence and league.Evidence. Every assertion here
+    describes what the sync already does today; none of it is new behaviour.
+    """
+
+    def _make_evidence(self, **kwargs):
+        from harvester.models import Evidence
+        defaults = {
+            'title': 'Characterization evidence', 'excerpt': 'Reported 42 tonnes CO2 reduction.',
+            'company_slug': 'char-co', 'category': 'emissions',
+        }
+        defaults.update(kwargs)
+        return Evidence.objects.create(**defaults)
+
+    def test_source_reference_and_source_type(self):
+        evidence = self._make_evidence()
+        m = memory.create_memory_from_evidence(evidence)
+        self.assertEqual(m.source_reference, f'harvester.Evidence:{evidence.pk}')
+        self.assertEqual(m.source_type, 'harvester_evidence')
+
+    def test_verification_workflow_fields_are_untouched_defaults(self):
+        """
+        The harvester sync has never set verification_status/review_tier/
+        document_category — they stay at the model's own defaults. This is
+        the baseline Tasks 2/3 must not silently change for harvester-sourced
+        memories.
+        """
+        evidence = self._make_evidence()
+        m = memory.create_memory_from_evidence(evidence)
+        self.assertEqual(m.verification_status, 'pending')
+        self.assertEqual(m.review_tier, 'uploaded')
+        self.assertEqual(m.document_category, 'other')
+
+    def test_integrity_reference_is_sha256_of_text_chunk(self):
+        import hashlib
+        evidence = self._make_evidence()
+        m = memory.create_memory_from_evidence(evidence)
+        expected = hashlib.sha256(m.text_chunk.encode('utf-8')).hexdigest()
+        self.assertEqual(m.integrity_reference, expected)
+        self.assertEqual(len(m.integrity_reference), 64)
+
+    def test_embedding_populated_with_correct_dimensions(self):
+        from evidence_memory.models import EMBEDDING_DIMENSIONS
+        evidence = self._make_evidence()
+        m = memory.create_memory_from_evidence(evidence)
+        self.assertEqual(m.embedding_status, 'embedded')
+        self.assertEqual(len(m.embedding), EMBEDDING_DIMENSIONS)
+
+    def test_idempotent_same_pk_no_duplicate_row(self):
+        evidence = self._make_evidence()
+        m1 = memory.create_memory_from_evidence(evidence)
+        m2 = memory.create_memory_from_evidence(evidence)
+        m3 = memory.create_memory_from_evidence(evidence)
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertEqual(m2.pk, m3.pk)
+        self.assertEqual(
+            EvidenceMemory.objects.filter(source_reference=f'harvester.Evidence:{evidence.pk}').count(), 1,
+        )
+
+    def test_resync_updates_text_chunk_in_place(self):
+        """Re-running the sync after the underlying Evidence changes updates the
+        existing memory row rather than leaving stale text or creating a second row."""
+        evidence = self._make_evidence(excerpt='Original excerpt text.')
+        m1 = memory.create_memory_from_evidence(evidence)
+        self.assertIn('Original excerpt', m1.text_chunk)
+
+        evidence.excerpt = 'Updated excerpt text after re-harvest.'
+        evidence.save(update_fields=['excerpt'])
+        m2 = memory.create_memory_from_evidence(evidence)
+
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertIn('Updated excerpt', m2.text_chunk)
+        self.assertEqual(EvidenceMemory.objects.filter(source_reference=f'harvester.Evidence:{evidence.pk}').count(), 1)
+
+    def test_two_different_evidence_rows_never_collide(self):
+        e1 = self._make_evidence(company_slug='co-a')
+        e2 = self._make_evidence(company_slug='co-b')
+        m1 = memory.create_memory_from_evidence(e1)
+        m2 = memory.create_memory_from_evidence(e2)
+        self.assertNotEqual(m1.pk, m2.pk)
+        self.assertNotEqual(m1.source_reference, m2.source_reference)
+
+    def test_embedding_failure_is_contained_not_propagated(self):
+        """
+        If embedding computation raises, the sync must still save the memory
+        row (marked embedding_status='failed') rather than losing the write
+        or propagating the exception up into the caller's ingestion pipeline.
+        """
+        evidence = self._make_evidence()
+        with mock.patch('evidence_memory.services.memory.compute_embedding', side_effect=RuntimeError('boom')):
+            m = memory.create_memory_from_evidence(evidence)
+        self.assertEqual(m.embedding_status, 'failed')
+        self.assertTrue(EvidenceMemory.objects.filter(pk=m.pk).exists())
+
+    def test_blank_excerpt_and_full_text_falls_back_to_title(self):
+        evidence = self._make_evidence(excerpt='', full_text='', title='Title-only evidence record')
+        m = memory.create_memory_from_evidence(evidence)
+        self.assertEqual(m.text_chunk, 'Title-only evidence record')
+
+    def test_is_demo_always_false_for_harvester_sourced_memory(self):
+        evidence = self._make_evidence()
+        m = memory.create_memory_from_evidence(evidence)
+        self.assertFalse(m.is_demo)
+
+
+class CreateMemoryFromHikmaEvidenceTests(TestCase):
+    """Phase 1A, Task 2 — hikma.Evidence -> EvidenceMemory."""
+
+    def _make_hikma_evidence(self, **kwargs):
+        from hikma.models import Evidence
+        from companies.models import CompanyProfile
+        from django.core.management import call_command
+        call_command('seed_global_companies')
+        profile = CompanyProfile.objects.first()
+        defaults = {
+            'company': profile, 'subject_type': 'company', 'subject_ref': profile.company.slug,
+            'kind': 'say', 'statement': 'Stated a 40% emissions-reduction target by 2030.',
+            'confidence_tier': 'analyst-reviewed', 'confidence_score': 0.8,
+            'scholar_review_required': True,
+        }
+        defaults.update(kwargs)
+        return Evidence.objects.create(**defaults)
+
+    def test_source_reference_and_source_type(self):
+        evidence = self._make_hikma_evidence()
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.source_reference, f'hikma.Evidence:{evidence.pk}')
+        self.assertEqual(m.source_type, 'company_report')
+
+    def test_non_company_subject_uses_other_source_type(self):
+        evidence = self._make_hikma_evidence(subject_type='country', subject_ref='KZ')
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.source_type, 'other')
+
+    def test_text_chunk_is_the_statement(self):
+        evidence = self._make_hikma_evidence(statement='A specific SAY statement.')
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.text_chunk, 'A specific SAY statement.')
+
+    def test_company_link_preserved(self):
+        evidence = self._make_hikma_evidence()
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.company_id, evidence.company_id)
+
+    def test_confidence_carried_from_confidence_score(self):
+        evidence = self._make_hikma_evidence(confidence_score=0.73)
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.confidence, 0.73)
+
+    def test_scholar_review_required_forces_requires_review(self):
+        evidence = self._make_hikma_evidence(confidence_tier='verified', scholar_review_required=True)
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.verification_status, 'requires_review')
+        self.assertEqual(m.review_tier, 'independently_verified')
+
+    def test_reviewed_and_cleared_flag_yields_verified(self):
+        evidence = self._make_hikma_evidence(confidence_tier='analyst-reviewed', scholar_review_required=False)
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.verification_status, 'verified')
+        self.assertEqual(m.review_tier, 'human_reviewed')
+
+    def test_ai_seeded_and_cleared_flag_yields_pending(self):
+        evidence = self._make_hikma_evidence(confidence_tier='ai-seeded', scholar_review_required=False)
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m.verification_status, 'pending')
+        self.assertEqual(m.review_tier, 'system_checked')
+
+    def test_is_demo_always_false(self):
+        evidence = self._make_hikma_evidence()
+        m = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertFalse(m.is_demo)
+
+    def test_idempotent_no_duplicate(self):
+        evidence = self._make_hikma_evidence()
+        m1 = memory.create_memory_from_hikma_evidence(evidence)
+        m2 = memory.create_memory_from_hikma_evidence(evidence)
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertEqual(
+            EvidenceMemory.objects.filter(source_reference=f'hikma.Evidence:{evidence.pk}').count(), 1,
+        )
+
+    def test_embedded_and_hikma_evidence_still_a_separate_store(self):
+        """hikma.Evidence itself is untouched by the sync — it's not consumed/deleted."""
+        from hikma.models import Evidence
+        evidence = self._make_hikma_evidence()
+        memory.create_memory_from_hikma_evidence(evidence)
+        self.assertTrue(Evidence.objects.filter(pk=evidence.pk).exists())
+
+    def test_wired_into_real_ingest_pipeline(self):
+        from hikma.ingest import ingest_for_profile
+        from hikma.models import Evidence as HikmaEvidence
+        from companies.models import CompanyProfile
+        from django.core.management import call_command
+        call_command('seed_global_companies')
+        profile = CompanyProfile.objects.exclude(ai_summary='').first()
+        self.assertIsNotNone(profile)
+
+        result = ingest_for_profile(profile)
+        self.assertGreater(result['created'], 0)
+
+        created_refs = {
+            f'hikma.Evidence:{ev.pk}' for ev in HikmaEvidence.objects.filter(company=profile)
+        }
+        synced_refs = set(
+            EvidenceMemory.objects.filter(source_reference__in=created_refs).values_list('source_reference', flat=True)
+        )
+        self.assertEqual(created_refs, synced_refs)
+
+
+class CreateMemoryFromLeagueEvidenceTests(TestCase):
+    """Phase 1A, Task 3 — league.Evidence -> EvidenceMemory."""
+
+    def _make_league_evidence(self, **kwargs):
+        from league.models import Company, Evidence
+        company = Company.objects.create(name='Char League Corp', sector='oil_gas')
+        defaults = {
+            'company': company, 'doc_type': 'permit', 'title': 'Environmental Permit 2026',
+            'url': 'https://example.com/permit.pdf', 'verification_status': 'pending',
+            'notes': 'Real permit document verifying project compliance.',
+        }
+        defaults.update(kwargs)
+        return Evidence.objects.create(**defaults)
+
+    def test_source_reference_and_source_type(self):
+        evidence = self._make_league_evidence()
+        m = memory.create_memory_from_league_evidence(evidence)
+        self.assertEqual(m.source_reference, f'league.Evidence:{evidence.pk}')
+        self.assertEqual(m.source_type, 'company_report')
+
+    def test_text_chunk_prefers_notes_falls_back_to_title(self):
+        evidence = self._make_league_evidence(notes='', title='Fallback title used here')
+        m = memory.create_memory_from_league_evidence(evidence)
+        self.assertEqual(m.text_chunk, 'Fallback title used here')
+
+    def test_no_cross_app_company_fk_is_set(self):
+        """
+        league.Company and companies.CompanyProfile are different models —
+        memory.company must stay None rather than pointing at the wrong table's
+        row via a coincidentally-matching pk.
+        """
+        evidence = self._make_league_evidence()
+        m = memory.create_memory_from_league_evidence(evidence)
+        self.assertIsNone(m.company)
+
+    def test_verification_status_propagated_verified(self):
+        evidence = self._make_league_evidence(verification_status='verified')
+        m = memory.create_memory_from_league_evidence(evidence)
+        self.assertEqual(m.verification_status, 'verified')
+        self.assertEqual(m.review_tier, 'human_reviewed')
+
+    def test_verification_status_propagated_rejected(self):
+        evidence = self._make_league_evidence(verification_status='rejected')
+        m = memory.create_memory_from_league_evidence(evidence)
+        self.assertEqual(m.verification_status, 'rejected')
+        self.assertEqual(m.review_tier, 'uploaded')
+
+    def test_is_demo_always_false(self):
+        evidence = self._make_league_evidence()
+        m = memory.create_memory_from_league_evidence(evidence)
+        self.assertFalse(m.is_demo)
+
+    def test_idempotent_no_duplicate(self):
+        evidence = self._make_league_evidence()
+        m1 = memory.create_memory_from_league_evidence(evidence)
+        m2 = memory.create_memory_from_league_evidence(evidence)
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertEqual(
+            EvidenceMemory.objects.filter(source_reference=f'league.Evidence:{evidence.pk}').count(), 1,
+        )
+
+    def test_wired_into_audit_ai_engine_apply_approved_findings(self):
+        from audit.ai_engine import apply_approved_findings
+        from audit.models import AIAnalysisJob
+        from league.models import Company, Evidence as LeagueEvidence
+        from django.utils import timezone
+
+        company = Company.objects.create(name='Audit Sync Corp', sector='mining')
+        job = AIAnalysisJob.objects.create(
+            company=company, original_filename='report.pdf', status='completed',
+            model_used='test-model', pages_analyzed=3, input_tokens=100, output_tokens=50,
+            executive_summary='Summary of findings.', completed_at=timezone.now(),
+        )
+        apply_approved_findings(job, company)
+
+        evidence = LeagueEvidence.objects.filter(company=company).first()
+        self.assertIsNotNone(evidence)
+        self.assertTrue(
+            EvidenceMemory.objects.filter(source_reference=f'league.Evidence:{evidence.pk}').exists()
+        )
+
+    def test_wired_into_ingestion_pipeline_project_and_report_evidence(self):
+        from ingestion.pipeline import IngestionPipeline
+        from ingestion.models import IngestionJob
+        from league.models import Evidence as LeagueEvidence
+
+        job = IngestionJob.objects.create(company_name='Pipeline Sync Corp')
+        pipeline = IngestionPipeline(job.pk)
+        pipeline._search_data = {'canonical_name': 'Pipeline Sync Corp', 'sector': 'energy'}
+        pipeline._extraction = {
+            'projects': [{'name': 'Sync Project', 'source_url': 'https://example.com/project-source'}],
+        }
+        pipeline._scores = {
+            'pollution_footprint': 60, 'reduction_progress': 55, 'investment': 50,
+            'transparency': 65, 'community_impact': 70, 'ecoiq_score': 58.2, 'reasoning': {},
+        }
+        pipeline._sources = [
+            {'url': 'https://example.com/report.pdf', 'downloaded': True, 'source_type': 'esg_report',
+             'title': 'ESG Report', 'snippet': 'Snippet text.'},
+        ]
+        pipeline._step_save()
+
+        refs = list(LeagueEvidence.objects.filter(company__name='Pipeline Sync Corp').values_list('pk', flat=True))
+        self.assertEqual(len(refs), 2)
+        for pk in refs:
+            self.assertTrue(EvidenceMemory.objects.filter(source_reference=f'league.Evidence:{pk}').exists())
 
 
 class CreateMemoryFromAgentRunTests(TestCase):
