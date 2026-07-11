@@ -1,10 +1,20 @@
+import logging
+
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from waste_to_value_capital_allocation_engine.models import (
     CapitalAllocationDecision, FundingGap, InterventionOption, OperationalLoss,
     VerifiedCapitalOutcome,
 )
+from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+    APPROVED_STATUSES, AmbiguousProjectMatchError, DecisionNotApprovedError,
+    find_matching_gold_project, promote_to_capital_guardian,
+)
+
+log = logging.getLogger(__name__)
 
 CORE_PURPOSE = (
     'Turns operational waste into finance-ready investment opportunities: quantifying the '
@@ -120,4 +130,108 @@ def decision_detail(request, decision_id):
         'route_matches': route_matches,
         'verified_outcome': verified_outcome,
         'council_run': decision.council_case,
+        # Human-approved Capital Guardian promotion — button only shown when
+        # both true; the real authorization/eligibility check happens again,
+        # independently, server-side in promote_confirm()/promote_execute().
+        'eligible_for_promotion': decision.approval_status in APPROVED_STATUSES,
     })
+
+
+def _decision_or_404(decision_id):
+    return get_object_or_404(
+        CapitalAllocationDecision.objects.select_related('intervention', 'intervention__operational_loss', 'council_case'),
+        pk=decision_id,
+    )
+
+
+@staff_member_required(login_url='/login/')
+def promote_confirm(request, decision_id):
+    """
+    GET-only confirmation screen for promoting a CapitalAllocationDecision
+    into Capital Guardian monitoring. Read-only preview — never mutates
+    anything. This view's own eligibility/match preview is for display only;
+    promote_execute() below independently re-checks everything from scratch
+    and is the sole place a ProjectGovernance record can actually be created.
+    """
+    decision = _decision_or_404(decision_id)
+    eligible = decision.approval_status in APPROVED_STATUSES
+
+    matching_project = None
+    match_state = 'not_eligible'
+    already_governance = None
+
+    if eligible:
+        from capital_guardian.models import ProjectGovernance
+        try:
+            matching_project = find_matching_gold_project(decision)
+        except AmbiguousProjectMatchError:
+            match_state = 'ambiguous'
+        else:
+            match_state = 'found' if matching_project else 'none'
+            if matching_project is not None:
+                already_governance = ProjectGovernance.objects.filter(project=matching_project).first()
+
+    return render(request, 'waste_to_value_capital_allocation_engine/promote_confirm.html', {
+        'decision': decision,
+        'eligible': eligible,
+        'matching_project': matching_project,
+        'match_state': match_state,
+        'already_governance': already_governance,
+    })
+
+
+@staff_member_required(login_url='/login/')
+def promote_execute(request, decision_id):
+    """
+    POST-only. Independently reloads the decision from the database (never
+    trusts anything about eligibility/matching carried over from the
+    confirmation page) and calls the existing, unmodified
+    promote_to_capital_guardian() service — no promotion logic is
+    duplicated here.
+    """
+    if request.method != 'POST':
+        return redirect('waste_to_value_capital_allocation_engine:promote_confirm', decision_id=decision_id)
+
+    decision = _decision_or_404(decision_id)
+
+    try:
+        result = promote_to_capital_guardian(decision, actor=request.user)
+    except DecisionNotApprovedError:
+        messages.error(
+            request, 'This decision must receive human approval before it can enter Capital Guardian.',
+        )
+        return redirect('waste_to_value_capital_allocation_engine:decision_detail', decision_id=decision_id)
+    except Exception:
+        log.exception(
+            'Unexpected failure promoting CapitalAllocationDecision %s to Capital Guardian', decision_id,
+        )
+        messages.error(
+            request, 'Something went wrong starting Capital Guardian monitoring. No changes were made.',
+        )
+        return redirect('waste_to_value_capital_allocation_engine:decision_detail', decision_id=decision_id)
+
+    if result.status == 'promoted':
+        messages.success(request, 'Capital Guardian monitoring has been activated for this project.')
+        return redirect('capital_guardian:governance', slug=result.project.slug)
+
+    if result.status == 'already_promoted':
+        messages.info(request, 'This decision is already monitored by Capital Guardian.')
+        return redirect('capital_guardian:governance', slug=result.project.slug)
+
+    if result.status == 'no_matching_project':
+        messages.warning(
+            request, 'No matching project record was found. No Capital Guardian record was created.',
+        )
+        return redirect('waste_to_value_capital_allocation_engine:decision_detail', decision_id=decision_id)
+
+    if result.status == 'ambiguous_project_match':
+        messages.warning(
+            request,
+            'Multiple matching project records were found. Promotion was stopped to prevent incorrect capital monitoring.',
+        )
+        return redirect('waste_to_value_capital_allocation_engine:decision_detail', decision_id=decision_id)
+
+    # Unrecognised status — fail safe, log loudly, never expose internals to the user.
+    log.error('promote_to_capital_guardian returned unrecognised status %r for decision %s', result.status, decision_id)
+    messages.error(request, 'Something went wrong starting Capital Guardian monitoring. No changes were made.')
+    return redirect('waste_to_value_capital_allocation_engine:decision_detail', decision_id=decision_id)

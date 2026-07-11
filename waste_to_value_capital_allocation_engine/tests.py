@@ -804,3 +804,334 @@ class CapitalGuardianHandoffTests(TestCase):
             project=self.gold_project, event_type='governance', field_name='(created)',
         ).first()
         self.assertIsNone(entry.changed_by)
+
+    def test_concurrent_race_falls_back_to_already_promoted(self):
+        """
+        Simulates two requests racing to promote the same decision: both pass
+        the existence check before either has saved, so the second .save()
+        hits the real OneToOne uniqueness constraint. The service must catch
+        that IntegrityError and report 'already_promoted', not crash.
+        """
+        from unittest import mock
+
+        from django.db import IntegrityError
+
+        from capital_guardian.models import ProjectGovernance
+
+        decision = self._make_decision(approval_status='approved')
+
+        real_save = ProjectGovernance.save
+        call_count = {'n': 0}
+
+        def racy_save(self, *args, **kwargs):
+            call_count['n'] += 1
+            if call_count['n'] == 1:
+                # Another request wins the race and creates the row first.
+                ProjectGovernance.objects.create(project=self.project, is_demo=False)
+                raise IntegrityError('UNIQUE constraint failed (simulated race)')
+            return real_save(self, *args, **kwargs)
+
+        with mock.patch.object(ProjectGovernance, 'save', racy_save):
+            result = promote_to_capital_guardian(decision, actor=self.actor)
+
+        self.assertEqual(result.status, 'already_promoted')
+        self.assertEqual(ProjectGovernance.objects.filter(project=self.gold_project).count(), 1)
+
+
+class CapitalGuardianPromotionUITests(TestCase):
+    """
+    Human approval UI for promoting a CapitalAllocationDecision into
+    Capital Guardian monitoring: authentication/authorization, HTTP safety,
+    eligibility, service-outcome handling, auditability, UX, and regressions.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject
+
+        User = get_user_model()
+        self.staff = User.objects.create_user('staff_user', 'staff@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_user', 'user@example.com', 'password123', is_staff=False)
+
+        self.gold_project = GoldProject.objects.create(name='UI Test Gold Project', slug='ui-test-gold-project')
+        self.loss = OperationalLoss.objects.create(
+            title='UI test loss', loss_type='meat_spoilage', financial_loss_amount=1000,
+            project='UI Test Gold Project',
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='UI test option', intervention_type='equipment_upgrade',
+            capex_estimate=5000, estimated_annual_savings=2000, estimated_loss_avoided=3000,
+        )
+
+    def _make_decision(self, approval_status='approved'):
+        return create_governed_investment_case(
+            self.option, decision_text='APPROVE', scores={'financial_return_score': 80},
+            approval_status=approval_status,
+        )
+
+    def _confirm_url(self, decision):
+        from django.urls import reverse
+        return reverse('waste_to_value_capital_allocation_engine:promote_confirm', args=[decision.pk])
+
+    def _execute_url(self, decision):
+        from django.urls import reverse
+        return reverse('waste_to_value_capital_allocation_engine:promote_execute', args=[decision.pk])
+
+    def _detail_url(self, decision):
+        from django.urls import reverse
+        return reverse('waste_to_value_capital_allocation_engine:decision_detail', args=[decision.pk])
+
+    # ── Authentication and authorization ────────────────────────────────────
+
+    def test_anonymous_cannot_access_confirm_page(self):
+        decision = self._make_decision('approved')
+        r = self.client.get(self._confirm_url(decision))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_anonymous_cannot_execute_promotion(self):
+        from capital_guardian.models import ProjectGovernance
+        decision = self._make_decision('approved')
+        r = self.client.post(self._execute_url(decision))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+
+    def test_normal_authenticated_user_cannot_access_confirm_page(self):
+        self.client.force_login(self.normal)
+        decision = self._make_decision('approved')
+        r = self.client.get(self._confirm_url(decision))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_normal_authenticated_user_cannot_execute_promotion(self):
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.normal)
+        decision = self._make_decision('approved')
+        r = self.client.post(self._execute_url(decision))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+
+    def test_staff_user_can_access_eligible_confirm_page(self):
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        r = self.client.get(self._confirm_url(decision))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Confirm and Start Capital Guardian Monitoring')
+
+    def test_idor_attempt_by_normal_user_with_known_decision_id_is_blocked(self):
+        """A normal user who knows a real decision ID still cannot promote it."""
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.normal)
+        decision = self._make_decision('approved')
+        self.client.post(self._execute_url(decision))
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+
+    # ── HTTP safety ──────────────────────────────────────────────────────────
+
+    def test_get_to_execute_url_does_not_promote(self):
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        r = self.client.get(self._execute_url(decision))
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+
+    def test_post_without_csrf_token_is_rejected(self):
+        from django.test import Client as CsrfClient
+        csrf_client = CsrfClient(enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        r = csrf_client.post(self._execute_url(decision))
+        self.assertEqual(r.status_code, 403)
+
+    def test_invalid_decision_id_returns_404_for_staff(self):
+        from django.urls import reverse
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('waste_to_value_capital_allocation_engine:promote_confirm', args=[999999]))
+        self.assertEqual(r.status_code, 404)
+
+    # ── Eligibility ──────────────────────────────────────────────────────────
+
+    def test_approved_decision_confirm_page_shows_confirm_button(self):
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        r = self.client.get(self._confirm_url(decision))
+        self.assertContains(r, 'Confirm and Start Capital Guardian Monitoring')
+
+    def test_approved_with_conditions_confirm_page_shows_confirm_button(self):
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved_with_conditions')
+        r = self.client.get(self._confirm_url(decision))
+        self.assertContains(r, 'Confirm and Start Capital Guardian Monitoring')
+
+    def test_pending_decision_confirm_page_does_not_show_confirm_button(self):
+        self.client.force_login(self.staff)
+        decision = self._make_decision('pending')
+        r = self.client.get(self._confirm_url(decision))
+        self.assertNotContains(r, 'Confirm and Start Capital Guardian Monitoring')
+        self.assertContains(r, 'must receive human approval')
+
+    def test_pending_decision_cannot_be_executed(self):
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        decision = self._make_decision('pending')
+        r = self.client.post(self._execute_url(decision), follow=True)
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+        self.assertContains(r, 'must receive human approval')
+
+    def test_rejected_decision_cannot_be_executed(self):
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        decision = self._make_decision('rejected')
+        r = self.client.post(self._execute_url(decision), follow=True)
+        self.assertFalse(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+        self.assertContains(r, 'must receive human approval')
+
+    # ── Service outcomes ─────────────────────────────────────────────────────
+
+    def test_successful_promotion_via_real_service_redirects_to_governance(self):
+        """Integration-style: exercises the real promote_to_capital_guardian(), not a mock."""
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        r = self.client.post(self._execute_url(decision))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn(f'/capital-guardian/{self.gold_project.slug}/governance/', r['Location'])
+        self.assertTrue(ProjectGovernance.objects.filter(project=self.gold_project).exists())
+
+    def test_successful_promotion_shows_success_message(self):
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        r = self.client.post(self._execute_url(decision), follow=True)
+        self.assertContains(r, 'Capital Guardian monitoring has been activated')
+
+    def test_already_promoted_shows_info_message_and_links_to_governance(self):
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        ProjectGovernance.objects.create(project=self.gold_project, is_demo=False)
+
+        r = self.client.post(self._execute_url(decision), follow=True)
+        self.assertContains(r, 'already monitored by Capital Guardian')
+        self.assertEqual(ProjectGovernance.objects.filter(project=self.gold_project).count(), 1)
+
+    def test_no_matching_project_shows_warning_and_creates_nothing(self):
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        self.loss.project = 'Nonexistent Project'
+        self.loss.save(update_fields=['project'])
+        decision = self._make_decision('approved')
+
+        r = self.client.post(self._execute_url(decision), follow=True)
+        self.assertContains(r, 'No matching project record was found')
+        self.assertEqual(ProjectGovernance.objects.count(), 0)
+
+    def test_ambiguous_project_match_shows_warning_and_creates_nothing(self):
+        from gold_intelligence.models import GoldProject
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        GoldProject.objects.create(name='UI Test Gold Project', slug='ui-test-gold-project-dup')
+        decision = self._make_decision('approved')
+
+        r = self.client.post(self._execute_url(decision), follow=True)
+        self.assertContains(r, 'Multiple matching project records were found')
+        self.assertEqual(ProjectGovernance.objects.count(), 0)
+
+    def test_blank_project_field_shows_no_matching_project_warning(self):
+        from capital_guardian.models import ProjectGovernance
+        self.client.force_login(self.staff)
+        self.loss.project = ''
+        self.loss.save(update_fields=['project'])
+        decision = self._make_decision('approved')
+
+        r = self.client.post(self._execute_url(decision), follow=True)
+        self.assertContains(r, 'No matching project record was found')
+        self.assertEqual(ProjectGovernance.objects.count(), 0)
+
+    def test_unexpected_service_failure_shows_safe_message_not_stack_trace(self):
+        from unittest import mock
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+
+        with mock.patch(
+            'waste_to_value_capital_allocation_engine.views.promote_to_capital_guardian',
+            side_effect=RuntimeError('unexpected internal boom'),
+        ):
+            r = self.client.post(self._execute_url(decision), follow=True)
+
+        self.assertContains(r, 'Something went wrong starting Capital Guardian monitoring')
+        self.assertNotContains(r, 'unexpected internal boom')
+        self.assertNotContains(r, 'Traceback')
+
+    def test_duplicate_post_is_idempotent(self):
+        from capital_guardian.models import ProjectGovernance, AuditLogEntry
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+
+        r1 = self.client.post(self._execute_url(decision), follow=True)
+        r2 = self.client.post(self._execute_url(decision), follow=True)
+
+        self.assertContains(r1, 'Capital Guardian monitoring has been activated')
+        self.assertContains(r2, 'already monitored by Capital Guardian')
+        self.assertEqual(ProjectGovernance.objects.filter(project=self.gold_project).count(), 1)
+        self.assertEqual(
+            AuditLogEntry.objects.filter(
+                project=self.gold_project, event_type='governance', field_name='(created)',
+            ).count(),
+            1,
+        )
+
+    # ── Audit ────────────────────────────────────────────────────────────────
+
+    def test_request_user_recorded_as_actor_in_audit_trail(self):
+        from capital_guardian.models import AuditLogEntry
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        self.client.post(self._execute_url(decision))
+
+        entry = AuditLogEntry.objects.filter(
+            project=self.gold_project, event_type='governance', field_name='(created)',
+        ).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.changed_by, self.staff)
+
+    # ── UX ───────────────────────────────────────────────────────────────────
+
+    def test_promote_button_appears_on_decision_detail_for_eligible_staff_user(self):
+        self.client.force_login(self.staff)
+        decision = self._make_decision('approved')
+        r = self.client.get(self._detail_url(decision))
+        self.assertContains(r, 'Promote to Capital Guardian')
+
+    def test_promote_button_absent_for_ineligible_decision(self):
+        self.client.force_login(self.staff)
+        decision = self._make_decision('pending')
+        r = self.client.get(self._detail_url(decision))
+        self.assertNotContains(r, 'Promote to Capital Guardian')
+
+    def test_promote_button_absent_for_non_staff_user(self):
+        self.client.force_login(self.normal)
+        decision = self._make_decision('approved')
+        r = self.client.get(self._detail_url(decision))
+        self.assertNotContains(r, 'Promote to Capital Guardian')
+
+    def test_promote_button_absent_for_anonymous_user(self):
+        decision = self._make_decision('approved')
+        r = self.client.get(self._detail_url(decision))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Promote to Capital Guardian')
+
+    # ── Regression ───────────────────────────────────────────────────────────
+
+    def test_existing_decision_detail_page_still_works(self):
+        decision = self._make_decision('approved')
+        r = self.client.get(self._detail_url(decision))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, decision.intervention.title)
+
+    def test_existing_overview_page_still_works(self):
+        from django.urls import reverse
+        r = self.client.get(reverse('waste_to_value_capital_allocation_engine:overview'))
+        self.assertEqual(r.status_code, 200)

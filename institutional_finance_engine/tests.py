@@ -60,10 +60,16 @@ class InstitutionalFinanceEnginePageTests(TestCase):
 
 
 class PlatformPageInstitutionalFinanceEngineTeaserTests(TestCase):
-    def test_platform_page_mentions_institutional_finance_engine(self):
+    def test_platform_page_no_longer_mentions_institutional_finance_engine(self):
+        """
+        Phase 1A follow-up: institutional_finance_engine is deprecated in
+        favour of financial_intelligence_cloud, and its module card + promo
+        section were removed from /platform/. This guards against the
+        deprecated module's teaser silently reappearing.
+        """
         response = self.client.get('/platform/')
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Institutional Finance Engine')
+        self.assertNotContains(response, 'EcoIQ Institutional Finance Engine')
 
     def test_platform_page_has_no_raw_template_tags(self):
         response = self.client.get('/platform/')

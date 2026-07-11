@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Promote to Capital Guardian — {{ decision.intervention.title }}{% endblock %}
+{% block meta_description_content %}Human-confirmed promotion of a governed capital allocation decision into Capital Guardian monitoring.{% endblock %}
+
+{% block content %}
+<div class="wtv-wrap">
+  <a class="wtv-back" href="{% url 'waste_to_value_capital_allocation_engine:decision_detail' decision.pk %}">← Back to decision</a>
+
+  <span class="wtv-badge">Capital Guardian Promotion</span>
+  <h1 class="wtv-title">Promote to Capital Guardian</h1>
+  <p class="wtv-subtitle">{{ decision.intervention.title }} — {{ decision.intervention.operational_loss.title }}</p>
+
+  <section class="wtv-section" id="decision-summary">
+    <h2 class="wtv-h2">Decision Summary</h2>
+    <div class="wtv-chip-row">
+      <span class="wtv-chip">Project: {{ decision.project|default:'—' }}</span>
+      <span class="wtv-chip">Status: {{ decision.get_approval_status_display }}</span>
+      <span class="wtv-chip">Intervention: {{ decision.intervention.title }}</span>
+      <span class="wtv-chip">CAPEX: £{{ decision.intervention.capex_estimate|floatformat:0 }}</span>
+      <span class="wtv-chip">Estimated annual savings: £{{ decision.intervention.estimated_annual_savings|floatformat:0 }}</span>
+      <span class="wtv-chip">Estimated loss avoided: £{{ decision.intervention.estimated_loss_avoided|floatformat:0 }}</span>
+    </div>
+  </section>
+
+  {% if not eligible %}
+  <section class="wtv-section" id="not-eligible">
+    <p class="iq-badge iq-badge-review">This decision must receive human approval before it can enter Capital Guardian. Current status: {{ decision.get_approval_status_display }}.</p>
+  </section>
+  {% else %}
+
+  <section class="wtv-section" id="matching-project">
+    <h2 class="wtv-h2">Matching Project</h2>
+    {% if match_state == 'found' %}
+      <p class="wtv-p">This decision matches GoldProject: <strong>{{ matching_project.name }}</strong></p>
+      {% if already_governance %}
+        <p class="iq-badge iq-badge-review">
+          {{ matching_project.name }} is already under Capital Guardian monitoring.
+          <a href="{% url 'capital_guardian:governance' slug=matching_project.slug %}">View the governance record →</a>
+        </p>
+      {% endif %}
+    {% elif match_state == 'none' %}
+      <p class="iq-badge iq-badge-review">No matching project record was found for {{ decision.project|default:'this decision' }}. No Capital Guardian record can be created until a matching GoldProject exists.</p>
+    {% elif match_state == 'ambiguous' %}
+      <p class="iq-badge iq-badge-review">Multiple project records match {{ decision.project }}. Promotion is stopped to prevent incorrect capital monitoring — disambiguate the project names first.</p>
+    {% endif %}
+  </section>
+
+  {% if match_state == 'found' and not already_governance %}
+  <section class="wtv-section" id="confirm">
+    <h2 class="wtv-h2">Before you confirm</h2>
+    <p class="wtv-p">
+      Confirming this action begins active governance and monitoring for <strong>{{ matching_project.name }}</strong>
+      inside Capital Guardian — capital-protection scoring, red-flag rules and audit history will track this
+      project from this point forward.
+    </p>
+    <p class="wtv-p">
+      This action is human-authorised and auditable: it will be recorded in Capital Guardian's audit history
+      as performed by <strong>{{ request.user }}</strong>.
+    </p>
+
+    <form method="post" action="{% url 'waste_to_value_capital_allocation_engine:promote_execute' decision.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="wtv-confirm-btn">Confirm and Start Capital Guardian Monitoring</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% endif %}
+</div>
+
+<style>
+  :root {
+    --wtv-bg: #070b0f; --wtv-bg2: #0d1117; --wtv-border: rgba(255,255,255,.08);
+    --wtv-text: #e2e8f0; --wtv-muted: #94a3b8; --wtv-acc: #00e89a; --wtv-info: #58a6ff;
+  }
+  .wtv-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; background: var(--wtv-bg); color: var(--wtv-text); border-radius: 14px; }
+  .wtv-back { color: var(--wtv-info); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .wtv-badge { display: inline-block; background: rgba(88,166,255,.12); color: var(--wtv-info); border: 1px solid rgba(88,166,255,.3); font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; margin-right: 0.5rem; }
+  .wtv-title { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; color: #fff; }
+  .wtv-subtitle { font-size: 1rem; color: var(--wtv-muted); margin: 0 0 1rem; }
+  .wtv-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--wtv-border); }
+  .wtv-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.75rem; }
+  .wtv-p { color: var(--wtv-muted); font-size: 0.9rem; line-height: 1.6; margin: 0 0 0.75rem; }
+  .wtv-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .wtv-chip { background: rgba(88,166,255,.1); color: var(--wtv-info); border: 1px solid rgba(88,166,255,.25); padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+  .wtv-confirm-btn { background: var(--wtv-acc); color: #06120c; font-weight: 800; font-size: 0.95rem; padding: 0.85rem 1.75rem; border-radius: 8px; border: none; cursor: pointer; }
+  .wtv-confirm-btn:hover { filter: brightness(1.08); }
+</style>
+{% endblock %}
