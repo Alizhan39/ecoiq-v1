@@ -264,7 +264,6 @@ SAFETY_PRINCIPLES = [
 CTA_BUTTONS = [
     {'label': 'Submit for Expert Review', 'anchor': '#review-workflow'},
     {'label': 'Request Technical Review', 'anchor': '#review-roles'},
-    {'label': 'Request Finance Review', 'url_name': 'institutional_finance_engine:overview'},
     {'label': 'Request Maqasid/Mizan Review', 'anchor': '#review-roles'},
     {'label': 'Approve for Supplier Outreach', 'url_name': 'supplier_funding_marketplace:overview'},
     {'label': 'Approve for Funding Memo', 'url_name': 'leads:request_review'},
