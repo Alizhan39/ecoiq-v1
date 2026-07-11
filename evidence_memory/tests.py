@@ -584,3 +584,110 @@ class AdminVisibilityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Visible in admin test')
         self.assertContains(response, 'embedded')
+
+
+class CreateMemoryFromManualProjectEvidenceTests(TestCase):
+    """Vertical-slice PR 1 — manual/document-assisted project evidence intake."""
+
+    def setUp(self):
+        from gold_intelligence.models import GoldProject
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes',
+            commodity='other', is_demo=True,
+        )
+
+    def test_creates_project_scoped_memory(self):
+        m = memory.create_memory_from_manual_project_evidence(
+            self.project, title='Coal usage estimate', text='Approx. 2 tonnes of coal per household per winter.',
+        )
+        self.assertEqual(m.source_reference, f'gold_intelligence.GoldProject:{self.project.pk}')
+
+    def test_source_type_defaults_to_manual(self):
+        m = memory.create_memory_from_manual_project_evidence(
+            self.project, title='T', text='Some evidence text.',
+        )
+        self.assertEqual(m.source_type, 'manual')
+
+    def test_verification_status_and_review_tier_preserved(self):
+        m = memory.create_memory_from_manual_project_evidence(
+            self.project, title='T', text='Reviewed evidence.',
+            verification_status='verified', review_tier='human_reviewed',
+        )
+        self.assertEqual(m.verification_status, 'verified')
+        self.assertEqual(m.review_tier, 'human_reviewed')
+
+    def test_verified_without_real_review_tier_is_rejected(self):
+        with self.assertRaises(ValueError):
+            memory.create_memory_from_manual_project_evidence(
+                self.project, title='T', text='Unreviewed but claims verified.',
+                verification_status='verified', review_tier='uploaded',
+            )
+
+    def test_is_demo_preserved(self):
+        m = memory.create_memory_from_manual_project_evidence(
+            self.project, title='T', text='Illustrative estimate.', is_demo=True,
+        )
+        self.assertTrue(m.is_demo)
+
+    def test_is_demo_false_by_default(self):
+        m = memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Real evidence.')
+        self.assertFalse(m.is_demo)
+
+    def test_integrity_reference_present(self):
+        m = memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Some text.')
+        self.assertEqual(len(m.integrity_reference), 64)
+
+    def test_no_company_fk_ever_set(self):
+        m = memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Some text.')
+        self.assertIsNone(m.company)
+
+    def test_country_set_from_project_when_present(self):
+        from countries.models import CountryProfile
+        country = CountryProfile.objects.create(name='Kazakhstan', iso_code='KZ')
+        self.project.country = country
+        self.project.save(update_fields=['country'])
+        m = memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Some text.')
+        self.assertEqual(m.country_id, country.pk)
+
+    def test_country_none_when_project_has_no_country(self):
+        m = memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Some text.')
+        self.assertIsNone(m.country)
+
+    def test_idempotent_same_text_updates_not_duplicates(self):
+        m1 = memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Same text.')
+        m2 = memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Same text.')
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertEqual(
+            EvidenceMemory.objects.filter(source_reference=f'gold_intelligence.GoldProject:{self.project.pk}').count(), 1,
+        )
+
+    def test_different_text_creates_a_second_row(self):
+        memory.create_memory_from_manual_project_evidence(self.project, title='T', text='First evidence.')
+        memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Second, different evidence.')
+        self.assertEqual(
+            EvidenceMemory.objects.filter(source_reference=f'gold_intelligence.GoldProject:{self.project.pk}').count(), 2,
+        )
+
+    def test_blank_text_is_rejected(self):
+        with self.assertRaises(ValueError):
+            memory.create_memory_from_manual_project_evidence(self.project, title='T', text='   ')
+
+    def test_project_a_evidence_not_returned_for_project_b(self):
+        from gold_intelligence.models import GoldProject
+        other = GoldProject.objects.create(name='Other Project', slug='other-project')
+        memory.create_memory_from_manual_project_evidence(self.project, title='T', text='Project A evidence.')
+        memory.create_memory_from_manual_project_evidence(other, title='T', text='Project B evidence.')
+        a_refs = EvidenceMemory.objects.filter(source_reference=f'gold_intelligence.GoldProject:{self.project.pk}')
+        b_refs = EvidenceMemory.objects.filter(source_reference=f'gold_intelligence.GoldProject:{other.pk}')
+        self.assertEqual(a_refs.count(), 1)
+        self.assertEqual(b_refs.count(), 1)
+        self.assertNotEqual(a_refs.first().pk, b_refs.first().pk)
+
+    def test_reviewer_set_only_for_human_review_tiers(self):
+        from django.contrib.auth import get_user_model
+        user = get_user_model().objects.create_user('reviewer1', 'r@example.com', 'password123')
+        m = memory.create_memory_from_manual_project_evidence(
+            self.project, title='T', text='Reviewed text.',
+            verification_status='verified', review_tier='human_reviewed', reviewer=user,
+        )
+        self.assertEqual(m.reviewer, user)

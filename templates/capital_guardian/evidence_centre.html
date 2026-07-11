@@ -39,7 +39,7 @@
     {% for row in rows %}
     {% with e=row.evidence %}
     <div class="gc-evidence-row">
-      <div><div class="gc-evidence-field-label">Document</div><div class="gc-evidence-field-value">{{ e.text_chunk|truncatechars:70 }}</div></div>
+      <div><div class="gc-evidence-field-label">Document</div><div class="gc-evidence-field-value">{{ e.text_chunk|truncatechars:70 }}{% if e.is_demo %} <span class="gold-demo-badge">ILLUSTRATIVE / DEMO</span>{% endif %}</div></div>
       <div><div class="gc-evidence-field-label">Type</div><div class="gc-evidence-field-value">{{ e.get_document_category_display }}</div></div>
       <div><div class="gc-evidence-field-label">Related</div><div class="gc-evidence-field-value">{{ row.related_label }}</div></div>
       <div><div class="gc-evidence-field-label">Recorded</div><div class="gc-evidence-field-value">{{ e.date_collected|default:e.created_at|date:"Y-m-d" }}</div></div>
@@ -56,6 +56,32 @@
     <p class="gold-honest-stub">No evidence documents recorded for this project yet.</p>
     {% endif %}
   </section>
+
+  {% if intake_form %}
+  <section class="gold-section" id="add-evidence">
+    <h2 class="gold-h2">Add Evidence (staff)</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">
+      Manual / document-assisted intake. Classify honestly: illustrative/demo evidence is always
+      flagged as such, and nothing here can be recorded as verified without a human-reviewed or
+      independently-verified review tier.
+    </p>
+    {% if intake_form.non_field_errors %}<p class="gold-honest-stub" style="color:#e07b7b;">{{ intake_form.non_field_errors }}</p>{% endif %}
+    <form method="post" action="{% url 'capital_guardian:add_project_evidence' project.slug %}" class="gc-intake-form">
+      {% csrf_token %}
+      <div class="gc-intake-field"><label for="id_title">Title</label>{{ intake_form.title }}{{ intake_form.title.errors }}</div>
+      <div class="gc-intake-field"><label for="id_text">Evidence text / summary</label>{{ intake_form.text }}{{ intake_form.text.errors }}</div>
+      <div class="gc-intake-field"><label for="id_source_url">Source URL (optional)</label>{{ intake_form.source_url }}{{ intake_form.source_url.errors }}</div>
+      <div class="gc-intake-grid">
+        <div class="gc-intake-field"><label for="id_source_type">Source type</label>{{ intake_form.source_type }}{{ intake_form.source_type.errors }}</div>
+        <div class="gc-intake-field"><label for="id_document_category">Document category</label>{{ intake_form.document_category }}{{ intake_form.document_category.errors }}</div>
+        <div class="gc-intake-field"><label for="id_verification_status">Verification status</label>{{ intake_form.verification_status }}{{ intake_form.verification_status.errors }}</div>
+        <div class="gc-intake-field"><label for="id_review_tier">Review tier</label>{{ intake_form.review_tier }}{{ intake_form.review_tier.errors }}</div>
+        <div class="gc-intake-field"><label for="id_classification">Classification</label>{{ intake_form.classification }}{{ intake_form.classification.errors }}</div>
+      </div>
+      <button type="submit" class="gold-btn gold-btn-primary" style="margin-top:0.75rem;">Add Evidence Record</button>
+    </form>
+  </section>
+  {% endif %}
 
   <section class="gold-section">
     <h2 class="gold-h2">The Evidence Chain</h2>
@@ -75,4 +101,16 @@
 
 {% include 'gold_intelligence/_styles.html' %}
 {% include 'capital_guardian/_styles.html' %}
+<style>
+  .gc-intake-form { max-width: 720px; }
+  .gc-intake-field { margin-bottom: 0.85rem; }
+  .gc-intake-field label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gold-muted, #94a3b8); margin-bottom: 0.3rem; }
+  .gc-intake-field input, .gc-intake-field textarea, .gc-intake-field select {
+    width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 6px; color: inherit; padding: 0.5rem 0.65rem; font-size: 0.85rem; font-family: inherit;
+  }
+  .gc-intake-field textarea { min-height: 110px; resize: vertical; }
+  .gc-intake-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+  .gc-intake-field .errorlist { color: #e07b7b; font-size: 0.75rem; margin: 0.25rem 0 0; padding-left: 1rem; }
+</style>
 {% endblock %}

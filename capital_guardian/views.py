@@ -25,7 +25,9 @@ not a second AI system).
 import datetime
 from urllib.parse import quote
 
-from django.shortcuts import get_object_or_404, render
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import get_object_or_404, redirect, render
 
 from gold_intelligence.models import GoldProject
 
@@ -389,11 +391,76 @@ def evidence_centre_view(request, slug):
 
     from evidence_memory.models import EvidenceMemory
 
+    from capital_guardian.forms import ProjectEvidenceIntakeForm
+
     return render(request, 'capital_guardian/evidence_centre.html', {
         'project': project, 'rows': rows, 'summary': summary,
         'status_choices': EvidenceMemory.VERIFICATION_STATUS_CHOICES,
         'selected_status': status_filter,
+        # Vertical-slice PR 1 — manual evidence intake. The form is only
+        # RENDERED for staff; the actual authorization check lives on
+        # add_project_evidence below, never in the template.
+        'intake_form': ProjectEvidenceIntakeForm() if request.user.is_staff else None,
     })
+
+
+@staff_member_required(login_url='/login/')
+def add_project_evidence(request, slug):
+    """
+    Vertical-slice PR 1 — staff-only manual/document-assisted evidence
+    intake for one project. POST only; a GET here just lands on the
+    Evidence Centre (where the form lives) without creating anything.
+    The project is independently re-resolved from the URL slug — nothing
+    about identity or authorization is trusted from the submitted form.
+    """
+    project = _project_or_404(slug)
+    if request.method != 'POST':
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    from capital_guardian.forms import ProjectEvidenceIntakeForm
+    from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+
+    form = ProjectEvidenceIntakeForm(request.POST)
+    if not form.is_valid():
+        evidence_qs = evidence_service.evidence_for_project(project).select_related('reviewer')
+        rows = [{'evidence': e, 'related_label': evidence_service.related_object_label(e.source_reference)} for e in evidence_qs]
+        from evidence_memory.models import EvidenceMemory
+        return render(request, 'capital_guardian/evidence_centre.html', {
+            'project': project, 'rows': rows,
+            'summary': evidence_service.verification_summary(evidence_service.evidence_for_project(project)),
+            'status_choices': EvidenceMemory.VERIFICATION_STATUS_CHOICES,
+            'selected_status': '',
+            'intake_form': form,
+        }, status=400)
+
+    data = form.cleaned_data
+    try:
+        memory = create_memory_from_manual_project_evidence(
+            project,
+            title=data['title'],
+            text=data['text'],
+            source_url=data['source_url'],
+            source_type=data['source_type'],
+            document_category=data['document_category'],
+            verification_status=data['verification_status'],
+            review_tier=data['review_tier'],
+            is_demo=(data['classification'] == 'illustrative'),
+            reviewer=request.user if data['review_tier'] in ('human_reviewed', 'independently_verified') else None,
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure adding manual evidence for GoldProject %s', project.pk,
+        )
+        messages.error(request, 'Something went wrong adding this evidence. No record was created.')
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    messages.success(
+        request,
+        f'Evidence added ({memory.get_verification_status_display()}'
+        f'{", illustrative/demo" if memory.is_demo else ""}).',
+    )
+    return redirect('capital_guardian:evidence_centre', slug=slug)
 
 
 def audit_history_view(request, slug):
