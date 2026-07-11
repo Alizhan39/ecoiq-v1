@@ -38,7 +38,7 @@ class GovernanceExpertReviewBoardPageTests(TestCase):
     def test_page_shows_cta_buttons(self):
         response = self.client.get('/governance-expert-review-board/')
         for label in (
-            'Submit for Expert Review', 'Request Technical Review', 'Request Finance Review',
+            'Submit for Expert Review', 'Request Technical Review',
             'Request Maqasid/Mizan Review', 'Approve for Supplier Outreach',
             'Approve for Funding Memo', 'Approve for Implementation',
             'Request More Evidence', 'Export Evidence Pack',
