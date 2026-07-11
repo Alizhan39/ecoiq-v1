@@ -25,7 +25,9 @@ def _refs_for_queryset(queryset, app_label, model_name):
 def evidence_for_project(project):
     """Every real EvidenceMemory row attached to anything belonging to this
     project — a capital movement, a piece of equipment, a milestone, a red
-    flag, its governance record, or an operational snapshot."""
+    flag, its governance record, an operational snapshot, or (PR7) a verified
+    capital outcome synced from this project's own capital allocation
+    decisions."""
     refs = []
     refs.append(f'gold_intelligence.GoldProject:{project.pk}')
     refs += _refs_for_queryset(project.capital_trace_entries.all(), 'capital_guardian', 'CapitalTraceEntry')
@@ -36,6 +38,16 @@ def evidence_for_project(project):
     governance = getattr(project, 'governance', None)
     if governance is not None:
         refs.append(f'capital_guardian.ProjectGovernance:{governance.pk}')
+
+    # Vertical-slice PR 7 — a decision has no FK to GoldProject (see PR5's
+    # capital_guardian_handoff.py docstring), so this is the same honest
+    # name-match already used by execution_monitoring.capital_decisions_for_
+    # project(), not a new lookup mechanism.
+    from waste_to_value_capital_allocation_engine.models import CapitalAllocationDecision
+    outcome_ids = CapitalAllocationDecision.objects.filter(
+        project=project.name, verified_outcome__isnull=False,
+    ).values_list('verified_outcome__pk', flat=True)
+    refs += [f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{pk}' for pk in outcome_ids]
 
     return EvidenceMemory.objects.filter(source_reference__in=refs)
 
@@ -58,6 +70,7 @@ RELATED_LABEL_PREFIXES = {
     'capital_guardian.OperationalSnapshot': 'Operational Snapshot',
     'capital_guardian.ProjectGovernance': 'Governance',
     'gold_intelligence.GoldProject': 'Project',
+    'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome': 'Verified Capital Outcome',
 }
 
 

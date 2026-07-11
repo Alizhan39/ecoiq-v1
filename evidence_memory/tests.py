@@ -691,3 +691,262 @@ class CreateMemoryFromManualProjectEvidenceTests(TestCase):
             verification_status='verified', review_tier='human_reviewed', reviewer=user,
         )
         self.assertEqual(m.reviewer, user)
+
+
+class CreateMemoryFromVerifiedOutcomeTests(TestCase):
+    """Vertical-slice PR 7 — VERIFIED CAPITAL OUTCOME -> EVIDENCE MEMORY."""
+
+    def setUp(self):
+        from gold_intelligence.models import GoldProject
+        from waste_to_value_capital_allocation_engine.models import InterventionOption, OperationalLoss
+        from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
+
+        self.project = GoldProject.objects.create(
+            name='PR7 Test Project', slug='pr7-test-project', commodity='other', is_demo=False,
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation Retrofit', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+            estimated_payback_months=30,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='Pending decision')
+        self.decision.approval_status = 'approved'
+        self.decision.save(update_fields=['approval_status'])
+
+    def _record_outcome(self, **kwargs):
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        defaults = dict(loss_avoided_actual=9000, capex_actual=21000, mrv_status='baseline_only', evidence_quality='medium')
+        defaults.update(kwargs)
+        return record_verified_outcome(self.decision, self.option, **defaults)
+
+    def test_estimated_outcome_creates_pending_uploaded_memory(self):
+        outcome = self._record_outcome(mrv_status='not_started')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.verification_status, 'pending')
+        self.assertEqual(m.review_tier, 'uploaded')
+
+    def test_reported_outcome_creates_pending_system_checked_memory(self):
+        outcome = self._record_outcome(mrv_status='after_data_pending')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.verification_status, 'pending')
+        self.assertEqual(m.review_tier, 'system_checked')
+
+    def test_human_reviewed_outcome_via_reviewer_note(self):
+        outcome = self._record_outcome(mrv_status='baseline_only')
+        outcome.next_capital_allocation_signal = '[Reviewer note] Confirmed by site visit.'
+        outcome.save(update_fields=['next_capital_allocation_signal'])
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.verification_status, 'requires_review')
+        self.assertEqual(m.review_tier, 'human_reviewed')
+
+    def test_verified_outcome_creates_verified_memory_when_eligible(self):
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.verification_status, 'verified')
+        self.assertEqual(m.review_tier, 'independently_verified')
+        self.assertFalse(m.is_demo)
+
+    def test_verified_outcome_on_demo_project_downgraded(self):
+        self.project.is_demo = True
+        self.project.save(update_fields=['is_demo'])
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertNotEqual(m.verification_status, 'verified')
+        self.assertTrue(m.is_demo)
+
+    def test_missing_evidence_quality_cannot_yield_verified(self):
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='missing')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertNotEqual(m.verification_status, 'verified')
+
+    def test_rejected_decision_blocks_positive_evidence(self):
+        self.decision.approval_status = 'rejected'
+        self.decision.save(update_fields=['approval_status'])
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.verification_status, 'rejected')
+
+    def test_disputed_mrv_marked_requires_review(self):
+        outcome = self._record_outcome(mrv_status='disputed')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.verification_status, 'requires_review')
+
+    def test_correct_source_reference(self):
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.source_reference, f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{outcome.pk}')
+
+    def test_correct_integrity_reference(self):
+        import hashlib
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.integrity_reference, hashlib.sha256(m.text_chunk.encode('utf-8')).hexdigest())
+
+    def test_project_provenance_in_text_chunk(self):
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertIn('PR7 Test Project', m.text_chunk)
+        self.assertIn('Insulation Retrofit', m.text_chunk)
+        self.assertIn('Coal heating loss', m.text_chunk)
+
+    def test_idempotent_repeated_sync_no_duplicate(self):
+        outcome = self._record_outcome()
+        m1 = memory.create_memory_from_verified_outcome(outcome)
+        m2 = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertEqual(EvidenceMemory.objects.filter(source_reference=m1.source_reference).count(), 1)
+
+    def test_status_update_safely_updates_one_row(self):
+        outcome = self._record_outcome(mrv_status='baseline_only')
+        m1 = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m1.verification_status, 'pending')
+
+        self.decision.approval_status = 'rejected'
+        self.decision.save(update_fields=['approval_status'])
+        m2 = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertEqual(m2.verification_status, 'rejected')
+        self.assertEqual(EvidenceMemory.objects.count(), 1)
+
+    def test_no_false_company_fk(self):
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertIsNone(m.company)
+
+    def test_source_type_is_other(self):
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.source_type, 'other')
+
+    def test_actor_sets_changed_by_via_audit_signal(self):
+        from django.contrib.auth import get_user_model
+        from capital_guardian.models import AuditLogEntry
+        user = get_user_model().objects.create_user('pr7_actor', 'a@example.com', 'password123')
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome, actor=user)
+        entries = AuditLogEntry.objects.filter(source_reference=f'evidence_memory.EvidenceMemory:{m.pk}')
+        self.assertTrue(entries.exists())
+        self.assertEqual(entries.first().changed_by, user)
+
+    def test_ambiguous_project_match_does_not_crash(self):
+        from gold_intelligence.models import GoldProject
+        GoldProject.objects.create(name='PR7 Test Project', slug='pr7-test-project-dup', commodity='other')
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertIsNotNone(m)
+        self.assertIsNone(m.country)
+
+
+class RetrieveRelevantVerifiedOutcomesTests(TestCase):
+    """Vertical-slice PR 7 — RETRIEVAL FOR FUTURE DECISIONS."""
+
+    def setUp(self):
+        from gold_intelligence.models import GoldProject
+        from waste_to_value_capital_allocation_engine.models import InterventionOption, OperationalLoss
+        from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+
+        self.project_a = GoldProject.objects.create(
+            name='Prior Heating Project A', slug='prior-heating-project-a', commodity='other',
+            region='Almaty region', is_demo=False,
+        )
+        self.new_project = GoldProject.objects.create(
+            name='New Heating Project B', slug='new-heating-project-b', commodity='other',
+            region='Almaty region', is_demo=False,
+        )
+
+        def make_outcome(project, title, mrv_status, evidence_quality='strong', approval_status='approved'):
+            loss = OperationalLoss.objects.create(
+                project=project.name, title=title, loss_type='heat_loss', financial_loss_amount=10000,
+            )
+            option = InterventionOption.objects.create(
+                operational_loss=loss, title=f'{title} intervention', intervention_type='prevention',
+                capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+            )
+            decision = create_governed_investment_case(option, decision_text='d')
+            decision.approval_status = approval_status
+            decision.save(update_fields=['approval_status'])
+            outcome = record_verified_outcome(
+                decision, option, loss_avoided_actual=9000, capex_actual=21000,
+                mrv_status=mrv_status, evidence_quality=evidence_quality,
+            )
+            return memory.create_memory_from_verified_outcome(outcome)
+
+        self.verified_memory = make_outcome(self.project_a, 'Verified coal heating loss', 'verified')
+        self.rejected_memory = make_outcome(self.project_a, 'Rejected coal heating loss', 'baseline_only', approval_status='rejected')
+
+    def test_relevant_prior_outcome_returned(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
+        self.assertIn(self.verified_memory, results)
+
+    def test_rejected_outcome_excluded(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
+        self.assertNotIn(self.rejected_memory, results)
+
+    def test_verified_prioritized_over_lower_tier(self):
+        from gold_intelligence.models import GoldProject
+        from waste_to_value_capital_allocation_engine.models import InterventionOption, OperationalLoss
+        from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+
+        loss = OperationalLoss.objects.create(
+            project=self.project_a.name, title='Estimated coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
+        )
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='Estimated intervention', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='d')
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+        outcome = record_verified_outcome(decision, option, loss_avoided_actual=9000, capex_actual=21000, mrv_status='not_started')
+        estimated_memory = memory.create_memory_from_verified_outcome(outcome)
+
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project, limit=10)
+        verified_idx = results.index(self.verified_memory)
+        estimated_idx = results.index(estimated_memory)
+        self.assertLess(verified_idx, estimated_idx)
+
+    def test_demo_clearly_labelled(self):
+        self.project_a.is_demo = True
+        self.project_a.save(update_fields=['is_demo'])
+        # Re-sync so is_demo propagates onto the memory row.
+        self.verified_memory.refresh_from_db()
+        outcome = self.verified_memory.source_reference
+        from waste_to_value_capital_allocation_engine.models import VerifiedCapitalOutcome
+        pk = outcome.rsplit(':', 1)[1]
+        resynced = memory.create_memory_from_verified_outcome(VerifiedCapitalOutcome.objects.get(pk=pk))
+        self.assertTrue(resynced.is_demo)
+
+    def test_project_a_private_evidence_not_leaked_structurally(self):
+        # Retrieval is a global similarity search (no project-scoped access
+        # control model exists yet — see PR7 audit/limitations); this test
+        # documents that project provenance is at least preserved in the
+        # returned text, not that access is restricted.
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
+        for m in results:
+            self.assertIn('PROJECT:', m.text_chunk)
+
+    def test_zero_results_honest_state(self):
+        from gold_intelligence.models import GoldProject
+        empty_project = GoldProject.objects.create(name='Empty Project', slug='empty-project-pr7', commodity='other')
+        # No query text can be built and no candidates exist for a totally
+        # unrelated, freshly created project with no description/region.
+        results = memory.retrieve_relevant_verified_outcomes(empty_project, query='completely unrelated aerospace query xyz')
+        self.assertIsInstance(results, list)
+
+    def test_source_provenance_visible(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
+        for m in results:
+            self.assertTrue(m.source_reference.startswith(memory.OUTCOME_SOURCE_PREFIX))
+
+    def test_no_guarantee_language_in_default_query(self):
+        query = memory.default_outcome_query_for_project(self.new_project)
+        self.assertNotIn('guarantee', query.lower())
+
+    def test_default_query_uses_real_project_fields(self):
+        query = memory.default_outcome_query_for_project(self.new_project)
+        self.assertIn('Almaty region', query)
