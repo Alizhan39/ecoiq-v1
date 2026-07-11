@@ -3837,9 +3837,347 @@ class EvidenceMemoryLearningIntegrationTests(TestCase):
         source_reference = f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{outcome.pk}'
         self.assertTrue(EvidenceMemory.objects.filter(source_reference=source_reference).exists())
 
-        second_project = GoldProject.objects.create(
-            name='Second Heating Pilot', slug='second-heating-pilot', commodity='other',
+
+class CommandCentreAggregationTests(TestCase):
+    """Project Command Centre — build_command_centre_context() across every real journey state."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_user('staff_cc_agg', 'staff_cc_agg@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes',
+            commodity='other', is_demo=True,
         )
-        r = client.post(reverse('capital_guardian:run_project_analysis', args=[second_project.slug]))
+
+    def _build_context(self):
+        from capital_guardian.services.command_centre import build_command_centre_context
+        return build_command_centre_context(GoldProject.objects.get(pk=self.project.pk))
+
+    def _stage(self, ctx, key):
+        return next(s for s in ctx['stages'] if s.key == key)
+
+    def test_no_journey_data(self):
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'evidence').status, 'NOT_STARTED')
+        self.assertEqual(self._stage(ctx, 'value_loss').status, 'NOT_STARTED')
+        self.assertEqual(ctx['next_action']['label'], 'ADD PROJECT EVIDENCE')
+
+    def test_evidence_only(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(
+            self.project, title='T', text='Evidence text.', verification_status='verified',
+            review_tier='human_reviewed', reviewer=self.staff,
+        )
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'evidence').status, 'COMPLETE')
+        self.assertEqual(self._stage(ctx, 'analysis').status, 'COMPLETE')
+        self.assertEqual(self._stage(ctx, 'value_loss').status, 'NOT_STARTED')
+
+    def _add_evidence(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        return create_memory_from_manual_project_evidence(
+            self.project, title='T', text='Evidence text.', verification_status='verified',
+            review_tier='human_reviewed', reviewer=self.staff,
+        )
+
+    def _create_loss(self):
+        self._add_evidence()
+        return OperationalLoss.objects.create(
+            project=self.project.name, title='CC test loss', loss_type='heat_loss',
+            financial_loss_amount=15000, evidence_quality='strong',
+        )
+
+    def test_value_loss_completed(self):
+        loss = self._create_loss()
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'value_loss').status, 'COMPLETE')
+        self.assertEqual(self._stage(ctx, 'better_way').status, 'NOT_STARTED')
+        self.assertEqual(ctx['loss'].pk, loss.pk)
+
+    def test_better_way_completed_without_decision(self):
+        loss = self._create_loss()
+        InterventionOption.objects.create(
+            operational_loss=loss, title='CC insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'better_way').status, 'IN_PROGRESS')
+        self.assertIsNotNone(ctx['better_way_result'])
+        self.assertEqual(ctx['next_action']['label'], 'COMPARE THE BETTER WAY')
+
+    def _create_decision(self, approval_status='pending'):
+        loss = self._create_loss()
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='CC insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='CC test decision')
+        decision.approval_status = approval_status
+        decision.save(update_fields=['approval_status'])
+        return loss, option, decision
+
+    def test_pending_capital_decision(self):
+        loss, option, decision = self._create_decision('pending')
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'capital_decision').status, 'COMPLETE')
+        self.assertEqual(self._stage(ctx, 'human_approval').status, 'PENDING_APPROVAL')
+        self.assertEqual(ctx['next_action']['label'], 'REVIEW CAPITAL DECISION')
+
+    def test_approved_decision(self):
+        loss, option, decision = self._create_decision('approved')
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'human_approval').status, 'COMPLETE')
+        self.assertEqual(ctx['next_action']['label'], 'PROMOTE TO CAPITAL GUARDIAN')
+
+    def test_active_capital_guardian(self):
+        loss, option, decision = self._create_decision('approved')
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        promote_to_capital_guardian(decision, actor=self.staff)
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'capital_guardian').status, 'ACTIVE_MONITORING')
+        self.assertEqual(ctx['next_action']['label'], 'ADD MONITORING DATA')
+
+    def test_monitoring_data(self):
+        loss, option, decision = self._create_decision('approved')
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        promote_to_capital_guardian(decision, actor=self.staff)
+        CapitalTraceEntry.objects.create(
+            project=self.project, date=datetime.date.today(), amount_usd=5000, purpose='CC monitoring spend',
+            approval_status='approved', payment_status='paid',
+        )
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'monitoring').status, 'ACTIVE_MONITORING')
+        self.assertEqual(ctx['next_action']['label'], 'RECORD OUTCOME')
+        self.assertIsNotNone(ctx['capital_summary'])
+        self.assertEqual(ctx['capital_summary']['capital_deployed_usd'], 5000.0)
+
+    def test_estimated_outcome(self):
+        loss, option, decision = self._create_decision('approved')
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        from capital_guardian.services.execution_monitoring import record_monitoring_outcome
+        promote_to_capital_guardian(decision, actor=self.staff)
+        CapitalTraceEntry.objects.create(
+            project=self.project, date=datetime.date.today(), amount_usd=5000, purpose='Monitoring spend',
+            approval_status='approved', payment_status='paid',
+        )
+        record_monitoring_outcome(decision, mrv_status='baseline_only', capex_actual=21000, loss_avoided_actual=9200)
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'outcome').status, 'OUTCOME_ESTIMATED')
+        self.assertEqual(ctx['next_action']['label'], 'ADD OUTCOME TO EVIDENCE MEMORY')
+
+    def test_human_reviewed_outcome(self):
+        loss, option, decision = self._create_decision('approved')
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        from capital_guardian.services.execution_monitoring import record_monitoring_outcome
+        promote_to_capital_guardian(decision, actor=self.staff)
+        record_monitoring_outcome(
+            decision, mrv_status='baseline_only', capex_actual=21000, loss_avoided_actual=9200,
+            reviewer_note='Site visit confirmed.',
+        )
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'outcome').status, 'HUMAN_REVIEWED')
+
+    def test_outcome_in_evidence_memory(self):
+        loss, option, decision = self._create_decision('approved')
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        from capital_guardian.services.execution_monitoring import record_monitoring_outcome
+        from evidence_memory.services.memory import create_memory_from_verified_outcome
+        promote_to_capital_guardian(decision, actor=self.staff)
+        CapitalTraceEntry.objects.create(
+            project=self.project, date=datetime.date.today(), amount_usd=5000, purpose='Monitoring spend',
+            approval_status='approved', payment_status='paid',
+        )
+        outcome = record_monitoring_outcome(decision, mrv_status='baseline_only', capex_actual=21000, loss_avoided_actual=9200)
+        create_memory_from_verified_outcome(outcome, actor=self.staff)
+        ctx = self._build_context()
+        self.assertEqual(self._stage(ctx, 'learning').status, 'COMPLETE')
+        self.assertTrue(ctx['learning_feedback']['already_synced'])
+        self.assertEqual(ctx['next_action']['label'], 'CONTINUE MONITORING')
+
+    def test_historical_retrieval_populated(self):
+        # A verified outcome synced from a DIFFERENT project should appear as
+        # relevant historical evidence for this one.
+        other = GoldProject.objects.create(name='CC Other Project', slug='cc-other-project', commodity='other', is_demo=False)
+        other_loss = OperationalLoss.objects.create(project=other.name, title='Other loss', loss_type='heat_loss', financial_loss_amount=10000)
+        other_option = InterventionOption.objects.create(
+            operational_loss=other_loss, title='Other insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        other_decision = create_governed_investment_case(other_option, decision_text='Other decision')
+        other_decision.approval_status = 'approved'
+        other_decision.save(update_fields=['approval_status'])
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        from evidence_memory.services.memory import create_memory_from_verified_outcome
+        other_outcome = record_verified_outcome(
+            other_decision, other_option, loss_avoided_actual=9500, capex_actual=21000,
+            mrv_status='verified', evidence_quality='strong',
+        )
+        create_memory_from_verified_outcome(other_outcome)
+
+        ctx = self._build_context()
+        self.assertTrue(len(ctx['relevant_outcomes']) >= 1)
+
+
+class CommandCentreWorkflowStateTests(TestCase):
+    """Project Command Centre — exact stage-status correctness, no false-complete states."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_user('staff_cc_wf', 'staff_cc_wf@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes',
+            commodity='other', is_demo=True,
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='WF loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='WF insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='WF decision')
+
+    def _stage(self, key):
+        from capital_guardian.services.command_centre import build_command_centre_context
+        ctx = build_command_centre_context(GoldProject.objects.get(pk=self.project.pk))
+        return next(s for s in ctx['stages'] if s.key == key)
+
+    def test_conditional_approval_preserved(self):
+        self.decision.approval_status = 'approved_with_conditions'
+        self.decision.save(update_fields=['approval_status'])
+        self.assertEqual(self._stage('human_approval').status, 'APPROVED_WITH_CONDITIONS')
+
+    def test_rejected_state_preserved(self):
+        self.decision.approval_status = 'rejected'
+        self.decision.save(update_fields=['approval_status'])
+        self.assertEqual(self._stage('human_approval').status, 'REJECTED')
+
+    def test_no_false_complete_state_for_pending_decision(self):
+        self.decision.approval_status = 'pending'
+        self.decision.save(update_fields=['approval_status'])
+        stage = self._stage('human_approval')
+        self.assertNotEqual(stage.status, 'COMPLETE')
+        self.assertEqual(stage.status, 'PENDING_APPROVAL')
+
+    def test_capital_guardian_not_falsely_active_without_governance(self):
+        self.decision.approval_status = 'approved'
+        self.decision.save(update_fields=['approval_status'])
+        self.assertEqual(self._stage('capital_guardian').status, 'NOT_STARTED')
+
+    def test_demo_state_visible_on_project(self):
+        from capital_guardian.services.command_centre import build_command_centre_context
+        ctx = build_command_centre_context(GoldProject.objects.get(pk=self.project.pk))
+        self.assertTrue(ctx['project'].is_demo)
+
+
+class CommandCentreSecurityTests(TestCase):
+    """Project Command Centre — permissions, isolation, safe errors."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_cc_sec', 'staff_cc_sec@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('normal_cc_sec', 'normal_cc_sec@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(name='CC Security Other Project', slug='cc-security-other-project', commodity='other')
+
+    def _url(self, project=None):
+        return reverse('capital_guardian:project_command_centre', args=[(project or self.project).slug])
+
+    def test_anonymous_blocked(self):
+        r = self.client.get(self._url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_blocked(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self._url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_staff_can_view(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._url())
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'Relevant Verified Outcomes from Prior Projects')
+        self.assertContains(r, 'PROJECT COMMAND CENTRE')
+
+    def test_invalid_slug_404(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=['no-such-project']))
+        self.assertEqual(r.status_code, 404)
+
+    def test_project_a_data_absent_from_project_b(self):
+        loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Security test loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        self.client.force_login(self.staff)
+        r = self.client.get(self._url(project=self.other_project))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Security test loss')
+
+    def test_no_idor_via_different_project_slug(self):
+        InterventionOption.objects.create(
+            operational_loss=OperationalLoss.objects.create(
+                project=self.project.name, title='IDOR loss', loss_type='heat_loss', financial_loss_amount=1000,
+            ),
+            title='IDOR option', intervention_type='prevention',
+        )
+        self.client.force_login(self.staff)
+        r = self.client.get(self._url(project=self.other_project))
+        self.assertNotContains(r, 'IDOR loss')
+        self.assertNotContains(r, 'IDOR option')
+
+
+class CommandCentreHonestyTests(TestCase):
+    """Project Command Centre — no forbidden claims, no status inflation."""
+
+    FORBIDDEN_PHRASES = [
+        'AI approved', 'AI verified', 'Quranically approved', 'Shariah compliant',
+        'Guaranteed outcome', 'Guaranteed investment', 'project completed',
+        'EcoIQ retrained itself', 'EcoIQ learned automatically', 'trained the AI',
+    ]
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_cc_honest', 'staff_cc_honest@ecoiq.uk', 'password123', is_staff=True)
+        self.client.force_login(self.staff)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
+        )
+
+    def _url(self):
+        return reverse('capital_guardian:project_command_centre', args=[self.project.slug])
+
+    def test_no_forbidden_claims_on_empty_project(self):
+        r = self.client.get(self._url())
+        content = r.content.decode()
+        for phrase in self.FORBIDDEN_PHRASES:
+            self.assertNotIn(phrase, content)
+
+    def test_promoted_governance_not_called_implementation_complete(self):
+        loss = OperationalLoss.objects.create(project=self.project.name, title='Honesty loss', loss_type='heat_loss', financial_loss_amount=15000)
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='Honesty insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='Honesty decision')
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        promote_to_capital_guardian(decision, actor=self.staff)
+        r = self.client.get(self._url())
+        content = r.content.decode()
+        self.assertNotIn('implementation complete', content.lower())
+        self.assertIn('capital guardian', content.lower())
+
+    def test_historical_evidence_framed_as_decision_support(self):
+        r = self.client.get(self._url())
+        self.assertContains(r, 'decision support')
+        self.assertContains(r, 'not a guaranteed prediction')
