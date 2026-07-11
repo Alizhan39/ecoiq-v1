@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}The Better Way — {{ loss.title }} — EcoIQ Capital Guardian{% endblock %}
+{% block meta_description_content %}Human-reviewed scenario comparison and ranking for {{ loss.title }}. Based on currently entered evidence and assumptions — not a guarantee or ruling.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:operational_loss_detail' project.slug loss.pk %}">← Back to Operational Loss</a>
+
+  <span class="gold-eyebrow">ECOIQ CAPITAL GUARDIAN · THE BETTER WAY</span>
+  <h1 class="gold-h1">The Better Way</h1>
+  <p class="gold-sub">{{ result.project_name }} — {{ loss.title }}</p>
+  <p class="gold-sub" style="font-size:0.8rem;">
+    Based on the currently entered evidence and assumptions. This is a recommendation for human review —
+    never a guarantee, an AI-proven conclusion, or a religious/Shariah determination.
+  </p>
+
+  {% if result.baseline_ranked_first %}
+  <section class="gold-section">
+    <p class="iq-badge iq-badge-review">{{ result.baseline_warning }}</p>
+  </section>
+  {% elif result.why_top_ranked %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Why the Top-Ranked Option Ranked Highest</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">{{ result.why_top_ranked }}</p>
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Ranked Options ({{ result.ranked|length }})</h2>
+    {% if result.ranked %}
+    {% for c in result.ranked %}
+    <div class="gc-evidence-row" style="grid-template-columns: 0.4fr 2fr 1fr 1fr 1fr;">
+      <div><div class="gc-evidence-field-label">Rank</div><div class="gc-evidence-field-value">#{{ c.rank }}</div></div>
+      <div>
+        <div class="gc-evidence-field-label">Option</div>
+        <div class="gc-evidence-field-value">
+          {{ c.option.title }}
+          {% if c.option.intervention_type == 'do_nothing' %}<span class="gold-demo-badge">BASELINE / CURRENT STATE</span>{% endif %}
+        </div>
+      </div>
+      <div><div class="gc-evidence-field-label">Composite Score</div><div class="gc-evidence-field-value">{{ c.composite_score }}</div></div>
+      <div><div class="gc-evidence-field-label">CAPEX</div><div class="gc-evidence-field-value">£{{ c.option.capex_estimate|floatformat:0 }}</div></div>
+      <div>
+        <div class="gc-evidence-field-label">Safety</div>
+        <div class="gc-evidence-field-value"><span class="gold-risk-badge {% if c.safety_status == 'eligible' %}low{% else %}medium{% endif %}">{{ c.safety_status|upper }}</span></div>
+      </div>
+    </div>
+    {% if c.safety_status == 'conditional' %}<p class="gold-sub" style="font-size:0.76rem;margin:-0.4rem 0 0.6rem;">Unmet condition: {{ c.safety_reason }}</p>{% endif %}
+    {% endfor %}
+    {% else %}
+    <p class="gold-honest-stub">No eligible or conditional options to rank yet.</p>
+    {% endif %}
+  </section>
+
+  {% if result.blocked %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Excluded (Blocked) Options</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">Blocked options never receive a normal rank.</p>
+    {% for b in result.blocked %}
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>{{ b.option.title }}:</strong> {{ b.reason }}</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if result.trade_offs %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Trade-offs</h2>
+    <div class="gold-grid">
+      {% if result.trade_offs.fastest_payback %}<div class="gold-card"><div class="gold-card-label">Fastest Payback</div><div class="gold-card-value">{{ result.trade_offs.fastest_payback.option.title }}</div></div>{% endif %}
+      <div class="gold-card"><div class="gold-card-label">Highest Capital Efficiency</div><div class="gold-card-value">{{ result.trade_offs.highest_capital_efficiency.option.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Lowest CAPEX</div><div class="gold-card-value">{{ result.trade_offs.lowest_capex.option.title }}</div></div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Stewardship Comparison</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">
+      These are stewardship review questions for human decision-makers — not a religious ruling, Shariah
+      determination, fatwa, or certification of any kind. Qualified scholars are required for religious
+      rulings; qualified engineers, scientists, regulators, and other domain experts are required for
+      technical and safety decisions.
+    </p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Amanah:</strong> Does the option manage resources responsibly?</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Mizan:</strong> Does the option balance costs, harms, benefits, and long-term effects?</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Adl:</strong> Who benefits and who carries the burden?</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Israf:</strong> Does the option reduce unnecessary waste or destruction?</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Prevention of Harm:</strong> Does the option reduce harm without creating a new unsafe pathway?</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Maslaha:</strong> Does the option create durable public benefit?</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Hisab:</strong> Can the implementation and outcome be measured?</p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Limitations</h2>
+    <ul class="gc-plain-list">{% for l in result.limitations %}<li>{{ l }}</li>{% endfor %}</ul>
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">Capital-at-risk ceiling used for scaling: £{{ result.capital_at_risk_ceiling|floatformat:0 }}.</p>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .gc-plain-list { color: var(--gold-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0.5rem 0 0; }
+</style>
+{% endblock %}

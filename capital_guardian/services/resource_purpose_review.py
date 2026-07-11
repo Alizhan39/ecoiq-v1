@@ -127,6 +127,18 @@ _FALLBACK_PROFILE = {
 }
 
 
+def reviewed_pathways_for_project(project):
+    """
+    Public accessor onto _RESOURCE_PROFILES' alternative_pathways list — used
+    by vertical-slice PR 4's intervention_safety_gate so a proposed
+    InterventionOption's safety status can be checked against the exact same
+    reviewed pathway data this module's own review page shows, without a
+    second copy of that reviewed content. Empty list for any project with no
+    reviewed profile (never a fabricated one).
+    """
+    return _RESOURCE_PROFILES.get(project.slug, _FALLBACK_PROFILE)['alternative_pathways']
+
+
 @dataclass
 class ResourcePurposeReviewResult:
     project_name: str

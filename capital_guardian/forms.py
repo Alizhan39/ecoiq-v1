@@ -7,7 +7,9 @@ convenience, never the safeguard.
 from django import forms
 
 from evidence_memory.models import EvidenceMemory
-from waste_to_value_capital_allocation_engine.models import LOSS_TYPE_CHOICES
+from waste_to_value_capital_allocation_engine.models import (
+    INTERVENTION_TYPE_CHOICES, LOSS_TYPE_CHOICES, READINESS_CHOICES, RISK_LEVEL_CHOICES,
+)
 
 # 'expired' is a lifecycle outcome (a real expiry date passing), not
 # something an intake form should ever assert about brand-new evidence.
@@ -77,3 +79,33 @@ class ValueLossConfirmationForm(forms.Form):
     avoidability_score = forms.FloatField(min_value=0, max_value=100, initial=50.0)
     urgency_score = forms.FloatField(min_value=0, max_value=100, initial=50.0)
     classification = forms.ChoiceField(choices=LOSS_CLASSIFICATION_CHOICES, initial='estimated')
+
+
+# Vertical-slice PR 4 — same real/estimated/illustrative discipline, applied
+# to a human-reviewed InterventionOption.
+INTERVENTION_CLASSIFICATION_CHOICES = CLASSIFICATION_CHOICES
+
+
+class InterventionOptionForm(forms.Form):
+    """
+    Human-reviewed creation of one candidate intervention against an
+    OperationalLoss. Every financial field defaults to 0/blank rather than a
+    guessed figure — the human reviewer enters what's actually known.
+    """
+    title = forms.CharField(max_length=255)
+    intervention_type = forms.ChoiceField(choices=INTERVENTION_TYPE_CHOICES)
+    description = forms.CharField(widget=forms.Textarea, required=False)
+
+    capex_estimate = forms.FloatField(min_value=0, initial=0)
+    opex_change = forms.FloatField(initial=0, help_text='Positive = OPEX increases, negative = OPEX decreases.')
+    estimated_loss_avoided = forms.FloatField(min_value=0, initial=0)
+    estimated_value_recovered = forms.FloatField(min_value=0, initial=0)
+    estimated_annual_savings = forms.FloatField(min_value=0, initial=0)
+    estimated_payback_months = forms.FloatField(required=False, min_value=0)
+    implementation_time = forms.CharField(max_length=60, required=False, help_text='e.g. "3-6 months"')
+
+    technical_readiness = forms.ChoiceField(choices=READINESS_CHOICES, initial='not_ready')
+    finance_readiness = forms.ChoiceField(choices=READINESS_CHOICES, initial='not_ready')
+    mrv_readiness = forms.ChoiceField(choices=READINESS_CHOICES, initial='not_ready')
+    risk_level = forms.ChoiceField(choices=RISK_LEVEL_CHOICES, initial='medium')
+    classification = forms.ChoiceField(choices=INTERVENTION_CLASSIFICATION_CHOICES, initial='estimated')
