@@ -1,11 +1,13 @@
 """
 capital_guardian/forms.py — vertical-slice PR 1: manual project-evidence
-intake for the Evidence Centre. Server-side validation only — the browser
-form is a convenience, never the safeguard.
+intake for the Evidence Centre; PR 3: human-reviewed value-loss
+confirmation. Server-side validation only — the browser form is a
+convenience, never the safeguard.
 """
 from django import forms
 
 from evidence_memory.models import EvidenceMemory
+from waste_to_value_capital_allocation_engine.models import LOSS_TYPE_CHOICES
 
 # 'expired' is a lifecycle outcome (a real expiry date passing), not
 # something an intake form should ever assert about brand-new evidence.
@@ -51,3 +53,27 @@ class ProjectEvidenceIntakeForm(forms.Form):
                 'Illustrative/demo evidence cannot be recorded as verified.',
             )
         return cleaned
+
+
+# Vertical-slice PR 3 — same real/estimated/illustrative discipline as
+# evidence intake above, applied to a human-confirmed value-loss record.
+LOSS_CLASSIFICATION_CHOICES = CLASSIFICATION_CHOICES
+
+
+class ValueLossConfirmationForm(forms.Form):
+    """
+    Human confirmation before creating a real OperationalLoss. Every field
+    is either pre-filled from a reviewed default the human can edit, or left
+    genuinely blank when no honest default exists — financial_loss_amount in
+    particular is REQUIRED and never pre-filled with a guessed number.
+    """
+    title = forms.CharField(max_length=255)
+    loss_type = forms.ChoiceField(choices=LOSS_TYPE_CHOICES)
+    financial_loss_amount = forms.FloatField(
+        min_value=0, help_text='Required — must be entered or confirmed by the human reviewer. Never pre-filled with a guessed figure.',
+    )
+    quantity_lost = forms.FloatField(required=False, min_value=0)
+    unit = forms.CharField(max_length=40, required=False, help_text='e.g. tonnes coal, MWh, kWh')
+    avoidability_score = forms.FloatField(min_value=0, max_value=100, initial=50.0)
+    urgency_score = forms.FloatField(min_value=0, max_value=100, initial=50.0)
+    classification = forms.ChoiceField(choices=LOSS_CLASSIFICATION_CHOICES, initial='estimated')

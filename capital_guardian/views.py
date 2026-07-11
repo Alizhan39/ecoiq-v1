@@ -28,6 +28,7 @@ from urllib.parse import quote
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from gold_intelligence.models import GoldProject
 
@@ -421,9 +422,11 @@ def run_project_analysis(request, slug):
         return redirect('capital_guardian:evidence_centre', slug=slug)
 
     from capital_guardian.services.project_analysis import analyse_project
+    from capital_guardian.services.resource_purpose_review import review_resource_purpose
 
     try:
         result = analyse_project(project)
+        review = review_resource_purpose(project, result)
     except Exception:
         import logging
         logging.getLogger(__name__).exception(
@@ -433,8 +436,144 @@ def run_project_analysis(request, slug):
         return redirect('capital_guardian:evidence_centre', slug=slug)
 
     return render(request, 'capital_guardian/project_analysis_result.html', {
-        'project': project, 'result': result,
+        'project': project, 'result': result, 'review': review,
     })
+
+
+def _build_value_loss_confirmation_form(project, review, data=None):
+    from capital_guardian.forms import ValueLossConfirmationForm
+
+    initial = {}
+    if review.has_reviewed_profile:
+        initial['title'] = f'Avoidable {review.primary_resource.lower()}-based {review.current_use.lower()}' if review.primary_resource and review.current_use else ''
+        initial['loss_type'] = 'heat_loss'
+    return ValueLossConfirmationForm(data, initial=initial)
+
+
+@staff_member_required(login_url='/login/')
+def create_value_loss_confirm(request, slug):
+    """
+    Vertical-slice PR 3 — GET-only, read-only confirmation screen. Re-derives
+    the project analysis and resource-purpose review from scratch (never
+    trusts anything carried over from the analysis page) so the eligibility
+    check (a genuine misuse/value-loss condition) is always current.
+    """
+    project = _project_or_404(slug)
+
+    from capital_guardian.services.project_analysis import analyse_project
+    from capital_guardian.services.resource_purpose_review import review_resource_purpose
+
+    analysis_result = analyse_project(project)
+    review = review_resource_purpose(project, analysis_result)
+
+    form = _build_value_loss_confirmation_form(project, review)
+
+    return render(request, 'capital_guardian/create_value_loss_confirm.html', {
+        'project': project, 'review': review, 'form': form,
+    })
+
+
+@staff_member_required(login_url='/login/')
+def create_value_loss_execute(request, slug):
+    """
+    Vertical-slice PR 3 — POST-only. Independently re-derives the project,
+    analysis, and resource-purpose review (never trusts the confirmation
+    page's hidden state for eligibility), refuses to create anything if no
+    genuine misuse/value-loss condition is indicated, and otherwise creates
+    exactly one real OperationalLoss via the existing, unmodified
+    loss_intake.create_operational_loss() — no loss-creation logic is
+    duplicated here.
+    """
+    project = _project_or_404(slug)
+    if request.method != 'POST':
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    from capital_guardian.services.project_analysis import analyse_project
+    from capital_guardian.services.resource_purpose_review import review_resource_purpose
+    from waste_to_value_capital_allocation_engine.models import LossEvidence
+    from waste_to_value_capital_allocation_engine.services.loss_intake import create_operational_loss
+
+    try:
+        analysis_result = analyse_project(project)
+        review = review_resource_purpose(project, analysis_result)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure re-deriving analysis/review for GoldProject %s', project.pk,
+        )
+        messages.error(request, 'Something went wrong creating the value-loss record. No record was created.')
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    if not review.misuse_or_value_loss_condition_exists:
+        messages.error(
+            request,
+            'No reviewed resource-misuse/value-loss condition is currently indicated for this project — '
+            'nothing was created.',
+        )
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    form = _build_value_loss_confirmation_form(project, review, data=request.POST)
+    if not form.is_valid():
+        return render(request, 'capital_guardian/create_value_loss_confirm.html', {
+            'project': project, 'review': review, 'form': form,
+        }, status=400)
+
+    data = form.cleaned_data
+
+    # evidence_quality/confidence are never form-editable — derived
+    # server-side from the real review_confidence so a human can't dial up
+    # apparent evidence quality beyond what verification status supports.
+    quality_by_confidence = {'low': 'weak', 'medium': 'medium', 'high': 'strong'}
+    evidence_quality = quality_by_confidence.get(review.review_confidence, 'weak')
+    confidence = {'strong': 90, 'medium': 60, 'weak': 30, 'missing': 10}[evidence_quality]
+
+    classification_label = dict(form.fields['classification'].choices)[data['classification']]
+    description_parts = [
+        f'Human-reviewed value loss created from Project Analysis + Resource Purpose Review for '
+        f'"{project.name}".',
+        f'Classification: {classification_label}.',
+        f'Reviewed by: {request.user.get_username()} at {timezone.now():%Y-%m-%d %H:%M} UTC.',
+        'This record is human-confirmed, not automatically verified.',
+    ]
+    if review.recommended_next_action:
+        description_parts.append(f'Review note: {review.recommended_next_action}')
+
+    try:
+        loss = create_operational_loss(
+            project=project.name,
+            country=project.country.name if project.country_id else '',
+            location=project.region or '',
+            sector='heating / energy transition',
+            loss_type=data['loss_type'],
+            title=data['title'],
+            description='\n'.join(description_parts),
+            quantity_lost=data.get('quantity_lost'),
+            unit=data.get('unit') or '',
+            financial_loss_amount=data['financial_loss_amount'],
+            evidence_quality=evidence_quality,
+            confidence=confidence,
+            avoidability_score=data['avoidability_score'],
+            urgency_score=data['urgency_score'],
+            status='detected',
+        )
+        for ref in review.evidence_used:
+            LossEvidence.objects.create(
+                operational_loss=loss, evidence_reference=ref, evidence_type='project_evidence',
+                evidence_quality=evidence_quality, confidence=confidence,
+            )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure creating OperationalLoss for GoldProject %s', project.pk,
+        )
+        messages.error(request, 'Something went wrong creating the value-loss record. No record was created.')
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    messages.success(
+        request,
+        f'Human-reviewed value loss "{loss.title}" created (evidence quality: {loss.get_evidence_quality_display()}).',
+    )
+    return redirect('capital_guardian:evidence_centre', slug=slug)
 
 
 @staff_member_required(login_url='/login/')

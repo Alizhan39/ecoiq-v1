@@ -77,6 +77,83 @@
     </ul>
   </section>
 
+  {% if review %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Current Resource Use</h2>
+    {% if review.has_reviewed_profile %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Primary Resource</div><div class="gold-card-value">{{ review.primary_resource }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Current Use</div><div class="gold-card-value">{{ review.current_use }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Intended Service</div><div class="gold-card-value">{{ review.intended_service }}</div></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No reviewed resource-purpose profile exists yet for this project.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Resource Purpose Review</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">Is the resource being used for the most reasonable, beneficial, safe, and responsible purpose?</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Necessity of current use:</strong> {{ review.necessity_of_current_use }}</p>
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Avoidability:</strong> {{ review.avoidability }}</p>
+    {% if review.lifecycle_concerns %}
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>Lifecycle concerns:</strong> {{ review.lifecycle_concerns }}</p>
+    {% endif %}
+  </section>
+
+  {% if review.alternative_pathways %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Alternative Pathways</h2>
+    {% for pathway in review.alternative_pathways %}
+    <div class="gc-evidence-row" style="grid-template-columns: 1fr 2fr;">
+      <div>
+        <div class="gc-evidence-field-label">Pathway</div>
+        <div class="gc-evidence-field-value">
+          {{ pathway.name }}
+          <span class="gold-risk-badge {% if pathway.status == 'open' %}low{% elif pathway.status == 'conditional' %}medium{% else %}high{% endif %}">{{ pathway.status|upper }}</span>
+        </div>
+      </div>
+      <div><div class="gc-evidence-field-label">Notes</div><div class="gc-evidence-field-value">{{ pathway.notes }}</div></div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if review.safety_constraints %}
+  <section class="gold-section">
+    <h2 class="gold-h2">Safety and Evidence Constraints</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">Conditional or blocked pathways — never assumed safe by default.</p>
+    <ul class="gc-plain-list">{% for constraint in review.safety_constraints %}<li>{{ constraint }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Stewardship Review Questions</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">{{ review.stewardship_disclaimer }}</p>
+    {% for q in review.stewardship_questions %}
+    <p class="gold-sub" style="font-size:0.85rem;"><strong>{{ q.name }}:</strong> {{ q.question }}</p>
+    {% endfor %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence Gaps</h2>
+    {% if review.evidence_gaps %}
+    <ul class="gc-plain-list">{% for gap in review.evidence_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+    {% else %}
+    <p class="gold-honest-stub">No evidence gaps identified against the reviewed profile's expected evidence.</p>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">Review confidence: {{ review.review_confidence|upper }}</p>
+  </section>
+
+  <section class="gold-section" id="human-review-required">
+    <h2 class="gold-h2">Human Review Required</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">{{ review.recommended_next_action }}</p>
+    {% if review.misuse_or_value_loss_condition_exists and request.user.is_staff %}
+    <a class="gold-btn gold-btn-primary" href="{% url 'capital_guardian:create_value_loss_confirm' project.slug %}">Create Human-Reviewed Value Loss</a>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="gold-section">
     <h2 class="gold-h2">Future Analysis Direction</h2>
     <p class="gold-sub" style="font-size:0.8rem;">
