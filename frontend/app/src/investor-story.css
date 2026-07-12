@@ -1,0 +1,631 @@
+/**
+ * EcoIQ Investor Scroll Story — component styles.
+ * Kept in its own file (not islands.css / cinematic.css / system.css) so
+ * this feature never touches anything covered by the Motion Library v1
+ * freeze. Uses only the existing --eiq-* design tokens.
+ */
+
+.eiq-inv {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.eiq-inv__intro {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 56px;
+  padding-top: 72px;
+}
+.eiq-inv__headline {
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--eiq-ink-strong);
+  margin: 14px 0 12px;
+}
+.eiq-inv__intro-copy {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--eiq-muted);
+}
+
+.eiq-inv__scene {
+  padding: 56px 0;
+  border-top: 1px solid var(--eiq-border);
+}
+.eiq-inv__scene--close { text-align: center; }
+
+.eiq-inv__glyph-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  opacity: 0.9;
+}
+.eiq-inv__glyph-row--still { opacity: 0.55; }
+.eiq-inv__glyph-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--eiq-muted);
+}
+
+.eiq-inv__lines {
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: var(--eiq-ink-strong);
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0 14px;
+}
+.eiq-inv__lede {
+  font-size: 15px;
+  color: var(--eiq-muted);
+  max-width: 520px;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+.eiq-inv__scene-copy {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--eiq-ink);
+  max-width: 640px;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+.eiq-inv__scene-copy--close { margin-top: 24px; }
+.eiq-inv__supporting-line {
+  font-size: 12.5px;
+  color: var(--eiq-faint);
+  margin-top: 12px;
+}
+
+.eiq-inv__cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.eiq-inv__scene--close .eiq-inv__cta-row { justify-content: center; }
+
+/* ── Problem case card ───────────────────────────────────────────────── */
+.eiq-inv__case { display: grid; gap: 14px; margin-top: 8px; }
+.eiq-inv__case-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.eiq-inv__case-title { font-size: 18px; font-weight: 700; color: var(--eiq-ink-strong); }
+.eiq-inv__case-meta { font-size: 12px; color: var(--eiq-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.eiq-inv__case-card {
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+  border-radius: var(--eiq-r-md);
+  padding: 16px 18px;
+}
+.eiq-inv__case-card--concern { border-color: rgba(242, 166, 90, 0.25); }
+.eiq-inv__case-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--eiq-faint); margin-bottom: 6px; }
+.eiq-inv__case-value { font-size: 14px; color: var(--eiq-ink); line-height: 1.5; }
+
+/* ── Evidence table ──────────────────────────────────────────────────── */
+.eiq-inv__evidence-table { border: 1px solid var(--eiq-border); border-radius: var(--eiq-r-md); overflow: hidden; }
+.eiq-inv__evidence-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--eiq-border);
+  font-size: 13px;
+  align-items: center;
+}
+.eiq-inv__evidence-row:last-child { border-bottom: none; }
+.eiq-inv__evidence-row--head {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eiq-faint);
+  background: var(--eiq-bg-800);
+}
+.eiq-inv__flag {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--eiq-warn);
+  border: 1px solid rgba(242, 166, 90, 0.35);
+  border-radius: 999px;
+  padding: 1px 7px;
+  vertical-align: middle;
+}
+.eiq-inv__status {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--eiq-border);
+  color: var(--eiq-muted);
+}
+.eiq-inv__status--verified { color: var(--eiq-accent); border-color: var(--eiq-border-accent); background: rgba(0, 232, 154, 0.06); }
+.eiq-inv__status--pending { color: var(--eiq-info); border-color: rgba(90, 176, 242, 0.3); background: rgba(90, 176, 242, 0.06); }
+.eiq-inv__status--requires_review { color: var(--eiq-warn); border-color: rgba(242, 166, 90, 0.3); background: rgba(242, 166, 90, 0.06); }
+
+/* ── Resource purpose review ─────────────────────────────────────────── */
+.eiq-inv__pathway { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 32px; }
+.eiq-inv__pathway-step { display: flex; align-items: center; gap: 4px; }
+.eiq-inv__pathway-step span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--eiq-ink);
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.eiq-inv__pathway-arrow { width: 22px; height: 11px; flex-shrink: 0; }
+
+.eiq-inv__stewardship-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.eiq-inv__stewardship-card {
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+  border-radius: var(--eiq-r-md);
+  padding: 14px 16px;
+}
+.eiq-inv__stewardship-term { font-size: 13px; font-weight: 700; color: var(--eiq-gold); margin-bottom: 6px; }
+.eiq-inv__stewardship-body { font-size: 12.5px; color: var(--eiq-muted); line-height: 1.55; }
+
+/* Dominant 3-second message — the one line the scene must communicate even skimmed. */
+.eiq-inv__dominant-message {
+  font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--eiq-ink-strong);
+  max-width: 640px;
+  margin: 12px 0 16px;
+}
+
+/* Compact Resource → Purpose Review → Stewardship Questions flow. */
+.eiq-inv__rpr-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 24px; }
+.eiq-inv__rpr-flow-step { display: flex; align-items: center; gap: 6px; }
+.eiq-inv__rpr-flow-step span {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--eiq-ink-strong);
+  background: rgba(232, 196, 106, 0.08);
+  border: 1px solid var(--eiq-border-accent);
+  border-radius: 999px;
+  padding: 7px 16px;
+}
+.eiq-inv__rpr-flow-arrow { width: 22px; height: 11px; flex-shrink: 0; }
+
+/* Compact stewardship node grid — dense, term + one-word gloss carry the
+   skim-read; the full question is present but visually secondary. */
+.eiq-inv__stewardship-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.eiq-inv__stewardship-node {
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+  border-radius: var(--eiq-r-sm);
+  padding: 10px 12px;
+  text-align: center;
+}
+.eiq-inv__stewardship-short { font-size: 10.5px; color: var(--eiq-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 2px 0 6px; }
+.eiq-inv__stewardship-node .eiq-inv__stewardship-body { font-size: 11px; line-height: 1.45; }
+
+/* Proceed / Reconsider / Block outcome — reuses the exact Better Way tone colors. */
+.eiq-inv__rpr-outcomes { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+.eiq-inv__rpr-outcome {
+  flex: 1;
+  min-width: 170px;
+  border-radius: var(--eiq-r-md);
+  padding: 12px 16px;
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+}
+.eiq-inv__rpr-outcome-label { display: block; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.eiq-inv__rpr-outcome-detail { display: block; font-size: 11.5px; color: var(--eiq-muted); line-height: 1.5; }
+.eiq-inv__rpr-outcome--eligible { border-color: var(--eiq-border-accent); }
+.eiq-inv__rpr-outcome--eligible .eiq-inv__rpr-outcome-label { color: var(--eiq-accent); }
+.eiq-inv__rpr-outcome--conditional { border-color: rgba(242, 166, 90, 0.3); }
+.eiq-inv__rpr-outcome--conditional .eiq-inv__rpr-outcome-label { color: var(--eiq-warn); }
+.eiq-inv__rpr-outcome--blocked { border-color: rgba(239, 111, 111, 0.3); }
+.eiq-inv__rpr-outcome--blocked .eiq-inv__rpr-outcome-label { color: var(--eiq-danger); }
+
+/* Secondary pathway (demoted — no longer the scene's primary visual). */
+.eiq-inv__pathway--secondary { opacity: 0.7; margin-bottom: 20px; }
+.eiq-inv__pathway--secondary .eiq-inv__pathway-step span { font-size: 11px; padding: 5px 12px; }
+.eiq-inv__pathway-sep { color: var(--eiq-faint); font-size: 12px; }
+
+/* ── Better way options ──────────────────────────────────────────────── */
+.eiq-inv__baseline {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--eiq-muted);
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--eiq-border);
+}
+.eiq-inv__baseline-label { font-weight: 700; color: var(--eiq-ink-strong); text-transform: uppercase; font-size: 11px; letter-spacing: 0.06em; }
+
+.eiq-inv__options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.eiq-inv__option {
+  position: relative;
+  border-radius: var(--eiq-r-md);
+  padding: 18px;
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+}
+.eiq-inv__option--eligible { border-color: var(--eiq-border-accent); }
+.eiq-inv__option--conditional { border-color: rgba(242, 166, 90, 0.3); }
+.eiq-inv__option--blocked { border-color: rgba(239, 111, 111, 0.3); opacity: 0.62; }
+.eiq-inv__option-badge {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 9px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+.eiq-inv__option-badge--eligible { color: var(--eiq-accent); background: rgba(0, 232, 154, 0.1); }
+.eiq-inv__option-badge--conditional { color: var(--eiq-warn); background: rgba(242, 166, 90, 0.1); }
+.eiq-inv__option-badge--blocked { color: var(--eiq-danger); background: rgba(239, 111, 111, 0.12); }
+.eiq-inv__option-title { font-size: 14.5px; font-weight: 700; color: var(--eiq-ink-strong); margin-bottom: 6px; }
+.eiq-inv__option-desc { font-size: 12.5px; color: var(--eiq-muted); line-height: 1.5; margin-bottom: 10px; }
+.eiq-inv__option-note { font-size: 11.5px; color: var(--eiq-faint); }
+
+/* ── Investment mandate ──────────────────────────────────────────────── */
+.eiq-inv__mandate-card {
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border-accent);
+  border-radius: var(--eiq-r-lg);
+  padding: 26px;
+  margin-bottom: 22px;
+}
+.eiq-inv__mandate-title { font-size: 20px; font-weight: 800; color: var(--eiq-ink-strong); margin: 8px 0 4px; }
+.eiq-inv__mandate-sub { font-size: 12.5px; color: var(--eiq-faint); margin-bottom: 20px; }
+.eiq-inv__mandate-criteria { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.eiq-inv__mandate-criterion-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--eiq-faint); margin-bottom: 3px; }
+.eiq-inv__mandate-criterion-value { font-size: 13px; color: var(--eiq-ink); font-weight: 600; }
+
+.eiq-inv__fit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 14px; }
+.eiq-inv__fit-chip { background: var(--eiq-bg-800); border: 1px solid var(--eiq-border); border-radius: var(--eiq-r-sm); padding: 12px 14px; }
+.eiq-inv__fit-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--eiq-accent); margin-bottom: 4px; }
+.eiq-inv__fit-note { display: block; font-size: 11.5px; color: var(--eiq-muted); line-height: 1.4; }
+
+/* Progressive disclosure — native <details>, no JS, fully keyboard/SR accessible. */
+.eiq-inv__mandate-more { margin-top: 14px; }
+.eiq-inv__mandate-more summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--eiq-muted);
+  list-style: none;
+  padding: 6px 0;
+}
+.eiq-inv__mandate-more summary::-webkit-details-marker { display: none; }
+.eiq-inv__mandate-more summary::before { content: '+ '; color: var(--eiq-gold); }
+.eiq-inv__mandate-more[open] summary::before { content: '− '; }
+.eiq-inv__mandate-more summary:hover, .eiq-inv__mandate-more summary:focus-visible { color: var(--eiq-ink); }
+.eiq-inv__mandate-criteria--secondary { margin-top: 10px; opacity: 0.85; }
+
+/* Overall fit verdict — the dominant Mandate → Fit Check signal. */
+.eiq-inv__fit-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: var(--eiq-r-md);
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+}
+.eiq-inv__fit-verdict-label { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.eiq-inv__fit-verdict-detail { font-size: 12.5px; color: var(--eiq-muted); }
+.eiq-inv__fit-verdict--aligned { border-color: var(--eiq-border-accent); }
+.eiq-inv__fit-verdict--aligned .eiq-inv__fit-verdict-label { color: var(--eiq-accent); }
+.eiq-inv__fit-verdict--conditional { border-color: rgba(242, 166, 90, 0.35); }
+.eiq-inv__fit-verdict--conditional .eiq-inv__fit-verdict-label { color: var(--eiq-warn); }
+.eiq-inv__fit-verdict--not-aligned { border-color: rgba(239, 111, 111, 0.35); }
+.eiq-inv__fit-verdict--not-aligned .eiq-inv__fit-verdict-label { color: var(--eiq-danger); }
+
+/* ── Human decision ──────────────────────────────────────────────────── */
+.eiq-inv__decision-card { background: var(--eiq-surface); border: 1px solid var(--eiq-border); border-radius: var(--eiq-r-lg); padding: 26px; max-width: 640px; }
+.eiq-inv__decision-fields { display: grid; gap: 10px; margin-bottom: 18px; }
+.eiq-inv__decision-fields div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid var(--eiq-border); }
+.eiq-inv__decision-fields dt { color: var(--eiq-faint); }
+.eiq-inv__decision-fields dd { color: var(--eiq-ink); font-weight: 600; text-align: right; }
+.eiq-inv__decision-banner {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eiq-gold);
+  background: rgba(232, 196, 106, 0.08);
+  border: 1px solid rgba(232, 196, 106, 0.25);
+  border-radius: var(--eiq-r-sm);
+  padding: 10px;
+  margin-bottom: 16px;
+}
+.eiq-inv__decision-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.eiq-inv__decision-action {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--eiq-faint);
+  border: 1px solid var(--eiq-border);
+  border-radius: var(--eiq-r-sm);
+  padding: 8px 16px;
+  cursor: not-allowed;
+  user-select: none;
+}
+.eiq-inv__decision-note { font-size: 11px; color: var(--eiq-faint); font-style: italic; margin-bottom: 14px; }
+.eiq-inv__link-out { font-size: 13px; font-weight: 700; color: var(--eiq-accent); text-decoration: none; }
+.eiq-inv__link-out:hover, .eiq-inv__link-out:focus-visible { text-decoration: underline; }
+
+/* ── Capital guardian lifecycle ──────────────────────────────────────── */
+.eiq-inv__lifecycle { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0; margin-bottom: 28px; }
+.eiq-inv__lifecycle-stage { display: flex; flex-direction: column; align-items: center; text-align: center; width: 108px; position: relative; }
+.eiq-inv__lifecycle-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--eiq-accent); box-shadow: 0 0 0 3px var(--eiq-accent-glow); margin-bottom: 8px; }
+.eiq-inv__lifecycle-label { font-size: 11px; font-weight: 700; color: var(--eiq-ink); line-height: 1.3; }
+.eiq-inv__lifecycle-detail { font-size: 10px; color: var(--eiq-faint); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+.eiq-inv__lifecycle-connector { width: 32px; height: 4px; margin-top: 5px; flex-shrink: 0; align-self: flex-start; }
+
+.eiq-inv__redflag-example {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: rgba(242, 166, 90, 0.05);
+  border: 1px solid rgba(242, 166, 90, 0.25);
+  border-radius: var(--eiq-r-md);
+  padding: 16px 18px;
+  max-width: 560px;
+}
+.eiq-inv__redflag-barrier { width: 4px; align-self: stretch; border-radius: 2px; background: var(--eiq-warn); flex-shrink: 0; }
+.eiq-inv__redflag-title { font-size: 13px; font-weight: 700; color: var(--eiq-warn); margin-bottom: 4px; }
+.eiq-inv__redflag-desc { font-size: 13px; color: var(--eiq-ink); margin-bottom: 6px; }
+.eiq-inv__redflag-note { font-size: 11.5px; color: var(--eiq-faint); line-height: 1.5; }
+
+/* ── Expected vs actual ──────────────────────────────────────────────── */
+.eiq-inv__eva-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eiq-faint);
+  padding: 0 4px 8px;
+  border-bottom: 1px solid var(--eiq-border);
+}
+.eiq-inv__eva-head span:nth-child(2), .eiq-inv__eva-head span:nth-child(3) { text-align: right; }
+.eiq-inv__eva-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--eiq-border);
+  font-size: 13px;
+  align-items: center;
+}
+.eiq-inv__eva-metric-label { color: var(--eiq-ink); font-weight: 600; }
+.eiq-inv__eva-expected { text-align: right; color: var(--eiq-muted); }
+.eiq-inv__eva-actual { text-align: right; color: var(--eiq-warn); font-weight: 700; }
+
+/* ── Shared: illustrative/disclaimer text ─────────────────────────────── */
+.eiq-inv__illustrative-note { font-size: 12px; color: var(--eiq-faint); margin-top: 10px; }
+.eiq-inv__disclaimers {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  border: 1px dashed var(--eiq-border);
+  border-radius: var(--eiq-r-sm);
+  font-size: 12px;
+  color: var(--eiq-faint);
+  line-height: 1.7;
+}
+.eiq-inv__text-link {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--eiq-muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--eiq-border);
+}
+.eiq-inv__text-link:hover, .eiq-inv__text-link:focus-visible { color: var(--eiq-accent); border-color: var(--eiq-border-accent); }
+
+/* ── Scene 10: Learning — take → store → retrieve → deliver, as a visual
+   composition rather than a text list. ─────────────────────────────────── */
+.eiq-inv__learning-composition {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin: 28px 0;
+  max-width: 420px;
+}
+.eiq-inv__learning-node {
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+  border-radius: var(--eiq-r-md);
+  padding: 16px 18px;
+}
+.eiq-inv__learning-node--b { border-color: var(--eiq-border-accent); }
+.eiq-inv__learning-node-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--eiq-faint); margin-bottom: 4px; }
+.eiq-inv__learning-node-detail { font-size: 14px; color: var(--eiq-ink); font-weight: 600; line-height: 1.4; margin-bottom: 8px; }
+.eiq-inv__learning-retrieved-tag {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--eiq-accent);
+}
+.eiq-inv__learning-link { display: flex; flex-direction: column; align-items: center; padding: 2px 0; }
+.eiq-inv__learning-link-svg { width: 100%; max-width: 60px; height: 24px; }
+.eiq-inv__learning-action {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--eiq-muted);
+}
+.eiq-inv__learning-vault {
+  text-align: center;
+  padding: 14px;
+  border: 1px dashed var(--eiq-border-accent);
+  border-radius: var(--eiq-r-md);
+  background: rgba(0, 232, 154, 0.03);
+}
+.eiq-inv__learning-vault-label { font-size: 13px; font-weight: 700; color: var(--eiq-ink-strong); margin-top: 8px; }
+.eiq-inv__learning-vault-detail { font-size: 11.5px; color: var(--eiq-faint); margin-top: 2px; }
+@media (min-width: 640px) {
+  .eiq-inv__learning-composition { max-width: none; }
+  .eiq-inv__learning-link { flex-direction: row; justify-content: center; gap: 10px; }
+  .eiq-inv__learning-link-svg { transform: rotate(0deg); }
+}
+
+/* ── Scene 11: Philosophical Hand — the visual climax ────────────────────
+   Deliberately not the eyebrow/heading/card shell every other scene uses:
+   full-bleed width (safe because body already has overflow-x:hidden),
+   far more negative space, and typography that finally escalates past the
+   uniform scale every earlier scene shares. ─────────────────────────────── */
+.eiq-inv__scene--climax { padding-top: 80px; padding-bottom: 80px; }
+.eiq-inv__climax-bleed {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 0 32px;
+  text-align: center;
+}
+.eiq-inv__climax-eyebrow { justify-content: center; margin-bottom: 20px; }
+.eiq-inv__climax-question {
+  font-size: clamp(1.3rem, 2.8vw, 1.9rem);
+  font-weight: 700;
+  color: var(--eiq-ink-strong);
+  max-width: 680px;
+  margin: 0 auto 10px;
+  line-height: 1.4;
+}
+.eiq-inv__climax-answer {
+  font-size: 14px;
+  color: var(--eiq-muted);
+  max-width: 560px;
+  margin: 0 auto 56px;
+  line-height: 1.7;
+}
+
+.eiq-inv__climax-triptych {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr;
+  align-items: start;
+  gap: 32px;
+  max-width: 1240px;
+  margin: 0 auto 64px;
+  text-align: left;
+}
+.eiq-inv__climax-side { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
+.eiq-inv__climax-side--world { align-items: flex-end; text-align: right; }
+.eiq-inv__climax-side-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--eiq-faint);
+  margin-bottom: 6px;
+}
+.eiq-inv__climax-flow-step {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--eiq-ink);
+  background: var(--eiq-surface);
+  border: 1px solid var(--eiq-border);
+  border-radius: var(--eiq-r-sm);
+  padding: 8px 14px;
+}
+.eiq-inv__climax-world-chip {
+  font-size: 12.5px;
+  color: var(--eiq-ink);
+  background: var(--eiq-bg-800);
+  border: 1px solid var(--eiq-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.eiq-inv__climax-center { position: relative; display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; padding: 8px 0 20px; }
+.eiq-inv__climax-manipulator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  max-width: 190px;
+  position: relative;
+  z-index: 1;
+}
+.eiq-inv__climax-manipulator h3 { font-size: 14px; font-weight: 800; color: var(--eiq-ink-strong); margin: 4px 0 2px; }
+.eiq-inv__climax-manipulator ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.eiq-inv__climax-manipulator li { font-size: 11.5px; color: var(--eiq-muted); line-height: 1.5; }
+.eiq-inv__climax-manipulator-note { font-size: 10.5px; color: var(--eiq-faint); font-style: italic; margin: 4px 0 0; }
+.eiq-inv__climax-span { position: absolute; left: 0; right: 0; top: 64px; width: 100%; height: 12px; z-index: 0; opacity: 0.6; }
+
+/* The statement — the single largest, most important line on the homepage. */
+.eiq-inv__climax-statement { max-width: 780px; margin: 0 auto 56px; }
+.eiq-inv__climax-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: clamp(2.1rem, 5.2vw, 3.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--eiq-ink-strong);
+}
+
+.eiq-inv__bridge-chain { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-bottom: 28px; }
+.eiq-inv__bridge-chain-step { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--eiq-ink); }
+.eiq-inv__bridge-chain-arrow { color: var(--eiq-faint); font-weight: 400; }
+
+.eiq-inv__closing-lines { text-align: center; max-width: 480px; margin: 0 auto 32px; }
+.eiq-inv__closing-lines p { font-size: 14px; color: var(--eiq-muted); line-height: 1.9; margin: 0; }
+
+.eiq-inv__brand-moment { text-align: center; padding-top: 8px; }
+.eiq-inv__brand-word { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: var(--eiq-ink-strong); letter-spacing: -0.02em; }
+.eiq-inv__brand-triple { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin-top: 12px; }
+.eiq-inv__brand-triple span { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--eiq-accent); }
+
+/* ── Scene 12: Final Joining ──────────────────────────────────────────── */
+.eiq-inv__scene--final { text-align: center; }
+.eiq-inv__progression { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin-bottom: 8px; }
+.eiq-inv__progression-step { font-size: 13px; font-weight: 700; color: var(--eiq-ink); }
+.eiq-inv__progression-arrow { color: var(--eiq-faint); margin-left: 8px; font-weight: 400; }
+.eiq-inv__brand-moment--final { margin: 36px 0 20px; }
+.eiq-inv__supporting-lines { max-width: 420px; margin: 0 auto 32px; }
+.eiq-inv__supporting-lines p { font-size: 13px; color: var(--eiq-faint); line-height: 1.8; margin: 0; }
+.eiq-inv__final-cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+
+@media (max-width: 760px) {
+  .eiq-inv { padding: 0 18px; }
+  .eiq-inv__evidence-row { grid-template-columns: 1fr; gap: 4px; }
+  .eiq-inv__evidence-row--head { display: none; }
+  .eiq-inv__lifecycle-connector { display: none; }
+  .eiq-inv__eva-head, .eiq-inv__eva-row { grid-template-columns: 1fr 1fr; }
+  .eiq-inv__eva-metric-label { grid-column: 1 / -1; }
+  .eiq-inv__climax-bleed { padding: 0 18px; }
+  .eiq-inv__climax-triptych { grid-template-columns: 1fr; text-align: center; gap: 40px; }
+  .eiq-inv__climax-side, .eiq-inv__climax-side--world { align-items: center; text-align: center; }
+  .eiq-inv__climax-span { display: none; }
+  .eiq-inv__climax-center { flex-wrap: wrap; }
+}

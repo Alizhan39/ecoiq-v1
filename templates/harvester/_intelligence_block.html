@@ -2,7 +2,7 @@
 Compact read-only platform intelligence block for the homepage.
 Institutional, flat (no gradients), data-first, no marketing copy.
 {% endcomment %}
-<section class="hv-intel" aria-label="EcoIQ Intelligence">
+<section class="hv-intel eiq-mo-root" aria-label="EcoIQ Intelligence">
   <style>
     .hv-intel{
       --i-bg:#0a0e13; --i-border:rgba(255,255,255,.10); --i-text:#e2e8f0;
@@ -37,10 +37,10 @@ Institutional, flat (no gradients), data-first, no marketing copy.
       {% if last_updated %}<span class="hv-intel-updated">last update {{ last_updated|date:"Y-m-d" }}</span>{% endif %}
     </div>
     <div class="hv-intel-grid">
-      <div class="hv-intel-cell"><div class="hv-intel-num">{{ companies_tracked }}</div><div class="hv-intel-label">Companies tracked</div></div>
-      <div class="hv-intel-cell"><div class="hv-intel-num">{{ evidence_count }}</div><div class="hv-intel-label">Evidence collected</div></div>
-      <div class="hv-intel-cell"><div class="hv-intel-num">{{ datapoint_count }}</div><div class="hv-intel-label">Datapoints extracted</div></div>
-      <div class="hv-intel-cell"><div class="hv-intel-num">{% if last_updated %}{{ last_updated|date:"M j" }}{% else %}—{% endif %}</div><div class="hv-intel-label">Last update</div></div>
+      <div class="hv-intel-cell eiq-mo-kpi"><div class="hv-intel-num"><span data-island="CountUpValue" data-props='{"value": {{ companies_tracked }}}'>{{ companies_tracked }}</span></div><div class="hv-intel-label eiq-mo-kpi-label">Companies tracked</div></div>
+      <div class="hv-intel-cell eiq-mo-kpi"><div class="hv-intel-num"><span data-island="CountUpValue" data-props='{"value": {{ evidence_count }}}'>{{ evidence_count }}</span></div><div class="hv-intel-label eiq-mo-kpi-label">Evidence collected</div></div>
+      <div class="hv-intel-cell eiq-mo-kpi"><div class="hv-intel-num"><span data-island="CountUpValue" data-props='{"value": {{ datapoint_count }}}'>{{ datapoint_count }}</span></div><div class="hv-intel-label eiq-mo-kpi-label">Datapoints extracted</div></div>
+      <div class="hv-intel-cell eiq-mo-kpi"><div class="hv-intel-num">{% if last_updated %}{{ last_updated|date:"M j" }}{% else %}—{% endif %}</div><div class="hv-intel-label eiq-mo-kpi-label">Last update</div></div>
     </div>
     <div class="hv-intel-cta">
       <a class="primary" href="{{ rankings_url }}">View Rankings</a>

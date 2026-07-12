@@ -20,6 +20,8 @@ import { createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import './design/system.css'
 import './islands.css'
+import './cinematic.css'
+import './investor-story.css'
 import { MotionProvider } from './motion'
 import { registry } from './registry'
 

@@ -5,10 +5,16 @@
  */
 import { useEffect, useState } from 'react'
 
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false
+}
+
 export function useCountUp(target: number, run: boolean, ms = 1000): number {
   const [value, setValue] = useState(run ? 0 : target)
   useEffect(() => {
-    if (!run) {
+    if (!run || prefersReducedMotion()) {
       setValue(target)
       return
     }
