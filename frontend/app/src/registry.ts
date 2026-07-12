@@ -15,6 +15,9 @@ import HeatingTransitionStory from './components/stories/HeatingTransitionStory'
 import NarrativeStory from './components/stories/NarrativeStory'
 import DigitalTwinPreview from './components/intelligence/DigitalTwinPreview'
 import GlobalCountryExplorer from './components/global/GlobalCountryExplorer'
+import CinematicHomeHero from './components/cinematic/CinematicHomeHero'
+import CountUpValue from './components/cinematic/CountUpValue'
+import InvestorScrollStory from './components/investor-story/InvestorScrollStory'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
@@ -30,4 +33,7 @@ export const registry: Record<string, ComponentType<any>> = {
   NarrativeStory,
   DigitalTwinPreview,
   GlobalCountryExplorer,
+  CinematicHomeHero,
+  CountUpValue,
+  InvestorScrollStory,
 }

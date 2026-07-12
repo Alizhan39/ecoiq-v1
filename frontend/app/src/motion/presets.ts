@@ -39,6 +39,18 @@ export const staggerItem: Variants = {
   show: { opacity: 1, y: 0, transition: tBase },
 }
 
+/** SVG stroke draw-in (pathLength 0→1) for chart lines, links, and map borders. */
+export const drawPath = (transition: Transition = tSlow): Variants => ({
+  hidden: { pathLength: 0, opacity: 0 },
+  show: { pathLength: 1, opacity: 1, transition },
+})
+
+/** Scale + fade pop-in for map/network nodes and pins, staggered by index via `transition.delay`. */
+export const popIn = (transition: Transition = tFast, fromScale = 0): Variants => ({
+  hidden: { scale: fromScale, opacity: 0 },
+  show: { scale: 1, opacity: 1, transition },
+})
+
 /** Premium hover lift for interactive cards. */
 export const hoverLift = {
   rest: { y: 0, boxShadow: '0 24px 60px -30px rgba(0,0,0,0.8)' },
