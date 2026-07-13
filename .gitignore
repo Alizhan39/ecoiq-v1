@@ -245,3 +245,4 @@ __marimo__/
 # WhiteNoise with no Node step. (frontend/app/ source is built locally.)
 !static/dist/
 !static/dist/**
+.DS_Store

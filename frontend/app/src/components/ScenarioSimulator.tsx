@@ -109,7 +109,13 @@ function Projection({ label, value, suffix, max, prefix }: { label: string; valu
         </span>
       </div>
       <div className="eiq-sim__bar">
-        <m.div className="eiq-sim__bar-fill" animate={{ width: `${pct}%` }} transition={tBase} />
+        <m.div
+          className="eiq-sim__bar-fill"
+          initial={false}
+          animate={{ scaleX: pct / 100 }}
+          transition={tBase}
+          style={{ transformOrigin: 'left' }}
+        />
       </div>
     </div>
   )
