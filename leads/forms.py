@@ -1,14 +1,10 @@
 from django import forms
 from .models import AccessRequest, ReviewRequest
 
-# Tailwind classes applied to every widget
-_INPUT = (
-    'w-full px-4 py-3 rounded-xl text-sm text-slate-200 placeholder-slate-600 '
-    'bg-white/[.045] border border-white/[.09] transition-colors duration-150 '
-    'focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/10'
-)
-_SELECT = _INPUT + ' cursor-pointer'
-_TEXTAREA = _INPUT + ' resize-none leading-relaxed'
+# CSS classes applied to every widget (styles defined in each template's <style> block)
+_INPUT = 'form-input'
+_SELECT = 'form-select'
+_TEXTAREA = 'form-textarea'
 
 
 class AccessRequestForm(forms.ModelForm):
@@ -62,7 +58,7 @@ class AccessRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Apply Tailwind classes to every widget
+        # Apply widget CSS classes
         for name, field in self.fields.items():
             if name == 'website':
                 continue
@@ -106,13 +102,7 @@ class AccessRequestForm(forms.ModelForm):
 
 # ── ReviewRequestForm ─────────────────────────────────────────────────────────
 
-_FILE_INPUT = (
-    'w-full px-4 py-3 rounded-xl text-sm text-slate-200 '
-    'bg-white/[.045] border border-white/[.09] transition-colors duration-150 '
-    'file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 '
-    'file:bg-emerald-500/20 file:text-emerald-300 file:text-xs file:font-medium '
-    'file:cursor-pointer hover:file:bg-emerald-500/30 cursor-pointer'
-)
+_FILE_INPUT = 'form-file-input'
 
 _MAX_UPLOAD_BYTES = 10 * 1024 * 1024   # 10 MB
 _ALLOWED_MIMES    = {'application/pdf'}
@@ -166,7 +156,7 @@ class ReviewRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Apply Tailwind classes
+        # Apply widget CSS classes
         for name, f in self.fields.items():
             if name in ('website', 'sustainability_report'):
                 continue
@@ -272,7 +262,7 @@ class ReportRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Apply Tailwind classes
+        # Apply widget CSS classes
         for name, f in self.fields.items():
             if name == 'hp_field':
                 continue

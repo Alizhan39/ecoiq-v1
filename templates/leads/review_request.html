@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" style="scroll-behavior: smooth;">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,25 +10,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            emerald: { 400: '#34d399', 500: '#10b981', 600: '#059669' },
-          },
-        },
-      },
-    };
-  </script>
-
   <style>
-    body { background: #080c0e; }
+    * { box-sizing: border-box; }
+    body {
+      background: #080c0e;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .hidden { display: none !important; }
 
     .grid-bg {
       background-image:
@@ -51,9 +44,18 @@
 
     .glow-emerald { box-shadow: 0 0 60px rgba(16,185,129,.10); }
 
-    input:focus, textarea:focus, select:focus {
-      box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+    /* Form widgets — classes applied in leads/forms.py */
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: .75rem 1rem; border-radius: .75rem; font-size: .875rem;
+      color: #e2e8f0; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.09);
+      transition: border-color .15s, box-shadow .15s; font-family: inherit;
     }
+    .form-input::placeholder, .form-textarea::placeholder { color: #475569; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none; border-color: rgba(16,185,129,.6); box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+    }
+    .form-select { cursor: pointer; }
+    .form-textarea { resize: none; line-height: 1.6; }
 
     .field-error { color: #f87171; font-size: .75rem; margin-top: .25rem; }
 
@@ -77,6 +79,12 @@
       border-color: rgba(16,185,129,.3);
       background: rgba(16,185,129,.04);
     }
+    .rt-card-inner { display: flex; align-items: flex-start; gap: .75rem; }
+    .rt-card-icon { font-size: 1.125rem; margin-top: .125rem; }
+    .rt-card-title { font-size: .875rem; font-weight: 600; color: #f1f5f9; margin: 0; }
+    .rt-card-desc { font-size: .75rem; color: #64748b; margin: .125rem 0 0; line-height: 1.5; }
+    .rt-grid { display: grid; gap: .75rem; }
+    @media (min-width: 640px) { .rt-grid { grid-template-columns: 1fr 1fr; } }
 
     /* File drop zone */
     #drop-zone {
@@ -95,6 +103,29 @@
       border-color: rgba(16,185,129,.4);
       background: rgba(16,185,129,.06);
     }
+    #drop-zone svg { width: 2rem; height: 2rem; margin: 0 auto .75rem; color: #475569; }
+    #dz-selected svg { width: 1.75rem; height: 1.75rem; margin: 0 auto .5rem; color: #34d399; }
+    .dz-hint { font-size: .875rem; color: #94a3b8; margin: 0 0 .25rem; }
+    .dz-hint strong { color: #34d399; font-weight: 500; }
+    .dz-sub { font-size: .75rem; color: #475569; margin: 0; }
+    .dz-filename { font-size: .875rem; color: #34d399; font-weight: 500; margin: 0; }
+    .dz-filesize { font-size: .75rem; color: #64748b; margin: .25rem 0 0; }
+    .dz-remove {
+      margin-top: .5rem; font-size: .75rem; color: #475569; text-decoration: underline;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+    }
+    .dz-remove:hover { color: #94a3b8; }
+
+    /* Form widget class used via forms.py for the file input */
+    .form-file-input {
+      width: 100%; padding: .75rem 1rem; border-radius: .75rem; font-size: .875rem; color: #e2e8f0;
+      background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.09); cursor: pointer;
+    }
+    .form-file-input::file-selector-button {
+      margin-right: 1rem; padding: .375rem 1rem; border-radius: .5rem; border: 0;
+      background: rgba(16,185,129,.2); color: #6ee7b7; font-size: .75rem; font-weight: 500; cursor: pointer;
+    }
+    .form-file-input:hover::file-selector-button { background: rgba(16,185,129,.3); }
 
     /* Submit spinner */
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -114,8 +145,10 @@
       text-decoration: none;
       transition: background .15s;
       width: 100%;
+      border: none; cursor: pointer; font-family: inherit;
     }
     .cta-primary:hover { background: rgba(52,211,153,1); }
+    .cta-primary svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 
     .cta-ghost {
       display: flex; align-items: center; gap: .5rem; justify-content: center;
@@ -129,24 +162,137 @@
       text-decoration: none;
       transition: all .15s;
       width: 100%;
+      cursor: pointer; font-family: inherit; text-align: center;
     }
     .cta-ghost:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .cta-ghost svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+
+    /* Nav */
+    .rr-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(8,12,14,.8);
+      backdrop-filter: blur(20px);
+    }
+    .rr-nav-inner {
+      max-width: 80rem; margin: 0 auto; padding: 0 1.5rem; height: 4rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .rr-logo { font-size: .875rem; font-weight: 500; letter-spacing: .2em; color: #e2e8f0; text-decoration: none; transition: color .15s; }
+    .rr-logo:hover { color: #34d399; }
+    .rr-logo span { color: #34d399; }
+    .rr-nav-links { display: flex; align-items: center; gap: 1.5rem; }
+    .rr-nav-links a { font-size: .875rem; color: #94a3b8; text-decoration: none; transition: color .15s; }
+    .rr-nav-links a:hover { color: #e2e8f0; }
+    .rr-nav-optional { display: none; }
+    @media (min-width: 640px) { .rr-nav-optional { display: block; } }
+    .rr-nav-back { display: flex; align-items: center; gap: .375rem; }
+    .rr-nav-back svg { width: 1rem; height: 1rem; }
+
+    /* Main */
+    .rr-main { padding: 6rem 1rem 6rem; }
+    @media (min-width: 640px) { .rr-main { padding-left: 1.5rem; padding-right: 1.5rem; } }
+    .rr-container { max-width: 72rem; margin: 0 auto; }
+
+    .rr-header { text-align: center; margin-bottom: 3rem; }
+    .rr-badge {
+      display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .75rem;
+      border-radius: 999px; background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.2);
+      color: #34d399; font-size: .75rem; letter-spacing: .05em; margin-bottom: 1.5rem;
+    }
+    .rr-badge-dot { width: .375rem; height: .375rem; border-radius: 999px; background: #34d399; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+    .rr-badge-dot { animation: pulse 2s ease infinite; }
+
+    .rr-title { font-size: 2.25rem; font-weight: 700; letter-spacing: -.02em; color: #fff; margin: 0 0 1rem; }
+    @media (min-width: 768px) { .rr-title { font-size: 3rem; } }
+    .rr-subtitle { color: #94a3b8; font-size: 1.125rem; max-width: 42rem; margin: 0 auto; line-height: 1.7; }
+
+    .rr-notice {
+      max-width: 42rem; margin: 0 auto 2rem; padding: 1rem; border-radius: .75rem; font-size: .875rem;
+      background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.2); color: #fcd34d;
+    }
+    .rr-notice a { color: inherit; text-decoration: underline; }
+    .rr-notice a:hover { color: #fde68a; }
+
+    .rr-grid { display: grid; gap: 2.5rem; align-items: start; }
+    @media (min-width: 1024px) { .rr-grid { grid-template-columns: 1fr 340px; } }
+
+    .rr-card { border-radius: 1rem; padding: 2rem; }
+    @media (min-width: 768px) { .rr-card { padding: 2.5rem; } }
+
+    .rr-section-label { font-size: .75rem; font-weight: 500; color: #94a3b8; margin: 0 0 1rem; letter-spacing: .03em; text-transform: uppercase; }
+    .rr-section-label .required { color: #34d399; }
+    .rr-type-block { margin-bottom: 2rem; }
+
+    .rr-section { border-top: 1px solid rgba(255,255,255,.06); padding-top: 2rem; margin-bottom: 1.5rem; }
+    .rr-section-label-lg { font-size: .75rem; font-weight: 500; color: #94a3b8; margin: 0 0 1.25rem; letter-spacing: .03em; text-transform: uppercase; }
+
+    .rr-row { display: grid; gap: 1.25rem; margin-bottom: 1.25rem; }
+    @media (min-width: 640px) { .rr-row-2 { grid-template-columns: 1fr 1fr; } }
+
+    .rr-field { margin-bottom: 1.25rem; }
+    .rr-label { display: block; font-size: .75rem; font-weight: 500; color: #94a3b8; margin-bottom: .5rem; letter-spacing: .03em; text-transform: uppercase; }
+    .rr-label .required { color: #34d399; }
+    .rr-label .optional { color: #475569; font-weight: 400; text-transform: none; }
+
+    .rr-submit {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: .75rem;
+      padding: 1rem 1.5rem; border-radius: .75rem; background: #10b981; color: #fff;
+      font-weight: 600; font-size: .875rem; letter-spacing: .02em; border: none; cursor: pointer;
+      transition: background-color .15s;
+    }
+    .rr-submit:hover { background: #34d399; }
+    .rr-submit:active { background: #059669; }
+    .rr-submit:focus { outline: none; box-shadow: 0 0 0 2px rgba(16,185,129,.5); }
+    .rr-submit-label { display: flex; align-items: center; gap: .5rem; }
+    .rr-submit-label svg { width: 1rem; height: 1rem; }
+    .rr-submit-note { text-align: center; color: #475569; font-size: .75rem; margin-top: 1rem; }
+
+    /* Sidebar */
+    .rr-sidebar { display: flex; flex-direction: column; gap: 1.25rem; }
+    @media (min-width: 1024px) { .rr-sidebar { position: sticky; top: 6rem; } }
+    .rr-side-card { border-radius: 1rem; padding: 1.5rem; }
+    .rr-side-card h3 { font-size: .75rem; font-weight: 600; color: #94a3b8; margin: 0 0 1.25rem; letter-spacing: .1em; text-transform: uppercase; }
+
+    .rr-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.25rem; }
+    .rr-step { display: flex; gap: 1rem; }
+    .rr-step-num {
+      flex-shrink: 0; width: 1.75rem; height: 1.75rem; border-radius: 999px;
+      background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3);
+      color: #34d399; font-size: .75rem; font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rr-step-title { font-size: .875rem; font-weight: 500; color: #e2e8f0; margin: 0; }
+    .rr-step-desc { font-size: .75rem; color: #64748b; margin: .125rem 0 0; }
+
+    .rr-actions { display: flex; flex-direction: column; gap: .75rem; }
+
+    .rr-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+    .rr-legend li { display: flex; align-items: center; gap: .5rem; font-size: .75rem; color: #94a3b8; }
+    .rr-legend-dot { width: .25rem; height: .25rem; border-radius: 999px; background: rgba(52,211,153,.6); flex-shrink: 0; }
+
+    .rr-disclaimer { font-size: .75rem; color: #475569; line-height: 1.6; padding: 0 .25rem; }
+
+    .rr-footer { border-top: 1px solid rgba(255,255,255,.05); padding: 2rem 0; text-align: center; color: #475569; font-size: .75rem; }
+    .rr-footer a { color: inherit; text-decoration: none; transition: color .15s; }
+    .rr-footer a:hover { color: #94a3b8; }
   </style>
 </head>
 
-<body class="grid-bg min-h-screen font-sans text-slate-100 antialiased">
+<body class="grid-bg">
 
   <!-- Nav -->
-  <nav class="fixed top-0 inset-x-0 z-50 border-b border-white/[.06] bg-[#080c0e]/80 backdrop-blur-xl">
-    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-      <a href="/" class="font-mono text-sm font-medium tracking-widest text-slate-200 hover:text-emerald-400 transition-colors">
-        ECO<span class="text-emerald-400">IQ</span>
+  <nav class="rr-nav">
+    <div class="rr-nav-inner">
+      <a href="/" class="rr-logo mono">
+        ECO<span>IQ</span>
       </a>
-      <div class="flex items-center gap-6">
-        <a href="/companies/" class="hidden sm:block text-sm text-slate-400 hover:text-slate-200 transition-colors">Rankings</a>
-        <a href="/countries/" class="hidden sm:block text-sm text-slate-400 hover:text-slate-200 transition-colors">Countries</a>
-        <a href="/" class="text-sm text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="rr-nav-links">
+        <a href="/companies/" class="rr-nav-optional">Rankings</a>
+        <a href="/countries/" class="rr-nav-optional">Countries</a>
+        <a href="/" class="rr-nav-back">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
           </svg>
           Back
@@ -155,19 +301,19 @@
     </div>
   </nav>
 
-  <main class="pt-24 pb-24 px-4 sm:px-6">
-    <div class="max-w-6xl mx-auto">
+  <main class="rr-main">
+    <div class="rr-container">
 
       <!-- Page header -->
-      <div class="text-center mb-12">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono tracking-wider mb-6">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <div class="rr-header">
+        <div class="rr-badge mono">
+          <span class="rr-badge-dot"></span>
           ECOIQ ANALYTICAL REVIEW
         </div>
-        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+        <h1 class="rr-title">
           Request an EcoIQ Review
         </h1>
-        <p class="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+        <p class="rr-subtitle">
           Select the type of review you need. Our analysts use the Mizan Engine and
           specialised scoring modules to deliver a structured intelligence brief —
           typically within 5 business days.
@@ -175,17 +321,17 @@
       </div>
 
       {% if rate_limited %}
-      <div class="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
+      <div class="rr-notice">
         <strong>Too many submissions.</strong> We've received several requests from your network recently.
         Please try again in an hour, or email us directly at
-        <a href="mailto:alizhan@ecoiq.uk" class="underline hover:text-amber-200">alizhan@ecoiq.uk</a>.
+        <a href="mailto:alizhan@ecoiq.uk">alizhan@ecoiq.uk</a>.
       </div>
       {% endif %}
 
-      <div class="grid lg:grid-cols-[1fr_340px] gap-10 items-start">
+      <div class="rr-grid">
 
         <!-- ── Main form ────────────────────────────────────────────────────── -->
-        <div class="glass-strong glow-emerald rounded-2xl p-8 md:p-10">
+        <div class="rr-card glass-strong glow-emerald">
           <form method="post" enctype="multipart/form-data" novalidate id="review-form">
             {% csrf_token %}
 
@@ -195,26 +341,26 @@
             </div>
 
             <!-- ── Section 1: Review type ──────────────────────────────────── -->
-            <div class="mb-8">
-              <p class="text-xs font-medium text-slate-400 mb-4 tracking-wide uppercase">
-                Review type <span class="text-emerald-400">*</span>
+            <div class="rr-type-block">
+              <p class="rr-section-label">
+                Review type <span class="required">*</span>
               </p>
 
               {% if form.request_type.errors %}
-                <p class="field-error mb-3">{{ form.request_type.errors.0 }}</p>
+                <p class="field-error" style="margin-bottom:.75rem;">{{ form.request_type.errors.0 }}</p>
               {% endif %}
 
-              <div class="grid sm:grid-cols-2 gap-3">
+              <div class="rt-grid">
 
                 <div class="rt-card">
                   <input type="radio" name="request_type" id="rt_company" value="company_assessment"
                     {% if form.request_type.value == 'company_assessment' %}checked{% endif %}>
                   <label for="rt_company">
-                    <div class="flex items-start gap-3">
-                      <span class="text-lg mt-0.5">🏭</span>
+                    <div class="rt-card-inner">
+                      <span class="rt-card-icon">🏭</span>
                       <div>
-                        <p class="text-sm font-semibold text-slate-100">Company EcoIQ Assessment</p>
-                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Mizan Engine scoring — six ethical dimensions, harm signals, investor note</p>
+                        <p class="rt-card-title">Company EcoIQ Assessment</p>
+                        <p class="rt-card-desc">Mizan Engine scoring — six ethical dimensions, harm signals, investor note</p>
                       </div>
                     </div>
                   </label>
@@ -224,11 +370,11 @@
                   <input type="radio" name="request_type" id="rt_country" value="country_intelligence"
                     {% if form.request_type.value == 'country_intelligence' %}checked{% endif %}>
                   <label for="rt_country">
-                    <div class="flex items-start gap-3">
-                      <span class="text-lg mt-0.5">🌍</span>
+                    <div class="rt-card-inner">
+                      <span class="rt-card-icon">🌍</span>
                       <div>
-                        <p class="text-sm font-semibold text-slate-100">Country Transition Intelligence</p>
-                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">National climate readiness, sovereign risk, and policy trajectory</p>
+                        <p class="rt-card-title">Country Transition Intelligence</p>
+                        <p class="rt-card-desc">National climate readiness, sovereign risk, and policy trajectory</p>
                       </div>
                     </div>
                   </label>
@@ -238,11 +384,11 @@
                   <input type="radio" name="request_type" id="rt_investor" value="investor_readiness"
                     {% if form.request_type.value == 'investor_readiness' %}checked{% endif %}>
                   <label for="rt_investor">
-                    <div class="flex items-start gap-3">
-                      <span class="text-lg mt-0.5">📊</span>
+                    <div class="rt-card-inner">
+                      <span class="rt-card-icon">📊</span>
                       <div>
-                        <p class="text-sm font-semibold text-slate-100">Investor Readiness Review</p>
-                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Project Readiness Score, finance route recommendation, blocker analysis</p>
+                        <p class="rt-card-title">Investor Readiness Review</p>
+                        <p class="rt-card-desc">Project Readiness Score, finance route recommendation, blocker analysis</p>
                       </div>
                     </div>
                   </label>
@@ -252,11 +398,11 @@
                   <input type="radio" name="request_type" id="rt_islamic" value="islamic_finance"
                     {% if form.request_type.value == 'islamic_finance' %}checked{% endif %}>
                   <label for="rt_islamic">
-                    <div class="flex items-start gap-3">
-                      <span class="text-lg mt-0.5">⚖️</span>
+                    <div class="rt-card-inner">
+                      <span class="rt-card-icon">⚖️</span>
                       <div>
-                        <p class="text-sm font-semibold text-slate-100">Islamic & Ethical Finance Fit</p>
-                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Structural suitability for sukuk, murabaha, and ethical finance instruments</p>
+                        <p class="rt-card-title">Islamic & Ethical Finance Fit</p>
+                        <p class="rt-card-desc">Structural suitability for sukuk, murabaha, and ethical finance instruments</p>
                       </div>
                     </div>
                   </label>
@@ -266,11 +412,11 @@
                   <input type="radio" name="request_type" id="rt_project" value="project_readiness"
                     {% if form.request_type.value == 'project_readiness' %}checked{% endif %}>
                   <label for="rt_project">
-                    <div class="flex items-start gap-3">
-                      <span class="text-lg mt-0.5">🏗️</span>
+                    <div class="rt-card-inner">
+                      <span class="rt-card-icon">🏗️</span>
                       <div>
-                        <p class="text-sm font-semibold text-slate-100">Project Readiness Review</p>
-                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Ten-dimension readiness score for climate and development finance</p>
+                        <p class="rt-card-title">Project Readiness Review</p>
+                        <p class="rt-card-desc">Ten-dimension readiness score for climate and development finance</p>
                       </div>
                     </div>
                   </label>
@@ -280,11 +426,11 @@
                   <input type="radio" name="request_type" id="rt_gw" value="greenwashing_review"
                     {% if form.request_type.value == 'greenwashing_review' %}checked{% endif %}>
                   <label for="rt_gw">
-                    <div class="flex items-start gap-3">
-                      <span class="text-lg mt-0.5">🔍</span>
+                    <div class="rt-card-inner">
+                      <span class="rt-card-icon">🔍</span>
                       <div>
-                        <p class="text-sm font-semibold text-slate-100">Greenwashing Risk Review</p>
-                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Evidence-based assessment of climate claim credibility and disclosure gaps</p>
+                        <p class="rt-card-title">Greenwashing Risk Review</p>
+                        <p class="rt-card-desc">Evidence-based assessment of climate claim credibility and disclosure gaps</p>
                       </div>
                     </div>
                   </label>
@@ -294,46 +440,46 @@
             </div>
 
             <!-- ── Section 2: Contact ──────────────────────────────────────── -->
-            <div class="border-t border-white/[.06] pt-8 mb-6">
-              <p class="text-xs font-medium text-slate-400 mb-5 tracking-wide uppercase">Contact details</p>
+            <div class="rr-section">
+              <p class="rr-section-label-lg">Contact details</p>
 
-              <div class="grid sm:grid-cols-2 gap-5 mb-5">
+              <div class="rr-row rr-row-2">
                 <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.name.id_for_label }}">
-                    Name <span class="text-emerald-400">*</span>
+                  <label class="rr-label" for="{{ form.name.id_for_label }}">
+                    Name <span class="required">*</span>
                   </label>
                   {{ form.name }}
                   {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.organisation.id_for_label }}">
-                    Organisation <span class="text-emerald-400">*</span>
+                  <label class="rr-label" for="{{ form.organisation.id_for_label }}">
+                    Organisation <span class="required">*</span>
                   </label>
                   {{ form.organisation }}
                   {% if form.organisation.errors %}<p class="field-error">{{ form.organisation.errors.0 }}</p>{% endif %}
                 </div>
               </div>
 
-              <div class="grid sm:grid-cols-2 gap-5 mb-5">
+              <div class="rr-row rr-row-2">
                 <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.email.id_for_label }}">
-                    Work email <span class="text-emerald-400">*</span>
+                  <label class="rr-label" for="{{ form.email.id_for_label }}">
+                    Work email <span class="required">*</span>
                   </label>
                   {{ form.email }}
                   {% if form.email.errors %}<p class="field-error">{{ form.email.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.country.id_for_label }}">
-                    Country <span class="text-emerald-400">*</span>
+                  <label class="rr-label" for="{{ form.country.id_for_label }}">
+                    Country <span class="required">*</span>
                   </label>
                   {{ form.country }}
                   {% if form.country.errors %}<p class="field-error">{{ form.country.errors.0 }}</p>{% endif %}
                 </div>
               </div>
 
-              <div class="mb-5">
-                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.sector.id_for_label }}">
-                  Sector <span class="text-emerald-400">*</span>
+              <div class="rr-field">
+                <label class="rr-label" for="{{ form.sector.id_for_label }}">
+                  Sector <span class="required">*</span>
                 </label>
                 {{ form.sector }}
                 {% if form.sector.errors %}<p class="field-error">{{ form.sector.errors.0 }}</p>{% endif %}
@@ -341,13 +487,13 @@
             </div>
 
             <!-- ── Section 3: Context + upload ────────────────────────────── -->
-            <div class="border-t border-white/[.06] pt-8 mb-8">
-              <p class="text-xs font-medium text-slate-400 mb-5 tracking-wide uppercase">Context & documents</p>
+            <div class="rr-section" style="margin-bottom: 2rem;">
+              <p class="rr-section-label-lg">Context & documents</p>
 
-              <div class="mb-5">
-                <label class="block text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase" for="{{ form.message.id_for_label }}">
+              <div class="rr-field">
+                <label class="rr-label" for="{{ form.message.id_for_label }}">
                   Context or focus areas
-                  <span class="text-slate-600 font-normal normal-case">(optional)</span>
+                  <span class="optional">(optional)</span>
                 </label>
                 {{ form.message }}
                 {% if form.message.errors %}<p class="field-error">{{ form.message.errors.0 }}</p>{% endif %}
@@ -355,34 +501,34 @@
 
               <!-- File upload -->
               <div id="upload-section">
-                <label class="block text-xs font-medium text-slate-400 mb-3 tracking-wide uppercase">
+                <label class="rr-label" style="margin-bottom:.75rem;">
                   Sustainability report
-                  <span class="text-slate-600 font-normal normal-case">(optional · PDF · max 10 MB)</span>
+                  <span class="optional">(optional · PDF · max 10 MB)</span>
                 </label>
 
                 <div id="drop-zone" onclick="document.getElementById('id_sustainability_report').click()" role="button" aria-label="Upload sustainability report">
 
                   <!-- Default state -->
                   <div id="dz-default">
-                    <svg class="w-8 h-8 mx-auto mb-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                     </svg>
-                    <p class="text-sm text-slate-400 mb-1">
-                      <span class="text-emerald-400 font-medium">Click to upload</span> or drag and drop
+                    <p class="dz-hint">
+                      <strong>Click to upload</strong> or drag and drop
                     </p>
-                    <p class="text-xs text-slate-600">PDF only · max 10 MB</p>
+                    <p class="dz-sub">PDF only · max 10 MB</p>
                   </div>
 
                   <!-- File selected state (hidden by default) -->
                   <div id="dz-selected" class="hidden">
-                    <svg class="w-7 h-7 mx-auto mb-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <p class="text-sm text-emerald-400 font-medium" id="dz-filename">report.pdf</p>
-                    <p class="text-xs text-slate-500 mt-1" id="dz-filesize"></p>
-                    <button type="button" onclick="clearFile(event)" class="mt-2 text-xs text-slate-600 hover:text-slate-400 underline">
+                    <p class="dz-filename" id="dz-filename">report.pdf</p>
+                    <p class="dz-filesize" id="dz-filesize"></p>
+                    <button type="button" onclick="clearFile(event)" class="dz-remove">
                       Remove file
                     </button>
                   </div>
@@ -393,7 +539,7 @@
                   {{ form.sustainability_report }}
                 </div>
                 {% if form.sustainability_report.errors %}
-                  <p class="field-error mt-2">{{ form.sustainability_report.errors.0 }}</p>
+                  <p class="field-error" style="margin-top:.5rem;">{{ form.sustainability_report.errors.0 }}</p>
                 {% endif %}
               </div>
             </div>
@@ -402,74 +548,74 @@
             <button
               type="submit"
               id="submit-btn"
-              class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold text-sm tracking-wide transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              class="rr-submit"
             >
-              <span class="btn-label flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span class="btn-label rr-submit-label">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M13 10V3L4 14h7v7l9-11h-7z"/>
                 </svg>
                 Submit review request
               </span>
-              <svg class="spinner w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              <svg class="spinner" style="width:1.25rem;height:1.25rem;color:#fff;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
-              <span class="spinner text-sm font-medium">Submitting…</span>
+              <span class="spinner" style="font-size:.875rem;font-weight:500;">Submitting…</span>
             </button>
 
-            <p class="text-center text-slate-600 text-xs mt-4">
+            <p class="rr-submit-note">
               No payment required. We respond within 48 hours.
             </p>
           </form>
         </div>
 
         <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
-        <div class="space-y-5 lg:sticky lg:top-24">
+        <div class="rr-sidebar">
 
           <!-- What happens next -->
-          <div class="glass rounded-2xl p-6">
-            <h3 class="text-xs font-semibold text-slate-400 mb-5 tracking-widest uppercase">What happens next</h3>
-            <ol class="space-y-5">
-              <li class="flex gap-4">
-                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">01</span>
+          <div class="rr-side-card glass">
+            <h3>What happens next</h3>
+            <ol class="rr-steps">
+              <li class="rr-step">
+                <span class="rr-step-num mono">01</span>
                 <div>
-                  <p class="text-sm font-medium text-slate-200">Request received</p>
-                  <p class="text-xs text-slate-500 mt-0.5">Confirmation email sent immediately. Our team is notified.</p>
+                  <p class="rr-step-title">Request received</p>
+                  <p class="rr-step-desc">Confirmation email sent immediately. Our team is notified.</p>
                 </div>
               </li>
-              <li class="flex gap-4">
-                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">02</span>
+              <li class="rr-step">
+                <span class="rr-step-num mono">02</span>
                 <div>
-                  <p class="text-sm font-medium text-slate-200">Analysis runs within 48 hours</p>
-                  <p class="text-xs text-slate-500 mt-0.5">Mizan Engine and specialist scoring modules are applied to your subject.</p>
+                  <p class="rr-step-title">Analysis runs within 48 hours</p>
+                  <p class="rr-step-desc">Mizan Engine and specialist scoring modules are applied to your subject.</p>
                 </div>
               </li>
-              <li class="flex gap-4">
-                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">03</span>
+              <li class="rr-step">
+                <span class="rr-step-num mono">03</span>
                 <div>
-                  <p class="text-sm font-medium text-slate-200">Intelligence brief delivered</p>
-                  <p class="text-xs text-slate-500 mt-0.5">You receive a structured report with scores, blockers, and recommended actions.</p>
+                  <p class="rr-step-title">Intelligence brief delivered</p>
+                  <p class="rr-step-desc">You receive a structured report with scores, blockers, and recommended actions.</p>
                 </div>
               </li>
-              <li class="flex gap-4">
-                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center justify-center">04</span>
+              <li class="rr-step">
+                <span class="rr-step-num mono">04</span>
                 <div>
-                  <p class="text-sm font-medium text-slate-200">Investor briefing available</p>
-                  <p class="text-xs text-slate-500 mt-0.5">Book a 30-minute call to walk through the findings with our team.</p>
+                  <p class="rr-step-title">Investor briefing available</p>
+                  <p class="rr-step-desc">Book a 30-minute call to walk through the findings with our team.</p>
                 </div>
               </li>
             </ol>
           </div>
 
           <!-- CTA actions -->
-          <div class="glass rounded-2xl p-6">
-            <h3 class="text-xs font-semibold text-slate-400 mb-4 tracking-widest uppercase">Quick actions</h3>
-            <div class="space-y-3">
+          <div class="rr-side-card glass">
+            <h3>Quick actions</h3>
+            <div class="rr-actions">
 
               <!-- Request EcoIQ Review — anchors to this page -->
-              <a href="#review-form" class="cta-ghost scroll-smooth">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="#review-form" class="cta-ghost">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
@@ -477,8 +623,8 @@
               </a>
 
               <!-- Upload Sustainability Report — scrolls to upload zone -->
-              <button type="button" onclick="scrollToUpload()" class="cta-ghost text-left w-full">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button type="button" onclick="scrollToUpload()" class="cta-ghost">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
@@ -488,7 +634,7 @@
               <!-- Book Investor Briefing -->
               {% if calendly_url %}
               <a href="{{ calendly_url }}" target="_blank" rel="noopener noreferrer" class="cta-primary">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
@@ -496,7 +642,7 @@
               </a>
               {% else %}
               <a href="mailto:alizhan@ecoiq.uk?subject=Investor Briefing Request" class="cta-primary">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
@@ -508,34 +654,19 @@
           </div>
 
           <!-- Review types legend -->
-          <div class="glass rounded-2xl p-6">
-            <h3 class="text-xs font-semibold text-slate-400 mb-4 tracking-widest uppercase">Scoring modules used</h3>
-            <ul class="space-y-2">
-              <li class="flex items-center gap-2 text-xs text-slate-400">
-                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
-                Mizan Engine — six-dimension ethical intelligence
-              </li>
-              <li class="flex items-center gap-2 text-xs text-slate-400">
-                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
-                Project Readiness Score — ten dimensions
-              </li>
-              <li class="flex items-center gap-2 text-xs text-slate-400">
-                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
-                Islamic & Ethical Finance Fit — nine dimensions
-              </li>
-              <li class="flex items-center gap-2 text-xs text-slate-400">
-                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
-                Greenwashing Risk Detector — five-component score
-              </li>
-              <li class="flex items-center gap-2 text-xs text-slate-400">
-                <span class="w-1 h-1 rounded-full bg-emerald-400/60 flex-shrink-0"></span>
-                Capital Integrity Score — seven dimensions
-              </li>
+          <div class="rr-side-card glass">
+            <h3>Scoring modules used</h3>
+            <ul class="rr-legend">
+              <li><span class="rr-legend-dot"></span>Mizan Engine — six-dimension ethical intelligence</li>
+              <li><span class="rr-legend-dot"></span>Project Readiness Score — ten dimensions</li>
+              <li><span class="rr-legend-dot"></span>Islamic & Ethical Finance Fit — nine dimensions</li>
+              <li><span class="rr-legend-dot"></span>Greenwashing Risk Detector — five-component score</li>
+              <li><span class="rr-legend-dot"></span>Capital Integrity Score — seven dimensions</li>
             </ul>
           </div>
 
           <!-- Privacy -->
-          <p class="text-xs text-slate-600 leading-relaxed px-1">
+          <p class="rr-disclaimer">
             Your information is used solely to process your review request.
             Uploaded documents are stored securely and never shared with third parties.
             EcoIQ assessments are analytical and indicative — not investment advice.
@@ -546,11 +677,11 @@
     </div>
   </main>
 
-  <footer class="border-t border-white/[.05] py-8 text-center text-slate-600 text-xs font-mono">
+  <footer class="rr-footer mono">
     &copy; {% now "Y" %} EcoIQ — Ethical Intelligence Platform &nbsp;·&nbsp;
-    <a href="/about/" class="hover:text-slate-400 transition-colors">About</a> &nbsp;·&nbsp;
-    <a href="/methodology/" class="hover:text-slate-400 transition-colors">Methodology</a> &nbsp;·&nbsp;
-    <a href="mailto:alizhan@ecoiq.uk" class="hover:text-slate-400 transition-colors">alizhan@ecoiq.uk</a>
+    <a href="/about/">About</a> &nbsp;·&nbsp;
+    <a href="/methodology/">Methodology</a> &nbsp;·&nbsp;
+    <a href="mailto:alizhan@ecoiq.uk">alizhan@ecoiq.uk</a>
   </footer>
 
   <script>
