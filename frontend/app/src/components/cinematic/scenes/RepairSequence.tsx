@@ -1,54 +1,22 @@
 /**
- * RepairSequence — late AI Agents sub-scene. Connection lines draw from two
- * nearby agents to a handful of repair targets over the industrial/smoke
- * area, a scan band sweeps once, bounded pulses fire at each target, and a
- * dark "smoke suppression" overlay ramps in followed by a soft green
- * "clean energy" reveal — both continuous scroll-linked opacity ramps, so
- * the change is progressive and fully reversible by scrolling back up.
+ * RepairSequence — late AI Agents sub-scene. A scan band sweeps once,
+ * bounded pulses fire at each target, and a dark "smoke suppression" overlay
+ * ramps in followed by a soft green "clean energy" reveal — both continuous
+ * scroll-linked opacity ramps, so the change is progressive and fully
+ * reversible by scrolling back up.
+ *
+ * Refinement pass: removed the dashed SVG connector lines (agent labels →
+ * repair targets) for the same reason as `WasteRestoration.tsx` — they
+ * duplicated the canvas's own particle stream (`canvasEngine.ts`'s
+ * `paintRepairEnergy`/`paintRepairReconstruct`, which now carry the
+ * "precise, staged, geometric" energy-transfer signal for this arm more
+ * clearly than a generic dashed line did). One clear signal, not two
+ * competing ones.
  */
 import { m, useTransform, type MotionValue } from 'framer-motion'
 import { AGENTS_SUB_RANGES } from '../sceneRanges'
-import { REPAIR_TARGETS, REPAIR_SOURCES, SMOKE_AREA, CANVAS_W, CANVAS_H, pct } from '../sceneLayout'
-
-const LINKS: [number, number][] = [
-  [0, 0],
-  [0, 1],
-  [1, 2],
-  [1, 3],
-]
-
-function RepairLink({
-  scrollYProgress,
-  sourceIndex,
-  targetIndex,
-  index,
-}: {
-  scrollYProgress: MotionValue<number>
-  sourceIndex: number
-  targetIndex: number
-  index: number
-}) {
-  const [start] = AGENTS_SUB_RANGES.repair
-  const drawStart = start + index * 0.008
-  const pathLength = useTransform(scrollYProgress, [drawStart, drawStart + 0.02], [0, 1])
-  const opacity = useTransform(scrollYProgress, [drawStart, drawStart + 0.005], [0, 1])
-  const from = REPAIR_SOURCES[sourceIndex]
-  const to = REPAIR_TARGETS[targetIndex]
-
-  return (
-    <m.line
-      x1={from.x}
-      y1={from.y}
-      x2={to.x}
-      y2={to.y}
-      stroke="var(--eiq-accent)"
-      strokeWidth={1.2}
-      strokeOpacity={0.5}
-      strokeDasharray="4 3"
-      style={{ pathLength, opacity }}
-    />
-  )
-}
+import { REPAIR_TARGETS, SMOKE_AREA, CANVAS_W, CANVAS_H, pct } from '../sceneLayout'
+import ContactFlash from './ContactFlash'
 
 export default function RepairSequence({
   scrollYProgress,
@@ -76,11 +44,7 @@ export default function RepairSequence({
         aria-hidden="true"
       />
 
-      <svg className="eiq-cine__repair-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        {LINKS.map(([s, t], i) => (
-          <RepairLink key={`${s}-${t}`} scrollYProgress={scrollYProgress} sourceIndex={s} targetIndex={t} index={i} />
-        ))}
-      </svg>
+      <ContactFlash point={SMOKE_AREA} active={active} tone="warn" />
 
       <div
         className="eiq-cine__repair-scan-track"
