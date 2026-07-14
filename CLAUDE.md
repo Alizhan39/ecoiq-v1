@@ -55,9 +55,11 @@ work**:
     `motion-style-guide.md`.
 11. **Every meaningful frontend change requires browser verification**
     before being reported as done — use the Browser pane tools
-    (`mcp__Claude_Browser__*`), which serve as this repo's Playwright-
-    equivalent verification layer (see `AI-DEVELOPMENT-STACK.md` §3–4 for
-    why no separate Playwright MCP was installed).
+    (`mcp__Claude_Browser__*`) for interactive/manual checks. A project-level
+    Playwright MCP server (`.mcp.json`, `@playwright/mcp`) is also available
+    for scripted/repeatable browser verification — see
+    `AI-DEVELOPMENT-STACK.md` §2–3 for status (requires one-time connection
+    approval since it was added outside an interactive session).
 12. **Fix regressions found during verification** if the fix doesn't change
     intended product behavior — don't leave a known-broken state because it
     wasn't the original ask.
@@ -72,3 +74,9 @@ work**:
 15. **Ask before making destructive infrastructure changes** — deleting
     data, force-pushing, dropping migrations, rewriting deploy config, or
     similar. Confirm in chat first.
+16. **Installed tools are specialists, not competing authorities. Use the
+    minimum relevant toolchain for each task.**
+17. **Never claim a skill, plugin, MCP server, or integration is available
+    unless its installation and discovery have been verified.** See
+    `docs/AI-TOOL-INSTALLATION-MANIFEST.md` for what's actually installed
+    vs. requires user action vs. could not be verified as real.
