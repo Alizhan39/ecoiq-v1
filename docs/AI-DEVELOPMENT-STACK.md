@@ -1,14 +1,20 @@
 # EcoIQ AI-Native Development Stack
 
 Audit and installation record for the AI-native design / frontend / motion /
-browser-testing / creative-production / prompt-engineering / AI-safety stack
-requested in July 2026. See also [AI-SKILL-ROUTER.md](AI-SKILL-ROUTER.md) and
+browser-testing / creative-production / prompt-engineering / AI-safety stack.
+Two passes: an initial audit (July 2026, documentation-only, superseded
+below) and an installation pass (2026-07-13) that actually installed the
+real, verified, compatible tools rather than only documenting them. See also
+[AI-SKILL-ROUTER.md](AI-SKILL-ROUTER.md) and
 [AI-QUALITY-GATES.md](AI-QUALITY-GATES.md).
 
-**Governing finding: EcoIQ already had most of this stack.** The audit below
-is the reason almost nothing new was installed — Phase 1 of the request
-("do not reinstall or duplicate existing tools") ruled most of the requested
-items out before Phase 2 security review even applied.
+**Governing finding, revised 2026-07-13:** most of the requested inventory
+still isn't real (see §4/§9), and EcoIQ already covered a large share of what
+*is* real. But three genuinely real, installable items had been wrongly
+skipped in the prior pass (Playwright MCP as "duplicative," and three
+official Anthropic skills as "not found" — a search-thoroughness gap, not a
+naming gap). Those are corrected in §2. Full classification per item is in
+[`AI-TOOL-INSTALLATION-MANIFEST.md`](AI-TOOL-INSTALLATION-MANIFEST.md).
 
 ---
 
@@ -25,16 +31,42 @@ items out before Phase 2 security review even applied.
 
 Nothing in this section was touched. It remains Level 1–4 of the hierarchy.
 
-## 2. Installed / configured this pass
+## 2. Installed / configured this pass (2026-07-13)
 
-| Item | Purpose | Verification |
-|---|---|---|
-| [`docs/AI-SKILL-ROUTER.md`](AI-SKILL-ROUTER.md) | Task → tool routing so skills don't compete | N/A (doc) |
-| [`docs/AI-QUALITY-GATES.md`](AI-QUALITY-GATES.md) | Checklist gating frontend/AI changes | N/A (doc) |
-| Root `CLAUDE.md` | Permanent standing instructions | N/A (doc) |
+| Item | Source | Scope | Purpose | Verification |
+|---|---|---|---|---|
+| Playwright MCP | `@playwright/mcp` (npm, official, `github.com/microsoft/playwright-mcp`, Microsoft-maintained, Apache-2.0) | Project (`.mcp.json`, gitignored? **no** — tracked-eligible, currently uncommitted) | Scripted/repeatable browser automation, complementary to the interactive Browser pane | `npm view` confirmed publisher (Microsoft team members) and clean `scripts` (no pre/postinstall). `npx -y @playwright/mcp@latest --version` executed successfully → `Version 0.0.78`, matching the published npm version. **Not yet confirmed discovered inside a live Claude Code session** — no `claude` CLI was reachable from this shell to reload; Claude Code will prompt for one-time connection approval on next session start because `.mcp.json` was added outside an interactive session. |
+| `frontend-design` skill | `github.com/anthropics/skills` (official, Apache-2.0) | Project-local (`.claude/skills/frontend-design/`, gitignored, this machine only) | General frontend implementation guidance | File present, license present, no install scripts. Sparse-cloned, content-inspected (`file`, grep for `eval`/`exec`/network calls) before copying. Not live-session-verified (see limitation above). |
+| `canvas-design` skill | `github.com/anthropics/skills` (official, Apache-2.0) | Project-local, gitignored | Static visual art generation (closest real match to the requested "canvas-design") | Same as above. |
+| `algorithmic-art` skill | `github.com/anthropics/skills` (official, Apache-2.0) | Project-local, gitignored | Generative/procedural art (closest real match to the requested "algorithmic-art") | Same as above. |
+| [`docs/AI-SKILL-ROUTER.md`](AI-SKILL-ROUTER.md) (updated) | — | Doc | Routing for the newly installed tools | N/A (doc) |
+| Root `CLAUDE.md` (updated) | — | Doc | Two new standing rules on tool-claim honesty and minimal toolchain use | N/A (doc) |
+| [`AI-TOOL-INSTALLATION-MANIFEST.md`](AI-TOOL-INSTALLATION-MANIFEST.md) (new) | — | Doc | Full per-capability classification (A–G) for the entire requested list | N/A (doc) |
 
-No npm packages, pip packages, MCP servers, or Claude Code plugins were
-installed. See §4 for why.
+**Known limitation of this pass:** this session has no `claude` CLI binary on
+`PATH` (`which claude` → not found) — it's running inside the harness, not a
+standalone install. MCP servers and skills were registered via their
+documented file-based mechanisms (`.mcp.json`, `.claude/skills/`) rather
+than `claude mcp add` / `/plugin install`.
+
+**Update (2026-07-13 integration audit) — resolved as far as possible without
+a session restart:**
+- Playwright MCP is now **functionally proven**, not just present on disk: a
+  direct MCP stdio JSON-RPC probe (independent of the Claude Code harness)
+  spawned the server, listed its 24 tools, navigated it to the live EcoIQ
+  dev server, and pulled a real accessibility snapshot back. The one thing
+  that genuinely still requires the next session is Claude Code's own
+  one-time approval of the `.mcp.json` connection — confirmed pending via
+  `~/.claude.json`'s `enabledMcpjsonServers: []` for this project (not
+  approved, but also not rejected).
+- The three vendored skills have correct `SKILL.md` frontmatter (`name` +
+  `description`) and directory structure. There is no approval-gate field
+  for skills in the project config (unlike MCP servers), so — per the
+  documented skill-loading mechanism — they should be auto-discovered at
+  the next session start with no user action. This is inferred from config
+  structure and the documented mechanism, since a skill's own discovery
+  can only be witnessed at session start, and this session already started
+  before they were added.
 
 ## 3. Already available, no action needed
 
@@ -49,16 +81,24 @@ new install:
 | canvas-design (partial) | `ui-ux-pro-max:ui-styling` ("canvas-based visual designs") |
 | animate | `animation-components` plugin family (animejs, react-spring-physics, lottie, scroll-reveal), `animejs`, `motion-framer` |
 | design-motion-principles | `core-3d-animation:gsap-scrolltrigger`, `motion-framer`, plus EcoIQ's own locked `docs/motion-style-guide.md` (which takes precedence — it's project-specific, the plugins are generic) |
-| Browser testing / "Playwright MCP" | Built-in Browser pane tools (`mcp__Claude_Browser__*`): navigate, click/type, accessibility-tree read, console/network inspection, viewport resize for responsive + dark-mode checks, screenshots. Functionally equivalent to a Playwright MCP server for this environment. |
+| Browser testing (interactive) | Built-in Browser pane tools (`mcp__Claude_Browser__*`): navigate, click/type, accessibility-tree read, console/network inspection, viewport resize, screenshots. **Playwright MCP is now also installed (§2)** for the scripted/repeatable case — the two are complementary, not duplicates; see the corrected reasoning in §4. |
 | Data visualization | `dataviz` skill |
 | Artifact/report generation | `artifact-design`, `anthropic-skills:web-artifacts-builder` |
 
-## 4. Evaluated and explicitly skipped
+## 4. Evaluated and explicitly skipped (revised 2026-07-13)
+
+**Correction to the prior pass:** Playwright MCP and three of the "not
+found" skills below were re-evaluated and are now installed (§2). The prior
+pass's "duplicative" reasoning for Playwright MCP didn't hold up — a
+scriptable, re-runnable MCP server and an interactively-driven Browser pane
+serve different verification needs — and the prior "not found" conclusion
+for `frontend-design`/`canvas-design`/`algorithmic-art` was a search gap:
+they exist verbatim in the official `github.com/anthropics/skills` repo.
 
 | Tool requested | Reason skipped |
 |---|---|
-| Playwright MCP (`@playwright/mcp`, real Microsoft package, verified to exist) | **Duplicative.** The Browser pane already provides equivalent capability (navigation, DOM/a11y tree, console, network, screenshots, viewport resize) with no install and no added supply-chain surface. Adding a second, redundant browser-automation server would violate the explicit "do not duplicate existing functionality" instruction. If a future need arises for automation *outside* this harness (e.g. a CI pipeline), add `@playwright/mcp` there specifically, not here. |
-| design-taste-frontend, redesign-existing-projects, image-to-code, canvas-design, algorithmic-art (as named, distinct skills) | **Not found.** No installed Claude Code skill, marketplace plugin, or npm/pip package with these exact names exists in this environment or the connector registry searched. Per "do not invent commands or repository URLs," nothing was installed under these names. The overlapping real capability (visual refinement, screenshot-to-code, canvas rendering) is already served by `ui-ux-pro-max:*` and general-purpose coding, so the gap is small. |
+| design-taste-frontend, brandkit (as a *distinct* dedicated package beyond `ui-ux-pro-max:brand`) | **Real third-party match found, not installed.** `github.com/Leonxlnx/taste-skill` ("Taste-Skill") is a real, actively-referenced third-party skill collection that includes a `brandkit` sub-skill and matches "design-taste" closely. Not vendored this pass — it's third-party (not Anthropic-official) and needs a full repo-history/maintainer security review before adoption, which was out of scope for the "quick verification pass" this install pass was scoped to. `ui-ux-pro-max:brand` already covers the practical need. Candidate for a follow-up if a dedicated taste/brand skill is specifically wanted. |
+| redesign-existing-projects, image-to-code, impressable, designer-skills | **Still not found** under these names in the official `anthropics/skills` repo, the two installed marketplaces, or the searches run this pass. `figma-implement` exists but only in `github.com/openai/skills` (OpenAI's skill format/ecosystem, not confirmed compatible with Claude Code) — not installed without a compatibility check. |
 | generative-ui, progressive-disclosure, feedback-loops, conversation-patterns, context-window-design | **Not installable products.** These are interaction-design *principles*, not packages. No skill/plugin by these names exists to inspect or install. They are instead written into [AI-SKILL-ROUTER.md](AI-SKILL-ROUTER.md) and [AI-QUALITY-GATES.md](AI-QUALITY-GATES.md) as applied methodology for AI-feature and dashboard work. |
 | guardrail-design, trust-calibration, transparency-patterns, constraint-specification, quality rubrics, task decomposition, handoff protocols | **Not installable products**, same reasoning as above — encoded as a checklist in AI-QUALITY-GATES.md §7 (AI Trust & Safety) rather than as software. |
 | Figma MCP (`plugin:product-management:figma`) | **Exists but requires OAuth.** This session is non-interactive and cannot complete the connector authorization flow. Skip until the user authorizes it via claude.ai connector settings; then it becomes available with no further installation. |
@@ -75,8 +115,22 @@ is nothing to report as a runtime failure.
 
 ## 6. Security findings
 
-- **No new third-party code was introduced**, so no new supply-chain,
-  postinstall-script, or exfiltration surface was added by this task.
+- **This pass (2026-07-13) did introduce new third-party code**, reviewed
+  before adoption: `@playwright/mcp` (npm, Microsoft-maintained team members
+  as listed publishers, `microsoft/playwright-mcp` repo, Apache-2.0, `npm
+  view @playwright/mcp scripts` shows no `preinstall`/`postinstall`/`install`
+  hooks) and three official Anthropic skills (`frontend-design`,
+  `canvas-design`, `algorithmic-art` from `github.com/anthropics/skills`,
+  Apache-2.0, content-inspected for `eval`/`exec`/network calls before
+  copying — none found beyond a benign regex `.exec()` call in one JS
+  template). `@playwright/mcp` runs via `npx` (fetches/executes on demand,
+  not vendored into the repo) and, when actually used, launches a real
+  Chromium/browser process — that's inherent to what a browser-automation
+  MCP server does, not a red flag specific to this package.
+- Nothing else in this task introduced new third-party code — the remaining
+  request items were either already-installed (§3), correctly not real (§4,
+  §9 in the manifest), or blocked on user authentication (Figma, Composio —
+  not installed, no code fetched).
 - `.claude/` is correctly listed in `.gitignore` (line 2) and confirmed via
   `git ls-files .claude/` to be untracked — `settings.local.json` (a Bash
   permission allowlist, no secrets) is not committed.

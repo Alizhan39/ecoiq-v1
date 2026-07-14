@@ -9,6 +9,17 @@ are specialists consulted for their layer, not a checklist to exhaust. Level
 1 (EcoIQ's own tokens/motion docs/architecture) always wins a disagreement
 with any generic skill's default opinion.
 
+## Newly installed (this pass) — exact routing
+
+| Tool | Trigger / use case | Use when | Don't use when | Runs before | Runs after | Verification |
+|---|---|---|---|---|---|---|
+| **Playwright MCP** (`mcp__playwright__*`, `.mcp.json`) | Scripted, repeatable, or CI-style browser verification; multi-step flows that need to be re-run identically | You need a deterministic, scriptable browser session (e.g. a repeatable regression check) | For one-off interactive checks — use the built-in Browser pane (`mcp__Claude_Browser__*`) instead, it's already connected and has no approval step | Implementation is complete (L1–L4) | Manual Browser pane spot-check for visual/motion nuance Playwright scripts don't cover | Run its own `browser_snapshot`/navigate against `http://localhost:8731`; confirm no errors. Requires one-time user approval of the new MCP connection (added outside an interactive session — Claude Code will prompt on first use). |
+| **`.claude/skills/frontend-design`** (official `anthropics/skills`, vendored project-local) | General frontend implementation guidance (layout, component structure, responsive patterns) | Frontend implementation, same trigger as `ui-ux-pro-max:ui-ux-pro-max` — pick one, don't invoke both for the same task | EcoIQ tokens/architecture already answer the question (L1 wins) | EcoIQ L1 source of truth | Browser pane verification (L5) | `SKILL.md` present at `.claude/skills/frontend-design/SKILL.md`, Apache-2.0, no install scripts. Not yet confirmed discovered by a live Claude Code session (added mid-session — would need a fresh session start to verify auto-invocation). |
+| **`.claude/skills/canvas-design`** (official `anthropics/skills`, vendored project-local) | Static visual art (.png/.pdf) generation using design philosophies — closest real match to the requested "canvas-design" | One-off visual/poster asset generation outside the React app | Anything inside the live app UI — use `ui-ux-pro-max:ui-styling` / EcoIQ tokens instead | N/A (standalone) | N/A | Same as above — `SKILL.md` + bundled fonts present, not yet live-session-verified. |
+| **`.claude/skills/algorithmic-art`** (official `anthropics/skills`, vendored project-local) | Generative/procedural art (p5.js-style, seeded randomness) — closest real match to the requested "algorithmic-art" | An explicit ask for generative/procedural visual art, not standard UI | Standard UI work | N/A (standalone) | N/A | Same as above. |
+
+`.claude/` is gitignored (see `CLAUDE.md` rule 14) — these three vendored skills are local to this machine/session only, not shared via git. That's consistent with the existing pattern (`settings.local.json`) and intentional.
+
 ## The hierarchy (Levels 1–7)
 
 1. **EcoIQ source of truth** — `frontend/app/src/design/tokens.ts`,
