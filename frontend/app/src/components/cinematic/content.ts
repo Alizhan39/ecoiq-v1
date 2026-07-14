@@ -35,6 +35,26 @@ export const agents = {
   ],
 }
 
+/**
+ * Left/right arm metrics for Scene 3's waste and repair sub-stages — one
+ * visible per side at a time, per the brief's "max 1-2 visible metrics"
+ * constraint. Values are deliberately round (not fake-precise decimals) so
+ * they read as illustrative/directional rather than measured telemetry —
+ * this hero has no real backing data source, unlike CountUpValue's other
+ * uses elsewhere in the app for genuine server-rendered numbers.
+ */
+export interface StewardshipMetric {
+  label: string
+  value: number
+  suffix: string
+  prefix?: string
+}
+
+export const stewardship: { left: StewardshipMetric; right: StewardshipMetric } = {
+  left: { label: 'Waste recovered', value: 2.4, suffix: 'T' },
+  right: { label: 'System efficiency', value: 31, suffix: '%', prefix: '+' },
+}
+
 export interface Pillar {
   title: string
   body: string

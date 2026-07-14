@@ -6,7 +6,7 @@
  * Shares `content.ts` with the scroll-driven stage so copy never drifts.
  */
 import { Reveal, fadeUp } from '../../motion'
-import { intro, evidence, agents } from './content'
+import { intro, evidence, agents, stewardship } from './content'
 
 const HERO_IMAGE = '/static/img/hero/ecoiq-better-way-hero.png'
 
@@ -54,6 +54,21 @@ export default function CinematicStaticStack() {
           {agents.roster.map((a) => (
             <li key={a}>{a}</li>
           ))}
+        </ul>
+      </Reveal>
+
+      <Reveal as="section" className="eiq-cine-static__card">
+        <ul className="eiq-cine-static__tag-list">
+          <li>
+            {stewardship.left.label}: {stewardship.left.prefix}
+            {stewardship.left.value}
+            {stewardship.left.suffix}
+          </li>
+          <li>
+            {stewardship.right.label}: {stewardship.right.prefix}
+            {stewardship.right.value}
+            {stewardship.right.suffix}
+          </li>
         </ul>
       </Reveal>
     </div>

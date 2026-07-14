@@ -179,6 +179,53 @@ final position, no exceptions.
 
 ---
 
+## v1.1 addition: hero canvas particle system
+
+Per the lock rules above ("a genuine new need... is a deliberate, reviewed
+addition to v1.1+, proposed before it's built"): the cinematic hero's Earth-
+depth and arm-intervention effects (atmospheric particles, directional waste/
+repair extraction, organic restoration spread, verify-beat data arcs) are
+rendered on a single `<canvas>` (`components/cinematic/HeroCanvas.tsx` +
+`canvasEngine.ts`) — a motion shape nothing in the DOM/SVG catalog above
+covers. Two rules specific to this addition:
+
+- **No independent animation loop.** `paintHero` is a pure function of
+  `progress` (the raw `scrollYProgress`, 0–1) — every particle's position
+  comes from a deterministic function of `(seed, progress)`, never
+  `(seed, elapsedMs)`. It's called synchronously from the same
+  `useMotionValueEvent(scrollYProgress, 'change', ...)` pattern every other
+  overlay in this tree already uses. No `requestAnimationFrame`, no
+  `setInterval`, anywhere in the canvas system.
+- **Particle budget: 60 total**, allocated once in a fixed pool and mutated
+  in place (`buildParticlePool`) — never recreated per paint call. The style
+  guide's earlier "~5 particles" figure was a proxy for "no per-frame-JS DOM
+  elements"; canvas draws don't carry that cost, but the number is a stated
+  budget here rather than a silent increase past that figure. Unchanged by
+  the refinement pass below — no new particles were added, only a new
+  geometric draw function reusing the existing `REPAIR_TARGETS` points.
+
+### Refinement pass (calibration, not a new addition)
+
+A follow-up audit found the whole waste→repair→verify sequence compressed
+into ~21vh of real scroll (too fast to read as distinct beats) and the two
+arms sharing near-identical particle motion (failing to read as
+differentiated interventions). Fixes, none of which change the rules above:
+`AGENTS_SUB_RANGES` widened (Scene 3's own span grew 0.14→0.21 of the
+timeline — scenes 4-8, still unimplemented, absorbed the difference);
+repair's particles switched from smooth converge-with-jitter to discrete
+stepped waypoints plus a new `paintRepairReconstruct` geometric-scaffold pass
+(precise/staged, vs. waste's organic/converging, per the brief's
+differentiation ask); the globe's arm-response glow moved from one uniform
+whole-globe ring to two localized spot-glows at the actual intervention
+points; the redundant dashed-SVG "connection lines" in `WasteRestoration.tsx`
+/`RepairSequence.tsx` were removed (the canvas particle stream already
+carries that signal, more directionally). Also added: a documented, reusable
+`imageSpaceToCanvasPoint()` helper in `sceneLayout.ts` for deriving a virtual-
+canvas point from a pixel measured directly in the source PNG (replacing
+guesswork for the 6 arm-joint points specifically) — see that file for the
+flagged, not-yet-resolved discrepancy on the older `LEFT_ARM_CLAW`/
+`RIGHT_ARM_CLAW`/`GLOBE_CENTER` constants.
+
 ## Where things live (quick index)
 
 ```
@@ -196,10 +243,12 @@ frontend/app/src/components/cinematic/
   CinematicHomeHero.tsx                         — orchestrator (motion/mobile branch)
   useCinematicScroll.ts                         — scroll-trigger hook
   sceneRanges.ts / sceneLayout.ts                — timeline + screen-space constants
-  CinematicBackground.tsx                        — hero image + GlobeRotationOverlay
-  GlobeRotationOverlay.tsx                       — fake-rotation overlay (circular mask)
+  CinematicBackground.tsx                        — hero image + GlobeRotationOverlay + HeroCanvas
+  GlobeRotationOverlay.tsx                       — fake-rotation + response-glow overlay (circular mask)
+  canvasEngine.ts / HeroCanvas.tsx                — v1.1 particle system (see above)
   scenes/*.tsx                                   — Intro / Evidence / Agents scenes,
-                                                    ArmEngagement, RepairSequence
+                                                    ArmEngagement, WasteRestoration, RepairSequence,
+                                                    ArmJointLights, ContactFlash
   CinematicStaticStack.tsx                       — reduced-motion + mobile fallback
   PillarsSection.tsx                             — five-pillar cards
   CountUpValue.tsx                               — KPI count-up island

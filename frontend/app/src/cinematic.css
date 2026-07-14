@@ -52,6 +52,14 @@
   opacity: 0.6;
   pointer-events: none;
 }
+.eiq-cine__hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
 
 /* ── Scene layers (stacked, crossfaded by scroll) ───────────────────────── */
 .eiq-cine__scene {
@@ -243,6 +251,37 @@
 .eiq-cine__globe-shadow {
   background: radial-gradient(circle at 72% 76%, rgba(3, 16, 12, 0.4) 0%, transparent 45%);
 }
+.eiq-cine__globe-verify-pulse,
+.eiq-cine__globe-settled {
+  position: absolute;
+  inset: -2%;
+  border-radius: 50%;
+}
+.eiq-cine__globe-verify-pulse {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, transparent 60%);
+}
+/* Holds after VERIFY (doesn't fade back to zero) — the "healthier, stable" resting state. */
+.eiq-cine__globe-settled {
+  box-shadow: inset 0 0 34px 5px var(--eiq-accent-glow);
+}
+
+/* Localized intervention response, positioned at the actual pollution/smoke
+   point rather than a uniform whole-globe ring — see GlobeRotationOverlay.tsx. */
+.eiq-cine__intervention-spot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 12vh;
+  height: 12vh;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+.eiq-cine__intervention-spot--waste {
+  background: radial-gradient(circle, var(--eiq-accent-glow) 0%, transparent 70%);
+}
+.eiq-cine__intervention-spot--repair {
+  background: radial-gradient(circle, rgba(242, 166, 90, 0.45) 0%, transparent 70%);
+}
 
 /* ── Robotic arm claw-tip decals ─────────────────────────────────────────── */
 .eiq-cine__claw-decal {
@@ -290,9 +329,67 @@
   100% { transform: scale(1.8); opacity: 0; }
 }
 
-/* ── Repair sequence ──────────────────────────────────────────────────────── */
+/* ── Joint lights — energy traveling through the arm toward the claw ─────── */
+.eiq-cine__joint-decal {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.eiq-cine__joint-glow {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: block;
+}
+.eiq-cine__joint-glow--accent {
+  background: radial-gradient(circle, var(--eiq-accent-glow) 0%, transparent 75%);
+}
+.eiq-cine__joint-glow--warn {
+  background: radial-gradient(circle, rgba(242, 166, 90, 0.4) 0%, transparent 75%);
+}
+
+/* ── Contact flash — a single flash where a beam reaches its target ──────── */
+.eiq-cine__contact-flash {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.eiq-cine__contact-flash-burst {
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+  opacity: 0;
+}
+.eiq-cine__contact-flash-burst--warn {
+  background: radial-gradient(circle, rgba(255, 244, 230, 0.9) 0%, transparent 70%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .eiq-cine__contact-flash-burst.is-active {
+    animation: eiq-cine-contact-flash 0.6s ease-out 1;
+  }
+}
+@keyframes eiq-cine-contact-flash {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ── Repair sequence (right arm) / Waste restoration (left arm) ──────────── */
 .eiq-cine__smoke-suppress,
-.eiq-cine__clean-reveal {
+.eiq-cine__clean-reveal,
+.eiq-cine__waste-suppress,
+.eiq-cine__restore-reveal {
   position: absolute;
   transform: translate(-50%, -50%);
   width: 34vw;
@@ -301,18 +398,13 @@
   pointer-events: none;
   z-index: 1;
 }
-.eiq-cine__smoke-suppress {
+.eiq-cine__smoke-suppress,
+.eiq-cine__waste-suppress {
   background: radial-gradient(circle, rgba(3, 16, 12, 0.85) 0%, transparent 68%);
 }
-.eiq-cine__clean-reveal {
+.eiq-cine__clean-reveal,
+.eiq-cine__restore-reveal {
   background: radial-gradient(circle, var(--eiq-accent-glow) 0%, transparent 65%);
-}
-.eiq-cine__repair-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
 }
 .eiq-cine__repair-scan-track {
   position: absolute;
@@ -362,6 +454,77 @@
   }
 }
 
+/* ── Verify badge — draws attention to the baked-in "VERIFIED" badge late in repair ── */
+.eiq-cine__verify-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.eiq-cine__verify-glow {
+  position: absolute;
+  top: -22px;
+  left: -22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: block;
+  background: radial-gradient(circle, var(--eiq-accent-glow) 0%, transparent 70%);
+}
+.eiq-cine__verify-pulse {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--eiq-accent);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .eiq-cine__verify-pulse.is-active {
+    animation: eiq-cine-claw-pulse 1.1s ease-out 3;
+  }
+}
+
+/* ── Metric panels (left = waste/restoration, right = infrastructure/energy) ── */
+.eiq-cine__metric-panel {
+  position: absolute;
+  bottom: 14vh;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 2;
+}
+.eiq-cine__metric-panel--left { left: 6vw; align-items: flex-start; }
+.eiq-cine__metric-panel--right { right: 6vw; align-items: flex-end; text-align: right; }
+.eiq-cine__metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(3, 16, 12, 0.72);
+  border: 1px solid var(--eiq-border-accent);
+  border-radius: var(--eiq-r-sm);
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+.eiq-cine__metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--eiq-muted);
+}
+.eiq-cine__metric-value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--eiq-ink);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Tablet: simplify overlays, keep the pinned composition ─────────────── */
 @media (max-width: 1024px) {
   .eiq-cine__intro-body { margin: 0 auto 8vh 5vw; max-width: 520px; }
@@ -371,6 +534,10 @@
     font-size: 10.5px;
     padding: 5px 9px;
   }
+  .eiq-cine__metric-item { padding: 6px 10px; }
+  .eiq-cine__metric-label { font-size: 9px; }
+  .eiq-cine__metric-value { font-size: 16px; }
+  .eiq-cine__metric-panel { bottom: 11vh; }
   /* Narrower viewports crop more of each side away — recentre so both
      robotic arms stay in frame instead of losing the left one. */
   .eiq-cine__bg-img { object-position: 50% 42%; }
