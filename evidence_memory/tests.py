@@ -841,13 +841,21 @@ class CreateMemoryFromVerifiedOutcomeTests(TestCase):
 
 
 class RetrieveRelevantVerifiedOutcomesTests(TestCase):
-    """Vertical-slice PR 7 — RETRIEVAL FOR FUTURE DECISIONS."""
+    """Vertical-slice PR 7 — RETRIEVAL FOR FUTURE DECISIONS.
+    feat/evidence-memory-hardening: retrieval is now access-policy-filtered
+    (evidence_memory/services/retrieval_policy.py) and returns explained
+    RetrievedEvidence items instead of a bare global similarity search."""
 
     def setUp(self):
+        from django.contrib.auth import get_user_model
         from gold_intelligence.models import GoldProject
         from waste_to_value_capital_allocation_engine.models import InterventionOption, OperationalLoss
         from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
         from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+
+        User = get_user_model()
+        self.staff = User.objects.create_user('em_staff', 'em_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.non_staff = User.objects.create_user('em_normal', 'em_normal@example.com', 'password123', is_staff=False)
 
         self.project_a = GoldProject.objects.create(
             name='Prior Heating Project A', slug='prior-heating-project-a', commodity='other',
@@ -875,73 +883,116 @@ class RetrieveRelevantVerifiedOutcomesTests(TestCase):
             )
             return memory.create_memory_from_verified_outcome(outcome)
 
+        self.make_outcome = make_outcome
         self.verified_memory = make_outcome(self.project_a, 'Verified coal heating loss', 'verified')
         self.rejected_memory = make_outcome(self.project_a, 'Rejected coal heating loss', 'baseline_only', approval_status='rejected')
 
-    def test_relevant_prior_outcome_returned(self):
-        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
-        self.assertIn(self.verified_memory, results)
+    def _memories(self, results):
+        return [r.memory for r in results]
 
-    def test_rejected_outcome_excluded(self):
-        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
-        self.assertNotIn(self.rejected_memory, results)
+    def test_same_project_retrieval_returns_own_evidence(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.staff)
+        self.assertIn(self.verified_memory, self._memories(results))
+
+    def test_cross_project_private_evidence_denied(self):
+        """The core PR3 fix: Project A's project-private evidence must never
+        surface in Project B's retrieval — the old behaviour (global
+        similarity search) is gone."""
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff)
+        self.assertNotIn(self.verified_memory, self._memories(results))
+
+    def test_platform_shared_verified_evidence_visible_cross_project(self):
+        from evidence_memory.services import retrieval_policy
+        retrieval_policy.set_visibility(self.verified_memory, 'platform_learning_verified')
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff)
+        self.assertIn(self.verified_memory, self._memories(results))
+
+    def test_organisation_shared_evidence_requires_same_organisation(self):
+        from evidence_memory.services import retrieval_policy
+        self.project_a.organisation = 'Stoke Share Ltd'
+        self.project_a.save(update_fields=['organisation'])
+        self.verified_memory.organisation = 'Stoke Share Ltd'
+        self.verified_memory.save(update_fields=['organisation'])
+        retrieval_policy.set_visibility(self.verified_memory, 'organisation_shared')
+
+        # Different (blank) organisation on the requesting project: denied.
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff)
+        self.assertNotIn(self.verified_memory, self._memories(results))
+
+        # Same organisation: allowed.
+        self.new_project.organisation = 'Stoke Share Ltd'
+        self.new_project.save(update_fields=['organisation'])
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff)
+        self.assertIn(self.verified_memory, self._memories(results))
+
+    def test_rejected_outcome_excluded_even_same_project(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.staff)
+        self.assertNotIn(self.rejected_memory, self._memories(results))
+
+    def test_no_user_returns_nothing(self):
+        self.assertEqual(memory.retrieve_relevant_verified_outcomes(self.project_a), [])
+
+    def test_non_staff_user_returns_nothing(self):
+        self.assertEqual(memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.non_staff), [])
 
     def test_verified_prioritized_over_lower_tier(self):
-        from gold_intelligence.models import GoldProject
-        from waste_to_value_capital_allocation_engine.models import InterventionOption, OperationalLoss
-        from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
-        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        estimated_memory = self.make_outcome(self.project_a, 'Estimated coal heating loss', 'not_started')
+        results = memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.staff, limit=10)
+        memories = self._memories(results)
+        self.assertLess(memories.index(self.verified_memory), memories.index(estimated_memory))
 
-        loss = OperationalLoss.objects.create(
-            project=self.project_a.name, title='Estimated coal heating loss', loss_type='heat_loss', financial_loss_amount=10000,
-        )
-        option = InterventionOption.objects.create(
-            operational_loss=loss, title='Estimated intervention', intervention_type='prevention',
-            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
-        )
-        decision = create_governed_investment_case(option, decision_text='d')
-        decision.approval_status = 'approved'
-        decision.save(update_fields=['approval_status'])
-        outcome = record_verified_outcome(decision, option, loss_avoided_actual=9000, capex_actual=21000, mrv_status='not_started')
-        estimated_memory = memory.create_memory_from_verified_outcome(outcome)
+    def test_every_result_carries_explanation(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.staff)
+        for r in results:
+            self.assertTrue(r.explanation)
+            self.assertIn('semantic similarity', r.explanation)
 
-        results = memory.retrieve_relevant_verified_outcomes(self.new_project, limit=10)
-        verified_idx = results.index(self.verified_memory)
-        estimated_idx = results.index(estimated_memory)
-        self.assertLess(verified_idx, estimated_idx)
+    def test_same_project_scope_explained(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.staff)
+        target = next(r for r in results if r.memory == self.verified_memory)
+        self.assertEqual(target.scope, 'same_project')
+        self.assertIn('Same project', target.explanation)
 
-    def test_demo_clearly_labelled(self):
+    def test_explanation_never_claims_transferability(self):
+        results = memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.staff)
+        for r in results:
+            self.assertNotIn('guarantee', r.explanation.lower())
+            self.assertNotIn('will succeed', r.explanation.lower())
+
+    def test_demo_platform_shared_labelled_demo(self):
+        from evidence_memory.services import retrieval_policy
         self.project_a.is_demo = True
         self.project_a.save(update_fields=['is_demo'])
-        # Re-sync so is_demo propagates onto the memory row.
-        self.verified_memory.refresh_from_db()
-        outcome = self.verified_memory.source_reference
-        from waste_to_value_capital_allocation_engine.models import VerifiedCapitalOutcome
-        pk = outcome.rsplit(':', 1)[1]
-        resynced = memory.create_memory_from_verified_outcome(VerifiedCapitalOutcome.objects.get(pk=pk))
-        self.assertTrue(resynced.is_demo)
+        demo_memory = self.make_outcome(self.project_a, 'Demo pilot heating loss', 'baseline_only')
+        self.assertTrue(demo_memory.is_demo)
+        retrieval_policy.set_visibility(demo_memory, 'platform_learning_demo')
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff, limit=10)
+        target = next(r for r in results if r.memory == demo_memory)
+        self.assertIn('demo evidence', target.explanation)
 
-    def test_project_a_private_evidence_not_leaked_structurally(self):
-        # Retrieval is a global similarity search (no project-scoped access
-        # control model exists yet — see PR7 audit/limitations); this test
-        # documents that project provenance is at least preserved in the
-        # returned text, not that access is restricted.
-        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
-        for m in results:
-            self.assertIn('PROJECT:', m.text_chunk)
+    def test_disputed_evidence_flagged(self):
+        disputed_memory = self.make_outcome(self.project_a, 'Disputed heating loss', 'disputed')
+        results = memory.retrieve_relevant_verified_outcomes(self.project_a, user=self.staff, limit=10)
+        target = next(r for r in results if r.memory == disputed_memory)
+        self.assertTrue(target.is_disputed)
+        self.assertIn('DISPUTED', target.explanation)
+
+    def test_restricted_unresolved_hidden_from_cross_project(self):
+        from gold_intelligence.models import GoldProject
+        # Duplicate name → ambiguous match → restricted_unresolved on re-sync.
+        GoldProject.objects.create(name='Prior Heating Project A', slug='prior-heating-a-dup', commodity='other')
+        outcome = self.verified_memory.originating_outcome
+        resynced = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(resynced.visibility, 'restricted_unresolved')
+        results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff, limit=10)
+        self.assertNotIn(resynced, self._memories(results))
 
     def test_zero_results_honest_state(self):
         from gold_intelligence.models import GoldProject
         empty_project = GoldProject.objects.create(name='Empty Project', slug='empty-project-pr7', commodity='other')
-        # No query text can be built and no candidates exist for a totally
-        # unrelated, freshly created project with no description/region.
-        results = memory.retrieve_relevant_verified_outcomes(empty_project, query='completely unrelated aerospace query xyz')
+        results = memory.retrieve_relevant_verified_outcomes(empty_project, user=self.staff, query='completely unrelated aerospace query xyz')
         self.assertIsInstance(results, list)
-
-    def test_source_provenance_visible(self):
-        results = memory.retrieve_relevant_verified_outcomes(self.new_project)
-        for m in results:
-            self.assertTrue(m.source_reference.startswith(memory.OUTCOME_SOURCE_PREFIX))
+        self.assertEqual(results, [])
 
     def test_no_guarantee_language_in_default_query(self):
         query = memory.default_outcome_query_for_project(self.new_project)
@@ -950,3 +1001,304 @@ class RetrieveRelevantVerifiedOutcomesTests(TestCase):
     def test_default_query_uses_real_project_fields(self):
         query = memory.default_outcome_query_for_project(self.new_project)
         self.assertIn('Almaty region', query)
+
+
+class RetrievalPolicyAccessTests(TestCase):
+    """feat/evidence-memory-hardening — is_record_accessible(): the single
+    access decision, tested directly at every boundary."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject
+
+        User = get_user_model()
+        self.staff = User.objects.create_user('pol_staff', 'pol_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.non_staff = User.objects.create_user('pol_normal', 'pol_normal@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Policy Project', slug='policy-project', commodity='other', organisation='Org One',
+        )
+        self.other_project = GoldProject.objects.create(
+            name='Other Policy Project', slug='other-policy-project', commodity='other', organisation='Org Two',
+        )
+
+    def _memory(self, **kwargs):
+        defaults = dict(text_chunk='policy test evidence', source_type='other', visibility='project_private')
+        defaults.update(kwargs)
+        return EvidenceMemory.objects.create(**defaults)
+
+    def test_anonymous_denied(self):
+        from django.contrib.auth.models import AnonymousUser
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project)
+        self.assertFalse(is_record_accessible(m, self.project, user=AnonymousUser()))
+        self.assertFalse(is_record_accessible(m, self.project, user=None))
+
+    def test_non_staff_denied(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project)
+        self.assertFalse(is_record_accessible(m, self.project, user=self.non_staff))
+
+    def test_project_private_same_project_allowed(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project)
+        self.assertTrue(is_record_accessible(m, self.project, user=self.staff))
+
+    def test_project_private_cross_project_denied(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project)
+        self.assertFalse(is_record_accessible(m, self.other_project, user=self.staff))
+
+    def test_project_private_without_project_link_denied_everywhere(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=None)
+        self.assertFalse(is_record_accessible(m, self.project, user=self.staff))
+
+    def test_organisation_shared_same_org_allowed(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project, visibility='organisation_shared', organisation='Org Two')
+        self.assertTrue(is_record_accessible(m, self.other_project, user=self.staff))
+
+    def test_organisation_shared_different_org_denied(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project, visibility='organisation_shared', organisation='Org One')
+        self.assertFalse(is_record_accessible(m, self.other_project, user=self.staff))
+
+    def test_organisation_shared_blank_never_matches_blank(self):
+        from gold_intelligence.models import GoldProject
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        no_org_project = GoldProject.objects.create(name='No Org', slug='no-org-project', commodity='other')
+        m = self._memory(project=self.project, visibility='organisation_shared', organisation='')
+        self.assertFalse(is_record_accessible(m, no_org_project, user=self.staff))
+
+    def test_platform_learning_verified_requires_full_eligibility(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        eligible = self._memory(
+            project=self.project, visibility='platform_learning_verified',
+            verification_status='verified', review_tier='independently_verified', is_demo=False,
+        )
+        self.assertTrue(is_record_accessible(eligible, self.other_project, user=self.staff))
+
+        # Visibility alone grants nothing once the record's state degrades.
+        degraded = self._memory(
+            project=self.project, visibility='platform_learning_verified',
+            verification_status='requires_review', review_tier='independently_verified', is_demo=False,
+        )
+        self.assertFalse(is_record_accessible(degraded, self.other_project, user=self.staff))
+
+        demo_marked = self._memory(
+            project=self.project, visibility='platform_learning_verified',
+            verification_status='verified', review_tier='independently_verified', is_demo=True,
+        )
+        self.assertFalse(is_record_accessible(demo_marked, self.other_project, user=self.staff))
+
+    def test_platform_learning_demo_requires_demo_flag(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        demo = self._memory(project=self.project, visibility='platform_learning_demo', is_demo=True)
+        self.assertTrue(is_record_accessible(demo, self.other_project, user=self.staff))
+        not_demo = self._memory(project=self.project, visibility='platform_learning_demo', is_demo=False)
+        self.assertFalse(is_record_accessible(not_demo, self.other_project, user=self.staff))
+
+    def test_restricted_unresolved_denied_everywhere(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project, visibility='restricted_unresolved')
+        self.assertFalse(is_record_accessible(m, self.project, user=self.staff))
+        self.assertFalse(is_record_accessible(m, self.other_project, user=self.staff))
+
+    def test_rejected_denied_everywhere(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project, verification_status='rejected')
+        self.assertFalse(is_record_accessible(m, self.project, user=self.staff))
+
+    def test_unknown_visibility_fails_closed(self):
+        from evidence_memory.services.retrieval_policy import is_record_accessible
+        m = self._memory(project=self.project)
+        m.visibility = 'some_future_state'
+        self.assertFalse(is_record_accessible(m, self.project, user=self.staff))
+
+
+class SetVisibilityTests(TestCase):
+    """feat/evidence-memory-hardening — set_visibility(): the one sanctioned
+    sharing action, refusing states the record cannot honestly support."""
+
+    def setUp(self):
+        from gold_intelligence.models import GoldProject
+        self.project = GoldProject.objects.create(
+            name='Share Project', slug='share-project', commodity='other', organisation='Org Share',
+        )
+
+    def _memory(self, **kwargs):
+        defaults = dict(text_chunk='share test evidence', source_type='other', project=self.project)
+        defaults.update(kwargs)
+        return EvidenceMemory.objects.create(**defaults)
+
+    def test_verified_platform_share_requires_independent_verification(self):
+        from evidence_memory.services import retrieval_policy
+        m = self._memory(verification_status='verified', review_tier='human_reviewed')
+        with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
+            retrieval_policy.set_visibility(m, 'platform_learning_verified')
+
+    def test_demo_cannot_be_shared_as_verified(self):
+        from evidence_memory.services import retrieval_policy
+        m = self._memory(verification_status='verified', review_tier='independently_verified', is_demo=True)
+        with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
+            retrieval_policy.set_visibility(m, 'platform_learning_verified')
+
+    def test_real_evidence_cannot_be_shared_under_demo_label(self):
+        from evidence_memory.services import retrieval_policy
+        m = self._memory(is_demo=False)
+        with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
+            retrieval_policy.set_visibility(m, 'platform_learning_demo')
+
+    def test_rejected_cannot_be_shared_at_all(self):
+        from evidence_memory.services import retrieval_policy
+        m = self._memory(verification_status='rejected', is_demo=True)
+        for target in ('platform_learning_demo', 'platform_learning_verified', 'organisation_shared'):
+            with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
+                retrieval_policy.set_visibility(m, target)
+
+    def test_organisation_share_fills_org_from_project(self):
+        from evidence_memory.services import retrieval_policy
+        m = self._memory(organisation='')
+        retrieval_policy.set_visibility(m, 'organisation_shared')
+        m.refresh_from_db()
+        self.assertEqual(m.organisation, 'Org Share')
+        self.assertEqual(m.visibility, 'organisation_shared')
+
+    def test_organisation_share_without_any_org_refused(self):
+        from gold_intelligence.models import GoldProject
+        from evidence_memory.services import retrieval_policy
+        orgless = GoldProject.objects.create(name='Orgless', slug='orgless-project', commodity='other')
+        m = self._memory(project=orgless, organisation='')
+        with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
+            retrieval_policy.set_visibility(m, 'organisation_shared')
+
+    def test_unknown_visibility_refused(self):
+        from evidence_memory.services import retrieval_policy
+        m = self._memory()
+        with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
+            retrieval_policy.set_visibility(m, 'everyone_forever')
+
+    def test_valid_share_and_unshare_roundtrip(self):
+        from evidence_memory.services import retrieval_policy
+        m = self._memory(verification_status='verified', review_tier='independently_verified', is_demo=False)
+        retrieval_policy.set_visibility(m, 'platform_learning_verified')
+        m.refresh_from_db()
+        self.assertEqual(m.visibility, 'platform_learning_verified')
+        retrieval_policy.set_visibility(m, 'project_private')
+        m.refresh_from_db()
+        self.assertEqual(m.visibility, 'project_private')
+
+
+class SyncHardeningTests(TestCase):
+    """feat/evidence-memory-hardening — create_memory_from_verified_outcome()
+    provenance, safe defaults on failed project resolution, and visibility
+    behaviour across repeated syncs."""
+
+    def setUp(self):
+        from gold_intelligence.models import GoldProject
+        from waste_to_value_capital_allocation_engine.models import InterventionOption, OperationalLoss
+        from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
+
+        self.project = GoldProject.objects.create(
+            name='Sync Hardening Project', slug='sync-hardening-project', commodity='other',
+            is_demo=False, organisation='Sync Org',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Sync loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Sync Retrofit', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='d')
+        self.decision.approval_status = 'approved'
+        self.decision.save(update_fields=['approval_status'])
+
+    def _record_outcome(self, **kwargs):
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        defaults = dict(loss_avoided_actual=9000, capex_actual=21000, mrv_status='baseline_only', evidence_quality='medium')
+        defaults.update(kwargs)
+        return record_verified_outcome(self.decision, self.option, **defaults)
+
+    def test_structured_provenance_links_set(self):
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.project, self.project)
+        self.assertEqual(m.originating_decision, self.decision)
+        self.assertEqual(m.originating_outcome, outcome)
+        self.assertEqual(m.organisation, 'Sync Org')
+        # source_reference retained in parallel for backward compatibility.
+        self.assertEqual(m.source_reference, f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{outcome.pk}')
+
+    def test_resolved_sync_defaults_to_project_private(self):
+        outcome = self._record_outcome()
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.visibility, 'project_private')
+
+    def test_failed_resolution_defaults_safely(self):
+        """No optimistic fallback: unresolved provenance means restricted
+        visibility, is_demo=True (never presented as verified real-world
+        data), and never a 'verified' status."""
+        self.decision.project = 'Name Matching Nothing At All'
+        self.decision.save(update_fields=['project'])
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertIsNone(m.project)
+        self.assertEqual(m.visibility, 'restricted_unresolved')
+        self.assertTrue(m.is_demo)
+        self.assertNotEqual(m.verification_status, 'verified')
+
+    def test_ambiguous_resolution_defaults_safely(self):
+        from gold_intelligence.models import GoldProject
+        GoldProject.objects.create(name='Sync Hardening Project', slug='sync-hardening-dup', commodity='other')
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertIsNone(m.project)
+        self.assertEqual(m.visibility, 'restricted_unresolved')
+        self.assertTrue(m.is_demo)
+        self.assertNotEqual(m.verification_status, 'verified')
+
+    def test_resync_is_idempotent_with_provenance(self):
+        outcome = self._record_outcome()
+        m1 = memory.create_memory_from_verified_outcome(outcome)
+        m2 = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m1.pk, m2.pk)
+        self.assertEqual(EvidenceMemory.objects.filter(originating_outcome=outcome).count(), 1)
+        self.assertEqual(m2.originating_decision, self.decision)
+
+    def test_resync_preserves_platform_share_while_still_eligible(self):
+        from evidence_memory.services import retrieval_policy
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        retrieval_policy.set_visibility(m, 'platform_learning_verified')
+        resynced = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(resynced.visibility, 'platform_learning_verified')
+
+    def test_resync_revokes_platform_share_when_no_longer_eligible(self):
+        from evidence_memory.services import retrieval_policy
+        outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        retrieval_policy.set_visibility(m, 'platform_learning_verified')
+
+        # The decision is later rejected — the record must not stay shared.
+        self.decision.approval_status = 'rejected'
+        self.decision.save(update_fields=['approval_status'])
+        resynced = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(resynced.visibility, 'project_private')
+        self.assertEqual(resynced.verification_status, 'rejected')
+
+    def test_disputed_outcome_stays_disputed_on_resync(self):
+        outcome = self._record_outcome(mrv_status='disputed')
+        m = memory.create_memory_from_verified_outcome(outcome)
+        self.assertEqual(m.verification_status, 'requires_review')
+        from evidence_memory.services import retrieval_policy
+        self.assertTrue(retrieval_policy.is_disputed(m))
+        resynced = memory.create_memory_from_verified_outcome(outcome)
+        self.assertTrue(retrieval_policy.is_disputed(resynced))
+
+    def test_manual_project_evidence_gets_structured_project_link(self):
+        m = memory.create_memory_from_manual_project_evidence(
+            self.project, title='Manual doc', text='A real manual evidence text.',
+        )
+        self.assertEqual(m.project, self.project)
+        self.assertEqual(m.visibility, 'project_private')

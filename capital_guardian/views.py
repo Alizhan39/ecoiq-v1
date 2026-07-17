@@ -438,8 +438,11 @@ def run_project_analysis(request, slug):
 
     # Vertical-slice PR 7 — Task 8: real historical evidence retrieval, never
     # a guaranteed predictor. Read-only, deterministic, never fails the page.
+    # feat/evidence-memory-hardening: access-policy-filtered per requesting
+    # user + project (see evidence_memory/services/retrieval_policy.py);
+    # returns RetrievedEvidence items carrying scope/explanation/labels.
     try:
-        relevant_outcomes = retrieve_relevant_verified_outcomes(project)
+        relevant_outcomes = retrieve_relevant_verified_outcomes(project, user=request.user)
     except Exception:
         import logging
         logging.getLogger(__name__).exception('Unexpected failure retrieving relevant verified outcomes for %s', project.pk)
@@ -1411,9 +1414,51 @@ def sync_outcome_to_evidence_memory(request, slug, decision_id):
 
     messages.success(
         request,
-        f'This reviewed outcome is now available as evidence for future EcoIQ decisions '
-        f'({memory.get_verification_status_display()}).',
+        f'This reviewed outcome is now stored as project-private evidence '
+        f'({memory.get_verification_status_display()}). Sharing it for cross-project learning is a '
+        f'separate, explicit action.',
     )
+    return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+
+@staff_member_required(login_url='/login/')
+def share_outcome_evidence(request, slug, decision_id):
+    """
+    feat/evidence-memory-hardening — staff-only, POST-only, explicit human
+    sharing action for one outcome-derived EvidenceMemory record. The only
+    write path is retrieval_policy.set_visibility(), which validates that
+    the record's own state honestly supports the requested scope (demo
+    records can only be shared under the demo label, only independently
+    verified non-demo records as verified platform learning, rejected
+    records never). Nothing is ever shared automatically.
+    """
+    from evidence_memory.models import EvidenceMemory
+    from evidence_memory.services import retrieval_policy
+
+    project = _project_or_404(slug)
+    decision = _monitoring_decision_or_404(project, decision_id)
+    if request.method != 'POST':
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    outcome = getattr(decision, 'verified_outcome', None)
+    memory = EvidenceMemory.objects.filter(originating_outcome=outcome).first() if outcome is not None else None
+    if memory is None:
+        messages.error(request, 'This outcome has not been synced into Evidence Memory yet — nothing to share.')
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    target = request.POST.get('visibility', '')
+    try:
+        retrieval_policy.set_visibility(memory, target, actor=request.user)
+    except retrieval_policy.VisibilityNotAllowedError as exc:
+        messages.error(request, f'Sharing not allowed: {exc}')
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure changing visibility for EvidenceMemory %s', memory.pk)
+        messages.error(request, 'Something went wrong changing this record’s visibility. Nothing was changed.')
+        return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    messages.success(request, f'Evidence visibility is now: {memory.get_visibility_display()}.')
     return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
 
 
@@ -1435,7 +1480,7 @@ def project_command_centre(request, slug):
 
     project = _project_or_404(slug)
     try:
-        context = build_command_centre_context(project)
+        context = build_command_centre_context(project, user=request.user)
     except Exception:
         import logging
         logging.getLogger(__name__).exception('Unexpected failure building Command Centre for project %s', project.pk)

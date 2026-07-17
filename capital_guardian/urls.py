@@ -57,6 +57,10 @@ urlpatterns = [
         '<slug:slug>/monitoring/decisions/<int:decision_id>/outcome/sync-to-evidence-memory/',
         views.sync_outcome_to_evidence_memory, name='sync_outcome_to_evidence_memory',
     ),
+    path(
+        '<slug:slug>/monitoring/decisions/<int:decision_id>/outcome/share-evidence/',
+        views.share_outcome_evidence, name='share_outcome_evidence',
+    ),
     path('<slug:slug>/decisions/<int:decision_id>/review/', views.human_decision_gate_view, name='human_decision_gate'),
     path(
         '<slug:slug>/decisions/<int:decision_id>/review/<str:action>/confirm/',

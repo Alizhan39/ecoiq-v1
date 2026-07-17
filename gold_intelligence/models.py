@@ -59,6 +59,13 @@ class GoldProject(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True)
     commodity = models.CharField(max_length=20, choices=COMMODITY_CHOICES, default='gold')
+    # feat/evidence-memory-hardening: free-text owning-organisation name,
+    # mirroring CapitalAllocationDecision.organisation's existing convention
+    # (no Organisation model exists in this codebase). Used only by the
+    # Evidence Memory retrieval policy to evaluate 'organisation_shared'
+    # visibility — blank means "no organisation declared" and never matches
+    # another blank.
+    organisation = models.CharField(max_length=200, blank=True)
     country = models.ForeignKey(
         'countries.CountryProfile', null=True, blank=True, on_delete=models.SET_NULL, related_name='gold_projects',
     )

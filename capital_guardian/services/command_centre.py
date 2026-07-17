@@ -183,11 +183,16 @@ def _primary_decision(project):
     return execution_monitoring.capital_decisions_for_project(project).first()
 
 
-def build_command_centre_context(project):
+def build_command_centre_context(project, user=None):
     """
     Returns one dict with every real, already-computed value the Command
     Centre template needs. Every sub-computation below is a direct call
     into an existing, unmodified service — see module docstring.
+
+    feat/evidence-memory-hardening: `user` is the requesting user, passed
+    through to the Evidence Memory retrieval policy — with no user (or a
+    non-staff one) historical-evidence retrieval returns nothing rather
+    than everything.
     """
     governance = getattr(project, 'governance', None)
 
@@ -233,12 +238,13 @@ def build_command_centre_context(project):
     open_red_flags = list(project.red_flags.filter(resolution_status='open'))
 
     from evidence_memory.services.memory import retrieve_relevant_verified_outcomes
-    relevant_outcomes = retrieve_relevant_verified_outcomes(project)
+    relevant_outcomes = retrieve_relevant_verified_outcomes(project, user=user)
+    memory_counts = _evidence_memory_counts(project)
 
     stages = _workflow_stages(
         project, evidence_qs, evidence_summary, analysis, review, loss, interventions, safety_breakdown,
         better_way_result, decision, governance, capital_summary, recent_trace_entries, milestones,
-        learning_feedback,
+        learning_feedback, memory_counts,
     )
     next_action = _next_required_action(
         project, evidence_qs, review, loss, interventions, decision, governance,
@@ -268,6 +274,7 @@ def build_command_centre_context(project):
         'milestones': milestones,
         'open_red_flags': open_red_flags,
         'relevant_outcomes': relevant_outcomes,
+        'memory_counts': memory_counts,
         'stages': stages,
         'started_stage_count': started_stage_count,
         'available_stage_count': available_stage_count,
@@ -275,9 +282,42 @@ def build_command_centre_context(project):
     }
 
 
+def _evidence_memory_counts(project):
+    """
+    feat/evidence-memory-hardening — honest, PROJECT-SCOPED Evidence Memory
+    counts for the Command Centre stage. Counts only this project's own
+    outcome-derived memory rows (via the structured project FK) plus its
+    unresolved rows reachable through its own decisions' provenance links —
+    never a platform-wide count, so no other project's volume of evidence
+    leaks through this page.
+    """
+    from evidence_memory.models import EvidenceMemory
+
+    own = EvidenceMemory.objects.filter(project=project, source_reference__startswith=_OUTCOME_PREFIX)
+    # Unresolved rows have no project FK by definition; reach them through
+    # this project's own decisions so a genuinely unattributable row (whose
+    # decision matched nothing) is never claimed by anyone's count.
+    unresolved = EvidenceMemory.objects.filter(
+        visibility='restricted_unresolved',
+        originating_decision__project=project.name,
+        source_reference__startswith=_OUTCOME_PREFIX,
+    )
+    return {
+        'total': own.count(),
+        'verified': own.filter(verification_status='verified').count(),
+        'human_reviewed': own.filter(review_tier='human_reviewed').count(),
+        'demo': own.filter(is_demo=True).count(),
+        'shared': own.filter(visibility__in=('platform_learning_demo', 'platform_learning_verified', 'organisation_shared')).count(),
+        'unresolved': unresolved.count(),
+    }
+
+
+_OUTCOME_PREFIX = 'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:'
+
+
 def _workflow_stages(project, evidence_qs, evidence_summary, analysis, review, loss, interventions,
                       safety_breakdown, better_way_result, decision, governance, capital_summary,
-                      recent_trace_entries, milestones, learning_feedback):
+                      recent_trace_entries, milestones, learning_feedback, memory_counts=None):
     stages = []
 
     # 1. Project — identity completeness, not a sequential "step". Never
@@ -527,21 +567,39 @@ def _workflow_stages(project, evidence_qs, evidence_summary, analysis, review, l
         action_url=_url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) if decision is not None else None,
     ))
 
-    # 12. Evidence Memory (sync + retrieval for future decisions)
+    # 12. Evidence Memory (sync + retrieval for future decisions).
+    # feat/evidence-memory-hardening: the summary now reports honest,
+    # project-scoped counts (verified / human-reviewed / demo / shared /
+    # unresolved) from _evidence_memory_counts() — never platform-wide
+    # totals, so no other project's evidence volume leaks through here.
+    counts = memory_counts or {}
     if outcome is None:
         status = 'NOT_STARTED'
         summary = 'No outcome to sync into Evidence Memory yet.'
     elif learning_feedback.get('already_synced'):
         status = 'COMPLETE'
-        summary = 'Synced into Evidence Memory for future retrieval.'
+        summary = (
+            f"{counts.get('total', 0)} memory record(s) for this project: "
+            f"{counts.get('verified', 0)} verified, {counts.get('human_reviewed', 0)} human-reviewed, "
+            f"{counts.get('demo', 0)} demo, {counts.get('shared', 0)} shared for learning."
+        )
     else:
         status = 'IN_PROGRESS'
         summary = 'Outcome recorded; not yet synced into Evidence Memory.'
+    blocked_reason = ''
+    if counts.get('unresolved'):
+        blocked_reason = (
+            f"{counts['unresolved']} record(s) have unresolved project provenance and are "
+            f"restricted from all cross-project retrieval until manually reviewed."
+        )
     memory = learning_feedback.get('memory') if learning_feedback else None
     stages.append(WorkflowStage(
         key='learning', label='Evidence Memory', status=status, summary=summary,
         action_label='Sync to Evidence Memory' if outcome is not None else 'Record Outcome First',
         action_url=_url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) if decision is not None else None,
+        blocked_reason=blocked_reason,
+        progress_current=counts.get('verified') if counts.get('total') else None,
+        progress_total=counts.get('total') or None,
         last_activity=memory.created_at if memory is not None else None,
     ))
 
