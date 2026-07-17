@@ -4326,7 +4326,10 @@ class CommandCentreCanonicalStagesTests(TestCase):
         self.assertEqual(stage.progress_current, 1)
         self.assertEqual(stage.progress_total, 2)
 
-    def test_human_approval_action_honestly_labelled_admin_review(self):
+    def test_human_approval_action_links_to_real_review_workflow(self):
+        """feat/human-decision-gate: this stage no longer points at Django
+        admin — it links to the real, auditable Human Decision Gate review
+        page, and is never labelled with a fabricated 'Approve now' claim."""
         loss = OperationalLoss.objects.create(
             project=self.project.name, title='Approval loss', loss_type='heat_loss', financial_loss_amount=15000,
         )
@@ -4337,10 +4340,14 @@ class CommandCentreCanonicalStagesTests(TestCase):
         decision = create_governed_investment_case(option, decision_text='Approval decision')
         ctx = self._ctx()
         stage = self._stage(ctx, 'human_approval')
-        self.assertEqual(stage.action_label, 'Review in Admin')
-        self.assertIn('Administrative review required', stage.summary)
+        self.assertEqual(stage.action_label, 'Open Human Decision Gate')
+        self.assertIn('Awaiting first human review', stage.summary)
         self.assertNotIn('Approve now', stage.action_label)
-        self.assertIn(f'/admin/waste_to_value_capital_allocation_engine/capitalallocationdecision/{decision.pk}/change/', stage.action_url)
+        self.assertNotIn('admin', stage.action_url)
+        self.assertEqual(
+            stage.action_url,
+            reverse('capital_guardian:human_decision_gate', args=[self.project.slug, decision.pk]),
+        )
 
     def test_all_set_action_urls_resolve(self):
         """Every stage that sets an action_url must be a URL that actually
@@ -4411,3 +4418,572 @@ class CommandCentreCanonicalStagesTests(TestCase):
         r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project.slug]))
         self.assertContains(r, '@media (max-width: 640px)')
         self.assertContains(r, 'grid-template-columns: 1fr')
+
+
+class HumanDecisionGateServiceTests(TestCase):
+    """
+    feat/human-decision-gate — capital_guardian/services/human_decision_gate.py:
+    the one service responsible for every CapitalAllocationDecision review
+    transition. Exercises the explicit state machine directly, independent
+    of the view layer above it.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.reviewer = User.objects.create_user('hdg_reviewer', 'hdg_reviewer@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes-svc', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+
+    def _decision(self):
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+        return create_decision_from_better_way(self.project, self.loss, self.option)
+
+    def test_pending_to_approved(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        result = hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        self.assertEqual(result.new_status, 'approved')
+        decision.refresh_from_db()
+        self.assertEqual(decision.approval_status, 'approved')
+
+    def test_pending_to_rejected_requires_notes(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        with self.assertRaises(hdg.MissingRationaleError):
+            hdg.submit_review(decision, 'reject', self.reviewer, notes='', project=self.project)
+        decision.refresh_from_db()
+        self.assertEqual(decision.approval_status, 'pending')
+
+    def test_pending_to_rejected_with_notes(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        result = hdg.submit_review(decision, 'reject', self.reviewer, notes='Too risky.', project=self.project)
+        self.assertEqual(result.new_status, 'rejected')
+
+    def test_request_evidence_requires_notes(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        with self.assertRaises(hdg.MissingRationaleError):
+            hdg.submit_review(decision, 'request_evidence', self.reviewer, notes='   ', project=self.project)
+
+    def test_request_modification_requires_notes(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        with self.assertRaises(hdg.MissingRationaleError):
+            hdg.submit_review(decision, 'request_modification', self.reviewer, notes='', project=self.project)
+
+    def test_pending_to_evidence_requested(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        result = hdg.submit_review(decision, 'request_evidence', self.reviewer, notes='Need more MRV data.', project=self.project)
+        self.assertEqual(result.new_status, 'evidence_requested')
+
+    def test_pending_to_modification_requested(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        result = hdg.submit_review(decision, 'request_modification', self.reviewer, notes='Reduce CAPEX.', project=self.project)
+        self.assertEqual(result.new_status, 'modification_requested')
+
+    def test_evidence_requested_to_pending_via_resubmit(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        hdg.submit_review(decision, 'request_evidence', self.reviewer, notes='Need more data.', project=self.project)
+        decision.refresh_from_db()
+        result = hdg.submit_review(decision, 'resubmit', self.reviewer, project=self.project)
+        self.assertEqual(result.new_status, 'pending')
+
+    def test_modification_requested_to_pending_via_resubmit(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        hdg.submit_review(decision, 'request_modification', self.reviewer, notes='Reduce CAPEX.', project=self.project)
+        decision.refresh_from_db()
+        result = hdg.submit_review(decision, 'resubmit', self.reviewer, project=self.project)
+        self.assertEqual(result.new_status, 'pending')
+
+    def test_approved_decision_cannot_be_re_reviewed(self):
+        """'approved' is terminal in this PR — reopening a decided case is
+        out of scope (see PR2 report's known limitations)."""
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        decision.refresh_from_db()
+        with self.assertRaises(hdg.IllegalTransitionError):
+            hdg.submit_review(decision, 'reject', self.reviewer, notes='Changed my mind.', project=self.project)
+
+    def test_rejected_decision_cannot_be_re_reviewed(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        hdg.submit_review(decision, 'reject', self.reviewer, notes='No.', project=self.project)
+        decision.refresh_from_db()
+        with self.assertRaises(hdg.IllegalTransitionError):
+            hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+
+    def test_duplicate_approve_raises_not_silently_ignored(self):
+        """A repeated action must never silently no-op or duplicate an audit
+        event — it must raise, so the view layer (which already re-checks
+        legality) is the only thing making duplicate POSTs safe."""
+        from capital_guardian.services import human_decision_gate as hdg
+        from waste_to_value_capital_allocation_engine.models import DecisionReviewEvent
+        decision = self._decision()
+        hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        decision.refresh_from_db()
+        with self.assertRaises(hdg.IllegalTransitionError):
+            hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        self.assertEqual(DecisionReviewEvent.objects.filter(decision=decision).count(), 1)
+
+    def test_invalid_action_string_rejected(self):
+        """No arbitrary, unvalidated status/action string ever reaches the model."""
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        with self.assertRaises(hdg.InvalidReviewActionError):
+            hdg.submit_review(decision, 'do_whatever_i_want', self.reviewer, project=self.project)
+        decision.refresh_from_db()
+        self.assertEqual(decision.approval_status, 'pending')
+
+    def test_blocked_intervention_cannot_be_approved(self):
+        """Re-verifies eligibility at approval time, not just at decision-
+        creation time — a decision left pending against an option that is
+        (or has become) blocked on safety grounds must never be approvable,
+        regardless of what was true when the decision row was created."""
+        from capital_guardian.services import human_decision_gate as hdg
+        from capital_guardian.services.capital_decision_bridge import BlockedInterventionError
+
+        blocked_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Burn coal to produce ash for fertiliser', intervention_type='resale',
+        )
+        decision = CapitalAllocationDecision.objects.create(
+            project=self.project.name, intervention=blocked_option, ranking=1,
+            decision='Pending review.', approval_status='pending',
+        )
+        with self.assertRaises(BlockedInterventionError):
+            hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        decision.refresh_from_db()
+        self.assertEqual(decision.approval_status, 'pending')
+
+    def test_conditions_preserved_through_approval(self):
+        """Conditional interventions must preserve all conditions — approve
+        never clears or ignores them, and targets 'approved_with_conditions'
+        rather than plain 'approved' whenever conditions are present."""
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        decision.conditions = ['MRV verification required before disbursement.']
+        decision.save(update_fields=['conditions'])
+        result = hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        self.assertEqual(result.new_status, 'approved_with_conditions')
+        decision.refresh_from_db()
+        self.assertEqual(decision.conditions, ['MRV verification required before disbursement.'])
+
+    def test_reviewer_timestamp_and_rationale_recorded(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        result = hdg.submit_review(decision, 'reject', self.reviewer, notes='Insufficient evidence quality.', project=self.project)
+        event = result.event
+        self.assertEqual(event.actor, self.reviewer)
+        self.assertIsNotNone(event.created_at)
+        self.assertEqual(event.notes, 'Insufficient evidence quality.')
+        self.assertEqual(event.previous_status, 'pending')
+        self.assertEqual(event.new_status, 'rejected')
+
+    def test_immutable_review_event_created_each_transition(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        from waste_to_value_capital_allocation_engine.models import DecisionReviewEvent
+        decision = self._decision()
+        hdg.submit_review(decision, 'request_evidence', self.reviewer, notes='More data please.', project=self.project)
+        decision.refresh_from_db()
+        hdg.submit_review(decision, 'resubmit', self.reviewer, project=self.project)
+        decision.refresh_from_db()
+        hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        self.assertEqual(DecisionReviewEvent.objects.filter(decision=decision).count(), 3)
+
+    def test_previous_review_event_not_erased_by_later_review(self):
+        """The core reason a separate DecisionReviewEvent model exists rather
+        than fields on CapitalAllocationDecision itself: a later review must
+        never overwrite an earlier reviewer's identity or rationale."""
+        from capital_guardian.services import human_decision_gate as hdg
+        from waste_to_value_capital_allocation_engine.models import DecisionReviewEvent
+        decision = self._decision()
+        hdg.submit_review(decision, 'request_evidence', self.reviewer, notes='First round notes.', project=self.project)
+        decision.refresh_from_db()
+        hdg.submit_review(decision, 'resubmit', self.reviewer, project=self.project)
+        decision.refresh_from_db()
+        first_event = DecisionReviewEvent.objects.get(decision=decision, action='request_evidence')
+        self.assertEqual(first_event.notes, 'First round notes.')
+
+    def test_audit_log_entry_written_for_project(self):
+        decision = self._decision()
+        from capital_guardian.services import human_decision_gate as hdg
+        hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        entry = AuditLogEntry.objects.filter(project=self.project, event_type='capital_decision').latest('created_at')
+        self.assertEqual(entry.previous_value, 'pending')
+        self.assertEqual(entry.new_value, 'approved')
+        self.assertEqual(entry.changed_by, self.reviewer)
+
+    def test_legal_actions_for_pending(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        self.assertEqual(
+            set(hdg.legal_actions_for(decision)),
+            {'approve', 'reject', 'request_evidence', 'request_modification'},
+        )
+
+    def test_legal_actions_for_evidence_requested_is_resubmit_only(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        hdg.submit_review(decision, 'request_evidence', self.reviewer, notes='More data.', project=self.project)
+        decision.refresh_from_db()
+        self.assertEqual(hdg.legal_actions_for(decision), ['resubmit'])
+
+    def test_legal_actions_for_approved_is_empty(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        decision = self._decision()
+        hdg.submit_review(decision, 'approve', self.reviewer, project=self.project)
+        decision.refresh_from_db()
+        self.assertEqual(hdg.legal_actions_for(decision), [])
+
+
+class HumanDecisionGateViewTests(TestCase):
+    """
+    feat/human-decision-gate — the review page and its confirm/execute
+    actions: permissions, cross-project isolation, CSRF, POST-only,
+    duplicate-POST safety, and Capital Guardian promotion gating.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('hdg_staff', 'hdg_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('hdg_normal', 'hdg_normal@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes-view', commodity='other',
+        )
+        self.other_project = GoldProject.objects.create(name='Unrelated Project', slug='unrelated-project-hdg', commodity='other')
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+        self.decision = create_decision_from_better_way(self.project, self.loss, self.option)
+
+    def _review_url(self, project=None, decision=None):
+        return reverse('capital_guardian:human_decision_gate', args=[(project or self.project).slug, (decision or self.decision).pk])
+
+    def _confirm_url(self, action, project=None, decision=None):
+        return reverse('capital_guardian:human_decision_gate_action_confirm', args=[(project or self.project).slug, (decision or self.decision).pk, action])
+
+    def _execute_url(self, action, project=None, decision=None):
+        return reverse('capital_guardian:human_decision_gate_action_execute', args=[(project or self.project).slug, (decision or self.decision).pk, action])
+
+    # ── Permissions ──────────────────────────────────────────────────
+    def test_anonymous_cannot_view_review_page(self):
+        r = self.client.get(self._review_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_cannot_view_review_page(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self._review_url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_staff_can_view_review_page(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._review_url())
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Insulation')
+
+    def test_anonymous_cannot_execute_action(self):
+        r = self.client.post(self._execute_url('approve'))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'pending')
+
+    def test_non_staff_cannot_execute_action(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._execute_url('approve'))
+        self.assertEqual(r.status_code, 302)
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'pending')
+
+    # ── Cross-project isolation / invalid IDs ───────────────────────
+    def test_cross_project_decision_access_denied(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._review_url(project=self.other_project))
+        self.assertEqual(r.status_code, 404)
+
+    def test_cross_project_execute_denied(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url('approve', project=self.other_project))
+        self.assertEqual(r.status_code, 404)
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'pending')
+
+    def test_invalid_decision_id_404s(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:human_decision_gate', args=[self.project.slug, 999999]))
+        self.assertEqual(r.status_code, 404)
+
+    def test_invalid_action_string_404s_on_confirm(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url('do_whatever'))
+        self.assertEqual(r.status_code, 404)
+
+    def test_invalid_action_string_404s_on_execute(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url('do_whatever'))
+        self.assertEqual(r.status_code, 404)
+
+    # ── CSRF / method enforcement ────────────────────────────────────
+    def test_csrf_enforced_on_execute(self):
+        csrf_client = Client(SERVER_NAME='localhost', enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._execute_url('approve'))
+        self.assertEqual(r.status_code, 403)
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'pending')
+
+    def test_get_cannot_execute(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._execute_url('approve'))
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'pending')
+
+    # ── Rationale requirement enforced at the view layer ────────────
+    def test_reject_without_notes_shows_error_and_makes_no_change(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url('reject'), {'notes': ''}, follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'pending')
+
+    def test_reject_with_notes_succeeds(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._execute_url('reject'), {'notes': 'Not viable.'}, follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'rejected')
+
+    # ── Duplicate POST safety ────────────────────────────────────────
+    def test_duplicate_approve_post_is_safe(self):
+        from waste_to_value_capital_allocation_engine.models import DecisionReviewEvent
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url('approve'), follow=True)
+        r = self.client.post(self._execute_url('approve'), follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, 'approved')
+        self.assertEqual(DecisionReviewEvent.objects.filter(decision=self.decision).count(), 1)
+
+    # ── Actions rendered only when legal ─────────────────────────────
+    def test_review_page_hides_actions_not_currently_legal(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url('approve'), follow=True)
+        r = self.client.get(self._review_url())
+        self.assertNotContains(r, self._confirm_url('reject'))
+        self.assertNotContains(r, self._confirm_url('approve'))
+
+    def test_confirm_page_redirects_when_action_no_longer_legal(self):
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url('approve'), follow=True)
+        r = self.client.get(self._confirm_url('reject'), follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertRedirects(r, self._review_url())
+
+    def test_confirm_page_shows_the_real_action_label(self):
+        """Regression: the confirm page must render the actual imperative
+        action label ("Reject"), not a blank 'Confirm:' heading."""
+        self.client.force_login(self.staff)
+        r = self.client.get(self._confirm_url('reject'))
+        self.assertContains(r, 'Confirm: Reject')
+
+    # ── Human-approval honesty ────────────────────────────────────────
+    def test_review_page_states_human_responsibility(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._review_url())
+        self.assertContains(r, 'A human reviewer is responsible for the final decision.')
+
+    def test_review_page_never_implies_approval_triggers_execution(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self._review_url())
+        self.assertNotContains(r, 'procurement complete')
+        self.assertNotContains(r, 'payment sent')
+        self.assertNotContains(r, 'installation scheduled')
+
+    # ── Capital Guardian promotion gating ────────────────────────────
+    def test_promotion_blocked_before_approval(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            DecisionNotApprovedError, promote_to_capital_guardian,
+        )
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(self.decision)
+
+    def test_promotion_blocked_after_rejection(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            DecisionNotApprovedError, promote_to_capital_guardian,
+        )
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url('reject'), {'notes': 'No.'}, follow=True)
+        self.decision.refresh_from_db()
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(self.decision)
+
+    def test_promotion_blocked_after_evidence_request(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            DecisionNotApprovedError, promote_to_capital_guardian,
+        )
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url('request_evidence'), {'notes': 'More data.'}, follow=True)
+        self.decision.refresh_from_db()
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(self.decision)
+
+    def test_promotion_blocked_after_modification_request(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import (
+            DecisionNotApprovedError, promote_to_capital_guardian,
+        )
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url('request_modification'), {'notes': 'Reduce CAPEX.'}, follow=True)
+        self.decision.refresh_from_db()
+        with self.assertRaises(DecisionNotApprovedError):
+            promote_to_capital_guardian(self.decision)
+
+    def test_promotion_allowed_after_approval(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        self.client.force_login(self.staff)
+        self.client.post(self._execute_url('approve'), follow=True)
+        self.decision.refresh_from_db()
+        result = promote_to_capital_guardian(self.decision)
+        self.assertEqual(result.status, 'promoted')
+
+
+class HumanDecisionGateCommandCentreIntegrationTests(TestCase):
+    """
+    feat/human-decision-gate — Command Centre's Human Approval stage and
+    section must point to the real review page, not Django admin, and must
+    surface reviewer/reviewed-date/rationale-summary/blocked-reason. Does
+    not touch or assert on any other Command Centre stage.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('hdg_cc_staff', 'hdg_cc_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes-cc', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+        self.decision = create_decision_from_better_way(self.project, self.loss, self.option)
+
+    def _stage(self, key):
+        from capital_guardian.services.command_centre import build_command_centre_context
+        ctx = build_command_centre_context(GoldProject.objects.get(pk=self.project.pk))
+        return next(s for s in ctx['stages'] if s.key == key)
+
+    def test_human_approval_stage_links_to_review_page_not_admin(self):
+        stage = self._stage('human_approval')
+        review_url = reverse('capital_guardian:human_decision_gate', args=[self.project.slug, self.decision.pk])
+        self.assertEqual(stage.action_url, review_url)
+        self.assertNotIn('admin', stage.action_url)
+
+    def test_human_approval_stage_shows_reviewer_and_rationale_after_review(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        hdg.submit_review(self.decision, 'reject', self.staff, notes='Insufficient MRV evidence.', project=self.project)
+        stage = self._stage('human_approval')
+        self.assertIn('hdg_cc_staff', stage.summary)
+        self.assertIn('Insufficient MRV evidence', stage.summary)
+
+    def test_human_approval_stage_blocked_reason_while_evidence_requested(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        hdg.submit_review(self.decision, 'request_evidence', self.staff, notes='Need more data.', project=self.project)
+        stage = self._stage('human_approval')
+        self.assertTrue(stage.blocked_reason)
+        self.assertIn('resubmission', stage.blocked_reason)
+
+    def test_command_centre_page_no_longer_shows_review_in_admin(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project.slug]))
+        self.assertNotContains(r, 'Review in Admin')
+        self.assertContains(r, 'Open Human Decision Gate')
+
+    def test_other_stages_untouched_by_human_decision_gate_work(self):
+        """Guards the explicit 'do not modify unrelated Command Centre
+        stages' requirement — every other canonical stage key must still be
+        present, in the same order, unaffected by this PR."""
+        from capital_guardian.services.command_centre import build_command_centre_context
+        ctx = build_command_centre_context(GoldProject.objects.get(pk=self.project.pk))
+        keys = [s.key for s in ctx['stages']]
+        self.assertEqual(keys, [
+            'project', 'evidence', 'resource_purpose', 'value_loss', 'intervention_options',
+            'better_way', 'capital_decision', 'human_approval', 'capital_guardian',
+            'monitoring', 'outcome', 'learning', 'telemetry',
+        ])
+
+
+class HumanDecisionGateAuditHistoryTests(TestCase):
+    """feat/human-decision-gate — every review action must appear in the
+    project's real Audit History, not only in Django admin's history."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('hdg_audit_staff', 'hdg_audit_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes-audit', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Coal heating loss', loss_type='heat_loss',
+            financial_loss_amount=10000, projected_future_loss=12000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Insulation', intervention_type='prevention',
+            capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
+        )
+        from capital_guardian.services.capital_decision_bridge import create_decision_from_better_way
+        self.decision = create_decision_from_better_way(self.project, self.loss, self.option)
+
+    def test_approval_appears_in_audit_history_page(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        hdg.submit_review(self.decision, 'approve', self.staff, project=self.project)
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:audit_history', args=[self.project.slug]))
+        self.assertContains(r, 'Capital Allocation Decision')
+        self.assertContains(r, 'hdg_audit_staff')
+
+    def test_rejection_appears_in_audit_history_page(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        hdg.submit_review(self.decision, 'reject', self.staff, notes='No.', project=self.project)
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:audit_history', args=[self.project.slug]))
+        self.assertContains(r, 'rejected')
+
+    def test_audit_history_filterable_by_capital_decision_event_type(self):
+        from capital_guardian.services import human_decision_gate as hdg
+        hdg.submit_review(self.decision, 'approve', self.staff, project=self.project)
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:audit_history', args=[self.project.slug]) + '?event_type=capital_decision')
+        self.assertContains(r, 'Capital Allocation Decision')

@@ -430,26 +430,46 @@ def _workflow_stages(project, evidence_qs, evidence_summary, analysis, review, l
     ))
 
     # 8. Human Approval — deliberately distinct from Capital Decision (see
-    # module docstring). No dedicated approval UI exists yet (that's the
-    # next hardening phase) — the honest current action is a Django admin
-    # edit, and it is labelled as exactly that, never as a polished
-    # "Approve now" workflow that doesn't exist yet.
+    # module docstring). feat/human-decision-gate: this stage now links to
+    # the real Human Decision Gate review page
+    # (capital_guardian:human_decision_gate) instead of a raw Django admin
+    # edit, and surfaces the latest DecisionReviewEvent — reviewer,
+    # reviewed-date, rationale — when one exists. Admin remains available
+    # as an emergency fallback only (see that app's admin.py); it is no
+    # longer the primary or labelled workflow here.
     approval_display = {
         'pending': 'PENDING_APPROVAL', 'approved': 'COMPLETE',
         'approved_with_conditions': 'APPROVED_WITH_CONDITIONS', 'rejected': 'REJECTED',
+        'evidence_requested': 'BLOCKED', 'modification_requested': 'BLOCKED',
     }
     status = approval_display.get(decision.approval_status, 'NOT_STARTED') if decision is not None else 'NOT_STARTED'
+    latest_review = decision.review_events.select_related('actor').first() if decision is not None else None
+    blocked_reason = ''
     if decision is None:
         summary = 'No decision awaiting approval yet.'
     elif decision.approval_status == 'pending':
-        summary = 'Administrative review required — no dedicated approval workflow exists in this release.'
+        summary = 'Awaiting first human review.' if latest_review is None else 'Resubmitted — awaiting re-review.'
+    elif latest_review is not None:
+        reviewer = latest_review.actor.get_username() if latest_review.actor else 'Unknown reviewer'
+        summary = f'{decision.get_approval_status_display()} by {reviewer} on {latest_review.created_at:%Y-%m-%d}.'
+        if latest_review.notes:
+            summary += f' Rationale: {latest_review.notes[:120]}'
     else:
         summary = f'{decision.get_approval_status_display()}.'
-    admin_url = _url('admin:waste_to_value_capital_allocation_engine_capitalallocationdecision_change', decision.pk) if decision is not None else None
+    if decision is not None and decision.approval_status in ('evidence_requested', 'modification_requested'):
+        blocked_reason = f'{decision.get_approval_status_display()} — awaiting resubmission before this can proceed.'
+    if decision is None:
+        action_label, review_url = '', None
+    else:
+        from capital_guardian.services import human_decision_gate
+        review_url = _url('capital_guardian:human_decision_gate', project.slug, decision.pk)
+        action_label = 'Open Human Decision Gate' if human_decision_gate.legal_actions_for(decision) else 'View Decision Review'
     stages.append(WorkflowStage(
         key='human_approval', label='Human Approval', status=status, summary=summary,
-        action_label='Review in Admin' if decision is not None else '',
-        action_url=admin_url,
+        action_label=action_label,
+        action_url=review_url,
+        blocked_reason=blocked_reason,
+        last_activity=latest_review.created_at if latest_review is not None else None,
         is_available=True,
     ))
 
@@ -555,8 +575,8 @@ def _next_required_action(project, evidence_qs, review, loss, interventions, dec
     if decision is None:
         return {'label': 'COMPARE THE BETTER WAY', 'url': _url('capital_guardian:operational_loss_detail', project.slug, loss.pk)}
 
-    if decision.approval_status == 'pending':
-        return {'label': 'REVIEW CAPITAL DECISION', 'url': _url('waste_to_value_capital_allocation_engine:decision_detail', decision.pk)}
+    if decision.approval_status in ('pending', 'evidence_requested', 'modification_requested'):
+        return {'label': 'REVIEW CAPITAL DECISION', 'url': _url('capital_guardian:human_decision_gate', project.slug, decision.pk)}
 
     if decision.approval_status == 'rejected':
         return {'label': 'COMPARE THE BETTER WAY', 'url': _url('capital_guardian:operational_loss_detail', project.slug, loss.pk)}

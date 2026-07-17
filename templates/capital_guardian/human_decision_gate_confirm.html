@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Confirm — {{ action|title }} — {{ option.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Confirm a human review action on a real capital allocation decision.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap hdg-wrap">
+  <a class="gold-btn" href="{% url 'capital_guardian:human_decision_gate' project.slug decision.pk %}">← Back to Human Decision Gate</a>
+
+  <span class="gold-eyebrow">ECOIQ · HUMAN DECISION GATE · CONFIRM</span>
+  <h1 class="gold-h1">Confirm: {{ action_label }}</h1>
+  <p class="gold-sub">{{ project.name }} — {{ option.title }}</p>
+
+  <div class="hdg-banner hdg-banner-{{ decision.approval_status }}">
+    <strong>CURRENT STATUS: {{ decision.get_approval_status_display|upper }}</strong>
+    <span>EcoIQ provides decision support. A human reviewer is responsible for the final decision. This action only authorises the next governed workflow stage — it does not trigger procurement, payment, or physical installation.</span>
+  </div>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Summary</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Intervention</div><div class="gold-card-value">{{ option.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Safety Status</div><div class="gold-card-value"><span class="gold-risk-badge {% if safety.status == 'eligible' %}low{% elif safety.status == 'blocked' %}high{% else %}medium{% endif %}">{{ safety.status|upper }}</span></div></div>
+      <div class="gold-card"><div class="gold-card-label">CAPEX</div><div class="gold-card-value">£{{ option.capex_estimate|floatformat:0 }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence on Record</div><div class="gold-card-value">{{ evidence_summary.total }} item(s), {{ evidence_summary.by_status.verified }} verified</div></div>
+    </div>
+    {% if decision.conditions %}
+    <p class="gold-sub" style="font-size:0.8rem;margin-top:0.6rem;">This decision carries {{ decision.conditions|length }} condition(s), preserved unchanged by this action.</p>
+    {% endif %}
+  </section>
+
+  {% if action == 'reject' %}
+  <div class="hdg-banner hdg-banner-blocked"><strong>REJECTING</strong><span>This decision will move to Rejected. Capital Guardian promotion will remain permanently blocked for this decision.</span></div>
+  {% elif action == 'approve' %}
+  <div class="hdg-banner hdg-banner-approved"><strong>APPROVING</strong><span>This decision will become eligible for Capital Guardian promotion as a separate, subsequent action — approval here does not promote it automatically.</span></div>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">{% if notes_required %}Explanatory Notes (required){% else %}Rationale (optional){% endif %}</h2>
+    <form method="post" action="{% url 'capital_guardian:human_decision_gate_action_execute' project.slug decision.pk action %}">
+      {% csrf_token %}
+      <textarea name="notes" rows="4" style="width:100%;background:var(--gold-bg2);color:var(--gold-text);border:1px solid var(--gold-border);border-radius:8px;padding:0.7rem;font-family:inherit;font-size:0.85rem;"
+        {% if notes_required %}required placeholder="Explain why — this is required and becomes part of the permanent audit trail."{% else %}placeholder="Optional rationale — becomes part of the permanent audit trail if entered."{% endif %}></textarea>
+      <div class="gold-btn-row" style="margin-top:0.85rem;">
+        <button type="submit" class="gold-btn {% if action == 'approve' %}gold-btn-primary{% endif %} hdg-action-btn-{{ action }}">Confirm: {{ action_label }}</button>
+        <a class="gold-btn" href="{% url 'capital_guardian:human_decision_gate' project.slug decision.pk %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .hdg-wrap { max-width: 900px; }
+  .hdg-banner { border-radius: 10px; padding: 0.9rem 1.1rem; margin: 1rem 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; }
+  .hdg-banner strong { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .hdg-banner span { color: var(--gold-muted); }
+  .hdg-banner-pending { background: rgba(244,162,97,.08); border: 1px solid rgba(244,162,97,.3); }
+  .hdg-banner-approved, .hdg-banner-approved_with_conditions { background: rgba(88,166,255,.08); border: 1px solid rgba(88,166,255,.3); }
+  .hdg-banner-rejected { background: rgba(230,57,70,.08); border: 1px solid rgba(230,57,70,.3); }
+  .hdg-banner-evidence_requested, .hdg-banner-modification_requested { background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.3); }
+  .hdg-banner-blocked { background: rgba(230,57,70,.12); border: 1px solid rgba(230,57,70,.4); }
+  textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--gold-acc); outline-offset: 2px; }
+  @media (max-width: 640px) { .hdg-wrap { padding: 1.5rem 1rem 3rem; } }
+</style>
+{% endblock %}

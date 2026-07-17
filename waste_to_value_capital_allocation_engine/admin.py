@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from waste_to_value_capital_allocation_engine.models import (
-    CapitalAllocationDecision, CapitalRouteMatch, FundingGap, InterventionOption,
+    CapitalAllocationDecision, CapitalRouteMatch, DecisionReviewEvent, FundingGap, InterventionOption,
     InterventionScenario, LossEvidence, OperationalLoss, VerifiedCapitalOutcome,
 )
 
@@ -53,3 +53,24 @@ class CapitalAllocationDecisionAdmin(admin.ModelAdmin):
 class VerifiedCapitalOutcomeAdmin(admin.ModelAdmin):
     list_display = ('intervention', 'mrv_status', 'verified_status', 'public_reporting_ready')
     list_filter = ('mrv_status', 'verified_status', 'public_reporting_ready')
+
+
+@admin.register(DecisionReviewEvent)
+class DecisionReviewEventAdmin(admin.ModelAdmin):
+    """Read-only in admin — this is the immutable Human Decision Gate audit
+    trail (feat/human-decision-gate). Real rows are only ever created by
+    capital_guardian.services.human_decision_gate.submit_review(); admin
+    stays available to *view* history for emergency/internal debugging,
+    never to edit or delete it."""
+    list_display = ('decision', 'action', 'actor', 'previous_status', 'new_status', 'created_at')
+    list_filter = ('action', 'previous_status', 'new_status')
+    readonly_fields = [f.name for f in DecisionReviewEvent._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

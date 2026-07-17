@@ -57,6 +57,15 @@ urlpatterns = [
         '<slug:slug>/monitoring/decisions/<int:decision_id>/outcome/sync-to-evidence-memory/',
         views.sync_outcome_to_evidence_memory, name='sync_outcome_to_evidence_memory',
     ),
+    path('<slug:slug>/decisions/<int:decision_id>/review/', views.human_decision_gate_view, name='human_decision_gate'),
+    path(
+        '<slug:slug>/decisions/<int:decision_id>/review/<str:action>/confirm/',
+        views.human_decision_gate_action_confirm, name='human_decision_gate_action_confirm',
+    ),
+    path(
+        '<slug:slug>/decisions/<int:decision_id>/review/<str:action>/execute/',
+        views.human_decision_gate_action_execute, name='human_decision_gate_action_execute',
+    ),
     path('<slug:slug>/govern/', views.govern_hub_view, name='govern_hub'),
     path('<slug:slug>/ai-director/', views.ai_director_view, name='ai_director'),
     path('<slug:slug>/decision-intelligence/', views.decision_intelligence_view, name='decision_intelligence'),

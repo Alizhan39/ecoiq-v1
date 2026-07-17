@@ -817,6 +817,185 @@ def create_capital_decision_execute(request, slug, loss_id, option_id):
     return redirect('waste_to_value_capital_allocation_engine:decision_detail', decision_id=decision.pk)
 
 
+# ── feat/human-decision-gate — the real EcoIQ Human Approval workflow ──────
+# Replaces the generic Django admin field edit as the primary way a
+# CapitalAllocationDecision gets reviewed. See capital_guardian/services/
+# human_decision_gate.py for the transition/audit-event logic — nothing
+# here duplicates it; these views only resolve identity, render, and hand
+# off to that one service.
+
+# Imperative button labels — distinct from DecisionReviewEvent.REVIEW_ACTION_
+# CHOICES, which are past-tense for displaying a completed event ("Approved"),
+# not a button a reviewer is about to click ("Approve").
+ACTION_LABELS = {
+    'approve': 'Approve',
+    'reject': 'Reject',
+    'request_evidence': 'Request More Evidence',
+    'request_modification': 'Request Pathway Modification',
+    'resubmit': 'Resubmit for Review',
+}
+
+
+def _decision_or_404_for_project(project, decision_id):
+    """
+    CapitalAllocationDecision has no FK to GoldProject (only a free-text
+    `project` name — see waste_to_value's models.py docstring), so this
+    mirrors the exact same real-ownership check `_loss_or_404` already uses
+    rather than trusting the URL's decision_id alone. Stops a decision
+    belonging to a different project from being reviewed/acted on under
+    this project's URL — the core of "cross-project decision access is
+    denied".
+    """
+    from django.http import Http404
+    from waste_to_value_capital_allocation_engine.models import CapitalAllocationDecision
+
+    decision = get_object_or_404(
+        CapitalAllocationDecision.objects.select_related(
+            'intervention', 'intervention__operational_loss', 'council_case', 'verified_outcome',
+        ),
+        pk=decision_id,
+    )
+    if decision.project != project.name:
+        raise Http404('No capital allocation decision found for this project.')
+    return decision
+
+
+def _human_decision_gate_context(project, decision):
+    from capital_guardian.services import human_decision_gate
+    from capital_guardian.services.better_way import compare_interventions, extract_classification
+    from capital_guardian.services.intervention_safety_gate import classify_intervention_safety
+
+    option = decision.intervention
+    loss = option.operational_loss
+
+    comparison = compare_interventions(project, loss)
+    candidate = next((c for c in comparison.ranked if c['option'].pk == option.pk), None)
+    blocked_entry = next((b for b in comparison.blocked if b['option'].pk == option.pk), None)
+    classification = extract_classification(option.description)
+    safety = classify_intervention_safety(project, option, classification=classification)
+
+    evidence_qs = list(evidence_service.evidence_for_project(project))
+    evidence_summary = evidence_service.verification_summary(evidence_qs)
+
+    return {
+        'project': project,
+        'decision': decision,
+        'option': option,
+        'loss': loss,
+        'comparison': comparison,
+        'candidate': candidate,
+        'blocked_entry': blocked_entry,
+        'safety': safety,
+        'evidence_qs': evidence_qs,
+        'evidence_summary': evidence_summary,
+        'review_events': list(decision.review_events.select_related('actor').all()),
+        'legal_actions': [
+            {'action': a, 'label': ACTION_LABELS[a]} for a in human_decision_gate.legal_actions_for(decision)
+        ],
+    }
+
+
+@staff_member_required(login_url='/login/')
+def human_decision_gate_view(request, slug, decision_id):
+    """GET-only, staff-only. The real EcoIQ Human Approval review page —
+    every section (project/origin/safety/evidence/capital/decision history)
+    is read-only; only the linked confirm pages below can change anything."""
+    project = _project_or_404(slug)
+    decision = _decision_or_404_for_project(project, decision_id)
+    context = _human_decision_gate_context(project, decision)
+    return render(request, 'capital_guardian/human_decision_gate.html', context)
+
+
+@staff_member_required(login_url='/login/')
+def human_decision_gate_action_confirm(request, slug, decision_id, action):
+    """GET-only, staff-only. Read-only confirmation step before any review
+    action — never mutates anything. 404s on an action string outside the
+    real, fixed action set (never renders a form for an invalid action)."""
+    from django.http import Http404
+
+    from capital_guardian.services import human_decision_gate
+
+    if action not in human_decision_gate.ACTIONS:
+        raise Http404('Unknown review action.')
+
+    project = _project_or_404(slug)
+    decision = _decision_or_404_for_project(project, decision_id)
+
+    if action not in human_decision_gate.legal_actions_for(decision):
+        messages.error(
+            request,
+            f'"{action.replace("_", " ")}" is not available for this decision in its current state '
+            f'({decision.get_approval_status_display()}).',
+        )
+        return redirect('capital_guardian:human_decision_gate', slug=slug, decision_id=decision_id)
+
+    context = _human_decision_gate_context(project, decision)
+    context['action'] = action
+    context['action_label'] = ACTION_LABELS[action]
+    context['notes_required'] = human_decision_gate.NOTES_REQUIRED[action]
+    return render(request, 'capital_guardian/human_decision_gate_confirm.html', context)
+
+
+@staff_member_required(login_url='/login/')
+def human_decision_gate_action_execute(request, slug, decision_id, action):
+    """
+    POST-only, staff-only. Independently re-resolves project/decision from
+    the URL and re-validates the action is legal from the decision's
+    CURRENT state (never trusts the confirm page's snapshot) before handing
+    off entirely to human_decision_gate.submit_review() — no transition or
+    audit-event logic is duplicated here.
+    """
+    from django.http import Http404
+
+    from capital_guardian.services import human_decision_gate
+    from capital_guardian.services.capital_decision_bridge import BlockedInterventionError
+
+    if action not in human_decision_gate.ACTIONS:
+        raise Http404('Unknown review action.')
+
+    project = _project_or_404(slug)
+    decision = _decision_or_404_for_project(project, decision_id)
+
+    if request.method != 'POST':
+        return redirect(
+            'capital_guardian:human_decision_gate_action_confirm', slug=slug, decision_id=decision_id, action=action,
+        )
+
+    notes = request.POST.get('notes', '').strip()
+
+    try:
+        result = human_decision_gate.submit_review(decision, action, request.user, notes=notes, project=project)
+    except human_decision_gate.MissingRationaleError:
+        messages.error(request, 'This action requires explanatory notes before it can be recorded.')
+        return redirect(
+            'capital_guardian:human_decision_gate_action_confirm', slug=slug, decision_id=decision_id, action=action,
+        )
+    except human_decision_gate.IllegalTransitionError:
+        messages.error(
+            request,
+            f'This decision is no longer in a state where "{action.replace("_", " ")}" is possible — '
+            f'it may have already been reviewed. No changes were made.',
+        )
+        return redirect('capital_guardian:human_decision_gate', slug=slug, decision_id=decision_id)
+    except BlockedInterventionError as exc:
+        messages.error(request, f'This option is blocked and cannot be approved: {exc}')
+        return redirect('capital_guardian:human_decision_gate', slug=slug, decision_id=decision_id)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure recording review action %r for CapitalAllocationDecision %s', action, decision_id,
+        )
+        messages.error(request, 'Something went wrong recording this review. No changes were made.')
+        return redirect('capital_guardian:human_decision_gate', slug=slug, decision_id=decision_id)
+
+    messages.success(
+        request,
+        f'Recorded: {result.event.get_action_display()}. Decision is now '
+        f'{result.decision.get_approval_status_display()}.',
+    )
+    return redirect('capital_guardian:human_decision_gate', slug=slug, decision_id=decision_id)
+
+
 @staff_member_required(login_url='/login/')
 def add_project_evidence(request, slug):
     """
