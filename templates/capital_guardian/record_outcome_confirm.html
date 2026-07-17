@@ -68,8 +68,13 @@
     <ul class="gc-plain-list" style="margin-top:0.6rem;">{% for b in learning_feedback.blockers %}<li>{{ b }}</li>{% endfor %}</ul>
     {% endif %}
     {% if learning_feedback.memory %}
+    <div class="gold-grid" style="margin-top:0.6rem;">
+      <div class="gold-card"><div class="gold-card-label">Visibility / Access Scope</div><div class="gold-card-value">{{ learning_feedback.memory.get_visibility_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Provenance</div><div class="gold-card-value" style="font-size:0.78rem;">{% if learning_feedback.memory.project %}{{ learning_feedback.memory.project.name }}{% else %}Unresolved project{% endif %} · Decision #{{ learning_feedback.memory.originating_decision_id|default:"—" }} · Outcome #{{ learning_feedback.memory.originating_outcome_id|default:"—" }}</div></div>
+    </div>
     <p class="gold-sub" style="font-size:0.8rem;margin-top:0.6rem;">
-      Eligible for retrieval by future projects: {% if learning_feedback.memory.verification_status == 'rejected' %}No (rejected){% else %}Yes{% endif %}
+      By default this record is private to this project. Sharing it for cross-project learning is a separate,
+      explicit action below — records are never platform-retrievable merely because they exist.
     </p>
     <div class="gold-btn-row" style="margin-top:0.6rem;">
       <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">View in Evidence Centre →</a>
@@ -79,6 +84,25 @@
       {% csrf_token %}
       <button type="submit" class="gold-btn gold-btn-primary">{% if learning_feedback.already_synced %}Update Evidence Memory{% else %}Add Outcome to Evidence Memory{% endif %}</button>
     </form>
+    {% if learning_feedback.memory and learning_feedback.memory.verification_status != 'rejected' and learning_feedback.memory.visibility != 'restricted_unresolved' %}
+    <form method="post" action="{% url 'capital_guardian:share_outcome_evidence' project.slug decision.pk %}" style="margin-top:0.6rem;">
+      {% csrf_token %}
+      <div class="gold-btn-row">
+        {% if learning_feedback.memory.visibility == 'project_private' %}
+          {% if learning_feedback.memory.is_demo %}
+          <button type="submit" name="visibility" value="platform_learning_demo" class="gold-btn">Share as Demo Learning Evidence</button>
+          {% elif learning_feedback.memory.verification_status == 'verified' and learning_feedback.memory.review_tier == 'independently_verified' %}
+          <button type="submit" name="visibility" value="platform_learning_verified" class="gold-btn">Share as Verified Platform Learning</button>
+          {% endif %}
+          {% if project.organisation %}
+          <button type="submit" name="visibility" value="organisation_shared" class="gold-btn">Share Within Organisation</button>
+          {% endif %}
+        {% else %}
+          <button type="submit" name="visibility" value="project_private" class="gold-btn">Make Project-Private Again</button>
+        {% endif %}
+      </div>
+    </form>
+    {% endif %}
   </section>
   {% endif %}
 </div>

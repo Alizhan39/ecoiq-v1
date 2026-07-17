@@ -3746,15 +3746,26 @@ class ProjectAnalysisRetrievalTests(TestCase):
         )
 
     def test_analysis_page_shows_relevant_outcomes_section(self):
+        # feat/evidence-memory-hardening: the section exists, but another
+        # project's PRIVATE evidence no longer appears in it — only the
+        # section heading and the honest empty state are guaranteed here.
         r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.new_project.slug]))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'Relevant Verified Outcomes from Prior Projects')
+        self.assertContains(r, 'Relevant Historical Evidence from Prior Projects')
+        self.assertNotContains(r, 'Prior insulation')
+
+    def test_shared_evidence_appears_on_analysis_page(self):
+        from evidence_memory.services import retrieval_policy
+        retrieval_policy.set_visibility(self.memory, 'platform_learning_verified')
+        r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.new_project.slug]))
+        self.assertContains(r, 'Prior insulation')
+        self.assertContains(r, 'Why this ranked here:')
 
     def test_no_guarantee_language_on_analysis_page(self):
         r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.new_project.slug]))
         content = r.content.decode()
         self.assertNotIn('Guaranteed recommendation', content)
-        self.assertIn('not a guaranteed recommendation', content.lower())
+        self.assertIn('does not guarantee the same outcome', content.lower())
 
 
 class OutcomeMemoryHonestyTests(TestCase):
@@ -3852,7 +3863,9 @@ class CommandCentreAggregationTests(TestCase):
 
     def _build_context(self):
         from capital_guardian.services.command_centre import build_command_centre_context
-        return build_command_centre_context(GoldProject.objects.get(pk=self.project.pk))
+        # feat/evidence-memory-hardening: retrieval is access-policy-gated,
+        # so the requesting staff user is now part of the context build.
+        return build_command_centre_context(GoldProject.objects.get(pk=self.project.pk), user=self.staff)
 
     def _stage(self, ctx, key):
         return next(s for s in ctx['stages'] if s.key == key)
@@ -4001,8 +4014,10 @@ class CommandCentreAggregationTests(TestCase):
         self.assertEqual(ctx['next_action']['label'], 'CONTINUE MONITORING')
 
     def test_historical_retrieval_populated(self):
-        # A verified outcome synced from a DIFFERENT project should appear as
-        # relevant historical evidence for this one.
+        # feat/evidence-memory-hardening: a verified outcome synced from a
+        # DIFFERENT project appears as relevant historical evidence only
+        # once it has been EXPLICITLY shared for platform learning —
+        # private-by-default is the whole point of the hardening.
         other = GoldProject.objects.create(name='CC Other Project', slug='cc-other-project', commodity='other', is_demo=False)
         other_loss = OperationalLoss.objects.create(project=other.name, title='Other loss', loss_type='heat_loss', financial_loss_amount=10000)
         other_option = InterventionOption.objects.create(
@@ -4014,14 +4029,22 @@ class CommandCentreAggregationTests(TestCase):
         other_decision.save(update_fields=['approval_status'])
         from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
         from evidence_memory.services.memory import create_memory_from_verified_outcome
+        from evidence_memory.services import retrieval_policy
         other_outcome = record_verified_outcome(
             other_decision, other_option, loss_avoided_actual=9500, capex_actual=21000,
             mrv_status='verified', evidence_quality='strong',
         )
-        create_memory_from_verified_outcome(other_outcome)
+        other_memory = create_memory_from_verified_outcome(other_outcome)
 
+        # Private by default: not retrievable by this project.
+        ctx = self._build_context()
+        self.assertEqual(len(ctx['relevant_outcomes']), 0)
+
+        # Explicitly shared: retrievable, with an explanation.
+        retrieval_policy.set_visibility(other_memory, 'platform_learning_verified')
         ctx = self._build_context()
         self.assertTrue(len(ctx['relevant_outcomes']) >= 1)
+        self.assertTrue(ctx['relevant_outcomes'][0].explanation)
 
 
 class CommandCentreWorkflowStateTests(TestCase):
@@ -4185,7 +4208,7 @@ class CommandCentreHonestyTests(TestCase):
     def test_historical_evidence_framed_as_decision_support(self):
         r = self.client.get(self._url())
         self.assertContains(r, 'decision support')
-        self.assertContains(r, 'not a guaranteed prediction')
+        self.assertContains(r, 'Historical evidence does not guarantee the same outcome.')
 
 
 class CommandCentreCanonicalStagesTests(TestCase):
@@ -4987,3 +5010,165 @@ class HumanDecisionGateAuditHistoryTests(TestCase):
         self.client.force_login(self.staff)
         r = self.client.get(reverse('capital_guardian:audit_history', args=[self.project.slug]) + '?event_type=capital_decision')
         self.assertContains(r, 'Capital Allocation Decision')
+
+
+class EvidenceMemoryHardeningIntegrationTests(TestCase):
+    """
+    feat/evidence-memory-hardening — Capital Guardian side of the hardened
+    Evidence Memory: access-policy-respecting retrieval on the Command
+    Centre and analysis pages, project-scoped stage counts, and the
+    explicit staff-only sharing action.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        from evidence_memory.services import memory as memory_service
+
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('emh_staff', 'emh_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('emh_normal', 'emh_normal@example.com', 'password123', is_staff=False)
+
+        self.project_a = GoldProject.objects.create(
+            name='EMH Project A', slug='emh-project-a', commodity='other',
+            region='Almaty region', is_demo=False, organisation='EMH Org',
+        )
+        self.project_b = GoldProject.objects.create(
+            name='EMH Project B', slug='emh-project-b', commodity='other',
+            region='Almaty region', is_demo=False,
+        )
+
+        self.loss = OperationalLoss.objects.create(
+            project=self.project_a.name, title='EMH heating loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='EMH Retrofit', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='d')
+        self.decision.approval_status = 'approved'
+        self.decision.save(update_fields=['approval_status'])
+        self.outcome = record_verified_outcome(
+            self.decision, self.option, loss_avoided_actual=9000, capex_actual=21000,
+            mrv_status='verified', evidence_quality='strong',
+        )
+        self.memory = memory_service.create_memory_from_verified_outcome(self.outcome)
+
+    def _share_url(self, project=None, decision=None):
+        return reverse('capital_guardian:share_outcome_evidence', args=[
+            (project or self.project_a).slug, (decision or self.decision).pk,
+        ])
+
+    # ── Command Centre integration ───────────────────────────────────
+    def test_command_centre_shows_own_project_private_evidence(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project_a.slug]))
+        self.assertContains(r, 'EMH Retrofit')
+        self.assertContains(r, 'Historical evidence does not guarantee the same outcome.')
+
+    def test_command_centre_does_not_leak_other_projects_private_evidence(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project_b.slug]))
+        self.assertNotContains(r, 'EMH Retrofit')
+
+    def test_command_centre_shows_shared_platform_evidence_cross_project(self):
+        from evidence_memory.services import retrieval_policy
+        retrieval_policy.set_visibility(self.memory, 'platform_learning_verified')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project_b.slug]))
+        self.assertContains(r, 'EMH Retrofit')
+        self.assertContains(r, 'Platform learning evidence')
+
+    def test_command_centre_memory_counts_are_project_scoped(self):
+        from capital_guardian.services.command_centre import _evidence_memory_counts
+        counts_a = _evidence_memory_counts(self.project_a)
+        counts_b = _evidence_memory_counts(self.project_b)
+        self.assertEqual(counts_a['total'], 1)
+        self.assertEqual(counts_a['verified'], 1)
+        self.assertEqual(counts_b['total'], 0)
+
+    def test_command_centre_honest_empty_state(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project_b.slug]))
+        self.assertContains(r, 'No historical evidence you are authorised to see matches this project yet')
+
+    def test_evidence_memory_stage_reports_unresolved_restriction(self):
+        self.decision.project = 'Matches Nothing Now'
+        self.decision.save(update_fields=['project'])
+        from evidence_memory.services import memory as memory_service
+        memory_service.create_memory_from_verified_outcome(self.outcome)
+        from capital_guardian.services.command_centre import _evidence_memory_counts
+        counts = _evidence_memory_counts(self.project_a)
+        # The row lost its project link, so it leaves A's own count…
+        self.assertEqual(counts['total'], 0)
+        # …and is NOT claimed by A's unresolved count either (its decision's
+        # free-text project name no longer matches A) — never guessed.
+        self.assertEqual(counts['unresolved'], 0)
+
+    # ── Sharing action permissions ───────────────────────────────────
+    def test_anonymous_cannot_share(self):
+        r = self.client.post(self._share_url(), {'visibility': 'platform_learning_verified'})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+        self.memory.refresh_from_db()
+        self.assertEqual(self.memory.visibility, 'project_private')
+
+    def test_non_staff_cannot_share(self):
+        self.client.force_login(self.normal)
+        r = self.client.post(self._share_url(), {'visibility': 'platform_learning_verified'})
+        self.assertEqual(r.status_code, 302)
+        self.memory.refresh_from_db()
+        self.assertEqual(self.memory.visibility, 'project_private')
+
+    def test_get_cannot_share(self):
+        self.client.force_login(self.staff)
+        self.client.get(self._share_url())
+        self.memory.refresh_from_db()
+        self.assertEqual(self.memory.visibility, 'project_private')
+
+    def test_csrf_enforced_on_share(self):
+        csrf_client = Client(SERVER_NAME='localhost', enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff)
+        r = csrf_client.post(self._share_url(), {'visibility': 'platform_learning_verified'})
+        self.assertEqual(r.status_code, 403)
+
+    def test_staff_can_share_eligible_record(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._share_url(), {'visibility': 'platform_learning_verified'}, follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.memory.refresh_from_db()
+        self.assertEqual(self.memory.visibility, 'platform_learning_verified')
+
+    def test_invalid_target_visibility_refused_without_change(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._share_url(), {'visibility': 'everyone_forever'}, follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.memory.refresh_from_db()
+        self.assertEqual(self.memory.visibility, 'project_private')
+
+    def test_cross_project_share_url_404s(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(self._share_url(project=self.project_b), {'visibility': 'platform_learning_verified'})
+        self.assertEqual(r.status_code, 404)
+
+    def test_invalid_decision_id_404s(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(
+            reverse('capital_guardian:share_outcome_evidence', args=[self.project_a.slug, 999999]),
+            {'visibility': 'platform_learning_verified'},
+        )
+        self.assertEqual(r.status_code, 404)
+
+    # ── Analysis page retrieval ──────────────────────────────────────
+    def test_analysis_page_shows_disclaimer_and_explanation(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.project_a.slug]))
+        self.assertContains(r, 'Historical evidence does not guarantee the same outcome.')
+        self.assertContains(r, 'Why this ranked here:')
+
+    def test_analysis_page_never_shows_other_projects_private_evidence(self):
+        self.client.force_login(self.staff)
+        r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.project_b.slug]))
+        self.assertNotContains(r, 'EMH Retrofit')

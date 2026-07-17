@@ -135,6 +135,69 @@ class EvidenceMemory(models.Model):
     # real harvester.Evidence / real AgentRun output) is genuinely real, not demo.
     is_demo = models.BooleanField(default=False)
 
+    # --- feat/evidence-memory-hardening: structured access model + provenance ---
+    #
+    # Before these fields, project linkage was only the free-text
+    # source_reference string and cross-project retrieval was a global
+    # similarity search (see the PR7 audit note in tests.py). These are all
+    # additive/nullable/defaulted; source_reference remains for backward
+    # compatibility and existing rows are classified by the accompanying
+    # data migration (unresolvable rows default to the safest restricted
+    # visibility, never guessed into a shareable one).
+    #
+    # `visibility` is the single access-control axis, enforced by
+    # evidence_memory/services/retrieval_policy.py — never by scattered
+    # checks in views:
+    #   project_private          — only the linked project may retrieve it.
+    #   organisation_shared      — retrievable by projects declaring the same
+    #                              organisation (matched on the trimmed,
+    #                              case-insensitive organisation string; blank
+    #                              never matches blank).
+    #   platform_learning_demo   — explicitly shared demo/illustrative
+    #                              learning material; always labelled DEMO.
+    #   platform_learning_verified — explicitly shared, independently
+    #                              verified, non-demo learning evidence.
+    #   restricted_unresolved    — provenance could not be resolved to a real
+    #                              project; hidden from ALL cross-project
+    #                              retrieval until a human resolves it.
+    # A record is never platform-retrievable merely because it exists:
+    # both platform_* states require an explicit human sharing action.
+    VISIBILITY_CHOICES = [
+        ('project_private', 'Project Private'),
+        ('organisation_shared', 'Organisation Shared'),
+        ('platform_learning_demo', 'Platform Learning (Demo)'),
+        ('platform_learning_verified', 'Platform Learning (Verified)'),
+        ('restricted_unresolved', 'Restricted — Unresolved Provenance'),
+    ]
+    visibility = models.CharField(max_length=30, choices=VISIBILITY_CHOICES, default='project_private')
+
+    # Structured project link (nullable — company/country memories and rows
+    # whose provenance could not be resolved have none). GoldProject is the
+    # temporary generic project anchor per docs/adr-0001, same as the
+    # source_reference convention this replaces as the primary link.
+    project = models.ForeignKey(
+        'gold_intelligence.GoldProject', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='evidence_memories',
+    )
+    # Free-text organisation, mirroring CapitalAllocationDecision.organisation's
+    # existing convention (no Organisation model exists in this codebase yet —
+    # see PR3 report). Only meaningful for visibility='organisation_shared'.
+    organisation = models.CharField(max_length=200, blank=True)
+
+    # Structured provenance back to the capital decision / verified outcome an
+    # outcome-derived memory row came from. SET_NULL: deleting a decision or
+    # outcome must never silently delete historical evidence, but the link is
+    # honestly gone. source_reference (above) is retained in parallel for
+    # backward compatibility with every existing caller and query.
+    originating_decision = models.ForeignKey(
+        'waste_to_value_capital_allocation_engine.CapitalAllocationDecision',
+        null=True, blank=True, on_delete=models.SET_NULL, related_name='evidence_memories',
+    )
+    originating_outcome = models.ForeignKey(
+        'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome',
+        null=True, blank=True, on_delete=models.SET_NULL, related_name='evidence_memories',
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

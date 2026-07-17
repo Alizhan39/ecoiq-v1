@@ -1,0 +1,69 @@
+{% comment %}
+feat/evidence-memory-hardening — shared "Relevant Historical Evidence"
+section. Expects `relevant_outcomes` (a list of
+evidence_memory.services.retrieval_policy.RetrievedEvidence) in context.
+Every item shown here has already passed the retrieval access policy for
+the current project + user — this template adds labels and progressive
+disclosure, never access decisions.
+{% endcomment %}
+<p class="hev-disclaimer">
+  <strong>Historical evidence does not guarantee the same outcome.</strong>
+  EcoIQ retrieves real, previously-recorded outcomes as decision support; it does not retrain a model,
+  learn automatically, or claim results transfer between projects.
+</p>
+{% if relevant_outcomes %}
+{% for r in relevant_outcomes %}
+<article class="hev-card">
+  <div class="hev-head">
+    <span class="hev-title">
+      {% if r.memory.originating_decision %}{{ r.memory.originating_decision.intervention.title }}{% else %}{{ r.memory.text_chunk|truncatechars:120 }}{% endif %}
+    </span>
+    <span class="hev-badges">
+      <span class="gold-risk-badge {% if r.memory.verification_status == 'verified' %}low{% elif r.memory.verification_status == 'requires_review' %}medium{% else %}na{% endif %}">{{ r.memory.get_verification_status_display }}</span>
+      {% if r.is_disputed %}<span class="gold-risk-badge high">DISPUTED</span>{% endif %}
+      {% if r.memory.is_demo %}<span class="gold-risk-badge medium">DEMO</span>{% endif %}
+    </span>
+  </div>
+  <div class="hev-meta">
+    {% if r.memory.project %}
+    <span>{{ r.memory.project.name }}{% if r.memory.project.commodity %} · {{ r.memory.project.get_commodity_display }}{% endif %}{% if r.memory.project.country %} · {{ r.memory.project.country.name }}{% endif %}</span>
+    {% else %}
+    <span>Originating project not recorded</span>
+    {% endif %}
+    <span class="hev-tier">Review tier: {{ r.memory.get_review_tier_display }}</span>
+  </div>
+  <p class="hev-explanation">Why this ranked here: {{ r.explanation }}</p>
+  <details class="hev-details">
+    <summary>Outcome summary — expected vs actual, limitations and provenance</summary>
+    <pre class="hev-text">{{ r.memory.text_chunk }}</pre>
+    <div class="hev-provenance">
+      Provenance:
+      {% if r.memory.originating_decision %}
+      <a href="{% url 'waste_to_value_capital_allocation_engine:decision_detail' r.memory.originating_decision.pk %}">Capital Decision #{{ r.memory.originating_decision.pk }}</a>
+      {% endif %}
+      {% if r.memory.originating_outcome %}· Verified Outcome #{{ r.memory.originating_outcome.pk }}{% endif %}
+      · Source: <code>{{ r.memory.source_reference }}</code>
+      · Recorded {{ r.memory.created_at|date:"Y-m-d" }}
+      {% if r.memory.reviewer %}· Reviewer: {{ r.memory.reviewer }}{% endif %}
+    </div>
+  </details>
+</article>
+{% endfor %}
+{% else %}
+<p class="gold-honest-stub">No historical evidence you are authorised to see matches this project yet — nothing is hidden behind this message except other projects' private records.</p>
+{% endif %}
+<style>
+  .hev-disclaimer { font-size: 0.82rem; color: var(--gold-muted); border-left: 3px solid var(--gold-acc, #d4af37); padding-left: 0.7rem; margin: 0.6rem 0 0.9rem; }
+  .hev-card { background: var(--gold-bg2, rgba(255,255,255,0.03)); border: 1px solid var(--gold-border, rgba(255,255,255,0.09)); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.7rem; }
+  .hev-head { display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; flex-wrap: wrap; }
+  .hev-title { font-weight: 600; font-size: 0.92rem; }
+  .hev-badges { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .hev-meta { display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; color: var(--gold-muted); font-size: 0.78rem; margin-top: 0.3rem; }
+  .hev-explanation { font-size: 0.8rem; color: var(--gold-muted); margin: 0.45rem 0 0; font-style: italic; }
+  .hev-details { margin-top: 0.5rem; }
+  .hev-details summary { cursor: pointer; font-size: 0.8rem; color: var(--gold-text, #e8e8e8); }
+  .hev-details summary:focus-visible { outline: 2px solid var(--gold-acc, #d4af37); outline-offset: 2px; }
+  .hev-text { white-space: pre-wrap; font-size: 0.78rem; line-height: 1.55; color: var(--gold-muted); background: rgba(0,0,0,0.25); border-radius: 8px; padding: 0.7rem; margin: 0.5rem 0; overflow-x: auto; }
+  .hev-provenance { font-size: 0.75rem; color: var(--gold-muted); }
+  .hev-provenance code { font-size: 0.72rem; }
+</style>

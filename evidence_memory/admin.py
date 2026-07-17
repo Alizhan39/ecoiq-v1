@@ -7,11 +7,11 @@ from evidence_memory.models import EvidenceMemory
 class EvidenceMemoryAdmin(admin.ModelAdmin):
     list_display = (
         'text_preview', 'source_type', 'document_category', 'verification_status', 'review_tier',
-        'company', 'country', 'agent_name', 'confidence', 'embedding_status', 'is_demo', 'created_at',
+        'visibility', 'project', 'company', 'country', 'agent_name', 'confidence', 'embedding_status', 'is_demo', 'created_at',
     )
     list_filter = (
         'source_type', 'document_category', 'verification_status', 'review_tier',
-        'embedding_status', 'is_demo', 'company', 'country',
+        'visibility', 'embedding_status', 'is_demo', 'company', 'country',
     )
     search_fields = ('text_chunk', 'source_reference', 'agent_name')
     readonly_fields = ('created_at', 'updated_at', 'embedding_status', 'integrity_reference')

@@ -301,19 +301,19 @@
 
   <section class="gold-section">
     <h2 class="gold-h2">Relevant Historical Evidence</h2>
-    <p class="gold-sub" style="font-size:0.78rem;">
-      Historical evidence is decision support, not a guaranteed prediction. EcoIQ retrieves real, previously-recorded
-      outcomes; it does not retrain a model or learn automatically.
-    </p>
-    {% if relevant_outcomes %}
-    <div class="cc-list">
-      {% for m in relevant_outcomes %}
-      <div class="gold-list-row"><span class="gold-list-label">{{ m.text_chunk|truncatechars:80 }}</span><span class="gold-list-value"><span class="gold-risk-badge {% if m.verification_status == 'verified' %}low{% elif m.verification_status == 'requires_review' %}medium{% else %}na{% endif %}">{{ m.get_verification_status_display }}{% if m.is_demo %} · DEMO{% endif %}</span></span></div>
-      {% endfor %}
+    {% if memory_counts %}
+    <div class="gold-grid" style="margin-bottom:0.6rem;">
+      <div class="gold-card"><div class="gold-card-label">This Project's Memory Records</div><div class="gold-card-value">{{ memory_counts.total }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Verified</div><div class="gold-card-value">{{ memory_counts.verified }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Human-Reviewed Tier</div><div class="gold-card-value">{{ memory_counts.human_reviewed }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Demo</div><div class="gold-card-value">{{ memory_counts.demo }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Shared for Learning</div><div class="gold-card-value">{{ memory_counts.shared }}</div></div>
+      {% if memory_counts.unresolved %}
+      <div class="gold-card"><div class="gold-card-label">Restricted / Unresolved</div><div class="gold-card-value">{{ memory_counts.unresolved }}</div></div>
+      {% endif %}
     </div>
-    {% else %}
-    <p class="gold-honest-stub">No relevant historical evidence is available yet.</p>
     {% endif %}
+    {% include 'capital_guardian/_historical_evidence.html' %}
   </section>
 
   <section class="gold-section">

@@ -231,8 +231,23 @@ def create_memory_from_verified_outcome(outcome, actor=None):
     find_matching_gold_project() used by capital_guardian_handoff/PR5) — a
     demo/illustrative project's outcome can never be stored as 'verified'
     evidence, however strong its own recorded MRV status looks in isolation.
-    Ambiguous or missing project matches are treated as real (not demo) but
-    with no country scoping, never guessed.
+
+    feat/evidence-memory-hardening — failed/ambiguous project matches now
+    default SAFELY, never optimistically:
+    - visibility='restricted_unresolved' (hidden from every cross-project
+      retrieval path until a human resolves the provenance);
+    - is_demo=True (the honesty flag means "never presented as verified
+      real-world data" — exactly what unresolved provenance requires; the
+      old behaviour of is_demo=False silently presented unresolved evidence
+      as real);
+    - verification can never be 'verified' (nobody can have verified an
+      outcome whose own project is unknown).
+    Structured provenance (project / originating_decision /
+    originating_outcome FKs) is written alongside the retained
+    source_reference string. Visibility on a resolved row defaults to
+    'project_private'; a repeated sync preserves an explicitly granted
+    sharing state only while the row's own state still honestly supports it
+    (see _safe_resync_visibility()).
     """
     decision = outcome.decision
     intervention = decision.intervention
@@ -249,9 +264,14 @@ def create_memory_from_verified_outcome(outcome, actor=None):
     except AmbiguousProjectMatchError:
         matched_project = None
 
-    is_demo = bool(matched_project.is_demo) if matched_project is not None else False
-    if is_demo and tier == 'verified':
-        verification_status, review_tier = _OUTCOME_TIER_MAPPING['human_reviewed']
+    if matched_project is None:
+        is_demo = True
+        if tier == 'verified':
+            verification_status, review_tier = _OUTCOME_TIER_MAPPING['human_reviewed']
+    else:
+        is_demo = bool(matched_project.is_demo)
+        if is_demo and tier == 'verified':
+            verification_status, review_tier = _OUTCOME_TIER_MAPPING['human_reviewed']
 
     reviewer_note = ''
     signal_text = outcome.next_capital_allocation_signal or ''
@@ -292,10 +312,52 @@ def create_memory_from_verified_outcome(outcome, actor=None):
     memory.document_category = 'technical_report'
     memory.is_demo = is_demo
     memory.country = matched_project.country if matched_project is not None else None
+    # Structured provenance — source_reference above is retained in parallel
+    # for backward compatibility.
+    memory.project = matched_project
+    memory.originating_decision = decision
+    memory.originating_outcome = outcome
+    memory.organisation = (matched_project.organisation if matched_project is not None else '') or ''
+    memory.visibility = _safe_resync_visibility(memory, matched_project)
     if actor is not None:
         memory._cg_changed_by = actor
     _embed_and_save(memory)
     return memory
+
+
+def _safe_resync_visibility(memory, matched_project):
+    """
+    Visibility for a freshly synced/re-synced outcome memory, defaulting to
+    the safest value and never widening automatically:
+
+    - unresolved project → 'restricted_unresolved', always (even a
+      previously shared row loses its sharing until provenance is resolved);
+    - a rejected record can never stay shared beyond the project;
+    - a previously granted platform_learning_* state is preserved ONLY while
+      the row's own new state still honestly supports it (same invariants
+      retrieval_policy.set_visibility() enforces); otherwise it drops back
+      to 'project_private';
+    - everything else (new rows, previously restricted rows that now
+      resolve) → 'project_private'. Sharing always requires a fresh,
+      explicit human action.
+    """
+    if matched_project is None:
+        return 'restricted_unresolved'
+    current = memory.visibility or 'project_private'
+    if memory.verification_status == 'rejected':
+        return 'project_private'
+    if current == 'platform_learning_verified':
+        still_eligible = (
+            not memory.is_demo
+            and memory.verification_status == 'verified'
+            and memory.review_tier == 'independently_verified'
+        )
+        return current if still_eligible else 'project_private'
+    if current == 'platform_learning_demo':
+        return current if memory.is_demo else 'project_private'
+    if current == 'organisation_shared':
+        return current if (memory.organisation or '').strip() else 'project_private'
+    return 'project_private'
 
 
 # Review tiers that can honestly back a 'verified' status — a row whose
@@ -363,6 +425,11 @@ def create_memory_from_manual_project_evidence(
     memory.country = project.country
     memory.date_collected = date_collected
     memory.reviewer = reviewer
+    # feat/evidence-memory-hardening: structured project link alongside the
+    # retained source_reference; manual project evidence is always
+    # project-private unless a human explicitly shares it later.
+    memory.project = project
+    memory.organisation = (project.organisation or '') if hasattr(project, 'organisation') else ''
     _embed_and_save(memory)
     return memory
 
@@ -386,9 +453,9 @@ def _cosine_similarity(a, b):
 def _rank_candidates(query_text, candidates, top_k):
     """The one real ranking engine — Postgres pgvector CosineDistance, or a
     genuine Python-side cosine-similarity fallback on SQLite. Shared by
-    search_similar() and retrieve_relevant_verified_outcomes() below so the
-    latter is a different candidate queryset over the SAME ranking logic,
-    never a second vector-search engine."""
+    search_similar() and the retrieval-policy service (retrieval_policy.py)
+    so outcome retrieval is a different candidate queryset over the SAME
+    ranking logic, never a second vector-search engine."""
     query_vector = compute_embedding(query_text)
     if query_vector is None:
         return EvidenceMemory.objects.none()
@@ -402,6 +469,25 @@ def _rank_candidates(query_text, candidates, top_k):
     scored = [(_cosine_similarity(m.embedding, query_vector), m) for m in candidates if m.embedding]
     scored.sort(key=lambda pair: pair[0], reverse=True)
     return [memory for _, memory in scored[:top_k]]
+
+
+def _similarities_for(query_text, memories):
+    """Real cosine similarity per already-ranked row, as {pk: similarity}.
+    On the Postgres path this converts the CosineDistance annotation
+    _rank_candidates() attached (similarity = 1 - distance); on SQLite it
+    recomputes the same cosine the ranking itself used. Rows with no
+    embedding are simply absent — similarity is never fabricated."""
+    query_vector = compute_embedding(query_text)
+    if query_vector is None:
+        return {}
+    similarities = {}
+    for m in memories:
+        distance = getattr(m, 'distance', None)
+        if distance is not None:
+            similarities[m.pk] = 1.0 - float(distance)
+        elif m.embedding is not None and len(m.embedding):
+            similarities[m.pk] = _cosine_similarity(m.embedding, query_vector)
+    return similarities
 
 
 def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None):
@@ -431,12 +517,6 @@ def search_country_memory(country, query_text, top_k=DEFAULT_TOP_K):
 # retrieving real historical evidence, never automatic model retraining.
 OUTCOME_SOURCE_PREFIX = 'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:'
 
-# Priority order for presentation — verified/human-reviewed evidence is
-# surfaced ahead of merely estimated/reported evidence at equal similarity
-# rank; rejected rows are excluded from the candidate queryset entirely
-# (never returned as "relevant historical evidence" at all).
-_RETRIEVAL_STATUS_PRIORITY = {'verified': 0, 'requires_review': 1, 'pending': 2}
-
 
 def default_outcome_query_for_project(project):
     """
@@ -454,41 +534,29 @@ def default_outcome_query_for_project(project):
     return ' '.join(p for p in parts if p).strip()
 
 
-def retrieve_relevant_verified_outcomes(project, query=None, limit=DEFAULT_TOP_K):
+def retrieve_relevant_verified_outcomes(project, query=None, limit=DEFAULT_TOP_K, user=None):
     """
-    Retrieves up to `limit` EvidenceMemory rows created from a
-    VerifiedCapitalOutcome (see create_memory_from_verified_outcome()) that
-    are relevant to `project` — real historical outcomes a human can consult
-    while reviewing a NEW project's analysis, never a guaranteed predictor
-    and never proof that EcoIQ "learned" anything automatically.
+    feat/evidence-memory-hardening: retrieval is now access-controlled and
+    explained. Delegates entirely to evidence_memory/services/
+    retrieval_policy.retrieve_for_project() — the one policy deciding which
+    records this project (viewed by this user) may use, how they rank, and
+    why. Returns a list of retrieval_policy.RetrievedEvidence (each carrying
+    the real EvidenceMemory row plus scope/explanation/labels), best first.
 
-    Rejected outcomes are excluded from the candidate set entirely — they
-    never surface as "relevant historical evidence". Among the remainder,
-    verified/human-reviewed rows are prioritised ahead of merely estimated/
-    reported ones at comparable similarity rank; demo/illustrative rows are
-    never excluded outright (a demo pilot's evidence can still be
-    instructive) but remain honestly labelled via is_demo on the returned
-    row — the caller/template must never present one as guaranteed.
+    Real historical outcomes a human can consult while reviewing a NEW
+    project's analysis — never a guaranteed predictor, never proof that
+    EcoIQ "learned" anything automatically, and never another project's
+    private evidence: with no user, an anonymous user, or a non-staff user
+    this returns [] rather than falling back to the old global search.
 
     query: an optional caller-supplied search string; if omitted, a
     deterministic query is built from the project's own real declared
     attributes (see default_outcome_query_for_project()) — never an
     uncontrolled live-AI-generated query.
     """
+    from evidence_memory.services import retrieval_policy
+
     query_text = query or default_outcome_query_for_project(project)
     if not query_text:
         return []
-
-    candidates = (
-        EvidenceMemory.objects
-        .filter(source_reference__startswith=OUTCOME_SOURCE_PREFIX)
-        .exclude(verification_status='rejected')
-    )
-    # Over-fetch so the priority re-sort below has real similarity-ranked
-    # material to reorder within, without ever inventing extra candidates.
-    ranked = _rank_candidates(query_text, candidates, top_k=max(limit * 3, limit))
-    ranked = sorted(
-        ranked,
-        key=lambda m: _RETRIEVAL_STATUS_PRIORITY.get(m.verification_status, 3),
-    )
-    return ranked[:limit]
+    return retrieval_policy.retrieve_for_project(project, user, query_text, limit=limit)

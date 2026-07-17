@@ -156,24 +156,8 @@
   {% endif %}
 
   <section class="gold-section">
-    <h2 class="gold-h2">Relevant Verified Outcomes from Prior Projects</h2>
-    <p class="gold-sub" style="font-size:0.8rem;">
-      Relevant historical evidence — not a guaranteed recommendation or a predictor of this project's outcome.
-      EcoIQ retrieves real, previously-recorded outcomes; it does not retrain a model or learn automatically.
-    </p>
-    {% if relevant_outcomes %}
-    {% for m in relevant_outcomes %}
-    <div class="gold-card" style="margin-bottom:0.7rem;">
-      <div class="gold-list-row" style="border:none;padding:0;">
-        <span class="gold-list-label">{{ m.text_chunk|truncatechars:90 }}</span>
-        <span class="gold-risk-badge {% if m.verification_status == 'verified' %}low{% elif m.verification_status == 'requires_review' %}medium{% else %}na{% endif %}">{{ m.get_verification_status_display }}{% if m.is_demo %} · DEMO{% endif %}</span>
-      </div>
-      <div class="gold-card-sub" style="margin-top:0.4rem;">Review tier: {{ m.get_review_tier_display }} · Source: {{ m.source_reference }}</div>
-    </div>
-    {% endfor %}
-    {% else %}
-    <p class="gold-honest-stub">No relevant verified outcomes are available yet for this project.</p>
-    {% endif %}
+    <h2 class="gold-h2">Relevant Historical Evidence from Prior Projects</h2>
+    {% include 'capital_guardian/_historical_evidence.html' %}
   </section>
 
   <section class="gold-section">
