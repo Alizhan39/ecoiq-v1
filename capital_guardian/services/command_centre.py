@@ -1,22 +1,108 @@
 """
 capital_guardian/services/command_centre.py — the Project Command Centre:
-a read-oriented orchestration layer over the complete PR1-PR7 vertical
-slice. This module computes NOTHING new — every value returned here is
-read directly from an existing model or delegated to an existing service
-(evidence, project_analysis, resource_purpose_review, better_way,
+a read-oriented orchestration layer over the complete evidence-to-outcome
+vertical slice. This module computes NOTHING new — every value returned
+here is read directly from an existing model or delegated to an existing
+service (evidence, project_analysis, resource_purpose_review, better_way,
 execution_monitoring, evidence_memory retrieval). It is not a new source
 of truth: if this module disappeared, every fact it displays would still
 be independently visible on its own existing page.
 
-Workflow stage vocabulary is intentionally not a single "0-100% done" bar
-per stage — each stage reports one of a small honest set of real states
-(NOT_STARTED / IN_PROGRESS / REQUIRES_REVIEW / PENDING_APPROVAL /
+CANONICAL STAGE LIST (13 stages) — decided by reviewing each candidate
+against one test: does it represent a genuinely different persisted
+state, a different permission boundary, or a different real action, from
+its neighbours? Two candidates that were considered and deliberately
+folded into a neighbour are documented below, not silently dropped.
+
+ 1. Project              — GoldProject identity/status. Not a workflow
+                            step (the project already exists by the time
+                            this page is viewed), but a genuinely distinct
+                            concern: is the project's own identity data
+                            complete? Folds in the Mizan project-analysis
+                            score as supporting detail — see "Analysis"
+                            note below.
+ 2. Evidence              — EvidenceMemory rows for this project. Distinct
+                            persisted model, distinct staff-only intake
+                            action, distinct permission (add vs. view).
+ 3. Resource Purpose Review — a hand-reviewed pathway profile. Distinct
+                            content, distinct "has this project been
+                            reviewed at all" state from Evidence.
+ 4. Baseline / Operational Loss — OperationalLoss model. Distinct
+                            persisted row, distinct creation action.
+ 5. Intervention Options  — InterventionOption rows. Previously folded
+                            invisibly inside the "Better Way" stage; this
+                            revision gives it its own row because it has
+                            its own model, its own staff-only creation
+                            action (create_intervention_option_execute),
+                            and its own state ("no options yet" is a
+                            meaningfully different situation from "options
+                            exist but haven't been compared"). Carries the
+                            safety/eligibility breakdown as a sub-detail
+                            (see "Safety/Eligibility" note below).
+ 6. The Better Way        — the comparison/ranking action over existing
+                            options. Stateless (computed live), but a
+                            genuinely distinct action from creating options
+                            in the first place.
+ 7. Capital Decision      — CapitalAllocationDecision existence. Distinct
+                            persisted row, distinct creation action,
+                            distinct from its own approval state (next).
+ 8. Human Approval        — decision.approval_status. Deliberately kept
+                            separate from "Capital Decision exists" (a
+                            decision can exist and be pending/approved/
+                            rejected — a materially different axis of
+                            state, and the subject of the next hardening
+                            phase).
+ 9. Capital Guardian      — ProjectGovernance promotion. Distinct
+                            persisted row, distinct staff-only action.
+10. Execution             — CapitalTraceEntry / milestone monitoring data.
+                            Distinct persisted data, distinct actions
+                            (add trace entry, add/update milestone).
+11. Outcome               — VerifiedCapitalOutcome. Distinct persisted
+                            row, distinct recording action, distinct MRV
+                            status axis from Execution.
+12. Evidence Memory       — whether the outcome has been synced into
+                            EvidenceMemory for future retrieval. Distinct
+                            action (sync), distinct persisted check
+                            (does a matching EvidenceMemory row exist).
+13. Sustainable AI Telemetry — does not exist in this release. Shown
+                            honestly as UNAVAILABLE, never hidden and
+                            never faked, per the founder's explicit
+                            instruction and the PR3 audit finding that
+                            zero telemetry fields exist anywhere yet.
+
+TWO CANDIDATES DELIBERATELY FOLDED IN, NOT MADE THEIR OWN STAGE:
+
+- "Analysis" (Mizan project scoring): considered as its own stage (it
+  was, in the previous revision of this module) but on inspection its
+  status was ENTIRELY derived from whether evidence exists — it has no
+  independent persisted state, no independent permission boundary, and
+  no independent action/URL of its own (it's computed live, on the same
+  page, as a side effect of viewing the Evidence Centre). It fails the
+  three-part test above, so its real output (the Mizan score) is folded
+  into the Project stage's summary instead of being a redundant row that
+  would always show the same status as Evidence one line down.
+- "Safety / Eligibility": a real, critical, and separately-tested gate
+  (capital_guardian.services.intervention_safety_gate), but it has no
+  persisted state of its own (nothing is stored — it's recomputed from
+  each InterventionOption's fields on every view), no distinct permission
+  boundary, and no distinct action/URL a human clicks ("review safety"
+  is not a separate action from viewing Intervention Options or Resource
+  Purpose Review). It is surfaced prominently as a sub-detail (an
+  eligible/conditional/blocked breakdown) on the Intervention Options
+  stage, rather than invented as a top-level row with nothing of its own
+  to link to.
+
+Workflow stage vocabulary distinguishes NOT_STARTED / MISSING_DATA /
+IN_PROGRESS / REQUIRES_REVIEW / BLOCKED / PENDING_APPROVAL /
 APPROVED_WITH_CONDITIONS / REJECTED / ACTIVE_MONITORING /
-OUTCOME_ESTIMATED / HUMAN_REVIEWED / VERIFIED / COMPLETE), never collapsed
-into a misleading blanket "complete".
+OUTCOME_ESTIMATED / HUMAN_REVIEWED / VERIFIED / COMPLETE / UNAVAILABLE —
+never collapsed into a misleading blanket "complete", and MISSING_DATA is
+used instead of a bare zero wherever showing zero would imply a real
+measurement of "none" rather than "not recorded".
 """
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Optional, Union
 
 from django.urls import reverse
 
@@ -28,10 +114,19 @@ from capital_guardian.services import execution_monitoring, project_analysis, re
 # high/na risk-badge classes already used throughout Capital Guardian's
 # templates) — never a scoring computation, purely a display grouping.
 _STATUS_CSS = {
-    'NOT_STARTED': 'na', 'IN_PROGRESS': 'medium', 'REQUIRES_REVIEW': 'medium',
-    'PENDING_APPROVAL': 'medium', 'APPROVED_WITH_CONDITIONS': 'medium', 'REJECTED': 'high',
+    'NOT_STARTED': 'na', 'MISSING_DATA': 'na', 'IN_PROGRESS': 'medium', 'REQUIRES_REVIEW': 'medium',
+    'BLOCKED': 'high', 'PENDING_APPROVAL': 'medium', 'APPROVED_WITH_CONDITIONS': 'medium', 'REJECTED': 'high',
     'ACTIVE_MONITORING': 'low', 'OUTCOME_ESTIMATED': 'medium', 'HUMAN_REVIEWED': 'medium',
-    'VERIFIED': 'low', 'COMPLETE': 'low',
+    'VERIFIED': 'low', 'COMPLETE': 'low', 'UNAVAILABLE': 'na',
+}
+
+_STATUS_LABELS = {
+    'NOT_STARTED': 'Not Started', 'MISSING_DATA': 'Missing Data', 'IN_PROGRESS': 'In Progress',
+    'REQUIRES_REVIEW': 'Requires Review', 'BLOCKED': 'Blocked', 'PENDING_APPROVAL': 'Pending Approval',
+    'APPROVED_WITH_CONDITIONS': 'Approved (Conditions)', 'REJECTED': 'Rejected',
+    'ACTIVE_MONITORING': 'Active Monitoring', 'OUTCOME_ESTIMATED': 'Outcome Estimated',
+    'HUMAN_REVIEWED': 'Human Reviewed', 'VERIFIED': 'Verified', 'COMPLETE': 'Complete',
+    'UNAVAILABLE': 'Not Available in This Release',
 }
 
 
@@ -40,13 +135,29 @@ class WorkflowStage:
     key: str
     label: str
     status: str
-    status_display: str
-    url: Optional[str] = None
-    detail: str = ''
+    summary: str = ''
+    action_label: str = ''
+    action_url: Optional[str] = None
+    blocked_reason: str = ''
+    evidence_count: Optional[int] = None
+    progress_current: Optional[int] = None
+    progress_total: Optional[int] = None
+    last_activity: Optional[Union[datetime, date]] = None
+    is_available: bool = True
+
+    @property
+    def status_label(self):
+        return _STATUS_LABELS.get(self.status, self.status.replace('_', ' ').title())
 
     @property
     def status_css(self):
         return _STATUS_CSS.get(self.status, 'na')
+
+    @property
+    def progress_label(self):
+        if self.progress_current is not None and self.progress_total is not None:
+            return f'{self.progress_current} of {self.progress_total}'
+        return None
 
 
 def _url(name, *args):
@@ -80,7 +191,7 @@ def build_command_centre_context(project):
     """
     governance = getattr(project, 'governance', None)
 
-    evidence_qs = list(evidence_service.evidence_for_project(project))
+    evidence_qs = list(evidence_service.evidence_for_project(project).select_related('reviewer'))
     evidence_summary = evidence_service.verification_summary(evidence_qs)
     evidence_rows = [
         {'evidence': e, 'related_label': evidence_service.related_object_label(e.source_reference)}
@@ -92,6 +203,16 @@ def build_command_centre_context(project):
 
     loss = _current_loss(project)
     interventions = list(loss.interventions.all()) if loss is not None else []
+
+    safety_breakdown = None
+    if interventions:
+        from capital_guardian.services.better_way import extract_classification
+        from capital_guardian.services.intervention_safety_gate import classify_intervention_safety
+        safety_breakdown = {'eligible': 0, 'conditional': 0, 'blocked': 0}
+        for option in interventions:
+            classification = extract_classification(option.description)
+            safety = classify_intervention_safety(project, option, classification=classification)
+            safety_breakdown[safety['status']] += 1
 
     better_way_result = None
     if loss is not None and interventions:
@@ -115,8 +236,8 @@ def build_command_centre_context(project):
     relevant_outcomes = retrieve_relevant_verified_outcomes(project)
 
     stages = _workflow_stages(
-        project, evidence_qs, analysis, review, loss, interventions, better_way_result,
-        decision, governance, capital_summary, recent_trace_entries, milestones,
+        project, evidence_qs, evidence_summary, analysis, review, loss, interventions, safety_breakdown,
+        better_way_result, decision, governance, capital_summary, recent_trace_entries, milestones,
         learning_feedback,
     )
     next_action = _next_required_action(
@@ -124,8 +245,8 @@ def build_command_centre_context(project):
         recent_trace_entries, milestones, learning_feedback,
     )
 
-    completed_stage_count = sum(1 for s in stages if s.status != 'NOT_STARTED')
-    workflow_completion_pct = round(100 * completed_stage_count / len(stages))
+    started_stage_count = sum(1 for s in stages if s.is_available and s.status not in ('NOT_STARTED', 'MISSING_DATA'))
+    available_stage_count = sum(1 for s in stages if s.is_available)
 
     return {
         'project': project,
@@ -137,6 +258,7 @@ def build_command_centre_context(project):
         'review': review,
         'loss': loss,
         'interventions': interventions,
+        'safety_breakdown': safety_breakdown,
         'better_way_result': better_way_result,
         'decision': decision,
         'expected_vs_actual': expected_vs_actual,
@@ -147,125 +269,268 @@ def build_command_centre_context(project):
         'open_red_flags': open_red_flags,
         'relevant_outcomes': relevant_outcomes,
         'stages': stages,
-        'workflow_completion_pct': workflow_completion_pct,
+        'started_stage_count': started_stage_count,
+        'available_stage_count': available_stage_count,
         'next_action': next_action,
     }
 
 
-def _workflow_stages(project, evidence_qs, analysis, review, loss, interventions, better_way_result,
-                      decision, governance, capital_summary, recent_trace_entries, milestones,
-                      learning_feedback):
-    verified_evidence_count = sum(1 for e in evidence_qs if e.verification_status == 'verified')
+def _workflow_stages(project, evidence_qs, evidence_summary, analysis, review, loss, interventions,
+                      safety_breakdown, better_way_result, decision, governance, capital_summary,
+                      recent_trace_entries, milestones, learning_feedback):
     stages = []
 
-    # 1. Evidence
+    # 1. Project — identity completeness, not a sequential "step". Never
+    # NOT_STARTED (the project exists by definition on this page); shows
+    # MISSING_DATA when core identity fields are genuinely unset, and folds
+    # in the Mizan project-analysis score (see module docstring's "Analysis"
+    # note) as supporting detail rather than a redundant stage.
+    missing_identity = []
+    if not project.country_id:
+        missing_identity.append('country')
+    if not project.region:
+        missing_identity.append('region')
+    status = 'MISSING_DATA' if missing_identity else 'COMPLETE'
+    summary = (
+        f"Missing: {', '.join(missing_identity)}." if missing_identity
+        else f'{project.get_status_display()} · {project.country.name}.'
+    )
+    if evidence_qs:
+        summary += f' Mizan score {analysis.final_mizan_score:.1f} ({analysis.mizan_label}).'
+    stages.append(WorkflowStage(
+        key='project', label='Project', status=status, summary=summary,
+        action_label='View Project Dashboard',
+        action_url=_url('capital_guardian:investor_dashboard', project.slug),
+        last_activity=project.updated_at,
+    ))
+
+    # 2. Evidence — the one and only stage that shows the project-level
+    # EvidenceMemory count (see module docstring / founder instruction:
+    # never repeat this same total against every other stage).
+    verified_evidence_count = evidence_summary['by_status'].get('verified', 0)
     if not evidence_qs:
         status = 'NOT_STARTED'
+        summary = 'No evidence recorded for this project yet.'
     elif verified_evidence_count == 0:
         status = 'IN_PROGRESS'
+        summary = f"{evidence_summary['total']} evidence item(s) recorded; none independently verified yet."
     else:
         status = 'COMPLETE'
-    stages.append(WorkflowStage('evidence', 'Evidence', status, status.replace('_', ' ').title(),
-                                 url=_url('capital_guardian:evidence_centre', project.slug)))
-
-    # 2. Analysis — analyse_project() is stateless/free; "started" means
-    # there is real evidence for it to reason over.
-    status = 'COMPLETE' if evidence_qs else 'NOT_STARTED'
-    stages.append(WorkflowStage('analysis', 'Project Analysis', status, status.replace('_', ' ').title(),
-                                 url=_url('capital_guardian:evidence_centre', project.slug),
-                                 detail=f'Mizan score {analysis.final_mizan_score:.1f} ({analysis.mizan_label})' if evidence_qs else ''))
+        summary = f"{verified_evidence_count} of {evidence_summary['total']} evidence item(s) verified."
+    last_activity = max((e.updated_at for e in evidence_qs), default=None)
+    stages.append(WorkflowStage(
+        key='evidence', label='Evidence', status=status, summary=summary,
+        action_label='Add Evidence' if not evidence_qs else 'Open Evidence Centre',
+        action_url=_url('capital_guardian:evidence_centre', project.slug),
+        evidence_count=evidence_summary['total'],
+        progress_current=verified_evidence_count if evidence_qs else None,
+        progress_total=evidence_summary['total'] if evidence_qs else None,
+        last_activity=last_activity,
+    ))
 
     # 3. Resource Purpose Review
+    review_evidence_count = len(review.evidence_used) if review.has_reviewed_profile else None
+    gaps = len(review.evidence_gaps)
+    # Denominator is "real evidence items used" + "categories still missing"
+    # — both are real, already-computed lists (evidence_used, evidence_gaps).
+    # Only shown once evidence_used is non-empty, so this never presents a
+    # 0-of-0 as if it were a real measurement.
+    progress_current = review_evidence_count if review_evidence_count else None
+    progress_total = (review_evidence_count + gaps) if review_evidence_count else None
     if not review.has_reviewed_profile:
         status = 'NOT_STARTED'
+        summary = 'No reviewed resource-purpose profile exists yet for this project.'
     elif loss is not None:
         status = 'COMPLETE'
+        summary = f'Reviewed. {gaps} evidence gap(s) noted.' if gaps else 'Reviewed. No evidence gaps noted.'
     elif review.misuse_or_value_loss_condition_exists:
         status = 'REQUIRES_REVIEW'
+        summary = 'A potential value-loss condition is indicated — human confirmation required before creating a loss record.'
     else:
         status = 'IN_PROGRESS'
-    stages.append(WorkflowStage('resource_purpose', 'Resource Purpose Review', status, status.replace('_', ' ').title(),
-                                 url=_url('capital_guardian:evidence_centre', project.slug)))
-
-    # 4. Operational Loss
-    status = 'COMPLETE' if loss is not None else 'NOT_STARTED'
+        summary = 'Reviewed; no clear value-loss condition indicated yet.'
     stages.append(WorkflowStage(
-        'value_loss', 'Operational Loss', status, status.replace('_', ' ').title(),
-        url=_url('capital_guardian:operational_loss_detail', project.slug, loss.pk) if loss is not None
-        else _url('capital_guardian:create_value_loss_confirm', project.slug),
+        key='resource_purpose', label='Resource Purpose Review', status=status, summary=summary,
+        action_label='Open Evidence Centre', action_url=_url('capital_guardian:evidence_centre', project.slug),
+        evidence_count=review_evidence_count,
+        progress_current=progress_current, progress_total=progress_total,
     ))
 
-    # 5. The Better Way
+    # 4. Baseline / Operational Loss
+    if loss is None:
+        status = 'NOT_STARTED'
+        summary = 'No operational loss recorded for this project yet.'
+    else:
+        status = 'COMPLETE'
+        summary = f'{loss.title} — {loss.get_evidence_quality_display()} evidence quality.'
+    stages.append(WorkflowStage(
+        key='value_loss', label='Baseline / Operational Loss', status=status, summary=summary,
+        action_label='View Operational Loss' if loss is not None else 'Create Value Loss Record',
+        action_url=(
+            _url('capital_guardian:operational_loss_detail', project.slug, loss.pk) if loss is not None
+            else _url('capital_guardian:create_value_loss_confirm', project.slug)
+        ),
+        last_activity=loss.updated_at if loss is not None else None,
+    ))
+
+    # 5. Intervention Options — carries the safety/eligibility breakdown as
+    # a sub-detail (see module docstring's "Safety/Eligibility" note) rather
+    # than as its own top-level stage with nothing of its own to link to.
+    if loss is None:
+        status = 'NOT_STARTED'
+        summary = 'No operational loss to attach intervention options to yet.'
+    elif not interventions:
+        status = 'NOT_STARTED'
+        summary = 'No intervention options created yet.'
+    elif safety_breakdown['eligible'] == 0:
+        status = 'BLOCKED'
+        summary = f"{len(interventions)} option(s) created; none currently eligible."
+    else:
+        status = 'COMPLETE'
+        summary = f"{len(interventions)} option(s): {safety_breakdown['eligible']} eligible, {safety_breakdown['conditional']} conditional, {safety_breakdown['blocked']} blocked."
+    blocked_reason = ''
+    if safety_breakdown and safety_breakdown['eligible'] == 0 and interventions:
+        blocked_reason = 'All current options are conditional or blocked on safety/eligibility grounds — see Resource Purpose Review.'
+    stages.append(WorkflowStage(
+        key='intervention_options', label='Intervention Options', status=status, summary=summary,
+        action_label='Add Intervention Option' if loss is not None else 'Create Baseline First',
+        action_url=(
+            _url('capital_guardian:operational_loss_detail', project.slug, loss.pk) if loss is not None else None
+        ),
+        blocked_reason=blocked_reason,
+        progress_current=safety_breakdown['eligible'] if safety_breakdown else None,
+        progress_total=len(interventions) if interventions else None,
+    ))
+
+    # 6. The Better Way
     if loss is None or not interventions:
         status = 'NOT_STARTED'
+        summary = 'Needs at least one intervention option before a comparison can run.'
     elif decision is not None:
         status = 'COMPLETE'
+        summary = 'Comparison complete; a capital decision has been created from it.'
     else:
         status = 'IN_PROGRESS'
+        top = better_way_result.ranked[0] if better_way_result and better_way_result.ranked else None
+        summary = f'{len(interventions)} option(s) compared.' + (f' Top-ranked: {top["option"].title}.' if top else '')
     stages.append(WorkflowStage(
-        'better_way', 'The Better Way', status, status.replace('_', ' ').title(),
-        url=_url('capital_guardian:operational_loss_detail', project.slug, loss.pk) if loss is not None else None,
+        key='better_way', label='The Better Way', status=status, summary=summary,
+        action_label='Compare Options',
+        action_url=_url('capital_guardian:operational_loss_detail', project.slug, loss.pk) if loss is not None else None,
     ))
 
-    # 6. Capital Decision (existence, independent of its approval state)
+    # 7. Capital Decision (existence, independent of its approval state)
     status = 'COMPLETE' if decision is not None else 'NOT_STARTED'
+    summary = f'{decision.intervention.title} selected.' if decision is not None else 'No capital allocation decision created yet.'
     stages.append(WorkflowStage(
-        'capital_decision', 'Capital Decision', status, status.replace('_', ' ').title(),
-        url=_url('waste_to_value_capital_allocation_engine:decision_detail', decision.pk) if decision is not None else None,
+        key='capital_decision', label='Capital Allocation Decision', status=status, summary=summary,
+        action_label='View Capital Decision' if decision is not None else 'Compare Options First',
+        action_url=_url('waste_to_value_capital_allocation_engine:decision_detail', decision.pk) if decision is not None else None,
+        last_activity=decision.created_at if decision is not None else None,
     ))
 
-    # 7. Human Approval
+    # 8. Human Approval — deliberately distinct from Capital Decision (see
+    # module docstring). No dedicated approval UI exists yet (that's the
+    # next hardening phase) — the honest current action is a Django admin
+    # edit, and it is labelled as exactly that, never as a polished
+    # "Approve now" workflow that doesn't exist yet.
     approval_display = {
         'pending': 'PENDING_APPROVAL', 'approved': 'COMPLETE',
         'approved_with_conditions': 'APPROVED_WITH_CONDITIONS', 'rejected': 'REJECTED',
     }
     status = approval_display.get(decision.approval_status, 'NOT_STARTED') if decision is not None else 'NOT_STARTED'
+    if decision is None:
+        summary = 'No decision awaiting approval yet.'
+    elif decision.approval_status == 'pending':
+        summary = 'Administrative review required — no dedicated approval workflow exists in this release.'
+    else:
+        summary = f'{decision.get_approval_status_display()}.'
+    admin_url = _url('admin:waste_to_value_capital_allocation_engine_capitalallocationdecision_change', decision.pk) if decision is not None else None
     stages.append(WorkflowStage(
-        'human_approval', 'Human Approval', status, status.replace('_', ' ').title(),
-        url=_url('waste_to_value_capital_allocation_engine:decision_detail', decision.pk) if decision is not None else None,
+        key='human_approval', label='Human Approval', status=status, summary=summary,
+        action_label='Review in Admin' if decision is not None else '',
+        action_url=admin_url,
+        is_available=True,
     ))
 
-    # 8. Capital Guardian
+    # 9. Capital Guardian
     status = 'ACTIVE_MONITORING' if governance is not None else 'NOT_STARTED'
-    stages.append(WorkflowStage('capital_guardian', 'Capital Guardian', status, status.replace('_', ' ').title(),
-                                 url=_url('capital_guardian:governance', project.slug)))
+    summary = 'Governance record active.' if governance is not None else 'Not yet promoted to Capital Guardian.'
+    stages.append(WorkflowStage(
+        key='capital_guardian', label='Capital Guardian', status=status, summary=summary,
+        action_label='View Governance' if governance is not None else 'Promote to Capital Guardian',
+        action_url=(
+            _url('capital_guardian:governance', project.slug) if governance is not None
+            else (_url('waste_to_value_capital_allocation_engine:decision_detail', decision.pk) if decision is not None else None)
+        ),
+        last_activity=governance.updated_at if governance is not None else None,
+    ))
 
-    # 9. Monitoring
+    # 10. Execution — CapitalTraceEntry + milestone monitoring data.
     has_monitoring_data = bool(recent_trace_entries or milestones)
+    complete_milestones = sum(1 for m in milestones if m.status == 'complete') if milestones else None
     if governance is None:
         status = 'NOT_STARTED'
+        summary = 'Not yet under active monitoring.'
     elif has_monitoring_data:
         status = 'ACTIVE_MONITORING'
+        summary = f'{len(recent_trace_entries)} recent capital trace entr(y/ies), {len(milestones)} milestone(s).'
     else:
         status = 'IN_PROGRESS'
-    stages.append(WorkflowStage('monitoring', 'Monitoring', status, status.replace('_', ' ').title(),
-                                 url=_url('capital_guardian:project_monitoring', project.slug)))
+        summary = 'Under Capital Guardian governance; no monitoring data recorded yet.'
+    last_activity = recent_trace_entries[0].date if recent_trace_entries else None
+    stages.append(WorkflowStage(
+        key='monitoring', label='Execution', status=status, summary=summary,
+        action_label='Open Monitoring' if governance is not None else 'Promote to Capital Guardian First',
+        action_url=_url('capital_guardian:project_monitoring', project.slug) if governance is not None else None,
+        progress_current=complete_milestones, progress_total=len(milestones) if milestones else None,
+        last_activity=last_activity,
+    ))
 
-    # 10. Verified Outcome
+    # 11. Outcome
     outcome = learning_feedback.get('outcome') if learning_feedback and learning_feedback.get('outcome_exists') else None
     if outcome is None:
         status = 'NOT_STARTED'
+        summary = 'No outcome recorded for this project yet.'
     elif outcome.verified_status == 'verified':
         status = 'VERIFIED'
+        summary = 'Independently verified.'
     elif '[Reviewer note]' in (outcome.next_capital_allocation_signal or ''):
         status = 'HUMAN_REVIEWED'
+        summary = 'Human-reviewed — not independently verified.'
     else:
         status = 'OUTCOME_ESTIMATED'
+        summary = 'Estimated outcome recorded — not yet reviewed.'
     stages.append(WorkflowStage(
-        'outcome', 'Verified Outcome', status, status.replace('_', ' ').title(),
-        url=_url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) if decision is not None else None,
+        key='outcome', label='Outcome', status=status, summary=summary,
+        action_label='Record Outcome' if decision is not None else 'Create Capital Decision First',
+        action_url=_url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) if decision is not None else None,
     ))
 
-    # 11. Learning (Evidence Memory feedback)
+    # 12. Evidence Memory (sync + retrieval for future decisions)
     if outcome is None:
         status = 'NOT_STARTED'
+        summary = 'No outcome to sync into Evidence Memory yet.'
     elif learning_feedback.get('already_synced'):
         status = 'COMPLETE'
+        summary = 'Synced into Evidence Memory for future retrieval.'
     else:
         status = 'IN_PROGRESS'
+        summary = 'Outcome recorded; not yet synced into Evidence Memory.'
+    memory = learning_feedback.get('memory') if learning_feedback else None
     stages.append(WorkflowStage(
-        'learning', 'Learning Feedback', status, status.replace('_', ' ').title(),
-        url=_url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) if decision is not None else None,
+        key='learning', label='Evidence Memory', status=status, summary=summary,
+        action_label='Sync to Evidence Memory' if outcome is not None else 'Record Outcome First',
+        action_url=_url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) if decision is not None else None,
+        last_activity=memory.created_at if memory is not None else None,
+    ))
+
+    # 13. Sustainable AI Telemetry — does not exist in this release. Shown
+    # honestly, never hidden, never faked (see module docstring).
+    stages.append(WorkflowStage(
+        key='telemetry', label='Sustainable AI Telemetry', status='UNAVAILABLE',
+        summary='Not available in this release.',
+        action_label='', action_url=None, is_available=False,
     ))
 
     return stages

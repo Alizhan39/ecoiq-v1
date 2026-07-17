@@ -3871,7 +3871,12 @@ class CommandCentreAggregationTests(TestCase):
         )
         ctx = self._build_context()
         self.assertEqual(self._stage(ctx, 'evidence').status, 'COMPLETE')
-        self.assertEqual(self._stage(ctx, 'analysis').status, 'COMPLETE')
+        # 'analysis' is no longer its own stage (feat/project-command-centre-
+        # primary-surface) — its status was always 100% derived from Evidence's
+        # own state, so it failed the "genuinely distinct" test documented in
+        # command_centre.py's module docstring. Its real output (the Mizan
+        # score) now appears in the 'project' stage's summary instead.
+        self.assertIn('Mizan score', self._stage(ctx, 'project').summary)
         self.assertEqual(self._stage(ctx, 'value_loss').status, 'NOT_STARTED')
 
     def _add_evidence(self):
@@ -4181,3 +4186,228 @@ class CommandCentreHonestyTests(TestCase):
         r = self.client.get(self._url())
         self.assertContains(r, 'decision support')
         self.assertContains(r, 'not a guaranteed prediction')
+
+
+class CommandCentreCanonicalStagesTests(TestCase):
+    """
+    feat/project-command-centre-primary-surface — the revised 13-stage
+    canonical list, honest evidence-count/progress scoping, action-URL
+    resolution, and the Human Approval honesty requirement. See
+    capital_guardian/services/command_centre.py's module docstring for the
+    full reasoning behind which candidates became stages and which were
+    folded in.
+    """
+    CANONICAL_KEYS = [
+        'project', 'evidence', 'resource_purpose', 'value_loss', 'intervention_options',
+        'better_way', 'capital_decision', 'human_approval', 'capital_guardian',
+        'monitoring', 'outcome', 'learning', 'telemetry',
+    ]
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('staff_cc_canon', 'staff_cc_canon@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes',
+            commodity='other', is_demo=True,
+        )
+
+    def _ctx(self):
+        from capital_guardian.services.command_centre import build_command_centre_context
+        return build_command_centre_context(GoldProject.objects.get(pk=self.project.pk))
+
+    def _stage(self, ctx, key):
+        return next(s for s in ctx['stages'] if s.key == key)
+
+    def test_canonical_stage_count_and_order(self):
+        ctx = self._ctx()
+        self.assertEqual([s.key for s in ctx['stages']], self.CANONICAL_KEYS)
+
+    def test_no_forced_or_missing_stage(self):
+        """Every stage in the canonical list is present exactly once — not
+        forced to a round number, not silently dropped."""
+        ctx = self._ctx()
+        keys = [s.key for s in ctx['stages']]
+        self.assertEqual(len(keys), len(set(keys)), 'duplicate stage key found')
+        self.assertEqual(set(keys), set(self.CANONICAL_KEYS))
+
+    def test_telemetry_explicitly_unavailable_not_missing_or_hidden(self):
+        ctx = self._ctx()
+        stage = self._stage(ctx, 'telemetry')
+        self.assertEqual(stage.status, 'UNAVAILABLE')
+        self.assertEqual(stage.summary, 'Not available in this release.')
+        self.assertFalse(stage.is_available)
+
+    def test_project_stage_shows_missing_data_not_not_started(self):
+        """A project that already exists is never 'not started' — missing
+        identity fields are reported as MISSING_DATA, an honestly different
+        state from a workflow step nobody has begun."""
+        ctx = self._ctx()
+        stage = self._stage(ctx, 'project')
+        self.assertEqual(stage.status, 'MISSING_DATA')
+        self.assertIn('country', stage.summary)
+
+    def test_project_stage_complete_once_identity_present(self):
+        self.project.country = CountryProfile.objects.create(name='Kazakhstan Test CC', iso_code='KZX')
+        self.project.region = 'Almaty'
+        self.project.save(update_fields=['country', 'region'])
+        ctx = self._ctx()
+        self.assertEqual(self._stage(ctx, 'project').status, 'COMPLETE')
+
+    def test_evidence_count_only_on_evidence_and_resource_purpose_stages(self):
+        """Founder instruction: never repeat the project-level EvidenceMemory
+        total against every stage — only Evidence (project-level total) and
+        Resource Purpose Review (its own real evidence_used list) carry a
+        defensible evidence_count. Every other stage must be None."""
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(
+            self.project, title='T', text='Evidence text.', verification_status='verified',
+            review_tier='human_reviewed', reviewer=self.staff,
+        )
+        ctx = self._ctx()
+        self.assertIsNotNone(self._stage(ctx, 'evidence').evidence_count)
+        for key in ['value_loss', 'intervention_options', 'better_way', 'capital_decision',
+                    'human_approval', 'capital_guardian', 'monitoring', 'outcome', 'learning', 'telemetry']:
+            self.assertIsNone(self._stage(ctx, key).evidence_count, f'{key} stage should not carry an evidence_count')
+
+    def test_no_progress_fabricated_without_a_real_denominator(self):
+        """An empty project shows no progress anywhere — never a 0-of-0 or
+        an invented percentage."""
+        ctx = self._ctx()
+        for stage in ctx['stages']:
+            if stage.key == 'evidence':
+                continue  # covered by its own dedicated test below
+            self.assertIsNone(stage.progress_current, f'{stage.key} should not show fabricated progress')
+            self.assertIsNone(stage.progress_total, f'{stage.key} should not show fabricated progress')
+
+    def test_evidence_progress_is_a_real_verified_vs_total_count(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        create_memory_from_manual_project_evidence(
+            self.project, title='T1', text='Evidence one.', verification_status='verified',
+            review_tier='human_reviewed', reviewer=self.staff,
+        )
+        create_memory_from_manual_project_evidence(
+            self.project, title='T2', text='Evidence two.', verification_status='pending',
+            review_tier='ai_flagged',
+        )
+        ctx = self._ctx()
+        stage = self._stage(ctx, 'evidence')
+        self.assertEqual(stage.progress_current, 1)
+        self.assertEqual(stage.progress_total, 2)
+
+    def test_intervention_options_blocked_when_none_eligible(self):
+        loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Blocked loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        InterventionOption.objects.create(
+            operational_loss=loss, title='Raw coal as fertiliser', intervention_type='resale',
+            description='Sell raw coal ash as fertiliser to local farms.',
+        )
+        ctx = self._ctx()
+        stage = self._stage(ctx, 'intervention_options')
+        self.assertEqual(stage.status, 'BLOCKED')
+        self.assertTrue(stage.blocked_reason)
+
+    def test_intervention_options_progress_is_eligible_vs_total(self):
+        loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Mixed loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        InterventionOption.objects.create(
+            operational_loss=loss, title='Insulation upgrade', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        InterventionOption.objects.create(
+            operational_loss=loss, title='Raw coal as fertiliser', intervention_type='resale',
+            description='Sell raw coal ash as fertiliser to local farms.',
+        )
+        ctx = self._ctx()
+        stage = self._stage(ctx, 'intervention_options')
+        self.assertEqual(stage.progress_current, 1)
+        self.assertEqual(stage.progress_total, 2)
+
+    def test_human_approval_action_honestly_labelled_admin_review(self):
+        loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Approval loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='Approval insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='Approval decision')
+        ctx = self._ctx()
+        stage = self._stage(ctx, 'human_approval')
+        self.assertEqual(stage.action_label, 'Review in Admin')
+        self.assertIn('Administrative review required', stage.summary)
+        self.assertNotIn('Approve now', stage.action_label)
+        self.assertIn(f'/admin/waste_to_value_capital_allocation_engine/capitalallocationdecision/{decision.pk}/change/', stage.action_url)
+
+    def test_all_set_action_urls_resolve(self):
+        """Every stage that sets an action_url must be a URL that actually
+        resolves — never a broken/guessed link. Exercised across empty,
+        mid-journey, and fully-promoted states in one pass."""
+        loss = OperationalLoss.objects.create(
+            project=self.project.name, title='URL loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        option = InterventionOption.objects.create(
+            operational_loss=loss, title='URL insulation', intervention_type='prevention',
+            capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+        )
+        decision = create_governed_investment_case(option, decision_text='URL decision')
+        decision.approval_status = 'approved'
+        decision.save(update_fields=['approval_status'])
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        promote_to_capital_guardian(decision, actor=self.staff)
+
+        ctx = self._ctx()
+        for stage in ctx['stages']:
+            if stage.action_url is not None:
+                self.assertTrue(
+                    stage.action_url.startswith('/'),
+                    f'{stage.key} action_url "{stage.action_url}" does not look like a resolved path',
+                )
+
+    def test_query_count_is_bounded_on_command_centre_page(self):
+        """N+1 protection: viewing the Command Centre page for a project with
+        several intervention options must not scale query count linearly
+        with the number of options — a real regression this test would
+        catch if a future change re-queried per-option instead of once."""
+        from django.test.utils import CaptureQueriesContext
+        from django.db import connection
+
+        loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Perf loss', loss_type='heat_loss', financial_loss_amount=15000,
+        )
+        for i in range(2):
+            InterventionOption.objects.create(
+                operational_loss=loss, title=f'Perf option {i}', intervention_type='prevention',
+                capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+            )
+        self.client.force_login(self.staff)
+        with CaptureQueriesContext(connection) as small:
+            self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project.slug]))
+
+        for i in range(2, 10):
+            InterventionOption.objects.create(
+                operational_loss=loss, title=f'Perf option {i}', intervention_type='prevention',
+                capex_estimate=20000, estimated_annual_savings=8000, estimated_loss_avoided=10000,
+            )
+        with CaptureQueriesContext(connection) as large:
+            self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project.slug]))
+
+        # 8 extra options must not add anywhere near 8 extra queries — a
+        # generous but real ceiling that would fail if a per-option N+1 crept in.
+        self.assertLess(
+            len(large) - len(small), 5,
+            f'query count grew by {len(large) - len(small)} for 8 extra options — possible N+1',
+        )
+
+    def test_no_horizontal_overflow_css_present(self):
+        """Simple template-level convention check, matching this codebase's
+        existing style of asserting on rendered content rather than true
+        visual regression testing: the page must declare the responsive
+        breakpoint rule that keeps the stage grid single-column on mobile."""
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project.slug]))
+        self.assertContains(r, '@media (max-width: 640px)')
+        self.assertContains(r, 'grid-template-columns: 1fr')

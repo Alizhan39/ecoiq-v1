@@ -1,4 +1,13 @@
 <nav class="gc-nav-groups" aria-label="Capital Guardian sections">
+  {% if request.user.is_staff %}
+  <div class="gc-nav-group">
+    <span class="gc-nav-group-label">Command Centre</span>
+    <div class="gc-nav-group-row">
+      <a class="gold-tab {% if active_tab == 'command_centre' %}active{% endif %}" href="{% url 'capital_guardian:project_command_centre' project.slug %}">Project Command Centre</a>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="gc-nav-group">
     <span class="gc-nav-group-label">Discover</span>
     <div class="gc-nav-group-row">
