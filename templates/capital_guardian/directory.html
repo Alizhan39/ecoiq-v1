@@ -14,10 +14,15 @@
   <div class="gold-section">
     <h2 class="gold-h2">Projects</h2>
     {% for project in projects %}
-    <a class="gold-project-card" href="{% url 'capital_guardian:investor_dashboard' project.slug %}">
-      <span class="gold-project-name">{{ project.name }}</span>{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}
-      <div class="gold-project-meta">{{ project.get_status_display }} · {{ project.country.name|default:"Country not set" }}{% if project.region %} · {{ project.region }}{% endif %}</div>
-    </a>
+    <div class="cc-directory-row">
+      <a class="gold-project-card" href="{% url 'capital_guardian:investor_dashboard' project.slug %}">
+        <span class="gold-project-name">{{ project.name }}</span>{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}
+        <div class="gold-project-meta">{{ project.get_status_display }} · {{ project.country.name|default:"Country not set" }}{% if project.region %} · {{ project.region }}{% endif %}</div>
+      </a>
+      {% if request.user.is_staff %}
+      <a class="gold-tab" style="color:#00e89a;" href="{% url 'capital_guardian:project_command_centre' project.slug %}">Command Centre →</a>
+      {% endif %}
+    </div>
     {% empty %}
     <p class="gold-honest-stub">No projects recorded yet.</p>
     {% endfor %}
@@ -26,4 +31,10 @@
 
 {% include 'gold_intelligence/_styles.html' %}
 {% include 'capital_guardian/_styles.html' %}
+<style>
+  .cc-directory-row { display: flex; align-items: stretch; gap: 0.6rem; margin-bottom: 0.6rem; }
+  .cc-directory-row .gold-project-card { flex: 1; margin-bottom: 0; }
+  .cc-directory-row .gold-tab { align-self: center; white-space: nowrap; }
+  @media (max-width: 560px) { .cc-directory-row { flex-direction: column; } }
+</style>
 {% endblock %}

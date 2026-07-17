@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="gold-wrap cc-wrap">
+  <div class="cc-crumb"><a href="{% url 'capital_guardian:directory' %}">← All Projects</a></div>
   <span class="gold-eyebrow">ECOIQ · PROJECT COMMAND CENTRE</span>
 
   <div class="cc-header">
@@ -16,10 +17,12 @@
       </p>
     </div>
     <div class="cc-completion">
-      <div class="cc-completion-value">{{ workflow_completion_pct }}%</div>
-      <div class="cc-completion-label">Workflow stages started</div>
+      <div class="cc-completion-value">{{ started_stage_count }} of {{ available_stage_count }}</div>
+      <div class="cc-completion-label">workflow stages started</div>
     </div>
   </div>
+
+  {% include 'capital_guardian/_nav.html' with active_tab='command_centre' %}
 
   <div class="gold-grid">
     <div class="gold-card"><div class="gold-card-label">Classification</div><div class="gold-card-value">{% if project.is_demo %}Demo / Illustrative{% else %}Real{% endif %}</div></div>
@@ -45,10 +48,22 @@
     <h2 class="gold-h2">Workflow</h2>
     <div class="cc-timeline">
       {% for stage in stages %}
-      <a class="cc-stage cc-stage-{{ stage.status_css }}" href="{{ stage.url|default:'#' }}">
-        <span class="cc-stage-index">{{ forloop.counter }}</span>
+      <a class="cc-stage cc-stage-{{ stage.status_css }}{% if not stage.is_available %} cc-stage-unavailable{% endif %}"
+         href="{{ stage.action_url|default:'#' }}"
+         {% if not stage.action_url %}tabindex="-1" aria-disabled="true"{% endif %}>
+        <div class="cc-stage-top">
+          <span class="cc-stage-index">{{ forloop.counter }}</span>
+          <span class="gold-risk-badge {{ stage.status_css }}">{{ stage.status_label }}</span>
+        </div>
         <span class="cc-stage-label">{{ stage.label }}</span>
-        <span class="gold-risk-badge {{ stage.status_css }}">{{ stage.status_display }}</span>
+        <p class="cc-stage-summary">{{ stage.summary }}</p>
+        {% if stage.blocked_reason %}<p class="cc-stage-blocked">⚠ {{ stage.blocked_reason }}</p>{% endif %}
+        <div class="cc-stage-meta">
+          {% if stage.evidence_count is not None %}<span>{{ stage.evidence_count }} evidence item{{ stage.evidence_count|pluralize }}</span>{% endif %}
+          {% if stage.progress_label %}<span>{{ stage.progress_label }}</span>{% endif %}
+          {% if stage.last_activity %}<span>Updated {{ stage.last_activity|date:"Y-m-d" }}</span>{% endif %}
+        </div>
+        {% if stage.action_label %}<span class="cc-stage-action">{{ stage.action_label }} →</span>{% endif %}
       </a>
       {% endfor %}
     </div>
@@ -93,13 +108,16 @@
       <div class="gold-list-row"><span class="gold-list-label">Avoidability</span><span class="gold-list-value">{{ review.avoidability }}</span></div>
       <div class="gold-list-row"><span class="gold-list-label">Review Confidence</span><span class="gold-list-value">{{ review.review_confidence|upper }}</span></div>
     </div>
+    {% if review.evidence_gaps %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">Evidence gaps: {{ review.evidence_gaps|join:"; " }}</p>
+    {% endif %}
     {% else %}
     <p class="gold-honest-stub" style="margin-top:0.6rem;">No reviewed resource-purpose profile exists yet for this project.</p>
     {% endif %}
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Operational Loss &amp; The Better Way</h2>
+    <h2 class="gold-h2">Operational Loss</h2>
     {% if loss %}
     <div class="gold-grid">
       <div class="gold-card"><div class="gold-card-label">Loss</div><div class="gold-card-value">{{ loss.title }}</div></div>
@@ -110,21 +128,48 @@
     <div class="gold-btn-row" style="margin-top:0.6rem;">
       <a class="gold-btn" href="{% url 'capital_guardian:operational_loss_detail' project.slug loss.pk %}">View Operational Loss →</a>
     </div>
-    {% if better_way_result %}
-    <div class="cc-list" style="margin-top:0.75rem;">
-      {% for c in better_way_result.ranked|slice:":3" %}
-      <div class="gold-list-row"><span class="gold-list-label">#{{ c.rank }} {{ c.option.title }}{% if c.option.intervention_type == 'do_nothing' %} (baseline){% endif %}</span><span class="gold-list-value"><span class="gold-risk-badge {% if c.safety_status == 'eligible' %}low{% else %}medium{% endif %}">{{ c.safety_status|upper }}</span></span></div>
-      {% endfor %}
-      {% if better_way_result.blocked %}<p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">{{ better_way_result.blocked|length }} option(s) blocked on safety grounds.</p>{% endif %}
-    </div>
-    {% endif %}
     {% else %}
     <p class="gold-honest-stub">No operational loss recorded for this project yet.</p>
     {% endif %}
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Capital Decision &amp; Human Approval</h2>
+    <h2 class="gold-h2">Intervention Options &amp; Safety/Eligibility</h2>
+    {% if interventions %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Total Options</div><div class="gold-card-value">{{ interventions|length }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Eligible</div><div class="gold-card-value">{{ safety_breakdown.eligible }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Conditional</div><div class="gold-card-value">{{ safety_breakdown.conditional }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Blocked</div><div class="gold-card-value {% if safety_breakdown.blocked %}na{% endif %}">{{ safety_breakdown.blocked }}</div></div>
+    </div>
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">Safety/eligibility is checked automatically against the reviewed resource-purpose pathways above — never assumed eligible by default.</p>
+    {% else %}
+    <p class="gold-honest-stub">No intervention options created yet.</p>
+    {% endif %}
+    {% if loss %}
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:operational_loss_detail' project.slug loss.pk %}">View / Add Intervention Options →</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">The Better Way</h2>
+    {% if better_way_result %}
+    <div class="cc-list" style="margin-top:0.75rem;">
+      {% for c in better_way_result.ranked|slice:":3" %}
+      <div class="gold-list-row"><span class="gold-list-label">#{{ c.rank }} {{ c.option.title }}{% if c.option.intervention_type == 'do_nothing' %} (baseline){% endif %}</span><span class="gold-list-value"><span class="gold-risk-badge {% if c.safety_status == 'eligible' %}low{% else %}medium{% endif %}">{{ c.safety_status|upper }}</span></span></div>
+      {% endfor %}
+      {% if better_way_result.blocked %}<p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">{{ better_way_result.blocked|length }} option(s) blocked on safety grounds.</p>{% endif %}
+      {% if better_way_result.baseline_warning %}<p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">⚠ {{ better_way_result.baseline_warning }}</p>{% endif %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No comparison has been run for this project yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital Allocation Decision</h2>
     {% if decision %}
     <div class="gold-grid">
       <div class="gold-card"><div class="gold-card-label">Selected Intervention</div><div class="gold-card-value">{{ decision.intervention.title }}</div></div>
@@ -145,7 +190,39 @@
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Capital Guardian Monitoring</h2>
+    <h2 class="gold-h2">Human Approval</h2>
+    {% if decision %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Status</div><div class="gold-card-value">{{ decision.get_approval_status_display }}</div></div>
+    </div>
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">
+      Administrative review required — no dedicated approval workflow exists in this release. Approval, rejection,
+      and conditional approval are currently recorded through the Django admin change form, which already enforces
+      staff-only access. A dedicated review UI with a full audit trail (reviewer, timestamp, rationale) is planned
+      for the next hardening phase.
+    </p>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'admin:waste_to_value_capital_allocation_engine_capitalallocationdecision_change' decision.pk %}">Review in Admin →</a>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No decision awaiting approval yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital Guardian</h2>
+    {% if governance %}
+    <p class="gold-sub" style="font-size:0.78rem;">Governance record active since promotion.</p>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:governance' project.slug %}">View Governance →</a>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">This project has not yet been promoted to Capital Guardian.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Execution</h2>
     {% if governance %}
     {% if capital_summary %}
     <div class="gold-grid">
@@ -165,6 +242,11 @@
     {% if open_red_flags %}
     <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">{{ open_red_flags|length }} open red flag(s).</p>
     {% endif %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">
+      Capital deployed does not mean equipment delivered; equipment delivered does not mean installed; installed
+      does not mean operational. No live procurement, payment, or physical-installation integration exists —
+      everything above is human-entered.
+    </p>
     <div class="gold-btn-row" style="margin-top:0.6rem;">
       <a class="gold-btn" href="{% url 'capital_guardian:project_monitoring' project.slug %}">Full Monitoring Page →</a>
     </div>
@@ -174,7 +256,7 @@
   </section>
 
   <section class="gold-section">
-    <h2 class="gold-h2">Verified Outcome &amp; Learning Feedback</h2>
+    <h2 class="gold-h2">Outcome</h2>
     {% if expected_vs_actual %}
     <div class="gold-grid">
       <div class="gold-card"><div class="gold-card-label">CAPEX (Expected → Actual)</div><div class="gold-card-value">£{{ expected_vs_actual.expected_capex|floatformat:0 }} → {% if expected_vs_actual.actual_capex == 'NOT YET REPORTED' %}Not yet reported{% else %}£{{ expected_vs_actual.actual_capex|floatformat:0 }}{% endif %}</div></div>
@@ -182,19 +264,28 @@
       <div class="gold-card"><div class="gold-card-label">Verification Status</div><div class="gold-card-value">{{ expected_vs_actual.verified_status }}</div></div>
       <div class="gold-card"><div class="gold-card-label">MRV Status</div><div class="gold-card-value">{{ expected_vs_actual.mrv_status }}</div></div>
     </div>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:record_outcome_confirm' project.slug decision.pk %}">Outcome Workflow →</a>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No outcome has been recorded for this project yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence Memory</h2>
     {% if learning_feedback.outcome_exists %}
     <div class="cc-list" style="margin-top:0.75rem;">
-      <div class="gold-list-row"><span class="gold-list-label">In Evidence Memory?</span><span class="gold-list-value">{% if learning_feedback.already_synced %}Yes{% else %}Not yet{% endif %}</span></div>
+      <div class="gold-list-row"><span class="gold-list-label">Synced to Evidence Memory?</span><span class="gold-list-value">{% if learning_feedback.already_synced %}Yes{% else %}Not yet{% endif %}</span></div>
       {% if learning_feedback.memory %}
       <div class="gold-list-row"><span class="gold-list-label">Memory Evidence Status</span><span class="gold-list-value">{{ learning_feedback.memory.get_verification_status_display }}{% if learning_feedback.memory.is_demo %} · DEMO{% endif %}</span></div>
       {% endif %}
     </div>
-    {% endif %}
     <div class="gold-btn-row" style="margin-top:0.6rem;">
-      <a class="gold-btn" href="{% url 'capital_guardian:record_outcome_confirm' project.slug decision.pk %}">Outcome &amp; Learning Feedback →</a>
+      <a class="gold-btn" href="{% url 'capital_guardian:record_outcome_confirm' project.slug decision.pk %}">Outcome &amp; Evidence Memory →</a>
     </div>
     {% else %}
-    <p class="gold-honest-stub">No verified outcome has been recorded for this project yet.</p>
+    <p class="gold-honest-stub">No outcome exists yet, so nothing can be synced into Evidence Memory.</p>
     {% endif %}
   </section>
 
@@ -214,24 +305,51 @@
     <p class="gold-honest-stub">No relevant historical evidence is available yet.</p>
     {% endif %}
   </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Sustainable AI Telemetry</h2>
+    <p class="gold-honest-stub">Not available in this release. Token/latency/energy/compute telemetry for AI-assisted steps is planned for a future hardening phase — no figures are fabricated in the meantime.</p>
+  </section>
 </div>
 
 {% include 'gold_intelligence/_styles.html' %}
 {% include 'capital_guardian/_styles.html' %}
 <style>
   .cc-wrap { max-width: 1280px; }
+  .cc-crumb { margin-bottom: 0.5rem; }
+  .cc-crumb a { color: var(--gold-muted); font-size: 0.8rem; text-decoration: none; }
+  .cc-crumb a:hover { color: var(--gold-acc); }
   .cc-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; }
   .cc-completion { text-align: right; }
-  .cc-completion-value { font-size: 2.2rem; font-weight: 800; color: var(--gold-acc); line-height: 1; }
+  .cc-completion-value { font-size: 1.9rem; font-weight: 800; color: var(--gold-acc); line-height: 1; white-space: nowrap; }
   .cc-completion-label { font-size: 0.72rem; color: var(--gold-muted); margin-top: 0.25rem; }
   .cc-next-action { border: 1px solid var(--gold-acc); background: rgba(212,175,55,0.06); }
   .cc-next-action-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
-  .cc-timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
-  .cc-stage { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--gold-border); background: var(--gold-bg2); text-decoration: none; color: inherit; transition: border-color 0.15s ease; }
-  .cc-stage:hover { border-color: var(--gold-acc); }
+  .cc-timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.7rem; }
+  .cc-stage {
+    display: flex; flex-direction: column; gap: 0.45rem; padding: 0.95rem; border-radius: 10px;
+    border: 1px solid var(--gold-border); background: var(--gold-bg2); text-decoration: none; color: inherit;
+    transition: border-color 0.15s ease; min-width: 0;
+  }
+  .cc-stage:hover, .cc-stage:focus-visible { border-color: var(--gold-acc); }
+  .cc-stage:focus-visible { outline: 2px solid var(--gold-acc); outline-offset: 2px; }
+  .cc-stage-unavailable { opacity: 0.55; border-style: dashed; cursor: default; }
+  .cc-stage-top { display: flex; justify-content: space-between; align-items: center; }
   .cc-stage-index { font-size: 0.7rem; color: var(--gold-muted); font-weight: 700; }
-  .cc-stage-label { font-size: 0.85rem; font-weight: 700; color: var(--gold-text); }
+  .cc-stage-label { font-size: 0.9rem; font-weight: 700; color: var(--gold-text); }
+  .cc-stage-summary { font-size: 0.78rem; color: var(--gold-muted); line-height: 1.5; margin: 0; word-break: break-word; }
+  .cc-stage-blocked { font-size: 0.74rem; color: var(--gold-high); margin: 0; }
+  .cc-stage-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.68rem; color: var(--gold-muted); }
+  .cc-stage-meta span { background: rgba(255,255,255,.03); border: 1px solid var(--gold-border); border-radius: 6px; padding: 0.15rem 0.45rem; }
+  .cc-stage-action { font-size: 0.74rem; font-weight: 700; color: var(--gold-acc); margin-top: auto; }
   .cc-list { display: flex; flex-direction: column; gap: 0.3rem; }
   .gc-plain-list { color: var(--gold-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0; }
+
+  @media (max-width: 640px) {
+    .cc-wrap { padding: 1.5rem 1rem 3rem; }
+    .cc-header { flex-direction: column; }
+    .cc-completion { text-align: left; }
+    .cc-timeline { grid-template-columns: 1fr; }
+  }
 </style>
 {% endblock %}

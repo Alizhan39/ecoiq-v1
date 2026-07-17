@@ -52,6 +52,13 @@
       header { flex-wrap: wrap; }
       header nav { flex-wrap: wrap; gap: .5rem 1rem; justify-content: flex-end; }
     }
+    /* Same fix/header-nav-overflow pattern already used on templates/landing.html's
+       own separate header markup — that fix never reached this shared base.html
+       header, so every other page (including the new Command Centre nav entry
+       this PR adds) could overflow at ordinary desktop widths. Collapses the
+       lowest-priority marketing links first; the new staff-only Command Centre/
+       Ingest/Admin links are never collapsed, since prominence is the point. */
+    @media (max-width: 1700px) { .hdr-nav-collapse { display: none !important; } }
 
     main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
 
@@ -133,15 +140,15 @@
     </a>
     <nav>
       <a href="/companies/">{% trans "Rankings" %}</a>
-      <a href="/countries/">{% trans "Countries" %}</a>
-      <a href="/about/">{% trans "About" %}</a>
-      <a href="/methodology/">{% trans "Methodology" %}</a>
-      <a href="/stewardship/">{% trans "Stewardship" %}</a>
+      <a href="/countries/" class="hdr-nav-collapse">{% trans "Countries" %}</a>
+      <a href="/about/" class="hdr-nav-collapse">{% trans "About" %}</a>
+      <a href="/methodology/" class="hdr-nav-collapse">{% trans "Methodology" %}</a>
+      <a href="/stewardship/" class="hdr-nav-collapse">{% trans "Stewardship" %}</a>
       <a href="/projects/">{% trans "Projects" %}</a>
-      <a href="/heating/">{% trans "Khalifa Heat" %}</a>
-      <a href="/khalifa-tours/">{% trans "Khalifa Tours" %}</a>
-      <a href="/pricing/">{% trans "Pricing" %}</a>
-      <a href="/geo-intelligence/">{% trans "Geo Intelligence" %}</a>
+      <a href="/heating/" class="hdr-nav-collapse">{% trans "Khalifa Heat" %}</a>
+      <a href="/khalifa-tours/" class="hdr-nav-collapse">{% trans "Khalifa Tours" %}</a>
+      <a href="/pricing/" class="hdr-nav-collapse">{% trans "Pricing" %}</a>
+      <a href="/geo-intelligence/" class="hdr-nav-collapse">{% trans "Geo Intelligence" %}</a>
       <a href="/gold-intelligence/" style="color:#d4af37;">{% trans "Gold Intelligence" %}</a>
       <a href="/capital-guardian/" style="color:#d4af37;">{% trans "Capital Guardian" %}</a>
       <a href="/ai-agents/" style="color:#00e89a;font-weight:700;border:1px solid rgba(0,232,154,.35);border-radius:999px;padding:.25rem .75rem;">{% trans "Ask EcoIQ AI" %}</a>
@@ -153,6 +160,7 @@
       <a href="/login/" style="color:#00e89a;font-weight:600;">{% trans "Sign In" %}</a>
       {% endif %}
       {% if request.user.is_staff %}
+      <a href="{% url 'capital_guardian:directory' %}" style="color:#00e89a;font-weight:700;border:1px solid rgba(0,232,154,.35);border-radius:999px;padding:.25rem .75rem;">{% trans "Command Centre" %}</a>
       <a href="/ingest/" style="color:#f4a261;font-weight:700;">⚡ Ingest</a>
       <a href="/admin/" style="color:#94a3b8;font-size:.8rem;">{% trans "Admin" %}</a>
       {% endif %}

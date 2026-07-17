@@ -1,4 +1,26 @@
-from django.shortcuts import render
+"""
+command_centre/views.py — DEPRECATED (feat/project-command-centre-primary-surface).
+
+This app was a static, hardcoded-data mockup of a "Command Centre" vision
+page — no models, no real queries, every list below is a plain Python
+literal. A REAL, backend-connected Project Command Centre now exists at
+capital_guardian.views.project_command_centre (see
+capital_guardian/services/command_centre.py), which computes every value
+it shows from live data.
+
+Keeping both under the same "Command Centre" name was a genuine risk of
+confusion (a technical reviewer could easily mistake this static page for
+the real one). Per the founder's explicit instruction, this app is not
+being deleted in this PR — only its public route is redirected to a real,
+safe destination (the project directory), so every existing `{% url
+'command_centre:overview' %}` reference elsewhere in the codebase
+(templates/platform.html, governance_expert_review_board/views.py,
+frontend_implementation_roadmap/views.py) keeps resolving via the same
+URL name without any template changes. The template and data below
+become unreachable dead code from this point on — left in place for a
+future, separate cleanup PR once usage is proven absent, not deleted here.
+"""
+from django.shortcuts import redirect
 
 # Connected EcoIQ modules — the Command Centre is the single operational view over all of them
 CONNECTED_MODULES = [
@@ -256,25 +278,15 @@ CTA_BUTTONS = [
 
 
 def overview(request):
-    return render(request, 'command_centre/overview.html', {
-        'connected_modules': CONNECTED_MODULES,
-        'core_purpose': CORE_PURPOSE,
-        'pipeline_stages': PIPELINE_STAGES,
-        'dashboard_summary_cards': DASHBOARD_SUMMARY_CARDS,
-        'project_table_fields': PROJECT_TABLE_FIELDS,
-        'filters': FILTERS,
-        'map_view_intro': MAP_VIEW_INTRO,
-        'map_view_asset_types': MAP_VIEW_ASSET_TYPES,
-        'map_view_marker_shows': MAP_VIEW_MARKER_SHOWS,
-        'kanban_columns': KANBAN_COLUMNS,
-        'kanban_card_shows': KANBAN_CARD_SHOWS,
-        'morning_briefing_items': MORNING_BRIEFING_ITEMS,
-        'morning_briefing_example': MORNING_BRIEFING_EXAMPLE,
-        'example_projects': EXAMPLE_PROJECTS,
-        'microsoft_integration': MICROSOFT_INTEGRATION,
-        'user_roles': USER_ROLES,
-        'decision_rules': DECISION_RULES,
-        'no_harm_gate_alerts': NO_HARM_GATE_ALERTS,
-        'safety_principles': SAFETY_PRINCIPLES,
-        'cta_buttons': CTA_BUTTONS,
-    })
+    """
+    DEPRECATED — this used to render the static mockup page directly (see
+    module docstring). Redirects to the real project directory instead,
+    which is the safe, honest "start here" destination for both anonymous
+    visitors (the directory is itself public/read-only, so this is not a
+    permission change) and staff (who additionally see a real Command
+    Centre link per project once they're there). Never redirects to the
+    real per-project Command Centre directly — that requires a project
+    slug this route doesn't have, and is staff-only, which anonymous
+    visitors of this legacy public URL are not guaranteed to be.
+    """
+    return redirect('capital_guardian:directory')
