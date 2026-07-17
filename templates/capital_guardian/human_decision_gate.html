@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Human Decision Gate — {{ option.title }} — {{ project.name }} — EcoIQ{% endblock %}
+{% block meta_description_content %}{{ project.name }}: real, auditable human review of a capital allocation decision — evidence, safety, capital and decision history in one place.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap hdg-wrap">
+  <div class="cc-crumb"><a href="{% url 'capital_guardian:project_command_centre' project.slug %}">← Project Command Centre</a></div>
+  <span class="gold-eyebrow">ECOIQ · HUMAN DECISION GATE</span>
+  <h1 class="gold-h1">{{ option.title }}</h1>
+  <p class="gold-sub">{{ project.name }}{% if project.is_demo %} · DEMO{% endif %} — {{ loss.title }}</p>
+
+  <div class="hdg-banner hdg-banner-{{ decision.approval_status }}">
+    <strong>{{ decision.get_approval_status_display|upper }}</strong>
+    <span>EcoIQ provides decision support. A human reviewer is responsible for the final decision. Approval only authorises the next governed workflow stage — it does not trigger procurement, payment, or physical installation.</span>
+  </div>
+
+  {% if safety.status == 'blocked' %}
+  <div class="hdg-banner hdg-banner-blocked">
+    <strong>BLOCKED ON SAFETY GROUNDS</strong>
+    <span>{{ safety.reason }}</span>
+  </div>
+  {% elif safety.status == 'conditional' %}
+  <div class="hdg-banner hdg-banner-conditional">
+    <strong>CONDITIONAL</strong>
+    <span>{{ safety.reason }}</span>
+  </div>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Project</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Name</div><div class="gold-card-value">{{ project.name }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Sector</div><div class="gold-card-value">{{ project.get_commodity_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Geography</div><div class="gold-card-value">{{ project.country.name|default:"Not recorded" }}{% if project.region %} — {{ project.region }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Demo Status</div><div class="gold-card-value">{% if project.is_demo %}Demo / Illustrative{% else %}Real{% endif %}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Origin</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Operational Loss</div><div class="gold-card-value">{{ loss.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Financial Loss</div><div class="gold-card-value">£{{ loss.financial_loss_amount|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Better Way Rank</div><div class="gold-card-value">{% if candidate %}#{{ candidate.rank }} of {{ comparison.ranked|length }}{% else %}Not in current comparison{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Composite Score</div><div class="gold-card-value">{% if candidate %}{{ candidate.composite_score }}{% else %}—{% endif %}</div></div>
+    </div>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:operational_loss_detail' project.slug loss.pk %}">View Operational Loss &amp; Comparison →</a>
+    </div>
+    {% if comparison.baseline_warning %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">⚠ {{ comparison.baseline_warning }}</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Safety / Eligibility</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Status</div><div class="gold-card-value"><span class="gold-risk-badge {% if safety.status == 'eligible' %}low{% elif safety.status == 'blocked' %}high{% else %}medium{% endif %}">{{ safety.status|upper }}</span></div></div>
+      <div class="gold-card"><div class="gold-card-label">Intervention Type</div><div class="gold-card-value">{{ option.get_intervention_type_display }}</div></div>
+    </div>
+    {% if safety.reason %}<p class="gold-sub" style="font-size:0.82rem;margin-top:0.5rem;">{{ safety.reason }}</p>{% endif %}
+    {% if decision.conditions %}
+    <h3 class="gold-h3" style="margin-top:0.75rem;">Conditions (preserved on this decision)</h3>
+    <ul class="gc-plain-list">{% for c in decision.conditions %}<li>{{ c }}</li>{% endfor %}</ul>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.76rem;margin-top:0.5rem;">Limitations: {{ comparison.limitations|join:" " }}</p>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Total</div><div class="gold-card-value">{{ evidence_summary.total }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Verified</div><div class="gold-card-value">{{ evidence_summary.by_status.verified }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Pending / Requires Review</div><div class="gold-card-value">{{ evidence_summary.by_status.pending|add:evidence_summary.by_status.requires_review }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Rejected / Expired</div><div class="gold-card-value">{{ evidence_summary.by_status.rejected|add:evidence_summary.by_status.expired }}</div></div>
+    </div>
+    {% if evidence_qs %}
+    <div class="cc-list" style="margin-top:0.75rem;">
+      {% for e in evidence_qs|slice:":6" %}
+      <div class="gold-list-row"><span class="gold-list-label">{{ e.title|default:e.text_chunk|truncatechars:70 }}</span><span class="gold-list-value">{{ e.get_verification_status_display }} · {{ e.get_review_tier_display }}{% if e.is_demo %} · DEMO{% endif %}</span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No supporting evidence recorded for this project yet — missing evidence.</p>
+    {% endif %}
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre →</a>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Capital</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">CAPEX</div><div class="gold-card-value">£{{ option.capex_estimate|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">OPEX Effect</div><div class="gold-card-value">{% if option.opex_change > 0 %}+{% endif %}£{{ option.opex_change|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Annual Savings</div><div class="gold-card-value">£{{ option.estimated_annual_savings|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Loss Avoided</div><div class="gold-card-value">£{{ option.estimated_loss_avoided|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Implementation Time</div><div class="gold-card-value">{{ option.implementation_time|default:"Not recorded" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Governance Needs</div><div class="gold-card-value">Tech {{ option.get_technical_readiness_display }} · Finance {{ option.get_finance_readiness_display }} · MRV {{ option.get_mrv_readiness_display }}</div></div>
+    </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Decision</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Current Status</div><div class="gold-card-value">{{ decision.get_approval_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Created</div><div class="gold-card-value">{{ decision.created_at|date:"Y-m-d H:i" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Confidence</div><div class="gold-card-value">{% if decision.confidence %}{{ decision.confidence|floatformat:0 }}%{% else %}—{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Review Events</div><div class="gold-card-value">{{ review_events|length }}</div></div>
+    </div>
+
+    <h3 class="gold-h3" style="margin-top:1rem;">Decision History</h3>
+    {% if review_events %}
+    <div class="cc-list">
+      {% for event in review_events %}
+      <div class="gold-list-row hdg-history-row">
+        <span class="gold-list-label">
+          <strong>{{ event.get_action_display }}</strong>
+          {{ event.previous_status }} → {{ event.new_status }}
+          {% if event.notes %}<br><span class="hdg-history-notes">{{ event.notes }}</span>{% endif %}
+        </span>
+        <span class="gold-list-value">{{ event.actor|default:"Unknown reviewer" }} · {{ event.created_at|date:"Y-m-d H:i" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No review events yet — this decision has not been reviewed.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section hdg-actions">
+    <h2 class="gold-h2">Actions</h2>
+    {% if legal_actions %}
+    <div class="hdg-action-row">
+      {% for item in legal_actions %}
+      <a class="gold-btn {% if item.action == 'approve' %}gold-btn-primary{% endif %} hdg-action-btn hdg-action-btn-{{ item.action }}"
+         href="{% url 'capital_guardian:human_decision_gate_action_confirm' project.slug decision.pk item.action %}">
+        {{ item.label }}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No further review action is available for this decision in its current state.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .hdg-wrap { max-width: 1120px; }
+  .hdg-banner { border-radius: 10px; padding: 0.9rem 1.1rem; margin: 1rem 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; }
+  .hdg-banner strong { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .hdg-banner span { color: var(--gold-muted); }
+  .hdg-banner-pending { background: rgba(244,162,97,.08); border: 1px solid rgba(244,162,97,.3); }
+  .hdg-banner-approved, .hdg-banner-approved_with_conditions { background: rgba(88,166,255,.08); border: 1px solid rgba(88,166,255,.3); }
+  .hdg-banner-rejected { background: rgba(230,57,70,.08); border: 1px solid rgba(230,57,70,.3); }
+  .hdg-banner-evidence_requested, .hdg-banner-modification_requested { background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.3); }
+  .hdg-banner-blocked { background: rgba(230,57,70,.12); border: 1px solid rgba(230,57,70,.4); }
+  .hdg-banner-conditional { background: rgba(244,162,97,.1); border: 1px solid rgba(244,162,97,.35); }
+  .hdg-history-row { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+  .hdg-history-notes { color: var(--gold-muted); font-size: 0.78rem; font-style: italic; }
+  .hdg-action-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
+  .hdg-action-btn-reject { border-color: rgba(230,57,70,.4); }
+
+  @media (max-width: 640px) {
+    .hdg-wrap { padding: 1.5rem 1rem 3rem; }
+    .hdg-action-row { flex-direction: column; }
+  }
+</style>
+{% endblock %}

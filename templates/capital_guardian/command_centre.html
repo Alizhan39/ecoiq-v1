@@ -192,18 +192,28 @@
   <section class="gold-section">
     <h2 class="gold-h2">Human Approval</h2>
     {% if decision %}
+    {% with latest_review=decision.review_events.first %}
     <div class="gold-grid">
       <div class="gold-card"><div class="gold-card-label">Status</div><div class="gold-card-value">{{ decision.get_approval_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Reviewer</div><div class="gold-card-value">{% if latest_review %}{{ latest_review.actor|default:"Unknown reviewer" }}{% else %}Not yet reviewed{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Reviewed</div><div class="gold-card-value">{% if latest_review %}{{ latest_review.created_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</div></div>
     </div>
+    {% if latest_review.notes %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;"><strong>Rationale:</strong> {{ latest_review.notes|truncatechars:200 }}</p>
+    {% endif %}
     <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">
-      Administrative review required — no dedicated approval workflow exists in this release. Approval, rejection,
-      and conditional approval are currently recorded through the Django admin change form, which already enforces
-      staff-only access. A dedicated review UI with a full audit trail (reviewer, timestamp, rationale) is planned
-      for the next hardening phase.
+      EcoIQ provides decision support. A human reviewer is responsible for the final decision. Approval, rejection,
+      requests for more evidence, and requests for pathway modification are recorded through the Human Decision
+      Gate — a real, auditable, project-scoped review workflow with a full immutable audit trail (reviewer,
+      timestamp, rationale for every event).
     </p>
+    {% if decision.approval_status == 'evidence_requested' or decision.approval_status == 'modification_requested' %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">⚠ {{ decision.get_approval_status_display }} — awaiting resubmission before this can proceed.</p>
+    {% endif %}
     <div class="gold-btn-row" style="margin-top:0.6rem;">
-      <a class="gold-btn" href="{% url 'admin:waste_to_value_capital_allocation_engine_capitalallocationdecision_change' decision.pk %}">Review in Admin →</a>
+      <a class="gold-btn" href="{% url 'capital_guardian:human_decision_gate' project.slug decision.pk %}">Open Human Decision Gate →</a>
     </div>
+    {% endwith %}
     {% else %}
     <p class="gold-honest-stub">No decision awaiting approval yet.</p>
     {% endif %}

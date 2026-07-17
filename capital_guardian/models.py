@@ -286,6 +286,16 @@ class AuditLogEntry(models.Model):
     RedFlag.resolution_status, or EvidenceMemory.verification_status for
     evidence scoped to this project — never hand-authored, so the log can't
     silently omit a real change.
+
+    feat/human-decision-gate: the 'capital_decision' event_type below is the
+    one exception to "always signal-created" — capital_guardian.services.
+    human_decision_gate.submit_review() creates these rows explicitly,
+    because CapitalAllocationDecision has no FK to GoldProject (only a
+    free-text name match — see capital_guardian_handoff.py), so a generic
+    signal can't reliably resolve which project's audit log to write to.
+    The review view already has the real project from the URL, so it's
+    written directly there instead of relying on a fragile signal-side
+    name-match.
     """
     EVENT_TYPE_CHOICES = [
         ('governance', 'Governance'),
@@ -296,6 +306,7 @@ class AuditLogEntry(models.Model):
         ('red_flag', 'Red Flag Status'),
         ('evidence', 'Evidence Verification'),
         ('capital_trace', 'Capital Trace Entry'),
+        ('capital_decision', 'Capital Allocation Decision'),
     ]
 
     project = models.ForeignKey(GoldProject, on_delete=models.CASCADE, related_name='audit_log_entries')

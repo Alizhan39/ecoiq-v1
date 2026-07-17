@@ -52,6 +52,7 @@ only names what already exists so a future reader (or the Phase 1A ADR) can
 reason about the two responsibilities without mistaking this for a
 justification to split them into separate Django apps.
 """
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -174,6 +175,12 @@ APPROVAL_STATUS_CHOICES = [
     ('approved',                'Approved'),
     ('approved_with_conditions', 'Approved with Conditions'),
     ('rejected',                'Rejected'),
+    # feat/human-decision-gate — two additional real, human-decision-gate
+    # states. Both only ever transition back to 'pending' in this PR
+    # (never silently, always via a new DecisionReviewEvent) — see
+    # capital_guardian/services/human_decision_gate.py's LEGAL_TRANSITIONS.
+    ('evidence_requested',      'Evidence Requested'),
+    ('modification_requested', 'Modification Requested'),
 ]
 
 MRV_STATUS_CHOICES = [
@@ -402,6 +409,58 @@ class CapitalAllocationDecision(models.Model):
 
     def __str__(self):
         return f'{self.intervention.title} — {self.get_approval_status_display()}'
+
+
+REVIEW_ACTION_CHOICES = [
+    ('approve',               'Approved'),
+    ('reject',                'Rejected'),
+    ('request_evidence',      'Requested More Evidence'),
+    ('request_modification',  'Requested Pathway Modification'),
+    ('resubmit',              'Resubmitted for Review'),
+]
+
+
+class DecisionReviewEvent(models.Model):
+    """
+    feat/human-decision-gate — one immutable row per human review action
+    taken on a CapitalAllocationDecision. This is the real audit trail for
+    the Human Decision Gate: every approve/reject/request-evidence/request-
+    modification/resubmit action creates a new row here, and existing rows
+    are never edited or deleted by the review service (only ever created,
+    via capital_guardian.services.human_decision_gate.submit_review()).
+
+    Deliberately a separate table rather than reviewed_by/reviewed_at/
+    rationale fields directly on CapitalAllocationDecision: fields on the
+    decision itself would be overwritten by the *next* review action,
+    silently erasing the previous reviewer's identity, timestamp and
+    rationale — exactly what the founder's brief prohibits ("do not create
+    a design where changing the decision erases the previous review").
+    CapitalAllocationDecision.approval_status remains the single current-
+    state field every other existing consumer (Capital Guardian promotion,
+    Command Centre, templates) already reads — this model is the append-
+    only history behind it, never a second source of truth for the current
+    state.
+
+    One `notes` field, not three separate rationale/evidence-request/
+    modification-request fields: which purpose it serves is already fully
+    determined by `action`, so three fields would mean two are always blank
+    for any given row — `notes` is simply labelled per-action in the UI.
+    """
+    decision = models.ForeignKey(CapitalAllocationDecision, on_delete=models.CASCADE, related_name='review_events')
+    action = models.CharField(max_length=25, choices=REVIEW_ACTION_CHOICES)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    previous_status = models.CharField(max_length=25, choices=APPROVAL_STATUS_CHOICES)
+    new_status = models.CharField(max_length=25, choices=APPROVAL_STATUS_CHOICES)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Decision Review Event'
+        verbose_name_plural = 'Decision Review Events'
+
+    def __str__(self):
+        return f'{self.decision_id}: {self.get_action_display()} ({self.previous_status} → {self.new_status})'
 
 
 # ── Downstream of both boundaries above (not itself part of either) ─────────
