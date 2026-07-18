@@ -217,6 +217,7 @@ urlpatterns = [
     # governance, equipment & insurance lifecycle, a mining digital twin,
     # milestone-based capital control, and a deterministic red flag engine.
     path('capital-guardian/', include('capital_guardian.urls', namespace='capital_guardian')),
+    path('ai-observatory/', include('ai_observatory.urls', namespace='ai_observatory')),
 
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),

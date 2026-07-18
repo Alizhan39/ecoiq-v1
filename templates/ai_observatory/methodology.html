@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Observatory Methodology — {{ project.name }} — EcoIQ{% endblock %}
+{% block meta_description_content %}How every AI Observatory metric is calculated: what is measured, what is estimated, what is assumed, and what EcoIQ explicitly does not claim.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap obs-wrap">
+  <div class="cc-crumb"><a href="{% url 'ai_observatory:observatory' project.slug %}">← AI Observatory</a></div>
+  <span class="gold-eyebrow">ECOIQ · AI OBSERVATORY · METHODOLOGY</span>
+  <h1 class="gold-h1">Methodology</h1>
+  <p class="gold-sub">
+    What every Observatory number measures, how it is calculated, what is assumed — and what EcoIQ explicitly
+    does <strong>not</strong> claim.
+  </p>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Measured vs Estimated</h2>
+    <ul class="gc-plain-list">
+      <li><strong>Measured:</strong> pipeline stage timings (wall-clock around the real work), stage counts, evidence/record counts, blocked-recommendation counts, human-review flags, and any token counts a model provider actually reported. A missing provider value is stored and shown as "not reported", never as zero.</li>
+      <li><strong>Estimated (always labelled):</strong> every number in the generic-LLM baseline column of the comparison, and the three relative proxy indices (which weight measured counts by configurable factors).</li>
+      <li><strong>Never produced:</strong> electricity (kWh), carbon (gCO₂e), or monetary figures. No defensible per-request measurement methodology exists for a mixed local/provider-hosted workload, so EcoIQ does not publish one.</li>
+    </ul>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">AI Quality Metrics</h2>
+    {% for m in metric_definitions %}
+    <article class="obs-method-card">
+      <h3 class="gold-h3">{{ m.label }}</h3>
+      <dl class="obs-dl">
+        <dt>What it measures</dt><dd>{{ m.measures }}</dd>
+        <dt>How it is calculated</dt><dd>{{ m.calculation }}</dd>
+        <dt>Assumptions</dt><dd>{{ m.assumptions }}</dd>
+        <dt>What it does NOT claim</dt><dd>{{ m.not_claimed }}</dd>
+      </dl>
+    </article>
+    {% endfor %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Compute / Cost / Carbon Proxy Weights</h2>
+    <p class="gold-sub" style="font-size:0.82rem;">
+      Relative indices over real recorded work units: <code>index = Σ count(unit) × weight(unit)</code>.
+      Weights are deliberately coarse, visible, and configurable
+      (<code>settings.AI_OBSERVATORY_PROXY_WEIGHTS</code> / <code>AI_OBSERVATORY_COST_WEIGHTS</code>);
+      indices are only meaningful for comparing workloads under the SAME weights.
+    </p>
+    <div class="obs-table-scroll">
+      <table class="obs-table">
+        <thead><tr><th>Work unit</th><th>Compute weight</th><th>Cost weight</th></tr></thead>
+        <tbody>
+          {% for row in weight_rows %}
+          <tr><td><code>{{ row.key }}</code></td><td>{{ row.compute }}</td><td>{{ row.cost|default_if_none:"—" }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <pre class="obs-doc">{{ proxies_doc }}</pre>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Generic-LLM Baseline Assumptions</h2>
+    <div class="obs-table-scroll">
+      <table class="obs-table">
+        <thead><tr><th>Assumption</th><th>Value</th></tr></thead>
+        <tbody>
+          {% for key, value in baseline_assumptions.items %}
+          <tr><td><code>{{ key }}</code></td><td>{{ value }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <pre class="obs-doc">{{ comparison_doc }}</pre>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">What EcoIQ Explicitly Does NOT Claim</h2>
+    <ul class="gc-plain-list">
+      <li>No electricity, energy or carbon measurement — only relative, weight-based proxies.</li>
+      <li>No claim that any specific competing product behaves like the generic baseline — it is a documented reference construction.</li>
+      <li>No claim that disclosed confidence values are calibrated, or that historical evidence guarantees future outcomes.</li>
+      <li>No claim of automatic learning: retrieval reuses stored evidence; no model is retrained by any pipeline recorded here.</li>
+      <li>No scientific scale is implied by any percentage on the dashboard — each is the documented ratio above, nothing more.</li>
+    </ul>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .obs-wrap { max-width: 1000px; }
+  .obs-method-card { border: 1px solid var(--gold-border); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.7rem; background: var(--gold-bg2, rgba(255,255,255,0.02)); }
+  .obs-dl { display: grid; grid-template-columns: 200px 1fr; gap: 0.3rem 1rem; font-size: 0.82rem; margin: 0.5rem 0 0; }
+  .obs-dl dt { color: var(--gold-muted); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  .obs-dl dd { margin: 0; }
+  .obs-table-scroll { overflow-x: auto; }
+  .obs-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .obs-table th, .obs-table td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--gold-border); }
+  .obs-doc { white-space: pre-wrap; font-size: 0.74rem; line-height: 1.5; color: var(--gold-muted); background: rgba(0,0,0,0.25); border-radius: 8px; padding: 0.8rem; margin-top: 0.7rem; overflow-x: auto; }
+  @media (max-width: 640px) { .obs-wrap { padding: 1.5rem 1rem 3rem; } .obs-dl { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

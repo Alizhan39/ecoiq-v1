@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}AI Observatory — {{ project.name }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Transparent, evidence-driven AI telemetry for {{ project.name }}: real pipeline timings, model calls, deterministic engines, governance and compute proxies.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap obs-wrap">
+  <div class="cc-crumb"><a href="{% url 'capital_guardian:project_command_centre' project.slug %}">← Project Command Centre</a></div>
+  <span class="gold-eyebrow">ECOIQ · AI INTELLIGENCE OBSERVATORY</span>
+  <h1 class="gold-h1">{{ project.name }}</h1>
+  <p class="gold-sub">
+    Transparent AI telemetry — every number below is recorded from real pipeline runs or clearly labelled as an
+    estimated comparative indicator. Nothing is sampled, modelled into existence, or invented.
+    <a href="{% url 'ai_observatory:methodology' project.slug %}">Full methodology →</a>
+  </p>
+
+  {# ── Overview ─────────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Overview</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Recorded Sessions</div><div class="gold-card-value">{{ session_total }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Model Calls (all sessions)</div><div class="gold-card-value">{{ proxies.counts.llm_call_fresh|add:proxies.counts.llm_call_cached }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Deterministic Engine Runs</div><div class="gold-card-value">{{ proxies.counts.deterministic_stage|add:proxies.counts.governance_stage }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Retrieval Operations</div><div class="gold-card-value">{{ proxies.counts.retrieval_stage }}</div></div>
+    </div>
+    {% if session_total == 0 %}
+    <p class="gold-honest-stub">No telemetry has been recorded for this project yet — run a project analysis, comparison or outcome action and its real timings will appear here.</p>
+    {% endif %}
+  </section>
+
+  {% if current %}
+  {# ── Current Analysis ─────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Current Analysis Session</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Analysis ID</div><div class="gold-card-value">#{{ current.pk }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Pipeline</div><div class="gold-card-value" style="font-size:0.95rem;">{{ current.get_kind_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Status</div><div class="gold-card-value">{{ current.get_status_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Started</div><div class="gold-card-value" style="font-size:0.95rem;">{{ current.started_at|date:"Y-m-d H:i:s" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Duration</div><div class="gold-card-value">{% if current.duration_ms is not None %}{{ current.duration_ms|intcomma }} ms{% else %}—{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Run By</div><div class="gold-card-value" style="font-size:0.95rem;">{{ current.user|default:"Not recorded" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Human Review</div><div class="gold-card-value" style="font-size:0.95rem;">{% if current.human_review_required %}Required{% if current.human_review_completed %} · Completed{% else %} · Pending{% endif %}{% else %}Not required{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Final Status</div><div class="gold-card-value" style="font-size:0.85rem;">{{ current.get_final_recommendation_status_display }}</div></div>
+    </div>
+    {% if current.warnings %}
+    <h3 class="gold-h3" style="margin-top:0.8rem;">Warnings Produced ({{ current.warnings|length }})</h3>
+    <ul class="gc-plain-list">{% for w in current.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if current.blocked_recommendation_count %}
+    <p class="gold-sub" style="margin-top:0.5rem;">⚠ {{ current.blocked_recommendation_count }} recommendation(s) blocked on safety/eligibility grounds in this session.</p>
+    {% endif %}
+  </section>
+
+  {# ── Pipeline Timeline ────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Pipeline Timeline</h2>
+    {% if current_stages %}
+    <div class="cc-list">
+      {% for stage in current_stages %}
+      <div class="gold-list-row obs-stage-row">
+        <span class="gold-list-label">
+          <span class="obs-cat obs-cat-{{ stage.category }}">{{ stage.get_category_display }}</span>
+          <strong>{{ stage.label }}</strong>
+          {% if not stage.success %}<span class="gold-risk-badge high">FAILED</span>{% endif %}
+        </span>
+        <span class="gold-list-value">
+          {% if stage.items_processed is not None %}{{ stage.items_processed }} item(s) · {% endif %}
+          {{ stage.duration_ms|default:"—" }} ms
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No pipeline stages were recorded for this session.</p>
+    {% endif %}
+  </section>
+
+  {# ── Model Calls ──────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Model Calls (this session)</h2>
+    {% if current_invocations %}
+    <div class="cc-list">
+      {% for inv in current_invocations %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ inv.provider|default:"Unknown provider" }} · {{ inv.model_name|default:"Unknown model" }}{% if inv.prompt_version %} · prompt {{ inv.prompt_version }}{% endif %}</span>
+        <span class="gold-list-value">
+          in {{ inv.input_tokens|default_if_none:"not reported" }} ·
+          out {{ inv.output_tokens|default_if_none:"not reported" }} ·
+          cached {{ inv.cached_tokens|default_if_none:"not reported" }}
+          {% if inv.retry_count %} · {{ inv.retry_count }} retries{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">
+      Zero model calls — this session ran entirely on deterministic engines and evidence retrieval.
+      That is a real recorded value, not missing data, and it is central to how EcoIQ differs from a
+      generic LLM workflow.
+    </p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {# ── Evidence Usage ───────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence Usage</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Evidence Traceability</div><div class="gold-card-value">{{ metrics.evidence_traceability.display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Coverage (verified)</div><div class="gold-card-value">{{ metrics.evidence_coverage.display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Reuse (latest session)</div><div class="gold-card-value">{{ metrics.evidence_reuse.display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Retrieval Operations</div><div class="gold-card-value">{{ metrics.retrieval_usage.display }}</div></div>
+    </div>
+    <p class="gold-sub" style="font-size:0.76rem;margin-top:0.5rem;">Definitions, assumptions and non-claims for every metric: <a href="{% url 'ai_observatory:methodology' project.slug %}">Methodology</a>.</p>
+  </section>
+
+  {# ── Deterministic Engines ────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Deterministic Engines</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">
+      Real recorded runs of EcoIQ's deterministic pipeline stages across all of this project's sessions —
+      each one replaces work a generic workflow would delegate to a model generation.
+    </p>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Deterministic Stage Runs</div><div class="gold-card-value">{{ proxies.counts.deterministic_stage }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Governance / Safety Checks</div><div class="gold-card-value">{{ proxies.counts.governance_stage }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Deterministic Step Ratio (latest)</div><div class="gold-card-value">{{ metrics.deterministic_step_ratio.display }}</div></div>
+    </div>
+  </section>
+
+  {# ── Governance ───────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Governance</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Governance Completion</div><div class="gold-card-value">{{ metrics.governance_completion.display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Blocked Unsafe Outputs</div><div class="gold-card-value">{{ metrics.blocked_unsafe_outputs.display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Confidence Disclosure</div><div class="gold-card-value">{{ metrics.confidence_disclosure.display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Missing-Data Disclosures (latest)</div><div class="gold-card-value">{{ metrics.missing_data_disclosure.display }}</div></div>
+    </div>
+  </section>
+
+  {# ── Human Review ─────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Human Review</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Human Oversight (sessions requiring review)</div><div class="gold-card-value">{{ metrics.human_oversight.display }}</div></div>
+    </div>
+    <p class="gold-sub" style="font-size:0.8rem;margin-top:0.5rem;">
+      EcoIQ provides decision support. A human reviewer is responsible for the final decision — review actions
+      themselves are recorded in the <a href="{% url 'capital_guardian:audit_history' project.slug %}">project Audit History</a>.
+    </p>
+  </section>
+
+  {# ── Compute Proxies ──────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Compute Proxies</h2>
+    <p class="gold-sub" style="font-size:0.8rem;">
+      <strong>These are relative indices, not measurements of electricity, cost or carbon.</strong>
+      They weight real recorded work units (model calls, tokens, retrievals, deterministic runs) by the
+      configurable weights shown below — meaningful only for comparing workloads under the same weights.
+    </p>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Relative Compute Index</div><div class="gold-card-value">{{ proxies.relative_compute_index }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Relative Cost Index</div><div class="gold-card-value">{{ proxies.relative_cost_index }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Relative Carbon Proxy</div><div class="gold-card-value">{{ proxies.relative_carbon_proxy }}</div></div>
+    </div>
+    <details class="obs-details">
+      <summary>Weights used for these indices</summary>
+      <div class="cc-list" style="margin-top:0.5rem;">
+        {% for key, weight in proxies.compute_weights.items %}
+        <div class="gold-list-row"><span class="gold-list-label">{{ key }}</span><span class="gold-list-value">compute ×{{ weight }}</span></div>
+        {% endfor %}
+      </div>
+    </details>
+  </section>
+
+  {# ── Comparison ───────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Comparison: EcoIQ vs Generic LLM Workflow</h2>
+    {% if comparison %}
+    <p class="gold-sub" style="font-size:0.8rem;">
+      <strong>Comparative indicators only.</strong> The EcoIQ column is recorded telemetry; the generic column is an
+      <em>estimated baseline</em> built from documented assumptions (shown below) applied to the same real workload.
+      Neither column converts to kWh, gCO₂e or currency.
+    </p>
+    <div class="obs-table-scroll">
+      <table class="obs-table">
+        <thead>
+          <tr><th>Indicator</th><th>{{ comparison.ecoiq.label }}</th><th>{{ comparison.generic.label }}</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Model calls</td><td>{{ comparison.ecoiq.model_calls }}</td><td>≈ {{ comparison.generic.model_calls }}</td></tr>
+          <tr><td>Tokens</td><td>{{ comparison.ecoiq.tokens|intcomma }}{% if comparison.ecoiq.tokens_unreported_calls %} (+{{ comparison.ecoiq.tokens_unreported_calls }} call(s) unreported){% endif %}</td><td>≈ {{ comparison.generic.tokens|intcomma }} (estimated)</td></tr>
+          <tr><td>Retrieval operations</td><td>{{ comparison.ecoiq.retrieval_operations }}</td><td>{{ comparison.generic.retrieval_operations }}</td></tr>
+          <tr><td>Deterministic steps</td><td>{{ comparison.ecoiq.deterministic_steps }}</td><td>{{ comparison.generic.deterministic_steps }}</td></tr>
+          <tr><td>Unsafe outputs blocked</td><td>{{ comparison.ecoiq.unsafe_outputs_blocked }}</td><td>{{ comparison.generic.unsafe_outputs_blocked }} (no gate exists)</td></tr>
+          <tr><td>Enforced human review steps</td><td>{{ comparison.ecoiq.human_review_steps }}</td><td>{{ comparison.generic.human_review_steps }} (none enforced)</td></tr>
+          <tr><td>Evidence records used</td><td>{{ comparison.ecoiq.evidence_records_used }}</td><td>{{ comparison.generic.evidence_records_used }} (context-stuffing instead)</td></tr>
+          <tr><td>Relative compute index</td><td>{{ comparison.ecoiq.compute_index }}</td><td>≈ {{ comparison.generic.compute_index }}</td></tr>
+          <tr><td>Relative cost index</td><td>{{ comparison.ecoiq.cost_index }}</td><td>≈ {{ comparison.generic.cost_index }}</td></tr>
+          <tr><td>Relative carbon proxy</td><td>{{ comparison.ecoiq.carbon_proxy }}</td><td>≈ {{ comparison.generic.carbon_proxy }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <details class="obs-details">
+      <summary>Baseline assumptions behind the generic column</summary>
+      <ul class="gc-plain-list" style="margin-top:0.5rem;">
+        <li>{{ comparison.assumptions.generations_per_stage }} model generation(s) replace each recorded deterministic/retrieval/governance stage.</li>
+        <li>The project's real evidence corpus ({{ comparison.corpus_chars|intcomma }} characters) is re-sent as context with every generation (÷{{ comparison.assumptions.context_chars_per_token }} chars/token heuristic, ×{{ comparison.assumptions.context_reuse_factor }} reuse factor).</li>
+        <li>{{ comparison.assumptions.output_tokens_per_generation }} output tokens assumed per generation.</li>
+        <li>No retrieval index, no deterministic engines, no safety gate, no enforced human review — that is what "generic" means here.</li>
+      </ul>
+    </details>
+    {% else %}
+    <p class="gold-honest-stub">No completed sessions yet — the comparison appears once real telemetry exists to compare.</p>
+    {% endif %}
+  </section>
+
+  {# ── Historical Sessions ──────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Historical Sessions</h2>
+    {% if sessions %}
+    <div class="cc-list">
+      {% for s in sessions %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">
+          <a href="{% url 'ai_observatory:session_detail' project.slug s.pk %}">#{{ s.pk }} — {{ s.get_kind_display }}</a>
+          {% if s.status == 'failed' %}<span class="gold-risk-badge high">FAILED</span>{% endif %}
+          {% if s.blocked_recommendation_count %}<span class="gold-risk-badge medium">{{ s.blocked_recommendation_count }} BLOCKED</span>{% endif %}
+        </span>
+        <span class="gold-list-value">{{ s.started_at|date:"Y-m-d H:i" }} · {{ s.duration_ms|default:"—" }} ms · {{ s.user|default:"—" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No sessions recorded yet.</p>
+    {% endif %}
+  </section>
+
+  {# ── Methodology pointer ──────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Methodology</h2>
+    <p class="gold-sub" style="font-size:0.85rem;">
+      Every metric and index on this page has a written definition covering what it measures, how it is
+      calculated, its assumptions, and what it explicitly does <strong>not</strong> claim.
+    </p>
+    <div class="gold-btn-row"><a class="gold-btn gold-btn-primary" href="{% url 'ai_observatory:methodology' project.slug %}">Read the Full Methodology →</a></div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .obs-wrap { max-width: 1180px; }
+  .obs-cat { display: inline-block; font-size: 0.62rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.45rem; border-radius: 5px; margin-right: 0.45rem; border: 1px solid var(--gold-border); color: var(--gold-muted); }
+  .obs-cat-deterministic { border-color: rgba(88,166,255,.4); }
+  .obs-cat-retrieval { border-color: rgba(63,185,80,.4); }
+  .obs-cat-governance { border-color: rgba(212,175,55,.4); }
+  .obs-cat-llm { border-color: rgba(230,57,70,.4); }
+  .obs-details { margin-top: 0.7rem; }
+  .obs-details summary { cursor: pointer; font-size: 0.8rem; }
+  .obs-details summary:focus-visible { outline: 2px solid var(--gold-acc); outline-offset: 2px; }
+  .obs-table-scroll { overflow-x: auto; }
+  .obs-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .obs-table th, .obs-table td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--gold-border); }
+  .obs-table th { color: var(--gold-muted); font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; }
+  @media (max-width: 640px) { .obs-wrap { padding: 1.5rem 1rem 3rem; } }
+</style>
+{% endblock %}

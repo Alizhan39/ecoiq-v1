@@ -318,7 +318,29 @@
 
   <section class="gold-section">
     <h2 class="gold-h2">Sustainable AI Telemetry</h2>
-    <p class="gold-honest-stub">Not available in this release. Token/latency/energy/compute telemetry for AI-assisted steps is planned for a future hardening phase — no figures are fabricated in the meantime.</p>
+    {% if latest_observatory_session %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Telemetry</div><div class="gold-card-value">Available</div></div>
+      <div class="gold-card"><div class="gold-card-label">Latest Session</div><div class="gold-card-value" style="font-size:0.85rem;">#{{ latest_observatory_session.pk }} — {{ latest_observatory_session.get_kind_display }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Recorded</div><div class="gold-card-value" style="font-size:0.95rem;">{{ latest_observatory_session.started_at|date:"Y-m-d H:i" }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Model Calls / Det. Ratio</div><div class="gold-card-value" style="font-size:0.95rem;">{{ latest_observatory_session.model_call_count }} · {{ latest_observatory_session.deterministic_step_ratio|default_if_none:"—" }}</div></div>
+    </div>
+    {% if latest_observatory_session.warnings %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">⚠ {{ latest_observatory_session.warnings|length }} warning(s) on the latest session.</p>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">
+      Efficiency, compute proxies, model-call detail and the generic-LLM comparison live in the Observatory —
+      relative indicators over real recorded runs, never energy or carbon measurements.
+    </p>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'ai_observatory:observatory' project.slug %}">Open Observatory →</a>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No telemetry sessions recorded for this project yet — run a project analysis, comparison or outcome action and its real telemetry will appear in the Observatory.</p>
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      <a class="gold-btn" href="{% url 'ai_observatory:observatory' project.slug %}">Open Observatory →</a>
+    </div>
+    {% endif %}
   </section>
 </div>
 
