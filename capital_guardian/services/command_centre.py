@@ -64,11 +64,14 @@ folded into a neighbour are documented below, not silently dropped.
                             EvidenceMemory for future retrieval. Distinct
                             action (sync), distinct persisted check
                             (does a matching EvidenceMemory row exist).
-13. Sustainable AI Telemetry — does not exist in this release. Shown
-                            honestly as UNAVAILABLE, never hidden and
-                            never faked, per the founder's explicit
-                            instruction and the PR3 audit finding that
-                            zero telemetry fields exist anywhere yet.
+13. Sustainable AI Telemetry — feat/ai-observatory: REAL now. Backed by
+                            ai_observatory.AnalysisSession rows recorded
+                            live around the actual pipelines; the stage
+                            summarises the latest session and links to
+                            the AI Observatory (which owns the detail —
+                            this stage never duplicates the dashboard).
+                            Shown as NOT_STARTED (not UNAVAILABLE) when a
+                            project simply has no recorded sessions yet.
 
 TWO CANDIDATES DELIBERATELY FOLDED IN, NOT MADE THEIR OWN STAGE:
 
@@ -241,6 +244,12 @@ def build_command_centre_context(project, user=None):
     relevant_outcomes = retrieve_relevant_verified_outcomes(project, user=user)
     memory_counts = _evidence_memory_counts(project)
 
+    # feat/ai-observatory — latest real telemetry session for this project
+    # only (never another project's), summarised in stage 13 and the
+    # template's telemetry section; the Observatory page owns the detail.
+    from ai_observatory.models import AnalysisSession
+    latest_observatory_session = AnalysisSession.objects.filter(project=project).first()
+
     stages = _workflow_stages(
         project, evidence_qs, evidence_summary, analysis, review, loss, interventions, safety_breakdown,
         better_way_result, decision, governance, capital_summary, recent_trace_entries, milestones,
@@ -275,6 +284,7 @@ def build_command_centre_context(project, user=None):
         'open_red_flags': open_red_flags,
         'relevant_outcomes': relevant_outcomes,
         'memory_counts': memory_counts,
+        'latest_observatory_session': latest_observatory_session,
         'stages': stages,
         'started_stage_count': started_stage_count,
         'available_stage_count': available_stage_count,
@@ -603,12 +613,37 @@ def _workflow_stages(project, evidence_qs, evidence_summary, analysis, review, l
         last_activity=memory.created_at if memory is not None else None,
     ))
 
-    # 13. Sustainable AI Telemetry — does not exist in this release. Shown
-    # honestly, never hidden, never faked (see module docstring).
+    # 13. Sustainable AI Telemetry — feat/ai-observatory: real now, backed
+    # by ai_observatory.AnalysisSession rows (see module docstring). This
+    # stage only SUMMARISES the latest session and links to the Observatory,
+    # which owns the detail — no dashboard content is duplicated here.
+    from ai_observatory.models import AnalysisSession
+
+    latest_session = AnalysisSession.objects.filter(project=project).first()
+    session_count = AnalysisSession.objects.filter(project=project).count()
+    if latest_session is None:
+        status = 'NOT_STARTED'
+        summary = 'No telemetry sessions recorded yet — run a project analysis to record one.'
+    else:
+        status = 'ACTIVE_MONITORING'
+        det_ratio = latest_session.deterministic_step_ratio
+        summary = (
+            f'{session_count} session(s) recorded. Latest: {latest_session.get_kind_display()} '
+            f'({latest_session.get_status_display()}, {latest_session.model_call_count} model call(s)'
+            + (f', deterministic ratio {det_ratio}' if det_ratio is not None else '')
+            + ').'
+        )
+    telemetry_blocked_reason = ''
+    if latest_session is not None and latest_session.warnings:
+        telemetry_blocked_reason = f'{len(latest_session.warnings)} warning(s) on the latest session — see Observatory.'
     stages.append(WorkflowStage(
-        key='telemetry', label='Sustainable AI Telemetry', status='UNAVAILABLE',
-        summary='Not available in this release.',
-        action_label='', action_url=None, is_available=False,
+        key='telemetry', label='Sustainable AI Telemetry', status=status,
+        summary=summary,
+        action_label='Open Observatory',
+        action_url=_url('ai_observatory:observatory', project.slug),
+        blocked_reason=telemetry_blocked_reason,
+        last_activity=latest_session.started_at if latest_session is not None else None,
+        is_available=True,
     ))
 
     return stages

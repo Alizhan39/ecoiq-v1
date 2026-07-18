@@ -209,6 +209,7 @@ INSTALLED_APPS = [
     # Evidence Memory + Vector Search — evidence/finding chunks embedded and
     # searchable via pgvector, so agents can reuse prior knowledge (Phase 1)
     'evidence_memory',
+    'ai_observatory',
 
     # Pandas Scoring Engine — explainable composite intelligence score
     # (climate risk, evidence quality, investment opportunity, modernisation

@@ -4255,12 +4255,25 @@ class CommandCentreCanonicalStagesTests(TestCase):
         self.assertEqual(len(keys), len(set(keys)), 'duplicate stage key found')
         self.assertEqual(set(keys), set(self.CANONICAL_KEYS))
 
-    def test_telemetry_explicitly_unavailable_not_missing_or_hidden(self):
+    def test_telemetry_stage_real_and_honest(self):
+        """feat/ai-observatory: the telemetry stage is real now — backed by
+        recorded AnalysisSession rows. With none recorded it is honestly
+        NOT_STARTED (never UNAVAILABLE, never faked as active), and always
+        links to the Observatory."""
         ctx = self._ctx()
         stage = self._stage(ctx, 'telemetry')
-        self.assertEqual(stage.status, 'UNAVAILABLE')
-        self.assertEqual(stage.summary, 'Not available in this release.')
-        self.assertFalse(stage.is_available)
+        self.assertEqual(stage.status, 'NOT_STARTED')
+        self.assertTrue(stage.is_available)
+        self.assertEqual(stage.action_label, 'Open Observatory')
+        self.assertIn('/ai-observatory/', stage.action_url)
+
+        from ai_observatory.services import recorder as observatory_recorder
+        session = observatory_recorder.start_session(self.project, 'project_analysis')
+        observatory_recorder.finish_session(session)
+        ctx = self._ctx()
+        stage = self._stage(ctx, 'telemetry')
+        self.assertEqual(stage.status, 'ACTIVE_MONITORING')
+        self.assertIn('1 session(s) recorded', stage.summary)
 
     def test_project_stage_shows_missing_data_not_not_started(self):
         """A project that already exists is never 'not started' — missing

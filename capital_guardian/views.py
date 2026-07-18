@@ -425,14 +425,26 @@ def run_project_analysis(request, slug):
     from capital_guardian.services.resource_purpose_review import review_resource_purpose
     from evidence_memory.services.memory import retrieve_relevant_verified_outcomes
 
+    # feat/ai-observatory — real, timed telemetry around the real pipeline.
+    # The recorder never raises (a telemetry failure can't break the
+    # analysis); a None session simply means telemetry is off for this run.
+    from ai_observatory.services import recorder
+
+    session = recorder.start_session(project, 'project_analysis', user=request.user)
+
     try:
-        result = analyse_project(project)
-        review = review_resource_purpose(project, result)
+        with recorder.record_stage(session, 'mizan_analysis', 'Mizan Project Analysis (deterministic scoring)') as stage:
+            result = analyse_project(project)
+            stage['metadata'] = {'mizan_score': getattr(result, 'mizan_score', None)}
+        with recorder.record_stage(session, 'resource_purpose_review', 'Resource Purpose Review', category='governance') as stage:
+            review = review_resource_purpose(project, result)
+            stage['items_processed'] = len(review.evidence_gaps or [])
     except Exception:
         import logging
         logging.getLogger(__name__).exception(
             'Unexpected failure running project analysis for GoldProject %s', project.pk,
         )
+        recorder.finish_session(session, status='failed')
         messages.error(request, 'Something went wrong running the project analysis. No result was produced.')
         return redirect('capital_guardian:evidence_centre', slug=slug)
 
@@ -442,11 +454,24 @@ def run_project_analysis(request, slug):
     # user + project (see evidence_memory/services/retrieval_policy.py);
     # returns RetrievedEvidence items carrying scope/explanation/labels.
     try:
-        relevant_outcomes = retrieve_relevant_verified_outcomes(project, user=request.user)
+        with recorder.record_stage(session, 'evidence_memory_retrieval', 'Evidence Memory Retrieval (policy-filtered)', category='retrieval') as stage:
+            relevant_outcomes = retrieve_relevant_verified_outcomes(project, user=request.user)
+            stage['items_processed'] = len(relevant_outcomes)
     except Exception:
         import logging
         logging.getLogger(__name__).exception('Unexpected failure retrieving relevant verified outcomes for %s', project.pk)
         relevant_outcomes = []
+
+    # Every retrieved historical record is REUSED stored evidence — the
+    # analysis regenerated nothing. Warnings = the review's own real,
+    # user-visible evidence-gap disclosures.
+    recorder.finish_session(
+        session,
+        evidence_retrieved=len(relevant_outcomes),
+        evidence_reused=len(relevant_outcomes),
+        warnings=list(review.evidence_gaps or []),
+        final_recommendation_status='human_review_required',
+    )
 
     return render(request, 'capital_guardian/project_analysis_result.html', {
         'project': project, 'result': result, 'review': review, 'relevant_outcomes': relevant_outcomes,
@@ -733,15 +758,44 @@ def run_better_way_comparison(request, slug, loss_id):
 
     from capital_guardian.services.better_way import compare_interventions
 
+    # feat/ai-observatory — the Better Way comparison IS the safety gate +
+    # ranking engine run (compare_interventions applies
+    # classify_intervention_safety to every option, then the shared
+    # scoring/ranking engine to the eligible ones), so one session records
+    # both as separate real stages with real counts.
+    from ai_observatory.services import recorder
+
+    session = recorder.start_session(project, 'better_way_comparison', user=request.user)
+
     try:
-        result = compare_interventions(project, loss)
+        with recorder.record_stage(session, 'better_way_engine', 'The Better Way Comparison (safety gate + ranking)') as stage:
+            result = compare_interventions(project, loss)
+            stage['items_processed'] = len(result.ranked) + len(result.blocked)
+            stage['metadata'] = {'ranked': len(result.ranked), 'blocked': len(result.blocked)}
     except Exception:
         import logging
         logging.getLogger(__name__).exception(
             'Unexpected failure comparing interventions for OperationalLoss %s', loss.pk,
         )
+        recorder.finish_session(session, status='failed')
         messages.error(request, 'Something went wrong running the comparison. No result was produced.')
         return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    with recorder.record_stage(session, 'safety_gate', 'Safety / Eligibility Gate', category='governance') as stage:
+        # Recorded from the comparison's own real gate output — the gate ran
+        # inside compare_interventions; this stage records its outcome.
+        stage['items_processed'] = len(result.blocked)
+        stage['metadata'] = {'blocked_titles': [b['option'].title for b in result.blocked]}
+
+    warnings = []
+    if result.baseline_warning:
+        warnings.append(result.baseline_warning)
+    recorder.finish_session(
+        session,
+        blocked_recommendations=len(result.blocked),
+        warnings=warnings,
+        final_recommendation_status='produced' if result.ranked else 'not_applicable',
+    )
 
     return render(request, 'capital_guardian/better_way_result.html', {
         'project': project, 'loss': loss, 'result': result,
@@ -796,12 +850,26 @@ def create_capital_decision_execute(request, slug, loss_id, option_id):
         BlockedInterventionError, InterventionNotInComparisonError, create_decision_from_better_way,
     )
 
+    # feat/ai-observatory — capital decision preparation telemetry. The
+    # blocked path is itself a real, recorded datum (a refused unsafe
+    # recommendation), not just an error message.
+    from ai_observatory.services import recorder
+
+    session = recorder.start_session(project, 'capital_decision', user=request.user)
+
     try:
-        decision = create_decision_from_better_way(project, loss, option)
+        with recorder.record_stage(session, 'capital_decision_preparation', 'Capital Decision Preparation (bridge re-runs safety gate + ranking)') as stage:
+            decision = create_decision_from_better_way(project, loss, option)
+            stage['metadata'] = {'decision_id': decision.pk}
     except BlockedInterventionError as exc:
+        recorder.finish_session(
+            session, blocked_recommendations=1, warnings=[str(exc)],
+            final_recommendation_status='blocked',
+        )
         messages.error(request, f'This option is blocked and cannot become a capital decision: {exc}')
         return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
     except InterventionNotInComparisonError:
+        recorder.finish_session(session, status='failed')
         messages.error(request, 'This option could not be matched to the current comparison. No decision was created.')
         return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
     except Exception:
@@ -809,8 +877,11 @@ def create_capital_decision_execute(request, slug, loss_id, option_id):
         logging.getLogger(__name__).exception(
             'Unexpected failure creating CapitalAllocationDecision for InterventionOption %s', option.pk,
         )
+        recorder.finish_session(session, status='failed')
         messages.error(request, 'Something went wrong creating the capital decision. No decision was created.')
         return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    recorder.finish_session(session, final_recommendation_status='produced')
 
     messages.success(
         request,
@@ -990,6 +1061,12 @@ def human_decision_gate_action_execute(request, slug, decision_id, action):
         )
         messages.error(request, 'Something went wrong recording this review. No changes were made.')
         return redirect('capital_guardian:human_decision_gate', slug=slug, decision_id=decision_id)
+
+    # feat/ai-observatory — a completed human review action closes the loop
+    # on the telemetry sessions that produced this decision. Never raises.
+    from ai_observatory.services import recorder as observatory_recorder
+
+    observatory_recorder.mark_human_review_completed(project, decision.pk)
 
     messages.success(
         request,
@@ -1356,21 +1433,36 @@ def record_outcome_execute(request, slug, decision_id):
         })
 
     data = form.cleaned_data
+
+    # feat/ai-observatory — execution monitoring / expected-vs-actual
+    # telemetry around the real recording service.
+    from ai_observatory.services import recorder
+
+    session = recorder.start_session(project, 'outcome_recording', user=request.user)
+
     try:
-        execution_monitoring.record_monitoring_outcome(
-            decision, mrv_status=data['mrv_status'], evidence_quality=data['evidence_quality'],
-            capex_actual=data['capex_actual'], opex_actual=data['opex_actual'] or 0,
-            loss_avoided_actual=data['loss_avoided_actual'], savings_actual=data['savings_actual'] or 0,
-            reviewer_note=data['reviewer_note'],
-        )
+        with recorder.record_stage(session, 'outcome_recording', 'Execution Monitoring — Record Outcome') as stage:
+            execution_monitoring.record_monitoring_outcome(
+                decision, mrv_status=data['mrv_status'], evidence_quality=data['evidence_quality'],
+                capex_actual=data['capex_actual'], opex_actual=data['opex_actual'] or 0,
+                loss_avoided_actual=data['loss_avoided_actual'], savings_actual=data['savings_actual'] or 0,
+                reviewer_note=data['reviewer_note'],
+            )
+        with recorder.record_stage(session, 'outcome_comparison', 'Expected vs Actual Comparison') as stage:
+            comparison_rows = execution_monitoring.expected_vs_actual(decision)
+            stage['items_processed'] = len(comparison_rows) if comparison_rows is not None else None
     except execution_monitoring.VerificationNotAllowedHereError as exc:
+        recorder.finish_session(session, status='failed', warnings=[str(exc)])
         messages.error(request, str(exc))
         return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
     except Exception:
         import logging
         logging.getLogger(__name__).exception('Unexpected failure recording outcome for decision %s', decision_id)
+        recorder.finish_session(session, status='failed')
         messages.error(request, 'Something went wrong recording this outcome. Nothing was saved.')
         return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    recorder.finish_session(session, final_recommendation_status='recorded')
 
     messages.success(
         request,
@@ -1402,15 +1494,26 @@ def sync_outcome_to_evidence_memory(request, slug, decision_id):
         messages.error(request, 'No outcome has been recorded for this decision yet — nothing to add to Evidence Memory.')
         return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
 
+    # feat/ai-observatory — evidence memory sync telemetry.
+    from ai_observatory.services import recorder
+
+    session = recorder.start_session(project, 'evidence_memory_sync', user=request.user)
+
     try:
-        memory = create_memory_from_verified_outcome(outcome, actor=request.user)
+        with recorder.record_stage(session, 'evidence_memory_sync', 'Evidence Memory Sync (outcome → retrievable evidence)', category='retrieval') as stage:
+            memory = create_memory_from_verified_outcome(outcome, actor=request.user)
+            stage['items_processed'] = 1
+            stage['metadata'] = {'memory_id': memory.pk, 'verification_status': memory.verification_status}
     except Exception:
         import logging
         logging.getLogger(__name__).exception(
             'Unexpected failure syncing VerifiedCapitalOutcome %s to EvidenceMemory', outcome.pk,
         )
+        recorder.finish_session(session, status='failed')
         messages.error(request, 'Something went wrong adding this outcome to Evidence Memory. Nothing was changed.')
         return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
+
+    recorder.finish_session(session, evidence_retrieved=1, evidence_reused=0, final_recommendation_status='recorded')
 
     messages.success(
         request,
