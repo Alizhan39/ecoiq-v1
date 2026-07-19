@@ -44,6 +44,20 @@
   </section>
   {% endif %}
 
+  {% if decision %}
+  <section class="gold-section cc-next-action" style="border-color:var(--gold-border);">
+    <span class="gold-eyebrow">RECOMMENDATION</span>
+    <div class="cc-next-action-row">
+      <h2 class="gold-h2" style="margin:0;">{{ decision.intervention.title }}</h2>
+      <a class="gold-btn" href="{% url 'capital_guardian:explain_recommendation' project.slug %}">Explain This Recommendation →</a>
+    </div>
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.4rem;">
+      Trace this recommendation from evidence to decision to execution to measured outcome — every claim linked
+      to a real EcoIQ record.
+    </p>
+  </section>
+  {% endif %}
+
   <section class="gold-section">
     <h2 class="gold-h2">Workflow</h2>
     <div class="cc-timeline">
