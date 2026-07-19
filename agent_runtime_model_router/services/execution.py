@@ -30,6 +30,95 @@ from agent_runtime_model_router.services.training_pack_loader import (
 
 MAX_LIVE_RETRIES = 1
 
+# ── feat/model-router-observatory ──────────────────────────────────────────
+# Every adapter call in execute_agent() goes through _run_adapter_observed()
+# below — the single shared boundary between EcoIQ and every model provider.
+# One PHYSICAL provider request produces exactly one
+# ai_observatory.ModelInvocation row; the router's bounded same-provider
+# retry and its fallback-provider attempt are separate physical requests and
+# therefore separate rows (retry_count records which attempt each row was,
+# per provider: 0 = first attempt, 1 = the single bounded retry).
+#
+# NOT recorded, deliberately:
+# - deterministic / simulated adapters (no model is invoked — recording them
+#   would poison the Observatory's honest "zero model calls" story);
+# - failures where no provider request was ever sent (missing_credentials,
+#   unsupported_capability): nothing physical happened, so nothing is
+#   counted.
+#
+# Telemetry can never break the model request: recording happens after the
+# adapter returns, inside its own try/except, and the recorder itself also
+# swallows failures. Only provider-reported usage values are stored —
+# estimates stay in AgentRun.estimated_* where they always lived, and are
+# never copied into the Observatory's measured columns. Prompts, responses
+# and API keys are never passed to the recorder.
+
+LIVE_PROVIDERS = {'anthropic', 'openai', 'gemini', 'azure_openai'}
+_NO_REQUEST_FAILURES = {'missing_credentials', 'unsupported_capability'}
+
+
+def _normalise_usage(provider, usage):
+    """Maps each provider's own usage-dict shape onto (input_tokens,
+    output_tokens, cached_tokens, model_version). Absent values stay None —
+    never estimated, never zero-filled."""
+    usage = usage or {}
+    if provider == 'anthropic':
+        return (
+            usage.get('input_tokens'), usage.get('output_tokens'),
+            usage.get('cache_read_input_tokens'), usage.get('model') or '',
+        )
+    if provider in ('openai', 'azure_openai'):
+        cached = (usage.get('prompt_tokens_details') or {}).get('cached_tokens')
+        return (
+            usage.get('prompt_tokens'), usage.get('completion_tokens'),
+            cached, usage.get('model') or '',
+        )
+    if provider == 'gemini':
+        return (
+            usage.get('promptTokenCount'), usage.get('candidatesTokenCount'),
+            usage.get('cachedContentTokenCount'), usage.get('modelVersion') or '',
+        )
+    return None, None, None, ''
+
+
+def _run_adapter_observed(adapter, instruction, agent_run, attempt, observatory_session=None):
+    """Runs one adapter call and records it in the AI Observatory when (and
+    only when) a physical provider request actually happened. The adapter's
+    result — success or failure — is returned untouched."""
+    import time as _time
+
+    started = _time.perf_counter()
+    result = adapter.run(instruction)
+    duration_ms = max(0, int((_time.perf_counter() - started) * 1000))
+
+    try:
+        provider = getattr(adapter, 'provider', '')
+        if provider in LIVE_PROVIDERS and result.failure_reason not in _NO_REQUEST_FAILURES:
+            from ai_observatory.services import recorder as observatory_recorder
+
+            input_tokens, output_tokens, cached_tokens, model_version = _normalise_usage(
+                provider, result.actual_usage,
+            )
+            observatory_recorder.record_model_invocation(
+                observatory_session,
+                provider=provider,
+                model_name=result.model_name or instruction.get('model_name', ''),
+                model_version=model_version,
+                prompt_version=agent_run.prompt_version or '',
+                input_tokens=input_tokens, output_tokens=output_tokens,
+                cached_tokens=cached_tokens,
+                streaming=False,  # every adapter here uses non-streaming APIs — a known value, not a guess
+                retry_count=attempt,
+                duration_ms=duration_ms,
+                succeeded=(result.status == 'success'),
+                agent_run=agent_run if agent_run.pk else None,
+            )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Observatory instrumentation failed for AgentRun %s', agent_run.pk)
+
+    return result
+
 # Illustrative per-1000-token pricing, USD — for the "estimated cost" label
 # only, never presented as an actual provider bill.
 ESTIMATED_PRICE_PER_1K_TOKENS = {
@@ -163,11 +252,20 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
                    requires_reasoning=False, context_length=0, cost_class='standard',
                    fixture_output=None, allow_deterministic_fallback=False,
                    evidence_quality_score=70, unresolved_disagreements=0,
-                   contradiction_severity='none', reviewer_status='pending'):
+                   contradiction_severity='none', reviewer_status='pending',
+                   observatory_session=None):
     """
     Runs the full pipeline for one AgentRun: load pack -> route -> execute
     (with fallback handling) -> validate -> safety-check -> calibrate. Never
     relabels a failed live run as simulated_demo — see the fallback branch.
+
+    observatory_session (feat/model-router-observatory): an optional
+    ai_observatory.AnalysisSession the caller ALREADY owns for the project
+    this run belongs to. When provided, each recorded ModelInvocation links
+    to it; when absent, invocations are recorded honestly unlinked
+    (session=NULL) — the router has no reliable project context of its own
+    (AgentRun knows only its council case), and a guessed link would weaken
+    project isolation.
     """
     agent_run.status = 'running'
     agent_run.started_at = timezone.now()
@@ -226,7 +324,7 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
 
     fallback_chain = []
     adapter = get_adapter(route['selected_provider'])
-    result = adapter.run(instruction)
+    result = _run_adapter_observed(adapter, instruction, agent_run, 0, observatory_session)
 
     if result.status == 'failed' and agent_run.execution_mode_requested == 'live':
         fallback_chain.append({
@@ -234,7 +332,7 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
             'outcome': 'failed', 'reason': result.failure_reason,
         })
         # Allowed outcome 1: one bounded retry on the same provider.
-        result = adapter.run(instruction)
+        result = _run_adapter_observed(adapter, instruction, agent_run, 1, observatory_session)
         if result.status == 'failed':
             fallback_chain.append({
                 'provider': route['selected_provider'], 'model': route['selected_model'],
@@ -243,7 +341,7 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
             # Allowed outcome 2: the configured live fallback provider.
             fallback_adapter = get_adapter(route['fallback_route'])
             fallback_model = instruction.copy()
-            result = fallback_adapter.run(fallback_model)
+            result = _run_adapter_observed(fallback_adapter, fallback_model, agent_run, 0, observatory_session)
             if result.status == 'success':
                 agent_run.model_provider = route['fallback_route']
                 agent_run.model_name = result.model_name
@@ -257,8 +355,12 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
                     'outcome': 'failed', 'reason': result.failure_reason,
                 })
                 if allow_deterministic_fallback:
-                    # Allowed outcome 3 — ONLY when explicitly requested (test/CI harness).
-                    deterministic_result = get_adapter('deterministic').run(instruction)
+                    # Allowed outcome 3 — ONLY when explicitly requested
+                    # (test/CI harness). Deterministic adapter = no model
+                    # invoked = never recorded in the Observatory.
+                    deterministic_result = _run_adapter_observed(
+                        get_adapter('deterministic'), instruction, agent_run, 0, observatory_session,
+                    )
                     if deterministic_result.status == 'success':
                         result = deterministic_result
                         agent_run.execution_mode_used = 'deterministic_test'

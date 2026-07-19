@@ -116,11 +116,14 @@ def mark_human_review_completed(project, decision_id):
 def record_model_invocation(session, *, provider='', model_name='', model_version='',
                             prompt_version='', input_tokens=None, output_tokens=None,
                             cached_tokens=None, streaming=None, retry_count=0,
-                            agent_run=None):
-    """Records one REAL model call. Token fields default to None — pass a
-    value only when the provider actually reported one; this function never
-    estimates. `agent_run` may be an agent_runtime_model_router.AgentRun,
-    linked via the soft-reference convention."""
+                            duration_ms=None, succeeded=None, agent_run=None):
+    """Records one REAL model call — one row per PHYSICAL provider request.
+    Token fields default to None — pass a value only when the provider
+    actually reported one; this function never estimates. `duration_ms` is
+    a measured wall-clock value from the caller; `succeeded` is the real
+    request outcome; both stay NULL when not measured. `agent_run` may be
+    an agent_runtime_model_router.AgentRun, linked via the soft-reference
+    convention."""
     from ai_observatory.models import ModelInvocation
 
     try:
@@ -129,6 +132,7 @@ def record_model_invocation(session, *, provider='', model_name='', model_versio
             model_version=model_version, prompt_version=prompt_version,
             input_tokens=input_tokens, output_tokens=output_tokens,
             cached_tokens=cached_tokens, streaming=streaming, retry_count=retry_count,
+            duration_ms=duration_ms, succeeded=succeeded,
             agent_run_reference=(
                 f'agent_runtime_model_router.AgentRun:{agent_run.pk}' if agent_run is not None else ''
             ),
