@@ -88,6 +88,13 @@
     {% else %}
     <p class="gold-honest-stub">No pathway to recommend until a baseline loss exists.</p>
     {% endif %}
+    <div class="gold-btn-row" style="margin-top:0.8rem;">
+      {% if decision %}
+      <a class="gold-btn gold-btn-primary" href="{% url 'capital_guardian:explain_recommendation' project.slug %}">Explain Current Recommendation →</a>
+      {% else %}
+      <span class="gold-btn" aria-disabled="true" style="opacity:0.5;cursor:default;pointer-events:none;">Explain Current Recommendation (No Recommendation Yet)</span>
+      {% endif %}
+    </div>
   </section>
 
   {# ── EXECUTION ─────────────────────────────────────────────────────── #}

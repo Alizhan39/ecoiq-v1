@@ -1742,3 +1742,46 @@ def project_overview_view(request, slug):
     )
     context['milestones_complete_count'] = sum(1 for m in context['milestones'] if m.status == 'complete')
     return render(request, 'capital_guardian/project_overview.html', context)
+
+
+# ── feat/explainability-layer (PR 8) — "Why did EcoIQ recommend this?"
+# GET-only, read-only drill-down over the exact same connected workflow —
+# see capital_guardian/services/decision_trace.py's module docstring for
+# why this reads existing pipeline outputs rather than recomputing them.
+
+@staff_member_required(login_url='/login/')
+def explain_recommendation_view(request, slug, decision_id=None):
+    """
+    Staff-only, GET-only, project-scoped. When decision_id is given it must
+    belong to this project (enforced by the same _decision_or_404_for_project
+    ownership check human_decision_gate_view already uses — fails closed
+    with a 404, never falls back silently to a different project's
+    decision). When omitted, falls back to the project's primary decision;
+    if none exists at all, the template renders an honest empty state
+    rather than a broken trace.
+    """
+    from capital_guardian.services.command_centre import _primary_decision, build_project_workflow_nav
+    from capital_guardian.services.decision_trace import build_decision_trace
+
+    project = _project_or_404(slug)
+    if decision_id is not None:
+        decision = _decision_or_404_for_project(project, decision_id)
+    else:
+        decision = _primary_decision(project)
+
+    try:
+        trace = build_decision_trace(project, decision=decision, user=request.user)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure building decision trace for GoldProject %s', project.pk,
+        )
+        messages.error(request, 'Something went wrong building the recommendation explanation.')
+        return redirect('capital_guardian:project_overview', slug=slug)
+
+    return render(request, 'capital_guardian/explain_recommendation.html', {
+        'project': project,
+        'decision': decision,
+        'trace': trace,
+        'workflow_nav': build_project_workflow_nav(project, 'decision', decision=decision),
+    })

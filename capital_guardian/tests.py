@@ -5552,3 +5552,462 @@ class WorkflowNavServiceTests(TestCase):
             if item['key'] in always_on:
                 self.assertTrue(item['available'], item['key'])
                 self.assertIsNotNone(item['url'], item['key'])
+
+
+class DecisionTraceServiceTests(TestCase):
+    """
+    feat/explainability-layer (PR 8) —
+    capital_guardian.services.decision_trace.build_decision_trace(). Every
+    test here asserts the trace reads real, already-persisted state — never
+    that it computes a new number. See that module's docstring for why it
+    calls the exact same services every other Capital Guardian page does.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_user('dt_staff', 'dt_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.project = GoldProject.objects.create(
+            name='DT Pilot Project', slug='dt-pilot-project', commodity='other',
+            region='Almaty region', is_demo=True,
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='DT heating loss', loss_type='heat_loss',
+            financial_loss_amount=90000, projected_future_loss=110000, evidence_quality='strong',
+        )
+        self.eligible_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='DT Insulation Retrofit', intervention_type='prevention',
+            capex_estimate=40000, estimated_annual_savings=18000, estimated_loss_avoided=60000,
+            estimated_payback_months=27, implementation_time='6 months',
+            technical_readiness='ready', finance_readiness='ready', mrv_readiness='ready', risk_level='low',
+        )
+        self.blocked_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Sell coal ash as fertiliser', intervention_type='resale',
+        )
+        self.conditional_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Resale of ash as industrial by-product', intervention_type='resale',
+            capex_estimate=15000, estimated_annual_savings=2000, estimated_loss_avoided=5000,
+            technical_readiness='needs_review', finance_readiness='draft', mrv_readiness='not_ready',
+            risk_level='high',
+        )
+
+    def _walk_to_decision(self):
+        decision = create_governed_investment_case(self.eligible_option, decision_text='DT decision')
+        return decision
+
+    def _walk_to_approved(self):
+        from capital_guardian.services import human_decision_gate
+        decision = self._walk_to_decision()
+        human_decision_gate.submit_review(
+            decision, 'approve', self.staff, notes='Approved for DT test.', project=self.project,
+        )
+        decision.refresh_from_db()
+        return decision
+
+    def _walk_to_promoted(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        decision = self._walk_to_approved()
+        promote_to_capital_guardian(decision, actor=self.staff)
+        return decision
+
+    def _walk_to_outcome(self, **kwargs):
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        decision = self._walk_to_promoted()
+        defaults = dict(loss_avoided_actual=55000, capex_actual=42000, mrv_status='baseline_only', evidence_quality='strong')
+        defaults.update(kwargs)
+        outcome = record_verified_outcome(decision, self.eligible_option, **defaults)
+        return decision, outcome
+
+    # ── construction / ordering ─────────────────────────────────────────
+    def test_trace_has_eleven_nodes_in_canonical_order(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        self.assertEqual(
+            [n.stage for n in trace.nodes],
+            ['problem', 'evidence', 'options', 'better_way', 'safety', 'human_decision',
+             'capital_guardian', 'execution', 'outcome', 'evidence_memory', 'observatory'],
+        )
+
+    def test_missing_decision_marks_downstream_stages_unavailable(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        trace = build_decision_trace(self.project, decision=None, user=self.staff)
+        self.assertIsNone(trace.decision)
+        by_stage = {n.stage: n for n in trace.nodes}
+        self.assertTrue(by_stage['problem'].available)  # loss still exists
+        self.assertFalse(by_stage['human_decision'].available)
+        self.assertFalse(by_stage['better_way'].available)
+        self.assertIn('No Capital Allocation Decision', ' '.join(trace.data_gaps))
+
+    def test_missing_loss_marks_all_stages_unavailable(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        empty = GoldProject.objects.create(name='DT Empty Project', slug='dt-empty-project', commodity='other')
+        trace = build_decision_trace(empty, decision=None, user=self.staff)
+        by_stage = {n.stage: n for n in trace.nodes}
+        self.assertFalse(by_stage['problem'].available)
+        self.assertFalse(by_stage['options'].available)
+
+    # ── options / safety ─────────────────────────────────────────────────
+    def test_multiple_options_all_appear_with_correct_statuses(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        options_node = next(n for n in trace.nodes if n.stage == 'options')
+        statuses = {row['option'].pk: row['status'] for row in options_node.extra['rows']}
+        self.assertEqual(statuses[self.eligible_option.pk], 'eligible')
+        self.assertEqual(statuses[self.blocked_option.pk], 'blocked')
+        self.assertEqual(statuses[self.conditional_option.pk], 'conditional')
+
+    def test_blocked_option_carries_a_reason(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        options_node = next(n for n in trace.nodes if n.stage == 'options')
+        blocked_row = next(row for row in options_node.extra['rows'] if row['option'].pk == self.blocked_option.pk)
+        self.assertTrue(blocked_row['reason'])
+        self.assertIn('fertiliser', blocked_row['reason'].lower())
+
+    def test_safety_node_reflects_selected_option_eligibility(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        safety_node = next(n for n in trace.nodes if n.stage == 'safety')
+        self.assertEqual(safety_node.status, 'ELIGIBLE')
+        self.assertFalse(safety_node.extra['human_override_possible'])
+
+    # ── Better Way factor provenance ──────────────────────────────────────
+    def test_better_way_factors_match_real_ranking_weights(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        from waste_to_value_capital_allocation_engine.services.ranking import RANKING_WEIGHTS
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        bw_node = next(n for n in trace.nodes if n.stage == 'better_way')
+        factor_keys = {f['key'] for f in bw_node.extra['factors']}
+        self.assertEqual(factor_keys, set(RANKING_WEIGHTS.keys()))
+        for f in bw_node.extra['factors']:
+            self.assertEqual(f['weight'], RANKING_WEIGHTS[f['key']])
+
+    def test_better_way_no_score_rescoring_composite_matches_ranking_engine(self):
+        from capital_guardian.services.better_way import compare_interventions
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        real_comparison = compare_interventions(self.project, self.loss)
+        real_candidate = next(c for c in real_comparison.ranked if c['option'].pk == self.eligible_option.pk)
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        bw_node = next(n for n in trace.nodes if n.stage == 'better_way')
+        self.assertEqual(bw_node.extra['composite_score'], real_candidate['composite_score'])
+
+    # ── human approval provenance ──────────────────────────────────────
+    def test_human_approval_provenance_includes_reviewer_and_notes(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_approved()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        hd_node = next(n for n in trace.nodes if n.stage == 'human_decision')
+        self.assertEqual(hd_node.status, 'Approved')
+        self.assertEqual(hd_node.actor, 'dt_staff')
+        self.assertEqual(len(hd_node.extra['review_events']), 1)
+        self.assertIn('Approved for DT test.', hd_node.extra['review_events'][0]['notes'])
+
+    def test_human_decision_not_started_when_no_decision_exists(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        trace = build_decision_trace(self.project, decision=None, user=self.staff)
+        hd_node = next(n for n in trace.nodes if n.stage == 'human_decision')
+        self.assertEqual(hd_node.status, 'Not Started')
+        self.assertFalse(hd_node.available)
+
+    # ── capital decision / governance provenance ────────────────────────
+    def test_capital_lifecycle_label_recommendation_only_before_decision(self):
+        from capital_guardian.services.decision_trace import _capital_lifecycle_label
+        self.assertEqual(_capital_lifecycle_label(None, None, {'capital_committed_usd': 0, 'capital_deployed_usd': 0}), 'Recommendation only')
+
+    def test_capital_lifecycle_label_human_approved_before_governance(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_approved()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        cg_node = next(n for n in trace.nodes if n.stage == 'capital_guardian')
+        self.assertIn('not yet promoted', cg_node.status)
+
+    def test_capital_lifecycle_label_governed_after_promotion(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        cg_node = next(n for n in trace.nodes if n.stage == 'capital_guardian')
+        self.assertIn('Capital governed', cg_node.status)
+
+    # ── execution status ────────────────────────────────────────────────
+    def test_execution_reflects_real_milestones(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        MineTimelineMilestone.objects.create(project=self.project, phase='construction', status='complete')
+        MineTimelineMilestone.objects.create(project=self.project, phase='production', status='in_progress')
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        exec_node = next(n for n in trace.nodes if n.stage == 'execution')
+        self.assertIn('1 of 2', exec_node.status)
+        self.assertTrue(exec_node.available)
+
+    def test_execution_honest_when_no_milestones(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        exec_node = next(n for n in trace.nodes if n.stage == 'execution')
+        self.assertEqual(exec_node.status, 'No Milestones Recorded')
+
+    # ── outcome classification (reuses PR7's execution_monitoring logic) ──
+    def test_outcome_achieved_classification(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision, outcome = self._walk_to_outcome(loss_avoided_actual=58000, capex_actual=41000)
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        outcome_node = next(n for n in trace.nodes if n.stage == 'outcome')
+        self.assertEqual(outcome_node.extra['result_key'], execution_monitoring.RESULT_ACHIEVED)
+        self.assertEqual(outcome_node.status, execution_monitoring.RESULT_LABELS[execution_monitoring.RESULT_ACHIEVED])
+
+    def test_outcome_not_achieved_classification(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision, outcome = self._walk_to_outcome(loss_avoided_actual=0, capex_actual=41000)
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        outcome_node = next(n for n in trace.nodes if n.stage == 'outcome')
+        self.assertEqual(outcome_node.extra['result_key'], execution_monitoring.RESULT_NOT_ACHIEVED)
+
+    def test_outcome_disputed_classification(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision, outcome = self._walk_to_outcome(mrv_status='disputed')
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        outcome_node = next(n for n in trace.nodes if n.stage == 'outcome')
+        self.assertEqual(outcome_node.extra['result_key'], execution_monitoring.RESULT_DISPUTED)
+        self.assertIn('disputed', outcome_node.data_quality)
+
+    def test_outcome_insufficient_evidence_when_none_recorded(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        outcome_node = next(n for n in trace.nodes if n.stage == 'outcome')
+        self.assertEqual(outcome_node.extra['result_key'], execution_monitoring.RESULT_INSUFFICIENT_EVIDENCE)
+        self.assertFalse(outcome_node.available)
+
+    # ── Evidence Memory learning loop ───────────────────────────────────
+    def test_evidence_memory_linkage_present_when_synced(self):
+        from evidence_memory.services.memory import create_memory_from_verified_outcome
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision, outcome = self._walk_to_outcome()
+        create_memory_from_verified_outcome(outcome, actor=self.staff)
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        mem_node = next(n for n in trace.nodes if n.stage == 'evidence_memory')
+        self.assertEqual(mem_node.status, 'Synced')
+        self.assertIsNotNone(mem_node.extra.get('memory'))
+
+    def test_evidence_memory_linkage_absent_when_not_synced(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision, outcome = self._walk_to_outcome()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        mem_node = next(n for n in trace.nodes if n.stage == 'evidence_memory')
+        self.assertEqual(mem_node.status, 'Not Yet Synced')
+
+    def test_evidence_memory_not_applicable_before_outcome_exists(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        mem_node = next(n for n in trace.nodes if n.stage == 'evidence_memory')
+        self.assertEqual(mem_node.status, 'Not Applicable')
+        self.assertFalse(mem_node.available)
+
+    def test_restricted_evidence_memory_excluded_from_trace_detail(self):
+        """The retrieval_policy access check must be honoured even for this
+        project's own synced outcome memory — a record whose visibility is
+        restricted_unresolved is never shown, matching evidence_memory's
+        own access policy (never exposing what the policy would refuse)."""
+        from evidence_memory.services.memory import create_memory_from_verified_outcome
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision, outcome = self._walk_to_outcome()
+        memory = create_memory_from_verified_outcome(outcome, actor=self.staff)
+        memory.visibility = 'restricted_unresolved'
+        memory.save(update_fields=['visibility'])
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        mem_node = next(n for n in trace.nodes if n.stage == 'evidence_memory')
+        self.assertIn('restricted', mem_node.status.lower())
+        self.assertNotIn('memory', mem_node.extra)
+
+    def test_demo_evidence_labelled_in_evidence_node(self):
+        from evidence_memory.services.memory import create_memory_from_manual_project_evidence
+        from capital_guardian.services.decision_trace import build_decision_trace
+        create_memory_from_manual_project_evidence(
+            self.project, title='DT demo doc', text='DT demo evidence text.',
+            document_category='technical_report', is_demo=True,
+        )
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        evidence_node = next(n for n in trace.nodes if n.stage == 'evidence')
+        rows = evidence_node.extra['rows']
+        self.assertTrue(any(r['is_demo'] for r in rows))
+
+    def test_missing_evidence_marked_honestly(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        empty = GoldProject.objects.create(name='DT No Evidence Project', slug='dt-no-evidence-project', commodity='other')
+        trace = build_decision_trace(empty, decision=None, user=self.staff)
+        evidence_node = next(n for n in trace.nodes if n.stage == 'evidence')
+        self.assertEqual(evidence_node.status, 'None Recorded')
+        self.assertIn('No evidence recorded', ' '.join(trace.data_gaps))
+
+    # ── AI Observatory linkage ───────────────────────────────────────────
+    def test_observatory_linkage_present_when_session_exists(self):
+        from ai_observatory.models import AnalysisSession
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        AnalysisSession.objects.create(project=self.project, kind='project_analysis', status='completed')
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        obs_node = next(n for n in trace.nodes if n.stage == 'observatory')
+        self.assertTrue(obs_node.available)
+        self.assertIsNotNone(obs_node.extra.get('session'))
+        self.assertIn('recency only', obs_node.extra['association_note'])
+
+    def test_observatory_linkage_absent_when_no_session(self):
+        from capital_guardian.services.decision_trace import build_decision_trace
+        decision = self._walk_to_promoted()
+        trace = build_decision_trace(self.project, decision=decision, user=self.staff)
+        obs_node = next(n for n in trace.nodes if n.stage == 'observatory')
+        self.assertFalse(obs_node.available)
+        self.assertEqual(obs_node.status, 'No Linked Telemetry Session Available')
+
+    # ── summary is deterministic, never a generated narrative ──────────
+    def test_summary_uses_not_available_literal_for_missing_facts(self):
+        from capital_guardian.services.decision_trace import NOT_AVAILABLE, build_decision_trace
+        trace = build_decision_trace(self.project, decision=None, user=self.staff)
+        self.assertEqual(trace.summary['recommended_intervention'], NOT_AVAILABLE)
+        self.assertEqual(trace.summary['current_status'], 'No decision yet')
+
+
+class ExplainRecommendationViewTests(TestCase):
+    """feat/explainability-layer (PR 8) — capital_guardian.views.
+    explain_recommendation_view. GET-only, project-scoped, staff-only."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('erv_staff', 'erv_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('erv_normal', 'erv_normal@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='ERV Pilot Project', slug='erv-pilot-project', commodity='other', is_demo=True,
+        )
+        self.other_project = GoldProject.objects.create(
+            name='ERV Other Project', slug='erv-other-project', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='ERV heating loss', loss_type='heat_loss',
+            financial_loss_amount=90000, evidence_quality='strong',
+        )
+        self.option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='ERV Insulation Retrofit', intervention_type='prevention',
+            capex_estimate=40000, estimated_annual_savings=18000, estimated_loss_avoided=60000,
+            technical_readiness='ready', finance_readiness='ready', mrv_readiness='ready', risk_level='low',
+        )
+        self.decision = create_governed_investment_case(self.option, decision_text='ERV decision')
+
+        other_loss = OperationalLoss.objects.create(
+            project=self.other_project.name, title='ERV other loss', loss_type='heat_loss',
+            financial_loss_amount=5000,
+        )
+        other_option = InterventionOption.objects.create(
+            operational_loss=other_loss, title='ERV other option', intervention_type='prevention',
+            capex_estimate=1000,
+        )
+        self.other_decision = create_governed_investment_case(other_option, decision_text='ERV other decision')
+
+    def test_anonymous_denied(self):
+        r = self.client.get(reverse('capital_guardian:explain_recommendation', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_non_staff_denied(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(reverse('capital_guardian:explain_recommendation', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 302)
+
+    def test_staff_sees_full_trace(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:explain_recommendation', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'ERV Insulation Retrofit')
+        self.assertContains(r, 'Decision Trace')
+        self.assertContains(r, 'Recommendation Summary')
+
+    def test_no_decision_shows_honest_empty_state(self):
+        empty = GoldProject.objects.create(name='ERV Empty Project', slug='erv-empty-project', commodity='other')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:explain_recommendation', args=[empty.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'NO RECOMMENDATION TO EXPLAIN YET')
+
+    def test_explicit_decision_id_must_belong_to_project(self):
+        """Project isolation: a decision_id belonging to a different
+        project's decision must never resolve under this project's URL."""
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse(
+            'capital_guardian:explain_recommendation_for_decision',
+            args=[self.project.slug, self.other_decision.pk],
+        ))
+        self.assertEqual(r.status_code, 404)
+
+    def test_explicit_decision_id_for_own_project_works(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse(
+            'capital_guardian:explain_recommendation_for_decision',
+            args=[self.project.slug, self.decision.pk],
+        ))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'ERV Insulation Retrofit')
+
+    def test_nonexistent_decision_id_404s(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse(
+            'capital_guardian:explain_recommendation_for_decision',
+            args=[self.project.slug, 999999],
+        ))
+        self.assertEqual(r.status_code, 404)
+
+    def test_nonexistent_project_slug_404s(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:explain_recommendation', args=['no-such-project']))
+        self.assertEqual(r.status_code, 404)
+
+    def test_get_writes_no_telemetry_and_mutates_nothing(self):
+        from ai_observatory.models import AnalysisSession
+        from evidence_memory.models import EvidenceMemory
+        self.client.force_login(self.staff)
+        before_status = self.decision.approval_status
+        before_memory_count = EvidenceMemory.objects.count()
+        for _ in range(3):
+            r = self.client.get(reverse('capital_guardian:explain_recommendation', args=[self.project.slug]))
+            self.assertEqual(r.status_code, 200)
+        self.assertEqual(AnalysisSession.objects.filter(project=self.project).count(), 0)
+        self.decision.refresh_from_db()
+        self.assertEqual(self.decision.approval_status, before_status)
+        self.assertEqual(EvidenceMemory.objects.count(), before_memory_count)
+
+    def test_workflow_nav_present_and_decision_stage_current(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:explain_recommendation', args=[self.project.slug]))
+        self.assertContains(r, 'pwn-nav')
+        self.assertContains(r, 'pwn-tab active')
+
+    def test_command_centre_shows_explain_link_when_decision_exists(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project.slug]))
+        self.assertContains(r, 'Explain This Recommendation')
+
+    def test_command_centre_hides_explain_link_without_decision(self):
+        empty = GoldProject.objects.create(name='ERV CC Empty', slug='erv-cc-empty', commodity='other')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_command_centre', args=[empty.slug]))
+        self.assertNotContains(r, 'Explain This Recommendation')
+
+    def test_project_overview_shows_explain_button_when_decision_exists(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[self.project.slug]))
+        self.assertContains(r, 'Explain Current Recommendation')
+        self.assertContains(r, reverse('capital_guardian:explain_recommendation', args=[self.project.slug]))
+
+    def test_project_overview_shows_disabled_state_without_decision(self):
+        empty = GoldProject.objects.create(name='ERV Overview Empty', slug='erv-overview-empty', commodity='other')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[empty.slug]))
+        self.assertContains(r, 'No Recommendation Yet')
