@@ -808,3 +808,205 @@ class PlatformPageTeaserTests(TestCase):
         content = response.content.decode()
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
+
+
+class FallbackModelSelectionTests(TestCase):
+    """
+    fix/router-fallback-model — the cross-provider fallback must ask the
+    fallback provider to run ITS OWN configured model, never the primary
+    provider's model string. Regression coverage for the defect surfaced by
+    the AI Observatory (a real Anthropic request for "gpt-4o" failing).
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        sync_registry()
+
+    def setUp(self):
+        from ai_agent_council.models import CouncilRun
+        self.council_run = CouncilRun.objects.create(
+            slug='fallback-model-test-run', title='Fallback Model Test', question='?',
+            task_category='industrial_asset_modernisation',
+        )
+
+    def _live_run(self, suffix=''):
+        from agent_runtime_model_router.services.execution import create_agent_run
+        return create_agent_run(
+            'Finance Modelling Agent', 'capex_opex_modelling', council_case=self.council_run,
+            execution_mode='live', input_summary=f'fallback model test {suffix}',
+            rerun_reason=suffix or '',
+        )
+
+    @staticmethod
+    def _scripted_adapter(provider, results, calls_log):
+        """Adapter double that logs every instruction it receives."""
+        from agent_runtime_model_router.services.model_adapters import AdapterResult
+
+        class _Fake:
+            def __init__(self):
+                self.provider = provider
+
+            def run(self, instruction):
+                calls_log.append({'provider': provider, 'model_name': instruction.get('model_name')})
+                if results:
+                    return results.pop(0)
+                return AdapterResult(status='failed', failure_reason='timeout', model_provider=provider)
+        return _Fake()
+
+    @staticmethod
+    def _ok(provider, model):
+        from agent_runtime_model_router.services.model_adapters import AdapterResult
+        return AdapterResult(
+            status='success',
+            output={'output_summary': 'ok', 'confidence': 80, 'evidence_used': [],
+                    'missing_data': [], 'risk_flags': []},
+            raw_text='ok', model_provider=provider, model_name=model,
+            actual_usage={'input_tokens': 10, 'output_tokens': 5},
+        )
+
+    @staticmethod
+    def _fail(provider):
+        from agent_runtime_model_router.services.model_adapters import AdapterResult
+        return AdapterResult(status='failed', failure_reason='timeout', model_provider=provider)
+
+    def _execute(self, run, adapters, **kwargs):
+        from unittest import mock
+        from agent_runtime_model_router.services import execution
+        with mock.patch.object(execution, 'get_adapter', side_effect=lambda p: adapters[p]):
+            return execution.execute_agent(run, **kwargs)
+
+    def test_primary_success_never_touches_fallback(self):
+        calls = []
+        run = self._live_run('primary-ok')
+        adapters = {
+            'openai': self._scripted_adapter('openai', [self._ok('openai', 'gpt-4o')], calls),
+            'anthropic': self._scripted_adapter('anthropic', [], calls),
+        }
+        run = self._execute(run, adapters)
+        self.assertEqual([c['provider'] for c in calls], ['openai'])
+        self.assertEqual(run.fallback_chain, [])
+        self.assertEqual(run.model_provider, 'openai')
+
+    def test_openai_to_anthropic_fallback_uses_anthropic_model(self):
+        """The core regression: primary openai (gpt-4o) fails twice; the
+        anthropic fallback must be asked for anthropic's OWN configured
+        model, not 'gpt-4o'."""
+        from agent_runtime_model_router.services.model_router import DEFAULT_MODEL_BY_PROVIDER
+        calls = []
+        run = self._live_run('openai-to-anthropic')
+        anthropic_model = DEFAULT_MODEL_BY_PROVIDER['anthropic']
+        adapters = {
+            'openai': self._scripted_adapter('openai', [self._fail('openai'), self._fail('openai')], calls),
+            'anthropic': self._scripted_adapter('anthropic', [self._ok('anthropic', anthropic_model)], calls),
+        }
+        run = self._execute(run, adapters)
+        self.assertEqual(run.status in ('completed', 'needs_human_review'), True)
+        self.assertEqual(run.model_provider, 'anthropic')
+        # The primary attempts carried openai's model; the fallback attempt
+        # carried anthropic's own configured model.
+        self.assertEqual(calls[0], {'provider': 'openai', 'model_name': 'gpt-4o'})
+        self.assertEqual(calls[1], {'provider': 'openai', 'model_name': 'gpt-4o'})
+        self.assertEqual(calls[2], {'provider': 'anthropic', 'model_name': anthropic_model})
+        self.assertNotEqual(calls[2]['model_name'], 'gpt-4o')
+        # fallback_chain records the real provider/model pairs.
+        self.assertEqual(run.fallback_chain[-1]['provider'], 'anthropic')
+        self.assertEqual(run.fallback_chain[-1]['model'], anthropic_model)
+        self.assertEqual(run.fallback_chain[-1]['outcome'], 'success')
+
+    def test_anthropic_to_openai_fallback_uses_openai_model(self):
+        """Reverse direction: requires_reasoning routes primary to
+        anthropic; its fallback (openai) must receive gpt-4o, not claude."""
+        calls = []
+        run = self._live_run('anthropic-to-openai')
+        adapters = {
+            'anthropic': self._scripted_adapter('anthropic', [self._fail('anthropic'), self._fail('anthropic')], calls),
+            'openai': self._scripted_adapter('openai', [self._ok('openai', 'gpt-4o')], calls),
+        }
+        run = self._execute(run, adapters, requires_reasoning=True)
+        self.assertEqual(calls[0]['provider'], 'anthropic')
+        self.assertEqual(calls[0]['model_name'], 'claude-opus-4-5')
+        self.assertEqual(calls[2], {'provider': 'openai', 'model_name': 'gpt-4o'})
+        self.assertEqual(run.model_provider, 'openai')
+
+    def test_missing_fallback_model_config_fails_clearly_without_attempt(self):
+        from unittest import mock
+        from agent_runtime_model_router.services import model_router
+        calls = []
+        run = self._live_run('missing-fallback-config')
+        adapters = {
+            'openai': self._scripted_adapter('openai', [self._fail('openai'), self._fail('openai')], calls),
+            'anthropic': self._scripted_adapter('anthropic', [self._ok('anthropic', 'claude-opus-4-5')], calls),
+        }
+        # Remove the fallback provider's configured model: the fallback must
+        # be SKIPPED with an explicit reason, never attempted.
+        with mock.patch.object(model_router, 'default_model_for', side_effect=lambda p: None if p == 'anthropic' else model_router.DEFAULT_MODEL_BY_PROVIDER.get(p)):
+            run = self._execute(run, adapters)
+        self.assertEqual([c['provider'] for c in calls], ['openai', 'openai'])
+        self.assertEqual(run.status, 'needs_human_review')
+        skipped = run.fallback_chain[-1]
+        self.assertEqual(skipped['outcome'], 'skipped')
+        self.assertEqual(skipped['reason'], 'no_fallback_model_configured')
+
+    def test_all_routes_fail_is_honest_and_bounded(self):
+        """Primary twice + fallback once = exactly three live attempts, no
+        fallback-of-fallback, no loop."""
+        calls = []
+        run = self._live_run('all-fail')
+        adapters = {
+            'openai': self._scripted_adapter('openai', [self._fail('openai'), self._fail('openai')], calls),
+            'anthropic': self._scripted_adapter('anthropic', [self._fail('anthropic')], calls),
+        }
+        run = self._execute(run, adapters)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(run.status, 'needs_human_review')
+        self.assertEqual([f['outcome'] for f in run.fallback_chain], ['failed', 'failed_retry', 'failed'])
+
+    def test_skipped_fallback_still_allows_explicit_deterministic_fallback(self):
+        from unittest import mock
+        from agent_runtime_model_router.services import model_router
+        from agent_runtime_model_router.services.model_adapters import DeterministicTestAdapter
+        calls = []
+        run = self._live_run('skip-then-deterministic')
+        adapters = {
+            'openai': self._scripted_adapter('openai', [self._fail('openai'), self._fail('openai')], calls),
+            'deterministic': DeterministicTestAdapter(),
+        }
+        with mock.patch.object(model_router, 'default_model_for', side_effect=lambda p: None if p == 'anthropic' else model_router.DEFAULT_MODEL_BY_PROVIDER.get(p)):
+            run = self._execute(run, adapters, allow_deterministic_fallback=True)
+        self.assertEqual(run.execution_mode_used, 'deterministic_test')
+        self.assertEqual(run.fallback_chain[-1]['provider'], 'deterministic')
+
+    def test_telemetry_failure_does_not_break_fallback_routing(self):
+        from unittest import mock
+        calls = []
+        run = self._live_run('telemetry-fail')
+        adapters = {
+            'openai': self._scripted_adapter('openai', [self._fail('openai'), self._fail('openai')], calls),
+            'anthropic': self._scripted_adapter('anthropic', [self._ok('anthropic', 'claude-opus-4-5')], calls),
+        }
+        with mock.patch('ai_observatory.services.recorder.record_model_invocation',
+                        side_effect=RuntimeError('telemetry boom')):
+            run = self._execute(run, adapters)
+        self.assertEqual(run.model_provider, 'anthropic')
+        self.assertEqual(calls[2]['model_name'], 'claude-opus-4-5')
+
+    def test_observatory_attribution_correct_provider_model_pairs(self):
+        """One row per physical request, each with the provider/model pair
+        that was actually attempted — no double counting."""
+        from ai_observatory.models import ModelInvocation
+        calls = []
+        run = self._live_run('observatory-attribution')
+        adapters = {
+            'openai': self._scripted_adapter('openai', [self._fail('openai'), self._fail('openai')], calls),
+            'anthropic': self._scripted_adapter('anthropic', [self._ok('anthropic', 'claude-opus-4-5')], calls),
+        }
+        self._execute(run, adapters)
+        rows = list(ModelInvocation.objects.order_by('created_at'))
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(
+            [(r.provider, r.succeeded, r.retry_count) for r in rows],
+            [('openai', False, 0), ('openai', False, 1), ('anthropic', True, 0)],
+        )
+        self.assertEqual(rows[2].model_name, 'claude-opus-4-5')
+        self.assertEqual(rows[2].input_tokens, 10)
+        self.assertEqual(rows[2].output_tokens, 5)

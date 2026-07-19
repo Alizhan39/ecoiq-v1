@@ -338,37 +338,60 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
                 'provider': route['selected_provider'], 'model': route['selected_model'],
                 'outcome': 'failed_retry', 'reason': result.failure_reason,
             })
-            # Allowed outcome 2: the configured live fallback provider.
-            fallback_adapter = get_adapter(route['fallback_route'])
-            fallback_model = instruction.copy()
-            result = _run_adapter_observed(fallback_adapter, fallback_model, agent_run, 0, observatory_session)
+            # Allowed outcome 2: the configured live fallback provider,
+            # running ITS OWN configured model. fix/router-fallback-model:
+            # the previous code passed instruction.copy() unchanged, so the
+            # fallback adapter was asked to run the PRIMARY provider's model
+            # string (e.g. Anthropic asked for "gpt-4o") and could never
+            # succeed. Model selection is provider-specific: provider ->
+            # default_model_for(provider), from the same configuration the
+            # router itself uses. A fallback provider with no configured
+            # model is skipped with an explicit reason, never attempted
+            # with a model it cannot serve. FALLBACK_MAP is a static
+            # one-hop map and this branch runs exactly once, so no
+            # fallback chain/loop is possible.
+            from agent_runtime_model_router.services.model_router import default_model_for
+
+            fallback_provider = route['fallback_route']
+            fallback_model_name = default_model_for(fallback_provider)
+            if fallback_provider and fallback_model_name:
+                fallback_adapter = get_adapter(fallback_provider)
+                fallback_instruction = dict(instruction, model_name=fallback_model_name)
+                result = _run_adapter_observed(fallback_adapter, fallback_instruction, agent_run, 0, observatory_session)
             if result.status == 'success':
-                agent_run.model_provider = route['fallback_route']
+                agent_run.model_provider = fallback_provider
                 agent_run.model_name = result.model_name
                 fallback_chain.append({
-                    'provider': route['fallback_route'], 'model': result.model_name,
+                    'provider': fallback_provider, 'model': result.model_name,
                     'outcome': 'success', 'reason': 'live fallback provider succeeded',
+                })
+            elif not (fallback_provider and fallback_model_name):
+                fallback_chain.append({
+                    'provider': fallback_provider or 'none', 'model': '',
+                    'outcome': 'skipped', 'reason': 'no_fallback_model_configured',
                 })
             else:
                 fallback_chain.append({
-                    'provider': route['fallback_route'], 'model': route['fallback_route'],
+                    'provider': fallback_provider, 'model': fallback_model_name,
                     'outcome': 'failed', 'reason': result.failure_reason,
                 })
-                if allow_deterministic_fallback:
-                    # Allowed outcome 3 — ONLY when explicitly requested
-                    # (test/CI harness). Deterministic adapter = no model
-                    # invoked = never recorded in the Observatory.
-                    deterministic_result = _run_adapter_observed(
-                        get_adapter('deterministic'), instruction, agent_run, 0, observatory_session,
-                    )
-                    if deterministic_result.status == 'success':
-                        result = deterministic_result
-                        agent_run.execution_mode_used = 'deterministic_test'
-                        agent_run.fallback_reason = 'Live providers failed; explicit deterministic_test fallback was allowed.'
-                        fallback_chain.append({
-                            'provider': 'deterministic', 'model': 'deterministic-test-v1',
-                            'outcome': 'success', 'reason': 'explicit deterministic fallback',
-                        })
+            if result.status == 'failed' and allow_deterministic_fallback:
+                # Allowed outcome 3 — ONLY when explicitly requested
+                # (test/CI harness). Reachable whether the live fallback
+                # failed or was skipped for lack of a configured model.
+                # Deterministic adapter = no model invoked = never recorded
+                # in the Observatory.
+                deterministic_result = _run_adapter_observed(
+                    get_adapter('deterministic'), instruction, agent_run, 0, observatory_session,
+                )
+                if deterministic_result.status == 'success':
+                    result = deterministic_result
+                    agent_run.execution_mode_used = 'deterministic_test'
+                    agent_run.fallback_reason = 'Live providers failed; explicit deterministic_test fallback was allowed.'
+                    fallback_chain.append({
+                        'provider': 'deterministic', 'model': 'deterministic-test-v1',
+                        'outcome': 'success', 'reason': 'explicit deterministic fallback',
+                    })
 
     agent_run.fallback_chain = fallback_chain
 
