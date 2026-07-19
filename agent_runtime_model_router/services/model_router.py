@@ -28,6 +28,18 @@ FALLBACK_MAP = {
 LONG_CONTEXT_THRESHOLD_CHARS = 50_000
 
 
+def default_model_for(provider):
+    """The configured model for one provider, or None when the provider has
+    no configured model. fix/router-fallback-model: the execution layer uses
+    this when switching to a fallback provider, so a fallback adapter is
+    always asked to run ITS OWN configured model — never the primary
+    provider's model string (e.g. Anthropic being asked to run "gpt-4o",
+    which can only ever fail). A None here means the fallback is skipped
+    with an explicit, honest reason rather than attempted with a model the
+    provider cannot serve."""
+    return DEFAULT_MODEL_BY_PROVIDER.get(provider)
+
+
 def _required_capability(requires_vision, requires_reasoning, context_length):
     if requires_vision:
         return 'vision'
