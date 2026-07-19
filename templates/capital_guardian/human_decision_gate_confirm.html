@@ -10,6 +10,8 @@
   <h1 class="gold-h1">Confirm: {{ action_label }}</h1>
   <p class="gold-sub">{{ project.name }} — {{ option.title }}</p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
+
   <div class="hdg-banner hdg-banner-{{ decision.approval_status }}">
     <strong>CURRENT STATUS: {{ decision.get_approval_status_display|upper }}</strong>
     <span>EcoIQ provides decision support. A human reviewer is responsible for the final decision. This action only authorises the next governed workflow stage — it does not trigger procurement, payment, or physical installation.</span>

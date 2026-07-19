@@ -15,6 +15,8 @@
     never a guarantee, an AI-proven conclusion, or a religious/Shariah determination.
   </p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
+
   {% if result.baseline_ranked_first %}
   <section class="gold-section">
     <p class="iq-badge iq-badge-review">{{ result.baseline_warning }}</p>
@@ -47,6 +49,21 @@
       </div>
     </div>
     {% if c.safety_status == 'conditional' %}<p class="gold-sub" style="font-size:0.76rem;margin:-0.4rem 0 0.6rem;">Unmet condition: {{ c.safety_reason }}</p>{% endif %}
+    <details class="bw-factors">
+      <summary>Why this composite score — factor-by-factor</summary>
+      <div class="gold-grid" style="margin-top:0.5rem;">
+        <div class="gold-card"><div class="gold-card-label">Financial Return</div><div class="gold-card-value" style="font-size:1rem;">{{ c.financial_return|floatformat:0 }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Capital Efficiency</div><div class="gold-card-value" style="font-size:1rem;">{{ c.capital_efficiency|floatformat:0 }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Loss Avoided</div><div class="gold-card-value" style="font-size:1rem;">{{ c.loss_avoided|floatformat:0 }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Downside Risk (inverted)</div><div class="gold-card-value" style="font-size:1rem;">{{ c.downside_risk|floatformat:0 }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Evidence Quality</div><div class="gold-card-value" style="font-size:1rem;">{{ c.evidence_quality|floatformat:0 }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">MRV Readiness</div><div class="gold-card-value" style="font-size:1rem;">{{ c.mrv_readiness|floatformat:0 }}</div></div>
+      </div>
+      <p class="gold-sub" style="font-size:0.72rem;margin-top:0.4rem;">
+        Each factor is scored 0–100 from this option's own entered figures and readiness levels, then weighted
+        into the composite score above — never a single opaque AI judgement.
+      </p>
+    </details>
     {% if request.user.is_staff %}
     <div style="margin:-0.3rem 0 0.9rem;">
       <a class="wtv-confirm-btn" style="font-size:0.78rem;padding:0.4rem 0.9rem;" href="{% url 'capital_guardian:create_capital_decision_confirm' project.slug loss.pk c.option.pk %}">Create Capital Decision</a>
@@ -109,5 +126,8 @@
   .gc-plain-list { color: var(--gold-muted); font-size: 0.85rem; line-height: 1.7; padding-left: 1.2rem; margin: 0.5rem 0 0; }
   .wtv-confirm-btn { display: inline-block; background: #00e89a; color: #06120c; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; }
   .wtv-confirm-btn:hover { filter: brightness(1.08); }
+  .bw-factors { margin: 0 0 0.9rem; }
+  .bw-factors summary { cursor: pointer; font-size: 0.8rem; color: var(--gold-text); }
+  .bw-factors summary:focus-visible { outline: 2px solid var(--gold-acc); outline-offset: 2px; }
 </style>
 {% endblock %}

@@ -186,6 +186,69 @@ def _primary_decision(project):
     return execution_monitoring.capital_decisions_for_project(project).first()
 
 
+# feat/e2e-project-pipeline — the ONE ordered list of the 11 pipeline stages
+# a reviewer walks through end-to-end (spec section 13's "suggested
+# sections"). Every page in this journey renders this exact same list via
+# templates/capital_guardian/_project_workflow_nav.html, so "what stage am I
+# on and what's next" is answered identically everywhere — never a
+# per-template ad hoc breadcrumb. This is presentation only: it resolves
+# URLs from the SAME loss/decision _current_loss()/_primary_decision()
+# already found elsewhere on this page; it stores no new state.
+WORKFLOW_STAGE_KEYS = [
+    'overview', 'investigation', 'evidence', 'interventions', 'better_way',
+    'decision', 'capital_guardian', 'execution', 'outcome', 'evidence_memory',
+    'observatory',
+]
+
+
+def build_project_workflow_nav(project, current_key, loss=None, decision=None):
+    """
+    Builds the 11-item project workflow nav for one project. `loss` and
+    `decision` may be passed by callers that already resolved their own
+    (e.g. a loss-scoped or decision-scoped page uses ITS OWN URL object,
+    not a re-guessed one) — otherwise this falls back to the same
+    _current_loss()/_primary_decision() helpers Command Centre uses, so
+    "the current loss/decision" is never resolved two different ways.
+
+    A stage with `available=False` renders with no href — never a link to
+    a page that would immediately bounce/404 for lack of a loss or
+    decision to scope to.
+    """
+    if loss is None:
+        loss = _current_loss(project)
+    if decision is None:
+        decision = _primary_decision(project)
+    has_interventions = loss is not None and loss.interventions.exists()
+
+    items = [
+        {'key': 'overview', 'label': 'Overview', 'available': True,
+         'url': _url('capital_guardian:project_overview', project.slug)},
+        {'key': 'investigation', 'label': 'Investigation', 'available': True,
+         'url': _url('capital_guardian:investigation', project.slug)},
+        {'key': 'evidence', 'label': 'Evidence', 'available': True,
+         'url': _url('capital_guardian:evidence_centre', project.slug)},
+        {'key': 'interventions', 'label': 'Interventions', 'available': loss is not None,
+         'url': _url('capital_guardian:operational_loss_detail', project.slug, loss.pk) if loss is not None else None},
+        {'key': 'better_way', 'label': 'Better Way', 'available': has_interventions,
+         'url': _url('capital_guardian:better_way_view', project.slug, loss.pk) if has_interventions else None},
+        {'key': 'decision', 'label': 'Decision', 'available': decision is not None,
+         'url': _url('capital_guardian:human_decision_gate', project.slug, decision.pk) if decision is not None else None},
+        {'key': 'capital_guardian', 'label': 'Capital Guardian', 'available': True,
+         'url': _url('capital_guardian:governance', project.slug)},
+        {'key': 'execution', 'label': 'Execution', 'available': True,
+         'url': _url('capital_guardian:project_monitoring', project.slug)},
+        {'key': 'outcome', 'label': 'Outcome', 'available': decision is not None,
+         'url': _url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) if decision is not None else None},
+        {'key': 'evidence_memory', 'label': 'Evidence Memory', 'available': decision is not None,
+         'url': (_url('capital_guardian:record_outcome_confirm', project.slug, decision.pk) + '#evidence-memory') if decision is not None else None},
+        {'key': 'observatory', 'label': 'Observatory', 'available': True,
+         'url': _url('ai_observatory:observatory', project.slug)},
+    ]
+    for item in items:
+        item['is_current'] = item['key'] == current_key
+    return items
+
+
 def build_command_centre_context(project, user=None):
     """
     Returns one dict with every real, already-computed value the Command

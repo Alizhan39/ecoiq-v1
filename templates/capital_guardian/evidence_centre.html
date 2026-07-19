@@ -10,6 +10,7 @@
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
   <p class="gold-sub">This app never marks a document independently verified itself — every status below is a real, human- or system-recorded value on the underlying EvidenceMemory row.</p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
   {% include 'capital_guardian/_nav.html' with active_tab='evidence' %}
 
   <section class="gold-section">

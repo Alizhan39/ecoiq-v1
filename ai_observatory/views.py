@@ -33,6 +33,11 @@ def _dashboard_context(project, current_session=None):
     completed = [s for s in sessions if s.status == 'completed']
     current = current_session or (sessions.first() if sessions else None)
 
+    # feat/e2e-project-pipeline — the same project workflow nav every other
+    # stage renders, so Observatory is reachable and returnable-from as part
+    # of the one connected journey, not a dead end.
+    from capital_guardian.services.command_centre import build_project_workflow_nav
+
     context = {
         'project': project,
         'sessions': list(sessions[:25]),
@@ -44,6 +49,7 @@ def _dashboard_context(project, current_session=None):
         'proxies': proxies_service.proxy_indices(completed),
         'comparison': comparison_service.compare(project, completed) if completed else None,
         'metric_definitions': metrics_service.METRIC_DEFINITIONS,
+        'workflow_nav': build_project_workflow_nav(project, 'observatory'),
     }
     return context
 
@@ -70,6 +76,8 @@ def methodology_view(request, slug):
     cw, kw = compute_weights(), cost_weights()
     weight_rows = [{'key': key, 'compute': cw[key], 'cost': kw.get(key)} for key in cw]
 
+    from capital_guardian.services.command_centre import build_project_workflow_nav
+
     return render(request, 'ai_observatory/methodology.html', {
         'project': project,
         'metric_definitions': metrics_service.METRIC_DEFINITIONS,
@@ -77,4 +85,5 @@ def methodology_view(request, slug):
         'baseline_assumptions': baseline_assumptions(),
         'proxies_doc': proxies_service.__doc__,
         'comparison_doc': comparison_service.__doc__,
+        'workflow_nav': build_project_workflow_nav(project, 'observatory'),
     })

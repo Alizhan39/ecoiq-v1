@@ -14,6 +14,8 @@
     <a href="{% url 'ai_observatory:methodology' project.slug %}">Full methodology →</a>
   </p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
+
   {# ── Overview ─────────────────────────────────────────────────── #}
   <section class="gold-section">
     <h2 class="gold-h2">Overview</h2>

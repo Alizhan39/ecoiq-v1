@@ -10,7 +10,39 @@
   <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %}<span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
   <div class="gc-synthetic-banner">⚠ Conceptual demo governance structure — not legal advice and not a substitute for professional legal structuring.</div>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
   {% include 'capital_guardian/_nav.html' with active_tab='governance' %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Approved Decision</h2>
+    {% if decision %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Approved Intervention</div><div class="gold-card-value" style="font-size:1rem;">{{ decision.intervention.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Decision Status</div><div class="gold-card-value"><span class="gold-risk-badge {% if decision.approval_status == 'approved' or decision.approval_status == 'approved_with_conditions' %}low{% elif decision.approval_status == 'rejected' %}high{% else %}medium{% endif %}">{{ decision.get_approval_status_display|upper }}</span></div></div>
+      <div class="gold-card"><div class="gold-card-label">Reviewer</div><div class="gold-card-value" style="font-size:1rem;">{% if latest_review %}{{ latest_review.actor|default:"Unknown reviewer" }}{% else %}Not yet reviewed{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Promotion Status</div><div class="gold-card-value" style="font-size:1rem;">{% if governance %}Promoted{% else %}Not yet promoted{% endif %}</div></div>
+    </div>
+    {% if decision.conditions %}
+    <h3 class="gold-h3" style="margin-top:0.7rem;">Approved Conditions</h3>
+    <ul class="gc-plain-list">{% for c in decision.conditions %}<li>{{ c }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if latest_review.notes %}
+    <p class="gold-sub" style="font-size:0.8rem;margin-top:0.6rem;"><strong>Rationale:</strong> {{ latest_review.notes|truncatechars:240 }}</p>
+    {% endif %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.6rem;">
+      Capital Guardian is a governance layer, not a spending action — promotion here does not itself trigger
+      procurement, payment, or physical installation.
+    </p>
+    <div class="gold-btn-row" style="margin-top:0.5rem;">
+      <a class="gold-btn" href="{% url 'capital_guardian:human_decision_gate' project.slug decision.pk %}">View Human Decision Gate →</a>
+      {% if not governance and decision.approval_status in approved_statuses %}
+      <a class="gold-btn" href="{% url 'waste_to_value_capital_allocation_engine:decision_detail' decision.pk %}">Promote to Capital Guardian →</a>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No capital allocation decision exists for this project yet.</p>
+    {% endif %}
+  </section>
 
   {% if governance %}
   <section class="gold-section">
@@ -71,10 +103,10 @@
     <div class="gc-flow vertical">
       <span class="gc-flow-step">Investor SPV + Founder HoldCo</span><span class="gc-flow-arrow">↓</span>
       <span class="gc-flow-step">Project Company</span><span class="gc-flow-arrow">↓</span>
-      <span class="gc-flow-step">Mining Licence</span><span class="gc-flow-arrow">↓</span>
+      <span class="gc-flow-step">Regulatory / Permitting Status</span><span class="gc-flow-arrow">↓</span>
       <span class="gc-flow-step">Equipment</span><span class="gc-flow-arrow">↓</span>
-      <span class="gc-flow-step">Processing Plant</span><span class="gc-flow-arrow">↓</span>
-      <span class="gc-flow-step">Production</span>
+      <span class="gc-flow-step">Implementation</span><span class="gc-flow-arrow">↓</span>
+      <span class="gc-flow-step">Verified Outcome</span>
     </div>
   </section>
 </div>

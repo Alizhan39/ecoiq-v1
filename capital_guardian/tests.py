@@ -5185,3 +5185,370 @@ class EvidenceMemoryHardeningIntegrationTests(TestCase):
         self.client.force_login(self.staff)
         r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.project_b.slug]))
         self.assertNotContains(r, 'EMH Retrofit')
+
+
+class EndToEndProjectPipelineTests(TestCase):
+    """
+    feat/e2e-project-pipeline — the connected Overview → Investigation →
+    Evidence → Interventions → Better Way → Decision → Capital Guardian →
+    Execution → Outcome → Evidence Memory → Observatory journey. Walks one
+    project all the way through using the exact same real services every
+    other test suite in this file already exercises — no new engine.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.client = Client(SERVER_NAME='localhost')
+        self.staff = User.objects.create_user('e2e_staff', 'e2e_staff@ecoiq.uk', 'password123', is_staff=True)
+        self.normal = User.objects.create_user('e2e_normal', 'e2e_normal@example.com', 'password123', is_staff=False)
+        self.project = GoldProject.objects.create(
+            name='E2E Pilot Project', slug='e2e-pilot-project', commodity='other',
+            region='Almaty region', is_demo=True,
+        )
+        self.other_project = GoldProject.objects.create(
+            name='E2E Other Project', slug='e2e-other-project', commodity='other',
+        )
+        self.loss = OperationalLoss.objects.create(
+            project=self.project.name, title='E2E heating loss', loss_type='heat_loss',
+            financial_loss_amount=90000, projected_future_loss=110000, evidence_quality='strong',
+        )
+        self.eligible_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='E2E Insulation Retrofit', intervention_type='prevention',
+            capex_estimate=40000, estimated_annual_savings=18000, estimated_loss_avoided=60000,
+            estimated_payback_months=27, implementation_time='6 months',
+            technical_readiness='ready', finance_readiness='ready', mrv_readiness='ready', risk_level='low',
+        )
+        self.blocked_option = InterventionOption.objects.create(
+            operational_loss=self.loss, title='Sell coal ash as fertiliser', intervention_type='resale',
+        )
+
+    def _walk_to_decision(self):
+        from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
+        decision = create_governed_investment_case(self.eligible_option, decision_text='E2E decision')
+        return decision
+
+    def _walk_to_approved(self):
+        from capital_guardian.services import human_decision_gate
+        decision = self._walk_to_decision()
+        human_decision_gate.submit_review(decision, 'approve', self.staff, project=self.project)
+        decision.refresh_from_db()
+        return decision
+
+    def _walk_to_promoted(self):
+        from waste_to_value_capital_allocation_engine.services.capital_guardian_handoff import promote_to_capital_guardian
+        decision = self._walk_to_approved()
+        promote_to_capital_guardian(decision, actor=self.staff)
+        return decision
+
+    def _walk_to_outcome(self, **kwargs):
+        from waste_to_value_capital_allocation_engine.services.mrv_outcomes import record_verified_outcome
+        decision = self._walk_to_promoted()
+        defaults = dict(loss_avoided_actual=55000, capex_actual=42000, mrv_status='baseline_only', evidence_quality='strong')
+        defaults.update(kwargs)
+        outcome = record_verified_outcome(decision, self.eligible_option, **defaults)
+        return decision, outcome
+
+    # ── Project Overview ──────────────────────────────────────────────
+    def test_project_overview_tells_the_full_story(self):
+        self._walk_to_promoted()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Why This Project Exists')
+        self.assertContains(r, 'E2E heating loss')
+        self.assertContains(r, 'Recommended Pathway')
+        self.assertContains(r, 'E2E Insulation Retrofit')
+        self.assertContains(r, 'Learning')
+
+    def test_project_overview_honest_when_nothing_started(self):
+        empty = GoldProject.objects.create(name='E2E Empty Project', slug='e2e-empty-project', commodity='other')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[empty.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'No operational loss has been established')
+
+    def test_project_overview_anonymous_denied(self):
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_project_overview_non_staff_denied(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 302)
+
+    # ── Navigation across stages ─────────────────────────────────────
+    def test_nav_present_on_every_stage_page_and_marks_current(self):
+        decision = self._walk_to_promoted()
+        self.client.force_login(self.staff)
+        pages = [
+            reverse('capital_guardian:project_overview', args=[self.project.slug]),
+            reverse('capital_guardian:investigation', args=[self.project.slug]),
+            reverse('capital_guardian:evidence_centre', args=[self.project.slug]),
+            reverse('capital_guardian:operational_loss_detail', args=[self.project.slug, self.loss.pk]),
+            reverse('capital_guardian:better_way_view', args=[self.project.slug, self.loss.pk]),
+            reverse('capital_guardian:human_decision_gate', args=[self.project.slug, decision.pk]),
+            reverse('capital_guardian:governance', args=[self.project.slug]),
+            reverse('capital_guardian:project_monitoring', args=[self.project.slug]),
+            reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, decision.pk]),
+            reverse('ai_observatory:observatory', args=[self.project.slug]),
+        ]
+        for url in pages:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertContains(r, 'pwn-nav', msg_prefix=url)
+            self.assertContains(r, 'Overview', msg_prefix=url)
+            self.assertContains(r, 'Observatory', msg_prefix=url)
+
+    def test_nav_hides_unavailable_stages_before_loss_exists(self):
+        empty = GoldProject.objects.create(name='E2E Nav Empty', slug='e2e-nav-empty', commodity='other')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[empty.slug]))
+        # Interventions/Better Way/Decision/Outcome/Evidence Memory have no
+        # loss/decision to scope to yet — rendered disabled, not as links.
+        self.assertContains(r, 'pwn-tab-disabled')
+
+    def test_investigation_is_get_reachable_and_writes_no_telemetry(self):
+        """The security requirement: no state-changing GET actions. Viewing
+        Investigation on every nav click/refresh must never create an
+        AnalysisSession — only the explicit POST button on Evidence Centre
+        does that."""
+        from ai_observatory.models import AnalysisSession
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:investigation', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        r = self.client.get(reverse('capital_guardian:investigation', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(AnalysisSession.objects.filter(project=self.project).count(), 0)
+
+    def test_better_way_view_is_get_reachable_and_writes_no_telemetry(self):
+        from ai_observatory.models import AnalysisSession
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:better_way_view', args=[self.project.slug, self.loss.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'E2E Insulation Retrofit')
+        self.assertEqual(AnalysisSession.objects.filter(project=self.project).count(), 0)
+
+    # ── Blocked / conditional intervention clarity ───────────────────
+    def test_blocked_intervention_never_looks_selectable(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:operational_loss_detail', args=[self.project.slug, self.loss.pk]))
+        self.assertContains(r, 'BLOCKED')
+        self.assertContains(r, 'iod-option-blocked')
+        self.assertContains(r, 'Why this is blocked')
+        self.assertNotContains(r, '<a href="#"')
+
+    def test_eligible_intervention_shows_ranking_inputs(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:operational_loss_detail', args=[self.project.slug, self.loss.pk]))
+        self.assertContains(r, 'ELIGIBLE')
+        self.assertContains(r, 'Implementation Time')
+        self.assertContains(r, '6 months')
+        self.assertContains(r, 'Readiness')
+
+    # ── Better Way factor-by-factor ──────────────────────────────────
+    def test_better_way_result_shows_factor_breakdown_not_opaque_score(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:better_way_view', args=[self.project.slug, self.loss.pk]))
+        self.assertContains(r, 'Why this composite score')
+        self.assertContains(r, 'Financial Return')
+        self.assertContains(r, 'Downside Risk')
+
+    # ── Pending / approved / rejected decision ────────────────────────
+    def test_pending_decision_visible_in_human_decision_gate(self):
+        decision = self._walk_to_decision()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:human_decision_gate', args=[self.project.slug, decision.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'PENDING')
+
+    def test_approved_decision_shows_next_action_and_capital_guardian_context(self):
+        decision = self._walk_to_approved()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:governance', args=[self.project.slug]))
+        self.assertContains(r, 'Approved Decision')
+        self.assertContains(r, 'E2E Insulation Retrofit')
+        self.assertContains(r, 'e2e_staff')
+        self.assertContains(r, 'Promote to Capital Guardian')
+
+    def test_rejected_decision_reflected_consistently(self):
+        from capital_guardian.services import human_decision_gate
+        decision = self._walk_to_decision()
+        human_decision_gate.submit_review(decision, 'reject', self.staff, notes='Not viable.', project=self.project)
+        decision.refresh_from_db()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:governance', args=[self.project.slug]))
+        self.assertContains(r, 'REJECTED')
+        self.assertNotContains(r, 'Promote to Capital Guardian')
+
+    def test_evidence_request_state_reflected_on_governance_page(self):
+        from capital_guardian.services import human_decision_gate
+        decision = self._walk_to_decision()
+        human_decision_gate.submit_review(decision, 'request_evidence', self.staff, notes='Need more.', project=self.project)
+        decision.refresh_from_db()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:governance', args=[self.project.slug]))
+        self.assertContains(r, 'EVIDENCE REQUESTED')
+        self.assertNotContains(r, 'Promote to Capital Guardian')
+
+    # ── Capital Guardian promotion ────────────────────────────────────
+    def test_capital_guardian_promotion_status_shown(self):
+        self._walk_to_promoted()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:governance', args=[self.project.slug]))
+        self.assertContains(r, 'Promoted')
+
+    # ── Execution ──────────────────────────────────────────────────
+    def test_execution_page_reachable_after_promotion(self):
+        self._walk_to_promoted()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_monitoring', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'pwn-nav')
+
+    # ── Verified outcome / MRV ────────────────────────────────────────
+    def test_outcome_achieved_result_label(self):
+        decision, outcome = self._walk_to_outcome(loss_avoided_actual=58000)
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, decision.pk]))
+        self.assertContains(r, 'ACHIEVED')
+
+    def test_outcome_partially_achieved_result_label(self):
+        decision, outcome = self._walk_to_outcome(loss_avoided_actual=25000)
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, decision.pk]))
+        self.assertContains(r, 'PARTIALLY ACHIEVED')
+
+    def test_outcome_disputed_result_label(self):
+        decision, outcome = self._walk_to_outcome(mrv_status='disputed')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, decision.pk]))
+        self.assertContains(r, 'DISPUTED')
+
+    def test_outcome_insufficient_evidence_before_any_outcome_recorded(self):
+        decision = self._walk_to_promoted()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, decision.pk]))
+        self.assertContains(r, 'INSUFFICIENT EVIDENCE')
+
+    def test_outcome_never_claims_verification_it_does_not_have(self):
+        decision, outcome = self._walk_to_outcome()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, decision.pk]))
+        self.assertNotContains(r, 'Independently Verified')
+
+    # ── Evidence Memory sync loop ─────────────────────────────────────
+    def test_evidence_memory_sync_reflected_and_never_claims_autonomous_learning(self):
+        from evidence_memory.services.memory import create_memory_from_verified_outcome
+        decision, outcome = self._walk_to_outcome()
+        create_memory_from_verified_outcome(outcome, actor=self.staff)
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:record_outcome_confirm', args=[self.project.slug, decision.pk]) + '#evidence-memory')
+        self.assertContains(r, 'id="evidence-memory"')
+        self.assertContains(r, 'governed historical evidence')
+        self.assertNotContains(r, 'learned automatically')
+
+    def test_overview_shows_evidence_memory_sync_state(self):
+        decision, outcome = self._walk_to_outcome()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[self.project.slug]))
+        self.assertContains(r, 'Outcome recorded, not yet synced')
+
+    # ── Observatory link ──────────────────────────────────────────────
+    def test_observatory_reachable_from_overview_and_shows_summary_only(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('ai_observatory:observatory', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'pwn-nav')
+
+    # ── Project isolation ──────────────────────────────────────────────
+    def test_overview_never_shows_other_projects_data(self):
+        self._walk_to_promoted()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[self.other_project.slug]))
+        self.assertNotContains(r, 'E2E Insulation Retrofit')
+        self.assertNotContains(r, 'E2E heating loss')
+
+    def test_investigation_cross_project_isolated(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:investigation', args=[self.other_project.slug]))
+        self.assertNotContains(r, 'E2E heating loss')
+
+    def test_direct_url_cannot_bypass_project_ownership(self):
+        """A decision belonging to self.project must 404 under a different
+        project's slug — direct URL manipulation cannot cross project
+        boundaries."""
+        decision = self._walk_to_decision()
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:human_decision_gate', args=[self.other_project.slug, decision.pk]))
+        self.assertEqual(r.status_code, 404)
+
+    # ── Permissions ───────────────────────────────────────────────────
+    def test_investigation_anonymous_denied(self):
+        r = self.client.get(reverse('capital_guardian:investigation', args=[self.project.slug]))
+        self.assertEqual(r.status_code, 302)
+
+    def test_better_way_view_non_staff_denied(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(reverse('capital_guardian:better_way_view', args=[self.project.slug, self.loss.pk]))
+        self.assertEqual(r.status_code, 302)
+
+    # ── Missing data / demo labels ─────────────────────────────────────
+    def test_demo_project_labelled_on_overview(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[self.project.slug]))
+        self.assertContains(r, 'DEMO')
+
+    def test_missing_data_honest_stub_before_pipeline_started(self):
+        empty = GoldProject.objects.create(name='E2E Missing Data', slug='e2e-missing-data', commodity='other')
+        self.client.force_login(self.staff)
+        r = self.client.get(reverse('capital_guardian:project_overview', args=[empty.slug]))
+        self.assertContains(r, 'gold-honest-stub')
+
+
+class WorkflowNavServiceTests(TestCase):
+    """capital_guardian.services.command_centre.build_project_workflow_nav()
+    — the single source of truth every stage page's nav renders from."""
+
+    def setUp(self):
+        self.project = GoldProject.objects.create(name='Nav Service Project', slug='nav-service-project', commodity='other')
+
+    def test_eleven_stages_in_canonical_order(self):
+        from capital_guardian.services.command_centre import WORKFLOW_STAGE_KEYS, build_project_workflow_nav
+        nav = build_project_workflow_nav(self.project, 'overview')
+        self.assertEqual([item['key'] for item in nav], WORKFLOW_STAGE_KEYS)
+        self.assertEqual(len(nav), 11)
+
+    def test_current_stage_flagged_exactly_once(self):
+        from capital_guardian.services.command_centre import build_project_workflow_nav
+        nav = build_project_workflow_nav(self.project, 'evidence')
+        current = [item for item in nav if item['is_current']]
+        self.assertEqual(len(current), 1)
+        self.assertEqual(current[0]['key'], 'evidence')
+
+    def test_interventions_unavailable_without_a_loss(self):
+        from capital_guardian.services.command_centre import build_project_workflow_nav
+        nav = build_project_workflow_nav(self.project, 'overview')
+        interventions = next(item for item in nav if item['key'] == 'interventions')
+        self.assertFalse(interventions['available'])
+        self.assertIsNone(interventions['url'])
+
+    def test_interventions_available_once_loss_exists(self):
+        from capital_guardian.services.command_centre import build_project_workflow_nav
+        loss = OperationalLoss.objects.create(
+            project=self.project.name, title='Nav loss', loss_type='heat_loss', financial_loss_amount=1000,
+        )
+        nav = build_project_workflow_nav(self.project, 'overview')
+        interventions = next(item for item in nav if item['key'] == 'interventions')
+        self.assertTrue(interventions['available'])
+        self.assertIn(f'/losses/{loss.pk}/', interventions['url'])
+
+    def test_overview_evidence_capital_guardian_execution_observatory_always_available(self):
+        from capital_guardian.services.command_centre import build_project_workflow_nav
+        nav = build_project_workflow_nav(self.project, 'overview')
+        always_on = {'overview', 'investigation', 'evidence', 'capital_guardian', 'execution', 'observatory'}
+        for item in nav:
+            if item['key'] in always_on:
+                self.assertTrue(item['available'], item['key'])
+                self.assertIsNotNone(item['url'], item['key'])
