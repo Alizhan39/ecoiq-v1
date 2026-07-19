@@ -93,12 +93,17 @@ class AnthropicCompatibleAdapter:
             )
             text = response.content[0].text if response.content else ''
             usage = getattr(response, 'usage', None)
+            # feat/model-router-observatory: also carry the provider-reported
+            # cache counters and the exact model version string when the API
+            # returned them — absent attributes stay None, never invented.
             return AdapterResult(
                 status='success', raw_text=text,
                 model_provider=self.provider, model_name=model_name,
                 actual_usage={
                     'input_tokens': getattr(usage, 'input_tokens', None),
                     'output_tokens': getattr(usage, 'output_tokens', None),
+                    'cache_read_input_tokens': getattr(usage, 'cache_read_input_tokens', None),
+                    'model': getattr(response, 'model', None),
                 } if usage else {},
             )
         except Exception as exc:
@@ -184,7 +189,11 @@ class OpenAICompatibleAdapter(_RequestsBasedAdapter):
 
     def _parse_response(self, data):
         text = data.get('choices', [{}])[0].get('message', {}).get('content', '')
-        usage = data.get('usage', {})
+        usage = dict(data.get('usage', {}))
+        # feat/model-router-observatory: the exact model version the API
+        # reports (e.g. "gpt-4o-2024-08-06") rides along with the usage dict.
+        if data.get('model'):
+            usage['model'] = data['model']
         return text, usage
 
 
@@ -210,7 +219,10 @@ class GeminiCompatibleAdapter(_RequestsBasedAdapter):
         if candidates:
             parts = candidates[0].get('content', {}).get('parts', [])
             text = ''.join(p.get('text', '') for p in parts)
-        usage = data.get('usageMetadata', {})
+        usage = dict(data.get('usageMetadata', {}))
+        # feat/model-router-observatory: reported model version rides along.
+        if data.get('modelVersion'):
+            usage['modelVersion'] = data['modelVersion']
         return text, usage
 
 

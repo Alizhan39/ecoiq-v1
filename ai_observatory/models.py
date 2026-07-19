@@ -173,7 +173,17 @@ class ModelInvocation(models.Model):
     output_tokens = models.PositiveIntegerField(null=True, blank=True)
     cached_tokens = models.PositiveIntegerField(null=True, blank=True)
     streaming = models.BooleanField(null=True, blank=True)
+    # feat/model-router-observatory: which attempt this physical provider
+    # request was within its AgentRun, per provider (0 = first attempt,
+    # 1 = the router's single bounded same-provider retry). One row exists
+    # per PHYSICAL provider request — a retry is a second row, never a
+    # mutation of the first.
     retry_count = models.PositiveIntegerField(default=0)
+    # Measured wall-clock around the real adapter call, and whether that
+    # call succeeded. Nullable: rows recorded through other paths that
+    # didn't measure them stay honestly NULL.
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    succeeded = models.BooleanField(null=True, blank=True)
 
     # Soft link to the existing agent-runtime record when this invocation
     # came through the Model Router (which already stores real usage data) —

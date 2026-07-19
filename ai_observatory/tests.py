@@ -340,3 +340,239 @@ class CommandCentreTelemetryStageTests(TestCase):
         recorder.finish_session(session)
         stage = self._stage()
         self.assertEqual(stage.status, 'NOT_STARTED')
+
+
+class ModelRouterInstrumentationTests(TestCase):
+    """
+    feat/model-router-observatory — the single shared adapter boundary in
+    agent_runtime_model_router.services.execution records one ModelInvocation
+    per PHYSICAL provider request, links sessions only when explicitly
+    given one, and can never break the underlying model request.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from agent_runtime_model_router.services.registry import sync_registry
+        sync_registry()
+
+    def setUp(self):
+        from ai_agent_council.models import CouncilRun
+        self.council_run = CouncilRun.objects.create(
+            slug='obs-router-test-run', title='Obs Router Test', question='?',
+            task_category='industrial_asset_modernisation',
+        )
+        self.project = GoldProject.objects.create(
+            name='Router Obs Project', slug='router-obs-project', commodity='other',
+        )
+
+    def _live_run(self):
+        from agent_runtime_model_router.services.execution import create_agent_run
+        return create_agent_run(
+            'Finance Modelling Agent', 'capex_opex_modelling', council_case=self.council_run,
+            execution_mode='live', input_summary='obs test',
+        )
+
+    @staticmethod
+    def _fake_adapter(provider, results):
+        """An adapter double: pops one scripted AdapterResult per run() call."""
+        class _Fake:
+            def __init__(self):
+                self.provider = provider
+            def run(self, instruction):
+                return results.pop(0)
+        return _Fake()
+
+    @staticmethod
+    def _result(status='success', provider='anthropic', model='claude-sonnet-5',
+                usage=None, failure_reason=''):
+        from agent_runtime_model_router.services.model_adapters import AdapterResult
+        return AdapterResult(
+            status=status, output={'output_summary': 'ok', 'confidence': 80,
+                                   'evidence_used': [], 'missing_data': [], 'risk_flags': []},
+            raw_text='ok', failure_reason=failure_reason,
+            model_provider=provider, model_name=model, actual_usage=usage or {},
+        )
+
+    def _execute_with_adapters(self, run, adapters_by_provider, **kwargs):
+        from unittest import mock
+        from agent_runtime_model_router.services import execution
+
+        def fake_get_adapter(provider):
+            return adapters_by_provider[provider]
+
+        with mock.patch.object(execution, 'get_adapter', side_effect=fake_get_adapter):
+            return execution.execute_agent(run, **kwargs)
+
+    def test_successful_live_invocation_recorded_once_with_real_usage(self):
+        run = self._live_run()
+        usage = {'input_tokens': 812, 'output_tokens': 145, 'cache_read_input_tokens': 0,
+                 'model': 'claude-sonnet-5-20250929'}
+        adapter = self._fake_adapter('anthropic', [self._result(usage=usage)])
+        self._execute_with_adapters(run, {run.model_provider or 'anthropic': adapter, 'anthropic': adapter,
+                                          'openai': adapter, 'gemini': adapter, 'azure_openai': adapter})
+        invocations = ModelInvocation.objects.all()
+        self.assertEqual(invocations.count(), 1)  # no double counting
+        inv = invocations.get()
+        self.assertEqual(inv.provider, 'anthropic')
+        self.assertEqual(inv.input_tokens, 812)
+        self.assertEqual(inv.output_tokens, 145)
+        self.assertEqual(inv.cached_tokens, 0)
+        self.assertEqual(inv.model_version, 'claude-sonnet-5-20250929')
+        self.assertIs(inv.streaming, False)
+        self.assertTrue(inv.succeeded)
+        self.assertIsNotNone(inv.duration_ms)
+        self.assertEqual(inv.retry_count, 0)
+        self.assertEqual(inv.agent_run_reference, f'agent_runtime_model_router.AgentRun:{run.pk}')
+        self.assertIsNone(inv.session)  # honestly unlinked without explicit context
+
+    def test_missing_provider_usage_stays_null(self):
+        run = self._live_run()
+        adapter = self._fake_adapter('anthropic', [self._result(usage={})])
+        self._execute_with_adapters(run, {'anthropic': adapter, 'openai': adapter,
+                                          'gemini': adapter, 'azure_openai': adapter})
+        inv = ModelInvocation.objects.get()
+        self.assertIsNone(inv.input_tokens)
+        self.assertIsNone(inv.output_tokens)
+        self.assertIsNone(inv.cached_tokens)
+        self.assertEqual(inv.model_version, '')
+
+    def test_openai_shaped_usage_normalised_including_cached(self):
+        run = self._live_run()
+        usage = {'prompt_tokens': 1000, 'completion_tokens': 200,
+                 'prompt_tokens_details': {'cached_tokens': 700}, 'model': 'gpt-4o-2024-08-06'}
+        adapter = self._fake_adapter('openai', [self._result(provider='openai', model='gpt-4o', usage=usage)])
+        self._execute_with_adapters(run, {'anthropic': adapter, 'openai': adapter,
+                                          'gemini': adapter, 'azure_openai': adapter})
+        inv = ModelInvocation.objects.get()
+        self.assertEqual(inv.provider, 'openai')
+        self.assertEqual(inv.input_tokens, 1000)
+        self.assertEqual(inv.output_tokens, 200)
+        self.assertEqual(inv.cached_tokens, 700)
+        self.assertEqual(inv.model_version, 'gpt-4o-2024-08-06')
+
+    def test_retry_and_fallback_produce_one_row_per_physical_request(self):
+        run = self._live_run()
+        primary_provider = None
+        # Determine the primary/fallback providers from the real route by
+        # letting execute_agent run with scripted adapters: primary fails
+        # twice (attempt 0 + bounded retry 1), fallback succeeds (attempt 0).
+        failing = [
+            self._result(status='failed', failure_reason='timeout', usage={}),
+            self._result(status='failed', failure_reason='timeout', usage={}),
+        ]
+        succeeding = [self._result(usage={'input_tokens': 10, 'output_tokens': 5})]
+
+        class _Registry:
+            def __init__(self, outer):
+                self.outer = outer
+                self.adapters = {}
+            def __call__(self, provider):
+                if provider not in self.adapters:
+                    # First provider requested = primary (gets the failing
+                    # script); any different provider = fallback.
+                    script = failing if not self.adapters else succeeding
+                    self.adapters[provider] = self.outer._fake_adapter(provider if provider in
+                        ('anthropic', 'openai', 'gemini', 'azure_openai') else provider, script)
+                return self.adapters[provider]
+
+        from unittest import mock
+        from agent_runtime_model_router.services import execution
+        with mock.patch.object(execution, 'get_adapter', side_effect=_Registry(self)):
+            execution.execute_agent(run)
+
+        invocations = list(ModelInvocation.objects.order_by('created_at'))
+        self.assertEqual(len(invocations), 3)
+        self.assertEqual([i.retry_count for i in invocations], [0, 1, 0])
+        self.assertEqual([i.succeeded for i in invocations], [False, False, True])
+
+    @override_settings(ANTHROPIC_API_KEY='', OPENAI_API_KEY='', GEMINI_API_KEY='',
+                       AZURE_OPENAI_API_KEY='', AZURE_OPENAI_ENDPOINT='')
+    def test_no_request_failures_are_not_counted(self):
+        """missing_credentials fails before any provider request is sent —
+        nothing physical happened, so nothing is recorded. Credentials are
+        explicitly blanked so the real adapters exercise exactly (and only)
+        that path — no live network call can occur from this test even in an
+        environment that has real keys configured."""
+        from agent_runtime_model_router.services.execution import execute_agent
+        run = self._live_run()
+        execute_agent(run)
+        self.assertEqual(ModelInvocation.objects.count(), 0)
+
+    def test_deterministic_pipeline_stays_at_zero_model_calls(self):
+        from agent_runtime_model_router.services.execution import create_agent_run, execute_agent
+        run = create_agent_run(
+            'Finance Modelling Agent', 'capex_opex_modelling', council_case=self.council_run,
+            execution_mode='deterministic_test', input_summary='obs det test',
+        )
+        execute_agent(run)
+        self.assertEqual(ModelInvocation.objects.count(), 0)
+
+    def test_simulated_demo_never_recorded(self):
+        from agent_runtime_model_router.services.execution import create_agent_run, execute_agent
+        run = create_agent_run(
+            'Finance Modelling Agent', 'capex_opex_modelling', council_case=self.council_run,
+            execution_mode='simulated_demo', input_summary='obs sim test',
+        )
+        execute_agent(run, fixture_output={'output_summary': 'fixture', 'confidence': 70,
+                                           'evidence_used': [], 'missing_data': [], 'risk_flags': []})
+        self.assertEqual(ModelInvocation.objects.count(), 0)
+
+    def test_telemetry_failure_never_breaks_model_execution(self):
+        from unittest import mock
+        run = self._live_run()
+        adapter = self._fake_adapter('anthropic', [self._result(usage={'input_tokens': 5, 'output_tokens': 2})])
+        with mock.patch('ai_observatory.services.recorder.record_model_invocation',
+                        side_effect=RuntimeError('telemetry boom')):
+            result_run = self._execute_with_adapters(run, {'anthropic': adapter, 'openai': adapter,
+                                                           'gemini': adapter, 'azure_openai': adapter})
+        # The model request completed and the run proceeded normally.
+        self.assertEqual(result_run.raw_output, 'ok')
+        self.assertEqual(ModelInvocation.objects.count(), 0)
+
+    def test_explicit_session_links_invocation_to_project(self):
+        run = self._live_run()
+        session = recorder.start_session(self.project, 'other')
+        adapter = self._fake_adapter('anthropic', [self._result(usage={'input_tokens': 5, 'output_tokens': 2})])
+        self._execute_with_adapters(
+            run, {'anthropic': adapter, 'openai': adapter, 'gemini': adapter, 'azure_openai': adapter},
+            observatory_session=session,
+        )
+        inv = ModelInvocation.objects.get()
+        self.assertEqual(inv.session, session)
+        self.assertEqual(inv.session.project, self.project)
+
+    def test_linked_invocation_feeds_project_aggregation_and_isolation(self):
+        run = self._live_run()
+        session = recorder.start_session(self.project, 'other')
+        adapter = self._fake_adapter('anthropic', [self._result(usage={'input_tokens': 1000, 'output_tokens': 100})])
+        self._execute_with_adapters(
+            run, {'anthropic': adapter, 'openai': adapter, 'gemini': adapter, 'azure_openai': adapter},
+            observatory_session=session,
+        )
+        recorder.finish_session(session)
+
+        counts = proxies.workload_counts([session])
+        self.assertEqual(counts['llm_call_fresh'], 1)
+        self.assertEqual(counts['llm_reported_tokens'], 1100)
+
+        # Another project's sessions see none of it.
+        other = GoldProject.objects.create(name='Router Obs Other', slug='router-obs-other', commodity='other')
+        other_session = recorder.start_session(other, 'other')
+        recorder.finish_session(other_session)
+        other_counts = proxies.workload_counts([other_session])
+        self.assertEqual(other_counts['llm_call_fresh'], 0)
+
+    def test_unlinked_invocation_never_appears_on_any_project_dashboard(self):
+        run = self._live_run()
+        adapter = self._fake_adapter('anthropic', [self._result(usage={'input_tokens': 5, 'output_tokens': 2})])
+        self._execute_with_adapters(run, {'anthropic': adapter, 'openai': adapter,
+                                          'gemini': adapter, 'azure_openai': adapter})
+        inv = ModelInvocation.objects.get()
+        self.assertIsNone(inv.session)
+
+        from django.contrib.auth import get_user_model
+        staff = get_user_model().objects.create_user('router_obs_staff', 'ros@ecoiq.uk', 'password123', is_staff=True)
+        client = Client(SERVER_NAME='localhost')
+        client.force_login(staff)
+        r = client.get(reverse('ai_observatory:observatory', args=[self.project.slug]))
+        self.assertNotContains(r, 'claude-sonnet-5')

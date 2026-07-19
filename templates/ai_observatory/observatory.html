@@ -82,12 +82,16 @@
     <div class="cc-list">
       {% for inv in current_invocations %}
       <div class="gold-list-row">
-        <span class="gold-list-label">{{ inv.provider|default:"Unknown provider" }} · {{ inv.model_name|default:"Unknown model" }}{% if inv.prompt_version %} · prompt {{ inv.prompt_version }}{% endif %}</span>
+        <span class="gold-list-label">
+          {{ inv.provider|default:"Unknown provider" }} · {{ inv.model_name|default:"Unknown model" }}{% if inv.model_version %} ({{ inv.model_version }}){% endif %}{% if inv.prompt_version %} · prompt {{ inv.prompt_version }}{% endif %}
+          {% if inv.succeeded is False %}<span class="gold-risk-badge high">FAILED</span>{% endif %}
+          {% if inv.retry_count %}<span class="gold-risk-badge medium">RETRY #{{ inv.retry_count }}</span>{% endif %}
+        </span>
         <span class="gold-list-value">
           in {{ inv.input_tokens|default_if_none:"not reported" }} ·
           out {{ inv.output_tokens|default_if_none:"not reported" }} ·
           cached {{ inv.cached_tokens|default_if_none:"not reported" }}
-          {% if inv.retry_count %} · {{ inv.retry_count }} retries{% endif %}
+          {% if inv.duration_ms is not None %} · {{ inv.duration_ms }} ms{% endif %}
         </span>
       </div>
       {% endfor %}
