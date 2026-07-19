@@ -17,6 +17,12 @@
 
   .gold-section { margin-top: 2rem; }
   .gold-h2 { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 1rem; }
+  .gold-h3 { font-size: 0.92rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
+
+  /* feat/e2e-project-pipeline: promoted from command_centre.html's local
+     <style> block to here so every page using cc-list (human_decision_gate,
+     ai_observatory) gets the same real styling instead of unstyled defaults. */
+  .cc-list { display: flex; flex-direction: column; gap: 0.3rem; }
 
   .gold-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
   .gold-card { background: var(--gold-bg2); border: 1px solid var(--gold-border); border-radius: 12px; padding: 1.1rem 1.2rem; }

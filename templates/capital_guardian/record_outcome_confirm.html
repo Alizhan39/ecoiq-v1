@@ -10,6 +10,8 @@
   <h1 class="gold-h1">Record Outcome</h1>
   <p class="gold-sub">{{ project.name }} — {{ decision.intervention.title }}</p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
+
   {% if messages %}
   <ul style="list-style:none;padding:0;">
     {% for message in messages %}<li class="iq-badge iq-badge-review" style="margin-bottom:0.5rem;">{{ message }}</li>{% endfor %}
@@ -17,13 +19,39 @@
   {% endif %}
 
   <section class="gold-section">
-    <h2 class="gold-h2">Expected (from the approved Capital Allocation Decision)</h2>
+    <h2 class="gold-h2">Result</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">
+      Classified from this decision's own real expected figures against its recorded actual figures — never a
+      claim of independent verification unless the underlying record actually is independently verified.
+    </p>
+    <span class="gold-risk-badge {% if result_key == 'achieved' %}low{% elif result_key == 'partially_achieved' %}medium{% elif result_key == 'not_achieved' or result_key == 'disputed' %}high{% else %}na{% endif %}" style="font-size:0.85rem;padding:0.4rem 0.9rem;">{{ result_label|upper }}</span>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Expected</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">From the approved Capital Allocation Decision's own stored assumptions.</p>
     <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Baseline (Financial Loss)</div><div class="gold-card-value">£{{ decision.intervention.operational_loss.financial_loss_amount|floatformat:0 }}</div></div>
       <div class="gold-card"><div class="gold-card-label">Expected CAPEX</div><div class="gold-card-value">£{{ expected_vs_actual.expected_capex|floatformat:0 }}</div></div>
       <div class="gold-card"><div class="gold-card-label">Expected Annual Savings</div><div class="gold-card-value">£{{ expected_vs_actual.expected_savings|floatformat:0 }}</div></div>
       <div class="gold-card"><div class="gold-card-label">Expected Loss Avoided</div><div class="gold-card-value">£{{ expected_vs_actual.expected_loss_avoided|floatformat:0 }}</div></div>
-      <div class="gold-card"><div class="gold-card-label">Expected Payback</div><div class="gold-card-value">{{ expected_vs_actual.expected_payback_months|default:"—" }} months</div></div>
+      <div class="gold-card"><div class="gold-card-label">Expected Timeline</div><div class="gold-card-value" style="font-size:1rem;">{{ expected_vs_actual.expected_timeline }}</div></div>
     </div>
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Actual</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Actual CAPEX</div><div class="gold-card-value {% if expected_vs_actual.actual_capex == 'NOT YET REPORTED' %}na{% endif %}">{% if expected_vs_actual.actual_capex == 'NOT YET REPORTED' %}Not yet reported{% else %}£{{ expected_vs_actual.actual_capex|floatformat:0 }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Actual Savings</div><div class="gold-card-value {% if expected_vs_actual.actual_savings == 'NOT YET REPORTED' %}na{% endif %}">{% if expected_vs_actual.actual_savings == 'NOT YET REPORTED' %}Not yet reported{% else %}£{{ expected_vs_actual.actual_savings|floatformat:0 }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Actual Loss Avoided</div><div class="gold-card-value {% if expected_vs_actual.actual_loss_avoided == 'NOT YET REPORTED' %}na{% endif %}">{% if expected_vs_actual.actual_loss_avoided == 'NOT YET REPORTED' %}Not yet reported{% else %}£{{ expected_vs_actual.actual_loss_avoided|floatformat:0 }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Measurement Source</div><div class="gold-card-value" style="font-size:1rem;">{{ expected_vs_actual.verified_status }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">MRV Status</div><div class="gold-card-value" style="font-size:1rem;">{{ expected_vs_actual.mrv_status }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Review Tier</div><div class="gold-card-value" style="font-size:1rem;">{{ expected_vs_actual.outcome.get_evidence_quality_display|default:"Not yet reported" }}</div></div>
+    </div>
+    {% if learning_feedback.blockers %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">Unresolved gaps: {{ learning_feedback.blockers|join:"; " }}</p>
+    {% endif %}
   </section>
 
   <section class="gold-section">
@@ -50,11 +78,12 @@
   {% endif %}
 
   {% if learning_feedback.outcome_exists %}
-  <section class="gold-section">
-    <h2 class="gold-h2">Learning Feedback</h2>
+  <section class="gold-section" id="evidence-memory">
+    <h2 class="gold-h2">Learning Feedback — Evidence Memory</h2>
     <p class="gold-sub" style="font-size:0.82rem;">
-      Make this reviewed outcome available as evidence for future EcoIQ decisions. This stores a real summary of
-      this outcome for retrieval — it does not retrain any model, and EcoIQ does not learn automatically.
+      Outcome → verification → memory record → retrieval eligibility. Available as governed historical evidence
+      for future EcoIQ decisions — this stores a real summary of this outcome for retrieval; EcoIQ does not
+      retrain any model or learn automatically.
     </p>
     <div class="gold-grid">
       <div class="gold-card"><div class="gold-card-label">Outcome Status</div><div class="gold-card-value">{{ learning_feedback.outcome.get_verified_status_display }}</div></div>

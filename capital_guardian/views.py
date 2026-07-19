@@ -217,8 +217,23 @@ def governance_view(request, slug):
         ]
         from plotly_visual_intelligence.services import charts
         ownership_donut = charts.ownership_donut_chart(governance.founder_holdco_pct, governance.investor_spv_pct)
+
+    # feat/e2e-project-pipeline — "make the transition from approved
+    # decision to Capital Guardian understandable": the same primary
+    # decision + its latest real review event Command Centre already
+    # resolves, read here (never recomputed a second way) so a reviewer
+    # sees exactly what was approved, by whom, and why, on the page that
+    # governs it — without implying Capital Guardian itself spends anything.
+    from capital_guardian.services.command_centre import _primary_decision, build_project_workflow_nav
+
+    decision = _primary_decision(project)
+    latest_review = decision.review_events.select_related('actor').first() if decision is not None else None
+
     return render(request, 'capital_guardian/governance.html', {
         'project': project, 'governance': governance, 'controls': controls, 'ownership_donut': ownership_donut,
+        'decision': decision, 'latest_review': latest_review,
+        'approved_statuses': ('approved', 'approved_with_conditions'),
+        'workflow_nav': build_project_workflow_nav(project, 'capital_guardian', decision=decision),
     })
 
 
@@ -393,6 +408,7 @@ def evidence_centre_view(request, slug):
     from evidence_memory.models import EvidenceMemory
 
     from capital_guardian.forms import ProjectEvidenceIntakeForm
+    from capital_guardian.services.command_centre import build_project_workflow_nav
 
     return render(request, 'capital_guardian/evidence_centre.html', {
         'project': project, 'rows': rows, 'summary': summary,
@@ -404,6 +420,7 @@ def evidence_centre_view(request, slug):
         'intake_form': ProjectEvidenceIntakeForm() if request.user.is_staff else None,
         # Vertical-slice PR 2 — "Run Project Analysis" button, staff-only display.
         'can_run_analysis': request.user.is_staff,
+        'workflow_nav': build_project_workflow_nav(project, 'evidence'),
     })
 
 
@@ -473,8 +490,53 @@ def run_project_analysis(request, slug):
         final_recommendation_status='human_review_required',
     )
 
+    from capital_guardian.services.command_centre import build_project_workflow_nav
     return render(request, 'capital_guardian/project_analysis_result.html', {
         'project': project, 'result': result, 'review': review, 'relevant_outcomes': relevant_outcomes,
+        'workflow_nav': build_project_workflow_nav(project, 'investigation'),
+    })
+
+
+@staff_member_required(login_url='/login/')
+def investigation_view(request, slug):
+    """
+    feat/e2e-project-pipeline — GET-only "Investigation" stage in the
+    connected project workflow. Deliberately separate from
+    run_project_analysis (the POST-only button on Evidence Centre that
+    records an ai_observatory.AnalysisSession): a GET must never write
+    anything, including telemetry, so simply viewing this page on every
+    nav click/refresh never pollutes the Observatory with spurious
+    sessions. Calls the exact same real, unmodified services and renders
+    the exact same template — this is a second entry point, not a second
+    engine.
+    """
+    from capital_guardian.services.project_analysis import analyse_project
+    from capital_guardian.services.resource_purpose_review import review_resource_purpose
+    from capital_guardian.services.command_centre import build_project_workflow_nav
+    from evidence_memory.services.memory import retrieve_relevant_verified_outcomes
+
+    project = _project_or_404(slug)
+    try:
+        result = analyse_project(project)
+        review = review_resource_purpose(project, result)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure loading Investigation for GoldProject %s', project.pk,
+        )
+        messages.error(request, 'Something went wrong loading the investigation. No result was produced.')
+        return redirect('capital_guardian:evidence_centre', slug=slug)
+
+    try:
+        relevant_outcomes = retrieve_relevant_verified_outcomes(project, user=request.user)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure retrieving relevant verified outcomes for %s', project.pk)
+        relevant_outcomes = []
+
+    return render(request, 'capital_guardian/project_analysis_result.html', {
+        'project': project, 'result': result, 'review': review, 'relevant_outcomes': relevant_outcomes,
+        'workflow_nav': build_project_workflow_nav(project, 'investigation'),
     })
 
 
@@ -654,8 +716,10 @@ def operational_loss_detail(request, slug, loss_id):
         for option in options
     ]
 
+    from capital_guardian.services.command_centre import build_project_workflow_nav
     return render(request, 'capital_guardian/operational_loss_detail.html', {
         'project': project, 'loss': loss, 'rows': rows,
+        'workflow_nav': build_project_workflow_nav(project, 'interventions', loss=loss),
     })
 
 
@@ -797,8 +861,41 @@ def run_better_way_comparison(request, slug, loss_id):
         final_recommendation_status='produced' if result.ranked else 'not_applicable',
     )
 
+    from capital_guardian.services.command_centre import build_project_workflow_nav
     return render(request, 'capital_guardian/better_way_result.html', {
         'project': project, 'loss': loss, 'result': result,
+        'workflow_nav': build_project_workflow_nav(project, 'better_way', loss=loss),
+    })
+
+
+@staff_member_required(login_url='/login/')
+def better_way_view(request, slug, loss_id):
+    """
+    feat/e2e-project-pipeline — GET-only "Better Way" stage in the
+    connected project workflow. Deliberately separate from
+    run_better_way_comparison (the POST-only "Compare" button, which
+    records an ai_observatory.AnalysisSession): a GET must never write
+    anything, including telemetry. Calls the exact same
+    compare_interventions() and renders the exact same template.
+    """
+    from capital_guardian.services.better_way import compare_interventions
+    from capital_guardian.services.command_centre import build_project_workflow_nav
+
+    project = _project_or_404(slug)
+    loss = _loss_or_404(project, loss_id)
+    try:
+        result = compare_interventions(project, loss)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Unexpected failure loading Better Way comparison for OperationalLoss %s', loss.pk,
+        )
+        messages.error(request, 'Something went wrong loading the comparison.')
+        return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
+
+    return render(request, 'capital_guardian/better_way_result.html', {
+        'project': project, 'loss': loss, 'result': result,
+        'workflow_nav': build_project_workflow_nav(project, 'better_way', loss=loss),
     })
 
 
@@ -826,8 +923,10 @@ def create_capital_decision_confirm(request, slug, loss_id, option_id):
     candidate = next((c for c in result.ranked if c['option'].pk == option.pk), None)
     blocked_entry = next((b for b in result.blocked if b['option'].pk == option.pk), None)
 
+    from capital_guardian.services.command_centre import build_project_workflow_nav
     return render(request, 'capital_guardian/create_capital_decision_confirm.html', {
         'project': project, 'loss': loss, 'option': option, 'candidate': candidate, 'blocked_entry': blocked_entry,
+        'workflow_nav': build_project_workflow_nav(project, 'better_way', loss=loss),
     })
 
 
@@ -951,6 +1050,8 @@ def _human_decision_gate_context(project, decision):
     evidence_qs = list(evidence_service.evidence_for_project(project))
     evidence_summary = evidence_service.verification_summary(evidence_qs)
 
+    from capital_guardian.services.command_centre import build_project_workflow_nav
+
     return {
         'project': project,
         'decision': decision,
@@ -966,6 +1067,7 @@ def _human_decision_gate_context(project, decision):
         'legal_actions': [
             {'action': a, 'label': ACTION_LABELS[a]} for a in human_decision_gate.legal_actions_for(decision)
         ],
+        'workflow_nav': build_project_workflow_nav(project, 'decision', loss=loss, decision=decision),
     }
 
 
@@ -1166,6 +1268,7 @@ def _monitoring_context(request, project, *, trace_form=None, milestone_form=Non
         for d in decisions
     ]
     red_flag_engine.detect_red_flags(project)
+    from capital_guardian.services.command_centre import build_project_workflow_nav
     return {
         'project': project,
         'governance': getattr(project, 'governance', None),
@@ -1181,6 +1284,7 @@ def _monitoring_context(request, project, *, trace_form=None, milestone_form=Non
         'trace_form': trace_form if request.user.is_staff else None,
         'milestone_form': milestone_form if request.user.is_staff else None,
         'evidence_form': evidence_form if request.user.is_staff else None,
+        'workflow_nav': build_project_workflow_nav(project, 'execution'),
     }
 
 
@@ -1386,22 +1490,39 @@ def _learning_feedback_context(decision):
     }
 
 
+def _record_outcome_context(project, decision, outcome_form):
+    """Shared by record_outcome_confirm (GET) and record_outcome_execute's
+    form-invalid branch, so both render the exact same real values —
+    never two slightly different computations of the same page."""
+    from capital_guardian.services import execution_monitoring
+    from capital_guardian.services.command_centre import build_project_workflow_nav
+
+    expected_vs_actual = execution_monitoring.expected_vs_actual(decision)
+    result_key = execution_monitoring.outcome_result_label(expected_vs_actual)
+    return {
+        'project': project, 'decision': decision,
+        'expected_vs_actual': expected_vs_actual,
+        'result_key': result_key,
+        'result_label': execution_monitoring.RESULT_LABELS[result_key],
+        'governance': getattr(project, 'governance', None),
+        'outcome_form': outcome_form,
+        'learning_feedback': _learning_feedback_context(decision),
+        'workflow_nav': build_project_workflow_nav(project, 'outcome', decision=decision),
+    }
+
+
 @staff_member_required(login_url='/login/')
 def record_outcome_confirm(request, slug, decision_id):
     """GET-only, staff-only. Read-only preview of the expected-vs-actual
     comparison and the outcome-recording form — nothing is persisted here."""
     from capital_guardian.forms import OutcomeMonitoringForm
-    from capital_guardian.services import execution_monitoring
 
     project = _project_or_404(slug)
     decision = _monitoring_decision_or_404(project, decision_id)
-    return render(request, 'capital_guardian/record_outcome_confirm.html', {
-        'project': project, 'decision': decision,
-        'expected_vs_actual': execution_monitoring.expected_vs_actual(decision),
-        'governance': getattr(project, 'governance', None),
-        'outcome_form': OutcomeMonitoringForm(),
-        'learning_feedback': _learning_feedback_context(decision),
-    })
+    return render(
+        request, 'capital_guardian/record_outcome_confirm.html',
+        _record_outcome_context(project, decision, OutcomeMonitoringForm()),
+    )
 
 
 @staff_member_required(login_url='/login/')
@@ -1424,13 +1545,10 @@ def record_outcome_execute(request, slug, decision_id):
 
     form = OutcomeMonitoringForm(request.POST)
     if not form.is_valid():
-        return render(request, 'capital_guardian/record_outcome_confirm.html', {
-            'project': project, 'decision': decision,
-            'expected_vs_actual': execution_monitoring.expected_vs_actual(decision),
-            'governance': getattr(project, 'governance', None),
-            'outcome_form': form,
-            'learning_feedback': _learning_feedback_context(decision),
-        })
+        return render(
+            request, 'capital_guardian/record_outcome_confirm.html',
+            _record_outcome_context(project, decision, form),
+        )
 
     data = form.cleaned_data
 
@@ -1591,3 +1709,36 @@ def project_command_centre(request, slug):
         return redirect('capital_guardian:investor_dashboard', slug=slug)
 
     return render(request, 'capital_guardian/command_centre.html', context)
+
+
+# ── feat/e2e-project-pipeline — the one connected Overview → ... →
+# Observatory journey. See capital_guardian/services/command_centre.py's
+# build_project_workflow_nav() for the shared nav every stage renders.
+
+@staff_member_required(login_url='/login/')
+def project_overview_view(request, slug):
+    """
+    The narrative "story" entry point into the project workflow — same
+    permission model and same real, already-computed context as Command
+    Centre (build_command_centre_context is reused verbatim, never
+    recomputed a second way); this page just reads that context as a
+    problem → evidence → pathway → execution → outcome → learning story
+    instead of a 13-tile checklist. Command Centre remains the operational
+    hub; this is the investor/reviewer-facing front door.
+    """
+    from capital_guardian.services.command_centre import build_command_centre_context, build_project_workflow_nav
+
+    project = _project_or_404(slug)
+    try:
+        context = build_command_centre_context(project, user=request.user)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Unexpected failure building Project Overview for project %s', project.pk)
+        messages.error(request, 'Something went wrong loading the project overview.')
+        return redirect('capital_guardian:investor_dashboard', slug=slug)
+
+    context['workflow_nav'] = build_project_workflow_nav(
+        project, 'overview', loss=context['loss'], decision=context['decision'],
+    )
+    context['milestones_complete_count'] = sum(1 for m in context['milestones'] if m.status == 'complete')
+    return render(request, 'capital_guardian/project_overview.html', context)

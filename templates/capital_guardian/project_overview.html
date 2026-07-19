@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ project.name }} — Project Overview — EcoIQ{% endblock %}
+{% block meta_description_content %}{{ project.name }}: the full story from problem to verified outcome — real evidence, safety-gated pathway, human-approved decision, execution and governed learning.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap ov-wrap">
+  <div class="cc-crumb"><a href="{% url 'capital_guardian:project_command_centre' project.slug %}">← Project Command Centre</a></div>
+  <span class="gold-eyebrow">ECOIQ · PROJECT OVERVIEW</span>
+  <h1 class="gold-h1">{{ project.name }}{% if project.is_demo %} <span class="gold-demo-badge">DEMO</span>{% endif %}</h1>
+  <p class="gold-sub">
+    {{ project.get_commodity_display }}{% if project.region %} · {{ project.region }}{% endif %}{% if project.country %} · {{ project.country.name }}{% endif %}
+    · {{ project.get_status_display }}
+  </p>
+
+  {% include 'capital_guardian/_project_workflow_nav.html' %}
+
+  <div class="gold-grid" style="margin-bottom:0.5rem;">
+    <div class="gold-card"><div class="gold-card-label">Current Stage</div><div class="gold-card-value" style="font-size:1rem;">{{ next_action.label|default:"—" }}</div></div>
+    <div class="gold-card"><div class="gold-card-label">Pipeline Progress</div><div class="gold-card-value">{{ started_stage_count }} / {{ available_stage_count }}</div></div>
+    <div class="gold-card"><div class="gold-card-label">Open Alerts</div><div class="gold-card-value {% if open_red_flags %}na{% endif %}">{{ open_red_flags|length }}</div></div>
+  </div>
+  {% if next_action.url %}
+  <div class="gold-btn-row" style="margin-bottom:1.2rem;">
+    <a class="gold-btn gold-btn-primary" href="{{ next_action.url }}">Next required action: {{ next_action.label }} →</a>
+  </div>
+  {% endif %}
+
+  {# ── WHY THIS PROJECT EXISTS ─────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Why This Project Exists</h2>
+    {% if loss %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Problem</div><div class="gold-card-value" style="font-size:1rem;">{{ loss.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Financial Loss (Baseline)</div><div class="gold-card-value">£{{ loss.financial_loss_amount|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Evidence Quality</div><div class="gold-card-value" style="font-size:1rem;">{{ loss.get_evidence_quality_display }}</div></div>
+    </div>
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">{{ loss.get_loss_type_display }} — this record is human-confirmed, not automatically verified.</p>
+    {% else %}
+    <p class="gold-honest-stub">No operational loss has been established for this project yet — see Investigation to run the analysis that identifies one.</p>
+    {% endif %}
+  </section>
+
+  {# ── EVIDENCE ─────────────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Evidence</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Total</div><div class="gold-card-value">{{ evidence_summary.total }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Verified</div><div class="gold-card-value">{{ evidence_summary.by_status.verified }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Pending / Requires Review</div><div class="gold-card-value">{{ evidence_summary.by_status.pending|add:evidence_summary.by_status.requires_review }}</div></div>
+    </div>
+    {% if evidence_qs %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">Latest: {{ evidence_qs.0.title|default:evidence_qs.0.text_chunk|truncatechars:90 }} ({{ evidence_qs.0.get_verification_status_display }}).</p>
+    {% else %}
+    <p class="gold-honest-stub">No evidence recorded yet — missing evidence.</p>
+    {% endif %}
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:evidence_centre' project.slug %}">Evidence Centre →</a></div>
+  </section>
+
+  {# ── DECISION PIPELINE ────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Decision Pipeline</h2>
+    <div class="cc-list">
+      {% for stage in stages %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ stage.label }}</span>
+        <span class="gold-list-value"><span class="gold-risk-badge {{ stage.status_css }}">{{ stage.status_label }}</span></span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="gold-btn-row" style="margin-top:0.6rem;"><a class="gold-btn" href="{% url 'capital_guardian:project_command_centre' project.slug %}">Full Command Centre →</a></div>
+  </section>
+
+  {# ── RECOMMENDED PATHWAY ──────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Recommended Pathway</h2>
+    {% if better_way_result.ranked %}
+    {% with top=better_way_result.ranked.0 %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Leading Intervention</div><div class="gold-card-value" style="font-size:1rem;">{{ top.option.title }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Safety Status</div><div class="gold-card-value"><span class="gold-risk-badge {% if top.safety_status == 'eligible' %}low{% elif top.safety_status == 'blocked' %}high{% else %}medium{% endif %}">{{ top.safety_status|upper }}</span></div></div>
+      <div class="gold-card"><div class="gold-card-label">Composite Score</div><div class="gold-card-value">{{ top.composite_score }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Capital Decision</div><div class="gold-card-value" style="font-size:1rem;">{% if decision %}{{ decision.get_approval_status_display }}{% else %}Not created yet{% endif %}</div></div>
+    </div>
+    {% endwith %}
+    {% elif loss %}
+    <p class="gold-honest-stub">No intervention options compared yet — see Interventions / Better Way.</p>
+    {% else %}
+    <p class="gold-honest-stub">No pathway to recommend until a baseline loss exists.</p>
+    {% endif %}
+  </section>
+
+  {# ── EXECUTION ─────────────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Execution</h2>
+    {% if governance %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Milestones</div><div class="gold-card-value">{{ milestones|length }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Complete</div><div class="gold-card-value">{{ milestones_complete_count }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Open Blockers</div><div class="gold-card-value {% if open_red_flags %}na{% endif %}">{{ open_red_flags|length }}</div></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">Not yet under active Capital Guardian monitoring.</p>
+    {% endif %}
+    <div class="gold-btn-row"><a class="gold-btn" href="{% url 'capital_guardian:project_monitoring' project.slug %}">Execution & Monitoring →</a></div>
+  </section>
+
+  {# ── OUTCOME ─────────────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Outcome</h2>
+    {% if expected_vs_actual %}
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Expected Loss Avoided</div><div class="gold-card-value">£{{ expected_vs_actual.expected_loss_avoided|floatformat:0|intcomma }}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Actual Loss Avoided</div><div class="gold-card-value {% if expected_vs_actual.actual_loss_avoided == 'NOT YET REPORTED' %}na{% endif %}">{% if expected_vs_actual.actual_loss_avoided == 'NOT YET REPORTED' %}Not yet reported{% else %}£{{ expected_vs_actual.actual_loss_avoided|floatformat:0|intcomma }}{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">Verification Status</div><div class="gold-card-value" style="font-size:1rem;">{{ expected_vs_actual.verified_status }}</div></div>
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No outcome recorded yet.</p>
+    {% endif %}
+  </section>
+
+  {# ── LEARNING ─────────────────────────────────────────────────────── #}
+  <section class="gold-section">
+    <h2 class="gold-h2">Learning</h2>
+    <div class="gold-grid">
+      <div class="gold-card"><div class="gold-card-label">Evidence Memory</div><div class="gold-card-value" style="font-size:1rem;">{% if learning_feedback.already_synced %}Available as governed historical evidence{% elif learning_feedback.outcome_exists %}Outcome recorded, not yet synced{% else %}No outcome to sync yet{% endif %}</div></div>
+      <div class="gold-card"><div class="gold-card-label">AI Observatory</div><div class="gold-card-value" style="font-size:1rem;">{% if latest_observatory_session %}{{ latest_observatory_session.get_kind_display }} — {{ latest_observatory_session.get_status_display }}{% else %}No telemetry recorded yet{% endif %}</div></div>
+    </div>
+    {% if latest_observatory_session %}
+    <p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;">
+      {{ latest_observatory_session.model_call_count }} model call(s) · {{ latest_observatory_session.deterministic_stage_count }} deterministic step(s) · {{ latest_observatory_session.retrieval_stage_count }} retrieval operation(s).
+      EcoIQ retrieves real, previously-recorded outcomes as decision support — it does not retrain a model or learn automatically.
+    </p>
+    {% endif %}
+    <div class="gold-btn-row" style="margin-top:0.6rem;">
+      {% if decision %}<a class="gold-btn" href="{% url 'capital_guardian:record_outcome_confirm' project.slug decision.pk %}#evidence-memory">Evidence Memory →</a>{% endif %}
+      <a class="gold-btn" href="{% url 'ai_observatory:observatory' project.slug %}">AI Observatory →</a>
+    </div>
+  </section>
+</div>
+
+{% include 'gold_intelligence/_styles.html' %}
+{% include 'capital_guardian/_styles.html' %}
+<style>
+  .ov-wrap { max-width: 1120px; }
+  @media (max-width: 640px) { .ov-wrap { padding: 1.5rem 1rem 3rem; } }
+</style>
+{% endblock %}

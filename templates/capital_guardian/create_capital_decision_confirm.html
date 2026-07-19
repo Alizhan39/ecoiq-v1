@@ -10,6 +10,8 @@
   <h1 class="gold-h1">Create Capital Decision</h1>
   <p class="gold-sub">{{ project.name }} — {{ loss.title }} — {{ option.title }}</p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
+
   {% if blocked_entry %}
   <section class="gold-section">
     <p class="iq-badge iq-badge-review">

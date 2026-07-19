@@ -10,6 +10,8 @@
   <h1 class="gold-h1">{{ loss.title }}</h1>
   <p class="gold-sub">{{ project.name }} — {{ loss.get_loss_type_display }}</p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
+
   <section class="gold-section">
     <h2 class="gold-h2">Loss Summary</h2>
     <div class="gold-grid">
@@ -25,25 +27,41 @@
 
   <section class="gold-section">
     <h2 class="gold-h2">Intervention Options ({{ rows|length }})</h2>
+    <p class="gold-sub" style="font-size:0.78rem;">
+      <span class="gold-risk-badge low">ELIGIBLE</span> options may be selected for a capital decision.
+      <span class="gold-risk-badge medium">CONDITIONAL</span> options require the stated review before they can be.
+      <span class="gold-risk-badge high">BLOCKED</span> options can never be selected — see reason below each.
+    </p>
     {% if rows %}
     {% for row in rows %}
-    <div class="gc-evidence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
-      <div>
-        <div class="gc-evidence-field-label">Option</div>
-        <div class="gc-evidence-field-value">
-          <a href="#" style="color:inherit;">{{ row.option.title }}</a> — {{ row.option.get_intervention_type_display }}
+    <div class="iod-option-card iod-option-{{ row.safety.status }}">
+      <div class="gc-evidence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
+        <div>
+          <div class="gc-evidence-field-label">Option</div>
+          <div class="gc-evidence-field-value">{{ row.option.title }} — {{ row.option.get_intervention_type_display }}</div>
+        </div>
+        <div><div class="gc-evidence-field-label">CAPEX</div><div class="gc-evidence-field-value">£{{ row.option.capex_estimate|floatformat:0 }}</div></div>
+        <div><div class="gc-evidence-field-label">Annual Savings</div><div class="gc-evidence-field-value">£{{ row.option.estimated_annual_savings|floatformat:0 }}</div></div>
+        <div>
+          <div class="gc-evidence-field-label">Safety Status</div>
+          <div class="gc-evidence-field-value">
+            <span class="gold-risk-badge {% if row.safety.status == 'eligible' %}low{% elif row.safety.status == 'conditional' %}medium{% else %}high{% endif %}">{{ row.safety.status|upper }}</span>
+          </div>
         </div>
       </div>
-      <div><div class="gc-evidence-field-label">CAPEX</div><div class="gc-evidence-field-value">£{{ row.option.capex_estimate|floatformat:0 }}</div></div>
-      <div><div class="gc-evidence-field-label">Annual Savings</div><div class="gc-evidence-field-value">£{{ row.option.estimated_annual_savings|floatformat:0 }}</div></div>
-      <div>
-        <div class="gc-evidence-field-label">Safety Status</div>
-        <div class="gc-evidence-field-value">
-          <span class="gold-risk-badge {% if row.safety.status == 'eligible' %}low{% elif row.safety.status == 'conditional' %}medium{% else %}high{% endif %}">{{ row.safety.status|upper }}</span>
-        </div>
+      <div class="gold-grid" style="margin-top:0.5rem;">
+        <div class="gold-card"><div class="gold-card-label">OPEX Effect</div><div class="gold-card-value" style="font-size:1rem;">{% if row.option.opex_change > 0 %}+{% endif %}£{{ row.option.opex_change|floatformat:0 }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Expected Loss Avoided</div><div class="gold-card-value" style="font-size:1rem;">£{{ row.option.estimated_loss_avoided|floatformat:0 }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Implementation Time</div><div class="gold-card-value" style="font-size:1rem;">{{ row.option.implementation_time|default:"Not recorded" }}</div></div>
+        <div class="gold-card"><div class="gold-card-label">Readiness (Tech · Finance · MRV)</div><div class="gold-card-value" style="font-size:0.9rem;">{{ row.option.get_technical_readiness_display }} · {{ row.option.get_finance_readiness_display }} · {{ row.option.get_mrv_readiness_display }}</div></div>
       </div>
+      {% if row.option.description %}<p class="gold-sub" style="font-size:0.78rem;margin-top:0.5rem;"><strong>Evidence basis:</strong> {{ row.option.description|truncatechars:220 }}</p>{% endif %}
+      {% if row.safety.reason %}
+      <p class="gold-sub iod-condition-note" style="font-size:0.78rem;">
+        <strong>{% if row.safety.status == 'blocked' %}Why this is blocked:{% else %}Condition:{% endif %}</strong> {{ row.safety.reason }}
+      </p>
+      {% endif %}
     </div>
-    {% if row.safety.reason %}<p class="gold-sub" style="font-size:0.76rem;margin:-0.4rem 0 0.6rem;">{{ row.safety.reason }}</p>{% endif %}
     {% endfor %}
     {% else %}
     <p class="gold-honest-stub">No intervention options created yet.</p>
@@ -68,5 +86,13 @@
 <style>
   .wtv-confirm-btn { display: inline-block; background: #00e89a; color: #06120c; font-weight: 800; font-size: 0.9rem; padding: 0.65rem 1.4rem; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; }
   .wtv-confirm-btn:hover { filter: brightness(1.08); }
+  .iod-option-card { border: 1px solid var(--gold-border); border-radius: 10px; padding: 0.9rem 1rem; margin-bottom: 0.8rem; }
+  .iod-option-eligible { border-left: 3px solid var(--gold-low); }
+  .iod-option-conditional { border-left: 3px solid var(--gold-medium); }
+  /* Blocked options must never look selectable — dimmed, no eligible-style
+     accent border, and their reason is never optional. */
+  .iod-option-blocked { border-left: 3px solid var(--gold-high); opacity: 0.72; filter: grayscale(0.15); }
+  .iod-condition-note { color: var(--gold-medium); }
+  .iod-option-blocked .iod-condition-note { color: var(--gold-high); font-weight: 600; }
 </style>
 {% endblock %}

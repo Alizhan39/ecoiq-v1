@@ -136,6 +136,54 @@ def expected_vs_actual(decision):
     }
 
 
+RESULT_ACHIEVED = 'achieved'
+RESULT_PARTIALLY_ACHIEVED = 'partially_achieved'
+RESULT_NOT_ACHIEVED = 'not_achieved'
+RESULT_DISPUTED = 'disputed'
+RESULT_INSUFFICIENT_EVIDENCE = 'insufficient_evidence'
+
+RESULT_LABELS = {
+    RESULT_ACHIEVED: 'Achieved',
+    RESULT_PARTIALLY_ACHIEVED: 'Partially Achieved',
+    RESULT_NOT_ACHIEVED: 'Not Achieved',
+    RESULT_DISPUTED: 'Disputed',
+    RESULT_INSUFFICIENT_EVIDENCE: 'Insufficient Evidence',
+}
+
+
+def outcome_result_label(ctx):
+    """
+    Classifies one expected_vs_actual() dict as achieved / partially
+    achieved / not achieved / disputed / insufficient evidence — reusing
+    the exact real expected/actual loss-avoided figures that dict already
+    carries, never a second independent computation of them. Disputed and
+    insufficient-evidence are checked first and always take precedence
+    over the numeric comparison: a disputed or evidence-poor outcome is
+    never labelled achieved/not achieved regardless of the raw numbers, and
+    "no outcome recorded yet" is honestly insufficient evidence, not a
+    silent default to any other state.
+    """
+    outcome = ctx['outcome']
+    if outcome is None:
+        return RESULT_INSUFFICIENT_EVIDENCE
+    if outcome.mrv_status == 'disputed':
+        return RESULT_DISPUTED
+    if outcome.evidence_quality == 'missing':
+        return RESULT_INSUFFICIENT_EVIDENCE
+
+    actual = ctx['actual_loss_avoided']
+    expected = ctx['expected_loss_avoided']
+    if actual == NOT_YET_REPORTED or not expected:
+        return RESULT_INSUFFICIENT_EVIDENCE
+
+    ratio = actual / expected
+    if ratio >= 0.9:
+        return RESULT_ACHIEVED
+    if ratio > 0:
+        return RESULT_PARTIALLY_ACHIEVED
+    return RESULT_NOT_ACHIEVED
+
+
 def record_monitoring_outcome(decision, *, mrv_status, evidence_quality='medium', capex_actual=None,
                                opex_actual=0, loss_avoided_actual=None, savings_actual=0, reviewer_note=''):
     """

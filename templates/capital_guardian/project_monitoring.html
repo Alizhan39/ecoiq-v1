@@ -14,6 +14,7 @@
     fabricated, and nothing becomes "independently verified" merely because a result was reported.
   </p>
 
+  {% if workflow_nav %}{% include 'capital_guardian/_project_workflow_nav.html' %}{% endif %}
   {% include 'capital_guardian/_nav.html' with active_tab='monitoring' %}
 
   {% if messages %}
