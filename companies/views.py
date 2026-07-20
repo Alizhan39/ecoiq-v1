@@ -606,6 +606,22 @@ def company_detail(request, slug):
     if request.user.is_authenticated:
         watchlist_entry = profile.watchlist_entries.filter(user=request.user).first()
 
+    # ── feat/company-evidence-ingestion (PR 10) — real source provenance,
+    # data-origin honesty, freshness/staleness, per-metric financial
+    # provenance. All read-only on this GET view, same discipline as above.
+    from company_intelligence.services.data_origin import company_data_origin
+    from company_intelligence.services.evidence_quality import company_evidence_quality_summary
+    from company_intelligence.services.freshness import screening_freshness
+
+    harvest_sources = list(profile.harvest_sources.select_related().all())
+    data_origin = company_data_origin(profile)
+    screening_freshness_info = screening_freshness(shariah_screen)
+    evidence_quality_summary = company_evidence_quality_summary(profile)
+    financial_fact_sources = (
+        list(shariah_screen.financial_facts.metric_sources.select_related('evidence').all())
+        if shariah_screen and shariah_screen.financial_facts else []
+    )
+
     return render(request, 'companies/detail.html', {
         'company':               company,
         'profile':               profile,
@@ -655,6 +671,12 @@ def company_detail(request, slug):
         'controversies':              controversies,
         'watchlist_entry':            watchlist_entry,
         'watchlist_statuses':         ResearchWatchlistEntry.STATUS_CHOICES,
+        # feat/company-evidence-ingestion (PR 10)
+        'harvest_sources':            harvest_sources,
+        'data_origin':                data_origin,
+        'screening_freshness':        screening_freshness_info,
+        'evidence_quality_summary':   evidence_quality_summary,
+        'financial_fact_sources':     financial_fact_sources,
     })
 
 

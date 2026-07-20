@@ -49,6 +49,7 @@ class AnalysisSession(models.Model):
         ('outcome_recording', 'Outcome Recording / Expected-vs-Actual'),
         ('evidence_memory_sync', 'Evidence Memory Sync'),
         ('company_intelligence', 'Company Intelligence Analysis (Shariah Screen / 114-KPI Mapping)'),
+        ('company_evidence_ingestion', 'Company Evidence Ingestion (Source Fetch / Extraction / KPI Candidate Matching)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [

@@ -49,6 +49,14 @@ class FetchOutcome:
     content_hash_input: str = ''  # raw text used for change-detection hashing, '' on failure
     error: str = ''
     skipped_reason: str = ''
+    # feat/company-evidence-ingestion (PR 10): optional structured payload a
+    # fetcher can return alongside its human-readable candidates, for a
+    # caller that needs real numeric values (not just prose) — e.g.
+    # fetch_sec_edgar's extracted XBRL figures, consumed by
+    # company_intelligence.services.evidence_ingestion to populate
+    # CompanyFinancialFacts. Every other existing fetcher leaves this empty;
+    # ingest_source() never reads it, so this is purely additive.
+    metadata: dict = field(default_factory=dict)
 
 
 def _validate_size_and_type(result, expected_content_types):
@@ -81,6 +89,137 @@ def _robots_allows(url):
         return ROBOTS_CACHE[netloc].can_fetch('EcoIQ-Bot/1.0', url)
     except Exception:
         return True
+
+
+def fetch_sec_edgar(company_slug):
+    """
+    Real SEC EDGAR XBRL companyfacts API call — free, no API key, reuses the
+    exact CIK mapping already proven in companies/management/commands/
+    ingest_sec_edgar.py (same reuse pattern as fetch_companies_house
+    above), routed through the shared retrying httpx client. SEC's
+    fair-use policy requires a descriptive User-Agent with a contact —
+    reuses that command's own EDGAR_HEADERS rather than a second header
+    constant.
+
+    Extracts four real XBRL concepts, each only if actually reported —
+    never fabricated, never defaulted to zero when absent:
+      revenue_usd                — Revenues / RevenueFromContractWith...
+      total_debt_usd             — LongTermDebt-family concepts
+      cash_and_equivalents_usd   — CashAndCashEquivalentsAtCarryingValue
+      non_permissible_income_usd — InvestmentIncomeInterest (a DERIVED
+                                    proxy — interest income — never a
+                                    directly-reported "non-permissible
+                                    income" line item; labelled as such in
+                                    both the candidate statement and
+                                    outcome.metadata so downstream callers
+                                    never present it as directly reported).
+
+    For each metric, every candidate XBRL concept is checked and the entry
+    with the most recent reporting `end` date wins — NOT the first concept
+    in priority order that happens to have any value at all. This was a
+    real, caught-in-verification bug: Tesla's `LongTermDebtNoncurrent` tag
+    carries a single stale $0 entry from FY2013 (an old, no-longer-used
+    tag), while its real current long-term debt (~$6.6B, FY2025) is filed
+    under `LongTermDebt` instead — trusting "first concept with a value"
+    would have silently presented an 11-year-stale zero as current debt.
+    This module never does that.
+
+    Market capitalisation is NOT obtainable from XBRL companyfacts alone (no
+    share-price feed here) — genuinely, honestly absent, not a gap this
+    function papers over.
+    """
+    from companies.management.commands.ingest_sec_edgar import EDGAR_BASE, EDGAR_HEADERS, US_COMPANY_CIKS
+
+    def _extract_latest_entry(concept_data):
+        """Returns the single most-recent-`end`-date XBRL entry for one
+        concept (annual 10-K/20-F filings preferred over interim ones) —
+        the whole entry, not just its value, so the caller can compare
+        recency across multiple candidate concepts for the same metric."""
+        units = concept_data.get('units', {})
+        for entries in units.values():
+            if not entries:
+                continue
+            annual = [e for e in entries if e.get('form') in ('10-K', '20-F')]
+            pool = sorted(annual or entries, key=lambda x: x.get('end', ''), reverse=True)
+            if pool:
+                return pool[0]
+        return None
+
+    cik = US_COMPANY_CIKS.get(company_slug)
+    if not cik:
+        return FetchOutcome(success=False, skipped_reason=f'No SEC EDGAR CIK mapped for "{company_slug}"')
+
+    result = http_fetch(f'{EDGAR_BASE}/api/xbrl/companyfacts/CIK{cik}.json', headers=EDGAR_HEADERS)
+    if not result.success:
+        if result.status_code == 404:
+            return FetchOutcome(success=False, skipped_reason=f'CIK {cik} not found in EDGAR')
+        return FetchOutcome(success=False, error=result.error or f'HTTP {result.status_code}')
+
+    validation_error = _validate_size_and_type(result, {'application/json'})
+    if validation_error:
+        return FetchOutcome(success=False, error=validation_error)
+
+    facts = result.json_data or {}
+    entity_name = facts.get('entityName', company_slug)
+    us_gaap = facts.get('facts', {}).get('us-gaap', {})
+
+    # field_key, candidate XBRL concepts (first match wins), human label, is_derived
+    metric_specs = [
+        ('revenue_usd', ['Revenues', 'RevenueFromContractWithCustomerExcludingAssessedTax'],
+         'total revenue', False),
+        ('total_debt_usd', ['DebtLongtermAndShorttermCombinedAmount', 'LongTermDebtNoncurrent', 'LongTermDebt'],
+         'long-term debt', False),
+        ('cash_and_equivalents_usd', ['CashAndCashEquivalentsAtCarryingValue'],
+         'cash and cash equivalents', False),
+        ('non_permissible_income_usd', ['InvestmentIncomeInterest', 'InterestIncomeOther'],
+         'interest income (used as a conservative proxy for non-permissible income under this methodology)', True),
+    ]
+
+    candidates = []
+    metadata = {'cik': cik, 'entity_name': entity_name, 'metrics': {}}
+    for field_key, concepts, label, is_derived in metric_specs:
+        # Evaluate EVERY candidate concept (not just the first one that
+        # happens to have any value at all) and keep whichever has the most
+        # recent reporting `end` date. A company may tag the same real fact
+        # under an unusual concept name while an earlier-priority concept
+        # in this list carries only a long-stale, unrelated historical
+        # entry (observed for real: Tesla's LongTermDebtNoncurrent has a
+        # single stale $0 entry from FY2013, while its real current debt is
+        # under LongTermDebt) — picking "first concept with a value" would
+        # silently surface that stale figure as current. Never happens.
+        best_value, used_concept, period_end = None, None, None
+        for concept in concepts:
+            entry = _extract_latest_entry(us_gaap.get(concept, {}))
+            if entry is None or entry.get('val') is None:
+                continue
+            entry_end = entry.get('end', '')
+            if period_end is None or entry_end > period_end:
+                best_value, used_concept, period_end = entry['val'], concept, entry_end
+        value = best_value
+        if value is None:
+            continue
+        statement = (
+            f'{entity_name} reported {label} of ${value:,.0f} per SEC EDGAR XBRL data '
+            f'(concept: {used_concept}).'
+        )
+        metadata['metrics'][field_key] = {
+            'value': value, 'concept': used_concept, 'is_derived': is_derived, 'unit': 'USD',
+            'period_end': period_end, 'statement': statement,
+        }
+        candidates.append(EvidenceCandidate(
+            company_slug=company_slug, category='financial', statement=statement, source_type='regulatory_filing',
+            title=f'SEC EDGAR — {entity_name} — {label}',
+            url=f'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=10-K',
+            source_owner='U.S. Securities and Exchange Commission',
+        ))
+
+    if not candidates:
+        return FetchOutcome(success=False, error='No usable XBRL financial concepts found for this company')
+
+    return FetchOutcome(
+        success=True, candidates=candidates,
+        content_hash_input=str(sorted(metadata['metrics'].items())), metadata=metadata,
+    )
 
 
 def fetch_companies_house(company_slug):

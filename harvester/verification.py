@@ -26,7 +26,7 @@ from datetime import date, datetime, timezone
 # Fallback source-class quality when no Source row is attached. Mirrors the
 # Source Registry base-confidence bands (primary filings high … media medium).
 SOURCE_TYPE_QUALITY = {
-    "companies_house": 0.92, "fca_filing": 0.92, "ofgem": 0.88,
+    "companies_house": 0.92, "sec_edgar": 0.92, "fca_filing": 0.92, "ofgem": 0.88,
     "environment_agency": 0.88, "regulatory_filing": 0.85, "sbti": 0.85,
     "annual_report": 0.85, "issb": 0.82, "cdp": 0.82, "iea": 0.82,
     "tcfd_report": 0.80, "world_bank": 0.80, "oecd": 0.80, "gri": 0.80,

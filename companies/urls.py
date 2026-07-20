@@ -15,6 +15,9 @@ urlpatterns = [
     path('<slug:slug>/explain/',                    ci_views.explain_view,      name='explain'),
     path('<slug:slug>/watchlist/add/',              ci_views.watchlist_add_view, name='watchlist_add'),
     path('<slug:slug>/watchlist/remove/',           ci_views.watchlist_remove_view, name='watchlist_remove'),
+    # feat/company-evidence-ingestion (PR 10) — staff-only actions.
+    path('<slug:slug>/refresh/',                    ci_views.refresh_company_view, name='refresh'),
+    path('<slug:slug>/evidence-review/',            ci_views.evidence_review_action_view, name='evidence_review_action'),
     path('<slug:slug>/report.pdf',                  views.company_pdf_report,   name='pdf_report'),
     path('<slug:slug>/ml-insights.json',            views.company_ml_insights,  name='ml_insights'),
     path('<slug:slug>/certificate/',                views.generate_certificate, name='certificate'),

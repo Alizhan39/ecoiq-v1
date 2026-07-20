@@ -31,6 +31,21 @@ already carries a `company` FK) as the one evidence store — no new evidence
 model. This PR is explicitly research/stewardship intelligence, never
 investment advice: no field anywhere on these models may express a
 buy/sell/hold recommendation, a price target, or a return forecast.
+
+feat/company-evidence-ingestion (PR 10) additions — real evidence ingestion
+for public companies, bridging the harvester app's existing acquisition
+layer (Source/Evidence/dedup/verification, unchanged) into these consumer
+models: CompanyKPIEvidenceLink.review_state (a deterministic KPI-candidate
+matcher can PROPOSE a link from ingested evidence, never auto-CONFIRM one),
+CompanyControversy.finding_type (allegation vs regulatory finding vs court
+finding, never conflated), CompanyFinancialFactSource (per-metric
+provenance — which real evidence backs each individual financial figure),
+and EvidenceReviewAction (the minimal staff human-review audit trail).
+Freshness, data-origin (DEMO/REAL_PUBLIC_DATA/MIXED), and evidence-quality
+are deliberately NOT stored fields — they are computed at read time by
+services/freshness.py, services/data_origin.py, services/evidence_quality.py,
+since all three would otherwise silently go stale the moment they were
+written.
 """
 from django.conf import settings
 from django.db import models
@@ -283,11 +298,30 @@ class CompanyKPIEvidenceLink(models.Model):
         ('conflicts', 'Conflicts'),
         ('context', 'Context Only'),
     ]
+    # feat/company-evidence-ingestion (PR 10): a deterministic KPI-candidate
+    # matcher (services/kpi_candidate_matching.py) may PROPOSE a link from
+    # ingested evidence text — never auto-CONFIRM one. Only 'confirmed'
+    # links count toward derive_status_from_evidence() (kpi_engine.py),
+    # preserving PR9's "never generate an unsupported KPI assessment"
+    # guarantee even as ingestion proposes candidates. Existing PR9 rows
+    # (manually created, pre-dating this field) default to 'confirmed' —
+    # a manually-added link was already a deliberate human action.
+    REVIEW_STATE_CHOICES = [
+        ('proposed', 'Proposed — Awaiting Review'),
+        ('confirmed', 'Confirmed'),
+        ('rejected', 'Rejected'),
+    ]
     assessment = models.ForeignKey(CompanyKPIAssessment, on_delete=models.CASCADE, related_name='evidence_links')
     evidence = models.ForeignKey(
         'evidence_memory.EvidenceMemory', on_delete=models.CASCADE, related_name='kpi_links',
     )
     relationship = models.CharField(max_length=10, choices=RELATIONSHIP_CHOICES)
+    review_state = models.CharField(max_length=10, choices=REVIEW_STATE_CHOICES, default='confirmed')
+    match_basis = models.CharField(
+        max_length=200, blank=True,
+        help_text='For a proposed (ingestion-matched) link: the deterministic keyword/category match that '
+                   'produced it — never an LLM claim. Blank for manually-created links.',
+    )
     added_at = models.DateTimeField(auto_now_add=True)
     added_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='kpi_evidence_links_added',
@@ -327,6 +361,19 @@ class CompanyControversy(models.Model):
     STATUS_CHOICES = [
         ('unresolved', 'Unresolved'), ('disputed', 'Disputed'), ('resolved', 'Resolved'),
     ]
+    # feat/company-evidence-ingestion (PR 10) — an allegation is not proven
+    # fact; a court finding is not the same evidentiary weight as a news
+    # report. Never inferred automatically — set from what the linked
+    # evidence's own document_category/source_type honestly supports, or
+    # left at the conservative default.
+    FINDING_TYPE_CHOICES = [
+        ('allegation', 'Allegation'),
+        ('investigation', 'Investigation (Ongoing)'),
+        ('regulatory_finding', 'Regulatory Finding'),
+        ('court_finding', 'Court Finding'),
+        ('company_admission', 'Company Admission'),
+        ('verified_event', 'Verified Event'),
+    ]
 
     company = models.ForeignKey(
         'companies.CompanyProfile', on_delete=models.CASCADE, related_name='controversies',
@@ -335,6 +382,7 @@ class CompanyControversy(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
     severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='unresolved')
+    finding_type = models.CharField(max_length=25, choices=FINDING_TYPE_CHOICES, default='allegation')
     evidence = models.ForeignKey(
         'evidence_memory.EvidenceMemory', null=True, blank=True, on_delete=models.SET_NULL, related_name='controversies',
     )
@@ -382,3 +430,100 @@ class ResearchWatchlistEntry(models.Model):
 
     def __str__(self):
         return f'{self.user} watching {self.company.company.name} ({self.get_status_display()})'
+
+
+class CompanyFinancialFactSource(models.Model):
+    """
+    feat/company-evidence-ingestion (PR 10) — per-metric provenance for one
+    CompanyFinancialFacts row. A single `source` free-text string on the
+    parent row (PR9) cannot honestly say WHICH of its six figures came from
+    where, or whether each was directly reported or derived — this model
+    gives each individual metric its own real evidence link and an explicit
+    directly-reported/derived flag, so "Interest-bearing debt: $X — source:
+    [this exact filing]" is a real, inspectable claim, never an aggregate
+    guess. One row per metric per financial-facts snapshot.
+    """
+    METRIC_CHOICES = [
+        ('market_cap_usd', 'Market Capitalisation'),
+        ('total_debt_usd', 'Total Debt'),
+        ('cash_and_equivalents_usd', 'Cash & Equivalents'),
+        ('interest_bearing_securities_usd', 'Interest-Bearing Securities'),
+        ('non_permissible_income_usd', 'Non-Permissible Income'),
+        ('revenue_usd', 'Revenue'),
+    ]
+    financial_facts = models.ForeignKey(
+        CompanyFinancialFacts, on_delete=models.CASCADE, related_name='metric_sources',
+    )
+    metric = models.CharField(max_length=40, choices=METRIC_CHOICES)
+    evidence = models.ForeignKey(
+        'evidence_memory.EvidenceMemory', null=True, blank=True, on_delete=models.SET_NULL, related_name='financial_fact_sources',
+    )
+    is_derived = models.BooleanField(
+        default=False,
+        help_text='True when this value was derived/interpreted from a reported figure (e.g. interest '
+                   'income used as a proxy for non-permissible income), never for a value copied directly '
+                   'from the filing.',
+    )
+    interpretation_note = models.TextField(
+        blank=True, help_text='Required explanation when is_derived=True — how the value was derived.',
+    )
+
+    class Meta:
+        ordering = ['metric']
+        verbose_name = 'Company Financial Fact Source'
+        constraints = [
+            models.UniqueConstraint(fields=['financial_facts', 'metric'], name='ci_unique_factset_metric'),
+        ]
+
+    def __str__(self):
+        basis = 'derived' if self.is_derived else 'reported'
+        return f'{self.financial_facts} — {self.get_metric_display()} ({basis})'
+
+    @property
+    def value(self):
+        """The real numeric value this row is provenance for, resolved here
+        in Python — Django templates cannot look up a model field by a
+        variable name (no `{{ obj|attr:field_name }}` filter exists), so
+        this property exists precisely so templates never need one."""
+        return getattr(self.financial_facts, self.metric, None)
+
+
+class EvidenceReviewAction(models.Model):
+    """
+    feat/company-evidence-ingestion (PR 10) — the minimal staff human-review
+    workflow the brief asks for, covering candidate evidence, ambiguous KPI
+    mappings, and derived financial values. Every action is an immutable,
+    timestamped audit row (never edited/deleted) attributing exactly who
+    made the call and why — this is what lets a KPI link's review_state or
+    a controversy's status move, never a silent field flip with no
+    reviewer/timestamp/reason on record.
+
+    At least one of `evidence`/`kpi_evidence_link` must be set (enforced by
+    the service layer, mirroring this app's existing convention of
+    ownership checks in services rather than DB CheckConstraints across
+    nullable FKs to different apps).
+    """
+    ACTION_CHOICES = [
+        ('verify', 'Verify'),
+        ('reject', 'Reject'),
+        ('mark_disputed', 'Mark Disputed'),
+        ('needs_more_evidence', 'Needs More Evidence'),
+    ]
+    evidence = models.ForeignKey(
+        'evidence_memory.EvidenceMemory', null=True, blank=True, on_delete=models.CASCADE, related_name='review_actions',
+    )
+    kpi_evidence_link = models.ForeignKey(
+        CompanyKPIEvidenceLink, null=True, blank=True, on_delete=models.CASCADE, related_name='review_actions',
+    )
+    action = models.CharField(max_length=25, choices=ACTION_CHOICES)
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='evidence_review_actions')
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Evidence Review Action'
+
+    def __str__(self):
+        target = self.kpi_evidence_link_id and f'KPI link #{self.kpi_evidence_link_id}' or f'Evidence #{self.evidence_id}'
+        return f'{self.get_action_display()} — {target} by {self.reviewer}'

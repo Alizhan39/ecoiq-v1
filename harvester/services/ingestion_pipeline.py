@@ -46,6 +46,12 @@ def ingest_source(source, triggered_by='manual'):
             return run
         outcome = fetchers.fetch_companies_house(company_slug)
         category_for_count = 'governance'
+    elif source.source_type == 'sec_edgar':
+        if not company_slug:
+            run.mark_completed('skipped')
+            return run
+        outcome = fetchers.fetch_sec_edgar(company_slug)
+        category_for_count = 'financial'
     elif source.source_type == 'csv_dataset':
         if not source.source_url or not company_slug:
             run.mark_completed('skipped')
