@@ -3,18 +3,28 @@ company_intelligence/views.py — feat/company-halal-intelligence (PR 9).
 
 Every view here is either a public, GET-only read (matching companies.
 company_detail's existing fully-public, no-login convention — see PR9
-audit) or a login-gated POST for the one genuinely personal, stateful
-action this app introduces: the Research Watchlist. Shariah screening and
-KPI-assessment computation are NOT triggered from a public button — like
-every other company-scoring pipeline in this repo (companies/
+audit) or a gated POST for a genuinely stateful action. Shariah screening
+and KPI-assessment computation are NOT triggered from a PUBLIC button —
+like every other company-scoring pipeline in this repo (companies/
 management/commands/recalculate_scores.py, pandas_scoring_engine's
-recalculate_ecoiq_scores.py, league's seed_league.py), they run via a
-management command (see management/commands/seed_company_intelligence_demo.py
-for this PR's own instrumented example), never as an anonymous-triggerable
-web action — consistent with "no state-changing GET actions" and this
-being research intelligence, not a live scoring API.
+recalculate_ecoiq_scores.py, league's seed_league.py), the primary path is
+a management command (see management/commands/seed_company_intelligence_demo.py
+and .../ingest_real_company_evidence.py) — consistent with "no
+state-changing GET actions" and this being research intelligence, not a
+live scoring API.
+
+feat/company-evidence-ingestion (PR 10) adds exactly two STAFF-gated POST
+actions the brief explicitly allows ("A staff-triggered refresh is
+acceptable for this PR" / "Provide a minimal staff review workflow"):
+refresh_company_view (re-runs real ingestion for one company) and
+evidence_review_action_view (records one EvidenceReviewAction and, for
+verify/reject, moves the target CompanyKPIEvidenceLink's review_state).
+Both are @staff_member_required, matching every other state-changing
+action already gated that way elsewhere in this codebase (capital_guardian,
+etc.) — never public, unlike the Research Watchlist's ordinary-user gate.
 """
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -22,7 +32,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from companies.models import CompanyProfile
 from league.models import Company
 
-from company_intelligence.models import ResearchWatchlistEntry
+from company_intelligence.models import CompanyKPIEvidenceLink, EvidenceReviewAction, ResearchWatchlistEntry
 from company_intelligence.services.company_trace import build_company_trace
 
 
@@ -97,3 +107,88 @@ def watchlist_view(request):
         .select_related('company', 'company__company')
     )
     return render(request, 'company_intelligence/watchlist.html', {'entries': entries})
+
+
+@staff_member_required(login_url='/login/')
+def refresh_company_view(request, slug):
+    """
+    POST-only, staff-only. Re-runs real evidence ingestion for this company
+    (idempotent — see evidence_ingestion.ingest_company_evidence) and, if a
+    Shariah methodology is available, re-screens with whatever fresh
+    financial facts were found. Never fabricates a source when none is
+    mapped — an honest warning is shown instead of a fake refresh.
+    """
+    if request.method != 'POST':
+        raise Http404()
+    profile = _profile_or_404(slug)
+
+    from company_intelligence.models import ShariahMethodology
+    from company_intelligence.services.evidence_ingestion import ingest_company_evidence
+
+    methodology = ShariahMethodology.objects.filter(is_active=True).order_by('-effective_date').first()
+    try:
+        result = ingest_company_evidence(profile, actor=request.user, methodology=methodology)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Refresh failed for company %s', profile.pk)
+        messages.error(request, 'Refresh failed unexpectedly — nothing was changed.')
+        return redirect('companies:detail', slug=slug)
+
+    if not result['identity']['sec_available']:
+        messages.warning(request, result['warnings'][0] if result['warnings'] else 'No real source available for this company.')
+    else:
+        run = result['ingestion_run']
+        messages.success(
+            request,
+            f'Refresh complete — ingestion {run.get_status_display() if run else "n/a"}, '
+            f'{len(result["kpi_candidates_proposed"])} new KPI candidate(s) proposed.'
+            + (f' {len(result["warnings"])} warning(s) — see below.' if result['warnings'] else ''),
+        )
+        for w in result['warnings']:
+            messages.info(request, w)
+    return redirect('companies:detail', slug=slug)
+
+
+@staff_member_required(login_url='/login/')
+def evidence_review_action_view(request, slug):
+    """
+    POST-only, staff-only. Records one EvidenceReviewAction against a
+    CompanyKPIEvidenceLink and, only for 'verify'/'reject', moves that
+    link's review_state and recomputes its assessment's status — every
+    other action (mark_disputed/needs_more_evidence) is logged as a real
+    audit entry without silently changing anything else.
+    """
+    if request.method != 'POST':
+        raise Http404()
+    profile = _profile_or_404(slug)
+
+    link_id = request.POST.get('kpi_evidence_link_id')
+    action = request.POST.get('action')
+    reason = request.POST.get('reason', '')
+
+    valid_actions = {choice for choice, _ in EvidenceReviewAction.ACTION_CHOICES}
+    if action not in valid_actions:
+        messages.error(request, 'Invalid review action.')
+        return redirect('companies:detail', slug=slug)
+
+    link = get_object_or_404(
+        CompanyKPIEvidenceLink, pk=link_id, assessment__company=profile,
+    )
+
+    EvidenceReviewAction.objects.create(
+        kpi_evidence_link=link, evidence=link.evidence, action=action, reviewer=request.user, reason=reason,
+    )
+
+    if action == 'verify':
+        link.review_state = 'confirmed'
+        link.save(update_fields=['review_state'])
+    elif action == 'reject':
+        link.review_state = 'rejected'
+        link.save(update_fields=['review_state'])
+
+    if action in ('verify', 'reject'):
+        from company_intelligence.services.kpi_engine import recompute_assessment_status
+        recompute_assessment_status(link.assessment)
+
+    messages.success(request, f'Recorded "{dict(EvidenceReviewAction.ACTION_CHOICES)[action]}" for this evidence link.')
+    return redirect('companies:detail', slug=slug)

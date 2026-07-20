@@ -1,5 +1,6 @@
 {% comment %} ── EcoIQ Shariah Eligibility Screen ──────────────────────────────
-   Context: shariah_screen (CompanyShariahScreen or None), company (league.Company)
+   Context: shariah_screen (CompanyShariahScreen or None), company (league.Company),
+   screening_freshness (dict, PR 10), financial_fact_sources (list, PR 10)
    Methodology-based screening — never a religious ruling or individual fatwa.
    Deliberately separate from the Quranic Decision Filter panel above: that
    panel's "halal" question is a coarse ethics-proxy; this is a dedicated
@@ -31,7 +32,9 @@
     Screened according to <strong>{{ shariah_screen.methodology.name }} v{{ shariah_screen.methodology.version }}</strong>
     on {{ shariah_screen.screened_at|date:"Y-m-d" }} · {{ shariah_screen.get_review_status_display }}
     {% if shariah_screen.is_demo %}<span class="shariah-demo-badge">DEMO</span>{% endif %}
+    {% if screening_freshness.is_stale %}<span class="shariah-stale-badge">⚠ Screening Requires Refresh</span>{% endif %}
   </p>
+  <p class="shariah-detail-text">{{ screening_freshness.reason }}</p>
 
   <div class="shariah-strip">
     <div class="shariah-stat">
@@ -51,6 +54,30 @@
   <details class="shariah-details">
     <summary>Business Activity Detail</summary>
     <p class="shariah-detail-text">{{ shariah_screen.business_activity_reason|default:"Not available." }}</p>
+  </details>
+
+  <details class="shariah-details">
+    <summary>Financial Inputs — Per-Metric Provenance</summary>
+    {% if financial_fact_sources %}
+    <table class="shariah-table">
+      <thead><tr><th>Metric</th><th>Value</th><th>Basis</th><th>Source</th></tr></thead>
+      <tbody>
+        {% for fs in financial_fact_sources %}
+        <tr>
+          <td>{{ fs.get_metric_display }}</td>
+          <td class="{% if fs.value is None %}shariah-fail-text{% endif %}">{% if fs.value is None %}Missing{% else %}${{ fs.value|floatformat:0 }}{% endif %}</td>
+          <td>{% if fs.is_derived %}Derived{% else %}Directly Reported{% endif %}</td>
+          <td>{% if fs.evidence %}<a href="#" title="{{ fs.evidence.text_chunk|truncatechars:200 }}">{{ fs.evidence.source_type }}</a>{% else %}Not linked{% endif %}</td>
+        </tr>
+        {% if fs.is_derived and fs.interpretation_note %}
+        <tr><td colspan="4" class="shariah-detail-text" style="padding-top:0;">↳ {{ fs.interpretation_note }}</td></tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="shariah-detail-text">No per-metric provenance recorded — financial facts (if any) came from a source without individual metric-level evidence links.</p>
+    {% endif %}
   </details>
 
   <details class="shariah-details">
@@ -105,6 +132,7 @@
   .shariah-result-insufficient_data,.shariah-result-not_screened{background:rgba(148,163,184,.1);color:#94a3b8}
   .shariah-methodology-line{font-size:.78rem;color:#94a3b8;margin:1rem 0 0}
   .shariah-demo-badge{display:inline-block;background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.3);color:#f4a261;font-family:'SF Mono',ui-monospace,monospace;font-size:.62rem;font-weight:700;letter-spacing:.04em;padding:.15rem .5rem;border-radius:999px;margin-left:.4rem}
+  .shariah-stale-badge{display:inline-block;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:#fca5a5;font-family:'SF Mono',ui-monospace,monospace;font-size:.62rem;font-weight:700;letter-spacing:.04em;padding:.15rem .5rem;border-radius:999px;margin-left:.4rem}
   .shariah-strip{display:flex;flex-wrap:wrap;gap:1.6rem;margin:1rem 0;padding:1rem 1.1rem;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:10px}
   .shariah-stat{display:flex;flex-direction:column;gap:.25rem}
   .shariah-stat-k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#475569;font-family:'SF Mono',ui-monospace,monospace}

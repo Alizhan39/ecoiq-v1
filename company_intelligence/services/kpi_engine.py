@@ -47,7 +47,15 @@ def derive_status_from_evidence(evidence_links):
     `relationship` ('supports'/'conflicts'/'context') — never re-derived
     from evidence free text here.
 
-    Deterministic rule, in priority order:
+    feat/company-evidence-ingestion (PR 10): only 'confirmed' links count.
+    A deterministic ingestion matcher may PROPOSE a link from newly
+    harvested evidence (review_state='proposed') — that link exists in the
+    database for a human reviewer to see and act on, but never moves this
+    company's KPI status until review confirms it. This is what keeps
+    "evidence-driven, never LLM/ingestion-asserted" true even once
+    automated candidate matching exists.
+
+    Deterministic rule, in priority order (over confirmed links only):
     - No links at all                                  -> insufficient_evidence
     - Only 'context' links (no supports/conflicts)      -> insufficient_evidence
     - Both supporting AND conflicting links exist        -> mixed
@@ -56,7 +64,7 @@ def derive_status_from_evidence(evidence_links):
     - Only supporting links exist, at least one strong
       (human_reviewed/independently_verified) tier        -> strong_support
     """
-    links = list(evidence_links)
+    links = [l for l in evidence_links if l.review_state == 'confirmed']
     supports = [l for l in links if l.relationship == 'supports']
     conflicts = [l for l in links if l.relationship == 'conflicts']
 
@@ -102,10 +110,15 @@ def kpi_alignment_profile(company_profile):
 
     counts = {key: 0 for key, _ in KPI_STATUS_CHOICES}
     rows = []
+    pending_review_total = 0
     for principle in PRINCIPLES:
         assessment = assessments_by_kpi.get(principle['id'])
         status = assessment.status if assessment is not None else 'not_assessed'
         counts[status] = counts.get(status, 0) + 1
+        pending_count = 0
+        if assessment is not None:
+            pending_count = sum(1 for l in assessment.evidence_links.all() if l.review_state == 'proposed')
+            pending_review_total += pending_count
         rows.append({
             'kpi_id': principle['id'],
             'title': principle['title'],
@@ -115,6 +128,7 @@ def kpi_alignment_profile(company_profile):
             'status': status,
             'status_display': status_display.get(status, status),
             'assessment': assessment,
+            'pending_review_count': pending_count,
         })
 
     total = len(PRINCIPLES)
@@ -125,6 +139,7 @@ def kpi_alignment_profile(company_profile):
         'coverage_pct': round((assessed / total) * 100, 1) if total else 0.0,
         'counts': counts,
         'rows': rows,
+        'pending_review_total': pending_review_total,
     }
 
 

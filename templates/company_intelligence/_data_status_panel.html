@@ -1,0 +1,87 @@
+{% comment %} ── EcoIQ Data Status + Source Library ────────────────────────────
+   feat/company-evidence-ingestion (PR 10) — "a production user must never
+   confuse fixture data with real analysis."
+   Context: data_origin (dict), harvest_sources (list of harvester.Source),
+   evidence_quality_summary (dict), company (league.Company), user
+{% endcomment %}
+<section class="ci-ds-panel" aria-labelledby="ci-ds-heading">
+  <div class="ci-ds-head">
+    <div>
+      <div class="ci-ds-eyebrow">Data Status</div>
+      <h2 class="ci-ds-title" id="ci-ds-heading">Real Public Data vs Demo</h2>
+    </div>
+    <span class="ci-ds-badge ci-ds-origin-{{ data_origin.origin }}">{{ data_origin.label }}</span>
+  </div>
+  <p class="ci-ds-sub">
+    {{ data_origin.real_count }} real record(s), {{ data_origin.demo_count }} demo record(s) currently on file
+    for this company. Real and demo data are never silently blended into one label.
+  </p>
+
+  {% if user.is_staff %}
+  <form method="post" action="{% url 'companies:refresh' company.slug %}" class="ci-ds-refresh-form">
+    {% csrf_token %}
+    <button type="submit" class="ci-ds-refresh-btn">Refresh Real Data →</button>
+  </form>
+  {% endif %}
+
+  <h3 class="ci-ds-h3">Source Library</h3>
+  {% if harvest_sources %}
+  <table class="ci-ds-table">
+    <thead><tr><th>Source</th><th>Type</th><th>Owner</th><th>Last Success</th><th>Last Failure</th></tr></thead>
+    <tbody>
+      {% for source in harvest_sources %}
+      <tr>
+        <td>{% if source.source_url %}<a href="{{ source.source_url }}" target="_blank" rel="noopener">{{ source.name }}</a>{% else %}{{ source.name }}{% endif %}</td>
+        <td>{{ source.get_source_type_display }}</td>
+        <td>{{ source.source_owner|default:"—" }}</td>
+        <td>{{ source.last_success_at|date:"Y-m-d H:i"|default:"Never" }}</td>
+        <td>{% if source.last_failure_at %}{{ source.last_failure_at|date:"Y-m-d H:i" }} — {{ source.last_failure_reason|truncatechars:60 }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="ci-ds-empty">No real source registry entries yet for this company.</p>
+  {% endif %}
+
+  {% if evidence_quality_summary.evidence_count %}
+  <h3 class="ci-ds-h3">Evidence Quality</h3>
+  <div class="ci-ds-quality-grid">
+    <div class="ci-ds-quality-card"><span class="ci-ds-quality-label">Evidence Items</span><span class="ci-ds-quality-value">{{ evidence_quality_summary.evidence_count }}</span></div>
+    <div class="ci-ds-quality-card"><span class="ci-ds-quality-label">Source-Backed</span><span class="ci-ds-quality-value">{{ evidence_quality_summary.harvester_backed_count }}</span></div>
+    <div class="ci-ds-quality-card"><span class="ci-ds-quality-label">Avg. Source Authority</span><span class="ci-ds-quality-value">{% if evidence_quality_summary.avg_source_authority %}{{ evidence_quality_summary.avg_source_authority }}{% else %}—{% endif %}</span></div>
+    <div class="ci-ds-quality-card"><span class="ci-ds-quality-label">Avg. Recency</span><span class="ci-ds-quality-value">{% if evidence_quality_summary.avg_recency %}{{ evidence_quality_summary.avg_recency }}{% else %}—{% endif %}</span></div>
+    <div class="ci-ds-quality-card"><span class="ci-ds-quality-label">Avg. Corroboration</span><span class="ci-ds-quality-value">{% if evidence_quality_summary.avg_corroboration %}{{ evidence_quality_summary.avg_corroboration }}{% else %}—{% endif %}</span></div>
+    <div class="ci-ds-quality-card {% if evidence_quality_summary.conflicting_count %}ci-ds-quality-warn{% endif %}"><span class="ci-ds-quality-label">Conflicting</span><span class="ci-ds-quality-value">{{ evidence_quality_summary.conflicting_count }}</span></div>
+  </div>
+  <p class="ci-ds-disclaimer">Component metrics from the real evidence-verification engine — never one mysterious blended score.</p>
+  {% endif %}
+</section>
+
+<style>
+  .ci-ds-panel{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.6rem 1.6rem 1.4rem;margin:2rem 0;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .ci-ds-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
+  .ci-ds-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.4rem}
+  .ci-ds-title{font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:-.02em;margin:0}
+  .ci-ds-badge{flex:none;font-size:.7rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:.35rem .8rem;border-radius:999px;font-family:'SF Mono',ui-monospace,monospace}
+  .ci-ds-origin-real_public_data{background:rgba(0,232,154,.12);color:#00e89a}
+  .ci-ds-origin-demo{background:rgba(244,162,97,.12);color:#f4a261}
+  .ci-ds-origin-mixed{background:rgba(230,57,70,.12);color:#fca5a5}
+  .ci-ds-origin-unverified_import{background:rgba(148,163,184,.1);color:#94a3b8}
+  .ci-ds-sub{font-size:.8rem;color:#64748b;margin:.7rem 0 0;line-height:1.5}
+  .ci-ds-refresh-form{margin-top:.9rem}
+  .ci-ds-refresh-btn{background:#c9a84c;color:#0a0a0a;font-weight:700;font-size:.8rem;padding:.55rem 1rem;border-radius:8px;border:none;cursor:pointer}
+  .ci-ds-h3{font-size:.88rem;font-weight:700;color:#fff;margin:1.2rem 0 .6rem}
+  .ci-ds-table{width:100%;border-collapse:collapse;font-size:.76rem}
+  .ci-ds-table th,.ci-ds-table td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid rgba(255,255,255,.06)}
+  .ci-ds-table th{color:#475569;font-size:.64rem;letter-spacing:.05em;text-transform:uppercase}
+  .ci-ds-table a{color:#c9a84c;text-decoration:none}
+  .ci-ds-empty{font-size:.78rem;color:#64748b}
+  .ci-ds-quality-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.6rem}
+  .ci-ds-quality-card{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.6rem .7rem}
+  .ci-ds-quality-card.ci-ds-quality-warn{border-color:rgba(230,57,70,.4)}
+  .ci-ds-quality-label{display:block;font-size:.6rem;color:#475569;text-transform:uppercase;letter-spacing:.04em}
+  .ci-ds-quality-value{display:block;font-size:1rem;font-weight:800;color:#fff;margin-top:.2rem;font-family:'SF Mono',ui-monospace,monospace}
+  .ci-ds-disclaimer{font-size:.68rem;color:#475569;margin-top:.7rem}
+  @media (max-width:640px){.ci-ds-table{overflow-x:auto;display:block}}
+</style>

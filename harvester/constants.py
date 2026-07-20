@@ -22,6 +22,7 @@ SOURCE_TYPES = [
     ("company_website", "Company Website"),
     ("investor_relations", "Investor Relations Page"),
     ("companies_house", "Companies House"),
+    ("sec_edgar", "SEC EDGAR (XBRL)"),
     ("csv_dataset", "CSV Dataset"),
     ("fca_filing", "FCA Filing"),
     ("regulatory_filing", "Regulatory Filing"),

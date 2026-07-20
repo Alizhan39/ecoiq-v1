@@ -15,6 +15,15 @@ is read from company_intelligence.services.shariah_screening,
 company_intelligence.services.kpi_engine, and the real, already-persisted
 CompanyShariahScreen/CompanyKPIAssessment/CompanyControversy rows. No LLM
 call anywhere in this module.
+
+feat/company-evidence-ingestion (PR 10): extended from PR9's 10 nodes to
+12 — added 'sources' (right after company identity: real harvester.Source
+registry entries + the real/demo data-origin classification) and
+'evidence_review' (right after KPI evidence: pending ingestion-proposed
+KPI links + the human review audit trail) — matching the brief's fuller
+"Company Identity -> Sources -> Extracted Evidence -> Reviewed Evidence ->
+... -> Final Research Profile" trace shape. The Shariah Result node now
+also surfaces real freshness/staleness (services/freshness.py).
 """
 from dataclasses import dataclass, field
 
@@ -63,9 +72,35 @@ def build_company_trace(company_profile, user=None):
         },
     ))
 
+    # ---- 2. Sources (feat/company-evidence-ingestion, PR 10) ---------------
+    from company_intelligence.services.data_origin import company_data_origin
+
+    origin = company_data_origin(company_profile)
+    sources = list(company_profile.harvest_sources.all())
+    if sources:
+        nodes.append(TraceNode(
+            stage='sources', title='Sources', status=f'{len(sources)} source(s) — {origin["label"]}',
+            status_kind=('demo' if origin['origin'] == 'demo' else 'measured'),
+            summary=(
+                f'{origin["real_count"]} real record(s), {origin["demo_count"]} demo record(s) on file for '
+                f'this company across Shariah screens, financial facts, KPI assessments and controversies.'
+            ),
+            data_quality=['demo'] if origin['origin'] == 'demo' else ['measured'],
+            extra={'sources': sources, 'data_origin': origin},
+        ))
+    else:
+        data_gaps.append('No source registry entries exist for this company yet — no real ingestion has run.')
+        nodes.append(TraceNode(
+            stage='sources', title='Sources', status=origin['label'],
+            status_kind='missing' if origin['origin'] == 'unverified_import' else 'demo',
+            summary='No harvester source registry entries recorded for this company.',
+            data_quality=['missing'], available=False,
+            extra={'data_origin': origin},
+        ))
+
     screen = shariah_screening.latest_screen_for(company_profile)
 
-    # ---- 2. Shariah methodology -----------------------------------------
+    # ---- 3. Shariah methodology -----------------------------------------
     if screen is not None:
         methodology = screen.methodology
         nodes.append(TraceNode(
@@ -82,7 +117,7 @@ def build_company_trace(company_profile, user=None):
             status_kind='missing', summary=NOT_AVAILABLE, available=False,
         ))
 
-    # ---- 3. Business activity evidence ----------------------------------
+    # ---- 4. Business activity evidence ----------------------------------
     if screen is not None:
         nodes.append(TraceNode(
             stage='business_activity', title='Business Activity Evidence',
@@ -98,7 +133,7 @@ def build_company_trace(company_profile, user=None):
             status_kind='missing', summary=NOT_AVAILABLE, available=False,
         ))
 
-    # ---- 4. Financial evidence -------------------------------------------
+    # ---- 5. Financial evidence -------------------------------------------
     if screen is not None and screen.financial_facts is not None:
         ff = screen.financial_facts
         nodes.append(TraceNode(
@@ -123,23 +158,32 @@ def build_company_trace(company_profile, user=None):
             status_kind='missing', summary=NOT_AVAILABLE, available=False,
         ))
 
-    # ---- 5. Shariah result -------------------------------------------------
+    # ---- 6. Shariah result -------------------------------------------------
     if screen is not None:
+        from company_intelligence.services.freshness import screening_freshness
+
+        fresh = screening_freshness(screen)
+        stale_suffix = ' — Screening Requires Refresh' if fresh['is_stale'] else ''
         nodes.append(TraceNode(
-            stage='shariah_result', title='Shariah Result', status=screen.get_overall_result_display(),
+            stage='shariah_result', title='Shariah Result', status=screen.get_overall_result_display() + stale_suffix,
             status_kind=(
                 'blocked' if screen.overall_result == 'fail' else
+                'estimated' if fresh['is_stale'] else
                 'verified' if screen.overall_result == 'pass' else
                 'missing' if screen.overall_result == 'insufficient_data' else 'estimated'
             ),
             summary=(
                 f'Screened according to {screen.methodology.name} v{screen.methodology.version}. '
-                f'Data completeness: {screen.data_completeness_pct}%. Review status: {screen.get_review_status_display()}.'
+                f'Data completeness: {screen.data_completeness_pct}%. Review status: {screen.get_review_status_display()}. '
+                f'{fresh["reason"]}'
             ),
             timestamp=screen.screened_at,
             confidence=screen.get_review_status_display(),
             data_quality=['demo'] if screen.is_demo else ['deterministic'],
-            extra={'business': screen.business_activity_result, 'financial': screen.financial_ratio_result},
+            extra={
+                'business': screen.business_activity_result, 'financial': screen.financial_ratio_result,
+                'freshness': fresh,
+            },
         ))
     else:
         nodes.append(TraceNode(
@@ -147,7 +191,7 @@ def build_company_trace(company_profile, user=None):
             summary=NOT_AVAILABLE, available=False,
         ))
 
-    # ---- 6-9. KPI evidence / positive / conflicting / gaps ----------------
+    # ---- 7. KPI evidence ---------------------------------------------------
     profile = kpi_engine.kpi_alignment_profile(company_profile)
     accessible_rows = []
     for row in profile['rows']:
@@ -169,6 +213,29 @@ def build_company_trace(company_profile, user=None):
         extra={'counts': profile['counts']},
     ))
 
+    # ---- 8. Evidence Review (feat/company-evidence-ingestion, PR 10) -------
+    from company_intelligence.models import EvidenceReviewAction
+
+    pending_review_total = profile.get('pending_review_total', 0)
+    review_actions = list(
+        EvidenceReviewAction.objects
+        .filter(kpi_evidence_link__assessment__company=company_profile)
+        .select_related('reviewer', 'kpi_evidence_link')[:20]
+    )
+    nodes.append(TraceNode(
+        stage='evidence_review', title='Evidence Review',
+        status=f'{pending_review_total} proposed link(s) awaiting review',
+        status_kind='estimated' if pending_review_total else 'measured',
+        summary=(
+            f'{len(review_actions)} review action(s) recorded. Proposed (ingestion-matched) KPI links never '
+            f'move a company\'s KPI status until a human reviewer confirms them.'
+        ),
+        data_quality=['human_approved'] if review_actions else ['deterministic'],
+        extra={'review_actions': review_actions, 'pending_review_total': pending_review_total},
+        available=bool(review_actions or pending_review_total),
+    ))
+
+    # ---- 9. Positive alignment ----------------------------------------------
     positive_rows = [r for r in accessible_rows if r['status'] in ('strong_support', 'support')]
     nodes.append(TraceNode(
         stage='positive_alignment', title='Positive Alignment', status=f'{len(positive_rows)} KPI(s)',
@@ -179,6 +246,7 @@ def build_company_trace(company_profile, user=None):
         extra={'rows': positive_rows}, available=bool(positive_rows),
     ))
 
+    # ---- 10. Conflicting evidence -------------------------------------------
     conflict_rows = [r for r in accessible_rows if r['status'] == 'conflict']
     controversies = list(company_profile.controversies.select_related('evidence').all())
     nodes.append(TraceNode(
@@ -195,6 +263,7 @@ def build_company_trace(company_profile, user=None):
         available=bool(conflict_rows or controversies),
     ))
 
+    # ---- 11. Evidence gaps ---------------------------------------------------
     insufficient_rows = [r for r in accessible_rows if r['status'] == 'insufficient_evidence']
     not_assessed_count = profile['counts'].get('not_assessed', 0)
     gap_notes = list(data_gaps)
@@ -211,23 +280,24 @@ def build_company_trace(company_profile, user=None):
         available=bool(gap_notes),
     ))
 
-    # ---- 10. Overall research profile ---------------------------------------
+    # ---- 12. Overall research profile ---------------------------------------
     shariah_label = screen.get_overall_result_display() if screen is not None else 'Not Screened'
     nodes.append(TraceNode(
         stage='overall_profile', title='Overall Research Profile', status='Research Intelligence — Not Investment Advice',
         status_kind='deterministic',
         summary=(
-            f'Shariah: {shariah_label} (methodology-based screening, not a religious ruling). '
-            f'114-KPI coverage: {profile["coverage_pct"]}% assessed, {len(positive_rows)} supported, '
-            f'{len(conflict_rows)} in conflict. This is research and stewardship intelligence — it is not '
-            f'personalised investment advice and contains no buy/sell recommendation.'
+            f'Data origin: {origin["label"]}. Shariah: {shariah_label} (methodology-based screening, not a '
+            f'religious ruling). 114-KPI coverage: {profile["coverage_pct"]}% assessed, {len(positive_rows)} '
+            f'supported, {len(conflict_rows)} in conflict. This is research and stewardship intelligence — it '
+            f'is not personalised investment advice and contains no buy/sell recommendation.'
         ),
         data_quality=['deterministic'],
-        extra={'shariah_result': screen.overall_result if screen else None, 'kpi_profile': profile},
+        extra={'shariah_result': screen.overall_result if screen else None, 'kpi_profile': profile, 'data_origin': origin},
     ))
 
     summary = {
         'company_name': league_company.name,
+        'data_origin': origin,
         'shariah_result': shariah_label,
         'kpi_coverage_pct': profile['coverage_pct'],
         'kpi_supported': len(positive_rows),
