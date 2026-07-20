@@ -1,0 +1,55 @@
+{% comment %} ── Explainability + Research Watchlist action ────────────────────
+   Context: company (league.Company), profile (CompanyProfile),
+   watchlist_entry (ResearchWatchlistEntry or None), watchlist_statuses,
+   user (from request, via base.html context)
+{% endcomment %}
+<section class="ci-wl-panel" aria-labelledby="ci-wl-heading">
+  <div class="ci-wl-explain">
+    <div class="ci-wl-eyebrow">Explainability</div>
+    <h2 class="ci-wl-title" id="ci-wl-heading">Why Does EcoIQ Classify This Company This Way?</h2>
+    <p class="ci-wl-sub">Trace this company's Shariah result and 114-KPI alignment back to the exact evidence that produced them.</p>
+    <a class="ci-wl-explain-btn" href="{% url 'companies:explain' company.slug %}">Explain This Company Assessment →</a>
+  </div>
+
+  <div class="ci-wl-action">
+    <div class="ci-wl-eyebrow">Research Watchlist</div>
+    <h2 class="ci-wl-title">{% if watchlist_entry %}On Your Watchlist{% else %}Add to Research Watchlist{% endif %}</h2>
+    <p class="ci-wl-sub">A personal research list — never a buy or sell signal.</p>
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'companies:watchlist_add' company.slug %}" class="ci-wl-form">
+      {% csrf_token %}
+      <select name="status" class="ci-wl-select">
+        {% for value, label in watchlist_statuses %}
+        <option value="{{ value }}" {% if watchlist_entry.status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="ci-wl-btn">{% if watchlist_entry %}Update Status{% else %}Add to Watchlist{% endif %}</button>
+    </form>
+    {% if watchlist_entry %}
+    <form method="post" action="{% url 'companies:watchlist_remove' company.slug %}" class="ci-wl-remove-form">
+      {% csrf_token %}
+      <button type="submit" class="ci-wl-remove-btn">Remove from watchlist</button>
+    </form>
+    {% endif %}
+    {% else %}
+    <a class="ci-wl-btn ci-wl-btn-secondary" href="/login/?next={% url 'companies:detail' company.slug %}">Sign in to add to watchlist</a>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  .ci-wl-panel{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:2rem 0}
+  .ci-wl-explain,.ci-wl-action{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.4rem 1.5rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .ci-wl-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.4rem}
+  .ci-wl-title{font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .4rem}
+  .ci-wl-sub{font-size:.78rem;color:#64748b;line-height:1.5;margin:0 0 .9rem}
+  .ci-wl-explain-btn,.ci-wl-btn{display:inline-block;font-size:.8rem;font-weight:700;padding:.6rem 1rem;border-radius:8px;text-decoration:none;border:none;cursor:pointer}
+  .ci-wl-explain-btn{background:rgba(201,168,76,.1);color:#c9a84c;border:1px solid rgba(201,168,76,.3)}
+  .ci-wl-form{display:flex;gap:.5rem;flex-wrap:wrap}
+  .ci-wl-select{background:#0d1117;color:#e2e8f0;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.55rem .6rem;font-size:.8rem}
+  .ci-wl-btn{background:#c9a84c;color:#0a0a0a}
+  .ci-wl-btn-secondary{background:rgba(255,255,255,.05);color:#e2e8f0;border:1px solid rgba(255,255,255,.1)}
+  .ci-wl-remove-form{margin-top:.6rem}
+  .ci-wl-remove-btn{background:transparent;border:none;color:#64748b;font-size:.72rem;text-decoration:underline;cursor:pointer;padding:0}
+  @media (max-width:800px){.ci-wl-panel{grid-template-columns:1fr}}
+</style>

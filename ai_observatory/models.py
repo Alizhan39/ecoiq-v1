@@ -48,6 +48,7 @@ class AnalysisSession(models.Model):
         ('capital_decision', 'Capital Decision Preparation'),
         ('outcome_recording', 'Outcome Recording / Expected-vs-Actual'),
         ('evidence_memory_sync', 'Evidence Memory Sync'),
+        ('company_intelligence', 'Company Intelligence Analysis (Shariah Screen / 114-KPI Mapping)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [
@@ -65,8 +66,19 @@ class AnalysisSession(models.Model):
         ('recorded', 'Result Recorded'),
     ]
 
+    # feat/company-halal-intelligence (PR 9): a session anchors to EITHER a
+    # gold_intelligence.GoldProject OR a companies.CompanyProfile, never
+    # both and never neither — enforced by the CheckConstraint below. This
+    # is the one telemetry system for all EcoIQ pipelines (per that PR's
+    # brief: "Do not create a second telemetry system"), so company
+    # analysis reuses this same model rather than a parallel one.
     project = models.ForeignKey(
-        'gold_intelligence.GoldProject', on_delete=models.CASCADE, related_name='observatory_sessions',
+        'gold_intelligence.GoldProject', null=True, blank=True, on_delete=models.CASCADE,
+        related_name='observatory_sessions',
+    )
+    company = models.ForeignKey(
+        'companies.CompanyProfile', null=True, blank=True, on_delete=models.CASCADE,
+        related_name='observatory_sessions',
     )
     kind = models.CharField(max_length=30, choices=KIND_CHOICES, default='other')
     user = models.ForeignKey(
@@ -97,9 +109,19 @@ class AnalysisSession(models.Model):
     class Meta:
         ordering = ['-started_at']
         verbose_name = 'Analysis Session'
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(project__isnull=False, company__isnull=True)
+                    | models.Q(project__isnull=True, company__isnull=False)
+                ),
+                name='observatory_session_exactly_one_anchor',
+            ),
+        ]
 
     def __str__(self):
-        return f'{self.get_kind_display()} — {self.project.name} ({self.started_at:%Y-%m-%d %H:%M})'
+        anchor = self.project.name if self.project_id else self.company.company.name
+        return f'{self.get_kind_display()} — {anchor} ({self.started_at:%Y-%m-%d %H:%M})'
 
     # Rollups over child rows — real aggregation, no cached copies to drift.
     @property

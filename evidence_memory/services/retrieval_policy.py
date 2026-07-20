@@ -315,3 +315,48 @@ def set_visibility(memory, visibility, actor=None):
         memory._cg_changed_by = actor
     memory.save(update_fields=['visibility', 'organisation'])
     return memory
+
+
+def is_company_record_accessible(memory, company):
+    """
+    feat/company-halal-intelligence (PR 9) — the company-anchored counterpart
+    to is_record_accessible() above. Deliberately separate rather than a
+    branch inside that function: `visibility`'s existing states
+    (project_private/organisation_shared/...) were designed entirely around
+    Capital Guardian's staff-only, project-scoped pages, and that function's
+    fail-closed default REQUIRES a real authenticated staff user. Company
+    research pages (companies.company_detail and everything this app adds
+    to it) are, by established repo convention, fully public with no login
+    (see companies/views.py::company_detail — no @staff_member_required
+    anywhere on that page) — so gating company evidence behind a staff
+    check would make it invisible on the very page it's meant to source.
+
+    Access rule, still fail-closed on the two things that must never be
+    shown regardless of anchor:
+    - rejected verification_status is never accessible (same as above).
+    - restricted_unresolved visibility is never accessible (same as above).
+    Otherwise: a record whose OWN `company` FK points at this company is
+    accessible on that company's own page (it was deliberately attached
+    there), and platform_learning_demo/platform_learning_verified records
+    remain accessible cross-company under the same honest labelling rules
+    is_record_accessible already enforces. project_private/
+    organisation_shared records are project-anchored concepts and are
+    never accessible here even if somehow also company-linked.
+    """
+    if memory is None or company is None:
+        return False
+    if memory.verification_status == 'rejected':
+        return False
+    if memory.visibility == 'restricted_unresolved':
+        return False
+    if memory.company_id == company.pk:
+        return True
+    if memory.visibility == 'platform_learning_demo':
+        return bool(memory.is_demo)
+    if memory.visibility == 'platform_learning_verified':
+        return (
+            not memory.is_demo
+            and memory.verification_status == 'verified'
+            and memory.review_tier == 'independently_verified'
+        )
+    return False

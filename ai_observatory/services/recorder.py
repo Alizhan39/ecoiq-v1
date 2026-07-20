@@ -18,19 +18,27 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-def start_session(project, kind, user=None, human_review_required=True):
-    """Creates a running AnalysisSession. Returns None (and logs) on
-    failure — callers must treat a None session as "telemetry off"."""
+def start_session(project=None, kind='other', user=None, human_review_required=True, company=None):
+    """Creates a running AnalysisSession, anchored to EITHER `project` OR
+    `company` (feat/company-halal-intelligence, PR 9 — AnalysisSession's
+    own CheckConstraint requires exactly one). Callers pass whichever
+    anchor their pipeline has; passing both or neither is a caller bug and
+    is logged, not silently coerced. Returns None (and logs) on failure —
+    callers must treat a None session as "telemetry off"."""
     from ai_observatory.models import AnalysisSession
 
+    if (project is None) == (company is None):
+        logger.error('Observatory: start_session requires exactly one of project/company for kind %s', kind)
+        return None
     try:
         return AnalysisSession.objects.create(
-            project=project, kind=kind,
+            project=project, company=company, kind=kind,
             user=user if getattr(user, 'is_authenticated', False) else None,
             human_review_required=human_review_required,
         )
     except Exception:
-        logger.exception('Observatory: failed to start %s session for project %s', kind, getattr(project, 'pk', '?'))
+        anchor = getattr(project, 'pk', None) or getattr(company, 'pk', '?')
+        logger.exception('Observatory: failed to start %s session for anchor %s', kind, anchor)
         return None
 
 

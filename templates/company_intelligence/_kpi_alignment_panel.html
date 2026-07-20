@@ -1,0 +1,138 @@
+{% comment %} ── EcoIQ 114-KPI Stewardship Alignment ───────────────────────────
+   Context: kpi_profile (dict from kpi_engine.kpi_alignment_profile),
+   kpi_filter (str), kpi_filtered_rows (list), company (league.Company)
+   Reuses core.esg_principles_data.PRINCIPLES verbatim — public name
+   "Capital Ethics Compendium" / "114-KPI stewardship framework". Never
+   references the internal Quran/Surah origin mapping of that list.
+{% endcomment %}
+<section class="ci-kpi-panel" aria-labelledby="ci-kpi-heading">
+  <div class="ci-kpi-head">
+    <div>
+      <div class="ci-kpi-eyebrow">EcoIQ 114-KPI Stewardship Framework</div>
+      <h2 class="ci-kpi-title" id="ci-kpi-heading">114-KPI Alignment</h2>
+      <p class="ci-kpi-sub">
+        Evidence-mapped against the Capital Ethics Compendium's 114 governance principles. Never a single
+        blended score — every principle's status is either backed by real evidence or honestly marked
+        Not Assessed.
+      </p>
+    </div>
+    <div class="ci-kpi-coverage">
+      <span class="ci-kpi-coverage-val">{{ kpi_profile.assessed }}</span>
+      <span class="ci-kpi-coverage-den">/ {{ kpi_profile.total }} assessed</span>
+      <span class="ci-kpi-coverage-pct">{{ kpi_profile.coverage_pct }}% coverage</span>
+    </div>
+  </div>
+
+  <div class="ci-kpi-counts">
+    <a class="ci-kpi-count-chip ci-kpi-tag-strong_support{% if kpi_filter == 'strong_support' %} active{% endif %}" href="?kpi_filter=strong_support#ci-kpi-heading">
+      <span class="ci-kpi-count-num">{{ kpi_profile.counts.strong_support }}</span>Strong Support
+    </a>
+    <a class="ci-kpi-count-chip ci-kpi-tag-support{% if kpi_filter == 'support' %} active{% endif %}" href="?kpi_filter=support#ci-kpi-heading">
+      <span class="ci-kpi-count-num">{{ kpi_profile.counts.support }}</span>Support
+    </a>
+    <a class="ci-kpi-count-chip ci-kpi-tag-mixed{% if kpi_filter == 'mixed' %} active{% endif %}" href="?kpi_filter=mixed#ci-kpi-heading">
+      <span class="ci-kpi-count-num">{{ kpi_profile.counts.mixed }}</span>Mixed
+    </a>
+    <a class="ci-kpi-count-chip ci-kpi-tag-conflict{% if kpi_filter == 'conflict' %} active{% endif %}" href="?kpi_filter=conflict#ci-kpi-heading">
+      <span class="ci-kpi-count-num">{{ kpi_profile.counts.conflict }}</span>Conflict
+    </a>
+    <a class="ci-kpi-count-chip ci-kpi-tag-insufficient_evidence{% if kpi_filter == 'insufficient_evidence' %} active{% endif %}" href="?kpi_filter=insufficient_evidence#ci-kpi-heading">
+      <span class="ci-kpi-count-num">{{ kpi_profile.counts.insufficient_evidence }}</span>Insufficient Evidence
+    </a>
+    <a class="ci-kpi-count-chip ci-kpi-tag-neutral_or_no_material_link{% if kpi_filter == 'neutral_or_no_material_link' %} active{% endif %}" href="?kpi_filter=neutral_or_no_material_link#ci-kpi-heading">
+      <span class="ci-kpi-count-num">{{ kpi_profile.counts.neutral_or_no_material_link }}</span>Neutral
+    </a>
+    <a class="ci-kpi-count-chip ci-kpi-tag-not_assessed{% if kpi_filter == 'not_assessed' %} active{% endif %}" href="?kpi_filter=not_assessed#ci-kpi-heading">
+      <span class="ci-kpi-count-num">{{ kpi_profile.counts.not_assessed }}</span>Not Assessed
+    </a>
+    {% if kpi_filter %}<a class="ci-kpi-clear" href="?#ci-kpi-heading">Clear filter ×</a>{% endif %}
+  </div>
+
+  <div class="ci-kpi-explorer">
+    {% for row in kpi_filtered_rows %}
+    <details class="ci-kpi-row ci-kpi-tag-{{ row.status }}">
+      <summary>
+        <span class="ci-kpi-row-id">#{{ row.kpi_id }}</span>
+        <span class="ci-kpi-row-title">{{ row.title }}</span>
+        <span class="ci-kpi-row-status">{{ row.status_display }}</span>
+      </summary>
+      <div class="ci-kpi-row-body">
+        <p class="ci-kpi-row-question">{{ row.question }}</p>
+        {% if row.assessment %}
+        <p class="ci-kpi-row-rationale">{{ row.assessment.rationale|default:"No rationale recorded." }}</p>
+        <p class="ci-kpi-row-meta">Confidence: {{ row.assessment.get_confidence_display }} · Last assessed {{ row.assessment.last_assessed_at|date:"Y-m-d" }}{% if row.assessment.is_demo %} · <span class="ci-kpi-demo-badge">DEMO</span>{% endif %}</p>
+        {% if row.assessment.evidence_links.all %}
+        <ul class="ci-kpi-evidence-list">
+          {% for link in row.assessment.evidence_links.all %}
+          <li>
+            <span class="ci-kpi-rel ci-kpi-rel-{{ link.relationship }}">{{ link.get_relationship_display }}</span>
+            {{ link.evidence.text_chunk|truncatechars:120 }}
+            <span class="ci-kpi-evidence-meta">— {{ link.evidence.get_verification_status_display }} · {{ link.evidence.get_review_tier_display }}{% if link.evidence.is_demo %} · DEMO{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% else %}
+        <p class="ci-kpi-row-rationale">No evidence linked yet — missing evidence is never treated as neutral.</p>
+        {% endif %}
+      </div>
+    </details>
+    {% empty %}
+    <p class="ci-kpi-empty">No KPIs match this filter.</p>
+    {% endfor %}
+  </div>
+
+  <p class="ci-kpi-disclaimer">
+    KPI status is derived only from linked, provenance-tracked evidence — never generated by asking a
+    language model whether this company supports a principle. A principle with no evidence is Not Assessed,
+    never assumed neutral or supportive.
+  </p>
+</section>
+
+<style>
+  .ci-kpi-panel{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.6rem 1.6rem 1.4rem;margin:2rem 0;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .ci-kpi-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
+  .ci-kpi-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.45rem}
+  .ci-kpi-title{font-size:1.4rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin:0 0 .35rem}
+  .ci-kpi-sub{font-size:.8rem;color:#64748b;max-width:56ch;line-height:1.55}
+  .ci-kpi-coverage{flex:none;text-align:right}
+  .ci-kpi-coverage-val{font-size:1.8rem;font-weight:800;color:#fff}
+  .ci-kpi-coverage-den{font-size:.85rem;color:#64748b;margin-left:.2rem}
+  .ci-kpi-coverage-pct{display:block;font-size:.72rem;color:#c9a84c;font-weight:700;margin-top:.2rem}
+  .ci-kpi-counts{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.1rem 0}
+  .ci-kpi-count-chip{display:inline-flex;align-items:center;gap:.4rem;font-size:.74rem;font-weight:700;padding:.4rem .7rem;border-radius:999px;text-decoration:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#94a3b8}
+  .ci-kpi-count-chip.active{border-color:#c9a84c;color:#c9a84c;background:rgba(201,168,76,.08)}
+  .ci-kpi-count-chip:focus-visible{outline:2px solid #c9a84c;outline-offset:2px}
+  .ci-kpi-count-num{font-family:'SF Mono',ui-monospace,monospace}
+  .ci-kpi-clear{font-size:.74rem;color:#64748b;align-self:center;text-decoration:underline}
+  .ci-kpi-explorer{display:flex;flex-direction:column;gap:.5rem;margin-top:.8rem;max-height:640px;overflow-y:auto}
+  .ci-kpi-row{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-left:3px solid #475569;border-radius:10px;padding:.2rem .9rem}
+  .ci-kpi-row.ci-kpi-tag-strong_support,.ci-kpi-row.ci-kpi-tag-support{border-left-color:#00e89a}
+  .ci-kpi-row.ci-kpi-tag-conflict{border-left-color:#e63946}
+  .ci-kpi-row.ci-kpi-tag-mixed{border-left-color:#f4a261}
+  .ci-kpi-row.ci-kpi-tag-insufficient_evidence,.ci-kpi-row.ci-kpi-tag-not_assessed{border-left-color:#475569}
+  .ci-kpi-row>summary{cursor:pointer;display:flex;align-items:center;gap:.6rem;padding:.7rem 0;list-style:none}
+  .ci-kpi-row>summary::-webkit-details-marker{display:none}
+  .ci-kpi-row-id{font-family:'SF Mono',ui-monospace,monospace;font-size:.68rem;color:#475569;flex:none}
+  .ci-kpi-row-title{flex:1;font-size:.85rem;font-weight:700;color:#e2e8f0}
+  .ci-kpi-row-status{flex:none;font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:.18rem .5rem;border-radius:999px}
+  .ci-kpi-tag-strong_support .ci-kpi-row-status,.ci-kpi-tag-support .ci-kpi-row-status{background:rgba(0,232,154,.12);color:#00e89a}
+  .ci-kpi-tag-mixed .ci-kpi-row-status{background:rgba(244,162,97,.12);color:#f4a261}
+  .ci-kpi-tag-conflict .ci-kpi-row-status{background:rgba(230,57,70,.12);color:#fca5a5}
+  .ci-kpi-tag-insufficient_evidence .ci-kpi-row-status,.ci-kpi-tag-not_assessed .ci-kpi-row-status,.ci-kpi-tag-neutral_or_no_material_link .ci-kpi-row-status{background:rgba(148,163,184,.1);color:#94a3b8}
+  .ci-kpi-row-body{padding:0 0 .9rem}
+  .ci-kpi-row-question{font-size:.78rem;color:#94a3b8;font-style:italic;margin:0 0 .5rem;line-height:1.5}
+  .ci-kpi-row-rationale{font-size:.78rem;color:#cbd5e1;line-height:1.55;margin:0 0 .4rem}
+  .ci-kpi-row-meta{font-size:.68rem;color:#475569;margin:0 0 .5rem}
+  .ci-kpi-demo-badge{color:#f4a261;font-weight:700}
+  .ci-kpi-evidence-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.4rem}
+  .ci-kpi-evidence-list li{font-size:.74rem;color:#94a3b8;line-height:1.5;background:rgba(255,255,255,.02);border-radius:6px;padding:.5rem .6rem}
+  .ci-kpi-rel{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.12rem .4rem;border-radius:999px;margin-right:.4rem}
+  .ci-kpi-rel-supports{background:rgba(0,232,154,.12);color:#00e89a}
+  .ci-kpi-rel-conflicts{background:rgba(230,57,70,.12);color:#fca5a5}
+  .ci-kpi-rel-context{background:rgba(148,163,184,.1);color:#94a3b8}
+  .ci-kpi-evidence-meta{color:#475569}
+  .ci-kpi-empty{font-size:.8rem;color:#64748b;padding:1rem 0}
+  .ci-kpi-disclaimer{font-size:.68rem;color:#475569;line-height:1.5;margin-top:1.1rem;max-width:80ch}
+  @media (max-width:640px){.ci-kpi-head{flex-direction:column}.ci-kpi-coverage{text-align:left}}
+</style>

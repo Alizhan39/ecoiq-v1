@@ -264,6 +264,13 @@ INSTALLED_APPS = [
     # lifecycle, a mining digital twin, milestone-based capital control, a
     # deterministic red flag engine and Decision Studio integration.
     'capital_guardian',
+
+    # Evidence-driven company research intelligence: Shariah eligibility
+    # screening and EcoIQ 114-KPI (Capital Ethics Compendium) alignment as
+    # two explicitly separate lenses over companies.CompanyProfile — never
+    # investment advice, never a buy/sell recommendation. Reuses league/
+    # companies/evidence_memory/ai_observatory; no duplicate company model.
+    'company_intelligence',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
