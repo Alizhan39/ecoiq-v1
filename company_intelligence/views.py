@@ -66,7 +66,16 @@ def watchlist_add_view(request, slug):
     """POST-only. Adds (or updates the status of) the current user's own
     Research Watchlist entry for this company. Never accepts or stores a
     BUY/SELL/HOLD value — status is restricted to
-    ResearchWatchlistEntry.STATUS_CHOICES."""
+    ResearchWatchlistEntry.STATUS_CHOICES.
+
+    feat/company-discovery-ranking (PR 11): an optional `research_context`
+    POST field (e.g. "Added from Discover Companies — KPI: Bees &
+    Sustainable Production Systems") lets a user record WHY they added a
+    company, without inventing any trading/portfolio semantics — it's
+    stored in the existing free-text `notes` field, never overwritten with
+    blank when the field is absent (so re-adding/updating status from the
+    plain company page never clobbers a note a user wrote earlier).
+    """
     if request.method != 'POST':
         raise Http404()
     profile = _profile_or_404(slug)
@@ -75,8 +84,13 @@ def watchlist_add_view(request, slug):
     if status not in valid_statuses:
         status = 'researching'
 
+    defaults = {'status': status}
+    research_context = request.POST.get('research_context', '').strip()
+    if research_context:
+        defaults['notes'] = research_context
+
     entry, created = ResearchWatchlistEntry.objects.update_or_create(
-        user=request.user, company=profile, defaults={'status': status},
+        user=request.user, company=profile, defaults=defaults,
     )
     messages.success(
         request,

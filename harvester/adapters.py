@@ -36,6 +36,12 @@ class EvidenceCandidate:
     full_text: str = ""
     document_type: str = ""
     source_owner: str = ""
+    # feat/company-discovery-ranking (PR 11) — where in a multi-chunk
+    # source document this candidate came from (e.g. "Page 14", "Section:
+    # Climate & Energy") so evidence stays traceable to an exact location,
+    # never just "somewhere in this document". Blank for single-fact
+    # sources with no meaningful location unit.
+    source_location: str = ""
 
     def __post_init__(self):
         if not self.excerpt:

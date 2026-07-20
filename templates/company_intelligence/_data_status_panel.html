@@ -22,6 +22,28 @@
     {% csrf_token %}
     <button type="submit" class="ci-ds-refresh-btn">Refresh Real Data →</button>
   </form>
+
+  {% comment %} feat/company-discovery-ranking (PR 11) — staff registration of
+     an official sustainability/ESG/annual-report document URL. Never
+     autonomous discovery — staff must type in a real, known-good URL. {% endcomment %}
+  <details class="ci-ds-register">
+    <summary>Register Official Document Source (staff)</summary>
+    <form method="post" action="{% url 'companies:register_document_source' company.slug %}" class="ci-ds-register-form">
+      {% csrf_token %}
+      <label>Document URL <input type="url" name="source_url" required placeholder="https://company.example.com/sustainability-report.pdf"></label>
+      <label>Document Type
+        <select name="document_type">
+          <option value="sustainability_report">Sustainability Report</option>
+          <option value="esg_report">ESG Report</option>
+          <option value="annual_report">Annual Report</option>
+          <option value="tcfd_report">TCFD Report</option>
+          <option value="transition_plan">Transition Plan</option>
+        </select>
+      </label>
+      <label>Publisher <input type="text" name="publisher" placeholder="e.g. Apple Inc."></label>
+      <button type="submit" class="ci-ds-refresh-btn">Register &amp; Ingest →</button>
+    </form>
+  </details>
   {% endif %}
 
   <h3 class="ci-ds-h3">Source Library</h3>
@@ -71,6 +93,11 @@
   .ci-ds-sub{font-size:.8rem;color:#64748b;margin:.7rem 0 0;line-height:1.5}
   .ci-ds-refresh-form{margin-top:.9rem}
   .ci-ds-refresh-btn{background:#c9a84c;color:#0a0a0a;font-weight:700;font-size:.8rem;padding:.55rem 1rem;border-radius:8px;border:none;cursor:pointer}
+  .ci-ds-register{margin-top:.8rem;background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.7rem 1rem}
+  .ci-ds-register>summary{cursor:pointer;font-size:.78rem;font-weight:700;color:#c9a84c}
+  .ci-ds-register-form{display:flex;flex-direction:column;gap:.6rem;margin-top:.7rem}
+  .ci-ds-register-form label{display:flex;flex-direction:column;gap:.25rem;font-size:.7rem;color:#64748b}
+  .ci-ds-register-form input,.ci-ds-register-form select{background:#070b0f;border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#e2e8f0;padding:.45rem .55rem;font-size:.78rem}
   .ci-ds-h3{font-size:.88rem;font-weight:700;color:#fff;margin:1.2rem 0 .6rem}
   .ci-ds-table{width:100%;border-collapse:collapse;font-size:.76rem}
   .ci-ds-table th,.ci-ds-table td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid rgba(255,255,255,.06)}

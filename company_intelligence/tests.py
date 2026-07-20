@@ -1075,3 +1075,437 @@ class ProjectOrganisationIsolationTests(TestCase):
         self.assertEqual(CompanyFinancialFacts.objects.filter(company=tesla).count(), 0)
         self.assertEqual(EvidenceMemory.objects.filter(company=tesla).count(), 0)
         self.assertEqual(HarvesterEvidence.objects.filter(company_slug='tesla').count(), 0)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# feat/company-discovery-ranking (PR 11) — Discover Companies, ranking,
+# Explain Match, comparison, KPI Explorer integration.
+# ═══════════════════════════════════════════════════════════════════════════
+from company_intelligence.services import discovery_engine, match_trace
+
+# Same convention as CompanyDetailIntegrationTests.test_no_buy_sell_language_anywhere_on_page:
+# '>buy<'/'>sell<' catches an actual naked BUY/SELL button or label; the bare
+# substrings 'buy'/'sell' would false-positive on this app's own disclaimer
+# text ("...contains no buy/sell recommendation"), which is required, not banned.
+BANNED_INVESTMENT_WORDS = ('>buy<', '>sell<', 'strong buy', 'target price', 'expected return', 'undervalued', 'outperform')
+
+
+def _confirmed_kpi_link(profile, kpi_id, relationship, review_tier='system_checked', text='Evidence text.'):
+    evidence = EvidenceMemory.objects.create(
+        text_chunk=text, company=profile, verification_status='verified', review_tier=review_tier,
+    )
+    assessment = CompanyKPIAssessment.objects.create(company=profile, kpi_id=kpi_id)
+    CompanyKPIEvidenceLink.objects.create(assessment=assessment, evidence=evidence, relationship=relationship)
+    kpi_engine.recompute_assessment_status(assessment)
+    return assessment, evidence
+
+
+class DiscoveryFilterTests(TestCase):
+    def test_demo_companies_excluded_by_default(self):
+        methodology = _methodology()
+        real = _profile(slug='disc-real-1', sector='energy')
+        demo = _profile(slug='disc-demo-1', sector='energy')
+        shariah_screening.run_shariah_screen(real, methodology, is_demo=False)
+        shariah_screening.run_shariah_screen(demo, methodology, is_demo=True)
+
+        results = discovery_engine.discover_companies({})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-real-1', slugs)
+        self.assertNotIn('disc-demo-1', slugs)
+
+    def test_include_demo_explicitly_opts_in(self):
+        methodology = _methodology()
+        demo = _profile(slug='disc-demo-2', sector='energy')
+        shariah_screening.run_shariah_screen(demo, methodology, is_demo=True)
+        results = discovery_engine.discover_companies({'include_demo': True})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-demo-2', slugs)
+
+    def test_sector_filter(self):
+        _profile(slug='disc-sector-energy', sector='energy')
+        _profile(slug='disc-sector-mining', sector='mining')
+        results = discovery_engine.discover_companies({'sector': 'mining'})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-sector-mining', slugs)
+        self.assertNotIn('disc-sector-energy', slugs)
+
+    def test_country_filter_substring_match(self):
+        Company.objects.create(name='UK Co', slug='disc-country-uk', sector='energy', country='United Kingdom')
+        CompanyProfile.objects.create(company=Company.objects.get(slug='disc-country-uk'), status='public')
+        _profile(slug='disc-country-kz')  # default country='Kazakhstan'
+        results = discovery_engine.discover_companies({'country': 'Kingdom'})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-country-uk', slugs)
+        self.assertNotIn('disc-country-kz', slugs)
+
+    def test_shariah_status_filter_matches_overall_result(self):
+        methodology = _methodology()
+        passer = _profile(slug='disc-shariah-pass', description='Operates solar assets.')
+        failer = _profile(slug='disc-shariah-fail', description='Conventional bank operating interest-based lending.')
+        passer_facts = CompanyFinancialFacts.objects.create(
+            company=passer, as_of_date=datetime.date(2026, 1, 1),
+            market_cap_usd=1000, total_debt_usd=100, interest_bearing_securities_usd=50,
+            non_permissible_income_usd=10, revenue_usd=500,
+        )
+        shariah_screening.run_shariah_screen(passer, methodology, financial_facts=passer_facts)
+        shariah_screening.run_shariah_screen(failer, methodology)
+
+        results = discovery_engine.discover_companies({'shariah_status': ['pass']})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-shariah-pass', slugs)
+        self.assertNotIn('disc-shariah-fail', slugs)
+
+    def test_not_screened_is_a_valid_explicit_shariah_filter_value(self):
+        never_screened = _profile(slug='disc-never-screened')
+        results = discovery_engine.discover_companies({'shariah_status': ['not_screened']})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-never-screened', slugs)
+
+    def test_kpi_filter_requires_confirmed_link(self):
+        profile_with = _profile(slug='disc-kpi-with')
+        profile_without = _profile(slug='disc-kpi-without')
+        _confirmed_kpi_link(profile_with, kpi_id=5, relationship='supports')
+
+        results = discovery_engine.discover_companies({'kpi_ids': [5]})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-kpi-with', slugs)
+        self.assertNotIn('disc-kpi-without', slugs)
+
+    def test_proposed_link_does_not_satisfy_kpi_filter(self):
+        """Candidate matching is not confirmation — a proposed-only link
+        must not make a company discoverable under that KPI."""
+        profile = _profile(slug='disc-kpi-proposed-only')
+        evidence = EvidenceMemory.objects.create(text_chunk='Some text.', company=profile, source_type='harvester_evidence')
+        assessment = CompanyKPIAssessment.objects.create(company=profile, kpi_id=6)
+        CompanyKPIEvidenceLink.objects.create(
+            assessment=assessment, evidence=evidence, relationship='context', review_state='proposed',
+        )
+        results = discovery_engine.discover_companies({'kpi_ids': [6]})
+        slugs = {c.company.slug for c in results}
+        self.assertNotIn('disc-kpi-proposed-only', slugs)
+
+    def test_controversy_state_none_excludes_unresolved(self):
+        clean = _profile(slug='disc-controversy-clean')
+        flagged = _profile(slug='disc-controversy-flagged')
+        CompanyControversy.objects.create(company=flagged, title='Incident', status='unresolved')
+        results = discovery_engine.discover_companies({'controversy_state': 'none'})
+        slugs = {c.company.slug for c in results}
+        self.assertIn('disc-controversy-clean', slugs)
+        self.assertNotIn('disc-controversy-flagged', slugs)
+
+    def test_require_current_screening_excludes_stale(self):
+        methodology = _methodology()
+        profile = _profile(slug='disc-stale-co')
+        screen = shariah_screening.run_shariah_screen(profile, methodology)
+        screen.screened_at = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
+        screen.save(update_fields=['screened_at'])
+
+        results = discovery_engine.discover_companies({'require_current_screening': True})
+        slugs = {c.company.slug for c in results}
+        self.assertNotIn('disc-stale-co', slugs)
+
+
+class DiscoveryRankingTests(TestCase):
+    def test_missing_components_excluded_from_composite_not_treated_as_zero(self):
+        profile = _profile(slug='rank-missing-co')
+        rows = discovery_engine.rank_company_matches([profile], criteria={'kpi_ids': [1]})
+        row = rows[0]
+        # No Shariah screen, no evidence at all -> every component is None
+        self.assertIsNone(row['components']['data_completeness'])
+        self.assertIsNone(row['components']['source_authority'])
+        # kpi_alignment is NOT None (it's computed even with zero evidence:
+        # 1 selected KPI, not_assessed -> neutral 0.5), so composite exists
+        # only via that one component's own weight, still never a fabricated
+        # score for the components genuinely missing.
+        self.assertIsNotNone(row['components']['kpi_alignment'])
+
+    def test_supported_kpi_ranks_above_conflicting_kpi(self):
+        """Section 8's own example: Company A (supported) must rank above
+        Company B (conflicting) for the same selected KPI."""
+        company_a = _profile(slug='rank-a-support')
+        company_b = _profile(slug='rank-b-conflict')
+        _confirmed_kpi_link(company_a, kpi_id=10, relationship='supports')
+        _confirmed_kpi_link(company_b, kpi_id=10, relationship='conflicts')
+
+        rows = discovery_engine.rank_company_matches([company_a, company_b], criteria={'kpi_ids': [10]})
+        ordered_slugs = [r['company'].company.slug for r in rows]
+        self.assertEqual(ordered_slugs.index('rank-a-support'), 0)
+
+    def test_absence_of_evidence_is_neutral_not_negative(self):
+        supported = _profile(slug='rank-supported-co')
+        untouched = _profile(slug='rank-untouched-co')
+        _confirmed_kpi_link(supported, kpi_id=11, relationship='supports')
+
+        rows = {r['company'].company.slug: r for r in discovery_engine.rank_company_matches(
+            [supported, untouched], criteria={'kpi_ids': [11]},
+        )}
+        self.assertGreater(rows['rank-supported-co']['components']['kpi_alignment'], rows['rank-untouched-co']['components']['kpi_alignment'])
+        # untouched company's kpi_alignment must be neutral (0.5), never a
+        # punitive low value just because nothing was assessed.
+        self.assertEqual(rows['rank-untouched-co']['components']['kpi_alignment'], 0.5)
+
+    def test_ranking_is_deterministic_across_repeated_calls(self):
+        a = _profile(slug='rank-det-a')
+        b = _profile(slug='rank-det-b')
+        _confirmed_kpi_link(a, kpi_id=12, relationship='supports')
+        first = [r['company'].pk for r in discovery_engine.rank_company_matches([a, b], criteria={'kpi_ids': [12]})]
+        second = [r['company'].pk for r in discovery_engine.rank_company_matches([a, b], criteria={'kpi_ids': [12]})]
+        self.assertEqual(first, second)
+
+    def test_weights_are_configurable(self):
+        profile = _profile(slug='rank-weights-co')
+        methodology = _methodology()
+        shariah_screening.run_shariah_screen(profile, methodology)
+        custom_weights = {'kpi_alignment': 0.0, 'source_authority': 0.0, 'recency': 0.0, 'corroboration': 0.0, 'data_completeness': 1.0}
+        rows = discovery_engine.rank_company_matches([profile], criteria={}, weights=custom_weights)
+        # With data_completeness weighted 100% and every other weight 0, the
+        # composite must equal the data_completeness component exactly.
+        row = rows[0]
+        self.assertAlmostEqual(row['composite'], row['components']['data_completeness'], places=4)
+
+    def test_no_qualifying_evidence_sorts_last_not_as_zero(self):
+        with_data = _profile(slug='rank-has-data')
+        methodology = _methodology()
+        shariah_screening.run_shariah_screen(with_data, methodology)
+        no_data = _profile(slug='rank-no-data')
+        # Force every component to None for no_data by using an empty kpi_ids
+        # selection with no assessments and no screen — composite is None.
+        rows = discovery_engine.rank_company_matches([with_data, no_data], criteria={'kpi_ids': []})
+        composites = [r['composite'] for r in rows]
+        # None must never sort before a real numeric composite.
+        none_positions = [i for i, c in enumerate(composites) if c is None]
+        real_positions = [i for i, c in enumerate(composites) if c is not None]
+        if none_positions and real_positions:
+            self.assertGreater(min(none_positions), max(real_positions))
+
+
+class CompareCompaniesTests(TestCase):
+    def test_comparison_preserves_input_order_never_resorted(self):
+        a = _profile(slug='cmp-a')
+        b = _profile(slug='cmp-b')
+        c = _profile(slug='cmp-c')
+        _confirmed_kpi_link(c, kpi_id=13, relationship='supports')  # c would rank first if sorted
+        comparison = discovery_engine.compare_companies([a, b, c], criteria={'kpi_ids': [13]})
+        self.assertEqual([r['company'].pk for r in comparison], [a.pk, b.pk, c.pk])
+
+    def test_comparison_includes_controversies_and_shariah_and_kpi_detail(self):
+        profile = _profile(slug='cmp-detail-co')
+        CompanyControversy.objects.create(company=profile, title='Test issue', status='unresolved')
+        comparison = discovery_engine.compare_companies([profile], criteria={})
+        row = comparison[0]
+        self.assertEqual(len(row['controversies']), 1)
+        self.assertIn('kpi_detail', row)
+        self.assertIn('shariah_screen', row)
+
+
+class ExplainMatchTests(TestCase):
+    def test_trace_has_eleven_nodes_in_documented_order(self):
+        profile = _profile(slug='match-trace-co')
+        trace = match_trace.explain_company_match(profile, criteria={'kpi_ids': [1]})
+        stages = [n.stage for n in trace.nodes]
+        self.assertEqual(stages, [
+            'selected_criteria', 'company_identity', 'shariah_screening', 'selected_kpis',
+            'supporting_evidence', 'conflicting_evidence', 'evidence_quality', 'match_freshness',
+            'match_data_gaps', 'ranking_components', 'why_here',
+        ])
+
+    def test_trace_never_contains_investment_language(self):
+        profile = _profile(slug='match-trace-clean-co')
+        trace = match_trace.explain_company_match(profile, criteria={})
+        combined = ' '.join(n.summary.lower() for n in trace.nodes)
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, combined)
+
+    def test_trace_reflects_selected_criteria_summary(self):
+        profile = _profile(slug='match-trace-criteria-co')
+        trace = match_trace.explain_company_match(profile, criteria={'shariah_status': ['pass'], 'sector': 'energy'})
+        criteria_node = trace.nodes[0]
+        self.assertIn('pass', criteria_node.summary.lower())
+        self.assertIn('energy', criteria_node.summary.lower())
+
+    def test_trace_honest_when_never_screened(self):
+        profile = _profile(slug='match-trace-unscreened-co')
+        trace = match_trace.explain_company_match(profile, criteria={})
+        shariah_node = next(n for n in trace.nodes if n.stage == 'shariah_screening')
+        self.assertEqual(shariah_node.status, 'Not Screened')
+        self.assertFalse(shariah_node.available)
+
+
+class DiscoveryViewTests(TestCase):
+    def test_discover_view_public_get(self):
+        client = Client()
+        response = client.get(reverse('companies:discover'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_discover_view_never_contains_investment_language(self):
+        _profile(slug='disc-view-clean-co')
+        client = Client()
+        response = client.get(reverse('companies:discover'))
+        body = response.content.decode().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, body)
+
+    def test_discover_view_excludes_demo_by_default(self):
+        methodology = _methodology()
+        demo = _profile(slug='disc-view-demo-co')
+        shariah_screening.run_shariah_screen(demo, methodology, is_demo=True)
+        client = Client()
+        response = client.get(reverse('companies:discover'))
+        self.assertNotContains(response, 'disc-view-demo-co')
+
+    def test_discover_view_kpi_filter_via_query_param(self):
+        profile = _profile(slug='disc-view-kpi-co')
+        _confirmed_kpi_link(profile, kpi_id=7, relationship='supports')
+        client = Client()
+        response = client.get(reverse('companies:discover'), {'kpi': ['7']})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, profile.company.name)
+
+    def test_explain_match_view_public_get(self):
+        profile = _profile(slug='disc-explain-view-co')
+        client = Client()
+        response = client.get(reverse('companies:explain_match', args=[profile.company.slug]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_compare_view_requires_at_least_two_companies(self):
+        profile = _profile(slug='disc-compare-solo-co')
+        client = Client()
+        response = client.get(reverse('companies:compare'), {'companies': profile.company.slug})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Select 2')
+
+    def test_compare_view_with_two_companies(self):
+        a = _profile(slug='disc-compare-a')
+        b = _profile(slug='disc-compare-b')
+        client = Client()
+        response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, a.company.name)
+        self.assertContains(response, b.company.name)
+
+
+class RegisterDocumentSourceViewTests(TestCase):
+    def setUp(self):
+        self.profile = _profile(slug='register-doc-co')
+        self.staff = User.objects.create_user(username='staffer', password='pw', is_staff=True)
+        self.normal = User.objects.create_user(username='normie', password='pw')
+
+    def test_requires_staff(self):
+        client = Client()
+        client.login(username='normie', password='pw')
+        response = client.post(reverse('companies:register_document_source', args=[self.profile.company.slug]), {
+            'source_url': 'https://example.com/report.pdf', 'document_type': 'sustainability_report',
+        })
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_get_not_allowed(self):
+        client = Client()
+        client.login(username='staffer', password='pw')
+        response = client.get(reverse('companies:register_document_source', args=[self.profile.company.slug]))
+        self.assertEqual(response.status_code, 404)
+
+    @patch('company_intelligence.services.evidence_ingestion.ingest_sustainability_document')
+    def test_staff_can_register_and_trigger_ingestion(self, mock_ingest):
+        from harvester.models import IngestionRun
+
+        mock_ingest.return_value = {
+            'ingestion_run': IngestionRun(status='new'), 'kpi_candidates_proposed': [], 'warnings': [],
+        }
+        client = Client()
+        client.login(username='staffer', password='pw')
+        response = client.post(reverse('companies:register_document_source', args=[self.profile.company.slug]), {
+            'source_url': 'https://example.com/report.pdf', 'document_type': 'sustainability_report', 'publisher': 'Example Inc.',
+        })
+        self.assertEqual(response.status_code, 302)
+        mock_ingest.assert_called_once()
+
+    def test_invalid_document_type_rejected(self):
+        client = Client()
+        client.login(username='staffer', password='pw')
+        response = client.post(reverse('companies:register_document_source', args=[self.profile.company.slug]), {
+            'source_url': 'https://example.com/report.pdf', 'document_type': 'not_a_real_type',
+        })
+        self.assertEqual(response.status_code, 302)  # redirects with an error message, never crashes
+
+
+class WatchlistResearchContextTests(TestCase):
+    def test_research_context_stored_in_notes(self):
+        profile = _profile(slug='watchlist-context-co')
+        user = User.objects.create_user(username='researcher', password='pw')
+        client = Client()
+        client.login(username='researcher', password='pw')
+        client.post(reverse('companies:watchlist_add', args=[profile.company.slug]), {
+            'status': 'researching', 'research_context': 'Added from Discover Companies — KPI: Test Principle',
+        })
+        entry = ResearchWatchlistEntry.objects.get(user=user, company=profile)
+        self.assertIn('Discover Companies', entry.notes)
+
+    def test_blank_research_context_never_clobbers_existing_notes(self):
+        profile = _profile(slug='watchlist-noclobber-co')
+        user = User.objects.create_user(username='researcher2', password='pw')
+        ResearchWatchlistEntry.objects.create(user=user, company=profile, notes='My own manual note.')
+        client = Client()
+        client.login(username='researcher2', password='pw')
+        client.post(reverse('companies:watchlist_add', args=[profile.company.slug]), {'status': 'high_kpi_alignment'})
+        entry = ResearchWatchlistEntry.objects.get(user=user, company=profile)
+        self.assertEqual(entry.notes, 'My own manual note.')
+
+
+class KPIExplorerDiscoveryIntegrationTests(TestCase):
+    def test_kpi_panel_links_to_discover_with_kpi_id(self):
+        methodology = _methodology()
+        profile = _profile(slug='kpi-explorer-link-co', description='Operates solar power assets.')
+        shariah_screening.run_shariah_screen(profile, methodology)
+        client = Client()
+        response = client.get(reverse('companies:detail', args=[profile.company.slug]))
+        self.assertContains(response, f"{reverse('companies:discover')}?kpi=1")
+
+
+class DiscoveryObservatoryTelemetryTests(TestCase):
+    def test_discover_view_records_company_discovery_session_with_no_anchor(self):
+        from ai_observatory.models import AnalysisSession
+
+        _profile(slug='disc-observatory-co')
+        client = Client()
+        client.get(reverse('companies:discover'))
+        session = AnalysisSession.objects.filter(kind='company_discovery').order_by('-pk').first()
+        self.assertIsNotNone(session)
+        self.assertIsNone(session.project_id)
+        self.assertIsNone(session.company_id)
+        self.assertEqual(session.status, 'completed')
+        self.assertGreaterEqual(session.stages.count(), 2)  # filtering + ranking
+
+    def test_compare_view_records_session(self):
+        from ai_observatory.models import AnalysisSession
+
+        a = _profile(slug='disc-observatory-cmp-a')
+        b = _profile(slug='disc-observatory-cmp-b')
+        client = Client()
+        client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
+        session = AnalysisSession.objects.filter(kind='company_discovery').order_by('-pk').first()
+        self.assertIsNotNone(session)
+
+
+class ObservatoryNeitherAnchorConstraintTests(TestCase):
+    def test_company_discovery_kind_permits_neither_anchor(self):
+        from ai_observatory.services import recorder
+
+        session = recorder.start_session(kind='company_discovery')
+        self.assertIsNotNone(session)
+        self.assertIsNone(session.project_id)
+        self.assertIsNone(session.company_id)
+
+    def test_other_kinds_still_require_exactly_one_anchor(self):
+        from ai_observatory.services import recorder
+
+        session = recorder.start_session(kind='company_intelligence')
+        self.assertIsNone(session)  # neither anchor, non-discovery kind -> rejected, logged
+
+    def test_both_anchors_always_rejected_even_for_discovery(self):
+        from ai_observatory.services import recorder
+
+        profile = _profile(slug='both-anchor-co')
+        from gold_intelligence.models import GoldProject
+        project = GoldProject.objects.create(name='Test Project')
+        session = recorder.start_session(project=project, company=profile, kind='company_discovery')
+        self.assertIsNone(session)

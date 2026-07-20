@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Explain Match — {{ company.name }} — EcoIQ Company Intelligence{% endblock %}
+{% block meta_description_content %}Trace why {{ company.name }} appears in Discover Companies results under the selected criteria, back to the exact evidence and ranking components.{% endblock %}
+
+{% block content %}
+<div class="ci-explain-wrap">
+  <div class="ci-explain-crumb"><a href="{% url 'companies:discover' %}?{{ request.GET.urlencode }}">← Discover Companies</a></div>
+  <span class="ci-explain-eyebrow">ECOIQ · EXPLAIN MATCH</span>
+  <h1 class="ci-explain-h1">Why Does {{ company.name }} Appear Here?</h1>
+  <p class="ci-explain-sub">
+    Every stage below links to the real, stored evidence and ranking components behind this result — under
+    the exact criteria you selected. This is research and stewardship intelligence, not personalised
+    investment advice, and contains no buy/sell recommendation.
+  </p>
+
+  <section class="ci-explain-trace">
+    <h2 class="ci-explain-h2">Match Trace</h2>
+    {% for node in trace.nodes %}
+    <div class="ci-explain-node {% if not node.available %}ci-explain-node-unavailable{% endif %}">
+      <div class="ci-explain-node-index">{{ forloop.counter }}</div>
+      <div class="ci-explain-node-body">
+        <div class="ci-explain-node-head">
+          <h3 class="ci-explain-h3" style="margin:0;">{{ node.title }}</h3>
+          <span class="ci-explain-tag ci-explain-tag-{{ node.status_kind }}">{{ node.status }}</span>
+        </div>
+        <p class="ci-explain-node-summary">{{ node.summary }}</p>
+        {% if node.source_url %}
+        <a class="ci-explain-source-link" href="{{ node.source_url }}">{{ node.source_label }}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% if not forloop.last %}<div class="ci-explain-arrow">↓</div>{% endif %}
+    {% endfor %}
+  </section>
+
+  <p class="ci-explain-disclaimer">
+    EcoIQ Company Intelligence is a research and stewardship intelligence system. It does not provide
+    personalised investment advice. Discovery ranking reflects evidence-backed stewardship relevance under
+    your selected criteria, not expected financial performance. Shariah screening is methodology-based and
+    does not constitute a religious ruling or individual fatwa.
+  </p>
+</div>
+
+<style>
+  .ci-explain-wrap{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .ci-explain-crumb a{color:#64748b;font-size:.8rem;text-decoration:none}
+  .ci-explain-crumb a:hover{color:#c9a84c}
+  .ci-explain-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin:1rem 0 .5rem}
+  .ci-explain-h1{font-size:clamp(1.4rem,3.4vw,2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .ci-explain-sub{font-size:.9rem;color:#94a3b8;max-width:70ch;line-height:1.6;margin:0 0 1.6rem}
+  .ci-explain-h2{font-size:1.1rem;font-weight:700;color:#fff;margin:0 0 1rem}
+  .ci-explain-h3{font-size:.92rem;font-weight:700;color:#fff}
+  .ci-explain-trace{display:flex;flex-direction:column}
+  .ci-explain-node{display:flex;gap:.9rem;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1rem 1.2rem}
+  .ci-explain-node-unavailable{opacity:.6}
+  .ci-explain-node-index{flex:none;width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.1);border:1px solid #c9a84c;color:#c9a84c;display:flex;align-items:center;justify-content:center;font-family:'SF Mono',ui-monospace,monospace;font-weight:800;font-size:.78rem}
+  .ci-explain-node-body{flex:1;min-width:0}
+  .ci-explain-node-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem}
+  .ci-explain-node-summary{font-size:.82rem;color:#94a3b8;line-height:1.55;margin:.4rem 0}
+  .ci-explain-tag{display:inline-block;font-family:'SF Mono',ui-monospace,monospace;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.2rem .55rem;border-radius:999px;border:1px solid rgba(255,255,255,.08)}
+  .ci-explain-tag-measured{color:#58a6ff;background:rgba(88,166,255,.1);border-color:rgba(88,166,255,.3)}
+  .ci-explain-tag-verified{color:#00e89a;background:rgba(0,232,154,.1);border-color:rgba(0,232,154,.3)}
+  .ci-explain-tag-estimated{color:#f4a261;background:rgba(244,162,97,.1);border-color:rgba(244,162,97,.3)}
+  .ci-explain-tag-deterministic{color:#94a3b8;background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.3)}
+  .ci-explain-tag-blocked,.ci-explain-tag-disputed{color:#fca5a5;background:rgba(230,57,70,.14);border-color:rgba(230,57,70,.4)}
+  .ci-explain-tag-missing,.ci-explain-tag-na{color:#64748b;background:rgba(255,255,255,.03);font-style:italic}
+  .ci-explain-tag-demo{color:#f4a261;background:rgba(244,162,97,.1);border-color:rgba(244,162,97,.3)}
+  .ci-explain-source-link{display:inline-block;margin-top:.4rem;font-size:.76rem;font-weight:700;color:#c9a84c;text-decoration:none}
+  .ci-explain-arrow{text-align:center;color:#475569;font-size:1.1rem;padding:.15rem 0}
+  .ci-explain-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:80ch}
+  @media (max-width:640px){.ci-explain-wrap{padding:1.5rem 1rem 3rem}.ci-explain-node{flex-direction:column}}
+</style>
+{% endblock %}

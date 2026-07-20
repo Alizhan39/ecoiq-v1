@@ -58,6 +58,7 @@
       </summary>
       <div class="ci-kpi-row-body">
         <p class="ci-kpi-row-question">{{ row.question }}</p>
+        <a class="ci-kpi-discover-link" href="{% url 'companies:discover' %}?kpi={{ row.kpi_id }}">Find companies with evidence for this KPI →</a>
         {% if row.assessment %}
         <p class="ci-kpi-row-rationale">{{ row.assessment.rationale|default:"No rationale recorded." }}</p>
         <p class="ci-kpi-row-meta">Confidence: {{ row.assessment.get_confidence_display }} · Last assessed {{ row.assessment.last_assessed_at|date:"Y-m-d" }}{% if row.assessment.is_demo %} · <span class="ci-kpi-demo-badge">DEMO</span>{% endif %}</p>
@@ -134,5 +135,6 @@
   .ci-kpi-evidence-meta{color:#475569}
   .ci-kpi-empty{font-size:.8rem;color:#64748b;padding:1rem 0}
   .ci-kpi-disclaimer{font-size:.68rem;color:#475569;line-height:1.5;margin-top:1.1rem;max-width:80ch}
+  .ci-kpi-discover-link{display:inline-block;font-size:.72rem;font-weight:700;color:#c9a84c;text-decoration:none;margin-top:.2rem}
   @media (max-width:640px){.ci-kpi-head{flex-direction:column}.ci-kpi-coverage{text-align:left}}
 </style>

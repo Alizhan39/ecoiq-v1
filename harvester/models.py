@@ -142,6 +142,65 @@ class HarvestJob(models.Model):
         }
 
 
+class SourceDocument(models.Model):
+    """
+    feat/company-discovery-ranking (PR 11) — one specific retrieved document
+    (a sustainability report, annual report, ESG report, TCFD report,
+    transition plan) — the whole-document provenance record the brief's
+    "Document ingestion" step needs. Distinct from Source (a recurring,
+    re-fetchable registration — e.g. "Apple's sustainability report page")
+    and from Evidence (one inspectable chunk/fact extracted FROM a
+    document) — this is the record that says "this exact document, at this
+    exact URL, with this exact content, was retrieved on this date."
+
+    Uniqueness on (company_slug, url, content_hash): re-ingesting the same
+    URL when its content is unchanged (same hash) resolves to the SAME row
+    — a genuine no-op, never a duplicate. When the publisher updates the
+    document at the same URL (a new reporting year, a corrected report),
+    the content_hash differs and a NEW row is created — history is
+    preserved, the old row is never silently overwritten.
+    """
+    source = models.ForeignKey('Source', on_delete=models.CASCADE, related_name='documents')
+    company = models.ForeignKey(
+        "companies.CompanyProfile", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="source_documents",
+    )
+    company_slug = models.CharField(max_length=120)
+
+    title = models.CharField(max_length=400)
+    document_type = models.CharField(max_length=40, choices=SOURCE_TYPES)
+    publisher = models.CharField(max_length=200, blank=True)
+    url = models.URLField(max_length=1000)
+    publication_date = models.DateField(null=True, blank=True)
+    # Free-text reporting period label (e.g. "FY2024", "2023/24") — left
+    # blank when genuinely not stated in the document, never guessed.
+    reporting_period = models.CharField(max_length=40, blank=True)
+    retrieved_at = models.DateTimeField(auto_now_add=True)
+    content_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    # Source tier per PR10's 4-tier hierarchy (1=regulatory/audited,
+    # 2=official annual/sustainability reports, 3=credible independent
+    # research, 4=marketing/self-reported) — set from document_type, never
+    # inferred from the document's own claims about itself.
+    source_tier = models.PositiveSmallIntegerField(default=4)
+    verification_status = models.CharField(max_length=24, choices=VERIFICATION_STATUSES, default="UNVERIFIED")
+    chunk_count = models.PositiveIntegerField(default=0)
+    is_demo = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "harvester_source_document"
+        ordering = ["-retrieved_at"]
+        verbose_name = "Source Document"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company_slug", "url", "content_hash"], name="uniq_document_company_url_hash",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.company_slug}, {self.get_document_type_display()})"
+
+
 class Evidence(models.Model):
     """A single raw, document-level piece of evidence collected from a source.
 
@@ -164,6 +223,19 @@ class Evidence(models.Model):
         HarvestJob, null=True, blank=True, on_delete=models.SET_NULL,
         related_name="evidence",
     )
+    # feat/company-discovery-ranking (PR 11) — which SourceDocument (if any)
+    # this chunk was extracted from. Null for evidence that never came from
+    # a multi-chunk document (SEC EDGAR figures, Companies House records,
+    # single-statement CSV rows) — those remain exactly as before.
+    document = models.ForeignKey(
+        SourceDocument, null=True, blank=True, on_delete=models.SET_NULL, related_name="evidence_chunks",
+    )
+    # feat/company-discovery-ranking (PR 11) — where in the source document
+    # this specific chunk came from (e.g. "Page 14" or "Section: Climate &
+    # Energy") so evidence shown to users is traceable back to an exact
+    # location, not just "somewhere in this 200-page report". Blank when
+    # the source has no meaningful location unit (e.g. a single API field).
+    source_location = models.CharField(max_length=200, blank=True)
 
     title = models.CharField(max_length=400, blank=True)
     url = models.URLField(blank=True)
