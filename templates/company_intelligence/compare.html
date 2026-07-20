@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Compare Companies — EcoIQ Company Intelligence{% endblock %}
+{% block meta_description_content %}Research comparison of 2-5 companies on evidence-backed Shariah screening and 114-KPI stewardship alignment — not an investment comparison.{% endblock %}
+
+{% block content %}
+<div class="cmp-wrap">
+  <div class="cmp-crumb"><a href="{% url 'companies:discover' %}">← Discover Companies</a></div>
+  <span class="cmp-eyebrow">ECOIQ · COMPANY COMPARISON</span>
+  <h1 class="cmp-h1">Compare Companies</h1>
+  <p class="cmp-sub">
+    Research comparison only — Shariah screening, evidence-backed KPI coverage, evidence quality, and
+    controversies. Never expected returns, price targets, or trading signals.
+  </p>
+
+  {% if too_few %}
+  <p class="cmp-empty">Select 2–5 companies (via <code>?companies=slug1,slug2</code>) to compare.</p>
+  {% else %}
+  <div class="cmp-table-wrap">
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          {% for row in comparison %}<th><a href="{% url 'companies:detail' row.company.company.slug %}">{{ row.company.company.name }}</a></th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Sector / Country</td>{% for row in comparison %}<td>{{ row.company.company.get_sector_display }} / {{ row.company.company.country }}</td>{% endfor %}</tr>
+        <tr><td>Data Origin</td>{% for row in comparison %}<td class="cmp-origin-{{ row.data_origin.origin }}">{{ row.data_origin.label }}</td>{% endfor %}</tr>
+        <tr><td>Shariah Result</td>{% for row in comparison %}<td>{% if row.shariah_screen %}{{ row.shariah_screen.get_overall_result_display }}{% if row.freshness.is_stale %} (Stale){% endif %}{% else %}Not Screened{% endif %}</td>{% endfor %}</tr>
+        <tr><td>Screening Freshness</td>{% for row in comparison %}<td>{{ row.freshness.label }}</td>{% endfor %}</tr>
+        <tr><td>Selected KPIs Supported</td>{% for row in comparison %}<td>{{ row.kpi_detail.supported_kpi_ids|length }}</td>{% endfor %}</tr>
+        <tr><td>Selected KPIs Conflicting</td>{% for row in comparison %}<td>{{ row.kpi_detail.conflicting_kpi_ids|length }}</td>{% endfor %}</tr>
+        <tr><td>Selected KPIs Insufficient Evidence</td>{% for row in comparison %}<td>{{ row.kpi_detail.insufficient_kpi_ids|length }}</td>{% endfor %}</tr>
+        <tr><td>Selected KPIs Not Assessed</td>{% for row in comparison %}<td>{{ row.kpi_detail.not_assessed_kpi_ids|length }}</td>{% endfor %}</tr>
+        <tr><td>Source Authority (avg)</td>{% for row in comparison %}<td>{{ row.components.source_authority|default:"Not available" }}</td>{% endfor %}</tr>
+        <tr><td>Recency (avg)</td>{% for row in comparison %}<td>{{ row.components.recency|default:"Not available" }}</td>{% endfor %}</tr>
+        <tr><td>Corroboration (avg)</td>{% for row in comparison %}<td>{{ row.components.corroboration|default:"Not available" }}</td>{% endfor %}</tr>
+        <tr><td>Financial Data Completeness</td>{% for row in comparison %}<td>{% if row.components.data_completeness is not None %}{{ row.components.data_completeness }}{% else %}Not screened{% endif %}</td>{% endfor %}</tr>
+        <tr><td>Composite (documented weights)</td>{% for row in comparison %}<td>{% if row.composite is not None %}{{ row.composite }}{% else %}No qualifying evidence{% endif %}</td>{% endfor %}</tr>
+        <tr><td>Unresolved Controversies</td>{% for row in comparison %}<td>{{ row.controversies|length }}</td>{% endfor %}</tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <p class="cmp-disclaimer">
+    EcoIQ Company Comparison is research and stewardship intelligence — not personalised investment advice.
+    Shariah screening is methodology-based and does not constitute a religious ruling or certification.
+  </p>
+</div>
+
+<style>
+  .cmp-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .cmp-crumb a{color:#64748b;font-size:.8rem;text-decoration:none}
+  .cmp-crumb a:hover{color:#c9a84c}
+  .cmp-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin:1rem 0 .5rem}
+  .cmp-h1{font-size:clamp(1.4rem,3.4vw,2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .cmp-sub{font-size:.9rem;color:#94a3b8;max-width:80ch;line-height:1.6;margin:0 0 1.6rem}
+  .cmp-table-wrap{overflow-x:auto;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:.4rem}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:480px}
+  .cmp-table th,.cmp-table td{text-align:left;padding:.55rem .8rem;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
+  .cmp-table th{color:#c9a84c;font-size:.78rem}
+  .cmp-table td:first-child{color:#64748b;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em}
+  .cmp-origin-real_public_data{color:#00e89a}
+  .cmp-origin-demo{color:#f4a261}
+  .cmp-empty{font-size:.85rem;color:#64748b;padding:2rem 0}
+  .cmp-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  @media (max-width:640px){.cmp-wrap{padding:1.5rem 1rem 3rem}}
+</style>
+{% endblock %}

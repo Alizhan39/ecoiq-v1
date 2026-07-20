@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from company_intelligence import views as ci_views
+from company_intelligence import discovery_views as discovery
 
 app_name = 'companies'
 
@@ -11,7 +12,13 @@ urlpatterns = [
     # below, same discipline as capital_guardian/urls.py, since a bare
     # SlugField pattern would otherwise swallow it.
     path('watchlist/',                              ci_views.watchlist_view,    name='watchlist'),
+    # feat/company-discovery-ranking (PR 11) — 'discover/' and 'compare/'
+    # must also be registered before the '<slug:slug>/' catch-all below.
+    path('discover/',                               discovery.discover_companies_view, name='discover'),
+    path('compare/',                                discovery.company_comparison_view, name='compare'),
     path('<slug:slug>/',                            views.company_detail,       name='detail'),
+    path('<slug:slug>/explain-match/',              discovery.explain_match_view, name='explain_match'),
+    path('<slug:slug>/register-document-source/',   discovery.register_document_source_view, name='register_document_source'),
     path('<slug:slug>/explain/',                    ci_views.explain_view,      name='explain'),
     path('<slug:slug>/watchlist/add/',              ci_views.watchlist_add_view, name='watchlist_add'),
     path('<slug:slug>/watchlist/remove/',           ci_views.watchlist_remove_view, name='watchlist_remove'),

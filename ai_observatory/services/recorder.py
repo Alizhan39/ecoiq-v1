@@ -22,12 +22,17 @@ def start_session(project=None, kind='other', user=None, human_review_required=T
     """Creates a running AnalysisSession, anchored to EITHER `project` OR
     `company` (feat/company-halal-intelligence, PR 9 — AnalysisSession's
     own CheckConstraint requires exactly one). Callers pass whichever
-    anchor their pipeline has; passing both or neither is a caller bug and
-    is logged, not silently coerced. Returns None (and logs) on failure —
-    callers must treat a None session as "telemetry off"."""
+    anchor their pipeline has; passing both is always a caller bug.
+    Passing NEITHER is only valid for kind='company_discovery' (feat/
+    company-discovery-ranking, PR 11) — a cross-company ranking/filtering
+    run genuinely has no single anchor; every other kind still requires
+    exactly one. Returns None (and logs) on failure — callers must treat a
+    None session as "telemetry off"."""
     from ai_observatory.models import AnalysisSession
 
-    if (project is None) == (company is None):
+    both = project is not None and company is not None
+    neither = project is None and company is None
+    if both or (neither and kind != 'company_discovery'):
         logger.error('Observatory: start_session requires exactly one of project/company for kind %s', kind)
         return None
     try:

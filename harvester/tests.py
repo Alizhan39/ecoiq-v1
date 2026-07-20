@@ -1279,3 +1279,168 @@ class BackgroundIntelligenceIngestionTaskTests(TestCase):
 
         result = refresh_entity_evidence.apply(args=[999999999]).get()
         self.assertEqual(result['status'], 'failed')
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# feat/company-discovery-ranking (PR 11) — sustainability document ingestion:
+# fetch_sustainability_document(), harvester.SourceDocument, dedup's document=
+# threading, and ingestion_pipeline's document dispatch/versioning.
+# ═══════════════════════════════════════════════════════════════════════════
+from harvester.models import SourceDocument
+
+SAMPLE_HTML_DOC = """
+<html><head><title>Acme Sustainability</title></head>
+<body>
+<h1>Introduction</h1>
+<p>Acme Corp is committed to reducing scope 1 and scope 2 emissions across all facilities by 2030.</p>
+<h2>Climate & Energy</h2>
+<p>We achieved a 12% reduction in energy consumption this year through renewable energy investment and grid modernization programmes.</p>
+<h2>Waste & Circularity</h2>
+<p>Our waste-to-landfill diversion rate reached 88% following expanded recycling and circular economy initiatives across manufacturing sites.</p>
+</body></html>
+"""
+
+
+class SustainabilityDocumentFetcherTests(TestCase):
+    @patch('harvester.services.fetchers._robots_allows', return_value=True)
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_html_document_splits_into_multiple_chunks_by_heading(self, mock_fetch, mock_robots):
+        mock_fetch.return_value = _ok_result(text=SAMPLE_HTML_DOC, content=SAMPLE_HTML_DOC.encode(), content_type='text/html')
+        outcome = fetchers.fetch_sustainability_document(
+            'https://acme.example.com/sustainability', 'acme', 'sustainability_report', publisher='Acme Corp',
+        )
+        self.assertTrue(outcome.success)
+        self.assertGreaterEqual(len(outcome.candidates), 2)
+        locations = {c.source_location for c in outcome.candidates}
+        self.assertTrue(any(loc.startswith('Section:') or loc == 'Introduction' for loc in locations))
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=True)
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_html_document_never_creates_one_giant_chunk(self, mock_fetch, mock_robots):
+        """The brief's own explicit rule: never treat an entire report as one evidence record."""
+        mock_fetch.return_value = _ok_result(text=SAMPLE_HTML_DOC, content=SAMPLE_HTML_DOC.encode(), content_type='text/html')
+        outcome = fetchers.fetch_sustainability_document('https://acme.example.com/sustainability', 'acme', 'sustainability_report')
+        full_doc_length = len(SAMPLE_HTML_DOC)
+        for c in outcome.candidates:
+            self.assertLess(len(c.full_text), full_doc_length)
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=True)
+    @patch('pypdf.PdfReader')
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_pdf_document_yields_one_chunk_per_page_with_page_location(self, mock_fetch, mock_reader_cls, mock_robots):
+        mock_fetch.return_value = _ok_result(content=b'%PDF-fake', content_type='application/pdf')
+
+        page1 = type('P', (), {'extract_text': lambda self: 'Our climate strategy targets net zero emissions by 2040 across global operations.'})()
+        page2 = type('P', (), {'extract_text': lambda self: 'Water stewardship programmes reduced withdrawal intensity by 18% year over year.'})()
+        mock_reader = mock_reader_cls.return_value
+        mock_reader.pages = [page1, page2]
+        mock_reader.metadata = None
+
+        outcome = fetchers.fetch_sustainability_document('https://acme.example.com/report.pdf', 'acme', 'annual_report')
+        self.assertTrue(outcome.success)
+        self.assertEqual(len(outcome.candidates), 2)
+        self.assertEqual(outcome.candidates[0].source_location, 'Page 1')
+        self.assertEqual(outcome.candidates[1].source_location, 'Page 2')
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=True)
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_document_too_large_is_honest_failure_not_truncated_success(self, mock_fetch, mock_robots):
+        big_content = b'x' * (fetchers.MAX_DOCUMENT_BYTES + 1)
+        mock_fetch.return_value = _ok_result(content=big_content, content_type='application/pdf')
+        outcome = fetchers.fetch_sustainability_document('https://acme.example.com/huge.pdf', 'acme', 'annual_report')
+        self.assertFalse(outcome.success)
+        self.assertIn('too large', outcome.error.lower())
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=True)
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_no_extractable_text_is_honest_failure(self, mock_fetch, mock_robots):
+        empty_html = '<html><head><title>Empty</title></head><body></body></html>'
+        mock_fetch.return_value = _ok_result(text=empty_html, content=empty_html.encode(), content_type='text/html')
+        outcome = fetchers.fetch_sustainability_document('https://acme.example.com/empty', 'acme', 'sustainability_report')
+        self.assertFalse(outcome.success)
+
+    @patch('harvester.services.fetchers._robots_allows', return_value=False)
+    def test_robots_disallowed_is_skipped_never_fetched(self, mock_robots):
+        outcome = fetchers.fetch_sustainability_document('https://acme.example.com/blocked', 'acme', 'sustainability_report')
+        self.assertFalse(outcome.success)
+        self.assertTrue(outcome.skipped_reason)
+
+
+class SustainabilityDocumentIngestionPipelineTests(TestCase):
+    def setUp(self):
+        self.company, self.profile = make_company(slug='acme')
+        self.robots_patcher = patch('harvester.services.fetchers._robots_allows', return_value=True)
+        self.robots_patcher.start()
+        self.addCleanup(self.robots_patcher.stop)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_ingest_source_creates_source_document_and_chunked_evidence(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(text=SAMPLE_HTML_DOC, content=SAMPLE_HTML_DOC.encode(), content_type='text/html')
+        source = Source.objects.create(
+            company=self.profile, source_type='sustainability_report', source_url='https://acme.example.com/sustainability',
+            confidence_base=0.75,
+        )
+        run = ingest_source(source, triggered_by='test')
+        self.assertEqual(run.status, 'new')
+        self.assertEqual(SourceDocument.objects.filter(company_slug='acme').count(), 1)
+        doc = SourceDocument.objects.get(company_slug='acme')
+        self.assertEqual(doc.source_tier, 2)  # sustainability_report is Tier 2
+        self.assertGreater(Evidence.objects.filter(company_slug='acme', document=doc).count(), 0)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_reingesting_unchanged_document_creates_no_duplicate_document_or_evidence(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(text=SAMPLE_HTML_DOC, content=SAMPLE_HTML_DOC.encode(), content_type='text/html')
+        source = Source.objects.create(
+            company=self.profile, source_type='sustainability_report', source_url='https://acme.example.com/sustainability',
+            confidence_base=0.75,
+        )
+        ingest_source(source, triggered_by='test')
+        doc_count_after_first = SourceDocument.objects.count()
+        evidence_count_after_first = Evidence.objects.count()
+
+        run2 = ingest_source(source, triggered_by='test')
+        self.assertEqual(run2.status, 'unchanged')
+        self.assertEqual(SourceDocument.objects.count(), doc_count_after_first)
+        self.assertEqual(Evidence.objects.count(), evidence_count_after_first)
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_changed_document_creates_new_versioned_source_document_not_overwrite(self, mock_fetch):
+        source = Source.objects.create(
+            company=self.profile, source_type='sustainability_report', source_url='https://acme.example.com/sustainability',
+            confidence_base=0.75,
+        )
+        mock_fetch.return_value = _ok_result(text=SAMPLE_HTML_DOC, content=SAMPLE_HTML_DOC.encode(), content_type='text/html')
+        ingest_source(source, triggered_by='test')
+        first_doc = SourceDocument.objects.get(company_slug='acme')
+
+        changed_html = SAMPLE_HTML_DOC.replace('12%', '25%').replace('88%', '95%')
+        mock_fetch.return_value = _ok_result(text=changed_html, content=changed_html.encode(), content_type='text/html')
+        ingest_source(source, triggered_by='test')
+
+        self.assertEqual(SourceDocument.objects.filter(company_slug='acme').count(), 2)
+        self.assertTrue(SourceDocument.objects.filter(pk=first_doc.pk).exists(), 'original version must be preserved, never deleted/overwritten')
+
+    @patch('harvester.services.fetchers.http_fetch')
+    def test_evidence_chunk_preserves_source_location(self, mock_fetch):
+        mock_fetch.return_value = _ok_result(text=SAMPLE_HTML_DOC, content=SAMPLE_HTML_DOC.encode(), content_type='text/html')
+        source = Source.objects.create(
+            company=self.profile, source_type='sustainability_report', source_url='https://acme.example.com/sustainability',
+            confidence_base=0.75,
+        )
+        ingest_source(source, triggered_by='test')
+        evidence_rows = Evidence.objects.filter(company_slug='acme')
+        self.assertTrue(all(e.source_location for e in evidence_rows))
+
+
+class SourceTierTests(TestCase):
+    def test_tier_by_type_matches_documented_hierarchy(self):
+        self.assertEqual(verification.source_tier('sec_edgar'), 1)
+        self.assertEqual(verification.source_tier('companies_house'), 1)
+        self.assertEqual(verification.source_tier('sustainability_report'), 2)
+        self.assertEqual(verification.source_tier('annual_report'), 2)
+        self.assertEqual(verification.source_tier('sbti'), 3)
+        self.assertEqual(verification.source_tier('press_release'), 4)
+
+    def test_unmapped_source_type_defaults_to_lowest_tier(self):
+        self.assertEqual(verification.source_tier('some_unmapped_type'), 4)
+        self.assertEqual(verification.source_tier(''), 4)

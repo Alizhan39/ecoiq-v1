@@ -50,6 +50,7 @@ class AnalysisSession(models.Model):
         ('evidence_memory_sync', 'Evidence Memory Sync'),
         ('company_intelligence', 'Company Intelligence Analysis (Shariah Screen / 114-KPI Mapping)'),
         ('company_evidence_ingestion', 'Company Evidence Ingestion (Source Fetch / Extraction / KPI Candidate Matching)'),
+        ('company_discovery', 'Company Discovery / Ranking (Filtering, Comparison, Explain Match)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [
@@ -111,17 +112,32 @@ class AnalysisSession(models.Model):
         ordering = ['-started_at']
         verbose_name = 'Analysis Session'
         constraints = [
+            # feat/company-discovery-ranking (PR 11): a discovery/ranking
+            # run spans MANY companies at once (or none, e.g. filtering with
+            # zero matches) — it genuinely has no single project or company
+            # to anchor to. Rather than invent a placeholder anchor (which
+            # would misrepresent what the session actually covered), the
+            # constraint now also permits NEITHER anchor, but only for
+            # kind='company_discovery' — every other kind still requires
+            # exactly one, unchanged. "Both anchors" remains invalid for
+            # every kind, including this one.
             models.CheckConstraint(
                 check=(
                     models.Q(project__isnull=False, company__isnull=True)
                     | models.Q(project__isnull=True, company__isnull=False)
+                    | models.Q(project__isnull=True, company__isnull=True, kind='company_discovery')
                 ),
                 name='observatory_session_exactly_one_anchor',
             ),
         ]
 
     def __str__(self):
-        anchor = self.project.name if self.project_id else self.company.company.name
+        if self.project_id:
+            anchor = self.project.name
+        elif self.company_id:
+            anchor = self.company.company.name
+        else:
+            anchor = 'cross-company'
         return f'{self.get_kind_display()} — {anchor} ({self.started_at:%Y-%m-%d %H:%M})'
 
     # Rollups over child rows — real aggregation, no cached copies to drift.

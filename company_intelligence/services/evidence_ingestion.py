@@ -171,6 +171,69 @@ def _sync_financial_facts(company_profile, metadata, actor=None):
     return facts, sources_created
 
 
+def _get_or_create_document_source(company_profile, source_url, document_type, publisher=''):
+    from harvester.models import Source
+
+    source, _ = Source.objects.get_or_create(
+        company=company_profile, source_type=document_type, source_url=source_url,
+        defaults={
+            'name': f'{document_type.replace("_", " ").title()} — {source_url}',
+            'source_owner': publisher, 'confidence_base': 0.75, 'update_frequency': 'annual',
+        },
+    )
+    return source
+
+
+def ingest_sustainability_document(company_profile, source_url, document_type, publisher='', actor=None):
+    """
+    feat/company-discovery-ranking (PR 11) — the bridge from ONE staff-
+    registered official sustainability/ESG/annual-report URL to real,
+    chunked, KPI-candidate-matched evidence for one company. Mirrors
+    ingest_company_evidence()'s shape (identity already resolved by the
+    caller having a real CompanyProfile; fetch -> harvester ingestion
+    -> KPI candidate matching, one Observatory session, never raises for
+    an honest fetch failure).
+
+    Never invents a report URL — `source_url` must be staff-registered
+    (see companies.views / the Register Document Source form), matching
+    the brief's "support staff registration of an official document URL"
+    instruction rather than pretending full autonomous discovery exists.
+    """
+    from harvester.services.fetchers import fetch_sustainability_document
+    from harvester.services.ingestion_pipeline import ingest_source
+
+    session = recorder.start_session(company=company_profile, kind='company_evidence_ingestion', user=actor)
+    result = {'ingestion_run': None, 'document_meta': None, 'kpi_candidates_proposed': [], 'warnings': []}
+
+    try:
+        with recorder.record_stage(session, 'sustainability_document_fetch', 'Sustainability Document Fetch + Chunking', category='retrieval') as info:
+            source = _get_or_create_document_source(company_profile, source_url, document_type, publisher)
+            run = ingest_source(source, triggered_by='company_intelligence')
+            result['ingestion_run'] = run
+            info['items_processed'] = run.evidence_created_count + run.evidence_updated_count
+            info['metadata'] = {'status': run.status}
+            if run.status == 'failed':
+                result['warnings'].append(f'Document fetch failed: {run.error_message}')
+            elif run.status == 'skipped':
+                result['warnings'].append('Document fetch was skipped (inactive source or no URL/company mapping).')
+
+        with recorder.record_stage(session, 'kpi_candidate_matching', 'KPI Candidate Matching (Narrative Evidence)', category='deterministic') as info:
+            proposed = _propose_kpi_candidates_for_company(company_profile)
+            result['kpi_candidates_proposed'] = proposed
+            info['items_processed'] = len(proposed)
+
+    except Exception:
+        logger.exception('Sustainability document ingestion failed for company %s', company_profile.pk)
+        recorder.finish_session(session, status='failed', warnings=result['warnings'] + ['Unexpected failure during document ingestion.'])
+        raise
+
+    recorder.finish_session(
+        session, evidence_retrieved=(result['ingestion_run'].evidence_created_count if result['ingestion_run'] else 0),
+        warnings=result['warnings'], final_recommendation_status='recorded',
+    )
+    return result
+
+
 def _propose_kpi_candidates_for_company(company_profile):
     """Runs the deterministic KPI candidate matcher over every real
     harvester-sourced EvidenceMemory row this company has — idempotent

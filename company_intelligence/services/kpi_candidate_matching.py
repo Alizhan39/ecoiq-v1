@@ -86,6 +86,38 @@ PRINCIPLES_BY_CATEGORY = {}
 for _p in PRINCIPLES:
     PRINCIPLES_BY_CATEGORY.setdefault(_p['category'], []).append(_p)
 
+# feat/company-discovery-ranking (PR 11) — real narrative evidence (chunked
+# sustainability-report text) exposed a precision gap the original SEC-
+# EDGAR-only matcher never hit: many principles' `metrics` lists share the
+# same generic scaffolding words ("... score", "... coverage", "supply
+# chain ...") purely because of how the 114-principle list phrases its
+# indicators, not because they're topically related. Verified directly
+# against real Walmart sustainability-report text: "supply"/"chain"
+# appeared in 3+ unrelated principles' keyword sets, "score" in 49% of all
+# 114 principles. A plain word-count overlap check treats these coincidental
+# shared words the same as a real topical match — this GENERIC_WORDS filter
+# removes any word appearing in more than GENERIC_DOC_FREQ_PCT of all 114
+# principles' own keyword sets from counting toward a match, computed once,
+# deterministically, from the fixed 114-principle list itself (not a
+# hand-picked stopword list, and never touching the underlying PRINCIPLES
+# data or its wording).
+GENERIC_DOC_FREQ_PCT = 0.07
+
+
+def _compute_generic_words():
+    from collections import Counter
+
+    freq = Counter()
+    for kw_set in PRINCIPLE_KEYWORDS.values():
+        for w in kw_set:
+            freq[w] += 1
+    threshold = GENERIC_DOC_FREQ_PCT * len(PRINCIPLE_KEYWORDS)
+    return {w for w, c in freq.items() if c > threshold}
+
+
+GENERIC_WORDS = _compute_generic_words()
+PRINCIPLE_KEYWORDS = {kpi_id: words - GENERIC_WORDS for kpi_id, words in PRINCIPLE_KEYWORDS.items()}
+
 MIN_WORD_OVERLAP = 2
 
 

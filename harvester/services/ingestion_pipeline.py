@@ -15,8 +15,17 @@ Evidence architecture, no parallel dedup logic.
 from django.utils import timezone
 
 from harvester.dedup import deduplicate
-from harvester.models import Evidence, IngestionRun
+from harvester.models import Evidence, IngestionRun, SourceDocument
 from harvester.services import fetchers
+from harvester.verification import source_tier
+
+# feat/company-discovery-ranking (PR 11) — the 5 multi-chunk "document"
+# source types, all routed through the ONE new fetch_sustainability_document
+# fetcher (never a separate fetcher per document type — the parsing logic
+# is identical, only the label differs).
+DOCUMENT_SOURCE_TYPES = {
+    'annual_report', 'sustainability_report', 'esg_report', 'tcfd_report', 'transition_plan',
+}
 
 
 def _company_slug_for_source(source):
@@ -52,6 +61,14 @@ def ingest_source(source, triggered_by='manual'):
             return run
         outcome = fetchers.fetch_sec_edgar(company_slug)
         category_for_count = 'financial'
+    elif source.source_type in DOCUMENT_SOURCE_TYPES:
+        if not source.source_url or not company_slug:
+            run.mark_completed('skipped')
+            return run
+        outcome = fetchers.fetch_sustainability_document(
+            source.source_url, company_slug, source.source_type, publisher=source.source_owner,
+        )
+        category_for_count = None  # a document's chunks can span multiple evidence categories
     elif source.source_type == 'csv_dataset':
         if not source.source_url or not company_slug:
             run.mark_completed('skipped')
@@ -82,7 +99,27 @@ def ingest_source(source, triggered_by='manual'):
     had_prior_evidence = existing_query.exists()
 
     profile = source.company
-    stats = deduplicate(outcome.candidates, profile=profile, harvest_job=None)
+
+    # feat/company-discovery-ranking (PR 11) — a document-shaped fetch
+    # (fetch_sustainability_document) reports whole-document provenance in
+    # outcome.metadata['document']; get_or_create on
+    # (company_slug, url, content_hash) makes re-ingesting an UNCHANGED
+    # document a genuine no-op (same row reused, no duplicate), while a
+    # changed document (new content_hash) creates a new, dated,
+    # version-preserving row rather than overwriting the old one.
+    document = None
+    doc_meta = outcome.metadata.get('document') if outcome.metadata else None
+    if doc_meta:
+        document, _ = SourceDocument.objects.get_or_create(
+            company_slug=company_slug, url=source.source_url, content_hash=doc_meta['content_hash'],
+            defaults={
+                'source': source, 'company': profile, 'title': doc_meta['title'],
+                'document_type': doc_meta['document_type'], 'publisher': doc_meta['publisher'],
+                'source_tier': source_tier(doc_meta['document_type']), 'chunk_count': doc_meta['chunk_count'],
+            },
+        )
+
+    stats = deduplicate(outcome.candidates, profile=profile, harvest_job=None, document=document)
 
     # deduplicate() never sets Evidence.source (it only records the string
     # source_type on EvidenceSourceRef) — attribute the real Source row here,

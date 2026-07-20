@@ -38,6 +38,33 @@ SOURCE_TYPE_QUALITY = {
 }
 DEFAULT_QUALITY = 0.5
 
+# feat/company-discovery-ranking (PR 11) — the 4-tier source hierarchy PR10's
+# brief described in prose (Tier 1 = regulatory filings/audited statements/
+# government records, Tier 2 = official annual/sustainability reports,
+# Tier 3 = credible independent research, Tier 4 = marketing/self-reported
+# claims) but never encoded — this is that mapping, made real and usable by
+# the evidence-quality filter (harvester.SourceDocument.source_tier and
+# company_intelligence's discovery engine both read from here, never a
+# second, possibly-inconsistent tier table).
+SOURCE_TIER_BY_TYPE = {
+    "companies_house": 1, "sec_edgar": 1, "fca_filing": 1, "ofgem": 1,
+    "environment_agency": 1, "regulatory_filing": 1,
+    "annual_report": 2, "sustainability_report": 2, "esg_report": 2,
+    "tcfd_report": 2, "transition_plan": 2,
+    "sbti": 3, "cdp": 3, "gri": 3, "sasb": 3, "issb": 3, "world_bank": 3,
+    "iea": 3, "ebrd": 3, "oecd": 3, "undp": 3, "financial_times": 3,
+    "reuters": 3, "tender_portal": 3, "procurement_db": 3,
+    "investor_relations": 4, "company_website": 4, "press_release": 4,
+    "bloomberg": 4, "csv_dataset": 4,
+}
+DEFAULT_TIER = 4  # unmapped/self-reported by default — never assumed authoritative
+
+
+def source_tier(source_type: str = "") -> int:
+    """The real, documented tier for a source type — 1 is highest authority.
+    Unmapped types conservatively default to Tier 4, never a middle tier."""
+    return SOURCE_TIER_BY_TYPE.get(source_type, DEFAULT_TIER)
+
 FRESHNESS_HORIZON_YEARS = 5.0
 UNKNOWN_DATE_FRESHNESS = 0.3   # present-but-undated penalty (not zero, not full)
 

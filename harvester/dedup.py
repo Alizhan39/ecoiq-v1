@@ -61,8 +61,15 @@ def _group_contradicted(candidates) -> bool:
     return "up" in dirs and "down" in dirs
 
 
-def deduplicate(candidates, *, profile=None, harvest_job=None, verify=True):
+def deduplicate(candidates, *, profile=None, harvest_job=None, verify=True, document=None):
     """Merge EvidenceCandidates into canonical Evidence rows + source refs.
+
+    `document` (feat/company-discovery-ranking, PR 11): an optional
+    harvester.SourceDocument every canonical Evidence row created THIS call
+    is linked to (never overwritten on an existing row from a prior run) —
+    lets a multi-chunk document's evidence units be traced back to the
+    exact document they came from. None for every pre-PR11 caller (SEC
+    EDGAR, Companies House, CSV, URL recheck), which is unaffected.
 
     Returns a dict of stats: {canonical_created, refs_created, refs_skipped,
     contradicted}. Idempotent across re-runs.
@@ -86,6 +93,8 @@ def deduplicate(candidates, *, profile=None, harvest_job=None, verify=True):
             defaults={
                 "company": profile,
                 "harvest_job": harvest_job,
+                "document": document,
+                "source_location": getattr(primary, "source_location", "") or "",
                 "title": primary.title or primary.statement[:120],
                 "url": primary.url,
                 "publication_date": primary.publication_date,

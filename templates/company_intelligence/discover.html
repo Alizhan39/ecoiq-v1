@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}Discover Companies — EcoIQ Company Intelligence{% endblock %}
+{% block meta_description_content %}Discover publicly listed companies with real, evidence-backed alignment to EcoIQ's 114-KPI stewardship framework and a preliminary Shariah eligibility screen — research intelligence, not investment advice.{% endblock %}
+
+{% block content %}
+<div class="disc-wrap">
+  <span class="disc-eyebrow">ECOIQ · COMPANY DISCOVERY</span>
+  <h1 class="disc-h1">Discover Companies</h1>
+  <p class="disc-sub">
+    Two independent lenses, never blended into one score: a preliminary Shariah eligibility screen, and
+    evidence-backed alignment against EcoIQ's 114-KPI stewardship framework. This is research and stewardship
+    intelligence — not personalised investment advice, and contains no buy/sell recommendation.
+  </p>
+
+  <form method="get" class="disc-filters" id="disc-filters">
+    <div class="disc-filter-grid">
+      <div class="disc-filter-col">
+        <label class="disc-label">Shariah Screening Status</label>
+        <div class="disc-checks">
+          {% for value, label in shariah_status_choices %}
+          <label class="disc-check"><input type="checkbox" name="shariah" value="{{ value }}" {% if value in criteria.shariah_status %}checked{% endif %}> {{ label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="disc-filter-col">
+        <label class="disc-label" for="disc-sector">Sector</label>
+        <select name="sector" id="disc-sector" class="disc-select">
+          <option value="">Any sector</option>
+          {% for value, label in sector_choices %}
+          <option value="{{ value }}" {% if value == criteria.sector %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label class="disc-label" for="disc-country">Country contains</label>
+        <input type="text" name="country" id="disc-country" class="disc-input" value="{{ criteria.country }}" placeholder="e.g. United States">
+        <label class="disc-label" for="disc-tier">Minimum Evidence Quality (Source Tier)</label>
+        <select name="tier" id="disc-tier" class="disc-select">
+          <option value="">Any tier</option>
+          <option value="1" {% if criteria.min_source_tier == 1 %}selected{% endif %}>Tier 1 only — regulatory/audited/government</option>
+          <option value="2" {% if criteria.min_source_tier == 2 %}selected{% endif %}>Tier 1–2 — + official annual/sustainability reports</option>
+          <option value="3" {% if criteria.min_source_tier == 3 %}selected{% endif %}>Tier 1–3 — + credible independent research</option>
+        </select>
+      </div>
+      <div class="disc-filter-col">
+        <label class="disc-check"><input type="checkbox" name="fresh" value="1" {% if criteria.require_current_screening %}checked{% endif %}> Current Shariah screening only (exclude stale)</label>
+        <label class="disc-label" for="disc-controversy">Controversy State</label>
+        <select name="controversy" id="disc-controversy" class="disc-select">
+          <option value="any" {% if criteria.controversy_state == 'any' %}selected{% endif %}>Any</option>
+          <option value="none" {% if criteria.controversy_state == 'none' %}selected{% endif %}>No unresolved controversies</option>
+          <option value="has_unresolved" {% if criteria.controversy_state == 'has_unresolved' %}selected{% endif %}>Has unresolved controversies</option>
+        </select>
+        <label class="disc-check"><input type="checkbox" name="include_demo" value="1" {% if criteria.include_demo %}checked{% endif %}> Include DEMO / illustrative companies</label>
+      </div>
+    </div>
+
+    <div class="disc-kpi-picker">
+      <div class="disc-label">Stewardship Priorities — 114-KPI Framework{% if criteria.kpi_ids %} ({{ criteria.kpi_ids|length }} selected){% endif %}</div>
+      {% for group in kpi_picker_groups %}
+      <details class="disc-kpi-cat">
+        <summary>{{ group.label }} ({{ group.principles|length }})</summary>
+        <div class="disc-kpi-cat-body">
+          {% for p in group.principles %}
+          <label class="disc-check" title="{{ p.tagline }}">
+            <input type="checkbox" name="kpi" value="{{ p.id }}" {% if p.id in criteria.kpi_ids %}checked{% endif %}>
+            #{{ p.id }} {{ p.title }}
+          </label>
+          {% endfor %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="disc-submit">Apply Filters →</button>
+  </form>
+
+  <div class="disc-results-head">
+    <span class="disc-results-count">{{ result_count }} compan{{ result_count|pluralize:"y,ies" }} found</span>
+    <span class="disc-weights">Ranking weights: {% for k, v in weights.items %}{{ k }}={{ v }}{% if not forloop.last %}, {% endif %}{% endfor %} — every component shown below, never hidden behind the composite.</span>
+  </div>
+
+  <div class="disc-results">
+    {% for row in results %}
+    <div class="disc-card">
+      <div class="disc-card-head">
+        <div>
+          <a href="{% url 'companies:detail' row.company.company.slug %}" class="disc-card-name">{{ row.company.company.name }}</a>
+          <div class="disc-card-meta">{{ row.company.company.get_sector_display }} · {{ row.company.company.country }}</div>
+        </div>
+        <span class="disc-origin-badge disc-origin-{{ row.data_origin.origin }}">{{ row.data_origin.label }}</span>
+      </div>
+
+      <div class="disc-card-strip">
+        <div class="disc-stat">
+          <span class="disc-stat-k">Shariah</span>
+          {% if row.shariah_screen %}
+          <span class="disc-stat-v disc-shariah-{{ row.shariah_screen.overall_result }}">{{ row.shariah_screen.get_overall_result_display }}</span>
+          {% if row.freshness.is_stale %}<span class="disc-stale">⚠ Stale</span>{% endif %}
+          {% else %}
+          <span class="disc-stat-v disc-shariah-not_screened">Not Screened</span>
+          {% endif %}
+        </div>
+        <div class="disc-stat">
+          <span class="disc-stat-k">KPI Coverage</span>
+          <span class="disc-stat-v">{{ row.kpi_detail.supported_kpi_ids|length }} supported · {{ row.kpi_detail.conflicting_kpi_ids|length }} conflict · {{ row.kpi_detail.insufficient_kpi_ids|length }} insufficient</span>
+        </div>
+        <div class="disc-stat">
+          <span class="disc-stat-k">Composite</span>
+          <span class="disc-stat-v">{% if row.composite is not None %}{{ row.composite }}{% else %}No qualifying evidence{% endif %}</span>
+        </div>
+      </div>
+
+      <details class="disc-components">
+        <summary>Ranking Components</summary>
+        <table class="disc-comp-table">
+          <tbody>
+            {% for key, value in row.components.items %}
+            <tr><td>{{ key }}</td><td>{% if value is not None %}{{ value }}{% else %}Not available{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+
+      {% if row.controversies %}
+      <p class="disc-controversy-note">⚠ {{ row.controversies|length }} controversy record(s) on file — never suppressed by a positive ranking.</p>
+      {% endif %}
+
+      <div class="disc-card-actions">
+        <a href="{% url 'companies:explain_match' row.company.company.slug %}?{{ request.GET.urlencode }}" class="disc-action-link">Explain Match →</a>
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'companies:watchlist_add' row.company.company.slug %}" class="disc-watchlist-form">
+          {% csrf_token %}
+          <input type="hidden" name="research_context" value="Added from Discover Companies — criteria: {{ criteria.kpi_ids|length }} KPI(s), Shariah: {{ criteria.shariah_status|join:', ' }}">
+          <button type="submit" class="disc-action-link">+ Watchlist</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <p class="disc-empty">No companies match these criteria. Try widening a filter — a strict evidence-quality or freshness requirement can honestly return zero qualifying results rather than a fabricated match.</p>
+    {% endfor %}
+  </div>
+
+  <p class="disc-disclaimer">
+    EcoIQ Company Discovery is a research and stewardship intelligence system. Discovery ranking reflects
+    evidence-backed stewardship relevance under your selected criteria — it is not expected financial
+    performance, not an investment recommendation, and never uses BUY/SELL/HOLD/target-price language.
+    Shariah screening is methodology-based and does not constitute a religious ruling, fatwa, or certification.
+  </p>
+</div>
+
+<style>
+  .disc-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .disc-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.5rem}
+  .disc-h1{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .disc-sub{font-size:.9rem;color:#94a3b8;max-width:80ch;line-height:1.6;margin:0 0 1.8rem}
+  .disc-filters{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.4rem 1.5rem;margin-bottom:1.6rem}
+  .disc-filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.4rem;margin-bottom:1rem}
+  .disc-filter-col{display:flex;flex-direction:column;gap:.5rem}
+  .disc-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-top:.4rem}
+  .disc-checks{display:flex;flex-direction:column;gap:.35rem}
+  .disc-check{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:#cbd5e1}
+  .disc-select,.disc-input{background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e2e8f0;padding:.5rem .6rem;font-size:.82rem}
+  .disc-kpi-picker{border-top:1px solid rgba(255,255,255,.06);padding-top:1rem;margin-top:.4rem}
+  .disc-kpi-cat{background:#0d1117;border:1px solid rgba(255,255,255,.06);border-radius:8px;margin-bottom:.5rem;padding:.5rem .8rem}
+  .disc-kpi-cat>summary{cursor:pointer;font-size:.8rem;font-weight:700;color:#c9a84c}
+  .disc-kpi-cat-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.3rem;margin-top:.6rem}
+  .disc-submit{margin-top:1.2rem;background:#c9a84c;color:#0a0e12;font-weight:800;border:none;border-radius:999px;padding:.7rem 1.4rem;font-size:.85rem;cursor:pointer}
+  .disc-results-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin:1.4rem 0 1rem;font-size:.78rem;color:#64748b}
+  .disc-results-count{font-weight:700;color:#e2e8f0}
+  .disc-results{display:flex;flex-direction:column;gap:1rem}
+  .disc-card{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.2rem 1.3rem}
+  .disc-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
+  .disc-card-name{font-size:1.05rem;font-weight:800;color:#fff;text-decoration:none}
+  .disc-card-name:hover{color:#c9a84c}
+  .disc-card-meta{font-size:.76rem;color:#64748b;margin-top:.2rem}
+  .disc-origin-badge{flex:none;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.25rem .6rem;border-radius:999px;background:rgba(255,255,255,.05);color:#94a3b8}
+  .disc-origin-real_public_data{background:rgba(0,232,154,.1);color:#00e89a}
+  .disc-origin-demo{background:rgba(244,162,97,.1);color:#f4a261}
+  .disc-card-strip{display:flex;flex-wrap:wrap;gap:1.4rem;margin:.9rem 0;padding:.8rem 1rem;background:rgba(255,255,255,.02);border-radius:8px}
+  .disc-stat{display:flex;flex-direction:column;gap:.2rem}
+  .disc-stat-k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#475569;font-family:'SF Mono',ui-monospace,monospace}
+  .disc-stat-v{font-size:.85rem;font-weight:700;color:#e2e8f0}
+  .disc-shariah-pass{color:#00e89a}
+  .disc-shariah-fail{color:#fca5a5}
+  .disc-shariah-conditional{color:#f4a261}
+  .disc-shariah-insufficient_data,.disc-shariah-not_screened{color:#94a3b8}
+  .disc-stale{color:#fca5a5;font-size:.68rem;margin-left:.4rem}
+  .disc-components{margin-top:.6rem;font-size:.78rem;color:#94a3b8}
+  .disc-components>summary{cursor:pointer;color:#c9a84c;font-weight:700}
+  .disc-comp-table{width:100%;margin-top:.5rem;font-size:.78rem}
+  .disc-comp-table td{padding:.2rem .4rem;border-bottom:1px solid rgba(255,255,255,.05)}
+  .disc-controversy-note{font-size:.76rem;color:#fca5a5;margin:.6rem 0 0}
+  .disc-card-actions{display:flex;gap:.8rem;margin-top:.9rem}
+  .disc-action-link{font-size:.78rem;font-weight:700;color:#c9a84c;background:none;border:1px solid rgba(201,168,76,.3);border-radius:999px;padding:.4rem .9rem;text-decoration:none;cursor:pointer}
+  .disc-watchlist-form{display:inline}
+  .disc-empty{font-size:.85rem;color:#64748b;padding:2rem 0}
+  .disc-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  @media (max-width:640px){.disc-wrap{padding:1.5rem 1rem 3rem}.disc-card-strip{gap:1rem}}
+</style>
+{% endblock %}

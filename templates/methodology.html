@@ -740,12 +740,133 @@ a{color:inherit;text-decoration:none}
 {% include 'ethics/_methodology_framework.html' %}
 
 
+<!-- ═══════════════════════════════════════════════════════════
+     10. COMPANY DISCOVERY, SHARIAH SCREENING & 114-KPI STEWARDSHIP
+     feat/company-discovery-ranking (PR 11)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="discovery-section">
+  <a class="section-anchor" id="discovery"></a>
+  <div class="sec-eyebrow">10 — Company Discovery</div>
+  <h2 class="sec-title">Company Discovery, Shariah Screening &amp; 114-KPI Stewardship</h2>
+  <p class="sec-lead">
+    A separate, evidence-first research system layered on top of the EcoIQ Intelligence Score above.
+    <a href="{% url 'companies:discover' %}">Discover Companies →</a> lets a user filter and rank real,
+    publicly listed companies across two independent lenses that are never blended into one number.
+  </p>
+
+  <h3 class="sec-h3">What this is — and is not</h3>
+  <p class="sec-body">
+    <strong>EcoIQ does not provide personalised investment advice.</strong> Discover Companies' ranking
+    reflects evidence-backed stewardship relevance under whatever criteria a user selects — it is not
+    expected financial performance, not a price target, and never uses BUY/SELL/HOLD/STRONG&nbsp;BUY/TARGET
+    PRICE/EXPECTED RETURN/UNDERVALUED/OUTPERFORM language anywhere in this system.
+  </p>
+
+  <h3 class="sec-h3">Preliminary Shariah Screening</h3>
+  <p class="sec-body">
+    A named, versioned, deterministic methodology (business-activity exclusions + financial-ratio
+    thresholds) — never an invented "Islamic ruling". Every result is labelled "Screened according to
+    [methodology name] v[version]", never "Halal certified", unless an actual third-party certification
+    exists (none does today). Results are PASS / CONDITIONAL / FAIL / INSUFFICIENT_DATA / NOT_SCREENED —
+    a missing required financial input is recorded as missing and excluded from ratio calculation, never
+    silently treated as zero.
+  </p>
+
+  <h3 class="sec-h3">The 114-KPI Stewardship Framework</h3>
+  <p class="sec-body">
+    Every company assessment against the 114-item Capital Ethics Compendium is either (a) a real, provenance-
+    tracked evidence link a human reviewer confirmed, or (b) a deterministic status derived from the
+    aggregate of confirmed evidence relationships (SUPPORTS/CONFLICTS/CONTEXT) — never an LLM asked "does
+    this company support KPI Y?" with the answer stored as fact. A deterministic keyword-overlap matcher may
+    PROPOSE a candidate link from newly ingested evidence (a sustainability report, an ESG report, an annual
+    report), but a proposed link can never move a company's KPI status until a staff reviewer explicitly
+    confirms it — see the Evidence Review workflow on each company's page.
+  </p>
+
+  <h3 class="sec-h3">Candidate vs Confirmed Evidence</h3>
+  <p class="sec-body">
+    <code>review_state</code> on every KPI evidence link is one of <code>proposed</code> / <code>confirmed</code>
+    / <code>rejected</code>. Only <code>confirmed</code> links count toward a company's displayed KPI status,
+    its discovery ranking, and its Explain Match trace. A proposed link is visible and inspectable, but inert
+    until reviewed — this is what keeps automated candidate matching honest even as more real evidence is
+    ingested.
+  </p>
+
+  <h3 class="sec-h3">Discovery Ranking — Components, Not a Mystery Score</h3>
+  <p class="sec-body">
+    Ranking combines five documented components, each shown alongside the composite, never hidden behind it:
+  </p>
+  <ul class="sec-list">
+    <li><strong>kpi_alignment</strong> (default weight 0.40) — supported vs conflicting evidence for the
+      selected KPI(s). Absence of evidence is neutral, never negative: an unassessed KPI contributes the
+      same neutral value as a KPI with only context-only evidence, never a penalty.</li>
+    <li><strong>source_authority</strong> (0.20) — average real source-quality score of the evidence backing
+      confirmed KPI links, from the harvester verification engine.</li>
+    <li><strong>recency</strong> (0.15) — average freshness of that evidence.</li>
+    <li><strong>corroboration</strong> (0.15) — average independent-source corroboration of that evidence.</li>
+    <li><strong>data_completeness</strong> (0.10) — the latest Shariah screen's own honest completeness
+      percentage.</li>
+  </ul>
+  <p class="sec-body">
+    Weights are configurable (passed explicitly to the ranking service; not hardcoded into a single formula
+    a user cannot inspect). A component that is genuinely unavailable for a company (no harvester-backed
+    evidence, no Shariah screen run) is EXCLUDED from the composite's weighted average — never coerced to
+    zero. A company with no qualifying evidence at all shows "No qualifying evidence", sorts last, and is
+    never displayed as "0 alignment".
+  </p>
+
+  <h3 class="sec-h3">Evidence Quality &amp; the Source-Tier Hierarchy</h3>
+  <p class="sec-body">
+    Every source is one of four tiers: <strong>Tier 1</strong> — regulatory filings, audited statements,
+    government records (SEC EDGAR, Companies House, FCA filings); <strong>Tier 2</strong> — official annual
+    and sustainability reports published directly by the company; <strong>Tier 3</strong> — credible
+    independent research (CDP, GRI, SASB, ISSB, multilateral datasets); <strong>Tier 4</strong> — marketing
+    and self-reported claims (company website copy, press releases). Discovery's evidence-quality filter lets
+    a user require Tier 1 only, Tier 1–2, or Tier 1–3 — results change based on real evidence availability;
+    a filter with no qualifying evidence honestly returns zero results, never a fabricated match.
+  </p>
+
+  <h3 class="sec-h3">Freshness</h3>
+  <p class="sec-body">
+    A Shariah screening is CURRENT, STALE (&gt;180 days since screening or since the underlying financial
+    data's reporting period, whichever is older), or NOT SCREENED. A stale screening displays "Screening
+    Requires Refresh" — it is never silently retained or ranked as equally current.
+  </p>
+
+  <h3 class="sec-h3">Conflict Treatment</h3>
+  <p class="sec-body">
+    Conflicting evidence and controversies are never suppressed by a positive-looking ranking elsewhere on
+    the same company. A company can have both strong positive stewardship evidence AND a credible,
+    unresolved controversy — both are shown, side by side, on every company profile and in every discovery
+    result.
+  </p>
+
+  <h3 class="sec-h3">Demo vs Real Data</h3>
+  <p class="sec-body">
+    Every company-intelligence record carries an honest <code>is_demo</code> flag. Discover Companies
+    excludes DEMO/illustrative companies by default — a user must explicitly opt in to see them, and they
+    remain clearly labelled throughout. Data origin is computed live from the real flags present, never a
+    static label that could silently drift from what the underlying data actually is.
+  </p>
+</div>
+
+<style>
+  #discovery-section .sec-h3{font-size:1rem;font-weight:700;color:var(--text);margin:1.6rem 0 .6rem}
+  #discovery-section .sec-body{font-size:.85rem;color:var(--muted2);line-height:1.7;max-width:80ch}
+  #discovery-section .sec-list{margin:.6rem 0 1rem 1.2rem;padding:0;font-size:.85rem;color:var(--muted2);line-height:1.8}
+  #discovery-section .sec-list li{margin-bottom:.3rem}
+  #discovery-section code{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85em;color:var(--accent)}
+  #discovery-section a{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+
+
 <!-- ── CTA footer ─────────────────────────────────────────────────── -->
 <div class="doc-cta">
   <h2>Explore the Intelligence Platform</h2>
   <p>See EcoIQ scores, transition readiness signals, and financing eligibility across 38 companies and 11 countries.</p>
   <div class="cta-buttons">
     <a href="{% url 'companies:directory' %}" class="cta-primary">View Company Rankings →</a>
+    <a href="{% url 'companies:discover' %}" class="cta-secondary">Discover Companies →</a>
     <a href="{% url 'countries:directory' %}" class="cta-secondary">Country Intelligence →</a>
     <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ%20Framework%20Enquiry" class="cta-secondary">Contact Us →</a>
   </div>
