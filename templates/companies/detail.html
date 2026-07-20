@@ -1200,6 +1200,15 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     {# ── Quranic Decision Filter (Decision Integrity) ────────────── #}
     {% include 'qdf/_decision_filter_panel.html' %}
 
+    {% comment %} ── feat/company-halal-intelligence (PR 9): Shariah Eligibility Screen
+       and 114-KPI Stewardship Alignment — two strictly separate lenses,
+       never combined with each other or with qdf_assessment/ecoiq_total_score
+       above. See templates/company_intelligence/_*.html for each panel. ── {% endcomment %}
+    {% include 'company_intelligence/_shariah_screen_panel.html' %}
+    {% include 'company_intelligence/_kpi_alignment_panel.html' %}
+    {% include 'company_intelligence/_controversies_panel.html' %}
+    {% include 'company_intelligence/_watchlist_action.html' %}
+
     <!-- Harm Signal Matrix -->
     <div class="intel-panel">
       <div class="panel-header">

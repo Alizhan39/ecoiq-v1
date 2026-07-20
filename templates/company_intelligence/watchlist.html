@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}My Research Watchlist — EcoIQ{% endblock %}
+{% block meta_description_content %}Your personal EcoIQ company research watchlist — never a buy/sell recommendation.{% endblock %}
+
+{% block content %}
+<div class="ci-wlp-wrap">
+  <span class="ci-wlp-eyebrow">ECOIQ · RESEARCH WATCHLIST</span>
+  <h1 class="ci-wlp-h1">My Research Watchlist</h1>
+  <p class="ci-wlp-sub">
+    A personal list of companies you're researching — visible only to you. Never a buy, sell, or hold
+    recommendation.
+  </p>
+
+  {% if entries %}
+  <div class="ci-wlp-list">
+    {% for entry in entries %}
+    <a class="ci-wlp-card" href="{% url 'companies:detail' entry.company.company.slug %}">
+      <div class="ci-wlp-card-name">{{ entry.company.company.name }}</div>
+      <span class="ci-wlp-card-status">{{ entry.get_status_display }}</span>
+      <span class="ci-wlp-card-date">Added {{ entry.added_at|date:"Y-m-d" }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="ci-wlp-empty">Your watchlist is empty. Visit any company profile and select "Add to Research Watchlist".</p>
+  {% endif %}
+</div>
+
+<style>
+  .ci-wlp-wrap{max-width:800px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .ci-wlp-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.5rem}
+  .ci-wlp-h1{font-size:clamp(1.4rem,3.4vw,2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .ci-wlp-sub{font-size:.88rem;color:#94a3b8;line-height:1.6;margin:0 0 1.6rem}
+  .ci-wlp-list{display:flex;flex-direction:column;gap:.6rem}
+  .ci-wlp-card{display:flex;align-items:center;gap:1rem;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.9rem 1.1rem;text-decoration:none;color:#e2e8f0}
+  .ci-wlp-card:hover{border-color:#c9a84c}
+  .ci-wlp-card-name{flex:1;font-weight:700;font-size:.9rem}
+  .ci-wlp-card-status{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#c9a84c;background:rgba(201,168,76,.1);padding:.2rem .55rem;border-radius:999px}
+  .ci-wlp-card-date{font-size:.7rem;color:#475569}
+  .ci-wlp-empty{font-size:.85rem;color:#64748b}
+  @media (max-width:640px){.ci-wlp-wrap{padding:1.5rem 1rem 3rem}.ci-wlp-card{flex-wrap:wrap}}
+</style>
+{% endblock %}

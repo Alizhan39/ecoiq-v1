@@ -12,6 +12,7 @@ from companies.scoring import get_path_to_100_actions
 from companies.throttle import rate_limit, cache_response
 from companies.improvement_data import get_improvement_pathway
 from league.models import Company, SECTOR_CHOICES
+from company_intelligence.models import ResearchWatchlistEntry
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -590,6 +591,21 @@ def company_detail(request, slug):
     institutional_signals = _get_institutional_signals(profile)
     confidence_label      = _get_confidence_label(ai_confidence, profile.is_verified)
 
+    # ── feat/company-halal-intelligence (PR 9) — Shariah screening + 114-KPI
+    # stewardship alignment. Two distinct lenses, read-only on this GET view
+    # (no state-changing GET actions) — see company_intelligence.services.
+    from company_intelligence.services.kpi_engine import filter_rows, kpi_alignment_profile
+    from company_intelligence.services.shariah_screening import latest_screen_for
+
+    shariah_screen = latest_screen_for(profile)
+    kpi_profile = kpi_alignment_profile(profile)
+    kpi_filter = request.GET.get('kpi_filter', '')
+    kpi_filtered_rows = filter_rows(kpi_profile['rows'], kpi_filter) if kpi_filter else kpi_profile['rows']
+    controversies = list(profile.controversies.select_related('evidence').all())
+    watchlist_entry = None
+    if request.user.is_authenticated:
+        watchlist_entry = profile.watchlist_entries.filter(user=request.user).first()
+
     return render(request, 'companies/detail.html', {
         'company':               company,
         'profile':               profile,
@@ -629,6 +645,16 @@ def company_detail(request, slug):
         # Institutional Intelligence layer
         'institutional_signals':      institutional_signals,
         'confidence_label':           confidence_label,
+        # feat/company-halal-intelligence (PR 9) — kept explicitly separate
+        # from qdf_assessment and every ecoiq_total_score/moral_label above:
+        # neither lens here is ever combined with those existing scores.
+        'shariah_screen':             shariah_screen,
+        'kpi_profile':                kpi_profile,
+        'kpi_filter':                 kpi_filter,
+        'kpi_filtered_rows':          kpi_filtered_rows,
+        'controversies':              controversies,
+        'watchlist_entry':            watchlist_entry,
+        'watchlist_statuses':         ResearchWatchlistEntry.STATUS_CHOICES,
     })
 
 

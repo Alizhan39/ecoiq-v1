@@ -1,0 +1,70 @@
+{% comment %} ── EcoIQ Company Controversies — structured, evidence-linked negative
+   evidence. Complements (does not replace) the existing Harm Signal
+   Matrix's controversy_risk_score heatmap component below, at per-incident
+   granularity with real evidence links.
+   Context: controversies (list of CompanyControversy)
+{% endcomment %}
+<section class="ci-cv-panel" aria-labelledby="ci-cv-heading">
+  <div class="ci-cv-eyebrow">Negative Evidence</div>
+  <h2 class="ci-cv-title" id="ci-cv-heading">Controversies</h2>
+  <p class="ci-cv-sub">
+    A positive KPI or Shariah result never suppresses controversy records — both are shown independently.
+  </p>
+
+  {% if controversies %}
+  <div class="ci-cv-list">
+    {% for c in controversies %}
+    <article class="ci-cv-card ci-cv-sev-{{ c.severity }}">
+      <div class="ci-cv-card-top">
+        <span class="ci-cv-badge ci-cv-sev-badge-{{ c.severity }}">{{ c.get_severity_display }}</span>
+        <span class="ci-cv-badge ci-cv-status-badge-{{ c.status }}">{{ c.get_status_display }}</span>
+        <span class="ci-cv-category">{{ c.get_category_display }}</span>
+        {% if c.is_demo %}<span class="ci-cv-demo-badge">DEMO</span>{% endif %}
+      </div>
+      <h3 class="ci-cv-card-title">{{ c.title }}</h3>
+      {% if c.reported_date %}<p class="ci-cv-card-date">Reported {{ c.reported_date }}</p>{% endif %}
+      {% if c.notes %}<p class="ci-cv-card-notes">{{ c.notes }}</p>{% endif %}
+      {% if c.evidence %}
+      <p class="ci-cv-evidence">
+        Evidence: {{ c.evidence.text_chunk|truncatechars:140 }}
+        <span class="ci-cv-evidence-meta">— {{ c.evidence.get_verification_status_display }} · {{ c.evidence.get_review_tier_display }}</span>
+      </p>
+      {% else %}
+      <p class="ci-cv-evidence ci-cv-evidence-missing">No linked evidence record.</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="ci-cv-empty">No controversy records currently on file for this company.</p>
+  {% endif %}
+</section>
+
+<style>
+  .ci-cv-panel{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.6rem 1.6rem 1.4rem;margin:2rem 0;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .ci-cv-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#e63946;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.45rem}
+  .ci-cv-title{font-size:1.4rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin:0 0 .35rem}
+  .ci-cv-sub{font-size:.8rem;color:#64748b;max-width:56ch;line-height:1.55;margin:0 0 1rem}
+  .ci-cv-list{display:flex;flex-direction:column;gap:.8rem}
+  .ci-cv-card{background:#0d1117;border:1px solid rgba(255,255,255,.07);border-left:3px solid #475569;border-radius:10px;padding:.9rem 1rem}
+  .ci-cv-card.ci-cv-sev-critical{border-left-color:#e63946}
+  .ci-cv-card.ci-cv-sev-high{border-left-color:#f4a261}
+  .ci-cv-card.ci-cv-sev-medium{border-left-color:#eab308}
+  .ci-cv-card-top{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-bottom:.5rem}
+  .ci-cv-badge{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.15rem .5rem;border-radius:999px}
+  .ci-cv-sev-badge-critical,.ci-cv-sev-badge-high{background:rgba(230,57,70,.12);color:#fca5a5}
+  .ci-cv-sev-badge-medium{background:rgba(244,162,97,.12);color:#f4a261}
+  .ci-cv-sev-badge-low{background:rgba(148,163,184,.1);color:#94a3b8}
+  .ci-cv-status-badge-unresolved{background:rgba(230,57,70,.1);color:#fca5a5}
+  .ci-cv-status-badge-disputed{background:rgba(244,162,97,.1);color:#f4a261}
+  .ci-cv-status-badge-resolved{background:rgba(0,232,154,.1);color:#00e89a}
+  .ci-cv-category{font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.04em}
+  .ci-cv-demo-badge{font-size:.62rem;font-weight:700;color:#f4a261;border:1px solid rgba(244,162,97,.3);padding:.1rem .4rem;border-radius:999px}
+  .ci-cv-card-title{font-size:.92rem;font-weight:700;color:#e2e8f0;margin:0 0 .3rem}
+  .ci-cv-card-date{font-size:.68rem;color:#475569;margin:0 0 .4rem}
+  .ci-cv-card-notes{font-size:.78rem;color:#94a3b8;line-height:1.5;margin:0 0 .5rem}
+  .ci-cv-evidence{font-size:.74rem;color:#94a3b8;line-height:1.5;background:rgba(255,255,255,.02);border-radius:6px;padding:.5rem .6rem;margin:0}
+  .ci-cv-evidence-meta{color:#475569}
+  .ci-cv-evidence-missing{font-style:italic;color:#475569}
+  .ci-cv-empty{font-size:.8rem;color:#64748b}
+</style>
