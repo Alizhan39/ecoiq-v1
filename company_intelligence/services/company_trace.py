@@ -24,6 +24,11 @@ KPI links + the human review audit trail) — matching the brief's fuller
 "Company Identity -> Sources -> Extracted Evidence -> Reviewed Evidence ->
 ... -> Final Research Profile" trace shape. The Shariah Result node now
 also surfaces real freshness/staleness (services/freshness.py).
+
+feat/global-stewardship-universe (PR 15): extended from 12 nodes to 13 —
+added 'coverage_matrix' right before the final overall-profile node,
+reusing services/coverage_matrix.py verbatim (Section 5's transparent
+AVAILABLE/PARTIAL/MISSING/STALE/NOT_APPLICABLE per-dimension breakdown).
 """
 from dataclasses import dataclass, field
 
@@ -280,7 +285,34 @@ def build_company_trace(company_profile, user=None):
         available=bool(gap_notes),
     ))
 
-    # ---- 12. Overall research profile ---------------------------------------
+    # ---- 12. Coverage Matrix (feat/global-stewardship-universe, PR 15) -------
+    # Section 5's transparent per-dimension coverage — reuses
+    # coverage_matrix.py verbatim (which itself reuses stewardship_state's
+    # compute_company_health(), never a second health computation). Missing
+    # data is always shown as MISSING, never silently coerced into a 0 or a
+    # false positive.
+    from company_intelligence.services.coverage_matrix import COVERAGE_ROW_LABELS, coverage_matrix_for_company
+
+    matrix = coverage_matrix_for_company(company_profile)
+    missing_or_stale = [k for k, v in matrix.items() if v['status'] in ('MISSING', 'STALE')]
+    # Django templates cannot look up a dict value by a loop variable key
+    # (no `{{ dict|attr:key }}` filter) — resolved here in Python, same
+    # discipline as PR10's CompanyFinancialFactSource.value property.
+    matrix_rows = [{'key': k, 'label': COVERAGE_ROW_LABELS[k], **v} for k, v in matrix.items()]
+    nodes.append(TraceNode(
+        stage='coverage_matrix', title='Coverage Matrix',
+        status=f'{len(matrix) - len(missing_or_stale)} of {len(matrix)} dimensions available',
+        status_kind='missing' if missing_or_stale else 'measured',
+        summary=(
+            f'{len(missing_or_stale)} coverage dimension(s) currently MISSING or STALE: '
+            f'{", ".join(COVERAGE_ROW_LABELS[k] for k in missing_or_stale)}.' if missing_or_stale
+            else 'All coverage dimensions are AVAILABLE or NOT_APPLICABLE — no missing or stale data currently.'
+        ),
+        data_quality=['deterministic'],
+        extra={'matrix': matrix, 'matrix_rows': matrix_rows},
+    ))
+
+    # ---- 13. Overall research profile ---------------------------------------
     shariah_label = screen.get_overall_result_display() if screen is not None else 'Not Screened'
     nodes.append(TraceNode(
         stage='overall_profile', title='Overall Research Profile', status='Research Intelligence — Not Investment Advice',

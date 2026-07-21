@@ -51,6 +51,23 @@ from django.conf import settings
 from django.db import models
 
 
+# feat/stewardship-universe (PR 13), hoisted to module level in feat/global-
+# stewardship-universe (PR 15) so CompanyListing (identity provenance) and
+# DiscoveredSource (source provenance) share the exact same domain-trust
+# vocabulary — never two independently-drifting scales. VERIFIED means
+# EcoIQ has independently curated/confirmed this exact domain (see
+# services/known_sources.py); PROBABLE came from a staff-entered field
+# never independently cross-checked; UNVERIFIED/CONFLICTING are honest
+# states for anything less certain. A PROBABLE/UNVERIFIED domain must
+# never silently become a Tier-1 source — see source_discovery.py.
+DOMAIN_STATUS_CHOICES = [
+    ('verified', 'Verified Official Domain'),
+    ('probable', 'Probable — Staff-Entered, Not Independently Verified'),
+    ('unverified', 'Unverified'),
+    ('conflicting', 'Conflicting — Multiple Candidate Domains Found'),
+]
+
+
 # ---------------------------------------------------------------------------
 # Shared honest result vocabulary — uncertainty is never collapsed to a
 # binary PASS/FAIL. INSUFFICIENT_DATA and NOT_SCREENED are first-class
@@ -142,16 +159,46 @@ class CompanyListing(models.Model):
     an ADR); `is_primary` marks the one the company page shows by default.
     Never invents an identifier: any field left blank means it genuinely
     isn't known, not that it was assumed empty.
+
+    feat/global-stewardship-universe (PR 15) — regulatory identifiers
+    (SEC CIK, Companies House number) and official-domain status existed
+    ONLY as hardcoded Python dicts (companies/management/commands/
+    ingest_sec_edgar.py::US_COMPANY_CIKS, ingest_companies_house.py::
+    UK_COMPANY_NUMBERS, company_intelligence/services/known_sources.py::
+    KNOWN_OFFICIAL_DOMAINS) before this PR — real, but not inspectable
+    per company anywhere in the UI or database. The fields below make
+    that same real identity data queryable and displayable, via
+    services/identity_sync.py, which populates them FROM those existing
+    dicts — never a second, independently-maintained identity source.
     """
     company = models.ForeignKey('league.Company', on_delete=models.CASCADE, related_name='listings')
     ticker = models.CharField(max_length=20, blank=True)
     exchange = models.CharField(max_length=100, blank=True, help_text='e.g. "NASDAQ", "LSE"')
     isin = models.CharField(max_length=12, blank=True, help_text='ISO 6166 identifier where known.')
+    lei = models.CharField(max_length=20, blank=True, help_text='ISO 17442 Legal Entity Identifier, where reliably known.')
     currency = models.CharField(max_length=8, blank=True, help_text='e.g. "USD"')
     is_primary = models.BooleanField(default=True)
     source = models.CharField(max_length=200, blank=True)
     retrieved_at = models.DateTimeField(null=True, blank=True)
     is_demo = models.BooleanField(default=False)
+
+    # feat/global-stewardship-universe (PR 15) — regulatory identity + domain
+    # provenance, synced from the existing hardcoded identity mappings.
+    sec_cik = models.CharField(max_length=10, blank=True, help_text='10-digit zero-padded SEC EDGAR CIK, where mapped.')
+    companies_house_number = models.CharField(max_length=12, blank=True, help_text='UK Companies House registration number, where mapped.')
+    official_domain = models.CharField(max_length=200, blank=True, help_text='e.g. "apple.com" — the company\'s own primary web domain, where known.')
+    domain_status = models.CharField(
+        max_length=15, choices=DOMAIN_STATUS_CHOICES, blank=True,
+        help_text='Reuses the same VERIFIED/PROBABLE/UNVERIFIED/CONFLICTING vocabulary as '
+                   'DiscoveredSource — never a second domain-trust scale.',
+    )
+    identity_source = models.CharField(
+        max_length=200, blank=True,
+        help_text='Which real, existing mapping this identity came from (e.g. "SEC EDGAR CIK mapping", '
+                   '"Companies House number mapping", "EcoIQ-curated official domain registry") — never blank '
+                   'when any of the fields above are populated.',
+    )
+    verified_at = models.DateTimeField(null=True, blank=True, help_text='When identity_sync.py last confirmed these fields against their source mapping.')
 
     class Meta:
         ordering = ['-is_primary', 'exchange']
@@ -556,20 +603,11 @@ class DiscoveredSource(models.Model):
         ('rejected', 'Rejected'),
         ('registered', 'Registered as an Active Source'),
     ]
-    # A domain being "official" is a real claim about provenance, not a
-    # guess from the company's name — VERIFIED means EcoIQ has independently
-    # curated/confirmed this exact domain for this exact company (see
-    # services/known_sources.py); PROBABLE means it came from a field staff
-    # typed in previously but was never independently cross-checked;
-    # UNVERIFIED/CONFLICTING are honest states for anything less certain.
-    # A PROBABLE/UNVERIFIED domain must never silently become a Tier-1
-    # source — see source_discovery.py's tier assignment.
-    DOMAIN_STATUS_CHOICES = [
-        ('verified', 'Verified Official Domain'),
-        ('probable', 'Probable — Staff-Entered, Not Independently Verified'),
-        ('unverified', 'Unverified'),
-        ('conflicting', 'Conflicting — Multiple Candidate Domains Found'),
-    ]
+    # feat/global-stewardship-universe (PR 15) — hoisted to module level
+    # (above) so CompanyListing can reuse the exact same vocabulary; kept
+    # as a class attribute alias here too since existing code may reference
+    # DiscoveredSource.DOMAIN_STATUS_CHOICES directly.
+    DOMAIN_STATUS_CHOICES = DOMAIN_STATUS_CHOICES
 
     company = models.ForeignKey(
         'companies.CompanyProfile', on_delete=models.CASCADE, related_name='discovered_sources',

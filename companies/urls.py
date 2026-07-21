@@ -19,6 +19,9 @@ urlpatterns = [
     # must also be registered before the '<slug:slug>/' catch-all below.
     path('discover/',                               discovery.discover_companies_view, name='discover'),
     path('compare/',                                discovery.company_comparison_view, name='compare'),
+    # feat/global-stewardship-universe (PR 15) — cross-company ranking view,
+    # so 'strongest-alignment/' must also precede the '<slug:slug>/' catch-all.
+    path('strongest-alignment/',                    discovery.strongest_alignment_view, name='strongest_alignment'),
     # feat/evidence-review-workbench (PR 12) — staff-only, spans all
     # companies, so 'review/' must also precede the '<slug:slug>/' catch-all.
     path('review/',                                 review.review_queue_view,   name='review_queue'),

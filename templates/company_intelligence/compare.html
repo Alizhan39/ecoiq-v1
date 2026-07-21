@@ -9,7 +9,7 @@
   <h1 class="cmp-h1">Compare Companies</h1>
   <p class="cmp-sub">
     Research comparison only — Shariah screening, evidence-backed KPI coverage, evidence quality, and
-    controversies. Never expected returns, price targets, or trading signals.
+    controversies. Never a prediction of financial performance, price targets, or trading signals.
   </p>
 
   {% if too_few %}
@@ -38,9 +38,30 @@
         <tr><td>Financial Data Completeness</td>{% for row in comparison %}<td>{% if row.components.data_completeness is not None %}{{ row.components.data_completeness }}{% else %}Not screened{% endif %}</td>{% endfor %}</tr>
         <tr><td>Composite (documented weights)</td>{% for row in comparison %}<td>{% if row.composite is not None %}{{ row.composite }}{% else %}No qualifying evidence{% endif %}</td>{% endfor %}</tr>
         <tr><td>Unresolved Controversies</td>{% for row in comparison %}<td>{{ row.controversies|length }}</td>{% endfor %}</tr>
+        <tr class="cmp-section-row"><td colspan="{{ comparison|length|add:1 }}">Global Stewardship Universe — Additional Research Signals</td></tr>
+        <tr><td>Shariah Methodology Version</td>{% for row in comparison %}<td>{{ row.extras.methodology_version }}</td>{% endfor %}</tr>
+        <tr><td>Confirmed KPIs Supported (all 114)</td>{% for row in comparison %}<td>{{ row.extras.metrics.confirmed_kpis_supported }} / {{ row.extras.metrics.total_kpis }}</td>{% endfor %}</tr>
+        <tr><td>Human-Reviewed Coverage</td>{% for row in comparison %}<td>{% if row.extras.metrics.human_reviewed_coverage_pct is not None %}{{ row.extras.metrics.human_reviewed_coverage_pct }}%{% else %}Not available{% endif %}</td>{% endfor %}</tr>
+        <tr><td>Evidence Breadth Across Categories</td>{% for row in comparison %}<td>{{ row.extras.metrics.evidence_breadth_category_count }} / {{ row.extras.metrics.evidence_breadth_total_categories }}</td>{% endfor %}</tr>
+        <tr><td>Disputed KPI Count</td>{% for row in comparison %}<td>{{ row.extras.disputed_count }}</td>{% endfor %}</tr>
+        <tr><td>Open Potential Conflicts</td>{% for row in comparison %}<td>{{ row.extras.open_conflicts_count }}</td>{% endfor %}</tr>
+        <tr><td>Stale Confirmed Evidence</td>{% for row in comparison %}<td>{{ row.extras.metrics.stale_evidence_count }}</td>{% endfor %}</tr>
+        <tr><td>Self-Reported Evidence Share</td>{% for row in comparison %}<td>{% if row.extras.self_report_concentration.self_reported_pct is not None %}{{ row.extras.self_report_concentration.self_reported_pct }}%{% if row.extras.self_report_concentration.warning %} ⚠{% endif %}{% else %}Not available{% endif %}</td>{% endfor %}</tr>
+        <tr><td>Evidence Concentration Warnings</td>{% for row in comparison %}<td>{{ row.extras.evidence_concentration_warnings|length }}</td>{% endfor %}</tr>
+        <tr><td>Monitoring Health</td>{% for row in comparison %}<td>{{ row.extras.monitoring_health.label }}</td>{% endfor %}</tr>
+        <tr><td>Last Refresh</td>{% for row in comparison %}<td>{% if row.extras.last_refresh_at %}{{ row.extras.last_refresh_at|date:"Y-m-d" }}{% else %}Never refreshed{% endif %}</td>{% endfor %}</tr>
       </tbody>
     </table>
   </div>
+
+  {% for row in comparison %}
+    {% if row.extras.self_report_concentration.warning %}
+    <p class="cmp-warning-note">⚠ {{ row.company.company.name }}: {{ row.extras.self_report_concentration.warning }}</p>
+    {% endif %}
+    {% for warning in row.extras.evidence_concentration_warnings %}
+    <p class="cmp-warning-note">⚠ {{ row.company.company.name }}: {{ warning }}</p>
+    {% endfor %}
+  {% endfor %}
   {% endif %}
 
   <p class="cmp-disclaimer">
@@ -64,6 +85,8 @@
   .cmp-origin-real_public_data{color:#00e89a}
   .cmp-origin-demo{color:#f4a261}
   .cmp-empty{font-size:.85rem;color:#64748b;padding:2rem 0}
+  .cmp-section-row td{color:#c9a84c !important;font-size:.68rem !important;text-transform:uppercase;letter-spacing:.06em;font-weight:700;background:rgba(201,168,76,.05);white-space:normal !important}
+  .cmp-warning-note{font-size:.76rem;color:#fca5a5;margin:.5rem 0 0}
   .cmp-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
   @media (max-width:640px){.cmp-wrap{padding:1.5rem 1rem 3rem}}
 </style>

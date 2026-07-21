@@ -9,6 +9,7 @@ result or an honest "insufficient_data"/"not_assessed"/"NOT_AVAILABLE"
 state when a required input is missing.
 """
 import datetime
+import time
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -20,12 +21,19 @@ from company_intelligence.models import (
     CompanyKPIAssessment, CompanyKPIEvidenceLink, CompanyListing, ResearchWatchlistEntry,
     ShariahMethodology,
 )
-from company_intelligence.services import kpi_engine, shariah_screening
+from company_intelligence.services import identity_sync, kpi_engine, rate_limiter, shariah_screening
 from company_intelligence.services.company_trace import build_company_trace
 from evidence_memory.models import EvidenceMemory
 from league.models import Company
 
 User = get_user_model()
+
+# feat/global-stewardship-universe (PR 15) — rate_limiter.wait_for_domain_
+# slot() looks up DEFAULT_MIN_INTERVAL_SECONDS by name on every call (see
+# its own docstring), specifically so this test-only override makes every
+# refresh_orchestrator test run at full speed instead of sleeping for real
+# whenever two tests touch the same domain (e.g. 'apple.com') back to back.
+rate_limiter.DEFAULT_MIN_INTERVAL_SECONDS = 0
 
 
 def _methodology(**overrides):
@@ -302,17 +310,19 @@ class CompanyExplainabilityTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('trace_user', 'trace@ecoiq.uk', 'password123')
 
-    def test_trace_has_twelve_nodes_in_order(self):
+    def test_trace_has_thirteen_nodes_in_order(self):
         """feat/company-evidence-ingestion (PR 10) extended PR9's 10-node
         trace to 12, inserting 'sources' after company identity and
-        'evidence_review' after KPI evidence — documented, intentional."""
+        'evidence_review' after KPI evidence. feat/global-stewardship-
+        universe (PR 15) added 'coverage_matrix' right before the final
+        overall-profile node — documented, intentional."""
         profile = _profile(slug='trace-co')
         trace = build_company_trace(profile, user=self.user)
         self.assertEqual(
             [n.stage for n in trace.nodes],
             ['company', 'sources', 'methodology', 'business_activity', 'financial_evidence', 'shariah_result',
              'kpi_evidence', 'evidence_review', 'positive_alignment', 'conflicting_evidence', 'evidence_gaps',
-             'overall_profile'],
+             'coverage_matrix', 'overall_profile'],
         )
 
     def test_trace_honest_when_never_screened(self):
@@ -452,6 +462,12 @@ class ExplainViewTests(TestCase):
     def test_explain_view_nonexistent_company_404s(self):
         r = self.client.get(reverse('companies:explain', args=['no-such-company']))
         self.assertEqual(r.status_code, 404)
+
+    def test_explain_view_shows_coverage_matrix(self):
+        r = self.client.get(reverse('companies:explain', args=[self.profile.company.slug]))
+        self.assertContains(r, 'Coverage Matrix')
+        self.assertContains(r, 'Identity Coverage')
+        self.assertContains(r, 'Monitoring Status')
 
     def test_explain_view_writes_no_state(self):
         from ai_observatory.models import AnalysisSession
@@ -1310,14 +1326,14 @@ class CompareCompaniesTests(TestCase):
 
 
 class ExplainMatchTests(TestCase):
-    def test_trace_has_eleven_nodes_in_documented_order(self):
+    def test_trace_has_twelve_nodes_in_documented_order(self):
         profile = _profile(slug='match-trace-co')
         trace = match_trace.explain_company_match(profile, criteria={'kpi_ids': [1]})
         stages = [n.stage for n in trace.nodes]
         self.assertEqual(stages, [
             'selected_criteria', 'company_identity', 'shariah_screening', 'selected_kpis',
             'supporting_evidence', 'conflicting_evidence', 'evidence_quality', 'match_freshness',
-            'match_data_gaps', 'ranking_components', 'why_here',
+            'match_data_gaps', 'ranking_components', 'evidence_provenance', 'why_here',
         ])
 
     def test_trace_never_contains_investment_language(self):
@@ -1347,6 +1363,43 @@ class DiscoveryViewTests(TestCase):
         client = Client()
         response = client.get(reverse('companies:discover'))
         self.assertEqual(response.status_code, 200)
+
+    def test_strongest_alignment_view_public_get(self):
+        client = Client()
+        response = client.get(reverse('companies:strongest_alignment'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_strongest_alignment_view_excludes_no_qualifying_evidence(self):
+        _profile(slug='sa-no-evidence-co')
+        client = Client()
+        response = client.get(reverse('companies:strongest_alignment'))
+        self.assertNotContains(response, 'sa-no-evidence-co')
+
+    def test_strongest_alignment_view_includes_company_with_confirmed_kpi(self):
+        profile = _profile(slug='sa-with-evidence-co')
+        _confirmed_kpi_link(profile, kpi_id=11, relationship='supports')
+        client = Client()
+        response = client.get(reverse('companies:strongest_alignment'))
+        self.assertContains(response, profile.company.name)
+
+    def test_strongest_alignment_view_never_contains_investment_language(self):
+        profile = _profile(slug='sa-clean-co')
+        _confirmed_kpi_link(profile, kpi_id=12, relationship='supports')
+        client = Client()
+        response = client.get(reverse('companies:strongest_alignment'))
+        body = response.content.decode().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, body)
+
+    def test_strongest_alignment_view_shows_mandatory_disclaimer(self):
+        client = Client()
+        response = client.get(reverse('companies:strongest_alignment'))
+        normalized = ' '.join(response.content.decode().split())
+        self.assertIn(
+            'Research ranking based on currently available and reviewed stewardship evidence. '
+            'This is not investment advice or a prediction of financial performance.',
+            normalized,
+        )
 
     def test_discover_view_never_contains_investment_language(self):
         _profile(slug='disc-view-clean-co')
@@ -1393,6 +1446,28 @@ class DiscoveryViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, a.company.name)
         self.assertContains(response, b.company.name)
+
+    def test_compare_view_includes_global_stewardship_universe_extras(self):
+        a = _profile(slug='disc-compare-extras-a')
+        b = _profile(slug='disc-compare-extras-b')
+        _confirmed_kpi_link(a, kpi_id=13, relationship='supports')
+        client = Client()
+        response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Confirmed KPIs Supported')
+        self.assertContains(response, 'Human-Reviewed Coverage')
+        self.assertContains(response, 'Monitoring Health')
+        self.assertContains(response, 'Open Potential Conflicts')
+
+    def test_compare_view_never_contains_investment_language(self):
+        a = _profile(slug='disc-compare-clean-a')
+        b = _profile(slug='disc-compare-clean-b')
+        _confirmed_kpi_link(a, kpi_id=14, relationship='supports')
+        client = Client()
+        response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
+        body = response.content.decode().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, body)
 
 
 class RegisterDocumentSourceViewTests(TestCase):
@@ -3373,6 +3448,54 @@ class MonitorViewsTests(TestCase):
 class SchedulerManagementCommandTests(TestCase):
     @patch('harvester.services.fetchers.fetch_sustainability_document')
     @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_batch_size_bounded_when_no_explicit_limit_given(self, mock_doc_fetch, mock_sec_fetch):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from company_intelligence.services import rate_limiter as rl
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+
+        for slug in ('apple', 'tesla', 'microsoft'):
+            company = Company.objects.get_or_create(slug=slug, defaults={'name': slug.title(), 'is_public': True})[0]
+            CompanyProfile.objects.get_or_create(company=company, defaults={'status': 'public', 'tracking_status': 'active'})
+
+        original_default = rl.DEFAULT_BATCH_SIZE
+        rl.DEFAULT_BATCH_SIZE = 1
+        try:
+            out = StringIO()
+            call_command('refresh_stewardship_universe', stdout=out)
+        finally:
+            rl.DEFAULT_BATCH_SIZE = original_default
+
+        self.assertIn('bounded', out.getvalue().lower())
+        self.assertEqual(CompanyRefreshRun.objects.count(), 1)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_explicit_company_list_is_never_bounded(self, mock_doc_fetch, mock_sec_fetch):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from company_intelligence.services import rate_limiter as rl
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+
+        original_default = rl.DEFAULT_BATCH_SIZE
+        rl.DEFAULT_BATCH_SIZE = 1
+        try:
+            out = StringIO()
+            call_command('refresh_stewardship_universe', '--company', 'apple', '--company', 'tesla', stdout=out)
+        finally:
+            rl.DEFAULT_BATCH_SIZE = original_default
+
+        self.assertNotIn('bounded', out.getvalue().lower())
+        self.assertEqual(CompanyRefreshRun.objects.count(), 2)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
     def test_scheduled_flag_records_scheduled_trigger(self, mock_doc_fetch, mock_sec_fetch):
         from io import StringIO
 
@@ -3438,3 +3561,400 @@ class SchedulerCSRFTests(TestCase):
         strict_client.login(username='csrf_alert_staff', password='pw')
         response = strict_client.post(reverse('companies:alert_acknowledge', args=[profile.company.slug, alert.pk]))
         self.assertEqual(response.status_code, 403)
+
+
+class CoverageMatrixTests(TestCase):
+    def test_brand_new_company_shows_missing_not_fabricated_zero(self):
+        from company_intelligence.services import coverage_matrix
+
+        profile = _profile(slug='matrix-brand-new-co')
+        matrix = coverage_matrix.coverage_matrix_for_company(profile)
+        self.assertEqual(matrix['identity']['status'], coverage_matrix.MISSING)
+        self.assertEqual(matrix['regulatory_data']['status'], coverage_matrix.MISSING)
+        self.assertEqual(matrix['financial_data']['status'], coverage_matrix.MISSING)
+        self.assertEqual(matrix['sustainability_documents']['status'], coverage_matrix.MISSING)
+        self.assertEqual(matrix['kpi_evidence']['status'], coverage_matrix.MISSING)
+        self.assertEqual(matrix['shariah_screening']['status'], coverage_matrix.MISSING)
+        self.assertEqual(matrix['monitoring']['status'], coverage_matrix.NOT_APPLICABLE)
+
+    def test_identity_available_once_synced_from_a_real_cik(self):
+        from company_intelligence.services import coverage_matrix, identity_sync
+
+        profile = _real_profile('apple')
+        identity_sync.sync_company_identity(profile)
+        matrix = coverage_matrix.coverage_matrix_for_company(profile)
+        self.assertEqual(matrix['identity']['status'], coverage_matrix.AVAILABLE)
+        self.assertIn('SEC CIK', matrix['identity']['detail'])
+
+    def test_shariah_row_available_after_a_real_screen(self):
+        from company_intelligence.services import coverage_matrix
+
+        profile = _profile(slug='matrix-screened-co')
+        methodology = _methodology()
+        shariah_screening.run_shariah_screen(profile, methodology)
+        matrix = coverage_matrix.coverage_matrix_for_company(profile)
+        self.assertEqual(matrix['shariah_screening']['status'], coverage_matrix.AVAILABLE)
+
+    def test_monitoring_row_partial_when_paused(self):
+        from company_intelligence.services import coverage_matrix
+
+        profile = _profile(slug='matrix-paused-co')
+        profile.tracking_status = 'paused'
+        profile.save(update_fields=['tracking_status'])
+        matrix = coverage_matrix.coverage_matrix_for_company(profile)
+        self.assertEqual(matrix['monitoring']['status'], coverage_matrix.PARTIAL)
+
+    def test_kpi_evidence_available_once_confirmed_support_crosses_threshold(self):
+        from company_intelligence.services import coverage_matrix
+
+        profile = _profile(slug='matrix-kpi-co')
+        for kpi_id in range(1, 15):  # >10% of 114 confirmed
+            _confirmed_kpi_link(profile, kpi_id=kpi_id, relationship='supports')
+        matrix = coverage_matrix.coverage_matrix_for_company(profile)
+        self.assertEqual(matrix['kpi_evidence']['status'], coverage_matrix.AVAILABLE)
+
+
+class AlignmentMetricsAndCategoryCoverageTests(TestCase):
+    def test_confirmed_supported_and_total_counts(self):
+        from company_intelligence.services import alignment_metrics
+
+        profile = _profile(slug='align-metrics-co')
+        _confirmed_kpi_link(profile, kpi_id=1, relationship='supports')
+        _confirmed_kpi_link(profile, kpi_id=2, relationship='conflicts')
+        metrics = alignment_metrics.stewardship_alignment_metrics(profile)
+        self.assertEqual(metrics['confirmed_kpis_supported'], 1)
+        self.assertEqual(metrics['total_kpis'], 114)
+        self.assertGreaterEqual(metrics['total_kpis_with_evidence'], 2)
+
+    def test_human_reviewed_coverage_reflects_confirmed_vs_proposed(self):
+        from company_intelligence.services import alignment_metrics
+
+        profile = _profile(slug='align-reviewed-co')
+        _confirmed_kpi_link(profile, kpi_id=3, relationship='supports')
+        evidence = EvidenceMemory.objects.create(text_chunk='x', company=profile)
+        assessment2 = CompanyKPIAssessment.objects.create(company=profile, kpi_id=4)
+        CompanyKPIEvidenceLink.objects.create(
+            assessment=assessment2, evidence=evidence, relationship='supports', review_state='proposed',
+        )
+        metrics = alignment_metrics.stewardship_alignment_metrics(profile)
+        self.assertEqual(metrics['human_reviewed_kpi_count'], 1)
+        self.assertEqual(metrics['proposed_pending_count'], 1)
+        self.assertEqual(metrics['human_reviewed_coverage_pct'], 50.0)
+
+    def test_disputed_kpi_count_reflects_disputed_review_state(self):
+        from company_intelligence.services import alignment_metrics
+
+        profile = _profile(slug='align-disputed-co')
+        assessment, evidence = _confirmed_kpi_link(profile, kpi_id=5, relationship='supports')
+        link = CompanyKPIEvidenceLink.objects.get(assessment=assessment, evidence=evidence)
+        link.review_state = 'disputed'
+        link.save(update_fields=['review_state'])
+        metrics = alignment_metrics.stewardship_alignment_metrics(profile)
+        self.assertEqual(metrics['disputed_kpi_count'], 1)
+
+    def test_category_coverage_reflects_only_the_relevant_categories(self):
+        from company_intelligence.services import category_coverage
+        from core.esg_principles_data import PRINCIPLES
+
+        principles_by_id = {p['id']: p for p in PRINCIPLES}
+        profile = _profile(slug='category-coverage-co')
+        kpi_id = 1
+        category = principles_by_id[kpi_id]['category']
+        _confirmed_kpi_link(profile, kpi_id=kpi_id, relationship='supports')
+        rows = category_coverage.category_coverage_for_company(profile)
+        row = next(r for r in rows if r['key'] == category)
+        self.assertGreaterEqual(row['supported_count'], 1)
+        self.assertEqual(len(rows), 10)  # exact canonical category count, never a competing taxonomy
+
+    def test_category_coverage_disputed_count(self):
+        from company_intelligence.services import category_coverage
+        from core.esg_principles_data import PRINCIPLES
+
+        principles_by_id = {p['id']: p for p in PRINCIPLES}
+        profile = _profile(slug='category-coverage-disputed-co')
+        kpi_id = 20
+        category = principles_by_id[kpi_id]['category']
+        assessment, evidence = _confirmed_kpi_link(profile, kpi_id=kpi_id, relationship='supports')
+        link = CompanyKPIEvidenceLink.objects.get(assessment=assessment, evidence=evidence)
+        link.review_state = 'disputed'
+        link.save(update_fields=['review_state'])
+        rows = category_coverage.category_coverage_for_company(profile)
+        row = next(r for r in rows if r['key'] == category)
+        self.assertEqual(row['disputed_count'], 1)
+
+
+def _document_backed_link(profile, kpi_id, *, document_type, relationship='supports', review_state='confirmed'):
+    """Same convention as _harvester_backed_link, but with a real
+    SourceDocument attached so evidence_provenance.py's
+    provenance_class_for_link() can classify it by document_type (rather
+    than falling back to 'unknown', which _harvester_backed_link alone
+    would produce)."""
+    from harvester.models import SourceDocument
+
+    source = HarvesterSource.objects.create(company=profile, source_type=document_type, name=f'{document_type} source')
+    document = SourceDocument.objects.create(
+        source=source, company=profile, company_slug=profile.company.slug, title='Test document',
+        document_type=document_type, url=f'https://example.com/{profile.company.slug}/{kpi_id}',
+        content_hash=f'hash-{profile.company.slug}-{kpi_id}',
+    )
+    return _harvester_backed_link(
+        profile, kpi_id, relationship=relationship, review_state=review_state, document=document, source=source,
+    )
+
+
+class EvidenceProvenanceTests(TestCase):
+    def test_provenance_class_regulatory_vs_self_reported_vs_unknown(self):
+        from company_intelligence.services import evidence_provenance
+
+        profile = _profile(slug='provenance-classify-co')
+        reg_link, _ = _document_backed_link(profile, kpi_id=1, document_type='sec_edgar')
+        self_link, _ = _document_backed_link(profile, kpi_id=2, document_type='sustainability_report')
+        plain_link, _ = _harvester_backed_link(profile, kpi_id=3)  # no document/source -> unknown
+
+        self.assertEqual(evidence_provenance.provenance_class_for_link(reg_link), 'regulatory')
+        self.assertEqual(evidence_provenance.provenance_class_for_link(self_link), 'self_reported')
+        self.assertEqual(evidence_provenance.provenance_class_for_link(plain_link), 'unknown')
+
+    def test_self_report_concentration_warns_when_entirely_self_reported(self):
+        from company_intelligence.services import evidence_provenance
+
+        profile = _profile(slug='provenance-warning-co')
+        for kpi_id in range(1, 4):
+            _document_backed_link(profile, kpi_id=kpi_id, document_type='sustainability_report')
+        result = evidence_provenance.self_report_concentration(profile)
+        self.assertEqual(result['self_reported_pct'], 100.0)
+        self.assertIsNotNone(result['warning'])
+        self.assertIn('self-reporting', result['warning'])
+
+    def test_self_report_concentration_no_warning_with_regulatory_mix(self):
+        from company_intelligence.services import evidence_provenance
+
+        profile = _profile(slug='provenance-mixed-co')
+        _document_backed_link(profile, kpi_id=1, document_type='sustainability_report')
+        _document_backed_link(profile, kpi_id=2, document_type='sec_edgar')
+        result = evidence_provenance.self_report_concentration(profile)
+        self.assertIsNone(result['warning'])
+
+    def test_self_report_concentration_honest_when_no_confirmed_evidence(self):
+        from company_intelligence.services import evidence_provenance
+
+        profile = _profile(slug='provenance-empty-co')
+        result = evidence_provenance.self_report_concentration(profile)
+        self.assertEqual(result['total'], 0)
+        self.assertIsNone(result['self_reported_pct'])
+        self.assertIsNone(result['warning'])
+
+    def test_evidence_concentration_warning_when_many_links_share_one_document(self):
+        from company_intelligence.services import evidence_provenance
+        from harvester.models import SourceDocument
+
+        profile = _profile(slug='provenance-concentration-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='doc source')
+        document = SourceDocument.objects.create(
+            source=source, company=profile, company_slug=profile.company.slug, title='Shared document',
+            document_type='sustainability_report', url='https://example.com/shared', content_hash='shared-hash',
+        )
+        for kpi_id in range(1, 6):  # 5 = EVIDENCE_CONCENTRATION_SAME_DOCUMENT_WARNING
+            _harvester_backed_link(profile, kpi_id=kpi_id, document=document, source=source)
+        warnings = evidence_provenance.evidence_concentration_warning(profile)
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('Shared document', warnings[0])
+
+    def test_evidence_concentration_no_warning_below_threshold(self):
+        from company_intelligence.services import evidence_provenance
+        from harvester.models import SourceDocument
+
+        profile = _profile(slug='provenance-no-concentration-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='doc source 2')
+        document = SourceDocument.objects.create(
+            source=source, company=profile, company_slug=profile.company.slug, title='Small document',
+            document_type='sustainability_report', url='https://example.com/small', content_hash='small-hash',
+        )
+        for kpi_id in range(1, 4):  # below the 5-link threshold
+            _harvester_backed_link(profile, kpi_id=kpi_id, document=document, source=source)
+        warnings = evidence_provenance.evidence_concentration_warning(profile)
+        self.assertEqual(warnings, [])
+
+
+class IdentitySyncTests(TestCase):
+    def test_identity_sources_for_slug_reflects_real_mappings(self):
+        result = identity_sync.identity_sources_for_slug('apple')
+        self.assertEqual(result['sec_cik'], '0000320193')
+        self.assertEqual(result['official_domain'], 'apple.com')
+        self.assertIn('SEC EDGAR CIK mapping', result['identity_source'])
+
+    def test_identity_sources_for_slug_honest_when_unmapped(self):
+        result = identity_sync.identity_sources_for_slug('some-unmapped-company')
+        self.assertEqual(result['sec_cik'], '')
+        self.assertEqual(result['identity_source'], '')
+
+    def test_sync_company_identity_returns_none_when_no_real_identifier(self):
+        profile = _profile(slug='identity-sync-unmapped-co')
+        self.assertIsNone(identity_sync.sync_company_identity(profile))
+        self.assertFalse(CompanyListing.objects.filter(company=profile.company).exists())
+
+    def test_sync_company_identity_persists_fields_on_a_brand_new_listing(self):
+        """Regression test for a real bug found via a live
+        `expand_stewardship_universe --limit 3` run: sync_company_identity
+        setattr'd sec_cik/official_domain onto a freshly get_or_create'd
+        CompanyListing but only called .save() when created=False — so a
+        brand-new listing silently kept every field blank in the database
+        despite the in-memory object looking correct. Fixed by always
+        saving when there are real fields to persist."""
+        profile = _real_profile('apple')
+        listing = identity_sync.sync_company_identity(profile)
+        self.assertIsNotNone(listing)
+        listing.refresh_from_db()
+        self.assertEqual(listing.sec_cik, '0000320193')
+        self.assertEqual(listing.official_domain, 'apple.com')
+        self.assertEqual(listing.domain_status, 'verified')
+        self.assertIn('SEC EDGAR CIK mapping', listing.identity_source)
+        self.assertIsNotNone(listing.verified_at)
+
+    def test_sync_company_identity_never_overwrites_a_human_edited_field(self):
+        profile = _real_profile('apple')
+        listing = CompanyListing.objects.create(
+            company=profile.company, is_primary=True, official_domain='staff-corrected-domain.example',
+        )
+        identity_sync.sync_company_identity(profile)
+        listing.refresh_from_db()
+        self.assertEqual(listing.official_domain, 'staff-corrected-domain.example')
+        self.assertEqual(listing.sec_cik, '0000320193')  # still fills in the genuinely blank field
+
+    def test_sync_company_identity_is_idempotent(self):
+        profile = _real_profile('apple')
+        identity_sync.sync_company_identity(profile)
+        count_after_first = CompanyListing.objects.filter(company=profile.company).count()
+        identity_sync.sync_company_identity(profile)
+        self.assertEqual(CompanyListing.objects.filter(company=profile.company).count(), count_after_first)
+
+
+class ExpandStewardshipUniverseCommandTests(TestCase):
+    def test_dry_run_performs_zero_database_writes(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        before = CompanyProfile.objects.count()
+        out = StringIO()
+        call_command('expand_stewardship_universe', '--dry-run', '--limit', '3', stdout=out)
+        self.assertEqual(CompanyProfile.objects.count(), before)
+        self.assertIn('DRY RUN', out.getvalue())
+
+    def test_creates_profile_and_syncs_identity_without_setting_active(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command('expand_stewardship_universe', '--limit', '1', stdout=out)
+        profile = CompanyProfile.objects.filter(tracking_status='not_tracked').latest('id')
+        self.assertTrue(CompanyListing.objects.filter(company=profile.company, is_primary=True).exists())
+        listing = CompanyListing.objects.get(company=profile.company, is_primary=True)
+        self.assertTrue(listing.sec_cik or listing.companies_house_number)
+
+    def test_limit_bounds_the_run_and_reports_the_drop(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command('expand_stewardship_universe', '--limit', '2', stdout=out)
+        self.assertIn('bounded', out.getvalue().lower())
+
+    def test_never_contains_investment_language(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command('expand_stewardship_universe', '--limit', '2', stdout=out)
+        body = out.getvalue().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, body)
+
+
+class RateLimiterTests(TestCase):
+    def tearDown(self):
+        rate_limiter.reset_for_tests()
+
+    def test_first_request_to_a_domain_never_blocks(self):
+        rate_limiter.reset_for_tests()
+        start = time.monotonic()
+        rate_limiter.wait_for_domain_slot('example.com', min_interval_seconds=5.0)
+        self.assertLess(time.monotonic() - start, 1.0)
+
+    def test_second_request_to_same_domain_waits_remaining_interval(self):
+        rate_limiter.reset_for_tests()
+        rate_limiter.wait_for_domain_slot('example.com', min_interval_seconds=0.2)
+        start = time.monotonic()
+        rate_limiter.wait_for_domain_slot('example.com', min_interval_seconds=0.2)
+        self.assertGreaterEqual(time.monotonic() - start, 0.15)
+
+    def test_different_domains_never_block_each_other(self):
+        rate_limiter.reset_for_tests()
+        rate_limiter.wait_for_domain_slot('a.example.com', min_interval_seconds=5.0)
+        start = time.monotonic()
+        rate_limiter.wait_for_domain_slot('b.example.com', min_interval_seconds=5.0)
+        self.assertLess(time.monotonic() - start, 1.0)
+
+    def test_blank_domain_never_blocks(self):
+        rate_limiter.reset_for_tests()
+        start = time.monotonic()
+        rate_limiter.wait_for_domain_slot('', min_interval_seconds=5.0)
+        rate_limiter.wait_for_domain_slot(None, min_interval_seconds=5.0)
+        self.assertLess(time.monotonic() - start, 1.0)
+
+    def test_source_type_budget_allows_up_to_its_limit_then_refuses(self):
+        budget = rate_limiter.SourceTypeBudget(limits={'sec_edgar': 2})
+        self.assertTrue(budget.allow('sec_edgar'))
+        self.assertTrue(budget.allow('sec_edgar'))
+        self.assertFalse(budget.allow('sec_edgar'))
+
+    def test_source_type_budget_uses_default_limit_for_unlisted_type(self):
+        budget = rate_limiter.SourceTypeBudget(default_limit=1)
+        self.assertTrue(budget.allow('some_unlisted_type'))
+        self.assertFalse(budget.allow('some_unlisted_type'))
+
+    def test_bounded_batch_respects_explicit_limit(self):
+        profiles = list(range(10))
+        bounded, dropped = rate_limiter.bounded_batch(profiles, limit=3)
+        self.assertEqual(bounded, [0, 1, 2])
+        self.assertEqual(dropped, 7)
+
+    def test_bounded_batch_applies_default_when_no_limit_given(self):
+        profiles = list(range(100))
+        bounded, dropped = rate_limiter.bounded_batch(profiles, limit=None, default_batch_size=25)
+        self.assertEqual(len(bounded), 25)
+        self.assertEqual(dropped, 75)
+
+    def test_bounded_batch_never_drops_when_under_the_bound(self):
+        profiles = list(range(5))
+        bounded, dropped = rate_limiter.bounded_batch(profiles, limit=None, default_batch_size=25)
+        self.assertEqual(bounded, profiles)
+        self.assertEqual(dropped, 0)
+
+
+class RefreshOrchestratorRateLimitingTests(TestCase):
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_source_type_budget_of_one_skips_second_sec_edgar_source_as_not_due(self, mock_doc_fetch, mock_sec_fetch):
+        """NOTE: decorator stacking binds bottom-up (verified empirically
+        this session) — mock_doc_fetch is actually fetch_sec_edgar's mock."""
+        mock_doc_fetch.return_value = _sec_edgar_outcome()
+        mock_sec_fetch.return_value = _sustainability_outcome()
+
+        profile = _real_profile('apple')
+        from company_intelligence.services import rate_limiter as rl
+
+        original_limits = dict(rl.MAX_SOURCES_PER_TYPE_PER_RUN)
+        rl.MAX_SOURCES_PER_TYPE_PER_RUN['sec_edgar'] = 0
+        try:
+            run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        finally:
+            rl.MAX_SOURCES_PER_TYPE_PER_RUN.clear()
+            rl.MAX_SOURCES_PER_TYPE_PER_RUN.update(original_limits)
+
+        self.assertEqual(run.sources_checked, 1)
+        self.assertGreaterEqual(run.sources_skipped_not_due, 1)
+        self.assertTrue(any('budget' in w for w in run.warnings))

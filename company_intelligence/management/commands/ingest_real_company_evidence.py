@@ -44,6 +44,11 @@ REAL_COMPANY_SEEDS = {
     'microsoft': {'name': 'Microsoft Corporation', 'sector': 'other', 'country': 'United States'},
     'exxonmobil': {'name': 'Exxon Mobil Corporation', 'sector': 'oil_gas', 'country': 'United States'},
     'walmart': {'name': 'Walmart Inc.', 'sector': 'other', 'country': 'United States'},
+    # feat/global-stewardship-universe (PR 15) — real companies added to
+    # widen sector/geography coverage, matching known_sources.py's newly
+    # verified real document entries.
+    'coca-cola': {'name': 'The Coca-Cola Company', 'sector': 'other', 'country': 'United States'},
+    'national-grid': {'name': 'National Grid plc', 'sector': 'energy', 'country': 'United Kingdom'},
 }
 
 

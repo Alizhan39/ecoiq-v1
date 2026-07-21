@@ -1190,6 +1190,128 @@ a{color:inherit;text-decoration:none}
 </div>
 
 
+<!-- ═══════════════════════════════════════════════════════════
+     14. GLOBAL STEWARDSHIP UNIVERSE — REAL COMPANY EXPANSION &
+         EVIDENCE-BASED DISCOVERY
+     feat/global-stewardship-universe (PR 15)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="global-universe-section">
+  <a class="section-anchor" id="global-universe"></a>
+  <div class="sec-eyebrow">14 — Global Stewardship Universe</div>
+  <h2 class="sec-title">Global Stewardship Universe — Real Company Expansion &amp; Evidence-Based Discovery</h2>
+  <p class="sec-lead">
+    Answers two separate research questions about a credible, expanding universe of real, publicly listed
+    companies: "Which real companies currently have the strongest verified evidence of alignment with the
+    stewardship principles represented by EcoIQ's 114 KPIs?" and, independently, "Which of those companies
+    currently pass or conditionally pass EcoIQ's documented preliminary Shariah screen?"
+    <strong>EcoIQ ranks research evidence, not expected investment performance. A company's presence or
+    position in the Stewardship Universe is not a recommendation to buy, sell, or hold any security.</strong>
+    EcoIQ never provides BUY/SELL/HOLD ratings, target prices, or expected-return estimates of any kind.
+  </p>
+
+  <h3 class="sec-h3">Real Company Identity</h3>
+  <p class="sec-body">
+    Every company in the Global Stewardship Universe has a defensible, inspectable identity path — a SEC
+    EDGAR CIK, a UK Companies House registration number, or (where genuinely known) a verified official
+    domain. These identifiers previously existed only as internal Python mappings; a <code>CompanyListing</code>
+    row now makes them queryable per company (legal name, ticker/exchange where known, country, sector,
+    regulatory identifier, official domain and its verification status). No company is added to the universe
+    without at least one of these real identifiers — this is never a search-engine-discovered or fabricated
+    list.
+  </p>
+
+  <h3 class="sec-h3">Two Strictly Separate Lenses</h3>
+  <p class="sec-body">
+    Unchanged from every earlier PR in this series: Shariah eligibility (PASS / CONDITIONAL / FAIL /
+    INSUFFICIENT DATA / NOT SCREENED) and 114-KPI stewardship evidence (CONFIRMED SUPPORTS / PROPOSED / NEEDS
+    MORE EVIDENCE / CONFLICTS / DISPUTED / STALE / HISTORICAL) are never blended into one score. A company
+    can pass Shariah screening with weak stewardship evidence, or have strong stewardship evidence and fail
+    Shariah screening — both facts are always shown side by side, never collapsed into a single verdict.
+  </p>
+
+  <h3 class="sec-h3">The Coverage Matrix — Never Collapsing Missing Data to Zero</h3>
+  <p class="sec-body">
+    Each company's data completeness is shown as an honest, five-value matrix across eight dimensions
+    (identity, regulatory data, financial data, sustainability documents, KPI evidence, human-reviewed
+    evidence, Shariah screening, monitoring status): <strong>AVAILABLE</strong>, <strong>PARTIAL</strong>,
+    <strong>MISSING</strong>, <strong>STALE</strong>, or <strong>NOT&nbsp;APPLICABLE</strong>. A dimension
+    with no data on file is always shown as MISSING — never silently treated as a zero, a pass, or a fail.
+  </p>
+
+  <h3 class="sec-h3">The Evidence-Backed Stewardship Alignment Indicator</h3>
+  <p class="sec-body">
+    Extends the same weighted-component ranking mechanism Company Discovery already used (PR 11) — this is
+    deliberately NOT a second, parallel scoring engine. Every component is a real, computed number; every
+    component is shown alongside the composite, never hidden behind it; a company missing a given component
+    has that component EXCLUDED from the weighted average (renormalised over what is actually available),
+    never coerced to zero:
+  </p>
+  <ul class="sec-list">
+    <li><strong>kpi_alignment</strong> (0.35) — net confirmed-support vs. confirmed-conflict balance across
+      the selected (or all 114) KPIs. Absence of evidence is neutral, never negative.</li>
+    <li><strong>source_authority</strong> (0.15) — average source tier backing this company's confirmed
+      evidence (regulatory highest, self-reported lowest).</li>
+    <li><strong>recency</strong> (0.10) — how current the underlying evidence is.</li>
+    <li><strong>corroboration</strong> (0.10) — how many independent sources support the same claim.</li>
+    <li><strong>data_completeness</strong> (0.10) — the latest Shariah screen's own honest completeness
+      percentage, where a screen exists.</li>
+    <li><strong>human_review_quality</strong> (0.10) — the fraction of this company's linked evidence that
+      has actually been human-reviewed and confirmed, rather than merely machine-proposed.</li>
+    <li><strong>evidence_diversity</strong> (0.10) — how many of the 10 canonical stewardship categories this
+      company has at least one confirmed supporting KPI in, rewarding evidence BREADTH over a narrow pile of
+      claims in a single category.</li>
+  </ul>
+  <p class="sec-body">
+    This composite is always labelled the <strong>"Evidence-Backed Stewardship Alignment Indicator"</strong> —
+    never an "ESG score" and never implying better financial returns, lower risk, better management quality,
+    or guaranteed sustainability outcomes. Weights are configurable and always shown alongside the ranking,
+    never hidden.
+  </p>
+
+  <h3 class="sec-h3">Evidence Quality Differentiation &amp; Greenwashing Resistance</h3>
+  <p class="sec-body">
+    Confirmed evidence is classified as <strong>regulatory</strong> (e.g. SEC/Companies House filings),
+    <strong>independent</strong> (e.g. third-party ratings, NGOs, press), or <strong>self-reported</strong>
+    (the company's own annual/sustainability reports, investor relations pages, and press releases) — a
+    company with many self-published statements does not automatically outrank a company with fewer but
+    independently-verified claims, since <code>human_review_quality</code> and <code>source_authority</code>
+    weight verified, reviewed evidence over raw volume. Two conservative, honestly-labelled signals surface
+    concentration risk without overclaiming: an <strong>"Evidence concentration warning"</strong> when an
+    unusually large share of a company's confirmed KPI links all trace back to the same single document, and
+    a <strong>"High reliance on company self-reporting"</strong> note when all of a company's confirmed
+    evidence is self-reported with no independent or regulatory source yet confirmed.
+    <strong>EcoIQ does not claim to "detect greenwashing"</strong> — these are transparency signals for a
+    human reader to weigh, not an automated accusation.
+  </p>
+
+  <h3 class="sec-h3">Discovery, Strongest Alignment, and Comparison</h3>
+  <p class="sec-body">
+    Discover Companies adds filters for minimum confirmed-KPI coverage, minimum human-reviewed evidence
+    share, monitoring health, and the presence of disputes or open potential conflicts — every filter is an
+    explicit opt-in, never a hidden ranking factor. The separate <strong>Strongest Alignment</strong> view
+    applies the same ranking, restricted to companies with at least one confirmed KPI (an entirely
+    unevidenced company is excluded from this specific view, since it would otherwise appear with a
+    misleadingly neutral composite) — and is labelled, in the product itself: "Research ranking based on
+    currently available and reviewed stewardship evidence. This is not investment advice or a prediction of
+    financial performance." Company Comparison adds the same real signals side by side (confirmed KPIs,
+    human-reviewed coverage, evidence breadth, disputes, open potential conflicts, stale evidence, monitoring
+    health, last refresh) — never expected returns or price targets.
+  </p>
+
+  <h3 class="sec-h3">Scaling Safely</h3>
+  <p class="sec-body">
+    Universe expansion is bounded, not unlimited scraping: a per-domain minimum request interval, a per-run
+    cap on how many sources of a given type (e.g. SEC EDGAR, Companies House) get fetched, and a default
+    batch-size bound on how many companies a single run processes unless a larger <code>--limit</code> is
+    explicitly given. Any bound that drops companies from a run reports exactly how many were dropped — never
+    a silent truncation presented as complete coverage. The <code>expand_stewardship_universe</code>
+    management command seeds a <code>CompanyProfile</code> and syncs real identity fields for every company
+    with a known SEC EDGAR CIK or Companies House number; it never marks a company ACTIVE by itself — that
+    status change happens only as the honest side effect of that company's first real, successful refresh.
+  </p>
+</div>
+
+
 <!-- ── CTA footer ─────────────────────────────────────────────────── -->
 <div class="doc-cta">
   <h2>Explore the Intelligence Platform</h2>

@@ -58,7 +58,7 @@ from django.utils import timezone
 
 from ai_observatory.services import recorder
 from company_intelligence.services import (
-    change_detection, conflict_detection, evidence_ingestion, refresh_policy,
+    change_detection, conflict_detection, evidence_ingestion, rate_limiter, refresh_policy,
     source_discovery, source_registry, stewardship_alerts,
 )
 
@@ -161,17 +161,32 @@ def refresh_company_intelligence(company_profile, actor=None, triggered_by='manu
 
         active_sources = list(company_profile.harvest_sources.filter(is_active=True))
         sec_edgar_checked_this_run = False
+        # feat/global-stewardship-universe (PR 15) Section 17 — "scale
+        # safely": a per-source-type budget for THIS run (never a hidden
+        # skip — sources_skipped_not_due already tracks the other kind of
+        # skip, so a type-budget skip is folded into the same counter
+        # rather than inventing a second, undocumented skip reason) plus a
+        # per-domain minimum interval before every outbound fetch.
+        source_type_budget = rate_limiter.SourceTypeBudget()
         with recorder.record_stage(session, 'source_fetch', 'Fetch + Deduplicate Registered Sources', category='retrieval') as info:
             for source in active_sources:
                 if not is_manual and not refresh_policy.is_source_due(source):
                     sources_skipped_not_due += 1
                     continue
+                if not source_type_budget.allow(source.source_type):
+                    sources_skipped_not_due += 1
+                    warnings.append(
+                        f'{source.name}: skipped — per-run budget for source type "{source.source_type}" reached.'
+                    )
+                    continue
                 sources_checked += 1
                 if source.source_type == 'sec_edgar':
                     sec_edgar_checked_this_run = True
                 try:
+                    from company_intelligence.services.known_sources import domain_of
                     from harvester.services.ingestion_pipeline import ingest_source
 
+                    rate_limiter.wait_for_domain_slot(domain_of(source.source_url))
                     ingestion_run = ingest_source(source, triggered_by=f'stewardship_refresh:{triggered_by}')
                     change_events.extend(change_detection.detect_source_change(source, ingestion_run, refresh_run=run))
 
