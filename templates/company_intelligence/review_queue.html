@@ -93,6 +93,12 @@
             <span>Priority: {{ row.priority_score }}/6</span>
             {% if row.on_watchlist %}<span class="rq-watchlist-flag">Research interest exists</span>{% endif %}
           </div>
+          {% if row.appearance.refresh_run_label or row.appearance.potential_conflict_event %}
+          <div class="rq-appearance-row">
+            {% if row.appearance.refresh_run_label %}<span class="rq-appearance-tag">{{ row.appearance.refresh_run_label }}</span>{% endif %}
+            {% if row.appearance.potential_conflict_event %}<span class="rq-appearance-tag rq-conflict-tag">⚠ Potential Conflict — Flagged During Refresh</span>{% endif %}
+          </div>
+          {% endif %}
           <div class="rq-card-actions">
             <a href="{% url 'companies:review_detail' row.link.pk %}" class="rq-action-link">Review →</a>
           </div>
@@ -150,6 +156,9 @@
   .rq-excerpt{font-size:.8rem;color:#cbd5e1;line-height:1.55;margin:.6rem 0}
   .rq-meta-row{display:flex;flex-wrap:wrap;gap:1rem;font-size:.7rem;color:#64748b}
   .rq-watchlist-flag{color:#c9a84c;font-weight:700}
+  .rq-appearance-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+  .rq-appearance-tag{font-size:.68rem;font-weight:600;color:#94a3b8;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.25rem .6rem}
+  .rq-conflict-tag{color:#fca5a5;background:rgba(230,57,70,.1);border-color:rgba(230,57,70,.25)}
   .rq-card-actions{margin-top:.7rem}
   .rq-action-link{font-size:.78rem;font-weight:700;color:#c9a84c;text-decoration:none;border:1px solid rgba(201,168,76,.3);border-radius:999px;padding:.4rem .9rem}
   .rq-empty{font-size:.85rem;color:#64748b;padding:2rem 0}

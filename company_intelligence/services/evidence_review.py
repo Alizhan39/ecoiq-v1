@@ -116,6 +116,30 @@ def _proposed_by(link):
     return 'Unknown / import'
 
 
+def appearance_context(link):
+    """
+    feat/stewardship-monitor (PR 14) — "why did this appear?" Reuses the
+    link's own `proposed_via_refresh_run` FK (set at creation time by
+    kpi_candidate_matching.propose_kpi_links_for_evidence, never rewritten
+    afterward) and any StewardshipChangeEvent flagging this exact link as
+    a potential conflict — never a second, duplicated provenance record.
+    """
+    from company_intelligence.models import StewardshipChangeEvent
+
+    run = link.proposed_via_refresh_run
+    potential_conflict = StewardshipChangeEvent.objects.filter(
+        kpi_evidence_link=link, event_type='potential_conflict',
+    ).order_by('-detected_at').first()
+    return {
+        'proposed_via_refresh_run': run,
+        'refresh_run_label': (
+            f'Proposed during refresh run #{run.pk} ({run.get_triggered_by_display()}) on '
+            f'{run.started_at:%Y-%m-%d}' if run else None
+        ),
+        'potential_conflict_event': potential_conflict,
+    }
+
+
 def duplicate_links_for(link):
     """
     Other CompanyKPIEvidenceLink rows a reviewer would otherwise waste time
@@ -252,6 +276,7 @@ def pending_review_queue(criteria=None):
             'priority_components': components,
             'priority_score': score,
             'on_watchlist': components['on_research_watchlist'],
+            'appearance': appearance_context(link),
         })
 
     rows.sort(key=lambda r: (-r['priority_score'], r['link'].added_at))

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Refresh Diff — {{ company.name }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Before/after diff for one Stewardship Universe refresh run.{% endblock %}
+
+{% block content %}
+<div class="rf-wrap">
+  <a href="{% url 'companies:company_status' company.slug %}" class="rf-back">← {{ company.name }} Intelligence Status</a>
+  <span class="rf-eyebrow">ECOIQ · STAFF ONLY · REFRESH DIFF</span>
+  <h1 class="rf-h1">Refresh Run #{{ run.pk }}</h1>
+  <p class="rf-sub">
+    {{ run.started_at|date:"Y-m-d H:i" }} · {{ run.get_triggered_by_display }}{% if run.actor %} ({{ run.actor.username }}){% endif %}
+    · <span class="rf-status rf-status-{{ run.status }}">{{ run.get_status_display }}</span>
+  </p>
+
+  <h2 class="rf-h2">Before / After</h2>
+  <div class="rf-table-scroll">
+  <table class="rf-table">
+    <thead><tr><th>Metric</th><th>Previous Run (cumulative)</th><th>This Run</th></tr></thead>
+    <tbody>
+      <tr><td>Sources Checked</td><td>{{ previous_run.sources_checked|default:"—" }}</td><td>{{ run.sources_checked }}</td></tr>
+      <tr><td>Sources Failed</td><td>{{ previous_run.sources_failed|default:"—" }}</td><td>{{ run.sources_failed }}</td></tr>
+      <tr><td>Sources Skipped (Not Due)</td><td>{{ previous_run.sources_skipped_not_due|default:"—" }}</td><td>{{ run.sources_skipped_not_due }}</td></tr>
+      <tr><td>New Documents</td><td>{{ previous_run.documents_new|default:"—" }}</td><td>{{ run.documents_new }}</td></tr>
+      <tr><td>Updated Documents</td><td>{{ previous_run.documents_updated|default:"—" }}</td><td>{{ run.documents_updated }}</td></tr>
+      <tr><td>Unchanged Documents</td><td>{{ previous_run.documents_unchanged|default:"—" }}</td><td>{{ run.documents_unchanged }}</td></tr>
+      <tr><td>Evidence Created</td><td>{{ previous_run.evidence_created|default:"—" }}</td><td>{{ run.evidence_created }}</td></tr>
+      <tr><td>KPI Candidates Proposed</td><td>{{ previous_run.kpi_candidates_proposed|default:"—" }}</td><td>{{ run.kpi_candidates_proposed }}</td></tr>
+      <tr><td>Review Required</td><td>{{ previous_run.review_required_count|default:"—" }}</td><td>{{ run.review_required_count }}</td></tr>
+      <tr><td>Duration</td><td>{{ previous_run.duration_seconds|default:"—" }}s</td><td>{{ run.duration_seconds|default:"—" }}s</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="rf-note">
+    "Previous Run" is this company's immediately preceding refresh run, shown for context only — this is not
+    a per-source before/after reconciliation, that level of detail lives in the Detected Changes list below,
+    which is the literal, real record of what this run found, never a synthesized summary.
+  </p>
+
+  <h2 class="rf-h2">Detected Changes (This Run)</h2>
+  <div class="rf-table-scroll">
+  <table class="rf-table">
+    <thead><tr><th>Type</th><th>Severity</th><th>Summary</th><th>Review Required</th></tr></thead>
+    <tbody>
+      {% for event in change_events %}
+      <tr>
+        <td>{{ event.get_event_type_display }}</td>
+        <td><span class="rf-status rf-status-{{ event.severity }}">{{ event.get_severity_display }}</span></td>
+        <td>{{ event.summary }}</td>
+        <td>{% if event.review_required %}Yes{% else %}No{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="rf-empty-row">This run detected zero changes — every checked source was unchanged, or nothing was checked.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% if run.warnings %}
+  <h2 class="rf-h2">Warnings</h2>
+  <ul class="rf-list">{% for w in run.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if run.errors %}
+  <h2 class="rf-h2">Errors</h2>
+  <ul class="rf-list rf-list-warn">{% for e in run.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <p class="rf-disclaimer">
+    No invented summary — every row above is a literal, stored record from this exact refresh run. Detected
+    changes never automatically became confirmed KPI evidence; potential conflicts remain potential until a
+    human reviewer decides in the Evidence Review Workbench.
+  </p>
+</div>
+
+<style>
+  .rf-wrap{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .rf-back{font-size:.78rem;color:#c9a84c;text-decoration:none}
+  .rf-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin:1rem 0 .5rem}
+  .rf-h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .5rem}
+  .rf-sub{font-size:.82rem;color:#94a3b8;margin:0 0 1.6rem}
+  .rf-h2{font-size:1rem;font-weight:800;color:#fff;margin:1.8rem 0 .7rem}
+  .rf-status{font-size:.62rem;font-weight:700;text-transform:uppercase;padding:.2rem .5rem;border-radius:999px;background:rgba(255,255,255,.06);color:#94a3b8}
+  .rf-status-complete,.rf-status-info,.rf-status-low{background:rgba(0,232,154,.12);color:#00e89a}
+  .rf-status-partial,.rf-status-medium{background:rgba(244,162,97,.14);color:#f4a261}
+  .rf-status-failed,.rf-status-high,.rf-status-critical{background:rgba(230,57,70,.14);color:#fca5a5}
+  .rf-table-scroll{overflow-x:auto;margin-bottom:.6rem}
+  .rf-table{width:100%;border-collapse:collapse;font-size:.76rem;min-width:480px}
+  .rf-table th{text-align:left;color:#64748b;text-transform:uppercase;font-size:.62rem;letter-spacing:.04em;padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.1)}
+  .rf-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);color:#cbd5e1;word-break:break-word}
+  .rf-note{font-size:.72rem;color:#64748b;line-height:1.55;max-width:80ch;margin-bottom:1rem}
+  .rf-list{font-size:.76rem;color:#94a3b8;line-height:1.7;padding-left:1.2rem}
+  .rf-list-warn{color:#fca5a5}
+  .rf-empty-row{color:#64748b;text-align:center;padding:1.5rem 0}
+  .rf-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  @media (max-width:640px){.rf-wrap{padding:1.5rem 1rem 3rem}}
+</style>
+{% endblock %}

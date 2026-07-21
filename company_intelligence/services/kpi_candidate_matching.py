@@ -152,13 +152,19 @@ def candidate_principles_for_evidence(evidence_category, evidence_text):
     return matches
 
 
-def propose_kpi_links_for_evidence(company_profile, evidence, harvester_category):
+def propose_kpi_links_for_evidence(company_profile, evidence, harvester_category, refresh_run=None):
     """
     Creates (or leaves alone, idempotent) CompanyKPIEvidenceLink rows with
     review_state='proposed' for every candidate match found for one real
     evidence_memory.EvidenceMemory row. Never confirms anything itself.
     Returns the list of created CompanyKPIEvidenceLink rows (empty if none
     matched or all already existed).
+
+    feat/stewardship-monitor (PR 14): `refresh_run`, when given, is stamped
+    onto every newly-created link so the Review Workbench can show exactly
+    which refresh run proposed it — never set on a link that already
+    existed (a link's provenance is fixed at creation, never rewritten by
+    a later refresh that merely re-confirms the same idempotent match).
     """
     from company_intelligence.models import CompanyKPIAssessment, CompanyKPIEvidenceLink
 
@@ -175,6 +181,7 @@ def propose_kpi_links_for_evidence(company_profile, evidence, harvester_category
                 'relationship': match['relationship'],
                 'review_state': 'proposed',
                 'match_basis': f"Keyword overlap: {', '.join(match['overlap_words'])}",
+                'proposed_via_refresh_run': refresh_run,
             },
         )
         if was_created:

@@ -5,6 +5,7 @@
 {% block content %}
 <div class="cs-wrap">
   <a href="{% url 'companies:universe' %}" class="cs-back">← Stewardship Universe</a>
+  <a href="{% url 'companies:monitor' %}" class="cs-back cs-back-secondary">Stewardship Monitor →</a>
   <span class="cs-eyebrow">ECOIQ · STAFF ONLY · COMPANY INTELLIGENCE STATUS</span>
   <h1 class="cs-h1">{{ company.name }}</h1>
   <div class="cs-state-row">
@@ -41,6 +42,27 @@
     <a href="{% url 'companies:review_queue' %}?company={{ company.slug }}" class="cs-review-link">Open in Review Workbench →</a>
   </div>
 
+  {% if open_alerts %}
+  <h2 class="cs-h2">Open Alerts</h2>
+  <div class="cs-alerts-list">
+    {% for alert in open_alerts %}
+    <div class="cs-alert-row">
+      <span class="cs-status-badge cs-status-{{ alert.severity }}">{{ alert.get_severity_display }}</span>
+      <span class="cs-alert-msg">{{ alert.message }}</span>
+      <span class="cs-alert-priority" title="Priority components: {{ alert.priority_components }}">Priority {{ alert.priority_score }}</span>
+      <span class="cs-alert-state">{{ alert.get_state_display }}</span>
+      <span class="cs-alert-actions">
+        {% if alert.state == 'new' %}
+        <form method="post" action="{% url 'companies:alert_acknowledge' company.slug alert.pk %}" class="cs-inline-form">{% csrf_token %}<button type="submit" class="cs-ack-btn">Acknowledge</button></form>
+        {% endif %}
+        <form method="post" action="{% url 'companies:alert_resolve' company.slug alert.pk %}" class="cs-inline-form">{% csrf_token %}<button type="submit" class="cs-approve-btn">Resolve</button></form>
+        <form method="post" action="{% url 'companies:alert_dismiss' company.slug alert.pk %}" class="cs-inline-form">{% csrf_token %}<button type="submit" class="cs-reject-btn">Dismiss</button></form>
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <h2 class="cs-h2">Source Registry</h2>
   <div class="cs-table-scroll">
   <table class="cs-table">
@@ -75,22 +97,23 @@
   <h2 class="cs-h2">Refresh History</h2>
   <div class="cs-table-scroll">
   <table class="cs-table">
-    <thead><tr><th>Started</th><th>Trigger</th><th>Status</th><th>Sources</th><th>New Docs</th><th>Unchanged</th><th>KPI Candidates</th><th>Duration</th><th>Observatory</th></tr></thead>
+    <thead><tr><th>Started</th><th>Trigger</th><th>Status</th><th>Sources</th><th>New Docs</th><th>Unchanged</th><th>KPI Candidates</th><th>Duration</th><th>Observatory</th><th>Diff</th></tr></thead>
     <tbody>
       {% for run in refresh_runs %}
       <tr>
         <td>{{ run.started_at|date:"Y-m-d H:i" }}</td>
         <td>{{ run.get_triggered_by_display }}{% if run.actor %} ({{ run.actor.username }}){% endif %}</td>
         <td><span class="cs-status-badge cs-status-{{ run.status }}">{{ run.get_status_display }}</span></td>
-        <td>{{ run.sources_checked }} ({{ run.sources_failed }} failed)</td>
+        <td>{{ run.sources_checked }} ({{ run.sources_failed }} failed{% if run.sources_skipped_not_due %}, {{ run.sources_skipped_not_due }} not due{% endif %})</td>
         <td>{{ run.documents_new }}</td>
         <td>{{ run.documents_unchanged }}</td>
         <td>{{ run.kpi_candidates_proposed }}</td>
         <td>{{ run.duration_seconds|default:"—" }}s</td>
         <td>{% if run.observatory_session_id %}Session #{{ run.observatory_session_id }}{% else %}—{% endif %}</td>
+        <td><a href="{% url 'companies:refresh_diff' company.slug run.pk %}" class="cs-review-link">View →</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="9" class="cs-empty-row">No refresh has run yet for this company.</td></tr>
+      <tr><td colspan="10" class="cs-empty-row">No refresh has run yet for this company.</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -117,6 +140,21 @@
   </table>
   </div>
 
+  <h2 class="cs-h2">Change Timeline</h2>
+  <p class="cs-timeline-note">What changed in EcoIQ's understanding of this company, and why — merged from real, stored records, oldest-to-newest reading order reversed (newest first).</p>
+  <ul class="cs-timeline">
+    {% for entry in timeline %}
+    <li class="cs-timeline-entry">
+      <span class="cs-timeline-ts">{{ entry.timestamp|date:"Y-m-d H:i" }}</span>
+      <span class="cs-timeline-label">{{ entry.label }}</span>
+      <span class="cs-timeline-detail">{{ entry.detail }}</span>
+      {% if entry.run_id %}<a href="{% url 'companies:refresh_diff' company.slug entry.run_id %}" class="cs-review-link">Diff →</a>{% endif %}
+    </li>
+    {% empty %}
+    <li class="cs-empty-row">No change history recorded yet for this company.</li>
+    {% endfor %}
+  </ul>
+
   <p class="cs-disclaimer">
     Automated source discovery and evidence extraction do not constitute independent verification. New
     evidence produces KPI CANDIDATES only — they remain PROPOSED until a human reviewer confirms them in
@@ -127,7 +165,8 @@
 
 <style>
   .cs-wrap{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
-  .cs-back{font-size:.78rem;color:#c9a84c;text-decoration:none}
+  .cs-back{font-size:.78rem;color:#c9a84c;text-decoration:none;margin-right:1rem}
+  .cs-back-secondary{color:#58a6ff}
   .cs-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin:1rem 0 .5rem}
   .cs-h1{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
   .cs-h2{font-size:1.1rem;font-weight:800;color:#fff;margin:2rem 0 .8rem}
@@ -151,9 +190,22 @@
   .cs-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);color:#cbd5e1;word-break:break-word}
   .cs-table a{color:#c9a84c;text-decoration:none;word-break:break-all}
   .cs-status-badge{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:.2rem .5rem;border-radius:999px;background:rgba(255,255,255,.06);color:#94a3b8;white-space:nowrap}
-  .cs-status-registered,.cs-status-complete,.cs-status-completed,.cs-status-approved{background:rgba(0,232,154,.12);color:#00e89a}
-  .cs-status-candidate,.cs-status-partial,.cs-status-running{background:rgba(244,162,97,.14);color:#f4a261}
-  .cs-status-rejected,.cs-status-failed{background:rgba(230,57,70,.14);color:#fca5a5}
+  .cs-status-registered,.cs-status-complete,.cs-status-completed,.cs-status-approved,.cs-status-info,.cs-status-low{background:rgba(0,232,154,.12);color:#00e89a}
+  .cs-status-candidate,.cs-status-partial,.cs-status-running,.cs-status-medium{background:rgba(244,162,97,.14);color:#f4a261}
+  .cs-status-rejected,.cs-status-failed,.cs-status-high,.cs-status-critical{background:rgba(230,57,70,.14);color:#fca5a5}
+  .cs-alerts-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem}
+  .cs-alert-row{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.6rem .8rem;font-size:.76rem}
+  .cs-alert-msg{color:#e2e8f0;flex:1;min-width:200px}
+  .cs-alert-priority{color:#64748b;font-family:'SF Mono',ui-monospace,monospace;font-size:.7rem}
+  .cs-alert-state{color:#94a3b8;font-size:.7rem;text-transform:uppercase}
+  .cs-alert-actions{display:flex;gap:.3rem}
+  .cs-ack-btn{background:rgba(88,166,255,.14);color:#58a6ff;border:none;border-radius:999px;padding:.25rem .6rem;font-size:.68rem;cursor:pointer}
+  .cs-timeline-note{font-size:.74rem;color:#64748b;margin-bottom:.8rem}
+  .cs-timeline{list-style:none;margin:0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.4rem;max-height:420px;overflow-y:auto}
+  .cs-timeline-entry{display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap;font-size:.74rem;padding:.4rem .2rem;border-bottom:1px solid rgba(255,255,255,.04)}
+  .cs-timeline-ts{color:#475569;font-family:'SF Mono',ui-monospace,monospace;font-size:.68rem;flex:none}
+  .cs-timeline-label{color:#c9a84c;font-weight:700;flex:none}
+  .cs-timeline-detail{color:#94a3b8;flex:1;min-width:150px}
   .cs-inline-form{display:inline-block;margin-right:.3rem}
   .cs-approve-btn{background:rgba(0,232,154,.14);color:#00e89a;border:none;border-radius:999px;padding:.25rem .6rem;font-size:.68rem;cursor:pointer}
   .cs-reject-btn{background:rgba(230,57,70,.14);color:#fca5a5;border:none;border-radius:999px;padding:.25rem .6rem;font-size:.68rem;cursor:pointer}

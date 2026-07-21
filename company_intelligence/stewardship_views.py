@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from companies.models import CompanyProfile
 from league.models import Company
 
-from company_intelligence.services import refresh_orchestrator, source_registry, stewardship_state
+from company_intelligence.services import change_timeline, refresh_orchestrator, source_registry, stewardship_state
 
 
 def _profile_or_404(slug):
@@ -36,7 +36,16 @@ def universe_view(request):
     for profile in profiles:
         health = stewardship_state.compute_company_health(profile)
         state = stewardship_state.compute_tracking_state(profile, health=health)
-        rows.append({'profile': profile, 'health': health, 'state': state})
+        open_alerts_count = profile.stewardship_alerts.exclude(state__in=('resolved', 'dismissed')).count()
+        open_conflicts_count = profile.change_events.filter(event_type='potential_conflict').exclude(
+            kpi_evidence_link__review_state__in=('confirmed', 'rejected'),
+        ).count()
+        latest_change = profile.change_events.order_by('-detected_at').first()
+        rows.append({
+            'profile': profile, 'health': health, 'state': state,
+            'open_alerts_count': open_alerts_count, 'open_conflicts_count': open_conflicts_count,
+            'latest_change': latest_change,
+        })
 
     state_filter = request.GET.get('state', '')
     if state_filter:
@@ -60,6 +69,8 @@ def company_status_view(request, slug):
     registry_rows = source_registry.source_registry_rows(profile)
     refresh_runs = profile.refresh_runs.select_related('observatory_session', 'actor')[:20]
     observatory_sessions = profile.observatory_sessions.order_by('-started_at')[:20]
+    open_alerts = profile.stewardship_alerts.exclude(state__in=('resolved', 'dismissed')).select_related('change_event')[:20]
+    timeline = change_timeline.company_change_timeline(profile, limit=40)
 
     return render(request, 'company_intelligence/company_status.html', {
         'profile': profile, 'company': profile.company,
@@ -67,6 +78,8 @@ def company_status_view(request, slug):
         'registry_rows': registry_rows,
         'refresh_runs': refresh_runs,
         'observatory_sessions': observatory_sessions,
+        'open_alerts': open_alerts,
+        'timeline': timeline,
     })
 
 
@@ -87,7 +100,7 @@ def trigger_refresh_view(request, slug):
             f"Dry run: {result['sources_due']} of {result['sources_total']} registered source(s) are due — "
             f"nothing was fetched or changed.",
         )
-    elif isinstance(result, dict) and result.get('error') == 'paused':
+    elif isinstance(result, dict) and result.get('error') in ('paused', 'already_refreshing'):
         messages.warning(request, result['note'])
     else:
         summary = (

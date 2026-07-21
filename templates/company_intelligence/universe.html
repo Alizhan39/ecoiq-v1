@@ -5,6 +5,7 @@
 {% block content %}
 <div class="su-wrap">
   <span class="su-eyebrow">ECOIQ · STAFF ONLY · GOVERNANCE</span>
+  <a href="{% url 'companies:monitor' %}" class="su-monitor-link">Stewardship Monitor →</a>
   <h1 class="su-h1">Stewardship Universe</h1>
   <p class="su-sub">
     What EcoIQ tracks, and how current its evidence base is — an operational view, not a research ranking.
@@ -45,6 +46,13 @@
         <span>Next due: {{ row.profile.next_refresh_due_at|default:"—" }}</span>
         <span>Shariah: {{ row.health.shariah_screening_freshness.label }}</span>
       </div>
+      {% if row.open_alerts_count or row.open_conflicts_count or row.latest_change %}
+      <div class="su-monitor-row">
+        {% if row.open_alerts_count %}<span class="su-monitor-tag">{{ row.open_alerts_count }} open alert{{ row.open_alerts_count|pluralize }}</span>{% endif %}
+        {% if row.open_conflicts_count %}<span class="su-monitor-tag su-conflict-tag">{{ row.open_conflicts_count }} potential conflict{{ row.open_conflicts_count|pluralize }}</span>{% endif %}
+        {% if row.latest_change %}<span class="su-monitor-tag">Latest: {{ row.latest_change.summary|truncatechars:60 }}</span>{% endif %}
+      </div>
+      {% endif %}
       <div class="su-card-actions">
         <a href="{% url 'companies:company_status' row.profile.company.slug %}" class="su-action-link">Operational Status →</a>
       </div>
@@ -93,6 +101,10 @@
   .su-meta-row{display:flex;flex-wrap:wrap;gap:.9rem;font-size:.68rem;color:#64748b;margin-top:.5rem}
   .su-card-actions{margin-top:.8rem}
   .su-action-link{font-size:.78rem;font-weight:700;color:#c9a84c;text-decoration:none;border:1px solid rgba(201,168,76,.3);border-radius:999px;padding:.4rem .9rem}
+  .su-monitor-link{float:right;font-size:.78rem;color:#58a6ff;text-decoration:none}
+  .su-monitor-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+  .su-monitor-tag{font-size:.66rem;font-weight:600;color:#94a3b8;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.2rem .55rem}
+  .su-conflict-tag{color:#fca5a5;background:rgba(230,57,70,.1);border-color:rgba(230,57,70,.25)}
   .su-empty{font-size:.85rem;color:#64748b;padding:2rem 0}
   .su-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
   @media (max-width:640px){.su-wrap{padding:1.5rem 1rem 3rem}.su-cards{grid-template-columns:1fr}}

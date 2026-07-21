@@ -2733,3 +2733,708 @@ class StewardshipCSRFAndCrossCompanyTests(TestCase):
         client.login(username='cross_staff', password='pw')
         response = client.post(reverse('companies:approve_source', args=[profile_b.company.slug, candidate.pk]))
         self.assertEqual(response.status_code, 404)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# feat/stewardship-monitor (PR 14) — Continuous Stewardship Monitor: scheduled
+# refresh, change detection, evidence alerts. Same @patch conventions as the
+# PR13 block above — network calls always mocked, identity/curated data real.
+# ═══════════════════════════════════════════════════════════════════════════
+from company_intelligence.models import StewardshipAlert, StewardshipChangeEvent
+from company_intelligence.services import (
+    change_detection, change_timeline, conflict_detection, stewardship_alerts,
+)
+
+
+def _harvester_backed_link(profile, kpi_id, *, relationship='supports', review_state='confirmed',
+                            text='Real evidence text discussing the KPI topic.', document=None,
+                            source=None, freshness_score=0.8):
+    """A CompanyKPIEvidenceLink genuinely backed by a harvester.Evidence row
+    (via the same EvidenceMemory.source_reference convention
+    create_memory_from_evidence() writes) — needed to exercise
+    change_detection.evidence_status_label(), which only resolves real
+    provenance, never a PR9-style demo fixture."""
+    from harvester.models import Evidence as HarvesterEvidence
+
+    harvester_evidence = HarvesterEvidence.objects.create(
+        company=profile, company_slug=profile.company.slug, category='waste', document=document, source=source,
+        title='Test evidence', full_text=text, excerpt=text[:200], freshness_score=freshness_score,
+    )
+    memory = EvidenceMemory.objects.create(
+        text_chunk=text, company=profile, source_type='harvester_evidence',
+        source_reference=f'harvester.Evidence:{harvester_evidence.pk}', verification_status='verified',
+    )
+    assessment = CompanyKPIAssessment.objects.get_or_create(company=profile, kpi_id=kpi_id)[0]
+    link = CompanyKPIEvidenceLink.objects.create(
+        assessment=assessment, evidence=memory, relationship=relationship, review_state=review_state,
+    )
+    return link, harvester_evidence
+
+
+class ChangeDetectionTests(TestCase):
+    def test_new_source_creates_change_event(self):
+        from harvester.models import Source as HarvesterSource
+
+        profile = _profile(slug='cd-new-source-co')
+        discovered = DiscoveredSource.objects.create(
+            company=profile, url='https://cd-new-source-co.example/x.pdf', discovery_method='manual', status='approved',
+        )
+        harvester_source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='x')
+        event = change_detection.record_new_source(discovered, harvester_source)
+        self.assertEqual(event.event_type, 'new_source')
+        self.assertEqual(event.company_id, profile.pk)
+        self.assertEqual(event.source_id, harvester_source.pk)
+
+    def test_unchanged_ingestion_run_with_no_prior_failure_creates_no_event(self):
+        from harvester.models import IngestionRun, Source as HarvesterSource
+
+        profile = _profile(slug='cd-unchanged-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='x')
+        run = IngestionRun.objects.create(source=source, status='unchanged')
+        events = change_detection.detect_source_change(source, run)
+        self.assertEqual(events, [])
+
+    def test_failed_ingestion_run_creates_source_unreachable_event(self):
+        from harvester.models import IngestionRun, Source as HarvesterSource
+
+        profile = _profile(slug='cd-failed-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='x')
+        run = IngestionRun.objects.create(source=source, status='failed', error_message='HTTP 404')
+        events = change_detection.detect_source_change(source, run)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, 'source_unreachable')
+        self.assertTrue(events[0].review_required)
+        self.assertIn('404', events[0].summary)
+
+    def test_source_recovers_after_prior_failure_on_unchanged_run(self):
+        from harvester.models import IngestionRun, Source as HarvesterSource
+
+        profile = _profile(slug='cd-recover-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='x')
+        IngestionRun.objects.create(source=source, status='failed', error_message='HTTP 500')
+        run2 = IngestionRun.objects.create(source=source, status='unchanged')
+        events = change_detection.detect_source_change(source, run2)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, 'source_recovered')
+
+    def test_new_document_alongside_recovery_returns_both_events(self):
+        """Regression test for a real bug caught during self-review: a
+        recovery detected in the SAME run as a new/updated document must
+        never be silently dropped from the returned list."""
+        from harvester.models import IngestionRun, Source as HarvesterSource
+
+        profile = _profile(slug='cd-recover-and-new-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='x')
+        IngestionRun.objects.create(source=source, status='failed', error_message='HTTP 500')
+        run2 = IngestionRun.objects.create(source=source, status='new', evidence_created_count=3)
+        events = change_detection.detect_source_change(source, run2)
+        event_types = {e.event_type for e in events}
+        self.assertIn('new_document', event_types)
+        self.assertIn('source_recovered', event_types)
+        self.assertEqual(len(events), 2)
+
+    def test_new_document_type_for_document_source_vs_new_evidence_for_raw_source(self):
+        from harvester.models import IngestionRun, Source as HarvesterSource
+
+        profile = _profile(slug='cd-doc-vs-evidence-co')
+        doc_source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='doc')
+        raw_source = HarvesterSource.objects.create(company=profile, source_type='sec_edgar', name='raw')
+
+        doc_run = IngestionRun.objects.create(source=doc_source, status='new', evidence_created_count=1)
+        raw_run = IngestionRun.objects.create(source=raw_source, status='new', evidence_created_count=1)
+
+        doc_events = change_detection.detect_source_change(doc_source, doc_run)
+        raw_events = change_detection.detect_source_change(raw_source, raw_run)
+        self.assertEqual(doc_events[0].event_type, 'new_document')
+        self.assertEqual(raw_events[0].event_type, 'new_evidence')
+
+    def test_record_new_kpi_candidates_aggregate_event(self):
+        profile = _profile(slug='cd-new-kpi-co')
+        link = _proposed_link(profile, kpi_id=10)
+        event = change_detection.record_new_kpi_candidates(profile, [link])
+        self.assertEqual(event.event_type, 'new_kpi_candidate')
+        self.assertIn('1', event.summary)
+
+    def test_record_new_kpi_candidates_returns_none_for_empty_list(self):
+        profile = _profile(slug='cd-no-new-kpi-co')
+        self.assertIsNone(change_detection.record_new_kpi_candidates(profile, []))
+
+    def test_record_shariah_data_changed(self):
+        profile = _profile(slug='cd-shariah-changed-co')
+        event = change_detection.record_shariah_data_changed(profile)
+        self.assertEqual(event.event_type, 'shariah_data_changed')
+        self.assertTrue(event.review_required)
+
+    def test_evidence_status_label_disputed_wins(self):
+        profile = _profile(slug='status-disputed-co')
+        link, _ = _harvester_backed_link(profile, kpi_id=20, review_state='disputed', freshness_score=0.9)
+        self.assertEqual(change_detection.evidence_status_label(link), 'DISPUTED')
+
+    def test_evidence_status_label_stale_when_freshness_below_threshold(self):
+        profile = _profile(slug='status-stale-co')
+        link, _ = _harvester_backed_link(profile, kpi_id=21, freshness_score=0.1)
+        self.assertEqual(change_detection.evidence_status_label(link), 'STALE')
+
+    def test_evidence_status_label_current_for_fresh_confirmed_evidence(self):
+        profile = _profile(slug='status-current-co')
+        link, _ = _harvester_backed_link(profile, kpi_id=22, freshness_score=0.9)
+        self.assertEqual(change_detection.evidence_status_label(link), 'CURRENT')
+
+    def test_evidence_status_label_current_for_non_harvester_backed_link(self):
+        # A PR9-style manual/demo link has no harvester.Evidence to resolve —
+        # honestly defaults to CURRENT rather than fabricating staleness.
+        profile = _profile(slug='status-no-harvester-co')
+        link = _proposed_link(profile, kpi_id=23)
+        self.assertEqual(change_detection.evidence_status_label(link), 'CURRENT')
+
+    def test_evidence_status_label_historical_when_newer_document_exists_no_conflict(self):
+        from harvester.models import Source as HarvesterSource, SourceDocument
+
+        profile = _profile(slug='status-historical-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='x')
+        old_doc = SourceDocument.objects.create(
+            source=source, company=profile, company_slug=profile.company.slug, title='Old Report',
+            document_type='sustainability_report', url='https://status-historical-co.example/report.pdf',
+            content_hash='hash-old',
+        )
+        link, harvester_evidence = _harvester_backed_link(profile, kpi_id=24, document=old_doc, freshness_score=0.8)
+        SourceDocument.objects.create(
+            source=source, company=profile, company_slug=profile.company.slug, title='New Report',
+            document_type='sustainability_report', url='https://status-historical-co.example/report.pdf',
+            content_hash='hash-new',
+        )
+        self.assertEqual(change_detection.evidence_status_label(link), 'HISTORICAL')
+
+    def test_evidence_status_label_possibly_superseded_when_conflict_flagged(self):
+        from harvester.models import Source as HarvesterSource, SourceDocument
+
+        profile = _profile(slug='status-superseded-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sustainability_report', name='x')
+        old_doc = SourceDocument.objects.create(
+            source=source, company=profile, company_slug=profile.company.slug, title='Old Report',
+            document_type='sustainability_report', url='https://status-superseded-co.example/report.pdf',
+            content_hash='hash-old-2',
+        )
+        link, harvester_evidence = _harvester_backed_link(profile, kpi_id=25, document=old_doc, freshness_score=0.8)
+        SourceDocument.objects.create(
+            source=source, company=profile, company_slug=profile.company.slug, title='New Report',
+            document_type='sustainability_report', url='https://status-superseded-co.example/report.pdf',
+            content_hash='hash-new-2',
+        )
+        StewardshipChangeEvent.objects.create(
+            company=profile, event_type='potential_conflict', severity='high',
+            evidence=link.evidence, kpi_evidence_link=link, summary='Test conflict flag.',
+        )
+        self.assertEqual(change_detection.evidence_status_label(link), 'POSSIBLY_SUPERSEDED')
+
+
+class ConflictDetectionTests(TestCase):
+    def test_reversal_signal_phrase_flags_potential_conflict(self):
+        profile = _profile(slug='conflict-reversal-co')
+        _harvester_backed_link(profile, kpi_id=30, relationship='supports', review_state='confirmed')
+        assessment = CompanyKPIAssessment.objects.get(company=profile, kpi_id=30)
+        new_link, _ = _harvester_backed_link(
+            profile, kpi_id=30, relationship='context', review_state='proposed',
+            text='The programme was discontinued and no longer supports this initiative.',
+        )
+        events = conflict_detection.detect_potential_conflicts_for_refresh(profile, [new_link])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, 'potential_conflict')
+        self.assertEqual(events[0].kpi_evidence_link_id, new_link.pk)
+        # Never auto-sets an actual conflicts relationship or mutates review_state.
+        new_link.refresh_from_db()
+        self.assertEqual(new_link.relationship, 'context')
+        self.assertEqual(new_link.review_state, 'proposed')
+
+    def test_no_existing_confirmed_support_means_no_conflict_flagged(self):
+        profile = _profile(slug='conflict-none-co')
+        new_link, _ = _harvester_backed_link(
+            profile, kpi_id=31, relationship='context', review_state='proposed',
+            text='This was discontinued.',
+        )
+        events = conflict_detection.detect_potential_conflicts_for_refresh(profile, [new_link])
+        self.assertEqual(events, [])
+
+    def test_ordinary_supporting_evidence_with_no_reversal_signal_is_not_flagged(self):
+        profile = _profile(slug='conflict-ordinary-co')
+        _harvester_backed_link(profile, kpi_id=32, relationship='supports', review_state='confirmed')
+        new_link, _ = _harvester_backed_link(
+            profile, kpi_id=32, relationship='supports', review_state='proposed',
+            text='We achieved a 74% waste diversion rate this year.',
+        )
+        events = conflict_detection.detect_potential_conflicts_for_refresh(profile, [new_link])
+        self.assertEqual(events, [])
+
+
+class StewardshipAlertsTests(TestCase):
+    def test_generate_alert_for_event_creates_alert_with_priority_components(self):
+        profile = _profile(slug='alert-gen-co')
+        event = StewardshipChangeEvent.objects.create(
+            company=profile, event_type='potential_conflict', severity='high', review_required=True,
+            summary='Test potential conflict.',
+        )
+        alert, created = stewardship_alerts.generate_alert_for_event(event)
+        self.assertTrue(created)
+        self.assertEqual(alert.alert_type, 'potential_conflict')
+        self.assertGreater(alert.priority_score, 0)
+        self.assertIn('severity_weight', alert.priority_components)
+        self.assertIn('change_type_weight', alert.priority_components)
+        self.assertEqual(alert.priority_score, sum(alert.priority_components.values()))
+
+    def test_generate_alert_for_event_is_idempotent(self):
+        profile = _profile(slug='alert-idempotent-co')
+        event = StewardshipChangeEvent.objects.create(
+            company=profile, event_type='new_document', severity='medium', summary='New doc.',
+        )
+        alert1, created1 = stewardship_alerts.generate_alert_for_event(event)
+        alert2, created2 = stewardship_alerts.generate_alert_for_event(event)
+        self.assertTrue(created1)
+        self.assertFalse(created2)
+        self.assertEqual(alert1.pk, alert2.pk)
+        self.assertEqual(StewardshipAlert.objects.filter(change_event=event).count(), 1)
+
+    def test_generate_alerts_for_refresh_produces_zero_alerts_for_zero_events(self):
+        profile = _profile(slug='alert-zero-co')
+        alerts = stewardship_alerts.generate_alerts_for_refresh(profile, None, [])
+        self.assertEqual(alerts, [])
+        self.assertEqual(StewardshipAlert.objects.filter(company=profile).count(), 0)
+
+    def test_acknowledge_resolve_dismiss_state_transitions(self):
+        profile = _profile(slug='alert-lifecycle-co')
+        staff = User.objects.create_user(username='alert_staff', password='pw', is_staff=True)
+        event = StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', summary='x')
+        alert, _ = stewardship_alerts.generate_alert_for_event(event)
+
+        self.assertEqual(alert.state, 'new')
+        stewardship_alerts.acknowledge_alert(alert, staff)
+        alert.refresh_from_db()
+        self.assertEqual(alert.state, 'acknowledged')
+        self.assertEqual(alert.acknowledged_by, staff)
+
+        stewardship_alerts.resolve_alert(alert, staff, reason='Confirmed harmless.')
+        alert.refresh_from_db()
+        self.assertEqual(alert.state, 'resolved')
+        self.assertEqual(alert.resolution_reason, 'Confirmed harmless.')
+
+    def test_dismiss_alert(self):
+        profile = _profile(slug='alert-dismiss-co')
+        staff = User.objects.create_user(username='alert_dismiss_staff', password='pw', is_staff=True)
+        event = StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', summary='x')
+        alert, _ = stewardship_alerts.generate_alert_for_event(event)
+        stewardship_alerts.dismiss_alert(alert, staff, reason='Not relevant.')
+        alert.refresh_from_db()
+        self.assertEqual(alert.state, 'dismissed')
+
+    def test_no_investment_recommendation_language_in_any_alert_template(self):
+        for event_type, template in stewardship_alerts.MESSAGE_TEMPLATES.items():
+            lowered = template.lower()
+            for banned in stewardship_alerts.BANNED_PHRASES:
+                self.assertNotIn(banned, lowered, f'{event_type} template contains banned phrase "{banned}"')
+
+
+class ChangeTimelineTests(TestCase):
+    def test_timeline_merges_and_sorts_multiple_record_types_newest_first(self):
+        profile = _profile(slug='timeline-co')
+        DiscoveredSource.objects.create(
+            company=profile, url='https://timeline-co.example/x.pdf', discovery_method='manual', status='candidate',
+        )
+        StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', summary='A new doc arrived.')
+        CompanyRefreshRun.objects.create(company=profile, status='complete')
+        _proposed_link(profile, kpi_id=40)
+
+        timeline = change_timeline.company_change_timeline(profile)
+        kinds = {e['kind'] for e in timeline}
+        self.assertIn('source_discovered', kinds)
+        self.assertIn('new_document', kinds)
+        self.assertIn('refresh_run', kinds)
+        self.assertIn('kpi_candidate_proposed', kinds)
+        timestamps = [e['timestamp'] for e in timeline]
+        self.assertEqual(timestamps, sorted(timestamps, reverse=True))
+
+    def test_timeline_respects_limit(self):
+        profile = _profile(slug='timeline-limit-co')
+        for i in range(5):
+            StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', summary=f'doc {i}')
+        timeline = change_timeline.company_change_timeline(profile, limit=2)
+        self.assertEqual(len(timeline), 2)
+
+
+class RefreshOrchestratorLockingAndSchedulingTests(TestCase):
+    def test_concurrent_refresh_is_refused_not_double_run(self):
+        profile = _profile(slug='lock-co')
+        profile.tracking_status = 'refresh_in_progress'
+        profile.save(update_fields=['tracking_status'])
+        result = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        self.assertEqual(result['error'], 'already_refreshing')
+        self.assertEqual(CompanyRefreshRun.objects.filter(company=profile).count(), 0)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_scheduled_trigger_skips_not_due_sources(self, mock_doc_fetch, mock_sec_fetch):
+        from django.utils import timezone
+        from harvester.models import Source as HarvesterSource
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        # First manual refresh registers + fetches both real sources.
+        refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        # Mark both sources freshly succeeded so neither is due again soon.
+        HarvesterSource.objects.filter(company=profile).update(last_success_at=timezone.now())
+
+        run2 = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='scheduled')
+        self.assertEqual(run2.sources_checked, 0)
+        self.assertEqual(run2.sources_skipped_not_due, 2)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_manual_trigger_always_rechecks_every_active_source(self, mock_doc_fetch, mock_sec_fetch):
+        from django.utils import timezone
+        from harvester.models import Source as HarvesterSource
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        HarvesterSource.objects.filter(company=profile).update(last_success_at=timezone.now())
+
+        run2 = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        self.assertEqual(run2.sources_checked, 2)
+        self.assertEqual(run2.sources_skipped_not_due, 0)
+
+
+class RefreshOrchestratorChangeWiringTests(TestCase):
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_first_refresh_produces_change_events_and_alerts(self, mock_doc_fetch, mock_sec_fetch):
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        events = StewardshipChangeEvent.objects.filter(refresh_run=run)
+        self.assertTrue(events.exists())
+        self.assertTrue(events.filter(event_type='new_kpi_candidate').exists())
+        self.assertTrue(StewardshipAlert.objects.filter(company=profile).exists())
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_genuinely_first_ever_document_is_labelled_new_not_updated(self, mock_doc_fetch, mock_sec_fetch):
+        """
+        Regression test for a real bug caught during PR14 browser
+        verification: a company's genuinely FIRST-EVER document ingestion
+        was mislabelled 'document_updated' because the pre-existing
+        new-vs-updated check in harvester/services/ingestion_pipeline.py
+        looked at whether the COMPANY had ANY evidence yet (in any
+        category), not whether THIS specific document/URL had been seen
+        before. Since the SEC EDGAR source is processed first (alphabetical
+        Source ordering: 'sec_edgar' < 'sustainability_report') and creates
+        financial-category evidence, the sustainability document's own
+        brand-new ingestion was incorrectly seeing "prior evidence exists"
+        and reporting itself as updated rather than new.
+
+        NOTE: with this exact stacked-@patch order, mock_doc_fetch (first
+        param) is the ACTUAL mock for fetch_sec_edgar and mock_sec_fetch
+        (second param) is the ACTUAL mock for fetch_sustainability_document
+        — verified empirically (see the comment on the shariah test above);
+        this test is precision-sensitive (checks an exact document_id/event
+        pairing), so unlike the file's other, coarser tests, getting this
+        backwards silently breaks it rather than merely being confusing.
+        """
+        mock_doc_fetch.return_value = _sec_edgar_outcome()
+        mock_sec_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        doc_events = StewardshipChangeEvent.objects.filter(refresh_run=run, document__isnull=False)
+        self.assertTrue(doc_events.exists())
+        for event in doc_events:
+            self.assertEqual(event.event_type, 'new_document', event.summary)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_second_unchanged_refresh_produces_zero_new_change_events(self, mock_doc_fetch, mock_sec_fetch):
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        run2 = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        self.assertEqual(StewardshipChangeEvent.objects.filter(refresh_run=run2).count(), 0)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_kpi_candidates_are_stamped_with_proposing_refresh_run(self, mock_doc_fetch, mock_sec_fetch):
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        links = CompanyKPIEvidenceLink.objects.filter(assessment__company=profile)
+        self.assertTrue(links.exists())
+        for link in links:
+            self.assertEqual(link.proposed_via_refresh_run_id, run.pk)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_shariah_data_changed_event_emitted_when_financial_facts_created(self, mock_doc_fetch, mock_sec_fetch):
+        # NOTE: with this exact stacked-@patch order, mock_doc_fetch (first
+        # param) is the ACTUAL mock for fetch_sec_edgar and mock_sec_fetch
+        # (second param) is the ACTUAL mock for fetch_sustainability_document
+        # — verified empirically; the parameter names are misleading but
+        # match this file's existing PR13 convention throughout. This test
+        # needs a realistic 'metrics' metadata shape (which the generic
+        # _sec_edgar_outcome() helper doesn't include) on whichever mock
+        # really backs fetch_sec_edgar, so it's built inline here.
+        sec_edgar_outcome_with_metrics = FetchOutcome(
+            success=True,
+            candidates=[EvidenceCandidate(
+                company_slug='apple', category='financial', statement='Apple reported revenue of $400B.',
+                source_type='regulatory_filing', title='SEC EDGAR test', url='https://www.sec.gov/test',
+                source_owner='U.S. Securities and Exchange Commission',
+            )],
+            content_hash_input='sec-hash-with-metrics',
+            metadata={
+                'cik': '0000320193', 'entity_name': 'Apple Inc.',
+                'metrics': {
+                    'revenue_usd': {
+                        'value': 400_000_000_000.0, 'concept': 'Revenues', 'is_derived': False,
+                        'unit': 'USD', 'period_end': '2024-09-28', 'statement': 'Apple reported total revenue of $400,000,000,000.',
+                    },
+                },
+            },
+        )
+        mock_doc_fetch.return_value = sec_edgar_outcome_with_metrics
+        mock_sec_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        self.assertTrue(profile.financial_facts.exists())
+        self.assertTrue(
+            StewardshipChangeEvent.objects.filter(refresh_run=run, event_type='shariah_data_changed').exists()
+        )
+
+
+class AppearanceContextAndReviewWorkbenchIntegrationTests(TestCase):
+    def test_appearance_context_shows_refresh_run_label(self):
+        profile = _profile(slug='appearance-co')
+        run = CompanyRefreshRun.objects.create(company=profile, triggered_by='manual', status='complete')
+        link = _proposed_link(profile, kpi_id=60)
+        link.proposed_via_refresh_run = run
+        link.save(update_fields=['proposed_via_refresh_run'])
+        context = evidence_review.appearance_context(link)
+        self.assertIsNotNone(context['refresh_run_label'])
+        self.assertIn(str(run.pk), context['refresh_run_label'])
+        self.assertIsNone(context['potential_conflict_event'])
+
+    def test_appearance_context_shows_potential_conflict_flag(self):
+        profile = _profile(slug='appearance-conflict-co')
+        link = _proposed_link(profile, kpi_id=61)
+        StewardshipChangeEvent.objects.create(
+            company=profile, event_type='potential_conflict', kpi_evidence_link=link, summary='Flagged.',
+        )
+        context = evidence_review.appearance_context(link)
+        self.assertIsNotNone(context['potential_conflict_event'])
+
+    def test_appearance_context_absent_for_manually_added_link(self):
+        profile = _profile(slug='appearance-manual-co')
+        link = _proposed_link(profile, kpi_id=62)
+        context = evidence_review.appearance_context(link)
+        self.assertIsNone(context['refresh_run_label'])
+        self.assertIsNone(context['potential_conflict_event'])
+
+    def test_pending_review_queue_rows_include_appearance_context(self):
+        profile = _profile(slug='appearance-queue-co')
+        _proposed_link(profile, kpi_id=63)
+        rows = evidence_review.pending_review_queue({'company_slug': profile.company.slug})
+        self.assertTrue(rows)
+        self.assertIn('appearance', rows[0])
+
+
+class MonitorViewsTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='monitor_staff', password='pw', is_staff=True)
+        self.normal = User.objects.create_user(username='monitor_normal', password='pw')
+
+    def test_monitor_dashboard_requires_staff(self):
+        client = Client()
+        client.login(username='monitor_normal', password='pw')
+        response = client.get(reverse('companies:monitor'))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_monitor_dashboard_shows_real_counts(self):
+        profile = _profile(slug='monitor-dash-co')
+        profile.tracking_status = 'active'
+        profile.save(update_fields=['tracking_status'])
+        client = Client()
+        client.login(username='monitor_staff', password='pw')
+        response = client.get(reverse('companies:monitor'))
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(response.context['health']['tracked_companies'], 1)
+
+    def test_monitor_dashboard_lists_source_failures(self):
+        from django.utils import timezone
+        from harvester.models import Source as HarvesterSource
+
+        profile = _profile(slug='monitor-failing-co')
+        HarvesterSource.objects.create(
+            company=profile, source_type='sustainability_report', name='failing-src',
+            last_failure_at=timezone.now(), last_failure_reason='HTTP 500',
+        )
+        client = Client()
+        client.login(username='monitor_staff', password='pw')
+        response = client.get(reverse('companies:monitor'))
+        self.assertEqual(response.context['health']['sources_currently_failing'], 1)
+
+    def test_no_investment_recommendation_language_on_monitor_page(self):
+        _profile(slug='monitor-no-invest-co')
+        client = Client()
+        client.login(username='monitor_staff', password='pw')
+        response = client.get(reverse('companies:monitor'))
+        content = response.content.decode().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, content)
+
+    def test_refresh_diff_view_requires_staff(self):
+        profile = _profile(slug='diff-staff-co')
+        run = CompanyRefreshRun.objects.create(company=profile, status='complete')
+        client = Client()
+        client.login(username='monitor_normal', password='pw')
+        response = client.get(reverse('companies:refresh_diff', args=[profile.company.slug, run.pk]))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_refresh_diff_view_shows_change_events_for_that_run(self):
+        profile = _profile(slug='diff-events-co')
+        run = CompanyRefreshRun.objects.create(company=profile, status='complete', sources_checked=1)
+        StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', refresh_run=run, summary='New doc found.')
+        client = Client()
+        client.login(username='monitor_staff', password='pw')
+        response = client.get(reverse('companies:refresh_diff', args=[profile.company.slug, run.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['change_events']), 1)
+
+    def test_refresh_diff_cross_company_404s(self):
+        profile_a = _profile(slug='diff-cross-a-co')
+        profile_b = _profile(slug='diff-cross-b-co')
+        run = CompanyRefreshRun.objects.create(company=profile_a, status='complete')
+        client = Client()
+        client.login(username='monitor_staff', password='pw')
+        response = client.get(reverse('companies:refresh_diff', args=[profile_b.company.slug, run.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_alert_acknowledge_resolve_dismiss_views_require_staff_and_post(self):
+        profile = _profile(slug='alert-view-co')
+        event = StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', summary='x')
+        alert, _ = stewardship_alerts.generate_alert_for_event(event)
+
+        client = Client()
+        client.login(username='monitor_normal', password='pw')
+        response = client.post(reverse('companies:alert_acknowledge', args=[profile.company.slug, alert.pk]))
+        self.assertNotEqual(response.status_code, 200)
+
+        client.login(username='monitor_staff', password='pw')
+        response = client.get(reverse('companies:alert_acknowledge', args=[profile.company.slug, alert.pk]))
+        self.assertEqual(response.status_code, 404)  # GET not allowed
+
+        response = client.post(reverse('companies:alert_acknowledge', args=[profile.company.slug, alert.pk]))
+        self.assertEqual(response.status_code, 302)
+        alert.refresh_from_db()
+        self.assertEqual(alert.state, 'acknowledged')
+
+        response = client.post(reverse('companies:alert_resolve', args=[profile.company.slug, alert.pk]), {'reason': 'Handled.'})
+        self.assertEqual(response.status_code, 302)
+        alert.refresh_from_db()
+        self.assertEqual(alert.state, 'resolved')
+
+    def test_alert_dismiss_view(self):
+        profile = _profile(slug='alert-dismiss-view-co')
+        event = StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', summary='x')
+        alert, _ = stewardship_alerts.generate_alert_for_event(event)
+        client = Client()
+        client.login(username='monitor_staff', password='pw')
+        response = client.post(reverse('companies:alert_dismiss', args=[profile.company.slug, alert.pk]), {'reason': 'n/a'})
+        self.assertEqual(response.status_code, 302)
+        alert.refresh_from_db()
+        self.assertEqual(alert.state, 'dismissed')
+
+    def test_universe_page_shows_open_alerts_and_conflicts_indicators(self):
+        profile = _profile(slug='universe-alerts-co')
+        event = StewardshipChangeEvent.objects.create(company=profile, event_type='potential_conflict', summary='Conflict here.')
+        stewardship_alerts.generate_alert_for_event(event)
+        client = Client()
+        client.login(username='monitor_staff', password='pw')
+        response = client.get(reverse('companies:universe'))
+        row = next(r for r in response.context['rows'] if r['profile'].pk == profile.pk)
+        self.assertGreaterEqual(row['open_alerts_count'], 1)
+
+
+class SchedulerManagementCommandTests(TestCase):
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_scheduled_flag_records_scheduled_trigger(self, mock_doc_fetch, mock_sec_fetch):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+
+        out = StringIO()
+        call_command('refresh_stewardship_universe', '--company', 'apple', '--scheduled', stdout=out)
+        profile = CompanyProfile.objects.get(company__slug='apple')
+        run = CompanyRefreshRun.objects.filter(company=profile).latest('started_at')
+        self.assertEqual(run.triggered_by, 'scheduled')
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_batch_continues_after_one_company_fails(self, mock_doc_fetch, mock_sec_fetch):
+        """Section 16 — one company's total failure must never stop the
+        batch. refresh_company_intelligence() itself never raises (it
+        catches everything internally), so a failing company simply
+        produces a 'failed' CompanyRefreshRun and the loop moves on.
+
+        NOTE: with this exact stacked-@patch order, mock_doc_fetch (first
+        param) is the ACTUAL mock for fetch_sec_edgar (verified empirically
+        — see the comment on the shariah test above); the side_effect
+        inspecting `slug` is therefore assigned to mock_doc_fetch here.
+        """
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        def sec_side_effect(slug):
+            if slug == 'apple':
+                return FetchOutcome(success=False, error='HTTP 500')
+            return _sec_edgar_outcome(slug)
+
+        mock_doc_fetch.side_effect = sec_side_effect
+        mock_sec_fetch.return_value = FetchOutcome(success=False, error='HTTP 404')
+
+        out = StringIO()
+        call_command('refresh_stewardship_universe', '--company', 'apple', '--company', 'tesla', stdout=out)
+
+        apple_profile = CompanyProfile.objects.get(company__slug='apple')
+        tesla_profile = CompanyProfile.objects.get(company__slug='tesla')
+        self.assertEqual(apple_profile.tracking_status, 'error')
+        # Tesla's own sec_edgar fetch succeeded (only its sustainability doc
+        # fetch fails, since tesla has no curated document) — proving the
+        # batch reached and completed Tesla despite Apple's total failure.
+        self.assertIn(tesla_profile.tracking_status, ('active', 'error'))
+        self.assertTrue(CompanyRefreshRun.objects.filter(company=tesla_profile).exists())
+
+
+class SchedulerCSRFTests(TestCase):
+    def test_alert_acknowledge_without_csrf_token_rejected(self):
+        from django.test import Client as StrictClient
+
+        profile = _profile(slug='csrf-alert-co')
+        staff = User.objects.create_user(username='csrf_alert_staff', password='pw', is_staff=True)
+        event = StewardshipChangeEvent.objects.create(company=profile, event_type='new_document', summary='x')
+        alert, _ = stewardship_alerts.generate_alert_for_event(event)
+
+        strict_client = StrictClient(enforce_csrf_checks=True)
+        strict_client.login(username='csrf_alert_staff', password='pw')
+        response = strict_client.post(reverse('companies:alert_acknowledge', args=[profile.company.slug, alert.pk]))
+        self.assertEqual(response.status_code, 403)

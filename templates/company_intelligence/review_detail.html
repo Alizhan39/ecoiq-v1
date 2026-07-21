@@ -75,6 +75,12 @@
         <div class="rd-kv"><span>Proposed By</span><strong>{{ proposed_by }}</strong></div>
         <div class="rd-kv"><span>Current Review State</span><strong>{{ link.get_review_state_display }}</strong></div>
         <div class="rd-kv"><span>Created</span><strong>{{ link.added_at|date:"Y-m-d H:i" }}</strong></div>
+        {% if appearance.refresh_run_label %}
+        <div class="rd-kv"><span>Why This Appeared</span><strong>{{ appearance.refresh_run_label }}</strong></div>
+        {% endif %}
+        {% if appearance.potential_conflict_event %}
+        <div class="rd-conflict-banner">⚠ Potential Conflict — Flagged During Refresh: {{ appearance.potential_conflict_event.summary }}</div>
+        {% endif %}
 
         {% if kpi_context.supporting %}
         <h3 class="rd-h3">Existing Supporting Evidence ({{ kpi_context.supporting|length }})</h3>
@@ -152,6 +158,7 @@
   .rd-table td:first-child{color:#64748b;width:35%}
   .rd-table a{color:#c9a84c;text-decoration:none;word-break:break-all}
   .rd-warning{font-size:.76rem;color:#fca5a5;margin:.5rem 0}
+  .rd-conflict-banner{font-size:.76rem;color:#fca5a5;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.25);border-radius:8px;padding:.6rem .8rem;margin:.6rem 0;line-height:1.5}
   .rd-quality-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem}
   .rd-quality-card{background:#0d1117;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:.6rem .7rem}
   .rd-quality-label{display:block;font-size:.6rem;color:#475569;text-transform:uppercase}

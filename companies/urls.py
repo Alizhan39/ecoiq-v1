@@ -4,6 +4,7 @@ from company_intelligence import views as ci_views
 from company_intelligence import discovery_views as discovery
 from company_intelligence import review_views as review
 from company_intelligence import stewardship_views as stewardship
+from company_intelligence import monitor_views as monitor
 
 app_name = 'companies'
 
@@ -28,6 +29,9 @@ urlpatterns = [
     # all tracked companies, so 'universe/' must also precede the
     # '<slug:slug>/' catch-all.
     path('universe/',                               stewardship.universe_view,  name='universe'),
+    # feat/stewardship-monitor (PR 14) — staff-only, cross-company dashboard,
+    # so 'monitor/' must also precede the '<slug:slug>/' catch-all.
+    path('monitor/',                                monitor.monitor_dashboard_view, name='monitor'),
     path('<slug:slug>/',                            views.company_detail,       name='detail'),
     path('<slug:slug>/explain-match/',              discovery.explain_match_view, name='explain_match'),
     path('<slug:slug>/register-document-source/',   discovery.register_document_source_view, name='register_document_source'),
@@ -48,6 +52,11 @@ urlpatterns = [
     path('<slug:slug>/status/resume/',               stewardship.resume_tracking_view, name='resume_tracking'),
     path('<slug:slug>/status/sources/<int:source_id>/approve/', stewardship.approve_source_view, name='approve_source'),
     path('<slug:slug>/status/sources/<int:source_id>/reject/',  stewardship.reject_source_view,  name='reject_source'),
+    # feat/stewardship-monitor (PR 14) — refresh diff + alert actions.
+    path('<slug:slug>/status/refresh/<int:run_id>/diff/',       monitor.refresh_diff_view,      name='refresh_diff'),
+    path('<slug:slug>/status/alerts/<int:alert_id>/acknowledge/', monitor.alert_acknowledge_view, name='alert_acknowledge'),
+    path('<slug:slug>/status/alerts/<int:alert_id>/resolve/',     monitor.alert_resolve_view,    name='alert_resolve'),
+    path('<slug:slug>/status/alerts/<int:alert_id>/dismiss/',     monitor.alert_dismiss_view,    name='alert_dismiss'),
     path('reports/',                               views.report_index,          name='report_index'),
     path('reports/sector/<str:sector>/',           views.sector_pdf_report,     name='sector_report'),
 ]

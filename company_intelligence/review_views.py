@@ -107,6 +107,7 @@ def review_detail_view(request, link_id):
         'duplicates': evidence_review.duplicate_links_for(link),
         'history': evidence_review.review_history(link),
         'proposed_by': evidence_review._proposed_by(link),
+        'appearance': evidence_review.appearance_context(link),
         'action_choices': EvidenceReviewAction.ACTION_CHOICES,
     }
     return render(request, 'company_intelligence/review_detail.html', context)
