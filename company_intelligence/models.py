@@ -293,10 +293,19 @@ class CompanyKPIEvidenceLink(models.Model):
     aggregate of its linked evidence relationships and their quality
     (see services/kpi_engine.py), not asserted independently of them.
     """
+    # feat/evidence-review-workbench (PR 12): 'insufficient_to_conclude' is a
+    # genuine FOURTH relationship, not a synonym for 'context' — the evidence
+    # really discusses the KPI (unlike 'context', which is topically adjacent
+    # but not evaluative) but a reviewer determined it isn't enough on its
+    # own to conclude support or conflict. Keeping it distinct from 'context'
+    # is what lets a reviewer separate MATCH VALIDITY (does this evidence
+    # really discuss this KPI?) from EVIDENCE RELATIONSHIP (what does it
+    # conclude?) rather than collapsing every valid match into one bucket.
     RELATIONSHIP_CHOICES = [
         ('supports', 'Supports'),
         ('conflicts', 'Conflicts'),
         ('context', 'Context Only'),
+        ('insufficient_to_conclude', 'Insufficient to Conclude'),
     ]
     # feat/company-evidence-ingestion (PR 10): a deterministic KPI-candidate
     # matcher (services/kpi_candidate_matching.py) may PROPOSE a link from
@@ -306,17 +315,32 @@ class CompanyKPIEvidenceLink(models.Model):
     # guarantee even as ingestion proposes candidates. Existing PR9 rows
     # (manually created, pre-dating this field) default to 'confirmed' —
     # a manually-added link was already a deliberate human action.
+    #
+    # feat/evidence-review-workbench (PR 12) adds 'needs_more_evidence' and
+    # 'disputed' as REAL states (not just logged, no-op actions the way
+    # PR10 first built mark_disputed/needs_more_evidence) — both are
+    # deliberately excluded from the 'confirmed' filter
+    # derive_status_from_evidence() already applies, so a disputed or
+    # needs-more-evidence link stops counting toward a company's KPI status
+    # the moment it leaves 'confirmed', with no engine change required.
+    # "Confirmed" is not permanently unquestionable: MARK_DISPUTED can move
+    # a confirmed link to 'disputed', and any of the confirm_*/reject
+    # actions can re-review a disputed link back out of that state — the
+    # full history is preserved as an immutable EvidenceReviewAction chain,
+    # never overwritten.
     REVIEW_STATE_CHOICES = [
         ('proposed', 'Proposed — Awaiting Review'),
         ('confirmed', 'Confirmed'),
         ('rejected', 'Rejected'),
+        ('needs_more_evidence', 'Needs More Evidence'),
+        ('disputed', 'Disputed'),
     ]
     assessment = models.ForeignKey(CompanyKPIAssessment, on_delete=models.CASCADE, related_name='evidence_links')
     evidence = models.ForeignKey(
         'evidence_memory.EvidenceMemory', on_delete=models.CASCADE, related_name='kpi_links',
     )
-    relationship = models.CharField(max_length=10, choices=RELATIONSHIP_CHOICES)
-    review_state = models.CharField(max_length=10, choices=REVIEW_STATE_CHOICES, default='confirmed')
+    relationship = models.CharField(max_length=30, choices=RELATIONSHIP_CHOICES)
+    review_state = models.CharField(max_length=25, choices=REVIEW_STATE_CHOICES, default='confirmed')
     match_basis = models.CharField(
         max_length=200, blank=True,
         help_text='For a proposed (ingestion-matched) link: the deterministic keyword/category match that '
@@ -490,13 +514,25 @@ class CompanyFinancialFactSource(models.Model):
 
 class EvidenceReviewAction(models.Model):
     """
-    feat/company-evidence-ingestion (PR 10) — the minimal staff human-review
-    workflow the brief asks for, covering candidate evidence, ambiguous KPI
-    mappings, and derived financial values. Every action is an immutable,
-    timestamped audit row (never edited/deleted) attributing exactly who
-    made the call and why — this is what lets a KPI link's review_state or
-    a controversy's status move, never a silent field flip with no
-    reviewer/timestamp/reason on record.
+    feat/company-evidence-ingestion (PR 10), extended by feat/evidence-
+    review-workbench (PR 12) — the staff human-review workflow's one
+    immutable, timestamped audit row per decision (never edited/deleted),
+    attributing exactly who made the call, what state it moved from/to, and
+    why. This is the ONLY thing that ever moves a KPI link's review_state —
+    never a silent field flip with no reviewer/timestamp/reason on record.
+
+    PR 12 replaces the single generic 'verify' action with four explicit
+    confirm_* actions, so a reviewer's decision separates MATCH VALIDITY
+    (was a real KPI relationship even proposed?) from EVIDENCE RELATIONSHIP
+    (does the evidence support, conflict, merely provide context, or is it
+    insufficient to conclude?) — never collapsing every valid match into
+    'supports' by default. mark_disputed/needs_more_evidence are upgraded
+    from PR10's audit-log-only, no-op actions to REAL review_state
+    mutations (see CompanyKPIEvidenceLink's REVIEW_STATE_CHOICES docstring)
+    — a dispute now genuinely stops a link counting toward a company's KPI
+    status, and can be resolved by any later confirm_*/reject action
+    (re-review), with the full chain of PRIOR decisions preserved here,
+    never overwritten.
 
     At least one of `evidence`/`kpi_evidence_link` must be set (enforced by
     the service layer, mirroring this app's existing convention of
@@ -504,10 +540,13 @@ class EvidenceReviewAction(models.Model):
     nullable FKs to different apps).
     """
     ACTION_CHOICES = [
-        ('verify', 'Verify'),
-        ('reject', 'Reject'),
-        ('mark_disputed', 'Mark Disputed'),
+        ('confirm_supports', 'Confirm — Supports'),
+        ('confirm_conflicts', 'Confirm — Conflicts'),
+        ('confirm_context', 'Confirm — Context Only'),
+        ('confirm_insufficient', 'Confirm — Insufficient to Conclude'),
+        ('reject', 'Reject Match'),
         ('needs_more_evidence', 'Needs More Evidence'),
+        ('mark_disputed', 'Mark Disputed'),
     ]
     evidence = models.ForeignKey(
         'evidence_memory.EvidenceMemory', null=True, blank=True, on_delete=models.CASCADE, related_name='review_actions',
@@ -518,6 +557,19 @@ class EvidenceReviewAction(models.Model):
     action = models.CharField(max_length=25, choices=ACTION_CHOICES)
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='evidence_review_actions')
     reason = models.TextField(blank=True)
+
+    # feat/evidence-review-workbench (PR 12) — explicit before/after
+    # snapshots on the audit row itself, so the history is readable without
+    # having to replay the whole action sequence to know what actually
+    # changed at each step.
+    previous_review_state = models.CharField(max_length=25, blank=True)
+    new_review_state = models.CharField(max_length=25, blank=True)
+    # The relationship this specific decision set (blank for
+    # reject/needs_more_evidence/mark_disputed, which don't assert one).
+    relationship_decision = models.CharField(
+        max_length=30, blank=True, choices=CompanyKPIEvidenceLink.RELATIONSHIP_CHOICES,
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

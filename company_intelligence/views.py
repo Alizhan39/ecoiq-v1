@@ -166,11 +166,13 @@ def refresh_company_view(request, slug):
 @staff_member_required(login_url='/login/')
 def evidence_review_action_view(request, slug):
     """
-    POST-only, staff-only. Records one EvidenceReviewAction against a
-    CompanyKPIEvidenceLink and, only for 'verify'/'reject', moves that
-    link's review_state and recomputes its assessment's status — every
-    other action (mark_disputed/needs_more_evidence) is logged as a real
-    audit entry without silently changing anything else.
+    POST-only, staff-only. The company-page "quick review" action —
+    delegates all state mutation to
+    company_intelligence.services.evidence_review.apply_review_decision(),
+    the SAME function the dedicated Evidence Review Workbench
+    (review_views.py, feat/evidence-review-workbench PR 12) uses, so there
+    is exactly one place a KPI link's review_state/relationship is ever
+    mutated, never two diverging copies of this logic.
     """
     if request.method != 'POST':
         raise Http404()
@@ -180,29 +182,16 @@ def evidence_review_action_view(request, slug):
     action = request.POST.get('action')
     reason = request.POST.get('reason', '')
 
-    valid_actions = {choice for choice, _ in EvidenceReviewAction.ACTION_CHOICES}
-    if action not in valid_actions:
+    from company_intelligence.services import evidence_review
+
+    if action not in evidence_review.ACTION_TRANSITIONS:
         messages.error(request, 'Invalid review action.')
         return redirect('companies:detail', slug=slug)
 
     link = get_object_or_404(
         CompanyKPIEvidenceLink, pk=link_id, assessment__company=profile,
     )
-
-    EvidenceReviewAction.objects.create(
-        kpi_evidence_link=link, evidence=link.evidence, action=action, reviewer=request.user, reason=reason,
-    )
-
-    if action == 'verify':
-        link.review_state = 'confirmed'
-        link.save(update_fields=['review_state'])
-    elif action == 'reject':
-        link.review_state = 'rejected'
-        link.save(update_fields=['review_state'])
-
-    if action in ('verify', 'reject'):
-        from company_intelligence.services.kpi_engine import recompute_assessment_status
-        recompute_assessment_status(link.assessment)
+    evidence_review.apply_review_decision(link, action, request.user, reason=reason)
 
     messages.success(request, f'Recorded "{dict(EvidenceReviewAction.ACTION_CHOICES)[action]}" for this evidence link.')
     return redirect('companies:detail', slug=slug)
