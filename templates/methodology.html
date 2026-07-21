@@ -949,6 +949,145 @@ a{color:inherit;text-decoration:none}
   </p>
 </div>
 
+<style>
+  #stewardship-section .sec-h3{font-size:1rem;font-weight:700;color:var(--text);margin:1.6rem 0 .6rem}
+  #stewardship-section .sec-body{font-size:.85rem;color:var(--muted2);line-height:1.7;max-width:80ch}
+  #stewardship-section .sec-list{margin:.6rem 0 1rem 1.2rem;padding:0;font-size:.85rem;color:var(--muted2);line-height:1.8}
+  #stewardship-section .sec-list li{margin-bottom:.3rem}
+  #stewardship-section code{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85em;color:var(--accent)}
+  #stewardship-section a{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════
+     12. STEWARDSHIP UNIVERSE — AUTOMATED SOURCE DISCOVERY & REFRESH
+     feat/stewardship-universe (PR 13)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="stewardship-section">
+  <a class="section-anchor" id="stewardship"></a>
+  <div class="sec-eyebrow">12 — Stewardship Universe</div>
+  <h2 class="sec-title">Stewardship Universe — Automated Source Discovery &amp; Evidence Refresh</h2>
+  <p class="sec-lead">
+    Turns manual, company-by-company document registration into a governed, repeatable pipeline: discover
+    authoritative sources → register them → fetch and version documents → extract evidence → propose KPI
+    candidates → send to human review → recompute company intelligence → record everything in AI Observatory.
+    <strong>Automated source discovery and evidence extraction do not constitute independent verification.
+    KPI relationships become confirmed evidence only after governed human review</strong> in the Evidence
+    Review Workbench — this page never replaces that gate, only feeds it more real candidates.
+  </p>
+
+  <h3 class="sec-h3">What Makes a Company "Tracked"</h3>
+  <p class="sec-body">
+    A <code>CompanyProfile</code> carries an explicit <code>tracking_status</code> — NOT TRACKED, ACTIVE,
+    REFRESH IN PROGRESS, PAUSED, or ERROR. This is deliberately a coarse, process-level lifecycle only; the
+    richer day-to-day state shown on the Stewardship Universe page (Needs Source Discovery / Review Required
+    / Needs Refresh / Current) is computed live from real conditions every time the page loads — never
+    stored, since a cached copy would go stale the moment anything changed underneath it. A company is never
+    shown as CURRENT while it has zero known sources or unreviewed evidence, no matter how long ago it was
+    last refreshed.
+  </p>
+
+  <h3 class="sec-h3">How Sources Are Discovered</h3>
+  <p class="sec-body">
+    Exactly three real, deterministic discovery methods — no generic web search, no guessed domains, no
+    fabricated results:
+  </p>
+  <ul class="sec-list">
+    <li><strong>SEC EDGAR identity</strong> — a company with a mapped CIK gets its regulatory filing history
+      as a Tier 1 source, auto-approved (a government filing index is definitionally authoritative).</li>
+    <li><strong>Companies House identity</strong> — the same for UK-registered companies, used for identity,
+      status, and filing metadata, never presented as sustainability evidence it does not provide.</li>
+    <li><strong>EcoIQ's curated official-domain registry</strong> — a small, manually-verified list of exact
+      sustainability-report URLs on companies' own domains, auto-approved as Tier 2.</li>
+  </ul>
+  <p class="sec-body">
+    A fourth, lower-trust path surfaces a company's own pre-existing, staff-entered profile fields (annual
+    report / sustainability report URLs) as CANDIDATES — real URLs, but never independently domain-verified,
+    so they always require explicit staff approval before being registered as a trusted source. A domain is
+    marked VERIFIED only when it matches EcoIQ's own curated registry; otherwise it is PROBABLE and cannot
+    silently become a Tier 1/2 source.
+  </p>
+
+  <h3 class="sec-h3">Source Registry &amp; Document Versioning</h3>
+  <p class="sec-body">
+    An approved <code>DiscoveredSource</code> becomes a real, fetchable <code>harvester.Source</code> row —
+    reused verbatim from PR10/11, never a parallel registry. Re-ingesting an unchanged document (same
+    content hash) resolves to the SAME <code>SourceDocument</code> row — a genuine no-op; a changed document
+    creates a new, dated row and the old one is preserved, never overwritten. Rejecting a discovered source
+    never deletes its record — historical provenance of what was found and why it was declined is kept.
+  </p>
+
+  <h3 class="sec-h3">Refresh Policy — Why Different Sources Check at Different Intervals</h3>
+  <p class="sec-body">
+    Regulatory filings (SEC EDGAR, Companies House) are checked every 90 days; annual/sustainability/ESG/TCFD
+    reports every 180 days; long-horizon transition plans every 270 days — a documented table, never one
+    universal interval. A source whose last attempt failed is retried after 14 days, sooner than its normal
+    interval, without being hammered every cycle. A source with no successful fetch on record yet is always
+    due immediately.
+  </p>
+
+  <h3 class="sec-h3">The Refresh Orchestrator</h3>
+  <p class="sec-body">
+    One service, <code>refresh_company_intelligence()</code>, runs discovery → registration → fetch →
+    dedup → KPI candidate matching → recomputation for one company, wrapped in a single AI Observatory
+    session. It is idempotent (reusing the exact same content-hash/dedup-key primitives PR10/11 already
+    proved), failure-tolerant (one source failing never corrupts or blocks another source's real results),
+    and honest about partial completion — a run is COMPLETE only if every checked source succeeded or was a
+    genuine no-op, PARTIAL if some failed, FAILED if none succeeded. Every run's structured outcome (sources
+    checked, documents new/unchanged, evidence created, KPI candidates proposed, warnings, errors) is
+    preserved as its own <code>CompanyRefreshRun</code> history row, linked to (never duplicating) its AI
+    Observatory session.
+  </p>
+
+  <h3 class="sec-h3">Dry Run</h3>
+  <p class="sec-body">
+    A dry run performs genuinely zero database writes — it reports which of a company's EXISTING registered
+    sources are currently due per policy, without discovery, registration, or any network fetch. It is a real
+    preview of existing state, never a simulation of hypothetical future discovery results.
+  </p>
+
+  <h3 class="sec-h3">No Auto-Confirmation</h3>
+  <p class="sec-body">
+    New evidence from a refresh produces KPI CANDIDATES only, via the same deterministic matcher and the same
+    <code>review_state='proposed'</code> path PR10/11 established — never an automatically confirmed KPI
+    relationship, no matter how strong the keyword match looks. A confirmed relationship still requires a
+    named human reviewer and a written reason in the Evidence Review Workbench.
+  </p>
+
+  <h3 class="sec-h3">Data Health — Transparent, Never a Hidden Score</h3>
+  <p class="sec-body">
+    Data completeness is a documented, five-component checklist, each worth exactly 20%: an official source is
+    known; at least one KPI has confirmed evidence; the Shariah screening is current; there is no disputed
+    evidence; no expected document category (annual/sustainability/ESG/TCFD/transition-plan report) is
+    missing. Every component is shown alongside the percentage — never collapsed into an unexplained number,
+    and never described as an investment quality score.
+  </p>
+
+  <h3 class="sec-h3">Scheduling</h3>
+  <p class="sec-body">
+    This repo has no periodic task scheduler wired up today (Celery is installed and used for on-demand
+    background work, but no Celery Beat schedule or platform cron exists). The
+    <code>refresh_stewardship_universe</code> management command (<code>--company</code>, <code>--limit</code>,
+    <code>--due-only</code>, <code>--dry-run</code>) is designed to be invoked by an external cron or platform
+    scheduler — EcoIQ does not claim autonomous continuous refresh beyond what is actually wired up.
+  </p>
+
+  <h3 class="sec-h3">Security</h3>
+  <p class="sec-body">
+    Every URL accepted into the Source Registry — whether staff-typed or discovered from a lower-trust
+    candidate — is checked against a URL-safety guard before being fetched: only http/https schemes, no
+    private/loopback/link-local/reserved IP ranges, no internal hostname patterns. A URL failing this check
+    is refused, never silently fetched anyway.
+  </p>
+
+  <h3 class="sec-h3">What EcoIQ Does Not Claim</h3>
+  <p class="sec-body">
+    This is a data-supply-chain and governance layer, not an investment recommendation engine. It never shows
+    BUY/SELL/HOLD/target-price/expected-return language, never auto-approves a KPI relationship, and never
+    treats a machine-discovered source or a machine-matched candidate as independently verified. Evidence
+    first; human governance before confirmed claims.
+  </p>
+</div>
+
 
 <!-- ── CTA footer ─────────────────────────────────────────────────── -->
 <div class="doc-cta">

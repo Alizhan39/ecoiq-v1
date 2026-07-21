@@ -62,6 +62,7 @@ class AnalysisSession(models.Model):
         ('company_evidence_ingestion', 'Company Evidence Ingestion (Source Fetch / Extraction / KPI Candidate Matching)'),
         ('company_discovery', 'Company Discovery / Ranking (Filtering, Comparison, Explain Match)'),
         ('evidence_review_workbench', 'Evidence Review Workbench (Queue, Decision, Dispute, Re-Review)'),
+        ('stewardship_refresh', 'Stewardship Universe Refresh (Source Discovery / Fetch / KPI Candidates)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [

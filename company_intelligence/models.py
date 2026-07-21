@@ -512,6 +512,168 @@ class CompanyFinancialFactSource(models.Model):
         return getattr(self.financial_facts, self.metric, None)
 
 
+class DiscoveredSource(models.Model):
+    """
+    feat/stewardship-universe (PR 13) — one candidate authoritative source
+    found by services/source_discovery.py for a company, BEFORE (or after)
+    it becomes a real, fetchable harvester.Source row. This is the missing
+    layer PR9-12 never built: identity resolution today is 100% hardcoded
+    CIK/company-number dicts plus a staff member manually typing a URL into
+    the "Register Document Source" form — this model is the governed,
+    inspectable record of HOW a source was found and whether it's trusted
+    enough to register automatically or needs a human's approval first.
+
+    Deliberately distinct from harvester.Source (the real, fetchable
+    registration) and companies.CompanySource (a lightweight, informal
+    citation list with no tier/provenance/status) — this is upstream of
+    both: "EcoIQ found this URL via this method; is it authoritative
+    enough to trust automatically, or does a reviewer need to look at it
+    first?" A discovered source that's approved gets a harvester_source FK
+    once registered; one is never deleted when superseded — old candidates
+    stay on record even after rejection, so provenance is never erased.
+    """
+    DISCOVERY_METHOD_CHOICES = [
+        ('sec_edgar_identity', 'SEC EDGAR CIK Mapping (Regulatory Filing)'),
+        ('companies_house_identity', 'Companies House Number Mapping (UK Regulatory Filing)'),
+        ('curated_official_domain', 'EcoIQ-Curated Official Domain Registry'),
+        ('staff_registered_field', 'Existing Staff-Entered Company Profile Field'),
+        ('manual', 'Manually Added by Staff'),
+    ]
+    STATUS_CHOICES = [
+        ('candidate', 'Candidate — Awaiting Staff Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('registered', 'Registered as an Active Source'),
+    ]
+    # A domain being "official" is a real claim about provenance, not a
+    # guess from the company's name — VERIFIED means EcoIQ has independently
+    # curated/confirmed this exact domain for this exact company (see
+    # services/known_sources.py); PROBABLE means it came from a field staff
+    # typed in previously but was never independently cross-checked;
+    # UNVERIFIED/CONFLICTING are honest states for anything less certain.
+    # A PROBABLE/UNVERIFIED domain must never silently become a Tier-1
+    # source — see source_discovery.py's tier assignment.
+    DOMAIN_STATUS_CHOICES = [
+        ('verified', 'Verified Official Domain'),
+        ('probable', 'Probable — Staff-Entered, Not Independently Verified'),
+        ('unverified', 'Unverified'),
+        ('conflicting', 'Conflicting — Multiple Candidate Domains Found'),
+    ]
+
+    company = models.ForeignKey(
+        'companies.CompanyProfile', on_delete=models.CASCADE, related_name='discovered_sources',
+    )
+    url = models.URLField(max_length=1000)
+    domain = models.CharField(max_length=200, blank=True)
+    publisher = models.CharField(max_length=200, blank=True)
+    source_type = models.CharField(max_length=40, blank=True, help_text='harvester.constants.SOURCE_TYPES value.')
+    # Tier 1 (highest authority) .. Tier 4 (self-reported) — same vocabulary
+    # as harvester.verification.source_tier(), never a second tier scale.
+    tier = models.PositiveSmallIntegerField(default=4)
+    discovery_method = models.CharField(max_length=30, choices=DISCOVERY_METHOD_CHOICES)
+    domain_status = models.CharField(max_length=15, choices=DOMAIN_STATUS_CHOICES, default='unverified')
+    # 0-1 confidence in this candidate being genuinely useful, where the
+    # discovery method itself provides a real basis for one (e.g. an exact
+    # CIK/company-number match is 1.0; a staff-entered field carried over
+    # with no independent check is left None — never a fabricated number).
+    confidence = models.FloatField(null=True, blank=True)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='candidate')
+    discovered_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='discovered_sources_reviewed',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_notes = models.TextField(blank=True)
+    harvester_source = models.ForeignKey(
+        'harvester.Source', null=True, blank=True, on_delete=models.SET_NULL, related_name='discovered_from',
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-discovered_at']
+        verbose_name = 'Discovered Source'
+        constraints = [
+            models.UniqueConstraint(fields=['company', 'url'], name='ci_unique_discovered_source_url'),
+        ]
+
+    def __str__(self):
+        return f'{self.company.company.slug} — {self.url[:60]} ({self.get_status_display()})'
+
+
+class CompanyRefreshRun(models.Model):
+    """
+    feat/stewardship-universe (PR 13) — the structured, per-company outcome
+    of one services/refresh_orchestrator.py::refresh_company_intelligence()
+    call. Distinct from ai_observatory.AnalysisSession (which stays generic
+    across every EcoIQ pipeline and deliberately carries no
+    stewardship-specific fields like "documents unchanged" or "duplicates
+    ignored") — this model is the domain-specific structured result the
+    brief's Section 25/11 asks for, linked back to its own Observatory
+    session so raw stage timings/telemetry are never duplicated here, only
+    referenced. One row per refresh attempt; never overwritten — refresh
+    history is this table's own append-only log, matching harvester's
+    IngestionRun/BatchHarvestRun precedent at the per-source/batch level.
+
+    status is never optimistic: COMPLETE only when every checked source
+    succeeded or was a genuine no-op; PARTIAL when at least one source
+    succeeded but at least one failed; FAILED when nothing succeeded at
+    all. A single failed source must never be allowed to make the whole
+    run silently report COMPLETE.
+    """
+    TRIGGER_CHOICES = [
+        ('manual', 'Manual (Staff-Triggered)'),
+        ('scheduled', 'Scheduled'),
+        ('management_command', 'Management Command'),
+        ('other', 'Other'),
+    ]
+    STATUS_CHOICES = [
+        ('running', 'Running'),
+        ('complete', 'Complete'),
+        ('partial', 'Partial'),
+        ('failed', 'Failed'),
+    ]
+
+    company = models.ForeignKey(
+        'companies.CompanyProfile', on_delete=models.CASCADE, related_name='refresh_runs',
+    )
+    observatory_session = models.ForeignKey(
+        'ai_observatory.AnalysisSession', null=True, blank=True, on_delete=models.SET_NULL, related_name='refresh_runs',
+    )
+    triggered_by = models.CharField(max_length=25, choices=TRIGGER_CHOICES, default='manual')
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='refresh_runs_triggered',
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='running')
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    sources_checked = models.PositiveIntegerField(default=0)
+    sources_failed = models.PositiveIntegerField(default=0)
+    documents_new = models.PositiveIntegerField(default=0)
+    documents_updated = models.PositiveIntegerField(default=0)
+    documents_unchanged = models.PositiveIntegerField(default=0)
+    evidence_created = models.PositiveIntegerField(default=0)
+    duplicates_ignored = models.PositiveIntegerField(default=0)
+    kpi_candidates_proposed = models.PositiveIntegerField(default=0)
+    review_required_count = models.PositiveIntegerField(default=0)
+
+    warnings = models.JSONField(default=list, blank=True)
+    errors = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ['-started_at']
+        verbose_name = 'Company Refresh Run'
+
+    def __str__(self):
+        return f'{self.company.company.slug} refresh — {self.get_status_display()} ({self.started_at:%Y-%m-%d %H:%M})'
+
+    @property
+    def duration_seconds(self):
+        if self.started_at and self.completed_at:
+            return round((self.completed_at - self.started_at).total_seconds(), 2)
+        return None
+
+
 class EvidenceReviewAction(models.Model):
     """
     feat/company-evidence-ingestion (PR 10), extended by feat/evidence-

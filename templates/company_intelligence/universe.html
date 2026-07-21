@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Stewardship Universe — EcoIQ{% endblock %}
+{% block meta_description_content %}Staff operational view of every company EcoIQ tracks and how current its evidence base is.{% endblock %}
+
+{% block content %}
+<div class="su-wrap">
+  <span class="su-eyebrow">ECOIQ · STAFF ONLY · GOVERNANCE</span>
+  <h1 class="su-h1">Stewardship Universe</h1>
+  <p class="su-sub">
+    What EcoIQ tracks, and how current its evidence base is — an operational view, not a research ranking.
+    Discover Companies filters companies by verified intelligence; this page shows the health of that
+    intelligence's own supply chain: known sources, refresh recency, and outstanding human review.
+  </p>
+
+  <form method="get" class="su-filter-bar">
+    <label class="su-label" for="su-state">Filter by state</label>
+    <select name="state" id="su-state" class="su-select" onchange="this.form.submit()">
+      <option value="">Any state</option>
+      {% for value, label in state_choices %}
+      <option value="{{ value }}" {% if value == state_filter %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="su-cards">
+    {% for row in rows %}
+    <div class="su-card">
+      <div class="su-card-head">
+        <div>
+          <span class="su-card-name">{{ row.profile.company.name }}</span>
+          <span class="su-card-meta">{{ row.profile.company.country }} · {{ row.profile.company.get_sector_display }}</span>
+        </div>
+        <span class="su-state-badge su-state-{{ row.state.state|lower }}">{{ row.state.label }}</span>
+      </div>
+      <p class="su-state-reason">{{ row.state.reason }}</p>
+      <div class="su-metrics">
+        <div class="su-metric"><span class="su-metric-v">{{ row.health.official_sources_known }}</span><span class="su-metric-k">Sources Known</span></div>
+        <div class="su-metric"><span class="su-metric-v">{{ row.health.confirmed_kpi_count }}/114</span><span class="su-metric-k">KPI Coverage</span></div>
+        <div class="su-metric"><span class="su-metric-v">{{ row.health.pending_review_count }}</span><span class="su-metric-k">Pending Review</span></div>
+        <div class="su-metric"><span class="su-metric-v">{{ row.health.disputed_count }}</span><span class="su-metric-k">Disputed</span></div>
+        <div class="su-metric"><span class="su-metric-v">{{ row.health.data_completeness_pct }}%</span><span class="su-metric-k">Completeness</span></div>
+      </div>
+      <div class="su-meta-row">
+        <span>Last refresh: {{ row.profile.last_refresh_at|default:"Never" }}</span>
+        <span>Next due: {{ row.profile.next_refresh_due_at|default:"—" }}</span>
+        <span>Shariah: {{ row.health.shariah_screening_freshness.label }}</span>
+      </div>
+      <div class="su-card-actions">
+        <a href="{% url 'companies:company_status' row.profile.company.slug %}" class="su-action-link">Operational Status →</a>
+      </div>
+    </div>
+    {% empty %}
+    <p class="su-empty">No company profiles exist yet.</p>
+    {% endfor %}
+  </div>
+
+  <p class="su-disclaimer">
+    Data completeness is a transparent, five-component checklist (official source known, confirmed KPI
+    evidence exists, Shariah screening is current, no disputed evidence, no missing expected document
+    categories — each worth 20%) — never a hidden or invented "quality score." Automated source discovery
+    and evidence extraction do not constitute independent verification; KPI relationships become confirmed
+    evidence only after governed human review in the Evidence Review Workbench.
+  </p>
+</div>
+
+<style>
+  .su-wrap{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .su-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.5rem}
+  .su-h1{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .su-sub{font-size:.9rem;color:#94a3b8;max-width:90ch;line-height:1.6;margin:0 0 1.6rem}
+  .su-filter-bar{display:flex;align-items:center;gap:.6rem;margin-bottom:1.4rem}
+  .su-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+  .su-select{background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e2e8f0;padding:.5rem .6rem;font-size:.82rem}
+  .su-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem}
+  .su-card{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.1rem 1.3rem}
+  .su-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;flex-wrap:wrap}
+  .su-card-name{display:block;font-weight:800;color:#fff;font-size:1rem}
+  .su-card-meta{display:block;font-size:.72rem;color:#64748b;margin-top:.1rem}
+  .su-state-badge{flex:none;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.25rem .6rem;border-radius:999px;background:rgba(255,255,255,.06);color:#94a3b8;white-space:nowrap}
+  .su-state-current{background:rgba(0,232,154,.12);color:#00e89a}
+  .su-state-needs_refresh{background:rgba(244,162,97,.14);color:#f4a261}
+  .su-state-review_required{background:rgba(244,162,97,.14);color:#f4a261}
+  .su-state-needs_source_discovery{background:rgba(148,163,184,.14);color:#94a3b8}
+  .su-state-error{background:rgba(230,57,70,.14);color:#fca5a5}
+  .su-state-paused{background:rgba(148,163,184,.14);color:#94a3b8}
+  .su-state-not_tracked{background:rgba(148,163,184,.1);color:#64748b}
+  .su-state-refresh_in_progress{background:rgba(88,166,255,.14);color:#58a6ff}
+  .su-state-reason{font-size:.76rem;color:#94a3b8;line-height:1.5;margin:.5rem 0}
+  .su-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:.5rem;margin:.7rem 0}
+  .su-metric{background:#0d1117;border-radius:8px;padding:.5rem;text-align:center}
+  .su-metric-v{display:block;font-size:1rem;font-weight:800;color:#fff;font-family:'SF Mono',ui-monospace,monospace}
+  .su-metric-k{display:block;font-size:.58rem;color:#64748b;text-transform:uppercase;letter-spacing:.03em;margin-top:.15rem}
+  .su-meta-row{display:flex;flex-wrap:wrap;gap:.9rem;font-size:.68rem;color:#64748b;margin-top:.5rem}
+  .su-card-actions{margin-top:.8rem}
+  .su-action-link{font-size:.78rem;font-weight:700;color:#c9a84c;text-decoration:none;border:1px solid rgba(201,168,76,.3);border-radius:999px;padding:.4rem .9rem}
+  .su-empty{font-size:.85rem;color:#64748b;padding:2rem 0}
+  .su-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  @media (max-width:640px){.su-wrap{padding:1.5rem 1rem 3rem}.su-cards{grid-template-columns:1fr}}
+</style>
+{% endblock %}
