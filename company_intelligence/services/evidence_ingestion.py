@@ -58,6 +58,37 @@ def resolve_company_identity(company_profile):
     return {'slug': slug, 'cik': cik, 'sec_available': cik is not None}
 
 
+def sync_financial_facts_for_company(company_profile, actor=None):
+    """
+    Public entry point — feat/stewardship-monitor (PR 14): the Stewardship
+    Universe refresh orchestrator fetches SEC EDGAR raw evidence via
+    harvester.services.ingestion_pipeline.ingest_source() (which never
+    touches CompanyFinancialFacts — that's this module's own job), so
+    keeping financial-ratio inputs current requires this explicit step.
+    Re-fetches SEC EDGAR (the same idempotent, already-retried call
+    fetch_sec_edgar always was) purely to get metadata for
+    _sync_financial_facts(); never fabricates a snapshot when the company
+    has no mapped identifier or the fetch fails.
+
+    Returns (facts, sources_created) — sources_created is a non-empty list
+    only when a genuinely NEW CompanyFinancialFacts snapshot was created
+    (i.e. real financial data changed or is being seen for the first time);
+    an unchanged re-fetch returns the existing latest facts with an empty
+    list, exactly like _sync_financial_facts's own documented idempotency.
+    Returns (None, []) honestly when SEC EDGAR isn't available or the fetch
+    fails — never a fabricated snapshot.
+    """
+    identity = resolve_company_identity(company_profile)
+    if not identity['sec_available']:
+        return None, []
+
+    outcome = fetchers.fetch_sec_edgar(identity['slug'])
+    if not outcome.success:
+        return None, []
+
+    return _sync_financial_facts(company_profile, outcome.metadata, actor=actor)
+
+
 def _get_or_create_sec_source(company_profile, cik):
     from harvester.models import Source
 
@@ -234,17 +265,24 @@ def ingest_sustainability_document(company_profile, source_url, document_type, p
     return result
 
 
-def propose_kpi_candidates_for_company(company_profile):
+def propose_kpi_candidates_for_company(company_profile, refresh_run=None):
     """Public entry point — feat/stewardship-universe (PR 13)'s refresh
     orchestrator calls harvester.services.ingestion_pipeline.ingest_source()
     directly (one call per registered source, not per-document like this
     module's own ingest_* wrappers), so KPI candidate matching needs to run
     as its own explicit step afterward. Thin wrapper so that reuse never
-    has to reach into a name-mangled "private" function across modules."""
-    return _propose_kpi_candidates_for_company(company_profile)
+    has to reach into a name-mangled "private" function across modules.
+
+    feat/stewardship-monitor (PR 14): `refresh_run`, when given, is
+    stamped onto every newly-created CompanyKPIEvidenceLink's
+    `proposed_via_refresh_run` FK — the Review Workbench's "why did this
+    appear?" provenance. None for calls outside the orchestrated refresh
+    path (e.g. the older per-document ingest_sustainability_document flow),
+    which is an honest, unchanged "unknown/import" provenance."""
+    return _propose_kpi_candidates_for_company(company_profile, refresh_run=refresh_run)
 
 
-def _propose_kpi_candidates_for_company(company_profile):
+def _propose_kpi_candidates_for_company(company_profile, refresh_run=None):
     """Runs the deterministic KPI candidate matcher over every real
     harvester-sourced EvidenceMemory row this company has — idempotent
     (CompanyKPIEvidenceLink has a unique constraint on assessment+evidence,
@@ -258,7 +296,7 @@ def _propose_kpi_candidates_for_company(company_profile):
         harvester_evidence = _harvester_evidence_for_memory(memory)
         if harvester_evidence is None:
             continue
-        proposed += propose_kpi_links_for_evidence(company_profile, memory, harvester_evidence.category)
+        proposed += propose_kpi_links_for_evidence(company_profile, memory, harvester_evidence.category, refresh_run=refresh_run)
     return proposed
 
 

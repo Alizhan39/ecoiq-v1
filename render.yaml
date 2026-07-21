@@ -126,3 +126,44 @@ databases:
 #       - key: ANTHROPIC_API_KEY
 #         sync: false
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Continuous Stewardship Monitor (scheduled refresh) — NOT enabled by default.
+#
+# Uncomment to actually run a periodic Stewardship Universe refresh in
+# production. This is a real, additional Render cron-job cost decision, not
+# something that should ship silently as a side effect of this PR — same
+# discipline as the Celery block above. Until uncommented, "scheduled
+# refresh" only happens if you invoke the management command yourself
+# (manually, or via your own external scheduler) — no claim of "continuous
+# monitoring" is made unless this (or an equivalent scheduler) is genuinely
+# running. --due-only means each company/source is only actually re-fetched
+# per its own refresh_policy interval, however often this job itself ticks;
+# --scheduled records the honest triggered_by='scheduled' provenance on
+# every CompanyRefreshRun this produces, and gates per-source fetches to
+# only those refresh_policy says are actually due (never re-hammers a
+# provider just because the cron ticked).
+#
+# services:
+#   - type: cron
+#     name: ecoiq-stewardship-monitor
+#     env: python
+#     region: oregon
+#     plan: starter
+#     schedule: "0 6 * * *"              # once daily, 06:00 UTC — adjust to taste
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: python manage.py refresh_stewardship_universe --due-only --scheduled --limit 50
+#     envVars:
+#       - key: PYTHON_VERSION
+#         value: "3.11.0"
+#       - key: DJANGO_SETTINGS_MODULE
+#         value: ecoiq.settings
+#       - key: DJANGO_SECRET_KEY
+#         sync: false                    # copy the same value as the `ecoiq` web service
+#       - key: DATABASE_URL
+#         fromDatabase:
+#           name: ecoiq-db
+#           property: connectionString
+#       - key: COMPANIES_HOUSE_API_KEY
+#         sync: false
+# ══════════════════════════════════════════════════════════════════════════════

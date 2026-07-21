@@ -350,6 +350,17 @@ class CompanyKPIEvidenceLink(models.Model):
     added_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='kpi_evidence_links_added',
     )
+    # feat/stewardship-monitor (PR 14) — which refresh run's KPI-candidate-
+    # matching stage proposed this link, if any (manually-created links and
+    # links proposed outside the orchestrated refresh path, e.g. the older
+    # per-document ingest_sustainability_document flow, stay null). This is
+    # what lets the Review Workbench answer "why did this appear?" —
+    # "proposed during refresh run #N, triggered by X, on date Y" — without
+    # a second, duplicated provenance record.
+    proposed_via_refresh_run = models.ForeignKey(
+        'company_intelligence.CompanyRefreshRun', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='kpi_candidates_proposed_here',
+    )
 
     class Meta:
         ordering = ['-added_at']
@@ -649,6 +660,13 @@ class CompanyRefreshRun(models.Model):
 
     sources_checked = models.PositiveIntegerField(default=0)
     sources_failed = models.PositiveIntegerField(default=0)
+    # feat/stewardship-monitor (PR 14) — sources this run deliberately did
+    # NOT fetch because refresh_policy said they weren't due yet (only
+    # applied for non-'manual' triggers — a staff-initiated manual refresh
+    # always rechecks every active source; a scheduled/batch run respects
+    # each source's own interval to avoid provider-hammering). Never
+    # counted as 'checked' or 'failed' — a genuinely separate bucket.
+    sources_skipped_not_due = models.PositiveIntegerField(default=0)
     documents_new = models.PositiveIntegerField(default=0)
     documents_updated = models.PositiveIntegerField(default=0)
     documents_unchanged = models.PositiveIntegerField(default=0)
@@ -672,6 +690,145 @@ class CompanyRefreshRun(models.Model):
         if self.started_at and self.completed_at:
             return round((self.completed_at - self.started_at).total_seconds(), 2)
         return None
+
+
+class StewardshipChangeEvent(models.Model):
+    """
+    feat/stewardship-monitor (PR 14) — a real, detected change in a tracked
+    company's evidence base, produced deterministically by
+    services/change_detection.py and services/conflict_detection.py during
+    a refresh_orchestrator.refresh_company_intelligence() run. This is the
+    "what changed, and why did EcoIQ notice" record the brief's Section 2
+    asks for — never a giant duplicated payload: provenance is captured by
+    FK reference to the existing Source/SourceDocument/Evidence/
+    CompanyKPIEvidenceLink rows, never copied inline.
+
+    An UNCHANGED source/document/evidence result NEVER produces a row here
+    — this table only ever records a genuine, detected change. Creating
+    this row is itself the deterministic decision that "a change happened";
+    it never asserts what that change MEANS (e.g. POTENTIAL_CONFLICT is
+    exactly that — potential — never a confirmed CONFLICTS relationship,
+    which remains exclusively a human reviewer's call via the existing
+    Evidence Review Workbench / EvidenceReviewAction).
+    """
+    EVENT_TYPE_CHOICES = [
+        ('new_source', 'New Source'),
+        ('source_changed', 'Source Changed'),
+        ('source_unreachable', 'Source Unreachable'),
+        ('source_recovered', 'Source Recovered'),
+        ('new_document', 'New Document'),
+        ('document_updated', 'Document Updated'),
+        ('document_removed_or_unreachable', 'Document Removed or Unreachable'),
+        ('new_evidence', 'New Evidence'),
+        ('evidence_changed', 'Evidence Changed'),
+        ('new_kpi_candidate', 'New KPI Candidate(s)'),
+        ('potential_conflict', 'Potential Conflict'),
+        ('evidence_stale', 'Evidence Stale'),
+        ('shariah_data_changed', 'Shariah Data Changed'),
+        ('review_required', 'Review Required'),
+    ]
+    SEVERITY_CHOICES = [
+        ('info', 'Info'), ('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('critical', 'Critical'),
+    ]
+
+    company = models.ForeignKey(
+        'companies.CompanyProfile', on_delete=models.CASCADE, related_name='change_events',
+    )
+    event_type = models.CharField(max_length=35, choices=EVENT_TYPE_CHOICES)
+    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='info')
+    review_required = models.BooleanField(default=False)
+
+    # Provenance by reference only — whichever of these apply to this event
+    # type; all nullable, never all blank for a real event.
+    source = models.ForeignKey(
+        'harvester.Source', null=True, blank=True, on_delete=models.SET_NULL, related_name='change_events',
+    )
+    document = models.ForeignKey(
+        'harvester.SourceDocument', null=True, blank=True, on_delete=models.SET_NULL, related_name='change_events',
+    )
+    evidence = models.ForeignKey(
+        'evidence_memory.EvidenceMemory', null=True, blank=True, on_delete=models.SET_NULL, related_name='change_events',
+    )
+    kpi_evidence_link = models.ForeignKey(
+        CompanyKPIEvidenceLink, null=True, blank=True, on_delete=models.SET_NULL, related_name='change_events',
+    )
+    refresh_run = models.ForeignKey(
+        CompanyRefreshRun, null=True, blank=True, on_delete=models.SET_NULL, related_name='change_events',
+    )
+
+    # Short, deterministic, template-generated text (e.g. "Apple published a
+    # new Sustainability Report") — never AI-generated prose, never a
+    # buy/sell/investment framing.
+    summary = models.CharField(max_length=300)
+    previous_state = models.CharField(max_length=200, blank=True)
+    new_state = models.CharField(max_length=200, blank=True)
+
+    detected_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-detected_at']
+        verbose_name = 'Stewardship Change Event'
+        indexes = [
+            models.Index(fields=['company', 'event_type']),
+            models.Index(fields=['detected_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.get_event_type_display()} — {self.company.company.slug} ({self.detected_at:%Y-%m-%d %H:%M})'
+
+
+class StewardshipAlert(models.Model):
+    """
+    feat/stewardship-monitor (PR 14) — an internal, staff-facing evidence/
+    research alert generated from a StewardshipChangeEvent. Deliberately
+    NOT the same model as intelligence.IntelligenceAlert (a pre-existing,
+    general intelligence-hub feed for a different purpose/audience) — kept
+    distinct so this PR's governance discipline (no investment-recommend-
+    ation language, transparent priority, human-authoritative resolution)
+    isn't diluted by reuse of a model this PR doesn't own the semantics of.
+
+    Priority is always a real, documented, component-shown sum — never a
+    black-box "AI priority score." See services/stewardship_alerts.py for
+    the exact formula.
+    """
+    STATE_CHOICES = [
+        ('new', 'New'),
+        ('acknowledged', 'Acknowledged'),
+        ('resolved', 'Resolved'),
+        ('dismissed', 'Dismissed'),
+    ]
+
+    company = models.ForeignKey(
+        'companies.CompanyProfile', on_delete=models.CASCADE, related_name='stewardship_alerts',
+    )
+    change_event = models.ForeignKey(
+        StewardshipChangeEvent, null=True, blank=True, on_delete=models.SET_NULL, related_name='alerts',
+    )
+    alert_type = models.CharField(max_length=35, choices=StewardshipChangeEvent.EVENT_TYPE_CHOICES)
+    severity = models.CharField(max_length=10, choices=StewardshipChangeEvent.SEVERITY_CHOICES, default='info')
+    message = models.CharField(max_length=300)
+
+    # Every component of this integer is documented in
+    # services/stewardship_alerts.py::_priority_components() and always
+    # shown alongside the total — never hidden.
+    priority_score = models.PositiveSmallIntegerField(default=0)
+    priority_components = models.JSONField(default=dict, blank=True)
+
+    state = models.CharField(max_length=15, choices=STATE_CHOICES, default='new')
+    created_at = models.DateTimeField(auto_now_add=True)
+    acknowledged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='stewardship_alerts_acknowledged',
+    )
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_reason = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-priority_score', '-created_at']
+        verbose_name = 'Stewardship Alert'
+
+    def __str__(self):
+        return f'{self.get_alert_type_display()} — {self.company.company.slug} ({self.get_state_display()})'
 
 
 class EvidenceReviewAction(models.Model):

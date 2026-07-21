@@ -1,11 +1,11 @@
 """
-refresh_stewardship_universe — feat/stewardship-universe (PR 13): the
-batch-refresh management command (Section 12/26). Deliberately conservative
-per the brief's own "the goal is NOT maximum scraping" instruction — this
-supports refreshing one company, a selected few, only those due per
-services/refresh_policy.py, or every actively-tracked company, but never
-seeds hundreds of fake companies and never bypasses the refresh
-orchestrator's own idempotency/failure-tolerance.
+refresh_stewardship_universe — feat/stewardship-universe (PR 13), extended
+by feat/stewardship-monitor (PR 14): the batch-refresh management command
+(Section 12/26). Deliberately conservative per the brief's own "the goal is
+NOT maximum scraping" instruction — this supports refreshing one company, a
+selected few, only those due per services/refresh_policy.py, or every
+actively-tracked company, but never seeds hundreds of fake companies and
+never bypasses the refresh orchestrator's own idempotency/failure-tolerance.
 
 Also doubles as the real-company bootstrap for verification (Section 27):
 --company accepts a slug that doesn't have a CompanyProfile yet and will
@@ -13,6 +13,19 @@ create one from the same REAL_COMPANY_SEEDS identity dict PR10's
 ingest_real_company_evidence.py already uses (reused, not duplicated) —
 first refresh implicitly starts tracking (see refresh_orchestrator's own
 docstring).
+
+PR 14 adds --scheduled: this is THE command an external cron/platform
+scheduler is meant to invoke (see render.yaml's own disabled-by-default
+cron block for the exact deployable configuration) — it records
+CompanyRefreshRun.triggered_by='scheduled' instead of 'management_command'
+so the audit trail honestly distinguishes an ad-hoc staff CLI run from a
+genuinely scheduled one, without adding a second command or a parallel
+job-running path. --scheduled also skips any source not yet due per
+refresh_policy for THIS run (never re-hammers a provider on every batch
+tick just because the COMPANY as a whole was due) — a manual/ad-hoc CLI
+run (no --scheduled) still rechecks every active source, unchanged from
+PR13, matching the same manual-override discipline the staff UI's
+"Refresh Company Intelligence" button already has.
 """
 from django.core.management.base import BaseCommand
 
@@ -25,6 +38,7 @@ class Command(BaseCommand):
         parser.add_argument('--limit', type=int, default=None, help='Maximum number of companies to refresh this run.')
         parser.add_argument('--due-only', action='store_true', help='Only refresh companies currently due per refresh policy (ignored when --company is given).')
         parser.add_argument('--dry-run', action='store_true', help='Preview only — performs zero database writes.')
+        parser.add_argument('--scheduled', action='store_true', help='Mark this run as scheduler-triggered (per-source due-gating applies) — use this from cron, never for an ad-hoc staff run.')
 
     def handle(self, *args, **options):
         from companies.models import CompanyProfile
@@ -36,6 +50,7 @@ class Command(BaseCommand):
         slugs = options.get('company')
         dry_run = options['dry_run']
         limit = options['limit']
+        triggered_by = 'scheduled' if options['scheduled'] else 'management_command'
 
         profiles = []
         if slugs:
@@ -59,10 +74,10 @@ class Command(BaseCommand):
             ))
             return
 
-        self.stdout.write(f'Refreshing {len(profiles)} companies (dry_run={dry_run})...')
+        self.stdout.write(f'Refreshing {len(profiles)} companies (dry_run={dry_run}, triggered_by={triggered_by})...')
         for profile in profiles:
             slug = profile.company.slug
-            result = refresh_company_intelligence(profile, triggered_by='management_command', dry_run=dry_run)
+            result = refresh_company_intelligence(profile, triggered_by=triggered_by, dry_run=dry_run)
 
             if isinstance(result, dict) and result.get('dry_run'):
                 self.stdout.write(f'{slug}: DRY RUN — {result["sources_due"]}/{result["sources_total"]} source(s) due, nothing changed.')
@@ -86,7 +101,8 @@ class Command(BaseCommand):
             'the Evidence Review Workbench — this command never auto-confirms anything.'
         ))
         self.stdout.write(
-            'No periodic scheduler is wired into this repo (see PR13 report §22) — run this command via an '
-            'external cron/platform scheduler, e.g.: '
-            '0 6 * * * cd /path/to/app && python manage.py refresh_stewardship_universe --due-only'
+            'No periodic scheduler runs automatically in this environment unless explicitly configured (see '
+            'render.yaml\'s disabled-by-default cron block and PR14 report §2/22) — this command is designed '
+            'to be invoked by an external cron/platform scheduler, e.g.: '
+            '0 6 * * * cd /path/to/app && python manage.py refresh_stewardship_universe --due-only --scheduled'
         )

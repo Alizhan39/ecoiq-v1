@@ -118,6 +118,23 @@ def ingest_source(source, triggered_by='manual'):
                 'source_tier': source_tier(doc_meta['document_type']), 'chunk_count': doc_meta['chunk_count'],
             },
         )
+        # feat/stewardship-monitor (PR 14) — a document-shaped fetch's own
+        # NEW-vs-UPDATED status must be judged by whether THIS document
+        # (same company_slug+url, any content_hash) has ever been seen
+        # before, never by whether the company has ANY evidence at all in
+        # ANY category. The generic `had_prior_evidence` check above
+        # deliberately skips the category filter for document sources (a
+        # document's chunks span multiple categories) — but that meant a
+        # company's FIRST-EVER sustainability report ingestion was
+        # misreported as "updated" merely because an unrelated SEC EDGAR
+        # source had already created some financial-category evidence
+        # moments earlier in the same refresh. Checking for any OTHER
+        # SourceDocument row at this exact url is the precise, correct
+        # signal — True only when a genuinely earlier version (a different
+        # content_hash) of this same document already existed.
+        had_prior_evidence = SourceDocument.objects.filter(
+            company_slug=company_slug, url=source.source_url,
+        ).exclude(pk=document.pk).exists()
 
     stats = deduplicate(outcome.candidates, profile=profile, harvest_job=None, document=document)
 

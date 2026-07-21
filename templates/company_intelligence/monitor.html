@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Stewardship Monitor — EcoIQ{% endblock %}
+{% block meta_description_content %}Operational health of EcoIQ's evidence supply chain — scheduled refreshes, detected changes, potential conflicts, source failures.{% endblock %}
+
+{% block content %}
+<div class="sm-wrap">
+  <a href="{% url 'companies:universe' %}" class="sm-back">← Stewardship Universe</a>
+  <span class="sm-eyebrow">ECOIQ · STAFF ONLY · CONTINUOUS STEWARDSHIP MONITOR</span>
+  <h1 class="sm-h1">Stewardship Monitor</h1>
+  <p class="sm-sub">
+    Operational intelligence about EcoIQ's own evidence supply chain — scheduling, detected changes,
+    potential conflicts, and source health. This is monitoring and change intelligence, never an
+    investor marketing page or an investment signal.
+  </p>
+
+  <h2 class="sm-h2">Monitoring Health</h2>
+  <div class="sm-metrics">
+    <div class="sm-metric"><span class="sm-metric-v">{{ health.tracked_companies }}</span><span class="sm-metric-k">Tracked Companies</span></div>
+    <div class="sm-metric"><span class="sm-metric-v">{{ health.due_for_refresh }}</span><span class="sm-metric-k">Due For Refresh</span></div>
+    <div class="sm-metric"><span class="sm-metric-v">{{ health.overdue_companies }}</span><span class="sm-metric-k">Overdue</span></div>
+    <div class="sm-metric"><span class="sm-metric-v">{{ health.sources_currently_failing }}</span><span class="sm-metric-k">Sources Failing</span></div>
+    <div class="sm-metric"><span class="sm-metric-v">{{ health.open_potential_conflicts }}</span><span class="sm-metric-k">Open Conflicts</span></div>
+    <div class="sm-metric"><span class="sm-metric-v">{{ health.open_alerts }}</span><span class="sm-metric-k">Open Alerts</span></div>
+    <div class="sm-metric"><span class="sm-metric-v">{{ health.partial_or_failed_recent_count }}</span><span class="sm-metric-k">Partial/Failed Runs</span></div>
+  </div>
+  <p class="sm-scheduler-status">
+    Last refresh run: {{ health.last_run_at|date:"Y-m-d H:i"|default:"Never" }}
+    {% if health.last_run_status %}({{ health.last_run_status }}){% endif %} —
+    <strong>no periodic scheduler is confirmed running in this environment</strong>; this dashboard reflects
+    whatever refreshes were actually triggered (manual, management command, or an external cron calling
+    <code>refresh_stewardship_universe --due-only --scheduled</code>, if one has been configured for this
+    deployment). See the Methodology page for exactly how scheduling is meant to be wired up.
+  </p>
+
+  <h2 class="sm-h2">Review Required / Potential Conflicts</h2>
+  <div class="sm-table-scroll">
+  <table class="sm-table">
+    <thead><tr><th>Company</th><th>KPI</th><th>Summary</th><th>Detected</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for event in open_conflicts %}
+      <tr>
+        <td>{{ event.company.company.name }}</td>
+        <td>{% if event.kpi_evidence_link %}#{{ event.kpi_evidence_link.assessment.kpi_id }}{% else %}—{% endif %}</td>
+        <td>{{ event.summary }}</td>
+        <td>{{ event.detected_at|date:"Y-m-d H:i" }}</td>
+        <td>{% if event.kpi_evidence_link %}<a href="{% url 'companies:review_detail' event.kpi_evidence_link.pk %}" class="sm-link">Review →</a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="sm-empty-row">No open potential conflicts — none detected, or all already reviewed.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="sm-h2">Source Failures</h2>
+  <div class="sm-table-scroll">
+  <table class="sm-table">
+    <thead><tr><th>Company</th><th>Source</th><th>Last Failure</th><th>Reason</th></tr></thead>
+    <tbody>
+      {% for source in failing_sources %}
+      <tr>
+        <td>{{ source.company.company.name|default:"Global" }}</td>
+        <td>{{ source.name }}</td>
+        <td>{{ source.last_failure_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ source.last_failure_reason|truncatechars:80 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="sm-empty-row">No sources are currently failing.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="sm-h2">Overdue Companies</h2>
+  <div class="sm-table-scroll">
+  <table class="sm-table">
+    <thead><tr><th>Company</th><th>Next Due</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for profile in overdue %}
+      <tr>
+        <td>{{ profile.company.name }}</td>
+        <td>{{ profile.next_refresh_due_at|date:"Y-m-d H:i"|default:"—" }}</td>
+        <td><a href="{% url 'companies:company_status' profile.company.slug %}" class="sm-link">Status →</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="sm-empty-row">Nothing is overdue right now.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="sm-h2">Recent Changes</h2>
+  <div class="sm-table-scroll">
+  <table class="sm-table">
+    <thead><tr><th>Company</th><th>Type</th><th>Summary</th><th>Detected</th></tr></thead>
+    <tbody>
+      {% for event in recent_changes %}
+      <tr>
+        <td>{{ event.company.company.name }}</td>
+        <td><span class="sm-badge sm-badge-{{ event.severity }}">{{ event.get_event_type_display }}</span></td>
+        <td>{{ event.summary }}</td>
+        <td>{{ event.detected_at|date:"Y-m-d H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="sm-empty-row">No changes detected yet — an unchanged refresh generates no false activity.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="sm-h2">Recent Refresh Runs</h2>
+  <div class="sm-table-scroll">
+  <table class="sm-table">
+    <thead><tr><th>Company</th><th>Started</th><th>Trigger</th><th>Status</th><th>Sources</th></tr></thead>
+    <tbody>
+      {% for run in recent_runs %}
+      <tr>
+        <td>{{ run.company.company.name }}</td>
+        <td>{{ run.started_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ run.get_triggered_by_display }}</td>
+        <td><span class="sm-badge sm-badge-{{ run.status }}">{{ run.get_status_display }}</span></td>
+        <td>{{ run.sources_checked }} ({{ run.sources_failed }} failed)</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="sm-empty-row">No refresh runs recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <p class="sm-disclaimer">
+    This dashboard shows evidence/research alerts and scheduling health — never price opportunities, buy/sell
+    signals, or investment recommendations. Automated monitoring detects changes in evidence and source state;
+    it does not autonomously determine that a company has improved, deteriorated, become investable, or become
+    unsuitable for investment. Every priority score shown throughout this system is a documented sum of real
+    components — never a hidden AI score.
+  </p>
+</div>
+
+<style>
+  .sm-wrap{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .sm-back{font-size:.78rem;color:#c9a84c;text-decoration:none}
+  .sm-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin:1rem 0 .5rem}
+  .sm-h1{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .sm-sub{font-size:.9rem;color:#94a3b8;max-width:90ch;line-height:1.6;margin:0 0 1.6rem}
+  .sm-h2{font-size:1.05rem;font-weight:800;color:#fff;margin:2rem 0 .8rem}
+  .sm-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.6rem;margin-bottom:1rem}
+  .sm-metric{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.7rem;text-align:center}
+  .sm-metric-v{display:block;font-size:1.2rem;font-weight:800;color:#fff;font-family:'SF Mono',ui-monospace,monospace}
+  .sm-metric-k{display:block;font-size:.6rem;color:#64748b;text-transform:uppercase;letter-spacing:.03em;margin-top:.2rem}
+  .sm-scheduler-status{font-size:.76rem;color:#94a3b8;line-height:1.6;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.8rem 1rem;margin-bottom:1rem}
+  .sm-scheduler-status code{color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;font-size:.7rem}
+  .sm-table-scroll{overflow-x:auto;margin-bottom:1rem}
+  .sm-table{width:100%;border-collapse:collapse;font-size:.74rem;min-width:600px}
+  .sm-table th{text-align:left;color:#64748b;text-transform:uppercase;font-size:.62rem;letter-spacing:.04em;padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sm-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);color:#cbd5e1;word-break:break-word}
+  .sm-link{color:#c9a84c;text-decoration:none;font-weight:700;font-size:.76rem}
+  .sm-badge{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:.2rem .5rem;border-radius:999px;background:rgba(255,255,255,.06);color:#94a3b8;white-space:nowrap}
+  .sm-badge-info,.sm-badge-low,.sm-badge-complete{background:rgba(0,232,154,.12);color:#00e89a}
+  .sm-badge-medium,.sm-badge-partial{background:rgba(244,162,97,.14);color:#f4a261}
+  .sm-badge-high,.sm-badge-critical,.sm-badge-failed{background:rgba(230,57,70,.14);color:#fca5a5}
+  .sm-empty-row{color:#64748b;text-align:center;padding:1.5rem 0}
+  .sm-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  @media (max-width:640px){.sm-wrap{padding:1.5rem 1rem 3rem}}
+</style>
+{% endblock %}

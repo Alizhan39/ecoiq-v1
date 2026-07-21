@@ -956,6 +956,12 @@ a{color:inherit;text-decoration:none}
   #stewardship-section .sec-list li{margin-bottom:.3rem}
   #stewardship-section code{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85em;color:var(--accent)}
   #stewardship-section a{color:var(--accent);text-decoration:none;font-weight:600}
+  #monitor-section .sec-h3{font-size:1rem;font-weight:700;color:var(--text);margin:1.6rem 0 .6rem}
+  #monitor-section .sec-body{font-size:.85rem;color:var(--muted2);line-height:1.7;max-width:80ch}
+  #monitor-section .sec-list{margin:.6rem 0 1rem 1.2rem;padding:0;font-size:.85rem;color:var(--muted2);line-height:1.8}
+  #monitor-section .sec-list li{margin-bottom:.3rem}
+  #monitor-section code{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85em;color:var(--accent)}
+  #monitor-section a{color:var(--accent);text-decoration:none;font-weight:600}
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -1085,6 +1091,101 @@ a{color:inherit;text-decoration:none}
     BUY/SELL/HOLD/target-price/expected-return language, never auto-approves a KPI relationship, and never
     treats a machine-discovered source or a machine-matched candidate as independently verified. Evidence
     first; human governance before confirmed claims.
+  </p>
+</div>
+
+<div class="section" id="monitor-section">
+  <a class="section-anchor" id="monitor"></a>
+  <div class="sec-eyebrow">13 — Continuous Stewardship Monitor</div>
+  <h2 class="sec-title">Continuous Stewardship Monitoring — Change Detection &amp; Evidence Alerts</h2>
+  <p class="sec-lead">
+    Turns the Stewardship Universe refresh pipeline into a change-aware monitoring system: every refresh
+    deterministically detects what genuinely changed — a new document, an unreachable source, a newly
+    proposed KPI candidate, a possible conflict — and surfaces it as an internal evidence alert.
+    <strong>Automated monitoring detects changes in evidence and source state. It does not autonomously
+    determine that a company has improved, deteriorated, become investable, or become unsuitable for
+    investment.</strong>
+  </p>
+
+  <h3 class="sec-h3">How Scheduling Works</h3>
+  <p class="sec-body">
+    The same <code>refresh_stewardship_universe --due-only</code> command PR13 introduced is the intended
+    scheduled entry point — PR14 adds a <code>--scheduled</code> flag so a cron-triggered run is honestly
+    distinguished in the audit trail (<code>CompanyRefreshRun.triggered_by='scheduled'</code>) from an ad-hoc
+    staff CLI invocation. <code>render.yaml</code> documents the exact deployable cron configuration, disabled
+    by default — the same "real cost decision, never a silent side effect" discipline PR13 already applied to
+    the Celery worker block. Until that block (or an equivalent external scheduler) is explicitly enabled,
+    EcoIQ does not claim continuous, unattended monitoring — only what was actually triggered, manually or
+    otherwise, is ever shown as having run.
+  </p>
+
+  <h3 class="sec-h3">How Due Dates Work</h3>
+  <p class="sec-body">
+    A scheduled/batch-triggered refresh only re-fetches sources <code>refresh_policy</code> says are actually
+    due — never every active source on every tick, which would hammer providers on a frequent cron schedule.
+    A staff-initiated manual refresh (the "Refresh Company Intelligence" button) still rechecks every active
+    source immediately, a deliberate human override, unchanged from PR13.
+  </p>
+
+  <h3 class="sec-h3">How Changes Are Detected</h3>
+  <p class="sec-body">
+    A deterministic <code>StewardshipChangeEvent</code> is created only for a REAL, already-happened change —
+    never for an unchanged or skipped fetch. Document-level: NEW_SOURCE, SOURCE_CHANGED, SOURCE_UNREACHABLE,
+    SOURCE_RECOVERED, NEW_DOCUMENT, DOCUMENT_UPDATED. Evidence-level: NEW_EVIDENCE, EVIDENCE_CHANGED, NEW_KPI_CANDIDATE.
+    Every event records real provenance by reference (the source/document/evidence/KPI-link row it concerns),
+    never a duplicated copy of that row's own data.
+  </p>
+
+  <h3 class="sec-h3">Potential Conflict — Never a Confirmed Conflict</h3>
+  <p class="sec-body">
+    Two conservative, explainable signals — never naive keyword-opposite matching treated as authoritative —
+    can flag a newly-proposed KPI candidate as a POTENTIAL_CONFLICT: the new evidence text itself uses an
+    explicit discontinuation/reversal phrase, or it comes from a strictly newer document discussing the same
+    KPI without repeating a currently-confirmed supporting claim. Either way, this system only ever creates
+    <code>POTENTIAL_CONFLICT</code> — only a human reviewer, in the existing Evidence Review Workbench, can
+    confirm an actual <code>CONFLICTS</code> relationship. The distinction is deliberate and load-bearing:
+    match validity (does the evidence relate to this KPI at all) stays separate from evidence relationship
+    (what a human decides it concludes).
+  </p>
+
+  <h3 class="sec-h3">How Stale Evidence Is Treated, and How Historical Evidence Is Preserved</h3>
+  <p class="sec-body">
+    Evidence is labelled CURRENT, HISTORICAL, POSSIBLY_SUPERSEDED, DISPUTED, or STALE — computed live, never
+    stored. An older document is never deleted or rewritten when a newer one arrives at the same source; its
+    evidence remains inspectable, simply no longer the latest word, with a newer version linked alongside it.
+    STALE means the evidence's own freshness score has decayed below a documented threshold — a genuine
+    "this may need a fresh look" signal, never a silent deletion or an automatic downgrade to false.
+  </p>
+
+  <h3 class="sec-h3">Source Recovery</h3>
+  <p class="sec-body">
+    A source that was previously unreachable and becomes reachable again produces a real SOURCE_RECOVERED
+    event the moment its next fetch succeeds (even an unchanged one) — a company is never left permanently
+    marked degraded once its sources are actually healthy again.
+  </p>
+
+  <h3 class="sec-h3">Scheduler Safety</h3>
+  <p class="sec-body">
+    Overlapping refreshes for the same company are prevented by a genuine, backend-portable atomic
+    compare-and-swap (an <code>UPDATE ... WHERE tracking_status != 'refresh_in_progress'</code> — correct on
+    every database backend Django supports, unlike <code>SELECT ... FOR UPDATE</code>, which SQLite cannot
+    honour) — a second concurrent trigger for the same company is refused outright, never silently queued,
+    retried, or double-run.
+  </p>
+
+  <h3 class="sec-h3">How Alerts Are Prioritised</h3>
+  <p class="sec-body">
+    Every <code>StewardshipAlert</code>'s priority is a plain, documented integer sum of real components —
+    severity weight, change-type weight, source authority, whether human review is required — all stored and
+    shown alongside the total. There is no hidden or tuned "AI priority score" anywhere in this system.
+  </p>
+
+  <h3 class="sec-h3">How Human Review Remains Authoritative</h3>
+  <p class="sec-body">
+    Nothing in the monitoring pipeline ever mutates a <code>CompanyKPIEvidenceLink</code>'s review state or
+    relationship — it only ever creates change events, alerts, and provenance tags (which refresh run proposed
+    a candidate). Confirming, rejecting, or resolving a conflict remains exclusively the Evidence Review
+    Workbench's job, unchanged from PR12.
   </p>
 </div>
 

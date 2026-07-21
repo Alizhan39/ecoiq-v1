@@ -1,8 +1,10 @@
 """
 company_intelligence/services/refresh_orchestrator.py — feat/stewardship-
-universe (PR 13): the ONE orchestration service for
+universe (PR 13), extended by feat/stewardship-monitor (PR 14): the ONE
+orchestration service for
 "Company -> discover sources -> register -> fetch -> version -> extract
-evidence -> generate KPI candidates -> review queue -> recompute -> record
+evidence -> generate KPI candidates -> detect changes -> flag potential
+conflicts -> generate alerts -> review queue -> recompute -> record
 telemetry -> return a structured result."
 
 Every step reuses an existing, already-idempotent primitive rather than a
@@ -28,13 +30,37 @@ WOULD be checked (this company's existing active sources and their real
 due-for-refresh status) without calling discovery, registration, or any
 fetch. This is a real, honest preview, not a simulation of hypothetical
 future discovery results.
+
+PR 14 additions (Continuous Stewardship Monitor):
+  - A genuine, backend-portable concurrency lock (an atomic
+    UPDATE ... WHERE tracking_status != 'refresh_in_progress', not
+    SELECT ... FOR UPDATE, which SQLite doesn't support) — a second
+    concurrent trigger for the SAME company is refused rather than double-
+    running (Section 15's "prevent overlapping refreshes for the same
+    company").
+  - Per-source due-date gating for any non-'manual' trigger (a scheduled/
+    batch run only fetches sources refresh_policy says are actually due —
+    never re-hammers a provider on every batch tick just because the
+    COMPANY was due; a staff-initiated manual refresh still rechecks every
+    active source, unchanged from PR13, since that's a deliberate human
+    action). Skipped-not-due sources are tracked separately and never
+    counted as checked/failed.
+  - Deterministic change detection (services/change_detection.py) and
+    conservative potential-conflict flagging (services/conflict_detection.py)
+    run against this run's OWN real results only — never a re-scan of
+    unrelated history — and every real change becomes exactly one
+    StewardshipAlert (services/stewardship_alerts.py). An unchanged run
+    produces zero change events and zero alerts.
 """
 import logging
 
 from django.utils import timezone
 
 from ai_observatory.services import recorder
-from company_intelligence.services import evidence_ingestion, refresh_policy, source_discovery, source_registry
+from company_intelligence.services import (
+    change_detection, conflict_detection, evidence_ingestion, refresh_policy,
+    source_discovery, source_registry, stewardship_alerts,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +85,32 @@ def _dry_run_preview(company_profile):
     }
 
 
+def _try_acquire_refresh_lock(company_profile):
+    """
+    Atomic compare-and-swap: only transitions tracking_status to
+    'refresh_in_progress' if the row is NOT already in that state right
+    now, in a single UPDATE ... WHERE statement — this is atomic per-row on
+    every backend Django supports (SQLite included), unlike
+    select_for_update(), which SQLite cannot honour. If a concurrent
+    refresh is genuinely already running for this company, this returns
+    False and the caller must not proceed.
+    """
+    from companies.models import CompanyProfile
+
+    updated = CompanyProfile.objects.filter(pk=company_profile.pk).exclude(
+        tracking_status='refresh_in_progress',
+    ).update(tracking_status='refresh_in_progress')
+    if updated:
+        company_profile.tracking_status = 'refresh_in_progress'
+    return bool(updated)
+
+
 def refresh_company_intelligence(company_profile, actor=None, triggered_by='manual', dry_run=False):
     """
     Returns a CompanyRefreshRun (persisted) for a real run, or a plain dict
-    for dry_run=True (no row is ever created for a dry run — a
-    CompanyRefreshRun row is itself a mutation).
+    for dry_run=True / paused / lock-unavailable (no CompanyRefreshRun row
+    is ever created for any of those three cases — each is itself a
+    genuine non-mutation outcome, not a failure).
     """
     if dry_run:
         return _dry_run_preview(company_profile)
@@ -74,11 +121,14 @@ def refresh_company_intelligence(company_profile, actor=None, triggered_by='manu
             'note': 'This company\'s tracking is paused — resume it explicitly before refreshing.',
         }
 
-    from company_intelligence.models import CompanyRefreshRun
-
     was_not_tracked = company_profile.tracking_status == 'not_tracked'
-    company_profile.tracking_status = 'refresh_in_progress'
-    company_profile.save(update_fields=['tracking_status'])
+    if not _try_acquire_refresh_lock(company_profile):
+        return {
+            'error': 'already_refreshing', 'company_slug': company_profile.company.slug,
+            'note': 'A refresh is already running for this company — this trigger was refused, not queued or retried.',
+        }
+
+    from company_intelligence.models import CompanyRefreshRun
 
     session = recorder.start_session(company=company_profile, kind='stewardship_refresh', user=actor)
     run = CompanyRefreshRun.objects.create(
@@ -86,9 +136,11 @@ def refresh_company_intelligence(company_profile, actor=None, triggered_by='manu
     )
 
     warnings, errors = [], []
-    sources_checked = sources_failed = 0
+    sources_checked = sources_failed = sources_skipped_not_due = 0
     documents_new = documents_updated = documents_unchanged = 0
     evidence_created_total = 0
+    change_events = []
+    is_manual = (triggered_by == 'manual')
 
     try:
         with recorder.record_stage(session, 'source_discovery', 'Authoritative Source Discovery', category='deterministic') as info:
@@ -99,20 +151,30 @@ def refresh_company_intelligence(company_profile, actor=None, triggered_by='manu
             registered_count = 0
             for candidate in company_profile.discovered_sources.filter(status='approved'):
                 try:
-                    source_registry.register_discovered_source(candidate, actor=actor)
+                    harvester_source, created = source_registry.register_discovered_source(candidate, actor=actor)
                     registered_count += 1
+                    if created:
+                        change_events.append(change_detection.record_new_source(candidate, harvester_source, refresh_run=run))
                 except ValueError as exc:
                     warnings.append(f'Could not register {candidate.url}: {exc}')
             info['items_processed'] = registered_count
 
         active_sources = list(company_profile.harvest_sources.filter(is_active=True))
+        sec_edgar_checked_this_run = False
         with recorder.record_stage(session, 'source_fetch', 'Fetch + Deduplicate Registered Sources', category='retrieval') as info:
             for source in active_sources:
+                if not is_manual and not refresh_policy.is_source_due(source):
+                    sources_skipped_not_due += 1
+                    continue
                 sources_checked += 1
+                if source.source_type == 'sec_edgar':
+                    sec_edgar_checked_this_run = True
                 try:
                     from harvester.services.ingestion_pipeline import ingest_source
 
                     ingestion_run = ingest_source(source, triggered_by=f'stewardship_refresh:{triggered_by}')
+                    change_events.extend(change_detection.detect_source_change(source, ingestion_run, refresh_run=run))
+
                     if ingestion_run.status == 'new':
                         documents_new += 1
                         evidence_created_total += ingestion_run.evidence_created_count
@@ -130,11 +192,31 @@ def refresh_company_intelligence(company_profile, actor=None, triggered_by='manu
                     errors.append(f'{source.name}: unexpected error — {type(exc).__name__}: {exc}')
                     logger.exception('Stewardship refresh: source %s failed for company %s', source.pk, company_profile.pk)
             info['items_processed'] = sources_checked
-            info['metadata'] = {'sources_failed': sources_failed}
+            info['metadata'] = {'sources_failed': sources_failed, 'sources_skipped_not_due': sources_skipped_not_due}
+
+        if sec_edgar_checked_this_run:
+            with recorder.record_stage(session, 'shariah_data_check', 'Shariah Financial Data Check', category='deterministic') as info:
+                facts, sources_created = evidence_ingestion.sync_financial_facts_for_company(company_profile)
+                info['items_processed'] = len(sources_created)
+                if sources_created:
+                    change_events.append(change_detection.record_shariah_data_changed(company_profile, refresh_run=run))
 
         with recorder.record_stage(session, 'kpi_candidate_matching', 'KPI Candidate Matching', category='deterministic') as info:
-            proposed = evidence_ingestion.propose_kpi_candidates_for_company(company_profile)
+            proposed = evidence_ingestion.propose_kpi_candidates_for_company(company_profile, refresh_run=run)
             info['items_processed'] = len(proposed)
+            if proposed:
+                event = change_detection.record_new_kpi_candidates(company_profile, proposed, refresh_run=run)
+                if event is not None:
+                    change_events.append(event)
+
+        with recorder.record_stage(session, 'conflict_detection', 'Potential Conflict Detection', category='deterministic') as info:
+            conflict_events = conflict_detection.detect_potential_conflicts_for_refresh(company_profile, proposed, refresh_run=run)
+            change_events.extend(conflict_events)
+            info['items_processed'] = len(conflict_events)
+
+        with recorder.record_stage(session, 'alert_generation', 'Stewardship Alert Generation', category='deterministic') as info:
+            alerts = stewardship_alerts.generate_alerts_for_refresh(company_profile, run, change_events)
+            info['items_processed'] = len(alerts)
 
         from company_intelligence.models import CompanyKPIEvidenceLink
 
@@ -156,7 +238,7 @@ def refresh_company_intelligence(company_profile, actor=None, triggered_by='manu
         return run
 
     if sources_checked == 0:
-        status = 'complete'  # nothing registered yet is not a failure of this run
+        status = 'complete'  # nothing registered/due yet is not a failure of this run
     elif sources_failed == 0:
         status = 'complete'
     elif sources_failed < sources_checked:
@@ -168,6 +250,7 @@ def refresh_company_intelligence(company_profile, actor=None, triggered_by='manu
     run.completed_at = timezone.now()
     run.sources_checked = sources_checked
     run.sources_failed = sources_failed
+    run.sources_skipped_not_due = sources_skipped_not_due
     run.documents_new = documents_new
     run.documents_updated = documents_updated
     run.documents_unchanged = documents_unchanged
