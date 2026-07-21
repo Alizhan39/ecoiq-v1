@@ -3,6 +3,7 @@ from . import views
 from company_intelligence import views as ci_views
 from company_intelligence import discovery_views as discovery
 from company_intelligence import review_views as review
+from company_intelligence import stewardship_views as stewardship
 
 app_name = 'companies'
 
@@ -23,6 +24,10 @@ urlpatterns = [
     path('review/bulk/',                            review.review_bulk_action_view, name='review_bulk_action'),
     path('review/<int:link_id>/',                   review.review_detail_view,  name='review_detail'),
     path('review/<int:link_id>/explain/',           review.explain_review_decision_view, name='review_explain'),
+    # feat/stewardship-universe (PR 13) — staff-only operational view across
+    # all tracked companies, so 'universe/' must also precede the
+    # '<slug:slug>/' catch-all.
+    path('universe/',                               stewardship.universe_view,  name='universe'),
     path('<slug:slug>/',                            views.company_detail,       name='detail'),
     path('<slug:slug>/explain-match/',              discovery.explain_match_view, name='explain_match'),
     path('<slug:slug>/register-document-source/',   discovery.register_document_source_view, name='register_document_source'),
@@ -35,6 +40,14 @@ urlpatterns = [
     path('<slug:slug>/report.pdf',                  views.company_pdf_report,   name='pdf_report'),
     path('<slug:slug>/ml-insights.json',            views.company_ml_insights,  name='ml_insights'),
     path('<slug:slug>/certificate/',                views.generate_certificate, name='certificate'),
+    # feat/stewardship-universe (PR 13) — per-company operational status +
+    # staff-triggered refresh/source governance actions.
+    path('<slug:slug>/status/',                     stewardship.company_status_view,  name='company_status'),
+    path('<slug:slug>/status/refresh/',              stewardship.trigger_refresh_view, name='trigger_refresh'),
+    path('<slug:slug>/status/pause/',                stewardship.pause_tracking_view,  name='pause_tracking'),
+    path('<slug:slug>/status/resume/',               stewardship.resume_tracking_view, name='resume_tracking'),
+    path('<slug:slug>/status/sources/<int:source_id>/approve/', stewardship.approve_source_view, name='approve_source'),
+    path('<slug:slug>/status/sources/<int:source_id>/reject/',  stewardship.reject_source_view,  name='reject_source'),
     path('reports/',                               views.report_index,          name='report_index'),
     path('reports/sector/<str:sector>/',           views.sector_pdf_report,     name='sector_report'),
 ]

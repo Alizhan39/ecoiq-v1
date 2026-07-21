@@ -234,6 +234,16 @@ def ingest_sustainability_document(company_profile, source_url, document_type, p
     return result
 
 
+def propose_kpi_candidates_for_company(company_profile):
+    """Public entry point — feat/stewardship-universe (PR 13)'s refresh
+    orchestrator calls harvester.services.ingestion_pipeline.ingest_source()
+    directly (one call per registered source, not per-document like this
+    module's own ingest_* wrappers), so KPI candidate matching needs to run
+    as its own explicit step afterward. Thin wrapper so that reuse never
+    has to reach into a name-mangled "private" function across modules."""
+    return _propose_kpi_candidates_for_company(company_profile)
+
+
 def _propose_kpi_candidates_for_company(company_profile):
     """Runs the deterministic KPI candidate matcher over every real
     harvester-sourced EvidenceMemory row this company has — idempotent

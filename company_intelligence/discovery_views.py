@@ -170,6 +170,13 @@ def register_document_source_view(request, slug):
         messages.error(request, 'A valid document URL and document type are required.')
         return redirect('companies:detail', slug=slug)
 
+    from company_intelligence.services.url_safety import is_safe_external_url
+
+    is_safe, reason = is_safe_external_url(source_url)
+    if not is_safe:
+        messages.error(request, f'This URL cannot be registered: {reason}')
+        return redirect('companies:detail', slug=slug)
+
     from company_intelligence.services.evidence_ingestion import ingest_sustainability_document
 
     try:

@@ -33,20 +33,12 @@ get_or_create on content_hash).
 """
 from django.core.management.base import BaseCommand
 
-REAL_DOCUMENT_SOURCES = {
-    'apple': {
-        'url': 'https://www.apple.com/environment/pdf/Apple_Environmental_Progress_Report_2024.pdf',
-        'document_type': 'sustainability_report', 'publisher': 'Apple Inc.',
-    },
-    'microsoft': {
-        'url': 'https://www.microsoft.com/en-us/corporate-responsibility/sustainability',
-        'document_type': 'sustainability_report', 'publisher': 'Microsoft Corporation',
-    },
-    'walmart': {
-        'url': 'https://corporate.walmart.com/purpose/sustainability',
-        'document_type': 'sustainability_report', 'publisher': 'Walmart Inc.',
-    },
-}
+# feat/stewardship-universe (PR 13) — moved to services/known_sources.py so
+# this command and the new source_discovery service read the exact same
+# curated list, never a second, possibly-drifting copy. Re-exported here
+# under its original name for backward compatibility with anything that
+# imported REAL_DOCUMENT_SOURCES from this module.
+from company_intelligence.services.known_sources import KNOWN_SUSTAINABILITY_DOCUMENTS as REAL_DOCUMENT_SOURCES
 
 
 class Command(BaseCommand):

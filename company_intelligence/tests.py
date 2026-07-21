@@ -2072,3 +2072,664 @@ class ReviewCSRFAndCrossCompanyTests(TestCase):
         self.assertEqual(response.status_code, 403)
         link.refresh_from_db()
         self.assertEqual(link.review_state, 'proposed')
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# feat/stewardship-universe (PR 13) — Automated Company Source Discovery +
+# Evidence Refresh Pipeline. Tests use the same @patch('harvester.services.
+# fetchers.http_fetch'/'.fetch_sec_edgar'/'.fetch_sustainability_document')
+# conventions established above — network calls are always mocked; identity
+# mappings (US_COMPANY_CIKS/UK_COMPANY_NUMBERS) and curated known_sources
+# data are real, so discovery/registration logic is exercised genuinely.
+# ═══════════════════════════════════════════════════════════════════════════
+from harvester.adapters import EvidenceCandidate
+from harvester.services.fetchers import FetchOutcome
+
+from company_intelligence.models import CompanyRefreshRun, DiscoveredSource
+from company_intelligence.services import (
+    known_sources, refresh_orchestrator, refresh_policy, source_discovery, source_registry,
+    stewardship_state, url_safety,
+)
+
+
+def _sec_edgar_outcome(slug='apple'):
+    candidate = EvidenceCandidate(
+        company_slug=slug, category='financial', statement='Test Co reported revenue of $1B per SEC EDGAR.',
+        source_type='regulatory_filing', title='SEC EDGAR test', url='https://www.sec.gov/test',
+        source_owner='U.S. Securities and Exchange Commission',
+    )
+    return FetchOutcome(success=True, candidates=[candidate], content_hash_input='sec-hash-stable')
+
+
+def _sustainability_outcome(text='We are committed to eliminating waste sent to landfill and implementing systems to avoid sending waste to landfill, achieved a waste diversion rate through recycling programs.'):
+    candidate = EvidenceCandidate(
+        company_slug='apple', category='waste', statement=text, source_type='sustainability_report',
+        title='Test Sustainability Doc — Page 1',
+        url='https://www.apple.com/environment/pdf/Apple_Environmental_Progress_Report_2024.pdf',
+        excerpt=text, full_text=text, source_owner='Apple Inc.', source_location='Page 1',
+    )
+    metadata = {
+        'document': {
+            'title': 'Test Sustainability Doc', 'document_type': 'sustainability_report',
+            'publisher': 'Apple Inc.', 'content_hash': 'doc-hash-stable', 'chunk_count': 1,
+            'retrieved_at': '2026-01-01T00:00:00+00:00',
+        },
+    }
+    return FetchOutcome(success=True, candidates=[candidate], content_hash_input='doc-hash-stable', metadata=metadata)
+
+
+class TrackingModelTests(TestCase):
+    def test_companyprofile_defaults_not_tracked(self):
+        profile = _profile(slug='track-default-co')
+        self.assertEqual(profile.tracking_status, 'not_tracked')
+        self.assertIsNone(profile.last_refresh_at)
+        self.assertIsNone(profile.next_refresh_due_at)
+
+    def test_discoveredsource_unique_per_company_and_url(self):
+        profile = _profile(slug='discsrc-uniq-co')
+        DiscoveredSource.objects.create(
+            company=profile, url='https://example.com/report.pdf', discovery_method='manual', status='candidate',
+        )
+        with self.assertRaises(Exception):
+            DiscoveredSource.objects.create(
+                company=profile, url='https://example.com/report.pdf', discovery_method='manual', status='candidate',
+            )
+
+    def test_companyrefreshrun_str_and_duration(self):
+        profile = _profile(slug='refreshrun-co')
+        run = CompanyRefreshRun.objects.create(company=profile, status='complete')
+        self.assertIn('complete', str(run).lower())
+        self.assertIsNone(run.duration_seconds)  # completed_at never set here
+
+
+class UrlSafetyTests(TestCase):
+    def test_non_http_scheme_blocked(self):
+        safe, reason = url_safety.is_safe_external_url('ftp://example.com/file')
+        self.assertFalse(safe)
+
+    def test_localhost_blocked(self):
+        safe, reason = url_safety.is_safe_external_url('http://localhost:8000/admin')
+        self.assertFalse(safe)
+
+    def test_loopback_ip_literal_blocked(self):
+        safe, reason = url_safety.is_safe_external_url('http://127.0.0.1/secret')
+        self.assertFalse(safe)
+
+    def test_private_ip_literal_blocked(self):
+        safe, reason = url_safety.is_safe_external_url('http://10.0.0.5/internal')
+        self.assertFalse(safe)
+
+    def test_cloud_metadata_ip_blocked(self):
+        safe, reason = url_safety.is_safe_external_url('http://169.254.169.254/latest/meta-data/')
+        self.assertFalse(safe)
+
+    def test_internal_suffix_blocked(self):
+        safe, reason = url_safety.is_safe_external_url('http://service.internal/data')
+        self.assertFalse(safe)
+
+    def test_empty_url_blocked(self):
+        safe, reason = url_safety.is_safe_external_url('')
+        self.assertFalse(safe)
+
+    @patch('company_intelligence.services.url_safety.socket.getaddrinfo')
+    def test_public_hostname_allowed(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = [(2, 1, 6, '', ('93.184.216.34', 0))]
+        safe, reason = url_safety.is_safe_external_url('https://www.example.com/report.pdf')
+        self.assertTrue(safe)
+
+    @patch('company_intelligence.services.url_safety.socket.getaddrinfo')
+    def test_dns_resolving_to_private_ip_blocked(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = [(2, 1, 6, '', ('192.168.1.5', 0))]
+        safe, reason = url_safety.is_safe_external_url('https://sneaky.example.com/report.pdf')
+        self.assertFalse(safe)
+
+    @patch('company_intelligence.services.url_safety.socket.getaddrinfo')
+    def test_dns_failure_is_unsafe_not_a_crash(self, mock_getaddrinfo):
+        import socket
+        mock_getaddrinfo.side_effect = socket.gaierror('no such host')
+        safe, reason = url_safety.is_safe_external_url('https://no-such-host.invalid/report.pdf')
+        self.assertFalse(safe)
+
+
+class KnownSourcesTests(TestCase):
+    def test_domain_of_strips_www(self):
+        self.assertEqual(known_sources.domain_of('https://www.apple.com/x'), 'apple.com')
+
+    def test_verified_when_domain_matches_curated_registry(self):
+        status = known_sources.domain_status_for('apple', 'https://www.apple.com/environment/report.pdf')
+        self.assertEqual(status, 'verified')
+
+    def test_probable_when_domain_unknown(self):
+        status = known_sources.domain_status_for('apple', 'https://some-random-mirror.example/report.pdf')
+        self.assertEqual(status, 'probable')
+
+    def test_probable_when_company_not_in_curated_registry_at_all(self):
+        status = known_sources.domain_status_for('unknown-slug', 'https://unknown-slug.com/report.pdf')
+        self.assertEqual(status, 'probable')
+
+
+class SourceDiscoveryTests(TestCase):
+    def test_mapped_company_discovers_sec_edgar_and_curated_document(self):
+        profile = _real_profile('apple')
+        discovered = source_discovery.discover_sources_for_company(profile)
+        methods = {d.discovery_method for d in discovered}
+        self.assertIn('sec_edgar_identity', methods)
+        self.assertIn('curated_official_domain', methods)
+        sec_row = next(d for d in discovered if d.discovery_method == 'sec_edgar_identity')
+        self.assertEqual(sec_row.status, 'approved')
+        self.assertEqual(sec_row.domain_status, 'verified')
+        self.assertEqual(sec_row.tier, 1)
+
+    def test_unmapped_company_discovers_nothing_automatically(self):
+        profile = _profile(slug='totally-unmapped-co')
+        discovered = source_discovery.discover_sources_for_company(profile)
+        self.assertEqual(discovered, [])
+
+    def test_staff_entered_field_surfaces_as_candidate_requiring_approval(self):
+        profile = _profile(slug='staff-entered-co')
+        profile.sustainability_report_url = 'https://staff-entered-co.example/sustainability.pdf'
+        profile.save(update_fields=['sustainability_report_url'])
+        discovered = source_discovery.discover_sources_for_company(profile)
+        staff_row = next(d for d in discovered if d.discovery_method == 'staff_registered_field')
+        self.assertEqual(staff_row.status, 'candidate')
+        self.assertEqual(staff_row.domain_status, 'probable')
+
+    def test_rerun_does_not_duplicate_discovered_sources(self):
+        profile = _real_profile('apple')
+        source_discovery.discover_sources_for_company(profile)
+        first_count = DiscoveredSource.objects.filter(company=profile).count()
+        source_discovery.discover_sources_for_company(profile)
+        second_count = DiscoveredSource.objects.filter(company=profile).count()
+        self.assertEqual(first_count, second_count)
+
+    def test_updates_last_source_discovery_at(self):
+        profile = _profile(slug='discovery-timestamp-co')
+        self.assertIsNone(profile.last_source_discovery_at)
+        source_discovery.discover_sources_for_company(profile)
+        profile.refresh_from_db()
+        self.assertIsNotNone(profile.last_source_discovery_at)
+
+
+class SourceRegistryTests(TestCase):
+    def test_register_approved_candidate_creates_harvester_source(self):
+        from harvester.models import Source as HarvesterSource
+
+        profile = _real_profile('apple')
+        [candidate] = [d for d in source_discovery.discover_sources_for_company(profile) if d.discovery_method == 'sec_edgar_identity']
+        source, created = source_registry.register_discovered_source(candidate)
+        self.assertTrue(created)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'registered')
+        self.assertEqual(candidate.harvester_source_id, source.pk)
+        self.assertEqual(HarvesterSource.objects.filter(company=profile, source_type='sec_edgar').count(), 1)
+
+    def test_registering_non_approved_candidate_raises(self):
+        profile = _profile(slug='not-approved-co')
+        candidate = DiscoveredSource.objects.create(
+            company=profile, url='https://not-approved-co.example/x.pdf', discovery_method='manual', status='candidate',
+        )
+        with self.assertRaises(ValueError):
+            source_registry.register_discovered_source(candidate)
+
+    def test_reregistering_already_registered_is_a_noop(self):
+        profile = _real_profile('apple')
+        [candidate] = [d for d in source_discovery.discover_sources_for_company(profile) if d.discovery_method == 'sec_edgar_identity']
+        source_registry.register_discovered_source(candidate)
+        candidate.refresh_from_db()
+        source_again, created_again = source_registry.register_discovered_source(candidate)
+        self.assertFalse(created_again)
+
+    def test_unsafe_url_refused_and_marked_rejected(self):
+        profile = _profile(slug='unsafe-url-co')
+        candidate = DiscoveredSource.objects.create(
+            company=profile, url='http://127.0.0.1/report.pdf', source_type='sustainability_report',
+            discovery_method='staff_registered_field', status='approved',
+        )
+        with self.assertRaises(ValueError):
+            source_registry.register_discovered_source(candidate)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'rejected')
+
+    def test_approve_discovered_source_registers_by_default(self):
+        profile = _profile(slug='approve-co')
+        profile.sustainability_report_url = 'https://approve-co.example/sustainability.pdf'
+        profile.save(update_fields=['sustainability_report_url'])
+        [candidate] = source_discovery.discover_sources_for_company(profile)
+        staff = User.objects.create_user(username='approver1', password='pw', is_staff=True)
+
+        with patch('company_intelligence.services.source_registry.is_safe_external_url', return_value=(True, 'test override')):
+            source_registry.approve_discovered_source(candidate, actor=staff, notes='Looks legitimate.')
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'registered')
+        self.assertEqual(candidate.reviewed_by, staff)
+
+    def test_reject_never_deletes_the_row(self):
+        profile = _profile(slug='reject-preserve-co')
+        candidate = DiscoveredSource.objects.create(
+            company=profile, url='https://reject-preserve-co.example/x.pdf', discovery_method='manual', status='candidate',
+        )
+        staff = User.objects.create_user(username='rejecter1', password='pw', is_staff=True)
+        source_registry.reject_discovered_source(candidate, actor=staff, reason='Not authoritative.')
+        self.assertTrue(DiscoveredSource.objects.filter(pk=candidate.pk).exists())
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'rejected')
+        self.assertEqual(candidate.review_notes, 'Not authoritative.')
+
+
+class RefreshPolicyTests(TestCase):
+    def test_never_checked_source_is_due_now(self):
+        from harvester.models import Source as HarvesterSource
+
+        profile = _profile(slug='policy-never-checked-co')
+        source = HarvesterSource.objects.create(company=profile, source_type='sec_edgar', name='x')
+        self.assertIsNone(refresh_policy.next_refresh_due_for_source(source))
+        self.assertTrue(refresh_policy.is_source_due(source))
+
+    def test_recently_succeeded_regulatory_source_not_yet_due(self):
+        from django.utils import timezone
+        from harvester.models import Source as HarvesterSource
+
+        profile = _profile(slug='policy-recent-co')
+        source = HarvesterSource.objects.create(
+            company=profile, source_type='sec_edgar', name='x', last_success_at=timezone.now(),
+        )
+        self.assertFalse(refresh_policy.is_source_due(source))
+
+    def test_failed_source_retried_sooner_than_normal_interval(self):
+        import datetime as dt
+        from django.utils import timezone
+        from harvester.models import Source as HarvesterSource
+
+        profile = _profile(slug='policy-failed-co')
+        now = timezone.now()
+        source = HarvesterSource.objects.create(
+            company=profile, source_type='sustainability_report', name='x',
+            last_success_at=now - dt.timedelta(days=200),
+            last_failure_at=now - dt.timedelta(days=20),
+        )
+        # Normal interval (180d) would say NOT due yet from last_success, but the
+        # more recent failure (20 days ago, retry window 14 days) makes it due.
+        self.assertTrue(refresh_policy.is_source_due(source, now=now))
+
+    def test_company_with_no_active_sources_has_no_due_date(self):
+        profile = _profile(slug='policy-no-sources-co')
+        self.assertIsNone(refresh_policy.company_next_refresh_due_at(profile))
+        self.assertFalse(refresh_policy.is_company_due_for_refresh(profile))
+
+
+class StewardshipHealthAndStateTests(TestCase):
+    def test_health_zero_sources_all_completeness_components_false_except_no_disputed(self):
+        profile = _profile(slug='health-empty-co')
+        health = stewardship_state.compute_company_health(profile)
+        self.assertEqual(health['official_sources_known'], 0)
+        self.assertTrue(health['data_completeness_components']['no_disputed_evidence'])
+        self.assertFalse(health['data_completeness_components']['has_official_source'])
+        self.assertEqual(health['data_completeness_pct'], 20.0)
+
+    def test_completeness_weights_sum_to_100(self):
+        self.assertEqual(sum(stewardship_state.COMPLETENESS_WEIGHTS.values()) * 100, 100.0)
+
+    def test_tracking_state_not_tracked_wins_regardless_of_health(self):
+        profile = _profile(slug='state-not-tracked-co')
+        state = stewardship_state.compute_tracking_state(profile)
+        self.assertEqual(state['state'], 'NOT_TRACKED')
+
+    def test_tracking_state_paused_wins_over_live_conditions(self):
+        profile = _profile(slug='state-paused-co')
+        profile.tracking_status = 'paused'
+        profile.save(update_fields=['tracking_status'])
+        state = stewardship_state.compute_tracking_state(profile)
+        self.assertEqual(state['state'], 'PAUSED')
+
+    def test_tracking_state_needs_source_discovery_when_active_with_zero_sources(self):
+        profile = _profile(slug='state-nsd-co')
+        profile.tracking_status = 'active'
+        profile.save(update_fields=['tracking_status'])
+        state = stewardship_state.compute_tracking_state(profile)
+        self.assertEqual(state['state'], 'NEEDS_SOURCE_DISCOVERY')
+
+    def test_tracking_state_review_required_when_pending_evidence_exists(self):
+        profile = _profile(slug='state-review-req-co')
+        profile.tracking_status = 'active'
+        profile.save(update_fields=['tracking_status'])
+        from harvester.models import Source as HarvesterSource
+        HarvesterSource.objects.create(company=profile, source_type='sec_edgar', name='x')
+        DiscoveredSource.objects.create(
+            company=profile, url='https://state-review-req-co.example/x', discovery_method='sec_edgar_identity',
+            status='registered',
+        )
+        _proposed_link(profile, kpi_id=50)
+        state = stewardship_state.compute_tracking_state(profile)
+        self.assertEqual(state['state'], 'REVIEW_REQUIRED')
+
+    def test_tracking_state_current_when_everything_is_clean_and_fresh(self):
+        from django.utils import timezone
+        from harvester.models import Source as HarvesterSource
+
+        profile = _profile(slug='state-current-co')
+        profile.tracking_status = 'active'
+        profile.save(update_fields=['tracking_status'])
+        HarvesterSource.objects.create(company=profile, source_type='sec_edgar', name='x', last_success_at=timezone.now())
+        DiscoveredSource.objects.create(
+            company=profile, url='https://state-current-co.example/x', discovery_method='sec_edgar_identity',
+            status='registered',
+        )
+        state = stewardship_state.compute_tracking_state(profile)
+        self.assertEqual(state['state'], 'CURRENT')
+
+
+class RefreshOrchestratorTests(TestCase):
+    def test_dry_run_performs_zero_database_writes(self):
+        profile = _real_profile('apple')
+        before_discovered = DiscoveredSource.objects.filter(company=profile).count()
+        before_runs = CompanyRefreshRun.objects.filter(company=profile).count()
+
+        result = refresh_orchestrator.refresh_company_intelligence(profile, dry_run=True)
+        self.assertTrue(result['dry_run'])
+        profile.refresh_from_db()
+        self.assertEqual(profile.tracking_status, 'not_tracked')  # unchanged
+        self.assertEqual(DiscoveredSource.objects.filter(company=profile).count(), before_discovered)
+        self.assertEqual(CompanyRefreshRun.objects.filter(company=profile).count(), before_runs)
+
+    def test_paused_company_refuses_refresh_without_mutation(self):
+        profile = _profile(slug='paused-refresh-co')
+        profile.tracking_status = 'paused'
+        profile.save(update_fields=['tracking_status'])
+        result = refresh_orchestrator.refresh_company_intelligence(profile)
+        self.assertEqual(result['error'], 'paused')
+        profile.refresh_from_db()
+        self.assertEqual(profile.tracking_status, 'paused')
+        self.assertEqual(CompanyRefreshRun.objects.filter(company=profile).count(), 0)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_full_refresh_completes_and_never_auto_confirms_kpi_candidates(self, mock_doc_fetch, mock_sec_fetch):
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+
+        profile = _real_profile('apple')
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+
+        self.assertIsInstance(run, CompanyRefreshRun)
+        self.assertEqual(run.status, 'complete')
+        self.assertEqual(run.sources_checked, 2)
+        self.assertEqual(run.sources_failed, 0)
+        self.assertGreater(run.kpi_candidates_proposed, 0)
+
+        profile.refresh_from_db()
+        self.assertEqual(profile.tracking_status, 'active')
+        self.assertIsNotNone(profile.last_refresh_at)
+
+        # CRITICAL invariant: every KPI candidate this refresh proposed
+        # remains 'proposed' — never silently auto-confirmed.
+        self.assertFalse(
+            CompanyKPIEvidenceLink.objects.filter(assessment__company=profile, review_state='confirmed').exists()
+        )
+        self.assertTrue(
+            CompanyKPIEvidenceLink.objects.filter(assessment__company=profile, review_state='proposed').exists()
+        )
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_second_run_is_idempotent_zero_duplicates(self, mock_doc_fetch, mock_sec_fetch):
+        from harvester.models import Evidence as HarvesterEvidence, SourceDocument
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+
+        refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        docs_1 = SourceDocument.objects.filter(company=profile).count()
+        ev_1 = HarvesterEvidence.objects.filter(company=profile).count()
+        kpi_1 = CompanyKPIEvidenceLink.objects.filter(assessment__company=profile).count()
+        disc_1 = DiscoveredSource.objects.filter(company=profile).count()
+
+        run2 = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+        self.assertEqual(run2.documents_new, 0)
+        self.assertEqual(run2.documents_unchanged, 2)
+
+        self.assertEqual(SourceDocument.objects.filter(company=profile).count(), docs_1)
+        self.assertEqual(HarvesterEvidence.objects.filter(company=profile).count(), ev_1)
+        self.assertEqual(CompanyKPIEvidenceLink.objects.filter(assessment__company=profile).count(), kpi_1)
+        self.assertEqual(DiscoveredSource.objects.filter(company=profile).count(), disc_1)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_one_failed_source_yields_partial_not_false_complete(self, mock_doc_fetch, mock_sec_fetch):
+        mock_sec_fetch.return_value = FetchOutcome(success=False, error='HTTP 500')
+        mock_doc_fetch.return_value = _sustainability_outcome()
+
+        profile = _real_profile('apple')
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+
+        self.assertEqual(run.status, 'partial')
+        self.assertEqual(run.sources_failed, 1)
+        self.assertTrue(any('HTTP 500' in e for e in run.errors))
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_all_sources_failing_yields_failed_and_error_tracking_status(self, mock_doc_fetch, mock_sec_fetch):
+        mock_sec_fetch.return_value = FetchOutcome(success=False, error='HTTP 500')
+        mock_doc_fetch.return_value = FetchOutcome(success=False, error='HTTP 404')
+
+        profile = _real_profile('apple')
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+
+        self.assertEqual(run.status, 'failed')
+        profile.refresh_from_db()
+        self.assertEqual(profile.tracking_status, 'error')
+
+    def test_company_with_no_mapped_sources_is_trivially_complete(self):
+        profile = _profile(slug='no-mapped-sources-co')
+        run = refresh_orchestrator.refresh_company_intelligence(profile)
+        self.assertEqual(run.status, 'complete')
+        self.assertEqual(run.sources_checked, 0)
+
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_refresh_records_observatory_session_anchored_to_company(self, mock_doc_fetch, mock_sec_fetch):
+        from ai_observatory.models import AnalysisSession
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+        profile = _real_profile('apple')
+        run = refresh_orchestrator.refresh_company_intelligence(profile, triggered_by='manual')
+
+        self.assertIsNotNone(run.observatory_session)
+        self.assertEqual(run.observatory_session.kind, 'stewardship_refresh')
+        self.assertEqual(run.observatory_session.company_id, profile.pk)
+        self.assertEqual(run.observatory_session.status, 'completed')
+
+
+class ManagementCommandTests(TestCase):
+    @patch('harvester.services.fetchers.fetch_sustainability_document')
+    @patch('harvester.services.fetchers.fetch_sec_edgar')
+    def test_bootstrap_and_refresh_real_company_by_slug(self, mock_doc_fetch, mock_sec_fetch):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        mock_sec_fetch.return_value = _sec_edgar_outcome()
+        mock_doc_fetch.return_value = _sustainability_outcome()
+
+        out = StringIO()
+        call_command('refresh_stewardship_universe', '--company', 'apple', stdout=out)
+        profile = CompanyProfile.objects.get(company__slug='apple')
+        self.assertEqual(profile.tracking_status, 'active')
+        self.assertIn('complete', out.getvalue().lower())
+
+    def test_dry_run_flag_performs_no_mutation(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        profile = _real_profile('apple')
+        before = CompanyRefreshRun.objects.filter(company=profile).count()
+        out = StringIO()
+        call_command('refresh_stewardship_universe', '--company', 'apple', '--dry-run', stdout=out)
+        self.assertEqual(CompanyRefreshRun.objects.filter(company=profile).count(), before)
+
+    def test_no_companies_to_refresh_is_handled_honestly(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command('refresh_stewardship_universe', stdout=out)
+        self.assertIn('No companies to refresh', out.getvalue())
+
+    def test_limit_flag_caps_company_count(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        p1 = _profile(slug='limit-co-1')
+        p2 = _profile(slug='limit-co-2')
+        for p in (p1, p2):
+            p.tracking_status = 'active'
+            p.save(update_fields=['tracking_status'])
+        out = StringIO()
+        call_command('refresh_stewardship_universe', '--limit', '1', stdout=out)
+        lines = [l for l in out.getvalue().splitlines() if l.startswith('limit-co')]
+        self.assertEqual(len(lines), 1)
+
+
+class StewardshipViewsTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='su_staff', password='pw', is_staff=True)
+        self.normal = User.objects.create_user(username='su_normal', password='pw')
+
+    def test_universe_view_requires_staff(self):
+        client = Client()
+        client.login(username='su_normal', password='pw')
+        response = client.get(reverse('companies:universe'))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_universe_view_lists_companies_with_derived_state(self):
+        _profile(slug='universe-list-co')
+        client = Client()
+        client.login(username='su_staff', password='pw')
+        response = client.get(reverse('companies:universe'))
+        self.assertEqual(response.status_code, 200)
+        slugs = [r['profile'].company.slug for r in response.context['rows']]
+        self.assertIn('universe-list-co', slugs)
+
+    def test_company_status_view_requires_staff(self):
+        profile = _profile(slug='status-view-co')
+        client = Client()
+        client.login(username='su_normal', password='pw')
+        response = client.get(reverse('companies:company_status', args=[profile.company.slug]))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_company_status_view_shows_health_and_registry(self):
+        profile = _profile(slug='status-view-ok-co')
+        client = Client()
+        client.login(username='su_staff', password='pw')
+        response = client.get(reverse('companies:company_status', args=[profile.company.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('health', response.context)
+        self.assertIn('registry_rows', response.context)
+
+    def test_trigger_refresh_requires_post(self):
+        profile = _profile(slug='trigger-get-co')
+        client = Client()
+        client.login(username='su_staff', password='pw')
+        response = client.get(reverse('companies:trigger_refresh', args=[profile.company.slug]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_trigger_refresh_requires_staff(self):
+        profile = _profile(slug='trigger-staff-co')
+        client = Client()
+        client.login(username='su_normal', password='pw')
+        response = client.post(reverse('companies:trigger_refresh', args=[profile.company.slug]))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_trigger_refresh_dry_run_via_view(self):
+        profile = _profile(slug='trigger-dryrun-co')
+        client = Client()
+        client.login(username='su_staff', password='pw')
+        response = client.post(
+            reverse('companies:trigger_refresh', args=[profile.company.slug]), {'dry_run': '1'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(CompanyRefreshRun.objects.filter(company=profile).count(), 0)
+
+    def test_approve_and_reject_source_views_require_staff(self):
+        profile = _profile(slug='approve-view-co')
+        candidate = DiscoveredSource.objects.create(
+            company=profile, url='https://approve-view-co.example/x.pdf', discovery_method='manual', status='candidate',
+        )
+        client = Client()
+        client.login(username='su_normal', password='pw')
+        response = client.post(reverse('companies:approve_source', args=[profile.company.slug, candidate.pk]))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_approve_source_view_staff_success(self):
+        profile = _profile(slug='approve-view-ok-co')
+        profile.sustainability_report_url = 'https://approve-view-ok-co.example/sustainability.pdf'
+        profile.save(update_fields=['sustainability_report_url'])
+        [candidate] = source_discovery.discover_sources_for_company(profile)
+        client = Client()
+        client.login(username='su_staff', password='pw')
+        with patch('company_intelligence.services.source_registry.is_safe_external_url', return_value=(True, 'ok')):
+            response = client.post(reverse('companies:approve_source', args=[profile.company.slug, candidate.pk]), {'notes': 'ok'})
+        self.assertEqual(response.status_code, 302)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'registered')
+
+    def test_pause_and_resume_tracking(self):
+        profile = _profile(slug='pause-resume-co')
+        profile.tracking_status = 'active'
+        profile.save(update_fields=['tracking_status'])
+        client = Client()
+        client.login(username='su_staff', password='pw')
+
+        client.post(reverse('companies:pause_tracking', args=[profile.company.slug]))
+        profile.refresh_from_db()
+        self.assertEqual(profile.tracking_status, 'paused')
+
+        client.post(reverse('companies:resume_tracking', args=[profile.company.slug]))
+        profile.refresh_from_db()
+        self.assertEqual(profile.tracking_status, 'active')
+
+    def test_no_investment_recommendation_language_on_universe_page(self):
+        _profile(slug='no-invest-lang-co')
+        client = Client()
+        client.login(username='su_staff', password='pw')
+        response = client.get(reverse('companies:universe'))
+        content = response.content.decode().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, content)
+
+    def test_no_investment_recommendation_language_on_status_page(self):
+        profile = _profile(slug='no-invest-lang-status-co')
+        client = Client()
+        client.login(username='su_staff', password='pw')
+        response = client.get(reverse('companies:company_status', args=[profile.company.slug]))
+        content = response.content.decode().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, content)
+
+
+class StewardshipCSRFAndCrossCompanyTests(TestCase):
+    def test_trigger_refresh_without_csrf_token_rejected(self):
+        from django.test import Client as StrictClient
+
+        profile = _profile(slug='csrf-refresh-co')
+        staff = User.objects.create_user(username='csrf_su_staff', password='pw', is_staff=True)
+        strict_client = StrictClient(enforce_csrf_checks=True)
+        strict_client.login(username='csrf_su_staff', password='pw')
+        response = strict_client.post(reverse('companies:trigger_refresh', args=[profile.company.slug]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_approve_source_cross_company_404s(self):
+        profile_a = _profile(slug='cross-a-co')
+        profile_b = _profile(slug='cross-b-co')
+        candidate = DiscoveredSource.objects.create(
+            company=profile_a, url='https://cross-a-co.example/x.pdf', discovery_method='manual', status='candidate',
+        )
+        staff = User.objects.create_user(username='cross_staff', password='pw', is_staff=True)
+        client = Client()
+        client.login(username='cross_staff', password='pw')
+        response = client.post(reverse('companies:approve_source', args=[profile_b.company.slug, candidate.pk]))
+        self.assertEqual(response.status_code, 404)

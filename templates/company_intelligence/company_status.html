@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}{{ company.name }} — Intelligence Status — EcoIQ{% endblock %}
+{% block meta_description_content %}Operational status of {{ company.name }}'s tracked sources, documents, evidence, and KPI candidates.{% endblock %}
+
+{% block content %}
+<div class="cs-wrap">
+  <a href="{% url 'companies:universe' %}" class="cs-back">← Stewardship Universe</a>
+  <span class="cs-eyebrow">ECOIQ · STAFF ONLY · COMPANY INTELLIGENCE STATUS</span>
+  <h1 class="cs-h1">{{ company.name }}</h1>
+  <div class="cs-state-row">
+    <span class="cs-state-badge">{{ state.label }}</span>
+    <span class="cs-state-reason">{{ state.reason }}</span>
+  </div>
+
+  <div class="cs-metrics">
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.official_sources_known }}</span><span class="cs-metric-k">Sources Known</span></div>
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.sources_reachable }}/{{ health.active_source_count }}</span><span class="cs-metric-k">Reachable</span></div>
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.confirmed_kpi_count }}/114</span><span class="cs-metric-k">Confirmed KPIs</span></div>
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.pending_review_count }}</span><span class="cs-metric-k">Pending Review</span></div>
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.disputed_count }}</span><span class="cs-metric-k">Disputed</span></div>
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.data_completeness_pct }}%</span><span class="cs-metric-k">Completeness</span></div>
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.latest_sustainability_report_age_days|default:"—" }}</span><span class="cs-metric-k">Sustain. Report Age (d)</span></div>
+    <div class="cs-metric"><span class="cs-metric-v">{{ health.latest_annual_report_age_days|default:"—" }}</span><span class="cs-metric-k">Annual Report Age (d)</span></div>
+  </div>
+
+  {% if health.missing_document_categories %}
+  <p class="cs-missing">Missing document categories: {{ health.missing_document_categories|join:", " }}</p>
+  {% endif %}
+
+  <div class="cs-actions-bar">
+    <form method="post" action="{% url 'companies:trigger_refresh' company.slug %}" class="cs-refresh-form">
+      {% csrf_token %}
+      <button type="submit" name="dry_run" value="0" class="cs-refresh-btn">Refresh Company Intelligence →</button>
+      <button type="submit" name="dry_run" value="1" class="cs-dryrun-btn">Dry Run (Preview Only)</button>
+    </form>
+    {% if profile.tracking_status == 'paused' %}
+    <form method="post" action="{% url 'companies:resume_tracking' company.slug %}"><input type="hidden" name="_" value="1">{% csrf_token %}<button type="submit" class="cs-pause-btn">Resume Tracking</button></form>
+    {% else %}
+    <form method="post" action="{% url 'companies:pause_tracking' company.slug %}">{% csrf_token %}<button type="submit" class="cs-pause-btn">Pause Tracking</button></form>
+    {% endif %}
+    <a href="{% url 'companies:review_queue' %}?company={{ company.slug }}" class="cs-review-link">Open in Review Workbench →</a>
+  </div>
+
+  <h2 class="cs-h2">Source Registry</h2>
+  <div class="cs-table-scroll">
+  <table class="cs-table">
+    <thead><tr><th>Source</th><th>Type</th><th>Tier</th><th>Domain Status</th><th>Discovery Method</th><th>Status</th><th>Last Success</th><th>Docs</th><th>Evidence</th><th>KPI Candidates</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for row in registry_rows %}
+      <tr>
+        <td><a href="{{ row.discovered.url }}" target="_blank" rel="noopener noreferrer">{{ row.discovered.domain|default:row.discovered.url|truncatechars:40 }}</a></td>
+        <td>{{ row.discovered.source_type|default:"—" }}</td>
+        <td>Tier {{ row.discovered.tier }}</td>
+        <td>{{ row.discovered.get_domain_status_display }}</td>
+        <td>{{ row.discovered.get_discovery_method_display }}</td>
+        <td><span class="cs-status-badge cs-status-{{ row.discovered.status }}">{{ row.discovered.get_status_display }}</span></td>
+        <td>{{ row.last_success_at|default:"Never" }}</td>
+        <td>{{ row.documents_count }}</td>
+        <td>{{ row.evidence_count }}</td>
+        <td>{{ row.kpi_candidates_count }}</td>
+        <td>
+          {% if row.discovered.status == 'candidate' %}
+          <form method="post" action="{% url 'companies:approve_source' company.slug row.discovered.pk %}" class="cs-inline-form">{% csrf_token %}<button type="submit" class="cs-approve-btn">Approve</button></form>
+          <form method="post" action="{% url 'companies:reject_source' company.slug row.discovered.pk %}" class="cs-inline-form">{% csrf_token %}<button type="submit" class="cs-reject-btn">Reject</button></form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="11" class="cs-empty-row">No sources discovered yet — trigger a refresh to run source discovery.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="cs-h2">Refresh History</h2>
+  <div class="cs-table-scroll">
+  <table class="cs-table">
+    <thead><tr><th>Started</th><th>Trigger</th><th>Status</th><th>Sources</th><th>New Docs</th><th>Unchanged</th><th>KPI Candidates</th><th>Duration</th><th>Observatory</th></tr></thead>
+    <tbody>
+      {% for run in refresh_runs %}
+      <tr>
+        <td>{{ run.started_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ run.get_triggered_by_display }}{% if run.actor %} ({{ run.actor.username }}){% endif %}</td>
+        <td><span class="cs-status-badge cs-status-{{ run.status }}">{{ run.get_status_display }}</span></td>
+        <td>{{ run.sources_checked }} ({{ run.sources_failed }} failed)</td>
+        <td>{{ run.documents_new }}</td>
+        <td>{{ run.documents_unchanged }}</td>
+        <td>{{ run.kpi_candidates_proposed }}</td>
+        <td>{{ run.duration_seconds|default:"—" }}s</td>
+        <td>{% if run.observatory_session_id %}Session #{{ run.observatory_session_id }}{% else %}—{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" class="cs-empty-row">No refresh has run yet for this company.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="cs-h2">Observatory Sessions</h2>
+  <div class="cs-table-scroll">
+  <table class="cs-table">
+    <thead><tr><th>Started</th><th>Kind</th><th>Status</th><th>Stages</th><th>Model Calls</th><th>Duration</th></tr></thead>
+    <tbody>
+      {% for session in observatory_sessions %}
+      <tr>
+        <td>{{ session.started_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ session.get_kind_display }}</td>
+        <td><span class="cs-status-badge cs-status-{{ session.status }}">{{ session.get_status_display }}</span></td>
+        <td>{{ session.stages.count }}</td>
+        <td>{{ session.model_call_count }}</td>
+        <td>{{ session.duration_ms|default:"—" }}ms</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="cs-empty-row">No Observatory sessions recorded yet for this company.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <p class="cs-disclaimer">
+    Automated source discovery and evidence extraction do not constitute independent verification. New
+    evidence produces KPI CANDIDATES only — they remain PROPOSED until a human reviewer confirms them in
+    the Evidence Review Workbench. This is an evidence-supply-chain and governance view, not an investment
+    recommendation surface.
+  </p>
+</div>
+
+<style>
+  .cs-wrap{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .cs-back{font-size:.78rem;color:#c9a84c;text-decoration:none}
+  .cs-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin:1rem 0 .5rem}
+  .cs-h1{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .cs-h2{font-size:1.1rem;font-weight:800;color:#fff;margin:2rem 0 .8rem}
+  .cs-state-row{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:1rem}
+  .cs-state-badge{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.3rem .7rem;border-radius:999px;background:rgba(201,168,76,.14);color:#c9a84c}
+  .cs-state-reason{font-size:.8rem;color:#94a3b8}
+  .cs-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.6rem;margin-bottom:1rem}
+  .cs-metric{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.6rem .7rem;text-align:center}
+  .cs-metric-v{display:block;font-size:1.1rem;font-weight:800;color:#fff;font-family:'SF Mono',ui-monospace,monospace}
+  .cs-metric-k{display:block;font-size:.58rem;color:#64748b;text-transform:uppercase;letter-spacing:.03em;margin-top:.2rem}
+  .cs-missing{font-size:.78rem;color:#f4a261;margin-bottom:1rem}
+  .cs-actions-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;margin-bottom:1.6rem}
+  .cs-refresh-form{display:flex;gap:.5rem}
+  .cs-refresh-btn{background:#c9a84c;color:#0a0e12;font-weight:800;border:none;border-radius:999px;padding:.6rem 1.2rem;font-size:.8rem;cursor:pointer}
+  .cs-dryrun-btn{background:transparent;border:1px solid rgba(255,255,255,.15);color:#94a3b8;border-radius:999px;padding:.6rem 1rem;font-size:.8rem;cursor:pointer}
+  .cs-pause-btn{background:transparent;border:1px solid rgba(255,255,255,.15);color:#94a3b8;border-radius:999px;padding:.6rem 1rem;font-size:.8rem;cursor:pointer}
+  .cs-review-link{font-size:.8rem;color:#58a6ff;text-decoration:none}
+  .cs-table-scroll{overflow-x:auto;margin-bottom:1rem}
+  .cs-table{width:100%;border-collapse:collapse;font-size:.74rem;min-width:760px}
+  .cs-table th{text-align:left;color:#64748b;text-transform:uppercase;font-size:.62rem;letter-spacing:.04em;padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.1)}
+  .cs-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);color:#cbd5e1;word-break:break-word}
+  .cs-table a{color:#c9a84c;text-decoration:none;word-break:break-all}
+  .cs-status-badge{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:.2rem .5rem;border-radius:999px;background:rgba(255,255,255,.06);color:#94a3b8;white-space:nowrap}
+  .cs-status-registered,.cs-status-complete,.cs-status-completed,.cs-status-approved{background:rgba(0,232,154,.12);color:#00e89a}
+  .cs-status-candidate,.cs-status-partial,.cs-status-running{background:rgba(244,162,97,.14);color:#f4a261}
+  .cs-status-rejected,.cs-status-failed{background:rgba(230,57,70,.14);color:#fca5a5}
+  .cs-inline-form{display:inline-block;margin-right:.3rem}
+  .cs-approve-btn{background:rgba(0,232,154,.14);color:#00e89a;border:none;border-radius:999px;padding:.25rem .6rem;font-size:.68rem;cursor:pointer}
+  .cs-reject-btn{background:rgba(230,57,70,.14);color:#fca5a5;border:none;border-radius:999px;padding:.25rem .6rem;font-size:.68rem;cursor:pointer}
+  .cs-empty-row{color:#64748b;text-align:center;padding:1.5rem 0}
+  .cs-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  @media (max-width:640px){.cs-wrap{padding:1.5rem 1rem 3rem}.cs-actions-bar{flex-direction:column;align-items:stretch}}
+</style>
+{% endblock %}

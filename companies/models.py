@@ -105,6 +105,27 @@ SOURCE_TYPE_CHOICES = [
     ('other',                 'Other'),
 ]
 
+# feat/stewardship-universe (PR 13) — a governed, explicit tracking
+# lifecycle for the Stewardship Universe. Deliberately SEPARATE from the
+# richer, mostly-derived operational states in Section 2 of the brief
+# (NEEDS_SOURCE_DISCOVERY / NEEDS_REFRESH / REVIEW_REQUIRED / CURRENT /
+# PARTIAL) — those are computed live from real conditions (source counts,
+# review queue depth, refresh-policy due dates) by
+# company_intelligence.services.stewardship_state.compute_tracking_state(),
+# never stored, since a stored copy would drift the moment conditions
+# change underneath it. Only the process-level lifecycle below is
+# genuinely stateful and worth persisting: whether this company is tracked
+# at all, whether a refresh is actively running right now (so a second
+# concurrent trigger can be refused), and whether staff has explicitly
+# paused it (which must NOT be silently resumed by a routine refresh call).
+TRACKING_STATUS_CHOICES = [
+    ('not_tracked', 'Not Tracked'),
+    ('active', 'Active'),
+    ('refresh_in_progress', 'Refresh In Progress'),
+    ('paused', 'Paused'),
+    ('error', 'Error — Last Refresh Failed'),
+]
+
 
 # ── CompanyProfile ─────────────────────────────────────────────────────────────
 
@@ -243,6 +264,24 @@ class CompanyProfile(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # ── Stewardship Universe tracking (feat/stewardship-universe, PR 13) ──
+    tracking_status = models.CharField(
+        max_length=20, choices=TRACKING_STATUS_CHOICES, default='not_tracked',
+        help_text='Process-level lifecycle only — see TRACKING_STATUS_CHOICES docstring above for '
+                   'why the richer operational states are computed live, never stored here.',
+    )
+    last_source_discovery_at = models.DateTimeField(
+        null=True, blank=True, help_text='When discover_sources_for_company() last ran for this company.',
+    )
+    last_refresh_at = models.DateTimeField(
+        null=True, blank=True, help_text='When refresh_company_intelligence() last completed (any status).',
+    )
+    next_refresh_due_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Computed by services/refresh_policy.py from this company\'s registered sources\' own '
+                   'refresh intervals — null when no source is registered yet (nothing to schedule).',
+    )
 
     class Meta:
         ordering = ['-ecoiq_total_score', 'company__name']
