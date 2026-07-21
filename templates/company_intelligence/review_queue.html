@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Evidence Review Workbench — EcoIQ{% endblock %}
+{% block meta_description_content %}Staff evidence review queue — verify, reject, dispute, or request more evidence for proposed company KPI relationships.{% endblock %}
+
+{% block content %}
+<div class="rq-wrap">
+  <span class="rq-eyebrow">ECOIQ · STAFF ONLY · GOVERNANCE</span>
+  <h1 class="rq-h1">Evidence Review Workbench</h1>
+  <p class="rq-sub">
+    Candidate KPI evidence relationships proposed by the deterministic matcher are NOT confirmed evidence
+    until a human reviewer explicitly decides. This queue is a governance and verification layer — it is
+    not an investment recommendation engine and does not auto-approve anything.
+  </p>
+
+  <div class="rq-analytics">
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.counts.proposed }}</span><span class="rq-stat-k">Pending</span></div>
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.counts.confirmed }}</span><span class="rq-stat-k">Confirmed</span></div>
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.counts.rejected }}</span><span class="rq-stat-k">Rejected</span></div>
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.counts.needs_more_evidence }}</span><span class="rq-stat-k">Needs More Evidence</span></div>
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.counts.disputed }}</span><span class="rq-stat-k">Disputed</span></div>
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.reviewed_today }}</span><span class="rq-stat-k">Reviewed Today</span></div>
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.median_unresolved_age_days|default:"—" }}</span><span class="rq-stat-k">Median Age (days)</span></div>
+    <div class="rq-stat"><span class="rq-stat-v">{{ analytics.oldest_unresolved_age_days|default:"—" }}</span><span class="rq-stat-k">Oldest (days)</span></div>
+  </div>
+
+  <form method="get" class="rq-filters">
+    <div class="rq-filter-grid">
+      <div class="rq-filter-col">
+        <label class="rq-label">Review State</label>
+        <div class="rq-checks">
+          {% for value, label in review_state_choices %}
+          <label class="rq-check"><input type="checkbox" name="state" value="{{ value }}" {% if value in criteria.review_states %}checked{% endif %}> {{ label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="rq-filter-col">
+        <label class="rq-label" for="rq-company">Company Slug</label>
+        <input type="text" name="company" id="rq-company" class="rq-input" value="{{ criteria.company_slug }}" placeholder="e.g. apple">
+        <label class="rq-label" for="rq-kpi">KPI Number</label>
+        <input type="number" name="kpi" id="rq-kpi" class="rq-input" value="{{ criteria.kpi_id|default:'' }}" min="1" max="114">
+        <label class="rq-label" for="rq-category">KPI Category</label>
+        <select name="category" id="rq-category" class="rq-select">
+          <option value="">Any category</option>
+          {% for value, label in kpi_categories %}
+          <option value="{{ value }}" {% if value == criteria.kpi_category %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="rq-filter-col">
+        <label class="rq-label" for="rq-relationship">Proposed Relationship</label>
+        <select name="relationship" id="rq-relationship" class="rq-select">
+          <option value="">Any</option>
+          {% for value, label in relationship_choices %}
+          <option value="{{ value }}" {% if value == criteria.relationship %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label class="rq-label" for="rq-tier">Minimum Source Tier</label>
+        <select name="tier" id="rq-tier" class="rq-select">
+          <option value="">Any tier</option>
+          <option value="1" {% if criteria.min_source_tier == 1 %}selected{% endif %}>Tier 1 only</option>
+          <option value="2" {% if criteria.min_source_tier == 2 %}selected{% endif %}>Tier 1–2</option>
+          <option value="3" {% if criteria.min_source_tier == 3 %}selected{% endif %}>Tier 1–3</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="rq-submit">Apply Filters →</button>
+  </form>
+
+  <div class="rq-results-head">
+    <span class="rq-results-count">{{ rows|length }} item(s) in queue</span>
+    <span class="rq-priority-note">Sorted by documented priority components (conflict present, high-authority source, fresh evidence, KPI unresolved, on watchlist, corroborated) — never an opaque score, oldest first within equal priority.</span>
+  </div>
+
+  <form method="post" action="{% url 'companies:review_bulk_action' %}" id="rq-bulk-form">
+    {% csrf_token %}
+    <div class="rq-cards">
+      {% for row in rows %}
+      <div class="rq-card">
+        <label class="rq-bulk-check"><input type="checkbox" name="link_id" value="{{ row.link.pk }}"></label>
+        <div class="rq-card-body">
+          <div class="rq-card-head">
+            <div>
+              <span class="rq-card-company">{{ row.company.company.name }}</span>
+              <span class="rq-card-kpi">#{{ row.kpi_id }} {{ row.kpi_title }}</span>
+            </div>
+            <span class="rq-rel-badge rq-rel-{{ row.link.relationship }}">{{ row.link.get_relationship_display }}</span>
+          </div>
+          <p class="rq-excerpt">{{ row.link.evidence.text_chunk|truncatechars:220 }}</p>
+          <div class="rq-meta-row">
+            <span>Tier: {{ row.source_tier|default:"Unknown" }}</span>
+            <span>Proposed by: {{ row.proposed_by }}</span>
+            <span>State: {{ row.link.get_review_state_display }}</span>
+            <span>Priority: {{ row.priority_score }}/6</span>
+            {% if row.on_watchlist %}<span class="rq-watchlist-flag">Research interest exists</span>{% endif %}
+          </div>
+          <div class="rq-card-actions">
+            <a href="{% url 'companies:review_detail' row.link.pk %}" class="rq-action-link">Review →</a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="rq-empty">No items match this filter — the queue is honestly empty, not hidden.</p>
+      {% endfor %}
+    </div>
+
+    <div class="rq-bulk-bar">
+      <input type="text" name="reason" class="rq-input" placeholder="Reason for bulk action (optional)">
+      <button type="submit" class="rq-bulk-btn">Mark Selected — Needs More Evidence</button>
+      <span class="rq-bulk-note">Bulk confirm is deliberately not offered — human governance must remain meaningful at scale.</span>
+    </div>
+  </form>
+
+  <p class="rq-disclaimer">
+    This is a governance and verification layer, not an investment recommendation engine, an automatic AI
+    approval system, or a new KPI framework. Machine-generated candidate matches are never treated as
+    verified evidence until a human reviewer explicitly confirms them.
+  </p>
+</div>
+
+<style>
+  .rq-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .rq-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.5rem}
+  .rq-h1{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .rq-sub{font-size:.9rem;color:#94a3b8;max-width:80ch;line-height:1.6;margin:0 0 1.6rem}
+  .rq-analytics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.7rem;margin-bottom:1.6rem}
+  .rq-stat{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.7rem .8rem;text-align:center}
+  .rq-stat-v{display:block;font-size:1.3rem;font-weight:800;color:#fff;font-family:'SF Mono',ui-monospace,monospace}
+  .rq-stat-k{display:block;font-size:.62rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-top:.2rem}
+  .rq-filters{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.4rem 1.5rem;margin-bottom:1.4rem}
+  .rq-filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.4rem;margin-bottom:1rem}
+  .rq-filter-col{display:flex;flex-direction:column;gap:.5rem}
+  .rq-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-top:.4rem}
+  .rq-checks{display:flex;flex-direction:column;gap:.35rem}
+  .rq-check{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:#cbd5e1}
+  .rq-select,.rq-input{background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e2e8f0;padding:.5rem .6rem;font-size:.82rem}
+  .rq-submit{background:#c9a84c;color:#0a0e12;font-weight:800;border:none;border-radius:999px;padding:.7rem 1.4rem;font-size:.85rem;cursor:pointer}
+  .rq-results-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin:1.2rem 0 1rem;font-size:.76rem;color:#64748b}
+  .rq-results-count{font-weight:700;color:#e2e8f0}
+  .rq-priority-note{max-width:60ch}
+  .rq-cards{display:flex;flex-direction:column;gap:.9rem}
+  .rq-card{display:flex;gap:.8rem;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1rem 1.2rem}
+  .rq-bulk-check{padding-top:.2rem}
+  .rq-card-body{flex:1;min-width:0}
+  .rq-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
+  .rq-card-company{font-weight:800;color:#fff;margin-right:.6rem}
+  .rq-card-kpi{font-size:.82rem;color:#94a3b8}
+  .rq-rel-badge{flex:none;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.2rem .55rem;border-radius:999px;background:rgba(255,255,255,.05);color:#94a3b8}
+  .rq-rel-supports{background:rgba(0,232,154,.1);color:#00e89a}
+  .rq-rel-conflicts{background:rgba(230,57,70,.12);color:#fca5a5}
+  .rq-excerpt{font-size:.8rem;color:#cbd5e1;line-height:1.55;margin:.6rem 0}
+  .rq-meta-row{display:flex;flex-wrap:wrap;gap:1rem;font-size:.7rem;color:#64748b}
+  .rq-watchlist-flag{color:#c9a84c;font-weight:700}
+  .rq-card-actions{margin-top:.7rem}
+  .rq-action-link{font-size:.78rem;font-weight:700;color:#c9a84c;text-decoration:none;border:1px solid rgba(201,168,76,.3);border-radius:999px;padding:.4rem .9rem}
+  .rq-empty{font-size:.85rem;color:#64748b;padding:2rem 0}
+  .rq-bulk-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.8rem;margin-top:1.2rem;padding:1rem;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px}
+  .rq-bulk-bar .rq-input{flex:1;min-width:200px}
+  .rq-bulk-btn{background:#f4a261;color:#0a0e12;font-weight:800;border:none;border-radius:999px;padding:.6rem 1.1rem;font-size:.8rem;cursor:pointer}
+  .rq-bulk-note{font-size:.68rem;color:#475569;max-width:40ch}
+  .rq-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  @media (max-width:640px){.rq-wrap{padding:1.5rem 1rem 3rem}.rq-card{flex-direction:column}}
+</style>
+{% endblock %}

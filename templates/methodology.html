@@ -857,7 +857,97 @@ a{color:inherit;text-decoration:none}
   #discovery-section .sec-list li{margin-bottom:.3rem}
   #discovery-section code{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85em;color:var(--accent)}
   #discovery-section a{color:var(--accent);text-decoration:none;font-weight:600}
+  #review-section .sec-h3{font-size:1rem;font-weight:700;color:var(--text);margin:1.6rem 0 .6rem}
+  #review-section .sec-body{font-size:.85rem;color:var(--muted2);line-height:1.7;max-width:80ch}
+  #review-section .sec-list{margin:.6rem 0 1rem 1.2rem;padding:0;font-size:.85rem;color:var(--muted2);line-height:1.8}
+  #review-section .sec-list li{margin-bottom:.3rem}
+  #review-section code{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85em;color:var(--accent)}
 </style>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     11. EVIDENCE REVIEW WORKBENCH — HUMAN GOVERNANCE
+     feat/evidence-review-workbench (PR 12)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="review-section">
+  <a class="section-anchor" id="review"></a>
+  <div class="sec-eyebrow">11 — Evidence Review Workbench</div>
+  <h2 class="sec-title">Evidence Review Workbench — Human Governance</h2>
+  <p class="sec-lead">
+    The bridge between "the deterministic matcher proposed this KPI relationship" and "this evidence
+    genuinely supports/conflicts with/merely mentions this KPI" is always a human decision. This is a
+    governance and verification layer — not an investment recommendation engine, not an automatic AI
+    approval system, and not a replacement for Evidence Memory or the 114-KPI framework itself.
+  </p>
+
+  <h3 class="sec-h3">Candidate vs Confirmed Evidence</h3>
+  <p class="sec-body">
+    <strong>Machine-generated candidate matches are not treated as verified evidence until reviewed.</strong>
+    A deterministic keyword-overlap matcher (never an LLM in this codebase) proposes a
+    <code>CompanyKPIEvidenceLink</code> with <code>review_state='proposed'</code> from newly ingested
+    evidence. Only <code>confirmed</code> links count toward a company's displayed KPI status, its
+    Discovery ranking, and its Explain Match trace — a proposed, disputed, rejected, or needs-more-evidence
+    link never does, regardless of how confident the matcher's keyword overlap looked.
+  </p>
+
+  <h3 class="sec-h3">The Human Review Workflow</h3>
+  <p class="sec-body">
+    A reviewer's decision separates MATCH VALIDITY (does this evidence really discuss this KPI at all?) from
+    EVIDENCE RELATIONSHIP (what does it conclude?). Seven explicit actions:
+  </p>
+  <ul class="sec-list">
+    <li><strong>Confirm — Supports</strong> / <strong>Confirm — Conflicts</strong> / <strong>Confirm — Context Only</strong>
+      / <strong>Confirm — Insufficient to Conclude</strong> — a reviewer decides not just that the match is
+      valid, but which of four distinct relationships the evidence actually establishes. A valid match is
+      never automatically collapsed into "Supports".</li>
+    <li><strong>Reject Match</strong> — the evidence does not genuinely relate to this KPI; never counts.</li>
+    <li><strong>Needs More Evidence</strong> — a real, visible "unresolved" state, distinct from the original
+      proposal — a reviewer looked and could not yet decide.</li>
+    <li><strong>Mark Disputed</strong> — even a previously CONFIRMED link is not permanently unquestionable;
+      disputing it immediately stops it counting toward the company's KPI status until re-reviewed.</li>
+  </ul>
+  <p class="sec-body">
+    Every action requires an explicit named reviewer and a written reason — there is no code path that moves
+    a link to <code>confirmed</code> without a human argument recording who decided and why. No auto-confirm.
+    No "high confidence therefore verified." No bulk-confirm — only a conservative bulk "mark needs more
+    evidence" is offered, and every affected link still gets its own individually attributed audit row.
+  </p>
+
+  <h3 class="sec-h3">Disputes and Re-Review</h3>
+  <p class="sec-body">
+    A confirmed relationship can be disputed at any time. A disputed link honestly stops contributing to the
+    company's KPI assessment, Discovery ranking, and Explain Match the moment it leaves <code>confirmed</code>
+    — no separate propagation logic is needed, because every downstream view already filters strictly on
+    <code>review_state == 'confirmed'</code>. Re-review is simply applying any confirm/reject/needs-more-
+    evidence action again; the full prior history is preserved, never overwritten.
+  </p>
+
+  <h3 class="sec-h3">How KPI Assessments Update</h3>
+  <p class="sec-body">
+    After every review decision, the affected <code>CompanyKPIAssessment</code> is recomputed through the
+    existing, unmodified 114-KPI engine — never a hardcoded status flip. Confirmed supporting evidence may
+    move an assessment to Support/Strong Support; confirmed conflicting evidence surfaces as Conflict;
+    rejected/needs-more-evidence/disputed links never contribute. This is the same engine Company Discovery,
+    Explain Match, and the company profile page all read from, so a review decision propagates consistently
+    everywhere without any view-specific special-casing.
+  </p>
+
+  <h3 class="sec-h3">What AI Can and Cannot Do</h3>
+  <p class="sec-body">
+    AI assistance in the review workflow (summarising long context, highlighting relevant sentences) is
+    optional and, in this PR, not yet built — the workbench ships with deterministic candidate matching only.
+    If AI assistance is added in a future PR, any suggestion must be visually labelled "AI ASSISTANCE — NOT A
+    REVIEW DECISION", must never itself confirm, reject, or resolve a dispute, and every model call must be
+    recorded as a real <code>ModelInvocation</code> in AI Observatory — never a second, unaudited AI path.
+  </p>
+
+  <h3 class="sec-h3">Audit Trail</h3>
+  <p class="sec-body">
+    Every <code>EvidenceReviewAction</code> is an immutable row recording the reviewer, timestamp, previous
+    review state, new review state, the relationship decision (where applicable), and the written reason —
+    never edited or deleted. A link's current state can change; its history never does.
+  </p>
+</div>
 
 
 <!-- ── CTA footer ─────────────────────────────────────────────────── -->

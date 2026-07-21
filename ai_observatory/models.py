@@ -40,6 +40,16 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+# feat/company-discovery-ranking (PR 11), generalised by feat/evidence-
+# review-workbench (PR 12): kinds whose sessions may anchor to NEITHER a
+# project nor a company — a queue-wide review session (or a cross-company
+# discovery/ranking run) genuinely has no single anchor. Module-level (not
+# a class attribute) because AnalysisSession.Meta's CheckConstraint needs a
+# bare name it can see — a nested class body cannot see its enclosing
+# class's own attributes by bare name. "Both anchors" remains invalid for
+# every kind, including these.
+NO_ANCHOR_ALLOWED_KINDS = ('company_discovery', 'evidence_review_workbench')
+
 
 class AnalysisSession(models.Model):
     KIND_CHOICES = [
@@ -51,6 +61,7 @@ class AnalysisSession(models.Model):
         ('company_intelligence', 'Company Intelligence Analysis (Shariah Screen / 114-KPI Mapping)'),
         ('company_evidence_ingestion', 'Company Evidence Ingestion (Source Fetch / Extraction / KPI Candidate Matching)'),
         ('company_discovery', 'Company Discovery / Ranking (Filtering, Comparison, Explain Match)'),
+        ('evidence_review_workbench', 'Evidence Review Workbench (Queue, Decision, Dispute, Re-Review)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [
@@ -112,20 +123,21 @@ class AnalysisSession(models.Model):
         ordering = ['-started_at']
         verbose_name = 'Analysis Session'
         constraints = [
-            # feat/company-discovery-ranking (PR 11): a discovery/ranking
-            # run spans MANY companies at once (or none, e.g. filtering with
-            # zero matches) — it genuinely has no single project or company
-            # to anchor to. Rather than invent a placeholder anchor (which
+            # feat/company-discovery-ranking (PR 11), generalised by feat/
+            # evidence-review-workbench (PR 12): a discovery/ranking run or
+            # a queue-wide review session spans MANY companies at once (or
+            # none) — it genuinely has no single project or company to
+            # anchor to. Rather than invent a placeholder anchor (which
             # would misrepresent what the session actually covered), the
-            # constraint now also permits NEITHER anchor, but only for
-            # kind='company_discovery' — every other kind still requires
-            # exactly one, unchanged. "Both anchors" remains invalid for
-            # every kind, including this one.
+            # constraint permits NEITHER anchor, but only for kinds in
+            # NO_ANCHOR_ALLOWED_KINDS above — every other kind still
+            # requires exactly one, unchanged. "Both anchors" remains
+            # invalid for every kind, including these.
             models.CheckConstraint(
                 check=(
                     models.Q(project__isnull=False, company__isnull=True)
                     | models.Q(project__isnull=True, company__isnull=False)
-                    | models.Q(project__isnull=True, company__isnull=True, kind='company_discovery')
+                    | models.Q(project__isnull=True, company__isnull=True, kind__in=NO_ANCHOR_ALLOWED_KINDS)
                 ),
                 name='observatory_session_exactly_one_anchor',
             ),

@@ -901,17 +901,22 @@ class EvidenceReviewWorkflowTests(TestCase):
         self.assertEqual(self.link.review_state, 'proposed')
 
     def test_verify_action_confirms_link_and_records_audit_row(self):
+        """feat/evidence-review-workbench (PR 12): the generic 'verify'
+        action is replaced by explicit confirm_supports/confirm_conflicts/
+        confirm_context/confirm_insufficient — a reviewer must say WHICH
+        relationship they're confirming, never a one-size-fits-all 'verify'."""
         self.client.force_login(self.staff)
         r = self.client.post(
             reverse('companies:evidence_review_action', args=[self.profile.company.slug]),
-            {'kpi_evidence_link_id': self.link.pk, 'action': 'verify', 'reason': 'Confirmed against filing.'},
+            {'kpi_evidence_link_id': self.link.pk, 'action': 'confirm_supports', 'reason': 'Confirmed against filing.'},
         )
         self.assertEqual(r.status_code, 302)
         self.link.refresh_from_db()
         self.assertEqual(self.link.review_state, 'confirmed')
+        self.assertEqual(self.link.relationship, 'supports')
         action = EvidenceReviewAction.objects.get(kpi_evidence_link=self.link)
         self.assertEqual(action.reviewer, self.staff)
-        self.assertEqual(action.action, 'verify')
+        self.assertEqual(action.action, 'confirm_supports')
         self.assertEqual(action.reason, 'Confirmed against filing.')
 
     def test_reject_action_rejects_link(self):
@@ -923,24 +928,30 @@ class EvidenceReviewWorkflowTests(TestCase):
         self.link.refresh_from_db()
         self.assertEqual(self.link.review_state, 'rejected')
 
-    def test_mark_disputed_logs_without_changing_review_state(self):
+    def test_mark_disputed_is_now_a_real_state_change(self):
+        """feat/evidence-review-workbench (PR 12) deliberately upgrades
+        mark_disputed from PR10's audit-log-only no-op to a real
+        review_state mutation — a disputed link must stop counting."""
         self.client.force_login(self.staff)
         self.client.post(
             reverse('companies:evidence_review_action', args=[self.profile.company.slug]),
             {'kpi_evidence_link_id': self.link.pk, 'action': 'mark_disputed', 'reason': 'Needs scholar review.'},
         )
         self.link.refresh_from_db()
-        self.assertEqual(self.link.review_state, 'proposed')  # unchanged
+        self.assertEqual(self.link.review_state, 'disputed')
         self.assertTrue(EvidenceReviewAction.objects.filter(kpi_evidence_link=self.link, action='mark_disputed').exists())
 
-    def test_needs_more_evidence_logs_without_changing_review_state(self):
+    def test_needs_more_evidence_is_now_a_real_state_change(self):
+        """feat/evidence-review-workbench (PR 12) deliberately upgrades
+        needs_more_evidence from PR10's audit-log-only no-op to a real,
+        visibly unresolved review_state."""
         self.client.force_login(self.staff)
         self.client.post(
             reverse('companies:evidence_review_action', args=[self.profile.company.slug]),
             {'kpi_evidence_link_id': self.link.pk, 'action': 'needs_more_evidence'},
         )
         self.link.refresh_from_db()
-        self.assertEqual(self.link.review_state, 'proposed')
+        self.assertEqual(self.link.review_state, 'needs_more_evidence')
 
     def test_invalid_action_rejected(self):
         self.client.force_login(self.staff)
@@ -955,7 +966,7 @@ class EvidenceReviewWorkflowTests(TestCase):
         self.client.force_login(self.staff)
         r = self.client.post(
             reverse('companies:evidence_review_action', args=[other_profile.company.slug]),
-            {'kpi_evidence_link_id': self.link.pk, 'action': 'verify'},
+            {'kpi_evidence_link_id': self.link.pk, 'action': 'confirm_supports'},
         )
         self.assertEqual(r.status_code, 404)
         self.link.refresh_from_db()
@@ -1509,3 +1520,555 @@ class ObservatoryNeitherAnchorConstraintTests(TestCase):
         project = GoldProject.objects.create(name='Test Project')
         session = recorder.start_session(project=project, company=profile, kind='company_discovery')
         self.assertIsNone(session)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# feat/evidence-review-workbench (PR 12) — review queue, decision semantics,
+# audit trail, dispute/re-review, KPI recomputation, Discovery propagation,
+# Explain Review Decision, Watchlist privacy, Observatory telemetry.
+# ═══════════════════════════════════════════════════════════════════════════
+from company_intelligence.services import evidence_review
+from company_intelligence.services.review_trace import explain_review_decision
+
+
+def _proposed_link(profile, kpi_id, relationship='context', match_basis='Keyword overlap: test, evidence', text='Proposed evidence text discussing the topic.'):
+    """A matcher-proposed (never confirmed) link — mirrors real
+    propose_kpi_links_for_evidence() output shape."""
+    evidence = EvidenceMemory.objects.create(
+        text_chunk=text, company=profile, source_type='harvester_evidence',
+        verification_status='verified',
+    )
+    assessment = CompanyKPIAssessment.objects.get_or_create(company=profile, kpi_id=kpi_id)[0]
+    link = CompanyKPIEvidenceLink.objects.create(
+        assessment=assessment, evidence=evidence, relationship=relationship,
+        review_state='proposed', match_basis=match_basis,
+    )
+    return link
+
+
+class ReviewModelChoiceTests(TestCase):
+    def test_relationship_choices_include_insufficient_to_conclude(self):
+        valid = {c for c, _ in CompanyKPIEvidenceLink.RELATIONSHIP_CHOICES}
+        self.assertEqual(valid, {'supports', 'conflicts', 'context', 'insufficient_to_conclude'})
+
+    def test_review_state_choices_include_needs_more_evidence_and_disputed(self):
+        valid = {c for c, _ in CompanyKPIEvidenceLink.REVIEW_STATE_CHOICES}
+        self.assertEqual(valid, {'proposed', 'confirmed', 'rejected', 'needs_more_evidence', 'disputed'})
+
+    def test_action_choices_are_the_documented_seven(self):
+        valid = {c for c, _ in EvidenceReviewAction.ACTION_CHOICES}
+        self.assertEqual(valid, {
+            'confirm_supports', 'confirm_conflicts', 'confirm_context', 'confirm_insufficient',
+            'reject', 'needs_more_evidence', 'mark_disputed',
+        })
+
+
+class ApplyReviewDecisionTests(TestCase):
+    def setUp(self):
+        self.company_profile = _profile(slug='apply-decision-co')
+        self.reviewer = User.objects.create_user(username='reviewer1', password='pw', is_staff=True)
+
+    def test_confirm_supports_sets_state_and_relationship(self):
+        link = _proposed_link(self.company_profile, kpi_id=1, relationship='context')
+        evidence_review.apply_review_decision(link, 'confirm_supports', self.reviewer, reason='Genuinely supports.')
+        link.refresh_from_db()
+        self.assertEqual(link.review_state, 'confirmed')
+        self.assertEqual(link.relationship, 'supports')
+
+    def test_confirm_conflicts_sets_state_and_relationship(self):
+        link = _proposed_link(self.company_profile, kpi_id=2, relationship='context')
+        evidence_review.apply_review_decision(link, 'confirm_conflicts', self.reviewer, reason='Genuinely conflicts.')
+        link.refresh_from_db()
+        self.assertEqual(link.review_state, 'confirmed')
+        self.assertEqual(link.relationship, 'conflicts')
+
+    def test_confirm_context_only(self):
+        link = _proposed_link(self.company_profile, kpi_id=3, relationship='supports')
+        evidence_review.apply_review_decision(link, 'confirm_context', self.reviewer, reason='Only background context.')
+        link.refresh_from_db()
+        self.assertEqual(link.relationship, 'context')
+
+    def test_confirm_insufficient_to_conclude(self):
+        link = _proposed_link(self.company_profile, kpi_id=4, relationship='context')
+        evidence_review.apply_review_decision(link, 'confirm_insufficient', self.reviewer, reason='Discusses the topic but does not conclude.')
+        link.refresh_from_db()
+        self.assertEqual(link.relationship, 'insufficient_to_conclude')
+        self.assertEqual(link.review_state, 'confirmed')
+
+    def test_reject_never_sets_a_relationship(self):
+        link = _proposed_link(self.company_profile, kpi_id=5, relationship='supports')
+        evidence_review.apply_review_decision(link, 'reject', self.reviewer, reason='Not actually about this KPI.')
+        link.refresh_from_db()
+        self.assertEqual(link.review_state, 'rejected')
+        self.assertEqual(link.relationship, 'supports')  # unchanged — reject doesn't assert a relationship
+
+    def test_needs_more_evidence_is_a_real_unresolved_state(self):
+        link = _proposed_link(self.company_profile, kpi_id=6)
+        evidence_review.apply_review_decision(link, 'needs_more_evidence', self.reviewer, reason='Need a second source.')
+        link.refresh_from_db()
+        self.assertEqual(link.review_state, 'needs_more_evidence')
+
+    def test_mark_disputed_moves_confirmed_link_out_of_confirmed(self):
+        link = _proposed_link(self.company_profile, kpi_id=7)
+        evidence_review.apply_review_decision(link, 'confirm_supports', self.reviewer, reason='Looks solid.')
+        evidence_review.apply_review_decision(link, 'mark_disputed', self.reviewer, reason='A second reviewer disagrees.')
+        link.refresh_from_db()
+        self.assertEqual(link.review_state, 'disputed')
+
+    def test_re_review_moves_disputed_link_back_to_confirmed(self):
+        link = _proposed_link(self.company_profile, kpi_id=8)
+        evidence_review.apply_review_decision(link, 'confirm_supports', self.reviewer, reason='Initial review.')
+        evidence_review.apply_review_decision(link, 'mark_disputed', self.reviewer, reason='Disputed.')
+        evidence_review.apply_review_decision(link, 'confirm_supports', self.reviewer, reason='Re-reviewed, dispute resolved.')
+        link.refresh_from_db()
+        self.assertEqual(link.review_state, 'confirmed')
+
+    def test_every_decision_creates_immutable_audit_row_with_full_fields(self):
+        link = _proposed_link(self.company_profile, kpi_id=9)
+        evidence_review.apply_review_decision(link, 'confirm_supports', self.reviewer, reason='Test reason.')
+        action = EvidenceReviewAction.objects.filter(kpi_evidence_link=link).latest('created_at')
+        self.assertEqual(action.reviewer, self.reviewer)
+        self.assertEqual(action.previous_review_state, 'proposed')
+        self.assertEqual(action.new_review_state, 'confirmed')
+        self.assertEqual(action.relationship_decision, 'supports')
+        self.assertEqual(action.reason, 'Test reason.')
+
+    def test_history_is_never_overwritten_across_multiple_decisions(self):
+        link = _proposed_link(self.company_profile, kpi_id=10)
+        evidence_review.apply_review_decision(link, 'confirm_supports', self.reviewer, reason='First.')
+        evidence_review.apply_review_decision(link, 'mark_disputed', self.reviewer, reason='Second.')
+        evidence_review.apply_review_decision(link, 'confirm_conflicts', self.reviewer, reason='Third.')
+        actions = list(EvidenceReviewAction.objects.filter(kpi_evidence_link=link).order_by('created_at'))
+        self.assertEqual(len(actions), 3)
+        self.assertEqual([a.reason for a in actions], ['First.', 'Second.', 'Third.'])
+
+    def test_assessment_recomputed_after_confirm_supports(self):
+        link = _proposed_link(self.company_profile, kpi_id=11)
+        evidence_review.apply_review_decision(link, 'confirm_supports', self.reviewer, reason='Real support.')
+        link.assessment.refresh_from_db()
+        self.assertIn(link.assessment.status, ('support', 'strong_support'))
+
+    def test_assessment_recomputed_after_confirm_conflicts(self):
+        link = _proposed_link(self.company_profile, kpi_id=12)
+        evidence_review.apply_review_decision(link, 'confirm_conflicts', self.reviewer, reason='Real conflict.')
+        link.assessment.refresh_from_db()
+        self.assertEqual(link.assessment.status, 'conflict')
+
+    def test_rejected_link_never_contributes_to_assessment(self):
+        link = _proposed_link(self.company_profile, kpi_id=13, relationship='supports')
+        evidence_review.apply_review_decision(link, 'reject', self.reviewer, reason='Bad match.')
+        link.assessment.refresh_from_db()
+        self.assertEqual(link.assessment.status, 'insufficient_evidence')  # no confirmed links -> insufficient, never 'support'
+
+    def test_proposed_link_never_contributes_as_confirmed(self):
+        link = _proposed_link(self.company_profile, kpi_id=14, relationship='supports')
+        # never reviewed at all
+        self.assertEqual(link.assessment.status, 'not_assessed')
+
+    def test_needs_more_evidence_link_remains_unresolved_not_confirmed(self):
+        link = _proposed_link(self.company_profile, kpi_id=15, relationship='supports')
+        evidence_review.apply_review_decision(link, 'needs_more_evidence', self.reviewer, reason='Insufficient on its own.')
+        link.assessment.refresh_from_db()
+        self.assertEqual(link.assessment.status, 'insufficient_evidence')
+
+    def test_invalid_action_raises(self):
+        link = _proposed_link(self.company_profile, kpi_id=16)
+        with self.assertRaises(ValueError):
+            evidence_review.apply_review_decision(link, 'not_a_real_action', self.reviewer)
+
+
+class ReviewQueueServiceTests(TestCase):
+    def setUp(self):
+        self.profile = _profile(slug='queue-service-co')
+
+    def test_default_queue_includes_proposed_needs_more_and_disputed_only(self):
+        reviewer = User.objects.create_user(username='reviewer2', password='pw', is_staff=True)
+        proposed = _proposed_link(self.profile, kpi_id=20)
+        confirmed = _proposed_link(self.profile, kpi_id=21)
+        evidence_review.apply_review_decision(confirmed, 'confirm_supports', reviewer, reason='ok')
+        needs_more = _proposed_link(self.profile, kpi_id=22)
+        evidence_review.apply_review_decision(needs_more, 'needs_more_evidence', reviewer, reason='ok')
+
+        rows = evidence_review.pending_review_queue({'company_slug': 'queue-service-co'})
+        link_pks = {r['link'].pk for r in rows}
+        self.assertIn(proposed.pk, link_pks)
+        self.assertIn(needs_more.pk, link_pks)
+        self.assertNotIn(confirmed.pk, link_pks)  # confirmed excluded from default active queue
+
+    def test_company_slug_filter(self):
+        other_profile = _profile(slug='queue-other-co')
+        link_here = _proposed_link(self.profile, kpi_id=23)
+        link_other = _proposed_link(other_profile, kpi_id=23)
+        rows = evidence_review.pending_review_queue({'company_slug': 'queue-service-co'})
+        pks = {r['link'].pk for r in rows}
+        self.assertIn(link_here.pk, pks)
+        self.assertNotIn(link_other.pk, pks)
+
+    def test_kpi_id_filter(self):
+        link_a = _proposed_link(self.profile, kpi_id=24)
+        link_b = _proposed_link(self.profile, kpi_id=25)
+        rows = evidence_review.pending_review_queue({'kpi_id': 24, 'company_slug': 'queue-service-co'})
+        pks = {r['link'].pk for r in rows}
+        self.assertIn(link_a.pk, pks)
+        self.assertNotIn(link_b.pk, pks)
+
+    def test_relationship_filter(self):
+        supports_link = _proposed_link(self.profile, kpi_id=26, relationship='supports')
+        context_link = _proposed_link(self.profile, kpi_id=27, relationship='context')
+        rows = evidence_review.pending_review_queue({'relationship': 'supports', 'company_slug': 'queue-service-co'})
+        pks = {r['link'].pk for r in rows}
+        self.assertIn(supports_link.pk, pks)
+        self.assertNotIn(context_link.pk, pks)
+
+    def test_priority_components_are_shown_not_hidden(self):
+        link = _proposed_link(self.profile, kpi_id=28)
+        rows = evidence_review.pending_review_queue({'company_slug': 'queue-service-co', 'kpi_id': 28})
+        self.assertIn('priority_components', rows[0])
+        self.assertIsInstance(rows[0]['priority_components'], dict)
+        self.assertEqual(rows[0]['priority_score'], sum(1 for v in rows[0]['priority_components'].values() if v))
+
+
+class DuplicateDetectionTests(TestCase):
+    def test_same_evidence_different_kpi_detected(self):
+        profile = _profile(slug='dup-co')
+        evidence = EvidenceMemory.objects.create(text_chunk='Shared evidence text.', company=profile, source_type='harvester_evidence')
+        assessment1 = CompanyKPIAssessment.objects.create(company=profile, kpi_id=30)
+        assessment2 = CompanyKPIAssessment.objects.create(company=profile, kpi_id=31)
+        link1 = CompanyKPIEvidenceLink.objects.create(assessment=assessment1, evidence=evidence, relationship='context', review_state='proposed')
+        link2 = CompanyKPIEvidenceLink.objects.create(assessment=assessment2, evidence=evidence, relationship='context', review_state='proposed')
+        dup = evidence_review.duplicate_links_for(link1)
+        self.assertEqual(len(dup['same_evidence_different_kpi']), 1)
+        self.assertEqual(dup['same_evidence_different_kpi'][0].pk, link2.pk)
+
+
+class ReviewAnalyticsTests(TestCase):
+    def test_counts_reflect_real_state_distribution(self):
+        profile = _profile(slug='analytics-co')
+        reviewer = User.objects.create_user(username='reviewer3', password='pw', is_staff=True)
+        _proposed_link(profile, kpi_id=40)
+        confirmed = _proposed_link(profile, kpi_id=41)
+        evidence_review.apply_review_decision(confirmed, 'confirm_supports', reviewer, reason='ok')
+
+        analytics = evidence_review.review_analytics()
+        self.assertGreaterEqual(analytics['counts']['proposed'], 1)
+        self.assertGreaterEqual(analytics['counts']['confirmed'], 1)
+        self.assertIn('by_source_tier', analytics)
+        self.assertIn('by_kpi_category', analytics)
+
+
+class EvidenceContextTests(TestCase):
+    def test_no_context_when_not_harvester_backed(self):
+        profile = _profile(slug='context-demo-co')
+        link = _proposed_link(profile, kpi_id=50)  # EvidenceMemory with no harvester.Evidence counterpart
+        ctx = evidence_review.evidence_context(link)
+        self.assertFalse(ctx['has_context'])
+        self.assertEqual(ctx['preceding'], '')
+        self.assertEqual(ctx['following'], '')
+
+
+class SourceProvenanceTests(TestCase):
+    def test_honest_fallback_when_not_harvester_backed(self):
+        profile = _profile(slug='provenance-demo-co')
+        link = _proposed_link(profile, kpi_id=51)
+        prov = evidence_review.source_provenance(link)
+        self.assertFalse(prov['has_harvester_record'])
+
+
+class KPIContextTests(TestCase):
+    def test_existing_supporting_and_conflicting_exclude_current_link(self):
+        profile = _profile(slug='kpi-ctx-co')
+        reviewer = User.objects.create_user(username='reviewer4', password='pw', is_staff=True)
+        support_link = _proposed_link(profile, kpi_id=60, relationship='context')
+        evidence_review.apply_review_decision(support_link, 'confirm_supports', reviewer, reason='ok')
+        new_link = _proposed_link(profile, kpi_id=60, relationship='context')
+
+        ctx = evidence_review.kpi_context(new_link)
+        self.assertEqual(len(ctx['supporting']), 1)
+        self.assertNotIn(new_link, ctx['supporting'])
+
+
+class ReviewHistoryTests(TestCase):
+    def test_history_is_chronological_oldest_first(self):
+        profile = _profile(slug='history-co')
+        reviewer = User.objects.create_user(username='reviewer5', password='pw', is_staff=True)
+        link = _proposed_link(profile, kpi_id=70)
+        evidence_review.apply_review_decision(link, 'needs_more_evidence', reviewer, reason='First.')
+        evidence_review.apply_review_decision(link, 'confirm_supports', reviewer, reason='Second.')
+        history = evidence_review.review_history(link)
+        self.assertEqual([a.reason for a in history], ['First.', 'Second.'])
+
+
+class ReviewTraceTests(TestCase):
+    def test_trace_covers_documented_stages(self):
+        profile = _profile(slug='review-trace-co')
+        link = _proposed_link(profile, kpi_id=80)
+        trace = explain_review_decision(link)
+        stages = [n.stage for n in trace.nodes]
+        self.assertEqual(stages[:5], ['source', 'document', 'evidence_chunk', 'candidate_matcher', 'proposed_kpi'])
+        self.assertIn('assessment_impact', stages)
+        self.assertIn('discovery_impact', stages)
+
+    def test_trace_reflects_confirmed_state_after_decision(self):
+        profile = _profile(slug='review-trace-confirmed-co')
+        reviewer = User.objects.create_user(username='reviewer6', password='pw', is_staff=True)
+        link = _proposed_link(profile, kpi_id=81)
+        evidence_review.apply_review_decision(link, 'confirm_supports', reviewer, reason='Real support.')
+        trace = explain_review_decision(link)
+        impact_node = next(n for n in trace.nodes if n.stage == 'discovery_impact')
+        self.assertIn('Included', impact_node.status)
+
+    def test_trace_never_contains_investment_language(self):
+        profile = _profile(slug='review-trace-clean-co')
+        link = _proposed_link(profile, kpi_id=82)
+        trace = explain_review_decision(link)
+        combined = ' '.join(n.summary.lower() for n in trace.nodes)
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, combined)
+
+
+class ReviewQueueViewTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='staffq', password='pw', is_staff=True)
+        self.normal = User.objects.create_user(username='normalq', password='pw')
+
+    def test_requires_staff(self):
+        client = Client()
+        client.login(username='normalq', password='pw')
+        response = client.get(reverse('companies:review_queue'))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_staff_can_view_queue(self):
+        _proposed_link(_profile(slug='queue-view-co'), kpi_id=90)
+        client = Client()
+        client.login(username='staffq', password='pw')
+        response = client.get(reverse('companies:review_queue'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_queue_never_contains_investment_language(self):
+        _proposed_link(_profile(slug='queue-view-clean-co'), kpi_id=91)
+        client = Client()
+        client.login(username='staffq', password='pw')
+        response = client.get(reverse('companies:review_queue'))
+        body = response.content.decode().lower()
+        for banned in BANNED_INVESTMENT_WORDS:
+            self.assertNotIn(banned, body)
+
+
+class ReviewDetailViewTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='staffd', password='pw', is_staff=True)
+        self.normal = User.objects.create_user(username='normald', password='pw')
+        self.profile = _profile(slug='detail-view-co')
+        self.link = _proposed_link(self.profile, kpi_id=95)
+
+    def test_requires_staff_get(self):
+        client = Client()
+        client.login(username='normald', password='pw')
+        response = client.get(reverse('companies:review_detail', args=[self.link.pk]))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_staff_get_shows_full_context(self):
+        client = Client()
+        client.login(username='staffd', password='pw')
+        response = client.get(reverse('companies:review_detail', args=[self.link.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_nonexistent_link_404s(self):
+        client = Client()
+        client.login(username='staffd', password='pw')
+        response = client.get(reverse('companies:review_detail', args=[999999999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_records_decision(self):
+        client = Client()
+        client.login(username='staffd', password='pw')
+        client.post(reverse('companies:review_detail', args=[self.link.pk]), {
+            'action': 'confirm_supports', 'reason': 'Real, considered reason.',
+        })
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.review_state, 'confirmed')
+        self.assertEqual(self.link.relationship, 'supports')
+
+    def test_post_invalid_action_rejected(self):
+        client = Client()
+        client.login(username='staffd', password='pw')
+        client.post(reverse('companies:review_detail', args=[self.link.pk]), {
+            'action': 'auto_approve_everything', 'reason': 'x',
+        })
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.review_state, 'proposed')  # unchanged
+
+    def test_get_not_allowed_to_mutate(self):
+        """A GET request must never itself change review_state — only POST."""
+        client = Client()
+        client.login(username='staffd', password='pw')
+        client.get(reverse('companies:review_detail', args=[self.link.pk]))
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.review_state, 'proposed')
+
+    def test_post_requires_staff(self):
+        client = Client()
+        client.login(username='normald', password='pw')
+        client.post(reverse('companies:review_detail', args=[self.link.pk]), {
+            'action': 'confirm_supports', 'reason': 'x',
+        })
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.review_state, 'proposed')  # blocked, unchanged
+
+
+class ReviewBulkActionViewTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='staffb', password='pw', is_staff=True)
+        self.profile = _profile(slug='bulk-co')
+
+    def test_bulk_marks_needs_more_evidence_with_individual_audit_rows(self):
+        link1 = _proposed_link(self.profile, kpi_id=100)
+        link2 = _proposed_link(self.profile, kpi_id=101)
+        client = Client()
+        client.login(username='staffb', password='pw')
+        client.post(reverse('companies:review_bulk_action'), {
+            'link_id': [str(link1.pk), str(link2.pk)], 'reason': 'Bulk needs more evidence.',
+        })
+        link1.refresh_from_db()
+        link2.refresh_from_db()
+        self.assertEqual(link1.review_state, 'needs_more_evidence')
+        self.assertEqual(link2.review_state, 'needs_more_evidence')
+        self.assertEqual(EvidenceReviewAction.objects.filter(kpi_evidence_link=link1).count(), 1)
+        self.assertEqual(EvidenceReviewAction.objects.filter(kpi_evidence_link=link2).count(), 1)
+
+    def test_get_not_allowed(self):
+        client = Client()
+        client.login(username='staffb', password='pw')
+        response = client.get(reverse('companies:review_bulk_action'))
+        self.assertEqual(response.status_code, 404)
+
+    def test_no_bulk_confirm_endpoint_exists(self):
+        """The brief's own conservative rule: bulk confirm must not exist at all."""
+        link = _proposed_link(self.profile, kpi_id=102, relationship='supports')
+        client = Client()
+        client.login(username='staffb', password='pw')
+        client.post(reverse('companies:review_bulk_action'), {
+            'link_id': [str(link.pk)], 'action': 'confirm_supports',  # even if a caller tries to smuggle this in
+        })
+        link.refresh_from_db()
+        self.assertNotEqual(link.review_state, 'confirmed')  # bulk view hardcodes needs_more_evidence regardless
+
+
+class DiscoveryPropagationAfterReviewTests(TestCase):
+    """feat/company-discovery-ranking (PR 11) integration — confirms a
+    review decision propagates through the SAME discovery/ranking service,
+    never a duplicated code path."""
+
+    def test_proposed_does_not_count_confirmed_does(self):
+        from company_intelligence.services import discovery_engine
+
+        profile = _profile(slug='propagation-co')
+        reviewer = User.objects.create_user(username='reviewer7', password='pw', is_staff=True)
+        link = _proposed_link(profile, kpi_id=110, relationship='context')
+
+        before = discovery_engine.rank_company_matches([profile], criteria={'kpi_ids': [110]})[0]
+        self.assertEqual(before['kpi_detail']['supported_kpi_ids'], [])
+
+        evidence_review.apply_review_decision(link, 'confirm_supports', reviewer, reason='Confirmed real support.')
+        after = discovery_engine.rank_company_matches([profile], criteria={'kpi_ids': [110]})[0]
+        self.assertEqual(after['kpi_detail']['supported_kpi_ids'], [110])
+
+    def test_confirm_conflicts_surfaces_as_conflict(self):
+        from company_intelligence.services import discovery_engine
+
+        profile = _profile(slug='propagation-conflict-co')
+        reviewer = User.objects.create_user(username='reviewer8', password='pw', is_staff=True)
+        link = _proposed_link(profile, kpi_id=111, relationship='context')
+        evidence_review.apply_review_decision(link, 'confirm_conflicts', reviewer, reason='Confirmed real conflict.')
+
+        result = discovery_engine.rank_company_matches([profile], criteria={'kpi_ids': [111]})[0]
+        self.assertEqual(result['kpi_detail']['conflicting_kpi_ids'], [111])
+
+    def test_reject_excludes_from_discovery(self):
+        from company_intelligence.services import discovery_engine
+
+        profile = _profile(slug='propagation-reject-co')
+        reviewer = User.objects.create_user(username='reviewer9', password='pw', is_staff=True)
+        link = _proposed_link(profile, kpi_id=112, relationship='supports')
+        evidence_review.apply_review_decision(link, 'reject', reviewer, reason='Bad match.')
+
+        result = discovery_engine.rank_company_matches([profile], criteria={'kpi_ids': [112]})[0]
+        self.assertEqual(result['kpi_detail']['supported_kpi_ids'], [])
+        # A CompanyKPIAssessment row exists (created when the link was
+        # first proposed) with zero confirmed links -> 'insufficient_evidence',
+        # not 'not_assessed' (which only applies when no assessment row
+        # exists for that kpi_id at all).
+        self.assertEqual(result['kpi_detail']['insufficient_kpi_ids'], [112])
+
+    def test_disputed_honestly_stops_counting(self):
+        from company_intelligence.services import discovery_engine
+
+        profile = _profile(slug='propagation-dispute-co')
+        reviewer = User.objects.create_user(username='reviewer10', password='pw', is_staff=True)
+        link = _proposed_link(profile, kpi_id=113, relationship='context')
+        evidence_review.apply_review_decision(link, 'confirm_supports', reviewer, reason='Initially confirmed.')
+        evidence_review.apply_review_decision(link, 'mark_disputed', reviewer, reason='Now disputed.')
+
+        result = discovery_engine.rank_company_matches([profile], criteria={'kpi_ids': [113]})[0]
+        self.assertEqual(result['kpi_detail']['supported_kpi_ids'], [])
+
+
+class WatchlistPrivacyInReviewTests(TestCase):
+    def test_on_watchlist_boolean_never_leaks_user_or_notes(self):
+        profile = _profile(slug='watchlist-privacy-co')
+        user = User.objects.create_user(username='privatewatcher', password='pw')
+        ResearchWatchlistEntry.objects.create(user=user, company=profile, notes='Sensitive private note.')
+        link = _proposed_link(profile, kpi_id=120)
+
+        rows = evidence_review.pending_review_queue({'company_slug': 'watchlist-privacy-co'})
+        row = next(r for r in rows if r['link'].pk == link.pk)
+        self.assertTrue(row['on_watchlist'])
+        # Only a boolean is exposed — no user/notes field anywhere in the row.
+        self.assertNotIn('privatewatcher', str(row))
+        self.assertNotIn('Sensitive private note', str(row))
+
+
+class ObservatoryReviewWorkbenchTelemetryTests(TestCase):
+    def test_queue_view_records_session_with_no_anchor(self):
+        from ai_observatory.models import AnalysisSession
+
+        _proposed_link(_profile(slug='obs-queue-co'), kpi_id=130)
+        staff = User.objects.create_user(username='obsstaff1', password='pw', is_staff=True)
+        client = Client()
+        client.login(username='obsstaff1', password='pw')
+        client.get(reverse('companies:review_queue'))
+
+        session = AnalysisSession.objects.filter(kind='evidence_review_workbench', company__isnull=True).order_by('-pk').first()
+        self.assertIsNotNone(session)
+        self.assertEqual(session.status, 'completed')
+
+    def test_decision_view_records_session_anchored_to_company(self):
+        from ai_observatory.models import AnalysisSession
+
+        profile = _profile(slug='obs-decision-co')
+        link = _proposed_link(profile, kpi_id=131)
+        staff = User.objects.create_user(username='obsstaff2', password='pw', is_staff=True)
+        client = Client()
+        client.login(username='obsstaff2', password='pw')
+        client.post(reverse('companies:review_detail', args=[link.pk]), {'action': 'confirm_supports', 'reason': 'Real reason.'})
+
+        session = AnalysisSession.objects.filter(kind='evidence_review_workbench', company=profile).order_by('-pk').first()
+        self.assertIsNotNone(session)
+        self.assertTrue(session.human_review_completed)
+
+
+class ReviewCSRFAndCrossCompanyTests(TestCase):
+    def test_post_without_csrf_token_rejected(self):
+        from django.test import Client as StrictClient
+
+        profile = _profile(slug='csrf-co')
+        link = _proposed_link(profile, kpi_id=140)
+        staff = User.objects.create_user(username='csrfstaff', password='pw', is_staff=True)
+        strict_client = StrictClient(enforce_csrf_checks=True)
+        strict_client.login(username='csrfstaff', password='pw')
+        response = strict_client.post(reverse('companies:review_detail', args=[link.pk]), {
+            'action': 'confirm_supports', 'reason': 'x',
+        })
+        self.assertEqual(response.status_code, 403)
+        link.refresh_from_db()
+        self.assertEqual(link.review_state, 'proposed')

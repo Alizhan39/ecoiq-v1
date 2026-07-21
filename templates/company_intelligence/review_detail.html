@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Review Evidence — {{ company.company.name }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Staff evidence review detail — inspect source, context, and KPI relationship before making a review decision.{% endblock %}
+
+{% block content %}
+<div class="rd-wrap">
+  <div class="rd-crumb"><a href="{% url 'companies:review_queue' %}">← Review Queue</a> · <a href="{% url 'companies:review_explain' link.pk %}">Explain This Decision →</a></div>
+  <span class="rd-eyebrow">ECOIQ · STAFF ONLY · REVIEW DETAIL</span>
+  <h1 class="rd-h1">{{ company.company.name }} — KPI #{{ kpi_context.principle.id }} {{ kpi_context.principle.title }}</h1>
+
+  <div class="rd-grid">
+    <div class="rd-primary">
+      <section class="rd-panel">
+        <h2 class="rd-h2">Matched Evidence</h2>
+        <div class="rd-evidence-box">
+          {% if evidence_context.has_context and evidence_context.preceding %}
+          <p class="rd-context rd-context-preceding"><span class="rd-context-label">PRECEDING CONTEXT</span>{{ evidence_context.preceding }}</p>
+          {% endif %}
+          <p class="rd-matched"><span class="rd-context-label">MATCHED EVIDENCE</span>{{ evidence_context.matched_text }}</p>
+          {% if evidence_context.has_context and evidence_context.following %}
+          <p class="rd-context rd-context-following"><span class="rd-context-label">SURROUNDING CONTEXT</span>{{ evidence_context.following }}</p>
+          {% endif %}
+          {% if not evidence_context.has_context %}
+          <p class="rd-no-context">No surrounding context available for this source type.</p>
+          {% endif %}
+        </div>
+
+        <h2 class="rd-h2">Source Provenance</h2>
+        {% if source_provenance.has_harvester_record %}
+        <table class="rd-table">
+          <tbody>
+            <tr><td>Publisher</td><td>{{ source_provenance.publisher|default:"—" }}</td></tr>
+            <tr><td>Document</td><td>{{ source_provenance.document_title|default:"—" }}</td></tr>
+            <tr><td>Document Type</td><td>{{ source_provenance.document_type|default:"—" }}</td></tr>
+            <tr><td>Source Tier</td><td>{{ source_provenance.source_tier|default:"Unknown" }}</td></tr>
+            <tr><td>Source URL</td><td>{% if source_provenance.source_url %}<a href="{{ source_provenance.source_url }}" target="_blank" rel="noopener">{{ source_provenance.source_url|truncatechars:60 }}</a>{% else %}—{% endif %}</td></tr>
+            <tr><td>Publication Date</td><td>{{ source_provenance.publication_date|default:"Unknown" }}</td></tr>
+            <tr><td>Reporting Period</td><td>{{ source_provenance.reporting_period|default:"Not stated" }}</td></tr>
+            <tr><td>Retrieved At</td><td>{{ source_provenance.retrieved_at|date:"Y-m-d H:i"|default:"—" }}</td></tr>
+            <tr><td>Content Hash</td><td>{{ source_provenance.content_hash|truncatechars:16|default:"—" }}</td></tr>
+            <tr><td>Page / Section</td><td>{{ source_provenance.source_location|default:"Not recorded" }}</td></tr>
+            <tr><td>Verification State</td><td>{{ source_provenance.verification_state }}</td></tr>
+          </tbody>
+        </table>
+        {% if source_provenance.is_stale %}
+        <p class="rd-warning">⚠ This evidence's freshness score is low — treat as potentially stale, not silently verified.</p>
+        {% endif %}
+        {% else %}
+        <p class="rd-warning">⚠ This evidence has no resolvable harvester source record — provenance fields are honestly unavailable, never assumed verified.</p>
+        {% endif %}
+
+        <h2 class="rd-h2">Evidence Quality Components</h2>
+        <div class="rd-quality-grid">
+          <div class="rd-quality-card"><span class="rd-quality-label">Source Authority</span><span class="rd-quality-value">{{ evidence_quality.source_authority|default:"Not available" }}</span></div>
+          <div class="rd-quality-card"><span class="rd-quality-label">Recency</span><span class="rd-quality-value">{{ evidence_quality.recency|default:"Not available" }}</span></div>
+          <div class="rd-quality-card"><span class="rd-quality-label">Corroboration</span><span class="rd-quality-value">{{ evidence_quality.corroboration|default:"Not available" }}</span></div>
+          <div class="rd-quality-card"><span class="rd-quality-label">Verification State</span><span class="rd-quality-value">{{ evidence_quality.verification_state }}</span></div>
+        </div>
+
+        {% if duplicates.same_document_same_kpi %}
+        <h2 class="rd-h2">Duplicate / Near-Duplicate Candidates</h2>
+        <p class="rd-detail-text">{{ duplicates.same_document_same_kpi|length }} other candidate(s) from the same document already propose evidence for this same KPI — review together to avoid redundant work.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="rd-side">
+      <section class="rd-panel">
+        <h2 class="rd-h2">KPI Context</h2>
+        <p class="rd-detail-text">{{ kpi_context.principle.tagline }}</p>
+        <p class="rd-detail-text"><em>{{ kpi_context.principle.question }}</em></p>
+        <div class="rd-kv"><span>Current Assessment Status</span><strong>{{ kpi_context.current_status_display }}</strong></div>
+        <div class="rd-kv"><span>Proposed Relationship</span><strong>{{ link.get_relationship_display }}</strong></div>
+        <div class="rd-kv"><span>Match Basis</span><strong>{{ link.match_basis|default:"Manual entry" }}</strong></div>
+        <div class="rd-kv"><span>Proposed By</span><strong>{{ proposed_by }}</strong></div>
+        <div class="rd-kv"><span>Current Review State</span><strong>{{ link.get_review_state_display }}</strong></div>
+        <div class="rd-kv"><span>Created</span><strong>{{ link.added_at|date:"Y-m-d H:i" }}</strong></div>
+
+        {% if kpi_context.supporting %}
+        <h3 class="rd-h3">Existing Supporting Evidence ({{ kpi_context.supporting|length }})</h3>
+        <ul class="rd-existing-list">{% for l in kpi_context.supporting %}<li>{{ l.evidence.text_chunk|truncatechars:100 }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if kpi_context.conflicting %}
+        <h3 class="rd-h3 rd-h3-warn">Existing Conflicting Evidence ({{ kpi_context.conflicting|length }})</h3>
+        <ul class="rd-existing-list">{% for l in kpi_context.conflicting %}<li>{{ l.evidence.text_chunk|truncatechars:100 }}</li>{% endfor %}</ul>
+        {% endif %}
+      </section>
+
+      <section class="rd-panel">
+        <h2 class="rd-h2">Reviewer Decision</h2>
+        <form method="post" class="rd-decision-form">
+          {% csrf_token %}
+          <div class="rd-action-grid">
+            <label class="rd-action-radio"><input type="radio" name="action" value="confirm_supports" required> Confirm — Supports</label>
+            <label class="rd-action-radio"><input type="radio" name="action" value="confirm_conflicts"> Confirm — Conflicts</label>
+            <label class="rd-action-radio"><input type="radio" name="action" value="confirm_context"> Confirm — Context Only</label>
+            <label class="rd-action-radio"><input type="radio" name="action" value="confirm_insufficient"> Confirm — Insufficient to Conclude</label>
+            <label class="rd-action-radio"><input type="radio" name="action" value="reject"> Reject Match</label>
+            <label class="rd-action-radio"><input type="radio" name="action" value="needs_more_evidence"> Needs More Evidence</label>
+            <label class="rd-action-radio"><input type="radio" name="action" value="mark_disputed"> Mark Disputed</label>
+          </div>
+          <label class="rd-label" for="rd-reason">Reason (required for an auditable decision)</label>
+          <textarea name="reason" id="rd-reason" class="rd-textarea" rows="3" required placeholder="Why does the evidence support/conflict/fail to establish this KPI relationship?"></textarea>
+          <button type="submit" class="rd-submit">Submit Decision →</button>
+        </form>
+      </section>
+
+      <section class="rd-panel">
+        <h2 class="rd-h2">Review History</h2>
+        {% if history %}
+        <ul class="rd-history-list">
+          {% for action in history %}
+          <li>
+            <strong>{{ action.get_action_display }}</strong> by {{ action.reviewer }} — {{ action.created_at|date:"Y-m-d H:i" }}<br>
+            <span class="rd-history-transition">{{ action.previous_review_state|default:"none" }} → {{ action.new_review_state }}{% if action.relationship_decision %} ({{ action.relationship_decision }}){% endif %}</span><br>
+            <span class="rd-history-reason">{{ action.reason|default:"No reason recorded." }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="rd-detail-text">No review action recorded yet — this is this link's first review.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+
+  <p class="rd-disclaimer">
+    A reviewer decision here is the only thing that ever moves this link's review_state — no automatic
+    confirmation, no bulk-confirm, no AI-generated approval. This is research and stewardship governance,
+    not an investment recommendation.
+  </p>
+</div>
+
+<style>
+  .rd-wrap{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .rd-crumb{font-size:.8rem;color:#64748b;margin-bottom:1rem}
+  .rd-crumb a{color:#c9a84c;text-decoration:none}
+  .rd-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.5rem}
+  .rd-h1{font-size:clamp(1.2rem,2.8vw,1.6rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 1.5rem}
+  .rd-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:1.4rem}
+  .rd-panel{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.2rem 1.3rem;margin-bottom:1.2rem}
+  .rd-h2{font-size:.92rem;font-weight:700;color:#c9a84c;margin:0 0 .8rem;text-transform:uppercase;letter-spacing:.04em;font-size:.7rem}
+  .rd-h3{font-size:.82rem;font-weight:700;color:#e2e8f0;margin:1rem 0 .5rem}
+  .rd-h3-warn{color:#fca5a5}
+  .rd-evidence-box{background:#0d1117;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:1rem}
+  .rd-context-label{display:block;font-size:.6rem;font-weight:700;letter-spacing:.06em;color:#475569;margin-bottom:.3rem}
+  .rd-context{font-size:.78rem;color:#64748b;line-height:1.6;margin:0 0 .8rem;font-style:italic}
+  .rd-matched{font-size:.86rem;color:#e2e8f0;line-height:1.65;background:rgba(201,168,76,.06);border-left:3px solid #c9a84c;padding:.6rem .8rem;margin:0 0 .8rem}
+  .rd-no-context{font-size:.78rem;color:#475569}
+  .rd-table{width:100%;font-size:.78rem;border-collapse:collapse;margin-bottom:.6rem;table-layout:fixed}
+  .rd-table td{padding:.35rem .5rem;border-bottom:1px solid rgba(255,255,255,.05);word-break:break-word;overflow-wrap:break-word}
+  .rd-table td:first-child{color:#64748b;width:35%}
+  .rd-table a{color:#c9a84c;text-decoration:none;word-break:break-all}
+  .rd-warning{font-size:.76rem;color:#fca5a5;margin:.5rem 0}
+  .rd-quality-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem}
+  .rd-quality-card{background:#0d1117;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:.6rem .7rem}
+  .rd-quality-label{display:block;font-size:.6rem;color:#475569;text-transform:uppercase}
+  .rd-quality-value{display:block;font-size:.9rem;font-weight:700;color:#fff;margin-top:.2rem}
+  .rd-detail-text{font-size:.78rem;color:#94a3b8;line-height:1.55;margin:0 0 .5rem}
+  .rd-kv{display:flex;justify-content:space-between;font-size:.78rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .rd-kv span{color:#64748b}
+  .rd-existing-list{list-style:none;margin:0;padding:0;font-size:.74rem;color:#94a3b8}
+  .rd-existing-list li{background:rgba(255,255,255,.02);border-radius:6px;padding:.5rem .6rem;margin-bottom:.4rem}
+  .rd-decision-form{display:flex;flex-direction:column;gap:.6rem}
+  .rd-action-grid{display:flex;flex-direction:column;gap:.4rem}
+  .rd-action-radio{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#cbd5e1;background:#0d1117;border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:.5rem .7rem}
+  .rd-label{font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+  .rd-textarea{background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e2e8f0;padding:.6rem .7rem;font-size:.8rem;font-family:inherit}
+  .rd-submit{background:#c9a84c;color:#0a0e12;font-weight:800;border:none;border-radius:999px;padding:.7rem 1.2rem;font-size:.84rem;cursor:pointer}
+  .rd-history-list{list-style:none;margin:0;padding:0;font-size:.74rem;display:flex;flex-direction:column;gap:.7rem}
+  .rd-history-list li{background:rgba(255,255,255,.02);border-radius:6px;padding:.6rem .7rem}
+  .rd-history-transition{color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;font-size:.7rem}
+  .rd-history-reason{color:#64748b}
+  .rd-disclaimer{font-size:.68rem;color:#475569;line-height:1.55;margin-top:1.5rem;max-width:90ch}
+  @media (max-width:900px){.rd-grid{grid-template-columns:1fr}}
+  @media (max-width:640px){.rd-wrap{padding:1.5rem 1rem 3rem}}
+</style>
+{% endblock %}
