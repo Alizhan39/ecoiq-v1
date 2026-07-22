@@ -37,6 +37,19 @@
           <span class="ci-explain-tag ci-explain-tag-{{ node.status_kind }}">{{ node.status }}</span>
         </div>
         <p class="ci-explain-node-summary">{{ node.summary }}</p>
+        {% if node.stage == 'coverage_matrix' %}
+        <table class="ci-explain-matrix">
+          <tbody>
+            {% for row in node.extra.matrix_rows %}
+            <tr>
+              <td class="ci-explain-matrix-label">{{ row.label }}</td>
+              <td><span class="ci-explain-matrix-status ci-explain-matrix-{{ row.status|lower }}">{{ row.status }}</span></td>
+              <td class="ci-explain-matrix-detail">{{ row.detail }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
         {% if node.warnings %}
         <ul class="ci-explain-list">{% for w in node.warnings %}<li>⚠ {{ w }}</li>{% endfor %}</ul>
         {% endif %}
@@ -88,6 +101,16 @@
   .ci-explain-tag-missing,.ci-explain-tag-na{color:#64748b;background:rgba(255,255,255,.03);font-style:italic}
   .ci-explain-tag-demo{color:#f4a261;background:rgba(244,162,97,.1);border-color:rgba(244,162,97,.3)}
   .ci-explain-source-link{display:inline-block;margin-top:.4rem;font-size:.76rem;font-weight:700;color:#c9a84c;text-decoration:none}
+  .ci-explain-matrix{width:100%;border-collapse:collapse;margin:.6rem 0;font-size:.78rem}
+  .ci-explain-matrix td{padding:.35rem .5rem;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+  .ci-explain-matrix-label{color:#64748b;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+  .ci-explain-matrix-detail{color:#94a3b8}
+  .ci-explain-matrix-status{display:inline-block;font-family:'SF Mono',ui-monospace,monospace;font-size:.66rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;white-space:nowrap}
+  .ci-explain-matrix-available{color:#00e89a;background:rgba(0,232,154,.1)}
+  .ci-explain-matrix-partial{color:#f4a261;background:rgba(244,162,97,.1)}
+  .ci-explain-matrix-missing{color:#fca5a5;background:rgba(230,57,70,.14)}
+  .ci-explain-matrix-stale{color:#f4a261;background:rgba(244,162,97,.1)}
+  .ci-explain-matrix-not_applicable{color:#64748b;background:rgba(255,255,255,.03)}
   .ci-explain-arrow{text-align:center;color:#475569;font-size:1.1rem;padding:.15rem 0}
   .ci-explain-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:80ch}
   @media (max-width:640px){.ci-explain-wrap{padding:1.5rem 1rem 3rem}.ci-explain-node{flex-direction:column}}

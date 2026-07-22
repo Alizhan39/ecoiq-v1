@@ -62,7 +62,7 @@ def explain_company_match(company_profile, criteria=None):
     Selected Criteria -> Company Identity -> Shariah Screening ->
     Selected KPI(s) -> Supporting Evidence -> Conflicting Evidence ->
     Evidence Quality -> Freshness -> Data Gaps -> Ranking Components ->
-    Why This Company Appears Here.
+    Evidence Provenance & Concentration -> Why This Company Appears Here.
     """
     from django.urls import reverse
 
@@ -228,12 +228,48 @@ def explain_company_match(company_profile, criteria=None):
         extra={'components': components, 'weights': match['weights_used'], 'composite': match['composite']},
     ))
 
-    # ---- 11. Why This Company Appears Here ---------------------------------------
+    # ---- 11. Evidence Provenance & Concentration -----------------------------------
+    # feat/global-stewardship-universe (PR 15) Section 15-16 — the same
+    # ranking-transparency discipline as every other node here: the
+    # human_review_quality/evidence_diversity components above are
+    # numbers; this node explains WHY those numbers look the way they do,
+    # reusing evidence_provenance.py verbatim (never a second computation).
+    from company_intelligence.services import evidence_provenance
+
+    concentration = evidence_provenance.self_report_concentration(company_profile)
+    doc_warnings = evidence_provenance.evidence_concentration_warning(company_profile)
+    provenance_notes = []
+    if concentration['warning']:
+        provenance_notes.append(concentration['warning'])
+    provenance_notes.extend(doc_warnings)
+    nodes.append(TraceNode(
+        stage='evidence_provenance', title='Evidence Provenance & Concentration',
+        status=(
+            f"{concentration['regulatory_count']} regulatory, {concentration['independent_count']} independent, "
+            f"{concentration['self_reported_count']} self-reported"
+        ),
+        status_kind='disputed' if provenance_notes else 'measured',
+        summary=(
+            '; '.join(provenance_notes) if provenance_notes
+            else 'No evidence-concentration or self-reporting-reliance signal for this company\'s confirmed '
+                 'evidence — never a claim of "detecting greenwashing", only a transparency signal.'
+        ),
+        data_quality=['deterministic'], available=bool(concentration['total']),
+        extra={'self_report_concentration': concentration, 'evidence_concentration_warnings': doc_warnings},
+    ))
+
+    # ---- 12. Why This Company Appears Here ---------------------------------------
     reasons = []
     if supported:
         reasons.append(f'{len(supported)} of the selected KPI(s) have confirmed supporting evidence')
     if screen is not None and criteria.get('shariah_status') and screen.overall_result in criteria['shariah_status']:
         reasons.append(f'its Shariah screen ({screen.get_overall_result_display()}) matches the selected filter')
+    if components.get('human_review_quality') is not None and components['human_review_quality'] >= 0.5:
+        reasons.append(
+            f"{round(components['human_review_quality'] * 100)}% of its linked evidence has been human-reviewed"
+        )
+    if components.get('evidence_diversity') is not None and components['evidence_diversity'] > 0:
+        reasons.append('it has confirmed supporting evidence spanning multiple stewardship categories')
     if not reasons:
         reasons.append('it matched the sector/country/tier filters selected, independent of KPI evidence')
     nodes.append(TraceNode(

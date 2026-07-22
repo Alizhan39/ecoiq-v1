@@ -40,6 +40,23 @@ KNOWN_SUSTAINABILITY_DOCUMENTS = {
         'url': 'https://corporate.walmart.com/purpose/sustainability',
         'document_type': 'sustainability_report', 'publisher': 'Walmart Inc.', 'domain': 'walmart.com',
     },
+    # feat/global-stewardship-universe (PR 15) — three additional real
+    # companies, each independently verified reachable (real HTTP 200,
+    # checked live via the browser tool, not guessed) during this PR's own
+    # development, matching the exact discipline PR11 established for the
+    # three entries above.
+    'exxonmobil': {
+        'url': 'https://corporate.exxonmobil.com/publications/sustainability',
+        'document_type': 'sustainability_report', 'publisher': 'Exxon Mobil Corporation', 'domain': 'exxonmobil.com',
+    },
+    'coca-cola': {
+        'url': 'https://www.coca-colacompany.com/about-us/environment',
+        'document_type': 'sustainability_report', 'publisher': 'The Coca-Cola Company', 'domain': 'coca-colacompany.com',
+    },
+    'national-grid': {
+        'url': 'https://www.nationalgrid.com/responsibility',
+        'document_type': 'sustainability_report', 'publisher': 'National Grid plc', 'domain': 'nationalgrid.com',
+    },
 }
 
 # Real, manually-verified official domains for companies this repo already
@@ -53,6 +70,8 @@ KNOWN_OFFICIAL_DOMAINS = {
     'walmart': 'walmart.com',
     'tesla': 'tesla.com',
     'exxonmobil': 'exxonmobil.com',
+    'coca-cola': 'coca-colacompany.com',
+    'national-grid': 'nationalgrid.com',
 }
 
 

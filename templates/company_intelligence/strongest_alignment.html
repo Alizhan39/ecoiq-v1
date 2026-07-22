@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Strongest Alignment — EcoIQ Stewardship Universe{% endblock %}
+{% block meta_description_content %}Real companies ranked by currently available, human-reviewed evidence of alignment with EcoIQ's 114-KPI stewardship framework — a research ranking, not investment advice.{% endblock %}
+
+{% block content %}
+<div class="disc-wrap">
+  <span class="disc-eyebrow">ECOIQ · STEWARDSHIP UNIVERSE</span>
+  <h1 class="disc-h1">Strongest Alignment</h1>
+  <p class="disc-sub">
+    Research ranking based on currently available and reviewed stewardship evidence. This is not investment advice
+    or a prediction of financial performance. Companies with no confirmed, human-reviewed supporting evidence under
+    the selected criteria are excluded from this list entirely (never shown with a fabricated neutral score) — see
+    <a href="{% url 'companies:discover' %}?{{ request.GET.urlencode }}" class="sa-inline-link">Discover Companies</a>
+    to view the full candidate pool including companies still awaiting evidence.
+  </p>
+
+  <div class="disc-results-head">
+    <span class="disc-results-count">{{ result_count }} compan{{ result_count|pluralize:"y,ies" }} with qualifying evidence</span>
+    <span class="disc-weights">Ranking weights: {% for k, v in weights.items %}{{ k }}={{ v }}{% if not forloop.last %}, {% endif %}{% endfor %} — every component shown below, never hidden behind the composite.</span>
+  </div>
+
+  <div class="disc-results">
+    {% for row in results %}
+    <div class="disc-card">
+      <div class="disc-card-head">
+        <div>
+          <span class="sa-rank">#{{ forloop.counter }}</span>
+          <a href="{% url 'companies:detail' row.company.company.slug %}" class="disc-card-name">{{ row.company.company.name }}</a>
+          <div class="disc-card-meta">{{ row.company.company.get_sector_display }} · {{ row.company.company.country }}</div>
+        </div>
+        <span class="disc-origin-badge disc-origin-{{ row.data_origin.origin }}">{{ row.data_origin.label }}</span>
+      </div>
+
+      <div class="disc-card-strip">
+        <div class="disc-stat">
+          <span class="disc-stat-k">Shariah</span>
+          {% if row.shariah_screen %}
+          <span class="disc-stat-v disc-shariah-{{ row.shariah_screen.overall_result }}">{{ row.shariah_screen.get_overall_result_display }}</span>
+          {% else %}
+          <span class="disc-stat-v disc-shariah-not_screened">Not Screened</span>
+          {% endif %}
+        </div>
+        <div class="disc-stat">
+          <span class="disc-stat-k">Confirmed KPIs Supported</span>
+          <span class="disc-stat-v">{{ row.kpi_detail.supported_kpi_ids|length }}</span>
+        </div>
+        <div class="disc-stat">
+          <span class="disc-stat-k">Alignment Indicator</span>
+          <span class="disc-stat-v">{{ row.composite }}</span>
+        </div>
+      </div>
+
+      <details class="disc-components">
+        <summary>Alignment Indicator Components — real numbers, never a hidden black-box score</summary>
+        <table class="disc-comp-table">
+          <tbody>
+            {% for key, value in row.components.items %}
+            <tr><td>{{ key }}</td><td>{% if value is not None %}{{ value }}{% else %}Not available{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+
+      {% if row.controversies %}
+      <p class="disc-controversy-note">⚠ {{ row.controversies|length }} controversy record(s) on file — never suppressed by a positive ranking.</p>
+      {% endif %}
+
+      <div class="disc-card-actions">
+        <a href="{% url 'companies:explain_match' row.company.company.slug %}?{{ request.GET.urlencode }}" class="disc-action-link">Explain Match →</a>
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'companies:watchlist_add' row.company.company.slug %}" class="disc-watchlist-form">
+          {% csrf_token %}
+          <input type="hidden" name="research_context" value="Added from Strongest Alignment ranking">
+          <button type="submit" class="disc-action-link">+ Watchlist</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <p class="disc-empty">No companies currently have qualifying evidence under these criteria — an honest empty result, never a fabricated ranking.</p>
+    {% endfor %}
+  </div>
+
+  <p class="disc-disclaimer">
+    EcoIQ's Stewardship Universe ranks research evidence, not expected investment performance. A company's presence
+    or position in this list is not a recommendation to buy, sell, or hold any security, and never implies better
+    returns, lower risk, better management quality, or guaranteed sustainability outcomes. Shariah screening is
+    methodology-based and does not constitute a religious ruling, fatwa, or certification.
+  </p>
+</div>
+
+<style>
+  .disc-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0a0e12;border-radius:16px}
+  .disc-eyebrow{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:.5rem}
+  .disc-h1{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem}
+  .disc-sub{font-size:.9rem;color:#94a3b8;max-width:80ch;line-height:1.6;margin:0 0 1.8rem}
+  .disc-results-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin:1.4rem 0 1rem;font-size:.78rem;color:#64748b}
+  .disc-results-count{font-weight:700;color:#e2e8f0}
+  .disc-results{display:flex;flex-direction:column;gap:1rem}
+  .disc-card{background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.2rem 1.3rem}
+  .disc-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
+  .disc-card-name{font-size:1.05rem;font-weight:800;color:#fff;text-decoration:none}
+  .disc-card-name:hover{color:#c9a84c}
+  .disc-card-meta{font-size:.76rem;color:#64748b;margin-top:.2rem}
+  .disc-origin-badge{flex:none;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.25rem .6rem;border-radius:999px;background:rgba(255,255,255,.05);color:#94a3b8}
+  .disc-origin-real_public_data{background:rgba(0,232,154,.1);color:#00e89a}
+  .disc-origin-demo{background:rgba(244,162,97,.1);color:#f4a261}
+  .disc-card-strip{display:flex;flex-wrap:wrap;gap:1.4rem;margin:.9rem 0;padding:.8rem 1rem;background:rgba(255,255,255,.02);border-radius:8px}
+  .disc-stat{display:flex;flex-direction:column;gap:.2rem}
+  .disc-stat-k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#475569;font-family:'SF Mono',ui-monospace,monospace}
+  .disc-stat-v{font-size:.85rem;font-weight:700;color:#e2e8f0}
+  .disc-shariah-pass{color:#00e89a}
+  .disc-shariah-fail{color:#fca5a5}
+  .disc-shariah-conditional{color:#f4a261}
+  .disc-shariah-insufficient_data,.disc-shariah-not_screened{color:#94a3b8}
+  .disc-components{margin-top:.6rem;font-size:.78rem;color:#94a3b8}
+  .disc-components>summary{cursor:pointer;color:#c9a84c;font-weight:700}
+  .disc-comp-table{width:100%;margin-top:.5rem;font-size:.78rem}
+  .disc-comp-table td{padding:.2rem .4rem;border-bottom:1px solid rgba(255,255,255,.05)}
+  .disc-controversy-note{font-size:.76rem;color:#fca5a5;margin:.6rem 0 0}
+  .disc-card-actions{display:flex;gap:.8rem;margin-top:.9rem}
+  .disc-action-link{font-size:.78rem;font-weight:700;color:#c9a84c;background:none;border:1px solid rgba(201,168,76,.3);border-radius:999px;padding:.4rem .9rem;text-decoration:none;cursor:pointer}
+  .disc-watchlist-form{display:inline}
+  .disc-empty{font-size:.85rem;color:#64748b;padding:2rem 0}
+  .disc-disclaimer{font-size:.7rem;color:#475569;line-height:1.55;margin-top:2rem;max-width:90ch}
+  .sa-rank{display:inline-block;font-family:'SF Mono',ui-monospace,monospace;font-size:.72rem;font-weight:800;color:#c9a84c;background:rgba(201,168,76,.1);border-radius:999px;padding:.15rem .5rem;margin-right:.5rem;vertical-align:middle}
+  .sa-inline-link{color:#c9a84c;text-decoration:underline}
+  @media (max-width:640px){.disc-wrap{padding:1.5rem 1rem 3rem}.disc-card-strip{gap:1rem}}
+</style>
+{% endblock %}

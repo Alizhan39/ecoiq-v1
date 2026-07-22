@@ -22,6 +22,14 @@ Reuses, never duplicates:
 - company_intelligence.services.data_origin.company_data_origin()
 - company_intelligence.services.evidence_quality.evidence_quality_for_memory()
 - harvester.verification.source_tier()
+
+feat/global-stewardship-universe (PR 15) — this same weighted-component
+mechanism IS the "Evidence-Backed Stewardship Alignment Indicator" Section
+8 asks for: two new components (human_review_quality, evidence_diversity)
+were added to DEFAULT_RANKING_WEIGHTS below, following the exact same
+"missing is excluded from the average, never coerced to zero" discipline
+every existing component already followed — this is deliberately NOT a
+second, parallel scoring engine.
 """
 from companies.models import CompanyProfile
 
@@ -37,13 +45,17 @@ PRINCIPLES_BY_ID = {p['id']: p for p in PRINCIPLES}
 # pulled down by conflicting evidence; every other component only ever
 # helps or is neutral — missing data is EXCLUDED from the composite's own
 # weighted average (renormalised over whatever a company actually has),
-# never treated as a zero.
+# never treated as a zero. This composite is publicly labelled the
+# "Evidence-Backed Stewardship Alignment Indicator" — never an "ESG score",
+# never implying future returns, lower risk, or better management.
 DEFAULT_RANKING_WEIGHTS = {
-    'kpi_alignment': 0.40,
-    'source_authority': 0.20,
-    'recency': 0.15,
-    'corroboration': 0.15,
+    'kpi_alignment': 0.35,
+    'source_authority': 0.15,
+    'recency': 0.10,
+    'corroboration': 0.10,
     'data_completeness': 0.10,
+    'human_review_quality': 0.10,
+    'evidence_diversity': 0.10,
 }
 
 SUPPORT_STATUSES = {'strong_support', 'support'}
@@ -122,6 +134,45 @@ def _evidence_quality_for_selected_kpis(company_profile, kpi_ids):
     }
 
 
+def _human_review_quality_for_selected_kpis(company_profile, kpi_ids):
+    """
+    feat/global-stewardship-universe (PR 15) — fraction of this company's
+    KPI-linked evidence (within the selected scope) that has actually been
+    human-reviewed (review_state='confirmed') rather than merely proposed
+    by the deterministic matcher. None when this company has no linked
+    evidence at all in scope — never a fabricated 0, and never counted as
+    a strike against a company that simply hasn't been ingested yet.
+    """
+    qs = CompanyKPIEvidenceLink.objects.filter(assessment__company=company_profile)
+    if kpi_ids:
+        qs = qs.filter(assessment__kpi_id__in=kpi_ids)
+    qs = qs.filter(review_state__in=('confirmed', 'proposed'))
+    total = qs.count()
+    if not total:
+        return None
+    confirmed = qs.filter(review_state='confirmed').count()
+    return round(confirmed / total, 4)
+
+
+def _evidence_diversity_for_company(company_profile):
+    """
+    feat/global-stewardship-universe (PR 15) — how many of the 10 canonical
+    stewardship categories (core.esg_principles_data.PRINCIPLE_CATEGORIES)
+    this company has at least one CONFIRMED supporting KPI in, as a [0,1]
+    fraction. Rewards evidence BREADTH across categories over a large pile
+    of evidence concentrated in just one — see services/category_coverage.py
+    for the same per-category breakdown shown in full on the company page.
+    None when this company has zero confirmed supporting evidence anywhere.
+    """
+    from company_intelligence.services.category_coverage import category_coverage_for_company
+
+    rows = category_coverage_for_company(company_profile)
+    represented = sum(1 for r in rows if r['supported_count'] > 0)
+    if not any(r['supported_count'] > 0 for r in rows):
+        return None
+    return round(represented / len(rows), 4) if rows else None
+
+
 def _company_meets_min_tier(company_profile, min_tier):
     """
     True if this company has at least one CONFIRMED KPI-linked evidence row
@@ -178,6 +229,24 @@ def discover_companies(criteria=None):
       include_demo            — bool, default False. Demo companies are
                                EXCLUDED from real discovery unless a caller
                                explicitly opts in.
+      min_confirmed_kpi_coverage — int, minimum count of CONFIRMED-supports
+                               KPIs (within kpi_ids scope, or all 114 if
+                               none selected). None/0 = no filter.
+      min_human_reviewed_pct  — float 0-100, minimum human-reviewed share of
+                               this company's linked evidence (see
+                               _human_review_quality_for_selected_kpis).
+                               None = no filter.
+      has_disputes            — bool or None. True = only companies with at
+                               least one disputed KPI evidence link; False =
+                               only companies with none; None = no filter.
+      has_potential_conflicts — bool or None. Same shape, over open
+                               StewardshipChangeEvent(event_type=
+                               'potential_conflict') rows.
+      monitoring_health       — one of stewardship_state's derived state
+                               keys (e.g. 'CURRENT', 'NEEDS_REFRESH',
+                               'REVIEW_REQUIRED', 'ERROR') or None/'' for no
+                               filter — never a hidden ranking factor, only
+                               an explicit opt-in filter.
 
     Returns a list of companies.CompanyProfile — the candidate pool BEFORE
     ranking (pass straight into rank_company_matches()).
@@ -234,6 +303,44 @@ def discover_companies(criteria=None):
     if min_source_tier is not None:
         companies = [c for c in companies if _company_meets_min_tier(c, min_source_tier)]
 
+    min_confirmed_kpi_coverage = criteria.get('min_confirmed_kpi_coverage')
+    if min_confirmed_kpi_coverage:
+        companies = [
+            c for c in companies
+            if len(_kpi_component_for_company(c, kpi_ids)['supported_kpi_ids']) >= min_confirmed_kpi_coverage
+        ]
+
+    min_human_reviewed_pct = criteria.get('min_human_reviewed_pct')
+    if min_human_reviewed_pct is not None:
+        filtered = []
+        for c in companies:
+            pct = _human_review_quality_for_selected_kpis(c, kpi_ids)
+            if pct is not None and (pct * 100.0) >= min_human_reviewed_pct:
+                filtered.append(c)
+        companies = filtered
+
+    has_disputes = criteria.get('has_disputes')
+    if has_disputes is not None:
+        companies = [
+            c for c in companies
+            if CompanyKPIEvidenceLink.objects.filter(assessment__company=c, review_state='disputed').exists() == has_disputes
+        ]
+
+    has_potential_conflicts = criteria.get('has_potential_conflicts')
+    if has_potential_conflicts is not None:
+        from company_intelligence.models import StewardshipAlert
+        companies = [
+            c for c in companies
+            if StewardshipAlert.objects.filter(
+                company=c, alert_type='potential_conflict',
+            ).exclude(state__in=('resolved', 'dismissed')).exists() == has_potential_conflicts
+        ]
+
+    monitoring_health = criteria.get('monitoring_health')
+    if monitoring_health:
+        from company_intelligence.services import stewardship_state
+        companies = [c for c in companies if stewardship_state.compute_tracking_state(c)['state'] == monitoring_health]
+
     return companies
 
 
@@ -264,6 +371,8 @@ def rank_company_matches(companies, criteria=None, weights=None):
             'recency': eq['recency'],
             'corroboration': eq['corroboration'],
             'data_completeness': (screen.data_completeness_pct / 100.0) if screen else None,
+            'human_review_quality': _human_review_quality_for_selected_kpis(company, kpi_ids),
+            'evidence_diversity': _evidence_diversity_for_company(company),
         }
 
         weighted_sum, weight_total = 0.0, 0.0

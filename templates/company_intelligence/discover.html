@@ -50,6 +50,33 @@
         </select>
         <label class="disc-check"><input type="checkbox" name="include_demo" value="1" {% if criteria.include_demo %}checked{% endif %}> Include DEMO / illustrative companies</label>
       </div>
+      <div class="disc-filter-col">
+        <label class="disc-label" for="disc-min-confirmed">Min. Confirmed KPI Coverage</label>
+        <input type="number" min="0" max="114" name="min_confirmed_kpi" id="disc-min-confirmed" class="disc-input" value="{% if criteria.min_confirmed_kpi_coverage %}{{ criteria.min_confirmed_kpi_coverage }}{% endif %}" placeholder="e.g. 10">
+        <label class="disc-label" for="disc-min-reviewed">Min. Human-Reviewed Coverage (%)</label>
+        <input type="number" min="0" max="100" step="1" name="min_human_reviewed_pct" id="disc-min-reviewed" class="disc-input" value="{% if criteria.min_human_reviewed_pct is not None %}{{ criteria.min_human_reviewed_pct }}{% endif %}" placeholder="e.g. 50">
+        <label class="disc-label" for="disc-monitoring-health">Monitoring Health</label>
+        <select name="monitoring_health" id="disc-monitoring-health" class="disc-select">
+          <option value="">Any</option>
+          {% for value, label in monitoring_health_choices %}
+          <option value="{{ value }}" {% if value == criteria.monitoring_health %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="disc-filter-col">
+        <label class="disc-label" for="disc-has-disputes">Disputed Evidence</label>
+        <select name="has_disputes" id="disc-has-disputes" class="disc-select">
+          <option value="" {% if criteria.has_disputes is None %}selected{% endif %}>Any</option>
+          <option value="1" {% if criteria.has_disputes == True %}selected{% endif %}>Has disputed KPI evidence</option>
+          <option value="0" {% if criteria.has_disputes == False %}selected{% endif %}>No disputed KPI evidence</option>
+        </select>
+        <label class="disc-label" for="disc-has-conflicts">Potential Conflicts</label>
+        <select name="has_potential_conflicts" id="disc-has-conflicts" class="disc-select">
+          <option value="" {% if criteria.has_potential_conflicts is None %}selected{% endif %}>Any</option>
+          <option value="1" {% if criteria.has_potential_conflicts == True %}selected{% endif %}>Has open potential-conflict alert</option>
+          <option value="0" {% if criteria.has_potential_conflicts == False %}selected{% endif %}>No open potential-conflict alert</option>
+        </select>
+      </div>
     </div>
 
     <div class="disc-kpi-picker">
@@ -75,6 +102,7 @@
   <div class="disc-results-head">
     <span class="disc-results-count">{{ result_count }} compan{{ result_count|pluralize:"y,ies" }} found</span>
     <span class="disc-weights">Ranking weights: {% for k, v in weights.items %}{{ k }}={{ v }}{% if not forloop.last %}, {% endif %}{% endfor %} — every component shown below, never hidden behind the composite.</span>
+    <a href="{% url 'companies:strongest_alignment' %}?{{ request.GET.urlencode }}" class="disc-action-link">View Strongest Alignment →</a>
   </div>
 
   <div class="disc-results">

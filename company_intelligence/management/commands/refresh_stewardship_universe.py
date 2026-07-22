@@ -43,7 +43,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from companies.models import CompanyProfile
         from company_intelligence.management.commands.ingest_real_company_evidence import REAL_COMPANY_SEEDS
-        from company_intelligence.services import refresh_policy
+        from company_intelligence.services import rate_limiter, refresh_policy
         from company_intelligence.services.refresh_orchestrator import refresh_company_intelligence
         from league.models import Company
 
@@ -59,13 +59,25 @@ class Command(BaseCommand):
                 company, _ = Company.objects.get_or_create(slug=slug, defaults={**seed, 'is_public': True})
                 profile, _ = CompanyProfile.objects.get_or_create(company=company, defaults={'status': 'public'})
                 profiles.append(profile)
+            dropped = 0
         else:
             profiles = list(CompanyProfile.objects.filter(tracking_status='active').select_related('company'))
             if options['due_only']:
                 profiles = [p for p in profiles if refresh_policy.is_company_due_for_refresh(p)]
+            # feat/global-stewardship-universe (PR 15) Section 17 — bounded
+            # expansion: an explicit --slug list is a deliberate, bounded
+            # staff ask and is never silently truncated; a --due-only/all-
+            # active batch IS bounded by default so one invocation can
+            # never silently try to refresh an unbounded number of
+            # companies — the drop is reported, never hidden.
+            profiles, dropped = rate_limiter.bounded_batch(profiles, limit=limit)
 
-        if limit is not None:
-            profiles = profiles[:limit]
+        if dropped:
+            self.stdout.write(self.style.WARNING(
+                f'Batch size bounded to {len(profiles)} compan{"y" if len(profiles) == 1 else "ies"} this run — '
+                f'{dropped} due/active compan{"y" if dropped == 1 else "ies"} were NOT refreshed this run '
+                f'(re-run, or pass --limit to raise the bound).'
+            ))
 
         if not profiles:
             self.stdout.write(self.style.WARNING(

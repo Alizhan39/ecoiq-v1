@@ -46,6 +46,29 @@ def _criteria_from_request(request):
     shariah_status = [v for v in request.GET.getlist('shariah') if v in SHARIAH_STATUS_CHOICES or v == 'not_screened']
     tier_raw = request.GET.get('tier', '')
     min_source_tier = int(tier_raw) if tier_raw.isdigit() else None
+
+    min_confirmed_raw = request.GET.get('min_confirmed_kpi', '')
+    min_confirmed_kpi_coverage = int(min_confirmed_raw) if min_confirmed_raw.isdigit() else None
+
+    min_reviewed_raw = request.GET.get('min_human_reviewed_pct', '')
+    try:
+        min_human_reviewed_pct = float(min_reviewed_raw) if min_reviewed_raw else None
+    except ValueError:
+        min_human_reviewed_pct = None
+
+    def _tri_state(param_name):
+        raw = request.GET.get(param_name, '')
+        if raw == '1':
+            return True
+        if raw == '0':
+            return False
+        return None
+
+    from company_intelligence.services.stewardship_state import DERIVED_STATE_LABELS
+
+    monitoring_health_raw = request.GET.get('monitoring_health', '')
+    monitoring_health = monitoring_health_raw if monitoring_health_raw in DERIVED_STATE_LABELS else ''
+
     return {
         'kpi_ids': kpi_ids,
         'shariah_status': shariah_status,
@@ -55,6 +78,11 @@ def _criteria_from_request(request):
         'require_current_screening': request.GET.get('fresh') == '1',
         'controversy_state': request.GET.get('controversy', 'any'),
         'include_demo': request.GET.get('include_demo') == '1',
+        'min_confirmed_kpi_coverage': min_confirmed_kpi_coverage,
+        'min_human_reviewed_pct': min_human_reviewed_pct,
+        'has_disputes': _tri_state('has_disputes'),
+        'has_potential_conflicts': _tri_state('has_potential_conflicts'),
+        'monitoring_health': monitoring_health,
     }
 
 
@@ -90,6 +118,8 @@ def discover_companies_view(request):
         for cat_key, cat_label in PRINCIPLE_CATEGORIES
     ]
 
+    from company_intelligence.services.stewardship_state import DERIVED_STATE_LABELS
+
     return render(request, 'company_intelligence/discover.html', {
         'criteria': criteria,
         'results': results,
@@ -97,6 +127,56 @@ def discover_companies_view(request):
         'kpi_picker_groups': kpi_picker_groups,
         'sector_choices': SECTOR_CHOICES,
         'shariah_status_choices': CompanyShariahScreen._meta.get_field('overall_result').choices,
+        'weights': discovery_engine.DEFAULT_RANKING_WEIGHTS,
+        'monitoring_health_choices': list(DERIVED_STATE_LABELS.items()),
+    })
+
+
+def strongest_alignment_view(request):
+    """
+    /companies/strongest-alignment/ — feat/global-stewardship-universe
+    (PR 15) Section 12: a dedicated view answering "which real companies
+    currently have the strongest verified evidence of alignment with
+    EcoIQ's 114 stewardship KPIs?" Reuses discover_companies()/
+    rank_company_matches() verbatim (never a second ranking engine) — the
+    only difference from Discover Companies is presentation: sorted
+    strictly by the Evidence-Backed Stewardship Alignment Indicator
+    (already how rank_company_matches sorts), and companies with zero
+    CONFIRMED KPI-supporting evidence are excluded here rather than merely
+    sorted with the rest. This is deliberate: kpi_alignment's own "absence
+    of evidence is neutral, not negative" component (discovery_engine's own
+    module docstring) means composite is almost never literally None, so
+    filtering on composite alone would let an entirely unevidenced company
+    appear in a "strongest alignment" list — misleading for this specific,
+    more claim-heavy view (Discover Companies still shows every candidate,
+    evidence or not).
+
+    Mandatory disclaimer text (Section 12's own words, rendered verbatim
+    in the template): "Research ranking based on currently available and
+    reviewed stewardship evidence. This is not investment advice or a
+    prediction of financial performance."
+    """
+    from ai_observatory.services import recorder
+
+    criteria = _criteria_from_request(request)
+
+    session = recorder.start_session(kind='company_discovery', user=request.user)
+    with recorder.record_stage(session, 'filtering', 'Company Filtering', category='deterministic') as info:
+        companies = discovery_engine.discover_companies(criteria)
+        info['items_processed'] = len(companies)
+        info['metadata'] = {'criteria': criteria}
+    with recorder.record_stage(session, 'ranking', 'Evidence-Backed Ranking', category='deterministic') as info:
+        results = [
+            r for r in discovery_engine.rank_company_matches(companies, criteria=criteria)
+            if r['kpi_detail']['supported_kpi_ids']
+        ]
+        info['items_processed'] = len(results)
+    recorder.finish_session(session, evidence_retrieved=len(results), final_recommendation_status='recorded')
+
+    return render(request, 'company_intelligence/strongest_alignment.html', {
+        'criteria': criteria,
+        'results': results,
+        'result_count': len(results),
         'weights': discovery_engine.DEFAULT_RANKING_WEIGHTS,
     })
 
@@ -113,6 +193,45 @@ def explain_match_view(request, slug):
     return render(request, 'company_intelligence/explain_match.html', {
         'profile': profile, 'company': profile.company, 'trace': trace, 'criteria': criteria,
     })
+
+
+def _comparison_extras_for_company(company_profile):
+    """
+    feat/global-stewardship-universe (PR 15) Section 14 — the extra
+    comparison rows the brief asks for (methodology version, human-reviewed
+    evidence, category coverage, disputes, potential conflicts, staleness,
+    monitoring health, last refresh). Every value here is a straight read
+    from an existing PR9-14 service — never a second comparison-only
+    computation of something already computed elsewhere.
+    """
+    from company_intelligence.models import CompanyKPIEvidenceLink, StewardshipAlert
+    from company_intelligence.services import (
+        alignment_metrics, coverage_matrix, evidence_provenance, shariah_screening, stewardship_state,
+    )
+
+    metrics = alignment_metrics.stewardship_alignment_metrics(company_profile)
+    coverage = coverage_matrix.coverage_matrix_for_company(company_profile)
+    tracking = stewardship_state.compute_tracking_state(company_profile)
+    screen = shariah_screening.latest_screen_for(company_profile)
+
+    disputed_count = CompanyKPIEvidenceLink.objects.filter(
+        assessment__company=company_profile, review_state='disputed',
+    ).values('assessment__kpi_id').distinct().count()
+    open_conflicts_count = StewardshipAlert.objects.filter(
+        company=company_profile, alert_type='potential_conflict',
+    ).exclude(state__in=('resolved', 'dismissed')).count()
+
+    return {
+        'methodology_version': f'{screen.methodology.name} v{screen.methodology.version}' if screen else 'Not screened',
+        'metrics': metrics,
+        'coverage': coverage,
+        'self_report_concentration': evidence_provenance.self_report_concentration(company_profile),
+        'evidence_concentration_warnings': evidence_provenance.evidence_concentration_warning(company_profile),
+        'disputed_count': disputed_count,
+        'open_conflicts_count': open_conflicts_count,
+        'monitoring_health': tracking,
+        'last_refresh_at': company_profile.last_refresh_at,
+    }
 
 
 def company_comparison_view(request):
@@ -136,6 +255,8 @@ def company_comparison_view(request):
     session = recorder.start_session(kind='company_discovery', user=request.user)
     with recorder.record_stage(session, 'comparison', 'Company Comparison', category='deterministic') as info:
         comparison = discovery_engine.compare_companies(profiles, criteria=criteria) if len(profiles) >= 2 else []
+        for row in comparison:
+            row['extras'] = _comparison_extras_for_company(row['company'])
         info['items_processed'] = len(comparison)
         info['metadata'] = {'slugs': slugs}
     recorder.finish_session(session, evidence_retrieved=len(comparison), final_recommendation_status='recorded')
