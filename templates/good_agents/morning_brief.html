@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Morning Brief — 114 Good Agents — EcoIQ{% endblock %}
+{% block meta_description_content %}Overnight Good Agent discovery run summary — signals reviewed, agents activated, qualified opportunities.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ga-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a;
+    max-width:1080px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .ga-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .ga-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .ga-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border:1px solid var(--border);
+    border-radius:8px; overflow:hidden; margin-bottom:1.2rem; }
+  .ga-kpi { padding:1rem; border-right:1px solid var(--border); background:var(--bg2); }
+  .ga-kpi:last-child { border-right:none; }
+  .ga-kpi .n { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:1.6rem; font-weight:800; }
+  .ga-kpi .l { font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-top:.3rem; }
+  .ga-card { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:.8rem 0; background:var(--bg2); }
+  .ga-card a { color:var(--text); text-decoration:none; font-weight:700; }
+  .ga-empty { color:var(--muted); padding:1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ga-wrap">
+  <div class="ga-eyebrow">ECOIQ · GOOD WHILE YOU SLEEP</div>
+  <h1 class="ga-h1">Morning Brief</h1>
+
+  {% if latest_run %}
+    <div class="ga-kpis">
+      <div class="ga-kpi"><div class="n">{{ latest_run.signals_reviewed }}</div><div class="l">Signals reviewed</div></div>
+      <div class="ga-kpi"><div class="n">{{ latest_run.agents_activated }}</div><div class="l">Agent activations</div></div>
+      <div class="ga-kpi"><div class="n">{{ latest_run.qualified_opportunities }}</div><div class="l">Qualified opportunities</div></div>
+      <div class="ga-kpi"><div class="n">{{ latest_run.zero_capital_opportunities }}</div><div class="l">Zero-capital opportunities</div></div>
+    </div>
+    <p class="ga-empty">Run "{{ latest_run.mission }}" completed {{ latest_run.completed_at }}. Estimated cost: ${{ latest_run.estimated_run_cost_usd|floatformat:2 }} of ${{ latest_run.cost_budget_usd|floatformat:2 }} budget.</p>
+    {% if latest_run.duplicates_removed or latest_run.rejected_opportunities or latest_run.insufficient_evidence_count %}
+    <p class="ga-empty">{{ latest_run.duplicates_removed }} duplicate(s) removed · {{ latest_run.rejected_opportunities }} rejected · {{ latest_run.insufficient_evidence_count }} flagged insufficient evidence.</p>
+    {% endif %}
+
+    <h2 style="font-size:1rem; color:var(--accent); margin-top:1.5rem;">Top 3 Actions Today</h2>
+    {% for action in top_3_actions %}
+      <div class="ga-card">
+        <a href="{% url 'good_agents:opportunity_detail' action.opportunity_id %}">{{ action.action }}</a>
+        <div class="ga-empty">{{ action.title }}</div>
+      </div>
+    {% empty %}
+      <p class="ga-empty">No decisions need your attention today.</p>
+    {% endfor %}
+
+    <h2 style="font-size:1rem; color:var(--muted); margin-top:1.5rem;">Top opportunities from this run</h2>
+    {% for opp in top_opportunities %}
+      <div class="ga-card">
+        <a href="{% url 'good_agents:opportunity_detail' opp.pk %}">{{ opp.title }}</a>
+        <div class="ga-empty">{{ opp.get_status_display }} · urgency {{ opp.urgency|floatformat:0 }} · confidence {{ opp.confidence|floatformat:0 }}</div>
+      </div>
+    {% endfor %}
+
+    <h2 style="font-size:1rem; color:var(--muted); margin-top:1.5rem;">Awaiting review ({{ awaiting_review|length }})</h2>
+    {% for opp in awaiting_review %}
+      <div class="ga-card">
+        <a href="{% url 'good_agents:opportunity_detail' opp.pk %}">{{ opp.title }}</a>
+        <div class="ga-empty">Next safe action: see Good Deed actions on the opportunity page.</div>
+      </div>
+    {% empty %}
+      <p class="ga-empty">Nothing awaiting review.</p>
+    {% endfor %}
+  {% else %}
+    <p class="ga-empty">No completed discovery run yet. Run <code>python manage.py run_almaty_good_agent_demo</code> to generate the first one.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{
+  "agent_name": "Good Agent Orchestrator",
+  "realistic_test_cases": [
+    {
+      "id": "GAO-01",
+      "title": "Almaty coal-to-clean-heating signal — 3 activated lenses, preserved disagreement",
+      "input": {
+        "signal_text": "High household heating costs and coal-smoke pollution across a pilot cohort of homes in the Almaty region.",
+        "geography": "Kazakhstan / Almaty region",
+        "activated_lenses": [
+          {"principle_id": 34, "name": "Illumination & Energy Transition", "mission": "Is the organisation moving toward clean energy with credible pace?"},
+          {"principle_id": 4, "name": "Protection of Vulnerable Groups", "mission": "What systems exist to prevent harm to people with lower power or legal standing?"},
+          {"principle_id": 45, "name": "Kneeling & Equitable Access", "mission": "Are products and services accessible to all — not only the privileged?"}
+        ]
+      },
+      "expected_output": {
+        "positions": [
+          {"principle_id": 34, "position": "support", "confidence": 75, "concern": "", "recommended_next_analysis": "Confirm technical feasibility and cost basis."},
+          {"principle_id": 4, "position": "support", "confidence": 70, "concern": "Vulnerable/elderly households need a subsidised path.", "recommended_next_analysis": ""},
+          {"principle_id": 45, "position": "concerns", "confidence": 55, "concern": "Without a subsidy mechanism, only already-advantaged households may benefit.", "recommended_next_analysis": ""}
+        ]
+      }
+    }
+  ]
+}

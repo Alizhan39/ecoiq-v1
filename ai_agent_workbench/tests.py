@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from agent_runtime_model_router.models import AgentRegistryEntry
+from ai_agent_council.agents import OPERATIONAL_AGENTS
 from ai_agent_council.models import CouncilRun
 from ai_agent_workbench.services import agent_data, demo_cases, recommender
 
@@ -24,12 +25,13 @@ class AgentDirectoryTests(TestCase):
     def setUpTestData(cls):
         _seed_all()
 
-    def test_all_twelve_operational_agents_visible(self):
+    def test_all_thirteen_operational_agents_visible(self):
         rows = agent_data.agent_directory_rows()
-        self.assertEqual(len(rows), 12)
+        self.assertEqual(len(rows), len(OPERATIONAL_AGENTS))
         names = {r['name'] for r in rows}
         self.assertIn('Waste & Leakage Agent', names)
         self.assertIn('Capital Allocation Agent', names)
+        self.assertIn('Good Agent Orchestrator', names)
 
     def test_no_duplicate_agent_registry_rows(self):
         agent_data.ensure_registry_synced()
@@ -70,7 +72,9 @@ class AgentDirectoryTests(TestCase):
         ):
             self.assertIn(chip, body)
         # Every agent card carries a distinct abstract avatar (no emoji, no generic icon reuse).
-        self.assertEqual(body.count('class="aiwb-avatar"'), 12)
+        # Count tracks OPERATIONAL_AGENTS directly rather than a hardcoded number, so a
+        # legitimately-registered new operational agent doesn't require a magic-number bump here.
+        self.assertEqual(body.count('class="aiwb-avatar"'), len(OPERATIONAL_AGENTS))
 
     def test_directory_avatars_all_render_without_template_leak(self):
         resp = self.client.get(reverse('ai_agent_workbench:directory'))
