@@ -71,6 +71,14 @@ class Command(BaseCommand):
     help = 'Runs the first Global Good Discovery overnight demo: 4 signals, noise rejection, resource matching, Morning Brief.'
 
     def handle(self, *args, **options):
+        from django.core.management import call_command
+        # This demo's signals are hand-tuned to match the 6 curated lenses
+        # (coal/heating/pollution/equitable-access keywords) — seeding just
+        # those 6 is correct here. A real-world signal stream (PR4's
+        # run_good_while_you_sleep) seeds all 114 instead, since real
+        # signals rarely match this narrow, Almaty-specific vocabulary.
+        call_command('seed_good_agent_definitions')
+
         mission, _ = GoodMission.objects.update_or_create(
             name=MISSION_NAME,
             defaults=dict(

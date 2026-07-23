@@ -657,7 +657,7 @@ class SignalCluster(models.Model):
     STATUS_CHOICES = [('open', 'Open'), ('triaged', 'Triaged'), ('discarded', 'Discarded')]
 
     representative_title = models.CharField(max_length=255)
-    signal_type = models.CharField(max_length=24, blank=True)
+    signal_type = models.CharField(max_length=30, blank=True)
     geography = models.CharField(max_length=150, blank=True)
     sector = models.CharField(max_length=100, blank=True)
     confidence_boost = models.FloatField(default=0.0)
@@ -691,13 +691,22 @@ class WorldSignal(models.Model):
         ('resource', 'Resource'), ('funding', 'Funding'), ('policy_change', 'Policy change'),
         ('technology_change', 'Technology change'), ('price_change', 'Price change'),
         ('opportunity', 'Opportunity'), ('emergency', 'Emergency'),
+        # PR4 Phase 3 — real-world signal classes emitted by real
+        # SignalProvider adapters. Additive: existing generic types above
+        # (used by PR2/PR3 fixtures/demos) are unchanged and still valid.
+        ('public_need', 'Public need'), ('environmental_risk', 'Environmental risk'),
+        ('resource_available', 'Resource available'), ('funding_available', 'Funding available'),
+        ('infrastructure_opportunity', 'Infrastructure opportunity'),
+        ('waste_or_unused_resource', 'Waste or unused resource'), ('community_need', 'Community need'),
+        # Never force a classification the evidence doesn't support (Phase 3).
+        ('unknown', 'Unknown / needs review'),
     ]
     CLASSIFICATION_CHOICES = [('fact', 'Fact'), ('claim', 'Claim'), ('inference', 'Inference')]
     STATUS_CHOICES = [
         ('new', 'New'), ('clustered', 'Clustered'), ('triaged', 'Triaged'), ('discarded', 'Discarded'),
     ]
 
-    signal_type = models.CharField(max_length=24, choices=TYPE_CHOICES)
+    signal_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
     title = models.CharField(max_length=255)
     summary = models.TextField(blank=True)
     geography = models.ForeignKey(
@@ -718,6 +727,12 @@ class WorldSignal(models.Model):
     # — never a hard FK, since raw evidence can live in any of the 3
     # existing Evidence models (harvester/hikma/league) or be manual.
     raw_evidence_ref = models.CharField(max_length=200, blank=True)
+    # PR4 Phase 4 (provenance) — the verbatim source text this signal was
+    # normalised FROM, truncated but never paraphrased. Answers "what
+    # exactly did the source say?" as distinct from `summary` (EcoIQ's own
+    # normalised restatement) and `content_classification` (whether that
+    # statement is being treated as fact/claim/inference).
+    source_excerpt = models.TextField(blank=True)
 
     confidence = models.FloatField(default=0.0)
     freshness = models.FloatField(default=0.0)
@@ -947,10 +962,18 @@ class ZeroCapitalStrategyAction(models.Model):
 
 
 class HumanReviewDecision(models.Model):
-    """Feedback loop (PR3 Phase 29) — tracks human review outcomes on an opportunity, never overwritten."""
+    """
+    Feedback loop (PR3 Phase 29, wired into prioritisation in PR4 Phase 12)
+    — tracks human review outcomes on an opportunity, never overwritten.
+    """
     DECISION_CHOICES = [
         ('approved', 'Approved'), ('rejected', 'Rejected'),
         ('deferred', 'Deferred'), ('needs_more_evidence', 'Needs more evidence'),
+        # PR4 Phase 12 — the vocabulary the PrioritisationEngine's
+        # deterministic feedback adjustment actually reads (see
+        # services/prioritisation.py). Additive alongside the 4 above.
+        ('useful', 'Useful'), ('not_useful', 'Not useful'), ('false_positive', 'False positive'),
+        ('duplicate', 'Duplicate'), ('high_priority', 'High priority'), ('not_actionable', 'Not actionable'),
     ]
 
     opportunity = models.ForeignKey(GoodOpportunity, on_delete=models.CASCADE, related_name='review_decisions')

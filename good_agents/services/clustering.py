@@ -16,13 +16,14 @@ _STOPWORDS = frozenset({
 TITLE_OVERLAP_THRESHOLD = 0.5
 
 
-def _keywords(title):
+def extract_keywords(title):
+    """Public: reused by services/matcher.py to require real keyword relevance before a generic-funding match."""
     words = re.findall(r'[a-z0-9]+', (title or '').lower())
     return {w for w in words if w not in _STOPWORDS and len(w) > 2}
 
 
 def _titles_overlap(title_a, title_b):
-    kw_a, kw_b = _keywords(title_a), _keywords(title_b)
+    kw_a, kw_b = extract_keywords(title_a), extract_keywords(title_b)
     if not kw_a or not kw_b:
         return False
     overlap = len(kw_a & kw_b) / min(len(kw_a), len(kw_b))

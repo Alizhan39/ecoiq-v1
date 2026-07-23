@@ -53,11 +53,13 @@ def opportunity_detail(request, pk):
 
 
 def morning_brief(request):
-    """PR2 Phase 13 + PR3 Phase 16-18 — assembled entirely from stored run/opportunity data, never fabricated numbers."""
+    """PR2 Phase 13 + PR3/PR4 Phase 16-18 — assembled entirely from stored run/opportunity data, never fabricated numbers."""
     latest_run = GoodDiscoveryRun.objects.filter(status='completed').order_by('-created_at').first()
     top_opportunities = []
     awaiting_review = []
     top_3_actions = []
+    observatory_summary = None
+    provider_health = list(SignalProvider.objects.all())
     if latest_run is not None:
         top_opportunities = list(
             latest_run.opportunities.order_by('-urgency', '-confidence')[:5]
@@ -66,10 +68,13 @@ def morning_brief(request):
             GoodOpportunity.objects.filter(status__in=['potential', 'qualified']).order_by('-urgency')[:10]
         )
         top_3_actions = morning_brief_service.top_3_actions(list(latest_run.opportunities.all()))
+        observatory_summary = morning_brief_service.build_brief(latest_run).get('observatory_summary')
     return render(request, 'good_agents/morning_brief.html', {
         'latest_run': latest_run,
         'top_opportunities': top_opportunities,
         'awaiting_review': awaiting_review,
+        'observatory_summary': observatory_summary,
+        'provider_health': provider_health,
         'top_3_actions': top_3_actions,
     })
 

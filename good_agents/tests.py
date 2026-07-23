@@ -831,3 +831,305 @@ class ObservatoryHealthApiTests(TestCase):
         data = response.json()
         self.assertEqual(data['active_count'], 1)
         self.assertEqual(data['failed_count'], 1)
+
+
+# ===========================================================================
+# === PR4 — Real-World Signal Ingestion + Autonomous Overnight Loop
+# ===========================================================================
+from unittest.mock import patch  # noqa: E402
+
+import httpx  # noqa: E402
+
+from good_agents.models import HumanReviewDecision  # noqa: E402
+from good_agents.services import human_review, ingestion, notify, provider_adapters, safe_http  # noqa: E402
+
+
+class SafeHttpSSRFTests(TestCase):
+    def test_rejects_non_https_scheme(self):
+        result = safe_http.safe_fetch('http://example.com/x', allowed_hosts={'example.com'})
+        self.assertFalse(result.success)
+        self.assertIn('blocked', result.error)
+
+    def test_rejects_host_not_in_allowlist(self):
+        result = safe_http.safe_fetch('https://evil.example.com/x', allowed_hosts={'good.example.com'})
+        self.assertFalse(result.success)
+        self.assertIn('not in allowlist', result.error)
+
+    def test_rejects_private_ip_resolution(self):
+        with patch('good_agents.services.safe_http.socket.getaddrinfo') as mock_resolve:
+            mock_resolve.return_value = [(2, 1, 6, '', ('127.0.0.1', 443))]
+            result = safe_http.safe_fetch('https://internal.example.com/x', allowed_hosts={'internal.example.com'})
+        self.assertFalse(result.success)
+        self.assertIn('non-public', result.error)
+
+    def test_never_raises_on_timeout(self):
+        with patch('good_agents.services.safe_http.httpx.Client') as mock_client:
+            mock_client.return_value.__enter__.return_value.get.side_effect = httpx.ConnectTimeout('timed out')
+            with patch('good_agents.services.safe_http.socket.getaddrinfo', return_value=[(2, 1, 6, '', ('93.184.216.34', 443))]):
+                result = safe_http.safe_fetch('https://example.com/x', allowed_hosts={'example.com'})
+        self.assertFalse(result.success)
+        self.assertIn('ConnectTimeout', result.error)
+
+    def test_rejects_oversized_response_via_content_length_header(self):
+        class _FakeResponse:
+            status_code = 200
+            is_redirect = False
+            headers = {'content-length': str(safe_http.MAX_RESPONSE_BYTES + 1)}
+            content = b''
+        with patch('good_agents.services.safe_http.httpx.Client') as mock_client:
+            mock_client.return_value.__enter__.return_value.get.return_value = _FakeResponse()
+            with patch('good_agents.services.safe_http.socket.getaddrinfo', return_value=[(2, 1, 6, '', ('93.184.216.34', 443))]):
+                result = safe_http.safe_fetch('https://example.com/x', allowed_hosts={'example.com'})
+        self.assertFalse(result.success)
+        self.assertIn('exceeds cap', result.error)
+
+
+class ProviderAdapterTests(TestCase):
+    def setUp(self):
+        call_command('seed_signal_providers')
+
+    def test_usgs_adapter_parses_real_shaped_response(self):
+        fixture = {
+            'features': [{
+                'id': 'us1234', 'properties': {
+                    'mag': 6.1, 'place': '10 km N of Testville', 'title': 'M 6.1 - 10 km N of Testville',
+                    'time': 1700000000000, 'status': 'reviewed', 'url': 'https://earthquake.usgs.gov/x',
+                },
+            }],
+        }
+        with patch('good_agents.services.provider_adapters.safe_fetch') as mock_fetch:
+            mock_fetch.return_value = safe_http.SafeFetchResult(success=True, json_data=fixture)
+            provider = SignalProvider.objects.get(slug='usgs-significant-earthquakes')
+            result = provider_adapters.fetch_usgs_significant_earthquakes(provider)
+        self.assertTrue(result.success)
+        self.assertEqual(len(result.raw_signals), 1)
+        self.assertEqual(result.raw_signals[0]['signal_type'], 'environmental_risk')
+        self.assertTrue(result.raw_signals[0]['asserted_as_fact'])
+
+    def test_adapter_skips_items_missing_required_fields_rather_than_guessing(self):
+        fixture = {'features': [{'id': 'us1', 'properties': {'place': 'Nowhere'}}]}  # no 'mag'
+        with patch('good_agents.services.provider_adapters.safe_fetch') as mock_fetch:
+            mock_fetch.return_value = safe_http.SafeFetchResult(success=True, json_data=fixture)
+            provider = SignalProvider.objects.get(slug='usgs-significant-earthquakes')
+            result = provider_adapters.fetch_usgs_significant_earthquakes(provider)
+        self.assertEqual(result.items_fetched, 1)
+        self.assertEqual(result.items_after_validation, 0)
+
+    def test_adapter_never_raises_returns_honest_failure(self):
+        with patch('good_agents.services.provider_adapters.safe_fetch') as mock_fetch:
+            mock_fetch.return_value = safe_http.SafeFetchResult(success=False, error='network unreachable')
+            provider = SignalProvider.objects.get(slug='usgs-significant-earthquakes')
+            result = provider_adapters.fetch_usgs_significant_earthquakes(provider)
+        self.assertFalse(result.success)
+        self.assertIn('network unreachable', result.error)
+
+    def test_unregistered_provider_slug_is_honest_failure_not_silent(self):
+        provider = SignalProvider.objects.create(slug='unregistered-provider', name='X', provider_type='news')
+        result = provider_adapters.fetch_from_provider(provider)
+        self.assertFalse(result.success)
+        self.assertIn('No registered adapter', result.error)
+
+    def test_adapter_bug_is_isolated_not_propagated(self):
+        provider = SignalProvider.objects.get(slug='usgs-significant-earthquakes')
+        with patch.dict(provider_adapters.PROVIDER_ADAPTERS, {'usgs-significant-earthquakes': lambda p: 1 / 0}):
+            result = provider_adapters.fetch_from_provider(provider)
+        self.assertFalse(result.success)
+        self.assertIn('ZeroDivisionError', result.error)
+
+
+class IngestionOrchestrationTests(TestCase):
+    def setUp(self):
+        call_command('seed_signal_providers')
+
+    def test_one_provider_failure_does_not_stop_others(self):
+        def fake_fetch(provider):
+            if provider.slug == 'uk-ea-flood-monitoring':
+                return provider_adapters.ProviderFetchResult(success=False, error='simulated timeout')
+            return provider_adapters.ProviderFetchResult(
+                success=True, raw_signals=[{
+                    'signal_type': 'environmental_risk', 'title': f'Signal from {provider.slug}',
+                    'summary': 'x', 'confidence': 50.0, 'severity': 50.0,
+                }],
+                items_fetched=1, items_after_validation=1,
+            )
+        with patch('good_agents.services.ingestion.fetch_from_provider', side_effect=fake_fetch):
+            raw_signals, reports = ingestion.fetch_due_signals()
+
+        self.assertEqual(len(raw_signals), 2)  # the 2 non-failing providers
+        failed_reports = [r for r in reports if not r['success']]
+        self.assertEqual(len(failed_reports), 1)
+        self.assertEqual(failed_reports[0]['slug'], 'uk-ea-flood-monitoring')
+
+        flood_provider = SignalProvider.objects.get(slug='uk-ea-flood-monitoring')
+        self.assertEqual(flood_provider.status, 'failed')
+        self.assertIn('simulated timeout', flood_provider.last_failure_reason)
+
+    def test_successful_provider_marked_refreshed(self):
+        def fake_fetch(provider):
+            return provider_adapters.ProviderFetchResult(success=True, raw_signals=[], items_fetched=0, items_after_validation=0)
+        with patch('good_agents.services.ingestion.fetch_from_provider', side_effect=fake_fetch):
+            ingestion.fetch_due_signals()
+        provider = SignalProvider.objects.first()
+        self.assertEqual(provider.status, 'active')
+        self.assertIsNotNone(provider.last_refresh_at)
+
+
+class ProvenanceTests(TestCase):
+    def test_source_excerpt_preserved_verbatim(self):
+        raw = _raw_signal(source_excerpt='The exact sentence the source published.')
+        signal, _ = signal_service.normalise_signal(raw)
+        self.assertEqual(signal.source_excerpt, 'The exact sentence the source published.')
+
+    def test_unknown_signal_type_routed_to_needs_review_not_discarded(self):
+        s1, _ = signal_service.normalise_signal(_raw_signal(signal_type='unknown', title='Ambiguous report', source_url='https://a.example/unk'))
+        cluster, _ = clustering.assign_to_cluster(s1)
+        self.assertEqual(discovery_engine._triage_cluster(cluster), 'needs_review')
+
+
+class PromiscuousResourceMatchTests(TestCase):
+    """
+    Regression coverage for a real false-positive caught during PR4's own
+    live-data testing: a Californian earthquake scored as "matched" to an
+    unrelated UK home-energy grant purely because both fall under the
+    broad energy/environment category.
+    """
+    def test_unrelated_generic_funding_resource_never_matches(self):
+        need, _ = need_resource.create_need(need_type='environment', title='M 6.1 earthquake near Testville')
+        need_resource.create_resource(
+            resource_type='government_programme', title='Warm Homes Local Grant for energy efficiency',
+            evidence_refs=['r'], capacity='x',
+        )
+        result = matcher.match_need(need)
+        self.assertEqual(len(result), 0)
+
+    def test_generic_overlap_word_alone_is_not_enough(self):
+        need, _ = need_resource.create_need(need_type='environment', title='New earthquake report near Testville')
+        need_resource.create_resource(
+            resource_type='government_programme', title='New funding scheme for flood defence',
+            evidence_refs=['r'], capacity='x',
+        )
+        result = matcher.match_need(need)
+        self.assertEqual(len(result), 0)  # only shared word is the generic "new"
+
+    def test_genuinely_relevant_generic_funding_resource_still_matches(self):
+        need, _ = need_resource.create_need(need_type='energy', title='Heating poverty need')
+        need_resource.create_resource(
+            resource_type='government_programme', title='Heating efficiency grant for households',
+            evidence_refs=['r'], capacity='x',
+        )
+        result = matcher.match_need(need)
+        self.assertEqual(len(result), 1)
+
+    def test_non_promiscuous_resource_type_unaffected(self):
+        need, _ = need_resource.create_need(need_type='waste', title='Unrelated waste need')
+        need_resource.create_resource(resource_type='waste_heat', title='Totally different title', evidence_refs=['r'], capacity='x')
+        result = matcher.match_need(need)
+        self.assertEqual(len(result), 1)
+
+
+class HumanFeedbackPrioritisationTests(TestCase):
+    def test_repeated_false_positive_reduces_ranking_confidence(self):
+        opp1 = GoodOpportunity.objects.create(title='x', problem_statement='x', theme='energy', sector='Seismic', confidence=70.0)
+        for _ in range(2):
+            other = GoodOpportunity.objects.create(title='y', problem_statement='y', theme='energy', sector='Seismic', confidence=70.0)
+            human_review.submit_review(other, 'false_positive', rationale='Not relevant.')
+        result = prioritisation.prioritise(opp1)
+        self.assertLess(result.dimensions['adjusted_confidence'], opp1.confidence)
+        self.assertTrue(result.feedback_reasons)
+
+    def test_repeated_useful_boosts_ranking_confidence(self):
+        opp1 = GoodOpportunity.objects.create(title='x', problem_statement='x', theme='housing', sector='Retrofit', confidence=50.0)
+        for _ in range(2):
+            other = GoodOpportunity.objects.create(title='y', problem_statement='y', theme='housing', sector='Retrofit', confidence=50.0)
+            human_review.submit_review(other, 'useful')
+        result = prioritisation.prioritise(opp1)
+        self.assertGreater(result.dimensions['adjusted_confidence'], opp1.confidence)
+
+    def test_never_mutates_stored_confidence(self):
+        opp = GoodOpportunity.objects.create(title='x', problem_statement='x', theme='energy', confidence=70.0)
+        human_review.submit_review(opp, 'false_positive')
+        human_review.submit_review(opp, 'false_positive')
+        prioritisation.prioritise(opp)
+        opp.refresh_from_db()
+        self.assertEqual(opp.confidence, 70.0)
+
+    def test_submit_review_rejects_unknown_decision(self):
+        opp = GoodOpportunity.objects.create(title='x', problem_statement='x')
+        with self.assertRaises(ValueError):
+            human_review.submit_review(opp, 'not_a_real_decision')
+
+
+class NotificationDedupTests(TestCase):
+    def test_urgent_opportunity_creates_one_notification(self):
+        opp = GoodOpportunity.objects.create(title='Urgent test', problem_statement='x', urgency=90.0, confidence=50.0)
+        result = prioritisation.prioritise(opp)
+        created = notify.notify_for_opportunity(opp, result)
+        self.assertEqual(len(created), 1)
+
+    def test_calling_twice_does_not_duplicate(self):
+        opp = GoodOpportunity.objects.create(title='Urgent test 2', problem_statement='x', urgency=90.0, confidence=50.0)
+        result = prioritisation.prioritise(opp)
+        notify.notify_for_opportunity(opp, result)
+        notify.notify_for_opportunity(opp, result)
+        from notifications.models import AdminNotification
+        count = AdminNotification.objects.filter(
+            source_type='good_agents_opportunity', source_object_id=str(opp.pk), metadata__reason='urgent_public_need',
+        ).count()
+        self.assertEqual(count, 1)
+
+    def test_non_urgent_opportunity_creates_no_urgent_notification(self):
+        opp = GoodOpportunity.objects.create(title='Calm test', problem_statement='x', urgency=10.0, confidence=10.0)
+        result = prioritisation.prioritise(opp)
+        notify.notify_for_opportunity(opp, result)
+        from notifications.models import AdminNotification
+        self.assertFalse(AdminNotification.objects.filter(metadata__reason='urgent_public_need').exists())
+
+
+class ObservatoryReuseTests(TestCase):
+    def test_discovery_run_creates_observatory_session_with_no_anchor(self):
+        from ai_observatory.models import AnalysisSession, NO_ANCHOR_ALLOWED_KINDS
+        self.assertIn('good_agents_discovery', NO_ANCHOR_ALLOWED_KINDS)
+
+        call_command('seed_good_agent_definitions')
+        mission = GoodMission.objects.create(name='Observatory Test Mission', run_cost_budget_usd=5.0, min_confidence=30.0)
+        raw_signals = [_raw_signal(title='Coal heating pollution harms households', severity=70.0, confidence=60.0)]
+        run, _ = run_global_discovery(mission, raw_signals, idempotency_key='observatory-test-run')
+
+        session_ref = run.stage_checkpoints.get('_observatory_session_reference', '')
+        self.assertTrue(session_ref.startswith('ai_observatory.AnalysisSession:'))
+        session = AnalysisSession.objects.get(pk=session_ref.split(':')[-1])
+        self.assertEqual(session.kind, 'good_agents_discovery')
+        self.assertIsNone(session.project)
+        self.assertIsNone(session.company)
+        self.assertEqual(session.status, 'completed')
+        self.assertGreater(session.stages.count(), 0)
+
+
+class EvidenceMemoryBoundaryTests(TestCase):
+    def test_raw_world_signal_never_becomes_evidence_memory_automatically(self):
+        """Phase 20 — only verified/reviewed outcomes become reusable learning evidence, never a raw WorldSignal."""
+        signal, _ = signal_service.normalise_signal(_raw_signal(title='Some raw unverified claim'))
+        self.assertFalse(EvidenceMemory.objects.filter(text_chunk__icontains='Some raw unverified claim').exists())
+
+
+class GoodWhileYouSleepCommandTests(TestCase):
+    def test_command_runs_with_no_enabled_missions(self):
+        from io import StringIO
+        out = StringIO()
+        call_command('run_good_while_you_sleep', stdout=out)
+        self.assertIn('No enabled GoodMission found', out.getvalue())
+
+    def test_command_is_idempotent_same_day(self):
+        call_command('seed_global_monitoring_mission')
+        with patch('good_agents.services.ingestion.fetch_due_signals', return_value=([], [])):
+            call_command('run_good_while_you_sleep')
+            run_count_after_first = GoodDiscoveryRun.objects.count()
+            call_command('run_good_while_you_sleep')
+            self.assertEqual(GoodDiscoveryRun.objects.count(), run_count_after_first)
+
+    def test_seeds_all_114_and_real_providers(self):
+        call_command('seed_global_monitoring_mission')
+        with patch('good_agents.services.ingestion.fetch_due_signals', return_value=([], [])):
+            call_command('run_good_while_you_sleep')
+        self.assertEqual(GoodAgentDefinition.objects.count(), 114)
+        self.assertEqual(SignalProvider.objects.count(), 3)

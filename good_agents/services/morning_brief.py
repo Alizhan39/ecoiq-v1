@@ -102,6 +102,25 @@ def build_brief(run):
 
     ranked_top = sorted(opportunities, key=lambda o: (-o.urgency, -o.confidence))[:5]
 
+    # PR4 Phase 16 — compute/Observatory summary, read straight from the
+    # AI Observatory session this run recorded into (Phase 7 — no second
+    # telemetry system). Absent gracefully if telemetry recording failed
+    # (start_session never raises, but can return None).
+    observatory_summary = None
+    session_ref = run.stage_checkpoints.get('_observatory_session_reference', '')
+    if session_ref.startswith('ai_observatory.AnalysisSession:'):
+        from ai_observatory.models import AnalysisSession
+        session = AnalysisSession.objects.filter(pk=session_ref.split(':')[-1]).first()
+        if session is not None:
+            observatory_summary = {
+                'session_reference': session_ref,
+                'duration_ms': session.duration_ms,
+                'deterministic_stage_count': session.deterministic_stage_count,
+                'model_call_count': session.model_call_count,
+                'deterministic_step_ratio': session.deterministic_step_ratio,
+                'status': session.status,
+            }
+
     return {
         'run_id': run.pk,
         'mission': run.mission,
@@ -126,4 +145,5 @@ def build_brief(run):
         'watch_list': [_opportunity_summary(o) for o in watch_list],
         'top_opportunities': [_opportunity_summary(o) for o in ranked_top],
         'top_3_actions_today': top_3_actions(opportunities),
+        'observatory_summary': observatory_summary,
     }

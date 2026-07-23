@@ -79,3 +79,68 @@ duplicated).
   `completed` without `human_approved=True`; RED is unconditionally
   rejected) and by the unmodified existing
   `CapitalAllocationDecision.approval_status='pending'` default.
+
+## Network security for real ingestion (PR4 Phase 21)
+
+PR4 introduces the first outbound network calls this app makes. Threats
+and mitigations, all in `good_agents/services/safe_http.py`:
+
+- **SSRF**: every fetch validates scheme (`https` only), validates the
+  hostname against the calling adapter's own fixed `allowed_hosts` set
+  (never derived from user input — there is no code path from a user
+  request to a fetched URL anywhere in this app), AND resolves the
+  hostname and rejects private/loopback/link-local/multicast/reserved IP
+  ranges before connecting. Tested:
+  `good_agents.tests.SafeHttpSSRFTests`.
+- **Redirect abuse**: redirects are followed manually, one hop at a time
+  (`follow_redirects=False` on the underlying `httpx.Client`), with the
+  SAME scheme/host/IP validation re-run on every hop's target, capped at
+  `MAX_REDIRECTS=3`. A redirect to an unlisted host is blocked, not followed.
+- **Oversized documents / decompression bombs**: `Content-Length` is
+  checked before the body is read; the actual body size is checked again
+  after; both against `MAX_RESPONSE_BYTES` (5 MB, matching
+  `harvester.services.fetchers.MAX_RESPONSE_BYTES`'s existing precedent).
+- **Provider timeout**: a bounded `httpx.Timeout` (5s connect / 15s read);
+  a timeout is a normal, isolated provider failure
+  (`ProviderFetchResult(success=False, ...)`), never an unhandled
+  exception. **Verified live, not just in tests**: the UK Environment
+  Agency provider genuinely timed out once during this PR's own
+  development session, was correctly recorded as `status='failed'` with
+  the real error message, and did not affect the other 2 providers or
+  the overall run (see `docs/REAL_SIGNAL_INGESTION.md`).
+- **Poisoned source content / HTML-script injection**: every provider
+  parses a structured JSON API response, never HTML — there is no HTML
+  parsing or script-execution path in `provider_adapters.py` at all. Raw
+  text (`source_excerpt`, `summary`) is stored as plain Django model
+  `TextField` values and rendered through Django's auto-escaping template
+  layer wherever displayed — never marked `safe`, never rendered raw.
+- **Duplicate replay**: unchanged from PR3 — `WorldSignal.dedup_key` +
+  `source_url` prevents the same fetched item from creating a second row
+  (see `services/signals.normalise_signal`).
+- **No API keys in telemetry**: none of the 3 real providers require an
+  API key (a deliberate selection criterion — see
+  `docs/REAL_SIGNAL_INGESTION.md`); `AgentActivationRecord`/
+  `PipelineStageExecution` metadata never includes request headers or
+  credentials, only counts and durations.
+- **No private source ingestion**: all 3 providers are public,
+  no-authentication APIs; nothing in this PR reads from an
+  authenticated/private source.
+- **Prompt/response leakage**: unchanged from PR3 — the Layer 4 reasoning
+  call's `simulated_demo` mode only ever replays a hand-authored
+  `fixture_output`; no real provider text is ever piped into an LLM
+  prompt in this PR (real `execution_mode='live'` reasoning is available
+  per PR2/PR3's existing `agent_runtime_model_router` plumbing but not
+  exercised by any command in this PR).
+
+## Permissions (PR4)
+
+`good_agents.views.good_map_api` and `.observatory_health_api` are
+unauthenticated, matching the existing PR2/PR3 `opportunity_list`/
+`opportunity_detail`/`morning_brief` views (none of this app's views are
+staff-gated). This is a deliberate, unchanged choice: every field these
+views expose is already non-sensitive and aggregate (region-level
+geography, confidence/urgency scores, provider status) — no precise
+location, no individual-level data, no credential, ever appears in any
+`good_agents` response. If a future PR adds a field that IS sensitive,
+that view must be gated with `@staff_member_required` at that time — this
+is a live constraint on future work, not a closed decision.
