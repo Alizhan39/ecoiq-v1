@@ -48,7 +48,12 @@ from django.utils import timezone
 # bare name it can see — a nested class body cannot see its enclosing
 # class's own attributes by bare name. "Both anchors" remains invalid for
 # every kind, including these.
-NO_ANCHOR_ALLOWED_KINDS = ('company_discovery', 'evidence_review_workbench')
+#
+# 'good_agents_discovery' (114 Good Agents PR4) added for the same reason:
+# a GlobalGoodDiscoveryEngine run spans many candidate signals/opportunities
+# across potentially many countries/sectors at once — it has no single
+# GoldProject or CompanyProfile to anchor to either.
+NO_ANCHOR_ALLOWED_KINDS = ('company_discovery', 'evidence_review_workbench', 'good_agents_discovery')
 
 
 class AnalysisSession(models.Model):
@@ -63,6 +68,7 @@ class AnalysisSession(models.Model):
         ('company_discovery', 'Company Discovery / Ranking (Filtering, Comparison, Explain Match)'),
         ('evidence_review_workbench', 'Evidence Review Workbench (Queue, Decision, Dispute, Re-Review)'),
         ('stewardship_refresh', 'Stewardship Universe Refresh (Source Discovery / Fetch / KPI Candidates)'),
+        ('good_agents_discovery', 'Good Agents Global Discovery Run (Signal Ingestion / 114-Principle Activation)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [

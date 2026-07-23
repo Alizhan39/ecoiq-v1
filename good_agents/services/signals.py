@@ -95,6 +95,7 @@ def normalise_signal(raw, provider=None):
         publisher=raw.get('publisher', ''),
         published_at=raw.get('published_at'),
         raw_evidence_ref=raw.get('raw_evidence_ref', ''),
+        source_excerpt=(raw.get('source_excerpt', '') or '')[:4000],
         confidence=raw.get('confidence', 0.0),
         freshness=compute_freshness(raw.get('published_at')),
         severity=raw.get('severity', 0.0),

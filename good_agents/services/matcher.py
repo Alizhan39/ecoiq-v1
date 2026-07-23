@@ -9,6 +9,7 @@ never matched at all, regardless of how similar the text sounds.
 from dataclasses import dataclass, field
 
 from good_agents.models import ResourceMatch
+from good_agents.services.clustering import extract_keywords
 
 # Which resource types can plausibly satisfy which need type. Deliberately
 # conservative — a type not listed here never scores above 0 for that need,
@@ -40,6 +41,20 @@ ZERO_CAPITAL_RESOURCE_TYPES = frozenset({
     'building', 'land', 'public_infrastructure', 'technology',
 })
 
+# These resource types are compatible with almost every need category
+# (a "government programme" or "grant" can fund nearly anything), so
+# type-compatibility alone is too coarse to call it a real match — real-
+# world testing surfaced exactly this: a Californian earthquake scoring as
+# "matched" to an unrelated UK home-energy grant purely because both fall
+# under the broad energy/environment category. For these types only, we
+# additionally REQUIRE the need and resource titles to share a real
+# keyword — never claim a match merely because a category overlaps
+# (Phase 9/10's explicit warning against exactly this failure mode).
+PROMISCUOUS_RESOURCE_TYPES = frozenset({
+    'government_programme', 'grant', 'subsidy', 'capital', 'impact_investment',
+    'islamic_finance', 'philanthropy', 'waqf',
+})
+
 
 @dataclass
 class MatchScore:
@@ -49,9 +64,29 @@ class MatchScore:
     next_action: str = ''
 
 
+# Words too generic to count as "shared subject matter" for the
+# promiscuous-type relevance check below — real-world testing surfaced a
+# UK flood-funding scheme "matching" an unrelated Papua New Guinea
+# earthquake purely on the shared word "new". Clustering's general
+# extract_keywords() correctly keeps these for title-similarity (where
+# they're one signal among several); this stricter, narrower list is only
+# for "is this funding resource actually about the same subject as this
+# need", where a single generic word is not evidence of that.
+_GENERIC_WORDS = frozenset({
+    'new', 'more', 'under', 'system', 'systems', 'scheme', 'schemes', 'ahead', 'local', 'national',
+    'fund', 'funds', 'funding', 'programme', 'programmes', 'grant', 'grants', 'support', 'improve',
+    'improving', 'improvement', 'improvements',
+})
+
+
 def score_match(need, resource):
     if resource.resource_type not in NEED_TYPE_TO_RESOURCE_TYPES.get(need.need_type, set()):
         return None  # not a plausible match at all — never scored, never persisted
+
+    if resource.resource_type in PROMISCUOUS_RESOURCE_TYPES:
+        shared_keywords = (extract_keywords(need.title) & extract_keywords(resource.title)) - _GENERIC_WORDS
+        if not shared_keywords:
+            return None  # category overlaps, but nothing in the actual subject matter does — not a real match
 
     if resource.is_expired():
         # Temporal memory (Phase 28): a resource that was open and is now

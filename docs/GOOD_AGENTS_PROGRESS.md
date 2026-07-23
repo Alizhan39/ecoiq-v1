@@ -172,3 +172,96 @@ urgent/zero-capital `GoodOpportunity` events into the existing
 `notifications.AdminNotification` model (already real and working — a
 small, safe, additive follow-up). Both are scoped and don't touch anything
 built in PR2 or PR3.
+
+---
+
+## PR4 — Real-World Signal Ingestion + Autonomous Overnight Loop
+
+**Important context**: PR2 and PR3 were never actually merged (or even
+pushed) before PR4 began — they existed only as uncommitted local changes
+on an unrelated branch. Before any PR4 work started, that was corrected:
+a clean branch (`feat/114-good-agents`) was created off the current
+`main` (which had gained 42 unrelated commits, including a brand-new
+`ai_observatory` app and a `company_intelligence` app), the PR2/3 work was
+ported onto it, verified with the full 3019-test suite, and opened as
+PR #187 (unmerged, per instructions). PR4 builds on top of that branch.
+
+### What PR4 built
+
+| Capability | Status |
+|---|---|
+| Real `SignalProvider` adapters (Phase 1-2) | **DONE** — 3 real, live, no-auth public APIs (USGS earthquakes, GOV.UK search, UK EA flood monitoring), `services/provider_adapters.py`, never raise, isolated per-provider |
+| SSRF-hardened fetch (Phase 21) | **DONE** — `services/safe_http.py`: scheme/host allowlist, private-IP rejection, manual redirect validation, size cap, bounded timeout |
+| Real signal types (Phase 3) | **DONE** — 8 new `WorldSignal.TYPE_CHOICES` added (additive), `unknown` routes to a new `needs_review` triage bucket rather than being forced/discarded |
+| Provenance (Phase 4) | **DONE** — new `WorldSignal.source_excerpt` field (verbatim source text, separate from EcoIQ's own `summary`) |
+| Real ingestion orchestration (Phase 5) | **DONE** — `services/ingestion.fetch_due_signals`, per-provider failure isolation, updates real `SignalProvider` health fields |
+| 114-agent activation at real scale (Phase 6-7) | **DONE** — verified `max_activated` still caps at 6 even with all 114 seeded, against real signals |
+| Cost/observability via AI Observatory (Phase 7) | **DONE** — reused, not duplicated: added `good_agents_discovery` to `ai_observatory`'s `AnalysisSession.KIND_CHOICES` + `NO_ANCHOR_ALLOWED_KINDS`; every discovery run now records real `PipelineStageExecution`/`ModelInvocation` rows |
+| No fabricated opportunities (Phase 8) | **DONE** — a real bug (opportunities created with zero activated lenses) was caught via live-data testing and fixed |
+| Need/resource/funding matching at real scale (Phase 9-11) | **DONE**, with a real false-positive found and fixed (see `docs/REAL_SIGNAL_INGESTION.md`) — generic funding-type resources now require real keyword relevance, not just category overlap |
+| Human feedback → prioritisation (Phase 12) | **DONE** — `services/human_review.py` + `services/prioritisation.py`'s deterministic, documented `_pattern_feedback` adjustment; opportunity's own stored confidence never mutated |
+| Notifications (Phase 13) | **DONE** — reuses `notifications.AdminNotification` (added one `SOURCE_TYPE_CHOICES` entry), deduplicated per (opportunity, reason) |
+| `run_good_while_you_sleep` (Phase 14) | **DONE** — real command, run live against all 3 providers repeatedly during this PR's development |
+| Scheduling (Phase 15) | **SCHEDULER READY, NOT ACTIVE** — disabled-by-default Render cron block added, mirroring the existing `ecoiq-stewardship-monitor` precedent exactly |
+| Morning Brief v3 (Phase 16) | **DONE** — added Compute/Observatory summary + signal provider health sections, real data confirmed via browser screenshot |
+| Global Good Map data (Phase 17) | **UNCHANGED from PR3** — already real, no map UI added (explicitly secondary) |
+| Dogfood mission run for real (Phase 18) | **DONE** — actually run against the live signal batch (not just seeded as PR3 left it); result was an honest set of qualified earthquake opportunities with zero resource matches — a valid, non-fabricated outcome |
+| First real overnight demo (Phase 19) | **DONE** — `run_good_while_you_sleep`, live sources, reproducible |
+| Evidence Memory boundary (Phase 20) | **DONE, verified** — a raw `WorldSignal` never automatically becomes `EvidenceMemory`; explicit regression test |
+| Security (Phase 21) | **DONE** — see `docs/GOOD_AGENT_SAFETY.md`'s new Network Security section |
+| Methodology (Phase 22) | **DONE** — `docs/REAL_SIGNAL_INGESTION.md` |
+
+### Tests / build (PR4)
+
+- 30 new tests appended to `good_agents/tests.py` (123 total in the app),
+  covering: SSRF blocking (non-https, unlisted host, private-IP
+  resolution, oversized response, timeout), provider adapter parsing +
+  honest-failure-on-malformed-input + adapter-bug isolation, ingestion
+  per-provider failure isolation, provenance (`source_excerpt`, `unknown`
+  → `needs_review`), the promiscuous-resource-type regression (4 tests
+  reproducing and fixing the exact false-positive found live), human
+  feedback → prioritisation adjustment (never mutates stored confidence),
+  notification dedup, AI Observatory session creation with no
+  project/company anchor, Evidence Memory boundary, and the
+  `run_good_while_you_sleep` command (no-missions case, idempotency,
+  seeds 114 + 3 providers).
+- Full repo suite: run at the end of this PR — see final chat report for
+  the exact count (was 3019 before PR4's own additions).
+- `python manage.py check` — clean. `makemigrations --check --dry-run` —
+  no missing migrations.
+- 2 new migrations this PR: `good_agents/migrations/0003_worldsignal_source_excerpt_and_more.py`,
+  `good_agents/migrations/0004_alter_humanreviewdecision_decision.py`, plus
+  one each in `ai_observatory` (new `AnalysisSession.kind` choice) and
+  `notifications` (new `AdminNotification.source_type` choice) — all
+  additive.
+
+### Known gaps (do not assume otherwise)
+
+- Only 3 real providers, all UK/global-public-data — no company
+  disclosure, no procurement-notice, no institutional-dataset provider
+  implemented yet (explicitly "start with 3-5 bounded provider types").
+- No real funding-deadline data → "funding match approaching deadline"
+  notifications are not implemented (would require fabricating a
+  deadline the actual GOV.UK search results don't reliably provide).
+- `run_good_while_you_sleep` is SCHEDULER READY, not ACTIVE — the Render
+  cron block is commented out, same as the pre-existing Celery worker and
+  Stewardship Monitor blocks.
+- The live demo's 3 providers happen not to share subject matter today
+  (global earthquakes vs. UK domestic energy/flood grants) — every real
+  run during this PR's development correctly produced ZERO resource
+  matches, an honest "no verified match found" result rather than a
+  forced positive one. The matching logic's positive case is proven via
+  unit tests (`PromiscuousResourceMatchTests.test_genuinely_relevant_generic_funding_resource_still_matches`
+  and the full `NeedResourceMatcherTests`/`CircularEconomyMatcherTests`
+  suites from PR3), not the live demo.
+- Cross-border discovery, real global comparison integration, and the
+  remaining named-stub specialist agents (`docs/GOOD_AGENT_SAFETY.md`)
+  are unchanged from PR3 — not attempted in PR4.
+
+### Recommended next PR
+
+Add a 4th real provider with genuine subject-matter overlap with an
+existing one (e.g. a real disaster-relief/emergency-funding feed, which
+would give the earthquake signals a real chance at a non-empty resource
+match) — this would be the cleanest way to demonstrate the positive
+resource-match case end-to-end with live data rather than only in tests.

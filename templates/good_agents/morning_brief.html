@@ -65,8 +65,31 @@
     {% empty %}
       <p class="ga-empty">Nothing awaiting review.</p>
     {% endfor %}
+
+    <h2 style="font-size:1rem; color:var(--muted); margin-top:1.5rem;">Compute / Observatory summary</h2>
+    {% if observatory_summary %}
+      <div class="ga-card">
+        <div class="ga-empty">
+          Session: {{ observatory_summary.session_reference }} · duration {{ observatory_summary.duration_ms }}ms ·
+          {{ observatory_summary.deterministic_stage_count }} deterministic stage(s) ·
+          {{ observatory_summary.model_call_count }} real model call(s)
+          {% if observatory_summary.deterministic_step_ratio %}· {{ observatory_summary.deterministic_step_ratio|floatformat:2 }} deterministic-step ratio{% endif %}
+        </div>
+      </div>
+    {% else %}
+      <p class="ga-empty">No AI Observatory telemetry recorded for this run.</p>
+    {% endif %}
+
+    <h2 style="font-size:1rem; color:var(--muted); margin-top:1.5rem;">Signal provider health</h2>
+    {% for provider in provider_health %}
+      <div class="ga-card">
+        {{ provider.name }} <span class="ga-empty">— {{ provider.get_status_display }}{% if provider.last_failure_reason %} ({{ provider.last_failure_reason }}){% endif %}</span>
+      </div>
+    {% empty %}
+      <p class="ga-empty">No signal providers registered yet. Run <code>python manage.py seed_signal_providers</code>.</p>
+    {% endfor %}
   {% else %}
-    <p class="ga-empty">No completed discovery run yet. Run <code>python manage.py run_almaty_good_agent_demo</code> to generate the first one.</p>
+    <p class="ga-empty">No completed discovery run yet. Run <code>python manage.py run_good_while_you_sleep</code> (real live sources) or <code>python manage.py run_almaty_good_agent_demo</code> (fixture demo) to generate the first one.</p>
   {% endif %}
 </div>
 {% endblock %}

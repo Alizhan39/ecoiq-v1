@@ -25,6 +25,7 @@ SOURCE_TYPE_CHOICES = [
     ('newsletter',        'Newsletter Signup'),
     ('contact',           'Contact Form'),
     ('background_task',   'Background Intelligence Task'),
+    ('good_agents_opportunity', '114 Good Agents — Opportunity / Discovery Event'),
     ('other',             'Other'),
 ]
 

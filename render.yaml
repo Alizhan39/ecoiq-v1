@@ -167,3 +167,38 @@ databases:
 #       - key: COMPANIES_HOUSE_API_KEY
 #         sync: false
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Good While You Sleep — 114 Good Agents overnight discovery — NOT enabled by
+# default. SCHEDULER READY, not SCHEDULER ACTIVE (see docs/GOOD_WHILE_YOU_SLEEP.md)
+# until this block is uncommented — same discipline as the two blocks above.
+#
+# Fetches from the 3 real, bounded public SignalProviders (USGS significant
+# earthquakes, GOV.UK grant/funding search, UK Environment Agency flood
+# monitoring — see good_agents/services/provider_adapters.py), runs every
+# enabled GoodMission through the GlobalGoodDiscoveryEngine, and prints the
+# Morning Brief. Idempotent per (mission, run-date): re-running the same day
+# is a no-op for any mission that already completed. One provider's failure
+# never stops the others (see good_agents/services/ingestion.py).
+#
+# services:
+#   - type: cron
+#     name: ecoiq-good-while-you-sleep
+#     env: python
+#     region: oregon
+#     plan: starter
+#     schedule: "0 5 * * *"              # once daily, 05:00 UTC — adjust to taste
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: python manage.py run_good_while_you_sleep
+#     envVars:
+#       - key: PYTHON_VERSION
+#         value: "3.11.0"
+#       - key: DJANGO_SETTINGS_MODULE
+#         value: ecoiq.settings
+#       - key: DJANGO_SECRET_KEY
+#         sync: false                    # copy the same value as the `ecoiq` web service
+#       - key: DATABASE_URL
+#         fromDatabase:
+#           name: ecoiq-db
+#           property: connectionString
+# ══════════════════════════════════════════════════════════════════════════════
