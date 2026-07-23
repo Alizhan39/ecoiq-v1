@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Good Opportunities — EcoIQ{% endblock %}
+{% block meta_description_content %}Good Opportunities discovered by the 114 Good Agent principle lenses — evidence-checked, never fabricated.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ga-wrap { --bg:#070b0f; --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0;
+    --muted:#94a3b8; --accent:#00e89a; --warn:#f4a261;
+    max-width:1080px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .ga-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .ga-h1 { font-size:1.6rem; font-weight:800; margin:.3rem 0 1rem; }
+  .ga-filters a { color:var(--muted); text-decoration:none; margin-right:1rem; font-size:.85rem; }
+  .ga-filters a.active { color:var(--accent); font-weight:700; }
+  .ga-card { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:.8rem 0;
+    background:var(--bg2); }
+  .ga-card a { color:var(--text); text-decoration:none; font-weight:700; }
+  .ga-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.68rem;
+    padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .ga-empty { color:var(--muted); padding:2rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ga-wrap">
+  <div class="ga-eyebrow">ECOIQ · 114 GOOD AGENTS</div>
+  <h1 class="ga-h1">Good Opportunities</h1>
+  <div class="ga-filters">
+    <a href="{% url 'good_agents:opportunity_list' %}" class="{% if not active_status %}active{% endif %}">All</a>
+    {% for value, label in status_choices %}
+      <a href="?status={{ value }}" class="{% if active_status == value %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+    <a href="{% url 'good_agents:morning_brief' %}" style="float:right;">Morning brief →</a>
+  </div>
+
+  {% if opportunities %}
+    {% for opp in opportunities %}
+      <div class="ga-card">
+        <a href="{% url 'good_agents:opportunity_detail' opp.pk %}">{{ opp.title }}</a>
+        <span class="ga-badge">{{ opp.get_status_display }}</span>
+        {% if opp.zero_capital_possible %}<span class="ga-badge">ZERO-CAPITAL PATH</span>{% endif %}
+        {% if opp.insufficient_evidence %}<span class="ga-badge">INSUFFICIENT EVIDENCE</span>{% endif %}
+        <div style="color:var(--muted); font-size:.85rem; margin-top:.4rem;">{{ opp.problem_statement|truncatewords:28 }}</div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="ga-empty">No Good Opportunities recorded yet. Run <code>python manage.py run_almaty_good_agent_demo</code> to see the first end-to-end demonstration.</div>
+  {% endif %}
+</div>
+{% endblock %}

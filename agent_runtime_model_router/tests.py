@@ -39,11 +39,12 @@ RAW_TEMPLATE_TOKENS = [
 
 
 class RegistryDiscoveryTests(TestCase):
-    def test_discovers_twelve_operational_and_four_next_stage(self):
+    def test_discovers_thirteen_operational_and_four_next_stage(self):
+        # 13 operational since Good Agent Orchestrator was added (ai_agent_council.agents.OPERATIONAL_AGENTS #13).
         discovered = discover_agents()
         operational = [d for d in discovered if not d['is_next_stage']]
         next_stage = [d for d in discovered if d['is_next_stage']]
-        self.assertEqual(len(operational), 12)
+        self.assertEqual(len(operational), 13)
         self.assertEqual(len(next_stage), 4)
 
     def test_operational_agents_have_real_content_hash(self):
@@ -61,9 +62,10 @@ class RegistryDiscoveryTests(TestCase):
 
 
 class RegistrySyncTests(TestCase):
-    def test_sync_creates_sixteen_entries(self):
+    def test_sync_creates_seventeen_entries(self):
+        # 13 operational + 4 next-stage = 17 (was 16 before Good Agent Orchestrator was added).
         sync_registry()
-        self.assertEqual(AgentRegistryEntry.objects.count(), 16)
+        self.assertEqual(AgentRegistryEntry.objects.count(), 17)
 
     def test_sync_is_idempotent(self):
         sync_registry()

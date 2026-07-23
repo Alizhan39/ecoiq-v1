@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}{{ opportunity.title }} — Good Opportunity — EcoIQ{% endblock %}
+{% block meta_description_content %}{{ opportunity.problem_statement|truncatewords:24 }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ga-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1080px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .ga-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .ga-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .ga-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0;
+    background:var(--bg2); }
+  .ga-section h2 { font-size:.95rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .ga-row { display:flex; justify-content:space-between; gap:1rem; padding:.35rem 0; border-bottom:1px solid var(--border); font-size:.9rem; }
+  .ga-row:last-child { border-bottom:none; }
+  .ga-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.68rem;
+    padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .ga-position-support { color:var(--accent); }
+  .ga-position-concerns { color:var(--warn); }
+  .ga-position-conflicts { color:var(--danger); }
+  .ga-empty { color:var(--muted); font-size:.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ga-wrap">
+  <div class="ga-eyebrow">ECOIQ · GOOD OPPORTUNITY #{{ opportunity.pk }}</div>
+  <h1 class="ga-h1">{{ opportunity.title }}</h1>
+  <span class="ga-badge">{{ opportunity.get_status_display }}</span>
+  {% if opportunity.zero_capital_possible %}<span class="ga-badge">ZERO-CAPITAL PATH</span>{% endif %}
+  {% if opportunity.insufficient_evidence %}<span class="ga-badge">INSUFFICIENT EVIDENCE</span>{% endif %}
+
+  <div class="ga-section">
+    <h2>Problem</h2>
+    <p>{{ opportunity.problem_statement }}</p>
+    <p class="ga-empty">Baseline: {{ opportunity.baseline|default:"Not yet recorded." }}</p>
+  </div>
+
+  <div class="ga-section">
+    <h2>Activated Good Agent lenses ({{ activations|length }})</h2>
+    {% for a in activations %}
+      <div class="ga-row">
+        <span>{{ a.agent.name }} <span class="ga-position-{{ a.position }}">[{{ a.get_position_display }}]</span></span>
+        <span>{{ a.confidence|floatformat:0 }}%</span>
+      </div>
+      {% if a.concern %}<div class="ga-empty">↳ {{ a.concern }}</div>{% endif %}
+    {% empty %}
+      <p class="ga-empty">No lenses activated yet.</p>
+    {% endfor %}
+  </div>
+
+  {% if cost_assessment %}
+  <div class="ga-section">
+    <h2>Opportunity cost</h2>
+    <p>{{ cost_assessment.preferred_option }}</p>
+    {% if cost_assessment.best_alternative %}<p class="ga-empty">Best alternative: {{ cost_assessment.best_alternative }}</p>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if red_team_review %}
+  <div class="ga-section">
+    <h2>Red team review — {% if red_team_review.cleared %}cleared{% else %}not cleared{% endif %}</h2>
+    {% if red_team_review.who_may_be_harmed %}<p class="ga-empty">Who may be harmed: {{ red_team_review.who_may_be_harmed }}</p>{% endif %}
+    {% if red_team_review.contradicting_evidence %}<p class="ga-empty">{{ red_team_review.contradicting_evidence }}</p>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="ga-section">
+    <h2>Good Deed actions</h2>
+    {% for action in actions %}
+      <div class="ga-row">
+        <span>{{ action.get_action_type_display }} <span class="ga-badge">{{ action.autonomy_class|upper }}</span></span>
+        <span>{{ action.get_status_display }}</span>
+      </div>
+    {% empty %}
+      <p class="ga-empty">No actions proposed yet.</p>
+    {% endfor %}
+  </div>
+
+  {% if decisions %}
+  <div class="ga-section">
+    <h2>Capital decisions</h2>
+    {% for d in decisions %}
+      <div class="ga-row"><span>{{ d.intervention.title }}</span><span>{{ d.get_approval_status_display }}</span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if impact_receipt %}
+  <div class="ga-section">
+    <h2>Impact receipt (MRV plan)</h2>
+    <p>{{ impact_receipt.mrv_methodology }}</p>
+    <p class="ga-empty">Measured result: {% if impact_receipt.measured_result %}{{ impact_receipt.measured_result }}{% else %}Not yet measured.{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

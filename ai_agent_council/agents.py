@@ -118,13 +118,27 @@ OPERATIONAL_AGENTS = [
             'investment decision.'
         ),
     },
+    {
+        'number': 13, 'name': 'Good Agent Orchestrator', 'folder': 'good_agent_orchestrator',
+        'role': (
+            'Takes one observed signal, activates only the relevant subset of the 114 canonical '
+            'principle lenses (never all of them), and produces one combined reasoning pass that '
+            'preserves disagreement between lenses rather than averaging it into a fake consensus.'
+        ),
+        'handoffs': ['Waste & Leakage Agent', 'Capital Allocation Agent'],
+        'important': (
+            'Good Agent Orchestrator selects and reasons about relevant principle lenses for human/'
+            'Council review. It must never activate all 114 lenses for one signal, never issue more '
+            'than one reasoning call per signal, and never move a decision past human approval itself.'
+        ),
+    },
 ]
 
 NEXT_STAGE_AGENTS = [
-    {'number': 13, 'name': 'Supplier / Funding Match Agent'},
-    {'number': 14, 'name': 'Customer Success Agent'},
-    {'number': 15, 'name': 'Sales CRM Agent'},
-    {'number': 16, 'name': 'Analytics Agent'},
+    {'number': 14, 'name': 'Supplier / Funding Match Agent'},
+    {'number': 15, 'name': 'Customer Success Agent'},
+    {'number': 16, 'name': 'Sales CRM Agent'},
+    {'number': 17, 'name': 'Analytics Agent'},
 ]
 
 OPERATIONAL_STATUS_LABEL = 'Operational Training Pack Ready'

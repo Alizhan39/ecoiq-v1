@@ -271,6 +271,17 @@ INSTALLED_APPS = [
     # investment advice, never a buy/sell recommendation. Reuses league/
     # companies/evidence_memory/ai_observatory; no duplicate company model.
     'company_intelligence',
+
+    # 114 Good Agents — the 114 canonical EcoIQ principles re-expressed as
+    # specialised opportunity-discovery lenses, plus the orchestrator,
+    # GoodOpportunity/GoodDeedsEngine, Opportunity Cost, Red Team and Impact
+    # Receipt models that sit in front of the existing capital pipeline
+    # above. Reuses agent_runtime_model_router / ai_agent_council /
+    # langgraph_orchestration for reasoning and capital_guardian /
+    # waste_to_value_capital_allocation_engine / evidence_memory for
+    # everything downstream of "opportunity qualified" — no new Evidence,
+    # Project or MRV model.
+    'good_agents',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

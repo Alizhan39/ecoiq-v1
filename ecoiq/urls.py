@@ -219,6 +219,10 @@ urlpatterns = [
     path('capital-guardian/', include('capital_guardian.urls', namespace='capital_guardian')),
     path('ai-observatory/', include('ai_observatory.urls', namespace='ai_observatory')),
 
+    # EcoIQ 114 Good Agents — the 114 canonical principles as specialised
+    # opportunity-discovery lenses over the capital pipeline above.
+    path('good-agents/', include('good_agents.urls', namespace='good_agents')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
