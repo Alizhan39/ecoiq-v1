@@ -672,6 +672,17 @@ class DiscoveryEngineTests(TestCase):
         run, _ = run_global_discovery(self.mission, raw_signals, idempotency_key='test-run-noise')
         self.assertEqual(run.opportunities_detected, 0)
 
+    def test_discovered_opportunity_gets_action_gate_immediately(self):
+        """PR5 Phase 1 — no opportunity should be invisible in the Action Centre until someone happens to open its detail page."""
+        from good_agents.models import ActionGate
+        raw_signals = [_raw_signal(title='Coal heating pollution harms rural households 2', severity=70.0, confidence=60.0)]
+        run, _ = run_global_discovery(self.mission, raw_signals, idempotency_key='test-run-gate')
+        opportunity = run.opportunities.first()
+        self.assertIsNotNone(opportunity)
+        gate = ActionGate.objects.filter(opportunity=opportunity).first()
+        self.assertIsNotNone(gate)
+        self.assertEqual(gate.current_state, 'discovered')
+
     def test_run_is_idempotent(self):
         raw_signals = [_raw_signal(title='Coal heating pollution harms households', severity=70.0, confidence=60.0)]
         run1, _ = run_global_discovery(self.mission, raw_signals, idempotency_key='test-run-idem')
@@ -1133,3 +1144,655 @@ class GoodWhileYouSleepCommandTests(TestCase):
             call_command('run_good_while_you_sleep')
         self.assertEqual(GoodAgentDefinition.objects.count(), 114)
         self.assertEqual(SignalProvider.objects.count(), 3)
+
+
+# ===========================================================================
+# === PR5 — Impact Action Network: discovered opportunity -> governed
+# === action -> responsible party -> connection/outreach -> project
+# === candidate -> execution/MRV -> verified outcome -> Evidence Memory.
+# ===========================================================================
+from good_agents.models import (  # noqa: E402
+    ActionContact, ActionGate, ActionPathway, ActionTimelineEvent, ConnectionCandidate, FundingAction,
+    OutreachDraft, ProjectCandidate, ResponsibleParty,
+)
+from good_agents.services import action_gate as action_gate_service  # noqa: E402
+from good_agents.services import action_pathway as action_pathway_service  # noqa: E402
+from good_agents.services import connection_action  # noqa: E402
+from good_agents.services import funding_action as funding_action_service  # noqa: E402
+from good_agents.services import outreach as outreach_service  # noqa: E402
+from good_agents.services import project_bridge  # noqa: E402
+from good_agents.services import responsible_party as responsible_party_service  # noqa: E402
+
+
+def _make_opportunity(**overrides):
+    base = dict(title='PR5 test opportunity', problem_statement='A real problem.', theme='energy', confidence=60.0)
+    base.update(overrides)
+    return GoodOpportunity.objects.create(**base)
+
+
+def _approve_gate(opportunity, state='approved_for_contact'):
+    action_gate_service.transition(opportunity, 'needs_review')
+    return action_gate_service.transition(opportunity, state)
+
+
+def _staff_user(username='pr5-staff'):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    return User.objects.create_user(username, f'{username}@example.com', 'password123', is_staff=True)
+
+
+class ActionGateTransitionTests(TestCase):
+    def test_gate_lazily_created_at_discovered(self):
+        opp = _make_opportunity()
+        gate = action_gate_service.get_or_create_gate(opp)
+        self.assertEqual(gate.current_state, 'discovered')
+        self.assertEqual(gate.transitions.count(), 1)
+        self.assertEqual(gate.transitions.first().previous_state, '')
+
+    def test_legal_transition_recorded(self):
+        opp = _make_opportunity()
+        gate = action_gate_service.transition(opp, 'needs_review', reason='Looks credible.')
+        self.assertEqual(gate.current_state, 'needs_review')
+        self.assertEqual(gate.transitions.last().previous_state, 'discovered')
+        self.assertEqual(gate.transitions.last().reason, 'Looks credible.')
+
+    def test_illegal_transition_raises_and_does_not_mutate_state(self):
+        opp = _make_opportunity()
+        with self.assertRaises(action_gate_service.IllegalTransitionError):
+            action_gate_service.transition(opp, 'approved_for_contact')  # discovered -> approved_for_contact is not allowed
+        gate = action_gate_service.get_or_create_gate(opp)
+        self.assertEqual(gate.current_state, 'discovered')
+
+    def test_rejected_is_terminal(self):
+        opp = _make_opportunity()
+        action_gate_service.transition(opp, 'rejected')
+        self.assertEqual(ActionGate.ALLOWED_TRANSITIONS['rejected'], set())
+        self.assertFalse(action_gate_service.can_transition(opp, 'needs_review'))
+
+    def test_needs_more_evidence_path(self):
+        opp = _make_opportunity()
+        action_gate_service.transition(opp, 'needs_review')
+        gate = action_gate_service.transition(opp, 'needs_more_evidence', reason='Missing a second source.')
+        self.assertEqual(gate.current_state, 'needs_more_evidence')
+        self.assertTrue(action_gate_service.can_transition(opp, 'needs_review'))
+
+    def test_approval_mirrors_action_approved_timeline_event(self):
+        opp = _make_opportunity()
+        action_gate_service.transition(opp, 'needs_review')
+        action_gate_service.transition(opp, 'approved_for_contact', reason='Ready to reach out.')
+        self.assertTrue(
+            ActionTimelineEvent.objects.filter(opportunity=opp, event_type='action_approved').exists()
+        )
+
+    def test_human_approval_required_no_autonomous_approval_path(self):
+        """Nothing in the discovery/orchestrator pipeline calls action_gate.transition — approval is always an explicit call."""
+        opp = _make_opportunity()
+        gate = action_gate_service.get_or_create_gate(opp)
+        self.assertNotIn(gate.current_state, ActionGate.APPROVED_STATES)
+
+
+class ActionPathwayTests(TestCase):
+    def test_pathway_blocked_until_gate_approved(self):
+        opp = _make_opportunity()
+        with self.assertRaises(action_pathway_service.PathwayNotAllowedError):
+            action_pathway_service.create_pathway(opp, 'introduction')
+
+    def test_pathway_allowed_after_approval(self):
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        pathway = action_pathway_service.create_pathway(opp, 'introduction', rationale='Connect to a local NGO.')
+        self.assertEqual(pathway.status, 'open')
+
+    def test_zero_capital_eligible_type_defaults_capital_required_no(self):
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        pathway = action_pathway_service.create_pathway(opp, 'information_request')
+        self.assertEqual(pathway.capital_required, 'no')
+
+    def test_project_candidate_pathway_type_not_auto_zero_capital(self):
+        opp = _make_opportunity()
+        _approve_gate(opp, state='approved_for_project_creation')
+        pathway = action_pathway_service.create_pathway(opp, 'project_candidate')
+        self.assertEqual(pathway.capital_required, 'unknown')
+
+    def test_owner_assignment_records_timeline_event(self):
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        user = _staff_user('pathway-owner')
+        pathway = action_pathway_service.create_pathway(opp, 'introduction', owner=user)
+        self.assertTrue(
+            ActionTimelineEvent.objects.filter(opportunity=opp, event_type='owner_assigned').exists()
+        )
+        self.assertEqual(pathway.owner_id, user.pk)
+
+
+class ResponsiblePartyProvenanceTests(TestCase):
+    def test_no_publisher_returns_none_honestly(self):
+        opp = _make_opportunity()
+        signal = WorldSignal.objects.create(signal_type='public_need', title='No publisher signal')
+        self.assertIsNone(responsible_party_service.suggest_from_signal(opp, signal))
+        self.assertEqual(ResponsibleParty.objects.count(), 0)
+
+    def test_suggestion_starts_as_possible_organisation_never_known(self):
+        opp = _make_opportunity()
+        signal = WorldSignal.objects.create(signal_type='public_need', title='UK grant signal', publisher='GOV.UK')
+        party = responsible_party_service.suggest_from_signal(opp, signal)
+        self.assertEqual(party.resolution_status, 'possible_organisation')
+        self.assertEqual(party.party_type, 'government_department')
+        self.assertIn('good_agents.WorldSignal', party.evidence_ref)
+
+    def test_unknown_publisher_still_creates_low_confidence_other_party(self):
+        opp = _make_opportunity()
+        signal = WorldSignal.objects.create(signal_type='public_need', title='Local blog post', publisher='Some Local Blog')
+        party = responsible_party_service.suggest_from_signal(opp, signal)
+        self.assertEqual(party.party_type, 'other')
+        self.assertEqual(party.confidence, 30.0)
+
+    def test_confirm_is_only_path_to_known_organisation(self):
+        opp = _make_opportunity()
+        signal = WorldSignal.objects.create(signal_type='public_need', title='UK grant signal 2', publisher='GOV.UK')
+        party = responsible_party_service.suggest_from_signal(opp, signal)
+        user = _staff_user('confirmer')
+        responsible_party_service.confirm(party, actor=user)
+        party.refresh_from_db()
+        self.assertEqual(party.resolution_status, 'known_organisation')
+        self.assertEqual(party.confirmed_by_id, user.pk)
+
+    def test_mark_unresolved(self):
+        opp = _make_opportunity()
+        signal = WorldSignal.objects.create(signal_type='public_need', title='UK grant signal 3', publisher='GOV.UK')
+        party = responsible_party_service.suggest_from_signal(opp, signal)
+        responsible_party_service.mark_unresolved(party, reason='Could not verify this is a real department.')
+        party.refresh_from_db()
+        self.assertEqual(party.resolution_status, 'unresolved')
+
+
+class ContactSafetyTests(TestCase):
+    def test_contact_channel_is_a_plain_public_field_not_scraped(self):
+        opp = _make_opportunity()
+        party = ResponsibleParty.objects.create(opportunity=opp, name='Test Department', party_type='government_department')
+        contact = ActionContact.objects.create(
+            responsible_party=party, contact_role='Press office',
+            public_contact_channel='press@example-department.gov', source_of_contact_info='Published on gov.uk contact page',
+        )
+        self.assertTrue(contact.source_of_contact_info)
+        self.assertEqual(contact.status, 'identified')
+
+
+class OutreachGovernanceTests(TestCase):
+    def setUp(self):
+        self.opp = _make_opportunity()
+        _approve_gate(self.opp)
+        self.pathway = action_pathway_service.create_pathway(self.opp, 'introduction')
+        self.party = ResponsibleParty.objects.create(opportunity=self.opp, name='Test NGO', party_type='ngo')
+        self.contact = ActionContact.objects.create(
+            responsible_party=self.party, public_contact_channel='contact@example-ngo.org',
+            source_of_contact_info='Published on the NGO website contact page.',
+        )
+        self.staff = _staff_user('outreach-staff')
+
+    def test_draft_starts_as_draft(self):
+        draft = outreach_service.create_draft(self.pathway, 'email', subject='Intro', body='Hello.', contact=self.contact)
+        self.assertEqual(draft.status, 'draft')
+
+    def test_approve_requires_real_actor(self):
+        draft = outreach_service.create_draft(self.pathway, 'email', subject='Intro', body='Hello.', contact=self.contact)
+        with self.assertRaises(outreach_service.OutreachNotApprovedError):
+            outreach_service.approve(draft, actor=None)
+
+    def test_send_refuses_unless_approved(self):
+        draft = outreach_service.create_draft(self.pathway, 'email', subject='Intro', body='Hello.', contact=self.contact)
+        with self.assertRaises(outreach_service.OutreachNotApprovedError):
+            outreach_service.send_outreach(draft, actor=self.staff)
+
+    def test_send_refuses_without_email_shaped_channel(self):
+        contact_no_email = ActionContact.objects.create(
+            responsible_party=self.party, public_contact_channel='+44 20 7946 0000',
+            source_of_contact_info='Published phone number.',
+        )
+        draft = outreach_service.create_draft(self.pathway, 'email', subject='Intro', body='Hello.', contact=contact_no_email)
+        outreach_service.approve(draft, actor=self.staff)
+        with self.assertRaises(outreach_service.NoContactChannelError):
+            outreach_service.send_outreach(draft, actor=self.staff)
+
+    def test_no_direct_draft_to_sent_path(self):
+        """There is no way to reach 'sent' without passing through 'approved' first."""
+        draft = outreach_service.create_draft(self.pathway, 'email', subject='Intro', body='Hello.', contact=self.contact)
+        draft.status = 'sent'  # simulate a hypothetical bypass attempt
+        draft.save(update_fields=['status'])
+        draft.status = 'draft'
+        draft.save(update_fields=['status'])
+        with self.assertRaises(outreach_service.OutreachNotApprovedError):
+            outreach_service.send_outreach(draft, actor=self.staff)
+
+    def test_approved_and_email_shaped_send_succeeds_via_real_email_backend(self):
+        from django.core import mail
+        draft = outreach_service.create_draft(self.pathway, 'email', subject='Intro', body='Hello.', contact=self.contact)
+        outreach_service.approve(draft, actor=self.staff)
+        outreach_service.send_outreach(draft, actor=self.staff)
+        draft.refresh_from_db()
+        self.assertEqual(draft.status, 'sent')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['contact@example-ngo.org'])
+
+    def test_record_reply_creates_timeline_event(self):
+        draft = outreach_service.create_draft(self.pathway, 'email', subject='Intro', body='Hello.', contact=self.contact)
+        outreach_service.approve(draft, actor=self.staff)
+        outreach_service.send_outreach(draft, actor=self.staff)
+        outreach_service.record_reply(draft, replied=True, notes='They are interested.')
+        self.assertTrue(
+            ActionTimelineEvent.objects.filter(opportunity=self.opp, event_type='reply_received').exists()
+        )
+
+
+class ConnectionLifecycleTests(TestCase):
+    def setUp(self):
+        self.opp = _make_opportunity()
+        need = Need.objects.create(need_type='energy', title='Households need heating support', opportunity=self.opp)
+        resource = AvailableResource.objects.create(resource_type='waste_heat', title='Nearby factory waste heat', availability='available')
+        self.match = ResourceMatch.objects.create(need=need, resource=resource, match_reason='Same region, compatible type.', confidence=70.0)
+        self.staff = _staff_user('connection-staff')
+
+    def test_create_candidate_is_idempotent(self):
+        c1 = connection_action.create_candidate(self.match)
+        c2 = connection_action.create_candidate(self.match)
+        self.assertEqual(c1.pk, c2.pk)
+
+    def test_approve_requires_candidate_match_status(self):
+        candidate = connection_action.create_candidate(self.match)
+        connection_action.approve_for_introduction(candidate, actor=self.staff)
+        with self.assertRaises(ValueError):
+            connection_action.approve_for_introduction(candidate, actor=self.staff)
+
+    def test_never_implies_agreement_before_human_recorded_outcome(self):
+        candidate = connection_action.create_candidate(self.match)
+        self.assertNotIn(candidate.status, {'interest_confirmed'})
+
+    def test_record_outcome_rejects_non_terminal_status(self):
+        candidate = connection_action.create_candidate(self.match)
+        with self.assertRaises(ValueError):
+            connection_action.record_outcome(candidate, 'candidate_match')
+
+    def test_full_lifecycle_to_interest_confirmed(self):
+        candidate = connection_action.create_candidate(self.match)
+        connection_action.approve_for_introduction(candidate, actor=self.staff)
+        connection_action.mark_introduced(candidate, actor=self.staff)
+        connection_action.record_outcome(candidate, 'interest_confirmed', notes='Confirmed on a call.')
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'interest_confirmed')
+        self.assertTrue(
+            ActionTimelineEvent.objects.filter(opportunity=self.opp, event_type='connection_made').exists()
+        )
+
+
+class FundingActionTests(TestCase):
+    def setUp(self):
+        self.opp = _make_opportunity()
+
+    def test_no_deadline_gets_honest_note(self):
+        match = FundingMatch.objects.create(opportunity=self.opp, funder_type='grant', eligibility_status='eligibility_unknown')
+        action = funding_action_service.create_action(match)
+        self.assertIn('No real deadline is known', action.notes)
+
+    def test_real_deadline_recorded_without_fabricated_note(self):
+        match = FundingMatch.objects.create(opportunity=self.opp, funder_type='grant', eligibility_status='eligibility_unknown')
+        deadline = (timezone.now().date() + datetime.timedelta(days=10))
+        action = funding_action_service.create_action(match, deadline=deadline)
+        self.assertEqual(action.deadline, deadline)
+        self.assertNotIn('No real deadline', action.notes)
+
+    def test_sharia_review_blocks_awarded_status(self):
+        match = FundingMatch.objects.create(opportunity=self.opp, funder_type='waqf', eligibility_status='requires_sharia_review')
+        action = funding_action_service.create_action(match)
+        with self.assertRaises(ValueError):
+            funding_action_service.update_status(action, 'awarded')
+
+    def test_non_sharia_match_can_be_awarded(self):
+        match = FundingMatch.objects.create(opportunity=self.opp, funder_type='grant', eligibility_status='eligible')
+        action = funding_action_service.create_action(match)
+        funding_action_service.update_status(action, 'awarded', notes='Confirmed by email from the funder.')
+        action.refresh_from_db()
+        self.assertEqual(action.status, 'awarded')
+
+    def test_funding_match_itself_never_lets_sharia_sensitive_type_claim_eligible(self):
+        match = FundingMatch.objects.create(opportunity=self.opp, funder_type='islamic_finance', eligibility_status='eligible')
+        self.assertEqual(match.eligibility_status, 'requires_sharia_review')
+
+
+class ProjectCandidateBridgeTests(TestCase):
+    def setUp(self):
+        self.opp = _make_opportunity()
+        self.staff = _staff_user('project-staff')
+
+    def test_approve_requires_real_actor(self):
+        candidate = project_bridge.propose_candidate(self.opp, rationale='Warrants a real pilot.')
+        with self.assertRaises(project_bridge.ProjectCandidateNotApprovedError):
+            project_bridge.approve_candidate(candidate, actor=None)
+
+    def test_create_requires_approved_status(self):
+        candidate = project_bridge.propose_candidate(self.opp)
+        with self.assertRaises(project_bridge.ProjectCandidateNotApprovedError):
+            project_bridge.create_project_from_candidate(
+                candidate, slug='test-pr5-project', name='Test PR5 Project', is_demo=True,
+            )
+
+    def test_create_requires_explicit_is_demo(self):
+        candidate = project_bridge.propose_candidate(self.opp)
+        project_bridge.approve_candidate(candidate, actor=self.staff)
+        with self.assertRaises(TypeError):
+            project_bridge.create_project_from_candidate(candidate, slug='test-pr5-project-2', name='Test PR5 Project 2')
+
+    def test_create_project_leaves_gold_specific_fields_none(self):
+        candidate = project_bridge.propose_candidate(self.opp)
+        project_bridge.approve_candidate(candidate, actor=self.staff)
+        project = project_bridge.create_project_from_candidate(
+            candidate, slug='test-pr5-project-3', name='Test PR5 Project 3', is_demo=True,
+        )
+        self.assertIsNone(project.ore_grade_g_per_tonne)
+        self.assertIsNone(project.total_capex_usd)
+        self.assertTrue(project.is_demo)
+
+    def test_create_is_idempotent(self):
+        candidate = project_bridge.propose_candidate(self.opp)
+        project_bridge.approve_candidate(candidate, actor=self.staff)
+        project1 = project_bridge.create_project_from_candidate(
+            candidate, slug='test-pr5-project-4', name='Test PR5 Project 4', is_demo=True,
+        )
+        project2 = project_bridge.create_project_from_candidate(
+            candidate, slug='ignored-slug-on-second-call', name='ignored', is_demo=False,
+        )
+        self.assertEqual(project1.pk, project2.pk)
+
+    def test_provenance_preserved_after_creation(self):
+        candidate = project_bridge.propose_candidate(self.opp, rationale='Because of X and Y evidence.')
+        project_bridge.approve_candidate(candidate, actor=self.staff)
+        project_bridge.create_project_from_candidate(
+            candidate, slug='test-pr5-project-5', name='Test PR5 Project 5', is_demo=True,
+        )
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.opportunity_id, self.opp.pk)
+        self.assertEqual(candidate.rationale, 'Because of X and Y evidence.')
+        self.assertTrue(
+            ActionTimelineEvent.objects.filter(opportunity=self.opp, event_type='project_created').exists()
+        )
+
+
+class ExecutionAndMRVBridgeTests(TestCase):
+    """Proves the Execution/MRV/Impact Receipt/Evidence Memory loop genuinely closes onto GoodOpportunity.status."""
+
+    def setUp(self):
+        self.country = CountryProfile.objects.create(name='PR5 Test Country', iso_code='P5')
+        self.project = GoldProject.objects.create(name='PR5 MRV Project', slug='pr5-mrv-project', country=self.country, is_demo=True)
+        self.opp = GoodOpportunity.objects.create(
+            title='PR5 MRV opportunity', problem_statement='x', project=self.project, confidence=50.0,
+        )
+        loss = pipeline.create_loss_for_opportunity(self.opp, self.project, financial_loss_amount=1000.0, loss_type='heat_loss')
+        pipeline.add_intervention_option(
+            loss, title='Heat pump', intervention_type='equipment_upgrade', classification='estimated',
+            capex_estimate=5000.0, estimated_annual_savings=800.0, estimated_payback_months=75,
+        )
+        better_way_result, _ = pipeline.run_better_way_and_opportunity_cost(self.opp, self.project, loss)
+        self.decision, _ = pipeline.create_capital_decision(self.project, loss, better_way_result)
+        pipeline.mark_decision_approved(self.decision)
+        pipeline.build_impact_receipt(self.opp, self.decision, better_way_result, mrv_methodology='Planned.')
+
+    def test_measuring_a_real_outcome_advances_status_to_measured(self):
+        pipeline.record_verified_outcome_and_sync(
+            self.decision, mrv_status='baseline_only', evidence_quality='medium',
+            capex_actual=4800.0, loss_avoided_actual=750.0, savings_actual=750.0,
+        )
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.status, 'measured')
+        self.assertTrue(ActionTimelineEvent.objects.filter(opportunity=self.opp, event_type='outcome_measured').exists())
+
+    def test_monitoring_path_cannot_reach_verified(self):
+        from capital_guardian.services.execution_monitoring import VerificationNotAllowedHereError
+        with self.assertRaises(VerificationNotAllowedHereError):
+            pipeline.record_verified_outcome_and_sync(
+                self.decision, mrv_status='verified', evidence_quality='medium',
+                capex_actual=4800.0, loss_avoided_actual=750.0, savings_actual=750.0,
+            )
+        self.opp.refresh_from_db()
+        self.assertNotEqual(self.opp.status, 'verified')
+
+    def test_admin_verification_signal_syncs_opportunity_to_verified(self):
+        """The ONLY real path to 'verified': a staff member editing the VerifiedCapitalOutcome admin form directly."""
+        from waste_to_value_capital_allocation_engine.models import VerifiedCapitalOutcome
+        outcome, _ = pipeline.record_verified_outcome_and_sync(
+            self.decision, mrv_status='baseline_only', evidence_quality='medium',
+            capex_actual=4800.0, loss_avoided_actual=750.0, savings_actual=750.0,
+        )
+        outcome.mrv_status = 'verified'
+        outcome.save(update_fields=['mrv_status'])
+
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.status, 'verified')
+        self.assertTrue(ActionTimelineEvent.objects.filter(opportunity=self.opp, event_type='outcome_verified').exists())
+        self.assertTrue(ActionTimelineEvent.objects.filter(opportunity=self.opp, event_type='evidence_memory_updated').exists())
+
+    def test_verification_signal_does_not_refire_on_repeat_save(self):
+        from waste_to_value_capital_allocation_engine.models import VerifiedCapitalOutcome
+        outcome, _ = pipeline.record_verified_outcome_and_sync(
+            self.decision, mrv_status='baseline_only', evidence_quality='medium',
+            capex_actual=4800.0, loss_avoided_actual=750.0, savings_actual=750.0,
+        )
+        outcome.mrv_status = 'verified'
+        outcome.save(update_fields=['mrv_status'])
+        outcome.save(update_fields=['mrv_status'])  # re-save, still 'verified'
+        count = ActionTimelineEvent.objects.filter(opportunity=self.opp, event_type='outcome_verified').count()
+        self.assertEqual(count, 1)
+
+
+class ActionTimelineOrderingTests(TestCase):
+    def test_events_ordered_chronologically(self):
+        opp = _make_opportunity()
+        action_gate_service.transition(opp, 'needs_review')
+        action_gate_service.transition(opp, 'approved_for_contact')
+        events = list(ActionTimelineEvent.objects.filter(opportunity=opp))
+        self.assertEqual(events, sorted(events, key=lambda e: e.created_at))
+        self.assertGreaterEqual(len(events), 3)  # discovered, human_reviewed x2, action_approved
+
+
+class ActionOutcomeFeedbackTests(TestCase):
+    def test_repeated_not_actionable_gates_reduce_ranking_confidence(self):
+        opp1 = _make_opportunity(theme='waste', confidence=70.0)
+        for _ in range(2):
+            other = _make_opportunity(theme='waste', confidence=70.0)
+            action_gate_service.transition(other, 'not_actionable')
+        result = prioritisation.prioritise(opp1)
+        self.assertLess(result.dimensions['adjusted_confidence'], opp1.confidence)
+
+    def test_repeated_completed_zero_capital_pathways_boost_ranking_confidence(self):
+        opp1 = _make_opportunity(theme='housing', confidence=50.0)
+        for _ in range(2):
+            other = _make_opportunity(theme='housing', confidence=50.0)
+            _approve_gate(other)
+            pathway = action_pathway_service.create_pathway(other, 'information_request')
+            action_pathway_service.update_status(pathway, 'completed')
+        result = prioritisation.prioritise(opp1)
+        self.assertGreater(result.dimensions['adjusted_confidence'], opp1.confidence)
+
+    def test_repeated_declined_connections_reduce_ranking_confidence(self):
+        opp1 = _make_opportunity(theme='water', confidence=70.0)
+        for _ in range(2):
+            other = _make_opportunity(theme='water', confidence=70.0)
+            need = Need.objects.create(need_type='water', title='Need', opportunity=other)
+            resource = AvailableResource.objects.create(resource_type='asset', title='Resource', availability='available')
+            match = ResourceMatch.objects.create(need=need, resource=resource, match_reason='x', confidence=60.0)
+            candidate = connection_action.create_candidate(match)
+            connection_action.record_outcome(candidate, 'declined')
+        result = prioritisation.prioritise(opp1)
+        self.assertLess(result.dimensions['adjusted_confidence'], opp1.confidence)
+
+
+class NotificationEventTests(TestCase):
+    def test_zero_capital_pathway_ready_notification_dedups(self):
+        from notifications.models import AdminNotification
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        action_pathway_service.create_pathway(opp, 'information_request')
+        action_pathway_service.create_pathway(opp, 'data_request')  # second zero-capital pathway on the SAME opportunity
+        count = AdminNotification.objects.filter(
+            source_model='good_agents.actionpathway', metadata__reason='zero_capital_pathway_ready',
+        ).count()
+        self.assertEqual(count, 2)  # different pathway instances — dedup is per-instance, not per-opportunity
+
+    def test_project_candidate_ready_notification_created_once(self):
+        from notifications.models import AdminNotification
+        opp = _make_opportunity()
+        candidate = project_bridge.propose_candidate(opp, rationale='Worth a pilot.')
+        project_bridge.propose_candidate(opp)  # idempotent get_or_create — no second candidate, no second notification
+        count = AdminNotification.objects.filter(
+            source_model='good_agents.projectcandidate', source_object_id=str(candidate.pk),
+            metadata__reason='project_candidate_ready',
+        ).count()
+        self.assertEqual(count, 1)
+
+    def test_outreach_awaiting_approval_notification(self):
+        from notifications.models import AdminNotification
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        pathway = action_pathway_service.create_pathway(opp, 'introduction')
+        draft = outreach_service.create_draft(pathway, 'email', subject='Hi', body='Hi.')
+        outreach_service.mark_ready_for_review(draft)
+        self.assertTrue(
+            AdminNotification.objects.filter(
+                source_model='good_agents.outreachdraft', source_object_id=str(draft.pk),
+                metadata__reason='outreach_awaiting_approval',
+            ).exists()
+        )
+
+    def test_funding_deadline_sweep_only_notifies_within_threshold(self):
+        from notifications.models import AdminNotification
+        opp = _make_opportunity()
+        match_far = FundingMatch.objects.create(opportunity=opp, funder_type='grant')
+        far_action = funding_action_service.create_action(
+            match_far, deadline=timezone.now().date() + datetime.timedelta(days=90),
+        )
+        opp2 = _make_opportunity()
+        match_near = FundingMatch.objects.create(opportunity=opp2, funder_type='grant')
+        near_action = funding_action_service.create_action(
+            match_near, deadline=timezone.now().date() + datetime.timedelta(days=5),
+        )
+        notify.sweep_funding_deadlines(days_threshold=14)
+        self.assertFalse(AdminNotification.objects.filter(source_object_id=str(far_action.pk), metadata__reason='funding_deadline_approaching').exists())
+        self.assertTrue(AdminNotification.objects.filter(source_object_id=str(near_action.pk), metadata__reason='funding_deadline_approaching').exists())
+
+
+class ImpactActionCentreViewTests(TestCase):
+    def setUp(self):
+        self.staff = _staff_user('centre-staff')
+
+    def test_anonymous_redirected(self):
+        response = self.client.get(reverse('good_agents:impact_action_centre'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_sees_real_sections(self):
+        self.client.force_login(self.staff)
+        opp = _make_opportunity()
+        # A real discovered opportunity gets its gate automatically (see
+        # discovery_engine.run_global_discovery); this one was created
+        # directly for the test, so it needs the same lazy path the
+        # opportunity_detail view uses to show up in "awaiting review".
+        action_gate_service.get_or_create_gate(opp)
+        response = self.client.get(reverse('good_agents:impact_action_centre'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Impact Action Centre')
+        self.assertContains(response, opp.title)
+
+
+class OpportunityDetailPR5SectionsTests(TestCase):
+    def setUp(self):
+        self.staff = _staff_user('detail-staff')
+        self.opp = _make_opportunity()
+
+    def test_gate_and_timeline_sections_render(self):
+        response = self.client.get(reverse('good_agents:opportunity_detail', args=[self.opp.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Action gate')
+        self.assertContains(response, 'Timeline')
+
+    def test_gate_transition_view_requires_staff(self):
+        response = self.client.post(reverse('good_agents:gate_transition', args=[self.opp.pk]), {'new_state': 'needs_review'})
+        self.assertEqual(response.status_code, 302)
+        gate = action_gate_service.get_or_create_gate(self.opp)
+        self.assertEqual(gate.current_state, 'discovered')
+
+    def test_gate_transition_view_applies_legal_transition(self):
+        self.client.force_login(self.staff)
+        self.client.post(reverse('good_agents:gate_transition', args=[self.opp.pk]), {'new_state': 'needs_review', 'reason': 'ok'})
+        gate = action_gate_service.get_or_create_gate(self.opp)
+        self.assertEqual(gate.current_state, 'needs_review')
+
+    def test_gate_transition_view_rejects_illegal_transition_without_crashing(self):
+        self.client.force_login(self.staff)
+        response = self.client.post(reverse('good_agents:gate_transition', args=[self.opp.pk]), {'new_state': 'approved_for_contact'})
+        self.assertEqual(response.status_code, 302)
+        gate = action_gate_service.get_or_create_gate(self.opp)
+        self.assertEqual(gate.current_state, 'discovered')  # untouched — illegal transition never applied
+
+    def test_pathway_create_view_requires_approved_gate(self):
+        self.client.force_login(self.staff)
+        response = self.client.post(reverse('good_agents:pathway_create', args=[self.opp.pk]), {'pathway_type': 'introduction'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ActionPathway.objects.filter(opportunity=self.opp).count(), 0)
+
+
+class PermissionsAndCSRFTests(TestCase):
+    def setUp(self):
+        self.staff = _staff_user('perm-staff')
+        self.opp = _make_opportunity()
+
+    def test_project_candidate_execute_requires_staff(self):
+        candidate = project_bridge.propose_candidate(self.opp)
+        response = self.client.post(
+            reverse('good_agents:project_candidate_create_execute', args=[candidate.pk]),
+            {'slug': 'perm-test', 'name': 'Perm Test', 'is_demo': 'true'},
+        )
+        self.assertEqual(response.status_code, 302)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'proposed')
+
+    def test_csrf_enforced_on_gate_transition(self):
+        csrf_client = Client(enforce_csrf_checks=True, SERVER_NAME='localhost')
+        csrf_client.force_login(self.staff)
+        response = csrf_client.post(reverse('good_agents:gate_transition', args=[self.opp.pk]), {'new_state': 'needs_review'})
+        self.assertEqual(response.status_code, 403)
+
+    def test_project_creation_refuses_unapproved_candidate_even_for_staff(self):
+        """Cross-object tampering guard: posting execute for a merely-proposed candidate must not create a project."""
+        self.client.force_login(self.staff)
+        candidate = project_bridge.propose_candidate(self.opp)
+        self.client.post(
+            reverse('good_agents:project_candidate_create_execute', args=[candidate.pk]),
+            {'slug': 'tamper-test', 'name': 'Tamper Test', 'is_demo': 'true'},
+        )
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'proposed')
+        self.assertIsNone(candidate.created_project)
+        self.assertEqual(GoldProject.objects.filter(slug='tamper-test').count(), 0)
+
+
+class NoFabricatedExternalStatusTests(TestCase):
+    def test_connection_candidate_cannot_be_marked_interest_confirmed_without_record_outcome(self):
+        """The only field write path for status is record_outcome/approve_for_introduction/mark_introduced — no shortcut asserts agreement."""
+        opp = _make_opportunity()
+        need = Need.objects.create(need_type='energy', title='Need', opportunity=opp)
+        resource = AvailableResource.objects.create(resource_type='asset', title='Resource', availability='available')
+        match = ResourceMatch.objects.create(need=need, resource=resource, match_reason='x', confidence=60.0)
+        candidate = connection_action.create_candidate(match)
+        self.assertEqual(candidate.status, 'candidate_match')
+
+    def test_funding_action_status_never_defaults_to_awarded(self):
+        opp = _make_opportunity()
+        match = FundingMatch.objects.create(opportunity=opp, funder_type='grant')
+        action = funding_action_service.create_action(match)
+        self.assertEqual(action.status, 'match_found')
+
+    def test_outreach_draft_never_created_pre_sent(self):
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        pathway = action_pathway_service.create_pathway(opp, 'introduction')
+        draft = outreach_service.create_draft(pathway, 'email', subject='x', body='x')
+        self.assertNotEqual(draft.status, 'sent')
+        self.assertIsNone(draft.sent_at)

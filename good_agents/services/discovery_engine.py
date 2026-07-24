@@ -31,8 +31,8 @@ work:
 """
 from good_agents.models import GoodAgentDefinition, GoodDiscoveryRun, GoodOpportunity
 from good_agents.services import (
-    agent_groups, circular_economy, clustering, evidence_gate, funding_matcher, matcher, morning_brief,
-    need_resource, notify, prioritisation, signals as signal_service, zero_capital_strategy,
+    action_gate, agent_groups, circular_economy, clustering, evidence_gate, funding_matcher, matcher,
+    morning_brief, need_resource, notify, prioritisation, signals as signal_service, zero_capital_strategy,
 )
 from good_agents.services.orchestrator import Signal, classify_relevant_agents, record_activations, run_deep_reasoning
 from good_agents.services.pipeline import qualify_opportunity
@@ -328,6 +328,11 @@ def run_global_discovery(mission_config, raw_signals, *, execution_mode='simulat
             opportunity.discovery_run = run
             opportunity.save(update_fields=['discovery_run', 'updated_at'])
             run.opportunities_detected += 1
+            # PR5 Phase 1 — every real discovered opportunity gets its
+            # ActionGate immediately (not lazily on first detail-page view),
+            # so it's visible in the Impact Action Centre's "awaiting
+            # review" queue from the moment it's discovered.
+            action_gate.get_or_create_gate(opportunity)
 
             records = record_activations(opportunity, activations, deep_output, reasoning_metadata)
             qualify_opportunity(opportunity, records)

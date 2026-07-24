@@ -41,7 +41,8 @@ from waste_to_value_capital_allocation_engine.models import InterventionOption
 from waste_to_value_capital_allocation_engine.services.loss_intake import create_operational_loss
 
 from good_agents.models import ImpactReceipt
-from good_agents.services import good_deeds_engine, opportunity_cost, red_team
+from good_agents.services import good_deeds_engine, notify, opportunity_cost, red_team
+from good_agents.services.timeline import record_event
 
 
 def create_loss_for_opportunity(opportunity, project, *, financial_loss_amount, classification='estimated',
@@ -179,6 +180,16 @@ def record_verified_outcome_and_sync(decision, *, mrv_status, evidence_quality, 
     after-data genuinely exists. Not called by the demo command — see this
     module's docstring for why. Exercised directly in tests.py to prove the
     wiring is real, using clearly-synthetic test figures.
+
+    PR5 Phase 21-23 — closes the loop onto GoodOpportunity.status, which has
+    'measured'/'verified' choices nothing previously set. This function can
+    only ever reach 'measured': record_monitoring_outcome() (called below)
+    refuses mrv_status='verified' by design (see execution_monitoring.py's
+    own safety-gate docstring — "the same user entering a result does not
+    automatically make it independently verified"). The 'verified' half of
+    the loop is closed by good_agents/signals.py reacting to the one real
+    path to independent verification: a staff member editing the existing
+    VerifiedCapitalOutcome admin change form directly.
     """
     outcome = record_monitoring_outcome(
         decision, mrv_status=mrv_status, evidence_quality=evidence_quality,
@@ -191,7 +202,18 @@ def record_verified_outcome_and_sync(decision, *, mrv_status, evidence_quality, 
         receipt.verified_outcome = outcome
         receipt.measured_result = {
             'capex_actual': capex_actual, 'loss_avoided_actual': loss_avoided_actual,
-            'savings_actual': savings_actual, 'stage': 'measured' if mrv_status != 'verified' else 'verified',
+            'savings_actual': savings_actual, 'stage': 'measured',
         }
         receipt.save(update_fields=['verified_outcome', 'measured_result'])
+
+        opportunity = receipt.opportunity
+        if opportunity.status not in ('measured', 'verified'):
+            opportunity.status = 'measured'
+            opportunity.save(update_fields=['status'])
+        record_event(
+            opportunity, 'outcome_measured',
+            source_object_reference=f'good_agents.ImpactReceipt:{receipt.pk}',
+            notes='Real after-data recorded — independent verification still required.',
+        )
+        notify.notify_outcome_measured(opportunity)
     return outcome, memory

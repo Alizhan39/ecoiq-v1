@@ -64,12 +64,48 @@ def _opportunity_summary(opportunity):
     }
 
 
+def _evidence_quality_label(opportunity):
+    if opportunity.insufficient_evidence:
+        return 'Insufficient'
+    if opportunity.confidence >= 70:
+        return 'Strong'
+    if opportunity.confidence >= 40:
+        return 'Moderate'
+    return 'Weak'
+
+
+def _action_pathway_context(opportunity):
+    """
+    PR5 Phase 16 — real pathway/ownership/approval context, never a
+    fabricated one. Returns None fields honestly when no pathway exists
+    yet (an unreviewed opportunity has no pathway — that's the point).
+    """
+    pathway = opportunity.action_pathways.order_by('-created_at').first()
+    if pathway is None:
+        return {
+            'action_pathway': None, 'capital_required': None, 'owner': None,
+            'next_step': '', 'due_date': None, 'progress_state': None,
+        }
+    return {
+        'action_pathway': pathway.get_pathway_type_display(),
+        'capital_required': pathway.get_capital_required_display(),
+        'owner': str(pathway.owner) if pathway.owner_id else None,
+        'next_step': pathway.next_step,
+        'due_date': pathway.due_date.isoformat() if pathway.due_date else None,
+        'progress_state': pathway.get_status_display(),
+    }
+
+
 def top_3_actions(opportunities):
     """
     AttentionPriority (Phase 18): which 3 decisions deserve human attention
     today. Ranked urgent-first, then evidence-gap (needs a human to unblock
     it), then everything else — never shows all opportunities as equally
     important.
+
+    PR5 Phase 16 upgrade: never presents an opportunity as "actionable"
+    while its ActionGate is still 'discovered'/'needs_review' — those
+    surface as "needs human review" instead, not a pretend action.
     """
     scored = []
     for opportunity in opportunities:
@@ -80,14 +116,32 @@ def top_3_actions(opportunities):
             + (1 if 'HIGH_LEVERAGE' in result.labels else 0)
         )
         if weight > 0 or opportunity.actions.filter(autonomy_class='yellow', status='proposed').exists():
-            scored.append((weight, opportunity))
+            scored.append((weight, opportunity, result))
 
-    scored.sort(key=lambda pair: -pair[0])
+    scored.sort(key=lambda triple: -triple[0])
     top = scored[:3]
     actions = []
-    for _, opportunity in top:
-        label, action_kind = _next_safe_step(opportunity)
-        actions.append({'opportunity_id': opportunity.pk, 'title': opportunity.title, 'action': label, 'action_kind': action_kind})
+    for _, opportunity, result in top:
+        gate = getattr(opportunity, 'action_gate', None)
+        gate_state = gate.current_state if gate is not None else 'discovered'
+        reviewed = gate_state not in ('discovered', 'needs_review')
+
+        if reviewed:
+            label, action_kind = _next_safe_step(opportunity)
+        else:
+            label, action_kind = 'Needs human review', 'needs_review'
+
+        actions.append({
+            'opportunity_id': opportunity.pk,
+            'title': opportunity.title,
+            'action': label,
+            'action_kind': action_kind,
+            'why_now': '; '.join(result.labels),
+            'evidence_quality': _evidence_quality_label(opportunity),
+            'relevant_principles': [a.agent.name for a in opportunity.agent_activations.select_related('agent').all()],
+            'human_approval_status': gate.get_current_state_display() if gate is not None else 'Discovered',
+            **_action_pathway_context(opportunity),
+        })
     return actions
 
 
