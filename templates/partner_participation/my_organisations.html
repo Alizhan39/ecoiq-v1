@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}My Organisations — EcoIQ Partner Network{% endblock %}
+{% block meta_description_content %}Claim and manage your organisation's participation in the EcoIQ Capability Graph.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261;
+    max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pp-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 .5rem; }
+  .pp-sub { color:var(--muted); font-size:.85rem; max-width:70ch; margin-bottom:1rem; }
+  .pp-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pp-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pp-row { display:flex; justify-content:space-between; gap:1rem; padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.9rem; }
+  .pp-row:last-child { border-bottom:none; }
+  .pp-row a { color:var(--accent); text-decoration:none; font-weight:600; }
+  .pp-row a:hover { text-decoration:underline; }
+  .pp-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem;
+    padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .pp-empty { color:var(--muted); font-size:.82rem; }
+  .pp-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.6rem; }
+  .pp-form input, .pp-form select { background:rgba(255,255,255,.04); border:1px solid var(--border);
+    border-radius:6px; color:inherit; padding:.4rem .6rem; font-size:.85rem; font-family:inherit; }
+  .pp-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px;
+    padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; text-decoration:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrap">
+  <div class="pp-eyebrow">ECOIQ · PARTNER PARTICIPATION</div>
+  <h1 class="pp-h1">My Organisations</h1>
+  <p class="pp-sub">Claiming an organisation submits a request for EcoIQ review — you never gain access automatically. Only a verified membership unlocks that organisation's Partner Portal.</p>
+
+  {% if messages %}
+    {% for message in messages %}<p class="pp-empty" style="color:{% if message.tags == 'success' %}var(--accent){% else %}var(--warn){% endif %};">{{ message }}</p>{% endfor %}
+  {% endif %}
+
+  <div class="pp-section">
+    <h2>My membership requests</h2>
+    {% for m in my_memberships %}
+      <div class="pp-row">
+        <span>{% if m.status == 'verified_member' %}<a href="{% url 'partner_participation:organisation_portal' m.organisation.pk %}">{{ m.organisation.name }}</a>{% else %}{{ m.organisation.name }}{% endif %}
+          <span class="pp-badge">{{ m.get_role_display }}</span></span>
+        <span class="pp-badge">{{ m.get_status_display }}</span>
+      </div>
+    {% empty %}<p class="pp-empty">You have no organisation claims yet.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Claim an organisation</h2>
+    {% for org in organisations %}
+      <div class="pp-row">
+        <span>{{ org.name }} <span class="pp-badge">{{ org.get_org_type_display }}</span>{% if org.jurisdiction %} <span class="pp-empty">{{ org.jurisdiction }}</span>{% endif %}</span>
+        <form method="post" action="{% url 'partner_participation:claim_organisation' org.pk %}" class="pp-form">
+          {% csrf_token %}
+          <select name="role"><option value="admin">Admin</option><option value="editor">Editor</option><option value="viewer">Viewer</option></select>
+          <input type="text" name="justification" placeholder="Why you represent this org">
+          <button type="submit" class="pp-btn">Request claim</button>
+        </form>
+      </div>
+    {% empty %}<p class="pp-empty">No organisations in the graph yet.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

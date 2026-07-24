@@ -53,7 +53,11 @@ from django.utils import timezone
 # a GlobalGoodDiscoveryEngine run spans many candidate signals/opportunities
 # across potentially many countries/sectors at once — it has no single
 # GoldProject or CompanyProfile to anchor to either.
-NO_ANCHOR_ALLOWED_KINDS = ('company_discovery', 'evidence_review_workbench', 'good_agents_discovery')
+#
+# 'partner_routing' (Partner Participation Protocol PR8): a routing run
+# spans one opportunity against many candidate organisations — no single
+# project/company anchor either.
+NO_ANCHOR_ALLOWED_KINDS = ('company_discovery', 'evidence_review_workbench', 'good_agents_discovery', 'partner_routing')
 
 
 class AnalysisSession(models.Model):
@@ -69,6 +73,7 @@ class AnalysisSession(models.Model):
         ('evidence_review_workbench', 'Evidence Review Workbench (Queue, Decision, Dispute, Re-Review)'),
         ('stewardship_refresh', 'Stewardship Universe Refresh (Source Discovery / Fetch / KPI Candidates)'),
         ('good_agents_discovery', 'Good Agents Global Discovery Run (Signal Ingestion / 114-Principle Activation)'),
+        ('partner_routing', 'Partner Participation Routing (Capability Match / Participation Signal Scoring)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [

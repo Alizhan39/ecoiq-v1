@@ -287,6 +287,10 @@ INSTALLED_APPS = [
     # first real consumer of; not good_agents-private, so it's listed as
     # its own app rather than a submodule.
     'capability_graph',
+    # Consented organisation participation (claims, roles, capability/
+    # resource/funding declarations, opportunity routing) — the reciprocal
+    # half of capability_graph's externally-discovered evidence.
+    'partner_participation',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
