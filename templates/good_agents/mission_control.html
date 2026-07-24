@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% block title %}Global Impact Mission Control — EcoIQ{% endblock %}
+{% block meta_description_content %}One flagship mission, one governed truth chain — real signal to verified impact, live.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .mc-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1280px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .mc-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .mc-h1 { font-size:1.6rem; font-weight:800; margin:.3rem 0 .4rem; }
+  .mc-sub { color:var(--muted); font-size:.85rem; max-width:70ch; margin-bottom:1.2rem; }
+  .mc-nav { display:flex; flex-wrap:wrap; gap:.4rem .6rem; margin-bottom:1.5rem; font-size:.72rem;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .mc-nav a { color:var(--muted); text-decoration:none; border:1px solid var(--border); border-radius:4px; padding:.2rem .5rem; }
+  .mc-nav a:hover { color:var(--accent); border-color:var(--accent); }
+  .mc-section { border:1px solid var(--border); border-radius:8px; padding:1.1rem 1.3rem; margin:1rem 0; background:var(--bg2); scroll-margin-top:1rem; }
+  .mc-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .7rem; }
+  .mc-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap:.75rem; margin-bottom:.5rem; }
+  .mc-kpi { border:1px solid var(--border); border-radius:6px; padding:.7rem .8rem; }
+  .mc-kpi .n { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:1.3rem; font-weight:800; }
+  .mc-kpi .l { font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:.2rem; }
+  .mc-row { display:flex; justify-content:space-between; gap:1rem; padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.85rem; }
+  .mc-row:last-child { border-bottom:none; }
+  .mc-row a, .mc-section p a { color:var(--accent); text-decoration:none; font-weight:600; }
+  .mc-row a:hover, .mc-section p a:hover { text-decoration:underline; }
+  .mc-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem;
+    padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .mc-badge-ok { color:var(--accent); border-color:var(--accent); }
+  .mc-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .mc-empty { color:var(--muted); font-size:.82rem; }
+  .mc-chain { display:flex; flex-direction:column; gap:0; }
+  .mc-chain-node { display:flex; gap:.7rem; align-items:flex-start; padding:.5rem 0; border-left:2px solid var(--border); padding-left:1rem; margin-left:.4rem; }
+  .mc-chain-node.reached { border-left-color:var(--accent); }
+  .mc-chain-dot { width:.6rem; height:.6rem; border-radius:50%; background:var(--muted); margin-top:.35rem; flex-shrink:0; margin-left:-1.35rem; }
+  .mc-chain-node.reached .mc-chain-dot { background:var(--accent); }
+  .mc-chain-stage { font-weight:700; font-size:.85rem; }
+  .mc-chain-detail { color:var(--muted); font-size:.8rem; }
+  .mc-story-step { display:flex; gap:.8rem; padding:.5rem 0; border-bottom:1px solid var(--border); }
+  .mc-story-step:last-child { border-bottom:none; }
+  .mc-story-num { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--accent); font-weight:800; flex-shrink:0; width:1.6rem; }
+  .mc-disclaimer { color:var(--warn); font-size:.78rem; border:1px solid var(--warn); border-radius:6px; padding:.6rem .8rem; margin:1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mc-wrap">
+  <div class="mc-eyebrow">ECOIQ · GLOBAL IMPACT MISSION CONTROL</div>
+  <h1 class="mc-h1">Mission Control</h1>
+  <p class="mc-sub">One flagship mission, one governed truth chain: real signal → evidence → 114 Good Agents → qualified opportunity → human review → action → responsible party → connection/outreach → project → execution → MRV → verified outcome → Impact Receipt → Evidence Memory. Every number below is a live query — nothing is a static mockup. Mission Control shows evidence and governed action state; it does not imply that every opportunity is feasible, funded, accepted, executed, or impactful.</p>
+
+  <nav class="mc-nav">
+    <a href="#status">Status</a><a href="#funnel">Funnel</a><a href="#noise">Noise</a><a href="#agents">114 Agents</a>
+    <a href="#opportunities">Opportunities</a><a href="#top3">Top 3</a><a href="#zerocapital">Zero-Capital</a>
+    <a href="#matches">Resource/Funding</a><a href="#parties">Responsible Parties</a><a href="#outreach">Outreach/Connection</a>
+    <a href="#projects">Projects</a><a href="#execution">Execution/MRV</a><a href="#verified">Verified Impact</a>
+    <a href="#receipts">Impact Receipts</a><a href="#evidencememory">Evidence Memory</a><a href="#velocity">Velocity</a>
+    <a href="#health">Mission Health</a><a href="#comparison">Comparison</a><a href="#story">Demo Story</a><a href="#observatory">Observatory</a>
+    <a href="#truthchain">Truth Chain</a><a href="#map">Map</a>
+  </nav>
+
+  {% if not mission %}
+  <div class="mc-section"><p class="mc-empty">No flagship mission seeded yet — run <code>python manage.py seed_global_monitoring_mission</code>.</p></div>
+  {% else %}
+
+  <section id="status" class="mc-section">
+    <h2>Mission status</h2>
+    <p>{{ mission.name }}</p>
+    <p class="mc-empty">{{ mission.description }}</p>
+    <div class="mc-grid">
+      <div class="mc-kpi"><div class="n">{{ mission_status.run_status }}</div><div class="l">Latest run status</div></div>
+      <div class="mc-kpi"><div class="n">{{ mission_status.last_completed_at|date:"Y-m-d H:i"|default:"—" }}</div><div class="l">Last completed</div></div>
+    </div>
+  </section>
+
+  <section id="funnel" class="mc-section">
+    <h2>Signal funnel</h2>
+    <p class="mc-empty">Signal/cluster counts are pool-wide (the schema shares one signal pool across missions, reported honestly rather than fabricating a false per-mission boundary); run and opportunity counts are genuinely scoped to this mission.</p>
+    <div class="mc-grid">
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.signals_fetched }}</div><div class="l">Signals fetched</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.duplicates_removed }}</div><div class="l">Duplicates removed</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.noise_rejected_pool_wide }}</div><div class="l">Noise rejected (pool)</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.clusters_reaching_evidence_gate }}</div><div class="l">Reached Evidence Gate</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.opportunities_detected }}</div><div class="l">Opportunities detected</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.opportunities_qualified }}</div><div class="l">Qualified</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.opportunities_human_reviewed }}</div><div class="l">Human-reviewed</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.actions_approved }}</div><div class="l">Actions approved</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.projects_created }}</div><div class="l">Projects created</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.outcomes_measured }}</div><div class="l">Outcomes measured</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.outcomes_verified }}</div><div class="l">Outcomes verified</div></div>
+      <div class="mc-kpi"><div class="n">{{ signal_funnel.evidence_memory_records_created }}</div><div class="l">Evidence Memory records</div></div>
+    </div>
+  </section>
+
+  <section id="noise" class="mc-section">
+    <h2>Noise rejected (sample)</h2>
+    <p class="mc-empty">EcoIQ does not turn every input into an opportunity — a real sample of rejected signal clusters and why.</p>
+    {% for n in noise_sample %}
+      <div class="mc-row"><span>{{ n.excerpt }} <span class="mc-badge">{{ n.signal_type }}</span></span>
+        <span class="mc-empty">{{ n.source|default:"Unknown source" }} · {{ n.timestamp|date:"Y-m-d H:i" }}</span></div>
+      <p class="mc-empty" style="margin:-.2rem 0 .4rem;">↳ {{ n.reason_rejected }}</p>
+    {% empty %}<p class="mc-empty">No rejected signals on record yet.</p>{% endfor %}
+  </section>
+
+  <section id="agents" class="mc-section">
+    <h2>114-principle activation — featured opportunity</h2>
+    {% if featured_opportunity and agent_transparency %}
+      <p><a href="{% url 'good_agents:opportunity_detail' featured_opportunity.pk %}">{{ featured_opportunity.title }}</a></p>
+      <div class="mc-grid">
+        <div class="mc-kpi"><div class="n">{{ agent_transparency.total_available }}</div><div class="l">Principles available</div></div>
+        <div class="mc-kpi"><div class="n">{{ agent_transparency.shortlisted|default:"—" }}</div><div class="l">Shortlisted</div></div>
+        <div class="mc-kpi"><div class="n">{{ agent_transparency.activated }}</div><div class="l">Agents activated</div></div>
+        <div class="mc-kpi"><div class="n">{{ agent_transparency.useful_reasoning_outputs }}</div><div class="l">Useful reasoning outputs</div></div>
+      </div>
+      <p class="mc-empty">{{ agent_transparency.deterministic_count }} deterministic step(s), {{ agent_transparency.model_assisted_count }} model-assisted step(s) — never 114 LLM calls.</p>
+      {% for a in agent_transparency.activations %}
+        <div class="mc-row"><span>{{ a.principle }} <span class="mc-badge">{{ a.position }}</span> <span class="mc-badge">{{ a.mode }}</span></span></div>
+        {% if a.reason %}<p class="mc-empty" style="margin:-.2rem 0 .4rem;">↳ {{ a.reason }}</p>{% endif %}
+      {% endfor %}
+    {% else %}<p class="mc-empty">No featured opportunity yet.</p>{% endif %}
+  </section>
+
+  <section id="opportunities" class="mc-section">
+    <h2>Qualified opportunities <span class="mc-badge">{{ qualified_opportunities|length }}</span></h2>
+    {% for o in qualified_opportunities %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' o.pk %}">{{ o.title }}</a>
+        <span class="mc-empty">urgency {{ o.urgency|floatformat:0 }} · confidence {{ o.confidence|floatformat:0 }}</span></div>
+    {% empty %}<p class="mc-empty">No qualified opportunities yet.</p>{% endfor %}
+
+    <h2 style="margin-top:1rem;">Awaiting human review <span class="mc-badge">{{ awaiting_review|length }}</span></h2>
+    {% for o in awaiting_review %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' o.pk %}">{{ o.title }}</a>
+        <span class="mc-badge">{{ o.action_gate.get_current_state_display }}</span></div>
+    {% empty %}<p class="mc-empty">Nothing awaiting review.</p>{% endfor %}
+  </section>
+
+  <section id="top3" class="mc-section">
+    <h2>Top 3 Actions — operating queue</h2>
+    {% for action in top_3_actions %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' action.opportunity_id %}">{{ action.action }}</a>
+        <span class="mc-empty">{{ action.human_approval_status }}</span></div>
+      <p class="mc-empty" style="margin:-.2rem 0 .6rem;">
+        {{ action.title }} ·
+        {% if action.why_now %}why now: {{ action.why_now }} · {% endif %}
+        evidence: {{ action.evidence_quality }}
+        {% if action.action_pathway %} · pathway: {{ action.action_pathway }} ({{ action.capital_required }} capital){% endif %}
+        {% if action.owner %} · owner: {{ action.owner }}{% endif %}
+        {% if action.due_date %} · due {{ action.due_date }}{% endif %}
+      </p>
+    {% empty %}<p class="mc-empty">No decisions need attention right now.</p>{% endfor %}
+  </section>
+
+  <section id="zerocapital" class="mc-section">
+    <h2>Zero-capital-first lane <span class="mc-badge">{{ zero_capital_lane|length }}</span></h2>
+    {% for z in zero_capital_lane %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' z.opportunity.pk %}">{{ z.opportunity.title }}</a>
+        <span class="mc-badge {% if z.capital_required_now == 'No' %}mc-badge-ok{% endif %}">Capital required now: {{ z.capital_required_now }}</span></div>
+      <p class="mc-empty" style="margin:-.2rem 0 .6rem;">{{ z.why }} · Next: {{ z.next_step }} · Human approval required: {{ z.human_approval_required|yesno:"Yes,No" }}</p>
+    {% empty %}<p class="mc-empty">No zero-capital-lane pathways yet — a gate must be approved before a pathway can exist.</p>{% endfor %}
+  </section>
+
+  <section id="matches" class="mc-section">
+    <h2>Resource matches <span class="mc-badge">{{ resource_matches|length }}</span></h2>
+    {% for m in resource_matches %}
+      <div class="mc-row">{{ m.need.title }} ↔ {{ m.resource.title }} <span class="mc-badge">{{ m.confidence|floatformat:0 }}%</span></div>
+    {% empty %}<p class="mc-empty">No resource matches yet.</p>{% endfor %}
+
+    <h2 style="margin-top:1rem;">Funding matches <span class="mc-badge">{{ funding_matches|length }}</span></h2>
+    {% for f in funding_matches %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' f.match.opportunity.pk %}">{{ f.match.opportunity.title }}</a>
+        <span class="mc-badge">{{ f.match.get_eligibility_status_display }}</span></div>
+      {% if f.action %}<p class="mc-empty" style="margin:-.2rem 0 .6rem;">Status: {{ f.action.get_status_display }}{% if f.action.deadline %} · due {{ f.action.deadline }}{% endif %}</p>{% endif %}
+    {% empty %}<p class="mc-empty">No funding matches yet.</p>{% endfor %}
+  </section>
+
+  <section id="parties" class="mc-section">
+    <h2>Responsible parties <span class="mc-badge">{{ responsible_party_lane|length }}</span></h2>
+    {% for p in responsible_party_lane %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' p.opportunity.pk %}">{{ p.party.name }}</a>
+        <span class="mc-badge">{{ p.party.get_resolution_status_display }}</span></div>
+      <p class="mc-empty" style="margin:-.2rem 0 .6rem;">Provenance: {{ p.provenance }} · Contact: {{ p.contact_status }} · Outreach: {{ p.outreach_status }} · {{ p.human_approval }}</p>
+    {% empty %}<p class="mc-empty">No responsible parties identified yet.</p>{% endfor %}
+  </section>
+
+  <section id="outreach" class="mc-section">
+    <h2>Outreach truth states <span class="mc-badge">{{ outreach_connection_truth.outreach|length }}</span></h2>
+    {% for d in outreach_connection_truth.outreach %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' d.action_pathway.opportunity_id %}">{{ d.subject|default:d.get_draft_type_display }}</a>
+        <span class="mc-badge">{{ d.get_status_display }}</span></div>
+    {% empty %}<p class="mc-empty">No outreach drafts yet.</p>{% endfor %}
+
+    <h2 style="margin-top:1rem;">Connection truth states <span class="mc-badge">{{ outreach_connection_truth.connections|length }}</span></h2>
+    {% for c in outreach_connection_truth.connections %}
+      <div class="mc-row">{{ c.resource_match.need.title }} ↔ {{ c.resource_match.resource.title }} <span class="mc-badge">{{ c.get_status_display }}</span></div>
+    {% empty %}<p class="mc-empty">No connection candidates yet.</p>{% endfor %}
+  </section>
+
+  <section id="projects" class="mc-section">
+    <h2>Project candidates <span class="mc-badge">{{ project_candidates|length }}</span></h2>
+    {% for pc in project_candidates %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' pc.opportunity_id %}">{{ pc.opportunity.title }}</a>
+        <span class="mc-badge">{{ pc.get_status_display }}</span></div>
+    {% empty %}<p class="mc-empty">No project candidates yet.</p>{% endfor %}
+
+    <h2 style="margin-top:1rem;">Active real-world projects <span class="mc-badge">{{ active_projects|length }}</span></h2>
+    {% for pc in active_projects %}
+      <div class="mc-row">{{ pc.created_project.name }} <span class="mc-badge">{% if pc.created_project.is_demo %}DEMO{% else %}REAL{% endif %}</span></div>
+    {% empty %}<p class="mc-empty">No projects created from opportunities yet.</p>{% endfor %}
+
+    {% if project_bridge_chain %}
+    <h2 style="margin-top:1rem;">Project bridge — featured opportunity</h2>
+    <p class="mc-empty">Signal: {{ project_bridge_chain.originating_signal|default:"Not recorded" }} → Opportunity: {{ project_bridge_chain.opportunity.title }} → Principles: {{ project_bridge_chain.relevant_principles|join:", "|default:"none" }} → Review: {% if project_bridge_chain.review_decision %}{{ project_bridge_chain.review_decision.get_decision_display }}{% else %}none{% endif %} → Pathway: {% if project_bridge_chain.action_pathway %}{{ project_bridge_chain.action_pathway.get_pathway_type_display }}{% else %}none{% endif %} → Candidate: {{ project_bridge_chain.candidate.get_status_display }} → Project: {{ project_bridge_chain.current_stage }}</p>
+    {% endif %}
+  </section>
+
+  <section id="execution" class="mc-section">
+    <h2>Execution / MRV — featured project</h2>
+    {% if execution_mrv %}
+      <p>Current milestone: {{ execution_mrv.current_milestone|default:"Not recorded" }}</p>
+      <p class="mc-empty">Blockers: {{ execution_mrv.blockers }} · Verification status: {{ execution_mrv.verification_status }}</p>
+      {% if execution_mrv.expected_vs_actual %}
+      <p class="mc-empty">Expected capex {{ execution_mrv.expected_vs_actual.expected_capex|default:"—" }} vs actual {{ execution_mrv.expected_vs_actual.actual_capex }} · Expected loss avoided {{ execution_mrv.expected_vs_actual.expected_loss_avoided|default:"—" }} vs actual {{ execution_mrv.expected_vs_actual.actual_loss_avoided }}</p>
+      {% endif %}
+    {% else %}<p class="mc-empty">No active project for the featured opportunity — nothing to execute or measure yet.</p>{% endif %}
+  </section>
+
+  <section id="verified" class="mc-section">
+    <h2>Verified impact <span class="mc-badge">{{ verified_impact|length }}</span></h2>
+    {% for o in verified_impact %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' o.pk %}">{{ o.title }}</a> <span class="mc-badge mc-badge-ok">VERIFIED</span></div>
+    {% empty %}<p class="mc-empty">No verified impact recorded yet — nothing here is claimed before it's measured.</p>{% endfor %}
+  </section>
+
+  <section id="receipts" class="mc-section">
+    <h2>Impact Receipts <span class="mc-badge">{{ impact_receipts|length }}</span></h2>
+    {% for r in impact_receipts %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' r.opportunity_id %}">{{ r.opportunity.title }}</a>
+        <span class="mc-badge">{% if r.verified_outcome_id %}Verified outcome linked{% else %}Plan only{% endif %}</span></div>
+    {% empty %}<p class="mc-empty">No Impact Receipts yet.</p>{% endfor %}
+  </section>
+
+  <section id="evidencememory" class="mc-section">
+    <h2>Evidence Memory — featured opportunity's receipt</h2>
+    {% for m in evidence_memory_records %}
+      <div class="mc-row">{{ m.text_chunk|truncatewords:20 }} <span class="mc-badge">{{ m.get_verification_status_display }}</span></div>
+    {% empty %}<p class="mc-empty">Not yet in Evidence Memory.</p>{% endfor %}
+  </section>
+
+  <section id="velocity" class="mc-section">
+    <h2>Impact velocity — featured opportunity</h2>
+    {% if impact_velocity %}
+      <div class="mc-row"><span>Opportunity → Human review</span><span>{{ impact_velocity.opportunity_to_review }}</span></div>
+      <div class="mc-row"><span>Review → Approved action</span><span>{{ impact_velocity.review_to_approved_action }}</span></div>
+      <div class="mc-row"><span>Action → Project</span><span>{{ impact_velocity.action_to_project }}</span></div>
+      <div class="mc-row"><span>Project → Measurement</span><span>{{ impact_velocity.project_to_measurement }}</span></div>
+      <div class="mc-row"><span>Measurement → Verification</span><span>{{ impact_velocity.measurement_to_verification }}</span></div>
+    {% else %}<p class="mc-empty">No featured opportunity.</p>{% endif %}
+  </section>
+
+  <section id="health" class="mc-section">
+    <h2>Mission health</h2>
+    <div class="mc-grid">
+      <div class="mc-kpi"><div class="n">{{ mission_health.providers_active }}</div><div class="l">Providers active</div></div>
+      <div class="mc-kpi"><div class="n">{{ mission_health.providers_failed }}</div><div class="l">Providers failed</div></div>
+      <div class="mc-kpi"><div class="n">{{ mission_health.signals_pending }}</div><div class="l">Signals pending</div></div>
+      <div class="mc-kpi"><div class="n">{{ mission_health.reviews_pending }}</div><div class="l">Reviews pending</div></div>
+      <div class="mc-kpi"><div class="n">{{ mission_health.outreach_awaiting_approval }}</div><div class="l">Outreach awaiting approval</div></div>
+      <div class="mc-kpi"><div class="n">{{ mission_health.projects_blocked }}</div><div class="l">Projects blocked</div></div>
+      <div class="mc-kpi"><div class="n">{{ mission_health.outcomes_awaiting_verification }}</div><div class="l">Outcomes awaiting verification</div></div>
+    </div>
+    <p class="mc-empty">Last successful ingestion: {{ mission_health.last_successful_ingestion|date:"Y-m-d H:i"|default:"Never" }}</p>
+  </section>
+
+  <section id="comparison" class="mc-section">
+    <h2>Mission comparison</h2>
+    {% for row in mission_comparison %}
+      <div class="mc-row"><span>{{ row.mission.name }}</span>
+        <span class="mc-empty">signals {{ row.signals_reviewed }} · qualified {{ row.opportunities_qualified }} · reviewed {{ row.opportunities_human_reviewed }} · actions {{ row.actions_approved }} · zero-capital {{ row.zero_capital_actions }} · projects {{ row.projects_created }} · verified {{ row.verified_outcomes }}</span></div>
+    {% empty %}<p class="mc-empty">No missions seeded.</p>{% endfor %}
+  </section>
+
+  <section id="story" class="mc-section">
+    <h2>Demo story mode — featured opportunity</h2>
+    <p class="mc-empty">A guided walkthrough built entirely from real stored fields — no AI-generated narration.</p>
+    {% for step in demo_story %}
+      <div class="mc-story-step"><span class="mc-story-num">{{ step.step }}</span>
+        <span><strong>{{ step.title }}</strong><br><span class="mc-empty">{{ step.text }}</span></span></div>
+    {% empty %}<p class="mc-empty">No featured opportunity.</p>{% endfor %}
+  </section>
+
+  <section id="observatory" class="mc-section">
+    <h2>Observatory summary</h2>
+    {% if observatory_summary %}
+      <p class="mc-empty">Session {{ observatory_summary.session_reference }} · {{ observatory_summary.duration_ms }}ms · {{ observatory_summary.deterministic_stage_count }} deterministic stage(s) · {{ observatory_summary.model_call_count }} model call(s) · {{ observatory_summary.deterministic_step_ratio|floatformat:2 }} deterministic-step ratio</p>
+      <p class="mc-empty">Evidence retrieved: {{ observatory_summary.evidence_retrieved_count|default:"—" }} · Evidence reused: {{ observatory_summary.evidence_reused_count|default:"—" }} · Human review: {% if observatory_summary.human_review_completed %}completed{% elif observatory_summary.human_review_required %}required{% else %}not required{% endif %} · Warnings: {{ observatory_summary.warnings|length }} · Blocked: {{ observatory_summary.blocked_recommendation_count }} · Status: {{ observatory_summary.status }}</p>
+      <a class="mc-badge" href="/admin/ai_observatory/analysissession/">Full Observatory →</a>
+    {% else %}<p class="mc-empty">No Observatory session recorded for this mission's latest run.</p>{% endif %}
+  </section>
+
+  <section id="truthchain" class="mc-section">
+    <h2>Truth chain — featured opportunity</h2>
+    {% if featured_opportunity %}
+    <p><a href="{% url 'good_agents:opportunity_detail' featured_opportunity.pk %}">{{ featured_opportunity.title }} →</a></p>
+    <div class="mc-chain">
+      {% for node in truth_chain %}
+        <div class="mc-chain-node {% if node.reached %}reached{% endif %}">
+          <div class="mc-chain-dot"></div>
+          <div><div class="mc-chain-stage">{{ node.stage }}</div><div class="mc-chain-detail">{{ node.detail }}</div></div>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="mc-empty">No featured opportunity yet.</p>{% endif %}
+  </section>
+
+  <section id="map" class="mc-section">
+    <h2>Global Good Map</h2>
+    <p class="mc-empty">Reuses the existing map data API's region-level fields — never a precise coordinate or individual identifier, and no globe/3D renderer, per this PR's own scope. <a class="mc-badge" href="{% url 'good_agents:good_map_api' %}">Raw data →</a></p>
+    {% for g in geographic_opportunities %}
+      <div class="mc-row"><a href="{% url 'good_agents:opportunity_detail' g.pk %}">{{ g.title }}</a>
+        <span class="mc-empty">{{ g.region|default:"Region not recorded" }}{% if g.country %}, {{ g.country }}{% endif %} · urgency {{ g.urgency|floatformat:0 }}</span></div>
+    {% empty %}<p class="mc-empty">No geo-tagged opportunities yet.</p>{% endfor %}
+  </section>
+
+  <div class="mc-disclaimer">Mission Control shows evidence and governed action state. It does not imply that every opportunity is feasible, funded, accepted, executed, or impactful.</div>
+  {% endif %}
+</div>
+{% endblock %}

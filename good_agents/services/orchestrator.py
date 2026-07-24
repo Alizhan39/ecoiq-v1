@@ -68,6 +68,24 @@ def _keyword_overlap_score(signal, agent_def):
     return score, domain_hits, signal_type_hits
 
 
+def count_shortlisted(signal, candidate_agents=None, min_score=15):
+    """
+    PR6 Mission Control transparency helper — the shortlist size
+    `classify_relevant_agents` computes internally but discards (it only
+    ever returns the post-`max_activated` slice). Reuses the exact same
+    deterministic `_keyword_overlap_score`, so this is never a second
+    scoring implementation that could silently disagree with the real one
+    — it's the same real computation, just reporting a count Mission
+    Control needs for "X of 114 principles shortlisted" and the real
+    activation pipeline doesn't.
+    """
+    candidates = (
+        candidate_agents if candidate_agents is not None
+        else GoodAgentDefinition.objects.filter(is_active=True)
+    )
+    return sum(1 for agent_def in candidates if _keyword_overlap_score(signal, agent_def)[0] >= min_score)
+
+
 def classify_relevant_agents(signal, candidate_agents=None, min_score=15, max_activated=6):
     """
     Layers 1+2: score every candidate GoodAgentDefinition against `signal`

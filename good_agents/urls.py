@@ -9,6 +9,7 @@ urlpatterns = [
     path('', views.opportunity_list, name='opportunity_list'),
     path('morning-brief/', views.morning_brief, name='morning_brief'),
     path('action-centre/', views.impact_action_centre, name='impact_action_centre'),
+    path('mission-control/', views.mission_control_view, name='mission_control'),
     path('api/map/', views.good_map_api, name='good_map_api'),
     path('api/observatory-health/', views.observatory_health_api, name='observatory_health_api'),
 
