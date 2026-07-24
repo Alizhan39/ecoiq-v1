@@ -1796,3 +1796,339 @@ class NoFabricatedExternalStatusTests(TestCase):
         draft = outreach_service.create_draft(pathway, 'email', subject='x', body='x')
         self.assertNotEqual(draft.status, 'sent')
         self.assertIsNone(draft.sent_at)
+
+
+# ===========================================================================
+# === PR6 — Global Impact Mission Control: one flagship mission, one
+# === governed truth chain from real signal to verified outcome.
+# ===========================================================================
+from good_agents.services import mission_control as mc  # noqa: E402
+
+
+def _mission_with_run(name='PR6 Test Mission', **overrides):
+    defaults = dict(run_cost_budget_usd=5.0, min_confidence=30.0, **overrides)
+    mission, _ = GoodMission.objects.get_or_create(name=name, defaults=defaults)
+    run = GoodDiscoveryRun.objects.create(mission=name, mission_config=mission, status='completed')
+    return mission, run
+
+
+def _mission_opportunity(run, **overrides):
+    base = dict(title='PR6 mission opportunity', problem_statement='A real problem.', theme='energy', confidence=60.0, status='qualified')
+    base.update(overrides)
+    opp = GoodOpportunity.objects.create(discovery_run=run, **base)
+    action_gate_service.get_or_create_gate(opp)
+    return opp
+
+
+class MissionControlAccessTests(TestCase):
+    def test_anonymous_redirected(self):
+        response = self.client.get(reverse('good_agents:mission_control'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_gets_200(self):
+        staff = _staff_user('mc-access-staff')
+        self.client.force_login(staff)
+        response = self.client.get(reverse('good_agents:mission_control'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Mission Control')
+
+    def test_no_flagship_mission_handled_honestly(self):
+        staff = _staff_user('mc-no-mission-staff')
+        self.client.force_login(staff)
+        response = self.client.get(reverse('good_agents:mission_control'))
+        self.assertContains(response, 'No flagship mission seeded yet')
+
+
+class SignalFunnelTests(TestCase):
+    def test_funnel_counts_are_mission_scoped_and_query_backed(self):
+        mission, run = _mission_with_run()
+        run.signals_reviewed = 12
+        run.duplicates_removed = 3
+        run.save(update_fields=['signals_reviewed', 'duplicates_removed'])
+        _mission_opportunity(run, title='Opp A')
+        _mission_opportunity(run, title='Opp B', status='qualified')
+
+        funnel = mc.signal_funnel(mission)
+        self.assertEqual(funnel['signals_fetched'], 12)
+        self.assertEqual(funnel['duplicates_removed'], 3)
+        self.assertEqual(funnel['opportunities_detected'], 2)
+        self.assertEqual(funnel['opportunities_qualified'], 2)
+        self.assertEqual(funnel['opportunities_human_reviewed'], 0)
+
+    def test_opportunity_outside_mission_not_counted(self):
+        mission, run = _mission_with_run()
+        _mission_opportunity(run)
+        other = _make_opportunity(title='Not in this mission')  # no discovery_run at all
+        funnel = mc.signal_funnel(mission)
+        self.assertEqual(funnel['opportunities_detected'], 1)
+        self.assertNotIn(other, GoodOpportunity.objects.filter(discovery_run__in=mission.runs.all()))
+
+    def test_human_reviewed_count_reflects_real_gate_transitions(self):
+        mission, run = _mission_with_run()
+        opp = _mission_opportunity(run)
+        self.assertEqual(mc.signal_funnel(mission)['opportunities_human_reviewed'], 0)
+        action_gate_service.transition(opp, 'needs_review')
+        self.assertEqual(mc.signal_funnel(mission)['opportunities_human_reviewed'], 1)
+
+
+class NoiseVisibilityTests(TestCase):
+    def test_noise_sample_reports_real_reason(self):
+        cluster = SignalCluster.objects.create(representative_title='Rejected cluster', status='discarded')
+        signal_service.WorldSignal.objects.create(signal_type='price_change', title='Stock rallies', cluster=cluster, confidence=10.0)
+        sample = mc.noise_sample(limit=5)
+        entry = next((s for s in sample if s['cluster'].pk == cluster.pk), None)
+        self.assertIsNotNone(entry)
+        self.assertTrue(entry['reason_rejected'])
+
+    def test_open_clusters_never_appear_in_noise_sample(self):
+        cluster = SignalCluster.objects.create(representative_title='Still open', status='open')
+        sample = mc.noise_sample(limit=50)
+        self.assertNotIn(cluster.pk, [s['cluster'].pk for s in sample])
+
+
+class AgentTransparencyTests(TestCase):
+    def test_never_implies_114_llm_calls(self):
+        call_command('seed_all_good_agent_definitions')
+        mission, run = _mission_with_run()
+        signal = WorldSignal.objects.create(
+            signal_type='harm', title='Coal heating pollution harms households', summary='x',
+            sector='energy', tags=['energy'], confidence=60.0,
+        )
+        opp = _mission_opportunity(run, detected_signals=[signal.title])
+        from good_agents.services.orchestrator import Signal as OrchSignal, classify_relevant_agents, record_activations
+        activations = classify_relevant_agents(OrchSignal(text=signal.title, domains=['energy']))
+        record_activations(opp, activations)
+
+        transparency = mc.agent_transparency(opp)
+        self.assertEqual(transparency['total_available'], 114)
+        self.assertLessEqual(transparency['activated'], 6)  # max_activated cap, never all 114
+        self.assertEqual(transparency['activated'], opp.agent_activations.count())
+
+    def test_useful_reasoning_outputs_never_exceeds_activated(self):
+        opp = _make_opportunity()
+        transparency = mc.agent_transparency(opp)
+        self.assertLessEqual(transparency['useful_reasoning_outputs'], transparency['activated'])
+
+
+class ZeroCapitalLaneTests(TestCase):
+    def test_lane_only_shows_real_pathways(self):
+        mission, run = _mission_with_run()
+        opp = _mission_opportunity(run)
+        self.assertEqual(len(mc.zero_capital_lane(mission)), 0)
+        _approve_gate(opp)
+        action_pathway_service.create_pathway(opp, 'data_request', rationale='Real rationale.')
+        lane = mc.zero_capital_lane(mission)
+        self.assertEqual(len(lane), 1)
+        self.assertEqual(lane[0]['capital_required_now'], 'No')
+
+    def test_pathway_outside_mission_excluded(self):
+        mission, run = _mission_with_run()
+        other = _make_opportunity()  # not linked to any discovery_run
+        _approve_gate(other)
+        action_pathway_service.create_pathway(other, 'data_request')
+        self.assertEqual(len(mc.zero_capital_lane(mission)), 0)
+
+
+class OutreachConnectionTruthTests(TestCase):
+    def test_never_shows_contacted_for_a_mere_draft(self):
+        mission, run = _mission_with_run()
+        opp = _mission_opportunity(run)
+        _approve_gate(opp)
+        pathway = action_pathway_service.create_pathway(opp, 'introduction')
+        draft = outreach_service.create_draft(pathway, 'email', subject='x', body='x')
+
+        truth = mc.outreach_connection_truth(mission)
+        self.assertEqual(len(truth['outreach']), 1)
+        self.assertEqual(truth['outreach'][0].status, 'draft')
+        self.assertNotEqual(truth['outreach'][0].status, 'sent')
+
+    def test_connection_states_reflect_real_status(self):
+        mission, run = _mission_with_run()
+        opp = _mission_opportunity(run)
+        need = Need.objects.create(need_type='energy', title='Need', opportunity=opp)
+        resource = AvailableResource.objects.create(resource_type='asset', title='Resource', availability='available')
+        match = ResourceMatch.objects.create(need=need, resource=resource, match_reason='x', confidence=60.0)
+        connection_action.create_candidate(match)
+        truth = mc.outreach_connection_truth(mission)
+        self.assertEqual(truth['connections'][0].status, 'candidate_match')
+
+
+class ProjectBridgeAndExecutionTests(TestCase):
+    def test_project_bridge_chain_none_without_candidate(self):
+        opp = _make_opportunity()
+        self.assertIsNone(mc.project_bridge_chain(opp))
+
+    def test_project_bridge_chain_reflects_real_state(self):
+        opp = _make_opportunity()
+        candidate = project_bridge.propose_candidate(opp, rationale='Worth a pilot.')
+        chain = mc.project_bridge_chain(opp)
+        self.assertEqual(chain['candidate'].pk, candidate.pk)
+        self.assertEqual(chain['current_stage'], 'Not yet created.')
+
+    def test_execution_mrv_none_without_project(self):
+        self.assertIsNone(mc.execution_mrv_for_project(None))
+
+    def test_execution_mrv_reuses_capital_guardian_no_duplicate_logic(self):
+        country = CountryProfile.objects.create(name='PR6 Test Country', iso_code='P6')
+        project = GoldProject.objects.create(name='PR6 Project', slug='pr6-mc-project', country=country, is_demo=True)
+        result = mc.execution_mrv_for_project(project)
+        self.assertIsNone(result['current_milestone'])
+        self.assertEqual(result['verification_status'], 'Not started.')
+
+
+class VerifiedImpactAndReceiptTests(TestCase):
+    def test_verified_impact_list_empty_until_genuinely_verified(self):
+        mission, run = _mission_with_run()
+        _mission_opportunity(run, status='measured')
+        self.assertEqual(mc.verified_impact_list(mission).count(), 0)
+
+    def test_evidence_memory_for_receipt_empty_without_verified_outcome(self):
+        opp = _make_opportunity()
+        receipt = ImpactReceipt.objects.create(opportunity=opp, problem='x')
+        self.assertEqual(mc.evidence_memory_for_receipt(receipt).count(), 0)
+
+
+class ImpactVelocityTests(TestCase):
+    def test_missing_stages_labelled_not_fabricated_zero(self):
+        opp = _make_opportunity()
+        velocity = mc.impact_velocity(opp)
+        self.assertEqual(velocity['opportunity_to_review'], mc.NOT_REACHED)
+        self.assertEqual(velocity['project_to_measurement'], mc.NOT_MEASURED)
+        self.assertEqual(velocity['measurement_to_verification'], mc.NOT_VERIFIED)
+
+    def test_real_gap_computed_from_real_timestamps(self):
+        opp = _make_opportunity()
+        action_gate_service.transition(opp, 'needs_review')
+        velocity = mc.impact_velocity(opp)
+        self.assertNotEqual(velocity['opportunity_to_review'], mc.NOT_REACHED)
+        import datetime as dt
+        self.assertIsInstance(velocity['opportunity_to_review'], dt.timedelta)
+
+
+class MissionHealthAndComparisonTests(TestCase):
+    def test_mission_health_counts_are_real(self):
+        SignalProvider.objects.create(slug='p1', name='Provider 1', status='active')
+        SignalProvider.objects.create(slug='p2', name='Provider 2', status='failed')
+        health = mc.mission_health()
+        self.assertEqual(health['providers_active'], 1)
+        self.assertEqual(health['providers_failed'], 1)
+
+    def test_mission_comparison_has_no_mystery_score(self):
+        _mission_with_run(name='PR6 Comparison Mission')
+        rows = mc.mission_comparison()
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertNotIn('score', row)
+
+
+class ObservatorySummaryReuseTests(TestCase):
+    def test_uses_shared_helper_not_a_new_computation(self):
+        mission, run = _mission_with_run()
+        self.assertIsNone(morning_brief.observatory_summary_for_run(run))
+
+
+class DemoStoryModeTests(TestCase):
+    def test_story_has_16_real_steps_no_fabrication(self):
+        opp = _make_opportunity()
+        story = mc.demo_story(opp)
+        self.assertEqual(len(story), 16)
+        self.assertEqual(story[0]['step'], 1)
+        self.assertIn('None identified.', [s['text'] for s in story if s['title'] == 'Responsible party'])
+
+
+class TruthChainTests(TestCase):
+    def test_truth_chain_reflects_real_progression_not_fabricated(self):
+        opp = _make_opportunity()
+        chain = mc.truth_chain(opp)
+        stage_map = {n['stage']: n for n in chain}
+        self.assertFalse(stage_map['Human review']['reached'])
+        self.assertFalse(stage_map['Verification']['reached'])
+
+        action_gate_service.transition(opp, 'needs_review')
+        chain = mc.truth_chain(opp)
+        stage_map = {n['stage']: n for n in chain}
+        self.assertTrue(stage_map['Human review']['reached'])
+        self.assertFalse(stage_map['Project']['reached'])
+
+
+class NotificationDeepLinkTests(TestCase):
+    def test_notification_admin_url_points_to_mission_control(self):
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        pathway = action_pathway_service.create_pathway(opp, 'data_request')
+        from notifications.models import AdminNotification
+        note = AdminNotification.objects.filter(
+            source_model='good_agents.actionpathway', source_object_id=str(pathway.pk),
+        ).first()
+        self.assertIsNotNone(note)
+        self.assertIn(f'/good-agents/mission-control/?opportunity={opp.pk}', note.admin_url)
+
+
+class MorningBriefMissionControlLinkTests(TestCase):
+    def test_top_action_links_to_mission_control(self):
+        opp = _make_opportunity(urgency=90.0, confidence=80.0)
+        response_html = None
+        from good_agents.services.morning_brief import top_3_actions
+        actions = top_3_actions([opp])
+        self.assertTrue(actions)
+        self.assertEqual(actions[0]['opportunity_id'], opp.pk)
+
+
+class MissionControlCrossObjectIsolationTests(TestCase):
+    def test_responsible_party_lane_never_leaks_other_missions(self):
+        mission_a, run_a = _mission_with_run(name='Mission A')
+        mission_b, run_b = _mission_with_run(name='Mission B')
+        opp_a = _mission_opportunity(run_a)
+        opp_b = _mission_opportunity(run_b)
+        ResponsibleParty.objects.create(opportunity=opp_a, name='Party A', party_type='ngo')
+        ResponsibleParty.objects.create(opportunity=opp_b, name='Party B', party_type='ngo')
+
+        lane_a = mc.responsible_party_lane(mission_a)
+        self.assertEqual(len(lane_a), 1)
+        self.assertEqual(lane_a[0]['party'].name, 'Party A')
+
+    def test_explicit_opportunity_param_overrides_default_pick_within_the_flagship_mission(self):
+        """
+        Mission Control anchors on the ONE flagship mission (Phase 1's own
+        "one flagship mission" instruction) — this proves an explicit
+        `?opportunity=` request wins over the default "furthest progressed /
+        highest urgency" pick, without needing a second mission to exist.
+        """
+        mission, run = _mission_with_run(name=mc.FLAGSHIP_MISSION_NAME)
+        low_urgency = _mission_opportunity(run, title='Low urgency opp', urgency=10.0)
+        _mission_opportunity(run, title='High urgency opp', urgency=99.0)
+
+        staff = _staff_user('mc-isolation-staff')
+        self.client.force_login(staff)
+        response = self.client.get(reverse('good_agents:mission_control') + f'?opportunity={low_urgency.pk}')
+        self.assertContains(response, 'TRUTH CHAIN'.title())
+        self.assertContains(response, low_urgency.title)
+
+    def test_responsible_party_lane_excludes_opportunities_outside_the_flagship_mission(self):
+        """Confirms mission-scoping at the query level: an opportunity with no discovery_run never appears."""
+        mission, run = _mission_with_run(name=mc.FLAGSHIP_MISSION_NAME)
+        in_mission = _mission_opportunity(run)
+        outside = _make_opportunity()  # no discovery_run — never belongs to any mission
+        ResponsibleParty.objects.create(opportunity=in_mission, name='In-mission party', party_type='ngo')
+        ResponsibleParty.objects.create(opportunity=outside, name='Outside party', party_type='ngo')
+
+        lane = mc.responsible_party_lane(mission)
+        self.assertEqual(len(lane), 1)
+        self.assertEqual(lane[0]['party'].name, 'In-mission party')
+
+
+class MissionControlRegressionTests(TestCase):
+    def test_full_page_renders_with_populated_data(self):
+        call_command('seed_global_monitoring_mission')
+        mission, run = _mission_with_run(name=mc.FLAGSHIP_MISSION_NAME)
+        opp = _mission_opportunity(run, urgency=80.0)
+        action_gate_service.transition(opp, 'needs_review')
+        action_gate_service.transition(opp, 'approved_for_research')
+        action_pathway_service.create_pathway(opp, 'data_request')
+
+        staff = _staff_user('mc-regression-staff')
+        self.client.force_login(staff)
+        response = self.client.get(reverse('good_agents:mission_control'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Data request')
+        self.assertContains(response, 'Approved for research')

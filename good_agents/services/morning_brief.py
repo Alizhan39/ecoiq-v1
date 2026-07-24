@@ -145,6 +145,39 @@ def top_3_actions(opportunities):
     return actions
 
 
+def observatory_summary_for_run(run):
+    """
+    PR4 Phase 16 / PR6 Phase 26 — compute/Observatory summary, read
+    straight from the AI Observatory session this run recorded into
+    (Phase 7 — no second telemetry system). Absent gracefully if
+    telemetry recording failed (start_session never raises, but can
+    return None). Shared by build_brief() and mission_control.py so
+    there is exactly one place this is computed.
+    """
+    session_ref = run.stage_checkpoints.get('_observatory_session_reference', '')
+    if not session_ref.startswith('ai_observatory.AnalysisSession:'):
+        return None
+    from ai_observatory.models import AnalysisSession
+    session = AnalysisSession.objects.filter(pk=session_ref.split(':')[-1]).first()
+    if session is None:
+        return None
+    return {
+        'session_reference': session_ref,
+        'duration_ms': session.duration_ms,
+        'deterministic_stage_count': session.deterministic_stage_count,
+        'model_call_count': session.model_call_count,
+        'deterministic_step_ratio': session.deterministic_step_ratio,
+        'status': session.status,
+        'evidence_retrieved_count': session.evidence_retrieved_count,
+        'evidence_reused_count': session.evidence_reused_count,
+        'human_review_required': session.human_review_required,
+        'human_review_completed': session.human_review_completed,
+        'warnings': session.warnings,
+        'blocked_recommendation_count': session.blocked_recommendation_count,
+        'final_recommendation_status': session.get_final_recommendation_status_display(),
+    }
+
+
 def build_brief(run):
     """Assembled entirely from `run` and its related, already-persisted rows."""
     opportunities = list(run.opportunities.all())
@@ -156,24 +189,7 @@ def build_brief(run):
 
     ranked_top = sorted(opportunities, key=lambda o: (-o.urgency, -o.confidence))[:5]
 
-    # PR4 Phase 16 — compute/Observatory summary, read straight from the
-    # AI Observatory session this run recorded into (Phase 7 — no second
-    # telemetry system). Absent gracefully if telemetry recording failed
-    # (start_session never raises, but can return None).
-    observatory_summary = None
-    session_ref = run.stage_checkpoints.get('_observatory_session_reference', '')
-    if session_ref.startswith('ai_observatory.AnalysisSession:'):
-        from ai_observatory.models import AnalysisSession
-        session = AnalysisSession.objects.filter(pk=session_ref.split(':')[-1]).first()
-        if session is not None:
-            observatory_summary = {
-                'session_reference': session_ref,
-                'duration_ms': session.duration_ms,
-                'deterministic_stage_count': session.deterministic_stage_count,
-                'model_call_count': session.model_call_count,
-                'deterministic_step_ratio': session.deterministic_step_ratio,
-                'status': session.status,
-            }
+    observatory_summary = observatory_summary_for_run(run)
 
     return {
         'run_id': run.pk,

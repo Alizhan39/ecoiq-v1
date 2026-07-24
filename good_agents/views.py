@@ -14,8 +14,8 @@ from good_agents.models import (
     Need, OutreachDraft, ProjectCandidate, SignalProvider,
 )
 from good_agents.services import (
-    action_gate, action_pathway as action_pathway_service, connection_action, morning_brief as morning_brief_service,
-    outreach, project_bridge,
+    action_gate, action_pathway as action_pathway_service, connection_action, mission_control,
+    morning_brief as morning_brief_service, outreach, project_bridge,
 )
 
 
@@ -202,7 +202,7 @@ def morning_brief(request):
             GoodOpportunity.objects.filter(status__in=['potential', 'qualified']).order_by('-urgency')[:10]
         )
         top_3_actions = morning_brief_service.top_3_actions(list(latest_run.opportunities.all()))
-        observatory_summary = morning_brief_service.build_brief(latest_run).get('observatory_summary')
+        observatory_summary = morning_brief_service.observatory_summary_for_run(latest_run)
     return render(request, 'good_agents/morning_brief.html', {
         'latest_run': latest_run,
         'top_opportunities': top_opportunities,
@@ -299,6 +299,90 @@ def good_map_api(request):
             for r in resources[:200]
         ],
     })
+
+
+def _pick_featured_opportunity(mission, requested_pk=None):
+    """
+    Picks the opportunity Mission Control's truth chain / demo story
+    features by default: an explicit `?opportunity=<pk>` wins; otherwise
+    the one that has genuinely progressed furthest along the real
+    pipeline (never a fabricated "best" score) — a project candidate
+    beats a pathway beats a reviewed gate beats "just discovered, highest
+    urgency".
+    """
+    runs = mission.runs.all() if mission else GoodDiscoveryRun.objects.none()
+    opportunities = GoodOpportunity.objects.filter(discovery_run__in=runs)
+    if requested_pk:
+        found = opportunities.filter(pk=requested_pk).first()
+        if found:
+            return found
+    for candidate_qs in (
+        opportunities.filter(project_candidate__isnull=False),
+        opportunities.filter(action_pathways__isnull=False),
+        opportunities.exclude(action_gate__current_state='discovered').filter(action_gate__isnull=False),
+    ):
+        featured = candidate_qs.order_by('-updated_at').first()
+        if featured:
+            return featured
+    return opportunities.order_by('-urgency', '-created_at').first()
+
+
+@staff_member_required(login_url='/login/')
+def mission_control_view(request):
+    """
+    PR6 — Global Impact Mission Control, the flagship operating surface.
+    Every section is a live read over models/services already built in
+    PR2-5; nothing here recomputes a discovery/agent/project/MRV decision
+    — see good_agents/services/mission_control.py's own module docstring.
+    """
+    mission = mission_control.get_flagship_mission()
+    opportunity = _pick_featured_opportunity(mission, request.GET.get('opportunity'))
+
+    runs = mission.runs.all() if mission else GoodDiscoveryRun.objects.none()
+    mission_opportunities = GoodOpportunity.objects.filter(discovery_run__in=runs)
+    latest_run = mission_control.latest_run_for_mission(mission)
+
+    context = {
+        'mission': mission,
+        'mission_status': mission_control.mission_status(mission),
+        'signal_funnel': mission_control.signal_funnel(mission),
+        'noise_sample': mission_control.noise_sample(),
+        'attention_economy': mission_control.attention_economy(mission),
+        'qualified_opportunities': mission_opportunities.filter(status='qualified').order_by('-urgency')[:15],
+        'awaiting_review': mission_opportunities.filter(
+            action_gate__current_state__in=['discovered', 'needs_review'],
+        ).order_by('-urgency')[:15],
+        'top_3_actions': morning_brief_service.top_3_actions(list(mission_opportunities)),
+        'zero_capital_lane': mission_control.zero_capital_lane(mission),
+        'resource_matches': mission_control.resource_matches_lane(mission)[:15],
+        'funding_matches': mission_control.funding_matches_lane(mission)[:15],
+        'responsible_party_lane': mission_control.responsible_party_lane(mission),
+        'outreach_connection_truth': mission_control.outreach_connection_truth(mission),
+        'project_candidates': ProjectCandidate.objects.filter(opportunity__in=mission_opportunities).select_related('opportunity', 'created_project'),
+        'active_projects': ProjectCandidate.objects.filter(opportunity__in=mission_opportunities, status='created').select_related('created_project'),
+        'verified_impact': mission_control.verified_impact_list(mission),
+        'impact_receipts': mission_control.impact_receipts_list(mission),
+        'mission_health': mission_control.mission_health(),
+        'mission_comparison': mission_control.mission_comparison(),
+        'geographic_opportunities': mission_control.geographic_opportunity_list(mission),
+        'observatory_summary': morning_brief_service.observatory_summary_for_run(latest_run) if latest_run else None,
+        'featured_opportunity': opportunity,
+        'truth_chain': mission_control.truth_chain(opportunity) if opportunity else None,
+        'agent_transparency': mission_control.agent_transparency(opportunity) if opportunity else None,
+        'demo_story': mission_control.demo_story(opportunity) if opportunity else None,
+        'project_bridge_chain': mission_control.project_bridge_chain(opportunity) if opportunity else None,
+        'execution_mrv': (
+            mission_control.execution_mrv_for_project(opportunity.project_candidate.created_project)
+            if opportunity and getattr(opportunity, 'project_candidate', None) and opportunity.project_candidate.created_project_id
+            else None
+        ),
+        'impact_velocity': mission_control.impact_velocity(opportunity) if opportunity else None,
+        'evidence_memory_records': (
+            mission_control.evidence_memory_for_receipt(getattr(opportunity, 'impact_receipt', None))
+            if opportunity else []
+        ),
+    }
+    return render(request, 'good_agents/mission_control.html', context)
 
 
 def observatory_health_api(request):

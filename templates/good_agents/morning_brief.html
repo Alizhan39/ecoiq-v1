@@ -55,6 +55,9 @@
         {% if action.relevant_principles %}
           <div class="ga-empty" style="font-size:.78rem;">Principles: {{ action.relevant_principles|join:", " }}</div>
         {% endif %}
+        <div style="font-size:.78rem; margin-top:.4rem;">
+          <a href="{% url 'good_agents:mission_control' %}?opportunity={{ action.opportunity_id }}">Open in Mission Control →</a>
+        </div>
         {% if action.next_step %}
           <div class="ga-empty" style="font-size:.78rem;">Next step: {{ action.next_step }}</div>
         {% endif %}
