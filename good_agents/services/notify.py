@@ -114,16 +114,28 @@ def _already_notified_for(instance, reason):
     ).exists()
 
 
-def _notify_instance_once(instance, reason, *, title, message, priority='normal', extra_metadata=None):
+def _notify_instance_once(instance, reason, *, title, message, priority='normal', extra_metadata=None, opportunity=None):
     if _already_notified_for(instance, reason):
         return None
     metadata = {'reason': reason}
     if extra_metadata:
         metadata.update(extra_metadata)
+    admin_url = mission_control_url(opportunity) if opportunity is not None else ''
     return create_notification(
         title, source_type='good_agents_opportunity', message=message, instance=instance,
-        priority=priority, metadata=metadata,
+        priority=priority, metadata=metadata, admin_url=admin_url,
     )
+
+
+def mission_control_url(opportunity):
+    """
+    PR6 Phase 25 — deep-links a meaningful notification straight into
+    Mission Control's truth chain for the opportunity it's about, instead
+    of the generic Django admin change form `create_notification` would
+    otherwise derive.
+    """
+    from django.urls import reverse
+    return f"{reverse('good_agents:mission_control')}?opportunity={opportunity.pk}"
 
 
 def notify_zero_capital_pathway_ready(pathway):
@@ -131,6 +143,7 @@ def notify_zero_capital_pathway_ready(pathway):
         pathway, 'zero_capital_pathway_ready',
         title=f'Zero-capital action ready: {pathway.opportunity.title}',
         message=f'{pathway.get_pathway_type_display()} pathway needs no capital — ready to move forward.',
+        opportunity=pathway.opportunity,
     )
 
 
@@ -140,6 +153,7 @@ def notify_connection_candidate_ready(candidate):
         candidate, 'connection_ready_for_introduction',
         title=f'Resource match ready: {need.title}',
         message=f'{need.title} <-> {candidate.resource_match.resource.title} is ready for a human-approved introduction.',
+        opportunity=need.opportunity,
     )
 
 
@@ -148,6 +162,7 @@ def notify_outreach_awaiting_approval(draft):
         draft, 'outreach_awaiting_approval',
         title=f'Outreach draft awaiting approval: {draft.subject}',
         message=f'A {draft.get_draft_type_display()} draft is ready for human review before it can be sent.',
+        opportunity=draft.action_pathway.opportunity,
     )
 
 
@@ -157,6 +172,7 @@ def notify_outreach_reply_received(draft):
         title=f'Reply received: {draft.subject}',
         message='A reply was recorded against this outreach draft.',
         priority='high',
+        opportunity=draft.action_pathway.opportunity,
     )
 
 
@@ -165,6 +181,7 @@ def notify_project_candidate_ready(candidate):
         candidate, 'project_candidate_ready',
         title=f'Project candidate ready for review: {candidate.opportunity.title}',
         message=(candidate.rationale or 'A project candidate has been proposed and needs human approval.')[:300],
+        opportunity=candidate.opportunity,
     )
 
 
@@ -181,6 +198,7 @@ def notify_funding_deadline_approaching(funding_action, *, days_threshold=14):
         message=f'{days_left} day(s) left until the funding deadline.',
         priority='high',
         extra_metadata={'days_left': days_left},
+        opportunity=funding_action.funding_match.opportunity,
     )
 
 
@@ -204,6 +222,7 @@ def notify_outcome_measured(opportunity):
         opportunity, 'outcome_measured',
         title=f'Outcome measured, verification required: {opportunity.title}',
         message='Real after-data has been recorded against this opportunity — not yet independently verified.',
+        opportunity=opportunity,
     )
 
 
@@ -213,4 +232,5 @@ def notify_verified_impact(opportunity):
         title=f'Verified impact achieved: {opportunity.title}',
         message='This opportunity now has an independently verified real-world outcome.',
         priority='high',
+        opportunity=opportunity,
     )
