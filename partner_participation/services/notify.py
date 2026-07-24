@@ -99,3 +99,54 @@ def notify_route_became_stale(edge):
         title=f'Route needs reconfirmation: {edge.organisation.name}',
         message=f'"{edge.get_capability_display()}" for {edge.organisation.name} is past its reconfirmation date.',
     )
+
+
+def notify_invitation_accepted(invitation):
+    return _notify_once(
+        invitation, 'invitation_accepted',
+        title=f'Invitation accepted: {invitation.invitee_email}',
+        message=f'{invitation.invitee_email} accepted the invitation to join {invitation.organisation.name} — membership still needs EcoIQ review.',
+        priority='high', admin_url=reverse('partner_participation:membership_review_queue'),
+    )
+
+
+def notify_organisation_routing_ready(organisation):
+    return _notify_once(
+        organisation, 'organisation_routing_ready',
+        title=f'{organisation.name} is now routing ready',
+        message=f'{organisation.name} meets every real requirement to receive routed opportunity candidates.',
+        admin_url=reverse('partner_participation:activation_dashboard'),
+    )
+
+
+def notify_opportunity_shared(delivery):
+    return _notify_once(
+        delivery, 'opportunity_shared',
+        title=f'Opportunity shared: {delivery.candidate.organisation.name}',
+        message=f'"{delivery.candidate.opportunity.title}" was shared with {delivery.candidate.organisation.name} via {delivery.get_delivery_method_display()}.',
+    )
+
+
+def notify_partner_responded(candidate):
+    return _notify_once(
+        candidate, f'partner_responded_{candidate.status}',
+        title=f'{candidate.organisation.name} responded: {candidate.get_status_display()}',
+        message=f'{candidate.organisation.name} moved "{candidate.opportunity.title}" to {candidate.get_status_display()}.',
+        priority='high' if candidate.status == 'interested' else 'normal',
+    )
+
+
+def notify_needs_more_information(candidate):
+    return _notify_once(
+        candidate, 'needs_more_information',
+        title=f'{candidate.organisation.name} needs more information',
+        message=f'{candidate.organisation.name} requested more information about "{candidate.opportunity.title}".',
+    )
+
+
+def notify_next_step_required(next_step):
+    return _notify_once(
+        next_step, 'next_step_required',
+        title=f'Next step created: {next_step.get_action_type_display()}',
+        message=f'{next_step.candidate.organisation.name} — {next_step.get_action_type_display()} for "{next_step.candidate.opportunity.title}".',
+    )

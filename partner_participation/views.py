@@ -17,12 +17,14 @@ from capability_graph.services import capabilities as capability_graph_capabilit
 from capability_graph.services.routes import add_public_route, propose_route_update
 from good_agents.models import AvailableResource, GOOD_TAXONOMY_CHOICES
 from partner_participation.models import (
-    FundingProgrammeDeclaration, OpportunityPreference, OrganisationMembership, RoutingCandidate,
+    FundingProgrammeDeclaration, NextStepAction, OpportunityPreference, OrganisationMembership, PartnerInvitation,
+    RoutingCandidate, ShareDelivery,
 )
 from partner_participation.permissions import any_member_required, editor_required
 from partner_participation.services import (
-    capability_declarations, funding_declarations, membership as membership_service, notify,
-    opportunity_preferences, routing,
+    capability_declarations, consent as consent_service, delivery as delivery_service,
+    funding_declarations, invitation as invitation_service, membership as membership_service, next_step as next_step_service,
+    notify, onboarding, opportunity_preferences, response_capture, routing,
 )
 
 
@@ -190,15 +192,53 @@ def propose_route_view(request, org_pk, capability_pk):
 @any_member_required
 def respond_to_routing_candidate_view(request, org_pk, candidate_pk):
     candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk, organisation=request.organisation)
-    if request.method == 'POST' and membership_service.can_respond_to_routing(request.organisation, request.user):
+    if request.method == 'POST':
         new_status = request.POST.get('status', '')
         try:
-            routing.transition(candidate, new_status, actor=request.user, notes=request.POST.get('notes', ''))
-            if new_status == 'interested':
-                notify.notify_organisation_interested(candidate)
-        except routing.IllegalRoutingTransitionError as exc:
+            response_capture.partner_self_service_response(
+                candidate, new_status, user=request.user, notes=request.POST.get('notes', ''),
+            )
+        except (routing.IllegalRoutingTransitionError, response_capture.ResponseNotAllowedError) as exc:
             messages.error(request, str(exc))
     return redirect('partner_participation:organisation_portal', org_pk=org_pk)
+
+
+@editor_required
+def consent_view(request, org_pk):
+    if request.method == 'POST':
+        action = request.POST.get('action', 'consent')
+        try:
+            if action == 'withdraw':
+                existing = getattr(request.membership, 'consent', None)
+                if existing is not None:
+                    consent_service.withdraw_consent(existing, actor=request.user)
+            else:
+                consent_service.record_consent(request.membership, actor=request.user)
+        except consent_service.ConsentNotAllowedError as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:organisation_portal', org_pk=org_pk)
+
+
+@login_required(login_url='/login/')
+def accept_invitation_view(request, token):
+    """
+    Public-facing (any authenticated user), token-gated, single-use. Only
+    ever creates a claim_requested membership — still requires real EcoIQ
+    staff review before it becomes verified_member (Phase 1's own
+    instruction applies even to an invited person).
+    """
+    invitation = get_object_or_404(PartnerInvitation, token=token)
+    if request.method == 'POST':
+        try:
+            invitation_service.accept_invitation(token, user=request.user)
+            messages.success(
+                request,
+                'Invitation accepted — your membership request has been submitted for EcoIQ review.',
+            )
+            return redirect('partner_participation:my_organisations')
+        except invitation_service.InvalidInvitationError as exc:
+            messages.error(request, str(exc))
+    return render(request, 'partner_participation/accept_invitation.html', {'invitation': invitation})
 
 
 # ── EcoIQ staff review (staff-only) ───────────────────────────────────────
@@ -301,4 +341,194 @@ def network_overview(request):
         'connections_in_progress': connections_in_progress,
         'ready_for_review': RoutingCandidate.objects.filter(status='ready_for_ecoiq_review').select_related('organisation', 'opportunity'),
         'approved_awaiting_share': RoutingCandidate.objects.filter(status='approved_to_share').select_related('organisation', 'opportunity'),
+    })
+
+
+# ── PR9 — Invitations (staff-only) ────────────────────────────────────────
+
+@staff_member_required(login_url='/login/')
+def create_invitation_view(request, org_pk):
+    organisation = get_object_or_404(Organisation, pk=org_pk)
+    if request.method == 'POST':
+        invitation_service.create_invitation(
+            organisation, request.POST.get('invitee_email', ''), actor=request.user,
+            intended_role=request.POST.get('intended_role', 'viewer'), reason=request.POST.get('reason', ''),
+        )
+    return redirect('partner_participation:activation_dashboard')
+
+
+@staff_member_required(login_url='/login/')
+def send_invitation_view(request, invitation_pk):
+    invitation = get_object_or_404(PartnerInvitation, pk=invitation_pk)
+    if request.method == 'POST':
+        try:
+            invitation_service.send_invitation(invitation, actor=request.user)
+            messages.success(request, f'Invitation sent by real email to {invitation.invitee_email}.')
+        except invitation_service.ManualDeliveryRequiredError:
+            subject, body, link = invitation_service.render_invitation_message(invitation, request=request)
+            messages.warning(
+                request,
+                f'No real mail transport is configured — deliver this manually, then confirm below.\n'
+                f'Subject: {subject}\n\n{body}',
+            )
+        except invitation_service.InvalidInvitationError as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:activation_dashboard')
+
+
+@staff_member_required(login_url='/login/')
+def mark_manually_sent_view(request, invitation_pk):
+    invitation = get_object_or_404(PartnerInvitation, pk=invitation_pk)
+    if request.method == 'POST':
+        try:
+            invitation_service.mark_manually_sent(invitation, actor=request.user, evidence=request.POST.get('evidence', ''))
+            messages.success(request, 'Invitation recorded as manually delivered.')
+        except invitation_service.InvalidInvitationError as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:activation_dashboard')
+
+
+@staff_member_required(login_url='/login/')
+def revoke_invitation_view(request, invitation_pk):
+    invitation = get_object_or_404(PartnerInvitation, pk=invitation_pk)
+    if request.method == 'POST':
+        try:
+            invitation_service.revoke_invitation(invitation, actor=request.user)
+        except invitation_service.InvalidInvitationError as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:activation_dashboard')
+
+
+# ── PR9 — Share approval + delivery (staff-only) ──────────────────────────
+
+@staff_member_required(login_url='/login/')
+def share_confirm_view(request, candidate_pk):
+    """Phase 12 — GET-only inspection screen: recipient, route, message, evidence, rationale, before any approval."""
+    candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk)
+    from capability_graph.models import PublicRoute
+    from partner_participation.services.share_package import build_share_package, render_share_message
+    open_routes = PublicRoute.objects.filter(
+        organisation_capability__organisation=candidate.organisation, is_currently_open=True,
+    )
+    subject, body = render_share_message(candidate)
+    return render(request, 'partner_participation/share_confirm.html', {
+        'candidate': candidate,
+        'package': build_share_package(candidate),
+        'open_routes': open_routes,
+        'subject': subject,
+        'body': body,
+        'has_real_mail_transport': invitation_service.has_real_mail_transport(),
+        'prior_deliveries': ShareDelivery.objects.filter(candidate=candidate),
+    })
+
+
+@staff_member_required(login_url='/login/')
+def approve_share_view(request, candidate_pk):
+    candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk)
+    if request.method == 'POST':
+        try:
+            delivery_service.approve_share(candidate, actor=request.user)
+        except (routing.IllegalRoutingTransitionError, delivery_service.ShareApprovalError) as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:share_confirm', candidate_pk=candidate_pk)
+
+
+@staff_member_required(login_url='/login/')
+def reject_share_view(request, candidate_pk):
+    candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk)
+    if request.method == 'POST':
+        try:
+            delivery_service.reject_share(candidate, actor=request.user, reason=request.POST.get('reason', ''))
+        except (routing.IllegalRoutingTransitionError, delivery_service.ShareApprovalError) as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:activation_dashboard')
+
+
+@staff_member_required(login_url='/login/')
+def deliver_real_email_view(request, candidate_pk):
+    candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk)
+    if request.method == 'POST':
+        try:
+            delivery_service.deliver_via_real_email(candidate, actor=request.user)
+            messages.success(request, 'Delivered via real email.')
+        except delivery_service.DeliveryError as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:share_confirm', candidate_pk=candidate_pk)
+
+
+@staff_member_required(login_url='/login/')
+def deliver_manual_view(request, candidate_pk):
+    candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk)
+    if request.method == 'POST':
+        try:
+            delivery_service.record_manual_delivery(
+                candidate, actor=request.user, recipient=request.POST.get('recipient', ''),
+                channel_notes=request.POST.get('channel_notes', ''), evidence=request.POST.get('evidence', ''),
+            )
+            messages.success(request, 'Manual delivery recorded.')
+        except delivery_service.DeliveryError as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:share_confirm', candidate_pk=candidate_pk)
+
+
+@staff_member_required(login_url='/login/')
+def record_response_view(request, candidate_pk):
+    """Staff recording a real response received through any channel (phone, email reply, in person)."""
+    candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk)
+    if request.method == 'POST':
+        try:
+            response_capture.record_response(
+                candidate, request.POST.get('status', ''), actor=request.user,
+                channel=request.POST.get('channel', ''), summary=request.POST.get('summary', ''),
+                reference=request.POST.get('reference', ''),
+            )
+        except (routing.IllegalRoutingTransitionError, response_capture.ResponseNotAllowedError) as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:activation_dashboard')
+
+
+@staff_member_required(login_url='/login/')
+def create_next_step_view(request, candidate_pk):
+    candidate = get_object_or_404(RoutingCandidate, pk=candidate_pk)
+    if request.method == 'POST':
+        action_type = request.POST.get('action_type', '')
+        notes = request.POST.get('notes', '')
+        try:
+            if action_type == 'data_exchange_request':
+                next_step_service.create_data_exchange_request(candidate, actor=request.user, notes=notes)
+            elif action_type == 'meeting_request':
+                next_step_service.create_meeting_request(candidate, actor=request.user, notes=notes)
+            elif action_type == 'project_candidate':
+                next_step_service.propose_project_candidate(candidate, actor=request.user, rationale=notes)
+            else:
+                messages.error(request, f'Unsupported next-step type: {action_type!r}.')
+        except next_step_service.NextStepNotAllowedError as exc:
+            messages.error(request, str(exc))
+    return redirect('partner_participation:activation_dashboard')
+
+
+@staff_member_required(login_url='/login/')
+def activation_dashboard(request):
+    """PR9 Phase 21 — real counts only, no vanity metrics."""
+    from partner_participation.services.invitation import sweep_expire_invitations
+    sweep_expire_invitations()
+
+    invitations_pending = PartnerInvitation.objects.filter(status__in=['draft', 'sent']).select_related('organisation')
+    verified_memberships = OrganisationMembership.objects.filter(status='verified_member').count()
+    participating_organisations = Organisation.objects.filter(memberships__status='verified_member').distinct()
+    routing_ready_organisations = [org for org in participating_organisations if onboarding.is_routing_ready(org)[0]]
+
+    return render(request, 'partner_participation/activation_dashboard.html', {
+        'invitations_pending': invitations_pending,
+        'verified_memberships': verified_memberships,
+        'participating_organisations_count': participating_organisations.count(),
+        'routing_ready_count': len(routing_ready_organisations),
+        'routing_ready_organisations': routing_ready_organisations,
+        'awaiting_share_review': RoutingCandidate.objects.filter(status='ready_for_ecoiq_review').select_related('organisation', 'opportunity'),
+        'approved_awaiting_delivery': RoutingCandidate.objects.filter(status='approved_to_share').select_related('organisation', 'opportunity'),
+        'shared_count': RoutingCandidate.objects.filter(status__in=['shared', 'no_response', 'viewed']).count(),
+        'responses_pending': RoutingCandidate.objects.filter(status__in=['shared', 'no_response']).select_related('organisation', 'opportunity'),
+        'interested_count': RoutingCandidate.objects.filter(status='interested').count(),
+        'declined_count': RoutingCandidate.objects.filter(status='not_interested').count(),
+        'next_step_actions': NextStepAction.objects.exclude(status='completed').select_related('candidate__organisation', 'candidate__opportunity'),
     })

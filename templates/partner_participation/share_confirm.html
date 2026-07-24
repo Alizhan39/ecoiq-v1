@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Review share — {{ candidate.opportunity.title }} → {{ candidate.organisation.name }}{% endblock %}
+{% block meta_description_content %}Staff inspection screen: recipient, route, message, evidence, and rationale before approving a share.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a; --warn:#f4a261;
+    max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pp-h1 { font-size:1.4rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pp-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pp-section h2 { font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pp-label { color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; }
+  .pp-row { padding:.3rem 0; font-size:.88rem; }
+  .pp-msg { white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.78rem; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:6px; padding:.8rem; }
+  .pp-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .pp-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .pp-empty { color:var(--muted); font-size:.82rem; }
+  .pp-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.5rem; }
+  .pp-form input, .pp-form textarea { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit; padding:.35rem .6rem; font-size:.8rem; font-family:inherit; }
+  .pp-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.4rem .9rem; font-size:.78rem; font-weight:700; cursor:pointer; }
+  .pp-btn-warn { background:var(--warn); }
+  ul.pp-list { margin:0; padding-left:1.1rem; font-size:.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrap">
+  <div class="pp-eyebrow">ECOIQ · SHARE REVIEW · HUMAN APPROVAL REQUIRED</div>
+  <h1 class="pp-h1">{{ candidate.opportunity.title }} → {{ candidate.organisation.name }}</h1>
+  <p><span class="pp-badge">{{ candidate.get_status_display }}</span> <span class="pp-badge">{{ candidate.get_confidence_label_display }}</span></p>
+
+  {% if messages %}
+    {% for message in messages %}<pre class="pp-empty" style="white-space:pre-wrap;color:{% if message.tags == 'success' %}var(--accent){% else %}var(--warn){% endif %};">{{ message }}</pre>{% endfor %}
+  {% endif %}
+
+  <div class="pp-section">
+    <h2>Why this was matched</h2>
+    <ul class="pp-list">
+      {% for reason in candidate.match_reasons %}<li>{{ reason }}</li>{% empty %}<li class="pp-empty">No match reasons recorded.</li>{% endfor %}
+    </ul>
+  </div>
+
+  <div class="pp-section">
+    <h2>Recipient route</h2>
+    {% for route in open_routes %}
+      <div class="pp-row">{{ route.get_route_type_display }}: <strong>{{ route.route_value }}</strong> <span class="pp-badge">open</span></div>
+    {% empty %}
+      <p class="pp-badge-warn">No open public route found for this organisation — real delivery cannot proceed until one exists.</p>
+    {% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Share package</h2>
+    <div class="pp-row"><span class="pp-label">Problem statement</span><br>{{ package.problem_statement }}</div>
+    <div class="pp-row"><span class="pp-label">Location</span><br>{{ package.location|default:"Not recorded" }}</div>
+    <div class="pp-row"><span class="pp-label">Originating signal</span><br>{{ package.originating_signal|default:"Not resolved" }}{% if package.originating_publisher %} ({{ package.originating_publisher }}){% endif %}</div>
+    <div class="pp-row"><span class="pp-label">Relevant principles</span><br>{{ package.relevant_principles|join:", "|default:"None recorded" }}</div>
+    <div class="pp-row"><span class="pp-label">Source evidence</span><br>
+      {% for ref in package.source_evidence %}{{ ref }}<br>{% empty %}<span class="pp-empty">None recorded.</span>{% endfor %}
+    </div>
+    <div class="pp-row"><span class="pp-label">Known unknowns</span>
+      <ul class="pp-list">{% for u in package.known_unknowns %}<li>{{ u }}</li>{% empty %}<li class="pp-empty">None.</li>{% endfor %}</ul>
+    </div>
+    <div class="pp-row"><span class="pp-label">Confidentiality</span><br>{{ package.confidentiality_status }}</div>
+  </div>
+
+  <div class="pp-section">
+    <h2>Exact message to be sent</h2>
+    <div class="pp-row"><span class="pp-label">Subject</span><br>{{ subject }}</div>
+    <div class="pp-msg">{{ body }}</div>
+  </div>
+
+  <div class="pp-section">
+    <h2>Approval</h2>
+    {% if candidate.status == 'ready_for_ecoiq_review' %}
+      <form method="post" action="{% url 'partner_participation:approve_share' candidate.pk %}" style="display:inline;">
+        {% csrf_token %}<button type="submit" class="pp-btn">Approve to share</button>
+      </form>
+      <form method="post" action="{% url 'partner_participation:reject_share' candidate.pk %}" class="pp-form" style="display:inline-flex;">
+        {% csrf_token %}<input type="text" name="reason" placeholder="Reason for not approving">
+        <button type="submit" class="pp-btn pp-btn-warn">Not approved</button>
+      </form>
+    {% elif candidate.status == 'approved_to_share' %}
+      <p class="pp-empty">Approved. Not yet delivered — no real send has occurred.</p>
+      {% if has_real_mail_transport %}
+        <form method="post" action="{% url 'partner_participation:deliver_real_email' candidate.pk %}">
+          {% csrf_token %}<button type="submit" class="pp-btn">Deliver via real email</button>
+        </form>
+      {% else %}
+        <p class="pp-badge-warn">No real mail transport configured — this environment cannot send a real email. Record a manual delivery instead once you have sent it yourself through a real channel.</p>
+      {% endif %}
+      <form method="post" action="{% url 'partner_participation:deliver_manual' candidate.pk %}" class="pp-form">
+        {% csrf_token %}
+        <input type="text" name="recipient" placeholder="Real recipient (email/contact used)" required>
+        <input type="text" name="channel_notes" placeholder="Channel (e.g. phone call, hand-delivered letter)" required>
+        <input type="text" name="evidence" placeholder="Evidence (optional)">
+        <button type="submit" class="pp-btn">Record manual delivery</button>
+      </form>
+    {% else %}
+      <p class="pp-empty">This candidate is {{ candidate.get_status_display }} — no further share action available from this screen.</p>
+    {% endif %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Prior deliveries <span class="pp-badge">{{ prior_deliveries|length }}</span></h2>
+    {% for d in prior_deliveries %}
+      <div class="pp-row">{{ d.get_delivery_method_display }} to {{ d.recipient }} <span class="pp-badge">{{ d.get_send_status_display }}</span> <span class="pp-empty">{{ d.sent_at|date:"Y-m-d H:i" }}</span>
+        {% if d.manual_evidence %}<br><span class="pp-empty">Evidence: {{ d.manual_evidence }}</span>{% endif %}</div>
+    {% empty %}<p class="pp-empty">No delivery has occurred yet.</p>{% endfor %}
+  </div>
+
+  <p><a href="{% url 'partner_participation:activation_dashboard' %}" style="color:var(--accent);">&larr; Back to Activation Dashboard</a></p>
+</div>
+{% endblock %}

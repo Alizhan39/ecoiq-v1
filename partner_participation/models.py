@@ -28,6 +28,8 @@ EcoIQ-authored one (see `services/capability_declarations.py`).
 brief's explicit "reuse AvailableResource, do not create a parallel
 resource system" instruction.
 """
+import secrets
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -222,7 +224,15 @@ ROUTING_STATUS_CHOICES = [
     ('routing_candidate', 'Routing candidate'),
     ('ready_for_ecoiq_review', 'Ready for EcoIQ review'),
     ('approved_to_share', 'Approved to share'),
+    # PR9 Phase 10 — staff can explicitly decline to share (distinct from
+    # silently leaving it at ready_for_ecoiq_review forever).
+    ('not_approved', 'Not approved to share'),
     ('shared', 'Shared'),
+    # PR9 Phase 10 — the real, honest state immediately after a real send/
+    # delivery: delivered, no reply yet. Distinct from 'viewed', which
+    # means EcoIQ or the partner portal has real evidence the recipient
+    # opened/engaged with it.
+    ('no_response', 'Shared — no response yet'),
     ('viewed', 'Viewed'),
     ('interested', 'Interested'),
     ('not_interested', 'Not interested'),
@@ -233,9 +243,11 @@ ROUTING_STATUS_CHOICES = [
 # 'shared' without EcoIQ ever approving it) are structurally impossible.
 ROUTING_ALLOWED_TRANSITIONS = {
     'routing_candidate': {'ready_for_ecoiq_review', 'not_interested'},
-    'ready_for_ecoiq_review': {'approved_to_share', 'not_interested'},
+    'ready_for_ecoiq_review': {'approved_to_share', 'not_approved', 'not_interested'},
     'approved_to_share': {'shared'},
-    'shared': {'viewed', 'not_interested'},
+    'not_approved': set(),
+    'shared': {'no_response', 'viewed', 'not_interested'},
+    'no_response': {'viewed', 'interested', 'not_interested', 'needs_more_information'},
     'viewed': {'interested', 'not_interested', 'needs_more_information'},
     'interested': {'needs_more_information', 'accepted_for_next_step', 'not_interested'},
     'needs_more_information': {'interested', 'not_interested'},
@@ -294,3 +306,241 @@ class RoutingCandidate(models.Model):
 
     def __str__(self):
         return f'{self.organisation} <- {self.opportunity} [{self.get_status_display()}]'
+
+
+# ===========================================================================
+# === PR9 — Trusted Partner Activation: real invitation, consent, share
+# === delivery, response capture, next-step creation, and an immutable
+# === network activity timeline. Builds ON the PR8 models above — no
+# === organisation identity duplicated, no second communications stack.
+# ===========================================================================
+
+def _generate_invitation_token():
+    return secrets.token_urlsafe(32)
+
+
+INVITATION_STATUS_CHOICES = [
+    ('draft', 'Draft — not yet sent'),
+    ('sent', 'Sent'),
+    ('accepted', 'Accepted'),
+    ('expired', 'Expired'),
+    ('revoked', 'Revoked'),
+]
+SEND_STATUS_CHOICES = [
+    ('not_sent', 'Not sent'),
+    ('sent_real_email', 'Sent via real email delivery'),
+    ('manual_delivery_required', 'Manual delivery required — no real send infrastructure configured'),
+    ('failed', 'Send failed'),
+]
+
+
+class PartnerInvitation(models.Model):
+    """
+    A staff-created invitation for a named person to join a specific
+    Organisation with a specific role. Never auto-verifies from the
+    invitee's email domain matching the organisation's own — the invited
+    person still goes through the exact same `OrganisationMembership`
+    claim + staff-review path as an unsolicited claim (Phase 1's own "do
+    not auto-verify from domain alone" instruction); this model only ever
+    records the invitation and pre-fills the intended role, it never
+    grants one directly.
+
+    `token` is a cryptographically random, single-use, expiring credential
+    (Phase 28's own security requirements) — `accept()` in
+    `services/invitation.py` is the only code path that consumes it.
+    """
+    organisation = models.ForeignKey(
+        'capability_graph.Organisation', on_delete=models.CASCADE, related_name='invitations',
+    )
+    invitee_email = models.EmailField()
+    intended_role = models.CharField(max_length=20, choices=ORG_ROLE_CHOICES, default='viewer')
+    reason = models.TextField(blank=True)
+
+    token = models.CharField(max_length=64, unique=True, default=_generate_invitation_token, editable=False)
+    status = models.CharField(max_length=12, choices=INVITATION_STATUS_CHOICES, default='draft')
+    expires_at = models.DateTimeField()
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    # Real send record (Phase 3) — never claims 'sent_real_email' unless
+    # send_mail() genuinely returned success against a configured SMTP
+    # backend; see services/invitation.py's send() for the honest
+    # console/locmem-backend distinction.
+    sent_at = models.DateTimeField(null=True, blank=True)
+    send_status = models.CharField(max_length=32, choices=SEND_STATUS_CHOICES, default='not_sent')
+
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Invitation for {self.invitee_email} -> {self.organisation} [{self.get_status_display()}]'
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+
+CONSENT_STATUS_CHOICES = [('active', 'Active'), ('withdrawn', 'Withdrawn')]
+CURRENT_CONSENT_TERMS_VERSION = 'v1'
+
+
+class ParticipationConsent(models.Model):
+    """
+    Explicit, real, per-membership consent — never inferred from account
+    creation or from a membership merely existing (Phase 4's own
+    instruction). A verified member can be routing-ineligible simply by
+    never having consented; `services/consent.py.record_consent()` is the
+    only way this row is created, and it requires the real acting user
+    (never staff-on-their-behalf).
+    """
+    membership = models.OneToOneField(OrganisationMembership, on_delete=models.CASCADE, related_name='consent')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')
+    terms_version = models.CharField(max_length=20, default=CURRENT_CONSENT_TERMS_VERSION)
+    status = models.CharField(max_length=12, choices=CONSENT_STATUS_CHOICES, default='active')
+    consented_at = models.DateTimeField(default=timezone.now)
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-consented_at']
+
+    def __str__(self):
+        return f'Consent by {self.actor} for {self.membership.organisation} [{self.get_status_display()}]'
+
+
+DELIVERY_METHOD_CHOICES = [
+    ('real_email', 'Real email send'),
+    ('manual_recorded', 'Manual delivery, recorded by staff'),
+]
+DELIVERY_SEND_STATUS_CHOICES = [
+    ('sent', 'Sent'), ('manual_pending', 'Manual delivery pending confirmation'), ('failed', 'Failed'),
+]
+
+
+class ShareDelivery(models.Model):
+    """
+    Phase 3/13's real, audited send record for one RoutingCandidate share
+    — never a second communications stack: `real_email` delivery reuses
+    this repo's existing `django.core.mail.send_mail`/`EMAIL_BACKEND`
+    infrastructure exactly like PR5's `outreach.send_outreach()` does.
+    Distinguishes an environment with real SMTP configured from one
+    without (console/locmem backend) — a "sent" console-backend send is
+    never claimed as a real delivery; it is recorded as
+    `manual_recorded`/`manual_pending` instead so a human can actually
+    deliver it (Phase 3's own "do not pretend an email was sent").
+    """
+    candidate = models.ForeignKey(RoutingCandidate, on_delete=models.CASCADE, related_name='deliveries')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    recipient = models.CharField(max_length=300, help_text='The real route value (email/contact) used.')
+    subject = models.CharField(max_length=300, blank=True)
+    body = models.TextField(help_text='The exact share package content sent/recorded — a real snapshot, not regenerated later.')
+    delivery_method = models.CharField(max_length=20, choices=DELIVERY_METHOD_CHOICES)
+    message_id = models.CharField(max_length=200, blank=True, help_text='Left blank when the send infrastructure does not expose one — never fabricated.')
+    send_status = models.CharField(max_length=20, choices=DELIVERY_SEND_STATUS_CHOICES, default='manual_pending')
+    manual_evidence = models.TextField(blank=True, help_text='e.g. "confirmed by phone call on 2026-08-01" — only for manual_recorded deliveries.')
+    sent_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f'Delivery of {self.candidate} via {self.get_delivery_method_display()} [{self.get_send_status_display()}]'
+
+
+NEXT_STEP_TYPE_CHOICES = [
+    ('connection_action', 'Connection action'),
+    ('data_exchange_request', 'Data exchange request'),
+    ('meeting_request', 'Meeting / call request'),
+    ('project_candidate', 'Project candidate'),
+    ('resource_match_followup', 'Resource match follow-up'),
+    ('funding_eligibility_review', 'Funding eligibility review'),
+]
+NEXT_STEP_STATUS_CHOICES = [
+    ('proposed', 'Proposed'), ('in_progress', 'In progress'), ('completed', 'Completed'),
+]
+
+
+class NextStepAction(models.Model):
+    """
+    Phase 16 — a governed, human-created next step once an organisation
+    expresses interest. Never automatically creates an active project:
+    `project_candidate` here only ever links to (or proposes, via
+    `good_agents.services.project_bridge`) a real PR5 `ProjectCandidate`
+    — the same human-approval gate that already exists, never bypassed.
+    `connection_action`/`resource_match_followup`/`funding_eligibility_review`
+    likewise link to the real PR3/5 mechanisms via a soft pointer rather
+    than duplicating them; `data_exchange_request`/`meeting_request` are
+    genuinely new (no existing model covers them) and store their own
+    content directly.
+    """
+    candidate = models.ForeignKey(RoutingCandidate, on_delete=models.CASCADE, related_name='next_steps')
+    action_type = models.CharField(max_length=32, choices=NEXT_STEP_TYPE_CHOICES)
+    linked_object_reference = models.CharField(
+        max_length=200, blank=True,
+        help_text='Soft pointer to the real underlying object, e.g. "good_agents.ProjectCandidate:12" — same convention as evidence_memory.EvidenceMemory.source_reference.',
+    )
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=NEXT_STEP_STATUS_CHOICES, default='proposed')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.get_action_type_display()} for {self.candidate} [{self.get_status_display()}]'
+
+
+NETWORK_EVENT_TYPE_CHOICES = [
+    ('invitation_sent', 'Invitation sent'),
+    ('invitation_accepted', 'Invitation accepted'),
+    ('membership_verified', 'Membership verified'),
+    ('consent_recorded', 'Participation consent recorded'),
+    ('consent_withdrawn', 'Participation consent withdrawn'),
+    ('capability_declared', 'Capability declared'),
+    ('routing_ready', 'Became routing ready'),
+    ('opportunity_matched', 'Opportunity matched'),
+    ('approved_to_share', 'Approved to share'),
+    ('not_approved_to_share', 'Not approved to share'),
+    ('shared', 'Shared'),
+    ('responded', 'Partner responded'),
+    ('interested', 'Partner expressed interest'),
+    ('declined', 'Partner declined'),
+    ('next_action_created', 'Next-step action created'),
+    ('project_candidate_created', 'Project candidate created'),
+]
+
+
+class NetworkActivityEvent(models.Model):
+    """
+    Phase 17 — one immutable, append-only timeline per Organisation,
+    spanning its ENTIRE participation journey (invitation through project
+    candidate) — never edited or deleted after creation, exactly like
+    good_agents.ActionTimelineEvent's own precedent, just scoped to the
+    organisation's participation journey rather than one opportunity.
+    """
+    organisation = models.ForeignKey(
+        'capability_graph.Organisation', on_delete=models.CASCADE, related_name='network_events',
+    )
+    event_type = models.CharField(max_length=32, choices=NETWORK_EVENT_TYPE_CHOICES)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    source_object_reference = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.organisation} — {self.get_event_type_display()} at {self.created_at:%Y-%m-%d %H:%M}'

@@ -29,6 +29,7 @@
   <div class="pp-eyebrow">ECOIQ · PARTNER PARTICIPATION NETWORK</div>
   <h1 class="pp-h1">Network Overview</h1>
   <p class="pp-sub">Every count below is a live query over real rows — no vanity metrics, no fabricated partnership counts.</p>
+  <p><a href="{% url 'partner_participation:activation_dashboard' %}" style="color:var(--accent);">Activation Dashboard (PR9) — invitations, routing readiness, share approval, delivery, response →</a></p>
 
   {% if messages %}
     {% for message in messages %}<p class="pp-empty" style="color:var(--warn);">{{ message }}</p>{% endfor %}

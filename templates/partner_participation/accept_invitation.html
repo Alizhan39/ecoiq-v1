@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Accept invitation — EcoIQ Partner Network{% endblock %}
+{% block meta_description_content %}Accept a real invitation to join an organisation's EcoIQ partner participation.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a; --warn:#f4a261;
+    max-width:640px; margin:3rem auto; padding:0 1rem; color:var(--text); }
+  .pp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pp-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pp-card { border:1px solid var(--border); border-radius:8px; padding:1.2rem 1.4rem; background:var(--bg2); }
+  .pp-row { padding:.4rem 0; font-size:.9rem; }
+  .pp-label { color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; }
+  .pp-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.5rem 1.1rem; font-size:.85rem; font-weight:700; cursor:pointer; margin-top:1rem; }
+  .pp-warn { color:var(--warn); font-size:.85rem; margin-top:1rem; }
+  .pp-empty { color:var(--muted); font-size:.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrap">
+  <div class="pp-eyebrow">ECOIQ · PARTNER INVITATION</div>
+  <h1 class="pp-h1">Accept invitation to {{ invitation.organisation.name }}</h1>
+
+  {% if messages %}
+    {% for message in messages %}<p class="{% if message.tags == 'success' %}pp-empty{% else %}pp-warn{% endif %}">{{ message }}</p>{% endfor %}
+  {% endif %}
+
+  <div class="pp-card">
+    <div class="pp-row"><span class="pp-label">Organisation</span><br>{{ invitation.organisation.name }}</div>
+    <div class="pp-row"><span class="pp-label">Invited email</span><br>{{ invitation.invitee_email }}</div>
+    <div class="pp-row"><span class="pp-label">Intended role</span><br>{{ invitation.get_intended_role_display }}</div>
+    {% if invitation.reason %}<div class="pp-row"><span class="pp-label">Reason</span><br>{{ invitation.reason }}</div>{% endif %}
+    <div class="pp-row"><span class="pp-label">Status</span><br>{{ invitation.get_status_display }}</div>
+
+    {% if invitation.is_expired %}
+      <p class="pp-warn">This invitation has expired. Contact EcoIQ to request a new one.</p>
+    {% elif invitation.status == 'revoked' %}
+      <p class="pp-warn">This invitation has been revoked.</p>
+    {% elif invitation.status == 'accepted' %}
+      <p class="pp-empty">This invitation has already been accepted.</p>
+    {% elif invitation.status == 'draft' %}
+      <p class="pp-warn">This invitation has not been sent yet — it cannot be accepted until EcoIQ staff send or confirm delivery of it.</p>
+    {% else %}
+      <p class="pp-empty">Accepting submits a real membership request to {{ invitation.organisation.name }} for EcoIQ review — it does not immediately grant access.</p>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="pp-btn">Accept invitation</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

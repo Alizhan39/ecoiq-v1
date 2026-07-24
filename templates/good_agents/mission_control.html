@@ -323,6 +323,17 @@
       <div class="mc-row"><span>Verified public route</span><span class="mc-badge {% if partner_participation_summary.verified_route %}mc-badge-ok{% endif %}">{{ partner_participation_summary.verified_route|yesno:"Yes,No" }}</span></div>
       <div class="mc-row"><span>Resource / funding available</span><span class="mc-badge {% if partner_participation_summary.resource_or_funding_available %}mc-badge-ok{% endif %}">{{ partner_participation_summary.resource_or_funding_available|yesno:"Yes,No" }}</span></div>
       <div class="mc-row"><span>Connection consent state</span><span class="mc-badge">{{ partner_participation_summary.connection_consent_state }}</span></div>
+      <div class="mc-row"><span>Routing ready (PR9)</span><span class="mc-badge {% if partner_participation_summary.routing_ready %}mc-badge-ok{% endif %}">{{ partner_participation_summary.routing_ready|yesno:"Yes,No" }}</span></div>
+      {% if not partner_participation_summary.routing_ready %}
+        <p class="mc-empty">{{ partner_participation_summary.routing_ready_reasons|join:"; " }}</p>
+      {% endif %}
+      {% if partner_participation_summary.routing_candidate %}
+        <div class="mc-row"><span>Share / delivery / response state</span>
+          <a class="mc-badge" href="{% url 'partner_participation:share_confirm' partner_participation_summary.routing_candidate.pk %}">{{ partner_participation_summary.routing_candidate.get_status_display }} →</a></div>
+        {% if partner_participation_summary.next_action %}
+        <div class="mc-row"><span>Next action</span><span class="mc-badge">{{ partner_participation_summary.next_action.get_action_type_display }} — {{ partner_participation_summary.next_action.get_status_display }}</span></div>
+        {% endif %}
+      {% endif %}
       {% if partner_participation_summary.organisation.memberships.exists %}
       <p class="mc-empty">Link to full Partner Portal requires a verified member login — not accessible from this staff view.</p>
       {% endif %}
