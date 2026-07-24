@@ -223,6 +223,10 @@ urlpatterns = [
     # opportunity-discovery lenses over the capital pipeline above.
     path('good-agents/', include('good_agents.urls', namespace='good_agents')),
 
+    # Evidence-backed Capability Graph — reusable Organisation/Capability/
+    # PublicRoute infrastructure good_agents is the first real consumer of.
+    path('capability-graph/', include('capability_graph.urls', namespace='capability_graph')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

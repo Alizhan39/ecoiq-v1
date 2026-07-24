@@ -282,6 +282,11 @@ INSTALLED_APPS = [
     # everything downstream of "opportunity qualified" — no new Evidence,
     # Project or MRV model.
     'good_agents',
+    # Evidence-backed Organisation/Capability/PublicRoute graph — reusable
+    # infrastructure good_agents (ResponsibleParty, FundingMatch) is the
+    # first real consumer of; not good_agents-private, so it's listed as
+    # its own app rather than a submodule.
+    'capability_graph',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

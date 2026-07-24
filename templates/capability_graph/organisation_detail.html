@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}{{ organisation.name }} — Capability Graph — EcoIQ{% endblock %}
+{% block meta_description_content %}Evidence-backed capabilities, jurisdictions, limitations, and verified routes for {{ organisation.name }}.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cg-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261;
+    max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .cg-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .cg-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 .5rem; }
+  .cg-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .cg-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .cg-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.9rem; }
+  .cg-row:last-child { border-bottom:none; }
+  .cg-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem;
+    padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .cg-badge-verified { color:var(--accent); border-color:var(--accent); }
+  .cg-empty { color:var(--muted); font-size:.82rem; }
+  .cg-empty a, .cg-section p a { word-break:break-all; }
+  .cg-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px;
+    padding:.35rem .8rem; font-size:.75rem; font-weight:700; cursor:pointer; text-decoration:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cg-wrap">
+  <a class="cg-empty" href="{% url 'capability_graph:organisation_list' %}">← All organisations</a>
+  <div class="cg-eyebrow">ECOIQ · CAPABILITY GRAPH · ORGANISATION #{{ organisation.pk }}</div>
+  <h1 class="cg-h1">{{ organisation.name }}</h1>
+  <p class="cg-empty">{{ organisation.get_org_type_display }}{% if organisation.jurisdiction %} · {{ organisation.jurisdiction }}{% endif %}
+    {% if organisation.website %} · <a href="{{ organisation.website }}" style="color:var(--accent);">{{ organisation.website }}</a>{% endif %}
+    {% if organisation.linked_company %} · linked company: {{ organisation.linked_company }}{% endif %}</p>
+
+  {% if messages %}
+    {% for message in messages %}<p class="cg-empty" style="color:var(--warn);">{{ message }}</p>{% endfor %}
+  {% endif %}
+
+  {% for cap in organisation.capabilities.all %}
+    <div class="cg-section">
+      <h2>{{ cap.get_capability_display }}{% if cap.topic_domain %} — {{ cap.topic_domain }}{% endif %}</h2>
+      <p><span class="cg-badge {% if cap.verification_state == 'independently_verified' %}cg-badge-verified{% endif %}">{{ cap.get_verification_state_display }}</span>
+        {% if cap.jurisdiction %}<span class="cg-badge">{{ cap.jurisdiction }}</span>{% endif %}</p>
+      {% if cap.evidence_url %}<p class="cg-empty">Evidence: <a href="{{ cap.evidence_url }}" style="color:var(--accent);">{{ cap.evidence_url }}</a></p>
+      {% elif cap.evidence_source %}<p class="cg-empty">Evidence: {{ cap.evidence_source }}</p>{% endif %}
+      <p class="cg-empty">Limitations: {{ cap.limitations|default:"No limitations recorded." }}</p>
+      {% if cap.last_verified_at %}<p class="cg-empty">Last verified: {{ cap.last_verified_at|date:"Y-m-d H:i" }}{% if cap.verified_by %} by {{ cap.verified_by }}{% endif %}</p>{% endif %}
+
+      <h2 style="margin-top:.8rem;">Public routes</h2>
+      {% for route in cap.public_routes.all %}
+        <div class="cg-row"><span>{{ route.get_route_type_display }}: {{ route.route_value }}</span>
+          <span class="cg-empty">{% if route.is_currently_open %}Open{% else %}Not currently open{% endif %}</span></div>
+      {% empty %}<p class="cg-empty">No public route recorded yet.</p>{% endfor %}
+
+      {% if cap.verification_state != 'independently_verified' %}
+      <form method="post" action="{% url 'capability_graph:verify_capability' cap.pk %}" style="margin-top:.6rem;">
+        {% csrf_token %}
+        <button type="submit" class="cg-btn">Record independent verification</button>
+      </form>
+      {% endif %}
+    </div>
+  {% empty %}
+    <div class="cg-section"><p class="cg-empty">No capabilities recorded yet for this organisation.</p></div>
+  {% endfor %}
+</div>
+{% endblock %}
