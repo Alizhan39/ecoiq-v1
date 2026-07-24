@@ -33,7 +33,8 @@
   <div class="pp-eyebrow">ECOIQ · PARTNER NETWORK · ACTIVATION</div>
   <h1 class="pp-h1">Activation Dashboard</h1>
   <p class="pp-sub">Every count is a live query over real rows. Real organisations are never marked participating or routing-ready unless they genuinely meet every real requirement.</p>
-  <p><a href="{% url 'partner_participation:network_overview' %}" style="color:var(--accent);">Network Overview (PR8) — capability/participation counts →</a></p>
+  <p><a href="{% url 'partner_participation:network_overview' %}" style="color:var(--accent);">Network Overview (PR8) — capability/participation counts →</a>
+     · <a href="{% url 'collaboration_rooms:staff_centre' %}" style="color:var(--accent);">Staff Collaboration Centre (PR10) →</a></p>
 
   {% if messages %}
     {% for message in messages %}<pre class="pp-empty" style="white-space:pre-wrap;color:{% if message.tags == 'success' %}var(--accent){% else %}var(--warn){% endif %};">{{ message }}</pre>{% endfor %}
@@ -127,6 +128,19 @@
       <div class="pp-row">{{ step.get_action_type_display }} — {{ step.candidate.organisation.name }} → {{ step.candidate.opportunity.title }}
         <span class="pp-badge">{{ step.get_status_display }}</span></div>
     {% empty %}<p class="pp-empty">No next-step actions yet.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Ready for a Governed Collaboration Room (PR10) <span class="pp-badge">{{ ready_for_collaboration|length }}</span></h2>
+    <p class="pp-empty">An organisation responding positively does not open a room by itself — a real staff member must explicitly create one.</p>
+    {% for c in ready_for_collaboration %}
+      <div class="pp-row">{{ c.opportunity.title }} → {{ c.organisation.name }} <span class="pp-badge">{{ c.get_status_display }}</span>
+        <form method="post" action="{% url 'collaboration_rooms:create_room' c.pk %}" class="pp-form">
+          {% csrf_token %}<input type="text" name="title" placeholder="Room title (optional)">
+          <button type="submit" class="pp-btn">Create collaboration room</button>
+        </form>
+      </div>
+    {% empty %}<p class="pp-empty">No candidates currently ready.</p>{% endfor %}
   </div>
 </div>
 {% endblock %}

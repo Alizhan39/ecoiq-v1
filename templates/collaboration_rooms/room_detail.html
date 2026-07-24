@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}{{ room.title }} — Collaboration Room — EcoIQ{% endblock %}
+{% block meta_description_content %}Governed, opportunity-scoped collaboration room — context, evidence, questions, and next-step proposals.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cr-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a; --warn:#f4a261;
+    max-width:1100px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .cr-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .cr-h1 { font-size:1.4rem; font-weight:800; margin:.3rem 0 .5rem; }
+  .cr-sub { color:var(--muted); font-size:.85rem; max-width:80ch; margin-bottom:1rem; }
+  .cr-nav { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.2rem; font-size:.72rem; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .cr-nav a { color:var(--muted); text-decoration:none; border:1px solid var(--border); border-radius:4px; padding:.2rem .5rem; }
+  .cr-nav a:hover { color:var(--accent); border-color:var(--accent); }
+  .cr-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); scroll-margin-top:1rem; }
+  .cr-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .cr-row { padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+  .cr-row:last-child { border-bottom:none; }
+  .cr-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); margin-right:.3rem; }
+  .cr-badge-ok { color:var(--accent); border-color:var(--accent); }
+  .cr-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .cr-empty { color:var(--muted); font-size:.82rem; }
+  .cr-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.6rem; }
+  .cr-form input, .cr-form select, .cr-form textarea { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit; padding:.4rem .6rem; font-size:.85rem; font-family:inherit; }
+  .cr-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; }
+  .cr-btn-warn { background:var(--warn); }
+  .cr-disclaimer { color:var(--warn); font-size:.78rem; border:1px solid var(--warn); border-radius:6px; padding:.6rem .8rem; margin:1rem 0; }
+  ul.cr-list { margin:0; padding-left:1.1rem; font-size:.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cr-wrap">
+  <a class="cr-empty" href="{% url 'collaboration_rooms:rooms_list' %}">← My rooms</a>
+  <div class="cr-eyebrow">ECOIQ · GOVERNED COLLABORATION ROOM #{{ room.pk }}</div>
+  <h1 class="cr-h1">{{ room.title }}</h1>
+  <p class="cr-sub">Status: <strong>{{ room.get_status_display }}</strong> · Anchored to routing candidate for {{ room.anchor_organisation.name }} on "{{ room.opportunity.title }}". You are a <strong>{{ participant.get_role_display }}</strong>.</p>
+
+  {% if messages %}
+    {% for message in messages %}<p class="cr-empty" style="color:{% if message.tags == 'success' %}var(--accent){% else %}var(--warn){% endif %};">{{ message }}</p>{% endfor %}
+  {% endif %}
+
+  <nav class="cr-nav">
+    <a href="#context">Context</a><a href="#participants">Participants</a><a href="#evidence">Evidence</a>
+    <a href="#questions">Questions</a><a href="#messages">Messages</a><a href="#proposals">Next Steps</a>
+    {% if is_staff %}<a href="{% url 'collaboration_rooms:staff_centre' %}">Staff Centre</a>{% endif %}
+  </nav>
+
+  <section id="summary" class="cr-section">
+    <h2>Collaboration summary (deterministic, real-time)</h2>
+    <div class="cr-row"><span class="cr-empty">Status</span><br>{{ summary.status }}</div>
+    <div class="cr-row"><span class="cr-empty">Evidence shared</span><br>{{ summary.evidence_shared_count }}</div>
+    <div class="cr-row"><span class="cr-empty">Open questions</span>
+      <ul class="cr-list">{% for q in summary.open_questions %}<li>{{ q }}</li>{% empty %}<li class="cr-empty">None.</li>{% endfor %}</ul>
+    </div>
+    <div class="cr-row"><span class="cr-empty">Proposed next step</span><br>{{ summary.proposed_next_step|default:"None yet." }}</div>
+    <div class="cr-row"><span class="cr-empty">Latest activity</span><br>{{ summary.latest_activity }}</div>
+  </section>
+
+  <section id="context" class="cr-section">
+    <h2>Opportunity context (read-only)</h2>
+    <div class="cr-row"><span class="cr-empty">Problem statement</span><br>{{ context_package.problem_statement }}</div>
+    <div class="cr-row"><span class="cr-empty">Human review decision</span><br>{{ context_package.human_review_decision }}</div>
+    <div class="cr-row"><span class="cr-empty">Why this organisation matched</span>
+      <ul class="cr-list">{% for reason in context_package.why_matched %}<li>{{ reason }}</li>{% endfor %}</ul>
+    </div>
+    <div class="cr-row"><span class="cr-empty">Relevant principles</span><br>{{ context_package.relevant_principles|join:", "|default:"None recorded" }}</div>
+    <div class="cr-row"><span class="cr-empty">Known unknowns</span>
+      <ul class="cr-list">{% for u in context_package.known_unknowns %}<li>{{ u }}</li>{% empty %}<li class="cr-empty">None.</li>{% endfor %}</ul>
+    </div>
+    <div class="cr-row"><span class="cr-empty">Current routing status</span><br>{{ context_package.current_routing_status }}</div>
+  </section>
+
+  <section id="participants" class="cr-section">
+    <h2>Authorised participants <span class="cr-badge">{{ participants|length }}</span></h2>
+    {% for p in participants %}
+      <div class="cr-row">{{ p.user }} <span class="cr-badge">{{ p.get_role_display }}</span> <span class="cr-empty">{{ p.organisation.name|default:"EcoIQ" }} — {{ p.reason }}</span>
+        {% if is_staff %}
+        <form method="post" action="{% url 'collaboration_rooms:revoke_participant' room.pk p.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="cr-btn cr-btn-warn">Revoke</button></form>
+        {% endif %}
+      </div>
+    {% endfor %}
+    {% if is_staff %}
+    <form method="post" action="{% url 'collaboration_rooms:add_participant' room.pk %}" class="cr-form">
+      {% csrf_token %}
+      <input type="number" name="user_id" placeholder="User ID" required>
+      <input type="number" name="organisation" placeholder="Organisation ID (blank = EcoIQ)">
+      <select name="role"><option value="expert">Expert</option><option value="observer" selected>Observer</option><option value="organisation_representative">Organisation representative</option></select>
+      <input type="text" name="reason" placeholder="Reason for access" required style="min-width:12rem;">
+      <button type="submit" class="cr-btn">Add participant</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section id="evidence" class="cr-section">
+    <h2>Shared evidence <span class="cr-badge">{{ evidence_items|length }}</span></h2>
+    <p class="cr-empty">A participant's own declaration is a claim, not verified evidence, until an EcoIQ staff member independently confirms it.</p>
+    {% for item in evidence_items %}
+      <div class="cr-row">
+        <strong>{{ item.title }}</strong> <span class="cr-badge {% if item.verification_state == 'ecoiq_verified' %}cr-badge-ok{% endif %}">{{ item.get_verification_state_display }}</span>
+        <span class="cr-badge">{{ item.get_evidence_type_display }}</span>
+        <p class="cr-empty">{{ item.description }}{% if item.source_url %} — <a href="{{ item.source_url }}" style="color:var(--accent);">{{ item.source_url }}</a>{% endif %}</p>
+        <p class="cr-empty">Shared by {{ item.shared_by }} ({{ item.organisation.name|default:"EcoIQ" }}) on {{ item.created_at|date:"Y-m-d H:i" }}</p>
+        {% if is_staff and item.verification_state != 'ecoiq_verified' %}
+        <form method="post" action="{% url 'collaboration_rooms:verify_evidence' room.pk item.pk %}">{% csrf_token %}<button type="submit" class="cr-btn">Mark EcoIQ verified</button></form>
+        {% endif %}
+      </div>
+    {% empty %}<p class="cr-empty">No evidence shared yet.</p>{% endfor %}
+    {% if can_act %}
+    <form method="post" action="{% url 'collaboration_rooms:share_evidence' room.pk %}" class="cr-form">
+      {% csrf_token %}
+      <input type="text" name="title" placeholder="Title" required>
+      <select name="evidence_type"><option value="document">Document</option><option value="public_source_link">Public source link</option><option value="measurement">Measurement</option><option value="resource_information">Resource information</option><option value="funding_information">Funding information</option><option value="organisation_provided">Organisation-provided</option><option value="other">Other</option></select>
+      <input type="url" name="source_url" placeholder="Source URL (optional)">
+      <input type="text" name="description" placeholder="Description">
+      <select name="visibility"><option value="shared_with_room" selected>Shared with room</option><option value="organisation_private">My organisation only</option>{% if is_staff %}<option value="ecoiq_internal_only">EcoIQ internal only</option>{% endif %}</select>
+      <button type="submit" class="cr-btn">Share evidence</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section id="questions" class="cr-section">
+    <h2>Structured questions &amp; information requests <span class="cr-badge">{{ information_requests|length }}</span></h2>
+    {% for req in information_requests %}
+      <div class="cr-row">
+        <strong>{{ req.question_text }}</strong> <span class="cr-badge">{{ req.get_request_type_display }}</span> <span class="cr-badge {% if req.status == 'answered' %}cr-badge-ok{% endif %}">{{ req.get_status_display }}</span>
+        {% for resp in req.responses.all %}
+          <p class="cr-empty">↳ {{ resp.responded_by }} ({{ resp.responding_organisation.name|default:"EcoIQ" }}): {{ resp.answer_text }}
+            <span class="cr-badge {% if not resp.is_claim_only %}cr-badge-ok{% endif %}">{{ resp.is_claim_only|yesno:"declared claim,evidence-backed" }}</span></p>
+        {% endfor %}
+        {% if can_act %}
+        <form method="post" action="{% url 'collaboration_rooms:respond_to_request' room.pk req.pk %}" class="cr-form">
+          {% csrf_token %}<input type="text" name="answer_text" placeholder="Your answer" required style="min-width:16rem;">
+          <button type="submit" class="cr-btn">Answer</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'collaboration_rooms:set_request_status' room.pk req.pk %}" class="cr-form">
+          {% csrf_token %}
+          <select name="status"><option value="open">Open</option><option value="answered">Answered</option><option value="partially_answered">Partially answered</option><option value="needs_evidence">Needs evidence</option><option value="closed">Closed</option></select>
+          <button type="submit" class="cr-btn">Update status</button>
+        </form>
+      </div>
+    {% empty %}<p class="cr-empty">No information requests yet.</p>{% endfor %}
+    {% if can_act %}
+    <form method="post" action="{% url 'collaboration_rooms:create_request' room.pk %}" class="cr-form">
+      {% csrf_token %}
+      <select name="request_type"><option value="document">Document</option><option value="measurement">Measurement</option><option value="eligibility_evidence">Eligibility evidence</option><option value="technical_specification">Technical specification</option><option value="authority_confirmation">Authority confirmation</option><option value="resource_availability">Resource availability</option><option value="funding_terms">Funding terms</option><option value="timeline">Timeline</option><option value="other">Other</option></select>
+      <input type="text" name="question_text" placeholder="Your question" required style="min-width:16rem;">
+      <button type="submit" class="cr-btn">Ask</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section id="messages" class="cr-section">
+    <h2>Messages <span class="cr-badge">{{ messages_list|length }}</span></h2>
+    {% for m in messages_list %}
+      <div class="cr-row">{{ m.author }} ({{ m.organisation.name|default:"EcoIQ" }}) — {{ m.created_at|date:"Y-m-d H:i" }}
+        {% if m.edited_at %}<span class="cr-badge">edited</span>{% endif %}<br>{{ m.body }}</div>
+    {% empty %}<p class="cr-empty">No messages yet.</p>{% endfor %}
+    <form method="post" action="{% url 'collaboration_rooms:post_message' room.pk %}" class="cr-form">
+      {% csrf_token %}<textarea name="body" placeholder="Message" required rows="2" style="flex:1;min-width:16rem;"></textarea>
+      <button type="submit" class="cr-btn">Send</button>
+    </form>
+  </section>
+
+  <section id="proposals" class="cr-section">
+    <h2>Next-step proposals &amp; mutual consent <span class="cr-badge">{{ proposals|length }}</span></h2>
+    {% for p in proposals %}
+      <div class="cr-row">
+        <strong>{{ p.get_proposal_type_display }}</strong> <span class="cr-badge {% if p.status == 'accepted' %}cr-badge-ok{% endif %}">{{ p.get_status_display }}</span>
+        <p class="cr-empty">{{ p.description }}</p>
+        <p class="cr-empty">Consent matrix:</p>
+        <ul class="cr-list">
+          {% for c in p.consents.all %}
+            <li>{{ c.organisation.name|default:"EcoIQ" }}: <span class="cr-badge {% if c.status == 'approved' %}cr-badge-ok{% elif c.status == 'rejected' %}cr-badge-warn{% endif %}">{{ c.get_status_display }}</span>
+              {% if c.decided_at %}({{ c.decided_at|date:"Y-m-d H:i" }} by {{ c.actor }}){% endif %}</li>
+          {% empty %}<li class="cr-empty">No required parties recorded.</li>{% endfor %}
+        </ul>
+        {% if p.status == 'proposed' %}
+        <form method="post" action="{% url 'collaboration_rooms:give_consent' room.pk p.pk %}" class="cr-form">
+          {% csrf_token %}<input type="number" name="organisation" placeholder="Your org ID (blank = EcoIQ, staff only)">
+          <button type="submit" class="cr-btn">Consent</button>
+        </form>
+        <form method="post" action="{% url 'collaboration_rooms:reject_consent' room.pk p.pk %}" class="cr-form">
+          {% csrf_token %}<input type="number" name="organisation" placeholder="Your org ID (blank = EcoIQ, staff only)">
+          <button type="submit" class="cr-btn cr-btn-warn">Reject</button>
+        </form>
+        {% endif %}
+        {% if p.status == 'accepted' and is_staff %}
+        <form method="post" action="{% url 'collaboration_rooms:promote_proposal' p.pk %}">{% csrf_token %}<button type="submit" class="cr-btn">Promote to real action/project</button></form>
+        {% endif %}
+        {% if p.promoted_reference %}<p class="cr-empty">Promoted: {{ p.promoted_reference }}</p>{% endif %}
+      </div>
+    {% empty %}<p class="cr-empty">No next-step proposals yet.</p>{% endfor %}
+    {% if can_act %}
+    <form method="post" action="{% url 'collaboration_rooms:create_proposal' room.pk %}" class="cr-form">
+      {% csrf_token %}
+      <select name="proposal_type">
+        <option value="technical_discussion">Schedule technical discussion</option>
+        <option value="share_dataset">Share missing dataset</option>
+        <option value="introduction">Make introduction</option>
+        <option value="verify_resource">Verify resource</option>
+        <option value="funding_eligibility_review">Review funding eligibility</option>
+        <option value="site_assessment">Conduct site assessment</option>
+        <option value="project_candidate">Create project candidate</option>
+        <option value="reject_close">Reject / close opportunity</option>
+      </select>
+      <input type="text" name="description" placeholder="Description" style="min-width:14rem;">
+      <input type="number" name="required_organisations" placeholder="Required org ID">
+      <label><input type="checkbox" name="requires_ecoiq_consent" checked> Requires EcoIQ consent</label>
+      <button type="submit" class="cr-btn">Propose</button>
+    </form>
+    {% endif %}
+  </section>
+
+  {% if can_act %}
+  <section class="cr-section">
+    <h2>Optional AI assistance</h2>
+    <p class="cr-empty">AI may summarise, extract open questions, or draft a neutral meeting brief — it can never give consent, accept a step, verify a claim, or create an action/project.</p>
+    <form method="post" action="{% url 'collaboration_rooms:ai_summarise' room.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="cr-btn">Summarise history</button></form>
+    <form method="post" action="{% url 'collaboration_rooms:ai_open_questions' room.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="cr-btn">Extract open questions</button></form>
+    <form method="post" action="{% url 'collaboration_rooms:ai_meeting_brief' room.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="cr-btn">Draft meeting brief</button></form>
+  </section>
+  {% endif %}
+
+  {% if is_staff %}
+  <section class="cr-section">
+    <h2>Room management</h2>
+    <form method="post" action="{% url 'collaboration_rooms:close_room' room.pk %}" class="cr-form">
+      {% csrf_token %}<input type="text" name="reason" placeholder="Close reason"><button type="submit" class="cr-btn cr-btn-warn">Close room</button>
+    </form>
+  </section>
+  {% endif %}
+
+  <div class="cr-disclaimer">A Collaboration Room does not create a partnership, contract, funding commitment, procurement commitment, or obligation. Agreement to a next step means only that authorised participants consented to that specific recorded next step.</div>
+</div>
+{% endblock %}

@@ -57,7 +57,10 @@ from django.utils import timezone
 # 'partner_routing' (Partner Participation Protocol PR8): a routing run
 # spans one opportunity against many candidate organisations — no single
 # project/company anchor either.
-NO_ANCHOR_ALLOWED_KINDS = ('company_discovery', 'evidence_review_workbench', 'good_agents_discovery', 'partner_routing')
+NO_ANCHOR_ALLOWED_KINDS = (
+    'company_discovery', 'evidence_review_workbench', 'good_agents_discovery', 'partner_routing',
+    'collaboration_room_ai_assist',
+)
 
 
 class AnalysisSession(models.Model):
@@ -74,6 +77,7 @@ class AnalysisSession(models.Model):
         ('stewardship_refresh', 'Stewardship Universe Refresh (Source Discovery / Fetch / KPI Candidates)'),
         ('good_agents_discovery', 'Good Agents Global Discovery Run (Signal Ingestion / 114-Principle Activation)'),
         ('partner_routing', 'Partner Participation Routing (Capability Match / Participation Signal Scoring)'),
+        ('collaboration_room_ai_assist', 'Collaboration Room AI Assistance (Summary / Open Questions / Meeting Brief)'),
         ('other', 'Other Instrumented Pipeline'),
     ]
     STATUS_CHOICES = [

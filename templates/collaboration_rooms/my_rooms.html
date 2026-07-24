@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}My Collaboration Rooms — EcoIQ{% endblock %}
+{% block meta_description_content %}Governed collaboration rooms you are authorised to access — grouped by what's needed from you.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cr-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a;
+    max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .cr-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .cr-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .cr-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .cr-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .cr-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+  .cr-row:last-child { border-bottom:none; }
+  .cr-row a { color:var(--accent); text-decoration:none; font-weight:600; }
+  .cr-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .cr-empty { color:var(--muted); font-size:.82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cr-wrap">
+  <div class="cr-eyebrow">ECOIQ · MY COLLABORATION ROOMS</div>
+  <h1 class="cr-h1">My Collaboration Rooms</h1>
+  <p class="cr-empty">Only rooms where you hold an active, authorised participation are ever listed here.</p>
+
+  <section class="cr-section">
+    <h2>Next step proposed <span class="cr-badge">{{ next_step_proposed|length }}</span></h2>
+    {% for r in next_step_proposed %}<div class="cr-row"><a href="{% url 'collaboration_rooms:room_detail' r.pk %}">{{ r.title }}</a> <span class="cr-badge">{{ r.get_status_display }}</span></div>{% empty %}<p class="cr-empty">None.</p>{% endfor %}
+  </section>
+  <section class="cr-section">
+    <h2>Waiting on evidence <span class="cr-badge">{{ waiting_on_evidence|length }}</span></h2>
+    {% for r in waiting_on_evidence %}<div class="cr-row"><a href="{% url 'collaboration_rooms:room_detail' r.pk %}">{{ r.title }}</a></div>{% empty %}<p class="cr-empty">None.</p>{% endfor %}
+  </section>
+  <section class="cr-section">
+    <h2>Waiting on EcoIQ <span class="cr-badge">{{ waiting_on_ecoiq|length }}</span></h2>
+    {% for r in waiting_on_ecoiq %}<div class="cr-row"><a href="{% url 'collaboration_rooms:room_detail' r.pk %}">{{ r.title }}</a></div>{% empty %}<p class="cr-empty">None.</p>{% endfor %}
+  </section>
+  <section class="cr-section">
+    <h2>Needs your response <span class="cr-badge">{{ needs_response|length }}</span></h2>
+    {% for r in needs_response %}<div class="cr-row"><a href="{% url 'collaboration_rooms:room_detail' r.pk %}">{{ r.title }}</a></div>{% empty %}<p class="cr-empty">None.</p>{% endfor %}
+  </section>
+  <section class="cr-section">
+    <h2>Active <span class="cr-badge">{{ active|length }}</span></h2>
+    {% for r in active %}<div class="cr-row"><a href="{% url 'collaboration_rooms:room_detail' r.pk %}">{{ r.title }}</a></div>{% empty %}<p class="cr-empty">None.</p>{% endfor %}
+  </section>
+  <section class="cr-section">
+    <h2>Closed <span class="cr-badge">{{ closed|length }}</span></h2>
+    {% for r in closed %}<div class="cr-row"><a href="{% url 'collaboration_rooms:room_detail' r.pk %}">{{ r.title }}</a> <span class="cr-badge">{{ r.get_status_display }}</span></div>{% empty %}<p class="cr-empty">None.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}
