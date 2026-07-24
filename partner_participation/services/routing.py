@@ -87,14 +87,28 @@ def score_candidate(organisation, edge, opportunity):
     preference_routable = preference is not None and preference.acceptance_mode in ROUTABLE_ACCEPTANCE_MODES
 
     if strong_capability and verified_member and preference_routable and has_route:
-        return 'strong_verified_match', reasons, None
-    if documented_capability:
-        return 'verified_capability_match', reasons, None
-    if verified_member and preference_routable:
-        return 'participation_match', reasons, None
-    if not has_route:
+        label = 'strong_verified_match'
+    elif documented_capability:
+        label = 'verified_capability_match'
+    elif verified_member and preference_routable:
+        label = 'participation_match'
+    elif not has_route:
         return 'no_verified_route', reasons, None
-    return 'possible_responsible_party', reasons, None
+    else:
+        label = 'possible_responsible_party'
+
+    # Phase 24 — transparent, deterministic feedback from real past
+    # responses for this SAME organisation + theme. Never touches
+    # 'no_verified_route'/'needs_review' (those already returned above).
+    from partner_participation.services.feedback import apply_adjustment, historical_feedback_adjustment
+    delta, feedback_reason, info_flag = historical_feedback_adjustment(organisation, opportunity.theme)
+    if feedback_reason:
+        reasons.append(feedback_reason)
+        label = apply_adjustment(label, delta)
+    if info_flag:
+        reasons.append(info_flag)
+
+    return label, reasons, None
 
 
 def generate_routing_candidates(opportunity):
@@ -147,10 +161,10 @@ def transition(candidate, new_status, *, actor=None, notes=''):
         raise IllegalRoutingTransitionError(
             f'Cannot move RoutingCandidate {candidate.pk} from {candidate.status!r} to {new_status!r}.'
         )
-    if new_status in ('approved_to_share', 'shared') and (actor is None or not getattr(actor, 'is_staff', False)):
+    if new_status in ('approved_to_share', 'not_approved', 'shared') and (actor is None or not getattr(actor, 'is_staff', False)):
         raise IllegalRoutingTransitionError(
             f'Moving a candidate to {new_status!r} requires a real EcoIQ staff actor — '
-            f'visibility to the organisation is always an explicit EcoIQ decision.'
+            f'the share decision is always an explicit EcoIQ decision.'
         )
 
     candidate.status = new_status

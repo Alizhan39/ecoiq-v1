@@ -47,7 +47,7 @@
   <nav class="pp-nav">
     <a href="#capabilities">Capabilities</a><a href="#preferences">Opportunity Preferences</a>
     <a href="#resources">Resources</a><a href="#funding">Funding Programmes</a>
-    <a href="#routing">Incoming Opportunities</a><a href="#members">Members</a>
+    <a href="#routing">Incoming Opportunities</a><a href="#consent">Participation Consent</a><a href="#members">Members</a>
   </nav>
 
   <section id="capabilities" class="pp-section">
@@ -154,7 +154,7 @@
 
   <section id="routing" class="pp-section">
     <h2>Incoming opportunity candidates</h2>
-    <p class="pp-empty">These are candidates EcoIQ has already approved to share — none of them are an assignment, endorsement, or acceptance of any kind.</p>
+    <p class="pp-empty">These are candidates EcoIQ has already approved to share — none of them are an assignment, endorsement, or acceptance of any kind. Anything still under EcoIQ's own internal review is never shown here.</p>
     {% for c in routing_candidates %}
       <div class="pp-row">
         {{ c.opportunity.title }} <span class="pp-badge">{{ c.get_status_display }}</span> <span class="pp-badge">{{ c.get_confidence_label_display }}</span>
@@ -168,8 +168,43 @@
           <button type="submit" class="pp-btn">Respond</button>
         </form>
         {% endif %}
+        {% for step in c.next_steps.all %}
+          <p class="pp-empty">Next step: {{ step.get_action_type_display }} <span class="pp-badge">{{ step.get_status_display }}</span></p>
+        {% endfor %}
       </div>
     {% empty %}<p class="pp-empty">No incoming opportunity candidates yet.</p>{% endfor %}
+  </section>
+
+  <section id="consent" class="pp-section">
+    <h2>Participation consent</h2>
+    <p class="pp-empty">Consent is never inferred from creating an account or joining an organisation — it is a real, explicit, per-member action, and it is required before your organisation can be routed any opportunity.</p>
+    {% with existing_consent=membership.consent %}
+      {% if existing_consent and existing_consent.status == 'active' %}
+        <div class="pp-row">Consent recorded {{ existing_consent.consented_at|date:"Y-m-d" }} (terms {{ existing_consent.terms_version }}) by {{ existing_consent.actor }}. <span class="pp-badge pp-badge-verified">Active</span></div>
+        {% if can_edit %}
+        <form method="post" action="{% url 'partner_participation:consent' organisation.pk %}" class="pp-form">
+          {% csrf_token %}<input type="hidden" name="action" value="withdraw">
+          <button type="submit" class="pp-btn" style="background:var(--warn);">Withdraw consent</button>
+        </form>
+        {% endif %}
+      {% elif existing_consent %}
+        <div class="pp-row">Consent withdrawn {{ existing_consent.withdrawn_at|date:"Y-m-d" }}. <span class="pp-badge pp-badge-warn">Withdrawn</span></div>
+        {% if can_edit %}
+        <form method="post" action="{% url 'partner_participation:consent' organisation.pk %}" class="pp-form">
+          {% csrf_token %}<button type="submit" class="pp-btn">Re-consent to participation</button>
+        </form>
+        {% endif %}
+      {% else %}
+        <p class="pp-empty">No consent has been recorded yet by any verified member.</p>
+        {% if can_edit %}
+        <form method="post" action="{% url 'partner_participation:consent' organisation.pk %}" class="pp-form">
+          {% csrf_token %}<button type="submit" class="pp-btn">I consent to real opportunity routing (terms v1)</button>
+        </form>
+        {% else %}
+        <p class="pp-empty">Only an admin or editor member can record consent.</p>
+        {% endif %}
+      {% endif %}
+    {% endwith %}
   </section>
 
   <section id="members" class="pp-section">

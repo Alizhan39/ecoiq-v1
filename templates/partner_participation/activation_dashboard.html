@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Activation Dashboard — EcoIQ Partner Network{% endblock %}
+{% block meta_description_content %}Real counts across invitations, routing readiness, share approval, delivery, and response — no vanity metrics.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a; --warn:#f4a261;
+    max-width:1200px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pp-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pp-sub { color:var(--muted); font-size:.85rem; max-width:80ch; margin-bottom:1rem; }
+  .pp-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap:.75rem; margin-bottom:1rem; }
+  .pp-kpi { border:1px solid var(--border); border-radius:6px; padding:.7rem .9rem; background:var(--bg2); }
+  .pp-kpi .n { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:1.3rem; font-weight:800; }
+  .pp-kpi .l { font-size:.64rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:.2rem; }
+  .pp-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pp-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pp-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+  .pp-row:last-child { border-bottom:none; }
+  .pp-row a { color:var(--accent); text-decoration:none; font-weight:600; }
+  .pp-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .pp-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .pp-empty { color:var(--muted); font-size:.82rem; }
+  .pp-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.4rem; }
+  .pp-form input, .pp-form select { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit; padding:.35rem .6rem; font-size:.8rem; font-family:inherit; }
+  .pp-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.35rem .8rem; font-size:.75rem; font-weight:700; cursor:pointer; }
+  .pp-btn-warn { background:var(--warn); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrap">
+  <div class="pp-eyebrow">ECOIQ · PARTNER NETWORK · ACTIVATION</div>
+  <h1 class="pp-h1">Activation Dashboard</h1>
+  <p class="pp-sub">Every count is a live query over real rows. Real organisations are never marked participating or routing-ready unless they genuinely meet every real requirement.</p>
+  <p><a href="{% url 'partner_participation:network_overview' %}" style="color:var(--accent);">Network Overview (PR8) — capability/participation counts →</a></p>
+
+  {% if messages %}
+    {% for message in messages %}<pre class="pp-empty" style="white-space:pre-wrap;color:{% if message.tags == 'success' %}var(--accent){% else %}var(--warn){% endif %};">{{ message }}</pre>{% endfor %}
+  {% endif %}
+
+  <div class="pp-grid">
+    <div class="pp-kpi"><div class="n">{{ invitations_pending|length }}</div><div class="l">Invitations pending</div></div>
+    <div class="pp-kpi"><div class="n">{{ verified_memberships }}</div><div class="l">Verified memberships</div></div>
+    <div class="pp-kpi"><div class="n">{{ participating_organisations_count }}</div><div class="l">Participating organisations</div></div>
+    <div class="pp-kpi"><div class="n">{{ routing_ready_count }}</div><div class="l">Routing-ready organisations</div></div>
+    <div class="pp-kpi"><div class="n">{{ awaiting_share_review|length }}</div><div class="l">Awaiting share review</div></div>
+    <div class="pp-kpi"><div class="n">{{ shared_count }}</div><div class="l">Shared</div></div>
+    <div class="pp-kpi"><div class="n">{{ responses_pending|length }}</div><div class="l">Responses pending</div></div>
+    <div class="pp-kpi"><div class="n">{{ interested_count }}</div><div class="l">Interested</div></div>
+    <div class="pp-kpi"><div class="n">{{ declined_count }}</div><div class="l">Declined</div></div>
+    <div class="pp-kpi"><div class="n">{{ next_step_actions|length }}</div><div class="l">Next-step actions</div></div>
+  </div>
+
+  <div class="pp-section">
+    <h2>Invite a real organisation representative</h2>
+    <form method="post" action="" class="pp-form" onsubmit="this.action='/partner-network/staff/invitations/'+document.getElementById('inv-org').value+'/create/';">
+      {% csrf_token %}
+      <input type="number" id="inv-org" name="organisation_id_display" placeholder="Organisation ID" required style="width:8rem;">
+      <input type="email" name="invitee_email" placeholder="representative@example.org" required>
+      <select name="intended_role"><option value="admin">Admin</option><option value="editor" selected>Editor</option><option value="viewer">Viewer</option></select>
+      <input type="text" name="reason" placeholder="Reason for invitation">
+      <button type="submit" class="pp-btn">Create invitation</button>
+    </form>
+    <p class="pp-empty">Find an organisation's ID from the <a href="{% url 'capability_graph:organisation_list' %}" style="color:var(--accent);">Capability Graph</a>.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2>Pending invitations <span class="pp-badge">{{ invitations_pending|length }}</span></h2>
+    {% for inv in invitations_pending %}
+      <div class="pp-row">
+        {{ inv.invitee_email }} → {{ inv.organisation.name }} <span class="pp-badge">{{ inv.get_status_display }}</span>
+        <span class="pp-badge">{{ inv.get_send_status_display }}</span>
+        <span class="pp-empty">expires {{ inv.expires_at|date:"Y-m-d" }}</span>
+        <div class="pp-form">
+          {% if inv.status == 'draft' %}
+          <form method="post" action="{% url 'partner_participation:send_invitation' inv.pk %}">{% csrf_token %}<button type="submit" class="pp-btn">Send</button></form>
+          <form method="post" action="{% url 'partner_participation:mark_manually_sent' inv.pk %}">{% csrf_token %}<input type="text" name="evidence" placeholder="Delivery evidence"><button type="submit" class="pp-btn">Mark manually sent</button></form>
+          {% endif %}
+          <form method="post" action="{% url 'partner_participation:revoke_invitation' inv.pk %}">{% csrf_token %}<button type="submit" class="pp-btn pp-btn-warn">Revoke</button></form>
+        </div>
+      </div>
+    {% empty %}<p class="pp-empty">No pending invitations.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Routing-ready organisations <span class="pp-badge">{{ routing_ready_count }}</span></h2>
+    {% for org in routing_ready_organisations %}
+      <div class="pp-row"><a href="{% url 'capability_graph:organisation_detail' org.pk %}">{{ org.name }}</a></div>
+    {% empty %}<p class="pp-empty">No organisation is fully routing-ready yet.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Awaiting share review <span class="pp-badge">{{ awaiting_share_review|length }}</span></h2>
+    {% for c in awaiting_share_review %}
+      <div class="pp-row">{{ c.opportunity.title }} → {{ c.organisation.name }} <span class="pp-badge">{{ c.get_confidence_label_display }}</span>
+        <a href="{% url 'partner_participation:share_confirm' c.pk %}">Review & approve →</a></div>
+    {% empty %}<p class="pp-empty">Nothing awaiting share review.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Approved, awaiting delivery <span class="pp-badge">{{ approved_awaiting_delivery|length }}</span></h2>
+    {% for c in approved_awaiting_delivery %}
+      <div class="pp-row">{{ c.opportunity.title }} → {{ c.organisation.name }}
+        <a href="{% url 'partner_participation:share_confirm' c.pk %}">Deliver →</a></div>
+    {% empty %}<p class="pp-empty">Nothing approved and awaiting delivery.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Responses pending <span class="pp-badge">{{ responses_pending|length }}</span></h2>
+    {% for c in responses_pending %}
+      <div class="pp-row">{{ c.opportunity.title }} → {{ c.organisation.name }} <span class="pp-badge">{{ c.get_status_display }}</span>
+        <form method="post" action="{% url 'partner_participation:record_response' c.pk %}" class="pp-form">
+          {% csrf_token %}
+          <select name="status"><option value="viewed">Viewed</option><option value="interested">Interested</option><option value="not_interested">Not interested</option><option value="needs_more_information">Needs more information</option></select>
+          <input type="text" name="channel" placeholder="Channel (phone/email)">
+          <input type="text" name="summary" placeholder="Summary">
+          <button type="submit" class="pp-btn">Record response</button>
+        </form>
+      </div>
+    {% empty %}<p class="pp-empty">No responses pending.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Next-step actions <span class="pp-badge">{{ next_step_actions|length }}</span></h2>
+    {% for step in next_step_actions %}
+      <div class="pp-row">{{ step.get_action_type_display }} — {{ step.candidate.organisation.name }} → {{ step.candidate.opportunity.title }}
+        <span class="pp-badge">{{ step.get_status_display }}</span></div>
+    {% empty %}<p class="pp-empty">No next-step actions yet.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

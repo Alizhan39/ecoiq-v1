@@ -268,6 +268,17 @@ def partner_participation_summary(opportunity):
     has_funding = FundingProgrammeDeclaration.objects.filter(organisation=organisation).exclude(status='expired').exists()
     routing_candidate = RoutingCandidate.objects.filter(organisation=organisation, opportunity=opportunity).first()
 
+    # PR9 Phase 19 — compact real-state fields, all read from already-persisted
+    # rows: routing readiness (onboarding.is_routing_ready), and, where a real
+    # routing candidate exists for THIS opportunity, its own current
+    # share/delivery/response/next-action state (never a separate computation).
+    from partner_participation.services.onboarding import is_routing_ready
+    routing_ready, routing_ready_reasons = is_routing_ready(organisation)
+
+    next_action = None
+    if routing_candidate is not None:
+        next_action = routing_candidate.next_steps.order_by('-created_at').first()
+
     return {
         'organisation': organisation,
         'capability_verified': has_verified_capability,
@@ -277,6 +288,10 @@ def partner_participation_summary(opportunity):
         'verified_route': has_open_route,
         'resource_or_funding_available': has_resource or has_funding,
         'connection_consent_state': routing_candidate.get_status_display() if routing_candidate else 'No routing candidate yet',
+        'routing_candidate': routing_candidate,
+        'routing_ready': routing_ready,
+        'routing_ready_reasons': routing_ready_reasons,
+        'next_action': next_action,
     }
 
 
