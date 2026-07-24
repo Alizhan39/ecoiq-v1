@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Capability Graph — EcoIQ{% endblock %}
+{% block meta_description_content %}Real-world organisations and their evidence-backed capabilities, jurisdictions, and verified routes.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cg-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261;
+    max-width:1000px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .cg-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .cg-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 .5rem; }
+  .cg-sub { color:var(--muted); font-size:.85rem; max-width:70ch; margin-bottom:1rem; }
+  .cg-filters { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.2rem; }
+  .cg-filters a { font-size:.7rem; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--muted); text-decoration:none; border:1px solid var(--border); border-radius:4px; padding:.2rem .5rem; }
+  .cg-filters a.active, .cg-filters a:hover { color:var(--accent); border-color:var(--accent); }
+  .cg-card { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin-bottom:.8rem; background:var(--bg2); }
+  .cg-card h2 { font-size:1rem; margin:0 0 .3rem; }
+  .cg-card h2 a { color:var(--text); text-decoration:none; }
+  .cg-card h2 a:hover { color:var(--accent); }
+  .cg-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem;
+    padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); margin-right:.3rem; }
+  .cg-badge-verified { color:var(--accent); border-color:var(--accent); }
+  .cg-empty { color:var(--muted); font-size:.82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cg-wrap">
+  <div class="cg-eyebrow">ECOIQ · CAPABILITY GRAPH</div>
+  <h1 class="cg-h1">Organisations</h1>
+  <p class="cg-sub">Every organisation here is real and deduplicated — the same real-world org referenced across many opportunities is one row, not a fresh guess each time. Each capability below is evidence-backed: never inferred from an organisation's name or sector alone.</p>
+
+  <div class="cg-filters">
+    <a href="{% url 'capability_graph:organisation_list' %}" class="{% if not active_capability %}active{% endif %}">All</a>
+    {% for value, label in capability_choices %}
+      <a href="?capability={{ value }}" class="{% if active_capability == value %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% for org in organisations %}
+    <div class="cg-card">
+      <h2><a href="{% url 'capability_graph:organisation_detail' org.pk %}">{{ org.name }}</a></h2>
+      <p class="cg-empty">{{ org.get_org_type_display }}{% if org.jurisdiction %} · {{ org.jurisdiction }}{% endif %}</p>
+      {% for cap in org.capabilities.all %}
+        <span class="cg-badge {% if cap.verification_state == 'independently_verified' %}cg-badge-verified{% endif %}">{{ cap.get_capability_display }}{% if cap.topic_domain %} · {{ cap.topic_domain }}{% endif %}</span>
+      {% empty %}<span class="cg-empty">No capabilities recorded yet.</span>{% endfor %}
+    </div>
+  {% empty %}
+    <p class="cg-empty">No organisations in the graph yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

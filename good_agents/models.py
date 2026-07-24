@@ -915,6 +915,14 @@ class FundingMatch(models.Model):
     resource = models.ForeignKey(
         AvailableResource, null=True, blank=True, on_delete=models.SET_NULL, related_name='funding_matches',
     )
+    # capability_graph (PR7) — set only when this match has been resolved to
+    # a real organisation with an evidence-backed FUND/GRANT/LEND capability;
+    # a purely deterministic "we need this kind of funder" match with no
+    # specific real funder identified yet honestly leaves this null.
+    organisation = models.ForeignKey(
+        'capability_graph.Organisation', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='funding_match_mentions',
+    )
     funder_type = models.CharField(max_length=24, choices=FUNDER_TYPE_CHOICES)
     eligibility_status = models.CharField(max_length=24, choices=ELIGIBILITY_STATUS_CHOICES, default='eligibility_unknown')
     notes = models.TextField(blank=True)
@@ -1145,6 +1153,15 @@ class ResponsibleParty(models.Model):
     guesswork — `resolution_status` stays 'possible_organisation' or
     'unresolved' until a human confirms it as 'known_organisation', and
     `evidence_ref` always points at the real signal/source it came from.
+
+    `organisation` (capability_graph, PR7) is the deduplicated real-world
+    org node this party resolution points at — added nullable/additive so
+    existing rows are unaffected. Before PR7, each opportunity created its
+    own freestanding party row even for the identical real organisation
+    (ten separate "USGS" rows across ten earthquake opportunities); new
+    resolutions now go through `capability_graph.services.organisations
+    .get_or_create_organisation()` so the same org is one row, referenced
+    many times, with its own reusable evidence-backed capabilities.
     """
     PARTY_TYPE_CHOICES = [
         ('local_authority', 'Local authority'), ('government_department', 'Government department'),
@@ -1171,6 +1188,10 @@ class ResponsibleParty(models.Model):
     evidence_ref = models.CharField(max_length=200, blank=True)
     linked_company = models.ForeignKey(
         'companies.CompanyProfile', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    organisation = models.ForeignKey(
+        'capability_graph.Organisation', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='responsible_party_mentions',
     )
     confidence = models.FloatField(default=0.0)
     notes = models.TextField(blank=True)

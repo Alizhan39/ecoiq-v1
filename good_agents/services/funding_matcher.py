@@ -11,6 +11,16 @@ by this service).
 """
 from good_agents.models import FundingMatch
 
+# PR7 — which Capability Graph capability a funder_type category maps to,
+# so a FundingMatch can be enriched with a REAL organisation when (and
+# only when) the graph has evidence-backed data for one. Deliberately a
+# small, explicit mapping, not an inference from the funder_type string.
+FUNDER_TYPE_TO_CAPABILITY = {
+    'government_programme': 'fund', 'grant': 'grant', 'development_finance': 'lend',
+    'impact_investor': 'fund', 'family_office': 'fund', 'philanthropy': 'donate',
+    'waqf': 'donate', 'islamic_finance': 'fund', 'green_finance': 'fund', 'corporate': 'fund',
+}
+
 # A funder type is only worth recording against an opportunity if the
 # opportunity's theme plausibly fits — avoids spamming a "green finance"
 # match onto an unrelated justice opportunity.
@@ -56,3 +66,23 @@ def suggest_funding_matches(opportunity, funder_types=None):
         )
         created.append(match)
     return created
+
+
+def enrich_with_capability_graph(funding_match, *, jurisdiction=None):
+    """
+    PR7 — resolves `funding_match.organisation` to a real Capability Graph
+    organisation ONLY when exactly one evidence-backed match exists for
+    the mapped capability; leaves it null (never guesses among several
+    candidates, never fabricates one where the graph has none yet — which
+    today is the common case, since no real funder database is connected).
+    """
+    from capability_graph.services.matcher import find_organisations_for_capability
+
+    capability = FUNDER_TYPE_TO_CAPABILITY.get(funding_match.funder_type)
+    if capability is None or funding_match.organisation_id:
+        return funding_match
+    matches = list(find_organisations_for_capability(capability, jurisdiction=jurisdiction))
+    if len(matches) == 1:
+        funding_match.organisation = matches[0].organisation
+        funding_match.save(update_fields=['organisation'])
+    return funding_match

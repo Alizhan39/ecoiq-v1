@@ -2132,3 +2132,105 @@ class MissionControlRegressionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Data request')
         self.assertContains(response, 'Approved for research')
+
+
+# ===========================================================================
+# === PR7 — Capability Graph integration: good_agents is the first real
+# === consumer (ResponsibleParty organisation dedup + FundingMatch
+# === enrichment). See capability_graph/tests.py for the graph's own
+# === standalone test suite.
+# ===========================================================================
+from capability_graph.models import Organisation  # noqa: E402
+from capability_graph.services.capabilities import record_capability  # noqa: E402
+from capability_graph.services.organisations import get_or_create_organisation  # noqa: E402
+from good_agents.services import funding_matcher  # noqa: E402
+
+
+class ResponsiblePartyCapabilityGraphIntegrationTests(TestCase):
+    def test_suggest_from_signal_deduplicates_the_same_real_organisation(self):
+        """
+        The regression test for the exact bug this PR fixes: PR6's live
+        demo showed ten separate 'USGS' ResponsiblyParty rows across ten
+        earthquake opportunities. suggest_from_signal must now resolve
+        every one of them to the SAME Organisation row.
+        """
+        opp1 = _make_opportunity(title='Earthquake A')
+        opp2 = _make_opportunity(title='Earthquake B')
+        signal1 = WorldSignal.objects.create(signal_type='harm', title='M 7.5 event A', publisher='USGS (US Geological Survey)', region='Global')
+        signal2 = WorldSignal.objects.create(signal_type='harm', title='M 6.9 event B', publisher='USGS (US Geological Survey)', region='Global')
+
+        party1 = responsible_party_service.suggest_from_signal(opp1, signal1)
+        party2 = responsible_party_service.suggest_from_signal(opp2, signal2)
+
+        self.assertIsNotNone(party1.organisation_id)
+        self.assertEqual(party1.organisation_id, party2.organisation_id)
+        self.assertEqual(Organisation.objects.count(), 1)
+
+    def test_suggest_from_capability_graph_returns_empty_when_no_evidence_yet(self):
+        opp = _make_opportunity()
+        parties = responsible_party_service.suggest_from_capability_graph(opp, 'respond_to_emergency')
+        self.assertEqual(parties, [])
+
+    def test_suggest_from_capability_graph_creates_candidate_from_real_evidence(self):
+        opp = _make_opportunity(theme='environment')
+        org = get_or_create_organisation('UK Environment Agency', org_type='regulator', jurisdiction='England')
+        record_capability(
+            org, 'respond_to_emergency', jurisdiction='England', topic_domain='flood risk',
+            evidence_url='https://environment.data.gov.uk/flood-monitoring/id/floods',
+            limitations='England only.',
+        )
+        parties = responsible_party_service.suggest_from_capability_graph(
+            opp, 'respond_to_emergency', jurisdiction='England',
+        )
+        self.assertEqual(len(parties), 1)
+        self.assertEqual(parties[0].organisation_id, org.pk)
+        self.assertEqual(parties[0].resolution_status, 'possible_organisation')
+        self.assertIn('England only', parties[0].notes)
+
+    def test_suggest_from_capability_graph_never_duplicates_on_rerun(self):
+        opp = _make_opportunity()
+        org = get_or_create_organisation('UK Environment Agency', org_type='regulator', jurisdiction='England')
+        record_capability(org, 'regulate', jurisdiction='England', evidence_url='https://environment.data.gov.uk/flood-monitoring/id/floods')
+        responsible_party_service.suggest_from_capability_graph(opp, 'regulate', jurisdiction='England')
+        responsible_party_service.suggest_from_capability_graph(opp, 'regulate', jurisdiction='England')
+        self.assertEqual(opp.responsible_parties.count(), 1)
+
+
+class FundingMatchCapabilityGraphIntegrationTests(TestCase):
+    def test_enrich_leaves_organisation_null_with_no_graph_data(self):
+        opp = _make_opportunity()
+        matches = funding_matcher.suggest_funding_matches(opp, funder_types=['grant'])
+        enriched = funding_matcher.enrich_with_capability_graph(matches[0])
+        self.assertIsNone(enriched.organisation_id)
+
+    def test_enrich_resolves_organisation_when_exactly_one_real_match_exists(self):
+        opp = _make_opportunity()
+        org = get_or_create_organisation('Real Grant Fund')
+        record_capability(org, 'grant', evidence_url='https://example.gov/grants')
+        matches = funding_matcher.suggest_funding_matches(opp, funder_types=['grant'])
+        enriched = funding_matcher.enrich_with_capability_graph(matches[0])
+        self.assertEqual(enriched.organisation_id, org.pk)
+
+    def test_enrich_never_guesses_among_multiple_candidates(self):
+        opp = _make_opportunity()
+        org_a = get_or_create_organisation('Fund A')
+        org_b = get_or_create_organisation('Fund B')
+        record_capability(org_a, 'grant', evidence_url='https://example.gov/a')
+        record_capability(org_b, 'grant', evidence_url='https://example.gov/b')
+        matches = funding_matcher.suggest_funding_matches(opp, funder_types=['grant'])
+        enriched = funding_matcher.enrich_with_capability_graph(matches[0])
+        self.assertIsNone(enriched.organisation_id)
+
+    def test_enrich_never_overwrites_an_already_resolved_organisation(self):
+        opp = _make_opportunity()
+        org = get_or_create_organisation('Real Grant Fund')
+        record_capability(org, 'grant', evidence_url='https://example.gov/grants')
+        matches = funding_matcher.suggest_funding_matches(opp, funder_types=['grant'])
+        match = matches[0]
+        other_org = get_or_create_organisation('Different Org')
+        match.organisation = other_org
+        match.save(update_fields=['organisation'])
+
+        funding_matcher.enrich_with_capability_graph(match)
+        match.refresh_from_db()
+        self.assertEqual(match.organisation_id, other_org.pk)
