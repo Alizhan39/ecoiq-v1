@@ -21,6 +21,12 @@
   .ga-position-concerns { color:var(--warn); }
   .ga-position-conflicts { color:var(--danger); }
   .ga-empty { color:var(--muted); font-size:.85rem; }
+  .ga-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
+  .ga-form label { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .ga-form input[type="text"], .ga-form select { background:rgba(255,255,255,.04); border:1px solid var(--border);
+    border-radius:6px; color:inherit; padding:.4rem .6rem; font-size:.85rem; font-family:inherit; }
+  .ga-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px;
+    padding:.45rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; text-decoration:none; }
 </style>
 {% endblock %}
 
@@ -95,5 +101,113 @@
     <p class="ga-empty">Measured result: {% if impact_receipt.measured_result %}{{ impact_receipt.measured_result }}{% else %}Not yet measured.{% endif %}</p>
   </div>
   {% endif %}
+
+  {% if messages %}
+    {% for message in messages %}<p class="ga-empty" style="color:var(--danger);">{{ message }}</p>{% endfor %}
+  {% endif %}
+
+  <div class="ga-section">
+    <h2>Action gate — governed next step</h2>
+    <p>Current state: <span class="ga-badge">{{ gate.get_current_state_display }}</span></p>
+    {% if allowed_next_state_choices %}
+    <form method="post" action="{% url 'good_agents:gate_transition' opportunity.pk %}" class="ga-form">
+      {% csrf_token %}
+      <label for="id_new_state">Move to</label>
+      <select name="new_state" id="id_new_state">
+        {% for state, label in allowed_next_state_choices %}<option value="{{ state }}">{{ label }}</option>{% endfor %}
+      </select>
+      <label for="id_reason">Reason</label>
+      <input type="text" name="reason" id="id_reason" placeholder="Why this decision">
+      <button type="submit" class="ga-btn">Record decision</button>
+    </form>
+    {% else %}
+    <p class="ga-empty">This gate is in a terminal state — no further transitions.</p>
+    {% endif %}
+
+    <h2 style="margin-top:1rem;">Gate history</h2>
+    {% for t in gate_transitions %}
+      <div class="ga-row">
+        <span>{{ t.previous_state|default:"(new)" }} → {{ t.new_state }}{% if t.reason %} — {{ t.reason }}{% endif %}</span>
+        <span class="ga-empty">{{ t.actor|default:"system" }} · {{ t.created_at|date:"Y-m-d H:i" }}</span>
+      </div>
+    {% empty %}
+      <p class="ga-empty">No transitions recorded.</p>
+    {% endfor %}
+  </div>
+
+  <div class="ga-section">
+    <h2>Action pathways</h2>
+    {% for p in pathways %}
+      <div class="ga-row">
+        <span>{{ p.get_pathway_type_display }} <span class="ga-badge">{{ p.get_capital_required_display }}</span></span>
+        <span>{{ p.get_status_display }}{% if p.owner %} · {{ p.owner }}{% endif %}</span>
+      </div>
+      {% if p.next_step %}<p class="ga-empty">↳ Next: {{ p.next_step }}{% if p.due_date %} (due {{ p.due_date }}){% endif %}</p>{% endif %}
+    {% empty %}
+      <p class="ga-empty">No action pathways yet — the gate must be approved before a pathway can be created.</p>
+    {% endfor %}
+
+    {% if gate.current_state in gate.APPROVED_STATES %}
+    <form method="post" action="{% url 'good_agents:pathway_create' opportunity.pk %}" class="ga-form">
+      {% csrf_token %}
+      <label for="id_pathway_type">New pathway</label>
+      <select name="pathway_type" id="id_pathway_type">
+        {% for value, label in pathway_type_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+      <input type="text" name="rationale" placeholder="Rationale">
+      <button type="submit" class="ga-btn">Create pathway</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="ga-section">
+    <h2>Responsible parties</h2>
+    {% for rp in responsible_parties %}
+      <div class="ga-row">
+        <span>{{ rp.name }} <span class="ga-badge">{{ rp.get_party_type_display }}</span></span>
+        <span>{{ rp.get_resolution_status_display }}{% if rp.confirmed_by %} · confirmed by {{ rp.confirmed_by }}{% endif %}</span>
+      </div>
+      {% if rp.evidence_ref %}<p class="ga-empty">↳ Evidence: {{ rp.evidence_ref }}</p>{% endif %}
+    {% empty %}
+      <p class="ga-empty">No responsible party identified yet.</p>
+    {% endfor %}
+  </div>
+
+  <div class="ga-section">
+    <h2>Project candidate</h2>
+    {% if project_candidate %}
+      <div class="ga-row"><span>{{ project_candidate.get_status_display }}</span>
+        <span>{% if project_candidate.created_project %}Project: {{ project_candidate.created_project.name }}{% endif %}</span></div>
+      <p class="ga-empty">{{ project_candidate.rationale }}</p>
+      {% if project_candidate.status == 'proposed' %}
+      <form method="post" action="{% url 'good_agents:project_candidate_approve' project_candidate.pk %}" class="ga-form">
+        {% csrf_token %}<button type="submit" class="ga-btn">Approve candidate</button>
+      </form>
+      {% elif project_candidate.status == 'approved' %}
+      <a class="ga-btn" href="{% url 'good_agents:project_candidate_create_confirm' project_candidate.pk %}">Create real project…</a>
+      {% endif %}
+    {% else %}
+      <p class="ga-empty">No project candidate proposed yet.</p>
+      {% if gate.current_state in gate.APPROVED_STATES %}
+      <form method="post" action="{% url 'good_agents:project_candidate_propose' opportunity.pk %}" class="ga-form">
+        {% csrf_token %}
+        <input type="text" name="rationale" placeholder="Why this opportunity warrants a real project">
+        <button type="submit" class="ga-btn">Propose project candidate</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="ga-section">
+    <h2>Timeline</h2>
+    {% for event in timeline_events %}
+      <div class="ga-row">
+        <span>{{ event.get_event_type_display }}{% if event.notes %} — {{ event.notes }}{% endif %}</span>
+        <span class="ga-empty">{{ event.actor|default:"system" }} · {{ event.created_at|date:"Y-m-d H:i" }}</span>
+      </div>
+    {% empty %}
+      <p class="ga-empty">No timeline events recorded.</p>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

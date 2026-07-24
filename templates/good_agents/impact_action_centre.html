@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Impact Action Centre — EcoIQ{% endblock %}
+{% block meta_description_content %}Staff dashboard: what good EcoIQ can help move forward today, from discovery to verified outcome.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ga-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1200px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .ga-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .ga-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1.2rem; }
+  .ga-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap:1rem; }
+  .ga-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; background:var(--bg2); }
+  .ga-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem;
+    display:flex; justify-content:space-between; }
+  .ga-count { color:var(--accent); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .ga-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.85rem; }
+  .ga-row:last-child { border-bottom:none; }
+  .ga-row a { color:var(--text); text-decoration:none; }
+  .ga-row a:hover { color:var(--accent); }
+  .ga-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem;
+    padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .ga-empty { color:var(--muted); font-size:.82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ga-wrap">
+  <div class="ga-eyebrow">ECOIQ · IMPACT ACTION NETWORK</div>
+  <h1 class="ga-h1">Impact Action Centre</h1>
+  <p class="ga-empty">Every section below is a live query over real rows — nothing here is a static mockup. Sections are capped at 15 (10 for verified impact); nothing beyond the cap is hidden from the underlying data, only from this view.</p>
+
+  <div class="ga-grid">
+    <div class="ga-section">
+      <h2>Awaiting human review <span class="ga-count">{{ new_awaiting_review|length }}</span></h2>
+      {% for o in new_awaiting_review %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' o.pk %}">{{ o.title }}</a>
+          <span class="ga-badge">{{ o.action_gate.get_current_state_display }}</span></div>
+      {% empty %}<p class="ga-empty">Nothing new awaiting review.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Approved actions in progress <span class="ga-count">{{ approved_actions|length }}</span></h2>
+      {% for p in approved_actions %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' p.opportunity_id %}">{{ p.opportunity.title }}</a>
+          <span class="ga-badge">{{ p.get_pathway_type_display }}</span> {{ p.get_status_display }}
+          {% if p.owner %} · {{ p.owner }}{% endif %}</div>
+      {% empty %}<p class="ga-empty">No approved actions in progress.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Zero-capital actions ready <span class="ga-count">{{ zero_capital_actions|length }}</span></h2>
+      {% for p in zero_capital_actions %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' p.opportunity_id %}">{{ p.opportunity.title }}</a>
+          <span class="ga-badge">{{ p.get_pathway_type_display }}</span></div>
+      {% empty %}<p class="ga-empty">No zero-capital actions ready.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Connections in play <span class="ga-count">{{ connections|length }}</span></h2>
+      {% for c in connections %}
+        <div class="ga-row">{{ c.resource_match.need.title }} ↔ {{ c.resource_match.resource.title }}
+          <span class="ga-badge">{{ c.get_status_display }}</span></div>
+      {% empty %}<p class="ga-empty">No active connection candidates.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Funding candidates <span class="ga-count">{{ funding_candidates|length }}</span></h2>
+      {% for f in funding_candidates %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' f.funding_match.opportunity_id %}">{{ f.funding_match.opportunity.title }}</a>
+          <span class="ga-badge">{{ f.get_status_display }}</span>{% if f.deadline %} · due {{ f.deadline }}{% endif %}</div>
+      {% empty %}<p class="ga-empty">No open funding candidates.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Project candidates <span class="ga-count">{{ project_candidates|length }}</span></h2>
+      {% for pc in project_candidates %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' pc.opportunity_id %}">{{ pc.opportunity.title }}</a>
+          <span class="ga-badge">{{ pc.get_status_display }}</span></div>
+      {% empty %}<p class="ga-empty">No project candidates proposed.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Outreach awaiting approval <span class="ga-count">{{ outreach_awaiting_approval|length }}</span></h2>
+      {% for d in outreach_awaiting_approval %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' d.action_pathway.opportunity_id %}">{{ d.subject }}</a>
+          <span class="ga-badge">{{ d.get_draft_type_display }}</span></div>
+      {% empty %}<p class="ga-empty">Nothing awaiting outreach approval.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Active real-world projects <span class="ga-count">{{ active_projects|length }}</span></h2>
+      {% for pc in active_projects %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' pc.opportunity_id %}">{{ pc.created_project.name }}</a>
+          <span class="ga-badge">{% if pc.created_project.is_demo %}DEMO{% else %}REAL{% endif %}</span></div>
+      {% empty %}<p class="ga-empty">No projects created from opportunities yet.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Outcome verification pending <span class="ga-count">{{ outcome_verification_pending|length }}</span></h2>
+      {% for o in outcome_verification_pending %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' o.pk %}">{{ o.title }}</a>
+          <span class="ga-badge">{{ o.get_status_display }}</span></div>
+      {% empty %}<p class="ga-empty">Nothing pending outcome verification.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Recent verified impact <span class="ga-count">{{ recent_verified_impact|length }}</span></h2>
+      {% for o in recent_verified_impact %}
+        <div class="ga-row"><a href="{% url 'good_agents:opportunity_detail' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">No verified impact recorded yet — nothing here is claimed before it's measured.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

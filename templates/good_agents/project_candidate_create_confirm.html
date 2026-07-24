@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Project Creation — EcoIQ{% endblock %}
+{% block meta_description_content %}Human confirmation before creating a real GoldProject from an approved Good Opportunity project candidate.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ga-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:720px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .ga-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .ga-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .ga-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .ga-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .ga-empty { color:var(--muted); font-size:.85rem; }
+  .ga-warn { color:var(--warn); font-size:.85rem; }
+  .ga-field { margin-bottom:.85rem; }
+  .ga-field label { display:block; font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:.3rem; }
+  .ga-field input[type="text"], .ga-field textarea, .ga-field select {
+    width:100%; background:rgba(255,255,255,.04); border:1px solid var(--border);
+    border-radius:6px; color:inherit; padding:.5rem .65rem; font-size:.85rem; font-family:inherit; box-sizing:border-box; }
+  .ga-radio-row { display:flex; gap:1.5rem; align-items:center; }
+  .ga-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px;
+    padding:.55rem 1.1rem; font-size:.85rem; font-weight:700; cursor:pointer; text-decoration:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ga-wrap">
+  <a class="ga-empty" href="{% url 'good_agents:opportunity_detail' candidate.opportunity_id %}">← Back to opportunity</a>
+  <div class="ga-eyebrow">ECOIQ IMPACT ACTION NETWORK · CONFIRM PROJECT CREATION</div>
+  <h1 class="ga-h1">Create Real Project from Candidate</h1>
+
+  <div class="ga-section">
+    <h2>Originating opportunity</h2>
+    <p>{{ candidate.opportunity.title }}</p>
+    <p class="ga-empty">{{ candidate.rationale }}</p>
+    <p class="ga-empty">Candidate status: {{ candidate.get_status_display }}
+      {% if candidate.approved_by %} — approved by {{ candidate.approved_by }} on {{ candidate.approved_at|date:"Y-m-d" }}{% endif %}</p>
+  </div>
+
+  {% if candidate.status != 'approved' %}
+  <div class="ga-section">
+    <p class="ga-warn">This candidate is {{ candidate.get_status_display }}, not "Approved" — it must be approved by a human before a project can be created.</p>
+  </div>
+  {% else %}
+  <div class="ga-section">
+    <h2>Confirm and edit before creating</h2>
+    <p class="ga-warn">This creates one real row in the canonical gold_intelligence.GoldProject table. All gold-specific and financial fields are left blank — nothing here fabricates a plausible number. State honestly below whether this is real or demo data.</p>
+    <form method="post" action="{% url 'good_agents:project_candidate_create_execute' candidate.pk %}">
+      {% csrf_token %}
+      <div class="ga-field"><label for="id_slug">Slug (unique, required)</label>
+        <input type="text" name="slug" id="id_slug" required></div>
+      <div class="ga-field"><label for="id_name">Project name (required)</label>
+        <input type="text" name="name" id="id_name" value="{{ candidate.opportunity.title }}" required></div>
+      <div class="ga-field"><label for="id_region">Region (optional)</label>
+        <input type="text" name="region" id="id_region" value="{{ candidate.opportunity.region }}"></div>
+      <div class="ga-field"><label for="id_description">Description (optional)</label>
+        <textarea name="description" id="id_description" rows="3">{{ candidate.rationale }}</textarea></div>
+      <div class="ga-field">
+        <label>Is this real or demo data? (required)</label>
+        <div class="ga-radio-row">
+          <label><input type="radio" name="is_demo" value="false" required> Real</label>
+          <label><input type="radio" name="is_demo" value="true" required> Demo</label>
+        </div>
+      </div>
+      <button type="submit" class="ga-btn">Create Project</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

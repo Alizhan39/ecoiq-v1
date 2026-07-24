@@ -1015,3 +1015,368 @@ class CrossBorderAssessment(models.Model):
 
     def __str__(self):
         return f'Cross-border assessment — {self.opportunity_id}'
+
+
+# ===========================================================================
+# PR5 — Impact Action Network: GoodOpportunity -> governed action -> verified
+# outcome. Bridges into the EXISTING project/execution/MRV infrastructure
+# (gold_intelligence.GoldProject, capital_guardian, waste_to_value_capital_
+# allocation_engine, evidence_memory) rather than building a second project-
+# management system inside good_agents. See docs/IMPACT_ACTION_NETWORK.md.
+#
+# Note on HumanReviewDecision (PR3/PR4): that model is an accumulating,
+# many-to-one FEEDBACK signal ("was this a useful discovery") that feeds
+# PrioritisationEngine's learning adjustment — it is NOT the same concept as
+# ActionGate below (the current, single, authoritative "what happens next"
+# state for one opportunity, with a full transition audit trail). Deliberately
+# not merged: different purpose, different cardinality, different consumer.
+# ===========================================================================
+
+
+class ActionGate(models.Model):
+    """
+    The one authoritative "what happens next" state for a GoodOpportunity
+    (PR5 Phase 1). No discovered opportunity may become an active action
+    automatically — every transition is recorded in ActionGateTransition
+    below with actor/timestamp/reason/evidence, never silently.
+    """
+    STATE_CHOICES = [
+        ('discovered', 'Discovered'), ('needs_review', 'Needs review'),
+        ('approved_for_contact', 'Approved for contact'), ('approved_for_research', 'Approved for research'),
+        ('approved_for_project_creation', 'Approved for project creation'),
+        ('rejected', 'Rejected'), ('needs_more_evidence', 'Needs more evidence'),
+        ('duplicate', 'Duplicate'), ('not_actionable', 'Not actionable'),
+    ]
+    # Which states may legally follow which — enforced in services/action_gate.py,
+    # never bypassed by directly setting current_state.
+    ALLOWED_TRANSITIONS = {
+        'discovered': {'needs_review', 'needs_more_evidence', 'duplicate', 'not_actionable', 'rejected'},
+        'needs_review': {
+            'approved_for_contact', 'approved_for_research', 'approved_for_project_creation',
+            'rejected', 'needs_more_evidence', 'duplicate', 'not_actionable',
+        },
+        'needs_more_evidence': {'needs_review', 'rejected', 'not_actionable', 'duplicate'},
+        'approved_for_contact': {'approved_for_project_creation', 'rejected', 'not_actionable'},
+        'approved_for_research': {'approved_for_contact', 'approved_for_project_creation', 'rejected', 'not_actionable'},
+        'approved_for_project_creation': {'rejected'},  # terminal in practice once a project exists
+        'rejected': set(), 'duplicate': set(), 'not_actionable': set(),  # terminal
+    }
+    APPROVED_STATES = frozenset({'approved_for_contact', 'approved_for_research', 'approved_for_project_creation'})
+
+    opportunity = models.OneToOneField(GoodOpportunity, on_delete=models.CASCADE, related_name='action_gate')
+    current_state = models.CharField(max_length=32, choices=STATE_CHOICES, default='discovered')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.opportunity_id}: {self.get_current_state_display()}'
+
+
+class ActionGateTransition(models.Model):
+    """Append-only audit trail — every ActionGate state change, ever. Never edited, never deleted."""
+    gate = models.ForeignKey(ActionGate, on_delete=models.CASCADE, related_name='transitions')
+    previous_state = models.CharField(max_length=32, blank=True)
+    new_state = models.CharField(max_length=32)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    reason = models.TextField(blank=True)
+    evidence_reviewed = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.previous_state} -> {self.new_state} ({self.created_at:%Y-%m-%d %H:%M})'
+
+
+class ActionPathway(models.Model):
+    """
+    The explicit next-step pathway for an approved opportunity (PR5 Phase
+    2). Folds in ownership (Phase 13) and the minimal task layer (Phase
+    12) — a purpose-specific pathway record, not a generic project-
+    management suite. Never forces every opportunity into a project.
+    """
+    PATHWAY_TYPE_CHOICES = [
+        ('information_request', 'Information request'), ('introduction', 'Introduction'),
+        ('resource_connection', 'Resource connection'), ('funding_referral', 'Funding referral'),
+        ('authority_alert', 'Authority alert'), ('project_candidate', 'Project candidate'),
+        ('expert_review', 'Expert review'), ('data_request', 'Data request'),
+        ('zero_capital_action', 'Zero-capital action'), ('other', 'Other'),
+    ]
+    STATUS_CHOICES = [
+        ('open', 'Open'), ('in_progress', 'In progress'), ('blocked', 'Blocked'), ('completed', 'Completed'),
+    ]
+    CAPITAL_REQUIRED_CHOICES = [('yes', 'Yes'), ('no', 'No'), ('unknown', 'Unknown')]
+
+    opportunity = models.ForeignKey(GoodOpportunity, on_delete=models.CASCADE, related_name='action_pathways')
+    pathway_type = models.CharField(max_length=24, choices=PATHWAY_TYPE_CHOICES)
+    rationale = models.TextField(blank=True)
+
+    capital_required = models.CharField(max_length=10, choices=CAPITAL_REQUIRED_CHOICES, default='unknown')
+    zero_capital_path = models.TextField(blank=True)
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='owned_action_pathways',
+    )
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='open')
+    next_step = models.TextField(blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(default=timezone.now)
+    blocked_reason = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.get_pathway_type_display()} — {self.opportunity_id}'
+
+    def touch(self):
+        self.last_activity_at = timezone.now()
+        self.save(update_fields=['last_activity_at'])
+
+
+class ResponsibleParty(models.Model):
+    """
+    Real-world party resolution (PR5 Phase 4). Never inferred from
+    guesswork — `resolution_status` stays 'possible_organisation' or
+    'unresolved' until a human confirms it as 'known_organisation', and
+    `evidence_ref` always points at the real signal/source it came from.
+    """
+    PARTY_TYPE_CHOICES = [
+        ('local_authority', 'Local authority'), ('government_department', 'Government department'),
+        ('company', 'Company'), ('charity', 'Charity'), ('ngo', 'NGO'),
+        ('community_organisation', 'Community organisation'), ('funder', 'Funder'),
+        ('research_institution', 'Research institution'), ('facility_operator', 'Facility operator'),
+        ('regulator', 'Regulator'), ('internal_ecoiq_team', 'Internal EcoIQ team'), ('other', 'Other'),
+    ]
+    RESOLUTION_STATUS_CHOICES = [
+        ('known_organisation', 'Known organisation'), ('possible_organisation', 'Possible organisation'),
+        ('unresolved', 'Unresolved'),
+    ]
+
+    opportunity = models.ForeignKey(GoodOpportunity, on_delete=models.CASCADE, related_name='responsible_parties')
+    action_pathway = models.ForeignKey(
+        ActionPathway, null=True, blank=True, on_delete=models.SET_NULL, related_name='responsible_parties',
+    )
+    name = models.CharField(max_length=255)
+    party_type = models.CharField(max_length=24, choices=PARTY_TYPE_CHOICES, default='other')
+    resolution_status = models.CharField(max_length=24, choices=RESOLUTION_STATUS_CHOICES, default='unresolved')
+    # Soft pointer to the real source this resolution came from (a WorldSignal,
+    # a companies.CompanyProfile, or a human note) — same convention as
+    # evidence_memory.EvidenceMemory.source_reference.
+    evidence_ref = models.CharField(max_length=200, blank=True)
+    linked_company = models.ForeignKey(
+        'companies.CompanyProfile', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    confidence = models.FloatField(default=0.0)
+    notes = models.TextField(blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-confidence']
+        verbose_name_plural = 'Responsible parties'
+
+    def __str__(self):
+        return f'{self.name} ({self.get_resolution_status_display()})'
+
+
+class ActionContact(models.Model):
+    """
+    Governed contact channel for a ResponsibleParty (PR5 Phase 5). Public
+    institutional channels only — never a scraped private personal email.
+    `source_of_contact_info` always states where the channel was published.
+    """
+    STATUS_CHOICES = [('identified', 'Identified'), ('verified', 'Verified'), ('stale', 'Stale'), ('invalid', 'Invalid')]
+
+    responsible_party = models.ForeignKey(ResponsibleParty, on_delete=models.CASCADE, related_name='contacts')
+    contact_role = models.CharField(max_length=150, blank=True)
+    # A public channel: an institutional contact-form URL, a published
+    # office/press-office address, a public switchboard number — never an
+    # individual's private address (enforced by convention/review, same
+    # discipline as khalifa_stewardship_tour_operating_system.TourLocalPartner).
+    public_contact_channel = models.CharField(max_length=255, blank=True)
+    source_of_contact_info = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='identified')
+    last_verified = models.DateField(null=True, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'{self.responsible_party.name} — {self.contact_role or "contact"}'
+
+
+class OutreachDraft(models.Model):
+    """
+    AI may draft; a human must approve before anything external is sent
+    (PR5 Phase 6-7). `status` never claims 'sent' unless a real send
+    actually happened (services/outreach.send_outreach is the only path
+    that can set it, and only from 'approved').
+    """
+    DRAFT_TYPE_CHOICES = [
+        ('email', 'Email'), ('briefing_note', 'Briefing note'), ('introduction_request', 'Introduction request'),
+        ('evidence_summary', 'Evidence summary'), ('project_invitation', 'Project invitation'),
+        ('data_request', 'Data request'), ('grant_referral_note', 'Grant referral note'),
+    ]
+    STATUS_CHOICES = [
+        ('draft', 'Draft'), ('ready_for_review', 'Ready for review'), ('approved', 'Approved'),
+        ('sent', 'Sent'), ('replied', 'Replied'), ('no_response', 'No response'),
+        ('declined', 'Declined'), ('follow_up_required', 'Follow-up required'),
+    ]
+
+    action_pathway = models.ForeignKey(ActionPathway, on_delete=models.CASCADE, related_name='outreach_drafts')
+    contact = models.ForeignKey(ActionContact, null=True, blank=True, on_delete=models.SET_NULL, related_name='outreach_drafts')
+    draft_type = models.CharField(max_length=24, choices=DRAFT_TYPE_CHOICES, default='email')
+    subject = models.CharField(max_length=255, blank=True)
+    body = models.TextField(blank=True)
+    associated_evidence = models.JSONField(default=list, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    sent_channel = models.CharField(max_length=255, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.get_draft_type_display()} [{self.status}] — {self.action_pathway_id}'
+
+
+class ConnectionCandidate(models.Model):
+    """
+    Governed "propose connection" workflow over an existing ResourceMatch
+    (PR5 Phase 8) — never implies the resource provider has agreed.
+    """
+    STATUS_CHOICES = [
+        ('candidate_match', 'Candidate match'), ('approved_for_introduction', 'Approved for introduction'),
+        ('introduced', 'Introduced'), ('interest_confirmed', 'Interest confirmed'),
+        ('not_suitable', 'Not suitable'), ('declined', 'Declined'), ('expired', 'Expired'),
+    ]
+
+    resource_match = models.OneToOneField(ResourceMatch, on_delete=models.CASCADE, related_name='connection_candidate')
+    action_pathway = models.ForeignKey(
+        ActionPathway, null=True, blank=True, on_delete=models.SET_NULL, related_name='connection_candidates',
+    )
+    status = models.CharField(max_length=26, choices=STATUS_CHOICES, default='candidate_match')
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.resource_match} [{self.status}]'
+
+
+class FundingAction(models.Model):
+    """
+    Governed tracking over an existing FundingMatch (PR5 Phase 9). Never
+    says "funding secured" until `status='awarded'`, which only a human
+    updating from real, external confirmation can set — no code path in
+    this app sets it automatically.
+    """
+    STATUS_CHOICES = [
+        ('match_found', 'Match found'), ('eligibility_review', 'Eligibility review'),
+        ('application_candidate', 'Application candidate'), ('application_started', 'Application started'),
+        ('submitted', 'Submitted'), ('awarded', 'Awarded'), ('rejected', 'Rejected'),
+        ('expired', 'Expired'), ('unknown', 'Unknown'),
+    ]
+
+    funding_match = models.OneToOneField(FundingMatch, on_delete=models.CASCADE, related_name='funding_action')
+    action_pathway = models.ForeignKey(
+        ActionPathway, null=True, blank=True, on_delete=models.SET_NULL, related_name='funding_actions',
+    )
+    status = models.CharField(max_length=24, choices=STATUS_CHOICES, default='match_found')
+    deadline = models.DateField(null=True, blank=True)  # stays null unless a real deadline is actually known
+    notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.funding_match} [{self.status}]'
+
+
+class ProjectCandidate(models.Model):
+    """
+    The bridge into the EXISTING project pipeline (PR5 Phase 10-11):
+    GoodOpportunity -> approved action -> ProjectCandidate -> (human
+    approval) -> a real gold_intelligence.GoldProject. Never a parallel
+    project model — `created_project` always points at the one canonical
+    Project anchor (see docs/adr-0001-canonical-project-architecture.md).
+    Provenance (originating opportunity/signals/principles/review/pathway)
+    survives permanently even after a project is created.
+    """
+    STATUS_CHOICES = [('proposed', 'Proposed'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('created', 'Created')]
+
+    opportunity = models.OneToOneField(GoodOpportunity, on_delete=models.CASCADE, related_name='project_candidate')
+    action_pathway = models.ForeignKey(
+        ActionPathway, null=True, blank=True, on_delete=models.SET_NULL, related_name='project_candidates',
+    )
+    rationale = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='proposed')
+
+    created_project = models.ForeignKey(
+        'gold_intelligence.GoldProject', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Project candidate — {self.opportunity_id} [{self.status}]'
+
+
+class ActionTimelineEvent(models.Model):
+    """
+    One immutable timeline per opportunity (PR5 Phase 14) — never edited,
+    never deleted. `source_object_reference` is a soft pointer (same
+    convention as evidence_memory.source_reference) to whatever row caused
+    this event (an ActionGateTransition, an OutreachDraft, a ProjectCandidate, ...).
+    """
+    EVENT_TYPE_CHOICES = [
+        ('discovered', 'Opportunity discovered'), ('human_reviewed', 'Human reviewed'),
+        ('action_approved', 'Action approved'), ('owner_assigned', 'Owner assigned'),
+        ('outreach_drafted', 'Outreach drafted'), ('outreach_approved', 'Outreach approved'),
+        ('sent', 'Sent'), ('reply_received', 'Reply received'), ('connection_made', 'Connection made'),
+        ('project_created', 'Project created'), ('execution_started', 'Execution started'),
+        ('outcome_measured', 'Outcome measured'), ('outcome_verified', 'Outcome verified'),
+        ('evidence_memory_updated', 'Evidence Memory updated'),
+    ]
+
+    opportunity = models.ForeignKey(GoodOpportunity, on_delete=models.CASCADE, related_name='timeline_events')
+    event_type = models.CharField(max_length=32, choices=EVENT_TYPE_CHOICES)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )  # null = system-recorded event
+    source_object_reference = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.get_event_type_display()} — {self.opportunity_id} ({self.created_at:%Y-%m-%d %H:%M})'

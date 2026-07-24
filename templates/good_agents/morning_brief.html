@@ -43,6 +43,21 @@
       <div class="ga-card">
         <a href="{% url 'good_agents:opportunity_detail' action.opportunity_id %}">{{ action.action }}</a>
         <div class="ga-empty">{{ action.title }}</div>
+        <div class="ga-empty" style="font-size:.78rem; margin-top:.4rem;">
+          {% if action.why_now %}Why now: {{ action.why_now }} · {% endif %}
+          Evidence: {{ action.evidence_quality }} ·
+          Human approval: {{ action.human_approval_status }}
+          {% if action.action_pathway %} · Pathway: {{ action.action_pathway }} ({{ action.capital_required }} capital){% endif %}
+          {% if action.owner %} · Owner: {{ action.owner }}{% endif %}
+          {% if action.progress_state %} · Progress: {{ action.progress_state }}{% endif %}
+          {% if action.due_date %} · Due: {{ action.due_date }}{% endif %}
+        </div>
+        {% if action.relevant_principles %}
+          <div class="ga-empty" style="font-size:.78rem;">Principles: {{ action.relevant_principles|join:", " }}</div>
+        {% endif %}
+        {% if action.next_step %}
+          <div class="ga-empty" style="font-size:.78rem;">Next step: {{ action.next_step }}</div>
+        {% endif %}
       </div>
     {% empty %}
       <p class="ga-empty">No decisions need your attention today.</p>

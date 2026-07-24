@@ -28,6 +28,17 @@ USEFUL_CONFIDENCE_BOOST = 5.0
 NOT_USEFUL_DECISIONS = frozenset({'not_useful', 'false_positive', 'not_actionable', 'duplicate', 'rejected'})
 USEFUL_DECISIONS = frozenset({'useful', 'high_priority', 'approved'})
 
+# PR5 Phase 24 — learning from real ACTION outcomes (not just human review
+# decisions). Same discipline as Phase 12 above: deterministic, documented,
+# ranking-only, never mutates the opportunity's own stored fields.
+NOT_ACTIONABLE_GATE_STATES = frozenset({'rejected', 'not_actionable'})
+NOT_ACTIONABLE_PATTERN_THRESHOLD = 2
+NOT_ACTIONABLE_CONFIDENCE_PENALTY = 10.0
+SUCCESSFUL_ZERO_CAPITAL_PATTERN_THRESHOLD = 2
+SUCCESSFUL_ZERO_CAPITAL_CONFIDENCE_BOOST = 5.0
+DECLINED_CONNECTION_PATTERN_THRESHOLD = 2
+DECLINED_CONNECTION_CONFIDENCE_PENALTY = 8.0
+
 
 @dataclass
 class PrioritisationResult:
@@ -76,6 +87,58 @@ def _pattern_feedback(opportunity):
     return adjustment, reasons
 
 
+def _action_outcome_feedback(opportunity):
+    """
+    PR5 Phase 24 — looks at prior ACTION outcomes (not human review
+    decisions) for opportunities sharing the same theme: repeated
+    rejected/not-actionable action gates reduce ranking confidence;
+    repeated completed zero-capital pathways boost it; repeated declined
+    connection candidates reduce it (a proxy for "matches for this theme
+    keep turning out to be poor-fit — require stronger compatibility").
+    Returns (adjustment: float, reasons: list[str]).
+    """
+    from good_agents.models import ActionGate, ActionPathway, ConnectionCandidate
+
+    if not opportunity.theme:
+        return 0.0, []
+
+    adjustment = 0.0
+    reasons = []
+
+    not_actionable_count = ActionGate.objects.filter(
+        opportunity__theme=opportunity.theme, current_state__in=NOT_ACTIONABLE_GATE_STATES,
+    ).exclude(opportunity=opportunity).count()
+    if not_actionable_count >= NOT_ACTIONABLE_PATTERN_THRESHOLD:
+        adjustment -= NOT_ACTIONABLE_CONFIDENCE_PENALTY
+        reasons.append(
+            f'{not_actionable_count} prior rejected/not-actionable action gates for theme={opportunity.theme!r} — '
+            f'confidence reduced by {NOT_ACTIONABLE_CONFIDENCE_PENALTY:.0f} for ranking purposes.'
+        )
+
+    successful_zero_capital_count = ActionPathway.objects.filter(
+        opportunity__theme=opportunity.theme, capital_required='no', status='completed',
+    ).exclude(opportunity=opportunity).count()
+    if successful_zero_capital_count >= SUCCESSFUL_ZERO_CAPITAL_PATTERN_THRESHOLD:
+        adjustment += SUCCESSFUL_ZERO_CAPITAL_CONFIDENCE_BOOST
+        reasons.append(
+            f'{successful_zero_capital_count} prior completed zero-capital pathways for the same theme — '
+            f'confidence boosted by {SUCCESSFUL_ZERO_CAPITAL_CONFIDENCE_BOOST:.0f} for ranking purposes.'
+        )
+
+    declined_connection_count = ConnectionCandidate.objects.filter(
+        resource_match__need__opportunity__theme=opportunity.theme, status='declined',
+    ).exclude(resource_match__need__opportunity=opportunity).count()
+    if declined_connection_count >= DECLINED_CONNECTION_PATTERN_THRESHOLD:
+        adjustment -= DECLINED_CONNECTION_CONFIDENCE_PENALTY
+        reasons.append(
+            f'{declined_connection_count} prior declined connection candidates for the same theme — '
+            f'confidence reduced by {DECLINED_CONNECTION_CONFIDENCE_PENALTY:.0f}; future matches for this '
+            f'theme should require stronger compatibility before being surfaced as ready.'
+        )
+
+    return adjustment, reasons
+
+
 def prioritise(opportunity):
     labels = []
     dimensions = {
@@ -87,7 +150,10 @@ def prioritise(opportunity):
         'insufficient_evidence': opportunity.insufficient_evidence,
     }
 
-    feedback_adjustment, feedback_reasons = _pattern_feedback(opportunity)
+    review_adjustment, review_reasons = _pattern_feedback(opportunity)
+    action_adjustment, action_reasons = _action_outcome_feedback(opportunity)
+    feedback_adjustment = review_adjustment + action_adjustment
+    feedback_reasons = review_reasons + action_reasons
     # A ranking-only view — never mutates opportunity.confidence itself,
     # which stays the honest, evidence-derived figure from the Evidence Gate.
     adjusted_confidence = max(0.0, min(100.0, opportunity.confidence + feedback_adjustment))

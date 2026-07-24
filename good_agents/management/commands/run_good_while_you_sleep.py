@@ -24,6 +24,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from good_agents.models import GoodMission
+from good_agents.services import notify
 from good_agents.services.discovery_engine import run_global_discovery
 from good_agents.services.ingestion import fetch_due_signals
 
@@ -97,6 +98,14 @@ class Command(BaseCommand):
                 )
             for action in brief['top_3_actions_today']:
                 self.stdout.write(f'  TOP ACTION: {action["action"]} — {action["title"]}')
+
+        # PR5 Phase 26 — funding deadlines are time-based, not event-based
+        # (an existing FundingAction's deadline gets closer every night this
+        # runs), so this sweep belongs in the overnight loop rather than at
+        # any single mutation call site.
+        deadline_notifications = notify.sweep_funding_deadlines()
+        if deadline_notifications:
+            self.stdout.write(f'\n{len(deadline_notifications)} funding deadline notification(s) raised.')
 
         self.stdout.write(self.style.WARNING(
             '\nSCHEDULER READY, not SCHEDULER ACTIVE — this command runs on demand only; '
