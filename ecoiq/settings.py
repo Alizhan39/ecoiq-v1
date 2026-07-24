@@ -291,6 +291,11 @@ INSTALLED_APPS = [
     # resource/funding declarations, opportunity routing) — the reciprocal
     # half of capability_graph's externally-discovered evidence.
     'partner_participation',
+    # Narrow, opportunity-scoped coordination protocol from "organisation
+    # interested" to "consented next step" — reuses partner_participation's
+    # RoutingCandidate as its anchor and good_agents/PR5's project/connection
+    # bridges for actual promotion; never a generic messaging platform.
+    'collaboration_rooms',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

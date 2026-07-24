@@ -171,6 +171,9 @@
         {% for step in c.next_steps.all %}
           <p class="pp-empty">Next step: {{ step.get_action_type_display }} <span class="pp-badge">{{ step.get_status_display }}</span></p>
         {% endfor %}
+        {% if c.collaboration_room %}
+          <p><a href="{% url 'collaboration_rooms:room_detail' c.collaboration_room.pk %}" style="color:var(--accent);">Open collaboration room →</a> <span class="pp-badge">{{ c.collaboration_room.get_status_display }}</span></p>
+        {% endif %}
       </div>
     {% empty %}<p class="pp-empty">No incoming opportunity candidates yet.</p>{% endfor %}
   </section>

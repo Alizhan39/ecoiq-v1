@@ -518,7 +518,16 @@ def activation_dashboard(request):
     participating_organisations = Organisation.objects.filter(memberships__status='verified_member').distinct()
     routing_ready_organisations = [org for org in participating_organisations if onboarding.is_routing_ready(org)[0]]
 
+    # PR10 — candidates whose organisation has responded positively but which
+    # have no Governed Collaboration Room yet (collaboration_rooms' own
+    # creation gate, never triggered from here automatically).
+    ready_for_collaboration = RoutingCandidate.objects.filter(
+        status__in=['interested', 'needs_more_information', 'accepted_for_next_step'],
+        collaboration_room__isnull=True,
+    ).select_related('organisation', 'opportunity')
+
     return render(request, 'partner_participation/activation_dashboard.html', {
+        'ready_for_collaboration': ready_for_collaboration,
         'invitations_pending': invitations_pending,
         'verified_memberships': verified_memberships,
         'participating_organisations_count': participating_organisations.count(),

@@ -333,6 +333,13 @@
         {% if partner_participation_summary.next_action %}
         <div class="mc-row"><span>Next action</span><span class="mc-badge">{{ partner_participation_summary.next_action.get_action_type_display }} — {{ partner_participation_summary.next_action.get_status_display }}</span></div>
         {% endif %}
+        {% if partner_participation_summary.collaboration_room %}
+        <div class="mc-row"><span>Collaboration room (PR10)</span>
+          <a class="mc-badge" href="{% url 'collaboration_rooms:room_detail' partner_participation_summary.collaboration_room.pk %}">{{ partner_participation_summary.collaboration_room.get_status_display }} →</a></div>
+        {% if partner_participation_summary.collaboration_open_proposal %}
+        <div class="mc-row"><span>Awaiting consent</span><span class="mc-badge">{{ partner_participation_summary.collaboration_open_proposal.get_proposal_type_display }}</span></div>
+        {% endif %}
+        {% endif %}
       {% endif %}
       {% if partner_participation_summary.organisation.memberships.exists %}
       <p class="mc-empty">Link to full Partner Portal requires a verified member login — not accessible from this staff view.</p>

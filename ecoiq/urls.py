@@ -232,6 +232,11 @@ urlpatterns = [
     # routing. The reciprocal half of capability_graph.
     path('partner-network/', include('partner_participation.urls', namespace='partner_participation')),
 
+    # Governed Collaboration Rooms — the narrow, opportunity-scoped
+    # coordination layer between "organisation interested" and "consented
+    # next step created", anchored to partner_participation.RoutingCandidate.
+    path('collaboration/', include('collaboration_rooms.urls', namespace='collaboration_rooms')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -279,6 +279,13 @@ def partner_participation_summary(opportunity):
     if routing_candidate is not None:
         next_action = routing_candidate.next_steps.order_by('-created_at').first()
 
+    # PR10 Phase 23 — compact collaboration-room status only; never
+    # duplicates room content (messages/evidence/proposals), just links to it.
+    collaboration_room = getattr(routing_candidate, 'collaboration_room', None) if routing_candidate is not None else None
+    open_proposal = None
+    if collaboration_room is not None:
+        open_proposal = collaboration_room.next_step_proposals.filter(status='proposed').order_by('-created_at').first()
+
     return {
         'organisation': organisation,
         'capability_verified': has_verified_capability,
@@ -292,6 +299,8 @@ def partner_participation_summary(opportunity):
         'routing_ready': routing_ready,
         'routing_ready_reasons': routing_ready_reasons,
         'next_action': next_action,
+        'collaboration_room': collaboration_room,
+        'collaboration_open_proposal': open_proposal,
     }
 
 
