@@ -807,7 +807,16 @@ class Need(models.Model):
 
 
 class AvailableResource(models.Model):
-    """Global Resource model (PR3 Phase 7) — the supply side. Never claims availability without an evidence reference."""
+    """
+    Global Resource model (PR3 Phase 7) — the supply side. Never claims
+    availability without an evidence reference.
+
+    PR8 (Partner Participation Protocol) Phase 11 reuses this SAME model
+    for partner-declared resources rather than building a second resource
+    system, per that PR's own explicit instruction — `organisation`/
+    `declared_by` are additive/nullable so every existing EcoIQ-discovered
+    row (organisation=None) is unaffected.
+    """
     RESOURCE_TYPE_CHOICES = [(v, v.replace('_', ' ').title()) for v in [
         'capital', 'grant', 'subsidy', 'government_programme', 'waqf', 'philanthropy',
         'impact_investment', 'islamic_finance', 'asset', 'building', 'land', 'equipment',
@@ -816,7 +825,8 @@ class AvailableResource(models.Model):
         'public_infrastructure',
     ]]
     AVAILABILITY_CHOICES = [
-        ('available', 'Available'), ('limited', 'Limited'), ('unknown', 'Unknown'), ('expired', 'Expired'),
+        ('available', 'Available'), ('limited', 'Limited'), ('reserved', 'Reserved'),
+        ('unavailable', 'Unavailable'), ('expired', 'Expired'), ('unknown', 'Unknown'),
     ]
     STATUS_CHOICES = [('active', 'Active'), ('expired', 'Expired'), ('withdrawn', 'Withdrawn')]
 
@@ -826,7 +836,7 @@ class AvailableResource(models.Model):
         'countries.CountryProfile', null=True, blank=True, on_delete=models.SET_NULL, related_name='available_resources',
     )
     region = models.CharField(max_length=150, blank=True)
-    availability = models.CharField(max_length=10, choices=AVAILABILITY_CHOICES, default='unknown')
+    availability = models.CharField(max_length=11, choices=AVAILABILITY_CHOICES, default='unknown')
     eligibility = models.TextField(blank=True)
     capacity = models.TextField(blank=True)
     constraints = models.TextField(blank=True)
@@ -836,6 +846,16 @@ class AvailableResource(models.Model):
     confidence = models.FloatField(default=0.0)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     dedup_key = models.CharField(max_length=64, blank=True, db_index=True)
+    # PR8 — set only for a resource an organisation itself declared through
+    # the partner portal; None for every EcoIQ-discovered resource (the
+    # entire pre-PR8 dataset, unaffected).
+    organisation = models.ForeignKey(
+        'capability_graph.Organisation', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='declared_resources',
+    )
+    declared_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

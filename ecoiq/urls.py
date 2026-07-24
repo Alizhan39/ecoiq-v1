@@ -227,6 +227,11 @@ urlpatterns = [
     # PublicRoute infrastructure good_agents is the first real consumer of.
     path('capability-graph/', include('capability_graph.urls', namespace='capability_graph')),
 
+    # Partner Participation Protocol — consented organisation claims,
+    # capability/resource/funding declarations, and governed opportunity
+    # routing. The reciprocal half of capability_graph.
+    path('partner-network/', include('partner_participation.urls', namespace='partner_participation')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

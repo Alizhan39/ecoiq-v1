@@ -238,6 +238,48 @@ def truth_chain(opportunity):
     return nodes
 
 
+def partner_participation_summary(opportunity):
+    """
+    PR8 Phase 26 — compact partner-participation status for the featured
+    opportunity's resolved organisation. A pure read over
+    partner_participation/capability_graph rows; never recomputes routing
+    or participation decisions, only reports their current real state.
+    Local import (not a module-level one) keeps this integration point
+    easy to unwind if partner_participation is ever restructured, matching
+    this file's existing pattern for evidence_memory.
+    """
+    responsible_party = opportunity.responsible_parties.order_by('-confidence').first()
+    organisation = responsible_party.organisation if responsible_party and responsible_party.organisation_id else None
+    if organisation is None:
+        return None
+
+    from partner_participation.models import (
+        ROUTABLE_ACCEPTANCE_MODES, FundingProgrammeDeclaration, OpportunityPreference, OrganisationMembership,
+        RoutingCandidate,
+    )
+    from good_agents.models import AvailableResource as _AvailableResource
+
+    is_participating = OrganisationMembership.objects.filter(organisation=organisation, status='verified_member').exists()
+    preference = OpportunityPreference.objects.filter(organisation=organisation, theme=opportunity.theme).first()
+    accepting = bool(preference and preference.acceptance_mode in ROUTABLE_ACCEPTANCE_MODES)
+    has_verified_capability = organisation.capabilities.filter(verification_state='independently_verified').exists()
+    has_open_route = any(cap.public_routes.filter(is_currently_open=True).exists() for cap in organisation.capabilities.all())
+    has_resource = _AvailableResource.objects.filter(organisation=organisation, availability='available').exists()
+    has_funding = FundingProgrammeDeclaration.objects.filter(organisation=organisation).exclude(status='expired').exists()
+    routing_candidate = RoutingCandidate.objects.filter(organisation=organisation, opportunity=opportunity).first()
+
+    return {
+        'organisation': organisation,
+        'capability_verified': has_verified_capability,
+        'participating': is_participating,
+        'accepting_opportunities': accepting,
+        'acceptance_mode_label': preference.get_acceptance_mode_display() if preference else 'No preference set',
+        'verified_route': has_open_route,
+        'resource_or_funding_available': has_resource or has_funding,
+        'connection_consent_state': routing_candidate.get_status_display() if routing_candidate else 'No routing candidate yet',
+    }
+
+
 # --- 11. Zero-capital-first lane -------------------------------------------
 
 def zero_capital_lane(mission):

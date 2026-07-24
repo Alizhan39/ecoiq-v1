@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Declaration Review Queue — EcoIQ{% endblock %}
+{% block meta_description_content %}Review organisation-declared capabilities and resolve conflicts with existing evidence.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a; --warn:#f4a261;
+    max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pp-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pp-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pp-row { padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.9rem; }
+  .pp-row:last-child { border-bottom:none; }
+  .pp-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .pp-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .pp-empty { color:var(--muted); font-size:.82rem; }
+  .pp-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.5rem; }
+  .pp-form input, .pp-form select { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit; padding:.4rem .6rem; font-size:.85rem; font-family:inherit; }
+  .pp-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrap">
+  <div class="pp-eyebrow">ECOIQ · STAFF · DECLARATION REVIEW</div>
+  <h1 class="pp-h1">Declaration Review Queue</h1>
+
+  <h2 style="color:var(--muted);font-size:.8rem;text-transform:uppercase;">Pending capability declarations</h2>
+  {% for edge in pending %}
+    <div class="pp-section">
+      <p>{{ edge.organisation.name }} — {{ edge.get_capability_display }} <span class="pp-badge">{{ edge.get_verification_state_display }}</span></p>
+      <p class="pp-empty">{{ edge.limitations|default:"No limitations recorded." }}</p>
+      {% if edge.evidence_url %}<p class="pp-empty">Evidence: <a href="{{ edge.evidence_url }}" style="color:var(--accent);">{{ edge.evidence_url }}</a></p>{% endif %}
+      <form method="post" action="{% url 'partner_participation:human_review_capability' edge.pk %}" class="pp-form">
+        {% csrf_token %}
+        <select name="action"><option value="human_review">Mark human-reviewed</option><option value="independently_verify">Independently verify</option></select>
+        <input type="text" name="notes" placeholder="Review notes">
+        <button type="submit" class="pp-btn">Submit</button>
+      </form>
+    </div>
+  {% empty %}<p class="pp-empty">No declarations awaiting review.</p>{% endfor %}
+
+  <h2 style="color:var(--muted);font-size:.8rem;text-transform:uppercase;margin-top:1.5rem;">Unresolved conflicts</h2>
+  {% for conflict in conflicts %}
+    <div class="pp-section">
+      <p class="pp-badge pp-badge-warn">UNRESOLVED</p>
+      <p>{{ conflict.description }}</p>
+      <form method="post" action="{% url 'partner_participation:resolve_conflict' conflict.pk %}" class="pp-form">
+        {% csrf_token %}
+        <select name="resolution">
+          <option value="declared_claim_upheld">Declared claim upheld</option>
+          <option value="external_evidence_upheld">External evidence upheld</option>
+          <option value="both_retained_as_distinct">Both retained — distinct claims</option>
+        </select>
+        <input type="text" name="notes" placeholder="Resolution notes">
+        <button type="submit" class="pp-btn">Resolve</button>
+      </form>
+    </div>
+  {% empty %}<p class="pp-empty">No unresolved conflicts.</p>{% endfor %}
+</div>
+{% endblock %}

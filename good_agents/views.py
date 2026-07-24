@@ -381,6 +381,7 @@ def mission_control_view(request):
             mission_control.evidence_memory_for_receipt(getattr(opportunity, 'impact_receipt', None))
             if opportunity else []
         ),
+        'partner_participation_summary': mission_control.partner_participation_summary(opportunity) if opportunity else None,
     }
     return render(request, 'good_agents/mission_control.html', context)
 

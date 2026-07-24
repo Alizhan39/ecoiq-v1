@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Network Overview — EcoIQ Partner Network{% endblock %}
+{% block meta_description_content %}Real counts across the EcoIQ partner participation network — no vanity metrics.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a;
+    max-width:1100px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pp-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pp-sub { color:var(--muted); font-size:.85rem; max-width:80ch; margin-bottom:1rem; }
+  .pp-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap:.75rem; margin-bottom:1rem; }
+  .pp-kpi { border:1px solid var(--border); border-radius:6px; padding:.7rem .9rem; background:var(--bg2); }
+  .pp-kpi .n { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:1.3rem; font-weight:800; }
+  .pp-kpi .l { font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:.2rem; }
+  .pp-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pp-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pp-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+  .pp-row:last-child { border-bottom:none; }
+  .pp-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .pp-empty { color:var(--muted); font-size:.82rem; }
+  .pp-form { display:flex; gap:.5rem; margin-top:.4rem; }
+  .pp-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.35rem .8rem; font-size:.75rem; font-weight:700; cursor:pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrap">
+  <div class="pp-eyebrow">ECOIQ · PARTNER PARTICIPATION NETWORK</div>
+  <h1 class="pp-h1">Network Overview</h1>
+  <p class="pp-sub">Every count below is a live query over real rows — no vanity metrics, no fabricated partnership counts.</p>
+
+  {% if messages %}
+    {% for message in messages %}<p class="pp-empty" style="color:var(--warn);">{{ message }}</p>{% endfor %}
+  {% endif %}
+
+  <div class="pp-grid">
+    <div class="pp-kpi"><div class="n">{{ verified_organisations }}</div><div class="l">Verified organisations</div></div>
+    <div class="pp-kpi"><div class="n">{{ participating_organisations }}</div><div class="l">Participating organisations</div></div>
+    <div class="pp-kpi"><div class="n">{{ capabilities_declared }}</div><div class="l">Capabilities declared</div></div>
+    <div class="pp-kpi"><div class="n">{{ capabilities_verified }}</div><div class="l">Capabilities verified</div></div>
+    <div class="pp-kpi"><div class="n">{{ public_routes_open }}</div><div class="l">Public routes open</div></div>
+    <div class="pp-kpi"><div class="n">{{ resources_available }}</div><div class="l">Resources available</div></div>
+    <div class="pp-kpi"><div class="n">{{ funding_programmes }}</div><div class="l">Funding programmes</div></div>
+    <div class="pp-kpi"><div class="n">{{ opportunity_preferences }}</div><div class="l">Opportunity preferences</div></div>
+    <div class="pp-kpi"><div class="n">{{ active_routing_candidates }}</div><div class="l">Active routing candidates</div></div>
+    <div class="pp-kpi"><div class="n">{{ connections_in_progress }}</div><div class="l">Connections in progress</div></div>
+  </div>
+
+  <div class="pp-section">
+    <h2>Ready for EcoIQ review <span class="pp-badge">{{ ready_for_review|length }}</span></h2>
+    {% for c in ready_for_review %}
+      <div class="pp-row">{{ c.opportunity.title }} → {{ c.organisation.name }} <span class="pp-badge">{{ c.get_confidence_label_display }}</span>
+        <form method="post" action="{% url 'partner_participation:approve_routing_candidate' c.pk %}" class="pp-form">
+          {% csrf_token %}<input type="hidden" name="status" value="approved_to_share">
+          <button type="submit" class="pp-btn">Approve to share</button>
+        </form>
+      </div>
+    {% empty %}<p class="pp-empty">Nothing awaiting review.</p>{% endfor %}
+  </div>
+
+  <div class="pp-section">
+    <h2>Approved, awaiting share <span class="pp-badge">{{ approved_awaiting_share|length }}</span></h2>
+    {% for c in approved_awaiting_share %}
+      <div class="pp-row">{{ c.opportunity.title }} → {{ c.organisation.name }}
+        <form method="post" action="{% url 'partner_participation:approve_routing_candidate' c.pk %}" class="pp-form">
+          {% csrf_token %}<input type="hidden" name="status" value="shared">
+          <button type="submit" class="pp-btn">Mark shared</button>
+        </form>
+      </div>
+    {% empty %}<p class="pp-empty">Nothing approved and awaiting share.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

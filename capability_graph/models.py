@@ -64,11 +64,37 @@ CAPABILITY_CHOICES = [(v, v.replace('_', ' ').title()) for v in [
 # else in this project (see good_agents' evidence-quality vocabulary).
 # Deliberately conservative default ('unverified') — a capability claim
 # never starts life looking more solid than it is.
+#
+# PR8 (Partner Participation Protocol) adds four states to this SAME ladder
+# rather than a second one, per that PR's own "preserve the existing
+# OrganisationCapability architecture where possible" instruction:
+# 'self_reported' already covers PR8's "SELF_DECLARED" (kept under its
+# original name — no data migration for PR7's existing rows);
+# 'evidence_supported' is new (an organisation's OWN declaration gained a
+# real attached evidence source — distinct from 'documented', which means
+# EcoIQ itself found EXTERNAL public evidence, see PROVENANCE_CHOICES
+# below for that distinction); 'human_reviewed', 'disputed', and 'expired'
+# are new lifecycle states a declaration can reach before or after
+# independent verification.
 VERIFICATION_STATE_CHOICES = [
     ('unverified', 'Unverified — not yet checked against any real source'),
-    ('self_reported', 'Self-reported — the organisation itself claims this, unconfirmed'),
-    ('documented', 'Documented — a real public source states this'),
+    ('self_reported', 'Self-reported / self-declared — the organisation itself claims this, unconfirmed'),
+    ('evidence_supported', 'Evidence supported — the organisation attached real evidence to its own declaration'),
+    ('documented', 'Documented — EcoIQ found a real external public source stating this'),
+    ('human_reviewed', 'Human reviewed — an EcoIQ staff member reviewed the claim (not yet independently verified)'),
     ('independently_verified', 'Independently verified — a human confirmed this directly'),
+    ('disputed', 'Disputed — conflicts with other evidence; needs resolution'),
+    ('expired', 'Expired — past its reconfirmation date, no longer treated as current'),
+]
+
+# PR8 — WHO originated a capability claim, kept as its own axis, separate
+# from verification_state (HOW confirmed it is). A claim can be
+# organisation-declared and independently verified at the same time; these
+# are different facts and must never be blurred into one field.
+PROVENANCE_CHOICES = [
+    ('external_public_evidence', 'External public evidence — EcoIQ found this from a public source (PR7 default)'),
+    ('organisation_declared', 'Organisation declared — the organisation itself submitted this via the partner portal'),
+    ('ecoiq_reviewed', 'EcoIQ reviewed — an EcoIQ staff member entered or reviewed this manually'),
 ]
 
 ROUTE_TYPE_CHOICES = [
@@ -158,6 +184,24 @@ class OrganisationCapability(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
     )
 
+    # PR8 — WHO originated this row. Default preserves PR7's existing
+    # meaning for every pre-PR8 row (EcoIQ found it externally) without a
+    # data migration.
+    provenance = models.CharField(max_length=32, choices=PROVENANCE_CHOICES, default='external_public_evidence')
+    # Set only when provenance='organisation_declared' — the real,
+    # authenticated partner_participation.OrganisationMembership holder who
+    # submitted this claim on their organisation's behalf.
+    declared_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+
+    # PR8 staleness (Phase 25) — a capability is never treated as current
+    # forever. `reconfirmation_due_at` is set explicitly by whichever
+    # service call last confirmed/verified this row; a null value means no
+    # reconfirmation schedule has been set yet (not "never expires").
+    last_confirmed_at = models.DateTimeField(null=True, blank=True)
+    reconfirmation_due_at = models.DateTimeField(null=True, blank=True)
+
     # Never optional in spirit — a real capability claim almost always has
     # a real limitation worth stating (see the brief's own examples). Left
     # blank=True at the DB level rather than enforced, since a genuinely
@@ -196,6 +240,15 @@ class PublicRoute(models.Model):
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
 
+    # PR8 — a partner-side member may PROPOSE a route update (Phase 10);
+    # doing so never auto-promotes `verified_at`/independent verification
+    # on its own. `superseded_at` marks a route no longer current WITHOUT
+    # deleting it — see PublicRouteRevision below for the full history.
+    proposed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    superseded_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -204,3 +257,64 @@ class PublicRoute(models.Model):
 
     def __str__(self):
         return f'{self.get_route_type_display()} — {self.organisation_capability}'
+
+
+class PublicRouteRevision(models.Model):
+    """
+    PR8 Phase 10 — append-only edit history for a PublicRoute. Every
+    update to `route_value`/`is_currently_open` is logged here BEFORE the
+    live PublicRoute row changes, so a partner-proposed edit is never lost
+    even though the live row shows only the current value.
+    """
+    route = models.ForeignKey(PublicRoute, on_delete=models.CASCADE, related_name='revisions')
+    previous_route_value = models.CharField(max_length=500, blank=True)
+    new_route_value = models.CharField(max_length=500, blank=True)
+    previous_is_currently_open = models.BooleanField(null=True)
+    new_is_currently_open = models.BooleanField(null=True)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Revision of {self.route} at {self.created_at:%Y-%m-%d %H:%M}'
+
+
+class CapabilityConflict(models.Model):
+    """
+    PR8 Phase 24 — when an organisation's own declaration disagrees with
+    existing evidence (typically `external_public_evidence`) for the same
+    (organisation, capability, jurisdiction, topic_domain), neither side is
+    silently overwritten. Both claims stay real rows; this model records
+    the conflict and its eventual human resolution as its own audit trail.
+    """
+    RESOLUTION_CHOICES = [
+        ('unresolved', 'Unresolved — review required'),
+        ('declared_claim_upheld', 'Declared claim upheld'),
+        ('external_evidence_upheld', 'External evidence upheld'),
+        ('both_retained_as_distinct', 'Both retained — genuinely distinct claims (e.g. different jurisdiction)'),
+    ]
+    capability = models.ForeignKey(OrganisationCapability, on_delete=models.CASCADE, related_name='conflicts')
+    conflicting_with = models.ForeignKey(
+        OrganisationCapability, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+        help_text='The other OrganisationCapability row this one disagrees with, if it still exists.',
+    )
+    description = models.TextField(help_text='What disagrees, in plain language — never fabricated.')
+    resolution = models.CharField(max_length=32, choices=RESOLUTION_CHOICES, default='unresolved')
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Conflict on {self.capability} [{self.get_resolution_display()}]'

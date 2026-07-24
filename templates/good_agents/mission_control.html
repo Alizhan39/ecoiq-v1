@@ -57,7 +57,7 @@
     <a href="#projects">Projects</a><a href="#execution">Execution/MRV</a><a href="#verified">Verified Impact</a>
     <a href="#receipts">Impact Receipts</a><a href="#evidencememory">Evidence Memory</a><a href="#velocity">Velocity</a>
     <a href="#health">Mission Health</a><a href="#comparison">Comparison</a><a href="#story">Demo Story</a><a href="#observatory">Observatory</a>
-    <a href="#truthchain">Truth Chain</a><a href="#map">Map</a>
+    <a href="#truthchain">Truth Chain</a><a href="#partnerparticipation">Partner Participation</a><a href="#map">Map</a>
   </nav>
 
   {% if not mission %}
@@ -311,6 +311,22 @@
       {% endfor %}
     </div>
     {% else %}<p class="mc-empty">No featured opportunity yet.</p>{% endif %}
+  </section>
+
+  <section id="partnerparticipation" class="mc-section">
+    <h2>Partner participation — featured opportunity's resolved organisation</h2>
+    {% if partner_participation_summary %}
+      <p><a href="{% url 'capability_graph:organisation_detail' partner_participation_summary.organisation.pk %}">{{ partner_participation_summary.organisation.name }} →</a></p>
+      <div class="mc-row"><span>Capability verified</span><span class="mc-badge {% if partner_participation_summary.capability_verified %}mc-badge-ok{% endif %}">{{ partner_participation_summary.capability_verified|yesno:"Yes,No" }}</span></div>
+      <div class="mc-row"><span>Participating (verified member)</span><span class="mc-badge {% if partner_participation_summary.participating %}mc-badge-ok{% endif %}">{{ partner_participation_summary.participating|yesno:"Yes,No" }}</span></div>
+      <div class="mc-row"><span>Accepting this class of opportunity</span><span class="mc-badge {% if partner_participation_summary.accepting_opportunities %}mc-badge-ok{% endif %}">{{ partner_participation_summary.acceptance_mode_label }}</span></div>
+      <div class="mc-row"><span>Verified public route</span><span class="mc-badge {% if partner_participation_summary.verified_route %}mc-badge-ok{% endif %}">{{ partner_participation_summary.verified_route|yesno:"Yes,No" }}</span></div>
+      <div class="mc-row"><span>Resource / funding available</span><span class="mc-badge {% if partner_participation_summary.resource_or_funding_available %}mc-badge-ok{% endif %}">{{ partner_participation_summary.resource_or_funding_available|yesno:"Yes,No" }}</span></div>
+      <div class="mc-row"><span>Connection consent state</span><span class="mc-badge">{{ partner_participation_summary.connection_consent_state }}</span></div>
+      {% if partner_participation_summary.organisation.memberships.exists %}
+      <p class="mc-empty">Link to full Partner Portal requires a verified member login — not accessible from this staff view.</p>
+      {% endif %}
+    {% else %}<p class="mc-empty">The featured opportunity has no resolved organisation yet — participation is not assessed until Capability Graph resolution happens.</p>{% endif %}
   </section>
 
   <section id="map" class="mc-section">

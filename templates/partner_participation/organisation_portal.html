@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}{{ organisation.name }} — Partner Portal — EcoIQ{% endblock %}
+{% block meta_description_content %}Manage {{ organisation.name }}'s capabilities, service areas, opportunity preferences, resources, funding programmes, and public routes.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261;
+    max-width:1100px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pp-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 .5rem; }
+  .pp-sub { color:var(--muted); font-size:.85rem; max-width:80ch; margin-bottom:1rem; }
+  .pp-nav { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.2rem; font-size:.72rem;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .pp-nav a { color:var(--muted); text-decoration:none; border:1px solid var(--border); border-radius:4px; padding:.2rem .5rem; }
+  .pp-nav a:hover { color:var(--accent); border-color:var(--accent); }
+  .pp-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); scroll-margin-top:1rem; }
+  .pp-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pp-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+  .pp-row:last-child { border-bottom:none; }
+  .pp-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem;
+    padding:.1rem .4rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); margin-right:.3rem; }
+  .pp-badge-verified { color:var(--accent); border-color:var(--accent); }
+  .pp-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .pp-empty { color:var(--muted); font-size:.82rem; }
+  .pp-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.6rem; }
+  .pp-form input, .pp-form select, .pp-form textarea { background:rgba(255,255,255,.04); border:1px solid var(--border);
+    border-radius:6px; color:inherit; padding:.4rem .6rem; font-size:.85rem; font-family:inherit; }
+  .pp-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px;
+    padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; text-decoration:none; }
+  .pp-disclaimer { color:var(--warn); font-size:.78rem; border:1px solid var(--warn); border-radius:6px; padding:.6rem .8rem; margin:1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrap">
+  <a class="pp-empty" href="{% url 'partner_participation:my_organisations' %}">← My organisations</a>
+  <div class="pp-eyebrow">ECOIQ · PARTNER PORTAL · ORGANISATION #{{ organisation.pk }}</div>
+  <h1 class="pp-h1">{{ organisation.name }}</h1>
+  <p class="pp-sub">{{ organisation.get_org_type_display }}{% if organisation.jurisdiction %} · {{ organisation.jurisdiction }}{% endif %} — you are a <strong>{{ membership.get_role_display }}</strong> verified member.</p>
+
+  {% if messages %}
+    {% for message in messages %}<p class="pp-empty" style="color:{% if message.tags == 'success' %}var(--accent){% else %}var(--warn){% endif %};">{{ message }}</p>{% endfor %}
+  {% endif %}
+
+  <nav class="pp-nav">
+    <a href="#capabilities">Capabilities</a><a href="#preferences">Opportunity Preferences</a>
+    <a href="#resources">Resources</a><a href="#funding">Funding Programmes</a>
+    <a href="#routing">Incoming Opportunities</a><a href="#members">Members</a>
+  </nav>
+
+  <section id="capabilities" class="pp-section">
+    <h2>Capabilities &amp; service areas</h2>
+    {% for cap in capabilities %}
+      <div class="pp-row">
+        <strong>{{ cap.get_capability_display }}</strong>{% if cap.topic_domain %} — {{ cap.topic_domain }}{% endif %}
+        <span class="pp-badge {% if cap.verification_state == 'independently_verified' %}pp-badge-verified{% endif %}">{{ cap.get_verification_state_display }}</span>
+        <span class="pp-badge">{{ cap.get_provenance_display }}</span>
+        {% if cap.jurisdiction %}<span class="pp-badge">{{ cap.jurisdiction }}</span>{% endif %}
+        <p class="pp-empty">{{ cap.limitations|default:"No limitations recorded." }}</p>
+        {% if not cap.evidence_url and cap.provenance == 'organisation_declared' %}
+        <form method="post" action="{% url 'partner_participation:attach_evidence' organisation.pk cap.pk %}" class="pp-form">
+          {% csrf_token %}<input type="url" name="evidence_url" placeholder="https://... real evidence URL" required>
+          <button type="submit" class="pp-btn">Attach evidence</button>
+        </form>
+        {% endif %}
+        <p class="pp-empty">Public routes:</p>
+        {% for route in cap.public_routes.all %}
+          <div class="pp-row"><span>{{ route.get_route_type_display }}: {{ route.route_value }}</span> <span class="pp-badge">{% if route.is_currently_open %}Open{% else %}Not open{% endif %}</span></div>
+        {% empty %}<p class="pp-empty">No public route yet.</p>{% endfor %}
+        {% if can_edit %}
+        <form method="post" action="{% url 'partner_participation:propose_route' organisation.pk cap.pk %}" class="pp-form">
+          {% csrf_token %}
+          <select name="route_type"><option value="online_application">Online application</option><option value="public_contact_form">Public contact form</option><option value="email">Email</option><option value="phone">Phone</option><option value="referral_required">Referral required</option><option value="other">Other</option></select>
+          <input type="text" name="route_value" placeholder="Real URL / email / phone" required>
+          <button type="submit" class="pp-btn">Add route</button>
+        </form>
+        {% endif %}
+      </div>
+    {% empty %}<p class="pp-empty">No capabilities declared yet.</p>{% endfor %}
+
+    {% if can_edit %}
+    <form method="post" action="{% url 'partner_participation:declare_capability' organisation.pk %}" class="pp-form">
+      {% csrf_token %}
+      <select name="capability">{% for value, label in capability_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+      <input type="text" name="jurisdiction" placeholder="Jurisdiction (e.g. England)">
+      <input type="text" name="topic_domain" placeholder="Topic (e.g. flood risk)">
+      <input type="text" name="limitations" placeholder="Real limitations">
+      <button type="submit" class="pp-btn">Declare capability</button>
+    </form>
+    <p class="pp-empty">A declaration with no attached evidence stays "self-reported" — it is never displayed as verified until EcoIQ or an independent reviewer confirms it.</p>
+    {% endif %}
+  </section>
+
+  <section id="preferences" class="pp-section">
+    <h2>Opportunity preferences</h2>
+    <p class="pp-empty">A preference is a routing signal, not a guarantee — it never means you have accepted any specific opportunity.</p>
+    {% for pref in preferences %}
+      <div class="pp-row">{{ pref.get_theme_display }} <span class="pp-badge">{{ pref.get_acceptance_mode_display }}</span>
+        {% if pref.requires_sharia_review %}<span class="pp-badge pp-badge-warn">Requires Sharia review</span>{% endif %}</div>
+    {% empty %}<p class="pp-empty">No opportunity preferences set yet.</p>{% endfor %}
+    {% if can_edit %}
+    <form method="post" action="{% url 'partner_participation:set_preference' organisation.pk %}" class="pp-form">
+      {% csrf_token %}
+      <select name="theme">{% for value, label in theme_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+      <select name="acceptance_mode">
+        <option value="open_to_relevant_opportunities">Open to relevant opportunities</option>
+        <option value="limited" selected>Limited</option>
+        <option value="invitation_only">Invitation only</option>
+        <option value="application_required">Application required</option>
+        <option value="not_accepting">Not accepting</option>
+        <option value="paused">Paused</option>
+      </select>
+      <label><input type="checkbox" name="requires_sharia_review"> Requires Sharia review</label>
+      <button type="submit" class="pp-btn">Set preference</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section id="resources" class="pp-section">
+    <h2>Resources</h2>
+    {% for r in resources %}
+      <div class="pp-row">{{ r.title }} <span class="pp-badge">{{ r.get_resource_type_display }}</span> <span class="pp-badge">{{ r.get_availability_display }}</span></div>
+    {% empty %}<p class="pp-empty">No resources declared yet.</p>{% endfor %}
+    {% if can_edit %}
+    <form method="post" action="{% url 'partner_participation:declare_resource' organisation.pk %}" class="pp-form">
+      {% csrf_token %}
+      <input type="text" name="title" placeholder="Resource title" required>
+      <select name="availability"><option value="available">Available</option><option value="limited">Limited</option><option value="reserved">Reserved</option><option value="unavailable">Unavailable</option><option value="unknown" selected>Unknown</option></select>
+      <input type="text" name="region" placeholder="Region">
+      <button type="submit" class="pp-btn">Declare resource</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section id="funding" class="pp-section">
+    <h2>Funding programmes</h2>
+    {% for f in funding_programmes %}
+      <div class="pp-row">{{ f.programme_name }} <span class="pp-badge">{{ f.get_status_display }}</span>
+        {% if f.requires_sharia_review %}<span class="pp-badge pp-badge-warn">Requires Sharia review</span>{% endif %}
+        {% if f.deadline %}<span class="pp-empty">deadline {{ f.deadline }}</span>{% endif %}</div>
+    {% empty %}<p class="pp-empty">No funding programmes declared yet.</p>{% endfor %}
+    {% if can_edit %}
+    <form method="post" action="{% url 'partner_participation:declare_funding_programme' organisation.pk %}" class="pp-form">
+      {% csrf_token %}
+      <input type="text" name="programme_name" placeholder="Programme name" required>
+      <select name="funder_type">{% for value, label in funder_type_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+      <input type="url" name="official_source_url" placeholder="Official source URL">
+      <button type="submit" class="pp-btn">Declare programme</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section id="routing" class="pp-section">
+    <h2>Incoming opportunity candidates</h2>
+    <p class="pp-empty">These are candidates EcoIQ has already approved to share — none of them are an assignment, endorsement, or acceptance of any kind.</p>
+    {% for c in routing_candidates %}
+      <div class="pp-row">
+        {{ c.opportunity.title }} <span class="pp-badge">{{ c.get_status_display }}</span> <span class="pp-badge">{{ c.get_confidence_label_display }}</span>
+        <p class="pp-empty">{{ c.match_reasons|join:" " }}</p>
+        {% if c.next_options %}
+        <form method="post" action="{% url 'partner_participation:respond_to_routing_candidate' organisation.pk c.pk %}" class="pp-form">
+          {% csrf_token %}
+          <select name="status">
+            {% for value, label in c.next_options %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="pp-btn">Respond</button>
+        </form>
+        {% endif %}
+      </div>
+    {% empty %}<p class="pp-empty">No incoming opportunity candidates yet.</p>{% endfor %}
+  </section>
+
+  <section id="members" class="pp-section">
+    <h2>Verified members</h2>
+    {% for m in members %}
+      <div class="pp-row">{{ m.user }} <span class="pp-badge">{{ m.get_role_display }}</span></div>
+    {% endfor %}
+  </section>
+
+  <div class="pp-disclaimer">Declaring a capability, resource, or funding programme does not independently prove it. Accepting relevant opportunities does not mean accepting any specific opportunity. A routing candidate is not a partnership, endorsement, commitment, or consent.</div>
+</div>
+{% endblock %}
