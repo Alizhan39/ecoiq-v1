@@ -8,14 +8,16 @@ services/pipeline.py — nothing here is a static mockup.
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from good_agents.models import (
-    ActionPathway, AvailableResource, ConnectionCandidate, FundingAction, GoodDiscoveryRun, GoodOpportunity,
-    Need, OutreachDraft, ProjectCandidate, SignalProvider,
+    ActionContact, ActionPathway, AvailableResource, ConnectionCandidate, FundingAction, GoodDiscoveryRun,
+    GoodOpportunity, Need, OutreachDraft, ProjectCandidate, ResponsibleParty, SignalProvider, WorldSignal,
 )
 from good_agents.services import (
     action_gate, action_pathway as action_pathway_service, connection_action, mission_control,
-    morning_brief as morning_brief_service, outreach, project_bridge,
+    morning_brief as morning_brief_service, outreach, pilot_launchpad, project_bridge,
+    responsible_party as responsible_party_service,
 )
 
 
@@ -235,6 +237,14 @@ def impact_action_centre(request):
     ).select_related('project_candidate')[:15]
     recent_verified_impact = GoodOpportunity.objects.filter(status='verified').order_by('-updated_at')[:10]
 
+    # PR11 Phase 15 — Human Command Centre queues. Scoped to a bounded,
+    # active real-opportunity set (not every historical row) since each
+    # one recomputes blockers()/next_best_action() live.
+    active_opportunities = GoodOpportunity.objects.filter(
+        status__in=['potential', 'qualified', 'approved', 'in_progress'],
+    ).select_related('action_gate', 'project_candidate').order_by('-urgency')[:40]
+    command_centre_queues = pilot_launchpad.command_centre_queues(active_opportunities)
+
     return render(request, 'good_agents/impact_action_centre.html', {
         'new_awaiting_review': new_awaiting_review,
         'approved_actions': approved_actions,
@@ -246,6 +256,7 @@ def impact_action_centre(request):
         'active_projects': active_projects,
         'outcome_verification_pending': outcome_verification_pending,
         'recent_verified_impact': recent_verified_impact,
+        'command_centre_queues': command_centre_queues,
     })
 
 
@@ -384,6 +395,152 @@ def mission_control_view(request):
         'partner_participation_summary': mission_control.partner_participation_summary(opportunity) if opportunity else None,
     }
     return render(request, 'good_agents/mission_control.html', context)
+
+
+@staff_member_required(login_url='/login/')
+def pilot_launchpad_redirect(request):
+    """
+    PR11 Phase 2 — deterministic flagship pilot selection. Never redirects
+    to a fabricated "best" opportunity; if nothing currently clears the
+    minimum bar, says so plainly rather than picking an arbitrary one.
+    """
+    from django.contrib import messages
+    opportunity = pilot_launchpad.select_flagship_pilot()
+    if opportunity is None:
+        messages.info(request, 'NOT_READY_FOR_PILOT — no current opportunity meets the minimum evidence + review criteria.')
+        return redirect('good_agents:opportunity_list')
+    return redirect('good_agents:pilot_launchpad', pk=opportunity.pk)
+
+
+@staff_member_required(login_url='/login/')
+def pilot_launchpad_view(request, pk):
+    """
+    PR11 Phase 4 — the one flagship operational screen: truth chain,
+    readiness scorecard, 114-principle relevance, Better Way, Capability
+    Graph matches, contact/outreach state, blockers, next best action,
+    capital/MRV snapshot, collaboration handoff. Every section is a pure
+    read over PR2-10 models/services — nothing here recomputes an
+    upstream decision.
+    """
+    opportunity = get_object_or_404(
+        GoodOpportunity.objects.select_related('project', 'geography', 'discovery_run'), pk=pk,
+    )
+    project_candidate = getattr(opportunity, 'project_candidate', None)
+    context = {
+        'opportunity': opportunity,
+        'criteria': pilot_launchpad.flagship_pilot_criteria(opportunity),
+        'readiness_scorecard': pilot_launchpad.readiness_scorecard(opportunity),
+        'truth_chain': pilot_launchpad.truth_chain_with_provenance(opportunity),
+        'principle_relevance': pilot_launchpad.principle_relevance(opportunity),
+        'better_way_options': pilot_launchpad.better_way_options(opportunity),
+        'capability_graph_matches': pilot_launchpad.capability_graph_matches(opportunity),
+        'contact_route_state': pilot_launchpad.contact_route_state(opportunity),
+        'outreach_pack': pilot_launchpad.outreach_pack(opportunity),
+        'blockers': pilot_launchpad.blockers(opportunity),
+        'next_best_action': pilot_launchpad.next_best_action(opportunity),
+        'capital_snapshot': pilot_launchpad.capital_snapshot(opportunity),
+        'mrv_plan': pilot_launchpad.mrv_plan(opportunity),
+        'partner_participation_summary': mission_control.partner_participation_summary(opportunity),
+        'demo_story': mission_control.demo_story(opportunity),
+        'project_candidate': project_candidate,
+    }
+    return render(request, 'good_agents/pilot_launchpad.html', context)
+
+
+@staff_member_required(login_url='/login/')
+def pilot_dossier_view(request, pk):
+    """PR11 Phase 25 — exportable read-only dossier. Missing stays Missing, never filled with invented prose."""
+    opportunity = get_object_or_404(GoodOpportunity, pk=pk)
+    return render(request, 'good_agents/pilot_dossier.html', {'dossier': pilot_launchpad.build_dossier(opportunity)})
+
+
+def pilot_launchpad_public_view(request, pk):
+    """
+    PR11 Phase 24 — public-safe read view. Deliberately narrow: problem,
+    public evidence references, principle relevance, Better Way options
+    (rationale only, no internal notes), current honest status, and
+    verified impact if it exists. Never exposes organisation contact
+    details, outreach content, internal notes, or partner-private data —
+    those live only in the staff-only pilot_launchpad_view above.
+    """
+    opportunity = get_object_or_404(GoodOpportunity, pk=pk)
+    return render(request, 'good_agents/pilot_launchpad_public.html', {
+        'opportunity': opportunity,
+        'truth_chain': pilot_launchpad.truth_chain_with_provenance(opportunity),
+        'principle_relevance': pilot_launchpad.principle_relevance(opportunity),
+        'better_way_options': [
+            {'pathway_type': o['pathway_type'], 'expected_benefit': o['expected_benefit'], 'decision_state': o['decision_state']}
+            for o in pilot_launchpad.better_way_options(opportunity)
+        ],
+        'mrv_plan': pilot_launchpad.mrv_plan(opportunity),
+    })
+
+
+@staff_member_required(login_url='/login/')
+def resolve_responsible_party_view(request, pk):
+    """
+    PR11 Phase 27 — closes the "requires Django admin/shell" gap for
+    resolving a responsible organisation. Staff-only, POST-only. Reuses
+    the real, existing responsible_party.suggest_from_signal() (PR5/PR7)
+    against the opportunity's own real originating signal — never
+    guesses an organisation from free text. Suggests 'possible_organisation'
+    only; a human must still separately confirm() it.
+    """
+    opportunity = get_object_or_404(GoodOpportunity, pk=pk)
+    if request.method == 'POST':
+        from django.contrib import messages
+        signal = WorldSignal.objects.filter(title__in=opportunity.detected_signals).first()
+        party = responsible_party_service.suggest_from_signal(opportunity, signal) if signal else None
+        if party is None:
+            messages.error(request, 'No originating signal with a publisher was found to suggest a responsible organisation from.')
+    return redirect('good_agents:pilot_launchpad', pk=pk)
+
+
+@staff_member_required(login_url='/login/')
+def create_outreach_draft_view(request, pathway_pk):
+    """
+    PR11 Phase 10/27 — closes the "requires Django admin/shell" gap for
+    creating an OutreachDraft: previously only a demo management command
+    could create one. Pre-fills subject/body from the deterministic,
+    grounded pilot_launchpad.render_outreach_message() — never an AI
+    call — and immediately marks it 'ready_for_review' so it lands in the
+    existing outreach_approve/outreach_send governance ladder untouched.
+    """
+    pathway = get_object_or_404(ActionPathway, pk=pathway_pk)
+    if request.method == 'POST':
+        message = pilot_launchpad.render_outreach_message(pathway.opportunity)
+        contact = ActionContact.objects.filter(responsible_party__opportunity=pathway.opportunity).order_by('-last_verified').first()
+        draft = outreach.create_draft(
+            pathway, 'email', subject=message['subject'], body=message['body'], contact=contact,
+            associated_evidence=pathway.opportunity.evidence_refs,
+        )
+        outreach.mark_ready_for_review(draft)
+    return redirect('good_agents:pilot_launchpad', pk=pathway.opportunity_id)
+
+
+@staff_member_required(login_url='/login/')
+def add_contact_view(request, party_pk):
+    """
+    PR11 Phase 27 — closes the "requires Django admin" gap for recording a
+    real, publicly verifiable contact route. Staff-only, POST-only. Public
+    institutional channels only, per ActionContact's own existing
+    discipline — never a scraped private personal contact.
+    """
+    party = get_object_or_404(ResponsibleParty, pk=party_pk)
+    if request.method == 'POST':
+        channel = request.POST.get('public_contact_channel', '').strip()
+        source = request.POST.get('source_of_contact_info', '').strip()
+        if channel and source:
+            ActionContact.objects.create(
+                responsible_party=party, contact_role=request.POST.get('contact_role', '').strip(),
+                public_contact_channel=channel, source_of_contact_info=source,
+                status='verified' if request.POST.get('verified') == 'true' else 'identified',
+                last_verified=timezone.now().date() if request.POST.get('verified') == 'true' else None,
+            )
+        else:
+            from django.contrib import messages
+            messages.error(request, 'A public contact channel and its source are both required.')
+    return redirect('good_agents:pilot_launchpad', pk=party.opportunity_id)
 
 
 def observatory_health_api(request):

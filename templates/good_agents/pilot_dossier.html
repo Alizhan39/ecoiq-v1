@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Pilot Dossier — {{ dossier.opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Exportable, deterministic pilot dossier — missing fields stay Missing, never filled with invented prose.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pd-wrap { max-width:900px; margin:2rem auto; padding:0 1rem; color:#1a1a1a; background:#fff; }
+  @media (prefers-color-scheme: dark) { .pd-wrap { color:#e2e8f0; background:transparent; } }
+  .pd-h1 { font-size:1.4rem; font-weight:800; margin-bottom:.2rem; }
+  .pd-meta { font-size:.78rem; color:#888; margin-bottom:1.2rem; }
+  .pd-section { margin:1.1rem 0; }
+  .pd-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:#888; margin-bottom:.4rem; }
+  .pd-row { padding:.25rem 0; font-size:.88rem; border-bottom:1px solid rgba(128,128,128,.15); }
+  .pd-disclaimer { font-size:.75rem; color:#888; border-top:1px solid rgba(128,128,128,.25); margin-top:1.5rem; padding-top:.7rem; }
+  @media print { .pd-wrap { max-width:100%; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pd-wrap">
+  <h1 class="pd-h1">Pilot Dossier — {{ dossier.opportunity.title }}</h1>
+  <div class="pd-meta">Generated {{ dossier.generated_at }} · Opportunity #{{ dossier.opportunity.pk }} · Status: {{ dossier.current_state }}</div>
+
+  <div class="pd-section"><h2>Problem</h2><p>{{ dossier.problem }}</p></div>
+  <div class="pd-section"><h2>Location</h2><p>{{ dossier.location }}</p></div>
+
+  <div class="pd-section">
+    <h2>Evidence references ({{ dossier.evidence_refs|length }})</h2>
+    {% for e in dossier.evidence_refs %}<div class="pd-row">{{ e }}</div>{% empty %}<p>Missing</p>{% endfor %}
+  </div>
+
+  <div class="pd-section">
+    <h2>114-principle relevance</h2>
+    {% for p in dossier.principle_relevance %}<div class="pd-row">{{ p.principle }} — {{ p.relationship_type }} ({{ p.confidence|floatformat:0 }}%)</div>{% empty %}<p>Missing</p>{% endfor %}
+  </div>
+
+  <div class="pd-section">
+    <h2>Better Way options</h2>
+    {% for o in dossier.better_way_options %}<div class="pd-row">{{ o.pathway_type }} — {{ o.decision_state }}: {{ o.expected_benefit }}</div>{% empty %}<p>Missing</p>{% endfor %}
+  </div>
+
+  <div class="pd-section">
+    <h2>Organisations</h2>
+    {% for m in dossier.capability_graph_matches %}<div class="pd-row">{{ m.organisation.name }} [{{ m.provenance_label }}] — {{ m.why_relevant }}</div>{% empty %}<p>Missing</p>{% endfor %}
+  </div>
+
+  <div class="pd-section"><h2>Contact route</h2><p>{{ dossier.contact_route_state.label }} — {{ dossier.contact_route_state.detail }}</p></div>
+
+  <div class="pd-section">
+    <h2>Blockers</h2>
+    {% for b in dossier.blockers %}<div class="pd-row">{{ b.code }} — {{ b.what_missing }}</div>{% empty %}<p>None recorded.</p>{% endfor %}
+  </div>
+
+  <div class="pd-section"><h2>Next legitimate action</h2><p>{{ dossier.next_best_action.primary.label }}</p></div>
+
+  <div class="pd-section">
+    <h2>Measurement plan</h2>
+    <p>Planned: {{ dossier.measurement_plan.planned_metrics|default:"Missing" }}</p>
+    <p>Measured: {{ dossier.measurement_plan.measured_values }}</p>
+    <p>Verified: {{ dossier.measurement_plan.verified_values }}</p>
+  </div>
+
+  <div class="pd-section">
+    <h2>Readiness scorecard</h2>
+    {% for c in dossier.readiness_scorecard %}<div class="pd-row">{{ c.item }} — {{ c.state }}</div>{% endfor %}
+  </div>
+
+  <div class="pd-disclaimer">{{ dossier.governance_disclaimer }}</div>
+</div>
+{% endblock %}

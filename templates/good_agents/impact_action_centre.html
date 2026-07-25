@@ -112,5 +112,52 @@
       {% empty %}<p class="ga-empty">No verified impact recorded yet — nothing here is claimed before it's measured.</p>{% endfor %}
     </div>
   </div>
+
+  <h1 class="ga-h1" style="margin-top:2rem;">Pilot Launchpad — Human Command Centre</h1>
+  <p class="ga-empty">Real, live queues over the current active opportunity set — no vanity counts, each opportunity appears only in the queues it genuinely belongs to.</p>
+
+  <div class="ga-grid">
+    <div class="ga-section">
+      <h2>Needs contact route <span class="ga-count">{{ command_centre_queues.needs_contact_route|length }}</span></h2>
+      {% for o in command_centre_queues.needs_contact_route %}
+        <div class="ga-row"><a href="{% url 'good_agents:pilot_launchpad' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing needs a contact route right now.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Waiting on external party <span class="ga-count">{{ command_centre_queues.waiting_on_external_party|length }}</span></h2>
+      {% for o in command_centre_queues.waiting_on_external_party %}
+        <div class="ga-row"><a href="{% url 'good_agents:pilot_launchpad' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing waiting on an external party.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Needs consent <span class="ga-count">{{ command_centre_queues.needs_consent|length }}</span></h2>
+      {% for o in command_centre_queues.needs_consent %}
+        <div class="ga-row"><a href="{% url 'good_agents:pilot_launchpad' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">No next steps awaiting consent.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Ready for project <span class="ga-count">{{ command_centre_queues.ready_for_project|length }}</span></h2>
+      {% for o in command_centre_queues.ready_for_project %}
+        <div class="ga-row"><a href="{% url 'good_agents:pilot_launchpad' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing ready to become a project candidate.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Needs measurement <span class="ga-count">{{ command_centre_queues.needs_measurement|length }}</span></h2>
+      {% for o in command_centre_queues.needs_measurement %}
+        <div class="ga-row"><a href="{% url 'good_agents:pilot_launchpad' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing awaiting a measurement/verification plan.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Blocked <span class="ga-count">{{ command_centre_queues.blocked|length }}</span></h2>
+      {% for o in command_centre_queues.blocked %}
+        <div class="ga-row"><a href="{% url 'good_agents:pilot_launchpad' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing currently blocked.</p>{% endfor %}
+    </div>
+  </div>
 </div>
 {% endblock %}
