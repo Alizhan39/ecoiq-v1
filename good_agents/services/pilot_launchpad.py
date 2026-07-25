@@ -775,3 +775,36 @@ def actionability_summary(opportunity):
         'blockers': pnd_blockers(candidate),
         'link': _link('Actionability review', 'public_need_discovery:candidate_detail', opportunity.pk),
     }
+
+
+def action_preparation_summary(opportunity):
+    """
+    PR14 Phase 21 — compact read-only action-preparation status. Never
+    duplicates public_action_preparation's own candidate detail/Founder
+    Action Review content, only links to it. Returns None if no
+    ActionTypeDecision exists yet.
+    """
+    decision = getattr(opportunity, 'action_type_decision', None)
+    if decision is None or not decision.action_type:
+        return None
+
+    from public_action_preparation.services.readiness import READINESS_LABELS, compute_action_readiness
+
+    readiness = compute_action_readiness(opportunity)
+    process = getattr(opportunity, 'verified_official_process', None)
+    ethics = getattr(opportunity, 'ethics_review', None)
+    founder_decision = getattr(opportunity, 'founder_action_decision', None)
+
+    return {
+        'action_type': decision.get_action_type_display(),
+        'process_status': process.get_status_display() if process else None,
+        'ethics_passed': ethics.all_passed if ethics else False,
+        'readiness': readiness,
+        'readiness_label': READINESS_LABELS[readiness],
+        'founder_decision': founder_decision.decision if founder_decision else None,
+        'link': _link('Action preparation', 'public_action_preparation:action_prep_detail', opportunity.pk),
+        'founder_review_link': (
+            _link('Founder Action Review', 'public_action_preparation:founder_action_review', opportunity.pk)
+            if readiness == 'ready_for_founder_action_review' or founder_decision else None
+        ),
+    }

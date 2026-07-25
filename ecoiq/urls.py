@@ -248,6 +248,13 @@ urlpatterns = [
     # official-process preference. Never sends anything.
     path('public-need-discovery/', include('public_need_discovery.urls', namespace='public_need_discovery')),
 
+    # First Legitimate Public Action — takes ONE real actionable
+    # candidate and prepares the exact legitimate action (official
+    # process / clarification / referral / data request / funding
+    # surfacing / zero-capital connection / outreach handoff). Stops at
+    # Founder Action Review; no real external submission exists here.
+    path('public-action-preparation/', include('public_action_preparation.urls', namespace='public_action_preparation')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

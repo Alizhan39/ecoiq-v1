@@ -196,6 +196,26 @@
   </div>
 
   <div class="pl-section">
+    <h2>First legitimate public action</h2>
+    {% if action_preparation_summary %}
+      <p><span class="pl-badge">{{ action_preparation_summary.action_type }}</span>
+         {% if action_preparation_summary.process_status %}<span class="pl-badge">{{ action_preparation_summary.process_status }}</span>{% endif %}
+         {% if action_preparation_summary.ethics_passed %}<span class="pl-badge">ETHICS PASSED</span>{% endif %}
+         <span class="pl-badge">{{ action_preparation_summary.readiness_label }}</span></p>
+      {% if action_preparation_summary.founder_decision %}
+        <p class="pl-empty">Founder decision: <strong>{{ action_preparation_summary.founder_decision|upper }}</strong></p>
+      {% else %}
+        <p class="pl-empty">Awaiting explicit founder action decision.</p>
+      {% endif %}
+      <a class="pl-btn" href="{{ action_preparation_summary.link.url }}">{{ action_preparation_summary.link.label }} →</a>
+      {% if action_preparation_summary.founder_review_link %}<a class="pl-btn" href="{{ action_preparation_summary.founder_review_link.url }}">{{ action_preparation_summary.founder_review_link.label }} →</a>{% endif %}
+    {% else %}
+      <p class="pl-empty">No action type decision started yet.</p>
+      <a class="pl-btn" href="{% url 'public_action_preparation:action_prep_detail' opportunity.pk %}">Start action preparation →</a>
+    {% endif %}
+  </div>
+
+  <div class="pl-section">
     <h2>First real outreach readiness</h2>
     {% if outreach_readiness_summary %}
       <p><span class="pl-badge">{{ outreach_readiness_summary.suitability_state }}</span>

@@ -284,6 +284,17 @@
     </div>
   </section>
 
+  <section id="first-legitimate-action" class="mc-section">
+    <h2>First legitimate public action <a href="{% url 'public_action_preparation:candidate_comparison' %}">Real candidate comparison →</a></h2>
+    <div class="mc-grid">
+      <div class="mc-kpi"><div class="n">{{ action_preparation_summary_counts.cases_with_action_type }}</div><div class="l">Cases with action type</div></div>
+      <div class="mc-kpi"><div class="n">{{ action_preparation_summary_counts.ready_for_founder_action_review }}</div><div class="l">Ready for Founder Action Review</div></div>
+      <div class="mc-kpi"><div class="n">{{ action_preparation_summary_counts.blocked }}</div><div class="l">Blocked</div></div>
+      <div class="mc-kpi"><div class="n">{{ action_preparation_summary_counts.rejected }}</div><div class="l">Rejected</div></div>
+      <div class="mc-kpi"><div class="n">{{ action_preparation_summary_counts.founder_decisions_recorded }}</div><div class="l">Founder decisions recorded</div></div>
+    </div>
+  </section>
+
   <section id="comparison" class="mc-section">
     <h2>Mission comparison</h2>
     {% for row in mission_comparison %}

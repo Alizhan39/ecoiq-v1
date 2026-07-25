@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Founder Action Dossier — {{ dossier.opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Exportable, deterministic Founder Action Dossier — missing fields stay Missing, never filled with invented prose.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .fad-wrap { max-width:900px; margin:2rem auto; padding:0 1rem; color:#1a1a1a; background:#fff; }
+  @media (prefers-color-scheme: dark) { .fad-wrap { color:#e2e8f0; background:transparent; } }
+  .fad-h1 { font-size:1.4rem; font-weight:800; margin-bottom:.2rem; }
+  .fad-meta { font-size:.78rem; color:#888; margin-bottom:1.2rem; }
+  .fad-section { margin:1.1rem 0; }
+  .fad-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:#888; margin-bottom:.4rem; }
+  .fad-row { padding:.25rem 0; font-size:.88rem; border-bottom:1px solid rgba(128,128,128,.15); }
+  .fad-disclaimer { font-size:.75rem; color:#888; border-top:1px solid rgba(128,128,128,.25); margin-top:1.5rem; padding-top:.7rem; }
+  @media print { .fad-wrap { max-width:100%; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fad-wrap">
+  <h1 class="fad-h1">Founder Action Dossier — {{ dossier.opportunity.title }}</h1>
+  <div class="fad-meta">Opportunity #{{ dossier.opportunity.pk }} · Readiness: {{ dossier.readiness_label }} · Recommendation: {{ dossier.recommendation|upper }}</div>
+
+  <div class="fad-section"><h2>Executive summary</h2><p>{{ dossier.executive_summary }}</p></div>
+
+  <div class="fad-section"><h2>Jurisdiction</h2><p>{{ dossier.evidence_pack.jurisdiction|default:"Missing" }}</p></div>
+
+  <div class="fad-section">
+    <h2>Responsible body</h2>
+    {% for r in dossier.evidence_pack.confirmed_justifying_roles %}<div class="fad-row">{{ r.organisation.name }} — {{ r.get_role_display }}: {{ r.rationale }}</div>{% empty %}<p>Missing</p>{% endfor %}
+  </div>
+
+  <div class="fad-section">
+    <h2>114-principle relevance</h2>
+    {% for p in dossier.evidence_pack.relevant_principles %}<div class="fad-row">{{ p.principle }} — {{ p.relationship_type }} ({{ p.confidence|floatformat:0 }}%)</div>{% empty %}<p>Missing</p>{% endfor %}
+  </div>
+
+  <div class="fad-section"><h2>Official process</h2>
+    {% if dossier.official_process and dossier.official_process.process_name %}
+      <p>{{ dossier.official_process.process_name }} — {{ dossier.official_process.get_status_display }}</p>
+      <p class="fad-row">{{ dossier.official_process.official_url }} · Closes {{ dossier.official_process.closing_date|default:"unknown" }}</p>
+    {% else %}<p>Not applicable</p>{% endif %}
+  </div>
+
+  <div class="fad-section"><h2>Proposed action</h2><p>{{ dossier.action_type }}</p><p class="fad-row">{{ dossier.action_rationale }}</p></div>
+
+  <div class="fad-section"><h2>Draft content</h2>
+    {% if dossier.proposed_content %}
+      <p><strong>{{ dossier.proposed_content.subject }}</strong> ({{ dossier.proposed_content.get_approval_status_display }})</p>
+      <p class="fad-row">{{ dossier.proposed_content.body_text }}</p>
+    {% else %}<p>Missing</p>{% endif %}
+  </div>
+
+  <div class="fad-section"><h2>Risk / ethics</h2>
+    <p>Ethics review passed: {{ dossier.ethics_passed }}</p>
+    {% if dossier.ethics_review %}<p class="fad-row">{{ dossier.ethics_review.notes }}</p>{% endif %}
+  </div>
+
+  <div class="fad-section"><h2>Unknowns</h2><p>{{ dossier.unknowns }}</p></div>
+
+  <div class="fad-section"><h2>Recommendation</h2><p>{{ dossier.recommendation|upper }}</p>
+    <ul>{% for r in dossier.recommendation_reasons %}<li class="fad-row">{{ r }}</li>{% endfor %}</ul>
+  </div>
+
+  <div class="fad-disclaimer">
+    A Founder Action Dossier does not create a partnership, contract, funding commitment, or obligation. Recording a
+    PROCEED decision in EcoIQ does not perform any real external submission, referral, application, or contact.
+  </div>
+</div>
+{% endblock %}
