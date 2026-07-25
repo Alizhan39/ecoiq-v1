@@ -312,7 +312,18 @@ INSTALLED_APPS = [
     # one exists. Never weakens or bypasses outreach_readiness's own
     # recipient-responsibility test.
     'public_need_discovery',
+    # First Legitimate Public Action (PR14) — takes ONE real actionable
+    # candidate from public_need_discovery and prepares the exact
+    # legitimate action (official process / clarification / referral /
+    # data request / funding surfacing / zero-capital connection /
+    # outreach handoff), never defaulting to email, never executing
+    # anything externally. EXTERNAL_PUBLIC_ACTIONS_ENABLED stays False.
+    'public_action_preparation',
 ]
+
+# PR14 — hardcoded false; no code path in public_action_preparation reads
+# this to perform a real submission, referral, application, or contact.
+EXTERNAL_PUBLIC_ACTIONS_ENABLED = False
 
 # ── Middleware ────────────────────────────────────────────────────────────────
 

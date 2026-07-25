@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Founder Action Review — {{ opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}The single final review surface before any real legitimate public action. The system may recommend; only the founder decides.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .far-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .far-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .far-h1 { font-size:1.4rem; font-weight:800; margin:.3rem 0 1rem; }
+  .far-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .far-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .far-empty { color:var(--muted); font-size:.85rem; }
+  .far-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; }
+  .far-badge-proceed { color:var(--accent); border-color:var(--accent); }
+  .far-badge-revise { color:var(--warn); border-color:var(--warn); }
+  .far-badge-noproceed { color:var(--danger); border-color:var(--danger); }
+  .far-message { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:6px; padding:1rem; white-space:pre-wrap; font-size:.88rem; }
+  .far-decision { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.8rem; }
+  .far-btn { border:1px solid var(--border); border-radius:6px; padding:.5rem 1rem; font-size:.82rem; font-weight:700; cursor:pointer; background:transparent; color:var(--text); }
+  .far-btn-proceed { background:var(--accent); color:#04120c; border-color:var(--accent); }
+  .far-btn-noproceed { background:var(--danger); color:#fff; border-color:var(--danger); }
+  .far-noswitch { font-size:.75rem; color:var(--muted); border-top:1px solid var(--border); margin-top:1rem; padding-top:.6rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="far-wrap">
+  <div class="far-eyebrow">ECOIQ · FOUNDER ACTION REVIEW</div>
+  <h1 class="far-h1">{{ opportunity.title }}</h1>
+
+  <div class="far-section">
+    <h2>System recommendation</h2>
+    <span class="far-badge {% if recommendation == 'proceed' %}far-badge-proceed{% elif recommendation == 'revise' %}far-badge-revise{% else %}far-badge-noproceed{% endif %}">{{ recommendation|upper }}</span>
+    <p class="far-empty">This is a computed suggestion, not a decision. Only the founder's explicit choice below constitutes a real decision.</p>
+    <ul>{% for r in recommendation_reasons %}<li class="far-empty">{{ r }}</li>{% endfor %}</ul>
+  </div>
+
+  <div class="far-section">
+    <h2>Selected case</h2>
+    <p>{{ opportunity.problem_statement }}</p>
+    <p><strong>Jurisdiction:</strong> {{ evidence_pack.jurisdiction|default:"NO_JURISDICTION" }}</p>
+    <p><strong>Responsible body:</strong>
+      {% for r in evidence_pack.confirmed_justifying_roles %}{{ r.organisation.name }} ({{ r.get_role_display }}){% if not forloop.last %}, {% endif %}{% empty %}Not confirmed{% endfor %}
+    </p>
+  </div>
+
+  <div class="far-section">
+    <h2>Action type</h2>
+    <p><strong>{{ decision.get_action_type_display }}</strong></p>
+    <p class="far-empty">{{ decision.rationale }}</p>
+    {% if decision.action_type == 'refer_to_existing_service' %}
+      <p class="far-empty">Real beneficiary: {{ decision.has_real_beneficiary }} — {{ decision.beneficiary_basis_notes }}</p>
+    {% endif %}
+  </div>
+
+  {% if process and process.process_name %}
+  <div class="far-section">
+    <h2>Official process</h2>
+    <p><span class="far-badge {% if process.status == 'open' %}far-badge-proceed{% elif process.status == 'expired' %}far-badge-noproceed{% endif %}">{{ process.get_status_display }}</span></p>
+    <p><strong>{{ process.process_name }}</strong> — {{ process.owning_organisation }}</p>
+    <p class="far-empty">{{ process.official_url }} · Closes {{ process.closing_date|default:"unknown" }}</p>
+    <p class="far-empty">{{ process.checked_notes }}</p>
+  </div>
+  {% endif %}
+
+  <div class="far-section">
+    <h2>114-principle relevance ({{ evidence_pack.relevant_principles|length }})</h2>
+    {% for p in evidence_pack.relevant_principles|slice:":6" %}<p class="far-empty">{{ p.principle }} — {{ p.relationship_type }}</p>{% empty %}<p class="far-empty">None recorded.</p>{% endfor %}
+  </div>
+
+  {% if preview %}
+  <div class="far-section">
+    <h2>Exact draft content — v{{ latest_draft.version_number }} ({{ latest_draft.get_approval_status_display }})</h2>
+    <p><strong>Subject:</strong> {{ preview.subject }}</p>
+    <div class="far-message">{{ preview.body_text }}</div>
+    <p class="far-empty">{{ preview.word_count }} words</p>
+    <p class="far-empty">Facts: {{ preview.facts|join:" · " }}</p>
+    <p class="far-empty">Inferences: {{ preview.inferences|join:" · " }}</p>
+    <p class="far-empty">Recommendation: {{ preview.recommendation }}</p>
+    <p class="far-empty">Limitations: {{ preview.limitations }}</p>
+    <p class="far-empty">Source links: {{ preview.source_links|join:" · " }}</p>
+    {% if preview.missing_fields %}<p class="far-badge far-badge-noproceed">Missing: {{ preview.missing_fields|join:", " }}</p>{% endif %}
+  </div>
+  {% elif decision.action_type == 'prepare_outreach' %}
+  <div class="far-section"><p class="far-empty">This action type hands off to <a href="{% url 'outreach_readiness:assessment_detail' opportunity.pk %}">outreach_readiness</a> — see its own Founder Send Review.</p></div>
+  {% else %}
+  <div class="far-section"><p class="far-empty">No content drafted yet.</p></div>
+  {% endif %}
+
+  <div class="far-section">
+    <h2>Ethics review</h2>
+    {% if ethics %}
+      <p><span class="far-badge {% if ethics.all_passed %}far-badge-proceed{% else %}far-badge-noproceed{% endif %}">{% if ethics.all_passed %}ALL PASSED{% else %}INCOMPLETE{% endif %}</span></p>
+      {% if ethics.failed_items %}<p class="far-empty">Outstanding: {{ ethics.failed_items|join:", " }}</p>{% endif %}
+      <p class="far-empty">{{ ethics.notes }}</p>
+    {% else %}<p class="far-empty">No ethics review recorded.</p>{% endif %}
+  </div>
+
+  <div class="far-section">
+    <h2>Human review roles</h2>
+    {% for role, users in role_summary.by_role.items %}<p class="far-empty">{{ role }}: {% for u in users %}{{ u }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endfor %}
+    {% if role_summary.single_reviewer_limitation %}<p class="far-badge far-badge-noproceed">SINGLE_REVIEWER_LIMITATION</p>{% endif %}
+  </div>
+
+  <div class="far-section">
+    <h2>Founder decision</h2>
+    {% if existing_decision.decision %}
+      <p><span class="far-badge {% if existing_decision.decision == 'proceed' %}far-badge-proceed{% elif existing_decision.decision == 'revise' %}far-badge-revise{% else %}far-badge-noproceed{% endif %}">{{ existing_decision.get_decision_display|upper }}</span> — {{ existing_decision.decided_by }}, {{ existing_decision.decided_at }}</p>
+      <p class="far-empty">{{ existing_decision.rationale }}</p>
+    {% endif %}
+    <form method="post" action="{% url 'public_action_preparation:record_founder_action_decision' opportunity.pk %}">
+      {% csrf_token %}
+      <textarea name="rationale" placeholder="Rationale for this decision" style="width:100%;min-height:4rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;color:inherit;padding:.5rem;box-sizing:border-box;"></textarea>
+      <div class="far-decision">
+        <button type="submit" name="decision" value="proceed" class="far-btn far-btn-proceed">PROCEED</button>
+        <button type="submit" name="decision" value="revise" class="far-btn">REVISE</button>
+        <button type="submit" name="decision" value="do_not_proceed" class="far-btn far-btn-noproceed">DO NOT PROCEED</button>
+      </div>
+    </form>
+    <p class="far-noswitch">
+      EXTERNAL_PUBLIC_ACTIONS_ENABLED is False in this environment. Recording a PROCEED decision here does not submit,
+      refer, apply, or contact anything — it records the founder's decision only. A real external action requires a
+      separate, later, explicit action outside this PR.
+    </p>
+  </div>
+</div>
+{% endblock %}

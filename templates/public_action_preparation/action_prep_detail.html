@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}Action Preparation — {{ opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Action type decision, official process verification, evidence pack, content drafting, and ethics review for one real actionable candidate.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pap-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1100px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pap-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pap-h1 { font-size:1.4rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pap-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; margin:.1rem .2rem .1rem 0; }
+  .pap-badge-reject { color:var(--danger); border-color:var(--danger); }
+  .pap-badge-proceed { color:var(--accent); border-color:var(--accent); }
+  .pap-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .pap-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pap-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pap-empty { color:var(--muted); font-size:.85rem; }
+  .pap-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.87rem; }
+  .pap-row:last-child { border-bottom:none; }
+  .pap-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:flex-start; margin-top:.5rem; }
+  .pap-form label { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.2rem; }
+  .pap-form .field { display:flex; flex-direction:column; min-width:220px; flex:1; }
+  .pap-form input[type=text], .pap-form input[type=url], .pap-form input[type=date], .pap-form select, .pap-form textarea {
+    background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit;
+    padding:.4rem .6rem; font-size:.85rem; font-family:inherit; width:100%; box-sizing:border-box; }
+  .pap-form textarea { min-height:4rem; resize:vertical; }
+  .pap-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.45rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; }
+  .pap-btn-secondary { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .pap-checklist { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:.4rem; }
+  .pap-checklist label { display:flex; align-items:center; gap:.4rem; font-size:.82rem; text-transform:none; color:var(--text); }
+  .pap-link { color:var(--accent); text-decoration:none; }
+  .pap-message { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:6px; padding:1rem; white-space:pre-wrap; font-size:.88rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pap-wrap">
+  <div class="pap-eyebrow">ECOIQ · ACTION PREPARATION · OPPORTUNITY #{{ opportunity.pk }}</div>
+  <h1 class="pap-h1">{{ opportunity.title }}</h1>
+  <span class="pap-badge {% if readiness == 'ready_for_founder_action_review' %}pap-badge-proceed{% elif readiness == 'blocked' or readiness == 'rejected' %}pap-badge-reject{% else %}pap-badge-warn{% endif %}">{{ readiness_label }}</span>
+  <a class="pap-link" href="{% url 'public_need_discovery:candidate_detail' opportunity.pk %}">Actionability review →</a>
+  <a class="pap-link" href="{% url 'good_agents:pilot_launchpad' opportunity.pk %}"> · Pilot Launchpad →</a>
+  {% if readiness == 'ready_for_founder_action_review' %}<a class="pap-link" href="{% url 'public_action_preparation:founder_action_review' opportunity.pk %}"> · Founder Action Review →</a>{% endif %}
+  <a class="pap-link" href="{% url 'public_action_preparation:dossier' opportunity.pk %}"> · Dossier →</a>
+
+  <div class="pap-section">
+    <h2>1. Public need &amp; evidence pack</h2>
+    <p>{{ opportunity.problem_statement }}</p>
+    <p class="pap-empty">Jurisdiction: {{ evidence_pack.jurisdiction|default:"NO_JURISDICTION" }} ({{ evidence_pack.jurisdiction_resolved|yesno:"resolved,unresolved" }})</p>
+    <p class="pap-empty">Missing evidence: {{ evidence_pack.missing_evidence }}</p>
+    <p class="pap-empty">Freshest publication: {{ evidence_pack.freshest_publication|default:"Unknown" }}</p>
+    {% for r in evidence_pack.source_records %}
+      <div class="pap-row">{{ r.title }} — {{ r.publisher }} ({{ r.classification }}) <a class="pap-link" href="{{ r.source_url }}" target="_blank" rel="noopener">source →</a></div>
+    {% empty %}<p class="pap-empty">No source records.</p>{% endfor %}
+  </div>
+
+  <div class="pap-section">
+    <h2>2. Responsible body (from public_need_discovery)</h2>
+    {% for r in evidence_pack.confirmed_justifying_roles %}
+      <div class="pap-row"><a class="pap-link" href="{% url 'capability_graph:organisation_detail' r.organisation.pk %}">{{ r.organisation.name }}</a> — {{ r.get_role_display }}
+        <div class="pap-empty">{{ r.rationale }}</div></div>
+    {% empty %}<p class="pap-empty">No confirmed justifying role — resolve this in public_need_discovery first.</p>{% endfor %}
+  </div>
+
+  <div class="pap-section">
+    <h2>3. 114-principle relevance ({{ evidence_pack.relevant_principles|length }})</h2>
+    {% for p in evidence_pack.relevant_principles %}
+      <div class="pap-row">{{ p.principle }} — {{ p.relationship_type }} ({{ p.confidence }}%) <span class="pap-empty">{{ p.provenance }}</span>
+        <div class="pap-empty">{{ p.reason }}</div></div>
+    {% empty %}<p class="pap-empty">No principle activations recorded.</p>{% endfor %}
+  </div>
+
+  <div class="pap-section">
+    <h2>4. Action type decision</h2>
+    <p>Recommended: <strong>{{ recommended_type }}</strong></p>
+    <ul>{% for r in recommended_reasons %}<li class="pap-empty">{{ r }}</li>{% endfor %}</ul>
+    <p>Current: <span class="pap-badge {% if decision.action_type %}pap-badge-proceed{% endif %}">{{ decision.get_action_type_display|default:"Not decided" }}</span></p>
+    <form method="post" action="{% url 'public_action_preparation:record_action_type' opportunity.pk %}" class="pap-form">
+      {% csrf_token %}
+      <div class="field"><label>Action type</label><select name="action_type">{% for value, display in action_type_choices %}<option value="{{ value }}" {% if decision.action_type == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+      <div class="field" style="min-width:100%;"><label>Rationale</label><textarea name="rationale">{{ decision.rationale }}</textarea></div>
+      <div class="field"><label>Has real beneficiary? (required for refer_to_existing_service)</label><select name="has_real_beneficiary"><option value="false" {% if not decision.has_real_beneficiary %}selected{% endif %}>No</option><option value="true" {% if decision.has_real_beneficiary %}selected{% endif %}>Yes</option></select></div>
+      <div class="field" style="min-width:100%;"><label>Beneficiary basis notes (required if yes)</label><textarea name="beneficiary_basis_notes">{{ decision.beneficiary_basis_notes }}</textarea></div>
+      <button type="submit" class="pap-btn">Save action type decision</button>
+    </form>
+  </div>
+
+  <div class="pap-section">
+    <h2>5. Official process verification</h2>
+    <p>Status: <span class="pap-badge {% if process.status == 'open' %}pap-badge-proceed{% elif process.status == 'expired' %}pap-badge-reject{% endif %}">{{ process.get_status_display }}</span></p>
+    {% if process.process_name %}
+      <p><strong>{{ process.process_name }}</strong> — {{ process.owning_organisation }}</p>
+      <p class="pap-empty">{{ process.official_url }} · Opens {{ process.opening_date|default:"unknown" }} · Closes {{ process.closing_date|default:"unknown" }}</p>
+      <p class="pap-empty">Checked: {{ process.checked_notes }}</p>
+    {% endif %}
+    <form method="post" action="{% url 'public_action_preparation:record_process_verification' opportunity.pk %}" class="pap-form">
+      {% csrf_token %}
+      <div class="field"><label>Process name</label><input type="text" name="process_name" value="{{ process.process_name }}"></div>
+      <div class="field"><label>Owning organisation (real name)</label><input type="text" name="owning_organisation_name" value="{{ process.owning_organisation.name }}"></div>
+      <div class="field"><label>Org jurisdiction</label><input type="text" name="owning_organisation_jurisdiction"></div>
+      <div class="field"><label>Official URL</label><input type="url" name="official_url" value="{{ process.official_url }}"></div>
+      <div class="field"><label>Route type</label><select name="route_type">{% for value, display in route_type_choices %}<option value="{{ value }}" {% if process.route_type == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Opening date</label><input type="date" name="opening_date" value="{{ process.opening_date|date:'Y-m-d' }}"></div>
+      <div class="field"><label>Closing date</label><input type="date" name="closing_date" value="{{ process.closing_date|date:'Y-m-d' }}"></div>
+      <div class="field" style="min-width:100%;"><label>Eligibility</label><textarea name="eligibility">{{ process.eligibility }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Required information</label><textarea name="required_information">{{ process.required_information }}</textarea></div>
+      <div class="field"><label>Submission format</label><input type="text" name="submission_format" value="{{ process.submission_format }}"></div>
+      <div class="field" style="min-width:100%;"><label>Evidence allowed</label><textarea name="evidence_allowed">{{ process.evidence_allowed }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Acknowledgement semantics</label><textarea name="acknowledgement_semantics">{{ process.acknowledgement_semantics }}</textarea></div>
+      <div class="field"><label>Status (overridden to EXPIRED automatically if closing date has passed)</label><select name="status">{% for value, display in process_status_choices %}<option value="{{ value }}" {% if process.status == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+      <div class="field" style="min-width:100%;"><label>Checked notes (how you verified this — cite the real source)</label><textarea name="checked_notes">{{ process.checked_notes }}</textarea></div>
+      <button type="submit" class="pap-btn">Save process verification</button>
+    </form>
+  </div>
+
+  <div class="pap-section">
+    <h2>6. Content draft ({{ content_drafts|length }})</h2>
+    {% for d in content_drafts %}
+      <div class="pap-row">
+        <strong>v{{ d.version_number }}</strong> {{ d.get_content_type_display }} — {{ d.subject }} <span class="pap-badge">{{ d.get_approval_status_display }}</span> ({{ d.word_count }} words)
+        {% if d.required_fields_missing %}<div class="pap-empty">Missing: {{ d.required_fields_missing|join:", " }}</div>{% endif %}
+        {% if d.approval_status == 'draft' %}<form method="post" action="{% url 'public_action_preparation:mark_draft_reviewed' d.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="pap-btn pap-btn-secondary">Mark reviewed</button></form>{% endif %}
+        {% if d.approval_status == 'reviewed' %}<form method="post" action="{% url 'public_action_preparation:founder_approve_draft' d.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="pap-btn pap-btn-secondary">Founder-approve content</button></form>{% endif %}
+      </div>
+    {% empty %}<p class="pap-empty">No content drafted yet.</p>{% endfor %}
+
+    {% if decision.action_type == 'prepare_outreach' %}
+      <p class="pap-empty">This action type hands off to <a class="pap-link" href="{% url 'outreach_readiness:assessment_detail' opportunity.pk %}">outreach_readiness</a> — no content is drafted here.</p>
+    {% elif decision.action_type == 'no_action' or not decision.action_type %}
+      <p class="pap-empty">Select an action type above before drafting content.</p>
+    {% else %}
+    <form method="post" action="{% url 'public_action_preparation:create_content_draft' opportunity.pk %}" class="pap-form">
+      {% csrf_token %}
+      <div class="field"><label>Content type</label><select name="content_type">{% for value, display in content_type_choices %}<option value="{{ value }}">{{ display }}</option>{% endfor %}</select></div>
+      <div class="field" style="min-width:100%;"><label>Subject</label><input type="text" name="subject"></div>
+      <div class="field" style="min-width:100%;"><label>Fact points (one per line)</label><textarea name="fact_points"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Inference points (one per line)</label><textarea name="inference_points"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Specific recommendation</label><textarea name="specific_recommendation"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Limitations</label><textarea name="limitations"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Source links (one per line)</label><textarea name="source_links"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Body text (the exact content that would be submitted)</label><textarea name="body_text" style="min-height:8rem;"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Required fields missing (referral only, one per line)</label><textarea name="required_fields_missing"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Change summary</label><input type="text" name="change_summary"></div>
+      <button type="submit" class="pap-btn">Save new content draft</button>
+    </form>
+    {% endif %}
+
+    {% if preview %}
+      <h2 style="margin-top:1rem;">Dry-run preview (never submits)</h2>
+      <div class="pap-message">{{ preview.body_text }}</div>
+      <p class="pap-empty">Facts: {{ preview.facts|join:" · " }}</p>
+      <p class="pap-empty">Inferences: {{ preview.inferences|join:" · " }}</p>
+      <p class="pap-empty">Recommendation: {{ preview.recommendation }}</p>
+      <p class="pap-empty">Limitations: {{ preview.limitations }}</p>
+      {% if preview.missing_fields %}<p class="pap-badge pap-badge-warn">Missing: {{ preview.missing_fields|join:", " }}</p>{% endif %}
+    {% endif %}
+  </div>
+
+  <div class="pap-section">
+    <h2>7. Ethics review</h2>
+    <form method="post" action="{% url 'public_action_preparation:record_ethics_review' opportunity.pk %}" class="pap-form">
+      {% csrf_token %}
+      <div class="field" style="min-width:100%;">
+        <div class="pap-checklist">
+          {% for q in ethics_questions %}
+            <label><input type="checkbox" name="{{ q.field }}" value="true" {% if q.value %}checked{% endif %}> {{ q.label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field" style="min-width:100%;"><label>Notes</label><textarea name="notes">{{ ethics.notes }}</textarea></div>
+      <button type="submit" class="pap-btn">Save ethics review</button>
+    </form>
+  </div>
+
+  <div class="pap-section">
+    <h2>8. Human review roles</h2>
+    {% for role, users in role_summary.by_role.items %}<div class="pap-row">{{ role }}: {% for u in users %}{{ u }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% empty %}<p class="pap-empty">No roles recorded yet.</p>{% endfor %}
+    {% if role_summary.single_reviewer_limitation %}<p class="pap-badge pap-badge-reject">SINGLE_REVIEWER_LIMITATION</p>{% endif %}
+    <form method="post" action="{% url 'public_action_preparation:add_review_role' opportunity.pk %}" class="pap-form">
+      {% csrf_token %}
+      <select name="role"><option value="researcher">Researcher</option><option value="reviewer">Reviewer</option><option value="founder_approver">Founder approver</option></select>
+      <button type="submit" class="pap-btn pap-btn-secondary">Add myself with this role</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

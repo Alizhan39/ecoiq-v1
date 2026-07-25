@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Real Candidate Comparison — EcoIQ{% endblock %}
+{% block meta_description_content %}Compares real actionable candidates from public_need_discovery — public benefit, evidence quality, jurisdiction, responsible body, process availability, risk. No aggregate score decides selection.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pap-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1200px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pap-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pap-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pap-sub { color:var(--muted); font-size:.85rem; max-width:80ch; margin-bottom:1rem; }
+  .pap-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); overflow-x:auto; }
+  .pap-table { width:100%; border-collapse:collapse; font-size:.85rem; min-width:760px; }
+  .pap-table th { text-align:left; color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; padding:.5rem; border-bottom:1px solid var(--border); }
+  .pap-table td { padding:.6rem .5rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  .pap-table tr:last-child td { border-bottom:none; }
+  .pap-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; }
+  .pap-badge-accent { color:var(--accent); border-color:var(--accent); }
+  .pap-empty { color:var(--muted); font-size:.85rem; }
+  .pap-link { color:var(--accent); text-decoration:none; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pap-wrap">
+  <div class="pap-eyebrow">ECOIQ · FIRST LEGITIMATE PUBLIC ACTION</div>
+  <h1 class="pap-h1">Real Candidate Comparison</h1>
+  <p class="pap-sub">Every row is a real GoodOpportunity that public_need_discovery already found actionable. Optimise for legitimate action, not action volume — not every candidate here should reach Founder Action Review.</p>
+
+  <div class="pap-section">
+    <table class="pap-table">
+      <thead>
+        <tr><th>Opportunity</th><th>Jurisdiction</th><th>Official process?</th><th>Action type</th><th>Readiness</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.opportunity.title }}</td>
+            <td>{{ r.candidate.jurisdiction|default:"NO_JURISDICTION" }}</td>
+            <td>{% if r.candidate.use_official_process %}<span class="pap-badge pap-badge-accent">{{ r.candidate.get_official_process_type_display }}</span>{% else %}—{% endif %}</td>
+            <td>{{ r.action_type|default:"Not decided" }}</td>
+            <td><span class="pap-badge">{{ r.readiness }}</span></td>
+            <td><a class="pap-link" href="{% url 'public_action_preparation:action_prep_detail' r.opportunity.pk %}">Prepare →</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="pap-empty">No real actionable candidates found — see public_need_discovery's own queue first.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

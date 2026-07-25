@@ -508,6 +508,29 @@ def actionable_discovery_summary():
     }
 
 
+# --- 20c. First Legitimate Public Action (PR14 Phase 23) ----------------------
+
+def action_preparation_summary_counts():
+    """Compact real counts across every real ActionTypeDecision — no vanity figures, local import."""
+    from public_action_preparation.models import ActionTypeDecision, FounderActionDecision
+    from public_action_preparation.services.readiness import compute_action_readiness
+
+    decisions = ActionTypeDecision.objects.exclude(action_type='').select_related('opportunity')
+    readiness_counts = {'ready_for_founder_action_review': 0, 'blocked': 0, 'rejected': 0}
+    for decision in decisions:
+        state = compute_action_readiness(decision.opportunity)
+        if state in readiness_counts:
+            readiness_counts[state] += 1
+
+    return {
+        'cases_with_action_type': decisions.count(),
+        'ready_for_founder_action_review': readiness_counts['ready_for_founder_action_review'],
+        'blocked': readiness_counts['blocked'],
+        'rejected': readiness_counts['rejected'],
+        'founder_decisions_recorded': FounderActionDecision.objects.exclude(decision='').count(),
+    }
+
+
 # --- 21. Mission comparison ---------------------------------------------------
 
 def mission_comparison():
