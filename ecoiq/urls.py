@@ -237,6 +237,11 @@ urlpatterns = [
     # next step created", anchored to partner_participation.RoutingCandidate.
     path('collaboration/', include('collaboration_rooms.urls', namespace='collaboration_rooms')),
 
+    # First Real Outreach Readiness — candidate suitability review,
+    # recipient responsibility test, route provenance, message versioning,
+    # risk review, dry run, Founder Send Review. No real send exists here.
+    path('outreach-readiness/', include('outreach_readiness.urls', namespace='outreach_readiness')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block title %}Outreach Assessment — {{ opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}First-real-outreach suitability, recipient responsibility, sensitivity, route, message, and risk review for one real opportunity.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .or-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1100px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .or-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .or-h1 { font-size:1.4rem; font-weight:800; margin:.3rem 0 1rem; }
+  .or-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; margin:.1rem .2rem .1rem 0; }
+  .or-badge-reject { color:var(--danger); border-color:var(--danger); }
+  .or-badge-proceed { color:var(--accent); border-color:var(--accent); }
+  .or-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .or-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .or-empty { color:var(--muted); font-size:.85rem; }
+  .or-row { padding:.35rem 0; border-bottom:1px solid var(--border); font-size:.87rem; }
+  .or-row:last-child { border-bottom:none; }
+  .or-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:flex-start; margin-top:.5rem; }
+  .or-form label { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.2rem; }
+  .or-form .field { display:flex; flex-direction:column; min-width:220px; flex:1; }
+  .or-form input[type=text], .or-form input[type=url], .or-form input[type=email], .or-form select, .or-form textarea {
+    background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit;
+    padding:.4rem .6rem; font-size:.85rem; font-family:inherit; width:100%; box-sizing:border-box; }
+  .or-form textarea { min-height:4.5rem; resize:vertical; }
+  .or-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.45rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; }
+  .or-checklist { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:.4rem; }
+  .or-checklist label { display:flex; align-items:center; gap:.4rem; font-size:.82rem; text-transform:none; color:var(--text); }
+  .or-link { color:var(--accent); text-decoration:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="or-wrap">
+  <div class="or-eyebrow">ECOIQ · OUTREACH ASSESSMENT · OPPORTUNITY #{{ opportunity.pk }}</div>
+  <h1 class="or-h1">{{ opportunity.title }}</h1>
+  <span class="or-badge {% if assessment.suitability_state == 'suitable' or assessment.suitability_state == 'potentially_suitable' %}or-badge-proceed{% elif assessment.suitability_state != 'not_ready' %}or-badge-reject{% endif %}">{{ assessment.get_suitability_state_display }}</span>
+  <span class="or-badge">READINESS: {{ readiness_label }}</span>
+  <a class="or-link" href="{% url 'good_agents:pilot_launchpad' opportunity.pk %}">Pilot Launchpad →</a>
+  {% if readiness_state == 'ready_for_founder_review' %}<a class="or-link" href="{% url 'outreach_readiness:founder_send_review' opportunity.pk %}"> · Founder Send Review →</a>{% endif %}
+
+  {% if assessment.is_rejected %}
+    <div class="or-section" style="border-color:var(--danger);">
+      <h2 style="color:var(--danger);">Rejected — do not proceed</h2>
+      <p>{{ assessment.assessment_notes|linebreaksbr }}</p>
+    </div>
+  {% endif %}
+
+  <div class="or-section">
+    <h2>1. Suitability review</h2>
+    <p class="or-empty">Problem: {{ opportunity.problem_statement }}</p>
+    <form method="post" action="{% url 'outreach_readiness:record_suitability' opportunity.pk %}" class="or-form">
+      {% csrf_token %}
+      {% for q in suitability_questions %}
+        <div class="field" style="min-width:260px;">
+          <label>{{ q.label }}</label>
+          <select name="{{ q.field }}">
+            <option value="" {% if q.value == None %}selected{% endif %}>Unknown</option>
+            <option value="true" {% if q.value == True %}selected{% endif %}>Yes</option>
+            <option value="false" {% if q.value == False %}selected{% endif %}>No</option>
+          </select>
+        </div>
+      {% endfor %}
+      <div class="field" style="min-width:100%;"><label>Notes</label><textarea name="notes">{{ assessment.assessment_notes }}</textarea></div>
+      <div class="field" style="min-width:220px;">
+        <label>Suitability verdict</label>
+        <select name="suitability_state">
+          {% for value, display in suitability_state_choices %}<option value="{{ value }}" {% if assessment.suitability_state == value %}selected{% endif %}>{{ display }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field" style="min-width:100%;"><label>Verdict rationale</label><textarea name="state_rationale" placeholder="Why this verdict?"></textarea></div>
+      <button type="submit" class="or-btn">Save suitability review</button>
+    </form>
+  </div>
+
+  <div class="or-section">
+    <h2>2. Recipient responsibility test</h2>
+    <p class="or-empty">Never contact a publisher merely because its feed generated the signal — classify the organisation's REAL role first.</p>
+    {% if assessment.organisation %}
+      <p><a class="or-link" href="{% url 'capability_graph:organisation_detail' assessment.organisation.pk %}">{{ assessment.organisation.name }} →</a> — current role: <strong>{{ assessment.get_recipient_role_display|default:"Not classified" }}</strong></p>
+    {% else %}
+      <p class="or-empty">No organisation resolved yet — resolve one via <a class="or-link" href="{% url 'good_agents:pilot_launchpad' opportunity.pk %}">Pilot Launchpad</a> first.</p>
+    {% endif %}
+    <form method="post" action="{% url 'outreach_readiness:recipient_responsibility' opportunity.pk %}" class="or-form">
+      {% csrf_token %}
+      <div class="field"><label>Recipient role (real, evidenced)</label>
+        <select name="recipient_role">
+          {% for value, display in recipient_role_choices %}<option value="{{ value }}" {% if assessment.recipient_role == value %}selected{% endif %}>{{ display }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label>Jurisdiction</label><input type="text" name="jurisdiction" value="{{ assessment.jurisdiction }}"></div>
+      <div class="field"><label>Identity confirmed?</label><select name="identity_confirmed"><option value="false">No</option><option value="true" {% if assessment.identity_confirmed %}selected{% endif %}>Yes</option></select></div>
+      <div class="field"><label>Remit confirmed for this issue?</label><select name="remit_confirmed"><option value="false">No</option><option value="true" {% if assessment.remit_confirmed_for_this_issue %}selected{% endif %}>Yes</option></select></div>
+      <div class="field"><label>Geographic relevance confirmed?</label><select name="geographic_relevance_confirmed"><option value="false">No</option><option value="true" {% if assessment.geographic_relevance_confirmed %}selected{% endif %}>Yes</option></select></div>
+      <div class="field" style="min-width:100%;"><label>Remit rationale (evidence-based)</label><textarea name="remit_rationale">{{ assessment.remit_rationale }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Capability evidence reference</label><input type="text" name="capability_evidence_reference" value="{{ assessment.capability_evidence_reference }}" placeholder="e.g. capability_graph.OrganisationCapability:12"></div>
+      <div class="field" style="min-width:100%;"><label>Limitations</label><textarea name="limitations">{{ assessment.limitations }}</textarea></div>
+      <button type="submit" class="or-btn">Save recipient responsibility test</button>
+    </form>
+  </div>
+
+  <div class="or-section">
+    <h2>3. Sensitivity gate</h2>
+    <form method="post" action="{% url 'outreach_readiness:sensitivity_review' opportunity.pk %}" class="or-form">
+      {% csrf_token %}
+      <div class="field" style="min-width:100%;">
+        <label>Sensitivity categories that apply</label>
+        <div class="or-checklist">
+          {% for value, display in sensitivity_category_choices %}
+            <label><input type="checkbox" name="categories" value="{{ value }}" {% if value in assessment.sensitivity_categories %}checked{% endif %}> {{ display }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field" style="min-width:100%;"><label>Notes</label><textarea name="notes">{{ assessment.sensitivity_notes }}</textarea></div>
+      <div class="field"><label>Evidence valid but outreach inappropriate?</label>
+        <select name="outreach_inappropriate"><option value="false">No</option><option value="true" {% if assessment.evidence_valid_but_outreach_inappropriate %}selected{% endif %}>Yes — block outreach</option></select>
+      </div>
+      <button type="submit" class="or-btn">Save sensitivity review</button>
+    </form>
+  </div>
+
+  <div class="or-section">
+    <h2>4. Minimum viable ask</h2>
+    <form method="post" action="{% url 'outreach_readiness:minimum_viable_ask' opportunity.pk %}" class="or-form">
+      {% csrf_token %}
+      <div class="field" style="min-width:100%;"><label>The one request</label><textarea name="ask">{{ assessment.minimum_viable_ask }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Value offered to recipient</label><textarea name="value_offered">{{ assessment.value_offered_to_recipient }}</textarea></div>
+      <button type="submit" class="or-btn">Save ask</button>
+    </form>
+  </div>
+
+  <div class="or-section">
+    <h2>5. Contact route ({{ routes|length }})</h2>
+    {% for r in routes %}
+      <div class="or-row">{{ r.get_route_type_display }} — {{ r.contact_page_or_institutional_email }} {% if r.superseded_at %}<span class="or-badge">SUPERSEDED</span>{% endif %}
+        <div class="or-empty">Source: {{ r.source_reference }} · Checked {{ r.date_checked }} · Accepts this request type: {{ r.accepts_this_request_type|default_if_none:"Unknown" }}</div>
+      </div>
+    {% empty %}<p class="or-empty">No route recorded yet.</p>{% endfor %}
+    <form method="post" action="{% url 'outreach_readiness:add_route' opportunity.pk %}" class="or-form">
+      {% csrf_token %}
+      <div class="field"><label>Contact page / institutional email</label><input type="text" name="contact_page_or_institutional_email" required></div>
+      <div class="field"><label>Route type</label><select name="route_type">{% for value, display in route_type_choices %}<option value="{{ value }}">{{ display }}</option>{% endfor %}</select></div>
+      <div class="field" style="min-width:100%;"><label>Source reference (where published)</label><input type="text" name="source_reference" required></div>
+      <div class="field"><label>Official website</label><input type="url" name="official_website"></div>
+      <div class="field"><label>Jurisdiction</label><input type="text" name="jurisdiction"></div>
+      <div class="field"><label>Accepts this request type?</label><select name="accepts_this_request_type"><option value="false">No / unknown</option><option value="true">Yes</option></select></div>
+      <div class="field" style="min-width:100%;"><label>Published restrictions</label><textarea name="published_restrictions"></textarea></div>
+      <button type="submit" class="or-btn">Record route</button>
+    </form>
+  </div>
+
+  <div class="or-section">
+    <h2>6. Outreach pack / message versions ({{ message_versions|length }})</h2>
+    {% for v in message_versions %}
+      <div class="or-row">
+        <strong>v{{ v.version_number }}</strong> — {{ v.subject }} <span class="or-badge">{{ v.get_approval_status_display }}</span> ({{ v.word_count }} words)
+        {% if v.risk_review %}<span class="or-badge {% if v.risk_review.all_passed %}or-badge-proceed{% else %}or-badge-reject{% endif %}">RISK {% if v.risk_review.all_passed %}PASSED{% else %}INCOMPLETE{% endif %}</span>{% endif %}
+        <div class="or-empty">Fact: {{ v.fact_points|join:" · " }}</div>
+        <div class="or-empty">Inference: {{ v.inference_points|join:" · " }}</div>
+        <div class="or-empty">Request: {{ v.the_request }}</div>
+        <div class="or-empty">Unknown: {{ v.unknowns|join:" · " }}</div>
+        {% if v.approval_status == 'draft' %}
+          <form method="post" action="{% url 'outreach_readiness:mark_message_reviewed' v.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="or-btn">Mark reviewed</button></form>
+        {% endif %}
+        {% if v.approval_status == 'reviewed' and v.risk_review.all_passed %}
+          <form method="post" action="{% url 'outreach_readiness:founder_approve_message' v.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="or-btn">Founder-approve content</button></form>
+        {% endif %}
+      </div>
+    {% empty %}<p class="or-empty">No message drafted yet.</p>{% endfor %}
+
+    {% if assessment.may_proceed_to_message %}
+    <form method="post" action="{% url 'outreach_readiness:create_message_version' opportunity.pk %}" class="or-form">
+      {% csrf_token %}
+      <div class="field" style="min-width:100%;"><label>Subject</label><input type="text" name="subject"></div>
+      <div class="field" style="min-width:100%;"><label>Fact points (one per line)</label><textarea name="fact_points"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Inference points (one per line)</label><textarea name="inference_points"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>The request</label><textarea name="the_request">{{ assessment.minimum_viable_ask }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Unknowns (one per line)</label><textarea name="unknowns"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Value offered</label><textarea name="value_offered">{{ assessment.value_offered_to_recipient }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Body text (target 100-180 words)</label><textarea name="body_text" style="min-height:8rem;"></textarea></div>
+      <div class="field"><label>Sender name</label><input type="text" name="sender_name"></div>
+      <div class="field"><label>Sender role</label><input type="text" name="sender_role"></div>
+      <div class="field"><label>Sender organisation</label><input type="text" name="sender_organisation" value="EcoIQ"></div>
+      <div class="field"><label>Reply-to</label><input type="email" name="reply_to"></div>
+      <div class="field"><label>Sender website</label><input type="url" name="sender_website"></div>
+      <div class="field" style="min-width:100%;"><label>Signature block</label><textarea name="signature_block"></textarea></div>
+      <div class="field" style="min-width:100%;"><label>Change summary</label><input type="text" name="change_summary"></div>
+      <button type="submit" class="or-btn">Save new message version</button>
+    </form>
+    {% else %}
+      <p class="or-empty">Cannot draft a message until suitability review finds this candidate SUITABLE or POTENTIALLY_SUITABLE.</p>
+    {% endif %}
+  </div>
+
+  {% if latest_version %}
+  <div class="or-section">
+    <h2>7. Risk checklist — v{{ latest_version.version_number }}</h2>
+    <form method="post" action="{% url 'outreach_readiness:record_risk_review' latest_version.pk %}" class="or-form">
+      {% csrf_token %}
+      <div class="or-checklist" style="min-width:100%;">
+        {% for item in risk_checklist_items %}
+          <label><input type="checkbox" name="{{ item.field }}" value="true" {% if item.checked %}checked{% endif %}> {{ item.label }}</label>
+        {% endfor %}
+      </div>
+      <div class="field" style="min-width:100%;"><label>Notes</label><textarea name="notes">{{ latest_risk_review.notes }}</textarea></div>
+      <button type="submit" class="or-btn">Save risk review</button>
+    </form>
+  </div>
+
+  <div class="or-section">
+    <h2>8. Dry run</h2>
+    {% if latest_dry_run %}
+      <p><span class="or-badge {% if latest_dry_run.validation_result == 'pass' %}or-badge-proceed{% else %}or-badge-reject{% endif %}">{{ latest_dry_run.get_validation_result_display }}</span> transport: {{ latest_dry_run.get_transport_mode_display }}</p>
+      {% if latest_dry_run.validation_details %}<ul>{% for d in latest_dry_run.validation_details %}<li class="or-empty">{{ d }}</li>{% endfor %}</ul>{% endif %}
+      <div class="or-empty">Recipient: {{ latest_dry_run.recipient_route_snapshot }}</div>
+      <div class="or-empty">Subject: {{ latest_dry_run.subject_snapshot }}</div>
+    {% else %}<p class="or-empty">No dry run performed yet.</p>{% endif %}
+    <form method="post" action="{% url 'outreach_readiness:run_dry_run' latest_version.pk %}">
+      {% csrf_token %}<button type="submit" class="or-btn">Run dry run (never sends)</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="or-section">
+    <h2>9. Review roles</h2>
+    {% for role, users in role_summary.by_role.items %}<div class="or-row">{{ role }}: {% for u in users %}{{ u }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% empty %}<p class="or-empty">No roles recorded yet.</p>{% endfor %}
+    {% if role_summary.single_reviewer_limitation %}<p class="or-badge or-badge-reject">SINGLE_REVIEWER_LIMITATION — the same person holds more than one role; do not present this as independent review.</p>{% endif %}
+  </div>
+
+  <div class="or-section">
+    <h2>10. Prior outreach / contact history</h2>
+    {% for h in prior_history %}<div class="or-row">{{ h }}</div>{% empty %}<p class="or-empty">No prior contact history found.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

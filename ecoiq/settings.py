@@ -296,6 +296,13 @@ INSTALLED_APPS = [
     # RoutingCandidate as its anchor and good_agents/PR5's project/connection
     # bridges for actual promotion; never a generic messaging platform.
     'collaboration_rooms',
+    # First Real Outreach Readiness (PR12) — a stricter, separate
+    # governance layer for "the first time EcoIQ contacts a real external
+    # organisation": candidate suitability review, recipient responsibility
+    # test, route provenance, message versioning, risk review, dry run,
+    # founder send decision. Deliberately does not reuse PR5's OutreachDraft
+    # send path — no code here can perform a real send.
+    'outreach_readiness',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -451,6 +458,15 @@ if EMAIL_BACKEND == _smtp_backend and not EMAIL_HOST_USER:
         RuntimeWarning,
         stacklevel=1,
     )
+
+# ── First Real Outreach Readiness (PR12) ──────────────────────────────────────
+# The master switch for ever performing a real send to a genuinely external
+# organisation via outreach_readiness. Hardcoded False, not read from the
+# environment — flipping it on is a deliberate code change for a later,
+# explicit PR to make (with its own review), never a deploy-time config
+# toggle someone could accidentally leave on. No code in this PR reads this
+# flag to perform a send; it exists so that later PR can gate on it.
+EXTERNAL_OUTREACH_ENABLED = False
 
 # Max upload size: 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024

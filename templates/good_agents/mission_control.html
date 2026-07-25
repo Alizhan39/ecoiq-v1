@@ -347,6 +347,18 @@
     {% else %}<p class="mc-empty">The featured opportunity has no resolved organisation yet — participation is not assessed until Capability Graph resolution happens.</p>{% endif %}
   </section>
 
+  <section id="outreach-readiness" class="mc-section">
+    <h2>First real outreach readiness</h2>
+    {% if outreach_readiness_summary %}
+      <div class="mc-row"><span>Recipient appropriate?</span><span class="mc-badge {% if outreach_readiness_summary.suitability_state_raw == 'suitable' or outreach_readiness_summary.suitability_state_raw == 'potentially_suitable' %}mc-badge-ok{% endif %}">{{ outreach_readiness_summary.suitability_state }} ({{ outreach_readiness_summary.recipient_role }})</span></div>
+      <div class="mc-row"><span>Sensitive?</span><span class="mc-badge">{{ outreach_readiness_summary.is_sensitive|yesno:"Yes,No" }}</span></div>
+      <div class="mc-row"><span>Readiness</span><span class="mc-badge">{{ outreach_readiness_summary.readiness_label }}</span></div>
+      <div class="mc-row"><span>Founder decision pending?</span><span class="mc-badge {% if outreach_readiness_summary.founder_decision %}mc-badge-ok{% endif %}">{{ outreach_readiness_summary.founder_decision|default:"Pending" }}</span></div>
+      <a class="mc-badge" href="{{ outreach_readiness_summary.link.url }}">{{ outreach_readiness_summary.link.label }} →</a>
+      {% if outreach_readiness_summary.founder_review_link %}<a class="mc-badge" href="{{ outreach_readiness_summary.founder_review_link.url }}">{{ outreach_readiness_summary.founder_review_link.label }} →</a>{% endif %}
+    {% else %}<p class="mc-empty">No outreach suitability review started for the featured opportunity yet.</p>{% endif %}
+  </section>
+
   <section id="map" class="mc-section">
     <h2>Global Good Map</h2>
     <p class="mc-empty">Reuses the existing map data API's region-level fields — never a precise coordinate or individual identifier, and no globe/3D renderer, per this PR's own scope. <a class="mc-badge" href="{% url 'good_agents:good_map_api' %}">Raw data →</a></p>

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Founder Send Review — {{ opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}The single final review surface before any real external outreach. The system may recommend; only the founder decides.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .fsr-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .fsr-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .fsr-h1 { font-size:1.4rem; font-weight:800; margin:.3rem 0 1rem; }
+  .fsr-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .fsr-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .fsr-empty { color:var(--muted); font-size:.85rem; }
+  .fsr-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; }
+  .fsr-badge-send { color:var(--accent); border-color:var(--accent); }
+  .fsr-badge-revise { color:var(--warn); border-color:var(--warn); }
+  .fsr-badge-nosend { color:var(--danger); border-color:var(--danger); }
+  .fsr-message { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:6px; padding:1rem; white-space:pre-wrap; font-size:.88rem; }
+  .fsr-decision { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.8rem; }
+  .fsr-btn { border:1px solid var(--border); border-radius:6px; padding:.5rem 1rem; font-size:.82rem; font-weight:700; cursor:pointer; background:transparent; color:var(--text); }
+  .fsr-btn-send { background:var(--accent); color:#04120c; border-color:var(--accent); }
+  .fsr-btn-nosend { background:var(--danger); color:#fff; border-color:var(--danger); }
+  .fsr-noswitch { font-size:.75rem; color:var(--muted); border-top:1px solid var(--border); margin-top:1rem; padding-top:.6rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fsr-wrap">
+  <div class="fsr-eyebrow">ECOIQ · FOUNDER SEND REVIEW</div>
+  <h1 class="fsr-h1">{{ opportunity.title }}</h1>
+
+  <div class="fsr-section">
+    <h2>System recommendation</h2>
+    <span class="fsr-badge {% if recommendation == 'send' %}fsr-badge-send{% elif recommendation == 'revise' %}fsr-badge-revise{% else %}fsr-badge-nosend{% endif %}">{{ recommendation|upper }}</span>
+    <p class="fsr-empty">This is a computed suggestion, not a decision. Only the founder's explicit choice below constitutes a real decision.</p>
+    <ul>{% for r in recommendation_reasons %}<li class="fsr-empty">{{ r }}</li>{% endfor %}</ul>
+  </div>
+
+  <div class="fsr-section">
+    <h2>Why this pilot / organisation</h2>
+    <p>{{ opportunity.problem_statement }}</p>
+    <p><strong>Recipient role:</strong> {{ assessment.get_recipient_role_display|default:"Not classified" }} · <strong>Suitability:</strong> {{ assessment.get_suitability_state_display }}</p>
+    <p class="fsr-empty">Remit rationale: {{ assessment.remit_rationale|default:"Not recorded." }}</p>
+    <p class="fsr-empty">Limitations: {{ assessment.limitations|default:"Not recorded." }}</p>
+  </div>
+
+  <div class="fsr-section">
+    <h2>Sensitivity assessment</h2>
+    <p>Sensitive: {{ assessment.is_sensitive }} {% if assessment.sensitivity_categories %}({{ assessment.sensitivity_categories|join:", " }}){% endif %}</p>
+    <p class="fsr-empty">{{ assessment.sensitivity_notes|default:"No sensitivity notes recorded." }}</p>
+  </div>
+
+  {% if latest_version %}
+  <div class="fsr-section">
+    <h2>Exact message — version {{ latest_version.version_number }} ({{ latest_version.get_approval_status_display }})</h2>
+    <p><strong>Subject:</strong> {{ latest_version.subject }}</p>
+    <div class="fsr-message">{{ latest_version.body_text }}</div>
+    <p class="fsr-empty">{{ latest_version.word_count }} words · Sender: {{ latest_version.sender_name }}, {{ latest_version.sender_role }}, {{ latest_version.sender_organisation }} · Reply-to: {{ latest_version.reply_to }}</p>
+    <p class="fsr-empty">Facts: {{ latest_version.fact_points|join:" · " }}</p>
+    <p class="fsr-empty">Inferences: {{ latest_version.inference_points|join:" · " }}</p>
+    <p class="fsr-empty">Request: {{ latest_version.the_request }}</p>
+    <p class="fsr-empty">Unknowns: {{ latest_version.unknowns|join:" · " }}</p>
+  </div>
+
+  <div class="fsr-section">
+    <h2>Risk checklist</h2>
+    {% if risk_review %}
+      <p><span class="fsr-badge {% if risk_review.all_passed %}fsr-badge-send{% else %}fsr-badge-nosend{% endif %}">{% if risk_review.all_passed %}ALL PASSED{% else %}INCOMPLETE{% endif %}</span></p>
+      {% if risk_review.failed_items %}<p class="fsr-empty">Outstanding: {{ risk_review.failed_items|join:", " }}</p>{% endif %}
+    {% else %}<p class="fsr-empty">No risk review recorded.</p>{% endif %}
+  </div>
+
+  <div class="fsr-section">
+    <h2>Dry-run output</h2>
+    {% if latest_dry_run %}
+      <p><span class="fsr-badge {% if latest_dry_run.validation_result == 'pass' %}fsr-badge-send{% else %}fsr-badge-nosend{% endif %}">{{ latest_dry_run.get_validation_result_display }}</span> — transport: {{ latest_dry_run.get_transport_mode_display }}</p>
+      <p class="fsr-empty">Recipient: {{ latest_dry_run.recipient_route_snapshot }}</p>
+      {% if latest_dry_run.validation_details %}<ul>{% for d in latest_dry_run.validation_details %}<li class="fsr-empty">{{ d }}</li>{% endfor %}</ul>{% endif %}
+    {% else %}<p class="fsr-empty">No dry run performed.</p>{% endif %}
+  </div>
+  {% else %}
+    <div class="fsr-section"><p class="fsr-empty">No message version exists — suitability review did not clear this candidate to draft one.</p></div>
+  {% endif %}
+
+  <div class="fsr-section">
+    <h2>Human review roles</h2>
+    {% for role, users in role_summary.by_role.items %}<p class="fsr-empty">{{ role }}: {% for u in users %}{{ u }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endfor %}
+    {% if role_summary.single_reviewer_limitation %}<p class="fsr-badge fsr-badge-nosend">SINGLE_REVIEWER_LIMITATION</p>{% endif %}
+  </div>
+
+  <div class="fsr-section">
+    <h2>Prior contact history</h2>
+    {% for h in prior_history %}<p class="fsr-empty">{{ h }}</p>{% empty %}<p class="fsr-empty">None found.</p>{% endfor %}
+  </div>
+
+  <div class="fsr-section">
+    <h2>Founder decision</h2>
+    {% if existing_decision.decision %}
+      <p><span class="fsr-badge {% if existing_decision.decision == 'send' %}fsr-badge-send{% elif existing_decision.decision == 'revise' %}fsr-badge-revise{% else %}fsr-badge-nosend{% endif %}">{{ existing_decision.get_decision_display|upper }}</span> — {{ existing_decision.decided_by }}, {{ existing_decision.decided_at }}</p>
+      <p class="fsr-empty">{{ existing_decision.rationale }}</p>
+    {% endif %}
+    <form method="post" action="{% url 'outreach_readiness:record_founder_decision' opportunity.pk %}">
+      {% csrf_token %}
+      <textarea name="rationale" placeholder="Rationale for this decision" style="width:100%;min-height:4rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;color:inherit;padding:.5rem;box-sizing:border-box;"></textarea>
+      <div class="fsr-decision">
+        <button type="submit" name="decision" value="send" class="fsr-btn fsr-btn-send">SEND</button>
+        <button type="submit" name="decision" value="revise" class="fsr-btn">REVISE</button>
+        <button type="submit" name="decision" value="do_not_send" class="fsr-btn fsr-btn-nosend">DO NOT SEND</button>
+      </div>
+    </form>
+    <p class="fsr-noswitch">
+      EXTERNAL_OUTREACH_ENABLED is False in this environment. Recording a SEND decision here does not send anything —
+      it records the founder's decision only. A real send requires a separate, later, explicit action outside this PR.
+    </p>
+  </div>
+</div>
+{% endblock %}

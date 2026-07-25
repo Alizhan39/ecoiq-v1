@@ -159,5 +159,59 @@
       {% empty %}<p class="ga-empty">Nothing currently blocked.</p>{% endfor %}
     </div>
   </div>
+
+  <h1 class="ga-h1" style="margin-top:2rem;">First Real Outreach Readiness</h1>
+  <p class="ga-empty">No vanity counts — an opportunity appears in exactly one queue, computed live from real assessment rows. Nothing here can send a real message.</p>
+
+  <div class="ga-grid">
+    <div class="ga-section">
+      <h2>Needs outreach suitability review <span class="ga-count">{{ outreach_readiness_queues.needs_suitability_review|length }}</span></h2>
+      {% for o in outreach_readiness_queues.needs_suitability_review %}
+        <div class="ga-row"><a href="{% url 'outreach_readiness:assessment_detail' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing awaiting suitability review.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Needs recipient resolution <span class="ga-count">{{ outreach_readiness_queues.needs_recipient_resolution|length }}</span></h2>
+      {% for o in outreach_readiness_queues.needs_recipient_resolution %}
+        <div class="ga-row"><a href="{% url 'outreach_readiness:assessment_detail' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing awaiting recipient resolution.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Needs route verification <span class="ga-count">{{ outreach_readiness_queues.needs_route_verification|length }}</span></h2>
+      {% for o in outreach_readiness_queues.needs_route_verification %}
+        <div class="ga-row"><a href="{% url 'outreach_readiness:assessment_detail' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing awaiting route verification.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Needs risk review <span class="ga-count">{{ outreach_readiness_queues.needs_risk_review|length }}</span></h2>
+      {% for o in outreach_readiness_queues.needs_risk_review %}
+        <div class="ga-row"><a href="{% url 'outreach_readiness:assessment_detail' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing awaiting risk review.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Needs message review <span class="ga-count">{{ outreach_readiness_queues.needs_message_review|length }}</span></h2>
+      {% for o in outreach_readiness_queues.needs_message_review %}
+        <div class="ga-row"><a href="{% url 'outreach_readiness:assessment_detail' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing awaiting message review.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Ready for founder review <span class="ga-count">{{ outreach_readiness_queues.ready_for_founder_review|length }}</span></h2>
+      {% for o in outreach_readiness_queues.ready_for_founder_review %}
+        <div class="ga-row"><a href="{% url 'outreach_readiness:founder_send_review' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing ready for founder review.</p>{% endfor %}
+    </div>
+
+    <div class="ga-section">
+      <h2>Rejected for outreach <span class="ga-count">{{ outreach_readiness_queues.rejected_for_outreach|length }}</span></h2>
+      {% for o in outreach_readiness_queues.rejected_for_outreach %}
+        <div class="ga-row"><a href="{% url 'outreach_readiness:assessment_detail' o.pk %}">{{ o.title }}</a></div>
+      {% empty %}<p class="ga-empty">Nothing rejected for outreach.</p>{% endfor %}
+    </div>
+  </div>
 </div>
 {% endblock %}
