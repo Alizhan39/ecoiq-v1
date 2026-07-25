@@ -79,6 +79,14 @@ class Command(BaseCommand):
             idempotency_key = f'good-while-you-sleep:{mission.pk}:{run_date}'
             run, brief = run_global_discovery(mission, list(raw_signals), idempotency_key=idempotency_key)
 
+            # PR13 Phase 23 — per-provider observability. Local import (same
+            # "easy to unwind" pattern already used by
+            # good_agents.services.mission_control's partner_participation
+            # integration): good_agents itself never depends on
+            # public_need_discovery.
+            from public_need_discovery.services.provider_metrics import record_run_metrics
+            record_run_metrics(run, provider_reports)
+
             self.stdout.write(self.style.SUCCESS(f'\n=== {mission.name} — GoodDiscoveryRun #{run.pk} ({run.status}) ==='))
             self.stdout.write(
                 f'  signals_reviewed={run.signals_reviewed} duplicates_removed={run.duplicates_removed} '

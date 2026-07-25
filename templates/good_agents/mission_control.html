@@ -272,6 +272,18 @@
     <p class="mc-empty">Last successful ingestion: {{ mission_health.last_successful_ingestion|date:"Y-m-d H:i"|default:"Never" }}</p>
   </section>
 
+  <section id="actionable-discovery" class="mc-section">
+    <h2>Actionable public-need discovery <a href="{% url 'public_need_discovery:candidate_queue' %}">Full queue →</a></h2>
+    <div class="mc-grid">
+      <div class="mc-kpi"><div class="n">{{ actionable_discovery_summary.informational_only }}</div><div class="l">Informational only</div></div>
+      <div class="mc-kpi"><div class="n">{{ actionable_discovery_summary.potentially_actionable }}</div><div class="l">Potentially actionable</div></div>
+      <div class="mc-kpi"><div class="n">{{ actionable_discovery_summary.actionability_qualified }}</div><div class="l">Actionability-qualified</div></div>
+      <div class="mc-kpi"><div class="n">{{ actionable_discovery_summary.use_official_process }}</div><div class="l">Use official process</div></div>
+      <div class="mc-kpi"><div class="n">{{ actionable_discovery_summary.outreach_suitable }}</div><div class="l">Outreach-suitable</div></div>
+      <div class="mc-kpi"><div class="n">{{ actionable_discovery_summary.sensitive_or_rejected }}</div><div class="l">Sensitive / rejected</div></div>
+    </div>
+  </section>
+
   <section id="comparison" class="mc-section">
     <h2>Mission comparison</h2>
     {% for row in mission_comparison %}

@@ -487,6 +487,27 @@ def mission_health():
     }
 
 
+# --- 20b. Actionable Public-Need Discovery (PR13 Phase 21) --------------------
+
+def actionable_discovery_summary():
+    """
+    Compact real counts across every real PilotCandidateAssessment — no
+    vanity figures, local import (same "easy to unwind" discipline as
+    partner_participation_summary above).
+    """
+    from public_need_discovery.models import ACTIONABILITY_TERMINAL_REJECTED_STATES, PilotCandidateAssessment
+
+    candidates = PilotCandidateAssessment.objects.all()
+    return {
+        'informational_only': candidates.filter(actionability_state='informational_only').count(),
+        'potentially_actionable': candidates.filter(actionability_state='potentially_actionable').count(),
+        'actionability_qualified': candidates.filter(actionability_qualified=True).count(),
+        'use_official_process': candidates.filter(use_official_process=True).count(),
+        'outreach_suitable': candidates.filter(outreach_suitable=True).count(),
+        'sensitive_or_rejected': candidates.filter(actionability_state__in=ACTIONABILITY_TERMINAL_REJECTED_STATES).count(),
+    }
+
+
 # --- 21. Mission comparison ---------------------------------------------------
 
 def mission_comparison():

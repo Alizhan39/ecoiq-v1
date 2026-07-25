@@ -303,6 +303,15 @@ INSTALLED_APPS = [
     # founder send decision. Deliberately does not reuse PR5's OutreachDraft
     # send path — no code here can perform a real send.
     'outreach_readiness',
+    # Actionable Public-Need Discovery (PR13) — sits between discovery
+    # (GoodOpportunity, already evidence-gated) and outreach_readiness
+    # (which governs contacting a real organisation): resolves jurisdiction,
+    # separates evidence-publisher from responsible-authority/implementer/
+    # funder roles, generates the smallest legitimate next action, and
+    # prefers an existing official public process over EcoIQ outreach where
+    # one exists. Never weakens or bypasses outreach_readiness's own
+    # recipient-responsibility test.
+    'public_need_discovery',
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

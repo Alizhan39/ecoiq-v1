@@ -177,6 +177,25 @@
   </div>
 
   <div class="pl-section">
+    <h2>Actionable public-need discovery</h2>
+    {% if actionability_summary %}
+      <p><span class="pl-badge">{{ actionability_summary.actionability_state }}</span>
+         {% if actionability_summary.discovery_qualified %}<span class="pl-badge">DISCOVERY QUALIFIED</span>{% endif %}
+         {% if actionability_summary.actionability_qualified %}<span class="pl-badge">ACTIONABILITY QUALIFIED</span>{% endif %}
+         {% if actionability_summary.outreach_suitable %}<span class="pl-badge">OUTREACH SUITABLE</span>{% endif %}</p>
+      <p class="pl-empty">Jurisdiction: {{ actionability_summary.jurisdiction|default:"NO_JURISDICTION" }} · Capital required now: {{ actionability_summary.capital_required_now }}</p>
+      {% if actionability_summary.use_official_process %}
+        <p class="pl-empty">Correct action: use the existing official process — <strong>{{ actionability_summary.official_process_type }}</strong>. No EcoIQ outreach required.</p>
+      {% endif %}
+      {% for b in actionability_summary.blockers %}<p class="pl-empty">Blocker: {{ b.code }} — {{ b.detail }}</p>{% endfor %}
+      <a class="pl-btn" href="{{ actionability_summary.link.url }}">{{ actionability_summary.link.label }} →</a>
+    {% else %}
+      <p class="pl-empty">No actionability review started yet — an evidence publisher is not automatically the responsible recipient.</p>
+      <a class="pl-btn" href="{% url 'public_need_discovery:candidate_detail' opportunity.pk %}">Start actionability review →</a>
+    {% endif %}
+  </div>
+
+  <div class="pl-section">
     <h2>First real outreach readiness</h2>
     {% if outreach_readiness_summary %}
       <p><span class="pl-badge">{{ outreach_readiness_summary.suitability_state }}</span>
