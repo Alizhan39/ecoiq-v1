@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}Pilot Launchpad — {{ opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}One-screen operational truth for the flagship real-world pilot: evidence, principles, Better Way, organisation matches, blockers, next action.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pl-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946; --blocked:#e63946;
+    max-width:1180px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pl-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pl-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 .6rem; }
+  .pl-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; margin:.1rem .2rem .1rem 0; }
+  .pl-badge-real { color:var(--accent); border-color:var(--accent); }
+  .pl-badge-controlled { color:var(--warn); border-color:var(--warn); }
+  .pl-badge-blocked { color:var(--danger); border-color:var(--danger); }
+  .pl-primary-action { background:var(--accent); color:#04120c; border-radius:8px; padding:.8rem 1.1rem; font-weight:800; margin:.8rem 0 1.2rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+  .pl-primary-action a { color:#04120c; }
+  .pl-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pl-section h2 { font-size:.9rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pl-row { display:flex; justify-content:space-between; gap:1rem; padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.87rem; }
+  .pl-row:last-child { border-bottom:none; }
+  .pl-empty { color:var(--muted); font-size:.85rem; }
+  .pl-chain { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .pl-node { border:1px solid var(--border); border-radius:6px; padding:.4rem .6rem; font-size:.72rem; min-width:110px; }
+  .pl-node-reached { border-color:var(--accent); }
+  .pl-node-missing { opacity:.55; }
+  .pl-node .stage { font-weight:700; }
+  .pl-node .prov { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.6rem; color:var(--muted); display:block; margin-top:.2rem; }
+  .pl-scorecard { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap:.5rem; }
+  .pl-check { border:1px solid var(--border); border-radius:6px; padding:.5rem .7rem; font-size:.8rem; display:flex; justify-content:space-between; gap:.5rem; }
+  .pl-state-READY { color:var(--accent); }
+  .pl-state-PARTIAL { color:var(--warn); }
+  .pl-state-BLOCKED { color:var(--danger); }
+  .pl-state-UNKNOWN, .pl-state-NOT_APPLICABLE { color:var(--muted); }
+  .pl-blocker { border-left:3px solid var(--danger); padding:.5rem .8rem; margin-bottom:.5rem; background:rgba(230,57,70,.06); border-radius:0 6px 6px 0; }
+  .pl-blocker .code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.68rem; color:var(--danger); }
+  .pl-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.35rem .8rem; font-size:.75rem; font-weight:700; cursor:pointer; text-decoration:none; }
+  .pl-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.4rem; }
+  .pl-form input { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit; padding:.35rem .6rem; font-size:.8rem; font-family:inherit; }
+  .pl-disclaimer { font-size:.72rem; color:var(--muted); border-top:1px solid var(--border); margin-top:1rem; padding-top:.6rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pl-wrap">
+  <div class="pl-eyebrow">ECOIQ · PILOT LAUNCHPAD · OPPORTUNITY #{{ opportunity.pk }}</div>
+  <h1 class="pl-h1">{{ opportunity.title }}</h1>
+  <span class="pl-badge">{{ opportunity.get_status_display }}</span>
+  {% if opportunity.zero_capital_possible %}<span class="pl-badge">ZERO-CAPITAL PATH</span>{% endif %}
+  <a class="pl-badge" href="{% url 'good_agents:pilot_dossier' opportunity.pk %}">Export dossier →</a>
+  <a class="pl-badge" href="{% url 'good_agents:pilot_launchpad_public' opportunity.pk %}">Public-safe view →</a>
+  <a class="pl-badge" href="{% url 'good_agents:opportunity_detail' opportunity.pk %}">Full opportunity record →</a>
+
+  <div class="pl-primary-action">
+    <span>NEXT LEGITIMATE ACTION: {{ next_best_action.primary.label }}</span>
+    {% if next_best_action.primary.link.url %}
+      <form method="post" action="{{ next_best_action.primary.link.url }}">{% csrf_token %}<button type="submit" class="pl-btn" style="background:#04120c;color:var(--accent);">{{ next_best_action.primary.link.label }} →</button></form>
+    {% endif %}
+  </div>
+  {% for s in next_best_action.secondary %}
+    <p class="pl-empty">
+      Also possible: {{ s.label }}
+      {% if s.link.url %}— <form method="post" action="{{ s.link.url }}" style="display:inline;">{% csrf_token %}<button type="submit" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:0;font:inherit;">{{ s.link.label }}</button></form>{% endif %}
+    </p>
+  {% endfor %}
+
+  <div class="pl-section">
+    <h2>Truth chain</h2>
+    <div class="pl-chain">
+      {% for node in truth_chain %}
+        <div class="pl-node {% if node.reached %}pl-node-reached{% else %}pl-node-missing{% endif %}">
+          <span class="stage">{{ node.stage }}</span><br>
+          <span class="pl-empty" style="font-size:.7rem;">{{ node.detail|truncatechars:40 }}</span>
+          <span class="prov">{{ node.provenance }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pl-section">
+    <h2>Pilot readiness scorecard</h2>
+    <div class="pl-scorecard">
+      {% for check in readiness_scorecard %}
+        <div class="pl-check"><span>{{ check.item }}</span><span class="pl-state-{{ check.state }}">{{ check.state }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pl-section">
+    <h2>Blockers ({{ blockers|length }})</h2>
+    {% for b in blockers %}
+      <div class="pl-blocker">
+        <span class="code">{{ b.code }}</span> — {{ b.what_missing }}
+        <div class="pl-empty">{{ b.why_it_matters }} Resolver: {{ b.who_can_resolve }}.</div>
+        {% if b.resolving_action.url %}
+          <form method="post" action="{{ b.resolving_action.url }}" style="display:inline;">{% csrf_token %}<button type="submit" class="pl-btn">{{ b.resolving_action.label }} →</button></form>
+        {% endif %}
+      </div>
+    {% empty %}<p class="pl-empty">No active blockers.</p>{% endfor %}
+  </div>
+
+  <div class="pl-section">
+    <h2>Problem &amp; evidence</h2>
+    <p>{{ opportunity.problem_statement }}</p>
+    <p class="pl-empty">Evidence references: {{ opportunity.evidence_refs|length }}{% if opportunity.insufficient_evidence %} — flagged INSUFFICIENT{% endif %}</p>
+  </div>
+
+  <div class="pl-section">
+    <h2>114-principle relevance ({{ principle_relevance|length }})</h2>
+    {% for p in principle_relevance %}
+      <div class="pl-row"><span>{{ p.principle }} <span class="pl-badge">{{ p.relationship_type }}</span></span><span>{{ p.confidence|floatformat:0 }}% · {{ p.provenance }}</span></div>
+      {% if p.concern %}<div class="pl-empty">↳ {{ p.concern }}</div>{% endif %}
+    {% empty %}<p class="pl-empty">No principles activated.</p>{% endfor %}
+  </div>
+
+  <div class="pl-section">
+    <h2>The Better Way</h2>
+    {% for o in better_way_options %}
+      <div class="pl-row"><span>{{ o.pathway_type }}</span><span>{{ o.decision_state }}</span></div>
+      <div class="pl-empty">Benefit: {{ o.expected_benefit }} · Cost: {{ o.known_cost }} · Risks: {{ o.risks }}</div>
+    {% empty %}<p class="pl-empty">No action pathway proposed yet.</p>{% endfor %}
+  </div>
+
+  <div class="pl-section">
+    <h2>Organisation matches (Capability Graph)</h2>
+    {% for m in capability_graph_matches %}
+      <div class="pl-row">
+        <span><a href="{% url 'capability_graph:organisation_detail' m.organisation.pk %}" style="color:var(--accent);">{{ m.organisation.name }}</a>
+          <span class="pl-badge {% if m.provenance_label == 'CONTROLLED_TEST_ORGANISATION' %}pl-badge-controlled{% elif m.provenance_label == 'REAL_PARTICIPATING_ORGANISATION' %}pl-badge-real{% endif %}">{{ m.provenance_label }}</span></span>
+        <span>{{ m.resolution_status }}</span>
+      </div>
+      <div class="pl-empty">Why relevant: {{ m.why_relevant }} · Limitations: {{ m.limitations }}</div>
+      {% if m.best_route %}<div class="pl-empty">Route: {{ m.best_route.get_route_type_display }} — {{ m.best_route.route_value }} (verified {{ m.best_route.verified_at|date:"Y-m-d"|default:"date unknown" }})</div>{% endif %}
+    {% empty %}<p class="pl-empty">No organisation identified yet.</p>{% endfor %}
+  </div>
+
+  <div class="pl-section">
+    <h2>Contact / outreach state</h2>
+    <p><span class="pl-badge">{{ contact_route_state.label }}</span> {{ contact_route_state.detail }}</p>
+    {% if not contact_route_state.contact and capability_graph_matches.0.responsible_party %}
+    <form method="post" action="{% url 'good_agents:add_contact' capability_graph_matches.0.responsible_party.pk %}" class="pl-form">
+      {% csrf_token %}
+      <input type="text" name="contact_role" placeholder="Role (e.g. Press office)">
+      <input type="text" name="public_contact_channel" placeholder="Public contact channel (URL/email/phone)" required style="min-width:220px;">
+      <input type="text" name="source_of_contact_info" placeholder="Where this was published" required style="min-width:180px;">
+      <label style="font-size:.75rem;color:var(--muted);"><input type="checkbox" name="verified" value="true"> Verified today</label>
+      <button type="submit" class="pl-btn">Record contact route</button>
+    </form>
+    {% elif not contact_route_state.contact %}
+      <p class="pl-empty">No matched organisation to attach a contact route to yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="pl-section">
+    <h2>Outreach pack (human-reviewable draft content)</h2>
+    <p>{{ outreach_pack.why_contacting }}</p>
+    <p class="pl-empty">Ask: {{ outreach_pack.specific_ask }}</p>
+    <p class="pl-empty">Not claiming: {{ outreach_pack.not_claiming|join:" " }}</p>
+  </div>
+
+  {% if partner_participation_summary %}
+  <div class="pl-section">
+    <h2>Partner participation &amp; collaboration</h2>
+    <p>Routing ready: {{ partner_participation_summary.routing_ready }} · State: {{ partner_participation_summary.connection_consent_state }}</p>
+    {% if partner_participation_summary.collaboration_room %}
+      <a class="pl-btn" href="{% url 'collaboration_rooms:room_detail' partner_participation_summary.collaboration_room.pk %}">Open collaboration room →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="pl-section">
+    <h2>Capital &amp; MRV</h2>
+    <p>Capital required: {% if capital_snapshot.capital_required_usd %}${{ capital_snapshot.capital_required_usd|floatformat:0 }}{% else %}Unknown{% endif %} · Zero-capital possible: {{ capital_snapshot.zero_capital_possible }}</p>
+    <p class="pl-empty">Decision state: {{ capital_snapshot.decision_state }} · Human gate: {{ capital_snapshot.human_gate }}</p>
+    <p class="pl-empty">Measured values: {{ mrv_plan.measured_values }}</p>
+    <p class="pl-empty">Verified values: {{ mrv_plan.verified_values }}</p>
+  </div>
+
+  <div class="pl-disclaimer">
+    This page reflects real, current EcoIQ records only. No partnership, funding commitment, contract,
+    or impact is implied by any state shown above unless independently verified.
+  </div>
+</div>
+{% endblock %}

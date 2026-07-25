@@ -29,6 +29,20 @@ PUBLISHER_TO_PARTY_TYPE = {
     'USGS (US Geological Survey)': 'research_institution',
 }
 
+# PR11 — the real, stable jurisdiction each KNOWN publisher's Capability
+# Graph Organisation was actually seeded under (see
+# capability_graph/management/commands/seed_capability_graph_from_real_providers.py).
+# Fixes a real duplication bug caught during PR11's flagship pilot walk:
+# using a per-event `signal.region` (e.g. one earthquake's epicentre) as
+# the ORGANISATION's overall jurisdiction created a fresh, capability-less
+# Organisation row per event instead of resolving to the one real,
+# evidence-backed USGS/UK Environment Agency row — violating
+# get_or_create_organisation()'s own documented "never duplicated" contract.
+PUBLISHER_TO_JURISDICTION = {
+    'UK Environment Agency': 'England',
+    'USGS (US Geological Survey)': 'Global',
+}
+
 
 def suggest_from_signal(opportunity, signal):
     """
@@ -40,8 +54,13 @@ def suggest_from_signal(opportunity, signal):
     if not signal.publisher:
         return None
     party_type = PUBLISHER_TO_PARTY_TYPE.get(signal.publisher, 'other')
+    # A known publisher resolves to its real, stable jurisdiction (the
+    # SAME Organisation every time); an unrecognised publisher falls back
+    # to the signal's own region — the best honest guess available when
+    # the org's real jurisdiction isn't yet known.
+    jurisdiction = PUBLISHER_TO_JURISDICTION.get(signal.publisher, signal.region or '')
     organisation = get_or_create_organisation(
-        signal.publisher, org_type=party_type, jurisdiction=signal.region or '',
+        signal.publisher, org_type=party_type, jurisdiction=jurisdiction,
     )
     party, _ = ResponsibleParty.objects.get_or_create(
         opportunity=opportunity, name=signal.publisher,

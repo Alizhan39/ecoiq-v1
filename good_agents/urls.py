@@ -26,4 +26,13 @@ urlpatterns = [
     path('project-candidate/<int:candidate_pk>/create/execute/', views.project_candidate_create_execute, name='project_candidate_create_execute'),
 
     path('<int:pk>/', views.opportunity_detail, name='opportunity_detail'),
+
+    # PR11 — Real-World Pilot Launchpad
+    path('pilot-launchpad/', views.pilot_launchpad_redirect, name='pilot_launchpad_redirect'),
+    path('<int:pk>/pilot-launchpad/', views.pilot_launchpad_view, name='pilot_launchpad'),
+    path('<int:pk>/pilot-launchpad/dossier/', views.pilot_dossier_view, name='pilot_dossier'),
+    path('<int:pk>/pilot-launchpad/public/', views.pilot_launchpad_public_view, name='pilot_launchpad_public'),
+    path('responsible-party/<int:party_pk>/add-contact/', views.add_contact_view, name='add_contact'),
+    path('<int:pk>/resolve-responsible-party/', views.resolve_responsible_party_view, name='resolve_responsible_party'),
+    path('pathway/<int:pathway_pk>/create-outreach-draft/', views.create_outreach_draft_view, name='create_outreach_draft'),
 ]

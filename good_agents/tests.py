@@ -2234,3 +2234,468 @@ class FundingMatchCapabilityGraphIntegrationTests(TestCase):
         funding_matcher.enrich_with_capability_graph(match)
         match.refresh_from_db()
         self.assertEqual(match.organisation_id, other_org.pk)
+
+
+# =============================================================================
+# PR11 — Real-World Pilot Launchpad
+# =============================================================================
+from capability_graph.models import PublicRoute  # noqa: E402
+from good_agents.models import ActionContact, WorldSignal  # noqa: E402
+from good_agents.services import pilot_launchpad  # noqa: E402
+
+
+def _real_org(name='USGS (US Geological Survey)', jurisdiction='Global'):
+    return get_or_create_organisation(name, org_type='research_institution', jurisdiction=jurisdiction)
+
+
+def _controlled_org(name='[CONTROLLED TEST] PR11 Org'):
+    return get_or_create_organisation(name, org_type='ngo', jurisdiction='Test')
+
+
+class FlagshipPilotSelectionTests(TestCase):
+    def test_select_flagship_pilot_returns_none_when_nothing_qualifies(self):
+        _make_opportunity(evidence_refs=[], problem_statement='')
+        self.assertIsNone(pilot_launchpad.select_flagship_pilot())
+
+    def test_select_flagship_pilot_requires_evidence_and_principle_activation(self):
+        opp = _make_opportunity(evidence_refs=['a real source'])
+        self.assertIsNone(pilot_launchpad.select_flagship_pilot(GoodOpportunity.objects.filter(pk=opp.pk)))
+
+    def test_select_flagship_pilot_picks_highest_scoring_real_candidate(self):
+        weak = _make_opportunity(title='Weak', evidence_refs=['ref'])
+        agent = GoodAgentDefinition.objects.first() or GoodAgentDefinition.objects.create(
+            principle_id=1, name='Test Principle', mission='m',
+        )
+        AgentActivationRecord.objects.create(opportunity=weak, agent=agent, reason_activated='r')
+
+        strong = _make_opportunity(title='Strong', evidence_refs=['ref1', 'ref2'], region='Test region')
+        agent2 = GoodAgentDefinition.objects.exclude(pk=agent.pk).first() or GoodAgentDefinition.objects.create(
+            principle_id=2, name='Test Principle 2', mission='m',
+        )
+        AgentActivationRecord.objects.create(opportunity=strong, agent=agent, reason_activated='r')
+        AgentActivationRecord.objects.create(opportunity=strong, agent=agent2, reason_activated='r')
+        org = _real_org(name='Selection Org')
+        ResponsibleParty.objects.create(opportunity=strong, name=org.name, party_type='other', organisation=org)
+
+        selected = pilot_launchpad.select_flagship_pilot(GoodOpportunity.objects.filter(pk__in=[weak.pk, strong.pk]))
+        self.assertEqual(selected.pk, strong.pk)
+
+    def test_flagship_criteria_excludes_controlled_test_organisation_from_real_org_check(self):
+        opp = _make_opportunity(evidence_refs=['ref'])
+        controlled = _controlled_org()
+        ResponsibleParty.objects.create(opportunity=opp, name=controlled.name, party_type='other', organisation=controlled)
+        criteria = pilot_launchpad.flagship_pilot_criteria(opp)
+        self.assertFalse(criteria['real_organisation_identified'])
+
+
+class ReadinessScorecardTests(TestCase):
+    def test_bare_opportunity_shows_blocked_and_unknown_states(self):
+        opp = _make_opportunity(evidence_refs=[])
+        scorecard = pilot_launchpad.readiness_scorecard(opp)
+        states = {row['item']: row['state'] for row in scorecard}
+        self.assertEqual(states['Evidence sufficient?'], 'BLOCKED')
+        self.assertEqual(states['Responsible organisation identified?'], 'BLOCKED')
+
+    def test_never_fabricates_a_numeric_score(self):
+        opp = _make_opportunity()
+        scorecard = pilot_launchpad.readiness_scorecard(opp)
+        self.assertTrue(all(set(row.keys()) == {'item', 'state'} for row in scorecard))
+        allowed_states = {'READY', 'PARTIAL', 'BLOCKED', 'UNKNOWN', 'NOT_APPLICABLE'}
+        self.assertTrue(all(row['state'] in allowed_states for row in scorecard))
+
+
+class DataProvenanceLabelTests(TestCase):
+    def test_controlled_test_organisation_is_never_confused_with_real(self):
+        controlled = _controlled_org()
+        self.assertEqual(pilot_launchpad.data_provenance_label(controlled), 'CONTROLLED_TEST_ORGANISATION')
+
+    def test_real_discovered_organisation_without_membership(self):
+        org = _real_org(name='Discovered Only Org')
+        self.assertEqual(pilot_launchpad.data_provenance_label(org), 'REAL_DISCOVERED_ORGANISATION')
+
+    def test_real_participating_organisation_requires_verified_membership(self):
+        from partner_participation.models import OrganisationMembership
+        org = _real_org(name='Participating Org')
+        user = _staff_user('provenance-user')
+        OrganisationMembership.objects.create(organisation=org, user=user, status='verified_member')
+        self.assertEqual(pilot_launchpad.data_provenance_label(org), 'REAL_PARTICIPATING_ORGANISATION')
+
+    def test_unknown_when_no_organisation(self):
+        self.assertEqual(pilot_launchpad.data_provenance_label(None), 'UNKNOWN')
+
+
+class BlockersAndNextBestActionTests(TestCase):
+    def test_new_opportunity_blocks_on_human_review(self):
+        opp = _make_opportunity(evidence_refs=['a real source'])
+        codes = [b['code'] for b in pilot_launchpad.blockers(opp)]
+        self.assertIn('HUMAN_REVIEW_PENDING', codes)
+        action = pilot_launchpad.next_best_action(opp)
+        self.assertEqual(action['primary']['label'], 'Human review required')
+
+    def test_insufficient_evidence_blocks_before_review(self):
+        opp = _make_opportunity(evidence_refs=[], insufficient_evidence=True)
+        action = pilot_launchpad.next_best_action(opp)
+        self.assertEqual(action['primary']['label'], 'Acquire missing evidence')
+
+    def _opportunity_with_resolved_org_and_contact(self, evidence_refs=None):
+        opp = _make_opportunity(evidence_refs=evidence_refs or ['a real source'])
+        _approve_gate(opp)
+        org = _real_org(name=f'NBA Org {opp.pk}')
+        record_capability(org, 'measure', evidence_url='https://example.gov/evidence', jurisdiction='Global')
+        party = ResponsibleParty.objects.create(opportunity=opp, name=org.name, party_type='other', organisation=org)
+        ActionContact.objects.create(responsible_party=party, public_contact_channel='https://example.gov/contact', source_of_contact_info='Official site', status='verified')
+        return opp
+
+    def test_never_suggests_send_before_approval(self):
+        """Regression guard: next_best_action must never jump straight to 'Send outreach' with an unapproved draft."""
+        opp = self._opportunity_with_resolved_org_and_contact()
+        pathway = action_pathway_service.create_pathway(opp, 'information_request', rationale='r')
+        draft = outreach_service.create_draft(pathway, 'email', subject='s', body='b')
+        outreach_service.mark_ready_for_review(draft)
+        action = pilot_launchpad.next_best_action(opp)
+        self.assertNotEqual(action['primary']['label'], 'Send outreach')
+        self.assertEqual(action['primary']['label'], 'Approve outreach draft')
+
+    def test_send_outreach_only_suggested_once_approved(self):
+        opp = self._opportunity_with_resolved_org_and_contact()
+        pathway = action_pathway_service.create_pathway(opp, 'information_request', rationale='r')
+        draft = outreach_service.create_draft(pathway, 'email', subject='s', body='b')
+        outreach_service.mark_ready_for_review(draft)
+        outreach_service.approve(draft, actor=_staff_user('nba-staff'))
+        action = pilot_launchpad.next_best_action(opp)
+        self.assertEqual(action['primary']['label'], 'Send outreach')
+
+    def test_exactly_one_primary_action_always_present(self):
+        for opp in [_make_opportunity(), _make_opportunity(evidence_refs=[])]:
+            action = pilot_launchpad.next_best_action(opp)
+            self.assertIn('label', action['primary'])
+            self.assertIsInstance(action['secondary'], list)
+
+    def test_resolving_action_links_are_real_resolvable_urls(self):
+        opp = _make_opportunity()
+        for blocker in pilot_launchpad.blockers(opp):
+            if blocker['resolving_action'] is not None:
+                self.assertTrue(blocker['resolving_action']['url'])
+
+
+class CapabilityGraphMatchesTests(TestCase):
+    def test_separates_discovered_from_participating_and_controlled(self):
+        opp = _make_opportunity()
+        real_org = _real_org(name='Discovered Real Org')
+        controlled = _controlled_org()
+        ResponsibleParty.objects.create(opportunity=opp, name=real_org.name, party_type='other', organisation=real_org)
+        ResponsibleParty.objects.create(opportunity=opp, name=controlled.name, party_type='other', organisation=controlled)
+
+        matches = pilot_launchpad.capability_graph_matches(opp)
+        labels = {m['organisation'].name: m['provenance_label'] for m in matches}
+        self.assertEqual(labels[real_org.name], 'REAL_DISCOVERED_ORGANISATION')
+        self.assertEqual(labels[controlled.name], 'CONTROLLED_TEST_ORGANISATION')
+
+    def test_shows_real_open_route_when_present(self):
+        opp = _make_opportunity()
+        org = _real_org(name='Org With Route')
+        ResponsibleParty.objects.create(opportunity=opp, name=org.name, party_type='other', organisation=org)
+        edge = record_capability(org, 'measure', evidence_url='https://example.gov/evidence', jurisdiction='Global')
+        PublicRoute.objects.create(organisation_capability=edge, route_type='contact_form', route_value='https://example.gov/contact', verified_at=timezone.now())
+
+        matches = pilot_launchpad.capability_graph_matches(opp)
+        self.assertIsNotNone(matches[0]['best_route'])
+        self.assertEqual(matches[0]['best_route'].route_value, 'https://example.gov/contact')
+
+
+class ContactRouteStateTests(TestCase):
+    def test_not_identified_by_default(self):
+        opp = _make_opportunity()
+        state = pilot_launchpad.contact_route_state(opp)
+        self.assertEqual(state['state'], 'not_identified')
+
+    def test_public_route_found_after_action_contact(self):
+        opp = _make_opportunity()
+        org = _real_org()
+        party = ResponsibleParty.objects.create(opportunity=opp, name=org.name, party_type='other', organisation=org)
+        ActionContact.objects.create(responsible_party=party, public_contact_channel='https://example.gov/contact', source_of_contact_info='Official site', status='verified')
+        state = pilot_launchpad.contact_route_state(opp)
+        self.assertEqual(state['state'], 'public_route_found')
+
+    def test_sent_maps_to_delivery_unknown_never_delivered(self):
+        """Honesty guard: this pipeline has no delivery confirmation, so 'sent' must never claim 'delivered'."""
+        opp = _make_opportunity()
+        _approve_gate(opp)
+        pathway = action_pathway_service.create_pathway(opp, 'information_request', rationale='r')
+        draft = outreach_service.create_draft(pathway, 'email', subject='s', body='b', contact=ActionContact.objects.create(
+            responsible_party=ResponsibleParty.objects.create(opportunity=opp, name='X', party_type='other'),
+            public_contact_channel='test@example.gov', source_of_contact_info='site',
+        ))
+        draft.status = 'sent'
+        draft.save(update_fields=['status'])
+        state = pilot_launchpad.contact_route_state(opp)
+        self.assertEqual(state['state'], 'delivery_unknown')
+        self.assertNotIn('delivered', state['label'].lower())
+
+
+class OutreachPackTests(TestCase):
+    def test_pack_never_fabricates_organisation_when_none_resolved(self):
+        opp = _make_opportunity()
+        pack = pilot_launchpad.outreach_pack(opp)
+        self.assertIsNone(pack['organisation'])
+        self.assertIn('No organisation identified yet.', pack['why_contacting'])
+
+    def test_pack_includes_non_claim_disclaimers(self):
+        opp = _make_opportunity()
+        pack = pilot_launchpad.outreach_pack(opp)
+        self.assertTrue(any('partnership' in d.lower() for d in pack['not_claiming']))
+
+    def test_render_outreach_message_is_deterministic_text(self):
+        opp = _make_opportunity()
+        message = pilot_launchpad.render_outreach_message(opp)
+        self.assertIn(opp.title, message['subject'])
+        self.assertIn('What EcoIQ is NOT claiming', message['body'])
+
+
+class MrvAndCapitalSnapshotTests(TestCase):
+    def test_verified_values_honest_default(self):
+        opp = _make_opportunity()
+        plan = pilot_launchpad.mrv_plan(opp)
+        self.assertEqual(plan['verified_values'], 'IMPACT NOT YET VERIFIED')
+
+    def test_capital_snapshot_reports_no_project_honestly(self):
+        opp = _make_opportunity()
+        snapshot = pilot_launchpad.capital_snapshot(opp)
+        self.assertEqual(snapshot['decision_state'], 'No project exists yet.')
+        self.assertEqual(snapshot['missing_facts'], [])
+
+
+class TruthChainProvenanceTests(TestCase):
+    def test_additive_never_breaks_existing_truth_chain_shape(self):
+        opp = _make_opportunity()
+        base_nodes = mc.truth_chain(opp)
+        provenance_nodes = pilot_launchpad.truth_chain_with_provenance(opp)
+        self.assertEqual(len(base_nodes), len(provenance_nodes))
+        for node in provenance_nodes:
+            self.assertIn('provenance', node)
+            self.assertIn('stage', node)
+            self.assertIn('reached', node)
+
+    def test_unreached_stages_never_labelled_measured_or_verified(self):
+        opp = _make_opportunity()
+        for node in pilot_launchpad.truth_chain_with_provenance(opp):
+            if not node['reached']:
+                self.assertNotIn(node['provenance'], (pilot_launchpad.PROV_MEASURED, pilot_launchpad.PROV_VERIFIED))
+
+
+class ResponsiblePartySignalJurisdictionRegressionTests(TestCase):
+    """
+    PR11's own regression test for the real duplication bug found during
+    the flagship pilot walk: two signals from the SAME known publisher but
+    with DIFFERENT per-event regions must still resolve to the SAME
+    Organisation — the pre-existing test only used identical regions and
+    so never actually caught this.
+    """
+    def test_same_publisher_different_event_regions_resolve_to_one_organisation(self):
+        opp1 = _make_opportunity(title='Event A')
+        opp2 = _make_opportunity(title='Event B')
+        signal1 = WorldSignal.objects.create(signal_type='harm', title='M 6.0 event A', publisher='USGS (US Geological Survey)', region='40 km NE of Somewhere, Chile')
+        signal2 = WorldSignal.objects.create(signal_type='harm', title='M 5.5 event B', publisher='USGS (US Geological Survey)', region='12 km SW of Elsewhere, Japan')
+
+        party1 = responsible_party_service.suggest_from_signal(opp1, signal1)
+        party2 = responsible_party_service.suggest_from_signal(opp2, signal2)
+
+        self.assertEqual(party1.organisation_id, party2.organisation_id)
+        self.assertEqual(Organisation.objects.filter(name='USGS (US Geological Survey)').count(), 1)
+
+    def test_known_publisher_reuses_capability_graph_seeded_jurisdiction(self):
+        seeded = get_or_create_organisation('USGS (US Geological Survey)', org_type='research_institution', jurisdiction='Global')
+        record_capability(seeded, 'measure', evidence_url='https://earthquake.usgs.gov/', jurisdiction='Global')
+
+        opp = _make_opportunity()
+        signal = WorldSignal.objects.create(signal_type='harm', title='M 7.0 event', publisher='USGS (US Geological Survey)', region='some specific epicentre string')
+        party = responsible_party_service.suggest_from_signal(opp, signal)
+
+        self.assertEqual(party.organisation_id, seeded.pk)
+        self.assertTrue(party.organisation.capabilities.exists())
+
+    def test_unknown_publisher_still_falls_back_to_signal_region(self):
+        opp = _make_opportunity()
+        signal = WorldSignal.objects.create(signal_type='harm', title='Unrecognised event', publisher='Some New Publisher', region='Somewhere Specific')
+        party = responsible_party_service.suggest_from_signal(opp, signal)
+        self.assertEqual(party.organisation.jurisdiction, 'Somewhere Specific')
+
+
+class CommandCentreQueuesTests(TestCase):
+    def test_needs_contact_route_queue(self):
+        opp = _make_opportunity()
+        org = _real_org(name='Needs Contact Org')
+        ResponsibleParty.objects.create(opportunity=opp, name=org.name, party_type='other', organisation=org)
+        queues = pilot_launchpad.command_centre_queues([opp])
+        self.assertIn(opp, queues['needs_contact_route'])
+
+    def test_opportunity_only_appears_in_queues_it_belongs_to(self):
+        clean_opp = _make_opportunity(title='Clean', evidence_refs=['ref'])
+        _approve_gate(clean_opp)
+        action_pathway_service.create_pathway(clean_opp, 'zero_capital_action', rationale='r', capital_required='no')
+        clean_opp.capital_required_usd = 0
+        clean_opp.zero_capital_possible = True
+        clean_opp.save()
+        queues = pilot_launchpad.command_centre_queues([clean_opp])
+        self.assertNotIn(clean_opp, queues['needs_measurement'])
+        self.assertNotIn(clean_opp, queues['needs_consent'])
+
+
+class DossierTests(TestCase):
+    def test_missing_fields_stay_missing_never_invented(self):
+        opp = _make_opportunity(problem_statement='', region='', evidence_refs=[])
+        dossier = pilot_launchpad.build_dossier(opp)
+        self.assertEqual(dossier['problem'], 'Missing')
+        self.assertEqual(dossier['location'], 'Missing')
+
+    def test_dossier_assembles_every_declared_section(self):
+        opp = _make_opportunity()
+        dossier = pilot_launchpad.build_dossier(opp)
+        for key in ('principle_relevance', 'better_way_options', 'capability_graph_matches', 'blockers', 'next_best_action', 'readiness_scorecard', 'governance_disclaimer'):
+            self.assertIn(key, dossier)
+
+
+class PilotLaunchpadViewTests(TestCase):
+    def setUp(self):
+        self.staff = _staff_user('launchpad-staff')
+        self.opp = _make_opportunity()
+
+    def test_staff_gets_200(self):
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('good_agents:pilot_launchpad', args=[self.opp.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_anonymous_redirected(self):
+        response = self.client.get(reverse('good_agents:pilot_launchpad', args=[self.opp.pk]))
+        self.assertEqual(response.status_code, 302)
+
+    def test_dossier_view_staff_only(self):
+        response = self.client.get(reverse('good_agents:pilot_dossier', args=[self.opp.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('good_agents:pilot_dossier', args=[self.opp.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_public_view_accessible_without_login(self):
+        response = self.client.get(reverse('good_agents:pilot_launchpad_public', args=[self.opp.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_public_view_never_exposes_organisation_or_contact_content(self):
+        org = _real_org(name='Private Contact Org')
+        party = ResponsibleParty.objects.create(opportunity=self.opp, name=org.name, party_type='other', organisation=org)
+        ActionContact.objects.create(responsible_party=party, public_contact_channel='secret@example.gov', source_of_contact_info='site', status='verified')
+        response = self.client.get(reverse('good_agents:pilot_launchpad_public', args=[self.opp.pk]))
+        self.assertNotContains(response, 'secret@example.gov')
+
+    def test_redirect_honestly_reports_not_ready(self):
+        GoodOpportunity.objects.all().delete()
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('good_agents:pilot_launchpad_redirect'), follow=True)
+        self.assertContains(response, 'NOT_READY_FOR_PILOT')
+
+
+class ResolveResponsiblePartyViewTests(TestCase):
+    def setUp(self):
+        self.staff = _staff_user('resolve-staff')
+
+    def test_staff_only_post_only(self):
+        opp = _make_opportunity()
+        response = self.client.get(reverse('good_agents:resolve_responsible_party', args=[opp.pk]))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_resolves_real_organisation_from_known_signal_publisher(self):
+        signal = WorldSignal.objects.create(signal_type='harm', title='M 6.1 test event', publisher='USGS (US Geological Survey)', region='somewhere')
+        opp = _make_opportunity(detected_signals=[signal.title])
+        self.client.force_login(self.staff)
+        self.client.post(reverse('good_agents:resolve_responsible_party', args=[opp.pk]))
+        self.assertTrue(opp.responsible_parties.exists())
+        party = opp.responsible_parties.first()
+        self.assertEqual(party.resolution_status, 'possible_organisation')
+
+    def test_no_signal_no_crash_no_fabrication(self):
+        opp = _make_opportunity(detected_signals=[])
+        self.client.force_login(self.staff)
+        response = self.client.post(reverse('good_agents:resolve_responsible_party', args=[opp.pk]), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(opp.responsible_parties.exists())
+
+
+class AddContactViewTests(TestCase):
+    def setUp(self):
+        self.staff = _staff_user('contact-staff')
+        self.opp = _make_opportunity()
+        self.party = ResponsibleParty.objects.create(opportunity=self.opp, name='Test Org', party_type='other')
+
+    def test_requires_channel_and_source(self):
+        self.client.force_login(self.staff)
+        self.client.post(reverse('good_agents:add_contact', args=[self.party.pk]), {'public_contact_channel': '', 'source_of_contact_info': ''})
+        self.assertFalse(ActionContact.objects.filter(responsible_party=self.party).exists())
+
+    def test_creates_real_contact_with_source(self):
+        self.client.force_login(self.staff)
+        self.client.post(reverse('good_agents:add_contact', args=[self.party.pk]), {
+            'public_contact_channel': 'https://example.gov/contact', 'source_of_contact_info': 'Official site', 'verified': 'true',
+        })
+        contact = ActionContact.objects.get(responsible_party=self.party)
+        self.assertEqual(contact.status, 'verified')
+        self.assertIsNotNone(contact.last_verified)
+
+    def test_anonymous_cannot_create_contact(self):
+        self.client.post(reverse('good_agents:add_contact', args=[self.party.pk]), {
+            'public_contact_channel': 'https://example.gov/contact', 'source_of_contact_info': 'Official site',
+        })
+        self.assertFalse(ActionContact.objects.filter(responsible_party=self.party).exists())
+
+
+class CreateOutreachDraftViewTests(TestCase):
+    def setUp(self):
+        self.staff = _staff_user('draft-staff')
+        self.opp = _make_opportunity()
+        _approve_gate(self.opp)
+        self.pathway = action_pathway_service.create_pathway(self.opp, 'information_request', rationale='r')
+
+    def test_creates_draft_ready_for_review_never_auto_approved(self):
+        self.client.force_login(self.staff)
+        self.client.post(reverse('good_agents:create_outreach_draft', args=[self.pathway.pk]))
+        draft = OutreachDraft.objects.get(action_pathway=self.pathway)
+        self.assertEqual(draft.status, 'ready_for_review')
+        self.assertIsNone(draft.approved_at)
+        self.assertIsNone(draft.sent_at)
+
+    def test_staff_only(self):
+        response = self.client.post(reverse('good_agents:create_outreach_draft', args=[self.pathway.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(OutreachDraft.objects.filter(action_pathway=self.pathway).exists())
+
+
+class PilotLaunchpadCSRFTests(TestCase):
+    def test_csrf_enforced_on_resolve_responsible_party(self):
+        staff = _staff_user('csrf-launchpad-staff')
+        opp = _make_opportunity()
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(staff)
+        response = csrf_client.post(reverse('good_agents:resolve_responsible_party', args=[opp.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_csrf_enforced_on_add_contact(self):
+        staff = _staff_user('csrf-contact-staff')
+        opp = _make_opportunity()
+        party = ResponsibleParty.objects.create(opportunity=opp, name='Test Org', party_type='other')
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(staff)
+        response = csrf_client.post(reverse('good_agents:add_contact', args=[party.pk]), {
+            'public_contact_channel': 'https://example.gov', 'source_of_contact_info': 'site',
+        })
+        self.assertEqual(response.status_code, 403)
+
+
+class ImpactActionCentreCommandCentreIntegrationTests(TestCase):
+    def test_queues_present_in_context(self):
+        staff = _staff_user('iac-staff')
+        _make_opportunity()
+        self.client.force_login(staff)
+        response = self.client.get(reverse('good_agents:impact_action_centre'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('command_centre_queues', response.context)
+        for key in ('needs_contact_route', 'waiting_on_external_party', 'needs_consent', 'ready_for_project', 'needs_measurement', 'blocked'):
+            self.assertIn(key, response.context['command_centre_queues'])

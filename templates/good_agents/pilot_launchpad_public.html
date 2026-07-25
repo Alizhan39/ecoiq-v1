@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}{{ opportunity.title }} — EcoIQ Public Pilot View{% endblock %}
+{% block meta_description_content %}Public-safe summary of one real EcoIQ pilot: problem, evidence, stewardship principles, current honest status.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .plp-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8; --accent:#00e89a;
+    max-width:860px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .plp-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .plp-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .plp-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .plp-section h2 { font-size:.9rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .plp-row { padding:.3rem 0; border-bottom:1px solid var(--border); font-size:.87rem; }
+  .plp-row:last-child { border-bottom:none; }
+  .plp-empty { color:var(--muted); font-size:.85rem; }
+  .plp-disclaimer { font-size:.75rem; color:var(--muted); border-top:1px solid var(--border); margin-top:1rem; padding-top:.6rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="plp-wrap">
+  <div class="plp-eyebrow">ECOIQ · PUBLIC PILOT VIEW</div>
+  <h1 class="plp-h1">{{ opportunity.title }}</h1>
+
+  <div class="plp-section">
+    <p>{{ opportunity.problem_statement }}</p>
+    <p class="plp-empty">Current status: {{ opportunity.get_status_display }}</p>
+  </div>
+
+  <div class="plp-section">
+    <h2>Stewardship principle relevance</h2>
+    {% for p in principle_relevance %}<div class="plp-row">{{ p.principle }} — {{ p.relationship_type }}</div>{% empty %}<p class="plp-empty">Not yet assessed.</p>{% endfor %}
+  </div>
+
+  <div class="plp-section">
+    <h2>Proposed Better Way</h2>
+    {% for o in better_way_options %}<div class="plp-row">{{ o.pathway_type }} — {{ o.expected_benefit }} ({{ o.decision_state }})</div>{% empty %}<p class="plp-empty">No intervention proposed yet.</p>{% endfor %}
+  </div>
+
+  <div class="plp-section">
+    <h2>Verified impact</h2>
+    <p>{{ mrv_plan.verified_values }}</p>
+  </div>
+
+  <div class="plp-disclaimer">
+    This is a public-safe summary. It does not include organisation contact details, outreach content,
+    internal notes, or unpublished evidence. No partnership, funding commitment, contract, or impact is
+    implied unless independently verified above.
+  </div>
+</div>
+{% endblock %}
