@@ -745,3 +745,33 @@ def outreach_readiness_summary(opportunity):
             if readiness_state == 'ready_for_founder_review' or founder_decision else None
         ),
     }
+
+
+def actionability_summary(opportunity):
+    """
+    PR13 Phase 20/21 — compact read-only actionability status for Pilot
+    Launchpad/Mission Control, same discipline as
+    outreach_readiness_summary: never duplicates public_need_discovery's
+    own candidate detail page content, only links to it. Returns None if
+    no assessment exists yet.
+    """
+    candidate = getattr(opportunity, 'pilot_candidate_assessment', None)
+    if candidate is None:
+        return None
+
+    from public_need_discovery.services.actionability import blockers as pnd_blockers
+
+    return {
+        'candidate': candidate,
+        'actionability_state': candidate.get_actionability_state_display(),
+        'actionability_state_raw': candidate.actionability_state,
+        'discovery_qualified': candidate.discovery_qualified,
+        'actionability_qualified': candidate.actionability_qualified,
+        'outreach_suitable': candidate.outreach_suitable,
+        'jurisdiction': candidate.jurisdiction,
+        'use_official_process': candidate.use_official_process,
+        'official_process_type': candidate.get_official_process_type_display() if candidate.official_process_type else None,
+        'capital_required_now': candidate.get_capital_required_now_display(),
+        'blockers': pnd_blockers(candidate),
+        'link': _link('Actionability review', 'public_need_discovery:candidate_detail', opportunity.pk),
+    }

@@ -96,7 +96,7 @@ def safe_fetch(url, *, allowed_hosts, timeout=DEFAULT_TIMEOUT, max_bytes=MAX_RES
                 location = response.headers.get('location', '')
                 if not location:
                     raise SSRFBlocked('Redirect response with no Location header')
-                current_url = httpx.URL(current_url).join(location).human_repr()
+                current_url = str(httpx.URL(current_url).join(location))
                 continue
 
             content_length = response.headers.get('content-length')

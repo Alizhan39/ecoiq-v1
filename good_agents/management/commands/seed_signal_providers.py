@@ -1,8 +1,9 @@
 """
-seed_signal_providers — registers the 3 real SignalProvider rows PR4
-implements adapters for. See good_agents/services/provider_adapters.py for
-the actual fetch logic; this command only creates/updates the registry
-rows describing them (Phase 1). Idempotent: update_or_create on slug.
+seed_signal_providers — registers the real SignalProvider rows this repo
+has a real adapter for (3 from PR4, 2 more from PR13). See
+good_agents/services/provider_adapters.py for the actual fetch logic; this
+command only creates/updates the registry rows describing them (Phase 1).
+Idempotent: update_or_create on slug.
 """
 from django.core.management.base import BaseCommand
 
@@ -47,6 +48,34 @@ PROVIDERS = [
         'fetch_method': (
             'HTTPS GET https://environment.data.gov.uk/flood-monitoring/id/floods?min-severity=3 — public '
             'real-time flood warnings API, no authentication, UK Environment Agency. Open Government Licence v3.'
+        ),
+        'refresh_cadence': 'On demand (every run_good_while_you_sleep invocation).',
+        'cost_usd_per_refresh': 0.0,
+    },
+    {
+        'slug': 'govuk-consultations',
+        'name': 'GOV.UK Search API (open public consultations)',
+        'provider_type': 'government_publication',
+        'geographies': ['United Kingdom'],
+        'domains': ['environment', 'infrastructure', 'community_resilience', 'government_efficiency'],
+        'trust_tier': 'high',
+        'fetch_method': (
+            'HTTPS GET https://www.gov.uk/api/search.json?q=...&filter_content_store_document_type=open_consultation '
+            '— same public GOV.UK Search API as govuk-search, restricted to open consultations. No authentication.'
+        ),
+        'refresh_cadence': 'On demand (every run_good_while_you_sleep invocation).',
+        'cost_usd_per_refresh': 0.0,
+    },
+    {
+        'slug': 'data-gov-uk-datasets',
+        'name': 'data.gov.uk Open Data Catalogue (CKAN package_search)',
+        'provider_type': 'public_dataset',
+        'geographies': ['United Kingdom'],
+        'domains': ['environment', 'infrastructure', 'financial_inclusion', 'community_resilience'],
+        'trust_tier': 'high',
+        'fetch_method': (
+            'HTTPS GET https://data.gov.uk/api/3/action/package_search?q=... — the standard public CKAN search '
+            'API for the UK Government open-data catalogue. No authentication.'
         ),
         'refresh_cadence': 'On demand (every run_good_while_you_sleep invocation).',
         'cost_usd_per_refresh': 0.0,

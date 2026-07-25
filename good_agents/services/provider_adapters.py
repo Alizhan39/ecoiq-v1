@@ -1,8 +1,9 @@
 """
 good_agents/services/provider_adapters.py — real SignalProvider adapters
-(PR4 Phases 1-3). Exactly 3, matching the spec's "small number of real,
-bounded source types" instruction — no plugin framework, no arbitrary URL
-fetching, no global internet scraping:
+(PR4 Phases 1-3, extended by PR13 Phase 3 with 2 more). 5 total, still
+matching the "small number of real, bounded source types" instruction —
+no plugin framework, no arbitrary URL fetching, no global internet
+scraping:
 
   usgs-significant-earthquakes   — USGS (US Geological Survey), real-time
                                     significant-earthquakes GeoJSON feed.
@@ -16,6 +17,18 @@ fetching, no global internet scraping:
                                     Frequently returns zero active warnings
                                     — that is a real, honest result, not an
                                     error (see docs/GLOBAL_GOOD_DISCOVERY.md).
+  govuk-consultations             — PR13: the SAME real GOV.UK Search API,
+                                    queried for open public consultations
+                                    specifically (a real, actionable public
+                                    need for evidence/input EcoIQ can
+                                    legitimately contribute to) rather than
+                                    generic grant/policy noise.
+                                    PUBLIC_NEED signals.
+  data-gov-uk-datasets            — PR13: data.gov.uk's real, standard CKAN
+                                    `package_search` API — real UK
+                                    government/local-authority open
+                                    datasets, each with a real cataloguing
+                                    organisation. PUBLIC_NEED signals.
 
 Provider adapter contract (Phase 2): each adapter is a plain function
 `fetch_raw_signals(provider) -> ProviderFetchResult`. It fetches,
@@ -229,6 +242,164 @@ def fetch_uk_ea_flood_monitoring(provider, min_severity=3):
 
 
 # ---------------------------------------------------------------------------
+# Adapter 4 (PR13) — GOV.UK Search API, open-consultations query
+# ---------------------------------------------------------------------------
+# Same real, already-allowlisted endpoint as Adapter 2 — a distinct,
+# separately-observable SignalProvider row because a consultation is a
+# genuinely different actionability class (Phase 5: "local-authority
+# consultation requiring evidence/input") from generic grant/policy search
+# results, not because the transport differs.
+
+GOVUK_CONSULTATIONS_QUERIES = [
+    'open consultation', 'have your say consultation', 'public consultation environment',
+]
+
+
+def fetch_govuk_consultations(provider, queries=None):
+    queries = queries or GOVUK_CONSULTATIONS_QUERIES
+    raw_signals = []
+    items_fetched = 0
+    last_error = ''
+    any_success = False
+
+    for query in queries:
+        result = safe_fetch(
+            GOVUK_SEARCH_URL, allowed_hosts=GOVUK_ALLOWED_HOSTS,
+            params={'q': query, 'count': 5, 'filter_content_store_document_type': 'open_consultation'},
+        )
+        if not result.success or result.json_data is None:
+            last_error = result.error or f'GOV.UK consultations: no JSON body for query {query!r}'
+            continue
+        any_success = True
+        results = result.json_data.get('results', [])
+        items_fetched += len(results)
+        for item in results:
+            title = item.get('title', '')
+            description = item.get('description') or ''
+            link = item.get('link', '')
+            if not title or not link:
+                continue
+            document_type = (item.get('document_type') or item.get('format') or '').lower()
+            # The filter above should already restrict to open consultations,
+            # but never trust a query-string filter alone — re-check the
+            # returned document type/title/description before asserting
+            # this is genuinely a consultation (Phase 12: never let a
+            # generic keyword match alone create an actionable signal).
+            is_consultation = 'consultation' in document_type or 'consultation' in title.lower() or 'consultation' in description.lower()
+            raw_signals.append({
+                # A real open consultation is a genuine PUBLIC_NEED for
+                # evidence/input, not merely policy noise — deliberately
+                # NOT 'policy_change' (which this codebase's discovery
+                # triage always discards as noise below a severity floor).
+                'signal_type': 'public_need' if is_consultation else 'policy_change',
+                'title': title,
+                'summary': description or title,
+                'sector': item.get('format', ''),
+                'source_url': f'https://www.gov.uk{link}' if link.startswith('/') else link,
+                'publisher': 'GOV.UK',
+                'published_at': _parse_iso(item.get('public_timestamp')),
+                'raw_evidence_ref': f'govuk-consultations:{link}',
+                'source_excerpt': description,
+                # A real, catalogued government listing — but still a
+                # search-result snippet, same confidence discipline as
+                # Adapter 2.
+                'confidence': 55.0,
+                'severity': 45.0 if is_consultation else 20.0,
+                'tags': ['policy', 'consultation' if is_consultation else 'policy_change', f'query:{query}'],
+                'asserted_as_fact': False,
+            })
+
+    if not any_success:
+        return ProviderFetchResult(success=False, error=last_error or 'GOV.UK consultations: all queries failed')
+    return ProviderFetchResult(
+        success=True, raw_signals=raw_signals, items_fetched=items_fetched, items_after_validation=len(raw_signals),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Adapter 5 (PR13) — data.gov.uk CKAN package_search
+# ---------------------------------------------------------------------------
+# data.gov.uk is the UK Government's standard CKAN open-data catalogue —
+# the `api/3/action/package_search` endpoint is CKAN's well-documented,
+# stable, public, unauthenticated search API (the same shape across every
+# CKAN deployment). Every result names a real UK government/local-authority
+# publishing organisation, which strengthens jurisdiction/responsible-body
+# resolution in a way a bare search snippet cannot.
+
+DATA_GOV_UK_URL = 'https://data.gov.uk/api/3/action/package_search'
+# data.gov.uk redirects data.gov.uk -> www.data.gov.uk -> the real
+# ckan.publishing.service.gov.uk backend (GDS/Government Digital Service's
+# actual CKAN instance for the UK open-data catalogue — a genuine .gov.uk
+# domain, not a third party). All three are the same real institution, so
+# all three are allowlisted; safe_http.py re-validates every redirect hop
+# against this same set, so an unrelated host would still be blocked.
+DATA_GOV_UK_ALLOWED_HOSTS = frozenset({'data.gov.uk', 'www.data.gov.uk', 'ckan.publishing.service.gov.uk'})
+DATA_GOV_UK_QUERIES = [
+    'flood risk management', 'fuel poverty', 'local authority consultation',
+]
+
+
+def fetch_data_gov_uk_datasets(provider, queries=None):
+    queries = queries or DATA_GOV_UK_QUERIES
+    raw_signals = []
+    items_fetched = 0
+    last_error = ''
+    any_success = False
+
+    for query in queries:
+        result = safe_fetch(DATA_GOV_UK_URL, allowed_hosts=DATA_GOV_UK_ALLOWED_HOSTS, params={'q': query, 'rows': 5})
+        if not result.success or result.json_data is None:
+            last_error = result.error or f'data.gov.uk: no JSON body for query {query!r}'
+            continue
+        if not result.json_data.get('success'):
+            last_error = f'data.gov.uk: API reported success=false for query {query!r}'
+            continue
+        any_success = True
+        packages = (result.json_data.get('result') or {}).get('results', [])
+        items_fetched += len(packages)
+        for pkg in packages:
+            title = pkg.get('title', '')
+            notes = pkg.get('notes') or ''
+            name = pkg.get('name', '')
+            if not title or not name:
+                continue
+            organisation = ((pkg.get('organization') or {}).get('title')) or ''
+            raw_signals.append({
+                'signal_type': 'public_need',
+                'title': title,
+                'summary': (notes[:500] if notes else title),
+                # A real, named local/national authority publishing a
+                # dataset IS a real geographic anchor for it (the same
+                # honest convention as EA's eaAreaName) — never left blank
+                # merely because CKAN's 'groups' field happens to be empty
+                # (evidence_gate.evaluate_cluster requires SOME geography
+                # or sector, or it correctly flags insufficient_evidence).
+                'region': organisation,
+                'sector': (pkg.get('groups') or [{}])[0].get('title', '') if pkg.get('groups') else query,
+                'source_url': f'https://data.gov.uk/dataset/{name}',
+                # A real, named cataloguing organisation strengthens
+                # downstream jurisdiction/responsible-body resolution — never
+                # fabricated when CKAN doesn't supply one.
+                'publisher': organisation or 'data.gov.uk',
+                'published_at': _parse_iso(pkg.get('metadata_modified')),
+                'raw_evidence_ref': f'data-gov-uk:{name}',
+                'source_excerpt': notes[:280] if notes else '',
+                # The dataset's existence, title and cataloguing
+                # organisation are directly stated CKAN catalogue facts.
+                'confidence': 60.0,
+                'severity': 30.0,
+                'tags': ['dataset', f'query:{query}'],
+                'asserted_as_fact': True,
+            })
+
+    if not any_success:
+        return ProviderFetchResult(success=False, error=last_error or 'data.gov.uk: all queries failed')
+    return ProviderFetchResult(
+        success=True, raw_signals=raw_signals, items_fetched=items_fetched, items_after_validation=len(raw_signals),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Registry — one adapter function per SignalProvider.slug
 # ---------------------------------------------------------------------------
 
@@ -236,6 +407,8 @@ PROVIDER_ADAPTERS = {
     'usgs-significant-earthquakes': fetch_usgs_significant_earthquakes,
     'govuk-search': fetch_govuk_search,
     'uk-ea-flood-monitoring': fetch_uk_ea_flood_monitoring,
+    'govuk-consultations': fetch_govuk_consultations,
+    'data-gov-uk-datasets': fetch_data_gov_uk_datasets,
 }
 
 

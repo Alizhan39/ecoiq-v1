@@ -242,6 +242,12 @@ urlpatterns = [
     # risk review, dry run, Founder Send Review. No real send exists here.
     path('outreach-readiness/', include('outreach_readiness.urls', namespace='outreach_readiness')),
 
+    # Actionable Public-Need Discovery — the actionability layer between
+    # discovery (GoodOpportunity) and outreach_readiness: jurisdiction
+    # resolution, organisation role separation, small-action generation,
+    # official-process preference. Never sends anything.
+    path('public-need-discovery/', include('public_need_discovery.urls', namespace='public_need_discovery')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

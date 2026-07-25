@@ -382,6 +382,7 @@ def mission_control_view(request):
         'verified_impact': mission_control.verified_impact_list(mission),
         'impact_receipts': mission_control.impact_receipts_list(mission),
         'mission_health': mission_control.mission_health(),
+        'actionable_discovery_summary': mission_control.actionable_discovery_summary(),
         'mission_comparison': mission_control.mission_comparison(),
         'geographic_opportunities': mission_control.geographic_opportunity_list(mission),
         'observatory_summary': morning_brief_service.observatory_summary_for_run(latest_run) if latest_run else None,
@@ -453,6 +454,7 @@ def pilot_launchpad_view(request, pk):
         'demo_story': mission_control.demo_story(opportunity),
         'project_candidate': project_candidate,
         'outreach_readiness_summary': pilot_launchpad.outreach_readiness_summary(opportunity),
+        'actionability_summary': pilot_launchpad.actionability_summary(opportunity),
     }
     return render(request, 'good_agents/pilot_launchpad.html', context)
 

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Actionable Pilot Candidates — EcoIQ{% endblock %}
+{% block meta_description_content %}Sections every real opportunity by its exact current blocker on the road to actionability — no vanity counts, no mysterious score.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pnd-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1200px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pnd-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pnd-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pnd-sub { color:var(--muted); font-size:.85rem; max-width:80ch; margin-bottom:1rem; }
+  .pnd-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pnd-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pnd-row { padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.87rem; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:center; }
+  .pnd-row:last-child { border-bottom:none; }
+  .pnd-row a { color:var(--accent); text-decoration:none; font-weight:600; }
+  .pnd-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .pnd-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .pnd-badge-accent { color:var(--accent); border-color:var(--accent); }
+  .pnd-badge-danger { color:var(--danger); border-color:var(--danger); }
+  .pnd-empty { color:var(--muted); font-size:.82rem; }
+  .pnd-blockers { font-size:.72rem; color:var(--warn); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pnd-wrap">
+  <div class="pnd-eyebrow">ECOIQ · ACTIONABLE PUBLIC-NEED DISCOVERY</div>
+  <h1 class="pnd-h1">Actionable Pilot Candidates</h1>
+  <p class="pnd-sub">An important event is not automatically an actionable EcoIQ opportunity. An evidence publisher is not automatically the responsible recipient. Every section below is a real, sectioned query — no aggregate AI score decides actionability.</p>
+
+  <div class="pnd-section">
+    <h2>Ready for actionability review <span class="pnd-badge">{{ ready_for_review|length }}</span></h2>
+    {% for r in ready_for_review %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }} <span class="pnd-empty">({{ r.opportunity.region|default:"no region" }})</span></span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">Review →</a></div>
+    {% empty %}<p class="pnd-empty">Nothing awaiting first review.</p>{% endfor %}
+  </div>
+
+  <div class="pnd-section">
+    <h2>Needs responsible body <span class="pnd-badge">{{ needs_responsible_body|length }}</span></h2>
+    {% for r in needs_responsible_body %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }}</span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">Resolve →</a></div>
+    {% empty %}<p class="pnd-empty">Nothing missing a responsible body.</p>{% endfor %}
+  </div>
+
+  <div class="pnd-section">
+    <h2>Needs jurisdiction <span class="pnd-badge">{{ needs_jurisdiction|length }}</span></h2>
+    {% for r in needs_jurisdiction %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }}</span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">Resolve →</a></div>
+    {% empty %}<p class="pnd-empty">Nothing missing a jurisdiction.</p>{% endfor %}
+  </div>
+
+  <div class="pnd-section">
+    <h2>Needs public route <span class="pnd-badge">{{ needs_route|length }}</span></h2>
+    {% for r in needs_route %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }}</span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">Resolve →</a></div>
+    {% empty %}<p class="pnd-empty">Nothing waiting on a route.</p>{% endfor %}
+  </div>
+
+  <div class="pnd-section">
+    <h2>Use official process (no outreach needed) <span class="pnd-badge pnd-badge-accent">{{ use_official_process|length }}</span></h2>
+    {% for r in use_official_process %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }} <span class="pnd-badge">{{ r.candidate.get_official_process_type_display }}</span></span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">View →</a></div>
+    {% empty %}<p class="pnd-empty">No candidate currently routed to an official process.</p>{% endfor %}
+  </div>
+
+  <div class="pnd-section">
+    <h2>Needs sensitivity review <span class="pnd-badge pnd-badge-warn">{{ needs_sensitivity_review|length }}</span></h2>
+    {% for r in needs_sensitivity_review %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }}</span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">Review →</a></div>
+    {% empty %}<p class="pnd-empty">Nothing pending sensitivity sign-off.</p>{% endfor %}
+  </div>
+
+  <div class="pnd-section">
+    <h2>Potentially suitable for outreach <span class="pnd-badge pnd-badge-accent">{{ potentially_suitable|length }}</span></h2>
+    {% for r in potentially_suitable %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }} <span class="pnd-badge">{{ r.candidate.get_actionability_state_display }}</span></span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">View →</a></div>
+    {% empty %}<p class="pnd-empty">Nothing currently suitable for outreach.</p>{% endfor %}
+  </div>
+
+  <div class="pnd-section">
+    <h2>Rejected / informational only <span class="pnd-badge pnd-badge-danger">{{ rejected|length }}</span></h2>
+    {% for r in rejected %}
+      <div class="pnd-row"><span>{{ r.opportunity.title }} <span class="pnd-badge pnd-badge-danger">{{ r.candidate.get_actionability_state_display }}</span></span>
+        <a href="{% url 'public_need_discovery:candidate_detail' r.opportunity.pk %}">View →</a></div>
+    {% empty %}<p class="pnd-empty">Nothing rejected.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Actionability Review — {{ opportunity.title }} — EcoIQ{% endblock %}
+{% block meta_description_content %}Jurisdiction, organisation role separation, small action, official process, and sensitivity review for one real opportunity.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pnd-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1100px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .pnd-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .pnd-h1 { font-size:1.4rem; font-weight:800; margin:.3rem 0 1rem; }
+  .pnd-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; margin:.1rem .2rem .1rem 0; }
+  .pnd-badge-reject { color:var(--danger); border-color:var(--danger); }
+  .pnd-badge-proceed { color:var(--accent); border-color:var(--accent); }
+  .pnd-badge-warn { color:var(--warn); border-color:var(--warn); }
+  .pnd-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .pnd-section h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .6rem; }
+  .pnd-empty { color:var(--muted); font-size:.85rem; }
+  .pnd-row { padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.87rem; }
+  .pnd-row:last-child { border-bottom:none; }
+  .pnd-form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:flex-start; margin-top:.5rem; }
+  .pnd-form label { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.2rem; }
+  .pnd-form .field { display:flex; flex-direction:column; min-width:220px; flex:1; }
+  .pnd-form input[type=text], .pnd-form input[type=url], .pnd-form select, .pnd-form textarea {
+    background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:inherit;
+    padding:.4rem .6rem; font-size:.85rem; font-family:inherit; width:100%; box-sizing:border-box; }
+  .pnd-form textarea { min-height:4rem; resize:vertical; }
+  .pnd-btn { display:inline-block; background:var(--accent); color:#04120c; border:none; border-radius:6px; padding:.45rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; }
+  .pnd-btn-secondary { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .pnd-checklist { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:.4rem; }
+  .pnd-checklist label { display:flex; align-items:center; gap:.4rem; font-size:.82rem; text-transform:none; color:var(--text); }
+  .pnd-link { color:var(--accent); text-decoration:none; }
+  .pnd-blocker { color:var(--warn); font-size:.82rem; padding:.2rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pnd-wrap">
+  <div class="pnd-eyebrow">ECOIQ · ACTIONABILITY REVIEW · OPPORTUNITY #{{ opportunity.pk }}</div>
+  <h1 class="pnd-h1">{{ opportunity.title }}</h1>
+  <span class="pnd-badge {% if candidate.actionability_state == 'actionable' %}pnd-badge-proceed{% elif candidate.is_rejected %}pnd-badge-reject{% else %}pnd-badge-warn{% endif %}">{{ candidate.get_actionability_state_display }}</span>
+  {% if candidate.discovery_qualified %}<span class="pnd-badge pnd-badge-proceed">DISCOVERY QUALIFIED</span>{% endif %}
+  {% if candidate.actionability_qualified %}<span class="pnd-badge pnd-badge-proceed">ACTIONABILITY QUALIFIED</span>{% endif %}
+  {% if candidate.outreach_suitable %}<span class="pnd-badge pnd-badge-proceed">OUTREACH SUITABLE</span>{% endif %}
+  <a class="pnd-link" href="{% url 'good_agents:pilot_launchpad' opportunity.pk %}">Pilot Launchpad →</a>
+  {% if outreach_assessment %}<a class="pnd-link" href="{% url 'outreach_readiness:assessment_detail' opportunity.pk %}"> · Outreach Assessment →</a>{% endif %}
+
+  {% if blockers %}
+    <div class="pnd-section" style="border-color:var(--warn);">
+      <h2 style="color:var(--warn);">Current blockers</h2>
+      {% for b in blockers %}<div class="pnd-blocker">{{ b.code }} — {{ b.detail }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="pnd-section">
+    <h2>Recommendation (deterministic, not a decision)</h2>
+    <p>Recommended state: <strong>{{ recommendation.0 }}</strong></p>
+    <ul>{% for reason in recommendation.1 %}<li class="pnd-empty">{{ reason }}</li>{% endfor %}</ul>
+  </div>
+
+  <div class="pnd-section">
+    <h2>1. Signal, evidence, need</h2>
+    <p>{{ opportunity.problem_statement }}</p>
+    <p class="pnd-empty">Originating signal: {{ lead_signal.title|default:"Not on record" }} — publisher {{ lead_signal.publisher|default:"unknown" }}, region {{ lead_signal.region|default:"unknown" }}</p>
+    <p class="pnd-empty">Evidence references: {{ opportunity.evidence_refs|join:", "|default:"None" }}</p>
+  </div>
+
+  <div class="pnd-section">
+    <h2>2. Jurisdiction</h2>
+    <p>{{ candidate.jurisdiction|default:"NO_JURISDICTION" }} — {% if candidate.jurisdiction_resolved %}<span class="pnd-badge pnd-badge-proceed">RESOLVED</span>{% else %}<span class="pnd-badge pnd-badge-warn">UNRESOLVED</span>{% endif %}</p>
+    <p class="pnd-empty">{{ candidate.jurisdiction_resolution_notes }}</p>
+    <form method="post" action="{% url 'public_need_discovery:resolve_jurisdiction' opportunity.pk %}"><button type="submit" class="pnd-btn">Resolve jurisdiction from real source data</button>{% csrf_token %}</form>
+  </div>
+
+  <div class="pnd-section">
+    <h2>3. Organisation roles ({{ organisation_roles|length }})</h2>
+    <p class="pnd-empty">A role must be independently evidenced — an evidence_publisher or jurisdiction_authority role alone never justifies action.</p>
+    {% for r in organisation_roles %}
+      <div class="pnd-row">
+        <a class="pnd-link" href="{% url 'capability_graph:organisation_detail' r.organisation.pk %}">{{ r.organisation.name }}</a>
+        — <span class="pnd-badge {% if r.confirmed %}pnd-badge-proceed{% endif %}">{{ r.get_role_display }}</span>
+        {% if r.confirmed %}<span class="pnd-badge pnd-badge-proceed">CONFIRMED</span>{% else %}<span class="pnd-badge pnd-badge-warn">SUGGESTED</span>{% endif %}
+        <div class="pnd-empty">Evidence: {{ r.evidence_reference|default:"None" }} — {{ r.rationale }}</div>
+        {% if not r.confirmed %}
+        <form method="post" action="{% url 'public_need_discovery:confirm_role' r.pk %}" class="pnd-form">
+          {% csrf_token %}
+          <input type="hidden" name="evidence_reference" value="{{ r.evidence_reference }}">
+          <div class="field" style="min-width:100%;"><label>Rationale to confirm</label><textarea name="rationale">{{ r.rationale }}</textarea></div>
+          <button type="submit" class="pnd-btn">Confirm this role</button>
+        </form>
+        {% endif %}
+      </div>
+    {% empty %}<p class="pnd-empty">No organisation role recorded yet.</p>{% endfor %}
+
+    <div class="pnd-form">
+      <form method="post" action="{% url 'public_need_discovery:resolve_responsible_party' opportunity.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="pnd-btn pnd-btn-secondary">Resolve responsible party from signal</button></form>
+      <form method="post" action="{% url 'public_need_discovery:suggest_roles' opportunity.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="pnd-btn pnd-btn-secondary">Suggest roles from Capability Graph</button></form>
+    </div>
+
+    <form method="post" action="{% url 'public_need_discovery:add_role' opportunity.pk %}" class="pnd-form">
+      {% csrf_token %}
+      <div class="field"><label>Organisation name (real)</label><input type="text" name="organisation_name" required></div>
+      <div class="field"><label>Role</label><select name="role">{% for value, display in organisation_role_choices %}<option value="{{ value }}">{{ display }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Org jurisdiction</label><input type="text" name="org_jurisdiction"></div>
+      <div class="field" style="min-width:100%;"><label>Evidence reference (URL or soft pointer)</label><input type="text" name="evidence_reference"></div>
+      <div class="field" style="min-width:100%;"><label>Rationale</label><textarea name="rationale"></textarea></div>
+      <div class="field"><label>Confirm immediately?</label><select name="confirmed"><option value="false">No — suggest only</option><option value="true">Yes — I have checked this</option></select></div>
+      <button type="submit" class="pnd-btn">Add organisation role</button>
+    </form>
+  </div>
+
+  <div class="pnd-section">
+    <h2>4. Small action / official process</h2>
+    <p>Suggested action type: <span class="pnd-badge">{{ suggested_action.0|default:"none" }}</span> · Suggested process type: <span class="pnd-badge">{{ suggested_action.1|default:"none" }}</span></p>
+    <p>Current: <strong>{{ candidate.get_suggested_action_type_display|default:"Not set" }}</strong> — {{ candidate.suggested_action_description }}</p>
+    <form method="post" action="{% url 'public_need_discovery:record_small_action' opportunity.pk %}" class="pnd-form">
+      {% csrf_token %}
+      <div class="field"><label>Action type</label><select name="action_type">{% for value, display in small_action_type_choices %}<option value="{{ value }}" {% if candidate.suggested_action_type == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+      <div class="field" style="min-width:100%;"><label>Description (specific, never "solve this problem")</label><textarea name="description">{{ candidate.suggested_action_description }}</textarea></div>
+      <button type="submit" class="pnd-btn">Save small action</button>
+    </form>
+
+    <p style="margin-top:1rem;">Official process: {% if candidate.use_official_process %}<span class="pnd-badge pnd-badge-proceed">{{ candidate.get_official_process_type_display }}</span> — {{ candidate.official_process_route_reference }}{% else %}<span class="pnd-empty">Not routed to an official process — EcoIQ outreach may be the correct path.</span>{% endif %}</p>
+    <form method="post" action="{% url 'public_need_discovery:record_official_process' opportunity.pk %}" class="pnd-form">
+      {% csrf_token %}
+      <div class="field"><label>Process type</label><select name="process_type">{% for value, display in public_process_type_choices %}<option value="{{ value }}" {% if candidate.official_process_type == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+      <div class="field" style="min-width:100%;"><label>Route reference (URL/reference to the real official process)</label><input type="text" name="route_reference" value="{{ candidate.official_process_route_reference }}"></div>
+      <div class="field"><label>Use official process instead of outreach?</label><select name="use_official_process"><option value="true" selected>Yes</option><option value="false">No — clear it</option></select></div>
+      <button type="submit" class="pnd-btn">Save official process</button>
+    </form>
+  </div>
+
+  <div class="pnd-section">
+    <h2>5. Sensitivity gate</h2>
+    <p class="pnd-empty">Suggested (keyword-based, not a decision): {{ suggested_sensitivity_categories|join:", "|default:"none" }}</p>
+    <form method="post" action="{% url 'public_need_discovery:sensitivity_review' opportunity.pk %}" class="pnd-form">
+      {% csrf_token %}
+      <div class="field" style="min-width:100%;">
+        <label>Sensitivity categories that apply</label>
+        <div class="pnd-checklist">
+          {% for value, display in sensitivity_category_choices %}
+            <label><input type="checkbox" name="categories" value="{{ value }}" {% if value in candidate.sensitivity_categories %}checked{% endif %}> {{ display }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field" style="min-width:100%;"><label>Notes</label><textarea name="notes">{{ candidate.sensitivity_notes }}</textarea></div>
+      <div class="field"><label>Evidence valid but outreach inappropriate?</label>
+        <select name="outreach_inappropriate"><option value="false">No</option><option value="true" {% if candidate.evidence_valid_but_outreach_inappropriate %}selected{% endif %}>Yes — block progression</option></select>
+      </div>
+      <button type="submit" class="pnd-btn">Save sensitivity review</button>
+    </form>
+  </div>
+
+  <div class="pnd-section">
+    <h2>6. Actionability verdict</h2>
+    <form method="post" action="{% url 'public_need_discovery:set_actionability_state' opportunity.pk %}" class="pnd-form">
+      {% csrf_token %}
+      <div class="field"><label>Actionability class</label><select name="actionability_class">{% for value, display in actionability_class_choices %}<option value="{{ value }}" {% if candidate.actionability_class == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Actionability state</label><select name="actionability_state">{% for value, display in actionability_state_choices %}<option value="{{ value }}" {% if candidate.actionability_state == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Capital required now?</label><select name="capital_required_now"><option value="no" {% if candidate.capital_required_now == 'no' %}selected{% endif %}>No</option><option value="yes" {% if candidate.capital_required_now == 'yes' %}selected{% endif %}>Yes</option><option value="unknown" {% if candidate.capital_required_now == 'unknown' %}selected{% endif %}>Unknown</option></select></div>
+      <div class="field" style="min-width:100%;"><label>Why this is a real need</label><textarea name="why_real_need">{{ candidate.why_real_need }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Why action may be useful</label><textarea name="why_action_useful">{{ candidate.why_action_useful }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>What EcoIQ does not know</label><textarea name="what_ecoiq_does_not_know">{{ candidate.what_ecoiq_does_not_know }}</textarea></div>
+      <div class="field" style="min-width:100%;"><label>Rationale for this verdict</label><textarea name="rationale"></textarea></div>
+      <button type="submit" class="pnd-btn">Save actionability verdict</button>
+    </form>
+  </div>
+
+  <div class="pnd-section">
+    <h2>7. Promote to outreach readiness</h2>
+    <p class="pnd-empty">Only candidates that are actionable, not routed to an official process, may promote here — and only using one of this candidate's own CONFIRMED justifying roles. Promotion never sets suitability — the human actor must still walk PR12's own recipient responsibility test from scratch.</p>
+    {% if confirmed_justifying_roles %}
+    <form method="post" action="{% url 'public_need_discovery:promote_to_outreach_readiness' opportunity.pk %}" class="pnd-form">
+      {% csrf_token %}
+      <div class="field" style="min-width:100%;">
+        <label>Organisation role to promote with</label>
+        <select name="organisation_role_pk">
+          {% for r in confirmed_justifying_roles %}<option value="{{ r.pk }}">{{ r.organisation.name }} — {{ r.get_role_display }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="pnd-btn">Promote to outreach_readiness</button>
+    </form>
+    {% else %}
+      <p class="pnd-empty">No confirmed justifying role yet — confirm one above first.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
