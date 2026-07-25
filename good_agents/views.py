@@ -245,6 +245,13 @@ def impact_action_centre(request):
     ).select_related('action_gate', 'project_candidate').order_by('-urgency')[:40]
     command_centre_queues = pilot_launchpad.command_centre_queues(active_opportunities)
 
+    # PR12 Phase 22 — outreach readiness queues, over the same real
+    # excludes-controlled-test candidate set the Candidate Review page uses.
+    from outreach_readiness.services.queues import command_centre_queues as outreach_command_centre_queues
+    outreach_readiness_queues = outreach_command_centre_queues(
+        GoodOpportunity.objects.exclude(title__startswith='[CONTROLLED TEST]').order_by('-urgency')[:40],
+    )
+
     return render(request, 'good_agents/impact_action_centre.html', {
         'new_awaiting_review': new_awaiting_review,
         'approved_actions': approved_actions,
@@ -257,6 +264,7 @@ def impact_action_centre(request):
         'outcome_verification_pending': outcome_verification_pending,
         'recent_verified_impact': recent_verified_impact,
         'command_centre_queues': command_centre_queues,
+        'outreach_readiness_queues': outreach_readiness_queues,
     })
 
 
@@ -393,6 +401,7 @@ def mission_control_view(request):
             if opportunity else []
         ),
         'partner_participation_summary': mission_control.partner_participation_summary(opportunity) if opportunity else None,
+        'outreach_readiness_summary': pilot_launchpad.outreach_readiness_summary(opportunity) if opportunity else None,
     }
     return render(request, 'good_agents/mission_control.html', context)
 
@@ -443,6 +452,7 @@ def pilot_launchpad_view(request, pk):
         'partner_participation_summary': mission_control.partner_participation_summary(opportunity),
         'demo_story': mission_control.demo_story(opportunity),
         'project_candidate': project_candidate,
+        'outreach_readiness_summary': pilot_launchpad.outreach_readiness_summary(opportunity),
     }
     return render(request, 'good_agents/pilot_launchpad.html', context)
 

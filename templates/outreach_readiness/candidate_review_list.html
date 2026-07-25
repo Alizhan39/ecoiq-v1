@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Outreach Candidate Review — EcoIQ{% endblock %}
+{% block meta_description_content %}Compares real EcoIQ opportunities for first-real-outreach suitability — no aggregate AI score, every state explainable.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .or-wrap { --bg2:#0d1117; --border:rgba(255,255,255,.08); --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+    max-width:1200px; margin:2rem auto; padding:0 1rem; color:var(--text); }
+  .or-eyebrow { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .or-h1 { font-size:1.5rem; font-weight:800; margin:.3rem 0 1rem; }
+  .or-section { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; background:var(--bg2); }
+  .or-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  .or-table th { text-align:left; color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; padding:.5rem; border-bottom:1px solid var(--border); }
+  .or-table td { padding:.6rem .5rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  .or-table tr:last-child td { border-bottom:none; }
+  .or-badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; border:1px solid var(--border); color:var(--muted); display:inline-block; }
+  .or-badge-reject { color:var(--danger); border-color:var(--danger); }
+  .or-badge-proceed { color:var(--accent); border-color:var(--accent); }
+  .or-empty { color:var(--muted); font-size:.85rem; }
+  .or-link { color:var(--accent); text-decoration:none; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="or-wrap">
+  <div class="or-eyebrow">ECOIQ · FIRST REAL OUTREACH READINESS</div>
+  <h1 class="or-h1">Outreach Candidate Review</h1>
+  <p class="or-empty">Every row is a real GoodOpportunity. There is no mysterious aggregate AI score here — each suitability state is a real, explainable human judgement recorded against explicit criteria. This page does not send anything.</p>
+
+  <div class="or-section" style="overflow-x:auto;">
+    <table class="or-table" style="min-width:820px;">
+      <thead>
+        <tr><th>Opportunity</th><th>Resolved organisation</th><th>Recipient role</th><th>Suitability</th><th>Readiness</th><th>Sensitive?</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for c in candidates %}
+          <tr>
+            <td>{{ c.opportunity.title }}</td>
+            <td>{{ c.organisation.name|default:"Not resolved" }}</td>
+            <td>{{ c.recipient_role }}</td>
+            <td>
+              <span class="or-badge {% if c.suitability_state_raw == 'suitable' or c.suitability_state_raw == 'potentially_suitable' %}or-badge-proceed{% elif c.suitability_state_raw != 'not_ready' %}or-badge-reject{% endif %}">{{ c.suitability_state }}</span>
+            </td>
+            <td><span class="or-badge">{{ c.readiness_state }}</span></td>
+            <td>{% if c.is_sensitive %}<span class="or-badge or-badge-reject">SENSITIVE</span>{% else %}—{% endif %}</td>
+            <td><a class="or-link" href="{% url 'outreach_readiness:assessment_detail' c.opportunity.pk %}">Assess →</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="or-empty">No real candidate opportunities found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

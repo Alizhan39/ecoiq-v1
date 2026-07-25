@@ -708,3 +708,40 @@ def command_centre_queues(opportunities):
         'needs_measurement': needs_measurement,
         'blocked': blocked_queue,
     }
+
+
+# --- PR12: First Real Outreach Readiness — compact integration --------------
+
+def outreach_readiness_summary(opportunity):
+    """
+    PR12 Phase 21/23 — compact read-only status for Pilot Launchpad/Mission
+    Control. Never duplicates outreach_readiness's own page content, only
+    links to it (same discipline as partner_participation_summary's
+    collaboration-room link). Returns None if no assessment exists yet —
+    an honest "not started" rather than a fabricated default.
+    """
+    assessment = getattr(opportunity, 'outreach_assessment', None)
+    if assessment is None:
+        return None
+
+    from outreach_readiness.services.readiness import READINESS_LABELS, compute_readiness_state
+    readiness_state = compute_readiness_state(assessment)
+    latest_version = assessment.message_versions.order_by('-version_number').first()
+    founder_decision = getattr(assessment, 'founder_decision', None)
+
+    return {
+        'assessment': assessment,
+        'suitability_state': assessment.get_suitability_state_display(),
+        'suitability_state_raw': assessment.suitability_state,
+        'recipient_role': assessment.get_recipient_role_display() if assessment.recipient_role else 'Not classified',
+        'is_sensitive': assessment.is_sensitive,
+        'readiness_state': readiness_state,
+        'readiness_label': READINESS_LABELS[readiness_state],
+        'latest_message_version': latest_version,
+        'founder_decision': founder_decision.decision if founder_decision else None,
+        'link': _link('Outreach assessment', 'outreach_readiness:assessment_detail', opportunity.pk),
+        'founder_review_link': (
+            _link('Founder Send Review', 'outreach_readiness:founder_send_review', opportunity.pk)
+            if readiness_state == 'ready_for_founder_review' or founder_decision else None
+        ),
+    }

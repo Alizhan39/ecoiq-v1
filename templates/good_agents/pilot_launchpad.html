@@ -176,9 +176,31 @@
     <p class="pl-empty">Verified values: {{ mrv_plan.verified_values }}</p>
   </div>
 
+  <div class="pl-section">
+    <h2>First real outreach readiness</h2>
+    {% if outreach_readiness_summary %}
+      <p><span class="pl-badge">{{ outreach_readiness_summary.suitability_state }}</span>
+         <span class="pl-badge">{{ outreach_readiness_summary.recipient_role }}</span>
+         {% if outreach_readiness_summary.is_sensitive %}<span class="pl-badge pl-badge-blocked">SENSITIVE</span>{% endif %}
+         <span class="pl-badge">{{ outreach_readiness_summary.readiness_label }}</span></p>
+      {% if outreach_readiness_summary.founder_decision %}
+        <p class="pl-empty">Founder decision: <strong>{{ outreach_readiness_summary.founder_decision|upper }}</strong></p>
+      {% else %}
+        <p class="pl-empty">Awaiting explicit founder send decision.</p>
+      {% endif %}
+      <a class="pl-btn" href="{{ outreach_readiness_summary.link.url }}">{{ outreach_readiness_summary.link.label }} →</a>
+      {% if outreach_readiness_summary.founder_review_link %}<a class="pl-btn" href="{{ outreach_readiness_summary.founder_review_link.url }}">{{ outreach_readiness_summary.founder_review_link.label }} →</a>{% endif %}
+    {% else %}
+      <p class="pl-empty">No outreach suitability review started yet.</p>
+      <a class="pl-btn" href="{% url 'outreach_readiness:assessment_detail' opportunity.pk %}">Start outreach assessment →</a>
+    {% endif %}
+  </div>
+
   <div class="pl-disclaimer">
     This page reflects real, current EcoIQ records only. No partnership, funding commitment, contract,
-    or impact is implied by any state shown above unless independently verified.
+    or impact is implied by any state shown above unless independently verified. Preparing an outreach
+    message does not establish a partnership, endorsement, consent, obligation, or commitment, and no
+    real external send can occur from this page.
   </div>
 </div>
 {% endblock %}
