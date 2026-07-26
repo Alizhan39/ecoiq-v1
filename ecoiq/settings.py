@@ -319,6 +319,16 @@ INSTALLED_APPS = [
     # outreach handoff), never defaulting to email, never executing
     # anything externally. EXTERNAL_PUBLIC_ACTIONS_ENABLED stays False.
     'public_action_preparation',
+
+    # Industrial Digital Twin & Modernisation Engine — a living baseline
+    # model of an industrial asset (manufacturing facility, mine, mineral
+    # deposit, processing plant, energy asset, infrastructure project, or
+    # generic industrial asset): components, process graph, resource flows,
+    # governed metrics and data gaps, deterministic loss detection and
+    # scenario simulation, a draft/versioned Qur'anic Stewardship KPI
+    # engine, and Agent Council + human-approval promotion into the existing
+    # waste_to_value_capital_allocation_engine capital-allocation workflow.
+    'digital_twin',
 ]
 
 # PR14 — hardcoded false; no code path in public_action_preparation reads
