@@ -147,8 +147,15 @@ def promote_loss_detection(loss_detection, organisation='', location='', country
     (raises) unless status == 'approved' — this is the only path by which a
     twin-detected candidate becomes a real, capital-allocation-visible loss.
     Idempotent: if already promoted, returns the existing OperationalLoss
-    rather than creating a second one."""
+    rather than creating a second one. Self-healing: `status` is an
+    invariant of `promoted_loss` being set, never the other way round — if a
+    caller re-sets status='approved' on an already-promoted row (e.g. by
+    re-running an approval script), that status is corrected back to
+    'promoted' rather than left in a self-contradictory state."""
     if loss_detection.promoted_loss_id:
+        if loss_detection.status != 'promoted':
+            loss_detection.status = 'promoted'
+            loss_detection.save(update_fields=['status', 'updated_at'])
         return loss_detection.promoted_loss
 
     if loss_detection.status != 'approved':

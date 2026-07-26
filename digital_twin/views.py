@@ -84,9 +84,10 @@ def scenario_stewardship(request, scenario_id):
 
 
 def scenario_council(request, scenario_id):
+    from digital_twin.services import council as council_service
+
     scenario = get_object_or_404(m.ModernisationScenario, pk=scenario_id)
-    decisions = scenario.human_decisions.select_related('council_run')
-    council_run = decisions.first().council_run if decisions.exists() else None
+    council_run = council_service.get_council_run(scenario)
     tasks = council_run.tasks.all() if council_run else []
     decision_record = getattr(council_run, 'decision', None) if council_run else None
     return render(request, 'digital_twin/scenario_council.html', {

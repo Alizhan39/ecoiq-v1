@@ -223,6 +223,22 @@ AGENT_POSITION_BUILDERS = {
 }
 
 
+def council_run_slug(scenario):
+    """The one place this slug is constructed — shared by convene_council()
+    and get_council_run() so a lookup can never drift out of sync with how
+    a run was actually created."""
+    return slugify(f'digital-twin-scenario-{scenario.pk}-{scenario.intervention.title}')[:120]
+
+
+def get_council_run(scenario):
+    """Looks up a scenario's CouncilRun directly (Council review happens
+    BEFORE any human decision, so this must not depend on a HumanDecision
+    existing — a scenario can have a council review and never be chosen)."""
+    from ai_agent_council.models import CouncilRun
+
+    return CouncilRun.objects.filter(slug=council_run_slug(scenario)).first()
+
+
 def convene_council(scenario):
     """Creates (idempotently, by slug) one CouncilRun with one AgentTask per
     COUNCIL_AGENT_ORDER entry, classifies real disagreements between them
@@ -236,9 +252,8 @@ def convene_council(scenario):
     assessments = list(scenario.stewardship_assessments.select_related('kpi'))
     guardrail = guardrails_service.evaluate_guardrails(scenario)
 
-    slug = slugify(f'digital-twin-scenario-{scenario.pk}-{scenario.intervention.title}')[:120]
     run, created = CouncilRun.objects.get_or_create(
-        slug=slug,
+        slug=council_run_slug(scenario),
         defaults={
             'title': f'Digital Twin Review: {scenario.intervention.title}',
             'question': f'Should "{scenario.intervention.title}" proceed for {scenario.twin.asset.name}?',

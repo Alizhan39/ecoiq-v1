@@ -269,6 +269,26 @@ class LossDetectionTests(TestCase):
         self.assertEqual(first.pk, second.pk)
         self.assertEqual(OperationalLoss.objects.count(), 1)
 
+    def test_promotion_self_heals_status_if_caller_resets_it_after_promotion(self):
+        # Reproduces a real bug found while validating the demo fixture: a
+        # caller (e.g. a re-run approval script) sets status back to
+        # 'approved' on an already-promoted row before calling promote again.
+        twin = _make_twin()
+        candidate = m.LossDetection.objects.create(
+            twin=twin, loss_type='energy_loss', title='Candidate', status='approved',
+        )
+        real_loss = loss_detection_service.promote_loss_detection(candidate)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, 'promoted')
+
+        candidate.status = 'approved'  # caller regresses status
+        candidate.save()
+        result = loss_detection_service.promote_loss_detection(candidate)
+        candidate.refresh_from_db()
+        self.assertEqual(result.pk, real_loss.pk)
+        self.assertEqual(candidate.status, 'promoted')  # self-healed
+        self.assertEqual(OperationalLoss.objects.count(), 1)
+
     def test_never_auto_approved_by_detection(self):
         twin = _make_twin()
         _make_node(twin, name='Line 1', downtime_hours=999.0)
@@ -464,6 +484,16 @@ class AgentCouncilIntegrationTests(TestCase):
         worker_safety_task = next(t for t in result['tasks'] if t.agent_name == 'Worker Safety Agent')
         self.assertIn('worker_harm_signal', worker_safety_task.risk_flags)
 
+    def test_get_council_run_finds_review_with_no_human_decision_yet(self):
+        # Reproduces a real view bug: Council review happens BEFORE a human
+        # decision exists, so lookup must not depend on one.
+        scenario = _make_scenario()
+        stewardship_service.run_stewardship_assessment(scenario)
+        result = council_service.convene_council(scenario)
+        self.assertFalse(m.HumanDecision.objects.filter(scenario=scenario).exists())
+        found = council_service.get_council_run(scenario)
+        self.assertEqual(found.pk, result['run'].pk)
+
     def test_convene_council_is_rerunnable_without_duplicating_the_run(self):
         scenario = _make_scenario()
         stewardship_service.run_stewardship_assessment(scenario)
@@ -602,7 +632,7 @@ class DemoWorkflowEndToEndTests(TestCase):
             self.assertTrue(scenario.stewardship_assessments.exists())
 
         strategic = scenarios.get(scenario_type='strategic')
-        strategic_run = CouncilRun.objects.get(slug__contains=f'digital-twin-scenario-{strategic.pk}')
+        strategic_run = council_service.get_council_run(strategic)
         self.assertEqual(strategic_run.decision.status, 'rejected')
 
         low_cost = scenarios.get(scenario_type='low_cost')
