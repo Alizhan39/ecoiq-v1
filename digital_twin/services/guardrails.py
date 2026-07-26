@@ -47,8 +47,13 @@ def evaluate_guardrails(scenario):
         reasons.append('BLOCK: financial return combined with unresolved worker/community harm signal.')
 
     # Named rule: material community displacement/vulnerability -> requires
-    # human and specialist review.
-    vulnerability_warnings = [a for a in assessments if a.kpi.slug == 'community-vulnerability-screen' and a.warning and a.warning_reason]
+    # human and specialist review. Distinguished from the KPI's plain
+    # "not documented" warning by its distinctive neutral score of 50.0
+    # (see services/stewardship.py::_score_protection_of_vulnerable_people)
+    # — an undocumented field is a generic gap, not a detected signal.
+    vulnerability_warnings = [
+        a for a in assessments if a.kpi.slug == 'community-vulnerability-screen' and a.calculated_score == 50.0
+    ]
     if vulnerability_warnings and verdict not in ('block',):
         verdict = _escalate(verdict, 'requires_specialist_review')
         for a in vulnerability_warnings:

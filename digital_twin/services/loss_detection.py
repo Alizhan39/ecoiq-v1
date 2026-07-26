@@ -48,15 +48,19 @@ def _make_candidate(twin, component, process_node, loss_type, title, description
                      estimated_annual_impact, confidence, evidence_references=None):
     from digital_twin.models import LossDetection
 
+    # Lookup key deliberately excludes `status`: once a candidate has been
+    # human-reviewed (approved/rejected/promoted), re-running detection must
+    # find and leave that same row alone, never spawn a fresh 'candidate'
+    # duplicate of something a human has already acted on.
     candidate, created = LossDetection.objects.get_or_create(
         twin=twin, component=component, process_node=process_node, loss_type=loss_type, title=title,
-        status='candidate',
         defaults={
             'description': description,
             'calculation_notes': calculation_notes,
             'estimated_annual_impact': estimated_annual_impact,
             'confidence': confidence,
             'evidence_references': evidence_references or [],
+            'status': 'candidate',
         },
     )
     if not created:
