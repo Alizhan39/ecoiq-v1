@@ -147,7 +147,18 @@ Run against this worktree's local SQLite dev database:
   pages), and the full demo workflow end to end including its own
   idempotency.
 - `python manage.py test digital_twin ai_agent_council ai_agent_workbench agent_runtime_model_router waste_to_value_capital_allocation_engine` — **323/323 passed**, confirming the two most directly touched existing apps and their nearest neighbours are unaffected.
-- `python manage.py test` (the entire ~100-app platform test suite) — completed with **exit code 0** (no failures).
+- `python manage.py test` (the entire ~100-app platform test suite, 3,587
+  tests) — **3,585 passed, 2 failed, 2 skipped.** The 2 failures
+  (`good_agents.tests.GoodWhileYouSleepCommandTests.test_seeds_all_114_and_real_providers`,
+  `good_agents.tests.IngestionOrchestrationTests.test_one_provider_failure_does_not_stop_others`)
+  are in an app this implementation never touches (`git diff --stat
+  80a4e25..HEAD -- good_agents/` is empty) and reproduce identically when
+  run against `good_agents/tests.py` checked out at the pre-implementation
+  base commit `80a4e25` — a pre-existing, stale-count assertion (test
+  expects 3 `SignalProvider` rows, the seed command now configures 5),
+  unrelated to and not introduced by this work. The 2 skips are
+  environment-only (`CountryProfile` fixtures for the demo country pages,
+  unrelated to `digital_twin`).
 - Manual browser verification (Django dev server against the seeded demo
   data): asset list → asset detail → twin baseline → operational losses →
   scenarios → the strategic scenario's Agent Council page (confirmed a real
