@@ -1,0 +1,32 @@
+{
+  "agent_name": "Engineering Agent",
+  "realistic_test_cases": [
+    {
+      "id": "ENG-01",
+      "title": "Well-specified retrofit",
+      "input": {
+        "technical_specification": "present",
+        "component_condition": "good"
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "ENG-02",
+      "title": "Missing specification on a critical, poor-condition component",
+      "input": {
+        "technical_specification": "",
+        "component_condition": "poor",
+        "criticality": "critical"
+      },
+      "expected_output": {
+        "position": "insufficient_evidence",
+        "risk_flags": [
+          "missing_technical_specification",
+          "critical_component_poor_condition"
+        ]
+      }
+    }
+  ]
+}

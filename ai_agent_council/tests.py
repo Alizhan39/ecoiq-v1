@@ -122,15 +122,16 @@ class AiAgentCouncilPageTests(TestCase):
 class AiAgentCouncilRepoValidationTests(TestCase):
     """Validates the live repository state the Council page reads from."""
 
-    def test_exactly_thirteen_operational_agent_folders(self):
-        # 13 since ai_agents/good_agent_orchestrator/ was added (OPERATIONAL_AGENTS #13).
+    def test_exactly_twenty_operational_agent_folders(self):
+        # 20 since the 7 Industrial Digital Twin Council personas were added
+        # (OPERATIONAL_AGENTS #18-24; was 13 after Good Agent Orchestrator).
         repo_state = _scan_ai_agents_repo_state()
-        self.assertEqual(repo_state['operational_folder_count'], 13)
+        self.assertEqual(repo_state['operational_folder_count'], 20)
 
-    def test_exactly_one_hundred_and_thirty_agent_training_files(self):
-        # 13 folders x 10 required files = 130 (was 120 before Good Agent Orchestrator was added).
+    def test_exactly_two_hundred_agent_training_files(self):
+        # 20 folders x 10 required files = 200 (was 130 before the Digital Twin personas were added).
         repo_state = _scan_ai_agents_repo_state()
-        self.assertEqual(repo_state['total_training_files'], 130)
+        self.assertEqual(repo_state['total_training_files'], 200)
 
     def test_master_index_exists(self):
         repo_state = _scan_ai_agents_repo_state()

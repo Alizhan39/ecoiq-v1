@@ -1,0 +1,30 @@
+{
+  "agent_name": "Evidence Agent",
+  "realistic_test_cases": [
+    {
+      "id": "EVA-01",
+      "title": "Confidence backed by evidence",
+      "input": {
+        "confidence": 80,
+        "evidence_reference_count": 3
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "EVA-02",
+      "title": "High confidence, no evidence",
+      "input": {
+        "confidence": 90,
+        "evidence_reference_count": 0
+      },
+      "expected_output": {
+        "position": "insufficient_evidence",
+        "missing_data": [
+          "no evidence_references for stated confidence"
+        ]
+      }
+    }
+  ]
+}

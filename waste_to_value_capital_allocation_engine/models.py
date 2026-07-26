@@ -77,6 +77,13 @@ LOSS_TYPE_CHOICES = [
     ('underused_renewable_generation', 'Underused renewable generation'),
     ('curtailed_energy',              'Curtailed energy'),
     ('unmatched_surplus',             'Unmatched surplus'),
+    # Added for the Industrial Digital Twin (digital_twin app) loss-detection
+    # rules — additive only, no existing choice renamed or removed, so no
+    # existing OperationalLoss row's loss_type value is affected.
+    ('avoidable_emissions',           'Avoidable emissions'),
+    ('worker_safety_exposure',        'Worker safety exposure'),
+    ('community_harm',                'Community harm'),
+    ('missing_technology_adoption',   'Missing research or technology adoption'),
 ]
 
 EVIDENCE_QUALITY_CHOICES = [

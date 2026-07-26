@@ -1,0 +1,28 @@
+{
+  "agent_name": "Community Impact Agent",
+  "realistic_test_cases": [
+    {
+      "id": "CIA-01",
+      "title": "No community effect expected",
+      "input": {
+        "community_impact": "Local air-quality readings expected to improve near the site boundary."
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "CIA-02",
+      "title": "Displacement language present",
+      "input": {
+        "community_impact": "May require resettlement of two adjacent households during construction."
+      },
+      "expected_output": {
+        "position": "conditional",
+        "conditions": [
+          "specialist community-impact review"
+        ]
+      }
+    }
+  ]
+}

@@ -601,6 +601,16 @@ class LossDetection(TimeStampedModel):
     def __str__(self):
         return f'{self.title} ({self.get_status_display()})'
 
+    @property
+    def human_approved(self):
+        """Duck-typed for services/human_approval_gate.py: derived from
+        `status`, never a second independent field that could disagree with it."""
+        if self.status in ('approved', 'promoted'):
+            return True
+        if self.status == 'rejected':
+            return False
+        return None
+
 
 # ── Modernisation scenarios ───────────────────────────────────────────────────
 

@@ -132,6 +132,62 @@ OPERATIONAL_AGENTS = [
             'than one reasoning call per signal, and never move a decision past human approval itself.'
         ),
     },
+
+    # --- Industrial Digital Twin & Modernisation Engine council personas ---
+    # Finance ("Finance Modelling Agent"), Risk ("Governance Agent") and
+    # Capital Guardian ("Capital Allocation Agent") roles are deliberately
+    # NOT re-added here — the Digital Twin council reuses those three
+    # existing personas directly rather than duplicating near-identical
+    # roles (see docs/adr/ADR-digital-twin-foundation.md).
+    {
+        'number': 18, 'name': 'Digital Twin Agent', 'folder': 'digital_twin_agent',
+        'role': 'States the twin\'s current baseline completeness/confidence/freshness and flags when a scenario rests on stale or incomplete data.',
+        'handoffs': ['Engineering Agent', 'Evidence Agent'], 'important': '',
+    },
+    {
+        'number': 19, 'name': 'Engineering Agent', 'folder': 'engineering_agent',
+        'role': 'Reviews a modernisation scenario\'s technical specification and implementation phases for feasibility and technical risk.',
+        'handoffs': ['Finance Modelling Agent', 'Risk Agent (Governance Agent)'], 'important': '',
+    },
+    {
+        'number': 20, 'name': 'Energy and Resources Agent', 'folder': 'energy_resources_agent',
+        'role': 'Reviews a scenario\'s energy, water, waste and emissions impact figures against the twin\'s recorded resource flows.',
+        'handoffs': ['Stewardship Agent'], 'important': '',
+    },
+    {
+        'number': 21, 'name': 'Worker Safety Agent', 'folder': 'worker_safety_agent',
+        'role': 'Reviews a scenario\'s worker_impact narrative and operational_disruption level for safety risk.',
+        'handoffs': ['Governance Agent'],
+        'important': (
+            'Worker Safety Agent flags risk for human and Council review. It must never '
+            'clear a scenario past a detected harm signal itself.'
+        ),
+    },
+    {
+        'number': 22, 'name': 'Community Impact Agent', 'folder': 'community_impact_agent',
+        'role': 'Reviews a scenario\'s community_impact narrative for displacement, vulnerability or local-harm signals.',
+        'handoffs': ['Governance Agent', 'Stewardship Agent'],
+        'important': (
+            'Community Impact Agent flags risk for human and specialist review. It must never '
+            'clear a scenario past a detected vulnerability signal itself.'
+        ),
+    },
+    {
+        'number': 23, 'name': 'Evidence Agent', 'folder': 'evidence_agent',
+        'role': 'Reviews whether a scenario\'s stated confidence is actually backed by evidence references, independent of who produced the confidence figure.',
+        'handoffs': ['Digital Twin Agent'], 'important': '',
+    },
+    {
+        'number': 24, 'name': 'Stewardship Agent', 'folder': 'stewardship_agent',
+        'role': 'Runs the draft, versioned Qur\'anic Stewardship KPI assessments for a scenario and reports the deterministic guardrail verdict — never generates or interprets religious content itself.',
+        'handoffs': ['Governance Agent', 'Capital Allocation Agent'],
+        'important': (
+            'Stewardship Agent reports pre-computed, deterministic KPI scores and guardrail '
+            'verdicts. It must never author, translate, or interpret a sacred-text source, and '
+            'every KPI it reports remains in draft/requires-scholarly-review status until a real '
+            'scholarly review changes that.'
+        ),
+    },
 ]
 
 NEXT_STAGE_AGENTS = [
