@@ -1,0 +1,21 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}Industrial Assets{% endblock %}
+{% block dt_content %}
+<h1>Industrial Assets</h1>
+<p class="dt-muted">Every row is an <span class="dt-badge dt-badge--observed">Observed</span> asset record — nothing here is AI-generated.</p>
+<table class="dt-table">
+  <tr><th>Name</th><th>Type</th><th>Country</th><th>Lifecycle</th><th>Status</th><th>Twins</th></tr>
+  {% for asset in assets %}
+  <tr>
+    <td><a href="{% url 'digital_twin:asset_detail' asset.pk %}">{{ asset.name }}</a></td>
+    <td>{{ asset.asset_type.display_name }}</td>
+    <td>{{ asset.country|default:"—" }}</td>
+    <td>{{ asset.get_lifecycle_stage_display }}</td>
+    <td>{{ asset.get_operational_status_display }}</td>
+    <td>{{ asset.twins.count }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="6" class="dt-muted">No industrial assets yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ twin.name }} — Operational Losses{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:twin_baseline' twin.pk %}">{{ twin.name }}</a> / Losses{% endblock %}
+{% block dt_content %}
+<h1>Detected Operational Losses</h1>
+<p class="dt-muted">
+  <span class="dt-badge dt-badge--ai-suggested">AI-Suggested</span> candidates are never auto-approved — only a
+  <span class="dt-badge dt-badge--approved">Promoted</span> row has become a real, capital-allocation-visible loss.
+</p>
+<table class="dt-table">
+  <tr><th>Title</th><th>Type</th><th>Est. Annual Impact</th><th>Confidence</th><th>Status</th></tr>
+  {% for loss in losses %}
+  <tr>
+    <td>{{ loss.title }}</td>
+    <td>{{ loss.get_loss_type_display }}</td>
+    <td>{{ loss.currency }} {{ loss.estimated_annual_impact|default:"—" }}</td>
+    <td>{{ loss.confidence }}</td>
+    <td>
+      {% if loss.status == 'promoted' %}<span class="dt-badge dt-badge--approved">Promoted</span>
+      {% elif loss.status == 'approved' %}<span class="dt-badge dt-badge--approved">Approved</span>
+      {% elif loss.status == 'rejected' %}<span class="dt-badge dt-badge--blocked">Rejected</span>
+      {% else %}<span class="dt-badge dt-badge--ai-suggested">{{ loss.get_status_display }}</span>{% endif %}
+    </td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="dt-muted">No losses detected yet.</td></tr>{% endfor %}
+</table>
+{% endblock %}

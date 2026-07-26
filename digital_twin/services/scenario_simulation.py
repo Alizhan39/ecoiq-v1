@@ -86,7 +86,6 @@ def _compute_case(scenario, intervention, case_key, horizon_years, horizon_is_de
         missing_inputs.append('scenario.confidence not set — confidence-adjusted benefit unavailable.')
 
     return {
-        'case': case_key,
         'capex': _result(
             'CAPEX', 'intervention.capex_estimate * case_multiplier',
             {'capex_estimate': intervention.capex_estimate, 'multiplier': capex_mult}, capex, 'USD', None, assumptions,

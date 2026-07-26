@@ -1,0 +1,33 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ scenario.intervention.title }} — Agent Council{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:scenario_detail' scenario.pk %}">{{ scenario.intervention.title }}</a> / Agent Council{% endblock %}
+{% block dt_content %}
+<h1>Agent Council Review</h1>
+{% if not council_run %}
+<p class="dt-muted">No Council review has been convened for this scenario yet.</p>
+{% else %}
+<p class="dt-muted">
+  <span class="dt-badge dt-badge--ai-suggested">AI-Suggested</span> — simulated positions (no live LLM runtime exists yet, matching the rest of the platform's honesty convention).
+</p>
+<h2>Agent Positions</h2>
+{% for t in tasks %}
+<div class="dt-card">
+  <strong>{{ t.agent_name }}</strong> <span class="dt-muted">confidence {{ t.confidence }}</span>
+  {% for flag in t.risk_flags %}<span class="dt-badge dt-badge--warning">{{ flag }}</span>{% endfor %}
+  <p>{{ t.position_summary }}</p>
+  {% if t.missing_data %}<p class="dt-muted">Missing: {{ t.missing_data|join:", " }}</p>{% endif %}
+</div>
+{% endfor %}
+
+<h2>Final Decision</h2>
+{% if decision_record %}
+<div class="dt-card">
+  <span class="dt-badge {% if decision_record.status == 'rejected' %}dt-badge--blocked{% elif decision_record.status == 'approved_with_conditions' %}dt-badge--warning{% else %}dt-badge--approved{% endif %}">{{ decision_record.get_status_display }}</span>
+  <p>{{ decision_record.summary }}</p>
+  <p class="dt-muted">Majority: {{ decision_record.majority_agents|join:", " }}</p>
+  <p class="dt-muted">Minority: {{ decision_record.minority_agents|join:", " }}{% if decision_record.minority_reason %} — {{ decision_record.minority_reason }}{% endif %}</p>
+  <p><strong>This is a recommendation. Human approval is still required.</strong></p>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

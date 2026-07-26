@@ -1,0 +1,22 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}Compare Scenarios{% endblock %}
+{% block dt_crumb %} / Compare Scenarios{% endblock %}
+{% block dt_content %}
+<h1>Scenario Comparison <span class="dt-badge dt-badge--calculated">Calculated</span></h1>
+<table class="dt-table">
+  <tr><th>Scenario</th><th>CAPEX</th><th>Annual Savings</th><th>NPV (expected)</th><th>Payback (years)</th></tr>
+  {% for scenario in scenarios %}
+  {% for c in comparisons %}
+  {% if c.scenario_id == scenario.pk %}
+  <tr>
+    <td><a href="{% url 'digital_twin:scenario_detail' scenario.pk %}">{{ scenario.intervention.title }}</a> ({{ scenario.get_scenario_type_display }})</td>
+    <td>{{ c.cases.expected.capex.output }}</td>
+    <td>{{ c.cases.expected.annual_savings.output }}</td>
+    <td>{{ c.cases.expected.npv.output|default:"—" }}</td>
+    <td>{{ c.cases.expected.payback_years.output|default:"—" }}</td>
+  </tr>
+  {% endif %}
+  {% endfor %}
+  {% empty %}<tr><td colspan="5" class="dt-muted">Select scenarios to compare from the twin's scenario list.</td></tr>{% endfor %}
+</table>
+{% endblock %}

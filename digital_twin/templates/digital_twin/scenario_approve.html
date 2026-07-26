@@ -1,0 +1,16 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ scenario.intervention.title }} — Human Approval{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:scenario_detail' scenario.pk %}">{{ scenario.intervention.title }}</a> / Human Approval{% endblock %}
+{% block dt_content %}
+<h1>Human Approval</h1>
+<p class="dt-muted">Recording a decision here is the only way a scenario can proceed to capital allocation — no AI output on this page is self-executing.</p>
+<h2>Decision History</h2>
+{% for d in decisions %}
+<div class="dt-card">
+  <span class="dt-badge {% if d.human_approved %}dt-badge--approved{% elif d.human_approved is False %}dt-badge--blocked{% else %}dt-badge--warning{% endif %}">{{ d.get_decision_display }}</span>
+  <span class="dt-muted">{{ d.reviewer_role }} — {{ d.decided_at }}</span>
+  <p>{{ d.comments }}</p>
+  {% if d.conditions %}<p class="dt-muted">Conditions: {{ d.conditions|join:"; " }}</p>{% endif %}
+</div>
+{% empty %}<p class="dt-muted">No human decision has been recorded yet. Use the Django admin to record a HumanDecision (approved / approved_with_conditions / rejected / deferred).</p>{% endfor %}
+{% endblock %}

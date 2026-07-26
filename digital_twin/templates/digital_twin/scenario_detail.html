@@ -1,0 +1,28 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ scenario.intervention.title }}{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:twin_scenarios' scenario.twin.pk %}">{{ scenario.twin.name }}</a> / {{ scenario.intervention.title }}{% endblock %}
+{% block dt_content %}
+<h1>{{ scenario.intervention.title }} <span class="dt-badge dt-badge--calculated">{{ scenario.get_scenario_type_display }}</span></h1>
+<p>{{ scenario.technical_specification }}</p>
+<p class="dt-muted">
+  <a href="{% url 'digital_twin:scenario_stewardship' scenario.pk %}">Stewardship assessment</a> ·
+  <a href="{% url 'digital_twin:scenario_council' scenario.pk %}">Agent Council review</a> ·
+  <a href="{% url 'digital_twin:scenario_approve' scenario.pk %}">Human approval</a>
+</p>
+
+<h2>Expected Case — Deterministic Simulation <span class="dt-badge dt-badge--calculated">Calculated</span></h2>
+{% with case=simulation.cases.expected %}
+<table class="dt-table">
+  <tr><th>Metric</th><th>Output</th><th>Formula</th><th>Missing</th></tr>
+  {% for key, value in case.items %}
+  <tr>
+    <td>{{ value.label }}</td>
+    <td>{{ value.output|default:"—" }} {{ value.unit }}</td>
+    <td class="dt-muted">{{ value.formula }}</td>
+    <td>{% for miss in value.missing_inputs %}<span class="dt-badge dt-badge--missing">{{ miss }}</span>{% endfor %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endwith %}
+<p class="dt-muted">Evaluation horizon: {{ simulation.evaluation_horizon_years }} years · Discount rate: {{ simulation.discount_rate_pct }}% — both explicit <span class="dt-badge dt-badge--assumption">Assumptions</span>, not observed facts.</p>
+{% endblock %}

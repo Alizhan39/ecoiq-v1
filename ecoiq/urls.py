@@ -255,6 +255,13 @@ urlpatterns = [
     # Founder Action Review; no real external submission exists here.
     path('public-action-preparation/', include('public_action_preparation.urls', namespace='public_action_preparation')),
 
+    # EcoIQ Industrial Digital Twin & Modernisation Engine — living baseline
+    # model of an industrial asset, deterministic loss detection and
+    # scenario simulation, draft Qur'anic Stewardship KPIs, Agent Council
+    # review and human-approved promotion into the existing capital-
+    # allocation workflow.
+    path('digital-twin/', include('digital_twin.urls', namespace='digital_twin')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

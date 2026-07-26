@@ -1,0 +1,36 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ twin.name }} — Baseline{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:asset_detail' twin.asset.pk %}">{{ twin.asset.name }}</a> / Baseline{% endblock %}
+{% block dt_content %}
+<h1>{{ twin.name }} <span class="dt-badge {% if twin.status == 'active' %}dt-badge--approved{% else %}dt-badge--calculated{% endif %}">{{ twin.get_status_display }}</span></h1>
+<p class="dt-muted">Baseline scores below are <span class="dt-badge dt-badge--calculated">Calculated</span> by the deterministic Baseline Engine (formula v{{ result.formula_version }}) — never asserted by an AI model.</p>
+
+<div class="dt-card">
+  <table class="dt-table">
+    <tr><th>Completeness</th><td class="dt-score">{{ result.completeness_score }}</td></tr>
+    <tr><th>Confidence</th><td class="dt-score">{{ result.confidence_score }}</td></tr>
+    <tr><th>Freshness</th><td class="dt-score">{{ result.freshness_score }}</td></tr>
+    <tr><th>Evidence coverage</th><td class="dt-score">{{ result.evidence_coverage }}</td></tr>
+    <tr><th>Ready for optimisation</th><td>{% if result.ready_for_optimisation %}<span class="dt-badge dt-badge--approved">Yes</span>{% else %}<span class="dt-badge dt-badge--warning">No</span>{% endif %}</td></tr>
+  </table>
+</div>
+
+<h2>Warnings</h2>
+{% for warning in result.warnings %}
+<p><span class="dt-badge dt-badge--missing">Missing</span> {{ warning }}</p>
+{% empty %}
+<p class="dt-muted">No warnings.</p>
+{% endfor %}
+
+<h2>Critical Data Gaps</h2>
+{% for gap in result.critical_data_gaps %}
+<p><span class="dt-badge dt-badge--missing">{{ gap.severity }}</span> {{ gap.affected_area }} — {{ gap.why_it_matters }}</p>
+{% empty %}
+<p class="dt-muted">None open.</p>
+{% endfor %}
+
+<p class="dt-muted"><a href="{% url 'digital_twin:twin_process_map' twin.pk %}">Process map</a> ·
+<a href="{% url 'digital_twin:twin_data_gaps' twin.pk %}">All data gaps</a> ·
+<a href="{% url 'digital_twin:twin_losses' twin.pk %}">Operational losses</a> ·
+<a href="{% url 'digital_twin:twin_scenarios' twin.pk %}">Modernisation scenarios</a></p>
+{% endblock %}

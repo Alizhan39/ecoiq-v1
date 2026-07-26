@@ -1,0 +1,20 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ scenario.intervention.title }} — Implementation{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:scenario_detail' scenario.pk %}">{{ scenario.intervention.title }}</a> / Implementation{% endblock %}
+{% block dt_content %}
+<h1>Implementation & Measured Outcomes</h1>
+{% for action in actions %}
+<div class="dt-card">
+  <strong>{{ action.title }}</strong> <span class="dt-badge dt-badge--calculated">{{ action.get_status_display }}</span>
+  <p class="dt-muted">Owner: {{ action.owner|default:"—" }} · Planned: {{ action.planned_start_date|default:"—" }} – {{ action.planned_end_date|default:"—" }} · Budget: {{ action.budget|default:"—" }}</p>
+  <h3 style="font-size:.95rem;margin-top:.5rem;">Measured Outcomes</h3>
+  {% for o in action.measured_outcomes.all %}
+  <p>
+    {% if o.actual_value is None %}<span class="dt-badge dt-badge--assumption">Placeholder — not yet measured</span>{% else %}<span class="dt-badge dt-badge--observed">Measured</span>{% endif %}
+    Predicted {{ o.predicted_value|default:"—" }} vs actual {{ o.actual_value|default:"pending" }}
+    {% if o.variance_pct %}(variance {{ o.variance_pct }}%){% endif %}
+  </p>
+  {% empty %}<p class="dt-muted">No measured outcomes recorded yet.</p>{% endfor %}
+</div>
+{% empty %}<p class="dt-muted">No implementation actions recorded yet.</p>{% endfor %}
+{% endblock %}

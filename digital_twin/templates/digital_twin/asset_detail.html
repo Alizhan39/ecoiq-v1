@@ -1,0 +1,22 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ asset.name }}{% endblock %}
+{% block dt_crumb %} / {{ asset.name }}{% endblock %}
+{% block dt_content %}
+<h1>{{ asset.name }}</h1>
+<p class="dt-muted">{{ asset.asset_type.display_name }} · {{ asset.country|default:"—" }}{% if asset.region %}, {{ asset.region }}{% endif %} · <span class="dt-badge dt-badge--observed">Observed</span></p>
+<p>{{ asset.description }}</p>
+
+<h2>Digital Twins</h2>
+{% for twin in twins %}
+<div class="dt-card">
+  <strong><a href="{% url 'digital_twin:twin_baseline' twin.pk %}">{{ twin.name }}</a></strong> — v{{ twin.version }}
+  <span class="dt-badge {% if twin.status == 'active' %}dt-badge--approved{% else %}dt-badge--calculated{% endif %}">{{ twin.get_status_display }}</span>
+  <div class="dt-muted">
+    Completeness: {{ twin.completeness_score|default:"—" }} · Confidence: {{ twin.confidence_score|default:"—" }} ·
+    Freshness: {{ twin.data_freshness_score|default:"—" }}
+  </div>
+</div>
+{% empty %}
+<p class="dt-muted">No Digital Twin has been built for this asset yet.</p>
+{% endfor %}
+{% endblock %}

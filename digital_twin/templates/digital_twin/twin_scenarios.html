@@ -1,0 +1,14 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ twin.name }} — Scenarios{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:twin_baseline' twin.pk %}">{{ twin.name }}</a> / Scenarios{% endblock %}
+{% block dt_content %}
+<h1>Modernisation Scenarios</h1>
+<a class="dt-btn" href="{% url 'digital_twin:scenario_compare' %}{% for s in scenarios %}{% if forloop.first %}?{% else %}&{% endif %}scenario={{ s.pk }}{% endfor %}">Compare all</a>
+{% for s in scenarios %}
+<div class="dt-card">
+  <strong><a href="{% url 'digital_twin:scenario_detail' s.pk %}">{{ s.intervention.title }}</a></strong>
+  <span class="dt-badge dt-badge--calculated">{{ s.get_scenario_type_display }}</span>
+  <div class="dt-muted">CAPEX {{ s.intervention.capex_estimate }} · Annual savings {{ s.intervention.estimated_annual_savings }} · Confidence {{ s.confidence|default:"—" }}</div>
+</div>
+{% empty %}<p class="dt-muted">No scenarios yet — a scenario can only be created once a detected loss has been human-approved.</p>{% endfor %}
+{% endblock %}
