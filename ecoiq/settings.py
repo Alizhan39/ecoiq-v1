@@ -329,6 +329,16 @@ INSTALLED_APPS = [
     # engine, and Agent Council + human-approval promotion into the existing
     # waste_to_value_capital_allocation_engine capital-allocation workflow.
     'digital_twin',
+
+    # Global Research, Technology & Manufacturer Discovery Engine — governed
+    # discovery of technologies, manufacturers and products worldwide to
+    # solve a verified Digital Twin problem: supplier-neutral requirements,
+    # multi-layer evidence search, structured claim extraction with a
+    # deterministic evidence hierarchy, mandatory-requirement compatibility
+    # gating, transparent comparative scoring, Agent Council review, and
+    # human-approved promotion into the existing Digital Twin / capital-
+    # allocation workflow. Never auto-contacts a vendor or commits capital.
+    'global_research',
 ]
 
 # PR14 — hardcoded false; no code path in public_action_preparation reads
