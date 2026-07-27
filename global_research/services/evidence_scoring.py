@@ -62,14 +62,30 @@ def _applicability_score(claim, target_conditions):
 
 def count_independent_corroborations(claim):
     """Other, independently-sourced claims for the same (subject,
-    predicate) — never counting the claim's own source."""
-    from global_research.models import ResearchClaim
+    predicate) that actually AGREE with this claim — never counting the
+    claim's own source, and never counting an independent claim that
+    CONTRADICTS this one (a ContradictionRecord links them) as
+    corroboration. Without this exclusion, a vendor claim that was
+    superseded by a disagreeing independent claim would still be marked
+    'verified' merely because an independent claim on the same subject/
+    predicate exists — exactly the "verified from the claim's own source
+    alone" failure this field must never allow (see
+    docs/research_evidence_methodology.md §2)."""
+    from django.db import models
+
+    from global_research.models import ContradictionRecord, ResearchClaim
+
+    contradicting_pairs = ContradictionRecord.objects.filter(
+        models.Q(claim_a=claim) | models.Q(claim_b=claim),
+    ).values_list('claim_a_id', 'claim_b_id')
+    contradicting_ids = {cid for pair in contradicting_pairs for cid in pair if cid != claim.pk}
 
     return (
         ResearchClaim.objects.filter(
             mission_id=claim.mission_id, subject=claim.subject, predicate=claim.predicate, vendor_provided=False,
         )
         .exclude(pk=claim.pk)
+        .exclude(pk__in=contradicting_ids)
         .count()
     )
 

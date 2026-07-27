@@ -1,0 +1,28 @@
+{
+  "agent_name": "Technical Requirements Agent",
+  "realistic_test_cases": [
+    {
+      "id": "TRA-01",
+      "title": "Well-formed mandatory requirement",
+      "input": {
+        "metric": "max_supply_temperature_c",
+        "unit": "count",
+        "is_mandatory": true
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "TRA-02",
+      "title": "Mandatory requirement with no metric",
+      "input": {
+        "metric": "",
+        "is_mandatory": true
+      },
+      "expected_output": {
+        "position": "insufficient_evidence"
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "agent_name": "Scientific Research Agent",
+  "realistic_test_cases": [
+    {
+      "id": "SRA-01",
+      "title": "Tier A source present",
+      "input": {
+        "tier_a_source_count": 1
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "SRA-02",
+      "title": "No authoritative source found",
+      "input": {
+        "tier_a_source_count": 0
+      },
+      "expected_output": {
+        "position": "insufficient_evidence"
+      }
+    }
+  ]
+}

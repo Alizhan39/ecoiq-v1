@@ -1,0 +1,26 @@
+{
+  "agent_name": "Product Specification Agent",
+  "realistic_test_cases": [
+    {
+      "id": "PSA-01",
+      "title": "Spec confirmed by independent claim",
+      "input": {
+        "verified": true
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "PSA-02",
+      "title": "Spec only from vendor datasheet",
+      "input": {
+        "verified": false,
+        "vendor_provided": true
+      },
+      "expected_output": {
+        "position": "conditional"
+      }
+    }
+  ]
+}

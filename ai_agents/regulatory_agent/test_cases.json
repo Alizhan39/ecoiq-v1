@@ -1,0 +1,25 @@
+{
+  "agent_name": "Regulatory Agent",
+  "realistic_test_cases": [
+    {
+      "id": "RA-01",
+      "title": "Certification on file",
+      "input": {
+        "local_standards_compatibility": "compatible"
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "RA-02",
+      "title": "No certification evidence",
+      "input": {
+        "local_standards_compatibility": "insufficient_data"
+      },
+      "expected_output": {
+        "position": "insufficient_evidence"
+      }
+    }
+  ]
+}

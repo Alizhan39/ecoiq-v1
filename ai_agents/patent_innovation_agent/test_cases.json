@@ -1,0 +1,27 @@
+{
+  "agent_name": "Patent and Innovation Agent",
+  "realistic_test_cases": [
+    {
+      "id": "PIA-01",
+      "title": "TRL 4 patent-only candidate",
+      "input": {
+        "trl": 4,
+        "commercial_maturity": "concept"
+      },
+      "expected_output": {
+        "position": "conditional"
+      }
+    },
+    {
+      "id": "PIA-02",
+      "title": "TRL 8 with commercial products",
+      "input": {
+        "trl": 8,
+        "commercial_maturity": "mature_commercial"
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    }
+  ]
+}
