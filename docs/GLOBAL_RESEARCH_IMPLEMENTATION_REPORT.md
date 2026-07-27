@@ -221,14 +221,17 @@ liveness.
   screen, mission-level permission boundaries, and the full demo workflow
   end to end including its own idempotency.
 - `python manage.py test digital_twin global_research ai_agent_council ai_agent_workbench agent_runtime_model_router` — **125+198 = confirmed passing together** (run at two checkpoints during implementation; both clean).
-- `python manage.py test` (entire platform, 3,600+ tests) — launched as the
-  final check; historically (Digital Twin phase) the only failures found in
-  a full run were 2 pre-existing, unrelated `good_agents` test failures
-  confirmed present before this work began. This report will be updated
-  with the exact final count once that run completes (background job, see
-  the conversation record for the live result — if not yet reflected here,
-  treat `global_research`'s own 66/66 and the four-app 125+198 checkpoint as
-  the authoritative pre-merge signal).
+- `python manage.py test` (entire platform) — **3,651 passed, 2 failed, 2
+  skipped, out of 3,653 total** (3,587 from the Digital Twin baseline + 66
+  new from `global_research`). The 2 failures are the exact same
+  pre-existing, unrelated `good_agents` tests
+  (`test_seeds_all_114_and_real_providers`,
+  `test_one_provider_failure_does_not_stop_others`) already documented as
+  pre-existing in `docs/DIGITAL_TWIN_IMPLEMENTATION_REPORT.md` — confirmed
+  identical failure count and identical test names before and after this
+  work, i.e. this implementation introduced zero new failures anywhere in
+  the platform. The 2 skips are the same environment-only `CountryProfile`
+  fixture skips as before, unrelated to `global_research`.
 - `makemigrations --check --dry-run` — clean, no changes detected.
 - Manual browser verification against the seeded demo (mission dashboard,
   manufacturer comparison, evidence view, Research Council view, RFI draft
