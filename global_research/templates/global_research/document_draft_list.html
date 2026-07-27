@@ -1,0 +1,13 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{{ mission.title }} — RFI/RFQ Drafts{% endblock %}
+{% block gr_crumb %} / <a href="{% url 'global_research:mission_dashboard' mission.pk %}">{{ mission.title }}</a> / Drafts{% endblock %}
+{% block gr_content %}
+<h1>RFI / RFQ Drafts</h1>
+<p class="gr-muted">Draft only — this system never sends anything automatically.</p>
+{% for d in drafts %}
+<div class="gr-card">
+  <a href="{% url 'global_research:document_draft_detail' d.pk %}"><strong>{{ d.title }}</strong></a>
+  <span class="gr-badge {% if d.status == 'approved' %}gr-badge--approved{% elif d.status == 'superseded' %}gr-badge--missing{% else %}gr-badge--ai-suggested{% endif %}">{{ d.get_status_display }}</span>
+</div>
+{% empty %}<p class="gr-muted">No drafts generated yet.</p>{% endfor %}
+{% endblock %}

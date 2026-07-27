@@ -1,0 +1,31 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}Research Council{% endblock %}
+{% block gr_crumb %} / <a href="{% url 'global_research:mission_dashboard' mission.pk %}">{{ mission.title }}</a> / Research Council{% endblock %}
+{% block gr_content %}
+<h1>Research Council Review</h1>
+{% if not council_run %}
+<p class="gr-muted">No Council review has been convened for this candidate yet.</p>
+{% else %}
+<p class="gr-muted"><span class="gr-badge gr-badge--ai-suggested">AI-Suggested</span> — simulated positions (no live LLM runtime exists yet).</p>
+<h2>Agent Positions</h2>
+{% for t in tasks %}
+<div class="gr-card">
+  <strong>{{ t.agent_name }}</strong> <span class="gr-muted">confidence {{ t.confidence }}</span>
+  {% for flag in t.risk_flags %}<span class="gr-badge gr-badge--warning">{{ flag }}</span>{% endfor %}
+  <p>{{ t.position_summary }}</p>
+  {% if t.missing_data %}<p class="gr-muted">Missing: {{ t.missing_data|join:", " }}</p>{% endif %}
+</div>
+{% endfor %}
+
+<h2>Readiness Verdict</h2>
+{% if decision_record %}
+<div class="gr-card">
+  <span class="gr-badge {% if decision_record.status == 'rejected' %}gr-badge--blocked{% elif decision_record.status == 'under_review' %}gr-badge--warning{% else %}gr-badge--approved{% endif %}">{{ decision_record.get_status_display }}</span>
+  <p>{{ decision_record.summary }}</p>
+  <p class="gr-muted">Majority: {{ decision_record.majority_agents|join:", " }}</p>
+  <p class="gr-muted">Minority: {{ decision_record.minority_agents|join:", " }}{% if decision_record.minority_reason %} — {{ decision_record.minority_reason }}{% endif %}</p>
+  <p><strong>This is a recommendation. Human shortlisting is still required.</strong></p>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

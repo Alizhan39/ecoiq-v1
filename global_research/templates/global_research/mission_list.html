@@ -1,0 +1,18 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}Research Missions{% endblock %}
+{% block gr_content %}
+<h1>Research Missions</h1>
+<table class="gr-table">
+  <tr><th>Title</th><th>Status</th><th>Priority</th><th>Origin</th></tr>
+  {% for mission in missions %}
+  <tr>
+    <td><a href="{% url 'global_research:mission_dashboard' mission.pk %}">{{ mission.title }}</a></td>
+    <td>{{ mission.get_status_display }}</td>
+    <td>{{ mission.get_priority_display }}</td>
+    <td class="gr-muted">
+      {% if mission.twin %}Twin: {{ mission.twin.name }}{% elif mission.asset %}Asset: {{ mission.asset.name }}{% else %}—{% endif %}
+    </td>
+  </tr>
+  {% empty %}<tr><td colspan="4" class="gr-muted">No research missions yet.</td></tr>{% endfor %}
+</table>
+{% endblock %}

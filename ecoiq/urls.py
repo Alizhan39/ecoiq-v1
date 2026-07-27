@@ -262,6 +262,13 @@ urlpatterns = [
     # allocation workflow.
     path('digital-twin/', include('digital_twin.urls', namespace='digital_twin')),
 
+    # EcoIQ Global Research, Technology & Manufacturer Discovery Engine —
+    # governed discovery of technologies and manufacturers worldwide to
+    # solve a verified Digital Twin problem, with deterministic evidence
+    # scoring, mandatory-requirement compatibility gating, transparent
+    # comparison, Agent Council review and human-approved promotion.
+    path('global-research/', include('global_research.urls', namespace='global_research')),
+
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

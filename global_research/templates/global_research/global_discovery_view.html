@@ -1,0 +1,24 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{{ mission.title }} — Global Discovery{% endblock %}
+{% block gr_crumb %} / <a href="{% url 'global_research:mission_dashboard' mission.pk %}">{{ mission.title }}</a> / Discovery{% endblock %}
+{% block gr_content %}
+<h1>Global Discovery</h1>
+<div class="gr-filters">
+  Filter by category:
+  {% for c in categories %}<a href="?category={{ c.name }}">{{ c.name }}</a>{% endfor %}
+  <a href="?">Clear</a>
+</div>
+{% for candidate in candidates %}
+<div class="gr-card">
+  <strong><a href="{% url 'global_research:technology_candidate_detail' candidate.pk %}">{{ candidate.name }}</a></strong>
+  <span class="gr-badge gr-badge--calculated">{{ candidate.get_commercial_maturity_display }}</span>
+  {% if candidate.status == 'shortlisted' %}<span class="gr-badge gr-badge--approved">Shortlisted</span>
+  {% elif candidate.status == 'incompatible' or candidate.status == 'rejected' %}<span class="gr-badge gr-badge--blocked">{{ candidate.get_status_display }}</span>
+  {% else %}<span class="gr-badge gr-badge--ai-suggested">{{ candidate.get_status_display }}</span>{% endif %}
+  <div class="gr-muted">
+    Evidence score: {{ candidate.evidence_score|default:"—" }} · TRL: {{ candidate.technology_readiness_level|default:"—" }} ·
+    Products: {{ candidate.products.count }}
+  </div>
+</div>
+{% empty %}<p class="gr-muted">No technology candidates discovered yet.</p>{% endfor %}
+{% endblock %}

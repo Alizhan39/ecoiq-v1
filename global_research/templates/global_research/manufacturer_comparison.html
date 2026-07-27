@@ -1,0 +1,26 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{{ mission.title }} — Manufacturer Comparison{% endblock %}
+{% block gr_crumb %} / <a href="{% url 'global_research:mission_dashboard' mission.pk %}">{{ mission.title }}</a> / Comparison{% endblock %}
+{% block gr_content %}
+<h1>Manufacturer Comparison <span class="gr-badge gr-badge--calculated">Calculated</span></h1>
+<p class="gr-muted">Evidence quality is always shown separately from rank — a high score never hides weak evidence.</p>
+<table class="gr-table">
+  <tr>
+    <th>Rank</th><th>Manufacturer</th><th>Country</th><th>Product</th><th>Mandatory Pass</th>
+    <th>Failed Requirements</th><th>Evidence Quality</th><th>Total Score</th><th>Status</th>
+  </tr>
+  {% for e in evaluations %}
+  <tr>
+    <td>{{ e.rank|default:"—" }}</td>
+    <td>{% if e.product_candidate %}{{ e.product_candidate.manufacturer.organisation.name }}{% else %}—{% endif %}</td>
+    <td>{% if e.product_candidate %}{{ e.product_candidate.manufacturer.headquarters_country }}{% else %}—{% endif %}</td>
+    <td>{% if e.product_candidate %}<a href="{% url 'global_research:product_candidate_detail' e.product_candidate.pk %}">{{ e.product_candidate.product_name }}</a>{% else %}<a href="{% url 'global_research:technology_candidate_detail' e.technology_candidate.pk %}">{{ e.technology_candidate.name }}</a>{% endif %}</td>
+    <td>{% if e.compatibility_assessment.mandatory_pass %}<span class="gr-badge gr-badge--approved">Yes</span>{% else %}<span class="gr-badge gr-badge--blocked">No</span>{% endif %}</td>
+    <td class="gr-muted">{{ e.compatibility_assessment.mandatory_requirements_failed|join:"; "|default:"—" }}</td>
+    <td>{{ e.evidence_score|default:"—" }}</td>
+    <td class="gr-score">{{ e.total_score|default:"—" }}</td>
+    <td>{% if e.is_ranked %}<span class="gr-badge gr-badge--calculated">Ranked</span>{% else %}<span class="gr-badge gr-badge--blocked">Excluded</span>{% endif %}</td>
+  </tr>
+  {% empty %}<tr><td colspan="9" class="gr-muted">No comparative evaluations yet.</td></tr>{% endfor %}
+</table>
+{% endblock %}
