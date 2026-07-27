@@ -11,7 +11,7 @@
   <tr>
     <td>{{ r.description }}</td><td>{{ r.metric|default:"—" }}</td>
     <td>{{ r.minimum_value|default:"—" }}</td><td>{{ r.maximum_value|default:"—" }}</td>
-    <td>{{ r.unit.symbol|default:r.unit.code|default:"—" }}</td>
+    <td>{% if r.unit %}{{ r.unit.symbol|default:r.unit.code }}{% else %}—{% endif %}</td>
     <td>{% if r.approved %}<span class="gr-badge gr-badge--approved">Approved</span>{% else %}<span class="gr-badge gr-badge--ai-suggested">Pending</span>{% endif %}</td>
   </tr>
   {% endif %}{% endfor %}
@@ -22,7 +22,7 @@
   {% for r in requirements %}{% if not r.is_mandatory %}
   <tr>
     <td>{{ r.description }}</td><td>{{ r.metric|default:"—" }}</td>
-    <td>{{ r.preferred_value|default:"—" }}</td><td>{{ r.unit.symbol|default:r.unit.code|default:"—" }}</td>
+    <td>{{ r.preferred_value|default:"—" }}</td><td>{% if r.unit %}{{ r.unit.symbol|default:r.unit.code }}{% else %}—{% endif %}</td>
     <td>{% if r.approved %}<span class="gr-badge gr-badge--approved">Approved</span>{% else %}<span class="gr-badge gr-badge--ai-suggested">Pending</span>{% endif %}</td>
   </tr>
   {% endif %}{% endfor %}
