@@ -13,14 +13,13 @@ from django.core.management.base import BaseCommand
 
 from digital_twin.models import DigitalTwin, LossDetection, Unit
 from global_research.models import (
-    ComparativeEvaluation, ManufacturerProfile, ProductCandidate, ResearchClaim,
-    ResearchDocumentDraft, ResearchHumanDecision, ResearchMission, ResearchRecommendation,
-    ResearchSource, TechnicalRequirement, TechnologyCandidate,
+    ComparativeEvaluation, ManufacturerProfile, ProductCandidate,
+    ResearchHumanDecision, ResearchMission, ResearchRecommendation,
+    TechnicalRequirement, TechnologyCandidate,
 )
 from global_research.providers.simulated import get_injection_test_candidate
 from global_research.services import (
-    claim_extraction, comparison, council, documents, human_approval_gate, orchestrator,
-    risk, scenario_bridge, stewardship_screen,
+    claim_extraction, comparison, council, documents, orchestrator, risk, scenario_bridge,
 )
 
 DEMO_KEYWORDS = [

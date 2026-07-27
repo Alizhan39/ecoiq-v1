@@ -14,7 +14,6 @@ call (see docs/adr/ADR-global-research-engine.md decision 4).
 """
 from django.utils.text import slugify
 
-from global_research.services import compatibility as compatibility_service
 from global_research.services import stewardship_screen
 
 TASK_CATEGORY = 'global_research_candidate_review'
