@@ -401,6 +401,23 @@ class OrchestratorTests(TestCase):
         plan2 = orchestrator.generate_query_plan(mission)
         self.assertEqual(plan2.version, plan1.version + 1)
 
+    def test_candidate_evidence_score_is_populated_after_a_full_run(self):
+        # Regression test for a real bug found during manual UI
+        # verification: TechnologyCandidate/ProductCandidate.evidence_score
+        # was aggregated from claim confidences BEFORE those claims were
+        # scored, so it stayed stuck at None even after a full mission run.
+        mission = _approved_mission()
+        plan = orchestrator.generate_query_plan(mission, keywords=['industrial heat pump'])
+        orchestrator.run_mission(mission, query_plan=plan)
+        candidates_with_claims = [c for c in mission.technology_candidates.all() if c.source_claims.exists()]
+        self.assertTrue(candidates_with_claims)
+        for candidate in candidates_with_claims:
+            self.assertIsNotNone(candidate.evidence_score, f'{candidate.name} has claims but evidence_score is still None')
+        products_with_claims = [p for p in m.ProductCandidate.objects.filter(technology_candidate__mission=mission) if p.source_claims.exists()]
+        self.assertTrue(products_with_claims)
+        for product in products_with_claims:
+            self.assertIsNotNone(product.evidence_score, f'{product.product_name} has claims but evidence_score is still None')
+
 
 class CouncilTests(TestCase):
     def test_convene_council_creates_one_task_per_agent(self):

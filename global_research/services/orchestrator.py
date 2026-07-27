@@ -175,6 +175,18 @@ def run_mission(mission, query_plan=None, providers=None):
         unresolved = contradiction.unresolved_contradiction_count(claim)
         evidence_scoring.score_claim(claim, unresolved_contradiction_count=unresolved)
 
+    # Re-aggregate candidate-level evidence_score now that every claim has
+    # a real confidence — the discovery-time aggregation above ran before
+    # scoring existed and would otherwise leave evidence_score stuck at
+    # None forever (a real bug found during manual UI verification).
+    from global_research.models import ProductCandidate as _ProductCandidate
+    from global_research.models import TechnologyCandidate as _TechnologyCandidate
+
+    for tech_candidate in _TechnologyCandidate.objects.filter(pk__in=technology_candidates_touched):
+        discovery.refresh_technology_candidate_evidence(tech_candidate)
+    for product in _ProductCandidate.objects.filter(pk__in=products_touched):
+        discovery.refresh_product_evidence(product)
+
     run.stage = 'evaluating'
     mission.status = 'evaluating'
     run.save(update_fields=['stage', 'updated_at'])

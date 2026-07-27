@@ -46,10 +46,22 @@ def create_or_update_technology_candidate(mission, category, name, claims, descr
     if trl_claim:
         candidate.technology_readiness_level = int(trl_claim.numeric_value)
         candidate.commercial_maturity = 'concept' if trl_claim.numeric_value <= 4 else 'pilot' if trl_claim.numeric_value <= 6 else 'early_commercial'
+        candidate.save()
+    return refresh_technology_candidate_evidence(candidate)
+
+
+def refresh_technology_candidate_evidence(candidate):
+    """Re-aggregates evidence_score/confidence/status from the candidate's
+    CURRENT claim confidences. Must be called again after
+    evidence_scoring.score_claim() runs for those claims — at discovery
+    time (inside the orchestrator's per-source loop) a claim's confidence
+    is still None, so the first aggregation is necessarily a placeholder;
+    without this second pass, evidence_score would stay stuck at None
+    forever even though the underlying claims are fully scored."""
     all_claims = list(candidate.source_claims.all())
     candidate.evidence_score = _average_confidence(all_claims)
     candidate.confidence = candidate.evidence_score
-    if candidate.status == 'discovered' and candidate.evidence_score is not None:
+    if candidate.status in ('discovered', 'insufficient_evidence', 'technically_relevant') and candidate.evidence_score is not None:
         candidate.status = (
             'technically_relevant' if candidate.evidence_score >= READY_STATUS_THRESHOLD else 'insufficient_evidence'
         )
@@ -118,12 +130,21 @@ def create_or_update_product(manufacturer_profile, technology_candidate, product
             if claim.object_value not in product.geographical_availability:
                 product.geographical_availability.append(claim.object_value)
 
-    all_claims = list(product.source_claims.all())
-    product.evidence_score = _average_confidence(all_claims)
-    product.confidence = product.evidence_score
     if product.status == 'unknown':
         product.status = 'active'
     if product.lifecycle_status == 'unknown':
         product.lifecycle_status = 'established'
     product.save()
+    return refresh_product_evidence(product)
+
+
+def refresh_product_evidence(product):
+    """Re-aggregates evidence_score/confidence from the product's CURRENT
+    claim confidences — must be called again after
+    evidence_scoring.score_claim() runs (see
+    refresh_technology_candidate_evidence's docstring for why)."""
+    all_claims = list(product.source_claims.all())
+    product.evidence_score = _average_confidence(all_claims)
+    product.confidence = product.evidence_score
+    product.save(update_fields=['evidence_score', 'confidence', 'updated_at'])
     return product
