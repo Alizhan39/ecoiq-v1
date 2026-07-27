@@ -1,0 +1,32 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{{ mission.title }} — Evidence{% endblock %}
+{% block gr_crumb %} / <a href="{% url 'global_research:mission_dashboard' mission.pk %}">{{ mission.title }}</a> / Evidence{% endblock %}
+{% block gr_content %}
+<h1>Evidence</h1>
+<p class="gr-muted">
+  <span class="gr-badge gr-badge--vendor">Vendor</span> claims are never treated as independently verified.
+  <span class="gr-badge gr-badge--approved">Verified</span> means an independent source actually corroborated the same claim.
+</p>
+<table class="gr-table">
+  <tr><th>Subject</th><th>Predicate</th><th>Value</th><th>Source</th><th>Tier</th><th>Vendor</th><th>Verified</th><th>Date</th><th>Language</th></tr>
+  {% for c in claims %}
+  <tr>
+    <td>{{ c.subject }}</td><td>{{ c.predicate }}</td><td>{{ c.object_value }}</td>
+    <td>{{ c.source.title }} {% if c.source.content_safety_flagged %}<span class="gr-badge gr-badge--blocked">Flagged</span>{% endif %}</td>
+    <td>{{ c.source.evidence_tier }}</td>
+    <td>{% if c.vendor_provided %}<span class="gr-badge gr-badge--vendor">Vendor</span>{% else %}<span class="gr-badge gr-badge--observed">Independent</span>{% endif %}</td>
+    <td>{% if c.verified %}<span class="gr-badge gr-badge--approved">Verified</span>{% else %}<span class="gr-badge gr-badge--ai-suggested">Unverified</span>{% endif %}</td>
+    <td>{{ c.source.publication_date|default:"—" }}</td><td>{{ c.source.get_language_display }}</td>
+  </tr>
+  {% empty %}<tr><td colspan="9" class="gr-muted">No claims extracted yet.</td></tr>{% endfor %}
+</table>
+
+<h2>Contradictions</h2>
+{% for c in contradictions %}
+<div class="gr-card">
+  <span class="gr-badge {% if c.resolution_status == 'unresolved' %}gr-badge--warning{% else %}gr-badge--calculated{% endif %}">{{ c.get_resolution_status_display }}</span>
+  {{ c.explanation }}
+  {% if c.resolution_notes %}<p class="gr-muted">{{ c.resolution_notes }}</p>{% endif %}
+</div>
+{% empty %}<p class="gr-muted">No contradictions detected.</p>{% endfor %}
+{% endblock %}

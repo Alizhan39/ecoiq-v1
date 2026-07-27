@@ -33,6 +33,11 @@ class BackgroundTaskRun(models.Model):
         ('run_agent_evaluation', 'Run Agent Evaluation'),
         ('run_agent_benchmark', 'Run Agent Benchmark'),
         ('detect_agent_regressions', 'Detect Agent Regressions'),
+        # Global Research, Technology & Manufacturer Discovery Engine —
+        # additive only, no existing task type renamed or removed.
+        ('research_mission_run', 'Research Mission Run'),
+        ('research_provider_search', 'Research Provider Search'),
+        ('research_claim_extraction', 'Research Claim Extraction'),
     ]
     STATUS_CHOICES = [
         ('queued', 'Queued'),

@@ -1,0 +1,27 @@
+{
+  "agent_name": "Independent Evidence Agent",
+  "realistic_test_cases": [
+    {
+      "id": "IEA-01",
+      "title": "Independently corroborated claim",
+      "input": {
+        "verified": true,
+        "evidence_score": 80
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "IEA-02",
+      "title": "Vendor-only claim, no corroboration",
+      "input": {
+        "verified": false,
+        "evidence_score": 20
+      },
+      "expected_output": {
+        "position": "insufficient_evidence"
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "agent_name": "Energy and Resources Agent",
+  "realistic_test_cases": [
+    {
+      "id": "ERA-01",
+      "title": "Energy reduction with matching baseline flow",
+      "input": {
+        "energy_impact": -500,
+        "baseline_energy_flow_exists": true
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "ERA-02",
+      "title": "Claimed reduction with no baseline to compare against",
+      "input": {
+        "energy_impact": -500,
+        "baseline_energy_flow_exists": false
+      },
+      "expected_output": {
+        "position": "insufficient_evidence",
+        "missing_data": [
+          "baseline energy ResourceFlow"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ twin.name }} — Data Gaps{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:twin_baseline' twin.pk %}">{{ twin.name }}</a> / Data Gaps{% endblock %}
+{% block dt_content %}
+<h1>Data Gaps</h1>
+<p class="dt-muted">This twin never pretends to know a value that is absent — every gap below is an honest admission, not a placeholder guess.</p>
+<table class="dt-table">
+  <tr><th>Area</th><th>Severity</th><th>Why it matters</th><th>Status</th></tr>
+  {% for gap in gaps %}
+  <tr>
+    <td><span class="dt-badge dt-badge--missing">Missing</span> {{ gap.affected_area }}</td>
+    <td>{{ gap.get_severity_display }}</td>
+    <td>{{ gap.why_it_matters }}</td>
+    <td>{{ gap.get_status_display }}</td>
+  </tr>
+  {% empty %}<tr><td colspan="4" class="dt-muted">No data gaps recorded.</td></tr>{% endfor %}
+</table>
+{% endblock %}

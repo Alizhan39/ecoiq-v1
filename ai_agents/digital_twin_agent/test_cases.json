@@ -1,0 +1,31 @@
+{
+  "agent_name": "Digital Twin Agent",
+  "realistic_test_cases": [
+    {
+      "id": "DTA-01",
+      "title": "Baseline ready",
+      "input": {
+        "completeness_score": 80,
+        "confidence_score": 70,
+        "critical_gaps": 0
+      },
+      "expected_output": {
+        "position": "support",
+        "human_approval_required": false
+      }
+    },
+    {
+      "id": "DTA-02",
+      "title": "Incomplete twin with a critical gap",
+      "input": {
+        "completeness_score": 40,
+        "confidence_score": 30,
+        "critical_gaps": 1
+      },
+      "expected_output": {
+        "position": "insufficient_evidence",
+        "human_approval_required": true
+      }
+    }
+  ]
+}

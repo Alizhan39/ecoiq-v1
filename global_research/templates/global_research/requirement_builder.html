@@ -1,0 +1,30 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{{ mission.title }} — Requirements{% endblock %}
+{% block gr_crumb %} / <a href="{% url 'global_research:mission_dashboard' mission.pk %}">{{ mission.title }}</a> / Requirements{% endblock %}
+{% block gr_content %}
+<h1>Technical Requirement Builder</h1>
+<p class="gr-muted">Supplier-neutral by design — no brand or manufacturer name should ever appear here.</p>
+<h2>Mandatory</h2>
+<table class="gr-table">
+  <tr><th>Description</th><th>Metric</th><th>Min</th><th>Max</th><th>Unit</th><th>Approved</th></tr>
+  {% for r in requirements %}{% if r.is_mandatory %}
+  <tr>
+    <td>{{ r.description }}</td><td>{{ r.metric|default:"—" }}</td>
+    <td>{{ r.minimum_value|default:"—" }}</td><td>{{ r.maximum_value|default:"—" }}</td>
+    <td>{% if r.unit %}{{ r.unit.symbol|default:r.unit.code }}{% else %}—{% endif %}</td>
+    <td>{% if r.approved %}<span class="gr-badge gr-badge--approved">Approved</span>{% else %}<span class="gr-badge gr-badge--ai-suggested">Pending</span>{% endif %}</td>
+  </tr>
+  {% endif %}{% endfor %}
+</table>
+<h2>Preferred / Optional</h2>
+<table class="gr-table">
+  <tr><th>Description</th><th>Metric</th><th>Preferred</th><th>Unit</th><th>Approved</th></tr>
+  {% for r in requirements %}{% if not r.is_mandatory %}
+  <tr>
+    <td>{{ r.description }}</td><td>{{ r.metric|default:"—" }}</td>
+    <td>{{ r.preferred_value|default:"—" }}</td><td>{% if r.unit %}{{ r.unit.symbol|default:r.unit.code }}{% else %}—{% endif %}</td>
+    <td>{% if r.approved %}<span class="gr-badge gr-badge--approved">Approved</span>{% else %}<span class="gr-badge gr-badge--ai-suggested">Pending</span>{% endif %}</td>
+  </tr>
+  {% endif %}{% endfor %}
+</table>
+{% endblock %}

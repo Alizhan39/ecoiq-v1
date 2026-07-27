@@ -1,0 +1,26 @@
+{
+  "agent_name": "Problem Definition Agent",
+  "realistic_test_cases": [
+    {
+      "id": "PDA-01",
+      "title": "Valid origin, neutral statement",
+      "input": {
+        "has_valid_origin": true,
+        "mentions_brand": false
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "PDA-02",
+      "title": "No origin entity",
+      "input": {
+        "has_valid_origin": false
+      },
+      "expected_output": {
+        "position": "insufficient_evidence"
+      }
+    }
+  ]
+}

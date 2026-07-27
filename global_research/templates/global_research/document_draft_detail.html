@@ -1,0 +1,9 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{{ draft.title }}{% endblock %}
+{% block gr_crumb %} / <a href="{% url 'global_research:mission_dashboard' draft.mission.pk %}">{{ draft.mission.title }}</a> / {{ draft.title }}{% endblock %}
+{% block gr_content %}
+<h1>{{ draft.title }} <span class="gr-badge {% if draft.status == 'approved' %}gr-badge--approved{% else %}gr-badge--ai-suggested{% endif %}">{{ draft.get_status_display }}</span></h1>
+<p class="gr-muted">Version {{ draft.version }} · Editing an approved draft always creates a new version — never mutates this one.</p>
+<pre style="white-space: pre-wrap; background:#10151a; border:1px solid #23292e; border-radius:8px; padding:1rem; font-size:.85rem;">{{ draft.body_text }}</pre>
+<p class="gr-muted">This system never sends this document. Export it and send it manually through your normal procurement process.</p>
+{% endblock %}

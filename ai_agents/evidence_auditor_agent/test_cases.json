@@ -1,0 +1,25 @@
+{
+  "agent_name": "Evidence Auditor",
+  "realistic_test_cases": [
+    {
+      "id": "EAA-01",
+      "title": "All evidence IDs resolve",
+      "input": {
+        "unresolved_evidence_ids": 0
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "EAA-02",
+      "title": "One unresolved evidence ID",
+      "input": {
+        "unresolved_evidence_ids": 1
+      },
+      "expected_output": {
+        "position": "oppose"
+      }
+    }
+  ]
+}

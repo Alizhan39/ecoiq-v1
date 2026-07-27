@@ -1,0 +1,33 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ twin.name }} — Process Map{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:twin_baseline' twin.pk %}">{{ twin.name }}</a> / Process Map{% endblock %}
+{% block dt_content %}
+<h1>Process Map</h1>
+<p class="dt-muted">All fields below are <span class="dt-badge dt-badge--observed">Observed</span> values from stored records, each with its own confidence.</p>
+
+<h2>Components</h2>
+{% for c in components %}
+<div class="dt-card">
+  <strong>{{ c.name }}</strong> — {{ c.get_component_type_display }}
+  <span class="dt-badge dt-badge--observed">{{ c.get_condition_display }}</span>
+  <span class="dt-badge dt-badge--observed">Criticality: {{ c.get_criticality_display }}</span>
+</div>
+{% empty %}<p class="dt-muted">No components recorded.</p>{% endfor %}
+
+<h2>Process Nodes (in sequence)</h2>
+<table class="dt-table">
+  <tr><th>#</th><th>Node</th><th>Type</th><th>Utilisation %</th><th>Downtime (h)</th><th>Yield %</th><th>Confidence</th></tr>
+  {% for n in nodes %}
+  <tr>
+    <td>{{ n.sequence_order }}</td><td>{{ n.name }}</td><td>{{ n.get_node_type_display }}</td>
+    <td>{{ n.utilisation_pct|default:"—" }}</td><td>{{ n.downtime_hours|default:"—" }}</td>
+    <td>{{ n.yield_pct|default:"—" }}</td><td>{{ n.confidence|default:"—" }}</td>
+  </tr>
+  {% empty %}<tr><td colspan="7" class="dt-muted">No process nodes recorded.</td></tr>{% endfor %}
+</table>
+
+<h2>Flow Edges</h2>
+{% for e in edges %}
+<p>{{ e.source_node.name }} → {{ e.target_node.name }}{% if e.label %} ({{ e.label }}){% endif %}</p>
+{% empty %}<p class="dt-muted">No edges recorded.</p>{% endfor %}
+{% endblock %}

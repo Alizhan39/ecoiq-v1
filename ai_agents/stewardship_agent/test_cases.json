@@ -1,0 +1,27 @@
+{
+  "agent_name": "Stewardship Agent",
+  "realistic_test_cases": [
+    {
+      "id": "STW-01",
+      "title": "Pass with warning",
+      "input": {
+        "guardrail_verdict": "pass_with_warning"
+      },
+      "expected_output": {
+        "position": "conditional",
+        "human_approval_required": true
+      }
+    },
+    {
+      "id": "STW-02",
+      "title": "Blocking harm signal",
+      "input": {
+        "guardrail_verdict": "block"
+      },
+      "expected_output": {
+        "position": "oppose",
+        "human_approval_required": true
+      }
+    }
+  ]
+}

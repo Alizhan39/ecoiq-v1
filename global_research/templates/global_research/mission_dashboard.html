@@ -1,0 +1,34 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{{ mission.title }}{% endblock %}
+{% block gr_crumb %} / {{ mission.title }}{% endblock %}
+{% block gr_content %}
+<h1>{{ mission.title }} <span class="gr-badge gr-badge--calculated">{{ mission.get_status_display }}</span></h1>
+<p class="gr-muted">
+  Origin: {% if mission.twin %}Digital Twin "{{ mission.twin.name }}"{% elif mission.asset %}Asset "{{ mission.asset.name }}"{% elif mission.loss_detection %}Loss Detection #{{ mission.loss_detection.pk }}{% elif mission.data_gap %}Data Gap #{{ mission.data_gap.pk }}{% else %}<span class="gr-badge gr-badge--blocked">No valid origin</span>{% endif %}
+</p>
+<p>{{ mission.problem_statement }}</p>
+
+<h2>Coverage <span class="gr-badge gr-badge--calculated">Calculated</span></h2>
+<table class="gr-table">
+  <tr><th>Sources</th><td>{{ sources.count }}</td></tr>
+  <tr><th>Country coverage</th><td>{{ country_coverage|join:", "|default:"—" }}</td></tr>
+  <tr><th>Language coverage</th><td>{{ language_coverage|join:", "|default:"—" }}</td></tr>
+  <tr><th>Average evidence quality</th><td>{{ avg_evidence_quality|default:"—" }}</td></tr>
+  <tr><th>Unresolved contradictions</th><td>{{ unresolved_contradictions.count }}</td></tr>
+</table>
+
+<h2>Technical Requirements</h2>
+<p><a href="{% url 'global_research:requirement_builder' mission.pk %}">{{ requirements.count }} requirement(s) — open builder</a></p>
+
+<h2>Unresolved Questions</h2>
+{% for c in unresolved_contradictions %}
+<p><span class="gr-badge gr-badge--warning">Unresolved</span> {{ c.explanation }}</p>
+{% empty %}<p class="gr-muted">No unresolved contradictions.</p>{% endfor %}
+
+<p class="gr-muted">
+  <a href="{% url 'global_research:global_discovery_view' mission.pk %}">Global discovery</a> ·
+  <a href="{% url 'global_research:evidence_view' mission.pk %}">Evidence</a> ·
+  <a href="{% url 'global_research:manufacturer_comparison' mission.pk %}">Manufacturer comparison</a> ·
+  <a href="{% url 'global_research:document_draft_list' mission.pk %}">RFI/RFQ drafts</a>
+</p>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ scenario.intervention.title }} — Stewardship{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:scenario_detail' scenario.pk %}">{{ scenario.intervention.title }}</a> / Stewardship{% endblock %}
+{% block dt_content %}
+<h1>Stewardship KPI Assessment</h1>
+<p class="dt-muted">
+  Every KPI below is a draft, deterministic operational indicator inspired by a stewardship principle —
+  <strong>never a divine judgement</strong>. Every seeded principle and KPI currently ships
+  <span class="dt-badge dt-badge--missing">Requires Scholarly Review</span>.
+</p>
+{% for a in assessments %}
+<div class="dt-card">
+  <strong>{{ a.kpi.name }}</strong> <span class="dt-muted">({{ a.kpi.principle.name }})</span>
+  {% if a.blocking %}<span class="dt-badge dt-badge--blocked">Blocking</span>
+  {% elif a.warning %}<span class="dt-badge dt-badge--warning">Warning</span>
+  {% else %}<span class="dt-badge dt-badge--calculated">Score: {{ a.calculated_score|default:"—" }}</span>{% endif %}
+  <p class="dt-muted">{{ a.explanation }}</p>
+  {% if a.warning_reason %}<p class="dt-muted">⚠ {{ a.warning_reason }}</p>{% endif %}
+  {% if a.blocking_reason %}<p class="dt-muted">⛔ {{ a.blocking_reason }}</p>{% endif %}
+</div>
+{% empty %}<p class="dt-muted">Stewardship assessment has not been run for this scenario yet.</p>{% endfor %}
+{% endblock %}

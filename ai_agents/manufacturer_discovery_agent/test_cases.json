@@ -1,0 +1,35 @@
+{
+  "agent_name": "Manufacturer Discovery Agent",
+  "realistic_test_cases": [
+    {
+      "id": "MDA-01",
+      "title": "Manufacturers found across 4+ countries",
+      "input": {
+        "countries": [
+          "Germany",
+          "China",
+          "Kazakhstan",
+          "South Korea"
+        ]
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "MDA-02",
+      "title": "Only one country found",
+      "input": {
+        "countries": [
+          "Germany"
+        ]
+      },
+      "expected_output": {
+        "position": "conditional",
+        "missing_data": [
+          "broader country coverage not yet confirmed"
+        ]
+      }
+    }
+  ]
+}

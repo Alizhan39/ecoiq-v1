@@ -1,0 +1,29 @@
+{
+  "agent_name": "Worker Safety Agent",
+  "realistic_test_cases": [
+    {
+      "id": "WSA-01",
+      "title": "No harm signal, disruption low",
+      "input": {
+        "worker_impact": "Two operators retrained, no role changes.",
+        "operational_disruption": "low"
+      },
+      "expected_output": {
+        "position": "support",
+        "human_approval_required": false
+      }
+    },
+    {
+      "id": "WSA-02",
+      "title": "Harm keyword present",
+      "input": {
+        "worker_impact": "Risk of exposure during retrofit window.",
+        "operational_disruption": "high"
+      },
+      "expected_output": {
+        "position": "oppose",
+        "human_approval_required": true
+      }
+    }
+  ]
+}

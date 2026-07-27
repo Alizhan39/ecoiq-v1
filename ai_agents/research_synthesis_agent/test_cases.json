@@ -1,0 +1,25 @@
+{
+  "agent_name": "Research Synthesis Agent",
+  "realistic_test_cases": [
+    {
+      "id": "RSA-01",
+      "title": "All agents support",
+      "input": {
+        "oppose_count": 0
+      },
+      "expected_output": {
+        "recommended_next_action": "ready_to_shortlist"
+      }
+    },
+    {
+      "id": "RSA-02",
+      "title": "Compatibility Agent opposes",
+      "input": {
+        "oppose_count": 1
+      },
+      "expected_output": {
+        "recommended_next_action": "incompatible_or_request_more_evidence"
+      }
+    }
+  ]
+}

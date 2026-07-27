@@ -1,0 +1,25 @@
+{
+  "agent_name": "Commercial Intelligence Agent",
+  "realistic_test_cases": [
+    {
+      "id": "CIA-01",
+      "title": "Real supplier quotation on file",
+      "input": {
+        "indicative_cost_type": "supplier_quotation"
+      },
+      "expected_output": {
+        "position": "support"
+      }
+    },
+    {
+      "id": "CIA-02",
+      "title": "No cost data available",
+      "input": {
+        "indicative_cost_type": "unavailable"
+      },
+      "expected_output": {
+        "position": "insufficient_evidence"
+      }
+    }
+  ]
+}

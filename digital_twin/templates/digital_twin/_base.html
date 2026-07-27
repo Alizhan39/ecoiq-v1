@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}{% block dt_title %}EcoIQ Digital Twin{% endblock %} — EcoIQ{% endblock %}
+{% block meta_description_content %}EcoIQ Industrial Digital Twin & Modernisation Engine.{% endblock %}
+
+{% block content %}
+<div class="dt-wrap">
+  <style>
+    .dt-wrap { max-width: 1000px; margin: 0 auto; padding: 2rem 1.25rem; font-family: system-ui, sans-serif; color: #dfe7ec; }
+    .dt-wrap h1 { font-size: 1.6rem; margin-bottom: .25rem; }
+    .dt-wrap h2 { font-size: 1.15rem; margin: 1.5rem 0 .5rem; border-bottom: 1px solid #2a343b; padding-bottom: .25rem; }
+    .dt-crumb { font-size: .85rem; opacity: .7; margin-bottom: 1rem; }
+    .dt-crumb a { color: #7fd1c4; }
+    .dt-table { width: 100%; border-collapse: collapse; margin: .5rem 0 1rem; font-size: .9rem; }
+    .dt-table th, .dt-table td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #23292e; }
+    .dt-card { border: 1px solid #23292e; border-radius: 8px; padding: 1rem; margin-bottom: .75rem; background: #10151a; }
+    .dt-badge { display: inline-block; font-size: .7rem; font-weight: 600; padding: .1rem .5rem; border-radius: 999px; margin-right: .35rem; text-transform: uppercase; letter-spacing: .03em; }
+    .dt-badge--observed { background: #1d3b2f; color: #7fe3a8; }
+    .dt-badge--calculated { background: #1d2f3b; color: #7fc3e3; }
+    .dt-badge--assumption { background: #3b3a1d; color: #e3d67f; }
+    .dt-badge--ai-suggested { background: #3b1d3a; color: #e07fe3; }
+    .dt-badge--missing { background: #3b1d1d; color: #e37f7f; }
+    .dt-badge--approved { background: #143d2a; color: #38d489; }
+    .dt-badge--warning { background: #3b2f1d; color: #e3ab7f; }
+    .dt-badge--blocked { background: #3b1414; color: #ff6b6b; }
+    .dt-muted { opacity: .65; font-size: .85rem; }
+    .dt-btn { display: inline-block; padding: .45rem .9rem; border-radius: 6px; background: #1d3b2f; color: #7fe3a8; text-decoration: none; font-size: .85rem; margin-right: .5rem; }
+    .dt-score { font-weight: 700; font-size: 1.1rem; }
+  </style>
+  <div class="dt-crumb"><a href="{% url 'digital_twin:asset_list' %}">Industrial Assets</a>{% block dt_crumb %}{% endblock %}</div>
+  {% block dt_content %}{% endblock %}
+</div>
+{% endblock %}

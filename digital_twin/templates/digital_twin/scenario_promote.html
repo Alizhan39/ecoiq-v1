@@ -1,0 +1,18 @@
+{% extends 'digital_twin/_base.html' %}
+{% block dt_title %}{{ scenario.intervention.title }} — Promotion{% endblock %}
+{% block dt_crumb %} / <a href="{% url 'digital_twin:scenario_detail' scenario.pk %}">{{ scenario.intervention.title }}</a> / Promotion{% endblock %}
+{% block dt_content %}
+<h1>Promotion to Capital Allocation</h1>
+{% if not decision %}
+<p class="dt-muted">No approving human decision exists yet — nothing can be promoted.</p>
+{% elif decision.capital_allocation_decision %}
+<div class="dt-card">
+  <span class="dt-badge dt-badge--approved">Promoted</span>
+  <p>Capital Allocation Decision #{{ decision.capital_allocation_decision.pk }} — {{ decision.capital_allocation_decision.get_approval_status_display }}</p>
+</div>
+{% else %}
+<p class="dt-muted">Approved by {{ decision.reviewer_role }} on {{ decision.decided_at }}. Use
+<code>digital_twin.services.promotion.promote_scenario(human_decision)</code> (or the admin action) to promote —
+this page never mutates state on a GET request.</p>
+{% endif %}
+{% endblock %}

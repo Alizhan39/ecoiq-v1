@@ -1,0 +1,73 @@
+{% extends 'global_research/_base.html' %}
+{% block gr_title %}{% if product %}{{ product.product_name }}{% else %}{{ candidate.name }}{% endif %}{% endblock %}
+{% block gr_crumb %} / {% if product %}{{ product.product_name }}{% else %}{{ candidate.name }}{% endif %}{% endblock %}
+{% block gr_content %}
+<h1>{% if product %}{{ product.manufacturer.organisation.name }} — {{ product.product_name }}{% else %}{{ candidate.name }}{% endif %}</h1>
+<p class="gr-muted">Technology Category: {{ candidate.category.name }} · TRL {{ candidate.technology_readiness_level|default:"—" }} · {{ candidate.get_commercial_maturity_display }}</p>
+{% if product %}
+<p><a href="{% url 'global_research:council_view_product' product.pk %}">Agent Council review</a></p>
+{% else %}
+<p><a href="{% url 'global_research:council_view_technology' candidate.pk %}">Agent Council review</a></p>
+{% endif %}
+
+<h2>Overview</h2>
+<p>{{ candidate.description }}</p>
+{% if product %}<p class="gr-muted">Lifecycle: {{ product.get_lifecycle_status_display }} · Status: {{ product.get_status_display }}</p>{% endif %}
+
+<h2>Specifications</h2>
+{% if product %}
+<table class="gr-table">
+  <tr><th>Capacity</th><td>{{ product.capacity_min|default:"—" }} – {{ product.capacity_max|default:"—" }} {{ product.capacity_unit.symbol }}</td></tr>
+  <tr><th>Efficiency values</th><td>{{ product.efficiency_values }}</td></tr>
+  <tr><th>Operating limits</th><td>{{ product.operating_limits }}</td></tr>
+  <tr><th>Geographical availability</th><td>{{ product.geographical_availability|join:", "|default:"—" }}</td></tr>
+</table>
+{% else %}<p class="gr-muted">Select a specific product for detailed specifications.</p>{% endif %}
+
+<h2>Evidence</h2>
+<table class="gr-table">
+  <tr><th>Predicate</th><th>Value</th><th>Vendor</th><th>Verified</th><th>Confidence</th></tr>
+  {% for c in claims %}
+  <tr>
+    <td>{{ c.predicate }}</td><td>{{ c.object_value }}</td>
+    <td>{% if c.vendor_provided %}<span class="gr-badge gr-badge--vendor">Vendor</span>{% else %}<span class="gr-badge gr-badge--observed">Independent</span>{% endif %}</td>
+    <td>{% if c.verified %}<span class="gr-badge gr-badge--approved">Yes</span>{% else %}<span class="gr-badge gr-badge--ai-suggested">No</span>{% endif %}</td>
+    <td>{{ c.confidence|default:"—" }}</td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="gr-muted">No claims yet.</td></tr>{% endfor %}
+</table>
+
+<h2>Compatibility</h2>
+{% for ca in compatibility %}
+<div class="gr-card">
+  <span class="gr-badge {% if ca.mandatory_pass %}gr-badge--approved{% else %}gr-badge--blocked{% endif %}">{{ ca.get_overall_status_display }}</span>
+  vs {{ ca.target_asset.name }}
+  <p class="gr-muted">Failed: {{ ca.mandatory_requirements_failed|join:"; "|default:"none" }}</p>
+</div>
+{% empty %}<p class="gr-muted">No compatibility assessment yet.</p>{% endfor %}
+
+<h2>Risks</h2>
+{% for f in risk_flags %}
+<p><span class="gr-badge gr-badge--warning">{{ f.get_severity_display }}</span> {{ f.get_risk_type_display }}: {{ f.description }}</p>
+{% empty %}<p class="gr-muted">No risk flags recorded.</p>{% endfor %}
+
+<h2>Manufacturer</h2>
+{% if product %}
+<p>{{ product.manufacturer.organisation.name }} ({{ product.manufacturer.headquarters_country }}) —
+  <span class="gr-badge gr-badge--calculated">{{ product.manufacturer.get_verification_status_display }}</span>
+  <span class="gr-badge {% if product.manufacturer.sanctions_screening_status == 'not_screened' %}gr-badge--ai-suggested{% else %}gr-badge--calculated{% endif %}">{{ product.manufacturer.get_sanctions_screening_status_display }}</span>
+</p>
+{% endif %}
+
+<h2>Commercial Data</h2>
+{% if product %}
+<p>Cost type: <span class="gr-badge gr-badge--assumption">{{ product.get_indicative_cost_type_display }}</span>
+{% if product.indicative_cost %}{{ product.cost_currency }} {{ product.indicative_cost }}{% endif %}</p>
+{% endif %}
+
+<h2>Stewardship</h2>
+<p class="gr-muted">Full governed Stewardship KPI assessment runs once this candidate becomes a real Modernisation Scenario.</p>
+
+<h2>Human Review</h2>
+<p class="gr-muted">Recorded via the Django admin (ResearchHumanDecision) or the service layer — never automatically.</p>
+{% endblock %}
