@@ -29,6 +29,8 @@ from django.utils.text import slugify
 
 from digital_twin.models import TimeStampedModel
 
+import hashlib
+
 from global_research.constants import (
     COMPATIBILITY_STATUS_CHOICES, EVIDENCE_TIER_CHOICES, LANGUAGE_CHOICES,
     SOURCE_OWNER_TYPE_CHOICES, SOURCE_TYPE_CHOICES, VERIFICATION_STATUS_CHOICES,
@@ -194,6 +196,15 @@ class ResearchQueryPlan(TimeStampedModel):
 
 # ── Sources and claims ────────────────────────────────────────────────────────
 
+def compute_source_dedup_key(url, title, publisher):
+    """The one place this dedup key is computed — shared by
+    ResearchSource.save() and services/orchestrator.py so a caller can
+    pre-compute the exact same key for an idempotent get_or_create() rather
+    than risk it drifting out of sync with the model's own logic."""
+    key_source = url or f'{title}::{publisher}'
+    return hashlib.sha1(slugify(key_source)[:250].encode('utf-8')).hexdigest()
+
+
 class ResearchSource(TimeStampedModel):
     """A discovered source. Stores metadata + a bounded permitted extract —
     never full copyrighted source text (see docs/research_evidence_methodology.md §1)."""
@@ -227,6 +238,12 @@ class ResearchSource(TimeStampedModel):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='candidate')
     dedup_key = models.CharField(max_length=300, db_index=True, blank=True, editable=False)
     provider_name = models.CharField(max_length=100, blank=True, help_text='Which ResearchProvider discovered this source.')
+    content_safety_flagged = models.BooleanField(
+        default=False,
+        help_text='True when this source\'s text matched a prompt-injection-attempt pattern. Flagging never changes '
+                   'how the content is treated (still inert evidence) — it only surfaces the attempt for review.',
+    )
+    content_safety_notes = models.TextField(blank=True)
 
     class Meta:
         ordering = ['mission', '-evidence_tier', '-publication_date']
@@ -240,10 +257,8 @@ class ResearchSource(TimeStampedModel):
         return self.title
 
     def save(self, *args, **kwargs):
-        import hashlib
         if not self.dedup_key:
-            key_source = self.url or f'{self.title}::{self.publisher}'
-            self.dedup_key = hashlib.sha1(slugify(key_source)[:250].encode('utf-8')).hexdigest()
+            self.dedup_key = compute_source_dedup_key(self.url, self.title, self.publisher)
         self.content_hash = hashlib.sha256(self.permitted_extract.encode('utf-8')).hexdigest() if self.permitted_extract else ''
         super().save(*args, **kwargs)
 
