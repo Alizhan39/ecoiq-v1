@@ -11,8 +11,8 @@ from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
-from .forms import AccessRequestForm, ReviewRequestForm, ReportRequestForm
-from .models import AccessRequest, ProfileClaim, ReviewRequest
+from .forms import AccessRequestForm, EnterpriseEnquiryForm, ReviewRequestForm, ReportRequestForm
+from .models import AccessRequest, EnterpriseEnquiry, ProfileClaim, ReviewRequest
 
 logger = logging.getLogger(__name__)
 
@@ -453,4 +453,109 @@ def client_report_preview(request, access_request_id):
     return render(request, 'leads/client_report_preview.html', {
         'obj':    obj,
         'drafts': drafts,
+    })
+
+
+# ── Enterprise Enquiry (EcoIQ Enterprise Pricing page) ─────────────────────────
+
+def _is_rate_limited_enterprise(ip: str) -> bool:
+    """True if this IP has submitted ≥ 5 enterprise enquiries in the last hour."""
+    if not ip:
+        return False
+    cutoff = timezone.now() - timedelta(hours=1)
+    return EnterpriseEnquiry.objects.filter(ip_address=ip, created_at__gte=cutoff).count() >= 5
+
+
+def _send_enterprise_emails(instance: 'EnterpriseEnquiry', request) -> None:
+    """
+    Fire two emails for a new EnterpriseEnquiry:
+      1. Team notification → LEAD_NOTIFY_EMAIL
+      2. Confirmation      → submitter's work email
+    Failures are logged and silenced — never surfaced to the user.
+    """
+    try:
+        notify_email = getattr(settings, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
+        from_email   = getattr(settings, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
+
+        notify_body = render_to_string('emails/enterprise_enquiry_notify.txt', {
+            'instance':  instance,
+            'admin_url': request.build_absolute_uri(
+                f'/admin/leads/enterpriseenquiry/{instance.pk}/change/'
+            ),
+        })
+        send_mail(
+            subject=(
+                f'[EcoIQ] New enterprise enquiry — {instance.get_preferred_engagement_display()} '
+                f'({instance.full_name}, {instance.organisation})'
+            ),
+            message=notify_body,
+            from_email=from_email,
+            recipient_list=[notify_email],
+            fail_silently=True,
+        )
+
+        confirm_body = render_to_string('emails/enterprise_enquiry_confirm.txt', {'instance': instance})
+        send_mail(
+            subject='EcoIQ Enterprise — we have received your enquiry',
+            message=confirm_body,
+            from_email=from_email,
+            recipient_list=[instance.work_email],
+            fail_silently=True,
+        )
+
+    except Exception as exc:   # pragma: no cover
+        logger.exception('Email send failed for EnterpriseEnquiry pk=%s: %s', instance.pk, exc)
+
+
+def enterprise_enquiry(request):
+    """
+    GET/POST /request-access/enterprise/
+
+    The single enquiry form every CTA on the EcoIQ Enterprise Pricing page
+    (/pricing/) routes to. Accepts an optional ?engagement= query param
+    (matching leads.models.ENGAGEMENT_TYPE_CHOICES) to pre-select the
+    dropdown — same deep-link convention as request_review's ?type=.
+    Never accepts payment; this only opens a scoped commercial conversation.
+    """
+    initial = {}
+    engagement = request.GET.get('engagement', '').strip()
+    if engagement:
+        initial['preferred_engagement'] = engagement
+
+    form = EnterpriseEnquiryForm(initial=initial)
+
+    if request.method == 'POST':
+        # Honeypot: if the hidden `hp_field` has any value, silently redirect
+        # to the thank-you page so bots get no feedback about detection.
+        if request.POST.get('hp_field', '').strip():
+            return redirect('leads:enterprise_enquiry_success')
+
+        ip   = _get_client_ip(request)
+        form = EnterpriseEnquiryForm(request.POST)
+
+        if _is_rate_limited_enterprise(ip):
+            return render(request, 'leads/enterprise_enquiry.html', {
+                'form':         form,
+                'rate_limited': True,
+            })
+
+        if form.is_valid():
+            instance            = form.save(commit=False)
+            instance.ip_address = ip
+            instance.save()
+            _send_enterprise_emails(instance, request)
+            return redirect('leads:enterprise_enquiry_success')
+
+    calendly_url = getattr(settings, 'CALENDLY_URL', '')
+    return render(request, 'leads/enterprise_enquiry.html', {
+        'form':         form,
+        'calendly_url': calendly_url,
+    })
+
+
+def enterprise_enquiry_success(request):
+    """GET /request-access/enterprise/success/ — confirmation page after an enterprise enquiry."""
+    calendly_url = getattr(settings, 'CALENDLY_URL', '')
+    return render(request, 'leads/enterprise_enquiry_success.html', {
+        'calendly_url': calendly_url,
     })

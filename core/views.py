@@ -873,13 +873,42 @@ def methodology(request):
 
 # ── Pricing page ────────────────────────────────────────────────────────────────
 
+# PART 5 of the enterprise pricing redesign — every item is quoted separately
+# ("Custom scope"), never priced on this page; see leads.EnterpriseEnquiry for
+# how these enquiries route into the same commercial pipeline as the four
+# core engagement tracks.
+ENTERPRISE_ADDONS = [
+    'Additional data integrations',
+    'Custom APIs',
+    'Private cloud deployment',
+    'GCC data localisation',
+    'Arabic intelligence and reporting',
+    'Custom AI agents',
+    'Portfolio data enrichment',
+    'Advanced cybersecurity review',
+    'Shariah advisory integration',
+    'Sector-specific methodology',
+    'Custom executive reports',
+    'On-site training and implementation',
+]
+
+
 def pricing(request):
     """
-    /pricing/ — EcoIQ plan comparison page.
-    Public, no auth required. 4-tier plan overview with billing toggle, comparison
-    table, FAQ, and CTAs.
+    /pricing/ — EcoIQ Enterprise Pricing page.
+    Public, no auth required. Positions EcoIQ as an enterprise/government
+    decision-intelligence platform: four commercial engagement tracks,
+    government & sovereign programme tiers, a limited GCC founding-partner
+    offer, add-ons, and a procurement/FAQ walkthrough. Every CTA routes to
+    leads.EnterpriseEnquiry (see leads/views.py:enterprise_enquiry) — no
+    payment is ever collected on this page.
     """
-    return render(request, 'pricing.html')
+    from django.conf import settings as _s
+    calendly_url = getattr(_s, 'CALENDLY_URL', '')
+    return render(request, 'pricing.html', {
+        'calendly_url': calendly_url,
+        'addons': ENTERPRISE_ADDONS,
+    })
 
 
 # ── About page ───────────────────────────────────────────────────────────────

@@ -16,4 +16,8 @@ urlpatterns = [
     # Profile claim flow
     path('claim/',         views.claim_profile_page,   name='claim_profile_page'),
     path('claim/submit/',  views.claim_profile_submit, name='claim_profile_submit'),
+
+    # Enterprise Enquiry flow — every /pricing/ CTA routes here
+    path('enterprise/',          views.enterprise_enquiry,         name='enterprise_enquiry'),
+    path('enterprise/success/',  views.enterprise_enquiry_success, name='enterprise_enquiry_success'),
 ]

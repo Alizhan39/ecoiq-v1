@@ -1,5 +1,5 @@
 from django import forms
-from .models import AccessRequest, ReviewRequest
+from .models import AccessRequest, EnterpriseEnquiry, ReviewRequest
 
 # CSS classes applied to every widget (styles defined in each template's <style> block)
 _INPUT = 'form-input'
@@ -289,6 +289,99 @@ class ReportRequestForm(forms.ModelForm):
         self.fields['role'].required             = False
         self.fields['product_interest'].required = False
         self.fields['message'].required          = False
+
+    def clean_work_email(self):
+        return self.cleaned_data['work_email'].strip().lower()
+
+    def clean_full_name(self):
+        name = self.cleaned_data['full_name'].strip()
+        if len(name) < 2:
+            raise forms.ValidationError('Please enter your full name.')
+        return name
+
+
+class EnterpriseEnquiryForm(forms.ModelForm):
+    """Backs /request-access/enterprise/ — the single form every /pricing/ CTA routes to."""
+
+    # Honeypot — must remain empty on genuine submissions
+    hp_field = forms.CharField(
+        required=False,
+        label='',
+        widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off', 'aria-hidden': 'true'}),
+    )
+
+    class Meta:
+        model  = EnterpriseEnquiry
+        fields = [
+            'full_name', 'organisation', 'work_email', 'country',
+            'organisation_type', 'preferred_engagement', 'estimated_assets',
+            'use_case', 'message',
+        ]
+        labels = {
+            'full_name':            'Full name',
+            'organisation':         'Organisation',
+            'work_email':           'Work email',
+            'country':              'Country',
+            'organisation_type':    'Organisation type',
+            'preferred_engagement': 'Preferred engagement',
+            'estimated_assets':     'Estimated number of assets or companies',
+            'use_case':             'Main use case',
+            'message':              'Message',
+        }
+        widgets = {
+            'full_name':    forms.TextInput(attrs={'placeholder': 'Jane Smith', 'autocomplete': 'name'}),
+            'organisation': forms.TextInput(attrs={
+                'placeholder': 'Ministry of Finance / Al Rayan Investment', 'autocomplete': 'organization',
+            }),
+            'work_email': forms.EmailInput(attrs={'placeholder': 'jane@organisation.com', 'autocomplete': 'email'}),
+            'country':    forms.TextInput(attrs={
+                'placeholder': 'e.g. United Arab Emirates, Saudi Arabia, United Kingdom', 'autocomplete': 'country-name',
+            }),
+            'organisation_type':    forms.Select(),
+            'preferred_engagement': forms.Select(),
+            'estimated_assets': forms.TextInput(attrs={
+                'placeholder': 'e.g. 40 portfolio companies, 12 ministries, 200 assets',
+            }),
+            'use_case': forms.TextInput(attrs={
+                'placeholder': 'e.g. Sovereign portfolio screening, national ESG programme',
+            }),
+            'message': forms.Textarea(attrs={
+                'rows': 4, 'placeholder': 'Any additional context — timelines, stakeholders, existing systems.',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Apply widget CSS classes
+        for name, f in self.fields.items():
+            if name == 'hp_field':
+                continue
+            if isinstance(f.widget, forms.Select):
+                f.widget.attrs.setdefault('class', _SELECT)
+            elif isinstance(f.widget, forms.Textarea):
+                f.widget.attrs.setdefault('class', _TEXTAREA)
+            else:
+                f.widget.attrs.setdefault('class', _INPUT)
+
+        # Blank prompts for selects
+        self.fields['organisation_type'].choices = (
+            [('', 'Select organisation type…')] + [c for c in self.fields['organisation_type'].choices if c[0]]
+        )
+        self.fields['preferred_engagement'].choices = (
+            [('', 'Select preferred engagement…')] + [c for c in self.fields['preferred_engagement'].choices if c[0]]
+        )
+
+        # Required vs optional
+        self.fields['full_name'].required            = True
+        self.fields['organisation'].required         = True
+        self.fields['work_email'].required            = True
+        self.fields['country'].required               = True
+        self.fields['organisation_type'].required     = True
+        self.fields['preferred_engagement'].required  = True
+        self.fields['estimated_assets'].required       = False
+        self.fields['use_case'].required                = False
+        self.fields['message'].required                = False
 
     def clean_work_email(self):
         return self.cleaned_data['work_email'].strip().lower()

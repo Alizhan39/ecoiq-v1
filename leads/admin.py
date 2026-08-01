@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import AccessRequest, ProfileClaim, NewsletterSignup, ReviewRequest
+from .models import AccessRequest, EnterpriseEnquiry, ProfileClaim, NewsletterSignup, ReviewRequest
 
 
 STATUS_COLOURS = {
@@ -349,6 +349,68 @@ class ReviewRequestAdmin(admin.ModelAdmin):
     @admin.display(description='Status', ordering='status')
     def status_badge(self, obj):
         fg, bg = REVIEW_STATUS_COLOURS.get(obj.status, ('#333', '#eee'))
+        return format_html(
+            '<span style="background:{};color:{};padding:2px 10px;border-radius:12px;'
+            'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',
+            bg, fg, obj.get_status_display()
+        )
+
+
+# ── EnterpriseEnquiry admin ─────────────────────────────────────────────────────
+
+ENTERPRISE_ENQUIRY_STATUS_COLOURS = {
+    'new':           ('#1b4332', '#d8f3dc'),
+    'reviewing':     ('#0c3a6b', '#dde5f4'),
+    'scoping_call':  ('#4a1d8a', '#ede9fe'),
+    'proposal_sent': ('#8a5a1d', '#fdf0d8'),
+    'won':           ('#fff',    '#10b981'),
+    'lost':          ('#7c2020', '#ffe0e0'),
+}
+
+
+@admin.register(EnterpriseEnquiry)
+class EnterpriseEnquiryAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'full_name', 'organisation', 'work_email', 'country',
+        'organisation_type_display', 'engagement_display', 'status_badge',
+        'status', 'created_at',
+    )
+    list_filter   = ('status', 'preferred_engagement', 'organisation_type', 'created_at')
+    search_fields = ('full_name', 'organisation', 'work_email', 'country', 'use_case', 'message', 'notes')
+    list_editable = ('status',)
+    ordering      = ('-created_at',)
+    date_hierarchy = 'created_at'
+    readonly_fields = ('ip_address', 'created_at', 'updated_at')
+
+    fieldsets = (
+        ('Contact', {
+            'fields': ('full_name', 'organisation', 'work_email', 'country'),
+        }),
+        ('Engagement', {
+            'fields': ('organisation_type', 'preferred_engagement', 'estimated_assets', 'use_case', 'message'),
+        }),
+        ('CRM', {
+            'fields': ('status', 'notes'),
+            'description': 'Internal status and team notes — not visible to the submitter.',
+        }),
+        ('Security & Timestamps', {
+            'fields': ('ip_address', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    @admin.display(description='Organisation Type', ordering='organisation_type')
+    def organisation_type_display(self, obj):
+        return obj.get_organisation_type_display()
+
+    @admin.display(description='Engagement', ordering='preferred_engagement')
+    def engagement_display(self, obj):
+        return obj.get_preferred_engagement_display()
+
+    @admin.display(description='Status', ordering='status')
+    def status_badge(self, obj):
+        fg, bg = ENTERPRISE_ENQUIRY_STATUS_COLOURS.get(obj.status, ('#333', '#eee'))
         return format_html(
             '<span style="background:{};color:{};padding:2px 10px;border-radius:12px;'
             'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',

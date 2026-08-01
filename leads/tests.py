@@ -296,3 +296,178 @@ class GenerateStarterDraftActionTests(TestCase):
         ]
         r = self._run_action(*[o.pk for o in objs])
         self.assertContains(r, 'Starter draft generated for 2 access request(s).')
+
+
+# ── EnterpriseEnquiry (EcoIQ Enterprise Pricing page) ───────────────────────────
+
+from .models import EnterpriseEnquiry
+
+VALID_ENTERPRISE_POST = {
+    'full_name':            'Sara Al Qasimi',
+    'organisation':         'Gulf Horizon Investments',
+    'work_email':           'Sara@GulfHorizon.example',
+    'country':              'United Arab Emirates',
+    'organisation_type':    'sovereign_wealth_fund',
+    'preferred_engagement': 'pilot_90day',
+    'estimated_assets':     '35 portfolio companies',
+    'use_case':             'Portfolio-wide ethical screening',
+    'message':              'Keen to move quickly on this.',
+    'hp_field':              '',   # honeypot — must be empty on genuine submissions
+}
+
+
+class PricingPageTests(TestCase):
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_pricing_page_200(self):
+        r = self.c.get('/pricing/')
+        self.assertEqual(r.status_code, 200)
+
+    def test_pricing_page_shows_all_four_engagement_cards(self):
+        r = self.c.get('/pricing/')
+        content = r.content.decode()
+        for title in ('Enterprise Diagnostic', '90-Day Enterprise Pilot', 'Enterprise Deployment', 'Annual Platform Licence'):
+            self.assertIn(title, content)
+
+    def test_pricing_page_shows_government_tiers(self):
+        r = self.c.get('/pricing/')
+        content = r.content.decode()
+        for title in ('Government Pilot', 'First-Year Deployment', 'Multi-Year National'):
+            self.assertIn(title, content)
+
+    def test_pricing_page_shows_founding_partner_prices(self):
+        r = self.c.get('/pricing/')
+        content = r.content.decode()
+        self.assertIn('£125,000', content)
+        self.assertIn('From £85,000', content)
+
+    def test_pricing_page_never_shows_buy_now(self):
+        """PART: 'Do not show Buy now' — every CTA must be a proposal/discovery request."""
+        r = self.c.get('/pricing/')
+        self.assertNotIn('Buy now', r.content.decode())
+        self.assertNotIn('Buy Now', r.content.decode())
+
+    def test_pricing_page_addons_all_marked_custom_scope(self):
+        r = self.c.get('/pricing/')
+        content = r.content.decode()
+        self.assertGreaterEqual(content.count('Custom scope'), 12)
+
+    def test_pricing_page_ctas_link_to_enterprise_enquiry_with_engagement(self):
+        r = self.c.get('/pricing/')
+        content = r.content.decode()
+        for engagement in (
+            'enterprise_diagnostic', 'pilot_90day', 'enterprise_deployment',
+            'annual_licence', 'government_sovereign', 'founding_partner',
+        ):
+            self.assertIn(f'/request-access/enterprise/?engagement={engagement}', content)
+
+
+class EnterpriseEnquiryFormTests(TestCase):
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_get_form_200(self):
+        r = self.c.get(reverse('leads:enterprise_enquiry'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_engagement_query_param_preselects_dropdown(self):
+        r = self.c.get(reverse('leads:enterprise_enquiry') + '?engagement=founding_partner')
+        self.assertEqual(r.context['form'].initial.get('preferred_engagement'), 'founding_partner')
+
+    def test_valid_submission_redirects_to_success(self):
+        r = self.c.post(reverse('leads:enterprise_enquiry'), VALID_ENTERPRISE_POST)
+        self.assertRedirects(r, reverse('leads:enterprise_enquiry_success'), fetch_redirect_response=False)
+
+    def test_valid_submission_creates_exactly_one_record(self):
+        self.c.post(reverse('leads:enterprise_enquiry'), VALID_ENTERPRISE_POST)
+        self.assertEqual(EnterpriseEnquiry.objects.count(), 1)
+
+    def test_saved_object_contains_all_fields(self):
+        self.c.post(reverse('leads:enterprise_enquiry'), VALID_ENTERPRISE_POST)
+        obj = EnterpriseEnquiry.objects.get()
+        self.assertEqual(obj.full_name, 'Sara Al Qasimi')
+        self.assertEqual(obj.organisation, 'Gulf Horizon Investments')
+        self.assertEqual(obj.work_email, 'sara@gulfhorizon.example')  # normalised lowercase
+        self.assertEqual(obj.country, 'United Arab Emirates')
+        self.assertEqual(obj.organisation_type, 'sovereign_wealth_fund')
+        self.assertEqual(obj.preferred_engagement, 'pilot_90day')
+        self.assertEqual(obj.estimated_assets, '35 portfolio companies')
+        self.assertEqual(obj.status, 'new')
+
+    def test_honeypot_prevents_record_creation(self):
+        data = {**VALID_ENTERPRISE_POST, 'hp_field': 'http://spam.example'}
+        r = self.c.post(reverse('leads:enterprise_enquiry'), data)
+        self.assertRedirects(r, reverse('leads:enterprise_enquiry_success'), fetch_redirect_response=False)
+        self.assertEqual(EnterpriseEnquiry.objects.count(), 0)
+
+    def test_missing_required_field_shows_form_and_saves_nothing(self):
+        data = {**VALID_ENTERPRISE_POST, 'full_name': ''}
+        r = self.c.post(reverse('leads:enterprise_enquiry'), data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(EnterpriseEnquiry.objects.count(), 0)
+
+    def test_missing_organisation_type_shows_form_and_saves_nothing(self):
+        data = {**VALID_ENTERPRISE_POST, 'organisation_type': ''}
+        r = self.c.post(reverse('leads:enterprise_enquiry'), data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(EnterpriseEnquiry.objects.count(), 0)
+
+    def test_optional_fields_can_be_blank(self):
+        data = {**VALID_ENTERPRISE_POST, 'estimated_assets': '', 'use_case': '', 'message': ''}
+        r = self.c.post(reverse('leads:enterprise_enquiry'), data)
+        self.assertRedirects(r, reverse('leads:enterprise_enquiry_success'), fetch_redirect_response=False)
+        self.assertEqual(EnterpriseEnquiry.objects.count(), 1)
+
+    def test_success_page_200(self):
+        r = self.c.get(reverse('leads:enterprise_enquiry_success'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_no_payment_language_anywhere_in_flow(self):
+        """PART: never accept payment on the website."""
+        for url in (reverse('leads:enterprise_enquiry'), reverse('leads:enterprise_enquiry_success')):
+            content = self.c.get(url).content.decode()
+            self.assertNotIn('Buy now', content)
+            self.assertNotIn('checkout', content.lower())
+
+
+class EnterpriseEnquiryRateLimitTests(TestCase):
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost', REMOTE_ADDR='10.0.0.2')
+
+    def test_rate_limit_after_five_submissions(self):
+        """Sixth submission from the same IP within 1 hour should show rate_limited."""
+        for _ in range(5):
+            self.c.post(reverse('leads:enterprise_enquiry'), VALID_ENTERPRISE_POST)
+
+        r = self.c.post(reverse('leads:enterprise_enquiry'), VALID_ENTERPRISE_POST)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.context.get('rate_limited', False))
+        # The 6th (blocked) attempt must not have created a 6th record.
+        self.assertEqual(EnterpriseEnquiry.objects.count(), 5)
+
+
+class EnterpriseEnquiryAdminTests(TestCase):
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_superuser('admin_enterprise', 'admin@example.com', 'pw123456')
+        self.c = Client(SERVER_NAME='localhost')
+        self.c.force_login(self.staff)
+        self.enquiry = EnterpriseEnquiry.objects.create(
+            full_name='Test Person', organisation='Test Org', work_email='test@example.com',
+            country='United Kingdom', organisation_type='bank', preferred_engagement='enterprise_diagnostic',
+        )
+
+    def test_admin_changelist_loads(self):
+        r = self.c.get('/admin/leads/enterpriseenquiry/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Test Org', r.content.decode())
+
+    def test_admin_change_page_loads(self):
+        r = self.c.get(f'/admin/leads/enterpriseenquiry/{self.enquiry.pk}/change/')
+        self.assertEqual(r.status_code, 200)
