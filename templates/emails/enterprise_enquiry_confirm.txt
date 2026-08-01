@@ -1,0 +1,42 @@
+Hi {{ instance.full_name }},
+
+Thank you for your enquiry about EcoIQ's enterprise and government
+decision-intelligence capabilities.
+
+We have received your request for:
+  {{ instance.get_preferred_engagement_display }}
+
+A member of our enterprise team will review your enquiry and follow up
+by email within two business days to schedule a discovery call.
+
+SUMMARY OF YOUR ENQUIRY
+------------------------
+Organisation:          {{ instance.organisation }}
+Organisation type:     {{ instance.get_organisation_type_display }}
+Country:                {{ instance.country }}
+Preferred engagement:  {{ instance.get_preferred_engagement_display }}
+{% if instance.use_case %}Main use case:          {{ instance.use_case }}
+{% endif %}
+
+WHAT HAPPENS NEXT
+------------------
+1. Our enterprise team reviews your enquiry and the scope you described.
+2. We schedule a discovery call to confirm objectives, data, users and
+   timeline.
+3. You receive a written scope, timeline, deliverables and a transparent
+   commercial proposal — no payment is collected on our website.
+
+Final pricing depends on the number of organisations, assets, users,
+data sources, integrations and security requirements involved.
+
+Questions? Reply to this email or contact us at:
+partnerships@ecoiq.uk
+
+─────────────────────────────────────────
+EcoIQ — Decision Intelligence Platform
+https://ecoiq.uk/pricing/
+─────────────────────────────────────────
+
+This message confirms receipt of an enquiry only. It is not a proposal,
+quotation, or offer of engagement, and does not constitute investment,
+legal, tax or Shariah advice.

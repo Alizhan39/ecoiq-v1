@@ -1,1280 +1,717 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}EcoIQ Pricing — Institutional Climate Intelligence Plans{% endblock %}
-{% block meta_description %}<meta name="description" content="EcoIQ pricing plans for climate intelligence, ESG scoring, country analysis, and investor-grade transition roadmaps. Free tier available. Institutional and Enterprise plans for development banks and sovereign funds.">{% endblock %}
+{% block title %}Enterprise Pricing — EcoIQ Decision Intelligence for Banks, Sovereign Funds & Government{% endblock %}
+{% block meta_description %}<meta name="description" content="EcoIQ enterprise decision intelligence pricing for banks, investment funds, sovereign wealth funds, governments and GCC holding groups. AI investment intelligence platform, ESG intelligence software, Islamic investment intelligence and sovereign investment analytics — scoped proposals, not consumer SaaS plans.">{% endblock %}
+{% block og_title %}EcoIQ Enterprise Pricing — Decision Intelligence for Institutions & Governments{% endblock %}
+{% block og_description %}Enterprise decision intelligence pricing, GCC AI platform deployment and government decision intelligence programmes from EcoIQ. Transparent scope, evidence-linked outputs, no hidden fees.{% endblock %}
 
 {% block extra_head %}
 <style>
 /* ══════════════════════════════════════════════════════════════════
-   EcoIQ PRICING — Institutional Design System
-   Bloomberg Terminal × Palantir Foundry pricing page aesthetic
+   EcoIQ ENTERPRISE PRICING — Institutional Design System
+   Dark navy / near-black · emerald + turquoise accents · subtle gold
+   for GCC/government sections. Tokens match static/css/ecoiq-institutional.css
+   (--iq-bg, --iq-accent, --iq-cyan) so this page never forks the brand.
    ══════════════════════════════════════════════════════════════════ */
 :root {
   --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2230;
-  --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12); --border3:rgba(255,255,255,.18);
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.13); --border3:rgba(255,255,255,.2);
   --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
-  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
-  --info:#58a6ff; --purple:#a855f7; --cyan:#06b6d4;
+  --accent:#00e89a; --accent-dim:#0bbf82; --cyan:#06b6d4;
+  --gold:#e8c46a; --gold-dim:rgba(232,196,106,.6); --gold-glow:rgba(232,196,106,.14);
+  --warn:#f4a261; --danger:#e63946;
   --font:'Inter',system-ui,-apple-system,sans-serif;
-  --radius:10px; --radius-sm:7px;
+  --mono:'JetBrains Mono',monospace;
+  --radius-lg:18px; --radius-md:14px; --radius-sm:10px;
+  scroll-behavior: smooth;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
+* { box-sizing: border-box; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+.mono { font-family: var(--mono); }
 
-/* ── Command bar ─────────────────────────────────────────────────── */
-.cmd-bar{
-  position:sticky;top:0;z-index:200;
-  background:rgba(7,11,15,.97);backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:.75rem;
-  padding:.55rem 1.5rem;flex-wrap:wrap;
-}
-.cmd-brand{font-weight:800;font-size:.88rem;color:var(--accent);letter-spacing:-.01em}
-.cmd-sep{color:var(--border2)}
-.cmd-bc{color:var(--muted);display:flex;align-items:center;gap:.4rem;font-size:.78rem}
-.cmd-bc a{color:var(--muted);transition:color .15s}
-.cmd-bc a:hover{color:var(--accent)}
-.cmd-links{display:flex;gap:.4rem;margin-left:auto;align-items:center}
-.cmd-btn{
-  font-size:.69rem;font-weight:600;padding:.28rem .8rem;border-radius:5px;
-  border:1px solid var(--border);color:var(--muted);
-  transition:all .15s;white-space:nowrap;
-}
-.cmd-btn:hover{border-color:var(--border2);color:var(--text)}
-.cmd-btn.accent{background:var(--accent);color:#0a0f14;border-color:var(--accent);font-weight:700}
-.cmd-btn.accent:hover{background:#00c882}
+/* base.html's <main> is capped at max-width:900px with its own side padding
+   for the site's normal narrower content pages -- too narrow for a 4-column
+   enterprise pricing grid and incompatible with this page's own full-bleed
+   government section. Overridden here (later in <head>, so it wins on
+   source order) rather than touching base.html, which every other page
+   still relies on unchanged. */
+main { max-width: none; margin: 0; padding: 0; }
 
-/* ── Page shell ──────────────────────────────────────────────────── */
-.page{max-width:1140px;margin:0 auto;padding:0 1.5rem 5rem}
+.page { max-width: 1180px; margin: 0 auto; padding: 0 1.5rem 6rem; }
+.section-inner { max-width: 1180px; margin: 0 auto; padding: 0 1.5rem; }
+h1, h2, h3 { letter-spacing: -.02em; }
+
+/* ── Shared badge / eyebrow ─────────────────────────────────────── */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: rgba(0,232,154,.08); border: 1px solid rgba(0,232,154,.24);
+  color: var(--accent); font-size: .68rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: .32rem .95rem; border-radius: 999px; margin-bottom: 1.4rem;
+}
+.eyebrow-gold { background: var(--gold-glow); border-color: rgba(232,196,106,.35); color: var(--gold); }
+.eyebrow-dot { width: .38rem; height: .38rem; border-radius: 999px; background: currentColor; animation: pulse-dot 2.2s ease infinite; }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
 /* ── Hero ────────────────────────────────────────────────────────── */
-.hero{
-  text-align:center;
-  padding:5rem 1.5rem 3.5rem;
-  background:linear-gradient(180deg,rgba(0,232,154,.03) 0%,transparent 100%);
-  border-bottom:1px solid var(--border);
-  margin-bottom:0;
+.hero {
+  text-align: center; padding: 5.5rem 1.5rem 3rem;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,232,154,.06), transparent 70%);
+  border-bottom: 1px solid var(--border);
 }
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:.5rem;
-  background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.22);
-  color:var(--accent);font-size:.72rem;font-weight:700;
-  letter-spacing:1.5px;text-transform:uppercase;
-  padding:.28rem .9rem;border-radius:20px;margin-bottom:1.4rem;
+.hero h1 {
+  font-size: clamp(2.1rem,4.4vw,3.3rem); font-weight: 800; line-height: 1.08;
+  margin-bottom: 1.1rem;
+  background: linear-gradient(135deg,#fff 30%,#9fb3ac 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.hero h1{
-  font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.04em;line-height:1.1;
-  margin-bottom:.9rem;
-  background:linear-gradient(135deg,#fff 30%,#94a3b8 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+.hero-sub { font-size: 1.08rem; color: var(--muted2); line-height: 1.75; max-width: 640px; margin: 0 auto 1rem; }
+.hero-tag { font-size: .85rem; color: var(--accent); font-weight: 600; margin-bottom: 2.2rem; }
+.hero-ctas { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3.5rem; }
+
+.btn { display: inline-flex; align-items: center; gap: .5rem; padding: .82rem 1.5rem; border-radius: var(--radius-sm);
+  font-size: .875rem; font-weight: 700; text-decoration: none; transition: all .18s; border: 1px solid transparent; cursor: pointer; }
+.btn-primary { background: var(--accent); color: #06120d; }
+.btn-primary:hover { background: #00c882; transform: translateY(-1px); box-shadow: 0 12px 30px -10px rgba(0,232,154,.45); }
+.btn-ghost { background: rgba(255,255,255,.03); border-color: var(--border2); color: var(--text); }
+.btn-ghost:hover { background: rgba(255,255,255,.07); border-color: var(--border3); }
+.btn-gold { background: var(--gold); color: #241b06; }
+.btn-gold:hover { background: #f0d68a; transform: translateY(-1px); box-shadow: 0 12px 30px -10px var(--gold-glow); }
+.btn-sm { padding: .6rem 1.1rem; font-size: .78rem; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* ── Flow visual: Data → Intelligence → Decisions → Impact ─────────── */
+.flow {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 0; align-items: stretch;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden; margin-bottom: 4.5rem;
 }
-.hero-sub{
-  font-size:1rem;color:var(--muted2);line-height:1.7;max-width:560px;margin:0 auto 2.5rem;
+.flow-step { padding: 1.6rem 1.2rem; text-align: center; position: relative; border-right: 1px solid var(--border); }
+.flow-step:last-child { border-right: none; }
+.flow-step::after {
+  content: '→'; position: absolute; right: -.7rem; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 1.1rem; z-index: 2;
+}
+.flow-step:last-child::after { display: none; }
+.flow-icon { font-size: 1.5rem; margin-bottom: .6rem; }
+.flow-label { font-size: .78rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
+.flow-desc { font-size: .68rem; color: var(--muted); line-height: 1.4; }
+@media (max-width: 800px) {
+  .flow { grid-template-columns: 1fr; }
+  .flow-step { border-right: none; border-bottom: 1px solid var(--border); }
+  .flow-step::after { content: '↓'; right: 50%; top: auto; bottom: -.65rem; transform: translateX(50%); }
 }
 
-/* ── Billing toggle ──────────────────────────────────────────────── */
-.billing-toggle{
-  display:inline-flex;align-items:center;gap:.85rem;
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:30px;padding:.35rem .35rem .35rem .85rem;
-  font-size:.82rem;color:var(--muted2);margin-bottom:3.5rem;
-}
-.billing-toggle .toggle-label{font-weight:600}
-.toggle-switch{
-  display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:20px;overflow:hidden;
-}
-.toggle-option{
-  padding:.32rem .85rem;font-size:.72rem;font-weight:700;letter-spacing:.3px;
-  cursor:pointer;transition:all .2s;white-space:nowrap;border:none;background:none;color:var(--muted);
-}
-.toggle-option.active{background:var(--accent);color:#0a0f14;border-radius:16px}
-.annual-badge{
-  background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.25);
-  color:var(--accent);font-size:.65rem;font-weight:700;
-  padding:.15rem .5rem;border-radius:8px;letter-spacing:.3px;
-}
+/* ── Section shell ───────────────────────────────────────────────── */
+.section { padding: 4.5rem 0; border-bottom: 1px solid var(--border); }
+.section-head { text-align: center; max-width: 700px; margin: 0 auto 2.8rem; }
+.section-head h2 { font-size: clamp(1.5rem,2.6vw,2.1rem); font-weight: 800; margin-bottom: .8rem; }
+.section-head p { color: var(--muted2); font-size: .96rem; line-height: 1.7; }
 
-/* ── Plan grid ───────────────────────────────────────────────────── */
-.plans-grid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:1rem;
-  margin-bottom:4rem;
+/* ── Commercial engagement cards ─────────────────────────────────── */
+.cards-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.1rem; margin-bottom: 1.5rem; }
+.card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 1.8rem 1.5rem; display: flex; flex-direction: column;
+  position: relative; transition: border-color .25s, transform .25s, box-shadow .25s;
 }
-.plan-card{
-  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
-  padding:1.6rem 1.4rem;display:flex;flex-direction:column;
-  position:relative;transition:border-color .25s,transform .2s;
+.card:hover { border-color: var(--border3); transform: translateY(-4px); box-shadow: 0 24px 50px -30px rgba(0,0,0,.6); }
+.card-featured { border-color: rgba(0,232,154,.4); background: linear-gradient(180deg, rgba(0,232,154,.06), var(--bg2) 55%); box-shadow: 0 0 0 1px rgba(0,232,154,.15), 0 30px 60px -30px rgba(0,232,154,.25); }
+.card-featured:hover { box-shadow: 0 0 0 1px rgba(0,232,154,.25), 0 34px 70px -30px rgba(0,232,154,.4); }
+.card-badge-row { min-height: 24px; margin-bottom: .9rem; }
+.card-pill {
+  display: inline-flex; align-items: center; gap: .35rem; font-size: .64rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; padding: .22rem .7rem; border-radius: 999px;
 }
-.plan-card:hover{border-color:var(--border2);transform:translateY(-2px)}
-.plan-card.featured{
-  border-color:rgba(0,232,154,.35);
-  background:linear-gradient(180deg,rgba(0,232,154,.05) 0%,var(--bg2) 60%);
-}
-.plan-card.featured::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--accent),transparent);border-radius:12px 12px 0 0;
-}
-.plan-badge-wrap{margin-bottom:1.1rem;min-height:22px}
-.plan-badge{
-  font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  padding:.2rem .6rem;border-radius:6px;
-}
-.plan-badge-popular{background:rgba(0,232,154,.15);color:var(--accent);border:1px solid rgba(0,232,154,.3)}
-.plan-badge-inst{background:rgba(88,166,255,.12);color:var(--info);border:1px solid rgba(88,166,255,.25)}
+.card-pill-accent { background: rgba(0,232,154,.14); color: var(--accent); border: 1px solid rgba(0,232,154,.3); }
+.card-pill-neutral { background: rgba(255,255,255,.05); color: var(--muted2); border: 1px solid var(--border2); }
+.card-title { font-size: 1.15rem; font-weight: 800; margin-bottom: .4rem; }
+.card-price { font-size: 1.55rem; font-weight: 800; color: var(--text); margin-bottom: .15rem; letter-spacing: -.01em; }
+.card-price-unit { font-size: .7rem; color: var(--muted); font-weight: 600; }
+.card-label { font-size: .72rem; color: var(--muted); font-weight: 600; margin-bottom: 1rem; }
+.card-desc { font-size: .82rem; color: var(--muted2); line-height: 1.6; margin-bottom: 1.2rem; }
+.card-list { list-style: none; display: flex; flex-direction: column; gap: .55rem; margin-bottom: 1.5rem; flex: 1; }
+.card-list li { display: flex; align-items: flex-start; gap: .55rem; font-size: .79rem; color: var(--muted2); line-height: 1.5; }
+.card-list li svg { flex-shrink: 0; margin-top: .15rem; color: var(--accent); }
+.cards-note { text-align: center; font-size: .8rem; color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.7; }
 
-.plan-name{font-size:1.1rem;font-weight:800;margin-bottom:.3rem;letter-spacing:-.02em}
-.plan-tagline{font-size:.75rem;color:var(--muted2);line-height:1.5;margin-bottom:1.3rem;min-height:48px}
+@media (max-width: 1080px) { .cards-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 620px) { .cards-grid { grid-template-columns: 1fr; } }
 
-.plan-price-block{margin-bottom:1.4rem}
-.plan-price{
-  font-size:2.2rem;font-weight:800;letter-spacing:-.04em;line-height:1;
-  font-variant-numeric:tabular-nums;
+/* ── Government & sovereign section (gold accents on dark teal) ──── */
+.gov-section {
+  background: linear-gradient(180deg, #06181a 0%, #071013 100%);
+  border-top: 1px solid rgba(232,196,106,.15); border-bottom: 1px solid rgba(232,196,106,.15);
+  padding: 5rem 0;
 }
-.plan-price .currency{font-size:1.1rem;font-weight:600;vertical-align:top;margin-top:.35rem;display:inline-block}
-.plan-price .period{font-size:.75rem;font-weight:500;color:var(--muted);vertical-align:baseline;margin-left:.1rem}
-.plan-annual-note{font-size:.68rem;color:var(--muted);margin-top:.3rem}
-.plan-custom-price{font-size:1.6rem;font-weight:800;letter-spacing:-.03em}
+.gov-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.1rem; margin-bottom: 2rem; }
+.gov-card {
+  background: rgba(232,196,106,.035); border: 1px solid rgba(232,196,106,.22); border-radius: var(--radius-lg);
+  padding: 1.7rem 1.5rem; transition: border-color .25s, transform .25s, box-shadow .25s;
+}
+.gov-card:hover { border-color: rgba(232,196,106,.45); transform: translateY(-4px); box-shadow: 0 26px 55px -30px var(--gold-glow); }
+.gov-card-title { font-size: 1rem; font-weight: 800; color: #f3e4bd; margin-bottom: .35rem; }
+.gov-card-price { font-size: 1.35rem; font-weight: 800; color: var(--gold); margin-bottom: 1rem; }
+.gov-card-list { list-style: none; display: flex; flex-direction: column; gap: .5rem; }
+.gov-card-list li { display: flex; align-items: flex-start; gap: .5rem; font-size: .78rem; color: #c9bd9a; line-height: 1.55; }
+.gov-card-list li svg { flex-shrink: 0; margin-top: .15rem; color: var(--gold); }
+.gov-cta-wrap { text-align: center; }
+.gov-note { text-align: center; font-size: .8rem; color: #8f8567; max-width: 620px; margin: 1.4rem auto 0; line-height: 1.7; }
+@media (max-width: 1000px) { .gov-cards { grid-template-columns: 1fr; } }
 
-.plan-cta{
-  display:block;text-align:center;padding:.65rem 1rem;border-radius:8px;
-  font-size:.83rem;font-weight:700;margin-bottom:1.4rem;transition:all .2s;
+/* ── Founding partner section ───────────────────────────────────── */
+.fp-section { padding: 5rem 0; }
+.fp-wrap {
+  background: linear-gradient(135deg, rgba(0,232,154,.05), rgba(232,196,106,.04));
+  border: 1px solid rgba(0,232,154,.22); border-radius: var(--radius-lg);
+  padding: 2.8rem; position: relative; overflow: hidden;
 }
-.plan-cta-free{background:var(--bg3);border:1px solid var(--border2);color:var(--text)}
-.plan-cta-free:hover{background:var(--bg4);border-color:var(--border3)}
-.plan-cta-pro{background:var(--accent);color:#0a0f14}
-.plan-cta-pro:hover{background:#00c882}
-.plan-cta-inst{background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.3);color:var(--info)}
-.plan-cta-inst:hover{background:rgba(88,166,255,.22)}
-.plan-cta-ent{background:var(--bg3);border:1px solid var(--border2);color:var(--text)}
-.plan-cta-ent:hover{background:var(--bg4);border-color:var(--border3)}
+.fp-wrap::before {
+  content: ''; position: absolute; top: -40%; right: -10%; width: 60%; height: 160%;
+  background: radial-gradient(circle, rgba(232,196,106,.08), transparent 70%); pointer-events: none;
+}
+.fp-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 3rem; align-items: start; position: relative; z-index: 1; }
+.fp-price-compare { display: flex; gap: 1.5rem; margin: 1.6rem 0 1.8rem; flex-wrap: wrap; }
+.fp-price-box { flex: 1; min-width: 180px; padding: 1.1rem 1.3rem; border-radius: var(--radius-md); background: rgba(255,255,255,.02); border: 1px solid var(--border2); }
+.fp-price-box.fp-highlight { border-color: rgba(0,232,154,.4); background: rgba(0,232,154,.06); }
+.fp-price-label { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: .4rem; }
+.fp-price-value { font-size: 1.35rem; font-weight: 800; }
+.fp-price-box.fp-highlight .fp-price-value { color: var(--accent); }
+.fp-price-strike { text-decoration: line-through; color: var(--muted); font-size: .85rem; font-weight: 600; }
+.fp-benefits { list-style: none; display: flex; flex-direction: column; gap: .65rem; margin-top: 1.3rem; }
+.fp-benefits li { display: flex; gap: .55rem; font-size: .82rem; color: var(--muted2); line-height: 1.55; }
+.fp-benefits li svg { flex-shrink: 0; margin-top: .15rem; color: var(--gold); }
+.fp-side { background: rgba(0,0,0,.18); border: 1px solid var(--border2); border-radius: var(--radius-md); padding: 1.5rem; }
+.fp-side p { font-size: .8rem; color: var(--muted2); line-height: 1.7; margin-bottom: 1.3rem; }
+@media (max-width: 900px) { .fp-grid { grid-template-columns: 1fr; } .fp-wrap { padding: 2rem 1.4rem; } }
 
-.plan-divider{height:1px;background:var(--border);margin-bottom:1.2rem}
+/* ── Add-ons grid ────────────────────────────────────────────────── */
+.addons-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .85rem; margin-bottom: 1.5rem; }
+.addon-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 1.1rem 1.3rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  transition: border-color .2s;
+}
+.addon-card:hover { border-color: var(--border3); }
+.addon-name { font-size: .84rem; font-weight: 600; color: var(--text); }
+.addon-price { font-size: .68rem; font-weight: 700; color: var(--cyan); white-space: nowrap; text-transform: uppercase; letter-spacing: .04em; }
+@media (max-width: 900px) { .addons-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .addons-grid { grid-template-columns: 1fr; } }
 
-.plan-features{list-style:none;flex:1;display:flex;flex-direction:column;gap:.55rem}
-.plan-feature{font-size:.78rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.5rem;line-height:1.45}
-.feat-icon{flex-shrink:0;font-size:.8rem;margin-top:.05rem}
-.feat-icon.yes{color:var(--accent)}
-.feat-icon.no{color:var(--border2)}
-.feat-icon.partial{color:var(--warn)}
-.feat-text-muted{color:var(--border2);text-decoration:line-through}
+/* ── Pricing factors ─────────────────────────────────────────────── */
+.factors-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.1rem; }
+.factor-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; }
+.factor-icon {
+  width: 42px; height: 42px; border-radius: 12px; background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.25);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto .9rem; color: var(--accent);
+}
+.factor-title { font-size: .84rem; font-weight: 700; line-height: 1.4; }
+@media (max-width: 900px) { .factors-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .factors-grid { grid-template-columns: 1fr; } }
 
-/* ── Comparison table ────────────────────────────────────────────── */
-.compare-section{margin-bottom:4rem}
-.compare-title{
-  font-size:1.4rem;font-weight:800;letter-spacing:-.03em;
-  margin-bottom:.5rem;
+/* ── Procurement timeline ────────────────────────────────────────── */
+.timeline { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.1rem; position: relative; }
+.timeline-step { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.6rem 1.4rem; position: relative; }
+.timeline-num {
+  width: 30px; height: 30px; border-radius: 999px; background: rgba(0,232,154,.12); border: 1px solid rgba(0,232,154,.32);
+  color: var(--accent); font-weight: 800; font-size: .85rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
 }
-.compare-sub{font-size:.83rem;color:var(--muted2);margin-bottom:2rem}
+.timeline-title { font-size: .92rem; font-weight: 800; margin-bottom: .45rem; }
+.timeline-desc { font-size: .78rem; color: var(--muted2); line-height: 1.6; }
+@media (max-width: 900px) { .timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .timeline { grid-template-columns: 1fr; } }
 
-.compare-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.compare-table th{
-  text-align:left;padding:.75rem 1rem;
-  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
-  color:var(--muted);border-bottom:1px solid var(--border2);
+/* ── Ethical commitment ──────────────────────────────────────────── */
+.ethics-wrap {
+  background: linear-gradient(135deg, rgba(0,232,154,.04), rgba(6,182,212,.03));
+  border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 2.6rem;
 }
-.compare-table th:not(:first-child){text-align:center}
-.compare-table td{
-  padding:.7rem 1rem;border-bottom:1px solid var(--border);
-  vertical-align:middle;
-}
-.compare-table td:not(:first-child){text-align:center}
-.compare-table tr:last-child td{border-bottom:none}
-.compare-table tr:hover td{background:rgba(255,255,255,.014)}
-.compare-table .row-group td{
-  font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
-  color:var(--muted);padding:.65rem 1rem .4rem;
-  background:rgba(255,255,255,.018);border-bottom:1px solid var(--border);
-}
-.compare-table .feat-name{color:var(--muted2)}
-.compare-table .feat-name strong{color:var(--text);display:block;font-weight:600;font-size:.8rem}
-.compare-table .feat-name span{font-size:.7rem;color:var(--muted)}
+.ethics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin: 1.8rem 0; }
+.ethics-item { display: flex; align-items: flex-start; gap: .6rem; font-size: .8rem; color: var(--muted2); line-height: 1.55; }
+.ethics-item svg { flex-shrink: 0; margin-top: .15rem; color: var(--accent); }
+.ethics-disclaimer { font-size: .74rem; color: var(--muted); font-style: italic; line-height: 1.7; border-top: 1px solid var(--border); padding-top: 1.2rem; margin-top: .4rem; }
+@media (max-width: 900px) { .ethics-grid { grid-template-columns: 1fr 1fr; } .ethics-wrap { padding: 1.8rem 1.4rem; } }
+@media (max-width: 560px) { .ethics-grid { grid-template-columns: 1fr; } }
 
-.ck{color:var(--accent);font-size:1rem}
-.cx{color:rgba(255,255,255,.15);font-size:1rem}
-.cp{color:var(--warn);font-size:.7rem;font-weight:600}
-.ch{color:var(--info);font-size:.7rem;font-weight:600}
-.cv{font-size:.72rem;color:var(--muted2);font-weight:600}
-
-.plan-col-header{
-  background:var(--bg2);
-}
-.plan-col-featured{
-  background:rgba(0,232,154,.04);border-left:1px solid rgba(0,232,154,.15);border-right:1px solid rgba(0,232,154,.15);
-}
-
-/* ── Trust strip ─────────────────────────────────────────────────── */
-.trust-strip{
-  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2rem;
-  padding:2rem 0;margin-bottom:3rem;
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-}
-.trust-item{display:flex;align-items:center;gap:.55rem;font-size:.78rem;color:var(--muted2)}
-.trust-icon{font-size:1rem;color:var(--accent)}
-
-/* ── FAQ ─────────────────────────────────────────────────────────── */
-.faq-section{margin-bottom:4rem}
-.faq-title{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.5rem}
-.faq-sub{font-size:.83rem;color:var(--muted2);margin-bottom:2rem}
-.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-
-details.faq-item{
-  background:var(--bg2);border:1px solid var(--border);border-radius:9px;
-  overflow:hidden;transition:border-color .2s;
-}
-details.faq-item:hover{border-color:var(--border2)}
-details.faq-item[open]{border-color:rgba(0,232,154,.2)}
-details.faq-item > summary{
-  list-style:none;padding:1rem 1.2rem;
-  cursor:pointer;user-select:none;outline:none;
-  display:flex;align-items:center;justify-content:space-between;gap:.75rem;
-}
-details.faq-item > summary::-webkit-details-marker{display:none}
-details.faq-item > summary:hover{background:rgba(255,255,255,.018)}
-.faq-q{font-size:.85rem;font-weight:600;color:var(--text);line-height:1.4;flex:1}
-.faq-chevron{font-size:.75rem;color:var(--muted);flex-shrink:0;transition:transform .22s}
-details.faq-item[open] .faq-chevron{transform:rotate(-180deg)}
-.faq-body{padding:.05rem 1.2rem 1rem;font-size:.8rem;color:var(--muted2);line-height:1.75}
-.faq-body a{color:var(--accent)}
-.faq-body a:hover{text-decoration:underline}
+/* ── FAQ (native details/summary — no JS) ───────────────────────── */
+.faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+details.faq-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: border-color .2s; }
+details.faq-item:hover { border-color: var(--border2); }
+details.faq-item[open] { border-color: rgba(0,232,154,.25); }
+details.faq-item > summary { list-style: none; padding: 1rem 1.2rem; cursor: pointer; display: flex; align-items: center; gap: .8rem; user-select: none; }
+details.faq-item > summary::-webkit-details-marker { display: none; }
+details.faq-item > summary:hover { background: rgba(255,255,255,.02); }
+.faq-q { font-size: .85rem; font-weight: 600; line-height: 1.45; flex: 1; }
+.faq-chevron { font-size: .75rem; color: var(--muted); flex-shrink: 0; transition: transform .22s; }
+details.faq-item[open] .faq-chevron { transform: rotate(-180deg); }
+.faq-body { padding: 0 1.2rem 1.1rem; font-size: .8rem; color: var(--muted2); line-height: 1.75; }
+@media (max-width: 800px) { .faq-grid { grid-template-columns: 1fr; } }
 
 /* ── Final CTA ───────────────────────────────────────────────────── */
-.final-cta{
-  background:linear-gradient(135deg,rgba(0,232,154,.07) 0%,rgba(88,166,255,.04) 100%);
-  border:1px solid rgba(0,232,154,.18);border-radius:14px;
-  padding:3rem 2rem;text-align:center;margin-bottom:3rem;
-  position:relative;overflow:hidden;
-}
-.final-cta::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 80% at 50% 0%,rgba(0,232,154,.06),transparent 70%);
-  pointer-events:none;
-}
-.final-cta-title{
-  font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:800;letter-spacing:-.03em;
-  margin-bottom:.65rem;position:relative;
-}
-.final-cta-sub{
-  font-size:.88rem;color:var(--muted2);max-width:480px;margin:0 auto 2rem;
-  line-height:1.65;position:relative;
-}
-.final-cta-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;position:relative}
-.btn-primary{
-  background:var(--accent);color:#0a0f14;
-  font-size:.88rem;font-weight:700;padding:.72rem 1.6rem;border-radius:9px;
-  display:inline-flex;align-items:center;gap:.4rem;transition:all .2s;
-}
-.btn-primary:hover{background:#00c882;transform:translateY(-1px)}
-.btn-secondary{
-  background:var(--bg2);border:1px solid var(--border2);color:var(--muted2);
-  font-size:.88rem;font-weight:600;padding:.72rem 1.6rem;border-radius:9px;
-  display:inline-flex;align-items:center;gap:.4rem;transition:all .2s;
-}
-.btn-secondary:hover{border-color:var(--border3);color:var(--text)}
+.final-cta { text-align: center; padding: 5.5rem 1.5rem 4rem; }
+.final-cta h2 { font-size: clamp(1.7rem,3.2vw,2.4rem); font-weight: 800; margin-bottom: .9rem; }
+.final-cta p { color: var(--muted2); font-size: 1rem; max-width: 560px; margin: 0 auto 2rem; line-height: 1.7; }
+.final-ctas { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.8rem; }
+.contact-line { font-size: .85rem; color: var(--muted); }
+.contact-line a { color: var(--accent); text-decoration: none; }
+.contact-line a:hover { text-decoration: underline; }
+.currency-note { text-align: center; font-size: .74rem; color: var(--muted); margin-top: -1rem; margin-bottom: 3rem; }
 
-/* ── Disclaimer ──────────────────────────────────────────────────── */
-.disclaimer{
-  font-size:.7rem;color:rgba(148,163,184,.4);text-align:center;
-  line-height:1.65;padding-top:1.5rem;border-top:1px solid var(--border);
-}
-
-/* ── Company pricing section ─────────────────────────────────────── */
-.co-pricing-section{
-  background:linear-gradient(180deg,rgba(88,166,255,.04) 0%,transparent 60%);
-  border-top:1px solid rgba(88,166,255,.12);
-  border-radius:20px;
-  padding:4rem 2rem 3.5rem;
-  margin:3rem 0 2rem;
-}
-.co-pricing-header{text-align:center;margin-bottom:2.8rem}
-.co-pricing-eyebrow{
-  font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:#58a6ff;margin-bottom:.6rem;
-}
-.co-pricing-title{
-  font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;letter-spacing:-.03em;
-  color:#f0f6fc;margin-bottom:.75rem;
-}
-.co-pricing-sub{
-  font-size:.88rem;color:#6e7681;max-width:580px;margin:0 auto;line-height:1.65;
-}
-.co-plan-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:1.2rem;
-  margin-bottom:2rem;
-}
-.co-plan-card{
-  background:#0d1117;
-  border:1px solid #21262d;
-  border-radius:14px;
-  padding:1.8rem 1.6rem;
-  position:relative;
-  transition:border-color .2s,transform .2s;
-  display:flex;flex-direction:column;
-}
-.co-plan-card:hover{border-color:rgba(88,166,255,.35);transform:translateY(-3px)}
-.co-featured{
-  border-color:rgba(88,166,255,.4);
-  background:linear-gradient(160deg,rgba(88,166,255,.08) 0%,#0d1117 60%);
-}
-.co-featured-badge{
-  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-  background:#58a6ff;color:#0d1117;font-size:.65rem;font-weight:800;
-  letter-spacing:.06em;text-transform:uppercase;padding:.2rem .75rem;
-  border-radius:20px;white-space:nowrap;
-}
-.co-ent{border-color:rgba(139,92,246,.3)}
-.co-ent:hover{border-color:rgba(139,92,246,.6)}
-.co-plan-icon{font-size:1.6rem;margin-bottom:.7rem}
-.co-plan-name{font-size:1.05rem;font-weight:800;color:#f0f6fc;margin-bottom:.5rem;letter-spacing:-.02em}
-.co-plan-price-block{margin-bottom:1.4rem}
-.co-plan-price{font-size:2.1rem;font-weight:900;color:#f0f6fc;line-height:1;letter-spacing:-.04em}
-.co-currency{font-size:1.1rem;font-weight:600;vertical-align:top;margin-top:.35rem;display:inline-block}
-.co-period{font-size:.75rem;font-weight:500;color:#6e7681;vertical-align:baseline;margin-left:.1rem}
-.co-plan-features{
-  list-style:none;padding:0;margin:0 0 1.5rem;
-  font-size:.8rem;color:#8b949e;display:flex;flex-direction:column;gap:.5rem;flex:1;
-}
-.co-plan-features li{display:flex;align-items:baseline;gap:.4rem}
-.co-plan-cta{
-  display:block;width:100%;text-align:center;padding:.7rem 1rem;
-  border-radius:9px;font-size:.84rem;font-weight:700;text-decoration:none;
-  transition:opacity .2s,transform .1s;margin-top:auto;
-}
-.co-plan-cta:hover{opacity:.87;transform:translateY(-1px)}
-.co-cta-vis{background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:#58a6ff}
-.co-cta-improve{background:#58a6ff;color:#0d1117}
-.co-cta-invest{background:rgba(0,232,154,.12);border:1px solid rgba(0,232,154,.3);color:#00e89a}
-.co-cta-ent{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);color:#8b5cf6}
-.co-claim-strip{
-  background:#010409;border:1px solid #21262d;border-radius:12px;
-  padding:1.4rem 1.8rem;display:flex;align-items:center;justify-content:space-between;
-  gap:1.2rem;flex-wrap:wrap;
-}
-.co-claim-btn{
-  display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.1rem;
-  border-radius:9px;font-size:.82rem;font-weight:700;text-decoration:none;
-  transition:opacity .2s;white-space:nowrap;
-}
-.co-claim-btn:hover{opacity:.86}
-.co-claim-primary{background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:#58a6ff}
-.co-claim-secondary{background:#58a6ff;color:#0d1117}
-
-/* ── Responsive ──────────────────────────────────────────────────── */
-@media(max-width:1024px){
-  .plans-grid{grid-template-columns:repeat(2,1fr)}
-  .co-plan-grid{grid-template-columns:repeat(2,1fr)}
-}
-@media(max-width:860px){
-  .hsr-grid{grid-template-columns:1fr}
-}
-@media(max-width:640px){
-  .plans-grid{grid-template-columns:1fr}
-  .co-plan-grid{grid-template-columns:1fr}
-  .faq-grid{grid-template-columns:1fr}
-  .compare-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .hero{padding:3.5rem 1rem 2.5rem}
-  .trust-strip{gap:1.2rem}
-  .co-claim-strip{flex-direction:column;align-items:flex-start}
+@media (max-width: 720px) {
+  .hero { padding: 4rem 1.2rem 2.5rem; }
+  .section { padding: 3.2rem 0; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- lang-ready: content below uses logical flex/grid layout (no absolute
+     left/right positioning) so an Arabic translation can render RTL once
+     core.LANGUAGES is re-enabled — see templates/base.html's commented-out
+     language switcher. -->
+<div class="page">
 
-<!-- Navigation provided by base.html global header — no duplicate nav here -->
+  <!-- ═══════════════════ 1. HERO ═══════════════════ -->
+  <section class="hero">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>ENTERPRISE PRICING</div>
+    <h1>Decision intelligence priced&nbsp;around&nbsp;measurable&nbsp;value.</h1>
+    <p class="hero-sub">
+      EcoIQ is deployed around each organisation's data, assets, decision processes and
+      strategic priorities. Pricing depends on scope, integrations, data volume,
+      security requirements and deployment model.
+    </p>
+    <p class="hero-tag">Transparent scope. Evidence-linked outputs. No hidden fees.</p>
+    <div class="hero-ctas">
+      <a href="{% url 'leads:enterprise_enquiry' %}" class="btn btn-primary">Request Enterprise Proposal</a>
+      {% if calendly_url %}
+      <a href="{{ calendly_url }}" class="btn btn-ghost" target="_blank" rel="noopener">Book a 30-Minute Discovery Call</a>
+      {% else %}
+      <a href="{% url 'leads:enterprise_enquiry' %}" class="btn btn-ghost">Book a 30-Minute Discovery Call</a>
+      {% endif %}
+    </div>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">🗂️</div>
+        <div class="flow-label">Data</div>
+        <div class="flow-desc">Portfolios, assets, systems, disclosures</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">🧠</div>
+        <div class="flow-label">EcoIQ Intelligence</div>
+        <div class="flow-desc">Evidence-linked scoring &amp; monitoring</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">✅</div>
+        <div class="flow-label">Verified Decisions</div>
+        <div class="flow-desc">Human-approved, audit-traceable</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">📈</div>
+        <div class="flow-label">Measurable Impact</div>
+        <div class="flow-desc">Reported outcomes, not promises</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ 2. COMMERCIAL ENGAGEMENT OPTIONS ═══════════════════ -->
+  <section class="section" id="engagement-options">
+    <div class="section-head">
+      <h2>Commercial engagement options</h2>
+      <p>Four ways to start — from a scoped diagnostic to a full annual platform licence.</p>
+    </div>
+
+    <div class="cards-grid">
+
+      <!-- Card 1 — Enterprise Diagnostic -->
+      <div class="card">
+        <div class="card-badge-row"><span class="card-pill card-pill-neutral">2–4 Weeks</span></div>
+        <div class="card-title">Enterprise Diagnostic</div>
+        <div class="card-price">£15,000–£30,000</div>
+        <div class="card-label">Fixed-scope assessment</div>
+        <p class="card-desc">A focused assessment of the organisation's data, risks, opportunities and decision-intelligence requirements.</p>
+        <ul class="card-list">
+          <li>{% include "partials/_check.html" %}Stakeholder discovery</li>
+          <li>{% include "partials/_check.html" %}Data-readiness assessment</li>
+          <li>{% include "partials/_check.html" %}Current risk and impact mapping</li>
+          <li>{% include "partials/_check.html" %}Priority use-case selection</li>
+          <li>{% include "partials/_check.html" %}Preliminary EcoIQ architecture</li>
+          <li>{% include "partials/_check.html" %}Executive findings report</li>
+          <li>{% include "partials/_check.html" %}Pilot implementation roadmap</li>
+        </ul>
+        <a href="{% url 'leads:enterprise_enquiry' %}?engagement=enterprise_diagnostic" class="btn btn-ghost btn-full btn-sm">Start with a Diagnostic</a>
+      </div>
+
+      <!-- Card 2 — 90-Day Enterprise Pilot (Most Popular, emerald glow) -->
+      <div class="card card-featured">
+        <div class="card-badge-row"><span class="card-pill card-pill-accent">★ Most Popular</span></div>
+        <div class="card-title">90-Day Enterprise Pilot</div>
+        <div class="card-price">£75,000–£150,000</div>
+        <div class="card-label">Live pilot deployment</div>
+        <p class="card-desc">A live EcoIQ pilot focused on a defined portfolio, asset group, business unit or strategic decision process.</p>
+        <ul class="card-list">
+          <li>{% include "partials/_check.html" %}Analysis of selected companies, projects or assets</li>
+          <li>{% include "partials/_check.html" %}Up to 5 core data integrations</li>
+          <li>{% include "partials/_check.html" %}AI agents and overnight monitoring</li>
+          <li>{% include "partials/_check.html" %}Evidence-linked findings</li>
+          <li>{% include "partials/_check.html" %}Risk, waste and modernisation detection</li>
+          <li>{% include "partials/_check.html" %}Human approval workflow</li>
+          <li>{% include "partials/_check.html" %}Executive dashboards</li>
+          <li>{% include "partials/_check.html" %}Final impact and scale-up report</li>
+        </ul>
+        <a href="{% url 'leads:enterprise_enquiry' %}?engagement=pilot_90day" class="btn btn-primary btn-full btn-sm">Request a Pilot Proposal</a>
+      </div>
+
+      <!-- Card 3 — Enterprise Deployment -->
+      <div class="card">
+        <div class="card-badge-row"><span class="card-pill card-pill-neutral">Implementation Fee</span></div>
+        <div class="card-title">Enterprise Deployment</div>
+        <div class="card-price">£150,000–£400,000</div>
+        <div class="card-label">Organisation-wide implementation</div>
+        <p class="card-desc">Organisation-wide implementation adapted to internal systems, governance processes and security requirements.</p>
+        <ul class="card-list">
+          <li>{% include "partials/_check.html" %}Custom system configuration</li>
+          <li>{% include "partials/_check.html" %}Enterprise data integrations</li>
+          <li>{% include "partials/_check.html" %}Role-based permissions</li>
+          <li>{% include "partials/_check.html" %}SSO and access controls</li>
+          <li>{% include "partials/_check.html" %}Workflow automation</li>
+          <li>{% include "partials/_check.html" %}Audit trail and evidence provenance</li>
+          <li>{% include "partials/_check.html" %}Arabic and English interfaces</li>
+          <li>{% include "partials/_check.html" %}Team onboarding and training</li>
+          <li>{% include "partials/_check.html" %}Implementation support</li>
+        </ul>
+        <a href="{% url 'leads:enterprise_enquiry' %}?engagement=enterprise_deployment" class="btn btn-ghost btn-full btn-sm">Discuss Deployment</a>
+      </div>
+
+      <!-- Card 4 — Annual Platform Licence -->
+      <div class="card">
+        <div class="card-badge-row"><span class="card-pill card-pill-neutral">Annual Licence</span></div>
+        <div class="card-title">Annual Platform Licence</div>
+        <div class="card-price">£120,000–£400,000<span class="card-price-unit"> / year</span></div>
+        <div class="card-label">Continuous platform access</div>
+        <p class="card-desc">Continuous access to EcoIQ intelligence, monitoring, reporting and decision-support capabilities.</p>
+        <ul class="card-list">
+          <li>{% include "partials/_check.html" %}Ongoing platform access</li>
+          <li>{% include "partials/_check.html" %}Scheduled AI-agent runs</li>
+          <li>{% include "partials/_check.html" %}Company, portfolio or asset monitoring</li>
+          <li>{% include "partials/_check.html" %}Executive reporting</li>
+          <li>{% include "partials/_check.html" %}Methodology updates</li>
+          <li>{% include "partials/_check.html" %}Platform maintenance</li>
+          <li>{% include "partials/_check.html" %}Security monitoring</li>
+          <li>{% include "partials/_check.html" %}Customer success support</li>
+          <li>{% include "partials/_check.html" %}Agreed usage allowance</li>
+        </ul>
+        <a href="{% url 'leads:enterprise_enquiry' %}?engagement=annual_licence" class="btn btn-ghost btn-full btn-sm">Request Licence Pricing</a>
+      </div>
+
+    </div>
+
+    <p class="cards-note">
+      Final pricing is based on the number of organisations, assets, users, data sources,
+      AI-agent workflows, integrations and security requirements.
+    </p>
+  </section>
+
+  <!-- ═══════════════════ 5. OPTIONAL ENTERPRISE ADD-ONS ═══════════════════ -->
+  <section class="section" id="addons">
+    <div class="section-head">
+      <h2>Additional capabilities</h2>
+      <p>Scoped and quoted alongside any engagement above.</p>
+    </div>
+    <div class="addons-grid">
+      {% for addon in addons %}
+      <div class="addon-card">
+        <span class="addon-name">{{ addon }}</span>
+        <span class="addon-price">Custom scope</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="cards-note">
+      Third-party data licences, custom integrations, cloud infrastructure and specialist
+      advisory services are quoted separately where required.
+    </p>
+  </section>
+
+  <!-- ═══════════════════ 6. HOW PRICING IS DETERMINED ═══════════════════ -->
+  <section class="section" id="pricing-factors">
+    <div class="section-head">
+      <h2>What determines your investment?</h2>
+      <p>EcoIQ pricing reflects the operational scope and value of the deployment, not only software access.</p>
+    </div>
+    <div class="factors-grid">
+      <div class="factor-card">
+        <div class="factor-icon">{% include "partials/_icon_assets.html" %}</div>
+        <div class="factor-title">Number of assets or companies analysed</div>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">{% include "partials/_icon_data.html" %}</div>
+        <div class="factor-title">Data volume and frequency</div>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">{% include "partials/_icon_integrations.html" %}</div>
+        <div class="factor-title">Number of integrations</div>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">{% include "partials/_icon_agent.html" %}</div>
+        <div class="factor-title">AI-agent complexity</div>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">{% include "partials/_icon_shield.html" %}</div>
+        <div class="factor-title">Security and hosting model</div>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">{% include "partials/_icon_users.html" %}</div>
+        <div class="factor-title">Number of departments and users</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ═══════════════════ 3. GOVERNMENT & SOVEREIGN (gold, full-bleed) ═══════════════════ -->
+<section class="gov-section" id="government">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="eyebrow eyebrow-gold"><span class="eyebrow-dot"></span>GOVERNMENT &amp; SOVEREIGN DEPLOYMENTS</div>
+      <h2>National and institutional decision intelligence.</h2>
+      <p>
+        EcoIQ can support governments, sovereign investors and major holding groups in
+        evaluating the economic, environmental, social and ethical consequences of capital
+        allocation before decisions are finalised.
+      </p>
+    </div>
+
+    <div class="gov-cards">
+      <div class="gov-card">
+        <div class="gov-card-title">Government Pilot</div>
+        <div class="gov-card-price">£150,000–£350,000</div>
+        <ul class="gov-card-list">
+          <li>{% include "partials/_check_gold.html" %}One ministry, authority, portfolio or defined use case</li>
+          <li>{% include "partials/_check_gold.html" %}Limited number of integrations</li>
+          <li>{% include "partials/_check_gold.html" %}Executive decision dashboard</li>
+          <li>{% include "partials/_check_gold.html" %}Impact and risk analysis</li>
+          <li>{% include "partials/_check_gold.html" %}Evidence-linked recommendations</li>
+          <li>{% include "partials/_check_gold.html" %}Scale-up roadmap</li>
+        </ul>
+      </div>
+      <div class="gov-card">
+        <div class="gov-card-title">First-Year Deployment</div>
+        <div class="gov-card-price">£500,000–£1.5 million</div>
+        <ul class="gov-card-list">
+          <li>{% include "partials/_check_gold.html" %}Production deployment</li>
+          <li>{% include "partials/_check_gold.html" %}Multiple departments or business units</li>
+          <li>{% include "partials/_check_gold.html" %}Enterprise security and governance</li>
+          <li>{% include "partials/_check_gold.html" %}Local data integrations</li>
+          <li>{% include "partials/_check_gold.html" %}Arabic and English reporting</li>
+          <li>{% include "partials/_check_gold.html" %}Training and implementation support</li>
+        </ul>
+      </div>
+      <div class="gov-card">
+        <div class="gov-card-title">Multi-Year National / Multi-Ministry Programme</div>
+        <div class="gov-card-price">£2–£5 million+</div>
+        <ul class="gov-card-list">
+          <li>{% include "partials/_check_gold.html" %}Multiple ministries or institutions</li>
+          <li>{% include "partials/_check_gold.html" %}National or cross-sector data architecture</li>
+          <li>{% include "partials/_check_gold.html" %}Private cloud or approved hosting</li>
+          <li>{% include "partials/_check_gold.html" %}Advanced governance controls</li>
+          <li>{% include "partials/_check_gold.html" %}Continuous decision monitoring</li>
+          <li>{% include "partials/_check_gold.html" %}Strategic implementation support</li>
+          <li>{% include "partials/_check_gold.html" %}Multi-year service agreement</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gov-cta-wrap">
+      <a href="{% url 'leads:enterprise_enquiry' %}?engagement=government_sovereign" class="btn btn-gold">Discuss a Government Deployment</a>
+    </div>
+    <p class="gov-note">
+      Government and sovereign engagements are individually scoped following technical,
+      legal, data-governance and procurement assessment.
+    </p>
+  </div>
+</section>
 
 <div class="page">
 
-<!-- ── Product Tiers ─────────────────────────────────────────────── -->
-<div id="free-scan" style="
-  padding:4rem 0 3rem;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  margin-bottom:0;
-">
-  <div style="text-align:center;margin-bottom:3rem;">
-    <div style="
-      display:inline-flex;align-items:center;gap:.5rem;
-      background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);
-      color:#c9a84c;font-size:.7rem;font-weight:700;
-      letter-spacing:1.5px;text-transform:uppercase;
-      padding:.3rem 1rem;border-radius:20px;margin-bottom:1.2rem;
-    ">◈ Intelligence Products</div>
-    <h2 style="font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;color:#fff;letter-spacing:-.04em;margin-bottom:.75rem;">
-      Institutional intelligence.<br>
-      <span style="background:linear-gradient(105deg,#00e89a,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Priced for access.</span>
-    </h2>
-    <p style="font-size:.92rem;color:#64748b;max-width:520px;margin:0 auto;line-height:1.7;">
-      Three entry points into EcoIQ intelligence — from a free scan to a full institutional pilot.
-      No subscriptions required to get started.
-    </p>
-  </div>
-
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:2rem;">
-
-    <!-- Free Scan -->
-    <div style="
-      background:#0d1117;border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;padding:2rem 1.75rem;
-      display:flex;flex-direction:column;
-      transition:border-color .2s,transform .2s;
-      position:relative;
-    ">
-      <div style="font-size:1.4rem;margin-bottom:.9rem;">🔍</div>
-      <div style="font-size:.65rem;font-family:'SF Mono',monospace;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;">Entry Point</div>
-      <div style="font-size:1.05rem;font-weight:800;color:#e2e8f0;margin-bottom:.4rem;letter-spacing:-.02em;">Free Scan</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.6;margin-bottom:1.4rem;flex:1;">
-        An indicative EcoIQ score and top-level ethical intelligence snapshot for any company in our index.
-        See where you stand before committing to a full report.
-      </div>
-      <div style="margin-bottom:1.4rem;">
-        <span style="font-size:2.4rem;font-weight:900;color:#94a3b8;letter-spacing:-.04em;line-height:1;">£0</span>
-        <span style="font-size:.8rem;color:#475569;margin-left:.4rem;">no cost · no commitment</span>
-      </div>
-      <ul style="list-style:none;padding:0;margin:0 0 1.6rem;display:flex;flex-direction:column;gap:.5rem;">
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>Top-level EcoIQ score (0–100)</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>Moral label classification</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>High-level pillar snapshot</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>Country benchmark position</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>No credit card required</li>
-      </ul>
-      <a href="{% url 'companies:directory' %}"
-         style="
-           display:block;text-align:center;
-           background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-           color:#e2e8f0;font-size:.85rem;font-weight:700;
-           padding:.75rem 1rem;border-radius:9px;
-           transition:background .2s;
-         "
-         onmouseover="this.style.background='rgba(255,255,255,.1)'"
-         onmouseout="this.style.background='rgba(255,255,255,.06)'">
-        Request Free Scan →
-      </a>
+  <!-- ═══════════════════ 4. FOUNDING PARTNER OFFER ═══════════════════ -->
+  <section class="fp-section" id="founding-partner">
+    <div class="section-head">
+      <div class="eyebrow"><span class="eyebrow-dot"></span>LIMITED GCC FOUNDING PARTNER PROGRAMME</div>
+      <h2>Build the regional intelligence layer with EcoIQ.</h2>
+      <p>
+        Selected banks, investment institutions, corporates and government-related
+        organisations can become EcoIQ Founding Partners and help shape the platform's
+        GCC deployment.
+      </p>
     </div>
 
-    <!-- Investor Readiness Report -->
-    <div style="
-      background:linear-gradient(160deg,rgba(0,232,154,.06) 0%,#0d1117 60%);
-      border:1px solid rgba(0,232,154,.35);
-      border-radius:14px;padding:2rem 1.75rem;
-      display:flex;flex-direction:column;
-      position:relative;
-      transition:border-color .2s,transform .2s;
-    ">
-      <!-- Top accent line -->
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00e89a,transparent);border-radius:14px 14px 0 0;"></div>
-      <div style="
-        position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-        background:#00e89a;color:#0a0f14;font-size:.62rem;font-weight:800;
-        letter-spacing:.06em;text-transform:uppercase;padding:.22rem .8rem;border-radius:20px;white-space:nowrap;
-      ">Most Requested</div>
-      <div style="font-size:1.4rem;margin-bottom:.9rem;margin-top:.5rem;">📋</div>
-      <div style="font-size:.65rem;font-family:'SF Mono',monospace;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;">Full Report</div>
-      <div style="font-size:1.05rem;font-weight:800;color:#e2e8f0;margin-bottom:.4rem;letter-spacing:-.02em;">EcoIQ Investor Readiness Report</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.6;margin-bottom:1.4rem;flex:1;">
-        A structured investor-grade intelligence report covering all six pillars, harm analysis,
-        improvement roadmap, and green finance eligibility signals. Delivered within 5 business days.
-      </div>
-      <div style="margin-bottom:1.4rem;">
-        <span style="font-size:2.4rem;font-weight:900;color:#00e89a;letter-spacing:-.04em;line-height:1;">£490</span>
-        <span style="font-size:1rem;color:#64748b;margin:0 .3rem;">–</span>
-        <span style="font-size:1.5rem;font-weight:800;color:#00e89a;letter-spacing:-.03em;">£990</span>
-        <div style="font-size:.7rem;color:#475569;margin-top:.3rem;">per company · one-time</div>
-      </div>
-      <ul style="list-style:none;padding:0;margin:0 0 1.6rem;display:flex;flex-direction:column;gap:.5rem;">
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>Full 6-pillar scored breakdown</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>Harm penalty analysis with evidence citations</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>9-milestone improvement roadmap</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>IFC / EBRD / green bond eligibility signals</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>Branded PDF for board or investor presentation</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#00e89a;">✓</span>Analyst review included</li>
-      </ul>
-      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Investor+Readiness+Report+Request"
-         style="
-           display:block;text-align:center;
-           background:#00e89a;color:#0a0f14;
-           font-size:.85rem;font-weight:700;
-           padding:.75rem 1rem;border-radius:9px;
-           transition:opacity .2s;
-         "
-         onmouseover="this.style.opacity='.87'"
-         onmouseout="this.style.opacity='1'">
-        Request Investor Readiness Report →
-      </a>
-    </div>
-
-    <!-- Institutional Pilot -->
-    <div style="
-      background:linear-gradient(160deg,rgba(201,168,76,.07) 0%,#0d1117 60%);
-      border:1px solid rgba(201,168,76,.3);
-      border-radius:14px;padding:2rem 1.75rem;
-      display:flex;flex-direction:column;
-      position:relative;
-      transition:border-color .2s,transform .2s;
-    ">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);border-radius:14px 14px 0 0;"></div>
-      <div style="font-size:1.4rem;margin-bottom:.9rem;">🏛️</div>
-      <div style="font-size:.65rem;font-family:'SF Mono',monospace;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;">Enterprise Engagement</div>
-      <div style="font-size:1.05rem;font-weight:800;color:#e2e8f0;margin-bottom:.4rem;letter-spacing:-.02em;">Institutional Pilot</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.6;margin-bottom:1.4rem;flex:1;">
-        A bespoke intelligence engagement for investment teams, development banks, and sovereign funds.
-        Covers portfolio screening, country intelligence briefings, and custom methodology configuration.
-      </div>
-      <div style="margin-bottom:1.4rem;">
-        <span style="font-size:2rem;font-weight:900;color:#c9a84c;letter-spacing:-.04em;line-height:1;">£10,000</span>
-        <span style="font-size:1rem;color:#64748b;margin:0 .3rem;">–</span>
-        <span style="font-size:1.5rem;font-weight:800;color:#c9a84c;letter-spacing:-.03em;">£25,000</span>
-        <div style="font-size:.7rem;color:#475569;margin-top:.3rem;">pilot engagement · 3–6 months</div>
-      </div>
-      <ul style="list-style:none;padding:0;margin:0 0 1.6rem;display:flex;flex-direction:column;gap:.5rem;">
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#c9a84c;">✓</span>Portfolio screening up to 100 companies</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#c9a84c;">✓</span>Country intelligence briefings (all 4 markets)</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#c9a84c;">✓</span>Dedicated EcoIQ analyst for the pilot period</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#c9a84c;">✓</span>Custom scoring methodology configuration</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#c9a84c;">✓</span>Unlimited investor briefings during pilot</li>
-        <li style="font-size:.78rem;color:#94a3b8;display:flex;gap:.5rem;align-items:flex-start;"><span style="color:#c9a84c;">✓</span>SLA + compliance documentation</li>
-      </ul>
-      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Institutional+Pilot+Enquiry"
-         style="
-           display:block;text-align:center;
-           background:#c9a84c;color:#0a0f14;
-           font-size:.85rem;font-weight:700;
-           padding:.75rem 1rem;border-radius:9px;
-           transition:opacity .2s;
-         "
-         onmouseover="this.style.opacity='.87'"
-         onmouseout="this.style.opacity='1'">
-        Discuss Institutional Pilot →
-      </a>
-    </div>
-
-  </div><!-- /product-grid -->
-
-  <p style="text-align:center;font-size:.72rem;color:#334155;margin-top:1rem;">
-    Prices are indicative and subject to scope. All reports include analyst review.
-    Not investment advice. <a href="/methodology/" style="color:#475569;">Read methodology →</a>
-  </p>
-
-</div><!-- /product-tiers -->
-
-<div style="height:3rem"></div>
-
-<!-- ── Hero ─────────────────────────────────────────────────────── -->
-<div class="hero">
-  <div class="hero-eyebrow">◆ Institutional Climate Intelligence</div>
-  <h1>Invest in climate clarity.<br>Not climate confusion.</h1>
-  <p class="hero-sub">
-    EcoIQ scores companies on environmental stewardship, governance, and public benefit.
-    Pick the plan that matches your analytical needs — from individual researcher to sovereign fund.
-  </p>
-
-  <!-- Billing toggle -->
-  <div class="billing-toggle">
-    <span class="toggle-label">Billing:</span>
-    <div class="toggle-switch">
-      <button class="toggle-option active" id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
-      <button class="toggle-option" id="btn-annual" onclick="setBilling('annual')">Annual</button>
-    </div>
-    <span class="annual-badge" id="annual-savings">Save 20%</span>
-  </div>
-</div>
-
-<!-- ── Plans grid ────────────────────────────────────────────────── -->
-<div class="plans-grid" style="padding-top:2.5rem">
-
-  <!-- EXPLORER -->
-  <div class="plan-card">
-    <div class="plan-badge-wrap"></div>
-    <div class="plan-name">Explorer</div>
-    <div class="plan-tagline">Public rankings and country profiles. Free for individuals and journalists.</div>
-    <div class="plan-price-block">
-      <div class="plan-price" style="color:var(--muted2)">
-        <span class="currency">£</span>0<span class="period">/mo</span>
-      </div>
-      <div class="plan-annual-note">&nbsp;</div>
-    </div>
-    <a href="{% url 'companies:directory' %}" class="plan-cta plan-cta-free">View Rankings →</a>
-    <div class="plan-divider"></div>
-    <ul class="plan-features">
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Full EcoIQ company rankings</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Country overview profiles</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Top-level EcoIQ scores (0–100)</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Sector filter and search</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>League table access</li>
-      <li class="plan-feature"><span class="feat-icon no">–</span><span class="feat-text-muted">Full intelligence profiles</span></li>
-      <li class="plan-feature"><span class="feat-icon no">–</span><span class="feat-text-muted">Investor briefings</span></li>
-      <li class="plan-feature"><span class="feat-icon no">–</span><span class="feat-text-muted">API access</span></li>
-      <li class="plan-feature"><span class="feat-icon no">–</span><span class="feat-text-muted">Data exports</span></li>
-    </ul>
-  </div>
-
-  <!-- ANALYST — FEATURED -->
-  <div class="plan-card featured">
-    <div class="plan-badge-wrap">
-      <span class="plan-badge plan-badge-popular">Most Popular</span>
-    </div>
-    <div class="plan-name" style="color:var(--accent)">Analyst</div>
-    <div class="plan-tagline">For independent researchers, ESG analysts, and climate-focused funds.</div>
-    <div class="plan-price-block">
-      <div class="plan-price" style="color:var(--accent)">
-        <span class="currency">£</span><span class="price-monthly">49</span><span class="price-annual" style="display:none">39</span><span class="period">/mo</span>
-      </div>
-      <div class="plan-annual-note" id="analyst-note">&nbsp;</div>
-    </div>
-    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Analyst+Plan+Access" class="plan-cta plan-cta-pro">Get Analyst Access →</a>
-    <div class="plan-divider"></div>
-    <ul class="plan-features">
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Everything in Explorer</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Full company intelligence profiles</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Country deep-dive reports</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Modernisation action plans</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>5 investor briefings / month</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>PDF &amp; CSV exports</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>1,000 API calls / month</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Email support</li>
-      <li class="plan-feature"><span class="feat-icon no">–</span><span class="feat-text-muted">Portfolio screening</span></li>
-    </ul>
-  </div>
-
-  <!-- INSTITUTIONAL -->
-  <div class="plan-card">
-    <div class="plan-badge-wrap">
-      <span class="plan-badge plan-badge-inst">Institutional</span>
-    </div>
-    <div class="plan-name" style="color:var(--info)">Institutional</div>
-    <div class="plan-tagline">For investment teams, development banks, and climate-aligned portfolio managers.</div>
-    <div class="plan-price-block">
-      <div class="plan-price" style="color:var(--info)">
-        <span class="currency">£</span><span class="price-monthly">299</span><span class="price-annual" style="display:none">239</span><span class="period">/mo</span>
-      </div>
-      <div class="plan-annual-note inst-note">&nbsp;</div>
-    </div>
-    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Institutional+Plan+Enquiry" class="plan-cta plan-cta-inst">Request Institutional Access →</a>
-    <div class="plan-divider"></div>
-    <ul class="plan-features">
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Everything in Analyst</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Portfolio screening (up to 50 cos.)</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Dev bank compatibility reports</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Transition roadmap access</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Unlimited investor briefings</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>White-label PDF export</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>10,000 API calls / month</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Priority support</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Financing compatibility reports</li>
-    </ul>
-  </div>
-
-  <!-- ENTERPRISE -->
-  <div class="plan-card">
-    <div class="plan-badge-wrap"></div>
-    <div class="plan-name" style="color:var(--purple)">Enterprise</div>
-    <div class="plan-tagline">For governments, sovereign wealth funds, and large industrial organisations.</div>
-    <div class="plan-price-block">
-      <div class="plan-custom-price" style="color:var(--purple)">Custom</div>
-      <div class="plan-annual-note" style="color:var(--muted)">Annual contract · custom scope</div>
-    </div>
-    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Enterprise+Enquiry" class="plan-cta plan-cta-ent">Talk to Sales →</a>
-    <div class="plan-divider"></div>
-    <ul class="plan-features">
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Everything in Institutional</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Custom company profile ingestion</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Unlimited portfolio screening</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Bulk data exports</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Unlimited API access</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Custom scoring methodology</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Dedicated EcoIQ analyst</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>SLA + compliance documentation</li>
-      <li class="plan-feature"><span class="feat-icon yes">✓</span>Custom integrations</li>
-    </ul>
-  </div>
-
-</div><!-- /plans-grid -->
-
-<!-- ── Trust strip ───────────────────────────────────────────────── -->
-<div class="trust-strip">
-  <div class="trust-item"><span class="trust-icon">◆</span>AI-assisted analysis from public data</div>
-  <div class="trust-item"><span class="trust-icon">🔒</span>No credit card required for Explorer</div>
-  <div class="trust-item"><span class="trust-icon">📊</span>6-pillar ethical intelligence scoring</div>
-  <div class="trust-item"><span class="trust-icon">🏦</span>Dev bank &amp; green bond compatibility</div>
-  <div class="trust-item"><span class="trust-icon">✉</span>Responses within 2 business days</div>
-</div>
-
-<!-- ── Feature comparison table ─────────────────────────────────── -->
-<div class="compare-section">
-  <div style="text-align:center;margin-bottom:2.5rem">
-    <h2 class="compare-title">Full feature comparison</h2>
-    <p class="compare-sub">Every capability across all four tiers — so you can choose precisely what you need.</p>
-  </div>
-
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-    <table class="compare-table">
-      <thead>
-        <tr class="plan-col-header">
-          <th style="width:38%">Feature</th>
-          <th style="width:15.5%">Explorer</th>
-          <th class="plan-col-featured" style="width:15.5%">Analyst</th>
-          <th style="width:15.5%">Institutional</th>
-          <th style="width:15.5%">Enterprise</th>
-        </tr>
-      </thead>
-      <tbody>
-
-        <!-- Rankings & Scoring -->
-        <tr class="row-group"><td colspan="5">Rankings &amp; Scoring</td></tr>
-        <tr>
-          <td class="feat-name"><strong>EcoIQ company rankings</strong><span>Full public league table</span></td>
-          <td><span class="ck">✓</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Top-level EcoIQ scores</strong><span>0–100 composite score</span></td>
-          <td><span class="ck">✓</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Full 6-pillar breakdown</strong><span>Env · Modernisation · Governance · Benefit · Ethics · Harm</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Historical score trends</strong><span>12-month trajectory</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Greenwashing risk signal</strong><span>AI-flagged disclosure gaps</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-
-        <!-- Intelligence Profiles -->
-        <tr class="row-group"><td colspan="5">Company Intelligence Profiles</td></tr>
-        <tr>
-          <td class="feat-name"><strong>Full intelligence profiles</strong><span>All scored dimensions + AI narrative</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Institutional signals strip</strong><span>Governance, Transition, Transparency</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Evidence coverage %</strong><span>Source quality and verification status</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Improvement pathway</strong><span>9-milestone AI-assisted action plan</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-
-        <!-- Country Intelligence -->
-        <tr class="row-group"><td colspan="5">Country Intelligence</td></tr>
-        <tr>
-          <td class="feat-name"><strong>Country overview profiles</strong><span>Macro stats, energy mix, transition status</span></td>
-          <td><span class="ck">✓</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Country deep-dive reports</strong><span>Risk, investment thesis, pollution hotspots</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>National transition roadmaps</strong><span>Path to 100 — 6-phase strategy</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cp">Limited</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Investor briefings</strong><span>Institutional-grade country memo</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cv">5 / month</span></td>
-          <td><span class="ck">Unlimited</span></td>
-          <td><span class="ck">Unlimited</span></td>
-        </tr>
-
-        <!-- Portfolio & Screening -->
-        <tr class="row-group"><td colspan="5">Portfolio Screening</td></tr>
-        <tr>
-          <td class="feat-name"><strong>Portfolio screening</strong><span>Multi-company climate risk view</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cx">–</span></td>
-          <td><span class="cv">Up to 50</span></td>
-          <td><span class="ck">Unlimited</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Dev bank compatibility</strong><span>IFC, ADB, EBRD, AIIB eligibility</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cp">Basic</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Green bond eligibility signals</strong><span>ICMA, Climate Bonds, EU Taxonomy</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cx">–</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Financing compatibility reports</strong><span>Instrument-level fit analysis</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cx">–</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-
-        <!-- Exports & API -->
-        <tr class="row-group"><td colspan="5">Exports &amp; API</td></tr>
-        <tr>
-          <td class="feat-name"><strong>PDF exports</strong><span>Downloadable intelligence reports</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>CSV / data exports</strong><span>Bulk score and dimension data</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>White-label export</strong><span>Unbranded PDFs for client delivery</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cx">–</span></td>
-          <td><span class="ck">✓</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>API access</strong><span>RESTful score and profile endpoints</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cv">1,000 calls/mo</span></td>
-          <td><span class="cv">10,000 calls/mo</span></td>
-          <td><span class="ck">Unlimited</span></td>
-        </tr>
-
-        <!-- Support -->
-        <tr class="row-group"><td colspan="5">Support &amp; SLA</td></tr>
-        <tr>
-          <td class="feat-name"><strong>Support channel</strong></td>
-          <td><span class="cv">Community</span></td>
-          <td class="plan-col-featured"><span class="cv">Email</span></td>
-          <td><span class="cv">Priority email</span></td>
-          <td><span class="cv">Dedicated analyst</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Response time</strong></td>
-          <td><span class="cv">—</span></td>
-          <td class="plan-col-featured"><span class="cv">2 business days</span></td>
-          <td><span class="cv">1 business day</span></td>
-          <td><span class="cv">Same day</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Custom methodology</strong><span>Bespoke scoring weights and pillars</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cx">–</span></td>
-          <td><span class="cx">–</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-        <tr>
-          <td class="feat-name"><strong>Compliance documentation</strong><span>SLA, data provenance, audit trail</span></td>
-          <td><span class="cx">–</span></td>
-          <td class="plan-col-featured"><span class="cx">–</span></td>
-          <td><span class="cx">–</span></td>
-          <td><span class="ck">✓</span></td>
-        </tr>
-
-      </tbody>
-    </table>
-  </div>
-</div><!-- /compare-section -->
-
-<!-- ── FAQ ──────────────────────────────────────────────────────── -->
-<div class="faq-section">
-  <div style="text-align:center;margin-bottom:2.5rem">
-    <h2 class="faq-title">Frequently asked questions</h2>
-    <p class="faq-sub">Everything you need to know about EcoIQ plans and pricing.</p>
-  </div>
-
-  <div class="faq-grid">
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">What is EcoIQ and how are scores calculated?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        EcoIQ is an AI-assisted climate intelligence platform that scores companies 0–100 across six pillars:
-        Environmental Responsibility, Modernisation, Governance &amp; Ethics, Public Benefit, Future Readiness, and a Harm Penalty.
-        Scores are derived from publicly available data — sustainability reports, government filings, satellite imagery, and news.
-        All scores are indicative and updated as new evidence is published.
-        <br><br>
-        <a href="{% url 'methodology' %}">Read the full methodology →</a>
-      </div>
-    </details>
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">Is the free Explorer tier really free, forever?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        Yes. The Explorer tier gives permanent, no-credit-card access to EcoIQ's public company rankings,
-        country overview profiles, and top-level EcoIQ scores. We believe climate data transparency is a public good,
-        so the ranking layer stays free. Deeper intelligence layers — full profiles, investor briefings, API — require
-        an Analyst or Institutional plan.
-      </div>
-    </details>
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">How does annual billing work?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        Annual plans are billed once per year (12 months upfront) at a 20% discount versus the monthly rate.
-        Analyst annual: £39/mo × 12 = £468/yr (vs £588 monthly).
-        Institutional annual: £239/mo × 12 = £2,868/yr (vs £3,588 monthly).
-        Annual plans are non-refundable after the 14-day trial period. Contact us to switch billing cycles.
-      </div>
-    </details>
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">What does "development bank compatibility" mean?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        EcoIQ maps each company's profile against the screening criteria of major multilateral development banks —
-        including IFC Performance Standards, ADB Safeguard Policy, EBRD Environmental Policy, and AIIB Environmental
-        and Social Framework. Compatibility is assessed as Eligible, Partial, or Conditional — all assessments are
-        indicative and require project-level due diligence before any financing decision.
-      </div>
-    </details>
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">Can I upgrade or downgrade at any time?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        Yes. Monthly plans can be upgraded or downgraded at any time, effective from the next billing cycle.
-        Annual plans can be upgraded at any time (prorated); downgrades take effect at the annual renewal date.
-        Enterprise plans have custom terms. <a href="mailto:alizhan@ecoiq.uk">Contact us</a> to discuss.
-      </div>
-    </details>
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">What is the EcoIQ API used for?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        The EcoIQ API gives programmatic access to company scores, dimension breakdowns, country profiles, and
-        financing compatibility signals. It is designed for integration into portfolio management systems, ESG
-        screening tools, and internal dashboards. Documentation and sandbox access are available upon request.
-        <br><br>
-        <a href="/api-docs/">View API documentation →</a>
-      </div>
-    </details>
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">Is EcoIQ data compliant with SFDR / EU Taxonomy?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        EcoIQ scores are AI-assisted and indicative — they are not a regulatory rating and do not constitute
-        an official SFDR PAI assessment or EU Taxonomy alignment determination. However, EcoIQ signals are
-        designed to be directionally consistent with these frameworks and can support internal pre-screening
-        workflows. Enterprise clients can request a compliance mapping document.
-      </div>
-    </details>
-
-    <details class="faq-item">
-      <summary>
-        <span class="faq-q">Do you offer a trial or demo?</span>
-        <span class="faq-chevron">▾</span>
-      </summary>
-      <div class="faq-body">
-        Yes. All paid plans include a 14-day money-back guarantee. For Institutional and Enterprise,
-        we offer a personalised 30-minute product walkthrough. To book a demo, email
-        <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Demo+Request">alizhan@ecoiq.uk</a> with your
-        organisation name and use case. Responses typically within one business day.
-      </div>
-    </details>
-
-  </div>
-</div><!-- /faq-section -->
-
-<!-- ══════════════════════════════════════════════════════════════
-     COMPANY-FACING PRICING — "Manage Your EcoIQ Profile"
-     ══════════════════════════════════════════════════════════════ -->
-<div class="co-pricing-section">
-
-  <div class="co-pricing-header">
-    <div class="co-pricing-eyebrow">For Companies</div>
-    <h2 class="co-pricing-title">Manage Your EcoIQ Profile</h2>
-    <p class="co-pricing-sub">
-      219 companies are already ranked on EcoIQ. If your company appears in our index,
-      claim your profile and take control of your climate intelligence story — before
-      investors and regulators do it for you.
-    </p>
-  </div>
-
-  <div class="co-plan-grid">
-
-    <!-- Tier 1 — Profile Visibility -->
-    <div class="co-plan-card">
-      <div class="co-plan-icon">🔍</div>
-      <div class="co-plan-name">Profile Visibility</div>
-      <div class="co-plan-price-block">
-        <div class="co-plan-price">
-          <span class="co-currency">£</span>500
-          <span class="co-period">/mo</span>
+    <div class="fp-wrap">
+      <div class="fp-grid">
+        <div>
+          <div class="fp-price-compare">
+            <div class="fp-price-box">
+              <div class="fp-price-label">Standard 90-Day Pilot</div>
+              <div class="fp-price-value fp-price-strike">£125,000</div>
+            </div>
+            <div class="fp-price-box fp-highlight">
+              <div class="fp-price-label">Founding Partner Pilot</div>
+              <div class="fp-price-value">From £85,000</div>
+            </div>
+          </div>
+          <p style="font-size:.85rem;color:var(--muted2);line-height:1.7;margin-bottom:1rem">
+            Founding Partner pricing is available only for a limited number of organisations
+            that provide structured feedback, nominate a defined use case and permit an
+            anonymised case study, subject to approval.
+          </p>
+          <ul class="fp-benefits">
+            <li>{% include "partials/_check_gold.html" %}Preferential pilot pricing</li>
+            <li>{% include "partials/_check_gold.html" %}Direct access to the EcoIQ product team</li>
+            <li>{% include "partials/_check_gold.html" %}Priority feature development</li>
+            <li>{% include "partials/_check_gold.html" %}GCC data localisation input</li>
+            <li>{% include "partials/_check_gold.html" %}Arabic interface collaboration</li>
+            <li>{% include "partials/_check_gold.html" %}Preferential expansion terms</li>
+          </ul>
+        </div>
+        <div class="fp-side">
+          <p><strong style="color:var(--text)">Not an automatic discount.</strong> Founding Partner status is approved case by case, based on fit, nominated use case and willingness to participate in structured feedback.</p>
+          <a href="{% url 'leads:enterprise_enquiry' %}?engagement=founding_partner" class="btn btn-primary btn-full">Apply as a Founding Partner</a>
         </div>
       </div>
-      <ul class="co-plan-features">
-        <li>✓ Claim &amp; verify your company profile</li>
-        <li>✓ Update company description and data</li>
-        <li>✓ Priority listing in company directory</li>
-        <li>✓ "Verified" badge on your EcoIQ card</li>
-        <li>✓ Monthly score monitoring alerts</li>
-      </ul>
-      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Profile+Visibility+Plan"
-         class="co-plan-cta co-cta-vis">Get Profile Visibility →</a>
     </div>
+  </section>
 
-    <!-- Tier 2 — Score Improvement -->
-    <div class="co-plan-card co-featured">
-      <div class="co-featured-badge">Most Popular</div>
-      <div class="co-plan-icon">📈</div>
-      <div class="co-plan-name">Score Improvement</div>
-      <div class="co-plan-price-block">
-        <div class="co-plan-price">
-          <span class="co-currency">£</span>2,000
-          <span class="co-period">/mo</span>
+  <!-- ═══════════════════ 7. PROCUREMENT PROCESS ═══════════════════ -->
+  <section class="section" id="procurement">
+    <div class="section-head">
+      <h2>How an engagement begins.</h2>
+      <p>A straightforward, four-step path from first conversation to full deployment.</p>
+    </div>
+    <div class="timeline">
+      <div class="timeline-step">
+        <div class="timeline-num">1</div>
+        <div class="timeline-title">Discovery</div>
+        <div class="timeline-desc">We identify the decision process, users, data and desired outcomes.</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-num">2</div>
+        <div class="timeline-title">Scope</div>
+        <div class="timeline-desc">EcoIQ provides a written scope, timeline, deliverables and transparent commercial proposal.</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-num">3</div>
+        <div class="timeline-title">Pilot</div>
+        <div class="timeline-desc">The system is tested on a controlled use case with measurable success criteria.</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-num">4</div>
+        <div class="timeline-title">Deployment</div>
+        <div class="timeline-desc">Successful pilots are expanded through an annual or multi-year agreement.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ 8. ETHICAL PRICING COMMITMENT ═══════════════════ -->
+  <section class="section" id="ethical-commitment">
+    <div class="section-head">
+      <h2>Transparent commercial terms.</h2>
+      <p>
+        EcoIQ applies clear scope, mutual agreement and fair measurement to every
+        engagement. Paid partnerships never influence EcoIQ scores, evidence findings or
+        analytical conclusions.
+      </p>
+    </div>
+    <div class="ethics-wrap">
+      <div class="ethics-grid">
+        <div class="ethics-item">{% include "partials/_check.html" %}No hidden platform fees</div>
+        <div class="ethics-item">{% include "partials/_check.html" %}No paid improvement of scores</div>
+        <div class="ethics-item">{% include "partials/_check.html" %}No undisclosed supplier commissions</div>
+        <div class="ethics-item">{% include "partials/_check.html" %}No unsupported savings guarantees</div>
+      </div>
+      <p class="ethics-disclaimer">
+        EcoIQ uses Islamic ethical principles as a decision-support framework. Formal
+        Shariah compliance or certification requires assessment by qualified independent
+        advisers.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ 9. FAQ ═══════════════════ -->
+  <section class="section" id="faq" style="border-bottom:none">
+    <div class="section-head">
+      <h2>Frequently asked questions</h2>
+      <p>Everything institutional and government buyers ask before engaging EcoIQ.</p>
+    </div>
+    <div class="faq-grid">
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Why are there no fixed SaaS plans?</span><span class="faq-chevron">▾</span></summary>
+        <div class="faq-body">
+          EcoIQ deployments differ significantly in data volume, integrations, security,
+          users and strategic scope. A bank pilot and a government deployment cannot be
+          priced responsibly as the same standard subscription.
         </div>
-      </div>
-      <ul class="co-plan-features">
-        <li>✓ Everything in Profile Visibility</li>
-        <li>✓ Expert EcoIQ score gap analysis</li>
-        <li>✓ Pillar-by-pillar improvement roadmap</li>
-        <li>✓ Monthly advisory call (60 min)</li>
-        <li>✓ Data submission portal access</li>
-        <li>✓ ESG data room preparation support</li>
-      </ul>
-      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Score+Improvement+Plan"
-         class="co-plan-cta co-cta-improve">Start Improving →</a>
-    </div>
+      </details>
 
-    <!-- Tier 3 — Investor Visibility -->
-    <div class="co-plan-card">
-      <div class="co-plan-icon">🏦</div>
-      <div class="co-plan-name">Investor Visibility</div>
-      <div class="co-plan-price-block">
-        <div class="co-plan-price">
-          <span class="co-currency">£</span>5,000
-          <span class="co-period">/mo</span>
+      <details class="faq-item">
+        <summary><span class="faq-q">Can we begin with a smaller engagement?</span><span class="faq-chevron">▾</span></summary>
+        <div class="faq-body">
+          Yes. Most organisations begin with an Enterprise Diagnostic or a controlled
+          90-Day Pilot.
         </div>
-      </div>
-      <ul class="co-plan-features">
-        <li>✓ Everything in Score Improvement</li>
-        <li>✓ Featured placement in investor briefings</li>
-        <li>✓ Direct intro to EcoIQ investor network</li>
-        <li>✓ AI executive briefing document</li>
-        <li>✓ Green finance eligibility assessment</li>
-        <li>✓ Quarterly board-level ESG report</li>
-      </ul>
-      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Investor+Visibility+Plan"
-         class="co-plan-cta co-cta-invest">Get Investor Visibility →</a>
-    </div>
+      </details>
 
-    <!-- Tier 4 — Enterprise -->
-    <div class="co-plan-card co-ent">
-      <div class="co-plan-icon">🏛</div>
-      <div class="co-plan-name">Enterprise</div>
-      <div class="co-plan-price-block">
-        <div class="co-plan-price" style="font-size:1.5rem;">
-          £15,000<span class="co-period">–</span>£50,000<span class="co-period">/mo</span>
+      <details class="faq-item">
+        <summary><span class="faq-q">Are third-party data costs included?</span><span class="faq-chevron">▾</span></summary>
+        <div class="faq-body">
+          Standard EcoIQ platform capabilities are included within the agreed scope.
+          Specialist external datasets and licences may be quoted separately.
         </div>
-      </div>
-      <ul class="co-plan-features">
-        <li>✓ Full ESG transformation programme</li>
-        <li>✓ Dedicated EcoIQ analyst team</li>
-        <li>✓ Board-level reporting &amp; governance support</li>
-        <li>✓ Regulatory compliance (SFDR, EU Taxonomy, ISSB)</li>
-        <li>✓ Custom financing introductions</li>
-        <li>✓ Annual investor day preparation</li>
-      </ul>
-      <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Enterprise+Plan+Enquiry"
-         class="co-plan-cta co-cta-ent">Talk to Us →</a>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Can EcoIQ be deployed in the GCC?</span><span class="faq-chevron">▾</span></summary>
+        <div class="faq-body">
+          Yes. EcoIQ is being designed for Arabic and English deployment, GCC-specific
+          data and regional hosting requirements.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Can EcoIQ be hosted privately?</span><span class="faq-chevron">▾</span></summary>
+        <div class="faq-body">
+          Private cloud, dedicated environment and approved regional hosting options can
+          be scoped for enterprise and government clients.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Does payment affect the EcoIQ Score?</span><span class="faq-chevron">▾</span></summary>
+        <div class="faq-body">
+          No. Commercial relationships must never influence evidence, methodology, scores
+          or analytical conclusions.
+        </div>
+      </details>
+
     </div>
-
-  </div><!-- /co-plan-grid -->
-
-  <!-- Claim CTA strip -->
-  <div class="co-claim-strip">
-    <div>
-      <div style="font-weight:700;color:#f0f6fc;font-size:1rem;margin-bottom:.3rem;">
-        Is your company already ranked on EcoIQ?
-      </div>
-      <div style="font-size:.82rem;color:#6e7681;">
-        Find your company in our directory and start a claim — takes 2 minutes.
-      </div>
-    </div>
-    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-      <a href="{% url 'companies:directory' %}" class="co-claim-btn co-claim-primary">
-        🔍 Find My Company
-      </a>
-      <a href="{% url 'leads:claim_profile_page' %}" class="co-claim-btn co-claim-secondary">
-        🏷 Claim My Profile →
-      </a>
-    </div>
-  </div>
-
-</div><!-- /co-pricing-section -->
-
-<!-- ══════════════════════════════════════════════════════════════
-     WHY THIS MATTERS FOR HSR  +  ETHICAL REVENUE PRINCIPLES
-     Added sections — institutional rationale and revenue ethics.
-     ══════════════════════════════════════════════════════════════ -->
-<div class="hsr-grid" style="display:grid;grid-template-columns:1.1fr 1fr;gap:1.25rem;margin:1rem 0 3rem;">
-
-  <!-- Why This Matters for HSR -->
-  <div style="background:linear-gradient(160deg,rgba(201,168,76,.06) 0%,var(--bg2) 60%);border:1px solid rgba(201,168,76,.22);border-radius:14px;padding:2rem 1.9rem;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);"></div>
-    <div style="font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#c9a84c;margin-bottom:.75rem;">◈ Why This Matters for HSR</div>
-    <h3 style="font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.9rem;">Recurring, ethical, mission-aligned revenue</h3>
-    <p style="font-size:.88rem;color:var(--muted2);line-height:1.75;">
-      EcoIQ converts public intelligence, the Maqasid methodology, and sustainability
-      analysis into practical decision tools. That model produces recurring,
-      mission-aligned revenue — value created by helping institutions make better,
-      cleaner, more accountable capital decisions, rather than by selling attention
-      or opaque ratings.
-    </p>
-  </div>
-
-  <!-- Ethical Revenue Principles -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:2rem 1.9rem;">
-    <div style="font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.75rem;">✦ Ethical Revenue Principles</div>
-    <h3 style="font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:1.1rem;">How we earn — and how we don't</h3>
-    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.65rem;">
-      <li style="font-size:.84rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.6rem;line-height:1.5;"><span style="color:var(--accent);flex-shrink:0;">✓</span>No greenwashing</li>
-      <li style="font-size:.84rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.6rem;line-height:1.5;"><span style="color:var(--accent);flex-shrink:0;">✓</span>No misleading ESG claims</li>
-      <li style="font-size:.84rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.6rem;line-height:1.5;"><span style="color:var(--accent);flex-shrink:0;">✓</span>No hidden conflict of interest</li>
-      <li style="font-size:.84rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.6rem;line-height:1.5;"><span style="color:var(--accent);flex-shrink:0;">✓</span>Transparent methodology</li>
-      <li style="font-size:.84rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.6rem;line-height:1.5;"><span style="color:var(--accent);flex-shrink:0;">✓</span>Respect for public benefit</li>
-      <li style="font-size:.84rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.6rem;line-height:1.5;"><span style="color:var(--accent);flex-shrink:0;">✓</span>Alignment with Maqasid values</li>
-      <li style="font-size:.84rem;color:var(--muted2);display:flex;align-items:flex-start;gap:.6rem;line-height:1.5;"><span style="color:var(--accent);flex-shrink:0;">✓</span>Clean revenue through useful intelligence</li>
-    </ul>
-  </div>
+  </section>
 
 </div>
 
-<!-- ── Final CTA ─────────────────────────────────────────────────── -->
-<div class="final-cta">
-  <div class="final-cta-title">Ready to invest in climate clarity?</div>
-  <p class="final-cta-sub">
-    Start with the free Explorer tier today — or book a 30-minute demo to see the full Institutional platform in action.
-  </p>
-  <div class="final-cta-btns">
-    <a href="{% url 'companies:directory' %}" class="btn-primary">
-      🌍 Explore Rankings — Free
-    </a>
-    <a href="mailto:alizhan@ecoiq.uk?subject=EcoIQ+Demo+Request" class="btn-secondary">
-      📅 Book a Demo →
-    </a>
+<!-- ═══════════════════ 10. FINAL CTA ═══════════════════ -->
+<section class="final-cta">
+  <h2>Start with one high-value decision.</h2>
+  <p>Tell us which portfolio, project, asset group or public-sector challenge you want EcoIQ to analyse.</p>
+  <div class="final-ctas">
+    <a href="{% url 'leads:enterprise_enquiry' %}" class="btn btn-primary">Request a Custom Proposal</a>
+    {% if calendly_url %}
+    <a href="{{ calendly_url }}" class="btn btn-ghost" target="_blank" rel="noopener">Book a Discovery Call</a>
+    {% else %}
+    <a href="{% url 'leads:enterprise_enquiry' %}" class="btn btn-ghost">Book a Discovery Call</a>
+    {% endif %}
   </div>
-</div>
-
-<!-- ── Disclaimer ─────────────────────────────────────────────────── -->
-<p class="disclaimer">
-  EcoIQ scores are AI-assisted and indicative, derived from publicly available information.
-  They are not investment advice, audit opinions, or regulatory assessments.
-  Prices shown are indicative and subject to change — all plans currently fulfilled via direct agreement.
-  Not to be used as the sole basis for investment decisions.
-</p>
-
-</div><!-- /page -->
-
-<script>
-(function(){
-  'use strict';
-
-  /* ── Billing toggle ────────────────────────────────────────────────── */
-  var billing = 'monthly';
-
-  function setBilling(mode){
-    billing = mode;
-
-    // Update button active state
-    document.getElementById('btn-monthly').classList.toggle('active', mode === 'monthly');
-    document.getElementById('btn-annual').classList.toggle('active', mode === 'annual');
-
-    // Toggle price values
-    document.querySelectorAll('.price-monthly').forEach(function(el){
-      el.style.display = mode === 'monthly' ? '' : 'none';
-    });
-    document.querySelectorAll('.price-annual').forEach(function(el){
-      el.style.display = mode === 'annual' ? '' : 'none';
-    });
-
-    // Update annual note beneath Analyst price
-    var analystNote = document.getElementById('analyst-note');
-    if(analystNote){
-      analystNote.textContent = mode === 'annual' ? 'Billed £468/yr · 2 months free' : ' ';
-    }
-    document.querySelectorAll('.inst-note').forEach(function(el){
-      el.textContent = mode === 'annual' ? 'Billed £2,868/yr · 2 months free' : ' ';
-    });
-
-    // Show/hide annual-savings badge
-    var badge = document.getElementById('annual-savings');
-    if(badge) badge.style.display = mode === 'monthly' ? '' : 'none';
-    if(mode === 'annual'){
-      var hint = document.createElement('span');
-      hint.id = 'annual-hint';
-      hint.className = 'annual-badge';
-      hint.style.marginLeft = '0';
-      hint.textContent = '20% off applied';
-    }
-  }
-
-  // Expose to onclick attrs
-  window.setBilling = setBilling;
-
-})();
-</script>
+  <p class="contact-line">Enterprise and government enquiries: <a href="mailto:partnerships@ecoiq.uk">partnerships@ecoiq.uk</a></p>
+  <p class="currency-note" style="margin-top:1.2rem">All pricing shown in GBP (£). USD, QAR, AED and SAR proposals are available on request.</p>
+</section>
 
 {% endblock %}

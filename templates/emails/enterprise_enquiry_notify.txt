@@ -1,0 +1,29 @@
+New EcoIQ Enterprise Enquiry
+============================
+
+Submitted: {{ instance.created_at|date:"d M Y, H:i" }} UTC
+
+CONTACT
+-------
+Name:         {{ instance.full_name }}
+Organisation: {{ instance.organisation }}
+Email:        {{ instance.work_email }}
+Country:      {{ instance.country }}
+
+ENGAGEMENT
+----------
+Organisation type:    {{ instance.get_organisation_type_display }}
+Preferred engagement: {{ instance.get_preferred_engagement_display }}
+{% if instance.estimated_assets %}Estimated assets:     {{ instance.estimated_assets }}
+{% endif %}{% if instance.use_case %}Main use case:        {{ instance.use_case }}
+{% endif %}
+{% if instance.message %}
+MESSAGE
+-------
+{{ instance.message }}
+{% endif %}
+
+─────────────────────────────────────────
+Review and update status in the admin panel:
+{{ admin_url }}
+─────────────────────────────────────────

@@ -332,3 +332,89 @@ class NewsletterSignup(models.Model):
 
     def __str__(self):
         return self.email
+
+
+# ── EnterpriseEnquiry ──────────────────────────────────────────────────────────
+
+# Organisation types the Enterprise Pricing page is built for — banks, funds,
+# sovereigns, government, and major industrial/infrastructure groups.
+ORGANISATION_TYPE_CHOICES = [
+    ('bank',                   'Bank'),
+    ('family_office',          'Family Office'),
+    ('investment_fund',        'Investment Fund'),
+    ('sovereign_wealth_fund',  'Sovereign Wealth Fund'),
+    ('ministry',               'Ministry'),
+    ('municipality',           'Municipality'),
+    ('government_entity',      'Government-Related Entity'),
+    ('energy_infrastructure',  'Energy / Infrastructure Company'),
+    ('industrial_group',       'Industrial Group'),
+    ('other',                  'Other'),
+]
+
+# Matches the six commercial engagement tracks on /pricing/ exactly, so a CTA
+# on any pricing card can deep-link straight to the right pre-selected option
+# (?engagement=<value> — same convention as ReviewRequest's ?type=).
+ENGAGEMENT_TYPE_CHOICES = [
+    ('enterprise_diagnostic', 'Enterprise Diagnostic'),
+    ('pilot_90day',           '90-Day Pilot'),
+    ('enterprise_deployment', 'Enterprise Deployment'),
+    ('annual_licence',        'Annual Platform Licence'),
+    ('government_sovereign',  'Government or Sovereign Programme'),
+    ('founding_partner',      'Founding Partner Programme'),
+]
+
+ENTERPRISE_ENQUIRY_STATUS_CHOICES = [
+    ('new',           'New'),
+    ('reviewing',     'Under Review'),
+    ('scoping_call',  'Scoping Call Booked'),
+    ('proposal_sent', 'Proposal Sent'),
+    ('won',           'Won'),
+    ('lost',          'Lost'),
+]
+
+
+class EnterpriseEnquiry(models.Model):
+    """
+    Submitted from the EcoIQ Enterprise Pricing page (/pricing/) — the single
+    destination every CTA on that page routes to, per engagement track
+    (Diagnostic, Pilot, Deployment, Licence, Government/Sovereign, Founding
+    Partner). No payment is ever collected here; this only opens a scoped
+    commercial conversation.
+    """
+
+    # Contact
+    full_name  = models.CharField(max_length=200)
+    organisation = models.CharField(max_length=200)
+    work_email = models.EmailField(db_index=True)
+    country    = models.CharField(max_length=100)
+
+    # Engagement specification
+    organisation_type   = models.CharField(max_length=30, choices=ORGANISATION_TYPE_CHOICES)
+    preferred_engagement = models.CharField(max_length=30, choices=ENGAGEMENT_TYPE_CHOICES)
+    estimated_assets    = models.CharField(
+        max_length=100, blank=True,
+        help_text='Estimated number of assets, companies or portfolio entities (free text, optional)',
+    )
+    use_case = models.CharField(
+        max_length=300, blank=True,
+        help_text='Main use case — e.g. portfolio screening, national ESG programme',
+    )
+    message = models.TextField(blank=True, help_text='Optional additional context')
+
+    # Security
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    # CRM pipeline
+    status = models.CharField(max_length=20, choices=ENTERPRISE_ENQUIRY_STATUS_CHOICES, default='new')
+    notes  = models.TextField(blank=True, help_text='Internal notes — not visible to the submitter')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering            = ['-created_at']
+        verbose_name        = 'Enterprise Enquiry'
+        verbose_name_plural = 'Enterprise Enquiries'
+
+    def __str__(self):
+        return f'{self.full_name} — {self.organisation} ({self.get_preferred_engagement_display()})'

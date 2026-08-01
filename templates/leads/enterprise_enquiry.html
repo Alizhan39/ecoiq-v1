@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" style="scroll-behavior: smooth;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request an Enterprise Proposal — EcoIQ</title>
+  <meta name="description" content="Request a scoped enterprise or government proposal from EcoIQ — Enterprise Diagnostic, 90-Day Pilot, Enterprise Deployment, Annual Platform Licence, Government & Sovereign Programme, or Founding Partner Programme.">
+  <meta name="robots" content="noindex, follow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22;
+      --border:rgba(255,255,255,.08); --border2:rgba(255,255,255,.14);
+      --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+      --accent:#00e89a; --accent-soft:rgba(0,232,154,.12);
+      --gold:#e8c46a; --cyan:#06b6d4; --danger:#e63946;
+      --font:'Inter',system-ui,-apple-system,sans-serif;
+      --mono:'JetBrains Mono',monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--font);
+      -webkit-font-smoothing: antialiased; min-height: 100vh;
+      background-image:
+        linear-gradient(rgba(0,232,154,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,232,154,.035) 1px, transparent 1px);
+      background-size: 64px 64px;
+    }
+    a { color: inherit; }
+    .mono { font-family: var(--mono); }
+
+    nav.eq-nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(7,11,15,.9); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .eq-nav-inner {
+      max-width: 76rem; margin: 0 auto; padding: 0 1.5rem; height: 4rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .eq-logo { font-size: .85rem; font-weight: 700; letter-spacing: .18em; text-decoration: none; }
+    .eq-logo span { color: var(--accent); }
+    .eq-back { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted2); text-decoration: none; transition: color .15s; }
+    .eq-back:hover { color: var(--accent); }
+
+    main { max-width: 68rem; margin: 0 auto; padding: 3.5rem 1.5rem 6rem; }
+
+    .eq-header { text-align: center; margin-bottom: 2.5rem; }
+    .eq-badge {
+      display: inline-flex; align-items: center; gap: .5rem; padding: .3rem .85rem;
+      border-radius: 999px; background: var(--accent-soft); border: 1px solid rgba(0,232,154,.25);
+      color: var(--accent); font-size: .68rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; margin-bottom: 1.4rem;
+    }
+    .eq-title { font-size: clamp(1.7rem,3.6vw,2.5rem); font-weight: 800; letter-spacing: -.02em; margin-bottom: .8rem; }
+    .eq-subtitle { color: var(--muted2); font-size: 1.02rem; line-height: 1.7; max-width: 46rem; margin: 0 auto; }
+
+    .eq-notice {
+      max-width: 46rem; margin: 0 auto 2rem; padding: .9rem 1.1rem; border-radius: .7rem; font-size: .85rem;
+      background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); color: #fcd34d;
+    }
+
+    .eq-grid { display: grid; gap: 2.2rem; align-items: start; }
+    @media (min-width: 1024px) { .eq-grid { grid-template-columns: 1fr 320px; } }
+
+    .eq-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border: 1px solid var(--border); border-radius: 1.1rem; padding: 2rem;
+      box-shadow: 0 30px 70px -40px rgba(0,0,0,.7);
+    }
+    @media (min-width: 768px) { .eq-card { padding: 2.4rem; } }
+
+    .eq-field { margin-bottom: 1.3rem; }
+    .eq-row { display: grid; gap: 1.1rem; margin-bottom: 1.3rem; }
+    @media (min-width: 640px) { .eq-row-2 { grid-template-columns: 1fr 1fr; } }
+    .eq-label {
+      display: block; font-size: .7rem; font-weight: 600; color: var(--muted2);
+      margin-bottom: .45rem; letter-spacing: .05em; text-transform: uppercase;
+    }
+    .eq-label .required { color: var(--accent); }
+    .eq-label .optional { color: #475569; font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: .72rem .95rem; border-radius: .7rem; font-size: .875rem;
+      color: var(--text); background: rgba(255,255,255,.045); border: 1px solid var(--border);
+      transition: border-color .15s, box-shadow .15s; font-family: inherit;
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: #475569; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none; border-color: rgba(0,232,154,.6); box-shadow: 0 0 0 3px rgba(0,232,154,.12);
+    }
+    .form-select { cursor: pointer; }
+    .form-textarea { resize: none; line-height: 1.6; }
+    .field-error { color: #f87171; font-size: .76rem; margin-top: .3rem; }
+
+    .eq-submit {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: .65rem;
+      padding: .95rem 1.4rem; border-radius: .75rem; background: var(--accent); color: #06120d;
+      font-weight: 700; font-size: .88rem; letter-spacing: .01em; border: none; cursor: pointer;
+      transition: background-color .15s; margin-top: .5rem;
+    }
+    .eq-submit:hover { background: #00c882; }
+    .eq-submit-note { text-align: center; color: #475569; font-size: .74rem; margin-top: 1rem; }
+
+    .eq-sidebar { display: flex; flex-direction: column; gap: 1.2rem; }
+    @media (min-width: 1024px) { .eq-sidebar { position: sticky; top: 6rem; } }
+    .eq-side-card {
+      background: rgba(255,255,255,.02); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem;
+    }
+    .eq-side-card h3 {
+      font-size: .68rem; font-weight: 700; color: var(--muted2); margin-bottom: 1.1rem;
+      letter-spacing: .1em; text-transform: uppercase;
+    }
+    .eq-steps { list-style: none; display: flex; flex-direction: column; gap: 1.1rem; }
+    .eq-step { display: flex; gap: .85rem; }
+    .eq-step-num {
+      flex-shrink: 0; width: 1.6rem; height: 1.6rem; border-radius: 999px;
+      background: var(--accent-soft); border: 1px solid rgba(0,232,154,.3); color: var(--accent);
+      font-size: .72rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .eq-step-title { font-size: .82rem; font-weight: 600; }
+    .eq-step-desc { font-size: .74rem; color: var(--muted); margin-top: .15rem; line-height: 1.5; }
+
+    .eq-gold-card { border-color: rgba(232,196,106,.28); background: linear-gradient(180deg, rgba(232,196,106,.06), rgba(255,255,255,.01)); }
+    .eq-gold-card h3 { color: var(--gold); }
+    .eq-gold-text { font-size: .8rem; color: var(--muted2); line-height: 1.6; }
+
+    .eq-disclaimer { font-size: .74rem; color: #475569; line-height: 1.6; padding: 0 .1rem; }
+    .eq-footer { border-top: 1px solid rgba(255,255,255,.05); padding: 2.5rem 0 1.5rem; text-align: center; color: #475569; font-size: .76rem; }
+    .eq-footer a { text-decoration: none; }
+    .eq-footer a:hover { color: var(--muted2); }
+  </style>
+</head>
+<body>
+
+  <nav class="eq-nav">
+    <div class="eq-nav-inner">
+      <a href="/" class="eq-logo mono">ECO<span>IQ</span></a>
+      <a href="/pricing/" class="eq-back">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+        Back to Pricing
+      </a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="eq-header">
+      <div class="eq-badge mono">ENTERPRISE &amp; GOVERNMENT ENQUIRY</div>
+      <h1 class="eq-title">Request an Enterprise Proposal</h1>
+      <p class="eq-subtitle">
+        Tell us about your organisation and the engagement you're considering.
+        We will follow up to scope a written proposal — no payment is collected here.
+      </p>
+    </div>
+
+    {% if rate_limited %}
+    <div class="eq-notice">
+      <strong>Too many submissions.</strong> We've received several enquiries from your network recently.
+      Please try again in an hour, or email us directly at
+      <a href="mailto:partnerships@ecoiq.uk">partnerships@ecoiq.uk</a>.
+    </div>
+    {% endif %}
+
+    <div class="eq-grid">
+      <div class="eq-card">
+        <form method="post" novalidate id="enterprise-form">
+          {% csrf_token %}
+
+          <!-- Honeypot -->
+          <div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true" tabindex="-1">
+            {{ form.hp_field }}
+          </div>
+
+          <div class="eq-row eq-row-2">
+            <div class="eq-field">
+              <label class="eq-label" for="{{ form.full_name.id_for_label }}">Full name <span class="required">*</span></label>
+              {{ form.full_name }}
+              {% if form.full_name.errors %}<p class="field-error">{{ form.full_name.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="eq-field">
+              <label class="eq-label" for="{{ form.organisation.id_for_label }}">Organisation <span class="required">*</span></label>
+              {{ form.organisation }}
+              {% if form.organisation.errors %}<p class="field-error">{{ form.organisation.errors.0 }}</p>{% endif %}
+            </div>
+          </div>
+
+          <div class="eq-row eq-row-2">
+            <div class="eq-field">
+              <label class="eq-label" for="{{ form.work_email.id_for_label }}">Work email <span class="required">*</span></label>
+              {{ form.work_email }}
+              {% if form.work_email.errors %}<p class="field-error">{{ form.work_email.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="eq-field">
+              <label class="eq-label" for="{{ form.country.id_for_label }}">Country <span class="required">*</span></label>
+              {{ form.country }}
+              {% if form.country.errors %}<p class="field-error">{{ form.country.errors.0 }}</p>{% endif %}
+            </div>
+          </div>
+
+          <div class="eq-row eq-row-2">
+            <div class="eq-field">
+              <label class="eq-label" for="{{ form.organisation_type.id_for_label }}">Organisation type <span class="required">*</span></label>
+              {{ form.organisation_type }}
+              {% if form.organisation_type.errors %}<p class="field-error">{{ form.organisation_type.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="eq-field">
+              <label class="eq-label" for="{{ form.preferred_engagement.id_for_label }}">Preferred engagement <span class="required">*</span></label>
+              {{ form.preferred_engagement }}
+              {% if form.preferred_engagement.errors %}<p class="field-error">{{ form.preferred_engagement.errors.0 }}</p>{% endif %}
+            </div>
+          </div>
+
+          <div class="eq-field">
+            <label class="eq-label" for="{{ form.estimated_assets.id_for_label }}">Estimated number of assets or companies <span class="optional">(optional)</span></label>
+            {{ form.estimated_assets }}
+            {% if form.estimated_assets.errors %}<p class="field-error">{{ form.estimated_assets.errors.0 }}</p>{% endif %}
+          </div>
+
+          <div class="eq-field">
+            <label class="eq-label" for="{{ form.use_case.id_for_label }}">Main use case <span class="optional">(optional)</span></label>
+            {{ form.use_case }}
+            {% if form.use_case.errors %}<p class="field-error">{{ form.use_case.errors.0 }}</p>{% endif %}
+          </div>
+
+          <div class="eq-field">
+            <label class="eq-label" for="{{ form.message.id_for_label }}">Message <span class="optional">(optional)</span></label>
+            {{ form.message }}
+            {% if form.message.errors %}<p class="field-error">{{ form.message.errors.0 }}</p>{% endif %}
+          </div>
+
+          <button type="submit" class="eq-submit">Request Proposal</button>
+          <p class="eq-submit-note">We typically respond within two business days. No payment is collected on this website.</p>
+        </form>
+      </div>
+
+      <div class="eq-sidebar">
+        <div class="eq-side-card">
+          <h3>What happens next</h3>
+          <ul class="eq-steps">
+            <li class="eq-step">
+              <span class="eq-step-num">1</span>
+              <div><p class="eq-step-title">Discovery</p><p class="eq-step-desc">We identify the decision process, users, data and desired outcomes.</p></div>
+            </li>
+            <li class="eq-step">
+              <span class="eq-step-num">2</span>
+              <div><p class="eq-step-title">Scope</p><p class="eq-step-desc">A written scope, timeline, deliverables and commercial proposal.</p></div>
+            </li>
+            <li class="eq-step">
+              <span class="eq-step-num">3</span>
+              <div><p class="eq-step-title">Pilot</p><p class="eq-step-desc">A controlled use case with measurable success criteria.</p></div>
+            </li>
+            <li class="eq-step">
+              <span class="eq-step-num">4</span>
+              <div><p class="eq-step-title">Deployment</p><p class="eq-step-desc">Successful pilots expand via an annual or multi-year agreement.</p></div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="eq-side-card eq-gold-card">
+          <h3>Government &amp; sovereign</h3>
+          <p class="eq-gold-text">
+            Government and sovereign engagements are individually scoped following
+            technical, legal, data-governance and procurement assessment.
+          </p>
+        </div>
+
+        <div class="eq-side-card">
+          <p class="eq-disclaimer">
+            This form opens a commercial conversation only. It is not a proposal,
+            quotation, invoice or offer of engagement, and EcoIQ does not accept
+            payment through this website.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="eq-footer">
+      <a href="mailto:partnerships@ecoiq.uk">partnerships@ecoiq.uk</a> · <a href="/pricing/">Pricing</a> · <a href="/">ecoiq.uk</a>
+    </footer>
+  </main>
+
+</body>
+</html>
