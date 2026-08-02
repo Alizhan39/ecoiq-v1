@@ -24,4 +24,5 @@ urlpatterns = [
     # Investor Enquiry flow — every GCC investor page (EN + AR) CTA routes here
     path('investors/',          views.investor_enquiry,         name='investor_enquiry'),
     path('investors/success/',  views.investor_enquiry_success, name='investor_enquiry_success'),
+    path('investors/report/',   views.investor_enquiry_report,  name='investor_enquiry_report'),
 ]

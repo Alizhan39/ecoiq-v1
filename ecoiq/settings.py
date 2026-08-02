@@ -375,6 +375,7 @@ TEMPLATES = [
                 'django.template.context_processors.i18n',   # LANGUAGE_CODE + LANGUAGES in every template
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'ecoiq.context_processors.analytics',
             ],
         },
     },
@@ -484,6 +485,18 @@ LEAD_NOTIFY_EMAIL  = os.environ.get('LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
 # Khalifa Heat lead notifications — falls back to LEAD_NOTIFY_EMAIL if unset.
 HEATING_LEADS_NOTIFY_EMAIL = os.environ.get('HEATING_LEADS_NOTIFY_EMAIL', LEAD_NOTIFY_EMAIL)
 CALENDLY_URL       = os.environ.get('CALENDLY_URL', '')
+
+# ── Analytics & search-engine verification ──────────────────────────────────
+# All blank by default — no script or verification meta tag renders until the
+# corresponding env var is set on Render. Never hardcode real IDs here.
+# Set at most one of GTM_CONTAINER_ID / GA4_MEASUREMENT_ID: if GTM is present
+# it owns tag firing (configure GA4 as a tag inside the GTM container) so the
+# raw gtag.js loader is skipped — this is what keeps analytics scripts from
+# ever loading twice on the same page.
+GA4_MEASUREMENT_ID       = os.environ.get('GA4_MEASUREMENT_ID', '').strip()
+GTM_CONTAINER_ID         = os.environ.get('GTM_CONTAINER_ID', '').strip()
+GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '').strip()
+BING_SITE_VERIFICATION   = os.environ.get('BING_SITE_VERIFICATION', '').strip()
 
 # ── Data ingestion API keys ───────────────────────────────────────────────────
 # Companies House (UK): free at developer.companieshouse.gov.uk

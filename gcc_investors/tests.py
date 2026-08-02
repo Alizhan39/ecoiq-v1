@@ -11,7 +11,7 @@ the final report's browser-verification section for that check.
 """
 import json
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from . import seo
@@ -340,3 +340,122 @@ class InternalLinkingTests(TestCase):
         for (page, lang), url in URL_BY_PAGE_LANG.items():
             content = self.client.get(url).content.decode()
             self.assertIn('/pricing/', content, url)
+
+
+# ── Analytics: loader (no duplicates) ───────────────────────────────────────
+
+@override_settings(GA4_MEASUREMENT_ID='', GTM_CONTAINER_ID='', GOOGLE_SITE_VERIFICATION='', BING_SITE_VERIFICATION='')
+class AnalyticsLoaderUnconfiguredTests(TestCase):
+    """Nothing loads unless the corresponding env var is set — verified per the
+    task's "verify whether the site already has GA4/GTM/verification" step:
+    at the time this was written it has none of them."""
+
+    def test_no_gtm_or_gtag_script_when_unconfigured(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            content = self.client.get(url).content.decode()
+            self.assertNotIn('googletagmanager.com/gtm.js', content, url)
+            self.assertNotIn('googletagmanager.com/gtag/js', content, url)
+            self.assertNotIn('google-site-verification', content, url)
+            self.assertNotIn('msvalidate.01', content, url)
+
+    def test_ecoiq_track_helper_still_defined_exactly_once(self):
+        """Instrumentation code (page_view, click handlers) must never error
+        even with no analytics backend configured — the core helper script
+        always renders, exactly once."""
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            content = self.client.get(url).content.decode()
+            self.assertEqual(content.count('id="ecoiq-analytics-core"'), 1, url)
+            self.assertEqual(content.count('id="ecoiq-analytics-loader"'), 0, url)
+
+
+@override_settings(GTM_CONTAINER_ID='GTM-TESTCODE', GA4_MEASUREMENT_ID='G-SHOULDNOTLOAD')
+class AnalyticsLoaderGtmTests(TestCase):
+    """When GTM is configured it owns tag firing — the raw gtag.js loader must
+    never also load, even if a GA4 ID happens to be set at the same time."""
+
+    def test_gtm_loads_gtag_does_not(self):
+        content = self.client.get('/gcc-investors/').content.decode()
+        # GTM's snippet builds the URL via runtime JS concatenation
+        # ('.../gtm.js?id='+i+dl), so the container ID appears as the IIFE's
+        # last literal argument rather than inline in the URL string.
+        self.assertIn('googletagmanager.com/gtm.js?id=', content)
+        self.assertIn("'GTM-TESTCODE'", content)
+        self.assertNotIn('googletagmanager.com/gtag/js', content)
+        self.assertNotIn('G-SHOULDNOTLOAD', content)
+        self.assertEqual(content.count('id="ecoiq-analytics-loader"'), 1)
+
+    def test_noscript_iframe_present_once(self):
+        content = self.client.get('/gcc-investors/').content.decode()
+        self.assertEqual(content.count('ns.html?id=GTM-TESTCODE'), 1)
+
+
+@override_settings(GA4_MEASUREMENT_ID='G-TESTCODE123', GTM_CONTAINER_ID='')
+class AnalyticsLoaderGtagTests(TestCase):
+
+    def test_gtag_loads_once_gtm_absent(self):
+        content = self.client.get('/gcc-investors/').content.decode()
+        self.assertIn('googletagmanager.com/gtag/js?id=G-TESTCODE123', content)
+        self.assertNotIn('googletagmanager.com/gtm.js', content)
+        self.assertEqual(content.count('id="ecoiq-analytics-loader"'), 1)
+        self.assertEqual(content.count('id="ecoiq-analytics-loader-config"'), 1)
+
+
+@override_settings(GOOGLE_SITE_VERIFICATION='gsc-token-abc', BING_SITE_VERIFICATION='bing-token-def')
+class SearchConsoleVerificationTests(TestCase):
+
+    def test_verification_meta_tags_present_once(self):
+        content = self.client.get('/gcc-investors/').content.decode()
+        self.assertEqual(content.count('name="google-site-verification" content="gsc-token-abc"'), 1)
+        self.assertEqual(content.count('name="msvalidate.01" content="bing-token-def"'), 1)
+
+
+# ── Analytics: gcc_investor_page_view ───────────────────────────────────────
+
+class PageViewEventTests(TestCase):
+
+    def test_page_view_event_fires_once_with_correct_country_and_language(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            content = self.client.get(url).content.decode()
+            self.assertEqual(content.count('gcc_investor_page_view'), 1, url)
+            self.assertIn(f"source_country_page: '{page}'", content, url)
+            self.assertIn(f"language: '{lang}'", content, url)
+
+    def test_utm_params_preserved_into_page_view_event(self):
+        content = self.client.get(
+            '/qatar/investors/?utm_source=linkedin&utm_medium=social&utm_campaign=gcc-launch'
+        ).content.decode()
+        self.assertIn("utm_source: 'linkedin'", content)
+        self.assertIn("utm_medium: 'social'", content)
+        # Hyphens are escapejs-encoded (-) for safe embedding in the <script> —
+        # still valid, semantically identical JS.
+        self.assertIn('utm_campaign', content)
+        self.assertIn('gcc', content)
+
+    def test_no_utm_keys_emitted_when_absent_from_query_string(self):
+        content = self.client.get('/kuwait/investors/').content.decode()
+        self.assertNotIn('utm_source:', content)
+        self.assertNotIn('utm_campaign:', content)
+
+
+# ── Analytics: click-tracking data attributes ───────────────────────────────
+
+class ClickEventMarkerTests(TestCase):
+
+    def test_four_investor_briefing_click_markers_per_page(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            content = self.client.get(url).content.decode()
+            self.assertEqual(content.count('data-eq-event="investor_briefing_click"'), 4, url)
+            self.assertEqual(content.count(f'data-eq-country="{page}"'), 6, url)  # 4 briefing + 1 pricing + 1 langswitch
+
+    def test_one_enterprise_pricing_click_marker_per_page(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            content = self.client.get(url).content.decode()
+            self.assertEqual(content.count('data-eq-event="enterprise_pricing_click"'), 1, url)
+
+    def test_one_language_switch_marker_with_correct_direction(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            content = self.client.get(url).content.decode()
+            self.assertEqual(content.count('data-eq-event="investor_language_switch"'), 1, url)
+            other_lang = 'ar' if lang == 'en' else 'en'
+            self.assertIn(f'data-eq-from="{lang}"', content, url)
+            self.assertIn(f'data-eq-to="{other_lang}"', content, url)
