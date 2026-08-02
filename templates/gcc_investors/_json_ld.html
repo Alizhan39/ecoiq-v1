@@ -1,0 +1,50 @@
+{% comment %}
+Shared JSON-LD for every GCC investor page. Only verified, factual fields
+are populated — no invented ratings, sameAs profiles, or founding dates
+(see gcc_investors/content_en.py's module docstring for the "no invented
+facts" rule this structured data must also follow).
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://ecoiq.uk/#organization",
+      "name": "EcoIQ",
+      "url": "https://ecoiq.uk/",
+      "sameAs": []
+    },
+    {
+      "@type": "WebPage",
+      "@id": "{{ canonical_url|escapejs }}#webpage",
+      "url": "{{ canonical_url|escapejs }}",
+      "name": "{{ content.meta.title|escapejs }}",
+      "description": "{{ content.meta.description|escapejs }}",
+      "inLanguage": "{% if is_arabic %}ar{% else %}en{% endif %}",
+      "isPartOf": { "@type": "WebSite", "@id": "https://ecoiq.uk/#website", "url": "https://ecoiq.uk/", "name": "EcoIQ" }
+    },
+    {
+      "@type": "Service",
+      "@id": "{{ canonical_url|escapejs }}#service",
+      "name": "{{ content.hero.h1|escapejs }}",
+      "description": "{{ content.meta.description|escapejs }}",
+      "provider": { "@id": "https://ecoiq.uk/#organization" }
+      {% if area_served %},"areaServed": "{{ area_served|escapejs }}"{% endif %}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {% for crumb in breadcrumbs %}
+        {
+          "@type": "ListItem",
+          "position": {{ forloop.counter }},
+          "name": "{{ crumb.label|escapejs }}"
+          {% if crumb.url %},"item": "https://ecoiq.uk{{ crumb.url|escapejs }}"{% endif %}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
+  ]
+}
+</script>

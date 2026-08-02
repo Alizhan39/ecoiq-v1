@@ -1,5 +1,5 @@
 from django import forms
-from .models import AccessRequest, EnterpriseEnquiry, ReviewRequest
+from .models import AccessRequest, EnterpriseEnquiry, InvestorEnquiry, ReviewRequest
 
 # CSS classes applied to every widget (styles defined in each template's <style> block)
 _INPUT = 'form-input'
@@ -391,3 +391,131 @@ class EnterpriseEnquiryForm(forms.ModelForm):
         if len(name) < 2:
             raise forms.ValidationError('Please enter your full name.')
         return name
+
+
+class InvestorEnquiryForm(forms.ModelForm):
+    """
+    Backs /request-access/investors/ — the single shared enquiry form every
+    GCC investor page (EN + AR) CTA routes to. UTM and source-page/country
+    fields are hidden inputs, populated server-side from the query string
+    the visitor arrived with (see gcc_investors views + InvestorEnquiryForm
+    initial= in leads/views.py:investor_enquiry) so attribution survives the
+    GET → render → POST round trip even without client-side JS.
+    """
+
+    # Honeypot — must remain empty on genuine submissions
+    hp_field = forms.CharField(
+        required=False,
+        label='',
+        widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off', 'aria-hidden': 'true'}),
+    )
+
+    class Meta:
+        model  = InvestorEnquiry
+        fields = [
+            'full_name', 'organisation', 'job_title', 'work_email', 'phone_whatsapp', 'country',
+            'organisation_type', 'type_of_interest', 'engagement_range',
+            'main_area_of_interest', 'message', 'consent',
+            'source_page', 'source_country', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+        ]
+        labels = {
+            'full_name':             'Full name',
+            'organisation':          'Organisation',
+            'job_title':             'Job title',
+            'work_email':            'Work email',
+            'phone_whatsapp':        'Phone or WhatsApp (optional)',
+            'country':               'Country',
+            'organisation_type':     'Organisation type',
+            'type_of_interest':      'Type of interest',
+            'engagement_range':      'Indicative engagement range (optional)',
+            'main_area_of_interest': 'Main area of interest',
+            'message':               'Message',
+            'consent': (
+                'I have read the investor notice below and understand this enquiry does not '
+                'constitute an offer, investment advice, or a securities transaction.'
+            ),
+        }
+        widgets = {
+            'full_name':      forms.TextInput(attrs={'placeholder': 'Jane Smith', 'autocomplete': 'name'}),
+            'organisation':   forms.TextInput(attrs={
+                'placeholder': 'Qatar Investment Fund / Family Office LLC', 'autocomplete': 'organization',
+            }),
+            'job_title':      forms.TextInput(attrs={'placeholder': 'Head of Investments', 'autocomplete': 'organization-title'}),
+            'work_email':     forms.EmailInput(attrs={'placeholder': 'jane@organisation.com', 'autocomplete': 'email'}),
+            'phone_whatsapp': forms.TextInput(attrs={'placeholder': '+974 …', 'autocomplete': 'tel'}),
+            'country':        forms.TextInput(attrs={
+                'placeholder': 'e.g. Qatar, Saudi Arabia, Kuwait, United Kingdom', 'autocomplete': 'country-name',
+            }),
+            'organisation_type': forms.Select(),
+            'type_of_interest':  forms.Select(),
+            'engagement_range':  forms.Select(),
+            'main_area_of_interest': forms.TextInput(attrs={
+                'placeholder': 'e.g. GCC market entry, Islamic finance intelligence, sovereign portfolio screening',
+            }),
+            'message': forms.Textarea(attrs={
+                'rows': 4, 'placeholder': 'Any additional context — mandate, timelines, stakeholders.',
+            }),
+            'consent': forms.CheckboxInput(),
+            'source_page':    forms.HiddenInput(),
+            'source_country': forms.HiddenInput(),
+            'utm_source':     forms.HiddenInput(),
+            'utm_medium':     forms.HiddenInput(),
+            'utm_campaign':   forms.HiddenInput(),
+            'utm_content':    forms.HiddenInput(),
+            'utm_term':       forms.HiddenInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for name, f in self.fields.items():
+            if name in ('hp_field', 'consent') or isinstance(f.widget, forms.HiddenInput):
+                continue
+            if isinstance(f.widget, forms.Select):
+                f.widget.attrs.setdefault('class', _SELECT)
+            elif isinstance(f.widget, forms.Textarea):
+                f.widget.attrs.setdefault('class', _TEXTAREA)
+            else:
+                f.widget.attrs.setdefault('class', _INPUT)
+
+        # Blank prompts for selects
+        self.fields['organisation_type'].choices = (
+            [('', 'Select organisation type…')] + [c for c in self.fields['organisation_type'].choices if c[0]]
+        )
+        self.fields['type_of_interest'].choices = (
+            [('', 'Select type of interest…')] + [c for c in self.fields['type_of_interest'].choices if c[0]]
+        )
+        self.fields['engagement_range'].choices = (
+            [('', 'Prefer not to say yet…')] + [c for c in self.fields['engagement_range'].choices if c[0]]
+        )
+
+        # Required vs optional
+        self.fields['full_name'].required             = True
+        self.fields['organisation'].required          = True
+        self.fields['job_title'].required              = False
+        self.fields['work_email'].required             = True
+        self.fields['phone_whatsapp'].required          = False
+        self.fields['country'].required                = True
+        self.fields['organisation_type'].required      = True
+        self.fields['type_of_interest'].required       = True
+        self.fields['engagement_range'].required        = False
+        self.fields['main_area_of_interest'].required   = False
+        self.fields['message'].required                 = False
+        self.fields['consent'].required                 = True
+        for hidden in ('source_page', 'source_country', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'):
+            self.fields[hidden].required = False
+
+    def clean_work_email(self):
+        return self.cleaned_data['work_email'].strip().lower()
+
+    def clean_full_name(self):
+        name = self.cleaned_data['full_name'].strip()
+        if len(name) < 2:
+            raise forms.ValidationError('Please enter your full name.')
+        return name
+
+    def clean_consent(self):
+        consent = self.cleaned_data.get('consent')
+        if not consent:
+            raise forms.ValidationError('Please confirm you have read the investor notice to continue.')
+        return consent

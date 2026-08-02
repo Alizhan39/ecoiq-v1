@@ -1,0 +1,38 @@
+New EcoIQ Investor Enquiry
+==========================
+
+Submitted: {{ instance.created_at|date:"d M Y, H:i" }} UTC
+
+CONTACT
+-------
+Name:         {{ instance.full_name }}
+Organisation: {{ instance.organisation }}
+{% if instance.job_title %}Job title:    {{ instance.job_title }}
+{% endif %}Email:        {{ instance.work_email }}
+{% if instance.phone_whatsapp %}Phone/WhatsApp: {{ instance.phone_whatsapp }}
+{% endif %}Country:      {{ instance.country }}
+
+QUALIFICATION
+-------------
+Organisation type:  {{ instance.get_organisation_type_display }}
+Type of interest:   {{ instance.get_type_of_interest_display }}
+{% if instance.engagement_range %}Engagement range:   {{ instance.get_engagement_range_display }}
+{% endif %}{% if instance.main_area_of_interest %}Main area:           {{ instance.main_area_of_interest }}
+{% endif %}
+{% if instance.message %}
+MESSAGE
+-------
+{{ instance.message }}
+{% endif %}
+
+ATTRIBUTION
+-----------
+Source country: {{ instance.get_source_country_display|default:"—" }}
+Source page:    {{ instance.source_page|default:"—" }}
+{% if instance.utm_source or instance.utm_medium or instance.utm_campaign %}UTM:            source={{ instance.utm_source|default:"—" }} medium={{ instance.utm_medium|default:"—" }} campaign={{ instance.utm_campaign|default:"—" }}
+{% endif %}
+
+─────────────────────────────────────────
+Review and update status in the admin panel:
+{{ admin_url }}
+─────────────────────────────────────────

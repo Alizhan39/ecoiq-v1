@@ -418,3 +418,131 @@ class EnterpriseEnquiry(models.Model):
 
     def __str__(self):
         return f'{self.full_name} — {self.organisation} ({self.get_preferred_engagement_display()})'
+
+
+# ── InvestorEnquiry ──────────────────────────────────────────────────────────
+#
+# Submitted from the GCC investor pages (/gcc-investors/, /qatar/investors/,
+# /saudi-arabia/investors/, /kuwait/investors/ and their /ar/ equivalents).
+# Deliberately a separate model from EnterpriseEnquiry: the org types and
+# interest types here are investor/capital-allocator shaped (VC fund, family
+# office, government-related organisation …), not buyer/deployment shaped,
+# and this model additionally tracks UTM + source-page/source-country
+# attribution, which EnterpriseEnquiry has no need for. No payment, share
+# purchase or investment commitment is ever collected here — see the legal
+# notice rendered next to every instance of this form.
+
+INVESTOR_ORGANISATION_TYPE_CHOICES = [
+    ('vc_fund',              'Venture Capital Fund'),
+    ('family_office',        'Family Office'),
+    ('bank_financial_inst',  'Bank or Financial Institution'),
+    ('corporate_vc',         'Corporate Venture Capital'),
+    ('strategic_corporate',  'Strategic Corporate Investor'),
+    ('institutional_investor', 'Institutional Investor'),
+    ('government_related',   'Government-Related Organisation'),
+    ('accelerator',          'Accelerator or Innovation Programme'),
+    ('research_institution', 'Research Institution'),
+    ('other',                'Other'),
+]
+
+INVESTOR_INTEREST_TYPE_CHOICES = [
+    ('strategic_investment',   'Strategic Investment'),
+    ('enterprise_pilot',       'Enterprise Pilot'),
+    ('annual_licence',         'Annual Platform Licence'),
+    ('government_programme',   'Government Programme'),
+    ('technology_partnership', 'Technology Partnership'),
+    ('data_partnership',       'Data Partnership'),
+    ('distribution_partnership', 'Distribution Partnership'),
+    ('founding_partner',       'GCC Founding Partner Programme'),
+    ('confidential_materials', 'Request Confidential Investor Materials'),
+]
+
+# Indicative only — a CRM qualification signal, never a quote or commitment.
+INVESTOR_ENGAGEMENT_RANGE_CHOICES = [
+    ('under_50k',   'Under £50,000'),
+    ('50k_150k',    '£50,000 – £150,000'),
+    ('150k_500k',   '£150,000 – £500,000'),
+    ('500k_2m',     '£500,000 – £2,000,000'),
+    ('over_2m',     '£2,000,000+'),
+    ('not_sure',    'Not sure yet — prefer to discuss'),
+]
+
+INVESTOR_ENQUIRY_STATUS_CHOICES = [
+    ('new',           'New'),
+    ('reviewing',     'Under Review'),
+    ('scoping_call',  'Scoping Call Booked'),
+    ('proposal_sent', 'Proposal Sent'),
+    ('won',           'Won'),
+    ('lost',          'Lost'),
+]
+
+# Which GCC page the enquiry originated from — used for attribution
+# reporting; 'hub' is the shared /gcc-investors/ landing page.
+INVESTOR_SOURCE_COUNTRY_CHOICES = [
+    ('hub',          'GCC Hub'),
+    ('qatar',        'Qatar'),
+    ('saudi_arabia', 'Saudi Arabia'),
+    ('kuwait',       'Kuwait'),
+]
+
+
+class InvestorEnquiry(models.Model):
+    """
+    Submitted from the shared GCC investor enquiry form. One form, reused
+    across all GCC investor pages (EN + AR) via ?source_country= and UTM
+    query-param passthrough — see gcc_investors/views.py.
+    """
+
+    # Contact
+    full_name  = models.CharField(max_length=200)
+    organisation = models.CharField(max_length=200)
+    job_title  = models.CharField(max_length=150, blank=True)
+    work_email = models.EmailField(db_index=True)
+    phone_whatsapp = models.CharField(max_length=40, blank=True, help_text='Optional phone or WhatsApp number')
+    country    = models.CharField(max_length=100)
+
+    # Investor qualification
+    organisation_type = models.CharField(max_length=30, choices=INVESTOR_ORGANISATION_TYPE_CHOICES)
+    type_of_interest   = models.CharField(max_length=30, choices=INVESTOR_INTEREST_TYPE_CHOICES)
+    engagement_range   = models.CharField(
+        max_length=20, choices=INVESTOR_ENGAGEMENT_RANGE_CHOICES, blank=True,
+        help_text='Indicative only — not a quote or commitment',
+    )
+    main_area_of_interest = models.CharField(
+        max_length=300, blank=True,
+        help_text='e.g. GCC market entry, Islamic finance intelligence, sovereign portfolio screening',
+    )
+    message = models.TextField(blank=True, help_text='Optional additional context')
+    consent = models.BooleanField(
+        default=False,
+        help_text='Confirms the submitter has read the investor-notice disclaimer',
+    )
+
+    # Attribution — preserved from the query string of the page the
+    # submitter arrived on, per the GCC investor SEO spec ("preserve UTM
+    # parameters and record the source page and source country").
+    source_page    = models.CharField(max_length=300, blank=True)
+    source_country = models.CharField(max_length=20, choices=INVESTOR_SOURCE_COUNTRY_CHOICES, blank=True)
+    utm_source   = models.CharField(max_length=100, blank=True)
+    utm_medium   = models.CharField(max_length=100, blank=True)
+    utm_campaign = models.CharField(max_length=100, blank=True)
+    utm_content  = models.CharField(max_length=100, blank=True)
+    utm_term     = models.CharField(max_length=100, blank=True)
+
+    # Security
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    # CRM pipeline
+    status = models.CharField(max_length=20, choices=INVESTOR_ENQUIRY_STATUS_CHOICES, default='new')
+    notes  = models.TextField(blank=True, help_text='Internal notes — not visible to the submitter')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering            = ['-created_at']
+        verbose_name        = 'Investor Enquiry'
+        verbose_name_plural = 'Investor Enquiries'
+
+    def __str__(self):
+        return f'{self.full_name} — {self.organisation} ({self.get_type_of_interest_display()})'

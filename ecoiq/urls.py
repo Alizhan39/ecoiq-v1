@@ -29,6 +29,9 @@ urlpatterns = [
     path('', include('core.urls')),
     path('audit/', include('audit.urls')),
     path('request-access/', include('leads.urls', namespace='leads')),
+    # GCC investor SEO pages — paths defined directly in gcc_investors/urls.py
+    # (English and Arabic pages don't share a common prefix; see that file).
+    path('', include('gcc_investors.urls', namespace='gcc_investors')),
     # Staff-only Investor Readiness Report previews (not in public nav)
     path('admin-report-preview/<int:access_request_id>/', leads_views.admin_report_preview, name='admin_report_preview'),
     path('client-report-preview/<int:access_request_id>/', leads_views.client_report_preview, name='client_report_preview'),

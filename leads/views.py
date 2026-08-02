@@ -5,14 +5,15 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
-from .forms import AccessRequestForm, EnterpriseEnquiryForm, ReviewRequestForm, ReportRequestForm
-from .models import AccessRequest, EnterpriseEnquiry, ProfileClaim, ReviewRequest
+from .forms import AccessRequestForm, EnterpriseEnquiryForm, InvestorEnquiryForm, ReviewRequestForm, ReportRequestForm
+from .models import AccessRequest, EnterpriseEnquiry, InvestorEnquiry, ProfileClaim, ReviewRequest
 
 logger = logging.getLogger(__name__)
 
@@ -558,4 +559,133 @@ def enterprise_enquiry_success(request):
     calendly_url = getattr(settings, 'CALENDLY_URL', '')
     return render(request, 'leads/enterprise_enquiry_success.html', {
         'calendly_url': calendly_url,
+    })
+
+
+# ── Investor Enquiry (GCC investor pages) ──────────────────────────────────────
+
+# Query-string keys carried from a GCC investor page's CTA link straight
+# through to the form's hidden fields (and, on submit, into InvestorEnquiry).
+_INVESTOR_ATTRIBUTION_KEYS = (
+    'source_page', 'source_country',
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+)
+
+
+def _is_rate_limited_investor(ip: str) -> bool:
+    """True if this IP has submitted ≥ 5 investor enquiries in the last hour."""
+    if not ip:
+        return False
+    cutoff = timezone.now() - timedelta(hours=1)
+    return InvestorEnquiry.objects.filter(ip_address=ip, created_at__gte=cutoff).count() >= 5
+
+
+def _send_investor_emails(instance: 'InvestorEnquiry', request) -> None:
+    """
+    Fire two emails for a new InvestorEnquiry:
+      1. Team notification → LEAD_NOTIFY_EMAIL
+      2. Confirmation      → submitter's work email
+    Failures are logged and silenced — never surfaced to the user.
+    """
+    try:
+        notify_email = getattr(settings, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
+        from_email   = getattr(settings, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>')
+
+        notify_body = render_to_string('emails/investor_enquiry_notify.txt', {
+            'instance':  instance,
+            'admin_url': request.build_absolute_uri(
+                f'/admin/leads/investorenquiry/{instance.pk}/change/'
+            ),
+        })
+        send_mail(
+            subject=(
+                f'[EcoIQ] New investor enquiry — {instance.get_type_of_interest_display()} '
+                f'({instance.full_name}, {instance.organisation})'
+            ),
+            message=notify_body,
+            from_email=from_email,
+            recipient_list=[notify_email],
+            fail_silently=True,
+        )
+
+        confirm_body = render_to_string('emails/investor_enquiry_confirm.txt', {'instance': instance})
+        send_mail(
+            subject='EcoIQ — we have received your investor enquiry',
+            message=confirm_body,
+            from_email=from_email,
+            recipient_list=[instance.work_email],
+            fail_silently=True,
+        )
+
+    except Exception as exc:   # pragma: no cover
+        logger.exception('Email send failed for InvestorEnquiry pk=%s: %s', instance.pk, exc)
+
+
+def investor_enquiry(request):
+    """
+    GET/POST /request-access/investors/[?lang=ar]
+
+    The single enquiry form every GCC investor page (EN + AR — /gcc-investors/,
+    /qatar/investors/, /saudi-arabia/investors/, /kuwait/investors/, and their
+    /ar/ equivalents) routes to. Accepts an optional ?interest= query param
+    (matching leads.models.INVESTOR_INTEREST_TYPE_CHOICES) to pre-select the
+    dropdown, plus source_page/source_country/utm_* for attribution — see
+    _INVESTOR_ATTRIBUTION_KEYS. ?lang=ar renders the form in Arabic/RTL (a
+    display concern only — not persisted on InvestorEnquiry). Never accepts
+    payment, share purchase, or an investment commitment; this only opens a
+    scoped conversation.
+    """
+    is_arabic = request.GET.get('lang', '').strip().lower() == 'ar'
+
+    initial = {}
+    interest = request.GET.get('interest', '').strip()
+    if interest:
+        initial['type_of_interest'] = interest
+    for key in _INVESTOR_ATTRIBUTION_KEYS:
+        value = request.GET.get(key, '').strip()
+        if value:
+            initial[key] = value
+
+    form = InvestorEnquiryForm(initial=initial)
+
+    if request.method == 'POST':
+        is_arabic = request.POST.get('lang', '').strip().lower() == 'ar'
+
+        # Honeypot: if the hidden `hp_field` has any value, silently redirect
+        # to the thank-you page so bots get no feedback about detection.
+        if request.POST.get('hp_field', '').strip():
+            return redirect(f"{reverse('leads:investor_enquiry_success')}{'?lang=ar' if is_arabic else ''}")
+
+        ip   = _get_client_ip(request)
+        form = InvestorEnquiryForm(request.POST)
+
+        if _is_rate_limited_investor(ip):
+            return render(request, 'leads/investor_enquiry.html', {
+                'form':         form,
+                'rate_limited': True,
+                'is_arabic':    is_arabic,
+            })
+
+        if form.is_valid():
+            instance            = form.save(commit=False)
+            instance.ip_address = ip
+            instance.save()
+            _send_investor_emails(instance, request)
+            return redirect(f"{reverse('leads:investor_enquiry_success')}{'?lang=ar' if is_arabic else ''}")
+
+    calendly_url = getattr(settings, 'CALENDLY_URL', '')
+    return render(request, 'leads/investor_enquiry.html', {
+        'form':         form,
+        'calendly_url': calendly_url,
+        'is_arabic':    is_arabic,
+    })
+
+
+def investor_enquiry_success(request):
+    """GET /request-access/investors/success/[?lang=ar] — confirmation page after an investor enquiry."""
+    calendly_url = getattr(settings, 'CALENDLY_URL', '')
+    is_arabic = request.GET.get('lang', '').strip().lower() == 'ar'
+    return render(request, 'leads/investor_enquiry_success.html', {
+        'calendly_url': calendly_url,
+        'is_arabic':    is_arabic,
     })

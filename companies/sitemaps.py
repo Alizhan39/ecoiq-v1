@@ -40,6 +40,15 @@ class StaticSitemap(Sitemap):
         'pricing',
         'about',
         'api_docs',
+        # GCC investor SEO pages — English + Arabic
+        'gcc_investors:hub_en',
+        'gcc_investors:hub_ar',
+        'gcc_investors:qatar_en',
+        'gcc_investors:qatar_ar',
+        'gcc_investors:saudi_en',
+        'gcc_investors:saudi_ar',
+        'gcc_investors:kuwait_en',
+        'gcc_investors:kuwait_ar',
     ]
 
     def items(self):

@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'core',
     'audit',
     'leads',
+    'gcc_investors',
     'league',
     'api',
     # 'cms' removed — Wagtail CMS unregistered (tables orphaned in DB, harmless)
