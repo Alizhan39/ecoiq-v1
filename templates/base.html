@@ -124,9 +124,12 @@
     [dir="rtl"] header nav { flex-direction: row-reverse; }
   </style>
 
+  {% include "_analytics_head.html" %}
+
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+  {% include "_analytics_body.html" %}
   <header style="background:#0d1117;border-bottom:1px solid rgba(255,255,255,.07);">
     <a href="/" style="display:flex;align-items:center;gap:.5rem;text-decoration:none;">
       <!-- EcoIQ mark — inline SVG, 26×26 -->

@@ -647,3 +647,186 @@ class InvestorEnquiryAdminTests(TestCase):
     def test_admin_change_page_loads(self):
         r = self.c.get(f'/admin/leads/investorenquiry/{self.enquiry.pk}/change/')
         self.assertEqual(r.status_code, 200)
+
+
+# ── Analytics: investor_form_start + language switch on the enquiry form ───
+
+import re
+
+
+def _script_block(content, script_id):
+    """Extract the contents of <script id="script_id">...</script>, or '' if absent."""
+    m = re.search(rf'<script id="{re.escape(script_id)}"[^>]*>(.*?)</script>', content, re.S)
+    return m.group(1) if m else ''
+
+
+# NOTE: 'organisation' is deliberately excluded — 'organisation_type' (a safe
+# enum choice, not the free-text org name) is an allowed analytics param and
+# would false-positive on a bare substring check. The org NAME is instead
+# checked by value in test_conversion_event_never_contains_pii.
+_PII_MARKERS = ('full_name', 'work_email', 'phone_whatsapp', 'message', 'job_title')
+
+
+class InvestorFormStartEventTests(TestCase):
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_form_start_marker_present_once(self):
+        content = self.c.get(reverse('leads:investor_enquiry')).content.decode()
+        self.assertEqual(content.count('id="ecoiq-analytics-form-events"'), 1)
+        self.assertIn('investor_form_start', content)
+
+    def test_form_start_carries_source_country_not_pii(self):
+        content = self.c.get(
+            reverse('leads:investor_enquiry') + '?source_country=qatar&source_page=/qatar/investors/'
+        ).content.decode()
+        block = _script_block(content, 'ecoiq-analytics-form-events')
+        self.assertIn('qatar', block)
+        for marker in _PII_MARKERS:
+            self.assertNotIn(marker, block)
+
+    def test_language_switch_marker_present_on_both_languages(self):
+        en_content = self.c.get(reverse('leads:investor_enquiry')).content.decode()
+        self.assertEqual(en_content.count('data-eq-event="investor_language_switch"'), 1)
+        self.assertIn('data-eq-from="en"', en_content)
+        self.assertIn('data-eq-to="ar"', en_content)
+
+        ar_content = self.c.get(reverse('leads:investor_enquiry') + '?lang=ar').content.decode()
+        self.assertEqual(ar_content.count('data-eq-event="investor_language_switch"'), 1)
+        self.assertIn('data-eq-from="ar"', ar_content)
+        self.assertIn('data-eq-to="en"', ar_content)
+
+
+# ── Analytics: investor_form_submit conversion event ───────────────────────
+
+class InvestorConversionEventTests(TestCase):
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_conversion_event_absent_on_direct_visit(self):
+        """Bookmarking/visiting the success URL directly must never register
+        as a conversion — only a real POST->redirect sets the session flag."""
+        content = self.c.get(reverse('leads:investor_enquiry_success')).content.decode()
+        self.assertNotIn('investor_form_submit', content)
+        self.assertNotIn('id="ecoiq-analytics-conversion"', content)
+
+    def test_conversion_event_present_once_after_real_submission(self):
+        r = self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST, follow=True)
+        content = r.content.decode()
+        self.assertEqual(content.count('id="ecoiq-analytics-conversion"'), 1)
+        self.assertEqual(content.count('investor_form_submit'), 1)
+
+    def test_conversion_event_carries_correct_non_pii_fields(self):
+        r = self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST, follow=True)
+        block = _script_block(r.content.decode(), 'ecoiq-analytics-conversion')
+        self.assertIn("source_country_page: 'qatar'", block)
+        self.assertIn("organisation_type: 'vc_fund'", block)
+        self.assertIn("type_of_interest: 'strategic_investment'", block)
+        self.assertIn("utm_source: 'linkedin'", block)
+        self.assertIn("utm_medium: 'social'", block)
+        self.assertIn("landing_page: '/qatar/investors/'", block)
+        # utm_campaign='gcc-launch' — the hyphen is escapejs-encoded, so match loosely.
+        self.assertIn('utm_campaign', block)
+
+    def test_conversion_event_never_contains_pii(self):
+        r = self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST, follow=True)
+        block = _script_block(r.content.decode(), 'ecoiq-analytics-conversion')
+        self.assertNotIn('Fatima', block)
+        self.assertNotIn('Doha Capital Partners', block)
+        self.assertNotIn('DohaCapital.example', block)
+        self.assertNotIn('5555', block)  # phone number fragment
+        self.assertNotIn('Keen to learn more', block)  # message text
+        for marker in _PII_MARKERS:
+            self.assertNotIn(marker, block)
+
+    def test_refreshing_success_page_does_not_refire_conversion(self):
+        """The session key is popped on first read, so a manual reload of the
+        success page must not double-count the conversion."""
+        self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST, follow=True)
+        second_visit = self.c.get(reverse('leads:investor_enquiry_success')).content.decode()
+        self.assertNotIn('investor_form_submit', second_visit)
+
+    def test_full_name_and_email_never_appear_anywhere_on_success_page(self):
+        """Belt-and-braces: the success page template never surfaces these
+        fields at all, analytics block or otherwise."""
+        r = self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST, follow=True)
+        content = r.content.decode()
+        self.assertNotIn('Fatima Al Thani', content)
+        self.assertNotIn('Fatima@DohaCapital.example', content)
+        self.assertNotIn('fatima@dohacapital.example', content)
+
+
+# ── Staff-only investor enquiry reporting dashboard ─────────────────────────
+
+class InvestorEnquiryReportViewTests(TestCase):
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_user(
+            username='report_staff', password='x', email='staff@ecoiq.uk', is_staff=True,
+        )
+        self.normal = User.objects.create_user(
+            username='report_normal', password='x', email='user@example.com', is_staff=False,
+        )
+        self.url = reverse('leads:investor_enquiry_report')
+
+        InvestorEnquiry.objects.create(
+            full_name='A', organisation='Org A', work_email='a@example.com', country='Qatar',
+            organisation_type='vc_fund', type_of_interest='strategic_investment',
+            consent=True, source_country='qatar', source_page='/qatar/investors/',
+            utm_campaign='gcc-launch',
+        )
+        InvestorEnquiry.objects.create(
+            full_name='B', organisation='Org B', work_email='b@example.com', country='Kuwait',
+            organisation_type='family_office', type_of_interest='enterprise_pilot',
+            consent=True, source_country='kuwait', source_page='/kuwait/investors/',
+        )
+        InvestorEnquiry.objects.create(
+            full_name='C', organisation='Org C', work_email='c@example.com', country='Qatar',
+            organisation_type='vc_fund', type_of_interest='strategic_investment',
+            consent=True, source_country='qatar', source_page='/qatar/investors/',
+            utm_campaign='gcc-launch',
+        )
+
+    def test_staff_can_access_report(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self.url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTemplateUsed(r, 'leads/investor_enquiry_report.html')
+
+    def test_non_staff_redirected_to_login(self):
+        self.client.force_login(self.normal)
+        r = self.client.get(self.url)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_anonymous_redirected_to_login(self):
+        r = self.client.get(self.url)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login', r['Location'])
+
+    def test_totals_correct(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self.url)
+        self.assertEqual(r.context['total_conversions'], 3)
+
+    def test_breakdown_by_country_correct(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self.url)
+        by_country = {row['key']: row['total'] for row in r.context['by_country']}
+        self.assertEqual(by_country['qatar'], 2)
+        self.assertEqual(by_country['kuwait'], 1)
+
+    def test_breakdown_by_utm_campaign_correct(self):
+        self.client.force_login(self.staff)
+        r = self.client.get(self.url)
+        by_campaign = {row['utm_campaign']: row['total'] for row in r.context['by_utm_campaign']}
+        self.assertEqual(by_campaign['gcc-launch'], 2)
+
+    def test_report_page_not_indexed(self):
+        self.client.force_login(self.staff)
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('noindex', content)

@@ -62,8 +62,10 @@
     .contact { margin-top: 2.5rem; font-size: .82rem; color: var(--muted); }
     .contact a { color: var(--accent); text-decoration: none; }
   </style>
+  {% include "_analytics_head.html" %}
 </head>
 <body>
+  {% include "_analytics_body.html" %}
   <nav><div class="nav-inner"><a href="/" class="logo mono">ECO<span>IQ</span></a></div></nav>
 
   <main>
@@ -109,5 +111,26 @@
       </div>
     </div>
   </main>
+
+  {% if conversion %}
+  <script id="ecoiq-analytics-conversion">
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.ecoiqTrack) {
+        window.ecoiqTrack('investor_form_submit', {
+          source_country_page: '{{ conversion.source_country_page|default:""|escapejs }}',
+          language: '{% if is_arabic %}ar{% else %}en{% endif %}',
+          landing_page: '{{ conversion.landing_page|default:""|escapejs }}',
+          organisation_type: '{{ conversion.organisation_type|default:""|escapejs }}',
+          type_of_interest: '{{ conversion.type_of_interest|default:""|escapejs }}'{% if conversion.utm_source %},
+          utm_source: '{{ conversion.utm_source|escapejs }}'{% endif %}{% if conversion.utm_medium %},
+          utm_medium: '{{ conversion.utm_medium|escapejs }}'{% endif %}{% if conversion.utm_campaign %},
+          utm_campaign: '{{ conversion.utm_campaign|escapejs }}'{% endif %}{% if conversion.utm_content %},
+          utm_content: '{{ conversion.utm_content|escapejs }}'{% endif %}{% if conversion.utm_term %},
+          utm_term: '{{ conversion.utm_term|escapejs }}'{% endif %}
+        });
+      }
+    });
+  </script>
+  {% endif %}
 </body>
 </html>

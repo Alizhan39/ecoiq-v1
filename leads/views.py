@@ -3,6 +3,8 @@ from datetime import timedelta
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.mail import send_mail
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -13,7 +15,10 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 from .forms import AccessRequestForm, EnterpriseEnquiryForm, InvestorEnquiryForm, ReviewRequestForm, ReportRequestForm
-from .models import AccessRequest, EnterpriseEnquiry, InvestorEnquiry, ProfileClaim, ReviewRequest
+from .models import (
+    AccessRequest, EnterpriseEnquiry, InvestorEnquiry, ProfileClaim, ReviewRequest,
+    INVESTOR_ORGANISATION_TYPE_CHOICES, INVESTOR_INTEREST_TYPE_CHOICES, INVESTOR_SOURCE_COUNTRY_CHOICES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -646,6 +651,11 @@ def investor_enquiry(request):
         if value:
             initial[key] = value
 
+    # Non-PII attribution surfaced to the template purely for client-side
+    # analytics (investor_form_start) — never persisted separately from the
+    # InvestorEnquiry row itself, and never includes name/email/phone/message.
+    attribution = {key: initial.get(key, '') for key in _INVESTOR_ATTRIBUTION_KEYS}
+
     form = InvestorEnquiryForm(initial=initial)
 
     if request.method == 'POST':
@@ -664,6 +674,7 @@ def investor_enquiry(request):
                 'form':         form,
                 'rate_limited': True,
                 'is_arabic':    is_arabic,
+                'attribution':  attribution,
             })
 
         if form.is_valid():
@@ -671,6 +682,22 @@ def investor_enquiry(request):
             instance.ip_address = ip
             instance.save()
             _send_investor_emails(instance, request)
+            # Handed to the success view via the session (never the URL) so the
+            # investor_form_submit conversion event carries non-PII attribution
+            # without leaking it into browser history/referrers, and so a
+            # refresh of the success page can't re-fire it (session key is
+            # popped exactly once — see investor_enquiry_success()).
+            request.session['investor_conversion'] = {
+                'source_country_page': instance.source_country,
+                'organisation_type':   instance.organisation_type,
+                'type_of_interest':    instance.type_of_interest,
+                'utm_source':          instance.utm_source,
+                'utm_medium':          instance.utm_medium,
+                'utm_campaign':        instance.utm_campaign,
+                'utm_content':         instance.utm_content,
+                'utm_term':            instance.utm_term,
+                'landing_page':        instance.source_page,
+            }
             return redirect(f"{reverse('leads:investor_enquiry_success')}{'?lang=ar' if is_arabic else ''}")
 
     calendly_url = getattr(settings, 'CALENDLY_URL', '')
@@ -678,14 +705,90 @@ def investor_enquiry(request):
         'form':         form,
         'calendly_url': calendly_url,
         'is_arabic':    is_arabic,
+        'attribution':  attribution,
     })
 
 
 def investor_enquiry_success(request):
-    """GET /request-access/investors/success/[?lang=ar] — confirmation page after an investor enquiry."""
+    """
+    GET /request-access/investors/success/[?lang=ar] — confirmation page after
+    an investor enquiry.
+
+    request.session.pop() both reads and clears 'investor_conversion' in one
+    step, so the investor_form_submit conversion event fires exactly once per
+    real submission: present on the redirect that follows a successful POST,
+    gone on any subsequent refresh or direct/bookmarked visit to this URL.
+    """
     calendly_url = getattr(settings, 'CALENDLY_URL', '')
     is_arabic = request.GET.get('lang', '').strip().lower() == 'ar'
+    conversion = request.session.pop('investor_conversion', None)
     return render(request, 'leads/investor_enquiry_success.html', {
         'calendly_url': calendly_url,
         'is_arabic':    is_arabic,
+        'conversion':   conversion,
+    })
+
+
+# ── Investor Enquiry — staff-only reporting dashboard ──────────────────────────
+
+_ORG_TYPE_LABELS      = dict(INVESTOR_ORGANISATION_TYPE_CHOICES)
+_INTEREST_TYPE_LABELS = dict(INVESTOR_INTEREST_TYPE_CHOICES)
+_SOURCE_COUNTRY_LABELS = dict(INVESTOR_SOURCE_COUNTRY_CHOICES)
+
+# How many days of the by-date submission breakdown to show.
+_REPORT_WINDOW_DAYS = 30
+
+
+@staff_member_required
+def investor_enquiry_report(request):
+    """
+    GET /request-access/investors/report/
+
+    Staff-only conversion-reporting dashboard for the GCC investor enquiry
+    flow: enquiries by country, organisation type, type of interest, source
+    page, UTM campaign, submissions by day (last 30 days), and totals.
+    Read-only — no PII beyond what staff already see in the Django admin
+    changelist for this same model. Non-staff users are redirected to the
+    admin login by @staff_member_required.
+    """
+    qs = InvestorEnquiry.objects.all()
+
+    by_country = [
+        {'key': row['source_country'], 'label': _SOURCE_COUNTRY_LABELS.get(row['source_country'], row['source_country'] or '(not set)'), 'total': row['total']}
+        for row in qs.values('source_country').annotate(total=Count('id')).order_by('-total')
+    ]
+    by_org_type = [
+        {'key': row['organisation_type'], 'label': _ORG_TYPE_LABELS.get(row['organisation_type'], row['organisation_type']), 'total': row['total']}
+        for row in qs.values('organisation_type').annotate(total=Count('id')).order_by('-total')
+    ]
+    by_interest = [
+        {'key': row['type_of_interest'], 'label': _INTEREST_TYPE_LABELS.get(row['type_of_interest'], row['type_of_interest']), 'total': row['total']}
+        for row in qs.values('type_of_interest').annotate(total=Count('id')).order_by('-total')
+    ]
+    by_source_page = list(
+        qs.exclude(source_page='').values('source_page').annotate(total=Count('id')).order_by('-total')
+    )
+    by_utm_campaign = list(
+        qs.exclude(utm_campaign='').values('utm_campaign').annotate(total=Count('id')).order_by('-total')
+    )
+
+    window_start = timezone.now() - timedelta(days=_REPORT_WINDOW_DAYS)
+    by_date = list(
+        qs.filter(created_at__gte=window_start)
+          .annotate(day=TruncDate('created_at'))
+          .values('day')
+          .annotate(total=Count('id'))
+          .order_by('-day')
+    )
+
+    return render(request, 'leads/investor_enquiry_report.html', {
+        'total_conversions':   qs.count(),
+        'total_last_30_days':  qs.filter(created_at__gte=window_start).count(),
+        'by_country':          by_country,
+        'by_org_type':         by_org_type,
+        'by_interest':         by_interest,
+        'by_source_page':      by_source_page,
+        'by_utm_campaign':     by_utm_campaign,
+        'by_date':             by_date,
+        'report_window_days':  _REPORT_WINDOW_DAYS,
     })

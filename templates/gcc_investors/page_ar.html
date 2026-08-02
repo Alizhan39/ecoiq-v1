@@ -140,7 +140,9 @@ header, footer { direction: ltr; }
     </nav>
 
     <div class="gcc-langswitch">
-      <a href="{{ lang_switch_url }}" hreflang="{{ lang_switch_code }}">English</a>
+      <a href="{{ lang_switch_url }}" hreflang="{{ lang_switch_code }}"
+         data-eq-event="investor_language_switch" data-eq-country="{{ page_key }}"
+         data-eq-from="ar" data-eq-to="en">English</a>
     </div>
 
     <!-- ١. مقدمة -->
@@ -149,8 +151,8 @@ header, footer { direction: ltr; }
       <h1>{{ content.hero.h1 }}</h1>
       <p class="sub">{{ content.hero.subhead }}</p>
       <div class="gcc-hero-ctas">
-        <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-primary">{{ content.hero.primary_cta_label }}</a>
-        <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-ghost">{{ content.hero.secondary_cta_label }}</a>
+        <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-primary" data-eq-event="investor_briefing_click" data-eq-country="{{ page_key }}" data-eq-lang="ar" data-eq-cta="hero_primary">{{ content.hero.primary_cta_label }}</a>
+        <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-ghost" data-eq-event="investor_briefing_click" data-eq-country="{{ page_key }}" data-eq-lang="ar" data-eq-cta="hero_secondary">{{ content.hero.secondary_cta_label }}</a>
       </div>
     </div>
 
@@ -234,7 +236,7 @@ header, footer { direction: ltr; }
     <section class="gcc-section" id="pricing">
       <h2>{{ content.pricing.heading }}</h2>
       {% for para in content.pricing.body %}<p>{{ para }}</p>{% endfor %}
-      <a href="/pricing/" class="gcc-btn gcc-btn-ghost">{{ content.pricing.cta_label }}</a>
+      <a href="/pricing/" class="gcc-btn gcc-btn-ghost" data-eq-event="enterprise_pricing_click" data-eq-country="{{ page_key }}" data-eq-lang="ar">{{ content.pricing.cta_label }}</a>
       <p class="gcc-currency-note">جميع الأسعار منشورة بالجنيه الإسترليني (GBP). تتوفر عروض بالدولار الأمريكي والريال القطري والدرهم الإماراتي والريال السعودي عند الطلب.</p>
     </section>
 
@@ -283,7 +285,7 @@ header, footer { direction: ltr; }
         استخدام واضحة، وتسمح بدراسة حالة مجهولة المصدر، بعد الموافقة. وهو ليس خصماً تلقائياً.
       </p>
       <div style="margin-top:1.2rem">
-        <a href="{{ founding_partner_enquiry_url }}" class="gcc-btn gcc-btn-primary">{{ content.founding_partner.cta_label }}</a>
+        <a href="{{ founding_partner_enquiry_url }}" class="gcc-btn gcc-btn-primary" data-eq-event="investor_briefing_click" data-eq-country="{{ page_key }}" data-eq-lang="ar" data-eq-cta="founding_partner">{{ content.founding_partner.cta_label }}</a>
       </div>
     </section>
 
@@ -301,7 +303,7 @@ header, footer { direction: ltr; }
       <div class="gcc-form-embed">
         <p>استخدم نموذج استفسار المستثمرين الآمن الخاص بـ EcoIQ للتواصل المباشر مع فريقنا.</p>
         <div style="margin-top:1.2rem">
-          <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-primary">{{ content.hero.primary_cta_label }}</a>
+          <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-primary" data-eq-event="investor_briefing_click" data-eq-country="{{ page_key }}" data-eq-lang="ar" data-eq-cta="final_cta">{{ content.hero.primary_cta_label }}</a>
         </div>
       </div>
     </section>
@@ -329,4 +331,23 @@ header, footer { direction: ltr; }
 
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script id="ecoiq-analytics-pageview">
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.ecoiqTrack) {
+      window.ecoiqTrack('gcc_investor_page_view', {
+        source_country_page: '{{ page_key|escapejs }}',
+        language: 'ar',
+        landing_page: '{{ request.path|escapejs }}'{% if request.GET.utm_source %},
+        utm_source: '{{ request.GET.utm_source|escapejs }}'{% endif %}{% if request.GET.utm_medium %},
+        utm_medium: '{{ request.GET.utm_medium|escapejs }}'{% endif %}{% if request.GET.utm_campaign %},
+        utm_campaign: '{{ request.GET.utm_campaign|escapejs }}'{% endif %}{% if request.GET.utm_content %},
+        utm_content: '{{ request.GET.utm_content|escapejs }}'{% endif %}{% if request.GET.utm_term %},
+        utm_term: '{{ request.GET.utm_term|escapejs }}'{% endif %}
+      });
+    }
+  });
+</script>
 {% endblock %}
