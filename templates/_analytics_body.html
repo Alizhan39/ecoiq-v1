@@ -1,0 +1,9 @@
+{% comment %}
+GTM's <noscript> fallback iframe — must sit immediately after the opening
+<body> tag. Only renders when GTM_CONTAINER_ID is set. Paired with
+_analytics_head.html; include both or neither.
+{% endcomment %}
+{% if analytics.gtm_id %}
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ analytics.gtm_id }}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+{% endif %}

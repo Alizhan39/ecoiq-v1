@@ -1,0 +1,90 @@
+{% comment %}
+Single source of truth for search-engine verification tags + the
+analytics loader. Included once in <head> by base.html (covers every page
+that extends it, including the GCC investor pages) and once each by the two
+standalone leads/investor_enquiry*.html templates (which don't extend
+base.html). Never include this partial more than once in the same document.
+
+Nothing renders here unless the matching env var is set in production — see
+ecoiq/settings.py and docs/gcc-investor-indexing-checklist.md for what to
+set and where. At most one of GTM / gtag.js loads, never both, so a page
+never carries two competing analytics scripts.
+{% endcomment %}
+{% if analytics.google_site_verification %}
+<meta name="google-site-verification" content="{{ analytics.google_site_verification }}">
+{% endif %}
+{% if analytics.bing_site_verification %}
+<meta name="msvalidate.01" content="{{ analytics.bing_site_verification }}">
+{% endif %}
+
+{% if analytics.gtm_id %}
+<!-- ecoiq-analytics-loader:gtm -->
+<script id="ecoiq-analytics-loader">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','{{ analytics.gtm_id }}');</script>
+{% elif analytics.ga4_id %}
+<!-- ecoiq-analytics-loader:gtag -->
+<script id="ecoiq-analytics-loader" async src="https://www.googletagmanager.com/gtag/js?id={{ analytics.ga4_id }}"></script>
+<script id="ecoiq-analytics-loader-config">
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  // No Google Signals / ad personalisation, no PII — see ecoiqTrack() below,
+  // which is the only path event code is allowed to send data through.
+  gtag('config', '{{ analytics.ga4_id }}', { allow_google_signals: false, anonymize_ip: true });
+</script>
+{% endif %}
+
+<script id="ecoiq-analytics-core">
+(function () {
+  window.dataLayer = window.dataLayer || [];
+
+  // Allowlist — the ONLY event params ecoiqTrack will ever forward. Never
+  // add full_name / work_email / phone_whatsapp / message / organisation /
+  // job_title / country here: task spec is explicit that no name, email,
+  // phone or message text may reach analytics.
+  var ECOIQ_ALLOWED_PARAMS = [
+    'source_country_page', 'language', 'landing_page',
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+    'organisation_type', 'type_of_interest', 'cta_label', 'from_lang', 'to_lang'
+  ];
+
+  window.ecoiqTrack = function (eventName, params) {
+    params = params || {};
+    var safe = {};
+    for (var i = 0; i < ECOIQ_ALLOWED_PARAMS.length; i++) {
+      var key = ECOIQ_ALLOWED_PARAMS[i];
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        safe[key] = params[key];
+      }
+    }
+    safe.event = eventName;
+    window.dataLayer.push(safe);
+  };
+
+  // Generic delegated click tracker — any element carrying data-eq-event
+  // fires that event with only the small set of known-safe data-eq-*
+  // attributes below. This is the single hook used for investor_briefing_click,
+  // enterprise_pricing_click and investor_language_switch across every page.
+  var ECOIQ_ATTR_MAP = {
+    'data-eq-country': 'source_country_page',
+    'data-eq-lang':    'language',
+    'data-eq-cta':     'cta_label',
+    'data-eq-from':    'from_lang',
+    'data-eq-to':      'to_lang'
+  };
+
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-eq-event]') : null;
+    if (!el) return;
+    var params = {};
+    for (var attr in ECOIQ_ATTR_MAP) {
+      var v = el.getAttribute(attr);
+      if (v) { params[ECOIQ_ATTR_MAP[attr]] = v; }
+    }
+    window.ecoiqTrack(el.getAttribute('data-eq-event'), params);
+  }, true);
+})();
+</script>

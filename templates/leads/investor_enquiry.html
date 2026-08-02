@@ -140,21 +140,27 @@
     .eq-lang-switch { font-size: .76rem; color: var(--muted2); text-decoration: none; border: 1px solid var(--border); border-radius: 999px; padding: .35rem .85rem; }
     .eq-lang-switch:hover { color: var(--accent); border-color: rgba(0,232,154,.4); }
   </style>
+  {% include "_analytics_head.html" %}
 </head>
 <body>
+  {% include "_analytics_body.html" %}
 
   <nav class="eq-nav">
     <div class="eq-nav-inner">
       <a href="/" class="eq-logo mono">ECO<span>IQ</span></a>
       <div style="display:flex;align-items:center;gap:1rem">
         {% if is_arabic %}
-        <a href="{% url 'leads:investor_enquiry' %}" class="eq-lang-switch">English</a>
+        <a href="{% url 'leads:investor_enquiry' %}" class="eq-lang-switch"
+           data-eq-event="investor_language_switch" data-eq-country="{{ attribution.source_country|default:'' }}"
+           data-eq-from="ar" data-eq-to="en">English</a>
         <a href="/ar/gcc-investors/" class="eq-back">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform:scaleX(-1)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
           العودة إلى مستثمري الخليج
         </a>
         {% else %}
-        <a href="{% url 'leads:investor_enquiry' %}?lang=ar" class="eq-lang-switch">العربية</a>
+        <a href="{% url 'leads:investor_enquiry' %}?lang=ar" class="eq-lang-switch"
+           data-eq-event="investor_language_switch" data-eq-country="{{ attribution.source_country|default:'' }}"
+           data-eq-from="en" data-eq-to="ar">العربية</a>
         <a href="/gcc-investors/" class="eq-back">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
           Back to GCC Investors
@@ -339,5 +345,21 @@
     </footer>
   </main>
 
+  <script id="ecoiq-analytics-form-events">
+    (function () {
+      var form = document.getElementById('investor-form');
+      if (!form) return;
+      var fired = false;
+      form.addEventListener('input', function () {
+        if (fired || !window.ecoiqTrack) return;
+        fired = true;
+        window.ecoiqTrack('investor_form_start', {
+          source_country_page: '{{ attribution.source_country|default:""|escapejs }}',
+          language: '{% if is_arabic %}ar{% else %}en{% endif %}',
+          landing_page: '{{ attribution.source_page|default:request.path|escapejs }}'
+        });
+      }, { capture: true });
+    })();
+  </script>
 </body>
 </html>
