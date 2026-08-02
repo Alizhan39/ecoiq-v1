@@ -471,3 +471,179 @@ class EnterpriseEnquiryAdminTests(TestCase):
     def test_admin_change_page_loads(self):
         r = self.c.get(f'/admin/leads/enterpriseenquiry/{self.enquiry.pk}/change/')
         self.assertEqual(r.status_code, 200)
+
+
+# ── InvestorEnquiry (GCC investor pages) ─────────────────────────────────────
+
+from .models import InvestorEnquiry
+
+VALID_INVESTOR_POST = {
+    'full_name':             'Fatima Al Thani',
+    'organisation':          'Doha Capital Partners',
+    'job_title':              'Head of Investments',
+    'work_email':             'Fatima@DohaCapital.example',
+    'phone_whatsapp':         '+974 5555 1234',
+    'country':                'Qatar',
+    'organisation_type':      'vc_fund',
+    'type_of_interest':       'strategic_investment',
+    'engagement_range':       '500k_2m',
+    'main_area_of_interest':  'GCC market entry',
+    'message':                'Keen to learn more.',
+    'consent':                'on',
+    'source_page':            '/qatar/investors/',
+    'source_country':         'qatar',
+    'utm_source':             'linkedin',
+    'utm_medium':             'social',
+    'utm_campaign':           'gcc-launch',
+    'utm_content':            '',
+    'utm_term':               '',
+    'hp_field':               '',   # honeypot — must be empty on genuine submissions
+}
+
+
+class InvestorEnquiryFormTests(TestCase):
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost')
+
+    def test_get_form_200(self):
+        r = self.c.get(reverse('leads:investor_enquiry'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_interest_query_param_preselects_dropdown(self):
+        r = self.c.get(reverse('leads:investor_enquiry') + '?interest=founding_partner')
+        self.assertEqual(r.context['form'].initial.get('type_of_interest'), 'founding_partner')
+
+    def test_attribution_query_params_populate_hidden_fields(self):
+        r = self.c.get(
+            reverse('leads:investor_enquiry')
+            + '?source_country=qatar&source_page=/qatar/investors/&utm_source=linkedin&utm_campaign=gcc-launch'
+        )
+        initial = r.context['form'].initial
+        self.assertEqual(initial.get('source_country'), 'qatar')
+        self.assertEqual(initial.get('source_page'), '/qatar/investors/')
+        self.assertEqual(initial.get('utm_source'), 'linkedin')
+        self.assertEqual(initial.get('utm_campaign'), 'gcc-launch')
+
+    def test_lang_ar_renders_arabic_rtl(self):
+        r = self.c.get(reverse('leads:investor_enquiry') + '?lang=ar')
+        content = r.content.decode()
+        self.assertIn('dir="rtl"', content)
+        self.assertIn('اطلب عرضاً للمستثمرين', content)
+
+    def test_valid_submission_redirects_to_success(self):
+        r = self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST)
+        self.assertRedirects(r, reverse('leads:investor_enquiry_success'), fetch_redirect_response=False)
+
+    def test_valid_submission_creates_exactly_one_record(self):
+        self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST)
+        self.assertEqual(InvestorEnquiry.objects.count(), 1)
+
+    def test_saved_object_contains_all_fields_including_attribution(self):
+        self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST)
+        obj = InvestorEnquiry.objects.get()
+        self.assertEqual(obj.full_name, 'Fatima Al Thani')
+        self.assertEqual(obj.organisation, 'Doha Capital Partners')
+        self.assertEqual(obj.work_email, 'fatima@dohacapital.example')  # normalised lowercase
+        self.assertEqual(obj.organisation_type, 'vc_fund')
+        self.assertEqual(obj.type_of_interest, 'strategic_investment')
+        self.assertEqual(obj.engagement_range, '500k_2m')
+        self.assertTrue(obj.consent)
+        # UTM + source preserved end-to-end (spec: "preserve UTM parameters
+        # and record the source page and source country").
+        self.assertEqual(obj.source_page, '/qatar/investors/')
+        self.assertEqual(obj.source_country, 'qatar')
+        self.assertEqual(obj.utm_source, 'linkedin')
+        self.assertEqual(obj.utm_medium, 'social')
+        self.assertEqual(obj.utm_campaign, 'gcc-launch')
+        self.assertEqual(obj.status, 'new')
+
+    def test_honeypot_prevents_record_creation(self):
+        data = {**VALID_INVESTOR_POST, 'hp_field': 'http://spam.example'}
+        r = self.c.post(reverse('leads:investor_enquiry'), data)
+        self.assertRedirects(r, reverse('leads:investor_enquiry_success'), fetch_redirect_response=False)
+        self.assertEqual(InvestorEnquiry.objects.count(), 0)
+
+    def test_missing_required_field_shows_form_and_saves_nothing(self):
+        data = {**VALID_INVESTOR_POST, 'full_name': ''}
+        r = self.c.post(reverse('leads:investor_enquiry'), data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(InvestorEnquiry.objects.count(), 0)
+
+    def test_missing_consent_shows_form_and_saves_nothing(self):
+        """PART E: consent checkbox is required."""
+        data = {**VALID_INVESTOR_POST, 'consent': ''}
+        r = self.c.post(reverse('leads:investor_enquiry'), data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(InvestorEnquiry.objects.count(), 0)
+
+    def test_optional_fields_can_be_blank(self):
+        data = {**VALID_INVESTOR_POST, 'job_title': '', 'phone_whatsapp': '', 'engagement_range': '',
+                 'main_area_of_interest': '', 'message': ''}
+        r = self.c.post(reverse('leads:investor_enquiry'), data)
+        self.assertRedirects(r, reverse('leads:investor_enquiry_success'), fetch_redirect_response=False)
+        self.assertEqual(InvestorEnquiry.objects.count(), 1)
+
+    def test_success_page_200(self):
+        r = self.c.get(reverse('leads:investor_enquiry_success'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_no_payment_or_buy_now_language_anywhere_in_flow(self):
+        """PART E/F: never accept payment, never show 'Buy now'."""
+        for url in (reverse('leads:investor_enquiry'), reverse('leads:investor_enquiry_success')):
+            content = self.c.get(url).content.decode()
+            self.assertNotIn('Buy now', content)
+            self.assertNotIn('Invest now', content)
+            self.assertNotIn('checkout', content.lower())
+
+    def test_legal_notice_present(self):
+        """PART F: the investor legal notice must appear near the form."""
+        content = self.c.get(reverse('leads:investor_enquiry')).content.decode()
+        self.assertIn('does not constitute an offer of securities', content)
+
+    def test_csrf_protected(self):
+        """PART: server-side CSRF protection must actually be enforced (item E)."""
+        csrf_client = Client(SERVER_NAME='localhost', enforce_csrf_checks=True)
+        r = csrf_client.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST)
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(InvestorEnquiry.objects.count(), 0)
+
+
+class InvestorEnquiryRateLimitTests(TestCase):
+
+    def setUp(self):
+        self.c = Client(SERVER_NAME='localhost', REMOTE_ADDR='10.0.0.3')
+
+    def test_rate_limit_after_five_submissions(self):
+        """Sixth submission from the same IP within 1 hour should show rate_limited."""
+        for _ in range(5):
+            self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST)
+
+        r = self.c.post(reverse('leads:investor_enquiry'), VALID_INVESTOR_POST)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.context.get('rate_limited', False))
+        self.assertEqual(InvestorEnquiry.objects.count(), 5)
+
+
+class InvestorEnquiryAdminTests(TestCase):
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.staff = User.objects.create_superuser('admin_investor', 'admin_investor@example.com', 'pw123456')
+        self.c = Client(SERVER_NAME='localhost')
+        self.c.force_login(self.staff)
+        self.enquiry = InvestorEnquiry.objects.create(
+            full_name='Test Investor', organisation='Test Fund', work_email='test@example.com',
+            country='Kuwait', organisation_type='family_office', type_of_interest='enterprise_pilot',
+            consent=True, source_country='kuwait',
+        )
+
+    def test_admin_changelist_loads(self):
+        r = self.c.get('/admin/leads/investorenquiry/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Test Fund', r.content.decode())
+
+    def test_admin_change_page_loads(self):
+        r = self.c.get(f'/admin/leads/investorenquiry/{self.enquiry.pk}/change/')
+        self.assertEqual(r.status_code, 200)

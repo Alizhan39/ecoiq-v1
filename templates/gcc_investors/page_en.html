@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ content.meta.title }}{% endblock %}
+{% comment %}
+base.html has two description blocks: meta_description_content (inside its own <meta> tag)
+and meta_description (empty, meant for a full replacement tag). Overriding BOTH would render
+two <meta name="description"> tags -- only override meta_description_content.
+{% endcomment %}
+{% block meta_description_content %}{{ content.meta.description }}{% endblock %}
+{% block og_title %}{{ content.meta.og_title }}{% endblock %}
+{% block og_description %}{{ content.meta.og_description }}{% endblock %}
+
+{% block extra_head %}
+{# base.html already emits a self-referencing canonical from request.path — see templates/base.html. #}
+{% for code, url in hreflang_alternates %}
+<link rel="alternate" hreflang="{{ code }}" href="{{ url }}">
+{% endfor %}
+{% include "gcc_investors/_json_ld.html" %}
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   EcoIQ GCC INVESTOR PAGES — Institutional Design System
+   Same tokens as static/css/ecoiq-institutional.css / templates/pricing.html
+   (--bg, --accent, --gold, --cyan) — never a competing palette.
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22;
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.13);
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+  --accent:#00e89a; --gold:#e8c46a; --cyan:#06b6d4; --danger:#e63946;
+}
+.gcc-page { background: var(--bg); color: var(--text); margin: -2rem -1.5rem; padding: 0; }
+.gcc-inner { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+
+.gcc-crumbs { font-size: .78rem; color: var(--muted); padding: 1.2rem 0 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.gcc-crumbs a { color: var(--muted2); text-decoration: none; }
+.gcc-crumbs a:hover { color: var(--accent); }
+.gcc-crumbs .sep { color: var(--border2); }
+
+.gcc-langswitch { display: flex; justify-content: flex-end; padding: .6rem 0 0; }
+.gcc-langswitch a {
+  font-size: .76rem; color: var(--muted2); text-decoration: none; border: 1px solid var(--border);
+  border-radius: 999px; padding: .3rem .85rem;
+}
+.gcc-langswitch a:hover { color: var(--accent); border-color: rgba(0,232,154,.4); }
+
+.gcc-hero { text-align: center; padding: 3.5rem 0 3rem; border-bottom: 1px solid var(--border); }
+.gcc-badge {
+  display: inline-flex; align-items: center; gap: .5rem; padding: .3rem .9rem; border-radius: 999px;
+  background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.25); color: var(--accent);
+  font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 1.4rem;
+}
+/* base.html sets a bare `h1 { color:#1b4332 }` / `h2 { color:#2d6a4f }` for its own
+   light-theme pages -- explicit color: var(--text) here overrides that fallback
+   before the gradient/background-clip progressive enhancement applies. */
+.gcc-hero h1 {
+  font-size: clamp(1.9rem,4vw,2.9rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.15; margin-bottom: 1.1rem;
+  color: var(--text);
+  background: linear-gradient(135deg,#fff 30%,#94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.gcc-hero .sub { font-size: 1.04rem; color: var(--muted2); line-height: 1.75; max-width: 700px; margin: 0 auto 2.2rem; }
+.gcc-hero-ctas { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; }
+.gcc-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .85rem 1.5rem; border-radius: .75rem; font-size: .88rem; font-weight: 700; text-decoration: none; transition: all .15s; }
+.gcc-btn-primary { background: var(--accent); color: #06120d; }
+.gcc-btn-primary:hover { background: #00c882; }
+.gcc-btn-ghost { background: rgba(255,255,255,.04); border: 1px solid var(--border2); color: var(--text); }
+.gcc-btn-ghost:hover { background: rgba(255,255,255,.08); }
+
+.gcc-section { padding: 3.6rem 0; border-bottom: 1px solid var(--border); }
+.gcc-section h2 { font-size: clamp(1.4rem,2.4vw,1.9rem); font-weight: 800; margin-bottom: 1.2rem; letter-spacing: -.01em; color: var(--text); }
+.gcc-section p { color: var(--muted2); font-size: .96rem; line-height: 1.75; margin-bottom: 1rem; max-width: 78ch; }
+.gcc-section p:last-child { margin-bottom: 0; }
+
+.gcc-cap-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 1.2rem; margin-top: 1.5rem; }
+.gcc-cap-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
+.gcc-cap-card h3 { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1rem; }
+.gcc-cap-live h3 { color: var(--accent); }
+.gcc-cap-prototype h3 { color: var(--cyan); }
+.gcc-cap-planned h3 { color: var(--gold); }
+.gcc-cap-card ul { list-style: none; display: flex; flex-direction: column; gap: .65rem; }
+.gcc-cap-card li { display: flex; gap: .55rem; font-size: .84rem; color: var(--muted2); line-height: 1.55; }
+.gcc-cap-card li::before { content: '—'; color: var(--border2); flex-shrink: 0; }
+
+.gcc-usecase-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 1.1rem; margin-top: 1.5rem; }
+.gcc-usecase-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.4rem; }
+.gcc-usecase-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+.gcc-usecase-card p { font-size: .84rem; margin: 0; }
+
+.gcc-timeline { display: flex; flex-direction: column; gap: 1.2rem; margin-top: 1.5rem; }
+.gcc-phase { display: flex; gap: 1rem; }
+.gcc-phase-marker { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 999px; background: rgba(0,232,154,.1); border: 1px solid rgba(0,232,154,.3); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; }
+.gcc-phase-body p { margin: 0; }
+.gcc-phase-body .label { font-weight: 700; color: var(--text); font-size: .92rem; margin-bottom: .2rem; }
+
+.gcc-fp-section { background: linear-gradient(180deg, rgba(232,196,106,.06), transparent); border-bottom: 1px solid var(--border); }
+.gcc-fp-badge { background: rgba(232,196,106,.1); border-color: rgba(232,196,106,.3); color: var(--gold); }
+.gcc-fp-compare { display: flex; gap: 1.2rem; flex-wrap: wrap; margin: 1.5rem 0; }
+.gcc-fp-price-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.3rem 1.6rem; flex: 1; min-width: 220px; }
+.gcc-fp-price-card.gold { border-color: rgba(232,196,106,.35); background: linear-gradient(180deg, rgba(232,196,106,.08), var(--bg2) 60%); }
+.gcc-fp-price-card .label { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: .4rem; }
+.gcc-fp-price-card .price { font-size: 1.5rem; font-weight: 800; }
+.gcc-fp-price-card.gold .price { color: var(--gold); }
+.gcc-fp-benefits { list-style: none; display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: .7rem; margin: 1.2rem 0 1.5rem; }
+.gcc-fp-benefits li { display: flex; gap: .5rem; font-size: .84rem; color: var(--muted2); }
+.gcc-fp-benefits li::before { content: '✓'; color: var(--gold); flex-shrink: 0; }
+.gcc-fp-note { font-size: .8rem; color: var(--muted); font-style: italic; max-width: 70ch; }
+
+.gcc-faq-item { border-bottom: 1px solid var(--border); padding: 1.1rem 0; }
+.gcc-faq-item:last-child { border-bottom: none; }
+.gcc-faq-item h3 { font-size: .96rem; font-weight: 700; margin-bottom: .5rem; }
+.gcc-faq-item p { margin: 0; font-size: .87rem; }
+
+.gcc-legal { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.6rem; margin-top: 1rem; }
+.gcc-legal p { font-size: .82rem; color: var(--muted); line-height: 1.7; margin-bottom: .9rem; }
+.gcc-legal p:last-child { margin-bottom: 0; }
+.gcc-legal .legal-tag { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; color: var(--danger); font-weight: 700; margin-bottom: .5rem; }
+
+.gcc-form-embed { background: var(--bg2); border: 1px solid var(--border); border-radius: 1.1rem; padding: 2.2rem; text-align: center; margin-top: 1.5rem; }
+.gcc-form-embed p { max-width: 60ch; margin-left: auto; margin-right: auto; }
+
+.gcc-currency-note { font-size: .78rem; color: var(--muted); margin-top: .8rem; }
+
+@media (max-width: 640px) {
+  .gcc-page { margin: -1rem -1rem; }
+  .gcc-hero { padding: 2.5rem 0 2rem; }
+  .gcc-section { padding: 2.5rem 0; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gcc-page">
+  <div class="gcc-inner">
+
+    <nav class="gcc-crumbs" aria-label="Breadcrumb">
+      {% for crumb in breadcrumbs %}
+        {% if crumb.url %}<a href="{{ crumb.url }}">{{ crumb.label }}</a><span class="sep">/</span>{% else %}<span aria-current="page">{{ crumb.label }}</span>{% endif %}
+      {% endfor %}
+    </nav>
+
+    <div class="gcc-langswitch">
+      <a href="{{ lang_switch_url }}" hreflang="{{ lang_switch_code }}">العربية</a>
+    </div>
+
+    <!-- 1. Hero -->
+    <div class="gcc-hero">
+      <div class="gcc-badge">{{ content.hero.badge }}</div>
+      <h1>{{ content.hero.h1 }}</h1>
+      <p class="sub">{{ content.hero.subhead }}</p>
+      <div class="gcc-hero-ctas">
+        <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-primary">{{ content.hero.primary_cta_label }}</a>
+        <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-ghost">{{ content.hero.secondary_cta_label }}</a>
+      </div>
+    </div>
+
+    {% if page_key == 'hub' %}
+    <section class="gcc-section" id="markets" style="padding-top:2.4rem">
+      <h2>Explore GCC markets</h2>
+      <div class="gcc-usecase-grid">
+        <a href="/qatar/investors/" class="gcc-usecase-card" style="text-decoration:none;display:block">
+          <h3 style="color:var(--accent)">Qatar →</h3>
+          <p>AI startup investment, Islamic finance technology, Doha banks and family offices.</p>
+        </a>
+        <a href="/saudi-arabia/investors/" class="gcc-usecase-card" style="text-decoration:none;display:block">
+          <h3 style="color:var(--accent)">Saudi Arabia →</h3>
+          <p>Vision 2030-aligned technology, industrial and infrastructure intelligence, Riyadh investors.</p>
+        </a>
+        <a href="/kuwait/investors/" class="gcc-usecase-card" style="text-decoration:none;display:block">
+          <h3 style="color:var(--accent)">Kuwait →</h3>
+          <p>AI and FinTech investment, Kuwait Vision 2035 digital transformation, investment due diligence.</p>
+        </a>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- 2. Investment thesis -->
+    <section class="gcc-section" id="thesis">
+      <h2>{{ content.thesis.heading }}</h2>
+      {% for para in content.thesis.body %}<p>{{ para }}</p>{% endfor %}
+    </section>
+
+    <!-- 3. Market problem -->
+    <section class="gcc-section" id="problem">
+      <h2>{{ content.problem.heading }}</h2>
+      {% for para in content.problem.body %}<p>{{ para }}</p>{% endfor %}
+    </section>
+
+    <!-- 4. EcoIQ solution -->
+    <section class="gcc-section" id="solution">
+      <h2>{{ content.solution.heading }}</h2>
+      {% for para in content.solution.body %}<p>{{ para }}</p>{% endfor %}
+    </section>
+
+    <!-- 5. Current product capabilities -->
+    <section class="gcc-section" id="capabilities">
+      <h2>{{ content.capabilities.heading }}</h2>
+      <div class="gcc-cap-grid">
+        <div class="gcc-cap-card gcc-cap-live">
+          <h3>Live today</h3>
+          <ul>{% for item in content.capabilities.live %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        <div class="gcc-cap-card gcc-cap-prototype">
+          <h3>Prototype</h3>
+          <ul>{% for item in content.capabilities.prototype %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        <div class="gcc-cap-card gcc-cap-planned">
+          <h3>Planned</h3>
+          <ul>{% for item in content.capabilities.planned %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Use cases -->
+    <section class="gcc-section" id="use-cases">
+      <h2>{{ content.use_cases.heading }}</h2>
+      <div class="gcc-usecase-grid">
+        {% for item in content.use_cases.items %}
+        <div class="gcc-usecase-card">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.body }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- 7. Business & revenue model -->
+    <section class="gcc-section" id="business-model">
+      <h2>{{ content.business_model.heading }}</h2>
+      {% for para in content.business_model.body %}<p>{{ para }}</p>{% endfor %}
+    </section>
+
+    <!-- 8. Enterprise pricing model -->
+    <section class="gcc-section" id="pricing">
+      <h2>{{ content.pricing.heading }}</h2>
+      {% for para in content.pricing.body %}<p>{{ para }}</p>{% endfor %}
+      <a href="/pricing/" class="gcc-btn gcc-btn-ghost">{{ content.pricing.cta_label }}</a>
+      <p class="gcc-currency-note">All pricing is published in GBP. USD, QAR, AED and SAR proposals are available on request.</p>
+    </section>
+
+    <!-- 9. Why the platform can scale -->
+    <section class="gcc-section" id="scale">
+      <h2>{{ content.scale.heading }}</h2>
+      {% for para in content.scale.body %}<p>{{ para }}</p>{% endfor %}
+    </section>
+
+    <!-- 10. Country market-entry plan -->
+    <section class="gcc-section" id="market-entry">
+      <h2>{{ content.market_entry.heading }}</h2>
+      <p>{{ content.market_entry.intro }}</p>
+      <div class="gcc-timeline">
+        {% for phase in content.market_entry.phases %}
+        <div class="gcc-phase">
+          <div class="gcc-phase-marker">{{ forloop.counter }}</div>
+          <div class="gcc-phase-body">
+            <p class="label">{{ phase.label }}</p>
+            <p>{{ phase.body }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- 11. GCC Founding Partner programme -->
+    <section class="gcc-section gcc-fp-section" id="founding-partner">
+      <h2>{{ content.founding_partner.heading }}</h2>
+      {% for para in content.founding_partner.body %}<p>{{ para }}</p>{% endfor %}
+      <div class="gcc-fp-compare">
+        <div class="gcc-fp-price-card">
+          <div class="label">Standard 90-Day Pilot</div>
+          <div class="price">£125,000</div>
+        </div>
+        <div class="gcc-fp-price-card gold">
+          <div class="label">Founding Partner Pilot</div>
+          <div class="price">From £85,000</div>
+        </div>
+      </div>
+      <ul class="gcc-fp-benefits">
+        {% for benefit in content.founding_partner.benefits %}<li>{{ benefit }}</li>{% endfor %}
+      </ul>
+      <p class="gcc-fp-note">
+        Founding Partner pricing is available only for a limited number of organisations that provide
+        structured feedback, nominate a defined use case and permit an anonymised case study, subject
+        to approval. It is not an automatic discount.
+      </p>
+      <div style="margin-top:1.2rem">
+        <a href="{{ founding_partner_enquiry_url }}" class="gcc-btn gcc-btn-primary">{{ content.founding_partner.cta_label }}</a>
+      </div>
+    </section>
+
+    <!-- 12. Responsible AI, evidence and governance -->
+    <section class="gcc-section" id="governance">
+      <h2>{{ content.governance.heading }}</h2>
+      {% for para in content.governance.body %}<p>{{ para }}</p>{% endfor %}
+      <p>Read more about EcoIQ's ethical decision-support framework on the <a href="/amanah-autopilot/" style="color:var(--accent)">Amanah Autopilot</a> page.</p>
+    </section>
+
+    <!-- 13. Investor & strategic-partnership enquiry -->
+    <section class="gcc-section" id="enquiry">
+      <h2>{{ content.enquiry_intro.heading }}</h2>
+      <p>{{ content.enquiry_intro.subhead }}</p>
+      <div class="gcc-form-embed">
+        <p>Use the secure EcoIQ investor enquiry form to reach our team directly.</p>
+        <div style="margin-top:1.2rem">
+          <a href="{{ enquiry_url }}" class="gcc-btn gcc-btn-primary">{{ content.hero.primary_cta_label }}</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. FAQ -->
+    <section class="gcc-section" id="faq">
+      <h2>{{ content.faq.heading }}</h2>
+      {% for item in content.faq.items %}
+      <div class="gcc-faq-item">
+        <h3>{{ item.q }}</h3>
+        <p>{{ item.a }}</p>
+      </div>
+      {% endfor %}
+    </section>
+
+    <!-- 15. Independence & legal disclaimer -->
+    <section class="gcc-section" id="legal" style="border-bottom:none">
+      <h2>Legal notice</h2>
+      <div class="gcc-legal">
+        <div class="legal-tag">Draft — requires legal review before production use</div>
+        <p>{{ content.legal.investment_notice }}</p>
+        <p>{{ content.legal.independence_notice }}</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

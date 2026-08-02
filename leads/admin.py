@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import AccessRequest, EnterpriseEnquiry, ProfileClaim, NewsletterSignup, ReviewRequest
+from .models import AccessRequest, EnterpriseEnquiry, InvestorEnquiry, ProfileClaim, NewsletterSignup, ReviewRequest
 
 
 STATUS_COLOURS = {
@@ -411,6 +411,75 @@ class EnterpriseEnquiryAdmin(admin.ModelAdmin):
     @admin.display(description='Status', ordering='status')
     def status_badge(self, obj):
         fg, bg = ENTERPRISE_ENQUIRY_STATUS_COLOURS.get(obj.status, ('#333', '#eee'))
+        return format_html(
+            '<span style="background:{};color:{};padding:2px 10px;border-radius:12px;'
+            'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',
+            bg, fg, obj.get_status_display()
+        )
+
+
+# ── InvestorEnquiry admin ────────────────────────────────────────────────────
+
+INVESTOR_ENQUIRY_STATUS_COLOURS = ENTERPRISE_ENQUIRY_STATUS_COLOURS  # same pipeline vocabulary
+
+
+@admin.register(InvestorEnquiry)
+class InvestorEnquiryAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'full_name', 'organisation', 'work_email', 'country',
+        'organisation_type_display', 'interest_display', 'source_country',
+        'status_badge', 'status', 'created_at',
+    )
+    list_filter   = (
+        'status', 'type_of_interest', 'organisation_type', 'source_country',
+        'engagement_range', 'created_at',
+    )
+    search_fields = (
+        'full_name', 'organisation', 'work_email', 'country',
+        'main_area_of_interest', 'message', 'notes', 'utm_campaign', 'utm_source',
+    )
+    list_editable = ('status',)
+    ordering      = ('-created_at',)
+    date_hierarchy = 'created_at'
+    readonly_fields = ('ip_address', 'source_page', 'source_country',
+                        'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+                        'created_at', 'updated_at')
+
+    fieldsets = (
+        ('Contact', {
+            'fields': ('full_name', 'organisation', 'job_title', 'work_email', 'phone_whatsapp', 'country'),
+        }),
+        ('Investor Qualification', {
+            'fields': ('organisation_type', 'type_of_interest', 'engagement_range',
+                       'main_area_of_interest', 'message', 'consent'),
+        }),
+        ('Attribution', {
+            'fields': ('source_page', 'source_country',
+                       'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'),
+            'classes': ('collapse',),
+        }),
+        ('CRM', {
+            'fields': ('status', 'notes'),
+            'description': 'Internal status and team notes — not visible to the submitter.',
+        }),
+        ('Security & Timestamps', {
+            'fields': ('ip_address', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    @admin.display(description='Organisation Type', ordering='organisation_type')
+    def organisation_type_display(self, obj):
+        return obj.get_organisation_type_display()
+
+    @admin.display(description='Type of Interest', ordering='type_of_interest')
+    def interest_display(self, obj):
+        return obj.get_type_of_interest_display()
+
+    @admin.display(description='Status', ordering='status')
+    def status_badge(self, obj):
+        fg, bg = INVESTOR_ENQUIRY_STATUS_COLOURS.get(obj.status, ('#333', '#eee'))
         return format_html(
             '<span style="background:{};color:{};padding:2px 10px;border-radius:12px;'
             'font-size:11px;font-weight:600;white-space:nowrap;">{}</span>',

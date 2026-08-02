@@ -1,0 +1,40 @@
+Hi {{ instance.full_name }},
+
+Thank you for your interest in EcoIQ.
+
+We have received your enquiry regarding:
+  {{ instance.get_type_of_interest_display }}
+
+A member of our team will review your enquiry and follow up by email
+within two business days to arrange an investor briefing.
+
+SUMMARY OF YOUR ENQUIRY
+------------------------
+Organisation:       {{ instance.organisation }}
+Organisation type:  {{ instance.get_organisation_type_display }}
+Country:            {{ instance.country }}
+Type of interest:   {{ instance.get_type_of_interest_display }}
+{% if instance.main_area_of_interest %}Main area:           {{ instance.main_area_of_interest }}
+{% endif %}
+
+WHAT HAPPENS NEXT
+------------------
+1. Our team reviews your enquiry and area of interest.
+2. We arrange an investor briefing call to share EcoIQ's current
+   capabilities, roadmap and regional plans.
+3. Any further discussion is subject to eligibility, due diligence,
+   legal documentation and applicable regulatory requirements.
+
+Questions? Reply to this email or contact us at:
+partnerships@ecoiq.uk
+
+─────────────────────────────────────────
+EcoIQ — AI Decision Intelligence Platform
+https://ecoiq.uk/gcc-investors/
+─────────────────────────────────────────
+
+Information provided by EcoIQ is for business and strategic-partnership
+discussions only. It does not constitute an offer of securities,
+investment advice or a recommendation to invest. This message confirms
+receipt of an enquiry only and is not a proposal, quotation or offer of
+engagement.

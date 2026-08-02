@@ -20,4 +20,8 @@ urlpatterns = [
     # Enterprise Enquiry flow — every /pricing/ CTA routes here
     path('enterprise/',          views.enterprise_enquiry,         name='enterprise_enquiry'),
     path('enterprise/success/',  views.enterprise_enquiry_success, name='enterprise_enquiry_success'),
+
+    # Investor Enquiry flow — every GCC investor page (EN + AR) CTA routes here
+    path('investors/',          views.investor_enquiry,         name='investor_enquiry'),
+    path('investors/success/',  views.investor_enquiry_success, name='investor_enquiry_success'),
 ]
