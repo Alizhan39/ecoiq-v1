@@ -340,3 +340,101 @@ class InternalLinkingTests(TestCase):
         for (page, lang), url in URL_BY_PAGE_LANG.items():
             content = self.client.get(url).content.decode()
             self.assertIn('/pricing/', content, url)
+
+
+# ── Meta description: count, placement and length ───────────────────────────
+#
+# Regression cover for a Bing Webmaster Tools "Live URL" finding of
+# "Meta Description too long or too short" on /gcc-investors/. The root cause
+# was length (the hub description rendered at 270 characters), NOT a missing
+# or duplicated tag. These tests parse the RENDERED <head> — the same thing a
+# crawler sees — rather than asserting on the content_*.py dicts, so a
+# template-level regression (e.g. overriding both meta_description_content and
+# meta_description in base.html, which would emit two tags) is caught too.
+
+import html as _html
+import re as _re
+
+# Bing's SEO analyser flags meta descriptions outside this range. Google
+# truncates display around ~155-160 chars, so the same ceiling serves both.
+META_DESC_MIN_CHARS = 25
+META_DESC_MAX_CHARS = 160
+
+_HEAD_RE = _re.compile(r'<head[^>]*>(.*?)</head>', _re.S | _re.I)
+_DESC_TAG_RE = _re.compile(r'<meta[^>]+name=["\']description["\'][^>]*>', _re.I)
+_DESC_CONTENT_RE = _re.compile(r'content=["\'](.*?)["\']\s*/?>', _re.S)
+
+
+class MetaDescriptionTagCountTests(TestCase):
+
+    def _fetch(self, url):
+        body = self.client.get(url).content.decode()
+        head_match = _HEAD_RE.search(body)
+        self.assertIsNotNone(head_match, f'{url}: no parseable <head>')
+        return body, head_match.group(1)
+
+    def test_exactly_one_meta_description_in_head(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            _, head = self._fetch(url)
+            tags = _DESC_TAG_RE.findall(head)
+            self.assertEqual(
+                len(tags), 1,
+                f'{url}: expected exactly 1 <meta name="description"> in <head>, found {len(tags)}: {tags}',
+            )
+
+    def test_exactly_one_meta_description_in_whole_document(self):
+        """Catches a stray duplicate emitted outside <head> (e.g. from a body
+        include), which crawlers still parse and report on."""
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            body, _ = self._fetch(url)
+            tags = _DESC_TAG_RE.findall(body)
+            self.assertEqual(
+                len(tags), 1,
+                f'{url}: expected exactly 1 <meta name="description"> in the document, found {len(tags)}',
+            )
+
+    def test_meta_description_is_non_empty_and_well_formed(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            _, head = self._fetch(url)
+            tag = _DESC_TAG_RE.findall(head)[0]
+            content_match = _DESC_CONTENT_RE.search(tag)
+            self.assertIsNotNone(content_match, f'{url}: description tag has no parseable content attribute')
+            self.assertTrue(content_match.group(1).strip(), f'{url}: description content is empty')
+
+
+class MetaDescriptionLengthTests(TestCase):
+
+    def _description(self, url):
+        body = self.client.get(url).content.decode()
+        head = _HEAD_RE.search(body).group(1)
+        tag = _DESC_TAG_RE.findall(head)[0]
+        return _html.unescape(_DESC_CONTENT_RE.search(tag).group(1))
+
+    def test_every_description_within_bing_length_range(self):
+        for (page, lang), url in URL_BY_PAGE_LANG.items():
+            desc = self._description(url)
+            self.assertGreaterEqual(
+                len(desc), META_DESC_MIN_CHARS,
+                f'{url}: meta description is {len(desc)} chars, below the {META_DESC_MIN_CHARS}-char minimum',
+            )
+            self.assertLessEqual(
+                len(desc), META_DESC_MAX_CHARS,
+                f'{url}: meta description is {len(desc)} chars, above the {META_DESC_MAX_CHARS}-char maximum '
+                f'(Bing reports "Meta Description too long or too short"): {desc!r}',
+            )
+
+    def test_all_eight_descriptions_unique_as_rendered(self):
+        descs = {url: self._description(url) for url in URL_BY_PAGE_LANG.values()}
+        self.assertEqual(len(descs), 8)
+        self.assertEqual(
+            len(set(descs.values())), 8,
+            f'Duplicate rendered meta description across GCC investor pages: {descs}',
+        )
+
+    def test_arabic_and_english_descriptions_differ_per_country(self):
+        """A page's AR description must not be a copy of its EN one — each
+        language variant needs its own indexable summary."""
+        for page in ALL_PAGES:
+            en = self._description(URL_BY_PAGE_LANG[(page, 'en')])
+            ar = self._description(URL_BY_PAGE_LANG[(page, 'ar')])
+            self.assertNotEqual(en, ar, page)

@@ -34,11 +34,12 @@ _INVESTMENT_NOTICE = (
 HUB = {
     'meta': {
         'title': 'EcoIQ GCC Investors | AI Decision Intelligence Platform',
+        # Kept within 25-160 characters — Bing Webmaster Tools' SEO analyser
+        # flags anything outside that range as "Meta Description too long or
+        # too short" (see MetaDescriptionLengthTests in tests.py).
         'description': (
             'EcoIQ is an AI decision-intelligence platform for investors, banks, family offices '
-            'and government-related institutions across the GCC. Explore country-specific '
-            'positioning for Qatar, Saudi Arabia and Kuwait, current capabilities, and how to '
-            'request an investor briefing.'
+            'and government-related institutions across Qatar, Saudi Arabia and Kuwait.'
         ),
         'og_title': 'EcoIQ GCC Investors — AI Decision Intelligence Platform',
         'og_description': (
@@ -340,10 +341,8 @@ QATAR = {
     'meta': {
         'title': 'AI Startup Investment in Qatar | EcoIQ',
         'description': (
-            'EcoIQ decision intelligence for Qatar\'s banks, asset managers, family '
-            'offices and government-related institutions — financial intelligence, '
-            'Islamic finance technology and sustainable capital allocation, with '
-            'Arabic and GCC data localisation on the roadmap.'
+            'EcoIQ decision intelligence for Qatar\'s banks, asset managers and family '
+            'offices — financial intelligence, Islamic finance technology and ESG analysis.'
         ),
         'og_title': 'EcoIQ — AI Decision Intelligence for Qatar\'s Investors',
         'og_description': (
@@ -601,10 +600,8 @@ SAUDI = {
     'meta': {
         'title': 'Saudi AI and Vision 2030 Investment | EcoIQ',
         'description': (
-            'EcoIQ decision intelligence for Saudi investors, holding companies and '
-            'government-related entities — Vision 2030-aligned industrial, '
-            'infrastructure and energy intelligence, portfolio and supply-chain '
-            'analysis, with Arabic executive reporting on the roadmap.'
+            'EcoIQ decision intelligence for Saudi investors and holding companies — Vision '
+            '2030-aligned industrial, infrastructure and energy portfolio analysis.'
         ),
         'og_title': 'EcoIQ — AI Decision Intelligence for Saudi Investment and Transformation',
         'og_description': (
@@ -864,10 +861,8 @@ KUWAIT = {
     'meta': {
         'title': 'Kuwait AI and FinTech Investment Opportunity | EcoIQ',
         'description': (
-            'EcoIQ decision intelligence for Kuwait’s banks, investment companies and '
-            'family offices — AI and FinTech investment due diligence, portfolio '
-            'intelligence, and governance/evidence provenance, aligned with Kuwait '
-            'Vision 2035 digital-transformation priorities.'
+            'EcoIQ decision intelligence for Kuwait\'s banks, investment companies and family '
+            'offices — AI and FinTech due diligence aligned with Kuwait Vision 2035.'
         ),
         'og_title': 'EcoIQ — AI Investment Intelligence for Kuwait’s Investors',
         'og_description': (
