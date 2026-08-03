@@ -61,6 +61,7 @@ class Command(BaseCommand):
         self._check_policy()
         self._check_routing()
         self._check_providers()
+        self._check_task_routing()
         self._check_registry()
         self._check_public_input_safety()
 
@@ -226,6 +227,51 @@ class Command(BaseCommand):
             self._record(FAIL, 'Routing chain is longer than AI_MAX_PROVIDER_ATTEMPTS')
         else:
             self._record(PASS, 'No fallback loop possible')
+
+    def _check_task_routing(self):
+        """
+        Every id in AI_TASK_ROUTING must be allowlisted, and the safety
+        classifier must never appear in a task list. Both are configuration
+        mistakes that would otherwise only surface at request time.
+        """
+        allowlist = set(settings.AI_MODEL_ALLOWLIST.get('openrouter', set()))
+        safety_model = getattr(settings, 'AI_SAFETY_MODEL', '')
+        table = getattr(settings, 'AI_TASK_ROUTING', {}) or {}
+
+        if not table:
+            self._record(WARN, 'No task-specific routing configured')
+            return
+
+        problems = []
+        for task, model_ids in sorted(table.items()):
+            if not model_ids:
+                problems.append(f'{task}: empty')
+            for model_id in model_ids:
+                if model_id not in allowlist:
+                    problems.append(f'{task}: {model_id} is not allowlisted')
+                if model_id == safety_model:
+                    problems.append(f'{task}: names the safety classifier')
+
+        if problems:
+            for problem in problems:
+                self._record(FAIL, f'Task routing — {problem}')
+        else:
+            self._record(PASS, f'Task routing valid for {len(table)} task(s)')
+
+        # Benchmark candidates must NOT have been quietly approved.
+        approved_candidates = [c for c in getattr(settings, 'AI_BENCHMARK_CANDIDATES', ())
+                               if c in allowlist]
+        if approved_candidates:
+            self._record(FAIL, 'Benchmark-only candidate(s) approved without review: '
+                               + ', '.join(approved_candidates))
+        else:
+            self._record(PASS, 'Benchmark candidates remain outside public routing')
+
+        if safety_model and safety_model not in allowlist:
+            self._record(WARN, 'Safety classifier is configured but not allowlisted — '
+                               'screening will be skipped')
+        elif safety_model:
+            self._record(PASS, 'Safety classifier allowlisted and excluded from routing')
 
     def _check_public_input_safety(self):
         """

@@ -255,6 +255,84 @@ benchmarks, and inventing scores would make routing look principled while being
 arbitrary. With no entries the scorer falls back to configured priority.
 Populating it changes ranking and nothing else.
 
+### Task-specific routing
+
+`AI_TASK_ROUTING` gives each task an explicit, operator-controlled attempt
+order. **Capability filtering runs first**, so a text-only model can never
+receive an image request no matter where a task list puts it.
+
+| Task | Order |
+| --- | --- |
+| `company_analysis` | Nemotron 3 Super → Gemma 4 31B → GPT-OSS 20B → router |
+| `company_comparison` | Nemotron 3 Super → Gemma 4 31B → router |
+| `investment_analysis` | Nemotron 3 Super → GPT-OSS 20B → Gemma 4 31B → router |
+| `khalifah_explanation` | Nemotron 3 Super → Gemma 4 31B → router |
+| `structured_data_extraction` | GPT-OSS 20B → Gemma 4 31B → Nemotron 3 Nano → router* |
+| `general_assistant` | Ling 3.0 Flash → Gemma 4 31B → Nemotron 3 Nano → router |
+| `translation_and_localisation` | Gemma 4 31B → Ling 3.0 Flash → router |
+| `document_and_image_analysis` | Nemotron Nano VL → Gemma 4 31B → router |
+| `quick_summary` | Ling 3.0 Flash → Nemotron 3 Nano → router |
+
+\* the configured list omits the router; it is appended as the guaranteed final
+reserve for every task.
+
+The task comes from the module (`AI_MODULE_ROUTING`), which EcoIQ's own code
+supplies — never the user. An unmapped module falls back to
+`general_assistant`. Models eligible but unnamed by a task follow the named
+ones, so a newly allowlisted model is usable without editing all nine lists.
+
+Every id is still subject to the live zero-price check on each registry
+refresh: a model that stops being free, or disappears, drops out automatically,
+and **a paid variant is never substituted**.
+
+Of the approved models, only `google/gemma-4-31b-it:free`,
+`nvidia/nemotron-nano-12b-v2-vl:free` and `openrouter/free` accept image input
+— which is why the router can still serve as the catch-all for a vision
+request.
+
+### Safety classifier
+
+`nvidia/nemotron-3.5-content-safety:free` is an **internal classifier, never a
+response model**. Two independent guarantees: `routing.is_eligible()` filters
+it out of every chain (and `registry.routable_models()` excludes it from the
+pool entirely), and `ai_gateway/safety.py` returns a normalised verdict rather
+than any generated text.
+
+Screening is **selective** — it runs only for untrusted document instructions,
+image uploads, suspected prompt injection, harmful-activity workflows, and
+staff-configured high-risk modules (`AI_SAFETY_HIGH_RISK_MODULES`). A harmless
+text question never triggers it.
+
+The classifier's reasoning trace, its raw category payload and the upstream
+provider's identity are never returned to a public user; a blocked request gets
+a generic refusal. If the classifier is unavailable the request proceeds
+unscreened — this is a supplementary check, and taking the assistant down
+because a classifier is rate-limited would be worse than losing a second
+opinion. (Fail-closed applies to *model approval*, where a wrong guess spends
+money.)
+
+### Benchmark-only candidates
+
+`nvidia/nemotron-3-ultra-550b-a55b:free`,
+`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` and
+`google/gemma-4-26b-a4b-it:free` are verified free and available but
+deliberately **not allowlisted** — they stay outside public routing until
+benchmarked. `check_ai_configuration` fails if one is approved without review.
+
+`ai_gateway/benchmarks.py` defines nine cases (English/Arabic/Russian company
+analysis, khalifah explanation, structured JSON validity, citation grounding,
+incomplete-data handling, document and chart analysis, latency and rate limits)
+with per-case review criteria. They are **definitions, not executions** —
+nothing runs them, least of all CI.
+
+### Provider distinction
+
+Models whose ids begin with `nvidia/` but are reached **through OpenRouter**
+are ordinary OpenRouter routes and are public-eligible. That is unrelated to
+**direct NVIDIA NIM**, which remains development/staff-only behind
+`NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED=false`,
+`NVIDIA_NIM_DEVELOPMENT_ONLY=true` and `NVIDIA_NIM_PROTOTYPE_ONLY=true`.
+
 ### Staff override
 
 Staff may pin a model for benchmarking, reasoning comparison, structured-output

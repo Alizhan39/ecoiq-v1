@@ -380,7 +380,9 @@ class AIModelRegistry:
         caller this already excludes development-only models, so NVIDIA preview
         cannot reach public routing even if a later filter were removed.
         """
-        return [m for m in self.visible_models(user) if m.free_eligible]
+        from ai_gateway import routing
+        return [m for m in self.visible_models(user)
+                if m.free_eligible and not routing.is_safety_classifier(m)]
 
     def select_route(self, profile, user=None) -> list[AIModelDefinition]:
         """

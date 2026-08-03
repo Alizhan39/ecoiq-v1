@@ -766,6 +766,10 @@ NVIDIA_NIM_TIMEOUT_SECONDS = _env_int('NVIDIA_NIM_TIMEOUT_SECONDS', 60)
 NVIDIA_NIM_MAX_OUTPUT_TOKENS = _env_int('NVIDIA_NIM_MAX_OUTPUT_TOKENS', 1600)
 NVIDIA_NIM_PROTOTYPE_ONLY = _env_bool('NVIDIA_NIM_PROTOTYPE_ONLY', 'true')
 NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED = _env_bool('NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED', 'false')
+# A third, independently-named latch on DIRECT NVIDIA NIM access. Note this
+# says nothing about `nvidia/...` models reached THROUGH OpenRouter — those
+# are ordinary OpenRouter routes and are public-eligible.
+NVIDIA_NIM_DEVELOPMENT_ONLY = _env_bool('NVIDIA_NIM_DEVELOPMENT_ONLY', 'true')
 
 # Manually reviewed, per-model NVIDIA configuration. NVIDIA models do not all
 # accept the same parameters, so capabilities and parameter defaults live here
@@ -834,6 +838,11 @@ AI_MODEL_ALLOWLIST = {
         'nvidia/nemotron-3-nano-30b-a3b:free',
         'google/gemma-4-31b-it:free',
         'inclusionai/ling-3.0-flash:free',
+        # Vision route for document/image analysis.
+        'nvidia/nemotron-nano-12b-v2-vl:free',
+        # Internal safety classifier — NEVER a response model. Excluded from
+        # every routing pool by AI_SAFETY_MODEL below.
+        'nvidia/nemotron-3.5-content-safety:free',
     },
     'bytez': set(BYTEZ_APPROVED_MODELS),
     # Staff / development only. Both ids were verified present in the live
@@ -853,7 +862,7 @@ AI_MODEL_ALLOWLIST = {
 # structured-output need, privacy level and minimum context. A module absent
 # from this map gets AI_ROUTING_DEFAULT_PROFILE.
 AI_ROUTING_DEFAULT_PROFILE = {
-    'task': 'chat',
+    'task': 'general_assistant',
     'structured_output': False,
     'privacy_level': 'standard',
     'min_context_length': 8_000,
@@ -861,14 +870,39 @@ AI_ROUTING_DEFAULT_PROFILE = {
 
 AI_MODULE_ROUTING = {
     'company-analysis': {
-        'task': 'analysis',
-        'structured_output': False,
+        'task': 'company_analysis',
         'privacy_level': 'sensitive',
         'min_context_length': 32_000,
     },
+    'company-comparison': {
+        'task': 'company_comparison',
+        'privacy_level': 'sensitive',
+        'min_context_length': 32_000,
+    },
+    'investment-analysis': {
+        'task': 'investment_analysis',
+        'privacy_level': 'sensitive',
+        'min_context_length': 32_000,
+    },
+    'khalifah': {
+        'task': 'khalifah_explanation',
+        'privacy_level': 'standard',
+    },
+    'data-extraction': {
+        'task': 'structured_data_extraction',
+        'structured_output': True,
+        'privacy_level': 'sensitive',
+    },
+    'translation': {
+        'task': 'translation_and_localisation',
+        'privacy_level': 'standard',
+    },
+    'document-analysis': {
+        'task': 'document_and_image_analysis',
+        'privacy_level': 'sensitive',
+    },
     'decision-studio': {
-        'task': 'analysis',
-        'structured_output': False,
+        'task': 'company_analysis',
         'privacy_level': 'sensitive',
         'min_context_length': 32_000,
     },
@@ -882,6 +916,96 @@ AI_ROUTING_MODES = {
     'deep':  {'min_context_length': 100_000, 'max_output_tokens': None, 'prefer': 'capable'},
 }
 AI_DEFAULT_ROUTING_MODE = os.environ.get('AI_DEFAULT_ROUTING_MODE', 'auto').strip() or 'auto'
+
+# ── Task-specific routing ─────────────────────────────────────────────────────
+# An explicit, operator-controlled attempt order per task. When a task appears
+# here its list governs the order; the capability filter still runs FIRST, so a
+# text-only model can never be handed an image request no matter where it sits
+# in the list.
+#
+# `OPENROUTER_FREE_ROUTER_MODEL` is appended as the guaranteed final reserve
+# even where a list omits it — the router is the last resort for every task.
+#
+# Every id below is also subject to the live zero-price catalogue check on each
+# registry refresh: a model that stops being free, or disappears, drops out of
+# the pool automatically. A paid variant is never substituted.
+AI_TASK_ROUTING = {
+    'company_analysis': [
+        'nvidia/nemotron-3-super-120b-a12b:free',
+        'google/gemma-4-31b-it:free',
+        'openai/gpt-oss-20b:free',
+        'openrouter/free',
+    ],
+    'company_comparison': [
+        'nvidia/nemotron-3-super-120b-a12b:free',
+        'google/gemma-4-31b-it:free',
+        'openrouter/free',
+    ],
+    'investment_analysis': [
+        'nvidia/nemotron-3-super-120b-a12b:free',
+        'openai/gpt-oss-20b:free',
+        'google/gemma-4-31b-it:free',
+        'openrouter/free',
+    ],
+    'khalifah_explanation': [
+        'nvidia/nemotron-3-super-120b-a12b:free',
+        'google/gemma-4-31b-it:free',
+        'openrouter/free',
+    ],
+    'structured_data_extraction': [
+        'openai/gpt-oss-20b:free',
+        'google/gemma-4-31b-it:free',
+        'nvidia/nemotron-3-nano-30b-a3b:free',
+    ],
+    'general_assistant': [
+        'inclusionai/ling-3.0-flash:free',
+        'google/gemma-4-31b-it:free',
+        'nvidia/nemotron-3-nano-30b-a3b:free',
+        'openrouter/free',
+    ],
+    'translation_and_localisation': [
+        'google/gemma-4-31b-it:free',
+        'inclusionai/ling-3.0-flash:free',
+        'openrouter/free',
+    ],
+    'document_and_image_analysis': [
+        'nvidia/nemotron-nano-12b-v2-vl:free',
+        'google/gemma-4-31b-it:free',
+        'openrouter/free',
+    ],
+    'quick_summary': [
+        'inclusionai/ling-3.0-flash:free',
+        'nvidia/nemotron-3-nano-30b-a3b:free',
+        'openrouter/free',
+    ],
+}
+
+# ── Safety classifier ─────────────────────────────────────────────────────────
+# An INTERNAL classifier, never a response model. `routing.is_eligible()`
+# excludes it from every chain, so it cannot answer a user even if a task list
+# named it. Its verdict is normalised before it leaves ai_gateway/safety.py —
+# no reasoning trace, no raw category payload, no upstream provider data ever
+# reaches a public caller.
+AI_SAFETY_MODEL = os.environ.get(
+    'AI_SAFETY_MODEL', 'nvidia/nemotron-3.5-content-safety:free').strip()
+AI_SAFETY_ENABLED = _env_bool('AI_SAFETY_ENABLED', 'true')
+
+# Screening is SELECTIVE — a harmless text question never triggers it. Modules
+# listed here are treated as high-risk and always screened.
+AI_SAFETY_HIGH_RISK_MODULES = frozenset(
+    _parse_env_list('AI_SAFETY_HIGH_RISK_MODULES', ''))
+AI_SAFETY_MAX_INPUT_CHARS = _env_int('AI_SAFETY_MAX_INPUT_CHARS', 4000)
+
+# ── Benchmark-only candidates ─────────────────────────────────────────────────
+# Verified free and available, but deliberately NOT in AI_MODEL_ALLOWLIST: they
+# stay outside public routing until benchmarked. Listing them here documents the
+# intent; it grants nothing. Approving one means adding it to the allowlist by
+# hand after reviewing benchmark results.
+AI_BENCHMARK_CANDIDATES = (
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+    'google/gemma-4-26b-a4b-it:free',
+)
 
 # Task-specific benchmark scores, highest wins, used to rank otherwise-eligible
 # models. INTENTIONALLY EMPTY: EcoIQ has not run its own benchmarks yet, and
@@ -929,6 +1053,17 @@ AI_MODEL_PRESENTATION = {
         'key_slug': 'ling-3-flash-free',
         'display_name': 'Ling 3.0 Flash',
         'priority': 50,
+    },
+    'nvidia/nemotron-nano-12b-v2-vl:free': {
+        'key_slug': 'nemotron-nano-vl-free',
+        'display_name': 'Nemotron Nano VL',
+        'description': 'Vision-capable model for documents and images.',
+        'priority': 60,
+    },
+    'nvidia/nemotron-3.5-content-safety:free': {
+        'key_slug': 'content-safety-free',
+        'display_name': 'Content Safety Classifier',
+        'priority': 900,
     },
     'meta/llama-3.1-8b-instruct': {
         'key_slug': 'llama-31-8b-preview',

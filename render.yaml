@@ -92,6 +92,17 @@ services:
         value: "true"
       - key: AI_MAX_PROVIDER_ATTEMPTS
         value: "3"
+      # Internal safety classifier — selective, never a response model.
+      - key: AI_SAFETY_ENABLED
+        value: "true"
+      - key: AI_SAFETY_MODEL
+        value: "nvidia/nemotron-3.5-content-safety:free"
+      - key: AI_SAFETY_HIGH_RISK_MODULES
+        value: ""
+      # Direct NVIDIA NIM stays development-only. Unrelated to `nvidia/...`
+      # models reached THROUGH OpenRouter, which are ordinary public routes.
+      - key: NVIDIA_NIM_DEVELOPMENT_ONLY
+        value: "true"
 
       - key: OPENROUTER_ENABLED
         value: "true"

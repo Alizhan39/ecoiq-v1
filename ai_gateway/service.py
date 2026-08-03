@@ -19,6 +19,7 @@ import uuid
 
 from django.conf import settings
 
+from ai_gateway import safety
 from ai_gateway.exceptions import FreeModelsUnavailable, InvalidAIRequest
 from ai_gateway.prompts import build_system_prompt, normalise_language
 from ai_gateway.registry import registry
@@ -159,6 +160,8 @@ class AIService:
         history=None,
         context=None,
         mode=None,
+        images=None,
+        attachments=None,
     ) -> dict:
         request_id = uuid.uuid4().hex[:16]
 
@@ -171,13 +174,37 @@ class AIService:
         if total_chars > MAX_TOTAL_REQUEST_CHARS:
             raise InvalidAIRequest('This conversation is too large to send. Start a new chat.')
 
+        has_images = bool(images)
+        has_attachments = bool(attachments) or has_images
+
         profile = build_profile(
             user=user,
             mode=mode,
             module=context.get('module', ''),
             language=language,
             estimated_input_chars=total_chars,
+            # Drives the capability filter: with images present, only
+            # vision-capable models survive `routing.is_eligible()`.
+            needs_vision=has_images,
         )
+
+        # Selective safety screening — see ai_gateway/safety.py. A harmless
+        # text question meets no trigger and costs nothing extra.
+        found = safety.triggers(
+            message=message,
+            has_attachments=has_attachments,
+            has_images=has_images,
+            module=context.get('module', ''),
+        )
+        if safety.should_screen(found):
+            verdict = safety.screen(message=message, found=found, request_id=request_id)
+            if verdict.blocked:
+                # A stable, generic refusal. The classifier's category, its
+                # reasoning and the provider behind it are never disclosed.
+                raise InvalidAIRequest(
+                    'EcoIQ cannot help with this request.',
+                    code='CONTENT_NOT_SUPPORTED',
+                )
 
         chain, pinned = self._build_chain(model_key, user, profile)
 

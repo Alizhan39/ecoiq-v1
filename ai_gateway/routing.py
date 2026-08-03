@@ -156,10 +156,21 @@ def recent_failures(model_key: str) -> int:
 
 # ── Eligibility + scoring ─────────────────────────────────────────────────────
 
+def is_safety_classifier(model: AIModelDefinition) -> bool:
+    """
+    The internal safety classifier. It is allowlisted so the registry will
+    fetch and validate it, but it must never answer a user — so it is filtered
+    out of every routing chain here, regardless of what a task list says.
+    """
+    return model.provider_model_id == getattr(settings, 'AI_SAFETY_MODEL', '')
+
+
 def is_eligible(model: AIModelDefinition, profile: RoutingProfile) -> tuple[bool, str]:
     """Hard filters. Returns (eligible, reason_if_not) for explainable routing."""
     if not model.free_eligible:
         return False, 'not free-eligible'
+    if is_safety_classifier(model):
+        return False, 'internal safety classifier — never a response model'
     if model.availability != AVAILABILITY_AVAILABLE:
         return False, 'cooling off after a recent failure'
     if profile.is_public and model.development_only:
@@ -227,12 +238,22 @@ def build_chain(candidates: list[AIModelDefinition], profile: RoutingProfile
     the guaranteed final reserve, so it must not be squeezed out by a large
     approved pool.
     """
+    # CAPABILITY FILTERING RUNS FIRST, before any ordering. A text-only model
+    # can never receive an image request no matter where a task list puts it.
     eligible = [m for m in candidates if is_eligible(m, profile)[0]]
 
     specific = [m for m in eligible if not is_catch_all_router(m)]
     catch_all = [m for m in eligible if is_catch_all_router(m)]
 
-    if getattr(settings, 'AI_ROUTING_MODE', 'automatic') == 'automatic':
+    task_order = (getattr(settings, 'AI_TASK_ROUTING', {}) or {}).get(profile.task)
+    if task_order:
+        # Explicit operator-defined order for this task. Models the task names
+        # come first, in the named order; anything eligible but unnamed follows
+        # (so a newly allowlisted model is usable without editing every task).
+        rank = {model_id: i for i, model_id in enumerate(task_order)}
+        specific.sort(key=lambda m: (rank.get(m.provider_model_id, len(rank)),
+                                     m.priority, m.key))
+    elif getattr(settings, 'AI_ROUTING_MODE', 'automatic') == 'automatic':
         specific.sort(key=lambda m: (-score(m, profile), m.priority, m.key))
     else:
         specific.sort(key=lambda m: (m.priority, m.key))
