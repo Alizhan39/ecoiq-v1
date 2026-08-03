@@ -73,6 +73,25 @@ class AuditSession(models.Model):
     extracted_text  = models.TextField(blank=True)
     notes           = models.TextField(blank=True)
 
+    # Owner of this session and of the document uploaded to it. Added after
+    # AuditSession shipped without any owner at all, which meant every
+    # logged-in user's list/detail/questionnaire/report/PDF views showed
+    # every OTHER user's sessions and their uploaded documents. Mirrors the
+    # identical fix already made on core.Assessment.created_by.
+    #
+    # Nullable + SET_NULL so no existing row is ever deleted or reassigned.
+    # AuditSession has never stored a user reference — not directly, and not
+    # via AuditReport/AuditResponse/Finding/Recommendation/ActionPlan, none of
+    # which carry one either — so the owner of a pre-existing row cannot be
+    # derived from the data. Those rows keep created_by=None and are
+    # STAFF-ONLY-VISIBLE (see audit.views._audit_sessions_visible_to): they
+    # fail closed for regular users rather than being guessed at or assigned
+    # to an arbitrary account.
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='audit_sessions',
+    )
+
     created_at      = models.DateTimeField(auto_now_add=True)
     updated_at      = models.DateTimeField(auto_now=True)
 

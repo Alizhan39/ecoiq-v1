@@ -19,11 +19,51 @@ from .questions import QUESTIONS, grouped as grouped_questions
 from core.utils import extract_text  # reuse existing PDF extractor
 
 
+# ── Object-level access scoping ───────────────────────────────────────────────
+#
+# AuditSession and AIAnalysisJob both hold user-uploaded documents and the
+# analysis derived from them. Every non-staff view below resolves its object
+# through one of these two querysets, so a user can only ever reach a row they
+# own — the filter is applied to the BASE QUERYSET, before the object is
+# fetched and before any file is opened or mutated. Object identity is never
+# taken from the URL alone.
+#
+# Same shape and same reasoning as core.views._assessments_visible_to.
+
+def _audit_sessions_visible_to(user):
+    """
+    Sessions `user` may see. Staff see everything: they are the only role that
+    can trigger a paid Anthropic call (see `analyse`) and must be able to
+    review any submission. Everyone else sees only their own.
+
+    Legacy rows with created_by=None are visible to staff ONLY — they predate
+    the owner field and their true owner is not recoverable from the data, so
+    they fail closed rather than being attributed to anyone.
+    """
+    if user.is_staff:
+        return AuditSession.objects.all()
+    return AuditSession.objects.filter(created_by=user)
+
+
+def _ai_jobs_visible_to(user):
+    """
+    AI analysis jobs `user` may see. Same policy as above.
+
+    AIAnalysisJob has always recorded `submitted_by` on upload; the defect was
+    that no view filtered on it. Jobs with submitted_by=None are staff-only for
+    the same fail-closed reason.
+    """
+    if user.is_staff:
+        return AIAnalysisJob.objects.all()
+    return AIAnalysisJob.objects.filter(submitted_by=user)
+
+
 # ── Index ─────────────────────────────────────────────────────────────────────
 
 @login_required
 def index(request):
-    sessions = AuditSession.objects.select_related('report').order_by('-created_at')[:50]
+    sessions = (_audit_sessions_visible_to(request.user)
+                .select_related('report').order_by('-created_at')[:50])
     return render(request, 'audit/index.html', {'sessions': sessions})
 
 
@@ -35,6 +75,7 @@ def upload(request):
         form = AuditSessionForm(request.POST, request.FILES)
         if form.is_valid():
             session = form.save(commit=False)
+            session.created_by = request.user
             if session.uploaded_file:
                 try:
                     session.extracted_text = extract_text(session.uploaded_file)
@@ -55,7 +96,7 @@ def upload(request):
 
 @login_required
 def questionnaire(request, pk):
-    session = get_object_or_404(AuditSession, pk=pk)
+    session = get_object_or_404(_audit_sessions_visible_to(request.user), pk=pk)
     saved   = {r.question_key: r.answer for r in session.responses.all()}
 
     if request.method == 'POST':
@@ -101,7 +142,10 @@ def questionnaire(request, pk):
 # Triggers paid Anthropic API calls — restricted to staff (no paid user-tier exists).
 @staff_member_required(login_url='/login/')
 def analyse(request, pk):
-    session = get_object_or_404(AuditSession, pk=pk)
+    # Staff-only (paid Anthropic call). Resolved through the same scoping
+    # helper so the staff policy is explicit and enforced by one code path
+    # rather than implied by the decorator alone.
+    session = get_object_or_404(_audit_sessions_visible_to(request.user), pk=pk)
 
     if session.status == 'complete':
         return redirect('audit_detail', pk=pk)
@@ -132,7 +176,7 @@ def analyse(request, pk):
 
 @login_required
 def detail(request, pk):
-    session  = get_object_or_404(AuditSession, pk=pk)
+    session  = get_object_or_404(_audit_sessions_visible_to(request.user), pk=pk)
     report   = getattr(session, 'report', None)
     findings = session.findings.all()
     recs     = session.recommendations.all()
@@ -305,14 +349,14 @@ def _report_context(session):
 
 @login_required
 def report(request, pk):
-    session = get_object_or_404(AuditSession, pk=pk)
+    session = get_object_or_404(_audit_sessions_visible_to(request.user), pk=pk)
     ctx = _report_context(session)
     return render(request, 'audit/report.html', ctx)
 
 
 @login_required
 def report_pdf(request, pk):
-    session = get_object_or_404(AuditSession, pk=pk)
+    session = get_object_or_404(_audit_sessions_visible_to(request.user), pk=pk)
     ctx = _report_context(session)
     try:
         import gc
@@ -386,8 +430,9 @@ def ai_jobs(request):
         messages.success(request, f'"{pdf.name}" uploaded. Click Analyse to start.')
         return redirect('ai_job_detail', pk=job.pk)
 
-    jobs      = AIAnalysisJob.objects.select_related('company', 'submitted_by') \
-                                      .prefetch_related('findings')
+    jobs      = _ai_jobs_visible_to(request.user) \
+                    .select_related('company', 'submitted_by') \
+                    .prefetch_related('findings')
     companies = Company.objects.all().order_by('name')
     return render(request, 'audit/ai_jobs.html', {
         'jobs': jobs, 'companies': companies,
@@ -399,7 +444,7 @@ def ai_job_detail(request, pk):
     """Review findings for one job."""
     from league.models import Company
 
-    job      = get_object_or_404(AIAnalysisJob, pk=pk)
+    job      = get_object_or_404(_ai_jobs_visible_to(request.user), pk=pk)
     findings = job.findings.all()
     score_estimate = getattr(job, 'score_estimate', None)
     companies      = Company.objects.all().order_by('name')
@@ -472,7 +517,9 @@ def ai_job_run(request, pk):
     if request.method != 'POST':
         return redirect('ai_job_detail', pk=pk)
 
-    job = get_object_or_404(AIAnalysisJob, pk=pk)
+    # Staff-only (paid Anthropic call) — resolved through the scoping helper so
+    # the staff policy is explicit and testable, not implied by the decorator.
+    job = get_object_or_404(_ai_jobs_visible_to(request.user), pk=pk)
 
     if job.status == 'processing':
         messages.warning(request, 'Analysis is already running.')
@@ -503,7 +550,13 @@ def ai_finding_action(request, pk):
     if request.method != 'POST':
         return redirect('ai_jobs')
 
-    finding = get_object_or_404(AIFinding, pk=pk)
+    # A finding inherits the access restrictions of the document it was derived
+    # from, so it is resolved THROUGH the owner-scoped job queryset. Looking it
+    # up by AIFinding.pk alone would let a finding id act as a side door to
+    # another user's document analysis.
+    finding = get_object_or_404(
+        AIFinding.objects.filter(job__in=_ai_jobs_visible_to(request.user)), pk=pk,
+    )
     action  = request.POST.get('action')  # 'approve' | 'reject'
     note    = request.POST.get('analyst_notes', '').strip()
 
@@ -527,7 +580,7 @@ def ai_bulk_action(request, pk):
 
     from django.utils import timezone as tz
 
-    job    = get_object_or_404(AIAnalysisJob, pk=pk)
+    job    = get_object_or_404(_ai_jobs_visible_to(request.user), pk=pk)
     action = request.POST.get('action')  # 'approve_all' | 'reject_all'
 
     if action == 'approve_all':
@@ -561,7 +614,7 @@ def ai_score_action(request, pk):
     if request.method != 'POST':
         return redirect('ai_job_detail', pk=pk)
 
-    job = get_object_or_404(AIAnalysisJob, pk=pk)
+    job = get_object_or_404(_ai_jobs_visible_to(request.user), pk=pk)
     se  = get_object_or_404(AIScoreEstimate, job=job)
 
     action = request.POST.get('action')  # 'approve' | 'revoke'
@@ -593,7 +646,7 @@ def ai_job_apply(request, pk):
     from league.models import Company
     from .ai_engine import apply_approved_findings
 
-    job = get_object_or_404(AIAnalysisJob, pk=pk)
+    job = get_object_or_404(_ai_jobs_visible_to(request.user), pk=pk)
 
     # Allow overriding company from POST
     company_id = request.POST.get('company_id') or None
@@ -640,7 +693,7 @@ def ai_job_save_note(request, pk):
     from django.http import JsonResponse
     if request.method != 'POST':
         return JsonResponse({'ok': False}, status=405)
-    job = get_object_or_404(AIAnalysisJob, pk=pk)
+    job = get_object_or_404(_ai_jobs_visible_to(request.user), pk=pk)
     note = request.POST.get('analyst_notes', '')
     job.analyst_notes = note
     job.save(update_fields=['analyst_notes'])
@@ -655,7 +708,7 @@ def ai_job_set_company(request, pk):
 
     from league.models import Company
 
-    job        = get_object_or_404(AIAnalysisJob, pk=pk)
+    job        = get_object_or_404(_ai_jobs_visible_to(request.user), pk=pk)
     company_id = request.POST.get('company_id') or None
 
     if company_id:
