@@ -222,8 +222,10 @@ def build_chain(candidates: list[AIModelDefinition], profile: RoutingProfile
         3. the free router (openrouter/free) as the catch-all
         4. (caller returns FREE_MODELS_UNAVAILABLE when this list empties)
 
-    Then truncate to AI_MAX_PROVIDER_ATTEMPTS. Deduplicated by key, so a chain
-    can never revisit a model — a fallback loop is not representable.
+    The whole list is capped by AI_MAX_PROVIDER_ATTEMPTS, but the catch-all
+    holds the last slot rather than queueing behind the specific models — it is
+    the guaranteed final reserve, so it must not be squeezed out by a large
+    approved pool.
     """
     eligible = [m for m in candidates if is_eligible(m, profile)[0]]
 
@@ -235,17 +237,28 @@ def build_chain(candidates: list[AIModelDefinition], profile: RoutingProfile
     else:
         specific.sort(key=lambda m: (m.priority, m.key))
 
-    ordered, seen = [], set()
-    for model in specific + catch_all:
-        if model.key not in seen:
-            seen.add(model.key)
-            ordered.append(model)
+    max_attempts = max(1, int(settings.AI_MAX_PROVIDER_ATTEMPTS))
 
     if not settings.AI_ALLOW_AUTOMATIC_FALLBACK:
-        ordered = ordered[:1]
+        return (specific + catch_all)[:1]
 
-    max_attempts = max(1, int(settings.AI_MAX_PROVIDER_ATTEMPTS))
-    return ordered[:max_attempts]
+    # The catch-all gets the LAST slot reserved for it, rather than competing
+    # for space with the specific models. Without this, a pool of 5 specific
+    # models and AI_MAX_PROVIDER_ATTEMPTS=3 truncates to three specific models
+    # and the free router — the documented final reserve — is never reachable.
+    if catch_all and max_attempts > 1:
+        ordered = specific[:max_attempts - 1] + catch_all[:1]
+    else:
+        ordered = (specific + catch_all)[:max_attempts]
+
+    # Deduplicate by key, so a chain can never revisit a model — a fallback
+    # loop is not representable.
+    seen, unique = set(), []
+    for model in ordered:
+        if model.key not in seen:
+            seen.add(model.key)
+            unique.append(model)
+    return unique[:max_attempts]
 
 
 def explain(candidates: list[AIModelDefinition], profile: RoutingProfile) -> list[dict]:

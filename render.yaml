@@ -117,7 +117,7 @@ services:
       # Bytez ships with an empty allowlist. Setting a key alone does NOT
       # make any Bytez model usable — see BYTEZ_APPROVED_MODELS below.
       - key: BYTEZ_ENABLED
-        value: "true"
+        value: "false"                   # OFF — code retained, see AI-GATEWAY.md
       - key: BYTEZ_API_KEY
         sync: false                      # set manually in Render dashboard — never in git
       - key: BYTEZ_OPENAI_BASE_URL
@@ -145,7 +145,7 @@ services:
       # Do NOT set NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED=true until licensing
       # for public production traffic has been separately approved.
       - key: NVIDIA_NIM_ENABLED
-        value: "true"
+        value: "true"                    # staff/development only; never public
       - key: NVIDIA_NIM_API_KEY
         sync: false                      # set manually in Render dashboard — never in git
       - key: NVIDIA_NIM_BASE_URL

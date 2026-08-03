@@ -427,10 +427,23 @@ class BytezPolicyTests(GatewayTestCase):
         Its catalogue schema could not be verified without a key, so the
         shipped default must contribute nothing. Read from the settings module
         directly rather than `django.conf.settings`, which this class overrides.
+
+        NVIDIA, by contrast, IS allowlisted — but only with ids verified in the
+        live catalogue, and only for staff/development (see
+        ShippedRoutingConfigTests).
         """
         import ecoiq.settings as shipped
         self.assertEqual(shipped.AI_MODEL_ALLOWLIST['bytez'], set())
-        self.assertEqual(shipped.AI_MODEL_ALLOWLIST['nvidia_nim'], set())
+        self.assertFalse(shipped.BYTEZ_ENABLED)
+        self.assertEqual(
+            shipped.AI_MODEL_ALLOWLIST['nvidia_nim'],
+            {'meta/llama-3.1-8b-instruct', 'nvidia/llama-3.1-nemotron-70b-instruct'},
+        )
+        # Every allowlisted NVIDIA id must have a reviewed config entry.
+        for model_id in shipped.AI_MODEL_ALLOWLIST['nvidia_nim']:
+            self.assertIn(model_id, shipped.NVIDIA_MODEL_CONFIG)
+            self.assertTrue(shipped.NVIDIA_MODEL_CONFIG[model_id]['development_only'])
+            self.assertFalse(shipped.NVIDIA_MODEL_CONFIG[model_id]['public'])
 
     @override_settings(BYTEZ_API_KEY='k', BYTEZ_ALLOW_PAID_CREDITS=True)
     def test_paid_credits_flag_blocks_generation_under_free_only(self):
@@ -1221,13 +1234,22 @@ class CheckAIConfigurationTests(GatewayTestCase):
         self.assertIn('[PASS] No secrets exposed', output)
         self.assertIn('Result: safe', output)
 
-    def test_bytez_empty_allowlist_is_a_warning_not_an_error(self):
+    @override_settings(BYTEZ_ENABLED=True, BYTEZ_API_KEY='k')
+    def test_enabled_bytez_with_empty_allowlist_is_a_warning_not_an_error(self):
         with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
             code, output = self._run()
         self.assertEqual(code, 0)
         self.assertIn('[WARN] Bytez has no approved models', output)
         self.assertIn('refresh_ai_models --provider bytez', output)
         self.assertIn('warning', output)
+
+    @override_settings(BYTEZ_ENABLED=False)
+    def test_disabled_bytez_reports_as_intentional_not_as_a_gap(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 0)
+        self.assertIn('[PASS] Bytez intentionally disabled', output)
+        self.assertNotIn('Bytez has no approved models', output)
 
     @override_settings(AI_ALLOW_PAID_MODELS=True)
     def test_paid_models_enabled_exits_non_zero(self):
@@ -1346,3 +1368,144 @@ class NoLiveCallTests(GatewayTestCase):
         prompt = build_system_prompt(language='ru')
         self.assertIn('Russian', prompt)
         self.assertIn('Do not include your reasoning process', prompt)
+
+
+# ── Shipped routing configuration ─────────────────────────────────────────────
+
+NEMOTRON_SUPER = or_entry('nvidia/nemotron-3-super-120b-a12b:free',
+                          name='NVIDIA: Nemotron 3 Super (free)', context_length=262144)
+GEMMA = or_entry('google/gemma-4-31b-it:free', name='Google: Gemma 4 31B (free)',
+                 inputs=('text', 'image'), context_length=262144)
+LING = or_entry('inclusionai/ling-3.0-flash:free', name='Ling-3.0-flash (free)',
+                context_length=262144)
+NANO = or_entry('nvidia/nemotron-3-nano-30b-a3b:free',
+                name='NVIDIA: Nemotron 3 Nano (free)', context_length=256000)
+
+#: The catalogue the SHIPPED allowlist expects — used to assert the real
+#: configuration, not a reduced test fixture.
+SHIPPED_CATALOG = [FREE_ROUTER, NEMOTRON_SUPER, FREE_MODEL, NANO, GEMMA, LING]
+
+
+def shipped_settings():
+    """The allowlist/presentation this project actually ships with."""
+    import ecoiq.settings as shipped
+    return override_settings(
+        AI_MODEL_ALLOWLIST=shipped.AI_MODEL_ALLOWLIST,
+        AI_MODEL_PRESENTATION=shipped.AI_MODEL_PRESENTATION,
+        NVIDIA_MODEL_CONFIG=shipped.NVIDIA_MODEL_CONFIG,
+    )
+
+
+@gateway_settings
+class ShippedRoutingConfigTests(GatewayTestCase):
+    """
+    Asserts the routing outcome the product actually wants:
+      ordinary users  → Nemotron 3 Super, reserve openrouter/free
+      staff / dev     → NVIDIA NIM as well
+      Bytez           → disabled, code retained
+    """
+
+    def test_primary_public_model_is_nemotron_super(self):
+        with shipped_settings():
+            with self._patch_catalog(SHIPPED_CATALOG):
+                chain = registry.select_route(RoutingProfile())
+        self.assertEqual(chain[0].provider_model_id,
+                         'nvidia/nemotron-3-super-120b-a12b:free')
+        self.assertEqual(chain[0].display_name, 'Nemotron 3 Super')
+
+    def test_openrouter_free_is_the_final_reserve(self):
+        with shipped_settings():
+            with self._patch_catalog(SHIPPED_CATALOG):
+                chain = registry.select_route(RoutingProfile())
+        self.assertEqual(chain[-1].provider_model_id, 'openrouter/free')
+
+    def test_catch_all_is_not_squeezed_out_by_a_large_free_pool(self):
+        """
+        Regression: with 5 approved specific models and a 3-attempt cap, the
+        old build_chain truncated `specific + catch_all` and dropped the free
+        router entirely — the documented final reserve was unreachable.
+        """
+        from ai_gateway.routing import build_chain
+        with shipped_settings():
+            with self._patch_catalog(SHIPPED_CATALOG):
+                models = registry.routable_models(None)
+                self.assertGreaterEqual(len(models), 5)
+                for cap in (2, 3, 4):
+                    with override_settings(AI_MAX_PROVIDER_ATTEMPTS=cap):
+                        chain = build_chain(models, RoutingProfile())
+                    self.assertLessEqual(len(chain), cap)
+                    self.assertEqual(chain[-1].provider_model_id, 'openrouter/free',
+                                     f'catch-all missing at cap={cap}')
+                    self.assertEqual(chain[0].provider_model_id,
+                                     'nvidia/nemotron-3-super-120b-a12b:free')
+
+    def test_single_attempt_cap_still_yields_a_route(self):
+        from ai_gateway.routing import build_chain
+        with shipped_settings():
+            with self._patch_catalog(SHIPPED_CATALOG):
+                models = registry.routable_models(None)
+                with override_settings(AI_MAX_PROVIDER_ATTEMPTS=1):
+                    chain = build_chain(models, RoutingProfile())
+        self.assertEqual(len(chain), 1)
+        self.assertEqual(chain[0].provider_model_id,
+                         'nvidia/nemotron-3-super-120b-a12b:free')
+
+    def test_chain_never_repeats_a_model(self):
+        from ai_gateway.routing import build_chain
+        with shipped_settings():
+            with self._patch_catalog(SHIPPED_CATALOG):
+                chain = build_chain(registry.routable_models(None), RoutingProfile())
+        keys = [m.key for m in chain]
+        self.assertEqual(len(keys), len(set(keys)))
+
+    # ── NVIDIA: staff / development only ──────────────────────────────────────
+
+    def _nvidia_catalog(self):
+        return patch('ai_gateway.providers._openai_compat.get_json',
+                     side_effect=lambda **kw: (
+                         {'data': [{'id': 'meta/llama-3.1-8b-instruct'},
+                                   {'id': 'nvidia/llama-3.1-nemotron-70b-instruct'}]}
+                         if 'nvidia' in kw['url'] else {'data': SHIPPED_CATALOG}))
+
+    def test_nvidia_is_allowlisted_for_staff(self):
+        staff = User.objects.create_user('nv_staff', password='x', is_staff=True)
+        with shipped_settings():
+            with override_settings(NVIDIA_NIM_API_KEY='k'):
+                with self._nvidia_catalog():
+                    keys = {m.key for m in registry.visible_models(staff)}
+        self.assertIn('nvidia:llama-31-8b-preview', keys)
+        self.assertIn('nvidia:nemotron-70b-preview', keys)
+
+    def test_nvidia_stays_invisible_to_ordinary_users(self):
+        user = User.objects.create_user('nv_user', password='x')
+        with shipped_settings():
+            with override_settings(NVIDIA_NIM_API_KEY='k'):
+                with self._nvidia_catalog():
+                    keys = {m.key for m in registry.visible_models(user)}
+                    chain = registry.select_route(RoutingProfile(), user)
+        self.assertNotIn('nvidia:llama-31-8b-preview', keys)
+        self.assertFalse([m for m in chain if m.provider == 'nvidia_nim'],
+                         'NVIDIA entered a public routing chain')
+
+    # ── Bytez: disabled, code retained ────────────────────────────────────────
+
+    def test_bytez_is_disabled_by_default_in_shipped_settings(self):
+        import ecoiq.settings as shipped
+        self.assertFalse(shipped.BYTEZ_ENABLED)
+
+    def test_disabled_bytez_contributes_nothing_and_fetches_nothing(self):
+        with override_settings(BYTEZ_ENABLED=False, BYTEZ_API_KEY='k'):
+            provider = BytezProvider()
+            self.assertFalse(provider.enabled)
+            self.assertFalse(provider.is_configured)
+            self.assertEqual(provider.unavailable_reason(), 'disabled')
+            self.assertEqual(provider.evaluate_catalog(), ([], []))
+
+    def test_bytez_code_is_retained_and_still_works_when_re_enabled(self):
+        """Disabling is a switch, not a deletion — the policy check still runs."""
+        entry = {'id': 'qwen/qwen3-8b', 'task': 'chat', 'meter': 'sm-free',
+                 'params': '8B', 'openSource': True}
+        with override_settings(BYTEZ_ENABLED=True, BYTEZ_API_KEY='k'):
+            eligible, policy, reason = BytezProvider().evaluate_free_eligibility(entry)
+        self.assertTrue(eligible, reason)
+        self.assertEqual(policy, 'bytez_free_tier_meter')

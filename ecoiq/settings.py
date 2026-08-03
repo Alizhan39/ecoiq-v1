@@ -728,7 +728,12 @@ OPENROUTER_FREE_ROUTER_MODEL = os.environ.get('OPENROUTER_FREE_ROUTER_MODEL', 'o
 OPENROUTER_ZDR_ENABLED = _env_bool('OPENROUTER_ZDR_ENABLED', 'true')
 
 # ── Bytez ─────────────────────────────────────────────────────────────────────
-BYTEZ_ENABLED = _env_bool('BYTEZ_ENABLED', 'true')
+# Bytez is DISABLED by default. Its provider, free-policy check, catalogue
+# survey command and tests all remain in the codebase and are still
+# exercised by the test suite — this switch only keeps it out of the
+# runtime registry until its catalogue schema has been verified with a
+# real key. Set BYTEZ_ENABLED=true to bring it back.
+BYTEZ_ENABLED = _env_bool('BYTEZ_ENABLED', 'false')
 BYTEZ_API_KEY = os.environ.get('BYTEZ_API_KEY', '')
 BYTEZ_OPENAI_BASE_URL = os.environ.get(
     'BYTEZ_OPENAI_BASE_URL', 'https://api.bytez.com/models/v2/openai/v1')
@@ -831,7 +836,15 @@ AI_MODEL_ALLOWLIST = {
         'inclusionai/ling-3.0-flash:free',
     },
     'bytez': set(BYTEZ_APPROVED_MODELS),
-    'nvidia_nim': set(),
+    # Staff / development only. Both ids were verified present in the live
+    # NVIDIA API catalogue (GET https://integrate.api.nvidia.com/v1/models)
+    # on 2026-08-03, and both have a reviewed entry in NVIDIA_MODEL_CONFIG
+    # below. They are public=False / development_only=True, and the two
+    # environment latches keep them out of public routing entirely.
+    'nvidia_nim': {
+        'meta/llama-3.1-8b-instruct',
+        'nvidia/llama-3.1-nemotron-70b-instruct',
+    },
 }
 
 # ── Automatic routing ─────────────────────────────────────────────────────────
@@ -894,10 +907,13 @@ AI_MODEL_PRESENTATION = {
         'display_name': 'GPT-OSS 20B',
         'priority': 10,
     },
+    # PRIMARY model for ordinary users. Lower priority number ranks higher, so
+    # this is the first thing automatic routing tries; openrouter/free remains
+    # the final reserve (it holds the last slot in every chain).
     'nvidia/nemotron-3-super-120b-a12b:free': {
         'key_slug': 'nemotron-super-free',
         'display_name': 'Nemotron 3 Super',
-        'priority': 20,
+        'priority': 1,
     },
     'nvidia/nemotron-3-nano-30b-a3b:free': {
         'key_slug': 'nemotron-nano-free',

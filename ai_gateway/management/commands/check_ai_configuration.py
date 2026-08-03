@@ -148,7 +148,12 @@ class Command(BaseCommand):
 
         # Bytez
         bytez_allowlist = settings.AI_MODEL_ALLOWLIST.get('bytez', set())
-        if not bytez_allowlist:
+        if not settings.BYTEZ_ENABLED:
+            # Intentionally off — don't nag the operator to populate an
+            # allowlist for a provider they have deliberately switched out.
+            self._record(PASS, 'Bytez intentionally disabled (code retained; '
+                               'set BYTEZ_ENABLED=true to re-enable)')
+        elif not bytez_allowlist:
             self._record(WARN, 'Bytez has no approved models — run '
                                '`refresh_ai_models --provider bytez --dry-run --explain` '
                                'with BYTEZ_API_KEY set, then populate BYTEZ_APPROVED_MODELS')

@@ -141,7 +141,12 @@ contains models that are zero on `prompt`/`completion` while billing through an
 Routing policy (ZDR, `allow_fallbacks: false`) is built server-side from
 settings. The frontend cannot contribute to it.
 
-### Bytez
+### Bytez — disabled
+
+`BYTEZ_ENABLED=false`. The provider, its free-policy check, the catalogue
+survey command and all its tests **remain in the codebase** and are still
+exercised by the suite; the switch only keeps it out of the runtime registry.
+Set `BYTEZ_ENABLED=true` to bring it back once its catalogue is verified.
 
 **Ships with an empty allowlist.** The catalogue endpoint returns 401 without a
 key, so its free-tier field names could not be verified; every field name in
@@ -174,10 +179,18 @@ and exhausted credits are treated as *unavailable* (a free-pool fallback
 trigger). Bytez models are labelled **"Free-plan model"**, never "Unlimited
 free".
 
-### NVIDIA NIM
+### NVIDIA NIM — staff / development only
 
 Developer Program hosted endpoints are prototype and development access, not
-permanently free production inference. Models are labelled **"NVIDIA preview"**,
+permanently free production inference. Two ids are allowlisted for **staff and
+development users only** — `meta/llama-3.1-8b-instruct` and
+`nvidia/llama-3.1-nemotron-70b-instruct` — both verified present in the live
+NVIDIA API catalogue and both carrying a reviewed `NVIDIA_MODEL_CONFIG` entry.
+
+A hard filter in `routing.is_eligible()` removes development-only models from
+any public chain, so **no public request can reach NVIDIA**.
+
+Models are labelled **"NVIDIA preview"**,
 are visible only to staff/development users, and require **two** independent
 latches (`NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED=true` **and**
 `NVIDIA_NIM_PROTOTYPE_ONLY=false`) before ordinary production users can see
@@ -216,14 +229,26 @@ benchmark, configured priority, mode preference and recent health.
 The public chain is therefore:
 
 ```
-1. best approved task-specific free model
-2. next compatible approved free model
-3. openrouter/free            ← the catch-all, pinned LAST
+1. Nemotron 3 Super           ← primary model for ordinary users
+2. next compatible free model
+3. openrouter/free            ← the reserve, holds the LAST slot
 4. FREE_MODELS_UNAVAILABLE    ← never a paid model
 ```
 
-`openrouter/free` is deliberately last: it is the fallback when nothing more
-specific applies, not the default first choice.
+**Ordinary users** get `nvidia/nemotron-3-super-120b-a12b:free` first (262k
+context, tools, structured outputs), with `openrouter/free` as the reserve.
+**Staff and development users** additionally get NVIDIA NIM. **Bytez is off** —
+see below.
+
+`openrouter/free` is deliberately last: it is the reserve when nothing more
+specific works, not the default first choice. It **holds the last slot** rather
+than queueing behind the specific models — otherwise a large approved pool plus
+a small `AI_MAX_PROVIDER_ATTEMPTS` would truncate it away and the documented
+final reserve would be unreachable.
+
+There is no free Kimi/Moonshot model: all eight in the OpenRouter catalogue are
+paid (`moonshotai/kimi-k2.6` is $0.60/M in, $3.41/M out), so none can be used
+while `AI_FREE_ONLY=true`.
 
 `AI_MODEL_BENCHMARKS` ships **empty**. EcoIQ has not run its own task
 benchmarks, and inventing scores would make routing look principled while being
