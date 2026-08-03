@@ -75,6 +75,11 @@ urlpatterns = [
     path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
     path('api/v1/',     include('api.urls',   namespace='api')),
 
+    # EcoIQ AI Gateway — one provider-neutral, free-only AI system over
+    # OpenRouter / Bytez / NVIDIA NIM, with a per-request model selector.
+    path('api/ai/',     include('ai_gateway.urls',     namespace='ai_gateway')),
+    path('ai-assistant/', include('ai_gateway.web_urls', namespace='ai_gateway_web')),
+
     # EcoIQ Mizan Engine — ethical intelligence API
     path('api/mizan/',  include('mizan.urls',          namespace='mizan')),
 

@@ -1,0 +1,420 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Assistant{% endblock %}
+{% block meta_description_content %}Ask the EcoIQ sustainability and ethical-intelligence assistant. Choose a free AI model for each question.{% endblock %}
+
+{% block content %}
+{% comment %}
+  The model list is NEVER rendered server-side into this page. It is fetched
+  from /api/ai/models/ at runtime, so the selector can only ever offer models
+  the chat endpoint would actually accept. No provider slug, base URL or key
+  is present anywhere in this document.
+{% endcomment %}
+<div class="aig-wrap" id="aig-root"
+     data-models-url="{{ models_url }}"
+     data-chat-url="{{ chat_url }}">
+
+  <span class="aig-badge">EcoIQ Assistant</span>
+  <h1 class="aig-title" data-i18n="title">What would you like to understand?</h1>
+  <p class="aig-subtitle" data-i18n="subtitle">
+    Ask about a company, a country, a project or a decision. EcoIQ separates facts from
+    assumptions and estimates, and tells you when the data is missing.
+  </p>
+
+  <div class="aig-toolbar">
+    <label class="aig-field">
+      <span class="aig-field-label" data-i18n="modelLabel">Model</span>
+      <select id="aig-model" class="aig-select" aria-describedby="aig-model-hint"></select>
+    </label>
+
+    <label class="aig-field">
+      <span class="aig-field-label" data-i18n="languageLabel">Answer language</span>
+      <select id="aig-language" class="aig-select">
+        <option value="en">English</option>
+        <option value="ar">العربية</option>
+        <option value="ru">Русский</option>
+      </select>
+    </label>
+  </div>
+
+  <p class="aig-hint" id="aig-model-hint"></p>
+
+  <div class="aig-thread" id="aig-thread" aria-live="polite" aria-atomic="false"></div>
+
+  <form class="aig-form" id="aig-form">
+    <textarea id="aig-input" class="aig-input" rows="3" maxlength="8000"
+              data-i18n-placeholder="placeholder"
+              placeholder="e.g. What are the main environmental risks for this company?"></textarea>
+    <button type="submit" class="aig-btn" id="aig-send" data-i18n="send">Ask EcoIQ</button>
+  </form>
+
+  <p class="aig-footnote" data-i18n="footnote">
+    EcoIQ provides decision-support information, not financial, legal, medical or religious advice.
+  </p>
+</div>
+
+<style>
+  .aig-wrap {
+    --aig-bg: #070b0f; --aig-bg2: #0d1117; --aig-border: rgba(255,255,255,.08);
+    --aig-text: #e2e8f0; --aig-muted: #94a3b8; --aig-acc: #00e89a; --aig-info: #58a6ff;
+    --aig-warn: #f4a261; --aig-danger: #e63946;
+    max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--aig-bg); color: var(--aig-text); border-radius: 14px;
+  }
+  .aig-badge { display:inline-block; background:rgba(0,232,154,.12); color:var(--aig-acc);
+    border:1px solid rgba(0,232,154,.3); font-weight:700; font-size:.78rem;
+    padding:.35rem .85rem; border-radius:999px; margin-bottom:1rem; }
+  .aig-title { font-size:2rem; font-weight:800; margin:.4rem 0 .6rem; color:#fff; letter-spacing:-.02em; }
+  .aig-subtitle { font-size:1rem; color:var(--aig-muted); margin:0 0 1.5rem; max-width:680px; line-height:1.6; }
+
+  .aig-toolbar { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:.5rem; }
+  .aig-field { display:flex; flex-direction:column; gap:.35rem; min-width:220px; flex:1; }
+  .aig-field-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--aig-muted); font-weight:700; }
+  .aig-select { background:var(--aig-bg2); color:#fff; border:1px solid var(--aig-border);
+    border-radius:10px; padding:.7rem .9rem; font-size:.92rem; width:100%; }
+  .aig-select:focus-visible { outline:2px solid var(--aig-acc); outline-offset:2px; }
+  .aig-select option:disabled { color:var(--aig-muted); }
+
+  .aig-hint { font-size:.8rem; color:var(--aig-muted); margin:.5rem 0 1.25rem; min-height:1.2em; }
+  .aig-hint .aig-tag { display:inline-block; border-radius:999px; padding:.15rem .6rem;
+    font-size:.7rem; font-weight:700; margin-inline-end:.35rem; }
+  .aig-tag-free { background:rgba(0,232,154,.12); color:var(--aig-acc); border:1px solid rgba(0,232,154,.3); }
+  .aig-tag-preview { background:rgba(244,162,97,.12); color:var(--aig-warn); border:1px solid rgba(244,162,97,.3); }
+  .aig-tag-cap { background:rgba(88,166,255,.1); color:var(--aig-info); border:1px solid rgba(88,166,255,.25); }
+
+  .aig-thread { display:flex; flex-direction:column; gap:.85rem; margin-bottom:1.25rem; }
+  .aig-msg { background:var(--aig-bg2); border:1px solid var(--aig-border); border-radius:12px;
+    padding:.95rem 1.15rem; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .aig-msg-user { border-inline-start:3px solid var(--aig-info); }
+  .aig-msg-assistant { border-inline-start:3px solid var(--aig-acc); }
+  .aig-msg-error { border-inline-start:3px solid var(--aig-danger); color:#fecaca; }
+  .aig-msg-meta { display:block; font-size:.72rem; color:var(--aig-muted); margin-top:.6rem; font-weight:600; }
+  .aig-msg-notice { display:block; font-size:.76rem; color:var(--aig-warn); margin-top:.5rem; }
+
+  .aig-form { display:flex; flex-wrap:wrap; gap:.6rem; align-items:flex-end; }
+  .aig-input { flex:1; min-width:260px; background:var(--aig-bg2); color:#fff;
+    border:1px solid var(--aig-border); border-radius:10px; padding:.9rem 1.1rem;
+    font-size:1rem; font-family:inherit; resize:vertical; }
+  .aig-input:focus-visible { outline:2px solid var(--aig-acc); outline-offset:2px; border-color:var(--aig-acc); }
+  .aig-btn { background:var(--aig-acc); color:#04201a; border:0; border-radius:10px;
+    padding:.9rem 1.6rem; font-size:.95rem; font-weight:700; cursor:pointer; }
+  .aig-btn:disabled { opacity:.55; cursor:progress; }
+  .aig-btn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+
+  .aig-footnote { font-size:.76rem; color:var(--aig-muted); margin-top:1.25rem; }
+
+  /* Arabic RTL: the wrapper flips direction so the thread, badges and form all
+     mirror. Logical properties above (margin-inline-end, border-inline-start)
+     mean nothing else needs an RTL override. */
+  .aig-wrap[dir="rtl"] { text-align: right; }
+
+  @media (prefers-reduced-motion: reduce) { .aig-wrap * { transition: none !important; } }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  var root = document.getElementById('aig-root');
+  if (!root) { return; }
+
+  var MODELS_URL = root.dataset.modelsUrl;
+  var CHAT_URL = root.dataset.chatUrl;
+  var STORAGE_KEY = 'ecoiq.ai.model_key';
+  var LANG_KEY = 'ecoiq.ai.language';
+  var CATALOG_REFRESH_MS = 15 * 60 * 1000;
+
+  var modelSelect = document.getElementById('aig-model');
+  var languageSelect = document.getElementById('aig-language');
+  var hint = document.getElementById('aig-model-hint');
+  var thread = document.getElementById('aig-thread');
+  var form = document.getElementById('aig-form');
+  var input = document.getElementById('aig-input');
+  var sendBtn = document.getElementById('aig-send');
+
+  // Conversation history is held here and survives a model change — switching
+  // models mid-conversation keeps the thread, it does not start a new one.
+  var history = [];
+  var models = [];
+  var busy = false;
+
+  // ── i18n ────────────────────────────────────────────────────────────────
+  var STRINGS = {
+    en: {
+      title: 'What would you like to understand?',
+      subtitle: 'Ask about a company, a country, a project or a decision. EcoIQ separates facts from assumptions and estimates, and tells you when the data is missing.',
+      modelLabel: 'Model', languageLabel: 'Answer language',
+      placeholder: 'e.g. What are the main environmental risks for this company?',
+      send: 'Ask EcoIQ', sending: 'Thinking…',
+      footnote: 'EcoIQ provides decision-support information, not financial, legal, medical or religious advice.',
+      unavailable: 'unavailable', loading: 'Loading models…',
+      noModels: 'No free models are available right now. Please try again later.',
+      catalogError: 'Could not load the model list. Please refresh the page.',
+      genericError: 'Something went wrong. Please try again.'
+    },
+    ar: {
+      title: 'ما الذي تودّ فهمه؟',
+      subtitle: 'اسأل عن شركة أو دولة أو مشروع أو قرار. يفصل EcoIQ بين الحقائق والافتراضات والتقديرات، ويوضّح متى تكون البيانات ناقصة.',
+      modelLabel: 'النموذج', languageLabel: 'لغة الإجابة',
+      placeholder: 'مثال: ما أبرز المخاطر البيئية لهذه الشركة؟',
+      send: 'اسأل EcoIQ', sending: 'جارٍ التفكير…',
+      footnote: 'يقدّم EcoIQ معلومات داعمة للقرار، وليست استشارة مالية أو قانونية أو طبية أو دينية.',
+      unavailable: 'غير متاح', loading: 'جارٍ تحميل النماذج…',
+      noModels: 'لا تتوفر نماذج مجانية حالياً. يرجى المحاولة لاحقاً.',
+      catalogError: 'تعذّر تحميل قائمة النماذج. يرجى تحديث الصفحة.',
+      genericError: 'حدث خطأ ما. يرجى المحاولة مرة أخرى.'
+    },
+    ru: {
+      title: 'Что вы хотите понять?',
+      subtitle: 'Спросите о компании, стране, проекте или решении. EcoIQ отделяет факты от допущений и оценок и прямо говорит, когда данных не хватает.',
+      modelLabel: 'Модель', languageLabel: 'Язык ответа',
+      placeholder: 'например: Каковы основные экологические риски этой компании?',
+      send: 'Спросить EcoIQ', sending: 'Думаю…',
+      footnote: 'EcoIQ предоставляет информацию для поддержки решений, а не финансовую, юридическую, медицинскую или религиозную консультацию.',
+      unavailable: 'недоступна', loading: 'Загрузка моделей…',
+      noModels: 'Бесплатные модели сейчас недоступны. Попробуйте позже.',
+      catalogError: 'Не удалось загрузить список моделей. Обновите страницу.',
+      genericError: 'Что-то пошло не так. Попробуйте ещё раз.'
+    }
+  };
+
+  var CAPABILITY_LABELS = {
+    en: { chat: 'Text', vision: 'Vision', tools: 'Tools' },
+    ar: { chat: 'نص', vision: 'رؤية', tools: 'أدوات' },
+    ru: { chat: 'Текст', vision: 'Зрение', tools: 'Инструменты' }
+  };
+
+  function lang() { return languageSelect.value || 'en'; }
+  function t(key) { return (STRINGS[lang()] || STRINGS.en)[key] || STRINGS.en[key]; }
+
+  function applyLanguage() {
+    var code = lang();
+    var rtl = code === 'ar';
+    root.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    root.setAttribute('lang', code);
+    root.querySelectorAll('[data-i18n]').forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    });
+    renderHint();
+  }
+
+  // ── CSRF (Django cookie) ────────────────────────────────────────────────
+  function csrfToken() {
+    var match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  // ── Catalogue ───────────────────────────────────────────────────────────
+  function loadModels() {
+    return fetch(MODELS_URL, {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    }).then(function (res) {
+      if (!res.ok) { throw new Error('catalog ' + res.status); }
+      return res.json();
+    }).then(function (data) {
+      models = Array.isArray(data.models) ? data.models : [];
+      renderModels(data.default_model_key);
+    }).catch(function () {
+      modelSelect.innerHTML = '';
+      var option = document.createElement('option');
+      option.textContent = t('catalogError');
+      option.disabled = true;
+      modelSelect.appendChild(option);
+      modelSelect.disabled = true;
+    });
+  }
+
+  function renderModels(defaultKey) {
+    var previous = modelSelect.value || localStorage.getItem(STORAGE_KEY) || defaultKey;
+    modelSelect.innerHTML = '';
+
+    if (!models.length) {
+      var empty = document.createElement('option');
+      empty.textContent = t('noModels');
+      empty.disabled = true;
+      modelSelect.appendChild(empty);
+      modelSelect.disabled = true;
+      sendBtn.disabled = true;
+      return;
+    }
+    modelSelect.disabled = false;
+    sendBtn.disabled = false;
+
+    // Group by provider only when more than one provider is actually present —
+    // a single-provider list reads better flat.
+    var providers = [];
+    models.forEach(function (m) {
+      if (providers.indexOf(m.provider) === -1) { providers.push(m.provider); }
+    });
+    var group = providers.length > 1;
+
+    var containers = {};
+    providers.forEach(function (name) {
+      if (group) {
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = name;
+        modelSelect.appendChild(optgroup);
+        containers[name] = optgroup;
+      } else {
+        containers[name] = modelSelect;
+      }
+    });
+
+    models.forEach(function (m) {
+      var option = document.createElement('option');
+      option.value = m.key;
+      var label = m.name;
+      if (!group) { label += ' — ' + m.provider; }
+      if (m.availability !== 'available') { label += ' (' + t('unavailable') + ')'; }
+      option.textContent = label;
+      // A model that became unavailable stays visible but cannot be chosen.
+      option.disabled = m.availability !== 'available';
+      containers[m.provider].appendChild(option);
+    });
+
+    var selectable = models.filter(function (m) { return m.availability === 'available'; });
+    var wanted = [previous, defaultKey].find(function (key) {
+      return key && selectable.some(function (m) { return m.key === key; });
+    });
+    modelSelect.value = wanted || (selectable[0] && selectable[0].key) || '';
+    renderHint();
+  }
+
+  function renderHint() {
+    var current = models.find(function (m) { return m.key === modelSelect.value; });
+    hint.innerHTML = '';
+    if (!current) { return; }
+
+    function tag(text, cls) {
+      var span = document.createElement('span');
+      span.className = 'aig-tag ' + cls;
+      span.textContent = text;
+      hint.appendChild(span);
+    }
+    if (current.preview) {
+      tag(current.free_label || 'Preview', 'aig-tag-preview');
+    } else if (current.free) {
+      tag(current.free_label || 'Free', 'aig-tag-free');
+    }
+    var capLabels = CAPABILITY_LABELS[lang()] || CAPABILITY_LABELS.en;
+    (current.capabilities || []).forEach(function (cap) {
+      tag(capLabels[cap] || cap, 'aig-tag-cap');
+    });
+    if (current.description) {
+      hint.appendChild(document.createTextNode(current.description));
+    }
+  }
+
+  // ── Thread ──────────────────────────────────────────────────────────────
+  function addMessage(role, text, meta, notice) {
+    var el = document.createElement('div');
+    el.className = 'aig-msg aig-msg-' + role;
+    // textContent, never innerHTML — model output is never parsed as markup.
+    el.textContent = text;
+    if (notice) {
+      var noticeEl = document.createElement('span');
+      noticeEl.className = 'aig-msg-notice';
+      noticeEl.textContent = notice;
+      el.appendChild(noticeEl);
+    }
+    if (meta) {
+      var metaEl = document.createElement('span');
+      metaEl.className = 'aig-msg-meta';
+      metaEl.textContent = meta;
+      el.appendChild(metaEl);
+    }
+    thread.appendChild(el);
+    el.scrollIntoView({ block: 'nearest' });
+    return el;
+  }
+
+  // ── Send ────────────────────────────────────────────────────────────────
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (busy) { return; }
+
+    var message = input.value.trim();
+    if (!message) { return; }
+    var modelKey = modelSelect.value;
+    if (!modelKey) { return; }
+
+    busy = true;
+    sendBtn.disabled = true;
+    sendBtn.textContent = t('sending');
+    addMessage('user', message);
+    input.value = '';
+
+    fetch(CHAT_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRFToken': csrfToken()
+      },
+      // Only these five fields. There is no way for this page to send a
+      // provider name, base URL, raw model id or routing preference.
+      body: JSON.stringify({
+        message: message,
+        model_key: modelKey,
+        language: lang(),
+        history: history.slice(-20),
+        context: {}
+      })
+    }).then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+    }).then(function (result) {
+      if (!result.ok || !result.data.success) {
+        var error = (result.data && result.data.error) || {};
+        addMessage('error', error.message || t('genericError'));
+        return;
+      }
+      var data = result.data;
+      var meta = data.model ? data.model.name : '';
+      if (data.resolved_model_name) { meta += ' · ' + data.resolved_model_name; }
+      addMessage('assistant', data.answer, meta, data.notice);
+      history.push({ role: 'user', content: message });
+      history.push({ role: 'assistant', content: data.answer });
+    }).catch(function () {
+      addMessage('error', t('genericError'));
+    }).then(function () {
+      busy = false;
+      sendBtn.disabled = false;
+      sendBtn.textContent = t('send');
+      input.focus();
+    });
+  });
+
+  // Ctrl/Cmd+Enter submits; plain Enter keeps making newlines.
+  input.addEventListener('keydown', function (event) {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      form.requestSubmit();
+    }
+  });
+
+  modelSelect.addEventListener('change', function () {
+    localStorage.setItem(STORAGE_KEY, modelSelect.value);
+    renderHint();
+  });
+
+  languageSelect.addEventListener('change', function () {
+    localStorage.setItem(LANG_KEY, languageSelect.value);
+    applyLanguage();
+    sendBtn.textContent = t('send');
+  });
+
+  // ── Boot ────────────────────────────────────────────────────────────────
+  var storedLang = localStorage.getItem(LANG_KEY);
+  if (storedLang && STRINGS[storedLang]) { languageSelect.value = storedLang; }
+  applyLanguage();
+  loadModels();
+  // Periodic refresh so a model that goes down (or comes back) is reflected
+  // without a page reload. The server-side registry cache means this costs a
+  // cache read, not a provider round-trip.
+  setInterval(loadModels, CATALOG_REFRESH_MS);
+})();
+</script>
+{% endblock %}

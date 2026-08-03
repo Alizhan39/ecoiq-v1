@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 load_dotenv(override=True)   # local .env wins over shell-inherited vars
@@ -340,6 +341,13 @@ INSTALLED_APPS = [
     # human-approved promotion into the existing Digital Twin / capital-
     # allocation workflow. Never auto-contacts a vendor or commits capital.
     'global_research',
+
+    # EcoIQ AI Gateway — one provider-neutral, free-only AI system in front of
+    # OpenRouter, Bytez and NVIDIA NIM, with a per-request user model selector.
+    # Distinct from agent_runtime_model_router (which governs *agent* execution
+    # against Anthropic/OpenAI/Gemini/Azure) — this is the user-facing chat
+    # gateway, and it never routes to a paid model.
+    'ai_gateway',
 ]
 
 # PR14 — hardcoded false; no code path in public_action_preparation reads
@@ -561,6 +569,14 @@ REST_FRAMEWORK = {
         'explorer':   '100/day',
         'professional': '2000/day',
         'enterprise':   '50000/day',
+        # ── EcoIQ AI Gateway (ai_gateway/throttles.py) ──
+        # A generation costs a shared free allowance, so both a per-identity
+        # and a per-IP ceiling apply to every chat request. The catalogue is
+        # cheap (cached registry) but still bounded so a stuck client cannot
+        # spin on it.
+        'ai_chat_user': '60/hour',
+        'ai_chat_ip':   '120/hour',
+        'ai_catalog':   '120/hour',
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
@@ -618,3 +634,222 @@ CELERY_TASK_TRACK_STARTED = True
 # own always-synchronous test entrypoint, regardless of this setting.
 CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_TASK_ALWAYS_EAGER', 'False') == 'True'
 CELERY_TASK_EAGER_PROPAGATES = True
+# ══════════════════════════════════════════════════════════════════════════════
+# EcoIQ AI Gateway (ai_gateway app)
+#
+# One provider-neutral AI system in front of OpenRouter, Bytez and NVIDIA NIM.
+# Users pick a model per request from a simple selector; the browser only ever
+# sends an opaque server-issued `model_key`. A raw provider slug, base URL or
+# model name submitted by a client is never trusted.
+#
+# This is NOT a replacement for agent_runtime_model_router (governed *agent*
+# execution against Anthropic/OpenAI/Gemini/Azure) or for core/ai.py (the
+# Anthropic ESG scoring path). Both are untouched and keep their own budgets.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _env_bool(key: str, default: str = 'false') -> bool:
+    return os.environ.get(key, default).strip().strip('"').strip("'").lower() in (
+        'true', '1', 'yes', 'on',
+    )
+
+
+def _env_int(key: str, default: int) -> int:
+    try:
+        return int(os.environ.get(key, str(default)).strip().strip('"').strip("'"))
+    except ValueError:
+        return default
+
+
+# ── Global policy ─────────────────────────────────────────────────────────────
+# AI_FREE_ONLY is the master switch. While it is on: paid models are neither
+# displayed nor callable, no request is ever silently upgraded to a paid model,
+# and a free model failing can only ever fall back to another *free* model.
+AI_FREE_ONLY = _env_bool('AI_FREE_ONLY', 'true')
+AI_ALLOW_PAID_MODELS = _env_bool('AI_ALLOW_PAID_MODELS', 'false')
+
+# 'user'  — the caller may choose a model per request (the model selector).
+# anything else — the submitted model_key is ignored and the server default is
+# used. A disabled selector must not be bypassable by posting a key anyway.
+AI_MODEL_SELECTION_MODE = os.environ.get('AI_MODEL_SELECTION_MODE', 'user').strip() or 'user'
+
+AI_DEFAULT_MODEL_KEY = os.environ.get('AI_DEFAULT_MODEL_KEY', 'openrouter:auto-free').strip()
+
+# Provider catalogues are fetched at most this often — never per page load and
+# never per chat request. A failed refresh serves the last known-good registry
+# from an extended-TTL cache copy (see ai_gateway/registry.py).
+AI_MODEL_CATALOG_CACHE_SECONDS = _env_int('AI_MODEL_CATALOG_CACHE_SECONDS', 3600)
+
+AI_ALLOW_AUTOMATIC_FALLBACK = _env_bool('AI_ALLOW_AUTOMATIC_FALLBACK', 'true')
+AI_MAX_PROVIDER_ATTEMPTS = _env_int('AI_MAX_PROVIDER_ATTEMPTS', 3)
+
+# Ceiling applied before each provider's own max-output setting; the lower of
+# the two wins.
+AI_MAX_OUTPUT_TOKENS = _env_int('AI_MAX_OUTPUT_TOKENS', 1600)
+
+# ── OpenRouter ────────────────────────────────────────────────────────────────
+OPENROUTER_ENABLED = _env_bool('OPENROUTER_ENABLED', 'true')
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+OPENROUTER_BASE_URL = os.environ.get('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
+OPENROUTER_SITE_URL = os.environ.get('OPENROUTER_SITE_URL', 'https://ecoiq.ai')
+OPENROUTER_APP_NAME = os.environ.get('OPENROUTER_APP_NAME', 'EcoIQ')
+OPENROUTER_TIMEOUT_SECONDS = _env_int('OPENROUTER_TIMEOUT_SECONDS', 60)
+OPENROUTER_MAX_OUTPUT_TOKENS = _env_int('OPENROUTER_MAX_OUTPUT_TOKENS', 1600)
+OPENROUTER_FREE_ROUTER_ENABLED = _env_bool('OPENROUTER_FREE_ROUTER_ENABLED', 'true')
+OPENROUTER_FREE_ROUTER_MODEL = os.environ.get('OPENROUTER_FREE_ROUTER_MODEL', 'openrouter/free')
+# Zero-data-retention preference, sent server-side in the request body. The
+# frontend can never set, unset or override it.
+OPENROUTER_ZDR_ENABLED = _env_bool('OPENROUTER_ZDR_ENABLED', 'true')
+
+# ── Bytez ─────────────────────────────────────────────────────────────────────
+BYTEZ_ENABLED = _env_bool('BYTEZ_ENABLED', 'true')
+BYTEZ_API_KEY = os.environ.get('BYTEZ_API_KEY', '')
+BYTEZ_OPENAI_BASE_URL = os.environ.get(
+    'BYTEZ_OPENAI_BASE_URL', 'https://api.bytez.com/models/v2/openai/v1')
+BYTEZ_MODELS_URL = os.environ.get(
+    'BYTEZ_MODELS_URL', 'https://api.bytez.com/models/v2/list/models')
+BYTEZ_TIMEOUT_SECONDS = _env_int('BYTEZ_TIMEOUT_SECONDS', 60)
+BYTEZ_MAX_OUTPUT_TOKENS = _env_int('BYTEZ_MAX_OUTPUT_TOKENS', 1200)
+BYTEZ_FREE_ONLY = _env_bool('BYTEZ_FREE_ONLY', 'true')
+# Bytez free-plan access can draw down included credits. EcoIQ never enables
+# auto-reload, never purchases credits, and treats exhausted credits as
+# "unavailable" (a free-pool fallback trigger), not as a reason to spend.
+BYTEZ_ALLOW_PAID_CREDITS = _env_bool('BYTEZ_ALLOW_PAID_CREDITS', 'false')
+BYTEZ_ALLOW_CLOSED_MODELS = _env_bool('BYTEZ_ALLOW_CLOSED_MODELS', 'false')
+
+# The documented free-access meter indicator, and the free-plan model-size
+# ceiling. Both are configurable rather than hard-coded because Bytez may
+# change them; confirm against current Bytez documentation before widening.
+BYTEZ_FREE_METERS = frozenset(
+    _parse_env_list('BYTEZ_FREE_METERS', 'sm-free') or ['sm-free'])
+BYTEZ_FREE_MAX_PARAMETERS_B = float(os.environ.get('BYTEZ_FREE_MAX_PARAMETERS_B', '10'))
+
+# ── NVIDIA NIM ────────────────────────────────────────────────────────────────
+# NVIDIA Developer Program hosted endpoints are prototype/development access,
+# not permanently free production inference. Both latches below must be flipped
+# before a NVIDIA model is offered to ordinary production users.
+NVIDIA_NIM_ENABLED = _env_bool('NVIDIA_NIM_ENABLED', 'true')
+NVIDIA_NIM_API_KEY = os.environ.get('NVIDIA_NIM_API_KEY', '')
+NVIDIA_NIM_BASE_URL = os.environ.get('NVIDIA_NIM_BASE_URL', 'https://integrate.api.nvidia.com/v1')
+NVIDIA_NIM_TIMEOUT_SECONDS = _env_int('NVIDIA_NIM_TIMEOUT_SECONDS', 60)
+NVIDIA_NIM_MAX_OUTPUT_TOKENS = _env_int('NVIDIA_NIM_MAX_OUTPUT_TOKENS', 1600)
+NVIDIA_NIM_PROTOTYPE_ONLY = _env_bool('NVIDIA_NIM_PROTOTYPE_ONLY', 'true')
+NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED = _env_bool('NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED', 'false')
+
+# Manually reviewed, per-model NVIDIA configuration. NVIDIA models do not all
+# accept the same parameters, so capabilities and parameter defaults live here
+# rather than being assumed uniform. A model id absent from this map is
+# rejected by the registry even if it is in the allowlist.
+#
+# Both ids below were verified present in the live NVIDIA API catalogue
+# (GET https://integrate.api.nvidia.com/v1/models) on 2026-08-03. Nothing here
+# was invented; add entries only after the same check.
+NVIDIA_MODEL_CONFIG = {
+    'meta/llama-3.1-8b-instruct': {
+        'display_name': 'Llama 3.1 8B',
+        'description': 'Fast general-purpose chat model. NVIDIA prototype endpoint.',
+        'capabilities': {'chat'},
+        'context_length': 131072,
+        'temperature': 0.2,
+        'top_p': None,
+        'public': False,
+        'development_only': True,
+    },
+    'nvidia/llama-3.1-nemotron-70b-instruct': {
+        'display_name': 'Nemotron 70B',
+        'description': 'Larger reasoning-oriented chat model. NVIDIA prototype endpoint.',
+        'capabilities': {'chat'},
+        'context_length': 131072,
+        'temperature': 0.2,
+        'top_p': None,
+        'public': False,
+        'development_only': True,
+    },
+}
+
+# ── EcoIQ allowlist ───────────────────────────────────────────────────────────
+# The server-side allowlist. A model is selectable only if it appears here AND
+# passes its provider's free-eligibility check AND is present in that
+# provider's live catalogue AND supports the requested capability.
+#
+# OpenRouter entries below were each verified against the live public
+# catalogue (GET https://openrouter.ai/api/v1/models) on 2026-08-03: every one
+# reported "prompt": "0" and "completion": "0", text-in/text-out (except the
+# Gemma entry, which also accepts images), and no expiration date. They are
+# re-verified on every registry refresh — a model that stops being free drops
+# out automatically rather than being billed.
+#
+# Bytez ships EMPTY: its catalogue endpoint requires a key, so its free-tier
+# field names could not be verified. Populate only after running
+# `manage.py refresh_ai_models --explain` with a real key.
+#
+# NVIDIA ships EMPTY by default too: uncomment an id from NVIDIA_MODEL_CONFIG
+# above only once the licensing question for your use has been settled.
+AI_MODEL_ALLOWLIST = {
+    'openrouter': {
+        'openrouter/free',
+        'openai/gpt-oss-20b:free',
+        'nvidia/nemotron-3-super-120b-a12b:free',
+        'nvidia/nemotron-3-nano-30b-a3b:free',
+        'google/gemma-4-31b-it:free',
+        'inclusionai/ling-3.0-flash:free',
+    },
+    'bytez': set(),
+    'nvidia_nim': set(),
+}
+
+# Friendly presentation for the selector. `key_slug` mints the opaque model key
+# (`openrouter/free` → `openrouter:auto-free`); `priority` orders the selector,
+# lower first. Anything not listed falls back to the provider's own name and a
+# slug derived from the model id — so this map is optional polish, never a
+# requirement for a model to work.
+AI_MODEL_PRESENTATION = {
+    'openrouter/free': {
+        'key_slug': 'auto-free',
+        'display_name': 'Auto — Free',
+        'description': 'Automatically selects an available free model.',
+        'priority': 0,
+    },
+    'openai/gpt-oss-20b:free': {
+        'key_slug': 'gpt-oss-20b-free',
+        'display_name': 'GPT-OSS 20B',
+        'priority': 10,
+    },
+    'nvidia/nemotron-3-super-120b-a12b:free': {
+        'key_slug': 'nemotron-super-free',
+        'display_name': 'Nemotron 3 Super',
+        'priority': 20,
+    },
+    'nvidia/nemotron-3-nano-30b-a3b:free': {
+        'key_slug': 'nemotron-nano-free',
+        'display_name': 'Nemotron 3 Nano',
+        'priority': 30,
+    },
+    'google/gemma-4-31b-it:free': {
+        'key_slug': 'gemma-4-31b-free',
+        'display_name': 'Gemma 4 31B',
+        'priority': 40,
+    },
+    'inclusionai/ling-3.0-flash:free': {
+        'key_slug': 'ling-3-flash-free',
+        'display_name': 'Ling 3.0 Flash',
+        'priority': 50,
+    },
+    'meta/llama-3.1-8b-instruct': {
+        'key_slug': 'llama-31-8b-preview',
+        'priority': 200,
+    },
+    'nvidia/llama-3.1-nemotron-70b-instruct': {
+        'key_slug': 'nemotron-70b-preview',
+        'priority': 210,
+    },
+}
+
+# A configuration that would let a "free" request become a paid one is a
+# deployment mistake, not a runtime decision — fail loudly at startup.
+if AI_FREE_ONLY and AI_ALLOW_PAID_MODELS:
+    raise ImproperlyConfigured(
+        'AI_FREE_ONLY=true and AI_ALLOW_PAID_MODELS=true are contradictory. '
+        'Set AI_ALLOW_PAID_MODELS=false, or turn AI_FREE_ONLY off deliberately.'
+    )
+

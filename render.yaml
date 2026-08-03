@@ -67,6 +67,86 @@ services:
       - key: COMPANIES_HOUSE_API_KEY
         sync: false                      # set manually in Render dashboard — never in git
 
+      # ── EcoIQ AI Gateway (ai_gateway app) ────────────────────────────────
+      # Configuration only — no new service, no new plan, no cost. Every AI
+      # provider key is sync:false and must be pasted into the Render
+      # dashboard by hand; a blank key simply means that provider contributes
+      # no models, which is a safe (not a broken) state.
+      - key: AI_FREE_ONLY
+        value: "true"                    # master switch: no paid model is ever shown or called
+      - key: AI_ALLOW_PAID_MODELS
+        value: "false"
+      - key: AI_MODEL_SELECTION_MODE
+        value: "user"                    # per-request model selector enabled
+      - key: AI_DEFAULT_MODEL_KEY
+        value: "openrouter:auto-free"
+      - key: AI_MODEL_CATALOG_CACHE_SECONDS
+        value: "3600"
+      - key: AI_ALLOW_AUTOMATIC_FALLBACK
+        value: "true"
+      - key: AI_MAX_PROVIDER_ATTEMPTS
+        value: "3"
+
+      - key: OPENROUTER_ENABLED
+        value: "true"
+      - key: OPENROUTER_API_KEY
+        sync: false                      # set manually in Render dashboard — never in git
+      - key: OPENROUTER_BASE_URL
+        value: "https://openrouter.ai/api/v1"
+      - key: OPENROUTER_SITE_URL
+        value: "https://ecoiq.ai"
+      - key: OPENROUTER_APP_NAME
+        value: "EcoIQ"
+      - key: OPENROUTER_TIMEOUT_SECONDS
+        value: "60"
+      - key: OPENROUTER_MAX_OUTPUT_TOKENS
+        value: "1600"
+      - key: OPENROUTER_FREE_ROUTER_ENABLED
+        value: "true"
+      - key: OPENROUTER_FREE_ROUTER_MODEL
+        value: "openrouter/free"
+      - key: OPENROUTER_ZDR_ENABLED
+        value: "true"
+
+      # Bytez ships with an empty allowlist — see settings.AI_MODEL_ALLOWLIST.
+      # Setting a key alone does NOT make any Bytez model selectable.
+      - key: BYTEZ_ENABLED
+        value: "true"
+      - key: BYTEZ_API_KEY
+        sync: false                      # set manually in Render dashboard — never in git
+      - key: BYTEZ_OPENAI_BASE_URL
+        value: "https://api.bytez.com/models/v2/openai/v1"
+      - key: BYTEZ_MODELS_URL
+        value: "https://api.bytez.com/models/v2/list/models"
+      - key: BYTEZ_TIMEOUT_SECONDS
+        value: "60"
+      - key: BYTEZ_MAX_OUTPUT_TOKENS
+        value: "1200"
+      - key: BYTEZ_FREE_ONLY
+        value: "true"
+      - key: BYTEZ_ALLOW_PAID_CREDITS
+        value: "false"                   # never spend credits, never auto-reload
+      - key: BYTEZ_ALLOW_CLOSED_MODELS
+        value: "false"
+
+      # NVIDIA Developer Program endpoints are prototype/development access.
+      # Do NOT set NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED=true until licensing
+      # for public production traffic has been separately approved.
+      - key: NVIDIA_NIM_ENABLED
+        value: "true"
+      - key: NVIDIA_NIM_API_KEY
+        sync: false                      # set manually in Render dashboard — never in git
+      - key: NVIDIA_NIM_BASE_URL
+        value: "https://integrate.api.nvidia.com/v1"
+      - key: NVIDIA_NIM_TIMEOUT_SECONDS
+        value: "60"
+      - key: NVIDIA_NIM_MAX_OUTPUT_TOKENS
+        value: "1600"
+      - key: NVIDIA_NIM_PROTOTYPE_ONLY
+        value: "true"
+      - key: NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED
+        value: "false"
+
 # REDIS_URL is intentionally NOT added as a live env var above — see the
 # Backend Intelligence Engine block at the end of this file for why, and
 # what to add (to both this service and the new worker) to enable it.
