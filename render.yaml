@@ -72,14 +72,20 @@ services:
       # provider key is sync:false and must be pasted into the Render
       # dashboard by hand; a blank key simply means that provider contributes
       # no models, which is a safe (not a broken) state.
+      - key: AI_ENABLED
+        value: "true"                    # master switch for the whole gateway
       - key: AI_FREE_ONLY
         value: "true"                    # master switch: no paid model is ever shown or called
       - key: AI_ALLOW_PAID_MODELS
         value: "false"
       - key: AI_MODEL_SELECTION_MODE
-        value: "user"                    # per-request model selector enabled
+        value: "automatic"               # EcoIQ chooses; no public model selector
+      - key: AI_ROUTING_MODE
+        value: "automatic"               # capability-scored routing
+      - key: AI_STAFF_MODEL_OVERRIDE_ENABLED
+        value: "true"                    # staff benchmarking only; free models only
       - key: AI_DEFAULT_MODEL_KEY
-        value: "openrouter:auto-free"
+        value: "openrouter:auto-free"    # public catch-all, LAST in the chain
       - key: AI_MODEL_CATALOG_CACHE_SECONDS
         value: "3600"
       - key: AI_ALLOW_AUTOMATIC_FALLBACK
@@ -108,8 +114,8 @@ services:
       - key: OPENROUTER_ZDR_ENABLED
         value: "true"
 
-      # Bytez ships with an empty allowlist — see settings.AI_MODEL_ALLOWLIST.
-      # Setting a key alone does NOT make any Bytez model selectable.
+      # Bytez ships with an empty allowlist. Setting a key alone does NOT
+      # make any Bytez model usable — see BYTEZ_APPROVED_MODELS below.
       - key: BYTEZ_ENABLED
         value: "true"
       - key: BYTEZ_API_KEY
@@ -128,6 +134,12 @@ services:
         value: "false"                   # never spend credits, never auto-reload
       - key: BYTEZ_ALLOW_CLOSED_MODELS
         value: "false"
+      # Curated Bytez allowlist. Deliberately EMPTY here rather than a long
+      # stale literal list: populate it in the dashboard only after running
+      #   python manage.py refresh_ai_models --provider bytez --dry-run --explain
+      # with a real key and confirming the ids it reports.
+      - key: BYTEZ_APPROVED_MODELS
+        value: ""
 
       # NVIDIA Developer Program endpoints are prototype/development access.
       # Do NOT set NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED=true until licensing

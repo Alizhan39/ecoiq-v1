@@ -286,6 +286,16 @@ class AIModelRegistry:
     def invalidate(self) -> None:
         cache.delete(FRESH_CACHE_KEY)
 
+    def peek_cached(self) -> RegistrySnapshot | None:
+        """
+        Read the cached registry WITHOUT triggering a build. Used by
+        `check_ai_configuration`, which must not touch the network by default —
+        `get_snapshot()` would fetch provider catalogues on a cold cache.
+        Returns None when nothing is cached.
+        """
+        cached = cache.get(FRESH_CACHE_KEY) or cache.get(STALE_CACHE_KEY)
+        return _deserialise(cached, stale=cached is not cache.get(FRESH_CACHE_KEY)) if cached else None
+
     # ── Querying ──────────────────────────────────────────────────────────────
 
     def visible_models(self, user=None, *, snapshot: RegistrySnapshot | None = None
@@ -363,6 +373,32 @@ class AIModelRegistry:
                 return model
         available = [m for m in visible if m.availability == AVAILABILITY_AVAILABLE]
         return (available or visible)[0]
+
+    def routable_models(self, user=None) -> list[AIModelDefinition]:
+        """
+        Everything this caller could legitimately be routed to. For a public
+        caller this already excludes development-only models, so NVIDIA preview
+        cannot reach public routing even if a later filter were removed.
+        """
+        return [m for m in self.visible_models(user) if m.free_eligible]
+
+    def select_route(self, profile, user=None) -> list[AIModelDefinition]:
+        """
+        Automatic routing: the ordered chain of approved free models to try for
+        this request. No model_key involved — EcoIQ chooses.
+
+        Returns [] when nothing is eligible; the caller turns that into the
+        stable FREE_MODELS_UNAVAILABLE response, never into a paid model.
+        """
+        from ai_gateway import routing
+
+        chain = routing.build_chain(self.routable_models(user), profile)
+        if not chain:
+            logger.warning(
+                'ai_gateway.no_eligible_route module=%s task=%s mode=%s audience=%s',
+                profile.module, profile.task, profile.mode, profile.audience,
+            )
+        return chain
 
     def fallback_chain(self, selected: AIModelDefinition, user=None) -> list[AIModelDefinition]:
         """

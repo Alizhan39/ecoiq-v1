@@ -19,10 +19,11 @@ import uuid
 
 from django.conf import settings
 
-from ai_gateway.exceptions import FreeModelsUnavailable, InvalidAIRequest, InvalidModelSelection
+from ai_gateway.exceptions import FreeModelsUnavailable, InvalidAIRequest
 from ai_gateway.prompts import build_system_prompt, normalise_language
 from ai_gateway.registry import registry
 from ai_gateway.router import router
+from ai_gateway.routing import build_profile
 from ai_gateway.types import CAPABILITY_CHAT
 
 logger = logging.getLogger('ecoiq.ai_gateway')
@@ -40,6 +41,14 @@ ALLOWED_CONTEXT_KEYS = frozenset({'company_id', 'country_id', 'module'})
 MAX_MODULE_LENGTH = 64
 
 DEFAULT_TEMPERATURE = 0.2
+
+#: Fields that would steer routing if they were trusted. None of them is ever
+#: legitimate from a browser: EcoIQ picks the model, and the provider, base URL
+#: and free-only policy are server-side decisions. Submitting one is either a
+#: stale client or an attempt to escape the free pool, and both deserve a clear,
+#: consistent 400 rather than a silent shrug.
+REJECTED_ROUTING_FIELDS = ('provider', 'base_url', 'model', 'free_only',
+                           'provider_preferences', 'route', 'api_key')
 
 
 def _validate_message(raw) -> str:
@@ -92,6 +101,22 @@ def _validate_history(raw) -> list[dict]:
     return history
 
 
+def reject_untrusted_routing_fields(data: dict) -> None:
+    """
+    Refuse any request that tries to steer routing directly. Consistent with
+    how `context` already treats unknown keys: an unsupported field is a 400,
+    not something quietly dropped.
+    """
+    present = [f for f in REJECTED_ROUTING_FIELDS if f in data]
+    if present:
+        # The field NAMES are safe to log; their values are not, and are not.
+        logger.warning('ai_gateway.untrusted_routing_fields fields=%s', ','.join(present))
+        raise InvalidAIRequest(
+            'This request contains fields EcoIQ does not accept. '
+            'EcoIQ selects the AI model automatically.'
+        )
+
+
 def _validate_context(raw) -> dict:
     if raw is None:
         return {}
@@ -133,6 +158,7 @@ class AIService:
         language: str | None = None,
         history=None,
         context=None,
+        mode=None,
     ) -> dict:
         request_id = uuid.uuid4().hex[:16]
 
@@ -145,42 +171,67 @@ class AIService:
         if total_chars > MAX_TOTAL_REQUEST_CHARS:
             raise InvalidAIRequest('This conversation is too large to send. Start a new chat.')
 
-        definition = self._resolve_model(model_key, user)
+        profile = build_profile(
+            user=user,
+            mode=mode,
+            module=context.get('module', ''),
+            language=language,
+            estimated_input_chars=total_chars,
+        )
+
+        chain, pinned = self._build_chain(model_key, user, profile)
 
         messages = self._build_messages(
             message=message, history=history, language=language, context=context,
         )
 
-        max_tokens = int(getattr(settings, 'AI_MAX_OUTPUT_TOKENS', 1600))
         response = router.run(
-            selected=definition,
+            chain=chain,
             messages=messages,
             temperature=DEFAULT_TEMPERATURE,
-            max_tokens=max_tokens,
+            max_tokens=profile.max_output_tokens,
             request_id=request_id,
-            user=user,
         )
 
-        return self._public_payload(definition, response, request_id)
+        return self._public_payload(response, profile, request_id, pinned=pinned)
 
     # ── Steps ─────────────────────────────────────────────────────────────────
 
-    def _resolve_model(self, model_key: str | None, user):
+    def _build_chain(self, model_key, user, profile):
         """
-        In `AI_MODEL_SELECTION_MODE=user` the caller picks. In any other mode
-        the submitted key is ignored entirely and the server default is used —
-        a per-request selector that the operator has turned off must not be
-        bypassable by simply posting a key anyway.
+        Decide what to try, in order.
+
+        Public callers get automatic routing — a submitted `model_key` is
+        ignored rather than rejected, so a stale client that still remembers a
+        selection keeps working instead of erroring. Ignoring is safe precisely
+        because the value is never read: it cannot widen the free pool.
+
+        Staff may pin a model for benchmarking. That still goes through
+        `registry.resolve()`, so it accepts only registered keys, cannot reach a
+        paid model, and cannot name a provider, base URL or raw slug.
         """
-        selection_mode = getattr(settings, 'AI_MODEL_SELECTION_MODE', 'user')
+        selection_mode = getattr(settings, 'AI_MODEL_SELECTION_MODE', 'automatic')
+        staff_override = (
+            getattr(settings, 'AI_STAFF_MODEL_OVERRIDE_ENABLED', True)
+            and registry.user_may_use_development_models(user)
+        )
+        may_pin = staff_override or selection_mode == 'user'
 
-        if selection_mode == 'user' and model_key:
-            return registry.resolve(model_key, user, required_capability=CAPABILITY_CHAT)
+        if model_key and may_pin:
+            pinned = registry.resolve(model_key, user, required_capability=CAPABILITY_CHAT)
+            chain = registry.fallback_chain(pinned, user)
+            return chain, pinned
 
-        default = registry.default_model(user)
-        if default is None:
+        if model_key:
+            # Ignored, but recorded — a public client still sending one is worth
+            # knowing about. The key itself is not logged.
+            logger.info('ai_gateway.model_key_ignored mode=%s audience=%s',
+                        selection_mode, profile.audience)
+
+        chain = registry.select_route(profile, user)
+        if not chain:
             raise FreeModelsUnavailable()
-        return default
+        return chain, None
 
     def _build_messages(self, *, message: str, history: list[dict], language: str,
                         context: dict) -> list[dict]:
@@ -192,51 +243,77 @@ class AIService:
             {'role': 'user', 'content': message},
         ]
 
-    def _public_payload(self, definition, response, request_id: str) -> dict:
+    def _public_payload(self, response, profile, request_id: str, *, pinned=None) -> dict:
         """
-        The public response. Friendly names only; `provider_model_id` and the
-        raw upstream body stay server-side. `resolved_model_name` is included
-        only when the upstream actually reported a concrete model that differs
-        from what we asked for — which is how `openrouter/free` reports its
-        pick.
+        The public response carries the answer and nothing about how it was
+        produced. A normal user never sees a model name, a provider name, a
+        resolved slug or a fallback notice — under automatic routing those are
+        implementation detail, and surfacing them would reintroduce exactly the
+        model-awareness this change removes.
+
+        Staff get the routing detail back, because they are the ones
+        benchmarking and comparing.
         """
-        served_key = response.metadata.get('served_model_key', definition.key)
-        served_name = response.metadata.get('served_model_name', definition.display_name)
-
-        resolved_name = None
-        if response.resolved_model and response.resolved_model != definition.provider_model_id:
-            resolved_name = response.resolved_model
-
         payload = {
             'success': True,
             'answer': response.content,
-            'model': {'key': served_key, 'name': served_name},
-            'resolved_model_name': resolved_name,
-            'fallback_used': response.fallback_used,
+            'mode': profile.mode,
             'request_id': request_id,
         }
-        if response.fallback_used:
-            payload['notice'] = (
-                'The selected free model was unavailable, so EcoIQ used another free model.'
-            )
-            payload['selected_model'] = {'key': definition.key, 'name': definition.display_name}
+
+        if profile.audience != 'staff':
+            return payload
+
+        served_key = response.metadata.get('served_model_key')
+        served_name = response.metadata.get('served_model_name')
+        payload['routing'] = {
+            'automatic': pinned is None,
+            'model': {'key': served_key, 'name': served_name},
+            # The concrete model behind a router pick (openrouter/free reports
+            # what it actually ran) — staff-only, for benchmark attribution.
+            'resolved_model_name': response.resolved_model,
+            'attempts': response.provider_attempts,
+            'fallback_used': response.fallback_used,
+            'task': profile.task,
+        }
+        if pinned is not None:
+            payload['routing']['pinned_model'] = {'key': pinned.key, 'name': pinned.display_name}
         return payload
 
     # ── Catalogue ─────────────────────────────────────────────────────────────
 
     def list_models(self, user) -> dict:
+        """
+        Under automatic routing this endpoint is a staff tool, not a public
+        selector. A normal caller gets `selection_available: false` and an
+        empty list — the endpoint keeps its contract, but there is nothing to
+        pick from, so the frontend cannot build a selector even if it tried.
+        """
         snapshot = registry.get_snapshot()
-        models = registry.visible_models(user, snapshot=snapshot)
-        default = registry.default_model(user)
+        selection_mode = getattr(settings, 'AI_MODEL_SELECTION_MODE', 'automatic')
+        may_select = (
+            selection_mode == 'user'
+            or (getattr(settings, 'AI_STAFF_MODEL_OVERRIDE_ENABLED', True)
+                and registry.user_may_use_development_models(user))
+        )
 
-        return {
-            'models': [self.serialise_model(m) for m in models],
-            'default_model_key': default.key if default else None,
+        payload = {
+            'models': [],
+            'selection_available': bool(may_select),
+            'selection_mode': selection_mode,
+            'routing_mode': getattr(settings, 'AI_ROUTING_MODE', 'automatic'),
+            'modes': sorted((getattr(settings, 'AI_ROUTING_MODES', {}) or {}).keys()),
+            'default_mode': getattr(settings, 'AI_DEFAULT_ROUTING_MODE', 'auto'),
             'free_only': bool(settings.AI_FREE_ONLY),
-            'selection_mode': getattr(settings, 'AI_MODEL_SELECTION_MODE', 'user'),
             'refreshed_at': snapshot.refreshed_at,
             'stale': snapshot.stale,
         }
+        if may_select:
+            payload['models'] = [
+                self.serialise_model(m)
+                for m in registry.visible_models(user, snapshot=snapshot)
+            ]
+        return payload
 
     @staticmethod
     def serialise_model(model) -> dict:

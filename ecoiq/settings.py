@@ -343,7 +343,8 @@ INSTALLED_APPS = [
     'global_research',
 
     # EcoIQ AI Gateway — one provider-neutral, free-only AI system in front of
-    # OpenRouter, Bytez and NVIDIA NIM, with a per-request user model selector.
+    # OpenRouter, Bytez and NVIDIA NIM. EcoIQ selects the model automatically;
+    # normal users never see or send a model selection.
     # Distinct from agent_runtime_model_router (which governs *agent* execution
     # against Anthropic/OpenAI/Gemini/Azure) — this is the user-facing chat
     # gateway, and it never routes to a paid model.
@@ -662,17 +663,42 @@ def _env_int(key: str, default: int) -> int:
 
 
 # ── Global policy ─────────────────────────────────────────────────────────────
-# AI_FREE_ONLY is the master switch. While it is on: paid models are neither
+# Master on/off for the whole gateway. Off means the endpoints stay mounted but
+# no provider is contacted — useful for turning the feature off in an incident
+# without a redeploy of code.
+AI_ENABLED = _env_bool('AI_ENABLED', 'true')
+
+# AI_FREE_ONLY is the free-spend switch. While it is on: paid models are neither
 # displayed nor callable, no request is ever silently upgraded to a paid model,
 # and a free model failing can only ever fall back to another *free* model.
 AI_FREE_ONLY = _env_bool('AI_FREE_ONLY', 'true')
 AI_ALLOW_PAID_MODELS = _env_bool('AI_ALLOW_PAID_MODELS', 'false')
 
-# 'user'  — the caller may choose a model per request (the model selector).
-# anything else — the submitted model_key is ignored and the server default is
-# used. A disabled selector must not be bypassable by posting a key anyway.
-AI_MODEL_SELECTION_MODE = os.environ.get('AI_MODEL_SELECTION_MODE', 'user').strip() or 'user'
+# Who chooses the model.
+#   'automatic' (default) — EcoIQ chooses. Normal users never see or send a
+#                           model selection; a submitted model_key is ignored.
+#                           Staff may still override (see below).
+#   'user'                 — legacy per-request selector. Retained so the
+#                           behaviour can be restored deliberately, but it is
+#                           no longer the product decision.
+AI_MODEL_SELECTION_MODE = os.environ.get('AI_MODEL_SELECTION_MODE', 'automatic').strip() or 'automatic'
 
+# How the server builds the attempt chain once it is choosing.
+#   'automatic' (default) — capability-scored: filter by required capabilities,
+#                           context length and health, rank by task benchmark
+#                           then priority, and put the free router last as the
+#                           catch-all rather than first.
+#   'static'               — plain priority order (the pre-automatic behaviour).
+AI_ROUTING_MODE = os.environ.get('AI_ROUTING_MODE', 'automatic').strip() or 'automatic'
+
+# Staff may pin a specific model for benchmarking and comparison. This is
+# permission-gated, accepts only registered model keys, and cannot reach a paid
+# model — the registry's own free-only gate still applies. Set false to remove
+# the capability entirely.
+AI_STAFF_MODEL_OVERRIDE_ENABLED = _env_bool('AI_STAFF_MODEL_OVERRIDE_ENABLED', 'true')
+
+# The public catch-all route, used when no better approved free model applies.
+# It is the last entry in the automatic chain, not the only possible model.
 AI_DEFAULT_MODEL_KEY = os.environ.get('AI_DEFAULT_MODEL_KEY', 'openrouter:auto-free').strip()
 
 # Provider catalogues are fetched at most this often — never per page load and
@@ -785,6 +811,16 @@ NVIDIA_MODEL_CONFIG = {
 #
 # NVIDIA ships EMPTY by default too: uncomment an id from NVIDIA_MODEL_CONFIG
 # above only once the licensing question for your use has been settled.
+#
+# BYTEZ_APPROVED_MODELS lets an operator curate the Bytez allowlist from the
+# environment *after* running the verification command below — deliberately not
+# a long stale literal list in render.yaml. It stays empty until someone has
+# actually seen the authenticated catalogue:
+#
+#     python manage.py refresh_ai_models --provider bytez --dry-run --explain
+#
+BYTEZ_APPROVED_MODELS = frozenset(_parse_env_list('BYTEZ_APPROVED_MODELS', ''))
+
 AI_MODEL_ALLOWLIST = {
     'openrouter': {
         'openrouter/free',
@@ -794,9 +830,52 @@ AI_MODEL_ALLOWLIST = {
         'google/gemma-4-31b-it:free',
         'inclusionai/ling-3.0-flash:free',
     },
-    'bytez': set(),
+    'bytez': set(BYTEZ_APPROVED_MODELS),
     'nvidia_nim': set(),
 }
+
+# ── Automatic routing ─────────────────────────────────────────────────────────
+# Per-module routing requirements. The *module* (supplied by EcoIQ's own code
+# in the request context, never chosen by the user) decides task type,
+# structured-output need, privacy level and minimum context. A module absent
+# from this map gets AI_ROUTING_DEFAULT_PROFILE.
+AI_ROUTING_DEFAULT_PROFILE = {
+    'task': 'chat',
+    'structured_output': False,
+    'privacy_level': 'standard',
+    'min_context_length': 8_000,
+}
+
+AI_MODULE_ROUTING = {
+    'company-analysis': {
+        'task': 'analysis',
+        'structured_output': False,
+        'privacy_level': 'sensitive',
+        'min_context_length': 32_000,
+    },
+    'decision-studio': {
+        'task': 'analysis',
+        'structured_output': False,
+        'privacy_level': 'sensitive',
+        'min_context_length': 32_000,
+    },
+}
+
+# Answer modes offered in the UI. These adjust ROUTING REQUIREMENTS only — they
+# never name a model and never appear in the provider request.
+AI_ROUTING_MODES = {
+    'auto':  {'min_context_length': 0,      'max_output_tokens': None, 'prefer': 'balanced'},
+    'quick': {'min_context_length': 0,      'max_output_tokens': 700,  'prefer': 'fast'},
+    'deep':  {'min_context_length': 100_000, 'max_output_tokens': None, 'prefer': 'capable'},
+}
+AI_DEFAULT_ROUTING_MODE = os.environ.get('AI_DEFAULT_ROUTING_MODE', 'auto').strip() or 'auto'
+
+# Task-specific benchmark scores, highest wins, used to rank otherwise-eligible
+# models. INTENTIONALLY EMPTY: EcoIQ has not run its own benchmarks yet, and
+# inventing scores would make routing look principled while being arbitrary.
+# With no entries the scorer falls back to AI_MODEL_PRESENTATION priority.
+# Shape: {provider_model_id: {task: score_0_to_100}}
+AI_MODEL_BENCHMARKS: dict[str, dict[str, float]] = {}
 
 # Friendly presentation for the selector. `key_slug` mints the opaque model key
 # (`openrouter/free` → `openrouter:auto-free`); `priority` orders the selector,
@@ -852,4 +931,3 @@ if AI_FREE_ONLY and AI_ALLOW_PAID_MODELS:
         'AI_FREE_ONLY=true and AI_ALLOW_PAID_MODELS=true are contradictory. '
         'Set AI_ALLOW_PAID_MODELS=false, or turn AI_FREE_ONLY off deliberately.'
     )
-

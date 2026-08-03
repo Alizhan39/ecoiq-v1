@@ -55,6 +55,10 @@ class BaseProvider:
     @property
     def enabled(self) -> bool:
         from django.conf import settings
+        # AI_ENABLED is the master switch: turning it off disables every
+        # provider at once, so no catalogue is fetched and no model is offered.
+        if not getattr(settings, 'AI_ENABLED', True):
+            return False
         return bool(getattr(settings, self.enabled_setting, False))
 
     @property

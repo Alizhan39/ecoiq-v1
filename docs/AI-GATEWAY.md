@@ -1,7 +1,8 @@
 # EcoIQ AI Gateway
 
 One provider-neutral, **free-only** AI system in front of OpenRouter, Bytez and
-NVIDIA NIM, with a per-request model selector.
+NVIDIA NIM. **EcoIQ selects the model automatically** — normal users never see,
+choose or send a model.
 
 > This is **not** a replacement for `agent_runtime_model_router` (governed
 > *agent* execution against Anthropic/OpenAI/Gemini/Azure) or `core/ai.py` (the
@@ -15,9 +16,11 @@ Django views (ai_gateway/views.py)
         ↓
 AIService            ai_gateway/service.py     validation, prompt, public payload
         ↓
-AIModelRegistry      ai_gateway/registry.py    model_key → approved model
+routing              ai_gateway/routing.py     request → routing profile → ranked chain
         ↓
-AIProviderRouter     ai_gateway/router.py      attempt + bounded free-pool fallback
+AIModelRegistry      ai_gateway/registry.py    approved free model set
+        ↓
+AIProviderRouter     ai_gateway/router.py      attempt the chain, bounded
         ↓
 ├── OpenRouterProvider   ai_gateway/providers/openrouter.py
 ├── BytezProvider        ai_gateway/providers/bytez.py
@@ -37,10 +40,10 @@ is. No new runtime dependency was added for this feature.
 
 | Endpoint | Auth | Purpose |
 | --- | --- | --- |
-| `GET /api/ai/models/` | authenticated | Selectable model catalogue |
-| `POST /api/ai/chat/` | authenticated | One generation, one model |
+| `GET /api/ai/models/` | authenticated | Approved model catalogue — **staff only in practice**: a normal caller gets `selection_available: false` and an empty list |
+| `POST /api/ai/chat/` | authenticated | One generation, model chosen automatically |
 | `GET /api/ai/health/` | **staff only** | Configuration + catalogue freshness |
-| `GET /ai-assistant/` | login required | The assistant page + model selector |
+| `GET /ai-assistant/` | login required | The assistant page (prompt, answer mode, language — no model selector) |
 
 Authentication reuses EcoIQ's existing chain. The views deliberately do **not**
 pin `authentication_classes`; they inherit
@@ -61,17 +64,26 @@ project defaults (staff-only health, AI-specific rate limits).
 ```json
 {
   "message": "Analyse this company",
-  "model_key": "openrouter:auto-free",
   "language": "en",
+  "mode": "auto",
   "history": [],
   "context": { "company_id": 123, "module": "company-analysis" }
 }
 ```
 
-`model_key` is **opaque and server-issued**. A raw provider slug
-(`openrouter/free`), a `provider`, a `base_url` or a `model` field submitted by
-a client is never read. The key is looked up in the registry; it is never
-parsed for routing information.
+**No field names a model.** `provider`, `base_url`, `model`, `free_only`,
+`provider_preferences`, `route` and `api_key` are **rejected with 400** — none
+is ever legitimate from a client. `model_key` is accepted only from staff (for
+benchmarking) and **ignored** for everyone else, so a stale client that still
+remembers a selection keeps working instead of erroring.
+
+`mode` is one of `auto` / `quick` / `deep`. It adjusts routing *requirements*
+(output ceiling, minimum context, capability preference); it never names a
+model.
+
+The public response carries the answer and nothing about how it was produced —
+no model name, no provider, no fallback notice. Staff additionally get a
+`routing` block for benchmark attribution.
 
 ### Errors
 
@@ -135,14 +147,26 @@ settings. The frontend cannot contribute to it.
 key, so its free-tier field names could not be verified; every field name in
 `providers/bytez.py` is treated as a hypothesis and the check requires explicit
 positive evidence. Anything missing or ambiguous is a rejection. Bytez
-therefore contributes zero models until someone with a key runs:
+therefore contributes zero models until someone with a key runs the catalogue
+survey:
 
 ```bash
-python manage.py refresh_ai_models --explain
+python manage.py refresh_ai_models --provider bytez --dry-run --explain
 ```
 
-reads the rejection reasons, confirms the real field names, and edits
-`AI_MODEL_ALLOWLIST`.
+That command makes **catalogue requests only** — never an inference request,
+never a credit purchase, never an allowlist write. It prints the fields the
+catalogue actually returns, which of them the free-policy check recognises, and
+a per-model accept/reject verdict with the reason. Eligible models are reported
+as *candidates, not approved*.
+
+Approval is a human step: add the confirmed ids to the `BYTEZ_APPROVED_MODELS`
+environment variable (space- or comma-separated), then re-run
+`check_ai_configuration`. Nothing is ever auto-approved, and the list is
+deliberately not a long literal in `render.yaml`.
+
+**Until that happens Bytez serves nothing**, and `check_ai_configuration`
+reports it as a WARNING (a missing capability), not an error.
 
 Free-plan access can consume included credits, so: auto-reload is never
 enabled, credits are never purchased, a larger paid model is never substituted,
@@ -166,30 +190,70 @@ NVIDIA API catalogue on each refresh, and must also have a reviewed entry in
 capabilities and parameter defaults are configured per model rather than
 assumed uniform.
 
-## Fallback
+## Automatic routing
+
+Normal users do not choose a model. `ai_gateway/routing.py` turns *what the
+request needs* into an ordered chain of approved free models.
+
+A **routing profile** is built only from things EcoIQ controls — never from
+free-form user input:
+
+| Input | Source |
+| --- | --- |
+| task, privacy level, min context | the active module, via `AI_MODULE_ROUTING` |
+| output ceiling, capability preference | the answer mode (`auto` / `quick` / `deep`) |
+| language | validated language code only |
+| required modality | derived from the request payload |
+| structured-output requirement | the module's routing profile |
+| context length | the larger of module, mode and an estimate of the conversation |
+| audience | public vs staff/development |
+
+**Hard filters** then remove anything ineligible: not free, cooling off after a
+recent failure, missing a required capability, too small a context window, or —
+for a public caller — development-only. **Scoring** ranks what survives by task
+benchmark, configured priority, mode preference and recent health.
+
+The public chain is therefore:
 
 ```
-Selected free model
-        ↓ unavailable
-Same provider's approved free fallback
-        ↓ unavailable
-Another provider's approved free fallback
-        ↓ unavailable
-FREE_MODELS_UNAVAILABLE
+1. best approved task-specific free model
+2. next compatible approved free model
+3. openrouter/free            ← the catch-all, pinned LAST
+4. FREE_MODELS_UNAVAILABLE    ← never a paid model
 ```
+
+`openrouter/free` is deliberately last: it is the fallback when nothing more
+specific applies, not the default first choice.
+
+`AI_MODEL_BENCHMARKS` ships **empty**. EcoIQ has not run its own task
+benchmarks, and inventing scores would make routing look principled while being
+arbitrary. With no entries the scorer falls back to configured priority.
+Populating it changes ranking and nothing else.
+
+### Staff override
+
+Staff may pin a model for benchmarking, reasoning comparison, structured-output
+and tool-calling testing, or multilingual evaluation. It is permission-gated
+(`AI_STAFF_MODEL_OVERRIDE_ENABLED`), goes through `registry.resolve()` so it
+accepts only registered keys, cannot reach a paid model, and cannot name a
+provider, base URL or raw slug. **No public request ever silently uses NVIDIA
+development access.**
+
+## Fallback
 
 Three invariants, enforced structurally rather than by convention:
 
-* **Never leaves the free pool** — the attempt chain is built by the registry
-  from already-approved, already-free-eligible models. "Fall back to a paid
-  model" is not expressible in this code.
-* **Never loops** — each key is attempted at most once, and the chain is capped
-  by `AI_MAX_PROVIDER_ATTEMPTS`.
+* **Never leaves the free pool** — the chain is built by the registry from
+  already-approved, already-free-eligible models. "Fall back to a paid model" is
+  not expressible in this code.
+* **Never loops** — the chain is deduplicated by key when built and each key is
+  attempted at most once, then capped by `AI_MAX_PROVIDER_ATTEMPTS`.
 * **Never falls back on a terminal error** — invalid request, unsupported
   modality, unauthorised, or broken configuration stops immediately.
 
 Fallback *does* happen on: timeout, connection failure, 429, 5xx, model
 temporarily unavailable, empty/malformed response, free-plan credits exhausted.
+A failing model is also cooled off and demoted in future rankings.
 
 A provider with **no API key is not configured**, and its models never enter
 the registry at all — so "missing credentials" can never appear as a
@@ -214,9 +278,21 @@ here, since Redis is not currently a paid resource on this deployment.
 ## System prompt
 
 There is exactly one, in `ai_gateway/prompts.py`, assembled server-side and
-always pinned at message index 0. Changing the selected model changes nothing
-about it. `system`-role messages from clients are **rejected**, not silently
-dropped — so the only path to a system message is that file.
+always pinned at message index 0. Whichever model automatic routing picks —
+and whichever fallback it lands on — changes nothing about it. `system`-role
+messages from clients are **rejected**, not silently dropped, so the only path
+to a system message is that file.
+
+## User experience
+
+The assistant page shows: EcoIQ Intelligence, a prompt box, answer language,
+the answer, and the standard missing-data framing from the system prompt. The
+only routing control is an answer mode — **Auto / Quick answer / Deep
+analysis** — which adjusts routing requirements, not model selection.
+
+It does **not** show, and cannot send: OpenRouter, Bytez, NVIDIA, model names,
+provider or model selectors, base URLs, temperature, or API terminology. The
+page does not call `/api/ai/models/` at all.
 
 ## Logging
 
@@ -227,20 +303,57 @@ context, personal information or hidden reasoning.
 
 ## Operations
 
+### Validate the configuration
+
 ```bash
-# Refresh the registry from live provider catalogues
-python manage.py refresh_ai_models
-
-# ...and explain why each allowlisted model was rejected
-python manage.py refresh_ai_models --explain
-
-# ...without writing the cached registry
-python manage.py refresh_ai_models --dry-run
+python manage.py check_ai_configuration
 ```
 
-The command makes **no inference request**, purchases nothing, and never
-auto-approves a model — approving one means editing
-`settings.AI_MODEL_ALLOWLIST`. It is safe to schedule if a scheduler already
+Local-only by default: it reads Django settings and the **cached** registry and
+**makes no network call at all** (it uses `registry.peek_cached()`, never
+`get_snapshot()`, which would fetch catalogues on a cold cache).
+
+It checks free-only policy, paid-model flags, automatic routing, attempt caps,
+fallback config, provider base URLs and credential presence, the OpenRouter free
+router, the Bytez allowlist, NVIDIA development-only state, that the public
+registry holds no paid and no development-only models, that no raw
+provider/model input is accepted from the public API, that default public
+routing has a route, and that no fallback loop is possible.
+
+Exit codes: **0** safe (possibly with warnings), **1** unsafe. The distinction
+is deliberate — a *warning* means a capability is missing ("Bytez has no
+approved models"); an *error* means the deployment could spend money or expose
+prototype access, and must not ship. Secrets are never printed, in whole or in
+part; a configured key is reported only as "configured".
+
+```bash
+python manage.py check_ai_configuration --live-catalog
+```
+
+Adds **read-only** catalogue reachability checks. Still never makes an inference
+request, never approves a model, never writes an allowlist.
+
+### Refresh the model registry
+
+```bash
+python manage.py refresh_ai_models                 # rebuild from live catalogues
+python manage.py refresh_ai_models --explain       # why each model was rejected
+python manage.py refresh_ai_models --dry-run       # don't write the cache
+```
+
+### Survey one provider before allowlisting
+
+```bash
+python manage.py refresh_ai_models --provider bytez --dry-run --explain
+```
+
+Prints the fields the catalogue actually returns, which the free-policy check
+recognises, and a per-model verdict. With no key configured it makes **no
+network call** and instead prints the exact command to run once the key is set.
+
+All of these make **no inference request**, purchase nothing, and never
+auto-approve a model — approving one means editing the allowlist
+(`BYTEZ_APPROVED_MODELS` for Bytez). Safe to schedule if a scheduler already
 exists; this change does not create one.
 
 ## Tests

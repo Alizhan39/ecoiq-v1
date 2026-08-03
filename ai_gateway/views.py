@@ -28,7 +28,7 @@ from ai_gateway.exceptions import AIGatewayError, InvalidAIRequest
 from ai_gateway.permissions import IsEcoIQAuthenticated, IsEcoIQStaff
 from ai_gateway.providers import all_providers
 from ai_gateway.registry import registry
-from ai_gateway.service import service
+from ai_gateway.service import reject_untrusted_routing_fields, service
 from ai_gateway.throttles import AICatalogThrottle, AIChatIPThrottle, AIChatUserThrottle
 
 logger = logging.getLogger('ecoiq.ai_gateway')
@@ -59,10 +59,14 @@ def ai_models(request):
     """
     GET /api/ai/models/
 
-    Returns only models that are enabled, public (for this caller),
-    free-eligible and currently offered by a configured provider. Never
-    returns API keys, base URLs, private or disabled models, paid models,
-    provider balances, raw provider errors or pricing internals.
+    Under automatic routing this is a STAFF tool, not a public selector: a
+    normal caller gets `selection_available: false` and an empty model list, so
+    no public UI can build a model picker from it.
+
+    For staff it returns only models that are enabled, free-eligible and
+    currently offered by a configured provider. It never returns API keys, base
+    URLs, private or disabled models, paid models, provider balances, raw
+    provider errors or pricing internals.
     """
     try:
         payload = service.list_models(request.user if request.user.is_authenticated else None)
@@ -80,17 +84,23 @@ def ai_chat(request):
     """
     POST /api/ai/chat/
 
-    Body: {message, model_key, language, history, context}
+    Body: {message, language, history, context, mode}
 
-    `model_key` is an opaque server-issued key. A raw provider slug, a
-    `provider`, a `base_url` or a `model` field submitted here is ignored
-    entirely — the resolution path goes through the registry only.
+    EcoIQ selects the model automatically. `provider`, `base_url`, `model`,
+    `free_only` and provider routing preferences are REJECTED with 400 — they
+    are never legitimate from a client. `model_key` is accepted only from staff
+    (benchmarking) and ignored for everyone else, so a stale client that still
+    remembers a selection keeps working rather than erroring.
+
+    `mode` is one of the routing modes (auto / quick / deep). It adjusts
+    routing requirements; it does not name a model.
     """
     data = request.data
     if not isinstance(data, dict):
         return _error_response(InvalidAIRequest('Request body must be a JSON object.'))
 
     try:
+        reject_untrusted_routing_fields(data)
         payload = service.chat(
             user=request.user if request.user.is_authenticated else None,
             message=data.get('message'),
@@ -98,6 +108,7 @@ def ai_chat(request):
             language=data.get('language'),
             history=data.get('history'),
             context=data.get('context'),
+            mode=data.get('mode'),
         )
     except AIGatewayError as exc:
         return _error_response(exc)

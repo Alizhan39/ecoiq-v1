@@ -76,7 +76,7 @@ urlpatterns = [
     path('api/v1/',     include('api.urls',   namespace='api')),
 
     # EcoIQ AI Gateway — one provider-neutral, free-only AI system over
-    # OpenRouter / Bytez / NVIDIA NIM, with a per-request model selector.
+    # OpenRouter / Bytez / NVIDIA NIM, with automatic free-only model routing.
     path('api/ai/',     include('ai_gateway.urls',     namespace='ai_gateway')),
     path('ai-assistant/', include('ai_gateway.web_urls', namespace='ai_gateway_web')),
 

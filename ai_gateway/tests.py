@@ -27,6 +27,7 @@ from ai_gateway.providers.bytez import BytezProvider
 from ai_gateway.providers.nvidia_nim import NvidiaNimProvider
 from ai_gateway.providers.openrouter import OpenRouterProvider
 from ai_gateway.registry import registry
+from ai_gateway.routing import RoutingProfile
 from ai_gateway.service import service
 from ai_gateway.types import AIResponse
 
@@ -63,6 +64,8 @@ def or_entry(model_id, *, prompt='0', completion='0', extra_pricing=None,
 
 FREE_ROUTER = or_entry('openrouter/free', context_length=200000, name='Free Models Router')
 FREE_MODEL = or_entry('openai/gpt-oss-20b:free', name='GPT-OSS 20B')
+SECOND_FREE_MODEL = or_entry('inclusionai/ling-3.0-flash:free', name='Ling 3.0 Flash',
+                             context_length=262144)
 PAID_MODEL = or_entry('openai/gpt-5', prompt='0.00000125', completion='0.00001', name='GPT-5')
 
 TEST_ALLOWLIST = {
@@ -80,7 +83,9 @@ TEST_PRESENTATION = {
 gateway_settings = override_settings(
     AI_FREE_ONLY=True,
     AI_ALLOW_PAID_MODELS=False,
-    AI_MODEL_SELECTION_MODE='user',
+    AI_MODEL_SELECTION_MODE='automatic',
+    AI_ROUTING_MODE='automatic',
+    AI_STAFF_MODEL_OVERRIDE_ENABLED=True,
     AI_DEFAULT_MODEL_KEY='openrouter:auto-free',
     AI_MODEL_CATALOG_CACHE_SECONDS=3600,
     AI_ALLOW_AUTOMATIC_FALLBACK=True,
@@ -344,6 +349,13 @@ class RegistryTests(GatewayTestCase):
         with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
             self.assertEqual(registry.default_model().key, 'openrouter:auto-free')
 
+    @override_settings(AI_ENABLED=False)
+    def test_master_switch_disables_every_provider(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]) as fetched:
+            snapshot = registry.build()
+        self.assertEqual(snapshot.models, ())
+        fetched.assert_not_called()
+
 
 # ── Bytez ─────────────────────────────────────────────────────────────────────
 
@@ -527,48 +539,49 @@ class FallbackTests(GatewayTestCase):
         self.catalog = self._patch_catalog([FREE_ROUTER, FREE_MODEL])
         self.catalog.start()
         self.addCleanup(self.catalog.stop)
+        # Staff, so the routing block comes back and the chain is inspectable.
+        # Public payloads deliberately carry none of this — see PublicPayloadTests.
+        self.staff = User.objects.create_user('fb_staff', password='x', is_staff=True)
 
     def _chat(self, side_effect):
         return patch('ai_gateway.providers._openai_compat.chat_completion',
                      side_effect=side_effect)
 
-    def test_selected_model_succeeds_without_fallback(self):
+    def test_first_route_succeeds_without_fallback(self):
         with self._chat([ok_completion('Hello.')]) as mocked:
-            result = service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
+            result = service.chat(user=self.staff, message='Hi')
         self.assertTrue(result['success'])
-        self.assertFalse(result['fallback_used'])
+        self.assertFalse(result['routing']['fallback_used'])
+        self.assertTrue(result['routing']['automatic'])
         self.assertEqual(mocked.call_count, 1)
-        self.assertEqual(result['model']['name'], 'Auto — Free')
 
     def test_failed_model_falls_back_to_another_free_model(self):
         side_effect = [ProviderCallError('server_error', provider='openrouter'),
                        ok_completion('Recovered.')]
         with self._chat(side_effect):
-            result = service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
-        self.assertTrue(result['fallback_used'])
+            result = service.chat(user=self.staff, message='Hi')
+        self.assertTrue(result['routing']['fallback_used'])
         self.assertEqual(result['answer'], 'Recovered.')
-        self.assertIn('another free model', result['notice'])
-        self.assertEqual(result['selected_model']['key'], 'openrouter:auto-free')
 
     def test_exhausted_credits_trigger_fallback(self):
         side_effect = [ProviderCallError('credits_exhausted', provider='bytez'),
                        ok_completion('Recovered.')]
         with self._chat(side_effect):
-            result = service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
-        self.assertTrue(result['fallback_used'])
+            result = service.chat(user=self.staff, message='Hi')
+        self.assertTrue(result['routing']['fallback_used'])
 
     def test_rate_limit_triggers_fallback(self):
         side_effect = [ProviderCallError('rate_limit', provider='openrouter'),
                        ok_completion()]
         with self._chat(side_effect):
-            result = service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
-        self.assertTrue(result['fallback_used'])
+            result = service.chat(user=self.staff, message='Hi')
+        self.assertTrue(result['routing']['fallback_used'])
 
     def test_all_free_models_failing_returns_the_stable_error(self):
         error = ProviderCallError('timeout', provider='openrouter')
         with self._chat([error, error, error, error]):
             with self.assertRaises(FreeModelsUnavailable) as ctx:
-                service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
+                service.chat(user=None, message='Hi')
         self.assertEqual(ctx.exception.code, 'FREE_MODELS_UNAVAILABLE')
         self.assertEqual(ctx.exception.http_status, 503)
 
@@ -577,7 +590,7 @@ class FallbackTests(GatewayTestCase):
         with override_settings(AI_MAX_PROVIDER_ATTEMPTS=1):
             with self._chat([error] * 5) as mocked:
                 with self.assertRaises(FreeModelsUnavailable):
-                    service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
+                    service.chat(user=None, message='Hi')
         self.assertEqual(mocked.call_count, 1)
 
     def test_fallback_cannot_loop(self):
@@ -585,24 +598,38 @@ class FallbackTests(GatewayTestCase):
         error = ProviderCallError('server_error', provider='openrouter')
         with self._chat([error] * 10) as mocked:
             with self.assertRaises(FreeModelsUnavailable):
-                service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
+                service.chat(user=None, message='Hi')
         self.assertEqual(mocked.call_count, 2)
 
     def test_no_fallback_on_invalid_request(self):
         with self._chat([ProviderCallError('invalid_request', provider='openrouter')]) as mocked:
             with self.assertRaises(InvalidAIRequest):
-                service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
+                service.chat(user=None, message='Hi')
         self.assertEqual(mocked.call_count, 1)
 
     def test_no_fallback_on_configuration_error(self):
         with self._chat([ProviderCallError('configuration_error', provider='openrouter')]) as mocked:
             with self.assertRaises(FreeModelsUnavailable):
-                service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
+                service.chat(user=None, message='Hi')
         self.assertEqual(mocked.call_count, 1)
 
-    def test_fallback_pool_is_entirely_free(self):
-        selected = registry.resolve('openrouter:auto-free')
-        chain = registry.fallback_chain(selected)
+    def test_automatic_chain_is_entirely_free(self):
+        chain = registry.select_route(RoutingProfile())
+        self.assertTrue(chain)
+        self.assertTrue(all(m.free_eligible for m in chain))
+
+    def test_free_router_is_the_last_resort_not_the_first_choice(self):
+        """
+        Spec order: best task-specific free model, then another compatible
+        free model, then openrouter/free as the catch-all.
+        """
+        chain = registry.select_route(RoutingProfile())
+        self.assertEqual(chain[0].provider_model_id, 'openai/gpt-oss-20b:free')
+        self.assertEqual(chain[-1].provider_model_id, 'openrouter/free')
+
+    def test_staff_pin_still_gets_a_free_fallback_pool(self):
+        selected = registry.resolve('openrouter:auto-free', self.staff)
+        chain = registry.fallback_chain(selected, self.staff)
         self.assertTrue(all(m.free_eligible for m in chain))
         self.assertGreaterEqual(len(chain), 2)
 
@@ -610,13 +637,177 @@ class FallbackTests(GatewayTestCase):
     def test_fallback_can_be_disabled(self):
         with self._chat([ProviderCallError('timeout', provider='openrouter')]) as mocked:
             with self.assertRaises(FreeModelsUnavailable):
-                service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
+                service.chat(user=None, message='Hi')
         self.assertEqual(mocked.call_count, 1)
 
-    def test_resolved_model_from_the_free_router_is_recorded(self):
+    def test_resolved_model_from_the_free_router_is_recorded_for_staff(self):
         with self._chat([ok_completion('Hi.', resolved_model='nvidia/nemotron-3-nano-30b-a3b:free')]):
-            result = service.chat(user=None, message='Hi', model_key='openrouter:auto-free')
-        self.assertEqual(result['resolved_model_name'], 'nvidia/nemotron-3-nano-30b-a3b:free')
+            result = service.chat(user=self.staff, message='Hi')
+        self.assertEqual(result['routing']['resolved_model_name'],
+                         'nvidia/nemotron-3-nano-30b-a3b:free')
+
+
+# ── Automatic routing ─────────────────────────────────────────────────────────
+
+@gateway_settings
+class AutomaticRoutingTests(GatewayTestCase):
+    def setUp(self):
+        super().setUp()
+        self.catalog = self._patch_catalog([FREE_ROUTER, FREE_MODEL])
+        self.catalog.start()
+        self.addCleanup(self.catalog.stop)
+        self.chat = patch('ai_gateway.providers._openai_compat.chat_completion',
+                          return_value=ok_completion())
+        self.mock_chat = self.chat.start()
+        self.addCleanup(self.chat.stop)
+
+    def test_automatic_is_the_default_selection_mode(self):
+        from django.conf import settings as live
+        self.assertEqual(live.AI_MODEL_SELECTION_MODE, 'automatic')
+        self.assertEqual(live.AI_ROUTING_MODE, 'automatic')
+        import ecoiq.settings as shipped
+        self.assertEqual(shipped.AI_MODEL_SELECTION_MODE, 'automatic')
+        self.assertEqual(shipped.AI_ROUTING_MODE, 'automatic')
+
+    def test_public_request_needs_no_model_key(self):
+        result = service.chat(user=None, message='Hi')
+        self.assertTrue(result['success'])
+        self.assertNotIn('routing', result)
+
+    def test_public_model_key_is_ignored_not_honoured(self):
+        """A stale client sending a key keeps working — the key is not read."""
+        result = service.chat(user=None, message='Hi',
+                              model_key='openrouter:auto-free')
+        self.assertTrue(result['success'])
+        # Automatic routing still put the specific model first, not the pinned one.
+        self.assertEqual(self.mock_chat.call_args.kwargs['model_id'],
+                         'openai/gpt-oss-20b:free')
+
+    def test_public_model_key_for_a_nonexistent_model_does_not_error(self):
+        result = service.chat(user=None, message='Hi', model_key='openrouter:does-not-exist')
+        self.assertTrue(result['success'])
+
+    def test_staff_pin_is_honoured(self):
+        staff = User.objects.create_user('pin_staff', password='x', is_staff=True)
+        service.chat(user=staff, message='Hi', model_key='openrouter:auto-free')
+        self.assertEqual(self.mock_chat.call_args.kwargs['model_id'], 'openrouter/free')
+
+    @override_settings(AI_STAFF_MODEL_OVERRIDE_ENABLED=False)
+    def test_staff_pin_can_be_disabled(self):
+        staff = User.objects.create_user('nopin_staff', password='x', is_staff=True)
+        service.chat(user=staff, message='Hi', model_key='openrouter:auto-free')
+        self.assertEqual(self.mock_chat.call_args.kwargs['model_id'],
+                         'openai/gpt-oss-20b:free')
+
+    def test_staff_pin_cannot_reach_an_unregistered_model(self):
+        staff = User.objects.create_user('bad_pin', password='x', is_staff=True)
+        with self.assertRaises(InvalidModelSelection):
+            service.chat(user=staff, message='Hi', model_key='openrouter/free')
+
+    def test_mode_adjusts_output_ceiling_not_model_choice(self):
+        service.chat(user=None, message='Hi', mode='quick')
+        quick_tokens = self.mock_chat.call_args.kwargs['max_tokens']
+        service.chat(user=None, message='Hi', mode='auto')
+        auto_tokens = self.mock_chat.call_args.kwargs['max_tokens']
+        self.assertLess(quick_tokens, auto_tokens)
+
+    def test_unknown_mode_falls_back_to_the_default(self):
+        result = service.chat(user=None, message='Hi', mode='turbo-ultra')
+        self.assertEqual(result['mode'], 'auto')
+
+    def test_deep_mode_requires_a_larger_context_window(self):
+        from ai_gateway.routing import build_profile
+        profile = build_profile(mode='deep')
+        self.assertGreaterEqual(profile.min_context_length, 100_000)
+
+    def test_module_drives_the_routing_profile(self):
+        from ai_gateway.routing import build_profile
+        profile = build_profile(module='company-analysis')
+        self.assertEqual(profile.task, 'analysis')
+        self.assertEqual(profile.privacy_level, 'sensitive')
+
+    def test_model_too_small_for_the_profile_is_not_routed_to(self):
+        from ai_gateway.routing import build_profile
+        profile = build_profile(mode='deep')
+        chain = registry.select_route(profile)
+        for model in chain:
+            self.assertGreaterEqual(model.context_length, profile.min_context_length)
+
+    def test_repeated_failures_lower_a_model_score(self):
+        from ai_gateway.routing import record_model_failure, score
+        model = registry.select_route(RoutingProfile())[0]
+        before = score(model, RoutingProfile())
+        for _ in range(3):
+            record_model_failure(model.key)
+        self.assertLess(score(model, RoutingProfile()), before)
+
+    @override_settings(
+        AI_MODEL_ALLOWLIST={
+            'openrouter': {'openrouter/free', 'openai/gpt-oss-20b:free',
+                           'inclusionai/ling-3.0-flash:free'},
+            'bytez': set(), 'nvidia_nim': set(),
+        },
+        AI_MODEL_PRESENTATION={
+            **TEST_PRESENTATION,
+            'inclusionai/ling-3.0-flash:free': {'key_slug': 'ling-3-flash-free',
+                                                'display_name': 'Ling 3.0 Flash',
+                                                'priority': 20},
+        },
+    )
+    def test_repeated_failures_reorder_the_chain(self):
+        """
+        A flaky model drifts down the order. The catch-all router is pinned
+        last by design, so this needs two *specific* models to be observable.
+        """
+        from ai_gateway.routing import record_model_failure
+        self.catalog.stop()
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL, SECOND_FREE_MODEL]):
+            first = registry.select_route(RoutingProfile())[0]
+            self.assertEqual(first.provider_model_id, 'openai/gpt-oss-20b:free')
+            for _ in range(5):
+                record_model_failure(first.key)
+            registry.invalidate()
+            reordered = registry.select_route(RoutingProfile())[0]
+        self.catalog.start()
+        self.assertEqual(reordered.provider_model_id, 'inclusionai/ling-3.0-flash:free')
+
+
+# ── Public response hygiene ───────────────────────────────────────────────────
+
+@gateway_settings
+class PublicPayloadTests(GatewayTestCase):
+    def setUp(self):
+        super().setUp()
+        self.catalog = self._patch_catalog([FREE_ROUTER, FREE_MODEL])
+        self.catalog.start()
+        self.addCleanup(self.catalog.stop)
+        self.chat = patch('ai_gateway.providers._openai_compat.chat_completion',
+                          return_value=ok_completion(resolved_model='openai/gpt-oss-20b:free'))
+        self.chat.start()
+        self.addCleanup(self.chat.stop)
+
+    def test_public_payload_names_no_model_or_provider(self):
+        result = service.chat(user=None, message='Hi')
+        serialised = json.dumps(result)
+        for forbidden in ('openrouter', 'OpenRouter', 'Bytez', 'NVIDIA', 'bytez',
+                          'nvidia', 'gpt-oss', 'GPT-OSS', 'Auto — Free',
+                          'model_key', 'provider'):
+            self.assertNotIn(forbidden, serialised, f'{forbidden!r} leaked to a public caller')
+
+    def test_public_payload_has_no_routing_block(self):
+        result = service.chat(user=None, message='Hi')
+        self.assertEqual(set(result), {'success', 'answer', 'mode', 'request_id'})
+
+    def test_public_fallback_produces_no_model_notice(self):
+        self.chat.stop()
+        with patch('ai_gateway.providers._openai_compat.chat_completion',
+                   side_effect=[ProviderCallError('timeout', provider='openrouter'),
+                                ok_completion('Recovered.')]):
+            result = service.chat(user=None, message='Hi')
+        self.chat.start()
+        self.assertEqual(result['answer'], 'Recovered.')
+        self.assertNotIn('notice', result)
+        self.assertNotIn('routing', result)
 
 
 # ── Request validation and prompt integrity ───────────────────────────────────
@@ -706,11 +897,9 @@ class RequestValidationTests(GatewayTestCase):
         roles = [m['role'] for m in self._sent_messages()]
         self.assertEqual(roles, ['system', 'user', 'assistant', 'user'])
 
-    @override_settings(AI_MODEL_SELECTION_MODE='server')
-    def test_server_selection_mode_ignores_the_submitted_key(self):
-        result = service.chat(user=None, message='Hi',
-                              model_key='openrouter:gpt-oss-20b-free')
-        self.assertEqual(result['model']['key'], 'openrouter:auto-free')
+    def test_mode_is_echoed_back(self):
+        result = service.chat(user=None, message='Hi', mode='deep')
+        self.assertEqual(result['mode'], 'deep')
 
 
 # ── Response hygiene ──────────────────────────────────────────────────────────
@@ -773,15 +962,25 @@ class EndpointTests(GatewayTestCase):
                                     content_type='application/json')
         self.assertIn(response.status_code, (401, 403))
 
-    def test_models_returns_the_documented_shape(self):
+    def test_models_offers_no_selection_to_a_normal_user(self):
+        """Under automatic routing there is nothing for a public UI to pick."""
         self.client.force_login(self.user)
         with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
             response = self.client.get(MODELS_URL)
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(data['default_model_key'], 'openrouter:auto-free')
-        self.assertTrue(data['free_only'])
-        self.assertIn('refreshed_at', data)
+        self.assertFalse(data['selection_available'])
+        self.assertEqual(data['models'], [])
+        self.assertEqual(data['selection_mode'], 'automatic')
+        self.assertEqual(data['routing_mode'], 'automatic')
+        self.assertEqual(sorted(data['modes']), ['auto', 'deep', 'quick'])
+
+    def test_models_returns_the_catalogue_to_staff(self):
+        self.client.force_login(self.staff)
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            response = self.client.get(MODELS_URL)
+        data = response.json()
+        self.assertTrue(data['selection_available'])
         first = data['models'][0]
         for field in ('key', 'name', 'provider', 'capabilities', 'availability', 'free'):
             self.assertIn(field, first)
@@ -795,8 +994,8 @@ class EndpointTests(GatewayTestCase):
                 response = self.client.post(
                     CHAT_URL,
                     data=json.dumps({'message': 'Analyse this company',
-                                     'model_key': 'openrouter:auto-free',
                                      'language': 'en',
+                                     'mode': 'auto',
                                      'context': {'company_id': 123,
                                                  'module': 'company-analysis'}}),
                     content_type='application/json',
@@ -805,35 +1004,50 @@ class EndpointTests(GatewayTestCase):
         data = response.json()
         self.assertTrue(data['success'])
         self.assertEqual(data['answer'], 'The answer.')
-        self.assertEqual(data['model']['name'], 'Auto — Free')
+        # No model name reaches a normal user.
+        self.assertNotIn('model', data)
+        self.assertNotIn('routing', data)
 
-    def test_chat_rejects_an_invented_model_key_with_400(self):
-        self.client.force_login(self.user)
-        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
-            response = self.client.post(
-                CHAT_URL,
-                data=json.dumps({'message': 'hi', 'model_key': 'openrouter:openai/gpt-5'}),
-                content_type='application/json')
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()['error']['code'], 'INVALID_MODEL_SELECTION')
-
-    def test_chat_ignores_a_submitted_provider_or_base_url(self):
-        """Extra routing fields are simply not read — they change nothing."""
+    def test_chat_ignores_a_model_key_from_a_normal_user(self):
         self.client.force_login(self.user)
         with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
             with patch('ai_gateway.providers._openai_compat.chat_completion',
                        return_value=ok_completion()) as mocked:
-                response = self.client.post(CHAT_URL, data=json.dumps({
-                    'message': 'hi',
-                    'model_key': 'openrouter:auto-free',
-                    'provider': 'evil',
-                    'base_url': 'https://attacker.example/v1',
-                    'model': 'openai/gpt-5',
-                }), content_type='application/json')
+                response = self.client.post(
+                    CHAT_URL,
+                    data=json.dumps({'message': 'hi', 'model_key': 'openrouter:auto-free'}),
+                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        kwargs = mocked.call_args.kwargs
-        self.assertEqual(kwargs['model_id'], 'openrouter/free')
-        self.assertEqual(kwargs['base_url'], 'https://openrouter.ai/api/v1')
+        # Automatic routing chose, not the submitted key.
+        self.assertEqual(mocked.call_args.kwargs['model_id'], 'openai/gpt-oss-20b:free')
+
+    def test_chat_rejects_a_submitted_provider(self):
+        self._assert_routing_field_rejected({'provider': 'evil'})
+
+    def test_chat_rejects_a_submitted_base_url(self):
+        self._assert_routing_field_rejected({'base_url': 'https://attacker.example/v1'})
+
+    def test_chat_rejects_a_submitted_raw_model(self):
+        self._assert_routing_field_rejected({'model': 'openai/gpt-5'})
+
+    def test_chat_rejects_a_free_only_override(self):
+        self._assert_routing_field_rejected({'free_only': False})
+
+    def test_chat_rejects_provider_routing_preferences(self):
+        self._assert_routing_field_rejected({'provider_preferences': {'order': ['x']}})
+
+    def _assert_routing_field_rejected(self, extra):
+        self.client.force_login(self.user)
+        body = {'message': 'hi'}
+        body.update(extra)
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            with patch('ai_gateway.providers._openai_compat.chat_completion') as mocked:
+                response = self.client.post(CHAT_URL, data=json.dumps(body),
+                                            content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['error']['code'], 'INVALID_REQUEST')
+        # Rejected before any provider was touched.
+        mocked.assert_not_called()
 
     def test_free_models_unavailable_returns_503_and_the_stable_body(self):
         self.client.force_login(self.user)
@@ -841,8 +1055,7 @@ class EndpointTests(GatewayTestCase):
             with patch('ai_gateway.providers._openai_compat.chat_completion',
                        side_effect=ProviderCallError('timeout', provider='openrouter')):
                 response = self.client.post(
-                    CHAT_URL,
-                    data=json.dumps({'message': 'hi', 'model_key': 'openrouter:auto-free'}),
+                    CHAT_URL, data=json.dumps({'message': 'hi'}),
                     content_type='application/json')
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json(), {
@@ -878,10 +1091,17 @@ class EndpointTests(GatewayTestCase):
         page = self.client.get('/ai-assistant/')
         self.assertEqual(page.status_code, 200)
         body = page.content.decode()
-        self.assertIn('/api/ai/models/', body)
-        # The page must not embed a model list, a provider slug or a key.
-        self.assertNotIn('openrouter/free', body)
-        self.assertNotIn('test-openrouter-key', body)
+        self.assertIn('/api/ai/chat/', body)
+        # No model selector, no provider names, no API terminology, no keys —
+        # and no call to the catalogue endpoint at all.
+        self.assertNotIn('/api/ai/models/', body)
+        for forbidden in ('openrouter/free', 'test-openrouter-key', 'OpenRouter',
+                          'Bytez', 'NVIDIA', 'aig-model', 'temperature',
+                          'base_url', 'model_key'):
+            self.assertNotIn(forbidden, body, f'{forbidden!r} present in the public page')
+        # The one routing control a user gets is the answer mode.
+        self.assertIn('aig-mode', body)
+        self.assertIn('Deep analysis', body)
 
 
 # ── Existing routes still work ────────────────────────────────────────────────
@@ -930,6 +1150,174 @@ class RefreshCommandTests(GatewayTestCase):
         with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
             call_command('refresh_ai_models', '--dry-run', stdout=StringIO())
         self.assertIsNone(cache.get(FRESH_CACHE_KEY))
+
+    @override_settings(BYTEZ_API_KEY='')
+    def test_bytez_survey_without_a_key_reports_the_exact_next_command(self):
+        from io import StringIO
+        out = StringIO()
+        with patch('ai_gateway.providers._openai_compat.get_json') as fetched:
+            call_command('refresh_ai_models', '--provider', 'bytez',
+                         '--dry-run', '--explain', stdout=out)
+        fetched.assert_not_called()          # no key → no network at all
+        output = out.getvalue()
+        self.assertIn('missing_credentials', output)
+        self.assertIn('BYTEZ_API_KEY', output)
+        self.assertIn('refresh_ai_models --provider bytez --dry-run --explain', output)
+        self.assertIn('BYTEZ_APPROVED_MODELS', output)
+
+    @override_settings(BYTEZ_API_KEY='k')
+    def test_bytez_survey_reports_the_real_schema_and_approves_nothing(self):
+        from io import StringIO
+        out = StringIO()
+        catalogue = {'models': [
+            {'id': 'qwen/qwen3-8b', 'task': 'chat', 'meter': 'sm-free',
+             'params': '8B', 'openSource': True},
+            {'id': 'openai/gpt-4o', 'task': 'chat', 'meter': 'sm-standard',
+             'params': '200B', 'openSource': False},
+        ]}
+        with patch('ai_gateway.providers._openai_compat.get_json', return_value=catalogue):
+            with patch('ai_gateway.providers._openai_compat.chat_completion') as chat:
+                call_command('refresh_ai_models', '--provider', 'bytez',
+                             '--dry-run', '--explain', stdout=out)
+        chat.assert_not_called()             # catalogue only, never inference
+        output = out.getvalue()
+        self.assertIn('Fields present across entries', output)
+        self.assertIn('meter', output)
+        # The eligible one is a candidate, NOT approved — the allowlist is empty.
+        self.assertIn('candidate — NOT approved', output)
+        self.assertIn('closed-source', output)
+        self.assertIn('Nothing was approved', output)
+        # And the survey genuinely did not widen the allowlist.
+        self.assertEqual(set(settings_module().AI_MODEL_ALLOWLIST['bytez']), set())
+
+
+def settings_module():
+    import ecoiq.settings as shipped
+    return shipped
+
+
+# ── check_ai_configuration ────────────────────────────────────────────────────
+
+@gateway_settings
+class CheckAIConfigurationTests(GatewayTestCase):
+    def _run(self, *args):
+        """Returns (exit_code, output). Exit code 0 == safe."""
+        from io import StringIO
+        out = StringIO()
+        try:
+            call_command('check_ai_configuration', *args, stdout=out)
+        except SystemExit as exc:
+            return int(exc.code or 0), out.getvalue()
+        return 0, out.getvalue()
+
+    def test_safe_configuration_exits_zero(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 0, output)
+        self.assertIn('[PASS] Free-only policy enabled', output)
+        self.assertIn('[PASS] Paid models disabled', output)
+        self.assertIn('[PASS] Automatic routing enabled', output)
+        self.assertIn('[PASS] NVIDIA public production disabled', output)
+        self.assertIn('[PASS] No secrets exposed', output)
+        self.assertIn('Result: safe', output)
+
+    def test_bytez_empty_allowlist_is_a_warning_not_an_error(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 0)
+        self.assertIn('[WARN] Bytez has no approved models', output)
+        self.assertIn('refresh_ai_models --provider bytez', output)
+        self.assertIn('warning', output)
+
+    @override_settings(AI_ALLOW_PAID_MODELS=True)
+    def test_paid_models_enabled_exits_non_zero(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 1)
+        self.assertIn('[FAIL]', output)
+        self.assertIn('AI_ALLOW_PAID_MODELS', output)
+        self.assertIn('UNSAFE', output)
+
+    @override_settings(AI_FREE_ONLY=False)
+    def test_free_only_disabled_exits_non_zero(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 1)
+        self.assertIn('AI_FREE_ONLY is false', output)
+
+    @override_settings(NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED=True)
+    def test_nvidia_public_production_exits_non_zero(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 1)
+        self.assertIn('NVIDIA_NIM_PUBLIC_PRODUCTION_ENABLED is true', output)
+        self.assertIn('licensing approval', output)
+
+    @override_settings(BYTEZ_ALLOW_PAID_CREDITS=True)
+    def test_bytez_paid_credits_exits_non_zero(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 1)
+        self.assertIn('BYTEZ_ALLOW_PAID_CREDITS', output)
+
+    @override_settings(AI_MAX_PROVIDER_ATTEMPTS=0)
+    def test_zero_attempts_exits_non_zero(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            code, output = self._run()
+        self.assertEqual(code, 1)
+        self.assertIn('AI_MAX_PROVIDER_ATTEMPTS', output)
+
+    def test_secrets_are_never_printed(self):
+        with override_settings(OPENROUTER_API_KEY='sk-or-v1-FAKE-FIXTURE-NOT-A-REAL-KEY-000'):
+            with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+                code, output = self._run()
+        self.assertEqual(code, 0)
+        self.assertNotIn('FAKE-FIXTURE', output)
+        self.assertNotIn('sk-or-v1', output)
+        self.assertIn('[PASS] No secrets exposed', output)
+
+    def test_default_run_makes_no_network_call_at_all(self):
+        """Cold cache included — the default run must never fetch a catalogue."""
+        with patch('ai_gateway.providers._openai_compat.get_json') as fetched:
+            with patch('ai_gateway.providers._openai_compat.chat_completion') as chat:
+                code, output = self._run()
+        fetched.assert_not_called()
+        chat.assert_not_called()
+        self.assertEqual(code, 0)
+        self.assertIn('Registry not cached yet', output)
+
+    def test_default_run_uses_the_cached_registry_when_warm(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            registry.get_snapshot()          # warm the cache
+        with patch('ai_gateway.providers._openai_compat.get_json') as fetched:
+            code, output = self._run()
+        fetched.assert_not_called()
+        self.assertEqual(code, 0)
+        self.assertIn('[PASS] No paid models in the registry', output)
+
+    def test_live_catalog_reads_catalogues_but_never_infers(self):
+        with patch('ai_gateway.providers._openai_compat.get_json',
+                   return_value={'data': [FREE_ROUTER, FREE_MODEL]}) as fetched:
+            with patch('ai_gateway.providers._openai_compat.chat_completion') as chat:
+                code, output = self._run('--live-catalog')
+        self.assertEqual(code, 0)
+        self.assertTrue(fetched.called)
+        chat.assert_not_called()
+        self.assertIn('no inference', output)
+        self.assertIn('nothing approved', output)
+
+    def test_reports_no_raw_model_input_is_accepted(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            _code, output = self._run()
+        self.assertIn('[PASS] No raw provider/model input accepted from public API', output)
+
+    def test_reports_no_fallback_loop(self):
+        with self._patch_catalog([FREE_ROUTER, FREE_MODEL]):
+            registry.get_snapshot()          # registry checks need a warm cache
+        _code, output = self._run()
+        self.assertIn('[PASS] No fallback loop possible', output)
+        self.assertIn('[PASS] No development-only models in public routing', output)
+        self.assertIn('[PASS] Default public routing has', output)
 
 
 # ── The no-live-call guarantee ────────────────────────────────────────────────

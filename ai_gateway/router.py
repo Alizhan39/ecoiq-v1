@@ -32,7 +32,8 @@ from ai_gateway.exceptions import (
     CATEGORY_TO_PUBLIC_ERROR, AIGatewayError, FreeModelsUnavailable, ProviderCallError,
 )
 from ai_gateway.providers import get_provider
-from ai_gateway.registry import mark_model_unavailable, registry
+from ai_gateway.registry import mark_model_unavailable
+from ai_gateway.routing import record_model_failure
 from ai_gateway.types import AIModelDefinition, AIResponse
 
 logger = logging.getLogger('ecoiq.ai_gateway')
@@ -44,14 +45,22 @@ class AIProviderRouter:
     def run(
         self,
         *,
-        selected: AIModelDefinition,
+        chain: list[AIModelDefinition],
         messages: list[dict],
         temperature: float,
         max_tokens: int,
         request_id: str,
-        user=None,
     ) -> AIResponse:
-        chain = registry.fallback_chain(selected, user)
+        """
+        `chain` is already built and ordered by the caller — either by
+        automatic routing (`registry.select_route`) or, for a staff pin, by
+        `registry.fallback_chain`. Either way every entry is an approved,
+        free-eligible model, so this loop cannot leave the free pool.
+        """
+        if not chain:
+            raise FreeModelsUnavailable()
+
+        selected = chain[0]
         max_attempts = max(1, int(settings.AI_MAX_PROVIDER_ATTEMPTS))
 
         attempted: set[str] = set()
@@ -86,6 +95,9 @@ class AIProviderRouter:
 
                 mark_model_unavailable(candidate.provider, candidate.provider_model_id,
                                        exc.category)
+                # Demote it in future automatic rankings too, so a persistently
+                # flaky model drifts down the chain instead of staying first.
+                record_model_failure(candidate.key)
                 continue
 
             fallback_used = candidate.key != selected.key
