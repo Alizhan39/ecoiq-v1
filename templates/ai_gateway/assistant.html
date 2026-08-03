@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ Assistant{% endblock %}
+{% block meta_description_content %}Ask the EcoIQ sustainability and ethical-intelligence assistant about a company, country, project or decision.{% endblock %}
+
+{% block content %}
+{% comment %}
+  EcoIQ chooses the model. This page has no model selector, no provider names
+  and no API terminology — and no way to send any of those. The only routing
+  input it offers is an answer MODE (Auto / Quick answer / Deep analysis),
+  which adjusts routing requirements server-side and never names a model.
+{% endcomment %}
+<div class="aig-wrap" id="aig-root" data-chat-url="{{ chat_url }}">
+
+  <span class="aig-badge">EcoIQ Intelligence</span>
+  <h1 class="aig-title" data-i18n="title">What would you like to understand?</h1>
+  <p class="aig-subtitle" data-i18n="subtitle">
+    Ask about a company, a country, a project or a decision. EcoIQ separates facts from
+    assumptions and estimates, and tells you when the data is missing.
+  </p>
+
+  <div class="aig-toolbar">
+    <label class="aig-field">
+      <span class="aig-field-label" data-i18n="modeLabel">Answer</span>
+      <select id="aig-mode" class="aig-select">
+        <option value="auto" data-i18n-option="modeAuto">Auto</option>
+        <option value="quick" data-i18n-option="modeQuick">Quick answer</option>
+        <option value="deep" data-i18n-option="modeDeep">Deep analysis</option>
+      </select>
+    </label>
+
+    <label class="aig-field">
+      <span class="aig-field-label" data-i18n="languageLabel">Answer language</span>
+      <select id="aig-language" class="aig-select">
+        <option value="en">English</option>
+        <option value="ar">العربية</option>
+        <option value="ru">Русский</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="aig-thread" id="aig-thread" aria-live="polite" aria-atomic="false"></div>
+
+  <form class="aig-form" id="aig-form">
+    <textarea id="aig-input" class="aig-input" rows="3" maxlength="8000"
+              data-i18n-placeholder="placeholder"
+              placeholder="e.g. What are the main environmental risks for this company?"></textarea>
+    <button type="submit" class="aig-btn" id="aig-send" data-i18n="send">Ask EcoIQ</button>
+  </form>
+
+  <p class="aig-footnote" data-i18n="footnote">
+    EcoIQ provides decision-support information, not financial, legal, medical or religious advice.
+  </p>
+</div>
+
+<style>
+  .aig-wrap {
+    --aig-bg: #070b0f; --aig-bg2: #0d1117; --aig-border: rgba(255,255,255,.08);
+    --aig-text: #e2e8f0; --aig-muted: #94a3b8; --aig-acc: #00e89a; --aig-info: #58a6ff;
+    --aig-warn: #f4a261; --aig-danger: #e63946;
+    max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    background: var(--aig-bg); color: var(--aig-text); border-radius: 14px;
+  }
+  .aig-badge { display:inline-block; background:rgba(0,232,154,.12); color:var(--aig-acc);
+    border:1px solid rgba(0,232,154,.3); font-weight:700; font-size:.78rem;
+    padding:.35rem .85rem; border-radius:999px; margin-bottom:1rem; }
+  .aig-title { font-size:2rem; font-weight:800; margin:.4rem 0 .6rem; color:#fff; letter-spacing:-.02em; }
+  .aig-subtitle { font-size:1rem; color:var(--aig-muted); margin:0 0 1.5rem; max-width:680px; line-height:1.6; }
+
+  .aig-toolbar { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; }
+  .aig-field { display:flex; flex-direction:column; gap:.35rem; min-width:220px; flex:1; }
+  .aig-field-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--aig-muted); font-weight:700; }
+  .aig-select { background:var(--aig-bg2); color:#fff; border:1px solid var(--aig-border);
+    border-radius:10px; padding:.7rem .9rem; font-size:.92rem; width:100%; }
+  .aig-select:focus-visible { outline:2px solid var(--aig-acc); outline-offset:2px; }
+
+  .aig-thread { display:flex; flex-direction:column; gap:.85rem; margin-bottom:1.25rem; }
+  .aig-msg { background:var(--aig-bg2); border:1px solid var(--aig-border); border-radius:12px;
+    padding:.95rem 1.15rem; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .aig-msg-user { border-inline-start:3px solid var(--aig-info); }
+  .aig-msg-assistant { border-inline-start:3px solid var(--aig-acc); }
+  .aig-msg-error { border-inline-start:3px solid var(--aig-danger); color:#fecaca; }
+
+  .aig-form { display:flex; flex-wrap:wrap; gap:.6rem; align-items:flex-end; }
+  .aig-input { flex:1; min-width:260px; background:var(--aig-bg2); color:#fff;
+    border:1px solid var(--aig-border); border-radius:10px; padding:.9rem 1.1rem;
+    font-size:1rem; font-family:inherit; resize:vertical; }
+  .aig-input:focus-visible { outline:2px solid var(--aig-acc); outline-offset:2px; border-color:var(--aig-acc); }
+  .aig-btn { background:var(--aig-acc); color:#04201a; border:0; border-radius:10px;
+    padding:.9rem 1.6rem; font-size:.95rem; font-weight:700; cursor:pointer; }
+  .aig-btn:disabled { opacity:.55; cursor:progress; }
+  .aig-btn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+
+  .aig-footnote { font-size:.76rem; color:var(--aig-muted); margin-top:1.25rem; }
+
+  /* Arabic RTL: the wrapper flips direction so the thread, badges and form all
+     mirror. Logical properties above (margin-inline-end, border-inline-start)
+     mean nothing else needs an RTL override. */
+  .aig-wrap[dir="rtl"] { text-align: right; }
+
+  @media (prefers-reduced-motion: reduce) { .aig-wrap * { transition: none !important; } }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  var root = document.getElementById('aig-root');
+  if (!root) { return; }
+
+  var CHAT_URL = root.dataset.chatUrl;
+  var LANG_KEY = 'ecoiq.ai.language';
+  var MODE_KEY = 'ecoiq.ai.mode';
+
+  var modeSelect = document.getElementById('aig-mode');
+  var languageSelect = document.getElementById('aig-language');
+  var thread = document.getElementById('aig-thread');
+  var form = document.getElementById('aig-form');
+  var input = document.getElementById('aig-input');
+  var sendBtn = document.getElementById('aig-send');
+
+  // Conversation history lives here. There is no model to switch, so nothing
+  // can reset it mid-conversation.
+  var history = [];
+  var busy = false;
+
+  // ── i18n ────────────────────────────────────────────────────────────────
+  var STRINGS = {
+    en: {
+      title: 'What would you like to understand?',
+      subtitle: 'Ask about a company, a country, a project or a decision. EcoIQ separates facts from assumptions and estimates, and tells you when the data is missing.',
+      modeLabel: 'Answer', languageLabel: 'Answer language',
+      modeAuto: 'Auto', modeQuick: 'Quick answer', modeDeep: 'Deep analysis',
+      placeholder: 'e.g. What are the main environmental risks for this company?',
+      send: 'Ask EcoIQ', sending: 'Thinking…',
+      footnote: 'EcoIQ provides decision-support information, not financial, legal, medical or religious advice.',
+      genericError: 'Something went wrong. Please try again.'
+    },
+    ar: {
+      title: 'ما الذي تودّ فهمه؟',
+      subtitle: 'اسأل عن شركة أو دولة أو مشروع أو قرار. يفصل EcoIQ بين الحقائق والافتراضات والتقديرات، ويوضّح متى تكون البيانات ناقصة.',
+      modeLabel: 'الإجابة', languageLabel: 'لغة الإجابة',
+      modeAuto: 'تلقائي', modeQuick: 'إجابة سريعة', modeDeep: 'تحليل معمّق',
+      placeholder: 'مثال: ما أبرز المخاطر البيئية لهذه الشركة؟',
+      send: 'اسأل EcoIQ', sending: 'جارٍ التفكير…',
+      footnote: 'يقدّم EcoIQ معلومات داعمة للقرار، وليست استشارة مالية أو قانونية أو طبية أو دينية.',
+      genericError: 'حدث خطأ ما. يرجى المحاولة مرة أخرى.'
+    },
+    ru: {
+      title: 'Что вы хотите понять?',
+      subtitle: 'Спросите о компании, стране, проекте или решении. EcoIQ отделяет факты от допущений и оценок и прямо говорит, когда данных не хватает.',
+      modeLabel: 'Ответ', languageLabel: 'Язык ответа',
+      modeAuto: 'Авто', modeQuick: 'Краткий ответ', modeDeep: 'Глубокий анализ',
+      placeholder: 'например: Каковы основные экологические риски этой компании?',
+      send: 'Спросить EcoIQ', sending: 'Думаю…',
+      footnote: 'EcoIQ предоставляет информацию для поддержки решений, а не финансовую, юридическую, медицинскую или религиозную консультацию.',
+      genericError: 'Что-то пошло не так. Попробуйте ещё раз.'
+    }
+  };
+
+  function lang() { return languageSelect.value || 'en'; }
+  function t(key) { return (STRINGS[lang()] || STRINGS.en)[key] || STRINGS.en[key]; }
+
+  function applyLanguage() {
+    var code = lang();
+    root.setAttribute('dir', code === 'ar' ? 'rtl' : 'ltr');
+    root.setAttribute('lang', code);
+    root.querySelectorAll('[data-i18n]').forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    root.querySelectorAll('[data-i18n-option]').forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-i18n-option'));
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    });
+  }
+
+  // ── CSRF (Django cookie) ────────────────────────────────────────────────
+  function csrfToken() {
+    var match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  // ── Thread ──────────────────────────────────────────────────────────────
+  function addMessage(role, text) {
+    var el = document.createElement('div');
+    el.className = 'aig-msg aig-msg-' + role;
+    // textContent, never innerHTML — model output is never parsed as markup.
+    el.textContent = text;
+    thread.appendChild(el);
+    el.scrollIntoView({ block: 'nearest' });
+    return el;
+  }
+
+  // ── Send ────────────────────────────────────────────────────────────────
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (busy) { return; }
+
+    var message = input.value.trim();
+    if (!message) { return; }
+
+    busy = true;
+    sendBtn.disabled = true;
+    sendBtn.textContent = t('sending');
+    addMessage('user', message);
+    input.value = '';
+
+    fetch(CHAT_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRFToken': csrfToken()
+      },
+      // Four fields, none of which names a model. There is no way for this
+      // page to send a provider, a base URL, a raw model identifier or any
+      // routing preference — EcoIQ chooses server-side.
+      body: JSON.stringify({
+        message: message,
+        language: lang(),
+        mode: modeSelect.value,
+        history: history.slice(-20)
+      })
+    }).then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+    }).then(function (result) {
+      if (!result.ok || !result.data.success) {
+        var error = (result.data && result.data.error) || {};
+        addMessage('error', error.message || t('genericError'));
+        return;
+      }
+      // The response carries the answer and nothing about how it was produced:
+      // no model name, no provider, no fallback notice.
+      addMessage('assistant', result.data.answer);
+      history.push({ role: 'user', content: message });
+      history.push({ role: 'assistant', content: result.data.answer });
+    }).catch(function () {
+      addMessage('error', t('genericError'));
+    }).then(function () {
+      busy = false;
+      sendBtn.disabled = false;
+      sendBtn.textContent = t('send');
+      input.focus();
+    });
+  });
+
+  // Ctrl/Cmd+Enter submits; plain Enter keeps making newlines.
+  input.addEventListener('keydown', function (event) {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      form.requestSubmit();
+    }
+  });
+
+  modeSelect.addEventListener('change', function () {
+    localStorage.setItem(MODE_KEY, modeSelect.value);
+  });
+
+  languageSelect.addEventListener('change', function () {
+    localStorage.setItem(LANG_KEY, languageSelect.value);
+    applyLanguage();
+    sendBtn.textContent = t('send');
+  });
+
+  // ── Boot ────────────────────────────────────────────────────────────────
+  var storedLang = localStorage.getItem(LANG_KEY);
+  if (storedLang && STRINGS[storedLang]) { languageSelect.value = storedLang; }
+  var storedMode = localStorage.getItem(MODE_KEY);
+  if (storedMode && ['auto', 'quick', 'deep'].indexOf(storedMode) !== -1) {
+    modeSelect.value = storedMode;
+  }
+  applyLanguage();
+})();
+</script>
+{% endblock %}
