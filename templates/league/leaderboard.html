@@ -211,12 +211,21 @@
       font-weight: 700;
       font-size: 0.88rem;
       color: var(--text);
+    }
+    .company-info .co-name-text {
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: block; max-width: 100%;
     }
     .company-info .co-meta {
       font-size: 0.65rem;
       color: var(--muted);
       margin-top: 0.1rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .company-info .co-ticker {
+      font-family: var(--mono, monospace);
+      font-size: 0.6rem; font-weight: 700;
+      color: #00e89a;
     }
 
     /* EcoIQ score cell */
@@ -464,9 +473,14 @@
           <!-- Company -->
           <div class="company-info">
             <a href="{% url 'league:company' co.slug %}" style="text-decoration:none;">
-              <div class="co-name">{{ co.name }}</div>
+              <div class="co-name">
+                <span class="co-name-text">{{ co.name }}</span>
+              </div>
             </a>
-            <div class="co-meta">{{ co.city }}</div>
+            <div class="co-meta">
+              {% if co.ticker %}<span class="co-ticker">{{ co.ticker }}{% if co.stock_price %} {{ co.stock_price_currency }} {{ co.stock_price }}{% endif %}</span>{% if co.city %} · {{ co.city }}{% endif %}
+              {% else %}{{ co.city }}{% endif %}
+            </div>
           </div>
 
           <!-- Country -->

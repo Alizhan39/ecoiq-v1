@@ -15,6 +15,7 @@ NOTE: The `Company` model (industrial companies, league scores) lives in
       This file exports: CompanyProfile, CompanyGuidanceVideo, CompanySource,
       CompanyScoreSnapshot, DataIngestionLog.
 """
+from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
@@ -622,3 +623,118 @@ class DataIngestionLog(models.Model):
         co = self.company.name if self.company_id else '(no company)'
         ts = self.ingested_at.strftime('%Y-%m-%d') if self.ingested_at else '—'
         return f'{self.get_source_display()} → {co} ({ts})'
+
+REPORT_STATUS_CHOICES = [
+    ('draft',     'Draft'),
+    ('reviewed',  'Reviewed'),
+    ('published', 'Published'),
+]
+
+INVESTMENT_CLASSIFICATION_CHOICES = [
+    ('lower_exposure',       'Lower Identified Exposure'),
+    ('moderate_exposure',    'Moderate Identified Exposure'),
+    ('elevated_exposure',    'Elevated Identified Exposure'),
+    ('high_exposure',        'High Identified Exposure'),
+    ('insufficient_evidence','Insufficient Evidence'),
+]
+
+REPORT_SECTION_KEYS = [
+    'executive_assessment',
+    'key_risks',
+    'positive_signals',
+    'transition_regulatory_exposure',
+    'controversies_evidence_concerns',
+    'sector_relative_context',
+    'data_confidence',
+    'due_diligence_questions',
+]
+
+
+class InvestmentRelevanceReport(models.Model):
+    """
+    EcoIQ Investment Relevance Report — a versioned, AI-assisted analysis of
+    how a company's environmental/stewardship profile may be relevant to
+    long-term investment risk. This is sustainability-risk intelligence, NOT
+    investment advice: see companies.ai_helpers.PROHIBITED_INVESTMENT_TERMS
+    and services/investment_report.py for the language the model is
+    forbidden from using, and the deterministic check that enforces it
+    before a report can be published.
+
+    Never overwritten in place — a new generation creates the next `version`
+    for the company, so historical reports remain auditable. Only
+    status='published' reports are ever shown to public (non-staff) users;
+    draft/reviewed stay staff-only, mirroring the human-approval-before-
+    publish pattern already used by
+    agent_runtime_model_router.services.human_approval_gate for other
+    public-facing AI content.
+    """
+    company = models.ForeignKey(
+        CompanyProfile, on_delete=models.CASCADE,
+        related_name='investment_reports',
+    )
+    version = models.PositiveIntegerField(help_text='1-based, incremented per company on each generation')
+    status  = models.CharField(max_length=10, choices=REPORT_STATUS_CHOICES, default='draft')
+
+    classification = models.CharField(max_length=25, choices=INVESTMENT_CLASSIFICATION_CHOICES)
+
+    # ── Structured report content ──
+    # Keys: executive_assessment, key_risks, positive_signals,
+    # transition_regulatory_exposure, controversies_evidence_concerns,
+    # sector_relative_context, data_confidence, due_diligence_questions.
+    # Each risk/signal entry is a dict that may include an `evidence` list
+    # of {type, detail, source, date, confidence} citations — see
+    # services/investment_report.py:EVIDENCE_TYPE_CHOICES for what `type`
+    # ('verified_evidence' | 'company_reported' | 'external_allegation' |
+    # 'ai_interpretation' | 'insufficient_evidence') means.
+    content = models.JSONField(default=dict, blank=True)
+
+    # ── Grounding / reproducibility ──
+    source_snapshot = models.JSONField(
+        default=dict, blank=True,
+        help_text='Copy of the EcoIQ scores/fields the report was generated from, for audit')
+
+    # ── Generation provenance ──
+    model_name          = models.CharField(max_length=80, blank=True)
+    model_provider       = models.CharField(max_length=30, blank=True,
+                            help_text='Provider selected by agent_runtime_model_router for this generation')
+    routing_reason       = models.TextField(blank=True,
+                            help_text='Why the model router selected this provider/model')
+    prompt_version       = models.CharField(max_length=20, default='v1')
+    methodology_version  = models.CharField(max_length=20, default='v1')
+
+    prohibited_language_flags = models.JSONField(
+        default=list, blank=True,
+        help_text='Findings from the prohibited-recommendation-language check; must be empty to publish')
+
+    generated_at = models.DateTimeField(auto_now_add=True)
+    generated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+',
+        help_text='Admin/analyst who triggered generation')
+
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-version']
+        unique_together = [('company', 'version')]
+        verbose_name = 'Investment Relevance Report'
+        verbose_name_plural = 'Investment Relevance Reports'
+
+    def __str__(self):
+        return f'{self.company.company.name} — Investment Relevance v{self.version} ({self.status})'
+
+    @property
+    def classification_display(self):
+        return dict(INVESTMENT_CLASSIFICATION_CHOICES).get(self.classification, self.classification)
+
+    @property
+    def is_publishable(self) -> bool:
+        """A report can only move to published when it carries no prohibited-language flags."""
+        return not self.prohibited_language_flags
+
+
+# ── DataIngestionLog ──────────────────────────────────────────────────────────

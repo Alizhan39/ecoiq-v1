@@ -1,0 +1,33 @@
+{% comment %}
+Compact stock-market header block — shown directly beside/below the company
+name on both companies/detail.html and league/company.html. Requires CSS
+classes `.stock-strip*` to already be defined by the including template
+(each template embeds its own <style> block, matching this codebase's
+existing per-template styling convention).
+
+Usage: {% include 'companies/_stock_strip.html' with company=company %}
+Caller must guard with {% if company.ticker %} — this partial assumes a
+ticker exists (private / non-public companies should never reach it).
+{% endcomment %}
+<div class="stock-strip">
+  {% if company.has_market_data %}
+    <a href="{{ company.stock_profile_url }}" class="stock-strip-main">
+      <span class="stock-strip-ticker">{{ company.ticker }}</span>
+      <span class="stock-strip-price">{{ company.stock_price_display }}</span>
+      {% if company.stock_day_change_display %}
+      <span class="stock-strip-change stock-strip-change-{{ company.stock_day_change_direction }}">{% if company.stock_day_change_direction == 'up' %}▲{% elif company.stock_day_change_direction == 'down' %}▼{% endif %} {{ company.stock_day_change_display }}</span>
+      {% endif %}
+    </a>
+    {% if company.stock_data_is_stale %}
+    <span class="stock-strip-stale" title="Last confirmed price — may be out of date">stale</span>
+    {% endif %}
+    <a href="{{ company.stock_profile_url }}" class="stock-strip-cta">View stock profile →</a>
+    {% if company.stock_price_updated_at %}
+    <span class="stock-strip-updated">Updated {{ company.stock_price_updated_at|timesince }} ago</span>
+    {% endif %}
+  {% else %}
+    <span class="stock-strip-ticker">{{ company.ticker }}</span>
+    <span class="stock-strip-nodata">Price not yet available</span>
+    <a href="{{ company.stock_profile_url }}" class="stock-strip-cta">View stock profile →</a>
+  {% endif %}
+</div>

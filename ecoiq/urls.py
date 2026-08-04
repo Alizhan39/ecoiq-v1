@@ -51,6 +51,9 @@ urlpatterns = [
     # EcoIQ Company Intelligence
     path('companies/', include('companies.urls', namespace='companies')),
 
+    # Public embeddable badges/widgets for a company (read-only, cached, no auth)
+    path('embed/', include('companies.embed_urls', namespace='embed')),
+
     # EcoIQ Country Intelligence
     path('countries/', include('countries.urls', namespace='countries')),
 

@@ -38,7 +38,10 @@
           {% endif %}
         </div>
         <div class="cc-id-text">
-          <div class="cc-name">{{ co.name }}</div>
+          <div class="cc-name">
+            <span class="cc-name-text">{{ co.name }}</span>
+            {% if co.ticker %}<span class="cc-ticker">{{ co.ticker }}{% if co.stock_price %} · {{ co.stock_price_currency }} {{ co.stock_price }}{% endif %}</span>{% endif %}
+          </div>
           <div class="cc-sub">{{ co.get_sector_display }} · {{ co.country }}</div>
         </div>
         {# Primary climate-readiness signal #}
