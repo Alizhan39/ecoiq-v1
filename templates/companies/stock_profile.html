@@ -1,12 +1,7 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% load company_extras %}
-{% comment %}
-NOTE: the investor_portfolio watchlist-controls block that belongs just under
-the hero meta is deliberately NOT included here. It depends on the
-investor_portfolio app (recovery Group E), which is not installed yet.
-Re-add the portfolio_extras load and the control tag when Group E lands.
-{% endcomment %}
+{% load portfolio_extras %}
 
 {% block title %}{{ company.name }} Stock — {{ company.ticker|default:"Not Public" }} | EcoIQ{% endblock %}
 {% block meta_description %}<meta name="description" content="{{ company.name }} ({{ company.ticker }}) stock profile — market data plus EcoIQ's sustainability-risk Investment Relevance Report. Not investment advice.">{% endblock %}
@@ -213,6 +208,9 @@ a{color:inherit;text-decoration:none}
           <span>{{ company.get_sector_display }}</span>
           <span>·</span>
           <a href="{% url 'companies:detail' company.slug %}">← Back to EcoIQ Intelligence Profile</a>
+        </div>
+        <div style="margin-top:.6rem">
+          {% watchlist_controls company %}
         </div>
       </div>
     </div>

@@ -1,0 +1,56 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}Confirm Import — {{ portfolio.name }} | EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:portfolio_list' %}">Portfolios</a><span>›</span>
+<a href="{% url 'portfolio:portfolio_dashboard' portfolio.pk %}">{{ portfolio.name }}</a><span>›</span>
+<span style="color:var(--muted2)">Import Preview</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">Confirm Import</h1>
+<div class="page-subtitle">Review before applying — nothing has been imported yet.</div>
+
+<div class="kpi-grid intel-panel" style="margin-bottom:1.4rem">
+  <div class="kpi-cell"><div class="kpi-val" style="color:var(--accent)">{{ summary.matched }}</div><div class="kpi-lbl">Matched</div></div>
+  <div class="kpi-cell"><div class="kpi-val" style="color:var(--warn)">{{ summary.unmatched }}</div><div class="kpi-lbl">Unmatched Tickers</div></div>
+  <div class="kpi-cell"><div class="kpi-val" style="color:var(--danger)">{{ summary.invalid }}</div><div class="kpi-lbl">Invalid Rows</div></div>
+  <div class="kpi-cell"><div class="kpi-val" style="color:var(--muted2)">{{ summary.duplicate }}</div><div class="kpi-lbl">Duplicate Holdings</div></div>
+</div>
+
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Row</th><th>Status</th><th>Company</th><th>Ticker</th><th>Qty</th><th>Avg Price</th><th>Currency</th><th>Date</th><th>Notes</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.row_number }}</td>
+      <td>
+        {% if r.status == 'matched' %}<span class="badge" style="background:rgba(0,232,154,.12);color:var(--accent);border:1px solid rgba(0,232,154,.3)">Matched</span>
+        {% elif r.status == 'unmatched' %}<span class="badge badge-warn">Unmatched</span>
+        {% elif r.status == 'invalid' %}<span class="badge badge-danger">Invalid</span>
+        {% else %}<span class="badge badge-muted">Duplicate</span>{% endif %}
+      </td>
+      <td>{{ r.company_name }}</td>
+      <td style="font-family:var(--mono)">{{ r.ticker }}</td>
+      <td>{{ r.quantity }}</td>
+      <td>{{ r.avg_price }}</td>
+      <td>{{ r.currency }}</td>
+      <td>{{ r.acquisition_date }}</td>
+      <td style="color:var(--muted);font-size:.68rem">{{ r.errors|join:"; " }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div style="margin-top:1.4rem;display:flex;gap:.6rem">
+  <form method="post" action="{% url 'portfolio:portfolio_import_confirm' portfolio.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="cta-btn cta-primary" {% if summary.matched == 0 %}disabled{% endif %}>
+      Import {{ summary.matched }} Matched Holding{{ summary.matched|pluralize }}
+    </button>
+  </form>
+  <a href="{% url 'portfolio:portfolio_import_csv' portfolio.pk %}" class="cta-btn cta-ghost">Upload a Different File</a>
+</div>
+{% endblock %}

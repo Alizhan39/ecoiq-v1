@@ -51,6 +51,9 @@ urlpatterns = [
     # EcoIQ Company Intelligence
     path('companies/', include('companies.urls', namespace='companies')),
 
+    # Investor portfolios and watchlists (authenticated, owner-scoped)
+    path('portfolio/', include('investor_portfolio.urls', namespace='portfolio')),
+
     # Public embeddable badges/widgets for a company (read-only, cached, no auth)
     path('embed/', include('companies.embed_urls', namespace='embed')),
 

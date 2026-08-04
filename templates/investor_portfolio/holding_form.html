@@ -1,0 +1,71 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}{% if holding %}Edit Holding{% else %}Add Holding{% endif %} — {{ portfolio.name }} | EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block page_width_class %}page-narrow{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:portfolio_list' %}">Portfolios</a><span>›</span>
+<a href="{% url 'portfolio:portfolio_dashboard' portfolio.pk %}">{{ portfolio.name }}</a><span>›</span>
+<span style="color:var(--muted2)">{% if holding %}Edit{% else %}Add{% endif %} Holding</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">{% if holding %}Edit Holding{% else %}Add Holding{% endif %}</h1>
+<div class="page-subtitle">{{ portfolio.name }} · aggregated holding per company — editing updates your existing position</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="form-field">
+    <label for="company_slug">Company</label>
+    {% if holding %}
+      <input type="text" value="{{ holding.company.name }} ({{ holding.company.ticker|default:'no ticker' }})" disabled>
+      <input type="hidden" name="company_slug" value="{{ holding.company.slug }}">
+      <div class="hint">Company can't be changed on an existing holding — delete and re-add to switch companies.</div>
+    {% else %}
+      <select name="company_slug" id="company_slug" required>
+        <option value="">Select a company…</option>
+        {% for c in companies %}
+        <option value="{{ c.slug }}">{{ c.name }}{% if c.ticker %} ({{ c.ticker }}){% endif %}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+  </div>
+
+  <div class="form-row">
+    <div class="form-field">
+      <label for="shares">Shares</label>
+      <input type="number" step="0.0001" name="shares" id="shares" required value="{{ holding.shares|default:'' }}">
+    </div>
+    <div class="form-field">
+      <label for="avg_acquisition_price">Avg. Acquisition Price (optional)</label>
+      <input type="number" step="0.0001" name="avg_acquisition_price" id="avg_acquisition_price" value="{{ holding.avg_acquisition_price|default:'' }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-field">
+      <label for="acquisition_currency">Acquisition Currency</label>
+      <input type="text" name="acquisition_currency" id="acquisition_currency" maxlength="8" value="{{ holding.acquisition_currency|default:'USD' }}">
+    </div>
+    <div class="form-field">
+      <label for="acquisition_date">Acquisition Date (optional)</label>
+      <input type="date" name="acquisition_date" id="acquisition_date" value="{{ holding.acquisition_date|date:'Y-m-d'|default:'' }}">
+    </div>
+  </div>
+  <div class="form-field">
+    <label for="manual_current_value">Manual Current Value (optional)</label>
+    <input type="number" step="0.01" name="manual_current_value" id="manual_current_value" value="{{ holding.manual_current_value|default:'' }}">
+    <div class="hint">Only used when EcoIQ has no live market price for this company. Assumed to be in {{ portfolio.base_currency }}.</div>
+  </div>
+  <div class="form-field">
+    <label for="notes">Notes (optional)</label>
+    <textarea name="notes" id="notes" rows="3">{{ holding.notes|default:'' }}</textarea>
+  </div>
+  <div class="form-field">
+    <label><input type="checkbox" name="include_in_analytics" style="width:auto"
+                  {% if holding is None or holding.include_in_analytics %}checked{% endif %}>
+      Include in portfolio EcoIQ analytics</label>
+  </div>
+
+  <button type="submit" class="cta-btn cta-primary">{% if holding %}Save Changes{% else %}Add Holding{% endif %}</button>
+  <a href="{% url 'portfolio:portfolio_dashboard' portfolio.pk %}" class="cta-btn cta-ghost">Cancel</a>
+</form>
+{% endblock %}

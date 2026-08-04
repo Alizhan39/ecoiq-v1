@@ -1,0 +1,34 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}Import Holdings — {{ portfolio.name }} | EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block page_width_class %}page-narrow{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:portfolio_list' %}">Portfolios</a><span>›</span>
+<a href="{% url 'portfolio:portfolio_dashboard' portfolio.pk %}">{{ portfolio.name }}</a><span>›</span>
+<span style="color:var(--muted2)">Import</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">Import Holdings from CSV</h1>
+<div class="page-subtitle">{{ portfolio.name }}</div>
+
+<div class="intel-panel">
+  <div class="panel-body">
+    <p style="font-size:.78rem;color:var(--muted2);line-height:1.6;margin-bottom:1rem">
+      Expected columns (header row required): <code>ticker</code>, <code>company_name</code>,
+      <code>quantity</code>, <code>avg_price</code>, <code>currency</code>, <code>acquisition_date</code>.
+      Only <code>ticker</code> or <code>company_name</code>, plus <code>quantity</code>, are required per row.
+      You'll see a preview before anything is imported.
+    </p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-field">
+        <label for="csv_file">CSV File</label>
+        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+      </div>
+      <button type="submit" class="cta-btn cta-primary">Preview Import</button>
+      <a href="{% url 'portfolio:portfolio_dashboard' portfolio.pk %}" class="cta-btn cta-ghost">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% comment %}
+'Add to watchlist' control — included via {% watchlist_controls company %}
+(investor_portfolio.templatetags.portfolio_extras). The including page must
+define CSS classes .cta-btn/.cta-secondary/.cta-ghost (companies/detail.html
+and companies/stock_profile.html both already do).
+{% endcomment %}
+<div class="watchlist-control" style="font-size:.72rem">
+  {% if not authenticated %}
+    <a href="{{ login_url }}" class="cta-btn cta-ghost" style="padding:.3rem .7rem">☆ Sign in to add to watchlist</a>
+  {% else %}
+    <details style="display:inline-block">
+      <summary class="cta-btn cta-ghost" style="padding:.3rem .7rem;cursor:pointer;list-style:none;display:inline-flex">
+        ☆ Watchlist{% if member_of_ids %} ({{ member_of_ids|length }}){% endif %}
+      </summary>
+      <div style="margin-top:.5rem;padding:.7rem;background:var(--bg3,#161b22);border:1px solid var(--border2,rgba(255,255,255,.12));border-radius:8px;min-width:220px">
+        {% if watchlists %}
+        <div style="font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted,#64748b);margin-bottom:.4rem">Your Watchlists</div>
+        {% for wl in watchlists %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.25rem 0">
+          <span>{{ wl.name }}</span>
+          {% if wl.pk in member_of_ids %}
+          <form method="post" action="{% url 'portfolio:watchlist_remove_company' wl.pk company.slug %}">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="cta-btn cta-ghost" style="padding:.15rem .5rem;font-size:.62rem">Remove</button>
+          </form>
+          {% else %}
+          <form method="post" action="{% url 'portfolio:watchlist_add_company' %}">
+            {% csrf_token %}
+            <input type="hidden" name="company_slug" value="{{ company.slug }}">
+            <input type="hidden" name="watchlist_id" value="{{ wl.pk }}">
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="cta-btn cta-secondary" style="padding:.15rem .5rem;font-size:.62rem">Add</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <div style="border-top:1px solid var(--border,rgba(255,255,255,.06));margin:.5rem 0"></div>
+        {% endif %}
+        <form method="post" action="{% url 'portfolio:watchlist_add_company' %}" style="display:flex;gap:.3rem">
+          {% csrf_token %}
+          <input type="hidden" name="company_slug" value="{{ company.slug }}">
+          <input type="hidden" name="next" value="{{ next }}">
+          <input type="text" name="new_watchlist_name" placeholder="New watchlist…" required
+                 style="flex:1;min-width:0;background:var(--bg2,#0d1117);border:1px solid var(--border2,rgba(255,255,255,.12));border-radius:5px;padding:.3rem .5rem;color:inherit;font-size:.68rem">
+          <button type="submit" class="cta-btn cta-primary" style="padding:.25rem .6rem;font-size:.62rem">+ Add</button>
+        </form>
+      </div>
+    </details>
+  {% endif %}
+</div>

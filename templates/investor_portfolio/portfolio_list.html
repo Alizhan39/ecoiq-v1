@@ -1,0 +1,42 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}My Portfolios — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block breadcrumb %}<span style="color:var(--muted2)">Portfolios</span>{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">My Portfolios</h1>
+<div class="page-subtitle">Personal, private to you. Not a brokerage or trading feature.</div>
+
+<div style="display:flex;gap:.6rem;margin-bottom:1.4rem">
+  <a href="{% url 'portfolio:portfolio_create' %}" class="cta-btn cta-primary">+ New Portfolio</a>
+  <a href="{% url 'portfolio:watchlist_list' %}" class="cta-btn cta-ghost">My Watchlists →</a>
+</div>
+
+{% if portfolios %}
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Name</th><th>Base Currency</th><th>Holdings</th><th>Updated</th><th></th></tr></thead>
+  <tbody>
+    {% for p in portfolios %}
+    <tr>
+      <td><a href="{% url 'portfolio:portfolio_dashboard' p.pk %}" style="color:var(--accent);font-weight:700">{{ p.name }}</a></td>
+      <td>{{ p.base_currency }}</td>
+      <td>{{ p.holdings.count }}</td>
+      <td style="color:var(--muted)">{{ p.updated_at|date:"N j, Y" }}</td>
+      <td><a href="{% url 'portfolio:portfolio_dashboard' p.pk %}" class="cta-btn cta-secondary" style="padding:.3rem .7rem">Open →</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+  You have no portfolios yet. Create one to start tracking holdings and their EcoIQ sustainability-risk exposure.
+</div>
+{% endif %}
+
+<div class="compliance-panel">
+  <strong>{{ disclaimer_financial }}</strong>
+</div>
+{% endblock %}

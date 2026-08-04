@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% load harvester_panels %}
+{% load portfolio_extras %}
 
 {% block title %}{{ company.name }} — EcoIQ Intelligence Profile{% endblock %}
 {% block meta_description %}<meta name="description" content="{{ company.name }} EcoIQ climate score: {{ profile.ecoiq_total_score|floatformat:1 }}/100. {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
@@ -751,6 +752,9 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         {% if company.description %}
         <p class="hero-desc">{{ company.description }}</p>
         {% endif %}
+        <div style="margin-top:.6rem">
+          {% watchlist_controls company %}
+        </div>
       </div>
     </div>
 
