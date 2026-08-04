@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load company_extras %}
+{% comment %}
+NOTE: the investor_portfolio watchlist-controls block that belongs just under
+the hero meta is deliberately NOT included here. It depends on the
+investor_portfolio app (recovery Group E), which is not installed yet.
+Re-add the portfolio_extras load and the control tag when Group E lands.
+{% endcomment %}
+
+{% block title %}{{ company.name }} Stock — {{ company.ticker|default:"Not Public" }} | EcoIQ{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ company.name }} ({{ company.ticker }}) stock profile — market data plus EcoIQ's sustainability-risk Investment Relevance Report. Not investment advice.">{% endblock %}
+
+{% block extra_head %}
+<style>
+header { display: none !important; }
+main   { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+
+:root {
+  --bg:#070b0f; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2230;
+  --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12);
+  --border3:rgba(255,255,255,.18);
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+  --accent:#00e89a; --warn:#f4a261; --danger:#e63946;
+  --info:#58a6ff; --purple:#a855f7; --cyan:#06b6d4;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'SF Mono','Fira Code',monospace;
+  --radius:10px; --radius-sm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+.cmd-bar{
+  position:sticky;top:0;z-index:200;background:rgba(7,11,15,.97);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;
+  padding:.55rem 1.5rem;flex-wrap:wrap;font-size:.72rem;
+}
+.cmd-bc{color:var(--muted);display:flex;align-items:center;gap:.35rem}
+.cmd-bc a{color:var(--muted);transition:color .15s}
+.cmd-bc a:hover{color:var(--accent)}
+
+.page{max-width:980px;margin:0 auto;padding:2rem 1.5rem 5rem}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.stock-hero{
+  background:linear-gradient(135deg,#080e1a 0%,#0b1628 55%,#081420 100%);
+  border:1px solid var(--border2);border-radius:14px;padding:1.75rem;margin-bottom:1.4rem;
+}
+.stock-hero-top{display:flex;gap:1.1rem;align-items:flex-start;flex-wrap:wrap}
+.stock-icon{
+  width:56px;height:56px;border-radius:12px;flex-shrink:0;background:var(--bg3);
+  border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.6rem;
+}
+.stock-hero-name{font-size:clamp(1.35rem,2.5vw,1.85rem);font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.stock-hero-meta{font-size:.74rem;color:var(--muted2);margin-top:.3rem;display:flex;flex-wrap:wrap;gap:.35rem .7rem}
+.stock-hero-meta a{color:var(--accent)}
+.stock-price-row{
+  display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap;margin-top:1.1rem;
+  padding-top:1.1rem;border-top:1px solid var(--border2);
+}
+.stock-price-big{font-family:var(--mono);font-size:2rem;font-weight:800;letter-spacing:-.02em}
+.stock-change-big{font-family:var(--mono);font-size:1rem;font-weight:700}
+.stock-change-up{color:var(--accent)} .stock-change-down{color:var(--danger)} .stock-change-flat{color:var(--muted2)}
+.stock-status-chip{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  padding:3px 9px;border-radius:5px;background:rgba(88,166,255,.1);color:var(--info);
+  border:1px solid rgba(88,166,255,.25);
+}
+.stock-stale-chip{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  padding:3px 9px;border-radius:5px;background:rgba(244,162,97,.12);color:var(--warn);
+  border:1px solid rgba(244,162,97,.3);
+}
+.stock-updated-line{font-size:.68rem;color:var(--muted);margin-top:.5rem;width:100%}
+
+/* ── Panels (shared with detail.html) ───────────────────────────── */
+.sec-head{
+  font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+  border-bottom:1px solid var(--border);padding-bottom:.5rem;margin:1.6rem 0 1rem;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.sec-head:first-of-type{margin-top:0}
+.intel-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.2rem}
+.panel-header{
+  background:var(--bg3);padding:.58rem 1.1rem;font-size:.63rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--muted);border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;
+}
+.panel-body{padding:1.1rem}
+.fact-row{display:flex;justify-content:space-between;align-items:baseline;padding:.42rem 0;border-bottom:1px solid var(--border);font-size:.76rem}
+.fact-row:last-child{border-bottom:none}
+.fact-label{color:var(--muted)}
+.fact-val{color:var(--text);text-align:right;font-weight:600;font-family:var(--mono)}
+
+.cta-btn{
+  font-size:.71rem;font-weight:700;padding:.42rem 1rem;border-radius:6px;border:1px solid;
+  cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:.4rem;
+}
+.cta-primary{background:var(--accent);color:#0a0f14;border-color:var(--accent)}
+.cta-primary:hover{background:#00c882;border-color:#00c882}
+.cta-secondary{background:transparent;color:var(--info);border-color:rgba(88,166,255,.3)}
+.cta-ghost{background:transparent;color:var(--muted2);border-color:var(--border2)}
+.cta-ghost:hover{color:var(--text);border-color:var(--border3)}
+.cta-warn{background:transparent;color:var(--warn);border-color:rgba(244,162,97,.3)}
+
+/* ── Classification badge ────────────────────────────────────────── */
+.class-badge{
+  font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  padding:5px 12px;border-radius:20px;display:inline-block;
+}
+.class-lower_exposure{background:rgba(0,232,154,.12);color:var(--accent);border:1px solid rgba(0,232,154,.3)}
+.class-moderate_exposure{background:rgba(88,166,255,.12);color:var(--info);border:1px solid rgba(88,166,255,.3)}
+.class-elevated_exposure{background:rgba(244,162,97,.12);color:var(--warn);border:1px solid rgba(244,162,97,.3)}
+.class-high_exposure{background:rgba(230,57,70,.12);color:var(--danger);border:1px solid rgba(230,57,70,.3)}
+.class-insufficient_evidence{background:rgba(148,163,184,.12);color:var(--muted2);border:1px solid rgba(148,163,184,.3)}
+
+/* ── Report content ───────────────────────────────────────────────── */
+.report-status-chip{
+  font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  padding:2px 8px;border-radius:10px;
+}
+.report-status-draft{background:rgba(148,163,184,.14);color:var(--muted2)}
+.report-status-reviewed{background:rgba(88,166,255,.14);color:var(--info)}
+.report-status-published{background:rgba(0,232,154,.14);color:var(--accent)}
+.report-prose{font-size:.83rem;line-height:1.65;color:var(--text)}
+.risk-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.75rem .9rem;margin-bottom:.6rem;
+}
+.risk-card:last-child{margin-bottom:0}
+.risk-card-title{font-size:.78rem;font-weight:700;margin-bottom:.3rem}
+.risk-card-detail{font-size:.74rem;color:var(--muted2);line-height:1.55;margin-bottom:.45rem}
+.evidence-badge{
+  font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  padding:2px 7px;border-radius:4px;display:inline-block;margin-right:.35rem;
+}
+.evidence-verified_evidence{background:rgba(0,232,154,.12);color:var(--accent)}
+.evidence-company_reported{background:rgba(88,166,255,.12);color:var(--info)}
+.evidence-external_allegation{background:rgba(244,162,97,.12);color:var(--warn)}
+.evidence-ai_interpretation{background:rgba(168,85,247,.12);color:var(--purple)}
+.evidence-insufficient_evidence{background:rgba(148,163,184,.12);color:var(--muted2)}
+.confidence-tag{font-size:.62rem;color:var(--muted)}
+.dd-list{font-size:.78rem;color:var(--muted2);line-height:1.8;padding-left:1.1rem}
+
+.evidence-details summary{cursor:pointer;font-size:.72rem;font-weight:700;color:var(--accent);padding:.9rem 1.1rem}
+.evidence-details[open] summary{border-bottom:1px solid var(--border)}
+.evidence-list-row{display:flex;gap:.6rem;align-items:baseline;font-size:.72rem;padding:.4rem 0;border-bottom:1px solid var(--border)}
+.evidence-list-row:last-child{border-bottom:none}
+
+/* ── Compliance disclaimer ───────────────────────────────────────── */
+.compliance-panel{
+  background:rgba(244,162,97,.05);border:1px solid rgba(244,162,97,.25);border-radius:var(--radius);
+  padding:1rem 1.1rem;margin:1.6rem 0;font-size:.72rem;line-height:1.7;color:var(--muted2);
+}
+.compliance-panel strong{color:var(--warn)}
+.compliance-panel ul{margin:.5rem 0 0 1.1rem}
+
+/* ── History table ────────────────────────────────────────────────── */
+.history-row{display:flex;align-items:center;gap:.6rem;font-size:.72rem;padding:.5rem 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.history-row:last-child{border-bottom:none}
+.history-version{font-family:var(--mono);font-weight:700;color:var(--text)}
+.history-date{color:var(--muted)}
+.status-form{display:inline-flex;gap:.35rem}
+
+.not-public-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:2rem;text-align:center;color:var(--muted2);font-size:.85rem;line-height:1.7;
+}
+
+@media(max-width:640px){
+  .page{padding:1.25rem 1rem 3rem}
+  .stock-price-big{font-size:1.5rem}
+  .fact-row{font-size:.72rem}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cmd-bar">
+  <div class="cmd-bc">
+    <a href="{% url 'companies:directory' %}">Companies</a>
+    <span>›</span>
+    <a href="{% url 'companies:detail' company.slug %}">{{ company.name }}</a>
+    <span>›</span>
+    <span style="color:var(--muted2)">Stock</span>
+  </div>
+</div>
+
+<div class="page">
+
+{% if not company.ticker %}
+  <div class="not-public-panel">
+    <div style="font-size:1.5rem;margin-bottom:.6rem">🔒</div>
+    <div style="font-weight:700;color:var(--text);margin-bottom:.4rem">{{ company.name }} is not publicly traded</div>
+    <p>EcoIQ does not show market data, a stock ticker, or a stock profile for private companies.</p>
+    <a href="{% url 'companies:detail' company.slug %}" class="cta-btn cta-secondary" style="margin-top:1.1rem">← Back to {{ company.name }}'s EcoIQ profile</a>
+  </div>
+{% else %}
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="stock-hero">
+    <div class="stock-hero-top">
+      <div class="stock-icon">
+        {% if company.logo_url %}
+        <img src="{{ company.logo_url }}" alt="{{ company.name }}" style="width:100%;height:100%;object-fit:contain;border-radius:10px" onerror="this.style.display='none'">
+        {% else %}📈{% endif %}
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div class="stock-hero-name">{{ company.name }} <span style="color:var(--muted);font-weight:600">({{ company.ticker }})</span></div>
+        <div class="stock-hero-meta">
+          {% if company.exchange %}<span>{{ company.exchange }}</span><span>·</span>{% endif %}
+          <span>{{ company.get_sector_display }}</span>
+          <span>·</span>
+          <a href="{% url 'companies:detail' company.slug %}">← Back to EcoIQ Intelligence Profile</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="stock-price-row">
+      {% if company.has_market_data %}
+        <span class="stock-price-big">{{ company.stock_price_display }}</span>
+        {% if company.stock_day_change_display %}
+        <span class="stock-change-big stock-change-{{ company.stock_day_change_direction }}">
+          {% if company.stock_day_change_direction == 'up' %}▲{% elif company.stock_day_change_direction == 'down' %}▼{% endif %}
+          {{ company.stock_day_change_display }}
+        </span>
+        {% endif %}
+        {% if company.market_status %}<span class="stock-status-chip">{{ company.market_status }}</span>{% endif %}
+        {% if company.stock_data_is_stale %}<span class="stock-stale-chip">⚠ May be stale</span>{% endif %}
+        <div class="stock-updated-line">
+          {% if company.stock_price_updated_at %}Last confirmed price: {{ company.stock_price_updated_at|date:"N j, Y H:i" }} UTC ({{ company.stock_price_updated_at|timesince }} ago){% endif %}
+        </div>
+      {% else %}
+        <span style="color:var(--muted2);font-style:italic">Price not yet available for this ticker.</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Market Data ─────────────────────────────────────────────── -->
+  <div class="sec-head">Market Data</div>
+  <div class="intel-panel">
+    <div class="panel-body">
+      {% if company.has_market_data %}
+        <div class="fact-row"><span class="fact-label">Current Price</span><span class="fact-val">{{ company.stock_price_display }}</span></div>
+        {% if company.previous_close %}<div class="fact-row"><span class="fact-label">Previous Close</span><span class="fact-val">{{ company.stock_price_currency }} {{ company.previous_close }}</span></div>{% endif %}
+        {% if company.day_high %}<div class="fact-row"><span class="fact-label">Day High</span><span class="fact-val">{{ company.stock_price_currency }} {{ company.day_high }}</span></div>{% endif %}
+        {% if company.day_low %}<div class="fact-row"><span class="fact-label">Day Low</span><span class="fact-val">{{ company.stock_price_currency }} {{ company.day_low }}</span></div>{% endif %}
+        {% if company.week52_high %}<div class="fact-row"><span class="fact-label">52-Week High</span><span class="fact-val">{{ company.stock_price_currency }} {{ company.week52_high }}</span></div>{% endif %}
+        {% if company.week52_low %}<div class="fact-row"><span class="fact-label">52-Week Low</span><span class="fact-val">{{ company.stock_price_currency }} {{ company.week52_low }}</span></div>{% endif %}
+        {% if company.market_cap_usd %}<div class="fact-row"><span class="fact-label">Market Capitalisation</span><span class="fact-val">${{ company.market_cap_usd|intword }}</span></div>{% endif %}
+        <div class="fact-row"><span class="fact-label">Trading Currency</span><span class="fact-val">{{ company.stock_price_currency }}</span></div>
+        {% if company.exchange %}<div class="fact-row"><span class="fact-label">Exchange</span><span class="fact-val">{{ company.exchange }}</span></div>{% endif %}
+        {% if company.stock_price_updated_at %}<div class="fact-row"><span class="fact-label">Data Updated</span><span class="fact-val">{{ company.stock_price_updated_at|date:"N j, Y H:i" }} UTC</span></div>{% endif %}
+      {% else %}
+        <div style="color:var(--muted2);font-size:.78rem">No market data has been fetched for {{ company.ticker }} yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Chart ───────────────────────────────────────────────────── -->
+  <div class="sec-head">Live Chart<span class="sec-note" style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:.63rem">Secondary — external site</span></div>
+  <div class="intel-panel">
+    <div class="panel-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem">
+      <span style="font-size:.78rem;color:var(--muted2)">{{ company.tradingview_symbol }}</span>
+      <a href="{{ company.tradingview_url }}" target="_blank" rel="noopener" class="cta-btn cta-secondary">📊 Open live chart on TradingView →</a>
+    </div>
+  </div>
+
+  <!-- ── Investment Relevance Report ────────────────────────────── -->
+  <div class="sec-head">
+    EcoIQ Investment Relevance Report
+    {% if report %}<span class="sec-note">v{{ report.version }}</span>{% endif %}
+  </div>
+
+  {% if is_staff %}
+  <div class="intel-panel">
+    <div class="panel-header">
+      Report Controls <span class="ai-conf-pill" style="text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted2)">Staff / analyst only</span>
+    </div>
+    <div class="panel-body">
+      <form method="post" action="{% url 'companies:stock_generate_report' company.slug %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="cta-btn cta-primary">✨ {% if report %}Regenerate{% else %}Generate{% endif %} EcoIQ Report</button>
+      </form>
+      {% if report %}
+        <span class="report-status-chip report-status-{{ report.status }}" style="margin-left:.6rem">{{ report.get_status_display }}</span>
+        {% if report.status == 'draft' %}
+        <form method="post" action="{% url 'companies:stock_report_status' company.slug report.pk %}" style="display:inline">
+          {% csrf_token %}<input type="hidden" name="action" value="mark_reviewed">
+          <button type="submit" class="cta-btn cta-secondary">Mark Reviewed</button>
+        </form>
+        {% endif %}
+        {% if report.status == 'reviewed' %}
+        <form method="post" action="{% url 'companies:stock_report_status' company.slug report.pk %}" style="display:inline">
+          {% csrf_token %}<input type="hidden" name="action" value="publish">
+          <button type="submit" class="cta-btn cta-primary" {% if not report.is_publishable %}disabled title="Cannot publish — prohibited-language flags present"{% endif %}>Publish</button>
+        </form>
+        {% endif %}
+        {% if report.status == 'published' %}
+        <form method="post" action="{% url 'companies:stock_report_status' company.slug report.pk %}" style="display:inline">
+          {% csrf_token %}<input type="hidden" name="action" value="revert_to_draft">
+          <button type="submit" class="cta-btn cta-ghost">Revert to Draft</button>
+        </form>
+        {% endif %}
+        {% if not report.is_publishable %}
+        <div style="margin-top:.6rem;font-size:.68rem;color:var(--danger)">
+          ⚠ {{ report.prohibited_language_flags|length }} prohibited-language finding(s) — cannot publish until regenerated clean.
+        </div>
+        {% endif %}
+      {% endif %}
+
+      {% if report_history %}
+      <div style="margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--border)">
+        <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem">Version History</div>
+        {% for h in report_history %}
+        <div class="history-row">
+          <span class="history-version">v{{ h.version }}</span>
+          <span class="report-status-chip report-status-{{ h.status }}">{{ h.get_status_display }}</span>
+          <span class="class-badge class-{{ h.classification }}" style="font-size:.56rem;padding:2px 8px">{{ h.classification_display }}</span>
+          <span class="history-date">{{ h.generated_at|date:"N j, Y H:i" }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if report %}
+    <div class="intel-panel">
+      <div class="panel-header">
+        Executive Assessment
+        <span class="class-badge class-{{ report.classification }}">{{ report.classification_display }}</span>
+      </div>
+      <div class="panel-body">
+        <p class="report-prose">{{ report.content.executive_assessment }}</p>
+      </div>
+    </div>
+
+    {% if report.content.key_risks %}
+    <div class="intel-panel">
+      <div class="panel-header">Key Sustainability-Related Investment Risks</div>
+      <div class="panel-body">
+        {% for r in report.content.key_risks %}
+        <div class="risk-card">
+          <div class="risk-card-title">{{ r.title }}</div>
+          <div class="risk-card-detail">{{ r.detail }}</div>
+          <span class="evidence-badge evidence-{{ r.evidence_type }}">{{ r.evidence_type|evidence_label }}</span>
+          <span class="confidence-tag">{{ r.evidence_detail }} · confidence: {{ r.confidence }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if report.content.positive_signals %}
+    <div class="intel-panel">
+      <div class="panel-header">Positive Stewardship Signals</div>
+      <div class="panel-body">
+        {% for s in report.content.positive_signals %}
+        <div class="risk-card">
+          <div class="risk-card-title">{{ s.title }}</div>
+          <div class="risk-card-detail">{{ s.detail }}</div>
+          <span class="evidence-badge evidence-{{ s.evidence_type }}">{{ s.evidence_type|evidence_label }}</span>
+          <span class="confidence-tag">{{ s.evidence_detail }} · confidence: {{ s.confidence }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="intel-panel">
+      <div class="panel-header">Transition &amp; Regulatory Exposure</div>
+      <div class="panel-body"><p class="report-prose">{{ report.content.transition_regulatory_exposure }}</p></div>
+    </div>
+
+    <div class="intel-panel">
+      <div class="panel-header">Controversies &amp; Evidence Concerns</div>
+      <div class="panel-body"><p class="report-prose">{{ report.content.controversies_evidence_concerns }}</p></div>
+    </div>
+
+    <div class="intel-panel">
+      <div class="panel-header">Sector-Relative Context</div>
+      <div class="panel-body"><p class="report-prose">{{ report.content.sector_relative_context }}</p></div>
+    </div>
+
+    <div class="intel-panel">
+      <div class="panel-header">Data Confidence</div>
+      <div class="panel-body"><p class="report-prose">{{ report.content.data_confidence }}</p></div>
+    </div>
+
+    {% if report.content.due_diligence_questions %}
+    <div class="intel-panel">
+      <div class="panel-header">Questions Requiring Further Due Diligence</div>
+      <div class="panel-body">
+        <ul class="dd-list">
+          {% for q in report.content.due_diligence_questions %}<li>{{ q }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    <details class="evidence-details intel-panel">
+      <summary>▸ Evidence used in this analysis</summary>
+      <div class="panel-body">
+        <p style="font-size:.7rem;color:var(--muted);margin-bottom:.7rem">
+          Each risk and signal above is labelled with how it is grounded:
+          <span class="evidence-badge evidence-verified_evidence">Verified</span>
+          <span class="evidence-badge evidence-company_reported">Company-Reported</span>
+          <span class="evidence-badge evidence-external_allegation">External Allegation</span>
+          <span class="evidence-badge evidence-ai_interpretation">AI Interpretation</span>
+          <span class="evidence-badge evidence-insufficient_evidence">Insufficient Evidence</span>
+        </p>
+        {% for r in report.content.key_risks %}
+        <div class="evidence-list-row">
+          <span class="evidence-badge evidence-{{ r.evidence_type }}">{{ r.evidence_type|evidence_label }}</span>
+          <span style="color:var(--muted2)">{{ r.evidence_detail }}</span>
+        </div>
+        {% endfor %}
+        {% for s in report.content.positive_signals %}
+        <div class="evidence-list-row">
+          <span class="evidence-badge evidence-{{ s.evidence_type }}">{{ s.evidence_type|evidence_label }}</span>
+          <span style="color:var(--muted2)">{{ s.evidence_detail }}</span>
+        </div>
+        {% endfor %}
+        <div style="margin-top:.7rem;padding-top:.6rem;border-top:1px solid var(--border);font-size:.66rem;color:var(--muted)">
+          Generated {{ report.generated_at|date:"N j, Y H:i" }} UTC · model {{ report.model_name }} ({{ report.model_provider }}) ·
+          prompt {{ report.prompt_version }} · methodology {{ report.methodology_version }}
+          {% if report.reviewed_by %} · reviewed by {{ report.reviewed_by.get_username }} on {{ report.reviewed_at|date:"N j, Y" }}{% endif %}
+          {% if report.published_at %} · published {{ report.published_at|date:"N j, Y" }}{% endif %}
+        </div>
+      </div>
+    </details>
+
+  {% else %}
+    <div class="intel-panel">
+      <div class="panel-body" style="color:var(--muted2);font-size:.82rem;line-height:1.7">
+        {% if is_staff %}
+          No EcoIQ Investment Relevance Report exists yet for {{ company.name }}. Use the "Generate EcoIQ Report" button above to create one.
+        {% else %}
+          EcoIQ has not yet published an Investment Relevance Report for {{ company.name }}. This means there currently isn't
+          enough reviewed sustainability-risk analysis to show here — not that the company's profile is necessarily clean or risky.
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- ── Compliance disclaimer ───────────────────────────────────── -->
+  <div class="compliance-panel">
+    <strong>{{ disclaimer_financial }}</strong>
+    <ul>
+      <li>This page, including any EcoIQ Investment Relevance Report, does not constitute a buy, sell or hold recommendation.</li>
+      <li>Sustainability factors may or may not affect market value.</li>
+      <li>Market data may be delayed and can become stale between updates.</li>
+      <li>Users should conduct independent financial due diligence before making any investment decision.</li>
+    </ul>
+  </div>
+
+{% endif %}
+
+</div>
+{% endblock %}

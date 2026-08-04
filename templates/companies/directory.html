@@ -170,8 +170,10 @@ a{color:inherit;text-decoration:none;}
 .cc-logo{width:40px;height:40px;border-radius:8px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;}
 .cc-logo-img{width:100%;height:100%;object-fit:contain;}
 .cc-id-text{min-width:0;}
-.cc-name{font-size:.92rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;transition:color .15s;}
+.cc-name{font-size:.92rem;font-weight:700;letter-spacing:-.01em;color:#fff;transition:color .15s;display:flex;align-items:baseline;gap:.4rem;min-width:0;}
+.cc-name-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .cc-card:hover .cc-name{color:var(--accent);}
+.cc-ticker{flex-shrink:0;font-family:var(--mono,monospace);font-size:.56rem;font-weight:700;color:#00e89a;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.25);border-radius:4px;padding:1px 6px;letter-spacing:.02em;}
 .cc-sub{font-size:.66rem;color:var(--muted2);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cc-flag{grid-column:1 / -1;justify-self:start;font-size:.57rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:5px;margin-top:.1rem;}
 .cc-flag-green{background:rgba(0,232,154,.18);color:#00e89a;}

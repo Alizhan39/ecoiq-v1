@@ -47,6 +47,11 @@ urlpatterns = [
     path('<slug:slug>/report.pdf',                  views.company_pdf_report,   name='pdf_report'),
     path('<slug:slug>/ml-insights.json',            views.company_ml_insights,  name='ml_insights'),
     path('<slug:slug>/certificate/',                views.generate_certificate, name='certificate'),
+
+    # ── Stock intelligence + investment relevance report ──
+    path('<slug:slug>/stock/',                       views.company_stock_profile,        name='stock'),
+    path('<slug:slug>/stock/generate/',              views.generate_investment_report,   name='stock_generate_report'),
+    path('<slug:slug>/stock/<int:report_id>/status/', views.set_investment_report_status, name='stock_report_status'),
     # feat/stewardship-universe (PR 13) — per-company operational status +
     # staff-triggered refresh/source governance actions.
     path('<slug:slug>/status/',                     stewardship.company_status_view,  name='company_status'),

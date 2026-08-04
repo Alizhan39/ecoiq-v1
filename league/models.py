@@ -92,6 +92,35 @@ class Company(models.Model):
     verified   = models.BooleanField(default=False, help_text='Data independently verified')
     is_featured = models.BooleanField(default=False, help_text='Show on landing page')
 
+    # ── Public markets ───────────────────────────────────────────────────────
+    ticker                 = models.CharField(
+        max_length=20, blank=True,
+        help_text='Exchange ticker symbol, Yahoo Finance format (e.g. AAPL, SHEL.L, 2222.SR)')
+    exchange               = models.CharField(
+        max_length=30, blank=True,
+        help_text='Explicit exchange code for chart links (e.g. NASDAQ, LSE, TADAWUL). '
+                   'Preferred over guessing from the ticker suffix — set this whenever known.')
+    stock_price            = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text='Latest share price, in stock_price_currency')
+    stock_price_currency   = models.CharField(max_length=8, blank=True, default='USD')
+    previous_close         = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    day_high               = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    day_low                = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    week52_high            = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    week52_low             = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    day_change_pct         = models.FloatField(null=True, blank=True,
+                             help_text='Daily % price movement vs. previous close')
+    market_status           = models.CharField(max_length=20, blank=True,
+                             help_text='Exchange session state when last fetched, e.g. REGULAR, CLOSED, PRE, POST')
+    market_cap_usd         = models.BigIntegerField(null=True, blank=True,
+                             help_text='Market capitalisation in USD')
+    stock_price_updated_at = models.DateTimeField(null=True, blank=True,
+                             help_text='When stock_price / market_cap_usd were last refreshed '
+                                       '— this is the last SUCCESSFUL fetch, never cleared just '
+                                       'because a later fetch failed, so it always reflects the '
+                                       'true age of the displayed price.')
+
     # ── Pillar scores 0-100 ──
     score_pollution_footprint = models.IntegerField(
         default=0,
@@ -225,6 +254,120 @@ class Company(models.Model):
             p.households_helped or 0
             for p in self.projects.filter(status='completed')
         )
+
+    # ── Public markets ─────────────────────────────────────────────────────────
+
+    #: Fallback map of Yahoo Finance ticker suffix → TradingView exchange prefix,
+    #: used ONLY when `exchange` hasn't been explicitly set. Covers the exchanges
+    #: in ingest_yfinance's TICKER_MAP. Bare tickers (no suffix — US-listed) need
+    #: no prefix on TradingView.
+    _YAHOO_SUFFIX_TO_TRADINGVIEW = {
+        '.L':  'LSE',
+        '.SR': 'TADAWUL',
+        '.PA': 'EURONEXT',
+        '.DE': 'XETR',
+        '.MI': 'MIL',
+        '.MC': 'BME',
+        '.CO': 'OMXCOP',
+        '.AS': 'EURONEXT',
+    }
+
+    #: How long a fetched price is trusted before the UI should flag it as stale.
+    STOCK_STALE_AFTER_HOURS = 48
+
+    @property
+    def tradingview_symbol(self) -> str:
+        """
+        TradingView symbol (EXCHANGE:TICKER). Prefers the explicit `exchange`
+        field — set by ingestion whenever the source API provides it — and
+        only falls back to guessing an exchange from the Yahoo ticker suffix
+        when `exchange` is blank.
+        """
+        if not self.ticker:
+            return ''
+        if self.exchange:
+            return f'{self.exchange.upper()}:{self.ticker.split(".")[0]}'
+        for suffix, exchange in self._YAHOO_SUFFIX_TO_TRADINGVIEW.items():
+            if self.ticker.endswith(suffix):
+                return f'{exchange}:{self.ticker[:-len(suffix)]}'
+        return self.ticker  # bare symbol — TradingView usually resolves these directly
+
+    @property
+    def tradingview_url(self) -> str:
+        """Secondary external link to this company's live chart on TradingView, or '' if no ticker."""
+        if not self.ticker:
+            return ''
+        return f'https://www.tradingview.com/symbols/{self.tradingview_symbol}/'
+
+    @property
+    def stock_profile_url(self):
+        """Primary internal EcoIQ stock-profile destination for this company, or '' if not public."""
+        if not self.ticker:
+            return ''
+        from django.urls import reverse
+        return reverse('companies:stock', args=[self.slug])
+
+    @property
+    def stock_data_is_stale(self) -> bool:
+        """True when the last successful price fetch is older than the trust window."""
+        if not self.stock_price_updated_at:
+            return bool(self.ticker)  # public + ticker but never fetched = treat as stale/unknown
+        from django.utils import timezone
+        age = timezone.now() - self.stock_price_updated_at
+        return age.total_seconds() > self.STOCK_STALE_AFTER_HOURS * 3600
+
+    @property
+    def has_market_data(self) -> bool:
+        """True only when we have a real, non-zero last-known price to show."""
+        return bool(self.ticker) and self.stock_price is not None and self.stock_price > 0
+
+    #: ISO currency code -> display symbol. 'GBp' (lowercase p) is Yahoo
+    #: Finance's convention for LSE tickers quoted in pence, not pounds —
+    #: handled separately below so a £27.42 headline never silently means
+    #: 2,742 pence.
+    _CURRENCY_SYMBOLS = {'USD': '$', 'GBP': '£', 'EUR': '€', 'JPY': '¥'}
+
+    def normalized_price_and_currency(self):
+        """
+        Returns (price: Decimal, currency_code: str) normalized for both
+        display AND arithmetic — converts Yahoo's GBp/GBX (pence) quoting to
+        GBP. Public because investor_portfolio.calculations needs the raw
+        numeric price (not just the formatted string) to compute holding
+        market values.
+        """
+        price = self.stock_price
+        currency = (self.stock_price_currency or 'USD')
+        if currency in ('GBp', 'GBX'):  # pence sterling
+            price = price / 100 if price is not None else None
+            currency = 'GBP'
+        return price, currency
+
+    @property
+    def stock_price_display(self) -> str:
+        """Formatted current price, e.g. '£27.42' or '227.50 USD'. '' if unknown."""
+        if not self.has_market_data:
+            return ''
+        price, currency = self.normalized_price_and_currency()
+        symbol = self._CURRENCY_SYMBOLS.get(currency.upper())
+        return f'{symbol}{price:,.2f}' if symbol else f'{price:,.2f} {currency}'
+
+    @property
+    def stock_day_change_display(self) -> str:
+        """Formatted daily % move with sign, e.g. '+0.8%' or '-1.2%'. '' if unknown."""
+        if self.day_change_pct is None:
+            return ''
+        return f'{self.day_change_pct:+.1f}%'
+
+    @property
+    def stock_day_change_direction(self) -> str:
+        """'up' | 'down' | 'flat' | '' (unknown) — for CSS colour coding."""
+        if self.day_change_pct is None:
+            return ''
+        if self.day_change_pct > 0:
+            return 'up'
+        if self.day_change_pct < 0:
+            return 'down'
+        return 'flat'
 
 
 # ── Environmental Project ──────────────────────────────────────────────────────

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Embed EcoIQ badges — {{ company.name }}{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1 style="margin-bottom:.25rem">Embed {{ company.name }}'s EcoIQ badges</h1>
+    <p style="color:#5a6a5f;margin-bottom:1.5rem">
+      Free, publicly-readable widgets for {{ company.name }}'s own site or a partner directory.
+      No API key required — these only ever reflect published EcoIQ data. Attribution
+      ("Powered by EcoIQ", linked back to the full profile) must stay intact.
+    </p>
+
+    <section style="margin-bottom:2rem">
+      <h2 style="font-size:1.05rem;margin-bottom:.5rem">EcoIQ Score badge</h2>
+      <img src="{{ badge_svg_url }}" alt="EcoIQ Score badge" style="margin-bottom:.5rem;display:block">
+      <pre style="background:#0d1117;color:#c9d1d9;padding:.75rem 1rem;border-radius:6px;overflow-x:auto;font-size:.8rem">&lt;img src="{{ badge_svg_url }}" alt="EcoIQ Score"&gt;</pre>
+    </section>
+
+    <section style="margin-bottom:2rem">
+      <h2 style="font-size:1.05rem;margin-bottom:.5rem">Ethical Screening badge</h2>
+      <img src="{{ ethical_badge_url }}" alt="EcoIQ Ethical Screening badge" style="margin-bottom:.5rem;display:block">
+      <pre style="background:#0d1117;color:#c9d1d9;padding:.75rem 1rem;border-radius:6px;overflow-x:auto;font-size:.8rem">&lt;img src="{{ ethical_badge_url }}" alt="EcoIQ Ethical Screening"&gt;</pre>
+    </section>
+
+    <section style="margin-bottom:2rem">
+      <h2 style="font-size:1.05rem;margin-bottom:.5rem">Islamic Screening badge (indicative)</h2>
+      <img src="{{ islamic_badge_url }}" alt="EcoIQ Islamic Screening badge" style="margin-bottom:.5rem;display:block">
+      <p style="font-size:.8rem;color:#5a6a5f;margin-bottom:.5rem">
+        Indicative only — not a fatwa or formal Shariah ruling.
+      </p>
+      <pre style="background:#0d1117;color:#c9d1d9;padding:.75rem 1rem;border-radius:6px;overflow-x:auto;font-size:.8rem">&lt;img src="{{ islamic_badge_url }}" alt="EcoIQ Islamic Screening (Indicative)"&gt;</pre>
+    </section>
+
+    <section style="margin-bottom:1rem">
+      <h2 style="font-size:1.05rem;margin-bottom:.5rem">Risk Card (iframe)</h2>
+      <p style="font-size:.85rem;color:#5a6a5f;margin-bottom:.5rem">
+        A richer summary card — score, both screening results, and top risks. Add
+        <code>?theme=dark</code> to the URL for a dark-background variant.
+      </p>
+      <pre style="background:#0d1117;color:#c9d1d9;padding:.75rem 1rem;border-radius:6px;overflow-x:auto;font-size:.8rem">&lt;iframe src="{{ risk_card_url }}" width="320" height="260" style="border:0;border-radius:10px" title="{{ company.name }} EcoIQ Risk Card" loading="lazy"&gt;&lt;/iframe&gt;</pre>
+    </section>
+
+    <section>
+      <h2 style="font-size:1.05rem;margin-bottom:.5rem">Auto-loader (no manual iframe sizing)</h2>
+      <pre style="background:#0d1117;color:#c9d1d9;padding:.75rem 1rem;border-radius:6px;overflow-x:auto;font-size:.8rem">&lt;div data-ecoiq-embed="risk-card" data-company="{{ company.slug }}" data-theme="light"&gt;&lt;/div&gt;
+&lt;script src="{{ loader_js_url }}" async&gt;&lt;/script&gt;</pre>
+    </section>
+  </div>
+{% endblock %}

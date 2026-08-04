@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils.html import format_html, mark_safe
 
 from .models import (CompanyProfile, CompanyGuidanceVideo, CompanySource,
-                     CompanyScoreSnapshot, DataIngestionLog)
+                     CompanyScoreSnapshot, DataIngestionLog, InvestmentRelevanceReport)
 
 logger = logging.getLogger(__name__)
 
@@ -666,3 +666,17 @@ class DataIngestionLogAdmin(admin.ModelAdmin):
     @admin.display(description='OK', ordering='success', boolean=True)
     def success_badge(self, obj):
         return obj.success
+
+
+@admin.register(InvestmentRelevanceReport)
+class InvestmentRelevanceReportAdmin(admin.ModelAdmin):
+    list_display   = ['company', 'version', 'status', 'classification', 'generated_at', 'reviewed_by', 'published_at']
+    list_filter    = ['status', 'classification', 'model_provider']
+    search_fields  = ['company__company__name']
+    ordering       = ['-generated_at']
+    readonly_fields = [
+        'company', 'version', 'content', 'source_snapshot', 'model_name', 'model_provider',
+        'routing_reason', 'prompt_version', 'methodology_version', 'prohibited_language_flags',
+        'generated_at', 'generated_by',
+    ]
+    fields = readonly_fields + ['status', 'classification', 'reviewed_by', 'reviewed_at', 'published_at']

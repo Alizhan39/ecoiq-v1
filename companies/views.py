@@ -4,8 +4,10 @@ EcoIQ Company Intelligence — Public Views.
 /companies/           → directory with search + filters
 /companies/<slug>/    → full public company profile
 """
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse, HttpResponseForbidden
+from django.contrib import messages
+from django.views.decorators.http import require_POST
 
 from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_CHOICES
 from companies.scoring import get_path_to_100_actions
@@ -27,6 +29,11 @@ DISCLAIMER_FULL = (
 DISCLAIMER_LIGHT = (
     "EcoIQ scores are indicative and designed to support transparency, "
     "modernization, and responsible investment dialogue."
+)
+DISCLAIMER_FINANCIAL = (
+    "EcoIQ provides environmental stewardship and sustainability-risk intelligence. "
+    "It does not provide investment advice, financial recommendations or predictions "
+    "of investment performance."
 )
 
 
@@ -1255,3 +1262,117 @@ def generate_certificate(request, slug):
 </html>"""
 
     return HttpResponse(html, content_type='text/html; charset=utf-8')
+
+
+def company_stock_profile(request, slug):
+    """
+    /companies/<slug>/stock/ — EcoIQ stock-market profile: market data,
+    a secondary TradingView chart link, and the EcoIQ Investment Relevance
+    Report. Private companies / companies with no ticker get a friendly
+    explanation instead of fabricated market data.
+    """
+    company = get_object_or_404(Company, slug=slug)
+    profile = CompanyProfile.objects.filter(
+        company=company, status__in=('public', 'verified', 'draft'),
+    ).first()
+
+    is_staff = request.user.is_authenticated and request.user.is_staff
+
+    report = None
+    report_history = []
+    if profile is not None:
+        reports_qs = profile.investment_reports.order_by('-version')
+        if is_staff:
+            report = reports_qs.first()
+            report_history = list(reports_qs[:10])
+        else:
+            report = reports_qs.filter(status='published').first()
+
+    return render(request, 'companies/stock_profile.html', {
+        'company':              company,
+        'profile':              profile,
+        'report':               report,
+        'report_history':       report_history,
+        'is_staff':             is_staff,
+        'disclaimer_financial': DISCLAIMER_FINANCIAL,
+    })
+
+
+@require_POST
+def generate_investment_report(request, slug):
+    """
+    POST /companies/<slug>/stock/generate/ — staff/analyst-only. Generates a
+    new draft version of the Investment Relevance Report; never overwrites
+    a prior version. Regenerating is the same action — it just creates the
+    next version.
+    """
+    if not (request.user.is_authenticated and request.user.is_staff):
+        return HttpResponseForbidden('Only staff/analyst accounts can generate EcoIQ reports.')
+
+    company = get_object_or_404(Company, slug=slug)
+    profile = get_object_or_404(CompanyProfile, company=company)
+
+    from companies.investment_report import generate_investment_relevance_report
+
+    try:
+        report = generate_investment_relevance_report(profile, user=request.user)
+        if report.prohibited_language_flags:
+            messages.warning(
+                request,
+                f'Report v{report.version} generated as draft, but flagged '
+                f'{len(report.prohibited_language_flags)} prohibited-language finding(s) — '
+                'it cannot be published until this is resolved (regenerate, or edit in admin).',
+            )
+        else:
+            messages.success(request, f'Investment Relevance Report v{report.version} generated as draft.')
+    except RuntimeError as exc:
+        messages.error(request, f'Could not generate report: {exc}')
+
+    return redirect('companies:stock', slug=slug)
+
+
+@require_POST
+def set_investment_report_status(request, slug, report_id):
+    """
+    POST /companies/<slug>/stock/<report_id>/status/ — staff-only. Moves a
+    report through draft -> reviewed -> published. A report can never be
+    published while it carries prohibited-language flags (mirrors the
+    human-approval-before-publish pattern used elsewhere in EcoIQ for
+    public-facing AI content).
+    """
+    if not (request.user.is_authenticated and request.user.is_staff):
+        return HttpResponseForbidden('Only staff accounts can change report status.')
+
+    from django.utils import timezone
+    from companies.models import InvestmentRelevanceReport
+
+    company = get_object_or_404(Company, slug=slug)
+    report = get_object_or_404(InvestmentRelevanceReport, pk=report_id, company__company=company)
+    action = request.POST.get('action')
+
+    if action == 'mark_reviewed':
+        report.status = 'reviewed'
+        report.reviewed_by = request.user
+        report.reviewed_at = timezone.now()
+        report.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
+        messages.success(request, f'Report v{report.version} marked reviewed.')
+    elif action == 'publish':
+        if not report.is_publishable:
+            messages.error(request, f'Report v{report.version} cannot be published — it has prohibited-language flags.')
+        else:
+            report.status = 'published'
+            if not report.reviewed_by:
+                report.reviewed_by = request.user
+                report.reviewed_at = timezone.now()
+            report.published_at = timezone.now()
+            report.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'published_at'])
+            messages.success(request, f'Report v{report.version} published.')
+    elif action == 'revert_to_draft':
+        report.status = 'draft'
+        report.published_at = None
+        report.save(update_fields=['status', 'published_at'])
+        messages.success(request, f'Report v{report.version} reverted to draft.')
+    else:
+        messages.error(request, 'Unknown action.')
+
+    return redirect('companies:stock', slug=slug)

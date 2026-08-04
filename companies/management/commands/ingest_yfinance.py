@@ -10,6 +10,7 @@ Usage:
     python manage.py ingest_yfinance --ticker SHEL.L
     python manage.py ingest_yfinance --update-scores
 """
+import datetime
 import time
 import yfinance as yf
 from django.core.management.base import BaseCommand
@@ -80,6 +81,39 @@ TICKER_MAP = {
     'jpmorgan':             'JPM',
 }
 
+# slug → explicit TradingView exchange code. Populated for every ticker in
+# TICKER_MAP above so the stock chart link never has to guess an exchange
+# from the Yahoo ticker suffix (league.Company.tradingview_symbol falls back
+# to suffix-guessing only for companies NOT in this map).
+EXCHANGE_MAP = {
+    # LSE
+    'national-grid': 'LSE', 'sse': 'LSE', 'centrica': 'LSE', 'rolls-royce': 'LSE',
+    'bae-systems': 'LSE', 'drax-group': 'LSE', 'croda-international': 'LSE',
+    'johnson-matthey': 'LSE', 'balfour-beatty': 'LSE', 'severn-trent': 'LSE',
+    'united-utilities': 'LSE', 'anglo-american': 'LSE', 'fresnillo': 'LSE',
+    'hsbc': 'LSE', 'barclays': 'LSE', 'lloyds-banking-group': 'LSE',
+    'natwest-group': 'LSE', 'iag-british-airways': 'LSE', 'easyjet': 'LSE',
+    'kazatomprom': 'LSE', 'air-astana': 'LSE', 'shell': 'LSE', 'bp': 'LSE',
+    # Tadawul
+    'saudi-aramco': 'TADAWUL', 'acwa-power': 'TADAWUL', 'al-rajhi-bank': 'TADAWUL',
+    'saudi-national-bank': 'TADAWUL', 'maaden': 'TADAWUL', 'almarai': 'TADAWUL',
+    'sabic': 'TADAWUL', 'saudi-telecom': 'TADAWUL', 'riyad-bank': 'TADAWUL',
+    # NASDAQ
+    'kaspi-kz': 'NASDAQ', 'microsoft': 'NASDAQ', 'apple': 'NASDAQ',
+    'tesla': 'NASDAQ', 'amazon': 'NASDAQ',
+    # NYSE
+    'equinor': 'NYSE', 'vale': 'NYSE', 'arcelormittal': 'NYSE', 'exxonmobil': 'NYSE',
+    'chevron': 'NYSE', 'freeport-mcmoran': 'NYSE', 'newmont': 'NYSE',
+    'blackrock': 'NYSE', 'jpmorgan': 'NYSE',
+    # Euronext Paris / Amsterdam
+    'totalenergies': 'EURONEXT', 'airbus': 'EURONEXT', 'bnp-paribas': 'EURONEXT',
+    'schneider-electric': 'EURONEXT', 'ing-group': 'EURONEXT',
+    # Xetra / Frankfurt
+    'volkswagen': 'XETR', 'deutsche-bank': 'XETR', 'siemens': 'XETR',
+    # Milan / Madrid / Copenhagen
+    'enel': 'MIL', 'iberdrola': 'BME', 'orsted': 'OMXCOP',
+}
+
 
 class Command(BaseCommand):
     help = 'Ingest financial + ESG data from Yahoo Finance (no API key needed)'
@@ -125,9 +159,24 @@ class Command(BaseCommand):
                     continue
 
                 esg_raw = info.get('esgScores') or {}
+                current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+                previous_close = info.get('previousClose') or info.get('regularMarketPreviousClose')
+                day_change_pct = None
+                if current_price and previous_close:
+                    day_change_pct = (current_price - previous_close) / previous_close * 100
                 extracted = {
                     'ticker':            ticker,
+                    'price':             current_price,
+                    'currency':          info.get('currency'),
                     'market_cap':        info.get('marketCap'),
+                    'previous_close':    previous_close,
+                    'day_high':          info.get('dayHigh') or info.get('regularMarketDayHigh'),
+                    'day_low':           info.get('dayLow') or info.get('regularMarketDayLow'),
+                    'week52_high':       info.get('fiftyTwoWeekHigh'),
+                    'week52_low':        info.get('fiftyTwoWeekLow'),
+                    'day_change_pct':    day_change_pct,
+                    'market_status':     info.get('marketState'),
+                    'exchange':          EXCHANGE_MAP.get(slug),
                     'revenue':           info.get('totalRevenue'),
                     'employees':         info.get('fullTimeEmployees'),
                     'country':           info.get('country'),
@@ -152,7 +201,51 @@ class Command(BaseCommand):
                     company.description = extracted['description']
                     fields_updated.append('description')
 
-                # 3. Blend Yahoo ESG into CompanyProfile score (optional)
+                # 3. Ticker / stock price / market cap / exchange / OHLC
+                # Every field below is only ever set when the source actually returned a
+                # value — a failed/partial fetch NEVER clears a previously good value, so
+                # stock_price_updated_at always reflects the true age of what's displayed.
+                if extracted['ticker'] and company.ticker != extracted['ticker']:
+                    company.ticker = extracted['ticker']
+                    fields_updated.append('ticker')
+                if extracted['exchange'] and company.exchange != extracted['exchange']:
+                    company.exchange = extracted['exchange']
+                    fields_updated.append('exchange')
+                if extracted['price']:
+                    company.stock_price = round(extracted['price'], 2)
+                    company.stock_price_currency = extracted['currency'] or company.stock_price_currency or 'USD'
+                    company.stock_price_updated_at = datetime.datetime.now(datetime.timezone.utc)
+                    fields_updated += ['stock_price', 'stock_price_currency', 'stock_price_updated_at']
+                if extracted['previous_close']:
+                    company.previous_close = round(extracted['previous_close'], 2)
+                    fields_updated.append('previous_close')
+                if extracted['day_high']:
+                    company.day_high = round(extracted['day_high'], 2)
+                    fields_updated.append('day_high')
+                if extracted['day_low']:
+                    company.day_low = round(extracted['day_low'], 2)
+                    fields_updated.append('day_low')
+                if extracted['week52_high']:
+                    company.week52_high = round(extracted['week52_high'], 2)
+                    fields_updated.append('week52_high')
+                if extracted['week52_low']:
+                    company.week52_low = round(extracted['week52_low'], 2)
+                    fields_updated.append('week52_low')
+                if extracted['day_change_pct'] is not None:
+                    company.day_change_pct = round(extracted['day_change_pct'], 2)
+                    fields_updated.append('day_change_pct')
+                if extracted['market_status']:
+                    company.market_status = extracted['market_status']
+                    fields_updated.append('market_status')
+                if extracted['market_cap']:
+                    company.market_cap_usd = int(extracted['market_cap'])
+                    fields_updated.append('market_cap_usd')
+                if extracted['price'] or extracted['market_cap']:
+                    if not company.is_public:
+                        company.is_public = True
+                        fields_updated.append('is_public')
+
+                # 4. Blend Yahoo ESG into CompanyProfile score (optional)
                 if update_scores and extracted['esg_total'] is not None:
                     try:
                         profile = company.profile

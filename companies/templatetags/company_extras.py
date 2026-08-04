@@ -11,6 +11,22 @@ from django import template
 register = template.Library()
 
 
+# ── Investment Relevance Report — evidence type badges ────────────────────────
+_EVIDENCE_LABELS = {
+    'verified_evidence':     'Verified',
+    'company_reported':      'Company-Reported',
+    'external_allegation':   'External Allegation',
+    'ai_interpretation':     'AI Interpretation',
+    'insufficient_evidence': 'Insufficient Evidence',
+}
+
+
+@register.filter
+def evidence_label(evidence_type):
+    """Human-readable label for an InvestmentRelevanceReport evidence_type value."""
+    return _EVIDENCE_LABELS.get(evidence_type, (evidence_type or '').replace('_', ' ').title())
+
+
 # ── Logo domain ──────────────────────────────────────────────────────────────
 @register.filter
 def domain_of(url):
