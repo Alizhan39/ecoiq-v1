@@ -1,0 +1,37 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}New Portfolio — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block page_width_class %}page-narrow{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:portfolio_list' %}">Portfolios</a><span>›</span><span style="color:var(--muted2)">New</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">New Portfolio</h1>
+<div class="page-subtitle">Track holdings and see their combined EcoIQ sustainability-risk exposure. Not a brokerage account.</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="form-field">
+    <label for="name">Portfolio Name</label>
+    <input type="text" name="name" id="name" required placeholder="e.g. Long-Term Core Holdings">
+  </div>
+  <div class="form-row">
+    <div class="form-field">
+      <label for="base_currency">Base Currency</label>
+      <input type="text" name="base_currency" id="base_currency" value="USD" maxlength="8">
+      <div class="hint">Used for cash balance and manually entered values.</div>
+    </div>
+    <div class="form-field">
+      <label for="cash_balance">Cash Balance (optional)</label>
+      <input type="number" step="0.01" name="cash_balance" id="cash_balance" placeholder="0.00">
+    </div>
+  </div>
+  <div class="form-field">
+    <label for="description">Description (optional)</label>
+    <textarea name="description" id="description" rows="3"></textarea>
+  </div>
+  <button type="submit" class="cta-btn cta-primary">Create Portfolio</button>
+  <a href="{% url 'portfolio:portfolio_list' %}" class="cta-btn cta-ghost">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,334 @@
+{% extends "investor_portfolio/_base.html" %}
+{% load humanize %}
+{% load portfolio_extras %}
+{% block title %}{{ portfolio.name }} — Portfolio | EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:portfolio_list' %}">Portfolios</a><span>›</span><span style="color:var(--muted2)">{{ portfolio.name }}</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">{{ portfolio.name }}</h1>
+<div class="page-subtitle">
+  {{ portfolio.base_currency }} · {{ all_holdings_count }} holding{{ all_holdings_count|pluralize }}
+  {% if is_staff_viewing_other %}<span class="badge badge-warn" style="margin-left:.5rem">Viewing as staff — not your portfolio</span>{% endif %}
+</div>
+
+<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.4rem">
+  <form method="post" action="{% url 'portfolio:portfolio_recalculate' portfolio.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="cta-btn cta-primary">↻ Recalculate Analytics</button>
+  </form>
+  <a href="{% url 'portfolio:holding_create' portfolio.pk %}" class="cta-btn cta-secondary">+ Add Holding</a>
+  <a href="{% url 'portfolio:portfolio_import_csv' portfolio.pk %}" class="cta-btn cta-ghost">Import CSV</a>
+  <a href="{% url 'portfolio:portfolio_export_csv' portfolio.pk %}" class="cta-btn cta-ghost">Export CSV</a>
+  <form method="post" action="{% url 'portfolio:portfolio_delete' portfolio.pk %}" onsubmit="return confirm('Delete this portfolio and all its holdings?');">
+    {% csrf_token %}
+    <button type="submit" class="cta-btn cta-danger">Delete Portfolio</button>
+  </form>
+</div>
+
+{% if not snapshot %}
+<div class="empty-state">
+  {% if all_holdings_count == 0 %}
+    This portfolio has no holdings yet. <a href="{% url 'portfolio:holding_create' portfolio.pk %}" style="color:var(--accent)">Add one</a>
+    or <a href="{% url 'portfolio:portfolio_import_csv' portfolio.pk %}" style="color:var(--accent)">import a CSV</a> to get started.
+  {% else %}
+    No analytics calculated yet — click "Recalculate Analytics" above.
+  {% endif %}
+</div>
+{% else %}
+
+<!-- ── Portfolio Overview ─────────────────────────────────────────── -->
+<div class="sec-head">Portfolio Overview</div>
+<div class="kpi-grid intel-panel">
+  <div class="kpi-cell">
+    <div class="kpi-val">
+      {% if snapshot.total_market_value is not None %}{{ snapshot.total_value_currency }} {{ snapshot.total_market_value|floatformat:2|intcomma }}
+      {% elif snapshot.fx_incomplete %}<span style="font-size:.9rem;color:var(--warn)">Mixed currencies</span>
+      {% else %}{{ portfolio.base_currency }} 0.00{% endif %}
+    </div>
+    <div class="kpi-lbl">Total Portfolio Value</div>
+  </div>
+  <div class="kpi-cell"><div class="kpi-val">{{ all_holdings_count }}</div><div class="kpi-lbl">Holdings</div></div>
+  <div class="kpi-cell"><div class="kpi-val">{{ portfolio.base_currency }}</div><div class="kpi-lbl">Base Currency</div></div>
+  <div class="kpi-cell"><div class="kpi-val" style="font-size:.85rem">{{ snapshot.calculated_at|date:"N j, H:i" }}</div><div class="kpi-lbl">Analytics Calculated</div></div>
+</div>
+{% if snapshot.fx_incomplete %}
+<div class="compliance-panel" style="margin-top:.8rem">
+  ⚠ This portfolio holds values in more than one currency ({{ snapshot.currency_subtotals|join:", " }}) and EcoIQ has
+  no FX conversion service. Total value is shown as per-currency subtotals below instead of being fabricated into one number,
+  and exposure weighting falls back to equal-weight per holding rather than value-weight.
+  <div style="margin-top:.5rem">
+    {% for cur, amt in snapshot.currency_subtotals.items %}
+    <span class="badge badge-muted" style="margin-right:.4rem">{{ cur }}: {{ amt|floatformat:2|intcomma }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── EcoIQ Exposure ─────────────────────────────────────────────── -->
+<div class="sec-head">EcoIQ Exposure</div>
+<div class="kpi-grid intel-panel">
+  <div class="kpi-cell">
+    <div class="kpi-val" style="color:{% if snapshot.exposure_score >= 65 %}var(--danger){% elif snapshot.exposure_score >= 40 %}var(--warn){% else %}var(--accent){% endif %}">
+      {{ snapshot.exposure_score|default:"—" }}
+    </div>
+    <div class="kpi-lbl">Exposure Score (0-100)</div>
+  </div>
+  <div class="kpi-cell"><div class="kpi-val">{{ snapshot.evidence_coverage_pct|floatformat:0|default:"—" }}%</div><div class="kpi-lbl">Evidence Coverage</div></div>
+  <div class="kpi-cell"><div class="kpi-val" style="color:var(--muted2)">{{ snapshot.unknown_exposure_pct|floatformat:0|default:"—" }}%</div><div class="kpi-lbl">Unknown / Unassessed</div></div>
+  <div class="kpi-cell"><div class="kpi-val" style="color:{% if snapshot.stale_analysis_pct > 30 %}var(--warn){% endif %}">{{ snapshot.stale_analysis_pct|floatformat:0|default:"—" }}%</div><div class="kpi-lbl">Stale Analysis (&gt;90d)</div></div>
+</div>
+<p style="font-size:.72rem;color:var(--muted2);margin-top:.6rem;line-height:1.6">
+  The exposure score is a deterministic weighted average (methodology {{ snapshot.methodology_version }}) across holdings
+  with a <strong>published</strong> EcoIQ classification only. {{ snapshot.unknown_exposure_pct|floatformat:0 }}% of this
+  portfolio's analytics-included value has no published classification (no report, or an insufficient-evidence verdict) —
+  this is tracked separately and is <strong>never</strong> folded into the "low exposure" figure.
+  {% if snapshot.concentration.high_exposure_concentration_flag %}
+  <strong style="color:var(--warn)">⚠ {{ snapshot.concentration.high_exposure_concentration_pct }}% of value is in elevated/high-exposure companies — concentrated exposure.</strong>
+  {% endif %}
+  {% if snapshot.concentration.hhi_flag %}
+  <strong style="color:var(--warn)">⚠ Holding concentration is high (HHI {{ snapshot.concentration.hhi }}) — a small number of holdings dominate portfolio weight.</strong>
+  {% endif %}
+</p>
+
+<!-- ── Distribution ───────────────────────────────────────────────── -->
+<div class="sec-head">Exposure Distribution <span class="sec-note">% of analytics-included value</span></div>
+<div class="intel-panel"><div class="panel-body">
+  <div class="bar-track" style="margin-bottom:.9rem" role="img" aria-label="Portfolio value by exposure classification">
+    {% for key, pct in snapshot.distribution.items %}
+      {% if pct > 0 %}<div class="bar-seg class-{{ key }}" style="width:{{ pct }}%;background:currentColor;opacity:.55"></div>{% endif %}
+    {% endfor %}
+  </div>
+  <!-- explicit text labels per bucket (accessibility — never colour-only) -->
+  <table class="data-table" style="margin-top:1rem">
+    <thead><tr><th>Classification</th><th>% of Value</th></tr></thead>
+    <tbody>
+      {% for key in classification_order %}
+      <tr>
+        <td><span class="class-badge class-{{ key }}">
+          {% if key == 'lower_exposure' %}Lower Identified Exposure
+          {% elif key == 'moderate_exposure' %}Moderate Identified Exposure
+          {% elif key == 'elevated_exposure' %}Elevated Identified Exposure
+          {% elif key == 'high_exposure' %}High Identified Exposure
+          {% else %}Insufficient Evidence{% endif %}
+        </span></td>
+        <td>{{ snapshot.distribution|get_item:key|default:0 }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+<!-- ── Largest contributors ──────────────────────────────────────── -->
+<div class="sec-head">Largest Contributors</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.2rem">
+  <div class="intel-panel" style="margin-bottom:0">
+    <div class="panel-header">Top Exposure Contributors</div>
+    <div class="panel-body">
+      {% for r in snapshot.holding_snapshots|dictsortreversed:"exposure_contribution"|slice:":5" %}
+        {% if r.exposure_contribution %}
+        <div class="fact-row"><span class="fact-label">{{ r.company_name }}</span><span class="fact-val">{{ r.exposure_contribution }} pts</span></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  <div class="intel-panel" style="margin-bottom:0">
+    <div class="panel-header">Largest Portfolio Weight</div>
+    <div class="panel-body">
+      {% for h in snapshot.concentration.top_holdings %}
+      <div class="fact-row"><span class="fact-label">{{ h.company_name }} {% if h.ticker %}({{ h.ticker }}){% endif %}</span><span class="fact-val">{{ h.weight_pct }}%</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="intel-panel" style="margin-bottom:0">
+    <div class="panel-header">Insufficient Evidence</div>
+    <div class="panel-body">
+      {% for r in snapshot.holding_snapshots %}
+        {% if not r.is_known_exposure and r.include_in_analytics %}
+        <div class="fact-row"><span class="fact-label">{{ r.company_name }}</span><span class="fact-val">{{ r.weight_pct }}%</span></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  <div class="intel-panel" style="margin-bottom:0">
+    <div class="panel-header">Stale EcoIQ Reports</div>
+    <div class="panel-body">
+      {% for r in snapshot.holding_snapshots %}
+        {% if r.stale_report %}
+        <div class="fact-row"><span class="fact-label">{{ r.company_name }}</span><span class="fact-val">{{ r.report_age_days }}d old</span></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Sector / country / exchange concentration ────────────────── -->
+<div class="sec-head">Concentration</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.2rem">
+  <div class="intel-panel" style="margin-bottom:0">
+    <div class="panel-header">By Sector</div>
+    <div class="panel-body">{% for k, v in snapshot.concentration.by_sector.items %}<div class="fact-row"><span class="fact-label">{{ k }}</span><span class="fact-val">{{ v }}%</span></div>{% endfor %}</div>
+  </div>
+  <div class="intel-panel" style="margin-bottom:0">
+    <div class="panel-header">By Country</div>
+    <div class="panel-body">{% for k, v in snapshot.concentration.by_country.items %}<div class="fact-row"><span class="fact-label">{{ k }}</span><span class="fact-val">{{ v }}%</span></div>{% endfor %}</div>
+  </div>
+  <div class="intel-panel" style="margin-bottom:0">
+    <div class="panel-header">By Exchange</div>
+    <div class="panel-body">{% for k, v in snapshot.concentration.by_exchange.items %}<div class="fact-row"><span class="fact-label">{{ k }}</span><span class="fact-val">{{ v }}%</span></div>{% endfor %}</div>
+  </div>
+</div>
+
+<!-- ── Changes since prior snapshot ─────────────────────────────── -->
+{% if diff %}
+<div class="sec-head">Changes Since Prior Snapshot</div>
+<div class="intel-panel"><div class="panel-body">
+  {% if not diff.has_prior %}
+    <div style="color:var(--muted2);font-size:.8rem">This is the first snapshot for this portfolio — nothing to compare yet.</div>
+  {% else %}
+    <div class="fact-row"><span class="fact-label">Exposure score change</span><span class="fact-val">{{ diff.exposure_score_delta|default:"—" }}</span></div>
+    <div class="fact-row"><span class="fact-label">Unknown-exposure % change</span><span class="fact-val">{{ diff.unknown_exposure_pct_delta|default:"—" }}</span></div>
+    {% if diff.added_companies %}<div class="fact-row"><span class="fact-label">Added</span><span class="fact-val">{{ diff.added_companies|join:", " }}</span></div>{% endif %}
+    {% if diff.removed_companies %}<div class="fact-row"><span class="fact-label">Removed</span><span class="fact-val">{{ diff.removed_companies|join:", " }}</span></div>{% endif %}
+    {% if diff.company_analysis_changes %}
+    <div style="margin-top:.6rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Company-Analysis Changes (new/updated EcoIQ report)</div>
+    {% for c in diff.company_analysis_changes %}
+    <div class="fact-row"><span class="fact-label">{{ c.company_name }}</span>
+      <span class="fact-val">{% if c.change_type == 'classification' %}{{ c.from_classification|default:"none" }} → {{ c.to_classification }}{% else %}confidence {{ c.from_confidence|floatformat:2 }} → {{ c.to_confidence|floatformat:2 }}{% endif %}</span></div>
+    {% endfor %}
+    {% endif %}
+    {% if diff.market_weight_changes %}
+    <div style="margin-top:.6rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Market-Weight Changes (price movement, same share count)</div>
+    {% for c in diff.market_weight_changes %}
+    <div class="fact-row"><span class="fact-label">{{ c.company_name }}</span><span class="fact-val">{{ c.from_weight_pct }}% → {{ c.to_weight_pct }}%</span></div>
+    {% endfor %}
+    {% endif %}
+    {% if diff.user_holding_changes %}
+    <div style="margin-top:.6rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Your Holding Changes (share count edited)</div>
+    {% for c in diff.user_holding_changes %}
+    <div class="fact-row"><span class="fact-label">{{ c.company_name }}</span><span class="fact-val">{{ c.from_shares }} → {{ c.to_shares }} shares</span></div>
+    {% endfor %}
+    {% endif %}
+  {% endif %}
+</div></div>
+{% endif %}
+
+<!-- ── AI Portfolio Briefing ────────────────────────────────────── -->
+<div class="sec-head">EcoIQ Portfolio Briefing {% if latest_briefing %}<span class="sec-note">v{{ latest_briefing.version }}</span>{% endif %}</div>
+<div class="intel-panel"><div class="panel-body">
+  <form method="post" action="{% url 'portfolio:portfolio_generate_briefing' portfolio.pk %}" style="display:inline">
+    {% csrf_token %}
+    <button type="submit" class="cta-btn cta-primary">✨ {% if latest_briefing %}Regenerate{% else %}Generate{% endif %} Portfolio Briefing</button>
+  </form>
+  {% if latest_briefing %}
+    <span class="report-status-chip" style="margin-left:.5rem;font-size:.6rem;padding:2px 8px;border-radius:10px;background:rgba(148,163,184,.14);color:var(--muted2)">{{ latest_briefing.get_status_display }}</span>
+    {% if latest_briefing.status == 'draft' %}
+    <form method="post" action="{% url 'portfolio:portfolio_briefing_status' portfolio.pk latest_briefing.pk %}" style="display:inline">
+      {% csrf_token %}<input type="hidden" name="action" value="mark_reviewed">
+      <button type="submit" class="cta-btn cta-secondary">Mark Reviewed</button>
+    </form>
+    {% endif %}
+    {% if latest_briefing.status == 'reviewed' %}
+    <form method="post" action="{% url 'portfolio:portfolio_briefing_status' portfolio.pk latest_briefing.pk %}" style="display:inline">
+      {% csrf_token %}<input type="hidden" name="action" value="publish">
+      <button type="submit" class="cta-btn cta-primary">Finalize</button>
+    </form>
+    {% endif %}
+    <div style="margin-top:1rem;font-size:.83rem;line-height:1.65">
+      <p><strong>Summary:</strong> {{ latest_briefing.content.summary }}</p>
+      <p style="margin-top:.6rem"><strong>Largest concentrations:</strong> {{ latest_briefing.content.largest_exposure_concentrations }}</p>
+      <p style="margin-top:.6rem"><strong>Top contributors:</strong> {{ latest_briefing.content.top_contributors }}</p>
+      <p style="margin-top:.6rem"><strong>Insufficient evidence:</strong> {{ latest_briefing.content.insufficient_evidence_areas }}</p>
+      <p style="margin-top:.6rem"><strong>Changes since prior snapshot:</strong> {{ latest_briefing.content.changes_since_prior_snapshot }}</p>
+      {% if latest_briefing.content.due_diligence_questions %}
+      <p style="margin-top:.6rem"><strong>Due diligence questions:</strong></p>
+      <ul style="margin-left:1.2rem;color:var(--muted2)">
+        {% for q in latest_briefing.content.due_diligence_questions %}<li>{{ q }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% if not latest_briefing.is_publishable %}
+    <div style="margin-top:.6rem;font-size:.68rem;color:var(--danger)">⚠ This briefing has prohibited-language flags and cannot be finalized until regenerated.</div>
+    {% endif %}
+  {% else %}
+    <div style="color:var(--muted2);font-size:.8rem;margin-top:.6rem">No briefing generated yet. This briefing is always private to you.</div>
+  {% endif %}
+</div></div>
+
+<!-- ── Holdings table ────────────────────────────────────────────── -->
+<div class="sec-head">Holdings</div>
+<form method="get" class="filter-bar">
+  <select name="sector" onchange="this.form.submit()">
+    <option value="">All Sectors</option>
+    {% for s in sectors %}<option value="{{ s }}" {% if filters.sector == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="country" onchange="this.form.submit()">
+    <option value="">All Countries</option>
+    {% for c in countries %}<option value="{{ c }}" {% if filters.country == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  <select name="exposure" onchange="this.form.submit()">
+    <option value="">All Exposure Levels</option>
+    {% for key in classification_order %}<option value="{{ key }}" {% if filters.exposure == key %}selected{% endif %}>{{ key }}</option>{% endfor %}
+  </select>
+  <label class="filter-chip {% if filters.stale == '1' %}active{% endif %}">
+    <input type="checkbox" name="stale" value="1" {% if filters.stale == '1' %}checked{% endif %} onchange="this.form.submit()" style="margin-right:.3rem">Stale
+  </label>
+  <label class="filter-chip {% if filters.missing_data == '1' %}active{% endif %}">
+    <input type="checkbox" name="missing_data" value="1" {% if filters.missing_data == '1' %}checked{% endif %} onchange="this.form.submit()" style="margin-right:.3rem">Missing Market Data
+  </label>
+  {% if filters.sector or filters.country or filters.exposure or filters.stale or filters.missing_data %}
+  <a href="?" class="filter-chip">Clear filters</a>
+  {% endif %}
+</form>
+
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr>
+    <th><a href="?sort=name&dir=asc">Company</a></th><th>Ticker</th><th>Sector</th>
+    <th><a href="?sort=shares">Shares</a></th><th>Price</th>
+    <th><a href="?sort=value">Market Value</a></th><th><a href="?sort=weight">Weight</a></th>
+    <th><a href="?sort=classification">Classification</a></th><th><a href="?sort=confidence">Confidence</a></th>
+    <th>Report Date</th><th>Status</th><th></th>
+  </tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.company_name }}</td>
+      <td style="font-family:var(--mono)">{{ r.ticker|default:"—" }}</td>
+      <td style="color:var(--muted2)">{{ r.sector_display }}</td>
+      <td>{{ r.shares }}</td>
+      <td>{% if r.price_per_share %}{{ r.currency }} {{ r.price_per_share }}{% else %}—{% endif %}</td>
+      <td>
+        {% if r.missing_market_data %}<span class="badge badge-warn">No Price</span>
+        {% else %}{{ r.currency }} {{ r.market_value|floatformat:2 }}{% if r.stale_price %} <span class="badge badge-warn">Stale</span>{% endif %}{% endif %}
+      </td>
+      <td>{{ r.weight_pct }}%</td>
+      <td><span class="class-badge class-{{ r.classification|default:'insufficient_evidence' }}">{{ classification_display|get_item:r.classification }}</span></td>
+      <td>{% if r.evidence_confidence %}{{ r.evidence_confidence|floatformat:2 }}{% else %}—{% endif %}</td>
+      <td style="color:var(--muted)">{{ r.report_date|default:"—" }}{% if r.stale_report %} <span class="badge badge-danger">Stale</span>{% endif %}</td>
+      <td>{% if not r.include_in_analytics %}<span class="badge badge-muted">Excluded</span>{% elif r.has_report %}<span class="badge" style="background:rgba(0,232,154,.12);color:var(--accent)">Published</span>{% else %}<span class="badge badge-muted">No Report</span>{% endif %}</td>
+      <td style="white-space:nowrap">
+        <a href="{% url 'companies:detail' r.company_slug %}" class="cta-btn cta-ghost" style="padding:.2rem .5rem">Profile</a>
+        {% if r.ticker %}<a href="{% url 'companies:stock' r.company_slug %}" class="cta-btn cta-ghost" style="padding:.2rem .5rem">Stock</a>{% endif %}
+        <a href="{% url 'portfolio:holding_edit' portfolio.pk r.holding_id %}" class="cta-btn cta-ghost" style="padding:.2rem .5rem">Edit</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+<div class="compliance-panel">
+  <strong>{{ disclaimer_financial }}</strong>
+  <ul>
+    <li>Portfolio exposure is based on available EcoIQ evidence — it is not a forecast of financial loss or return.</li>
+    <li>Missing evidence is shown separately (unknown exposure) and never folded into "low exposure".</li>
+    <li>Market data may be delayed; stale prices and stale reports are flagged, not hidden.</li>
+    <li>Currency conversion may be incomplete — see the FX notice above when it applies.</li>
+    <li>Users should perform independent financial due diligence. This is not investment advice.</li>
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}{{ watchlist.name }} — Watchlist | EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="{% if watchlist.is_public %}index, follow{% else %}noindex, nofollow{% endif %}">{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:watchlist_list' %}">Watchlists</a><span>›</span><span style="color:var(--muted2)">{{ watchlist.name }}</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">{{ watchlist.name }}</h1>
+<div class="page-subtitle">
+  {{ rows|length }} compan{{ rows|length|pluralize:"y,ies" }}
+  {% if watchlist.is_public %}· <span class="badge badge-muted">Public</span>{% else %}· <span class="badge badge-muted">Private</span>{% endif %}
+  {% if watchlist.description %}<br>{{ watchlist.description }}{% endif %}
+</div>
+
+{% if is_owner %}
+<form method="post" action="{% url 'portfolio:watchlist_delete' watchlist.pk %}" style="margin-bottom:1.2rem"
+      onsubmit="return confirm('Delete this watchlist? This cannot be undone.');">
+  {% csrf_token %}
+  <button type="submit" class="cta-btn cta-danger">Delete Watchlist</button>
+</form>
+{% endif %}
+
+<div class="sec-head">
+  Exposure-Level Distribution
+  <span class="sec-note">by number of companies</span>
+</div>
+<div class="intel-panel">
+  <div class="panel-body">
+    {% if rows %}
+    <div class="bar-track" style="margin-bottom:.8rem" role="img" aria-label="Exposure distribution across watchlist companies">
+      {% for key, count in distribution.items %}
+        {% widthratio count rows|length 100 as pct %}
+        {% if pct > 0 %}
+        <div class="bar-seg class-{{ key }}" style="width:{{ pct }}%;background:currentColor;opacity:.55"></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.72rem">
+      {% for key, count in distribution.items %}
+      <div><span class="class-badge class-{{ key }}">{{ key|default:"insufficient_evidence" }}</span> {{ count }}</div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="color:var(--muted2);font-size:.8rem">No companies in this watchlist yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="sec-head">
+  Companies
+  <span class="sec-note">
+    Sort:
+    <a href="?sort=name" style="color:{% if sort == 'name' %}var(--accent){% else %}var(--muted){% endif %}">Name</a> ·
+    <a href="?sort=exposure" style="color:{% if sort == 'exposure' %}var(--accent){% else %}var(--muted){% endif %}">Exposure</a> ·
+    <a href="?sort=sector" style="color:{% if sort == 'sector' %}var(--accent){% else %}var(--muted){% endif %}">Sector</a> ·
+    <a href="?sort=report_date" style="color:{% if sort == 'report_date' %}var(--accent){% else %}var(--muted){% endif %}">Latest Report</a> ·
+    <a href="?sort=changed" style="color:{% if sort == 'changed' %}var(--accent){% else %}var(--muted){% endif %}">Recently Changed</a>
+  </span>
+</div>
+
+{% if rows %}
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr>
+    <th>Company</th><th>Sector</th><th>Classification</th><th>Signals</th><th>Report Date</th><th></th>
+  </tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>
+        <a href="{% url 'companies:detail' r.company.slug %}" style="color:var(--accent);font-weight:700">{{ r.company.name }}</a>
+        {% if r.company.ticker %}<div style="font-size:.62rem;color:var(--muted);font-family:var(--mono)">{{ r.company.ticker }}</div>{% endif %}
+      </td>
+      <td style="color:var(--muted2)">{{ r.company.get_sector_display }}</td>
+      <td><span class="class-badge class-{{ r.classification|default:'insufficient_evidence' }}">{{ r.classification_display }}</span></td>
+      <td>
+        {% if r.is_new_report %}<span class="badge badge-warn">New Report</span>{% endif %}
+        {% if r.classification_changed %}<span class="badge badge-warn">Classification Changed</span>{% endif %}
+        {% if r.stale %}<span class="badge badge-danger">Stale &gt;{{ stale_threshold_days }}d</span>{% endif %}
+        {% if not r.report %}<span class="badge badge-muted">No Published Report</span>{% endif %}
+      </td>
+      <td style="color:var(--muted)">{% if r.report %}{{ r.report.published_at|date:"N j, Y"|default:r.report.generated_at|date:"N j, Y" }}{% else %}—{% endif %}</td>
+      <td style="white-space:nowrap">
+        {% if r.company.ticker %}<a href="{{ r.company.stock_profile_url }}" class="cta-btn cta-secondary" style="padding:.25rem .6rem">Stock →</a>{% endif %}
+        {% if is_owner %}
+        <form method="post" action="{% url 'portfolio:watchlist_remove_company' watchlist.pk r.company.slug %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="cta-btn cta-ghost" style="padding:.25rem .6rem">Remove</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">Use "Add to watchlist" on any public company's page to build this list.</div>
+{% endif %}
+{% endblock %}

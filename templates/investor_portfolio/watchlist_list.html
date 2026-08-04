@@ -1,0 +1,42 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}My Watchlists — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:portfolio_list' %}">Portfolios</a><span>›</span><span style="color:var(--muted2)">Watchlists</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">My Watchlists</h1>
+<div class="page-subtitle">Follow companies without tracking shares or value. Private by default.</div>
+
+<form method="post" action="{% url 'portfolio:watchlist_create' %}" style="display:flex;gap:.5rem;margin-bottom:1.4rem;flex-wrap:wrap">
+  {% csrf_token %}
+  <input type="text" name="name" placeholder="New watchlist name (e.g. Energy companies)" required
+         style="flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:.5rem .7rem;color:var(--text)">
+  <label style="display:flex;align-items:center;gap:.35rem;font-size:.72rem;color:var(--muted2)">
+    <input type="checkbox" name="is_public"> Public
+  </label>
+  <button type="submit" class="cta-btn cta-primary">+ Create</button>
+</form>
+
+{% if watchlists %}
+<div class="table-scroll">
+<table class="data-table">
+  <thead><tr><th>Name</th><th>Companies</th><th>Visibility</th><th>Updated</th><th></th></tr></thead>
+  <tbody>
+    {% for wl in watchlists %}
+    <tr>
+      <td><a href="{% url 'portfolio:watchlist_detail' wl.pk %}" style="color:var(--accent);font-weight:700">{{ wl.name }}</a></td>
+      <td>{{ wl.items.count }}</td>
+      <td>{% if wl.is_public %}<span class="badge badge-muted">Public</span>{% else %}<span class="badge badge-muted">Private</span>{% endif %}</td>
+      <td style="color:var(--muted)">{{ wl.updated_at|date:"N j, Y" }}</td>
+      <td><a href="{% url 'portfolio:watchlist_detail' wl.pk %}" class="cta-btn cta-secondary" style="padding:.3rem .7rem">Open →</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">No watchlists yet. Create one above, or use "Add to watchlist" on any public company page.</div>
+{% endif %}
+{% endblock %}

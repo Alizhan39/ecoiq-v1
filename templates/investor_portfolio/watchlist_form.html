@@ -1,0 +1,27 @@
+{% extends "investor_portfolio/_base.html" %}
+{% block title %}New Watchlist — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block page_width_class %}page-narrow{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'portfolio:watchlist_list' %}">Watchlists</a><span>›</span><span style="color:var(--muted2)">New</span>
+{% endblock %}
+
+{% block portfolio_content %}
+<h1 class="page-title">New Watchlist</h1>
+<form method="post">
+  {% csrf_token %}
+  <div class="form-field">
+    <label for="name">Name</label>
+    <input type="text" name="name" id="name" required placeholder="e.g. High-transition-risk companies">
+  </div>
+  <div class="form-field">
+    <label for="description">Description (optional)</label>
+    <textarea name="description" id="description" rows="3"></textarea>
+  </div>
+  <div class="form-field">
+    <label><input type="checkbox" name="is_public" style="width:auto"> Make this watchlist public (read-only to others)</label>
+  </div>
+  <button type="submit" class="cta-btn cta-primary">Create Watchlist</button>
+  <a href="{% url 'portfolio:watchlist_list' %}" class="cta-btn cta-ghost">Cancel</a>
+</form>
+{% endblock %}
