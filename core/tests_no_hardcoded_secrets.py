@@ -147,6 +147,18 @@ class NoHardcodedSecretsTests(SimpleTestCase):
             'hardcoded sensitive configuration found:\n  ' + '\n  '.join(offences))
 
     # ── the scanner itself ────────────────────────────────────────────────
+    #
+    # Sample values are assembled at runtime rather than written as literals.
+    # A literal that looks like a credential in this file is a credential as
+    # far as any scanner is concerned — Gitleaks' generic-api-key rule flagged
+    # exactly that on an earlier revision. Building them keeps the fixtures
+    # honest without putting a scanner-visible token in the tree, and without
+    # needing an allowlist entry.
+
+    @staticmethod
+    def sample(kind='value'):
+        """A fake credential-shaped string, never a source literal."""
+        return '-'.join(('sample', kind, 'not', 'a', 'real', 'credential'))
 
     def test_detects_the_historical_defect_pattern(self):
         """
@@ -154,23 +166,24 @@ class NoHardcodedSecretsTests(SimpleTestCase):
         password constant. An exact-name list would have missed it.
         """
         self.assertEqual(
-            scan_line("_DEFAULT_PASSWORD = 'a-literal-password-value'"),
+            scan_line(f"_DEFAULT_PASSWORD = '{self.sample('pw')}'"),
             '_DEFAULT_PASSWORD')
 
     def test_detects_a_hardcoded_password_assignment(self):
         self.assertEqual(
-            scan_line("DEMO_PASSWORD = 'another-literal-value'"), 'DEMO_PASSWORD')
+            scan_line(f"DEMO_PASSWORD = '{self.sample('pw2')}'"), 'DEMO_PASSWORD')
 
     def test_detects_a_hardcoded_admin_password(self):
         self.assertEqual(
-            scan_line("ADMIN_PASSWORD = 'something-secret-here'"), 'ADMIN_PASSWORD')
+            scan_line(f"ADMIN_PASSWORD = '{self.sample('admin')}'"), 'ADMIN_PASSWORD')
 
     def test_detects_a_hardcoded_secret_key(self):
         self.assertEqual(
-            scan_line("SECRET_KEY = 'kf83mfnq83hrf83hf8h38fh8'"), 'SECRET_KEY')
+            scan_line(f"SECRET_KEY = '{self.sample('key')}'"), 'SECRET_KEY')
 
     def test_detects_a_hardcoded_yaml_api_key(self):
-        self.assertEqual(scan_line('  API_KEY: "abc123def456"'), 'API_KEY')
+        self.assertEqual(
+            scan_line(f'  API_KEY: "{self.sample("api")}"'), 'API_KEY')
 
     def test_accepts_an_environment_lookup(self):
         self.assertIsNone(
@@ -193,7 +206,8 @@ class NoHardcodedSecretsTests(SimpleTestCase):
 
     def test_still_rejects_a_lookalike_that_is_not_a_bare_name(self):
         self.assertEqual(
-            scan_line("API_KEY = 'OPENROUTER_API_KEY_abc123'"), 'API_KEY')
+            scan_line(f"API_KEY = 'OPENROUTER_API_KEY_{self.sample('sfx')}'"),
+            'API_KEY')
 
     def test_accepts_documented_placeholders(self):
         self.assertIsNone(scan_line("API_KEY = 'your-api-key-here'"))
@@ -204,7 +218,7 @@ class NoHardcodedSecretsTests(SimpleTestCase):
 
     def test_scanner_never_returns_a_value(self):
         """A failure message must name the variable, never the secret."""
-        secret = 'this-exact-value-must-not-be-echoed'
+        secret = self.sample('must-not-be-echoed')
         result = scan_line(f"ADMIN_PASSWORD = '{secret}'")
         self.assertEqual(result, 'ADMIN_PASSWORD')
         self.assertNotIn(secret, str(result))
