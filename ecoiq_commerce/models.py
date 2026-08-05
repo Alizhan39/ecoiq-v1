@@ -149,13 +149,26 @@ class Plan(models.Model):
     def __str__(self):
         return f'{self.product.name} — {self.name}'
 
+    # Suffix shown after the price, e.g. "GBP 99.00/month". An explicit map,
+    # not string surgery: `billing_period.rstrip("ly")` strips every trailing
+    # "l"/"y" CHARACTER rather than the suffix, so "annual" became "annua".
+    # It happened to be correct for "monthly" only, which is why it survived.
+    _PERIOD_SUFFIXES = {
+        'monthly': 'month',
+        'annual': 'year',
+        'usage': 'unit',
+    }
+
     @property
     def price_display(self) -> str:
         if self.price_amount is None:
             return 'Contact Sales'
         if self.billing_period == 'one_time':
             return f'{self.currency} {self.price_amount:,.2f}'
-        return f'{self.currency} {self.price_amount:,.2f}/{self.billing_period.rstrip("ly")}'
+        suffix = self._PERIOD_SUFFIXES.get(self.billing_period)
+        if suffix is None:
+            return f'{self.currency} {self.price_amount:,.2f}'
+        return f'{self.currency} {self.price_amount:,.2f}/{suffix}'
 
 
 # ── Features & entitlements ──────────────────────────────────────────────────
