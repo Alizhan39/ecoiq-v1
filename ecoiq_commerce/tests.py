@@ -1,8 +1,19 @@
+"""
+Tests for the ecoiq_commerce commercial platform.
+
+SECURE_SSL_REDIRECT is overridden on every test-client class below. settings.py
+turns it on whenever DEBUG is False, which is what CI sets — without the
+override the test client is 301'd to https before reaching any view, and an
+assertion like "an ordinary user gets 404 for someone else's key" would pass
+for entirely the wrong reason. Overriding it here means these tests assert real
+behaviour under both DEBUG=True (the local convention) and DEBUG=False. No
+production setting is changed.
+"""
 import datetime
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from api.models import APIKey
@@ -32,6 +43,7 @@ def _plan(feature, *, price=0, public=True, quantity_limit=None, limit_period='u
     return plan
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class SelfServiceAPIKeyTest(TestCase):
     def setUp(self):
         call_command('seed_commercial_catalogue')
@@ -77,6 +89,7 @@ class SelfServiceAPIKeyTest(TestCase):
         self.assertContains(resp, 'noindex')
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class ProductsPageTest(TestCase):
     def test_products_page_renders_all_catalogue_products(self):
         call_command('seed_commercial_catalogue')
@@ -86,6 +99,7 @@ class ProductsPageTest(TestCase):
             self.assertContains(resp, product.name)
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class DashboardTest(TestCase):
     def test_staff_only(self):
         user = User.objects.create_user(username='regular', password='pw12345')
@@ -102,6 +116,7 @@ class DashboardTest(TestCase):
         self.assertContains(resp, 'noindex')
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class EntitlementServiceTest(TestCase):
     """Unit tests for the single entitlement resolver -- ecoiq_commerce.services.entitlements.has_entitlement()."""
 
@@ -218,6 +233,7 @@ class EntitlementServiceTest(TestCase):
         self.assertTrue(check_and_record_usage(self.other_user, feature.key))
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class TrackEventTest(TestCase):
     def test_unknown_event_type_rejected(self):
         with self.assertRaises(ValueError):
