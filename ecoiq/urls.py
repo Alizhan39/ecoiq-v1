@@ -60,6 +60,11 @@ urlpatterns = [
     # EcoIQ Commercial Platform — PART 14 catalogue, PART 17 self-service keys, PART 12 dashboard
     path('products/', include('ecoiq_commerce.urls', namespace='commerce')),
 
+    # Stripe billing — Checkout, Customer Portal, and the webhook endpoint.
+    # /billing/webhook/ is registered by hand in the Stripe Dashboard; changing
+    # this prefix breaks payment provisioning in production silently.
+    path('billing/', include('ecoiq_commerce.billing_urls', namespace='billing')),
+
     # EcoIQ Country Intelligence
     path('countries/', include('countries.urls', namespace='countries')),
 
