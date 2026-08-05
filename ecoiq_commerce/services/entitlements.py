@@ -10,11 +10,25 @@ logic such as `if user.is_pro:` across templates").
 Resolution order (first match wins for *inclusion*; quantity limits are then
 applied on top of whichever source granted access):
     1. An unexpired manual Entitlement grant (comp access, beta tester, etc.)
-    2. The user's (or organisation's) active Subscription -> Plan -> PlanFeature
+    2. The BEST entitlement across ALL of the holder's currently-valid
+       subscriptions -> Plan -> PlanFeature
     3. Any public Plan with price_amount == 0 that includes the feature
        (the "free tier" — available even to a user with no subscription row
        at all, exactly like an anonymous visitor gets free-tier web access)
     4. Not entitled.
+
+Step 2 says "best across all", not "the most recent one". An organisation that
+holds several subscriptions — an old Starter alongside a new Pro, or a
+per-team subscription plus a company-wide one — must get the highest
+entitlement it is currently paying for. Picking the most recently *started*
+row made access depend on row creation order, so an upgrade bought before a
+cheaper add-on could be silently masked by it.
+
+"Currently valid" is also stricter than a status check alone. A subscription
+counts only when its status is 'trialing' or 'active' AND its
+current_period_end has not passed. A row left 'active' with an expired period
+— which happens when a cancellation or renewal webhook is missed, delayed, or
+never delivered — must not keep granting access indefinitely.
 
 Usage limits (PlanFeature.quantity_limit / UsageLimit override) are only
 enforced for a known user or organisation — anonymous requests are handled
@@ -68,16 +82,72 @@ def _period_bounds(period: str, at: datetime.date = None):
     return at, at  # 'unlimited' — period bounds unused when there's no quantity limit
 
 
-def _active_subscription(user, organisation):
+# Only these two statuses can ever grant access. 'past_due' (which Stripe's
+# past_due, unpaid and incomplete all map onto), 'cancelled' and 'expired' are
+# all outside it, so a failed payment or a chargeback withdraws entitlement
+# without deleting anything.
+ENTITLING_STATUSES = ('trialing', 'active')
+
+
+def _valid_subscriptions(user, organisation):
+    """
+    Every currently-valid subscription for this holder, newest first.
+
+    Two conditions, both required. The status must be entitling, AND the
+    current period must not have ended — a row stuck at 'active' with a period
+    that ended last month is not a live subscription, it is a missed webhook,
+    and treating it as live would grant access indefinitely for free.
+
+    A null current_period_end is treated as valid: manually-created and
+    NullBillingProvider subscriptions legitimately have no period boundary.
+    """
+    now = timezone.now()
+    unexpired = Q(current_period_end__isnull=True) | Q(current_period_end__gt=now)
     if organisation is not None:
-        return (OrganisationSubscription.objects
-                .filter(organisation=organisation, status__in=('trialing', 'active'))
-                .select_related('plan').order_by('-started_at').first())
+        return list(OrganisationSubscription.objects
+                    .filter(organisation=organisation, status__in=ENTITLING_STATUSES)
+                    .filter(unexpired)
+                    .select_related('plan').order_by('-started_at'))
     if user is not None and getattr(user, 'is_authenticated', False):
-        return (Subscription.objects
-                .filter(user=user, status__in=('trialing', 'active'))
-                .select_related('plan').order_by('-started_at').first())
-    return None
+        return list(Subscription.objects
+                    .filter(user=user, status__in=ENTITLING_STATUSES)
+                    .filter(unexpired)
+                    .select_related('plan').order_by('-started_at'))
+    return []
+
+
+def _active_subscription(user, organisation):
+    """The single newest valid subscription. Kept for callers that need one."""
+    subscriptions = _valid_subscriptions(user, organisation)
+    return subscriptions[0] if subscriptions else None
+
+
+def _best_plan_feature(subscriptions, feature_key):
+    """
+    The most generous PlanFeature for this feature across `subscriptions`.
+
+    Ranking, in order: an included feature beats an excluded one; unlimited
+    beats any finite limit; a larger limit beats a smaller one. Returns
+    (plan_feature, subscription) or (None, None).
+
+    Deliberately not "the highest tier" — that would need a tier ordering
+    EcoIQ does not have, and price is a poor proxy (an enterprise plan has
+    price_amount=None). Comparing the actual entitlement being asked about
+    needs no such invention and cannot be wrong about it.
+    """
+    best_pf = best_sub = None
+    best_rank = None
+    for subscription in subscriptions:
+        pf = (PlanFeature.objects
+              .filter(plan=subscription.plan, feature__key=feature_key)
+              .select_related('feature').first())
+        if pf is None or not pf.is_included:
+            continue
+        unlimited = pf.limit_period == 'unlimited' or pf.quantity_limit is None
+        rank = (1, 0) if unlimited else (0, pf.quantity_limit or 0)
+        if best_rank is None or rank > best_rank:
+            best_rank, best_pf, best_sub = rank, pf, subscription
+    return best_pf, best_sub
 
 
 def _manual_grant(user, organisation, feature_key):
@@ -132,11 +202,10 @@ def has_entitlement(user, feature_key: str, organisation=None, quantity: int = 1
     """
     subscription = None
     organisation_subscription = None
+    candidates = []
     if plan is None:
-        if organisation is not None:
-            organisation_subscription = _active_subscription(None, organisation)
-        else:
-            subscription = _active_subscription(user, None)
+        candidates = _valid_subscriptions(
+            None if organisation is not None else user, organisation)
 
     # 1. Manual grant
     grant = _manual_grant(user, organisation, feature_key)
@@ -149,12 +218,26 @@ def has_entitlement(user, feature_key: str, organisation=None, quantity: int = 1
                                  used, remaining, 'monthly',
                                  '' if remaining >= quantity else 'Manual grant quota exhausted for this period.')
 
-    # 2. Active plan (explicit override, or subscription / organisation subscription)
-    active_sub = organisation_subscription or subscription
-    effective_plan = plan or (active_sub.plan if active_sub else None)
+    # 2. The BEST entitlement across every currently-valid subscription — not
+    #    whichever happens to have started most recently. See the module
+    #    docstring for why row order must not decide what a customer gets.
+    active_sub = None
     plan_feature = None
-    if effective_plan is not None:
-        plan_feature = PlanFeature.objects.filter(plan=effective_plan, feature__key=feature_key).select_related('feature').first()
+    if plan is not None:
+        plan_feature = (PlanFeature.objects
+                        .filter(plan=plan, feature__key=feature_key)
+                        .select_related('feature').first())
+    else:
+        plan_feature, active_sub = _best_plan_feature(candidates, feature_key)
+        if active_sub is None and candidates:
+            # Valid subscriptions exist but none includes this feature; keep
+            # the newest for the usage-override lookup below.
+            active_sub = candidates[0]
+
+    if isinstance(active_sub, OrganisationSubscription):
+        organisation_subscription = active_sub
+    elif isinstance(active_sub, Subscription):
+        subscription = active_sub
 
     source = 'plan'
     if plan_feature is None or not plan_feature.is_included:
@@ -202,11 +285,11 @@ def record_usage(user, feature_key: str, organisation=None, amount: int = 1):
     # Use the plan's configured period where possible so the counter resets
     # on the same cadence the limit is defined against; default to monthly.
     period = 'monthly'
-    active_sub = _active_subscription(None, organisation) if organisation else _active_subscription(user, None)
-    if active_sub:
-        pf = PlanFeature.objects.filter(plan=active_sub.plan, feature=feature).first()
-        if pf:
-            period = pf.limit_period if pf.limit_period != 'unlimited' else 'monthly'
+    candidates = _valid_subscriptions(
+        None if organisation is not None else user, organisation)
+    pf, _sub = _best_plan_feature(candidates, feature_key)
+    if pf and pf.limit_period != 'unlimited':
+        period = pf.limit_period
 
     period_start, period_end = _period_bounds(period)
     with transaction.atomic():
