@@ -540,6 +540,10 @@ class Invoice(models.Model):
     # NullBillingProvider invoices. Not unique at the DB level because blank
     # is the common case; the webhook path upserts on this value explicitly.
     external_invoice_id = models.CharField(max_length=120, blank=True, db_index=True)
+    # The PaymentIntent that settled this invoice. Recorded because a dispute
+    # payload carries only a charge/payment_intent — this is the link back from
+    # a chargeback to the subscription whose access must be suspended.
+    external_payment_intent_id = models.CharField(max_length=120, blank=True, db_index=True)
     # Stripe's own hosted invoice/receipt page. Safe to show a customer — it is
     # a capability URL Stripe issues for exactly this purpose, and it means
     # EcoIQ never has to render or store invoice PDFs itself.
@@ -843,6 +847,10 @@ class StripeDispute(models.Model):
     # Captured at suspension time so a won dispute restores the exact prior
     # state instead of assuming 'active'.
     previous_subscription_status = models.CharField(max_length=10, blank=True)
+    # And what we moved it TO. Restoration only proceeds when the subscription
+    # is still sitting in this state — if anything else has changed it since
+    # (an unrelated cancellation, a renewal failure), that newer fact wins.
+    suspended_to_status = models.CharField(max_length=10, blank=True)
     access_suspended = models.BooleanField(default=False)
 
     opened_at = models.DateTimeField(auto_now_add=True)

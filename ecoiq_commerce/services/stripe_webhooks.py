@@ -55,6 +55,9 @@ HANDLED_EVENT_TYPES = (
     'customer.subscription.created',
     'customer.subscription.updated',
     'customer.subscription.deleted',
+    'charge.refunded',
+    'charge.dispute.created',
+    'charge.dispute.closed',
 )
 
 
@@ -158,6 +161,15 @@ def _dispatch(event) -> str:
     if event_type == 'customer.subscription.deleted':
         sub = stripe_sync.cancel_subscription(obj)
         return f'subscription cancelled (local id={sub.pk})'
+
+    if event_type == 'charge.refunded':
+        return stripe_sync.record_charge_refunded(obj, event_id=event_id)
+
+    if event_type == 'charge.dispute.created':
+        return stripe_sync.open_dispute(obj, event_id=event_id)
+
+    if event_type == 'charge.dispute.closed':
+        return stripe_sync.close_dispute(obj, event_id=event_id)
 
     raise SyncSkipped(f'No handler for event type {event_type}.')
 
