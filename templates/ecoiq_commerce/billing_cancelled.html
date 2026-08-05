@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Checkout cancelled — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1>Checkout cancelled</h1>
+    <p style="color:#5a6a5f;max-width:60ch">
+      No payment was taken and nothing has changed on your account. You can
+      pick up where you left off whenever you are ready.
+    </p>
+    <p style="margin-top:1.25rem">
+      <a href="{% url 'billing:plans' %}" class="btn btn-primary">Back to plans</a>
+      &nbsp;<a href="/request-access/">Talk to us instead</a>
+    </p>
+  </div>
+{% endblock %}
