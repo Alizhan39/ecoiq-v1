@@ -36,9 +36,27 @@ jobs:
       - name: Run migrations check
         run: python manage.py makemigrations --check --dry-run
 
-      # Non-blocking: the suite has one known, pre-existing, unrelated failure
-      # (league.tests.LeaderboardViewTests.test_leaderboard_sector_filter).
-      # Run it for visibility without letting it turn the whole workflow red.
+      # Blocking: a red suite must turn the workflow red.
+      #
+      # This step previously carried `continue-on-error: true`, which meant no
+      # test failure could ever fail CI. Two things were hiding behind it:
+      #
+      #   1. Two stale assertions in good_agents, unnoticed for eleven days
+      #      after PR13 changed the seeded provider count. Corrected in the
+      #      commit this branch builds on.
+      #   2. This job's own environment. The job-level DEBUG=False is right for
+      #      the `check` steps above, but at settings-import time it also turns
+      #      on SECURE_SSL_REDIRECT, so every test-client request 301s and
+      #      ~1400 tests fail. Reproduced on a pristine main checkout; the same
+      #      commit passes with DEBUG=true.
+      #
+      # DEBUG is therefore overridden for this step only: the checks stay
+      # production-like, and the suite runs as a test process rather than as a
+      # production one.
+      #
+      # Do not re-add continue-on-error to make a red suite go green. Fix the
+      # test, or fix the code it is testing.
       - name: Run tests
+        env:
+          DEBUG: "True"
         run: python manage.py test
-        continue-on-error: true
