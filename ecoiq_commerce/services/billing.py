@@ -28,6 +28,37 @@ from ecoiq_commerce.models import (
 )
 
 
+class WrongBillingProvider(Exception):
+    """
+    A billing provider was asked to write records while a different provider
+    is the configured one.
+    """
+
+
+def require_provider(expected: str) -> None:
+    """
+    Assert that `expected` is the provider this deployment is configured to
+    use, before any billing record is written.
+
+    Exactly one provider may create Invoice rows. If both could, a single
+    charge could produce two invoices — one written locally by
+    NullBillingProvider and one written by the Stripe webhook — and the
+    accounting would be wrong in a way that is very hard to notice, because
+    each row looks individually correct.
+
+    Guarding at the write sites rather than trusting call sites means this
+    holds even for a future code path nobody has written yet.
+    """
+    from django.conf import settings
+    actual = getattr(settings, 'ECOIQ_BILLING_PROVIDER', 'none')
+    if actual != expected:
+        raise WrongBillingProvider(
+            f'ECOIQ_BILLING_PROVIDER is "{actual}", so the "{expected}" '
+            f'provider must not create billing records. Exactly one provider '
+            f'is authoritative for invoices at a time.'
+        )
+
+
 class BillingProvider:
     """Abstract interface — see NullBillingProvider for the only current implementation."""
 
@@ -53,6 +84,7 @@ class NullBillingProvider(BillingProvider):
     """
 
     def get_or_create_customer(self, *, user=None, organisation=None) -> BillingCustomer:
+        require_provider('none')
         if bool(user) == bool(organisation):
             raise ValueError('Exactly one of user or organisation is required.')
         existing = BillingCustomer.objects.filter(user=user, organisation=organisation).first()
@@ -61,6 +93,7 @@ class NullBillingProvider(BillingProvider):
         return BillingCustomer.objects.create(user=user, organisation=organisation, provider='none')
 
     def start_subscription(self, *, plan, user=None, organisation=None, trial_days=0):
+        require_provider('none')
         if bool(user) == bool(organisation):
             raise ValueError('Exactly one of user or organisation is required.')
         now = timezone.now()
@@ -89,6 +122,7 @@ class NullBillingProvider(BillingProvider):
 
     def issue_invoice(self, *, billing_customer, line_items, currency='USD'):
         """line_items: list of {description, quantity, unit_price}."""
+        require_provider('none')
         total = sum(Decimal(str(li['unit_price'])) * li.get('quantity', 1) for li in line_items)
         invoice = Invoice.objects.create(
             billing_customer=billing_customer, amount_total=total, currency=currency,

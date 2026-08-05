@@ -35,6 +35,7 @@ from ecoiq_commerce.models import (
     PaymentEvent, StripeCheckoutRecord, StripeDispute, Subscription,
 )
 from ecoiq_commerce.services import stripe_gateway
+from ecoiq_commerce.services.billing import require_provider
 from ecoiq_commerce.services.events import track_event
 
 logger = logging.getLogger(__name__)
@@ -411,6 +412,11 @@ def complete_checkout_session(session: dict):
 # ── Invoices ─────────────────────────────────────────────────────────────────
 
 def _upsert_invoice(invoice: dict, *, status: str) -> Invoice:
+    # Symmetric to NullBillingProvider's guard: Stripe may only write invoices
+    # when Stripe is the configured provider. Without both halves, flipping
+    # ECOIQ_BILLING_PROVIDER while webhooks are still arriving would let two
+    # systems create invoices for the same money.
+    require_provider('stripe')
     invoice_id = invoice.get('id') or ''
     customer_id = invoice.get('customer') or ''
     if isinstance(customer_id, dict):
