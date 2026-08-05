@@ -172,6 +172,11 @@ activemq-data/
 # Environments
 .env
 .envrc
+# Per-environment variants. None of these exist in the repo today; they are
+# ignored pre-emptively because only bare ".env" was covered, and a file named
+# .env.production is exactly the one you least want committed by accident.
+.env.*
+!.env.example
 .venv
 env/
 venv/
