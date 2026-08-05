@@ -8,6 +8,16 @@ python-dotenv==1.2.2
 weasyprint==68.1
 whitenoise==6.9.0
 
+# ── Billing (Stripe) ─────────────────────────────────────────────────────────
+# Official Stripe Python SDK, pinned exactly like the other core dependencies
+# above. 15.4.0 pins Stripe API version 2026-07-29.dahlia by default; note
+# that from the "basil" release onward, Subscription.current_period_* moved
+# onto subscription items and Invoice.subscription moved under
+# Invoice.parent — ecoiq_commerce/services/stripe_sync.py reads both shapes,
+# so a deliberate downgrade or an older account pin still works. Upgrading a
+# major version should be paired with a run of ecoiq_commerce.tests_stripe.
+stripe==15.4.0
+
 # ── Data ingestion pipeline ──────────────────────────────────────────────────
 requests>=2.31
 pandas>=2.0
