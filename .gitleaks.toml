@@ -1,0 +1,38 @@
+# Gitleaks configuration for EcoIQ.
+#
+# Extends the upstream default rule set — nothing is disabled, no rule is
+# relaxed, and no path, regex or stopword is exempted. The allowlist below
+# contains exactly one entry, pinned to a single finding by fingerprint
+# (commit : file : rule : line), so it cannot hide anything else: a different
+# commit, file, line or rule still fails the scan.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = """
+One historical test fixture, exempted by exact fingerprint.
+
+core/tests_no_hardcoded_secrets.py is the repository's own guard against
+hardcoded credentials. To prove that it detects a hardcoded API key, an early
+revision contained a credential-shaped literal in an assertion. That is a true
+pattern match but not a credential, and the workflow scans full history
+(fetch-depth: 0), so the string remains reachable in that one commit even
+though the current tree no longer contains it — commit 02e75d9 rewrote those
+fixtures to be assembled at runtime instead.
+
+The alternative was rewriting published history, which is a far worse trade for
+a fabricated test string. This entry is pinned to that single finding:
+
+  commit ea6244aedc8fba8f6d25014585c3b2123bfb57ee
+  file   core/tests_no_hardcoded_secrets.py
+  rule   generic-api-key
+  line   173
+
+Any other finding — including the same file at a different line, or the same
+line in a different commit — is still reported and still fails the build.
+Do not broaden this entry, and do not add paths, regexes or stopwords here.
+"""
+fingerprints = [
+  "ea6244aedc8fba8f6d25014585c3b2123bfb57ee:core/tests_no_hardcoded_secrets.py:generic-api-key:173",
+]
