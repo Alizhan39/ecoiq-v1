@@ -32,7 +32,7 @@ from django.utils import timezone
 
 from ecoiq_commerce.models import (
     BillingCustomer, Invoice, Organisation, OrganisationSubscription,
-    PaymentEvent, StripeCheckoutRecord, Subscription,
+    PaymentEvent, StripeCheckoutRecord, StripeDispute, Subscription,
 )
 from ecoiq_commerce.services import stripe_gateway
 from ecoiq_commerce.services.events import track_event
@@ -105,6 +105,29 @@ def subscription_price_id(subscription: dict) -> str:
     if isinstance(price, dict):
         return price.get('id') or ''
     return str(price or '')
+
+
+def invoice_payment_intent_id(invoice: dict) -> str:
+    """
+    The PaymentIntent that settled an invoice, across API-version shapes.
+
+    Pre-"basil" this was a plain `invoice.payment_intent`. Current versions
+    move it under `invoice.payments[].payment.payment_intent`. Needed so a
+    later chargeback — which carries only a charge and a payment_intent — can
+    be traced back to the subscription it paid for.
+    """
+    pi = invoice.get('payment_intent')
+    if isinstance(pi, dict):
+        return pi.get('id') or ''
+    if pi:
+        return pi
+    for payment in ((invoice.get('payments') or {}).get('data') or []):
+        inner = ((payment or {}).get('payment') or {}).get('payment_intent')
+        if isinstance(inner, dict):
+            inner = inner.get('id')
+        if inner:
+            return inner
+    return ''
 
 
 def invoice_subscription_id(invoice: dict) -> str:
@@ -407,6 +430,7 @@ def _upsert_invoice(invoice: dict, *, status: str) -> Invoice:
         'currency': (invoice.get('currency') or '').upper() or 'USD',
         'status': status,
         'hosted_invoice_url': invoice.get('hosted_invoice_url') or '',
+        'external_payment_intent_id': invoice_payment_intent_id(invoice),
         'issued_at': _ts((invoice.get('status_transitions') or {}).get('finalized_at')),
         'paid_at': _ts((invoice.get('status_transitions') or {}).get('paid_at')),
         'due_at': _ts(invoice.get('due_date')),
@@ -478,3 +502,217 @@ def record_invoice_payment_failed(invoice: dict, *, event_id: str = ''):
         logger.warning('Subscription %s moved to past_due after invoice.payment_failed',
                        local_sub.stripe_subscription_id)
     return row
+
+
+# ── Refunds and disputes ─────────────────────────────────────────────────────
+# A refund and a chargeback are different events and get different treatment.
+#
+# A refund is final and voluntary: EcoIQ (or Stripe) gave the money back, so
+# access for a one-time purchase goes away and stays away.
+#
+# A dispute is neither. The cardholder's bank has pulled the funds pending an
+# investigation that can run for weeks and can be resolved either way, so the
+# right response is to SUSPEND access and record exactly what was suspended —
+# then restore precisely that if the dispute is won, and leave it withdrawn if
+# it is lost.
+#
+# Neither event cancels a subscription by itself. If a subscription is actually
+# cancelled, Stripe sends customer.subscription.deleted separately and
+# cancel_subscription() handles it.
+
+def _payment_intent_of(obj: dict) -> str:
+    pi = obj.get('payment_intent')
+    if isinstance(pi, dict):
+        return pi.get('id') or ''
+    return pi or ''
+
+
+def _checkout_record_for(payment_intent_id: str, charge_id: str = ''):
+    if payment_intent_id:
+        rec = StripeCheckoutRecord.objects.filter(
+            stripe_payment_intent_id=payment_intent_id).first()
+        if rec is not None:
+            return rec
+    return None
+
+
+def _subscription_for_payment_intent(payment_intent_id: str):
+    """Chargeback -> PaymentIntent -> Invoice -> the subscription it paid for."""
+    if not payment_intent_id:
+        return None
+    invoice = Invoice.objects.filter(
+        external_payment_intent_id=payment_intent_id).first()
+    if invoice is None:
+        return None
+    return invoice.subscription or invoice.organisation_subscription
+
+
+def record_charge_refunded(charge: dict, *, event_id: str = ''):
+    """
+    charge.refunded — money returned to the customer.
+
+    A FULL refund withdraws access to a one-time purchase. A PARTIAL refund
+    does not: the customer still paid for something, and silently revoking on
+    a partial refund would take away access someone had legitimately bought.
+    The partial case is recorded and logged for a human instead of guessed at.
+    """
+    payment_intent_id = _payment_intent_of(charge)
+    captured = int(charge.get('amount_captured') or charge.get('amount') or 0)
+    refunded_amount = int(charge.get('amount_refunded') or 0)
+    fully_refunded = bool(charge.get('refunded')) or (
+        captured > 0 and refunded_amount >= captured)
+
+    record = _checkout_record_for(payment_intent_id, charge.get('id') or '')
+    invoice = Invoice.objects.filter(
+        external_payment_intent_id=payment_intent_id).first() if payment_intent_id else None
+
+    if record is None and invoice is None:
+        raise SyncSkipped(
+            f'Refunded charge {charge.get("id") or "—"} matches no EcoIQ '
+            f'purchase or invoice. Nothing to withdraw.')
+
+    if invoice is not None:
+        PaymentEvent.objects.get_or_create(
+            invoice=invoice, status='refunded',
+            provider_reference=event_id or charge.get('id') or '',
+            defaults={'failure_reason': ''})
+        if fully_refunded:
+            invoice.status = 'void'
+            invoice.save(update_fields=['status'])
+
+    if record is not None and fully_refunded and record.access_granted:
+        record.access_granted = False
+        record.revocation_reason = 'refund'
+        record.save(update_fields=['access_granted', 'revocation_reason'])
+        logger.info('Access withdrawn for %s after full refund', record.session_id)
+        return f'access withdrawn for {record.session_id} (full refund)'
+
+    if not fully_refunded:
+        logger.warning(
+            'Partial refund on charge %s (%s of %s minor units). Access left '
+            'in place deliberately — review manually if it should be withdrawn.',
+            charge.get('id'), refunded_amount, captured)
+        return 'partial refund recorded; access deliberately unchanged'
+
+    return 'refund recorded; no access was outstanding to withdraw'
+
+
+def open_dispute(dispute: dict, *, event_id: str = ''):
+    """
+    charge.dispute.created — funds withheld pending the bank's investigation.
+
+    Suspends access and stores the pre-suspension subscription status, which is
+    what lets close_dispute() restore the exact prior state rather than assume
+    'active'. Idempotent: keyed on the dispute id, so a duplicate delivery
+    finds the existing row and re-suspends nothing.
+    """
+    dispute_id = dispute.get('id') or ''
+    if not dispute_id:
+        raise SyncSkipped('Dispute payload carried no id.')
+
+    payment_intent_id = _payment_intent_of(dispute)
+    charge_id = dispute.get('charge') or ''
+    if isinstance(charge_id, dict):
+        charge_id = charge_id.get('id') or ''
+
+    record = _checkout_record_for(payment_intent_id, charge_id)
+    local_sub = _subscription_for_payment_intent(payment_intent_id)
+
+    if record is None and local_sub is None:
+        raise SyncSkipped(
+            f'Dispute {dispute_id} matches no EcoIQ purchase or subscription. '
+            f'Recorded in Stripe only; nothing suspended.')
+
+    row, created = StripeDispute.objects.get_or_create(
+        dispute_id=dispute_id,
+        defaults={
+            'charge_id': charge_id,
+            'payment_intent_id': payment_intent_id,
+            'status': 'open',
+            'reason': (dispute.get('reason') or '')[:80],
+            'amount': _amount(dispute.get('amount')),
+            'currency': (dispute.get('currency') or '').upper(),
+            'checkout_record': record,
+            'subscription': local_sub if isinstance(local_sub, Subscription) else None,
+            'organisation_subscription': (
+                local_sub if isinstance(local_sub, OrganisationSubscription) else None),
+        },
+    )
+    if not created and row.access_suspended:
+        return f'dispute {dispute_id} already open; nothing re-suspended'
+
+    if record is not None and record.access_granted:
+        record.access_granted = False
+        record.revocation_reason = 'dispute'
+        record.save(update_fields=['access_granted', 'revocation_reason'])
+
+    if local_sub is not None:
+        row.previous_subscription_status = local_sub.status
+        if local_sub.status in ('active', 'trialing'):
+            local_sub.status = 'past_due'
+            row.suspended_to_status = 'past_due'
+            local_sub.save(update_fields=['status', 'updated_at'])
+
+    row.access_suspended = True
+    row.save()
+    logger.warning('Dispute %s opened (%s) — access suspended', dispute_id, row.reason)
+    return f'dispute {dispute_id} opened; access suspended'
+
+
+def close_dispute(dispute: dict, *, event_id: str = ''):
+    """
+    charge.dispute.closed — the bank decided.
+
+    won  -> restore exactly what this dispute suspended, and only that. A
+            subscription goes back to its recorded previous status, so a
+            subscription that was independently cancelled or went past_due for
+            an unrelated failed payment is not silently reactivated. A purchase
+            is restored only if this dispute is what revoked it — never one
+            that was refunded.
+    lost -> the money is gone. Access stays withdrawn.
+    """
+    dispute_id = dispute.get('id') or ''
+    row = StripeDispute.objects.filter(dispute_id=dispute_id).first()
+    if row is None:
+        raise SyncSkipped(
+            f'Dispute {dispute_id or "—"} was never recorded as opened by '
+            f'EcoIQ, so there is nothing to restore.')
+
+    outcome = dispute.get('status') or ''
+    won = outcome in ('won', 'warning_closed')
+
+    if row.status in ('won', 'lost'):
+        return f'dispute {dispute_id} already closed as {row.status}'
+
+    row.status = 'won' if won else 'lost'
+    row.closed_at = timezone.now()
+
+    if won:
+        record = row.checkout_record
+        if record is not None and record.revocation_reason == 'dispute':
+            record.access_granted = True
+            record.revocation_reason = ''
+            record.save(update_fields=['access_granted', 'revocation_reason'])
+
+        local_sub = row.subscription or row.organisation_subscription
+        if (local_sub is not None
+                and row.suspended_to_status
+                and local_sub.status == row.suspended_to_status):
+            # Still exactly where this dispute left it, so nothing else has
+            # had an opinion since and it is safe to put back. If the status
+            # has moved on — cancelled outright, or past_due from an unrelated
+            # failed payment — that newer fact wins and is left alone.
+            local_sub.status = row.previous_subscription_status
+            local_sub.save(update_fields=['status', 'updated_at'])
+        elif local_sub is not None:
+            logger.info(
+                'Dispute %s won, but subscription status moved to %r since '
+                'suspension — leaving it alone rather than reactivating.',
+                dispute_id, local_sub.status)
+        row.access_suspended = False
+        logger.info('Dispute %s won — suspended access restored', dispute_id)
+    else:
+        logger.warning('Dispute %s lost — access remains withdrawn', dispute_id)
+
+    row.save()
+    return f'dispute {dispute_id} closed as {row.status}'
