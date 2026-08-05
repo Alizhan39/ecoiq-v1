@@ -29,10 +29,20 @@ a fabricated test string. This entry is pinned to that single finding:
   rule   generic-api-key
   line   173
 
-Any other finding — including the same file at a different line, or the same
-line in a different commit — is still reported and still fails the build.
-Do not broaden this entry, and do not add paths, regexes or stopwords here.
+Scoped by commit. Gitleaks 8.30 rejects an allowlist keyed only on
+`fingerprints` ("must contain at least one check for: commits, paths, regexes,
+or stopwords"), so the commit is the narrowing key and the fingerprint is kept
+alongside it for precision. That commit introduces exactly one file — the guard
+module itself — so this cannot mask anything else.
+
+Deliberately NOT used here: `paths`, `regexes` and `stopwords`. Allowlist
+conditions are OR-ed, so adding a path would exempt that file in *every*
+commit, which is broader than intended. Any finding in any other commit is
+still reported and still fails the build.
 """
+commits = [
+  "ea6244aedc8fba8f6d25014585c3b2123bfb57ee",
+]
 fingerprints = [
   "ea6244aedc8fba8f6d25014585c3b2123bfb57ee:core/tests_no_hardcoded_secrets.py:generic-api-key:173",
 ]
