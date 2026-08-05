@@ -141,46 +141,52 @@ def connect():
     from evidence_memory.models import EvidenceMemory
     from gold_intelligence.models import CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone
 
-    pre_save.connect(_snapshot(ProjectGovernance, GOVERNANCE_FIELDS), sender=ProjectGovernance, dispatch_uid='cg_audit_pre_governance')
+    pre_save.connect(_snapshot(ProjectGovernance, GOVERNANCE_FIELDS), sender=ProjectGovernance, dispatch_uid='cg_audit_pre_governance', weak=False)
     post_save.connect(
         _log(GOVERNANCE_FIELDS, 'governance', lambda i: i.project, lambda i: 'Governance', lambda i: f'capital_guardian.ProjectGovernance:{i.pk}'),
         sender=ProjectGovernance, dispatch_uid='cg_audit_post_governance',
+        weak=False,
     )
 
-    pre_save.connect(_snapshot(MineTimelineMilestone, MILESTONE_FIELDS), sender=MineTimelineMilestone, dispatch_uid='cg_audit_pre_milestone')
+    pre_save.connect(_snapshot(MineTimelineMilestone, MILESTONE_FIELDS), sender=MineTimelineMilestone, dispatch_uid='cg_audit_pre_milestone', weak=False)
     post_save.connect(
         _log(MILESTONE_FIELDS, 'milestone', lambda i: i.project, lambda i: f'Milestone: {i.get_phase_display()}', lambda i: f'gold_intelligence.MineTimelineMilestone:{i.pk}'),
         sender=MineTimelineMilestone, dispatch_uid='cg_audit_post_milestone',
+        weak=False,
     )
 
-    pre_save.connect(_snapshot(EquipmentSpec, EQUIPMENT_FIELDS), sender=EquipmentSpec, dispatch_uid='cg_audit_pre_equipment')
+    pre_save.connect(_snapshot(EquipmentSpec, EQUIPMENT_FIELDS), sender=EquipmentSpec, dispatch_uid='cg_audit_pre_equipment', weak=False)
     post_save.connect(
         _log(EQUIPMENT_FIELDS, 'equipment', lambda i: i.project, lambda i: f'Equipment: {i}', lambda i: f'gold_intelligence.EquipmentSpec:{i.pk}'),
         sender=EquipmentSpec, dispatch_uid='cg_audit_post_equipment',
+        weak=False,
     )
 
-    pre_save.connect(_snapshot(CapitalBudgetLine, BUDGET_LINE_FIELDS), sender=CapitalBudgetLine, dispatch_uid='cg_audit_pre_budget')
+    pre_save.connect(_snapshot(CapitalBudgetLine, BUDGET_LINE_FIELDS), sender=CapitalBudgetLine, dispatch_uid='cg_audit_pre_budget', weak=False)
     post_save.connect(
         _log(BUDGET_LINE_FIELDS, 'capex', lambda i: i.project, lambda i: f'CAPEX Budget: {i.label}', lambda i: f'gold_intelligence.CapitalBudgetLine:{i.pk}'),
         sender=CapitalBudgetLine, dispatch_uid='cg_audit_post_budget',
+        weak=False,
     )
 
-    pre_save.connect(_snapshot(GoldProject, GOLDPROJECT_FIELDS), sender=GoldProject, dispatch_uid='cg_audit_pre_goldproject')
+    pre_save.connect(_snapshot(GoldProject, GOLDPROJECT_FIELDS), sender=GoldProject, dispatch_uid='cg_audit_pre_goldproject', weak=False)
     post_save.connect(
         _log(GOLDPROJECT_FIELDS, 'capital', lambda i: i, lambda i: f'Project: {i.name}', lambda i: f'gold_intelligence.GoldProject:{i.pk}'),
         sender=GoldProject, dispatch_uid='cg_audit_post_goldproject',
+        weak=False,
     )
 
-    pre_save.connect(_snapshot(RedFlag, REDFLAG_FIELDS), sender=RedFlag, dispatch_uid='cg_audit_pre_redflag')
+    pre_save.connect(_snapshot(RedFlag, REDFLAG_FIELDS), sender=RedFlag, dispatch_uid='cg_audit_pre_redflag', weak=False)
     post_save.connect(
         _log(
             REDFLAG_FIELDS, 'red_flag', lambda i: i.project, lambda i: f'Red Flag: {i.category}',
             lambda i: f'capital_guardian.RedFlag:{i.pk}', field_labels={'resolution_status': 'Resolution Status'},
         ),
         sender=RedFlag, dispatch_uid='cg_audit_post_redflag',
+        weak=False,
     )
 
-    pre_save.connect(_snapshot(EvidenceMemory, EVIDENCE_FIELDS), sender=EvidenceMemory, dispatch_uid='cg_audit_pre_evidence')
+    pre_save.connect(_snapshot(EvidenceMemory, EVIDENCE_FIELDS), sender=EvidenceMemory, dispatch_uid='cg_audit_pre_evidence', weak=False)
     post_save.connect(
         _log(
             EVIDENCE_FIELDS, 'evidence', lambda i: _resolve_project_from_source_reference(i.source_reference),
@@ -188,9 +194,10 @@ def connect():
             field_labels={'verification_status': 'Verification Status'},
         ),
         sender=EvidenceMemory, dispatch_uid='cg_audit_post_evidence',
+        weak=False,
     )
 
-    pre_save.connect(_snapshot(CapitalTraceEntry, CAPITAL_TRACE_ENTRY_FIELDS), sender=CapitalTraceEntry, dispatch_uid='cg_audit_pre_trace')
+    pre_save.connect(_snapshot(CapitalTraceEntry, CAPITAL_TRACE_ENTRY_FIELDS), sender=CapitalTraceEntry, dispatch_uid='cg_audit_pre_trace', weak=False)
     post_save.connect(
         _log(
             CAPITAL_TRACE_ENTRY_FIELDS, 'capital_trace', lambda i: i.project, lambda i: f'{i.purpose} ({i.trace_id})',
@@ -202,4 +209,5 @@ def connect():
             },
         ),
         sender=CapitalTraceEntry, dispatch_uid='cg_audit_post_trace',
+        weak=False,
     )
