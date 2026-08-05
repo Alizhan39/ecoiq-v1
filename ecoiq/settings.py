@@ -618,7 +618,15 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-if not DEBUG:
+# IS_PRODUCTION, not `not DEBUG`: the test runner imports this module with
+# whatever DEBUG the surrounding environment carries, and CI sets DEBUG=False
+# so the `check` steps are production-like. Under `not DEBUG` that turned
+# SECURE_SSL_REDIRECT on for the test process too, so every test-client request
+# answered 301 and roughly 1400 tests failed — invisibly, because the CI test
+# step also carried continue-on-error. IS_PRODUCTION is already
+# `not (DEBUG or RUNNING_TESTS)`, so this keeps production and
+# `check --deploy` unchanged while excluding the test process.
+if IS_PRODUCTION:
     SECURE_SSL_REDIRECT      = True
     SESSION_COOKIE_SECURE    = True
     CSRF_COOKIE_SECURE       = True

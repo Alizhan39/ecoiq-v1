@@ -240,3 +240,184 @@ class DeploymentScriptTests(SimpleTestCase):
 
     def test_build_uses_strict_mode(self):
         self.assertIn('set -euo pipefail', self._read('build.sh'))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Production security must apply to production processes only.
+#
+# The block was gated on `not DEBUG`. The test runner imports settings with
+# whatever DEBUG the environment carries, and CI sets DEBUG=False so its
+# `check` steps are production-like — which switched SECURE_SSL_REDIRECT on
+# for the test process, made every test-client request answer 301, and failed
+# ~1400 tests. It went unnoticed because the CI test step also carried
+# continue-on-error.
+#
+# These tests run real settings imports in a subprocess: the in-process
+# `django.conf.settings` is already loaded and cannot show import-time
+# behaviour, and load_settings_module() above cannot reproduce a genuine
+# `manage.py` argv.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Settings the block turns on that Django leaves off/0 by default, so their
+# value proves whether the block ran.
+PRODUCTION_ONLY_SECURITY_SETTINGS = (
+    'SECURE_SSL_REDIRECT',
+    'SESSION_COOKIE_SECURE',
+    'CSRF_COOKIE_SECURE',
+    'SECURE_HSTS_SECONDS',
+    'SECURE_HSTS_INCLUDE_SUBDOMAINS',
+    'SECURE_HSTS_PRELOAD',
+)
+
+# Also set by the block, but True in django.conf.global_settings anyway, so it
+# stays on everywhere and cannot indicate whether the block ran.
+ALWAYS_ON_SECURITY_SETTINGS = ('SECURE_CONTENT_TYPE_NOSNIFF',)
+
+PRODUCTION_SECURITY_SETTINGS = (
+    PRODUCTION_ONLY_SECURITY_SETTINGS + ALWAYS_ON_SECURITY_SETTINGS
+)
+
+# Import settings under a chosen argv and report the values as JSON. argv is
+# what distinguishes a test process from a production one, so it is set
+# explicitly rather than inherited.
+_PROBE = """
+import json, sys
+sys.argv = {argv!r}
+import django
+django.setup()
+from django.conf import settings
+print('@@' + json.dumps({{
+    'DEBUG': settings.DEBUG,
+    'RUNNING_TESTS': settings.RUNNING_TESTS,
+    'IS_PRODUCTION': settings.IS_PRODUCTION,
+    **{{name: getattr(settings, name, None) for name in {names!r}}},
+}}))
+"""
+
+# Test-process value only; not a credential for any real environment.
+PROBE_SECRET = 'subprocess-probe-key-not-a-real-secret-value'
+
+
+def probe_settings(argv, **env_overrides):
+    """
+    Import ecoiq.settings in a fresh interpreter under a controlled
+    environment and argv, and return the resulting values.
+    """
+    import json
+    import subprocess
+
+    env = {
+        'PATH': os.environ.get('PATH', ''),
+        'HOME': os.environ.get('HOME', ''),
+        'DJANGO_SETTINGS_MODULE': 'ecoiq.settings',
+        'DJANGO_SECRET_KEY': PROBE_SECRET,
+        'ALLOWED_HOSTS': 'localhost 127.0.0.1',
+        'DATABASE_URL': 'sqlite:///probe-not-created.sqlite3',
+        # Neutralise any developer .env so the probe sees only what it is given.
+        'DOTENV_PATH': '/nonexistent',
+    }
+    env.update({k: v for k, v in env_overrides.items() if v is not None})
+
+    script = _PROBE.format(argv=argv, names=list(PRODUCTION_SECURITY_SETTINGS))
+    result = subprocess.run(
+        [sys.executable, '-c', script],
+        cwd=str(REPO_ROOT), env=env, capture_output=True, text=True, timeout=120,
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            f'settings import failed (exit {result.returncode}) for argv={argv} '
+            f'env={ {k: v for k, v in env_overrides.items()} }\n'
+            f'--- stderr ---\n{result.stdout[-2000:]}\n{result.stderr[-2000:]}'
+        )
+    line = next((l for l in result.stdout.splitlines() if l.startswith('@@')), None)
+    if line is None:
+        raise AssertionError(f'probe produced no result. stdout:\n{result.stdout[-2000:]}')
+    return json.loads(line[2:])
+
+
+class ProductionSecurityAppliesOnlyToProductionTests(SimpleTestCase):
+
+    # ── The defect ────────────────────────────────────────────────────────
+
+    def test_debug_false_under_the_test_runner_does_not_enable_ssl_redirect(self):
+        values = probe_settings(['manage.py', 'test'], DEBUG='False')
+        self.assertFalse(
+            values['SECURE_SSL_REDIRECT'],
+            'SECURE_SSL_REDIRECT during tests makes every test-client request 301')
+
+    def test_debug_false_under_the_test_runner_enables_no_production_security(self):
+        values = probe_settings(['manage.py', 'test'], DEBUG='False')
+        for name in PRODUCTION_ONLY_SECURITY_SETTINGS:
+            with self.subTest(setting=name):
+                self.assertFalse(
+                    values[name],
+                    f'{name} must not be enabled solely because the environment '
+                    f'carries DEBUG=False while running tests')
+        # Django's own default, on in every environment — asserted so a future
+        # change that turns it off is still caught.
+        for name in ALWAYS_ON_SECURITY_SETTINGS:
+            with self.subTest(setting=name):
+                self.assertTrue(values[name])
+
+    def test_is_production_is_false_during_tests_even_with_debug_false(self):
+        values = probe_settings(['manage.py', 'test'], DEBUG='False')
+        self.assertFalse(values['DEBUG'])
+        self.assertTrue(values['RUNNING_TESTS'])
+        self.assertFalse(values['IS_PRODUCTION'])
+
+    # ── Production must be unaffected ─────────────────────────────────────
+
+    def test_real_production_import_enables_every_security_setting(self):
+        values = probe_settings(['manage.py', 'runserver'], DEBUG='False')
+        self.assertTrue(values['IS_PRODUCTION'])
+        self.assertFalse(values['RUNNING_TESTS'])
+        for name in PRODUCTION_SECURITY_SETTINGS:
+            with self.subTest(setting=name):
+                self.assertTrue(values[name], f'{name} must stay on in production')
+        self.assertEqual(values['SECURE_HSTS_SECONDS'], 31536000)
+
+    def test_check_deploy_is_treated_as_production_not_as_a_test(self):
+        values = probe_settings(['manage.py', 'check', '--deploy'], DEBUG='False')
+        self.assertTrue(values['IS_PRODUCTION'])
+        self.assertFalse(values['RUNNING_TESTS'])
+        self.assertTrue(values['SECURE_SSL_REDIRECT'])
+        self.assertTrue(values['SESSION_COOKIE_SECURE'])
+        self.assertTrue(values['CSRF_COOKIE_SECURE'])
+
+    def test_gunicorn_style_process_is_production(self):
+        values = probe_settings(['gunicorn', 'ecoiq.wsgi:application'], DEBUG='False')
+        self.assertTrue(values['IS_PRODUCTION'])
+        self.assertTrue(values['SECURE_SSL_REDIRECT'])
+
+    # ── Development ───────────────────────────────────────────────────────
+
+    def test_development_enables_no_production_security(self):
+        values = probe_settings(['manage.py', 'runserver'], DEBUG='True')
+        self.assertTrue(values['DEBUG'])
+        self.assertFalse(values['IS_PRODUCTION'])
+        for name in PRODUCTION_ONLY_SECURITY_SETTINGS:
+            with self.subTest(setting=name):
+                self.assertFalse(values[name])
+
+    # ── The gate itself ───────────────────────────────────────────────────
+
+    def test_security_block_is_gated_on_is_production(self):
+        source = SETTINGS_PATH.read_text()
+        block = source[source.index('SECURE_PROXY_SSL_HEADER'):]
+        gate = next(
+            line.strip() for line in block.splitlines()
+            if line.startswith('if ') and 'SECURE' not in line
+        )
+        self.assertEqual(gate, 'if IS_PRODUCTION:')
+
+    def test_proxy_ssl_header_stays_unconditional(self):
+        """Render terminates TLS; this must apply in every environment."""
+        for argv, debug in ((['manage.py', 'test'], 'False'),
+                            (['manage.py', 'runserver'], 'True'),
+                            (['manage.py', 'runserver'], 'False')):
+            with self.subTest(argv=argv, DEBUG=debug):
+                self.assertEqual(
+                    load_settings_module(
+                        production_env(DEBUG=debug), argv=argv,
+                    )['SECURE_PROXY_SSL_HEADER'],
+                    ('HTTP_X_FORWARDED_PROTO', 'https'))
