@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     # Investor portfolios and watchlists — user-owned holdings valued from the
     # market data already on league.Company. No new market-data source.
     'investor_portfolio',
+    'ecoiq_commerce',
     'countries',
     'ethics',
     'financing',
@@ -471,6 +472,12 @@ ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # AI Findings Engine — model selection (override in .env if needed)
 ECOIQ_AI_MODEL = os.environ.get('ECOIQ_AI_MODEL', 'claude-opus-4-5')
+
+# EcoIQ Commercial Platform — billing provider seam (see ecoiq_commerce/services/billing.py).
+# 'none' = NullBillingProvider (manual/invoiced billing, no payment gateway).
+# No other provider is implemented yet — this is set explicitly so a future
+# payment-gateway integration is a one-line settings change, not a code hunt.
+ECOIQ_BILLING_PROVIDER = os.environ.get('ECOIQ_BILLING_PROVIDER', 'none')
 
 # Agent Runtime & Model Router — live-provider credentials. Blank by default,
 # same pattern as ANTHROPIC_API_KEY above: live adapters must fail safely
