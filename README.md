@@ -359,6 +359,97 @@ ecoiq-v1/
 | `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key (`sk-ant-...`) |
 | `DJANGO_SECRET_KEY` | Yes (prod) | Django secret key — change in production |
 | `DEBUG` | No | `True` for development, `False` for production |
+| `STRIPE_SECRET_KEY` | No | Stripe secret key. Blank = billing disabled (safe default) |
+| `STRIPE_PUBLISHABLE_KEY` | No | Stripe publishable key |
+| `STRIPE_WEBHOOK_SECRET` | No | Webhook signing secret (`whsec_...`), one per endpoint |
+| `STRIPE_PRICE_STARTER_MONTHLY` | No | Stripe Price id for the Starter monthly plan |
+| `STRIPE_PRICE_STARTER_YEARLY` | No | Stripe Price id for the Starter annual plan |
+| `STRIPE_PRICE_PRO_MONTHLY` | No | Stripe Price id for the Pro monthly plan |
+| `STRIPE_PRICE_PRO_YEARLY` | No | Stripe Price id for the Pro annual plan |
+| `STRIPE_AUTOMATIC_TAX_ENABLED` | No | Stripe Tax. **Leave `false`** until tax registrations are confirmed |
+| `STRIPE_LIVE_MODE_ALLOWED` | No | Safety latch. Must be `true` before an `sk_live_` key is accepted |
+| `ECOIQ_BILLING_PROVIDER` | No | `none` (manual invoicing, default) or `stripe` |
+
+See `.env.example` for the full annotated list.
+
+---
+
+## Billing (Stripe)
+
+Merchant of record: **Stoke Share Ltd**, trading as EcoIQ. Lives in the
+existing `ecoiq_commerce` app; routes are mounted at `/billing/`.
+
+Supports Stripe Checkout (monthly/annual subscriptions and one-time
+sustainability assessments or consulting), Billing, Subscriptions, the Customer
+Portal, and Invoicing. Stripe Tax is wired but **disabled by default**.
+
+### Local setup (test mode only)
+
+```bash
+# 1. Install dependencies (adds stripe==15.4.0)
+pip install -r requirements.txt
+
+# 2. Copy the Stripe block from .env.example into .env and fill in TEST keys
+#    from https://dashboard.stripe.com/test/apikeys
+#    Never commit .env — it is gitignored, and it must stay that way.
+
+# 3. Apply migrations
+python manage.py migrate
+
+# 4. Create products and prices in the Stripe test dashboard, put the four
+#    price ids in .env, then map them onto local Plan rows
+python manage.py sync_stripe_prices
+
+# 5. Forward webhooks to the local server (Stripe CLI, separate terminal).
+#    This prints its OWN whsec_… — put that in .env, not the dashboard one.
+stripe listen --forward-to localhost:8731/billing/webhook/
+
+# 6. Enable the gateway
+#    ECOIQ_BILLING_PROVIDER=stripe
+python manage.py runserver 8731
+```
+
+Then: `/billing/plans/` to buy, `/billing/manage/` to manage, and
+`stripe trigger checkout.session.completed` to exercise the webhook.
+
+Use Stripe's test cards — `4242 4242 4242 4242` succeeds,
+`4000 0000 0000 0341` fails after attaching.
+
+### How access is granted
+
+Paid access is granted **only** by a signature-verified webhook. The browser
+success redirect (`/billing/success/`) reports status and grants nothing — it
+can be visited, shared or forged without any payment having occurred. Every
+event id is recorded in `StripeEvent`, so a duplicate delivery is acknowledged
+without provisioning twice.
+
+A refund withdraws access; a chargeback *suspends* it and restores exactly
+what it suspended if the dispute is won.
+
+EcoIQ stores only non-sensitive Stripe identifiers (customer, subscription,
+price and invoice ids, status, period dates, cancellation state). **No card
+data is ever received or stored** — all card entry happens on Stripe-hosted
+Checkout and Portal pages.
+
+Discounts have one source of truth per payment flow: Stripe Checkout uses
+Stripe promotion codes, and the local `Coupon` model applies to manual and
+invoiced billing only. Exactly one billing provider may write invoices at a
+time (`ECOIQ_BILLING_PROVIDER`), enforced at the write sites.
+
+### Tests
+
+```bash
+python manage.py test ecoiq_commerce
+```
+
+Covers webhook signature verification, idempotency, permission and ownership,
+checkout creation, the full subscription lifecycle, refunds, chargebacks, and
+entitlement precedence across multiple subscriptions. No test touches the
+network.
+
+Production deployment notes — including the webhook endpoint URL, the exact
+event list to subscribe to, and the live-mode checklist — are in
+[`DEPLOY.md`](DEPLOY.md).
 
 ---
 

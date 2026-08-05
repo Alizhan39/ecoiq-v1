@@ -28,6 +28,37 @@ from ecoiq_commerce.models import (
 )
 
 
+class WrongBillingProvider(Exception):
+    """
+    A billing provider was asked to write records while a different provider
+    is the configured one.
+    """
+
+
+def require_provider(expected: str) -> None:
+    """
+    Assert that `expected` is the provider this deployment is configured to
+    use, before any billing record is written.
+
+    Exactly one provider may create Invoice rows. If both could, a single
+    charge could produce two invoices — one written locally by
+    NullBillingProvider and one written by the Stripe webhook — and the
+    accounting would be wrong in a way that is very hard to notice, because
+    each row looks individually correct.
+
+    Guarding at the write sites rather than trusting call sites means this
+    holds even for a future code path nobody has written yet.
+    """
+    from django.conf import settings
+    actual = getattr(settings, 'ECOIQ_BILLING_PROVIDER', 'none')
+    if actual != expected:
+        raise WrongBillingProvider(
+            f'ECOIQ_BILLING_PROVIDER is "{actual}", so the "{expected}" '
+            f'provider must not create billing records. Exactly one provider '
+            f'is authoritative for invoices at a time.'
+        )
+
+
 class BillingProvider:
     """Abstract interface — see NullBillingProvider for the only current implementation."""
 
@@ -53,6 +84,7 @@ class NullBillingProvider(BillingProvider):
     """
 
     def get_or_create_customer(self, *, user=None, organisation=None) -> BillingCustomer:
+        require_provider('none')
         if bool(user) == bool(organisation):
             raise ValueError('Exactly one of user or organisation is required.')
         existing = BillingCustomer.objects.filter(user=user, organisation=organisation).first()
@@ -61,6 +93,7 @@ class NullBillingProvider(BillingProvider):
         return BillingCustomer.objects.create(user=user, organisation=organisation, provider='none')
 
     def start_subscription(self, *, plan, user=None, organisation=None, trial_days=0):
+        require_provider('none')
         if bool(user) == bool(organisation):
             raise ValueError('Exactly one of user or organisation is required.')
         now = timezone.now()
@@ -89,6 +122,7 @@ class NullBillingProvider(BillingProvider):
 
     def issue_invoice(self, *, billing_customer, line_items, currency='USD'):
         """line_items: list of {description, quantity, unit_price}."""
+        require_provider('none')
         total = sum(Decimal(str(li['unit_price'])) * li.get('quantity', 1) for li in line_items)
         invoice = Invoice.objects.create(
             billing_customer=billing_customer, amount_total=total, currency=currency,
@@ -115,12 +149,62 @@ class NullBillingProvider(BillingProvider):
         return None  # one_time / usage / custom — no recurring period
 
 
+class StripeBillingProvider(BillingProvider):
+    """
+    The Stripe implementation of the seam described in this module's header.
+
+    Deliberately thin, and deliberately not a mirror of NullBillingProvider.
+    Under Stripe, EcoIQ is not the system that decides when a subscription
+    starts, what it costs, or when an invoice is paid — Stripe is. So the two
+    write methods here do NOT create local rows and return them; they hand
+    off to Stripe and let the resulting webhooks create the rows, which is
+    the only path that cannot be spoofed by a browser.
+
+    Anything that needs a Checkout or Portal session should call
+    services/stripe_gateway.py directly: those need the HttpRequest (for
+    absolute success/cancel URLs) that this provider-neutral interface has no
+    place carrying.
+    """
+
+    def get_or_create_customer(self, *, user=None, organisation=None):
+        from ecoiq_commerce.services import stripe_gateway
+        return stripe_gateway.get_or_create_billing_customer(
+            user=user, organisation=organisation)
+
+    def start_subscription(self, *, plan, user=None, organisation=None, trial_days=0):
+        raise NotImplementedError(
+            'Stripe subscriptions start from a Checkout Session, not from a '
+            'server-side call: the customer must enter payment details on '
+            'Stripe-hosted Checkout first. Use '
+            'stripe_gateway.create_subscription_checkout_session(), and let '
+            'the customer.subscription.created webhook create the local row.'
+        )
+
+    def cancel_subscription(self, subscription, *, at_period_end=True):
+        raise NotImplementedError(
+            'Cancel through the Stripe Customer Portal (billing:portal) or '
+            'the Stripe Dashboard. The customer.subscription.updated / '
+            '.deleted webhook then updates the local row. Cancelling only '
+            'locally would leave Stripe still billing the customer.'
+        )
+
+    def issue_invoice(self, *, billing_customer, line_items, currency='USD'):
+        raise NotImplementedError(
+            'Stripe issues invoices for subscriptions and for Checkout '
+            'sessions created with invoice_creation enabled. Local Invoice '
+            'rows are written by the invoice.paid / invoice.payment_failed '
+            'webhooks — see services/stripe_sync.py.'
+        )
+
+
 def get_billing_provider() -> BillingProvider:
     from django.conf import settings
     provider_key = getattr(settings, 'ECOIQ_BILLING_PROVIDER', 'none')
     if provider_key == 'none':
         return NullBillingProvider()
+    if provider_key == 'stripe':
+        return StripeBillingProvider()
     raise NotImplementedError(
-        f'Billing provider "{provider_key}" is not implemented yet. '
-        'Only "none" (NullBillingProvider) is available until a real gateway is integrated.'
+        f'Billing provider "{provider_key}" is not implemented. '
+        'Available: "none" (NullBillingProvider), "stripe" (StripeBillingProvider).'
     )

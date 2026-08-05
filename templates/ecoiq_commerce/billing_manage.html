@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Billing — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1>Billing</h1>
+    <p style="color:#5a6a5f;max-width:65ch">
+      Update your payment method, download invoices, and change or cancel a
+      subscription in the Stripe customer portal. EcoIQ never stores card
+      details — Stripe handles them directly.
+    </p>
+
+    {% if billing_configured %}
+    <form method="post" action="{% url 'billing:portal' %}" style="margin-top:1rem">
+      {% csrf_token %}
+      {% if organisations %}
+      <label style="display:block;font-size:.9rem;color:#5a6a5f;margin-bottom:.4rem">
+        Account
+        <select name="organisation_id" style="margin-left:.3rem">
+          <option value="">My personal billing</option>
+          {% for org in organisations %}
+            <option value="{{ org.pk }}">{{ org.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      <button type="submit" class="btn btn-primary">Open Stripe customer portal</button>
+    </form>
+    {% else %}
+    <p style="margin-top:1rem">
+      <span class="badge badge-draft">Online billing not configured</span>
+      &nbsp;<a href="/request-access/">Contact us for an invoice</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Subscriptions</h2>
+    {% if personal_subs or org_subs %}
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid #e2e8e4">
+          <th style="padding:.5rem 0">Plan</th>
+          <th>Account</th>
+          <th>Status</th>
+          <th>Renews / ends</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in personal_subs %}
+        <tr style="border-bottom:1px solid #f1f3f2">
+          <td style="padding:.5rem 0">{{ sub.plan.name }}</td>
+          <td>Personal</td>
+          <td>
+            {% if sub.is_active %}<span class="badge badge-ready">{{ sub.get_status_display }}</span>
+            {% else %}<span class="badge badge-error">{{ sub.get_status_display }}</span>{% endif %}
+            {% if sub.cancel_at_period_end %}<span class="badge badge-draft">Cancels at period end</span>{% endif %}
+          </td>
+          <td>{{ sub.current_period_end|date:"j M Y"|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+        {% for sub in org_subs %}
+        <tr style="border-bottom:1px solid #f1f3f2">
+          <td style="padding:.5rem 0">{{ sub.plan.name }}</td>
+          <td>{{ sub.organisation.name }}</td>
+          <td>
+            {% if sub.is_active %}<span class="badge badge-ready">{{ sub.get_status_display }}</span>
+            {% else %}<span class="badge badge-error">{{ sub.get_status_display }}</span>{% endif %}
+            {% if sub.cancel_at_period_end %}<span class="badge badge-draft">Cancels at period end</span>{% endif %}
+          </td>
+          <td>{{ sub.current_period_end|date:"j M Y"|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#5a6a5f">
+      No subscriptions yet. <a href="{% url 'billing:plans' %}">See plans</a>.
+    </p>
+    {% endif %}
+  </div>
+
+  {% if purchases %}
+  <div class="card">
+    <h2>One-time purchases</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid #e2e8e4">
+          <th style="padding:.5rem 0">Item</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for purchase in purchases %}
+        <tr style="border-bottom:1px solid #f1f3f2">
+          <td style="padding:.5rem 0">{{ purchase.plan.name|default:"—" }}</td>
+          <td>{% if purchase.amount_total %}{{ purchase.currency }} {{ purchase.amount_total }}{% else %}—{% endif %}</td>
+          <td>
+            {% if purchase.access_granted %}<span class="badge badge-ready">Paid</span>
+            {% elif purchase.status == 'created' %}<span class="badge badge-draft">Not completed</span>
+            {% else %}<span class="badge badge-error">{{ purchase.get_status_display }}</span>{% endif %}
+          </td>
+          <td>{{ purchase.created_at|date:"j M Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Invoices</h2>
+    {% if invoices or org_invoices %}
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid #e2e8e4">
+          <th style="padding:.5rem 0">Date</th>
+          <th>Account</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in invoices %}
+        <tr style="border-bottom:1px solid #f1f3f2">
+          <td style="padding:.5rem 0">{{ invoice.issued_at|default:invoice.created_at|date:"j M Y" }}</td>
+          <td>Personal</td>
+          <td>{{ invoice.currency }} {{ invoice.amount_total }}</td>
+          <td>
+            {% if invoice.status == 'paid' %}<span class="badge badge-ready">Paid</span>
+            {% else %}<span class="badge badge-draft">{{ invoice.get_status_display }}</span>{% endif %}
+          </td>
+          <td>{% if invoice.hosted_invoice_url %}<a href="{{ invoice.hosted_invoice_url }}" rel="noopener noreferrer" target="_blank">View</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        {% for invoice in org_invoices %}
+        <tr style="border-bottom:1px solid #f1f3f2">
+          <td style="padding:.5rem 0">{{ invoice.issued_at|default:invoice.created_at|date:"j M Y" }}</td>
+          <td>{{ invoice.billing_customer.organisation.name }}</td>
+          <td>{{ invoice.currency }} {{ invoice.amount_total }}</td>
+          <td>
+            {% if invoice.status == 'paid' %}<span class="badge badge-ready">Paid</span>
+            {% else %}<span class="badge badge-draft">{{ invoice.get_status_display }}</span>{% endif %}
+          </td>
+          <td>{% if invoice.hosted_invoice_url %}<a href="{{ invoice.hosted_invoice_url }}" rel="noopener noreferrer" target="_blank">View</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p style="color:#8a968f;font-size:.85rem;margin-top:.75rem">
+      Full invoice history, including PDF downloads, is available in the Stripe
+      customer portal above.
+    </p>
+    {% else %}
+    <p style="color:#5a6a5f">No invoices yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -133,6 +133,16 @@ class Plan(models.Model):
     api_tier = models.CharField(max_length=20, blank=True,
                                  help_text='Matches api.APIKey TIER_CHOICES (explorer/professional/enterprise)')
 
+    # Stripe Price id (`price_…`) this plan is sold as. NOT a secret — a public
+    # catalogue identifier. Blank means the plan is not self-serve purchasable
+    # through Stripe (enterprise/contact-sales plans, or a plan whose price has
+    # not been created in the Stripe Dashboard yet). Populate with
+    # `manage.py sync_stripe_prices`, which copies the STRIPE_PRICE_* env vars
+    # onto the matching plans rather than hard-coding ids in source.
+    stripe_price_id = models.CharField(
+        max_length=120, blank=True, db_index=True,
+        help_text='Stripe Price id (price_…) — public identifier, never a secret')
+
     requires_legal_review = models.BooleanField(
         default=False,
         help_text='Set True for any plan whose commercial terms involve transaction-based fees '
@@ -252,6 +262,12 @@ class Subscription(models.Model):
     canceled_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Non-sensitive Stripe identifiers only (see StripeEvent's docstring for
+    # the full "what we may and may not store" rule). No card data, no PII
+    # beyond what the user already gave EcoIQ directly.
+    stripe_subscription_id = models.CharField(max_length=120, blank=True, db_index=True)
+    stripe_price_id = models.CharField(max_length=120, blank=True)
+
     class Meta:
         ordering = ['-started_at']
 
@@ -276,6 +292,9 @@ class OrganisationSubscription(models.Model):
     cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    stripe_subscription_id = models.CharField(max_length=120, blank=True, db_index=True)
+    stripe_price_id = models.CharField(max_length=120, blank=True)
 
     class Meta:
         ordering = ['-started_at']
@@ -474,7 +493,9 @@ class BillingCustomer(models.Model):
     organisation = models.ForeignKey(Organisation, null=True, blank=True,
                                       on_delete=models.CASCADE, related_name='billing_customer')
     provider = models.CharField(max_length=10, choices=BILLING_PROVIDER_CHOICES, default='none')
-    external_customer_id = models.CharField(max_length=120, blank=True)
+    # For provider='stripe' this holds the Stripe Customer id (`cus_…`).
+    # Indexed because every inbound webhook resolves its owner through it.
+    external_customer_id = models.CharField(max_length=120, blank=True, db_index=True)
     default_currency = models.CharField(max_length=8, default='USD')
     tax_id = models.CharField(max_length=60, blank=True, help_text='VAT/GST/Tax ID, when applicable')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -515,6 +536,19 @@ class Invoice(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Provider invoice id (`in_…` for Stripe). Blank for manually-issued
+    # NullBillingProvider invoices. Not unique at the DB level because blank
+    # is the common case; the webhook path upserts on this value explicitly.
+    external_invoice_id = models.CharField(max_length=120, blank=True, db_index=True)
+    # The PaymentIntent that settled this invoice. Recorded because a dispute
+    # payload carries only a charge/payment_intent — this is the link back from
+    # a chargeback to the subscription whose access must be suspended.
+    external_payment_intent_id = models.CharField(max_length=120, blank=True, db_index=True)
+    # Stripe's own hosted invoice/receipt page. Safe to show a customer — it is
+    # a capability URL Stripe issues for exactly this purpose, and it means
+    # EcoIQ never has to render or store invoice PDFs itself.
+    hosted_invoice_url = models.URLField(max_length=500, blank=True)
+
     class Meta:
         ordering = ['-created_at']
 
@@ -536,7 +570,32 @@ class InvoiceLineItem(models.Model):
 COUPON_DISCOUNT_TYPE_CHOICES = [('percent', 'Percent'), ('fixed', 'Fixed Amount')]
 
 
+COUPON_SCOPE_CHOICES = [
+    ('manual', 'Manual / invoiced billing only'),
+]
+
+
 class Coupon(models.Model):
+    """
+    Discounts for NON-Stripe payment flows only.
+
+    EcoIQ has two payment paths and they must not share a discount system,
+    because two systems mean two answers to "what does this customer owe".
+    The split is:
+
+        Stripe Checkout      -> Stripe promotion codes (allow_promotion_codes)
+        Manual / invoiced    -> this model
+
+    Stripe is authoritative for anything it charges: a local Coupon row can
+    neither reduce a Stripe price nor be redeemed against a Checkout session,
+    and nothing in services/stripe_gateway.py reads this table. `scope` records
+    that constraint in the schema rather than only in a comment, so the
+    restriction survives someone adding a new code path later.
+    """
+    scope = models.CharField(
+        max_length=10, choices=COUPON_SCOPE_CHOICES, default='manual',
+        help_text='Manual/invoiced billing only. Stripe Checkout uses Stripe '
+                   'promotion codes — create those in the Stripe Dashboard.')
     code = models.CharField(max_length=40, unique=True)
     discount_type = models.CharField(max_length=10, choices=COUPON_DISCOUNT_TYPE_CHOICES, default='percent')
     value = models.DecimalField(max_digits=8, decimal_places=2, help_text='Percent (0-100) or fixed amount')
@@ -617,3 +676,188 @@ class CommercialEvent(models.Model):
 
     def __str__(self):
         return f'{self.event_type} @ {self.occurred_at:%Y-%m-%d %H:%M}'
+
+
+# ── Stripe ───────────────────────────────────────────────────────────────────
+# Two models back the Stripe integration. Everything else it needs already
+# existed (BillingCustomer.external_customer_id, Subscription,
+# OrganisationSubscription, Invoice, PaymentEvent) — see
+# services/stripe_gateway.py, stripe_sync.py and stripe_webhooks.py.
+#
+# WHAT MAY BE STORED HERE: opaque Stripe identifiers (cus_/sub_/price_/in_/
+# cs_/pi_/evt_), subscription status, period boundaries, cancellation state,
+# and amounts. WHAT MAY NOT: card numbers, CVCs, expiry dates, raw payment
+# method details of any kind. Stripe holds those; EcoIQ never receives them,
+# because every card entry happens on Stripe-hosted Checkout and Portal pages.
+
+STRIPE_EVENT_STATUS_CHOICES = [
+    ('received', 'Received'),     # signature verified, handler not finished yet
+    ('processed', 'Processed'),   # handler completed — never run again
+    ('ignored', 'Ignored'),       # verified but not a type/owner we act on
+    ('failed', 'Failed'),         # handler raised; safe for Stripe to retry
+]
+
+
+class StripeEvent(models.Model):
+    """
+    The idempotency ledger for inbound Stripe webhooks.
+
+    Stripe guarantees at-least-once delivery, retries on any non-2xx, and can
+    deliver the same event concurrently. Provisioning must therefore be keyed
+    on the event id, not on the fact that a request arrived. The webhook view
+    takes a row lock on this table before doing any work, so a duplicate
+    delivery finds status='processed' and returns 200 without provisioning a
+    second time.
+
+    `payload_summary` deliberately stores a small allow-listed set of scalar
+    identifiers rather than the full event body — same privacy stance as
+    CommercialEvent.metadata (see services/events.py). The full payload is
+    always retrievable from the Stripe Dashboard by event id if needed.
+    """
+    stripe_event_id = models.CharField(max_length=120, unique=True)
+    event_type = models.CharField(max_length=80, db_index=True)
+    api_version = models.CharField(max_length=40, blank=True)
+    livemode = models.BooleanField(default=False)
+
+    status = models.CharField(max_length=10, choices=STRIPE_EVENT_STATUS_CHOICES, default='received')
+    payload_summary = models.JSONField(default=dict, blank=True)
+    error = models.TextField(blank=True)
+
+    received_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-received_at']
+        indexes = [models.Index(fields=['event_type', 'received_at'])]
+
+    def __str__(self):
+        return f'{self.stripe_event_id} ({self.event_type}, {self.status})'
+
+
+STRIPE_CHECKOUT_MODE_CHOICES = [
+    ('subscription', 'Subscription'),
+    ('payment', 'One-Time Payment'),
+]
+
+STRIPE_CHECKOUT_STATUS_CHOICES = [
+    ('created', 'Created'),      # session opened, customer may still abandon it
+    ('completed', 'Completed'),  # checkout.session.completed received and verified
+    ('expired', 'Expired'),      # Stripe expired the session unpaid
+]
+
+
+class StripeCheckoutRecord(models.Model):
+    """
+    A checkout session EcoIQ itself created, written BEFORE the customer is
+    redirected to Stripe.
+
+    Two jobs:
+
+    1. It ties the session back to the authenticated user (and organisation)
+       that started it, so an inbound `checkout.session.completed` provisions
+       for the right owner even though the webhook arrives on a separate,
+       unauthenticated connection. `client_reference_id` and session metadata
+       carry the same ids, and the two are cross-checked on arrival.
+
+    2. `access_granted` is the single flag the rest of the app reads to decide
+       whether a one-time purchase was actually paid for. It is set ONLY by
+       the verified webhook handler — never by the browser success redirect,
+       which a customer can reach (or forge) without having paid.
+    """
+    session_id = models.CharField(max_length=200, unique=True)
+    mode = models.CharField(max_length=12, choices=STRIPE_CHECKOUT_MODE_CHOICES)
+    status = models.CharField(max_length=10, choices=STRIPE_CHECKOUT_STATUS_CHOICES, default='created')
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                              related_name='stripe_checkouts')
+    organisation = models.ForeignKey(Organisation, null=True, blank=True, on_delete=models.CASCADE,
+                                      related_name='stripe_checkouts')
+    plan = models.ForeignKey(Plan, null=True, blank=True, on_delete=models.SET_NULL,
+                              related_name='stripe_checkouts')
+
+    stripe_price_id = models.CharField(max_length=120, blank=True)
+    stripe_customer_id = models.CharField(max_length=120, blank=True)
+    stripe_subscription_id = models.CharField(max_length=120, blank=True)
+    stripe_payment_intent_id = models.CharField(max_length=120, blank=True)
+
+    amount_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=8, blank=True)
+
+    access_granted = models.BooleanField(
+        default=False,
+        help_text='Set only by the verified webhook handler — never by the browser success redirect.')
+    # Why access was taken away, so a dispute resolved in EcoIQ's favour can
+    # restore only what a dispute removed — and never resurrect a refund.
+    revocation_reason = models.CharField(
+        max_length=10, blank=True,
+        choices=[('refund', 'Refunded'), ('dispute', 'Disputed')])
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['user', 'created_at'])]
+
+    def __str__(self):
+        return f'{self.session_id} ({self.mode}, {self.status})'
+
+
+DISPUTE_STATUS_CHOICES = [
+    ('open', 'Open — funds withheld'),
+    ('won', 'Won — funds returned to EcoIQ'),
+    ('lost', 'Lost — funds returned to the cardholder'),
+]
+
+
+class StripeDispute(models.Model):
+    """
+    A chargeback, and the record of what EcoIQ suspended because of it.
+
+    A dispute is not a refund. The cardholder's bank has pulled the funds
+    pending an investigation that can take weeks and can go either way, so the
+    right response is to *suspend* access, not delete the subscription — and
+    then to restore exactly what was suspended if the dispute is won.
+
+    `previous_subscription_status` is what makes that restoration honest.
+    Without it, "won" would have to guess a status to restore to, and would
+    happily reactivate a subscription that had independently been cancelled or
+    had gone past_due for an unrelated failed payment. With it, a won dispute
+    puts the subscription back precisely where it was and nowhere else.
+
+    Keyed on `dispute_id` (unique), so the create/closed pair and any duplicate
+    delivery of either converge on one row.
+    """
+    dispute_id = models.CharField(max_length=120, unique=True)
+    charge_id = models.CharField(max_length=120, blank=True, db_index=True)
+    payment_intent_id = models.CharField(max_length=120, blank=True, db_index=True)
+
+    status = models.CharField(max_length=6, choices=DISPUTE_STATUS_CHOICES, default='open')
+    reason = models.CharField(max_length=80, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=8, blank=True)
+
+    checkout_record = models.ForeignKey(StripeCheckoutRecord, null=True, blank=True,
+                                         on_delete=models.SET_NULL, related_name='disputes')
+    subscription = models.ForeignKey(Subscription, null=True, blank=True,
+                                      on_delete=models.SET_NULL, related_name='disputes')
+    organisation_subscription = models.ForeignKey(OrganisationSubscription, null=True, blank=True,
+                                                   on_delete=models.SET_NULL, related_name='disputes')
+
+    # Captured at suspension time so a won dispute restores the exact prior
+    # state instead of assuming 'active'.
+    previous_subscription_status = models.CharField(max_length=10, blank=True)
+    # And what we moved it TO. Restoration only proceeds when the subscription
+    # is still sitting in this state — if anything else has changed it since
+    # (an unrelated cancellation, a renewal failure), that newer fact wins.
+    suspended_to_status = models.CharField(max_length=10, blank=True)
+    access_suspended = models.BooleanField(default=False)
+
+    opened_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-opened_at']
+
+    def __str__(self):
+        return f'Dispute {self.dispute_id} ({self.status})'

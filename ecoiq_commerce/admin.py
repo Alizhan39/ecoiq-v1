@@ -3,7 +3,8 @@ from django.contrib import admin
 from .models import (
     AddOn, BillingCustomer, CommercialEvent, Coupon, Entitlement, Feature,
     Invoice, InvoiceLineItem, LicenceAgreement, Organisation, OrganisationMembership,
-    OrganisationSubscription, PaymentEvent, Plan, PlanFeature, Product, Subscription,
+    OrganisationSubscription, PaymentEvent, Plan, PlanFeature, Product,
+    StripeCheckoutRecord, StripeDispute, StripeEvent, Subscription,
     SubscriptionAddOn, UsageLimit, UsageRecord,
 )
 
@@ -157,3 +158,59 @@ class CommercialEventAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False  # only ever created by services.events.track_event()
+
+
+# ── Stripe ───────────────────────────────────────────────────────────────────
+# Both models are read-only in the admin. They are an audit trail of what
+# Stripe told us, not something an operator should be able to edit: hand-
+# flipping StripeEvent.status would let a real event be re-processed or
+# silently skipped, and hand-setting StripeCheckoutRecord.access_granted
+# would grant paid access with no payment behind it. Corrections belong in
+# Stripe (replay the event from the Dashboard), not in this table.
+
+@admin.register(StripeEvent)
+class StripeEventAdmin(admin.ModelAdmin):
+    list_display = ['stripe_event_id', 'event_type', 'status', 'livemode',
+                    'received_at', 'processed_at']
+    list_filter = ['status', 'event_type', 'livemode']
+    search_fields = ['stripe_event_id', 'event_type']
+    date_hierarchy = 'received_at'
+    readonly_fields = [f.name for f in StripeEvent._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(StripeCheckoutRecord)
+class StripeCheckoutRecordAdmin(admin.ModelAdmin):
+    list_display = ['session_id', 'mode', 'status', 'user', 'organisation',
+                    'plan', 'amount_total', 'currency', 'access_granted', 'created_at']
+    list_filter = ['mode', 'status', 'access_granted']
+    search_fields = ['session_id', 'stripe_customer_id', 'stripe_subscription_id',
+                     'stripe_payment_intent_id']
+    date_hierarchy = 'created_at'
+    readonly_fields = [f.name for f in StripeCheckoutRecord._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(StripeDispute)
+class StripeDisputeAdmin(admin.ModelAdmin):
+    list_display = ['dispute_id', 'status', 'amount', 'currency', 'access_suspended',
+                    'previous_subscription_status', 'opened_at', 'closed_at']
+    list_filter = ['status', 'access_suspended']
+    search_fields = ['dispute_id', 'charge_id', 'payment_intent_id']
+    readonly_fields = [f.name for f in StripeDispute._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

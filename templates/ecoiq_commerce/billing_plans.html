@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Plans & Checkout — EcoIQ{% endblock %}
+{% block og_title %}EcoIQ Plans{% endblock %}
+{% block og_description %}Self-serve EcoIQ subscriptions and one-time sustainability assessments, billed securely through Stripe.{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1>Plans &amp; Checkout</h1>
+    <p style="color:#5a6a5f;max-width:65ch">
+      Self-serve subscriptions and one-off engagements. Payment is handled
+      entirely on Stripe's hosted checkout — EcoIQ never sees or stores your
+      card details. For enterprise, government and sovereign programmes, see
+      <a href="/pricing/">enterprise pricing</a>.
+    </p>
+  </div>
+
+  {% if not billing_configured %}
+  <div class="card">
+    <p><span class="badge badge-draft">Checkout unavailable</span></p>
+    <p style="color:#5a6a5f;max-width:60ch">
+      Online payment is not configured on this deployment yet. Please
+      <a href="/request-access/">contact us</a> and we will invoice you directly.
+    </p>
+  </div>
+  {% endif %}
+
+  {% if tiers %}
+  <div class="card">
+    <h2>Subscriptions</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:1rem">
+      {% for tier in tiers %}
+      <div style="border:1px solid #e2e8e4;border-radius:8px;padding:1.1rem">
+        <h3 style="margin-bottom:.35rem">EcoIQ {{ tier.label }}</h3>
+
+        {% for interval, entry in tier.intervals.items %}
+          {% if entry.plan %}
+            <p style="margin:.15rem 0;color:#2d6a4f;font-weight:600">{{ entry.plan.price_display }}</p>
+            {% if entry.plan.description %}
+              <p style="color:#5a6a5f;font-size:.9rem;margin-bottom:.6rem">{{ entry.plan.description }}</p>
+            {% endif %}
+          {% else %}
+            <p style="margin:.15rem 0;color:#5a6a5f;font-size:.9rem">
+              {{ interval|capfirst }} billing — price shown at checkout
+            </p>
+          {% endif %}
+
+          {% if user.is_authenticated and billing_configured %}
+          <form method="post" action="{% url 'billing:checkout_subscription' %}" style="margin:.4rem 0">
+            {% csrf_token %}
+            <input type="hidden" name="tier" value="{{ tier.key }}">
+            <input type="hidden" name="interval" value="{{ interval }}">
+            {% if organisations %}
+            <label style="display:block;font-size:.85rem;color:#5a6a5f;margin-bottom:.3rem">
+              Bill to
+              <select name="organisation_id" style="margin-left:.3rem">
+                <option value="">Myself</option>
+                {% for org in organisations %}
+                  <option value="{{ org.pk }}">{{ org.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            {% endif %}
+            <button type="submit" class="btn btn-primary">
+              Subscribe {{ interval }}
+            </button>
+          </form>
+          {% elif billing_configured %}
+          <p style="margin:.4rem 0"><a href="/login/?next={{ request.path|urlencode }}">Sign in to subscribe {{ interval }}</a></p>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <p style="color:#8a968f;font-size:.85rem;margin-top:1rem">
+      Subscriptions renew automatically. Cancel any time from
+      {% if user.is_authenticated %}<a href="{% url 'billing:manage' %}">billing management</a>{% else %}your billing settings{% endif %}.
+    </p>
+  </div>
+  {% endif %}
+
+  {% if one_time_plans %}
+  <div class="card">
+    <h2>One-time assessments &amp; consulting</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:1rem">
+      {% for plan in one_time_plans %}
+      <div style="border:1px solid #e2e8e4;border-radius:8px;padding:1.1rem">
+        <h3 style="margin-bottom:.35rem">{{ plan.name }}</h3>
+        <p style="margin:.15rem 0;color:#2d6a4f;font-weight:600">{{ plan.price_display }}</p>
+        {% if plan.description %}
+          <p style="color:#5a6a5f;font-size:.9rem;margin-bottom:.6rem">{{ plan.description }}</p>
+        {% endif %}
+        {% if user.is_authenticated and billing_configured %}
+        <form method="post" action="{% url 'billing:checkout_one_time' plan.key %}">
+          {% csrf_token %}
+          {% if organisations %}
+          <label style="display:block;font-size:.85rem;color:#5a6a5f;margin-bottom:.3rem">
+            Bill to
+            <select name="organisation_id" style="margin-left:.3rem">
+              <option value="">Myself</option>
+              {% for org in organisations %}
+                <option value="{{ org.pk }}">{{ org.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          {% endif %}
+          <button type="submit" class="btn btn-primary">Purchase</button>
+        </form>
+        {% elif billing_configured %}
+        <p><a href="/login/?next={{ request.path|urlencode }}">Sign in to purchase</a></p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not tiers and not one_time_plans %}
+  <div class="card">
+    <p style="color:#5a6a5f">
+      No self-serve plans are configured yet.
+      <a href="/products/">View the full product catalogue</a> or
+      <a href="/pricing/">enterprise pricing</a>.
+    </p>
+  </div>
+  {% endif %}
+{% endblock %}
