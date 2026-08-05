@@ -47,8 +47,12 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true              # Render generates and rotates this automatically
 
+      # Explicit host list — a wildcard disables Django's Host-header
+      # validation, which re-opens Host-header poisoning of password-reset and
+      # other absolute URLs. settings.py refuses to start on "*" when
+      # DEBUG=False. Add any new custom domain here AND in CSRF_TRUSTED_ORIGINS.
       - key: ALLOWED_HOSTS
-        value: "*"
+        value: "ecoiq.onrender.com ecoiq.uk www.ecoiq.uk"
 
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://ecoiq.onrender.com,https://ecoiq.uk,https://www.ecoiq.uk"

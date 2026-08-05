@@ -11,15 +11,20 @@
 # Keeping the build DB-free means the service builds and deploys even when the
 # database is temporarily unavailable.
 # ══════════════════════════════════════════════════════════════════════════════
-set -o errexit
+set -euo pipefail
 
-echo "==> Installing Python dependencies..."
-pip install -r requirements.txt
+# NOTE: dependencies are installed by render.yaml's buildCommand
+#   pip install -r requirements.txt && ./build.sh
+# so this script must NOT install them again — doing so doubled build time and
+# could resolve a different version than the one the build command pinned.
 
 echo "==> Compiling translation messages..."
-python manage.py compilemessages || true
+# Optional: msgfmt (gettext) is not guaranteed on the build image, and no
+# non-English locale is currently enabled in settings.LANGUAGES. A failure here
+# must not fail the build, unlike every other step in this script.
+python manage.py compilemessages || echo "   (skipped — gettext unavailable)"
 
 echo "==> Collecting static files... (no database access)"
 python manage.py collectstatic --no-input
 
-echo "==> Build complete (database untouched — migrate/seed run at runtime)."
+echo "==> Build complete (database untouched — migrations run in predeploy.sh)."

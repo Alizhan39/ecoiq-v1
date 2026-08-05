@@ -15,14 +15,20 @@ Endpoints:
     GET  /api/v1/countries/<slug>/           Country detail
     GET  /api/v1/search/                     Cross-entity search
 """
+import logging
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
+from django.conf import settings
+from django.core.exceptions import FieldError
 from django.db.models import Q, Avg
 from django.shortcuts import get_object_or_404
+
+logger = logging.getLogger(__name__)
 
 from api.authentication import APIKeyAuthentication
 from api.permissions import IsAPIKeyAuthenticated, IsPublicOrAPIKey
@@ -34,6 +40,7 @@ from api.serializers import (
     LeaderboardSerializer,
     CountryListSerializer,
     CountryDetailSerializer,
+    SemanticSearchQuerySerializer,
 )
 from league.models import Company
 
@@ -329,32 +336,50 @@ def semantic_search(request):
 
     Returns ranked company list with similarity score.
     """
-    query = request.query_params.get('q', '').strip()
-    limit = min(int(request.query_params.get('limit', 10)), 50)
+    params = SemanticSearchQuerySerializer(data=request.query_params)
+    if not params.is_valid():
+        # Field-level messages only — never an internal exception string.
+        return Response({'error': 'Invalid query parameters',
+                         'detail': params.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
 
-    if not query or len(query) < 2:
-        return Response({'error': 'q parameter required (min 2 chars)'}, status=400)
+    query = params.validated_data['q']
+    limit = params.validated_data['limit']
 
     method = 'text'
     companies = None
 
     # ── Try semantic vector search ────────────────────────────────────────────
-    try:
-        from sentence_transformers import SentenceTransformer
-        from pgvector.django import L2Distance
+    # Gated by a setting and OFF by default. sentence-transformers/torch are
+    # deliberately not in requirements.txt (see the commented block there), and
+    # league.Company has no `embedding` field on the current schema — so on
+    # production this branch could only ever raise, once per request, and be
+    # swallowed. Loading a transformer model per request would also not fit the
+    # 512 MB Render Starter plan. Enable only once both are genuinely in place.
+    if getattr(settings, 'ECOIQ_SEMANTIC_SEARCH_ENABLED', False):
+        try:
+            from sentence_transformers import SentenceTransformer
+            from pgvector.django import L2Distance
 
-        model = SentenceTransformer('all-MiniLM-L6-v2')
-        query_embedding = model.encode(query).tolist()
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+            query_embedding = model.encode(query).tolist()
 
-        companies = Company.objects.filter(
-            embedding__isnull=False
-        ).order_by(
-            L2Distance('embedding', query_embedding)
-        ).select_related('profile')[:limit]
-        method = 'semantic'
+            companies = Company.objects.filter(
+                embedding__isnull=False
+            ).order_by(
+                L2Distance('embedding', query_embedding)
+            ).select_related('profile')[:limit]
+            method = 'semantic'
 
-    except Exception:
-        pass
+        except (ImportError, FieldError) as exc:
+            # Misconfiguration, not a user error: the flag is on but the
+            # dependency or the schema is missing. Log it and serve the
+            # keyword results rather than 500-ing the caller.
+            logger.warning(
+                'semantic_search_unavailable_falling_back_to_keyword',
+                extra={'reason': type(exc).__name__},
+            )
+            companies = None
 
     # ── Keyword fallback ──────────────────────────────────────────────────────
     if companies is None:

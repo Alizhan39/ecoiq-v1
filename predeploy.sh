@@ -2,54 +2,48 @@
 # ══════════════════════════════════════════════════════════════════════════════
 # Render PRE-DEPLOY command — runs once per deploy in the RUNTIME network, where
 # the internal Postgres hostname (dpg-…-a) resolves. This is the correct place
-# for database migrations + seeding (NOT the build phase).
+# for database migrations (NOT the build phase, which has no database access).
 #
-# Best-effort by design: every step is guarded and the script always exits 0, so
-# a temporarily-unavailable database can never block a deploy. Migrations are
-# retried briefly in case the database is still waking up.
+# FAIL-SAFE by design: if migrations or the deployment checks fail, this script
+# exits non-zero and Render aborts the deploy, leaving the previous known-good
+# release serving. It previously swallowed every failure and exited 0, which
+# meant a broken migration produced a green deploy and a half-migrated schema
+# behind live traffic.
+#
+# A short retry loop is still allowed for the *connection* only — a Render
+# Postgres instance can take a few seconds to accept connections after a
+# restart. Exhausting the retries is a deploy failure, not a skip.
+#
+# What this script deliberately does NOT do:
+#   - create administrators (see docs/security/admin-credential-rotation.md)
+#   - seed demo/reference data (see docs/engineering/deployment-runbook.md)
+# Both are explicit, idempotent operator actions, not deploy side effects.
 # ══════════════════════════════════════════════════════════════════════════════
-set +e   # never abort the deploy on a database hiccup
+set -euo pipefail
 
-echo "==> [pre-deploy] Applying database migrations (with brief retry)..."
+echo "==> [pre-deploy] Applying database migrations..."
 migrated=0
 for attempt in 1 2 3 4 5; do
   if python manage.py migrate --no-input; then
     migrated=1
     break
   fi
-  echo "    migrate attempt ${attempt} failed (database not reachable yet) — retrying in 5s..."
-  sleep 5
+  if [ "${attempt}" -lt 5 ]; then
+    echo "    migrate attempt ${attempt} failed — retrying in 5s..."
+    sleep 5
+  fi
 done
 
 if [ "${migrated}" -ne 1 ]; then
-  echo "⚠  [pre-deploy] Database unreachable — skipping migrate + seed this deploy."
-  echo "   The app will still start; migrations apply on the next start once the DB is back."
-  exit 0
+  echo "✗  [pre-deploy] Migrations failed after 5 attempts — aborting the deploy."
+  echo "   The previous release stays live. Fix the migration or the database"
+  echo "   connection and redeploy; do not bypass this check."
+  exit 1
 fi
 
-# NOTE: administrator bootstrap is deliberately NOT run here.
-# Creating the first admin is a one-time, manual, explicitly-authorised action —
-# never a side effect of a routine deploy. Full procedure:
-# docs/security/admin-credential-rotation.md
-
-echo "==> [pre-deploy] Seeding country intelligence profiles..."
-python manage.py seed_countries || echo "   (skipped)"
-
-echo "==> [pre-deploy] Seeding phase-1 / phase-2 company profiles (idempotent)..."
-python manage.py seed_global_companies  2>/dev/null || true
-python manage.py seed_phase2_companies  2>/dev/null || true
-
-echo "==> [pre-deploy] Seeding strategic companies — UK / Saudi / Kazakhstan / Global..."
-python manage.py add_400_companies || echo "   (skipped)"
-
-echo "==> [pre-deploy] Seeding score-history snapshots (idempotent)..."
-python manage.py seed_score_history || echo "   (skipped)"
-
-echo "==> [pre-deploy] Focusing public profiles on UK / Kazakhstan / Saudi Arabia / Türkiye..."
-python manage.py focus_target_markets || echo "   (skipped)"
-
-echo "==> [pre-deploy] Seeding LegacySafe AI hackathon demo (idempotent)..."
-python manage.py seed_legacy_safe || echo "   (skipped)"
+# Deployment-security checks (secure cookies, HSTS, SSL redirect, ALLOWED_HOSTS).
+# ERROR-level findings abort the deploy; warnings are printed for visibility.
+echo "==> [pre-deploy] Running Django deployment checks..."
+python manage.py check --deploy --fail-level ERROR
 
 echo "==> [pre-deploy] Complete."
-exit 0
