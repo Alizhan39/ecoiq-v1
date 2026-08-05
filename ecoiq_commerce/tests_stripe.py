@@ -47,6 +47,13 @@ TEST_SECRET_KEY = 'sk_test_PLACEHOLDER_not_a_real_secret_key'
 OTHER_WEBHOOK_SECRET = 'whsec_PLACEHOLDER_a_different_fake_secret'
 
 STRIPE_TEST_SETTINGS = dict(
+    # settings.py enables SECURE_SSL_REDIRECT whenever DEBUG is False, which is
+    # what CI sets. Without this the test client is 301'd to https before
+    # reaching any view — so a permission assertion such as "a non-member gets
+    # 404" would pass for entirely the wrong reason. Disabling it here means
+    # these tests assert real behaviour under both DEBUG=True and DEBUG=False.
+    # No production setting is changed.
+    SECURE_SSL_REDIRECT=False,
     # Stripe is the authoritative provider throughout these tests, which is
     # what services/billing.py:require_provider asserts before any invoice is
     # written. See BillingProviderExclusivityTests for the other half.

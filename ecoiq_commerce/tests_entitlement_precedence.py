@@ -16,7 +16,7 @@ without ever looking broken:
 import datetime
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from ecoiq_commerce.models import (
@@ -28,6 +28,7 @@ from ecoiq_commerce.services.entitlements import has_entitlement
 User = get_user_model()
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class EntitlementPrecedenceTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='multisub', password='pw12345')
