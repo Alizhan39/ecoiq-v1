@@ -2,19 +2,24 @@
 Management command: create_demo_user
 Creates a superuser account for demo/investor access.
 
+There is no default password: one must be supplied explicitly, either via
+--password or via the DEMO_USER_PASSWORD environment variable. The password is
+never echoed back to the terminal.
+
 Usage:
-    python manage.py create_demo_user
-    python manage.py create_demo_user --username investor --password Demo2025!
+    DEMO_USER_PASSWORD=... python manage.py create_demo_user
+    python manage.py create_demo_user --username investor --password ...
     python manage.py create_demo_user --reset   # delete and recreate
 
 The user can then sign in at /login/ and access the full ESG platform.
 """
+import os
+
 from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 
 DEFAULT_USERNAME = 'demo'
-DEFAULT_PASSWORD = 'EcoIQ-Demo-2025!'
 
 
 class Command(BaseCommand):
@@ -28,8 +33,9 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '--password',
-            default=DEFAULT_PASSWORD,
-            help=f'Password for the demo account (default: {DEFAULT_PASSWORD})',
+            default=None,
+            help='Password for the demo account. Required — falls back to the '
+                 'DEMO_USER_PASSWORD environment variable. No default.',
         )
         parser.add_argument(
             '--reset',
@@ -39,7 +45,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         username = options['username']
-        password = options['password']
+        password = options['password'] or os.environ.get('DEMO_USER_PASSWORD', '')
+
+        if not password:
+            raise CommandError(
+                'No password supplied. Pass --password or set the '
+                'DEMO_USER_PASSWORD environment variable — this command has '
+                'no default password.'
+            )
 
         if options['reset']:
             deleted, _ = User.objects.filter(username=username).delete()
@@ -64,11 +77,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'\n  ✓  Demo superuser created\n'
             f'     Username : {username}\n'
-            f'     Password : {password}\n'
+            f'     Password : (not shown — the value you supplied)\n'
             f'     Login at : /login/\n'
             f'     Admin at : /admin/\n'
         ))
-        if password == DEFAULT_PASSWORD:
-            self.stdout.write(self.style.WARNING(
-                '  ⚠  Using the default password — change it in production.'
-            ))

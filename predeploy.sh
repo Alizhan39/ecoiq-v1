@@ -27,8 +27,10 @@ if [ "${migrated}" -ne 1 ]; then
   exit 0
 fi
 
-echo "==> [pre-deploy] Bootstrapping admin superuser..."
-python manage.py bootstrap_superuser || echo "   (skipped)"
+# NOTE: administrator bootstrap is deliberately NOT run here.
+# Creating the first admin is a one-time, manual, explicitly-authorised action —
+# never a side effect of a routine deploy. Full procedure:
+# docs/security/admin-credential-rotation.md
 
 echo "==> [pre-deploy] Seeding country intelligence profiles..."
 python manage.py seed_countries || echo "   (skipped)"
