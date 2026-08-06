@@ -1,21 +1,45 @@
 from pathlib import Path
 import os
+import sys
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
-load_dotenv(override=True)   # local .env wins over shell-inherited vars
+# override=False: a real environment variable (Render dashboard, CI secret,
+# shell export) always wins over a .env file. With override=True — the previous
+# setting — a stray .env on a production host silently replaced real
+# configuration, including DEBUG, which in turn disabled every `if not DEBUG`
+# security setting below.
+load_dotenv(override=False)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ── Core ──────────────────────────────────────────────────────────────────────
-
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-dev-only-CHANGE-IN-PRODUCTION',
-)
+# ── Environment ───────────────────────────────────────────────────────────────
+# Three distinguishable modes: production (the default — nothing is assumed),
+# local development (DEBUG=True), and the test runner. Only the latter two get
+# generated fallbacks; production must be configured explicitly or refuse to
+# start.
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+RUNNING_TESTS = 'test' in sys.argv or Path(sys.argv[0]).name in ('pytest', 'py.test')
+
+# True only when this process must be fully configured from the environment.
+IS_PRODUCTION = not (DEBUG or RUNNING_TESTS)
+
+# ── Core ──────────────────────────────────────────────────────────────────────
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+
+if not SECRET_KEY:
+    if IS_PRODUCTION:
+        raise ImproperlyConfigured(
+            'DJANGO_SECRET_KEY is required when DEBUG is False. Set it in the '
+            'Render dashboard (the blueprint generates one automatically for '
+            'new services). Refusing to start with an insecure fallback key.'
+        )
+    # Development and test only — never reachable in production.
+    SECRET_KEY = 'django-insecure-local-development-and-test-only'
 
 
 def _parse_env_list(key: str, default: str = '') -> list:
@@ -41,24 +65,40 @@ def _parse_env_list(key: str, default: str = '') -> list:
     return [p.strip('"').strip("'") for p in parts if p.strip('"').strip("'")]
 
 
-# Accepts: "ecoiq.uk", "ecoiq.uk www.ecoiq.uk", "ecoiq.uk,www.ecoiq.uk", "*"
+# Accepts: "ecoiq.uk", "ecoiq.uk www.ecoiq.uk", "ecoiq.uk,www.ecoiq.uk"
 ALLOWED_HOSTS = _parse_env_list('ALLOWED_HOSTS', 'localhost 127.0.0.1')
+
+if IS_PRODUCTION:
+    if not ALLOWED_HOSTS:
+        raise ImproperlyConfigured(
+            'ALLOWED_HOSTS is required when DEBUG is False. Set it to the '
+            'explicit hostnames this service answers on.'
+        )
+    if '*' in ALLOWED_HOSTS:
+        # A wildcard disables Django's Host-header validation entirely, which
+        # re-opens Host-header poisoning of password-reset and absolute URLs.
+        raise ImproperlyConfigured(
+            'ALLOWED_HOSTS must not contain "*" in production. List the exact '
+            'hostnames instead, e.g. '
+            '"ecoiq.uk www.ecoiq.uk ecoiq.onrender.com".'
+        )
 
 # Accepts: "https://ecoiq.uk", "https://ecoiq.uk,https://www.ecoiq.uk",
 #           "https://ecoiq.uk https://www.ecoiq.uk", "https://*.ecoiq.uk"
 # Note: bare "https://*" is not valid in Django — use explicit origins or "https://*.domain.com"
 CSRF_TRUSTED_ORIGINS = _parse_env_list('CSRF_TRUSTED_ORIGINS', '')
 
-# Log at startup so Gunicorn logs show exactly what Django parsed
-# (helps diagnose future 400s without needing a shell)
-import sys as _sys
-print(
-    f"[ecoiq] ALLOWED_HOSTS={ALLOWED_HOSTS}  "
-    f"CSRF_TRUSTED_ORIGINS={CSRF_TRUSTED_ORIGINS}  "
-    f"DEBUG={DEBUG}",
-    file=_sys.stderr,
-    flush=True,
+# Startup diagnostic so Gunicorn logs show exactly what Django parsed (helps
+# diagnose a 400 without needing a shell). Written to stderr directly rather
+# than via `logging` because LOGGING below is not applied until Django finishes
+# loading this module. Host names only — never a secret or a credential.
+_startup_banner = (
+    f'[ecoiq] ALLOWED_HOSTS={ALLOWED_HOSTS}  '
+    f'CSRF_TRUSTED_ORIGINS={CSRF_TRUSTED_ORIGINS}  '
+    f'DEBUG={DEBUG}'
 )
+if not RUNNING_TESTS:
+    print(_startup_banner, file=sys.stderr, flush=True)
 
 # ── Applications ──────────────────────────────────────────────────────────────
 
@@ -399,7 +439,18 @@ WSGI_APPLICATION = 'ecoiq.wsgi.application'
 
 # ── Database ──────────────────────────────────────────────────────────────────
 # DATABASE_URL set → PostgreSQL (production)
-# Not set         → SQLite (local development)
+# Not set         → SQLite (local development and tests only)
+#
+# Production must never fall through to SQLite: on Render that would create an
+# empty database file on ephemeral disk, so the deploy would look healthy while
+# serving no data and losing every write on the next restart.
+
+if IS_PRODUCTION and not os.environ.get('DATABASE_URL', '').strip():
+    raise ImproperlyConfigured(
+        'DATABASE_URL is required when DEBUG is False. The Render blueprint '
+        'supplies it from the ecoiq-db service; refusing to start on a local '
+        'SQLite fallback in production.'
+    )
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -469,6 +520,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
+# /api/v1/semantic-search/ vector path. OFF by default and must stay off until
+# BOTH are true: sentence-transformers + torch are installed (they are
+# deliberately absent from requirements.txt), and league.Company actually has an
+# `embedding` column. Until then the endpoint serves keyword search and reports
+# `"method": "text"` honestly in its response.
+ECOIQ_SEMANTIC_SEARCH_ENABLED = os.environ.get(
+    'ECOIQ_SEMANTIC_SEARCH_ENABLED', 'false'
+).strip().lower() in ('true', '1', 'yes', 'on')
 
 # AI Findings Engine — model selection (override in .env if needed)
 ECOIQ_AI_MODEL = os.environ.get('ECOIQ_AI_MODEL', 'claude-opus-4-5')
@@ -601,6 +661,20 @@ if EMAIL_BACKEND == _smtp_backend and not EMAIL_HOST_USER:
         stacklevel=1,
     )
 
+# The console backend is the right default for development and the wrong one in
+# production: lead-notification and enquiry emails are written to the deploy log
+# and silently never delivered. Not fatal (the site still serves), so this is a
+# loud startup banner rather than an ImproperlyConfigured — but it must not be
+# silent. Set EMAIL_BACKEND explicitly in the Render dashboard to clear it.
+if IS_PRODUCTION and EMAIL_BACKEND.endswith('console.EmailBackend'):
+    print(
+        '[ecoiq] WARNING: EMAIL_BACKEND is the console backend in production — '
+        'outbound email (lead notifications, enquiries) is written to the log '
+        'and NOT delivered. Set EMAIL_BACKEND to an SMTP backend.',
+        file=sys.stderr,
+        flush=True,
+    )
+
 # ── First Real Outreach Readiness (PR12) ──────────────────────────────────────
 # The master switch for ever performing a real send to a genuinely external
 # organisation via outreach_readiness. Hardcoded False, not read from the
@@ -619,7 +693,15 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-if not DEBUG:
+# IS_PRODUCTION, not `not DEBUG`: the test runner imports this module with
+# whatever DEBUG the surrounding environment carries, and CI sets DEBUG=False
+# so the `check` steps are production-like. Under `not DEBUG` that turned
+# SECURE_SSL_REDIRECT on for the test process too, so every test-client request
+# answered 301 and roughly 1400 tests failed — invisibly, because the CI test
+# step also carried continue-on-error. IS_PRODUCTION is already
+# `not (DEBUG or RUNNING_TESTS)`, so this keeps production and
+# `check --deploy` unchanged while excluding the test process.
+if IS_PRODUCTION:
     SECURE_SSL_REDIRECT      = True
     SESSION_COOKIE_SECURE    = True
     CSRF_COOKIE_SECURE       = True
@@ -627,6 +709,52 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD      = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+# Explicit configuration so application code can rely on `logging.getLogger()`
+# reaching the Render log stream instead of falling back to Django's implicit
+# defaults (which drop anything below WARNING from non-Django loggers).
+#
+# Console-only by design: Render captures stdout/stderr. Never add a handler
+# that writes request bodies, headers, or cookies — see
+# docs/security/admin-credential-rotation.md for what must never be logged.
+
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO').upper()
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': LOG_LEVEL,
+    },
+    'loggers': {
+        # Unhandled view exceptions. Django logs these at ERROR with the full
+        # traceback server-side; the client still gets Django's generic 500.
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        # Very chatty at DEBUG (one line per query) — pin it above that.
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # ── Django REST Framework ─────────────────────────────────────────────────────
 REST_FRAMEWORK = {

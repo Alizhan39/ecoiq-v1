@@ -178,3 +178,24 @@ class LeaderboardSerializer(serializers.ModelSerializer):
             'ecoiq_score', 'ml_score', 'ml_cluster_label',
             'is_anomaly', 'verified',
         ]
+
+
+class SemanticSearchQuerySerializer(serializers.Serializer):
+    """
+    Query-string validation for GET /api/v1/semantic-search/.
+
+    Exists so malformed input (`?limit=abc`, `?limit=-5`, `?limit=100000`)
+    produces a 400 with a field-level message instead of an unhandled
+    ValueError (HTTP 500) or a negative list slice.
+    """
+    q = serializers.CharField(
+        min_length=2,
+        max_length=500,
+        trim_whitespace=True,
+    )
+    limit = serializers.IntegerField(
+        required=False,
+        default=10,
+        min_value=1,
+        max_value=50,
+    )

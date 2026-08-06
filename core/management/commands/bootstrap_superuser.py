@@ -1,38 +1,72 @@
 """
 Management command: bootstrap_superuser
 
-Creates the production superuser on first deploy.
-Idempotent — skips silently if the user already exists.
+Creates the first administrator account for an environment. This is an
+EXPLICIT, ONE-TIME, MANUAL operation — it is deliberately NOT wired into any
+deploy script, so a routine deploy can never (re)create an administrator.
 
-Called automatically from build.sh on every Render deploy.
+There are no default credentials. All three values must be supplied through
+the environment, and the command refuses to run if any of them is missing:
 
-Credentials can be overridden via environment variables:
-    BOOTSTRAP_ADMIN_USERNAME  (default: alizhan)
-    BOOTSTRAP_ADMIN_EMAIL     (default: work.tazabekov@gmail.com)
-    BOOTSTRAP_ADMIN_PASSWORD  (default: EcoIQ2026!)
+    BOOTSTRAP_ADMIN_USERNAME
+    BOOTSTRAP_ADMIN_EMAIL
+    BOOTSTRAP_ADMIN_PASSWORD
+
+If a user with the given username already exists, the command reports that and
+exits without touching the account — it never overwrites an existing password.
+
+The password is read from the environment, hashed by Django's user manager, and
+is never written to stdout, stderr, or logs. Remove BOOTSTRAP_ADMIN_PASSWORD
+from the environment immediately after a successful run — see
+docs/security/admin-credential-rotation.md.
 """
 import os
 
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 User = get_user_model()
 
-_DEFAULT_USERNAME = 'alizhan'
-_DEFAULT_EMAIL    = 'work.tazabekov@gmail.com'
-_DEFAULT_PASSWORD = 'EcoIQ2026!'
+REQUIRED_ENV_VARS = (
+    'BOOTSTRAP_ADMIN_USERNAME',
+    'BOOTSTRAP_ADMIN_EMAIL',
+    'BOOTSTRAP_ADMIN_PASSWORD',
+)
 
 
 class Command(BaseCommand):
-    help = 'Bootstrap the production superuser if none exists (idempotent).'
+    help = (
+        'Create the first administrator from BOOTSTRAP_ADMIN_* environment '
+        'variables. Manual, one-time operation — never run automatically. '
+        'Refuses to run if any variable is missing; never overwrites an '
+        'existing account.'
+    )
 
     def handle(self, *args, **options):
-        username = os.environ.get('BOOTSTRAP_ADMIN_USERNAME', _DEFAULT_USERNAME)
-        email    = os.environ.get('BOOTSTRAP_ADMIN_EMAIL',    _DEFAULT_EMAIL)
-        password = os.environ.get('BOOTSTRAP_ADMIN_PASSWORD', _DEFAULT_PASSWORD)
+        username = os.environ.get('BOOTSTRAP_ADMIN_USERNAME', '').strip()
+        email    = os.environ.get('BOOTSTRAP_ADMIN_EMAIL', '').strip()
+        password = os.environ.get('BOOTSTRAP_ADMIN_PASSWORD', '')
 
-        if User.objects.filter(is_superuser=True).exists():
-            self.stdout.write('EcoIQ admin bootstrap checked')
+        missing = [
+            name for name, value in (
+                ('BOOTSTRAP_ADMIN_USERNAME', username),
+                ('BOOTSTRAP_ADMIN_EMAIL', email),
+                ('BOOTSTRAP_ADMIN_PASSWORD', password),
+            )
+            if not value
+        ]
+        if missing:
+            # Names only — never echo a value back to the caller.
+            raise CommandError(
+                'Cannot bootstrap an administrator: missing required '
+                'environment variables: ' + ', '.join(missing)
+            )
+
+        if User.objects.filter(username=username).exists():
+            self.stdout.write(self.style.WARNING(
+                f'Administrator "{username}" already exists — no changes made '
+                f'(existing password left untouched).'
+            ))
             return
 
         User.objects.create_superuser(
@@ -41,9 +75,7 @@ class Command(BaseCommand):
             password=password,
         )
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'EcoIQ admin bootstrap checked\n'
-                f'  ✓  Superuser created: {username} <{email}>'
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(
+            f'Administrator created: {username} <{email}>\n'
+            f'Now remove BOOTSTRAP_ADMIN_PASSWORD from the environment.'
+        ))

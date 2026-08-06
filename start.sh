@@ -2,19 +2,15 @@
 # ══════════════════════════════════════════════════════════════════════════════
 # Render START command — runs at RUNTIME (internal DB hostname resolves here).
 #
-# A fast, best-effort `migrate` runs as a safety net so that, if the DB was
-# unavailable during pre-deploy, schema is brought up to date on the next start
-# once the database is back — WITHOUT requiring a fresh deploy. It never blocks
-# boot: if the database is still down, we log and start gunicorn anyway, so the
-# web service comes up and serves (the app has no import-time DB access).
+# This script starts the web server and does nothing else. It deliberately does
+# NOT migrate: schema changes belong to the release step (predeploy.sh), which
+# runs exactly once per deploy and aborts the deploy on failure.
 #
-# Heavy data seeding lives in predeploy.sh (once per deploy), not here, so it
-# never delays the port binding / health check.
+# Running migrate here as well meant every web process restart — including an
+# autoscale event or an OOM restart — could mutate the production schema, with
+# several workers potentially racing on the same migration, and it hid a
+# pre-deploy migration failure behind an apparently healthy boot.
 # ══════════════════════════════════════════════════════════════════════════════
-
-echo "==> [start] Applying database migrations (best-effort)..."
-python manage.py migrate --no-input || \
-  echo "⚠  [start] Database unavailable — starting web server anyway (migrations deferred)."
 
 echo "==> [start] Launching Gunicorn..."
 exec gunicorn ecoiq.wsgi:application \
