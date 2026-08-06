@@ -1246,8 +1246,23 @@ class BackgroundIntelligenceIngestionTaskTests(TestCase):
         self.assertEqual(result['status'], 'completed')
         self.assertEqual(result['sources_processed'], 3)
 
+    @patch('backend_intelligence_engine.tasks.recalculate_scores_background.delay')
     @patch('harvester.services.fetchers.http_fetch')
-    def test_refresh_entity_evidence_triggers_score_recalc_only_on_real_change(self, mock_fetch):
+    def test_refresh_entity_evidence_triggers_score_recalc_only_on_real_change(
+            self, mock_fetch, mock_recalc_delay):
+        """
+        The outer task runs inline via .apply(), but on a genuine change it
+        hands off with `recalculate_scores_background.delay(...)`, which
+        publishes to the real broker. That made this test require a running
+        Redis: it passed on workstations that happened to have one and failed
+        with ConnectionRefusedError anywhere that did not, including CI.
+
+        What this test is about is the eligibility rule — that a recalculation
+        is queued only when evidence genuinely changed — not that a broker
+        accepted the message. Patching the handoff isolates that Celery
+        boundary and lets the assertion check the actual call rather than a
+        status string.
+        """
         from backend_intelligence_engine.tasks import refresh_entity_evidence
 
         # 'national-grid' is a real, mapped Companies House slug — needed so
@@ -1264,8 +1279,12 @@ class BackgroundIntelligenceIngestionTaskTests(TestCase):
         self.assertEqual(result['status'], 'completed')
         self.assertTrue(result['genuinely_changed'])
         self.assertEqual(result['score_recalculation'], 'queued')
+        # Stronger than the status string: the handoff really happened, once,
+        # for this profile.
+        mock_recalc_delay.assert_called_once_with(company_profile_id=mapped_profile.pk)
 
-    def test_refresh_entity_evidence_no_change_does_not_queue_recalc(self):
+    @patch('backend_intelligence_engine.tasks.recalculate_scores_background.delay')
+    def test_refresh_entity_evidence_no_change_does_not_queue_recalc(self, mock_recalc_delay):
         # No API key -> every source skipped -> genuinely_changed must be False
         from backend_intelligence_engine.tasks import refresh_entity_evidence
 
@@ -1273,6 +1292,18 @@ class BackgroundIntelligenceIngestionTaskTests(TestCase):
         self.assertEqual(result['status'], 'completed')
         self.assertFalse(result['genuinely_changed'])
         self.assertIsNone(result['score_recalculation'])
+        # The other half of the eligibility rule: no genuine change means the
+        # expensive downstream pipeline is never handed off at all. Asserted
+        # against the real call, not just the status field.
+        mock_recalc_delay.assert_not_called()
+
+    @patch('backend_intelligence_engine.tasks.recalculate_scores_background.delay')
+    def test_refresh_entity_evidence_unknown_company_never_queues_recalc(self, mock_recalc_delay):
+        from backend_intelligence_engine.tasks import refresh_entity_evidence
+
+        result = refresh_entity_evidence.apply(args=[999999999]).get()
+        self.assertEqual(result['status'], 'failed')
+        mock_recalc_delay.assert_not_called()
 
     def test_refresh_entity_evidence_unknown_company_fails_honestly(self):
         from backend_intelligence_engine.tasks import refresh_entity_evidence
