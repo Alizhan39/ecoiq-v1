@@ -220,7 +220,12 @@ databases:
   - name: ecoiq-db
     databaseName: ecoiq
     user: ecoiq
-    plan: starter                        # $7/month PostgreSQL — 1 GB storage
+    # Must match the live instance and must be a current plan. `starter` was a
+    # legacy Postgres plan; Render retired it, and its presence here failed
+    # Blueprint validation outright — so no change in this file could sync,
+    # whatever else it contained. The live ecoiq-db has run on basic_256mb
+    # (1 GB disk, PostgreSQL 18) since 2026-06-23.
+    plan: basic-256mb                    # matches the live ecoiq-db instance
     region: oregon                       # same region as web service for low latency
 
 # ══════════════════════════════════════════════════════════════════════════════
