@@ -37,6 +37,15 @@ STATUS_CHOICES = [
     ('archived', 'Archived'),
 ]
 
+SPAM_STATUS_CHOICES = [
+    ('unclassified', 'Unclassified'),   # predates screening
+    ('accepted',     'Accepted'),       # screened and legitimate
+    ('review',       'Needs review'),   # quarantined, team not alerted
+    ('rejected',     'Rejected (spam)'),
+    ('legitimate',   'Confirmed legitimate'),   # human override
+    ('archived',     'Archived'),
+]
+
 PRIORITY_CHOICES = [
     ('low',    'Low'),
     ('normal', 'Normal'),
@@ -65,11 +74,51 @@ class AdminNotification(models.Model):
     created_at        = models.DateTimeField(auto_now_add=True, db_index=True)
     read_at           = models.DateTimeField(null=True, blank=True)
 
+    # ── Abuse screening (see notifications/antispam/) ─────────────────────
+    # Every field is optional with a safe default so the migration adds them to
+    # the existing rows without a rewrite and without reclassifying history:
+    # untouched records stay 'unclassified'.
+    spam_status       = models.CharField(
+        max_length=16, choices=SPAM_STATUS_CHOICES, default='unclassified',
+        db_index=True,
+        help_text='Screening outcome. "unclassified" means it predates screening.')
+    risk_reasons      = models.JSONField(
+        default=list, blank=True,
+        help_text='Deterministic reason codes; never free text.')
+    source_endpoint   = models.CharField(
+        max_length=120, blank=True, db_index=True,
+        help_text='Which public form produced this (e.g. contact).')
+    fingerprint       = models.CharField(
+        max_length=64, blank=True, db_index=True,
+        help_text='Keyed digest of the normalised submission. Never the message itself.')
+    duplicate_count   = models.PositiveIntegerField(
+        default=0,
+        help_text='Further identical submissions suppressed after the first.')
+    classified_at     = models.DateTimeField(null=True, blank=True)
+    classified_by     = models.CharField(
+        max_length=60, blank=True,
+        help_text='Who or what set spam_status — a username, or a command name.')
+    previous_status   = models.CharField(
+        max_length=16, blank=True,
+        help_text='Status before the last bulk classification, so it can be rolled back.')
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Notification'
         verbose_name_plural = 'Notifications'
-        indexes = [models.Index(fields=['status', '-created_at'])]
+        indexes = [
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['spam_status', '-created_at']),
+            models.Index(fields=['fingerprint']),
+        ]
+
+    @property
+    def email_domain(self):
+        return self.contact_email.rpartition('@')[2].lower() if '@' in (self.contact_email or '') else ''
+
+    @property
+    def is_quarantined(self):
+        return self.spam_status in ('review', 'rejected')
 
     def __str__(self):
         return f'[{self.get_status_display()}] {self.title}'
@@ -87,7 +136,9 @@ class AdminNotification(models.Model):
 
 def create_notification(title, *, source_type='other', message='', instance=None,
                         admin_url='', priority='normal', contact_name='',
-                        contact_email='', phone='', metadata=None):
+                        contact_email='', phone='', metadata=None,
+                        spam_status='unclassified', risk_reasons=None,
+                        source_endpoint='', fingerprint=''):
     """
     Create an AdminNotification. Never raises — a notification failure must not
     break the user-facing form submission. Returns the object or None.
@@ -118,6 +169,10 @@ def create_notification(title, *, source_type='other', message='', instance=None
             contact_email=(contact_email or '')[:254],
             phone=(phone or '')[:50],
             metadata=metadata or {},
+            spam_status=spam_status or 'unclassified',
+            risk_reasons=risk_reasons or [],
+            source_endpoint=(source_endpoint or '')[:120],
+            fingerprint=(fingerprint or '')[:64],
         )
     except Exception as exc:  # pragma: no cover - defensive
         logger.exception('create_notification failed: %s', exc)

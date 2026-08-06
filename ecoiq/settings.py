@@ -519,6 +519,31 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ── Public-form abuse protection (notifications/antispam) ─────────────────────
+# Cloudflare Turnstile. Both keys come from the environment and are never
+# committed. TURNSTILE_SITE_KEY is public (rendered in the form);
+# TURNSTILE_SECRET_KEY is server-side only.
+#
+# Unconfigured behaviour is deliberately asymmetric: development and tests pass
+# through so no Cloudflare account is needed to work locally, while production
+# fails closed — an unprotected public form in production is exactly the defect
+# that produced 937 spam notifications.
+TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
+TURNSTILE_TIMEOUT_SECONDS = float(os.environ.get('TURNSTILE_TIMEOUT_SECONDS', '5'))
+
+# Rate limits per public form: {scope: (limit, window_seconds)}.
+ANTISPAM_LIMITS = {
+    'ip':      (int(os.environ.get('ANTISPAM_IP_LIMIT', '5')), 60 * 60),
+    'email':   (int(os.environ.get('ANTISPAM_EMAIL_LIMIT', '3')), 60 * 60 * 24),
+    'message': (int(os.environ.get('ANTISPAM_MESSAGE_LIMIT', '2')), 60 * 60 * 24),
+    'global':  (int(os.environ.get('ANTISPAM_GLOBAL_LIMIT', '200')), 60 * 60),
+}
+
+# Volume alert thresholds (notifications/antispam/monitoring.py).
+ANTISPAM_ALERT_REJECTIONS_PER_10MIN = int(os.environ.get('ANTISPAM_ALERT_REJECTIONS', '30'))
+ANTISPAM_ALERT_FINGERPRINT_PER_DAY = int(os.environ.get('ANTISPAM_ALERT_FINGERPRINT', '100'))
+
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # /api/v1/semantic-search/ vector path. OFF by default and must stay off until

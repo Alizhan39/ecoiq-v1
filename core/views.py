@@ -1084,19 +1084,39 @@ def contact(request):
     /contact/ — EcoIQ contact page.
     Shows founder card, Stoke Share Ltd details, direct phone/email,
     and an enquiry form. Public, no auth required.
+
+    Supplies the anti-abuse context the form needs: a signed render timestamp
+    (so a submission that arrives implausibly fast, or with a forged/absent
+    token, is detectable) and the public Turnstile site key.
     """
-    return render(request, 'contact.html')
+    from django.conf import settings as _s
+
+    from notifications.antispam import timing as _timing
+
+    return render(request, 'contact.html', {
+        'antispam_form_token': _timing.issue(),
+        'turnstile_site_key': getattr(_s, 'TURNSTILE_SITE_KEY', ''),
+    })
 
 
 def contact_submit(request):
     """
     /contact/submit/ — Process the contact form (POST only).
-    Validates name, email, subject, message; sends notification email to
-    LEAD_NOTIFY_EMAIL (alizhan@ecoiq.uk); redirects back to /contact/
-    with a Django message on success or failure.
+
+    Every submission is screened by notifications.antispam BEFORE anything is
+    created. This endpoint produced 100% of the 937 admin notifications in the
+    June–August abuse incident (924 of them from a single repeated contact
+    name) because it had no captcha, no rate limit, no honeypot and no email
+    validation, while the leads/ forms — which have all of those — received
+    none.
+
+    Ordering matters: the screen runs first, so a rejected submission creates
+    no AdminNotification, sends no email, dispatches no task and makes no
+    external API call.
     """
-    from django.core.mail import send_mail
     from django.conf import settings as _s
+
+    from notifications.antispam import Decision, evaluate
 
     if request.method != 'POST':
         return redirect('contact')
@@ -1107,12 +1127,39 @@ def contact_submit(request):
     company = request.POST.get('company', '').strip()[:120]
     message = request.POST.get('message', '').strip()[:4000]
 
-    # Basic validation
+    # Basic validation (unchanged, user-facing)
     if not name or not email or not subject or not message or len(message) < 20:
         messages.error(request, 'Please fill in all required fields (message must be at least 20 characters).')
         return render(request, 'contact.html', {
             'form_data': {'name': name, 'email': email, 'subject': subject, 'company': company, 'message': message},
         })
+
+    # ── Abuse screening — before any side effect ──────────────────────────
+    verdict = evaluate(
+        request=request,
+        form='contact',
+        name=name, email=email, subject=subject, message=message,
+        honeypot=request.POST.get('website', ''),
+        form_token=request.POST.get('form_token', ''),
+        turnstile_token=request.POST.get('cf-turnstile-response', ''),
+    )
+
+    if verdict.decision is Decision.REJECT:
+        _log_submission('contact_submission_rejected', verdict, request)
+        if verdict.http_status == 429:
+            _log_submission('contact_submission_rate_limited', verdict, request)
+            return render(request, 'contact.html', {
+                'form_error': 'Too many submissions from this connection. Please try again later.',
+            }, status=429)
+        # Same wording as success: a bot must not learn that it was caught.
+        messages.success(request, f"✓ Message received — we'll reply to {email} within one business day.")
+        return redirect('contact')
+
+    quarantined = verdict.decision is Decision.REVIEW
+    if quarantined:
+        _log_submission('contact_submission_reviewed', verdict, request)
+    else:
+        _log_submission('contact_submission_accepted', verdict, request)
 
     body = (
         f"New EcoIQ contact form submission\n"
@@ -1125,34 +1172,70 @@ def contact_submit(request):
         f"{message}\n"
     )
 
-    notify_email = getattr(_s, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
-    try:
-        send_mail(
-            subject=f'[EcoIQ Contact] {subject} — {name}',
-            message=body,
-            from_email=getattr(_s, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>'),
-            recipient_list=[notify_email],
-            fail_silently=False,
-        )
-        messages.success(request, f"✓ Message sent — we'll reply to {email} within one business day.")
-    except Exception:
-        # Email infra may not be configured in all environments; log but don't crash.
-        messages.success(request, f"✓ Message received — we'll reply to {email} within one business day.")
+    # Quarantined submissions never alert the commercial team.
+    if not quarantined:
+        from django.core.mail import send_mail
+        notify_email = getattr(_s, 'LEAD_NOTIFY_EMAIL', 'alizhan@ecoiq.uk')
+        try:
+            send_mail(
+                subject=f'[EcoIQ Contact] {subject} — {name}',
+                message=body,
+                from_email=getattr(_s, 'DEFAULT_FROM_EMAIL', 'EcoIQ <noreply@ecoiq.uk>'),
+                recipient_list=[notify_email],
+                fail_silently=False,
+            )
+        except Exception:
+            # Email infra may not be configured in all environments.
+            pass
 
-    # Central admin notification (contact form has no model — create explicitly).
     try:
         from notifications.models import create_notification
         create_notification(
             f'Contact form — {subject} ({name})',
-            source_type='contact', priority='normal',
+            source_type='contact',
+            priority='low' if quarantined else 'normal',
             message=message[:500],
             contact_name=name, contact_email=email,
             metadata={'company': company, 'subject': subject},
+            spam_status='review' if quarantined else 'accepted',
+            risk_reasons=verdict.reason_codes,
+            source_endpoint='contact',
+            fingerprint=verdict.fingerprint,
         )
     except Exception:
         pass
 
+    messages.success(request, f"✓ Message sent — we'll reply to {email} within one business day.")
     return redirect('contact')
+
+
+def _log_submission(event, verdict, request):
+    """
+    Structured screening event.
+
+    Never records the message, the full IP, or a Turnstile token — only the
+    event name, the deterministic reason codes, the keyed fingerprint and a
+    keyed IP hash.
+    """
+    import logging
+
+    from notifications.antispam.engine import _client_ip
+    from notifications.antispam.fingerprint import hashed_ip
+
+    logging.getLogger('notifications.antispam').info(
+        event,
+        extra={
+            'event': event,
+            'form': 'contact',
+            'decision': verdict.decision.value,
+            'reasons': verdict.reason_codes,
+            'fingerprint': verdict.fingerprint[:12],
+            'ip_hash': hashed_ip(_client_ip(request)),
+        },
+    )
+
+    from notifications.antispam import monitoring
+    monitoring.record(event, fingerprint=verdict.fingerprint, form='contact')
 
 
 # ── Value Distribution ───────────────────────────────────────────────────────

@@ -145,9 +145,22 @@ class FormSubmissionNotificationTests(TestCase):
             electricity='220', available_kw='8', package='assisted', install_type='assisted'))
 
     def test_contact_form(self):
+        """
+        /contact/submit/ is now screened for abuse, so a genuine submission
+        must carry the anti-abuse fields the real form renders: an empty
+        honeypot and a signed render timestamp. Turnstile is unconfigured in
+        tests, so it passes through (see notifications/tests_antispam.py for
+        the screening behaviour itself).
+        """
+        import time
+
+        from notifications.antispam import timing
+
         self._assert_one('contact', '/contact/submit/', dict(
             name='Visitor', email='v@x.com', subject='Partnership', company='X',
-            message='This is a message longer than twenty chars.'))
+            message='This is a genuine enquiry about a partnership opportunity.',
+            website='',
+            form_token=timing.issue(now=time.time() - 30)))
 
 
 from django.test import override_settings
