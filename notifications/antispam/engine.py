@@ -19,12 +19,9 @@ DUPLICATE_PREFIX = 'antispam:fp:'
 
 
 def _client_ip(request):
-    if request is None:
-        return ''
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', '')
+    """Trusted client address. See core.client_origin for why not XFF[0]."""
+    from core.client_origin import client_ip
+    return client_ip(request)
 
 
 def evaluate(*, request=None, form='contact', name='', email='', subject='',

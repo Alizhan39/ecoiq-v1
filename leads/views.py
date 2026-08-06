@@ -42,14 +42,19 @@ DRAFT_PLACEHOLDERS = {
 }
 
 
+from core.client_origin import client_ip
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _get_client_ip(request):
-    """Return the real client IP, honouring X-Forwarded-For from proxies."""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    if x_forwarded_for:
-        return x_forwarded_for.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', '')
+    """
+    The client address as our own proxies observed it.
+
+    Taking X-Forwarded-For[0] trusted a header the client writes, so any caller
+    could present a new address per request and never hit the rate limit below.
+    """
+    return client_ip(request)
 
 
 def _is_rate_limited(ip):

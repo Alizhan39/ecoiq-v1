@@ -15,6 +15,7 @@ import logging
 
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
+from core import client_origin
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +25,14 @@ WINDOW = 60  # seconds
 
 
 def _client_ip(request):
-    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    if xff:
-        return xff.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR') or 'unknown'
+    """
+    Trusted client address, or 'unknown'.
+
+    'unknown' is a single shared bucket by design: an origin we cannot identify
+    gets throttled together with every other unidentifiable origin, rather than
+    being waved through.
+    """
+    return client_origin.client_ip(request) or 'unknown'
 
 
 def _limit_for(request):
