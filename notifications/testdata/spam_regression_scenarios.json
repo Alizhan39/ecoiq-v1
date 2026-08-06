@@ -1,0 +1,180 @@
+{
+  "_readme": [
+    "Synthetic regression scenarios for notifications.antispam.classify.",
+    "",
+    "Every value here is invented. No name, address, domain, message or",
+    "timestamp is copied from a real submission, and nothing in this file is",
+    "derived from production data — the scenarios reproduce the SHAPES seen in",
+    "the August 2026 contact-form incident, not its contents. Domains use the",
+    "RFC 2606 reserved example.* names plus mainstream providers, because the",
+    "mailbox provider is deliberately not a signal.",
+    "",
+    "Each scenario states the shape, the corpus it is scored against, and the",
+    "decision the classifier must reach. `corpus` entries are other submissions",
+    "that exist alongside the one being scored."
+  ],
+  "scenarios": [
+    {
+      "id": "genuine_single_enquiry",
+      "why": "An ordinary first-time enquiry. One name, one address, real wording.",
+      "expect": "ACCEPT",
+      "expect_signals": [],
+      "record": {
+        "name": "Dana Whitfield",
+        "email": "dana.whitfield@example.com",
+        "subject": "Question about audit pricing",
+        "message": "Hello, we run a mid-sized logistics firm and would like to understand what an EcoIQ emissions audit covers and roughly what it costs. Are you able to send a summary?"
+      },
+      "corpus": []
+    },
+    {
+      "id": "genuine_free_mailbox_provider",
+      "why": "Free providers carry no signal — real customers and the incident both used them. Must not be penalised.",
+      "expect": "ACCEPT",
+      "expect_signals": [],
+      "record": {
+        "name": "Priya Raghunathan",
+        "email": "priya.raghunathan@gmail.com",
+        "subject": "Following up on the demo",
+        "message": "Hi there, I attended the webinar last week and wanted to ask whether the reporting module can export to CSV as well as PDF. Thanks very much for your time."
+      },
+      "corpus": []
+    },
+    {
+      "id": "genuine_short_but_specific",
+      "why": "Brevity is not spam. A short, specific enquiry must survive.",
+      "expect": "ACCEPT",
+      "expect_signals": [],
+      "record": {
+        "name": "Tomasz Wiśniewski",
+        "email": "t.wisniewski@example.org",
+        "subject": "Integration",
+        "message": "Does the API support webhook callbacks on audit completion?"
+      },
+      "corpus": []
+    },
+    {
+      "id": "incident_one_name_many_addresses",
+      "why": "The August 2026 shape: a single contact name behind dozens of unrelated addresses. Decisive on its own.",
+      "expect": "REJECT",
+      "expect_signals": [
+        "name_on_many_distinct_emails"
+      ],
+      "record": {
+        "name": "Alex Morgan",
+        "email": "alex.morgan.0@example.net",
+        "subject": "Business proposal",
+        "message": "Good day, I represent an investment group interested in discussing a partnership opportunity with your organisation at your earliest convenience."
+      },
+      "corpus_generator": {
+        "kind": "name_across_addresses",
+        "name": "Alex Morgan",
+        "count": 40,
+        "email_template": "alex.morgan.{i}@example.net",
+        "subject": "Business proposal",
+        "start": 1,
+        "message_template": "Good day, I represent investment group {i} and would like to discuss a partnership opportunity with your organisation."
+      }
+    },
+    {
+      "id": "name_reuse_below_strong_threshold",
+      "why": "A name on a handful of addresses is ordinary — a shared team inbox, a resent enquiry. Weak alone, so it must not reject and must not review on its own.",
+      "expect": "ACCEPT",
+      "expect_signals": [
+        "name_on_several_distinct_emails"
+      ],
+      "record": {
+        "name": "Sam Okonkwo",
+        "email": "sam.okonkwo.5@example.com",
+        "subject": "Renewal question",
+        "message": "Hello, our procurement team asked me to check whether the annual licence renews automatically or needs a new purchase order each year."
+      },
+      "corpus_generator": {
+        "kind": "name_across_addresses",
+        "name": "Sam Okonkwo",
+        "count": 6,
+        "email_template": "sam.okonkwo.{i}@example.com",
+        "subject": "Renewal question",
+        "start": 1,
+        "message_template": "Hello, our procurement team asked me to check point {i} of the renewal terms before the purchase order is raised."
+      }
+    },
+    {
+      "id": "template_sprayed_from_many_addresses",
+      "why": "One message body sent from many different addresses under different names. Decisive on its own — the name rule alone would miss it.",
+      "expect": "REJECT",
+      "expect_signals": [
+        "template_reused_across_emails"
+      ],
+      "record": {
+        "name": "Chris Bell",
+        "email": "sender.0@example.net",
+        "subject": "Collaboration",
+        "message": "Dear team we noticed your website and would like to offer our services for improving your search rankings please reply for our rate card"
+      },
+      "corpus_generator": {
+        "kind": "template_across_addresses",
+        "count": 15,
+        "name_template": "Sender {i}",
+        "email_template": "sender.{i}@example.net",
+        "subject": "Collaboration",
+        "message": "Dear team we noticed your website and would like to offer our services for improving your search rankings please reply for our rate card",
+        "start": 1
+      }
+    },
+    {
+      "id": "duplicate_submission_single_medium",
+      "why": "An identical resubmission is suspicious but a real person double-clicks. One MEDIUM signal reviews, it does not reject.",
+      "expect": "REVIEW",
+      "expect_signals": [
+        "duplicate_submission"
+      ],
+      "record": {
+        "name": "Helen Marsh",
+        "email": "helen.marsh@example.org",
+        "subject": "Audit scope",
+        "message": "Could you confirm whether scope 3 supply chain emissions are included in the standard audit package or charged separately?"
+      },
+      "corpus_generator": {
+        "kind": "repeat_self",
+        "count": 2
+      }
+    },
+    {
+      "id": "two_weak_signals_review",
+      "why": "A throwaway inbox plus near-empty wording. Neither rejects alone; together they warrant a human look.",
+      "expect": "REVIEW",
+      "expect_signals": [
+        "disposable_email_domain",
+        "low_content_quality"
+      ],
+      "record": {
+        "name": "J",
+        "email": "throwaway@mailinator.com",
+        "subject": "hi",
+        "message": "test test test test test test"
+      },
+      "corpus": []
+    },
+    {
+      "id": "two_medium_signals_reject",
+      "why": "A malformed address and a wall of links. Two MEDIUM signals together are enough to reject without any cross-record evidence.",
+      "expect": "REJECT",
+      "expect_signals": [
+        "duplicate_submission",
+        "excessive_urls",
+        "invalid_email_format"
+      ],
+      "record": {
+        "name": "Marketing Team",
+        "email": "not-an-address-at-all",
+        "subject": "Offer",
+        "message": "Visit https://example.net/one and https://example.net/two and https://example.net/three and https://example.net/four for our full catalogue of services today"
+      },
+      "corpus_generator": {
+        "kind": "repeat_self",
+        "count": 2
+      }
+    }
+  ]
+}

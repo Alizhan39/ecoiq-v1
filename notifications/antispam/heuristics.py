@@ -76,11 +76,15 @@ def low_content_quality(message):
     return unique / len(words) < 0.2
 
 
-def name_reused_across_emails(name, email, *, lookback_days=30, threshold=5):
+def distinct_emails_for_name(name, *, lookback_days=30):
     """
-    The strongest signal from the live incident: one contact name attached to
-    many unrelated addresses. Keyed on the name only — it says nothing about
-    what the name is, only that it recurs with different senders.
+    How many different addresses have used this contact name recently.
+
+    The strongest signal from the live incident. Keyed on the name only — it
+    says nothing about what the name is, only that it recurs with different
+    senders. Returns a count so the caller can distinguish "a handful", which a
+    real person or a shared team inbox can produce, from "hundreds", which they
+    cannot.
     """
     from datetime import timedelta
 
@@ -88,15 +92,18 @@ def name_reused_across_emails(name, email, *, lookback_days=30, threshold=5):
 
     from notifications.models import AdminNotification
 
-    normalised = normalise_text(name)
-    if not normalised:
-        return False
+    if not normalise_text(name):
+        return 0
     cutoff = timezone.now() - timedelta(days=lookback_days)
-    distinct = (
+    return (
         AdminNotification.objects
         .filter(created_at__gte=cutoff)
         .exclude(contact_email='')
         .filter(contact_name__iexact=(name or '').strip())
         .values('contact_email').distinct().count()
     )
-    return distinct >= threshold
+
+
+def name_reused_across_emails(name, email=None, *, lookback_days=30, threshold=5):
+    """Boolean form of `distinct_emails_for_name`, kept for existing callers."""
+    return distinct_emails_for_name(name, lookback_days=lookback_days) >= threshold

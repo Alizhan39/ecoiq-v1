@@ -26,4 +26,9 @@ Design rules this module follows:
 """
 from .verdict import Decision, Verdict, Reason          # noqa: F401
 from .engine import evaluate                            # noqa: F401
+# Note: the `classify` submodule is deliberately NOT re-exported by name here.
+# Binding `classify` to the function would shadow the module for anyone doing
+# `from notifications.antispam import classify`, which is how both the engine
+# and the management commands reach the thresholds.
+from .classify import CLASSIFIER_VERSION, Corpus       # noqa: F401
 from .fingerprint import submission_fingerprint, normalise_email, normalise_text  # noqa: F401

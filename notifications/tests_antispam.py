@@ -300,7 +300,10 @@ class LoggingHygieneTests(AntispamTestCase):
 class ManagementCommandTests(TestCase):
 
     def setUp(self):
-        for i in range(6):
+        # 30 addresses behind one name: above NAME_DISTINCT_EMAILS_STRONG, so
+        # this reproduces the live incident shape that must reject. Six would
+        # only be the weak variant, which deliberately no longer rejects.
+        for i in range(30):
             AdminNotification.objects.create(
                 title='Contact form — Offer', message='cheap deals http://a.example http://b.example http://c.example',
                 source_type='contact', contact_name='Repeatedbot',
@@ -319,7 +322,7 @@ class ManagementCommandTests(TestCase):
         call_command('analyse_notification_spam', '--dry-run', stdout=out)
         after = list(AdminNotification.objects.values_list('id', 'spam_status', 'status'))
         self.assertEqual(before, after)
-        self.assertIn('PROPOSED CLASSIFICATION', out.getvalue())
+        self.assertIn('PROPOSED classification', out.getvalue())
 
     def test_analysis_prints_no_message_bodies(self):
         from io import StringIO
