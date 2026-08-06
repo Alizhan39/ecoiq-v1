@@ -131,6 +131,7 @@ INSTALLED_APPS = [
     # Investor portfolios and watchlists — user-owned holdings valued from the
     # market data already on league.Company. No new market-data source.
     'investor_portfolio',
+    'ecoiq_commerce',
     'countries',
     'ethics',
     'financing',
@@ -531,6 +532,80 @@ ECOIQ_SEMANTIC_SEARCH_ENABLED = os.environ.get(
 
 # AI Findings Engine — model selection (override in .env if needed)
 ECOIQ_AI_MODEL = os.environ.get('ECOIQ_AI_MODEL', 'claude-opus-4-5')
+
+# EcoIQ Commercial Platform — billing provider seam (see ecoiq_commerce/services/billing.py).
+# 'none'   = NullBillingProvider (manual/invoiced billing, no payment gateway).
+# 'stripe' = StripeBillingProvider (Stripe Checkout / Billing / Customer Portal).
+# Exactly one provider is ever active — see services/billing.py:require_provider.
+ECOIQ_BILLING_PROVIDER = os.environ.get('ECOIQ_BILLING_PROVIDER', 'none')
+
+
+def _env_flag(key: str, default: bool = False) -> bool:
+    """Parse a boolean env var the same way ECOIQ_SEMANTIC_SEARCH_ENABLED does."""
+    raw = os.environ.get(key)
+    if raw is None or not raw.strip():
+        return default
+    return raw.strip().lower() in ('true', '1', 'yes', 'on')
+
+
+# ── Stripe (ecoiq_commerce billing) ───────────────────────────────────────────
+# Merchant of record: Stoke Share Ltd, trading as EcoIQ (https://ecoiq.uk).
+#
+# Every credential is read from the environment ONLY — never a literal in
+# source, never a committed .env. Blank is a safe, supported state: with no
+# secret key the gateway refuses to create sessions and the /billing/ checkout
+# endpoints return an explicit "billing is not configured" error rather than
+# half-working. Nothing here is ever rendered into a page except the
+# PUBLISHABLE key, which is designed to be public.
+
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '').strip()
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '').strip()
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '').strip()
+
+# Recurring price IDs. `price_…` values are not secrets, but they are still
+# env-driven so a test-mode and a live-mode catalogue can never be confused
+# with each other in source control.
+STRIPE_PRICE_STARTER_MONTHLY = os.environ.get('STRIPE_PRICE_STARTER_MONTHLY', '').strip()
+STRIPE_PRICE_STARTER_YEARLY = os.environ.get('STRIPE_PRICE_STARTER_YEARLY', '').strip()
+STRIPE_PRICE_PRO_MONTHLY = os.environ.get('STRIPE_PRICE_PRO_MONTHLY', '').strip()
+STRIPE_PRICE_PRO_YEARLY = os.environ.get('STRIPE_PRICE_PRO_YEARLY', '').strip()
+
+# Blank = use the version the installed stripe SDK pins (stripe 15.4.0 →
+# 2026-07-29.dahlia). Set explicitly only when deliberately pinning to an
+# older version; ecoiq_commerce.services.stripe_sync reads both the current
+# and the pre-"basil" shapes of Subscription/Invoice, so either works.
+STRIPE_API_VERSION = os.environ.get('STRIPE_API_VERSION', '').strip()
+
+# ── Stripe Tax ────────────────────────────────────────────────────────────────
+# OFF by default and must stay off until Stoke Share Ltd's relevant tax
+# registrations are confirmed and entered in the Stripe Dashboard. Enabling
+# automatic_tax without registrations produces incorrect tax on real invoices,
+# so this is a deliberate configuration latch rather than a code change:
+# set STRIPE_AUTOMATIC_TAX_ENABLED=true once registrations are live.
+STRIPE_AUTOMATIC_TAX_ENABLED = _env_flag('STRIPE_AUTOMATIC_TAX_ENABLED', False)
+# Collecting a customer VAT/GST number only makes sense alongside Stripe Tax.
+STRIPE_TAX_ID_COLLECTION_ENABLED = _env_flag('STRIPE_TAX_ID_COLLECTION_ENABLED', False)
+
+# Optional Customer Portal configuration id (bpc_…). Blank = the Stripe
+# Dashboard's default portal configuration for the account.
+STRIPE_BILLING_PORTAL_CONFIGURATION_ID = os.environ.get(
+    'STRIPE_BILLING_PORTAL_CONFIGURATION_ID', '').strip()
+
+# ── Live-mode latch ───────────────────────────────────────────────────────────
+# The integration is built and tested against Stripe TEST mode. Pointing it at
+# a live secret key is a commercial decision (real money, real customers), not
+# something that should happen as a side effect of pasting a key into a
+# dashboard — so a live key is refused unless this flag is explicitly set too.
+STRIPE_LIVE_MODE_ALLOWED = _env_flag('STRIPE_LIVE_MODE_ALLOWED', False)
+
+if STRIPE_SECRET_KEY.startswith('sk_live_') and not STRIPE_LIVE_MODE_ALLOWED:
+    raise ImproperlyConfigured(
+        'STRIPE_SECRET_KEY is a LIVE key but STRIPE_LIVE_MODE_ALLOWED is not '
+        'set. Live mode charges real customers. Set '
+        'STRIPE_LIVE_MODE_ALLOWED=true only after the Stripe account, tax '
+        'registrations and webhook endpoint have been verified in live mode.'
+    )
+
 
 # Agent Runtime & Model Router — live-provider credentials. Blank by default,
 # same pattern as ANTHROPIC_API_KEY above: live adapters must fail safely

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Payment received — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% comment %}
+This page reports; it never grants. `confirmed` reflects what a
+signature-verified Stripe webhook has already recorded — reaching this URL
+proves nothing on its own, so the copy never claims access is active unless
+the webhook says it is. See billing_views.success.
+{% endcomment %}
+
+{% block content %}
+  <div class="card">
+    {% if confirmed %}
+      <h1>Payment confirmed</h1>
+      <p><span class="badge badge-ready">Confirmed by Stripe</span></p>
+      <p style="color:#5a6a5f;max-width:60ch">
+        Thank you. Your payment has been verified and your account has been
+        updated.
+        {% if record.mode == 'subscription' %}
+          Your subscription is active — manage or cancel it any time from
+          billing management.
+        {% endif %}
+      </p>
+    {% elif record %}
+      <h1>Payment received — confirming</h1>
+      <p><span class="badge badge-draft">Awaiting confirmation from Stripe</span></p>
+      <p style="color:#5a6a5f;max-width:60ch">
+        Stripe has taken your payment and is confirming it with us now. This
+        normally takes a few seconds. Access is activated only once that
+        confirmation arrives, so nothing is lost if you close this page —
+        reload billing management shortly and it will be there.
+      </p>
+    {% else %}
+      <h1>Checkout complete</h1>
+      <p style="color:#5a6a5f;max-width:60ch">
+        We could not match this page to a checkout on your account. If you
+        have just paid, your account will update as soon as Stripe confirms
+        the payment. Check billing management, or
+        <a href="/request-access/">contact us</a> if anything looks wrong.
+      </p>
+    {% endif %}
+
+    {% if record %}
+    <dl style="margin-top:1.25rem;font-size:.9rem;color:#5a6a5f">
+      <div><dt style="display:inline;font-weight:600">Reference:</dt>
+        <dd style="display:inline;margin:0"><code>{{ record.session_id }}</code></dd></div>
+      {% if record.plan %}
+      <div><dt style="display:inline;font-weight:600">Item:</dt>
+        <dd style="display:inline;margin:0">{{ record.plan.name }}</dd></div>
+      {% endif %}
+      {% if record.amount_total %}
+      <div><dt style="display:inline;font-weight:600">Amount:</dt>
+        <dd style="display:inline;margin:0">{{ record.currency }} {{ record.amount_total }}</dd></div>
+      {% endif %}
+    </dl>
+    {% endif %}
+
+    <p style="margin-top:1.25rem">
+      <a href="{% url 'billing:manage' %}" class="btn btn-primary">Billing management</a>
+    </p>
+  </div>
+{% endblock %}

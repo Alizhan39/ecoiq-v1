@@ -71,6 +71,54 @@ services:
       - key: COMPANIES_HOUSE_API_KEY
         sync: false                      # set manually in Render dashboard — never in git
 
+      # ── Stripe billing (ecoiq_commerce) ──────────────────────────────────
+      # Merchant of record: Stoke Share Ltd, trading as EcoIQ.
+      #
+      # Every credential is sync:false and must be pasted into the Render
+      # dashboard by hand. Blank keys are a SAFE state, not a broken one:
+      # /billing/ checkout and portal endpoints report "billing is not
+      # configured" and the webhook endpoint refuses unverifiable traffic.
+      #
+      # Ship with TEST-mode keys. settings.py refuses to start on an sk_live_
+      # key unless STRIPE_LIVE_MODE_ALLOWED is also true, so going live is a
+      # deliberate two-step act, not a side effect of pasting a key.
+      #
+      # The webhook endpoint to register in the Stripe Dashboard is:
+      #     https://ecoiq.uk/billing/webhook/
+      - key: ECOIQ_BILLING_PROVIDER
+        value: "none"                    # flip to "stripe" once keys are set
+      - key: STRIPE_SECRET_KEY
+        sync: false                      # set manually in Render dashboard — never in git
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false                      # per-endpoint signing secret (whsec_…)
+
+      # Price ids are public catalogue identifiers, not secrets — but they
+      # differ between the test and live Stripe accounts, so they are still
+      # set per-environment rather than committed.
+      - key: STRIPE_PRICE_STARTER_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_STARTER_YEARLY
+        sync: false
+      - key: STRIPE_PRICE_PRO_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_PRO_YEARLY
+        sync: false
+
+      # Stripe Tax stays OFF until Stoke Share Ltd's tax registrations are
+      # confirmed in the Stripe Dashboard. Turning it on early puts incorrect
+      # tax on real customer invoices.
+      - key: STRIPE_AUTOMATIC_TAX_ENABLED
+        value: "false"
+      - key: STRIPE_TAX_ID_COLLECTION_ENABLED
+        value: "false"
+
+      # Live-mode latch — see the note above. Do not set true until the live
+      # account, webhook endpoint and tax position have all been verified.
+      - key: STRIPE_LIVE_MODE_ALLOWED
+        value: "false"
+
       # ── EcoIQ AI Gateway (ai_gateway app) ────────────────────────────────
       # Configuration only — no new service, no new plan, no cost. Every AI
       # provider key is sync:false and must be pasted into the Render

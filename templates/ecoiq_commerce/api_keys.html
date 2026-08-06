@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}API Keys — EcoIQ{% endblock %}
+{% block meta_description %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1>Your API Keys</h1>
+    <p style="color:#5a6a5f;max-width:60ch">
+      Self-service keys are sandbox-only. Production keys are issued by EcoIQ
+      staff after a short verification step — request one via
+      <a href="/request-access/">Request Access</a>.
+    </p>
+
+    {% if can_create %}
+    <form method="post" action="{% url 'commerce:api_keys' %}" style="margin-top:1rem">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">Generate sandbox key</button>
+    </form>
+    {% else %}
+    <p style="margin-top:1rem">
+      <span class="badge badge-draft">API access not included in your plan</span>
+      &nbsp;<a href="/products/">View plans</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Existing keys</h2>
+    {% if keys %}
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid #e2e8e4">
+          <th style="padding:.5rem 0">Prefix</th>
+          <th>Tier</th>
+          <th>Environment</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Last used</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key in keys %}
+        <tr style="border-bottom:1px solid #f1f3f2">
+          <td style="padding:.5rem 0"><code>{{ key.prefix }}…</code></td>
+          <td>{{ key.get_tier_display }}</td>
+          <td>{{ key.get_environment_display }}</td>
+          <td>
+            {% if key.is_active %}<span class="badge badge-ready">Active</span>
+            {% else %}<span class="badge badge-error">Revoked</span>{% endif %}
+          </td>
+          <td>{{ key.created_at|date:"Y-m-d" }}</td>
+          <td>{{ key.last_used|date:"Y-m-d H:i"|default:"Never" }}</td>
+          <td style="white-space:nowrap">
+            {% if key.is_active %}
+            <form method="post" action="{% url 'commerce:api_key_rotate' key.pk %}" style="display:inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary" style="padding:.3rem .7rem;font-size:.8rem">Rotate</button>
+            </form>
+            <form method="post" action="{% url 'commerce:api_key_revoke' key.pk %}" style="display:inline"
+                  onsubmit="return confirm('Revoke this key? This cannot be undone.');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary" style="padding:.3rem .7rem;font-size:.8rem;color:#7c2020">Revoke</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#888">No API keys yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

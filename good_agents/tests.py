@@ -966,7 +966,22 @@ class IngestionOrchestrationTests(TestCase):
         with patch('good_agents.services.ingestion.fetch_from_provider', side_effect=fake_fetch):
             raw_signals, reports = ingestion.fetch_due_signals()
 
-        self.assertEqual(len(raw_signals), 2)  # the 2 non-failing providers
+        # Derived from the seeded registry, not hard-coded: the point of this
+        # test is "one failure does not stop the others", which must hold for
+        # however many providers seed_signal_providers declares. A literal
+        # count silently went stale when PR13 added two more providers.
+        expected_slugs = set(
+            SignalProvider.objects.exclude(slug='uk-ea-flood-monitoring')
+            .values_list('slug', flat=True)
+        )
+        self.assertTrue(expected_slugs, 'no non-failing providers were seeded')
+        self.assertEqual(len(raw_signals), len(expected_slugs))
+        # Stronger than a count: every non-failing provider must be represented
+        # exactly once, so a silently dropped provider fails the test.
+        self.assertEqual(
+            sorted(s['title'].removeprefix('Signal from ') for s in raw_signals),
+            sorted(expected_slugs),
+        )
         failed_reports = [r for r in reports if not r['success']]
         self.assertEqual(len(failed_reports), 1)
         self.assertEqual(failed_reports[0]['slug'], 'uk-ea-flood-monitoring')
@@ -1139,11 +1154,22 @@ class GoodWhileYouSleepCommandTests(TestCase):
             self.assertEqual(GoodDiscoveryRun.objects.count(), run_count_after_first)
 
     def test_seeds_all_114_and_real_providers(self):
+        from good_agents.management.commands.seed_signal_providers import PROVIDERS
+
         call_command('seed_global_monitoring_mission')
         with patch('good_agents.services.ingestion.fetch_due_signals', return_value=([], [])):
             call_command('run_good_while_you_sleep')
+        # 114 is a real domain constant (the Tazkiyah agent set) — kept literal.
         self.assertEqual(GoodAgentDefinition.objects.count(), 114)
-        self.assertEqual(SignalProvider.objects.count(), 3)
+        # The provider count is not a domain constant, it is "however many the
+        # seed command declares". Asserting the slugs rather than a literal
+        # count keeps the real invariant — every declared provider is seeded,
+        # and nothing else is — without going stale when a provider is added.
+        self.assertEqual(
+            set(SignalProvider.objects.values_list('slug', flat=True)),
+            {spec['slug'] for spec in PROVIDERS},
+        )
+        self.assertEqual(SignalProvider.objects.count(), len(PROVIDERS))
 
 
 # ===========================================================================
