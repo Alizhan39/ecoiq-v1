@@ -14,6 +14,7 @@ from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
+from core.client_origin import client_ip
 from .forms import AccessRequestForm, EnterpriseEnquiryForm, InvestorEnquiryForm, ReviewRequestForm, ReportRequestForm
 from .models import (
     AccessRequest, EnterpriseEnquiry, InvestorEnquiry, ProfileClaim, ReviewRequest,
@@ -40,9 +41,6 @@ DRAFT_PLACEHOLDERS = {
         'Pending roadmap across 30, 60, and 90-day implementation windows.'
     ),
 }
-
-
-from core.client_origin import client_ip
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

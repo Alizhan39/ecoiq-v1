@@ -137,6 +137,21 @@ class SafeContextTests(SimpleTestCase):
             with self.subTest(public):
                 self.assertFalse(CO.is_private(public))
 
+    def test_an_unknown_origin_is_still_rate_limited_not_waved_through(self):
+        from django.core.cache import cache
+
+        from notifications.antispam import ratelimit
+
+        cache.clear()
+        limit, _window = ratelimit.DEFAULTS['ip']
+        # An origin we cannot resolve must still consume a quota. Previously
+        # this branch was skipped entirely and an unknown origin was unlimited.
+        exceeded = []
+        for _ in range(limit + 2):
+            exceeded = ratelimit.check(ip='', email='', message='', form='contact')
+        self.assertIn('ip', exceeded)
+        cache.clear()
+
     @override_settings(TRUSTED_PROXY_COUNT=1)
     def test_unknown_origin_is_reported_as_unknown_not_guessed(self):
         request = RequestFactory().post('/contact/submit/')
