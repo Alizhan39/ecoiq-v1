@@ -219,7 +219,93 @@ class LiveEngineAlignmentTests(TestCase):
         self.assertIs(C.SIGNALS[Reason.NAME_ON_MANY_DISTINCT_EMAILS.value][0],
                       C.Strength.STRONG)
 
-    def test_expected_count_mismatch_aborts_before_writing(self):
+    # ── bulk-job guards ────────────────────────────────────────────────────
+    def _spray(self, n=30, name='Sprayer'):
+        from notifications.models import AdminNotification
+        return [AdminNotification.objects.create(
+            title='t', message='cheap deals for your business today',
+            source_type='contact', contact_name=name,
+            contact_email=f'a{i}@example.net') for i in range(n)]
+
+    def test_an_existing_accept_is_never_downgraded_to_reject(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        records = self._spray()
+        protected = records[0]
+        protected.spam_status = 'accepted'
+        protected.save(update_fields=['spam_status'])
+
+        out = StringIO()
+        call_command('classify_notification_spam', '--confirm', stdout=out)
+        protected.refresh_from_db()
+        self.assertEqual(protected.spam_status, 'accepted')
+        self.assertIn('never automatic', out.getvalue())
+
+    def test_review_is_not_promoted_to_reject_without_a_strong_signal(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from notifications.models import AdminNotification
+
+        # Two MEDIUM signals: enough to reject a live submission, not enough to
+        # relabel a row already sitting in the review queue.
+        rec = AdminNotification.objects.create(
+            title='t', source_type='contact', contact_name='Marketing',
+            contact_email='not-an-address',
+            message=('Visit https://example.net/a and https://example.net/b and '
+                     'https://example.net/c and https://example.net/d today'),
+            spam_status='review')
+        AdminNotification.objects.create(
+            title='t', source_type='contact', contact_name='Marketing',
+            contact_email='not-an-address',
+            message=('Visit https://example.net/a and https://example.net/b and '
+                     'https://example.net/c and https://example.net/d today'))
+
+        out = StringIO()
+        call_command('classify_notification_spam', '--confirm', stdout=out)
+        rec.refresh_from_db()
+        self.assertEqual(rec.spam_status, 'review')
+        self.assertIn('without a strong signal', out.getvalue())
+
+    def test_rows_already_at_the_target_are_not_counted_as_transitions(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from notifications.models import AdminNotification
+
+        self._spray()
+        AdminNotification.objects.all().update(spam_status='rejected')
+
+        out = StringIO()
+        call_command('classify_notification_spam', stdout=out)
+        self.assertIn('changes planned    0', out.getvalue())
+
+    def test_the_three_expectation_flags_each_mean_one_thing(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        self._spray(30)
+        # 30 rows, 30 REJECT decisions, 30 transitions — distinct concepts that
+        # happen to coincide here; each flag is checked independently.
+        for flag, wrong in (('--expected-total', '29'),
+                            ('--expected-reject-count', '31'),
+                            ('--expected-transitions', '1')):
+            with self.subTest(flag):
+                with self.assertRaises(CommandError) as ctx:
+                    call_command('classify_notification_spam', '--confirm',
+                                 flag, wrong, stdout=StringIO())
+                self.assertIn(flag, str(ctx.exception))
+                from notifications.models import AdminNotification
+                self.assertEqual(
+                    AdminNotification.objects.filter(spam_status='unclassified').count(), 30)
+
+    def test_snapshot_hash_mismatch_aborts_before_writing(self):
         from io import StringIO
 
         from django.core.management import call_command
@@ -227,15 +313,74 @@ class LiveEngineAlignmentTests(TestCase):
 
         from notifications.models import AdminNotification
 
-        for i in range(30):
-            AdminNotification.objects.create(
-                title='t', message='cheap deals for you today',
-                source_type='contact', contact_name='Sprayer',
-                contact_email=f'a{i}@example.net')
-
+        self._spray()
         with self.assertRaises(CommandError) as ctx:
             call_command('classify_notification_spam', '--confirm',
-                         '--expected-count', '1', stdout=StringIO())
+                         '--snapshot-hash', 'deadbeef' * 8, stdout=StringIO())
+        self.assertIn('snapshot hash', str(ctx.exception))
+        self.assertEqual(
+            AdminNotification.objects.exclude(spam_status='unclassified').count(), 0)
+
+    def test_snapshot_hash_changes_when_a_single_status_changes(self):
+        from notifications.management.commands.analyse_notification_spam import (
+            build_corpus, snapshot_hash,
+        )
+        from notifications.models import AdminNotification
+
+        records = self._spray()
+        loaded = list(AdminNotification.objects.order_by('id'))
+        before = snapshot_hash(loaded, build_corpus(loaded))
+
+        records[0].spam_status = 'legitimate'
+        records[0].save(update_fields=['spam_status'])
+        loaded = list(AdminNotification.objects.order_by('id'))
+        after = snapshot_hash(loaded, build_corpus(loaded))
+        self.assertNotEqual(before, after)
+
+    def test_the_ambiguous_old_flag_is_refused_with_an_explanation(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        self._spray()
+        with self.assertRaises(CommandError) as ctx:
+            call_command('classify_notification_spam', '--confirm',
+                         '--expected-count', '30', stdout=StringIO())
+        message = str(ctx.exception)
+        self.assertIn('ambiguous', message)
+        self.assertIn('--expected-reject-count', message)
+
+    def test_analysis_and_mutation_agree_on_the_transition_count(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        self._spray()
+        analysis = StringIO()
+        call_command('analyse_notification_spam', stdout=analysis)
+        mutation = StringIO()
+        call_command('classify_notification_spam', stdout=mutation)
+
+        import re
+        a = re.search(r'ROWS THAT WOULD ACTUALLY CHANGE: (\d+)', analysis.getvalue())
+        m = re.search(r'changes planned\s+(\d+)', mutation.getvalue())
+        self.assertIsNotNone(a)
+        self.assertIsNotNone(m)
+        self.assertEqual(a.group(1), m.group(1))
+
+    def test_expected_reject_count_mismatch_aborts_before_writing(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        from notifications.models import AdminNotification
+
+        self._spray()
+        with self.assertRaises(CommandError) as ctx:
+            call_command('classify_notification_spam', '--confirm',
+                         '--expected-reject-count', '1', stdout=StringIO())
         self.assertIn('does not match', str(ctx.exception))
         self.assertEqual(
             AdminNotification.objects.exclude(spam_status='unclassified').count(), 0)

@@ -10,6 +10,7 @@ Never prints message bodies, contact names, full email addresses, IP addresses
 or tokens — only counts, mailbox domains and truncated fingerprint prefixes.
 """
 import collections
+import hashlib
 import json
 from datetime import timedelta
 
@@ -17,7 +18,9 @@ from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 from django.utils import timezone
 
-from notifications.antispam.classify import CLASSIFIER_VERSION, Corpus, SIGNALS, classify
+from notifications.antispam.classify import (
+    CLASSIFIER_VERSION, Corpus, SIGNALS, Strength, classify,
+)
 from notifications.antispam.fingerprint import submission_fingerprint
 from notifications.models import AdminNotification
 
@@ -58,6 +61,86 @@ def fingerprint_of(record):
         message=record.message or '',
         form=record.source_type or '',
     )
+
+
+DECISION_TO_STATUS = {'REJECT': 'rejected', 'REVIEW': 'review', 'ACCEPT': 'accepted'}
+
+# A human has ruled on these; a batch job does not get to overrule them.
+HUMAN_DECIDED = ('legitimate',)
+
+
+def is_high_confidence(reasons):
+    """True when at least one STRONG signal fired, not merely a pair of MEDIUMs."""
+    return any(SIGNALS[c][0] is Strength.STRONG for c in reasons if c in SIGNALS)
+
+
+def plan_transitions(records, corpus):
+    """
+    The single definition of "which rows would actually change", shared by the
+    read-only analysis and the mutating command.
+
+    They must agree exactly: the analysis prints the figure an operator passes
+    to --expected-transitions, and the mutating command aborts if its own count
+    differs. Two separate implementations would eventually disagree and the
+    guard would fire on a correct run — or, worse, not fire on an incorrect one.
+
+    Returns (planned, decisions, refused).
+
+    Two guards live here rather than in the classifier, because they are about
+    what a *bulk job* may do to stored rows, not about what a submission is:
+
+      - An existing ACCEPT is never downgraded to REJECT automatically. A
+        disagreement there is for a human to look at, not for a batch job.
+      - REVIEW is promoted to REJECT only on high confidence — at least one
+        STRONG signal. Two MEDIUM signals reject a live submission, but are not
+        enough to relabel a row a human may already have seen in the queue.
+    """
+    planned = []
+    decisions = collections.Counter()
+    refused = collections.Counter()
+
+    for r in records:
+        decision, reasons = classify_record(r, corpus)
+        decisions[decision] += 1
+        current = r.spam_status
+        target = DECISION_TO_STATUS[decision]
+
+        if current in HUMAN_DECIDED:
+            refused['human decision, left alone'] += 1
+            continue
+        if current == target:
+            # Already there. Not a transition, and must not be counted as one.
+            continue
+        if current == 'accepted' and target == 'rejected':
+            refused['accepted -> rejected, never automatic'] += 1
+            continue
+        if current == 'review' and target == 'rejected' and not is_high_confidence(reasons):
+            refused['review -> rejected without a strong signal'] += 1
+            continue
+
+        planned.append((r, target, reasons))
+    return planned, decisions, refused
+
+
+def snapshot_hash(records, corpus):
+    """
+    Digest of (id, stored status, computed decision) over every record, in id
+    order.
+
+    This is the strictest of the expectation checks: the three counts can each
+    stay the same while the underlying rows change (one record moves out of
+    REJECT, another moves in). The digest cannot. An operator who supplies it is
+    asserting "the table is exactly as I reviewed it", and any addition,
+    removal, status edit or ruleset change invalidates it.
+
+    Contains no message text, name, address or fingerprint — only primary keys
+    and status strings.
+    """
+    h = hashlib.sha256()
+    for record in sorted(records, key=lambda r: r.pk):
+        decision, _reasons = classify_record(record, corpus)
+        h.update(f'{record.pk}:{record.spam_status}:{decision}\n'.encode())
+    return h.hexdigest()
 
 
 def classify_record(record, corpus):
@@ -184,9 +267,22 @@ class Command(BaseCommand):
         else:
             w('    none — stored classification already matches')
         w('')
-        w('  Apply with:')
-        w(f'    python manage.py classify_notification_spam --confirm '
-          f'--expected-count {proposals.get("REJECT", 0)}')
+        planned, _decisions, refused = plan_transitions(records, corpus)
+        digest = snapshot_hash(records, corpus)
+        w('')
+        w(f'  ROWS THAT WOULD ACTUALLY CHANGE: {len(planned)}')
+        if refused:
+            w('  refused by a bulk-job guard (counted as no change):')
+            for reason, n in sorted(refused.items()):
+                w(f'    {n:>5}  {reason}')
+        w(f'  SNAPSHOT HASH  {digest}')
+        w('')
+        w('  Apply with (every figure below is checked before any write):')
+        w('    python manage.py classify_notification_spam --confirm \\')
+        w(f'      --expected-total {total} \\')
+        w(f'      --expected-reject-count {proposals.get("REJECT", 0)} \\')
+        w(f'      --expected-transitions {len(planned)} \\')
+        w(f'      --snapshot-hash {digest}')
         w('  Nothing is ever hard-deleted; every change records previous_status.')
         w('')
 
