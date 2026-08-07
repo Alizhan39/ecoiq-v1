@@ -1,123 +1,173 @@
 """
 Trusted resolution of a request's client address, and a safe way to log it.
 
-The problem this fixes
-----------------------
-Five call sites independently read `X-Forwarded-For` and took the **leftmost**
-entry. That entry is written by the client. Anyone can send::
+Measured topology (2026-08-07)
+------------------------------
+Probes against production, recording hop *classes* only, established this:
 
-    X-Forwarded-For: 203.0.113.9
+    request with no forwarding header   -> 2 hops, both public
+    request with 1 forged entry         -> 3 hops: [testnet, public, public]
+    request with 3 forged entries       -> 5 hops: [testnet x3, public, public]
 
-and be counted as 203.0.113.9 — so a single host can present a fresh address on
-every request and walk straight through any per-IP rate limit, while the logs
-record whatever it chose to claim.
+Identical on ecoiq.uk and ecoiq.onrender.com. Forged entries (RFC 5737
+TEST-NET-3, which never occurs in real traffic) always appear to the LEFT, and
+the infrastructure always appends exactly **two** entries on the right:
 
-The header is an append-only chain: each proxy appends the address it received
-the connection *from*. Only the hops your own infrastructure appended can be
-trusted. With `TRUSTED_PROXY_COUNT = n`, the real client is the entry `n` places
-from the right; everything to the left of it is client-supplied and worthless.
+    [ client-supplied junk ... , real client , Cloudflare edge ]
+                                  ^^^^^^^^^^^
+                                  index len-2
 
-Getting `n` wrong in either direction is a real failure, so it is an explicit
-setting rather than a guess:
+Cloudflare appends the address it received the connection from — the real
+client. Render's router then appends the address it received from — the
+Cloudflare edge. REMOTE_ADDR is a private Render address in every case.
 
-  too high  you start trusting client-supplied entries again
-  too low   every request resolves to your own load balancer, and one shared
-            rate-limit bucket throttles all of your users at once
+This is why rate limiting was ineffective. With TRUSTED_PROXY_COUNT=1 the
+resolver selected index len-1, the *Cloudflare edge*. Nobody could forge it, so
+it was not a spoofing hole — but Cloudflare answers from a large rotating edge
+fleet, so consecutive requests from one person landed in different buckets and
+the per-origin counters never accumulated. 66 probe requests produced zero 429s.
 
-On Render there is exactly one proxy in front of the application, so
-`TRUSTED_PROXY_COUNT = 1`. Locally there is none, so it is 0 and `REMOTE_ADDR`
-is used directly.
+Two independent sources, both explicit
+--------------------------------------
+1. `CF-Connecting-IP`, when TRUSTED_CLIENT_IP_HEADER names it. Cloudflare sets
+   this itself and **rejects any request that tries to supply it**: a probe
+   sending the header got `HTTP 403, error code: 1000` before reaching the
+   origin. It is therefore not client-forgeable, and it is immune to changes in
+   chain length.
+2. `X-Forwarded-For`, counting TRUSTED_PROXY_COUNT entries in from the right.
+
+The header is preferred because it does not depend on hop arithmetic. The count
+remains as the fallback and for deployments without Cloudflare. Neither is
+implicit: adding or removing a CDN requires changing configuration, and the
+structural fields emitted by `safe_origin_context()` make a mismatch visible
+rather than silent.
+
+Fail closed
+-----------
+If the chain is shorter than the trusted hop count, the request did not arrive
+the way we believe it does, and no value in it can be trusted. The resolver
+returns '' rather than falling back to REMOTE_ADDR — REMOTE_ADDR is the private
+Render address, identical for every visitor, so falling back to it would put the
+entire internet in one bucket while looking like a successful resolution.
+Callers treat '' as "unknown origin", which gets its own bounded shared bucket.
 
 What is safe to log
 -------------------
-Not the address. `origin_fingerprint()` returns a keyed, truncated HMAC — enough
-to recognise the same origin across requests and to count repeat offenders,
-useless to anyone who obtains the logs without SECRET_KEY. Nothing here reads
-cookies, session identifiers, Authorization headers, CSRF tokens or captcha
-tokens, and `safe_origin_context()` returns a fixed set of keys so a future
-caller cannot widen it by accident.
+Not the address. `origin_fingerprint()` returns a keyed HMAC-SHA256, truncated.
+Nothing here reads cookies, sessions, Authorization headers, CSRF or captcha
+tokens, and `safe_origin_context()` returns a fixed set of keys so a caller
+cannot widen it by accident.
 
-Retention
----------
-Fingerprints appear only in application log lines and in cache keys.
-
-  application logs   retained by the platform's own log retention; EcoIQ
-                     writes no separate origin log and no origin column
-  cache keys         expire with their rate-limit window (see ANTISPAM_LIMITS),
-                     at most 24 hours
-
-Because the key is derived from SECRET_KEY, rotating SECRET_KEY invalidates
-every previously emitted fingerprint — old log lines can no longer be correlated
-with new ones. That is the intended failure mode.
+Retention: fingerprints appear only in application log lines (platform log
+retention) and in cache keys (expiring with their rate-limit window, at most
+24h). No raw address is written to a log or to any database column by this
+module.
 """
+import hashlib
+import hmac
 import ipaddress
+import logging
 
 from django.conf import settings
 
-# Header names are fixed here rather than taken from a setting: a caller that
-# could choose the header could choose one the proxy does not control.
+logger = logging.getLogger(__name__)
+
 FORWARDED_FOR = 'HTTP_X_FORWARDED_FOR'
 REMOTE_ADDR = 'REMOTE_ADDR'
 
+# Resolution outcomes, reported in structured logs so a topology change is
+# visible in the data rather than only in a behaviour regression.
+RESOLVED_TRUSTED_HEADER = 'trusted_header'
+RESOLVED_FORWARDED_CHAIN = 'forwarded_chain'
+RESOLVED_REMOTE_ADDR = 'remote_addr'
+RESOLVED_CHAIN_TOO_SHORT = 'chain_too_short'
+RESOLVED_UNAVAILABLE = 'unavailable'
+
 
 def trusted_proxy_count():
-    """How many rightmost X-Forwarded-For entries our own infrastructure wrote."""
+    """Entries our own infrastructure appends to X-Forwarded-For."""
     return max(0, int(getattr(settings, 'TRUSTED_PROXY_COUNT', 0) or 0))
+
+
+def trusted_client_ip_header():
+    """
+    META key of a header whose value the edge guarantees, or ''.
+
+    Naming a header here is an explicit statement that a trusted proxy sets it
+    and strips any client-supplied copy. Empty means "do not trust any header",
+    which is correct for local development and any deployment without a CDN.
+    """
+    name = (getattr(settings, 'TRUSTED_CLIENT_IP_HEADER', '') or '').strip()
+    if not name:
+        return ''
+    return 'HTTP_' + name.upper().replace('-', '_')
 
 
 def normalise_ip(value):
     """
-    Return a canonical address string, or '' if it is not one.
+    Canonical address string, or '' if it is not one.
 
     Normalising matters: `2001:DB8::1`, `2001:db8:0:0:0:0:0:1` and
-    `[2001:db8::1]:443` are the same origin and must produce the same
-    fingerprint, or an IPv6 client gets a free pass on every rate limit by
-    varying the spelling.
+    `[2001:db8::1]:443` are one origin. Without this an IPv6 client evades every
+    per-origin limit by varying the spelling.
     """
     text = (value or '').strip()
     if not text:
         return ''
-    # Bracketed IPv6, with or without a port: [2001:db8::1]:443
     if text.startswith('['):
         text = text[1:].partition(']')[0]
     elif text.count(':') == 1:
-        # Exactly one colon means IPv4:port. Bare IPv6 always has several.
+        # Exactly one colon is IPv4:port. Bare IPv6 always has several.
         text = text.partition(':')[0]
-    # A zone index is local to the sending host and not part of the identity.
-    text = text.partition('%')[0]
+    text = text.partition('%')[0]           # zone index is local to the sender
     try:
         return str(ipaddress.ip_address(text))
     except ValueError:
         return ''
 
 
-def client_ip(request):
-    """
-    The address our own infrastructure observed the connection coming from.
+def forwarded_chain(request):
+    """Validated X-Forwarded-For entries, malformed ones discarded."""
+    raw = request.META.get(FORWARDED_FOR, '') or ''
+    return [ip for ip in (normalise_ip(p) for p in raw.split(',')) if ip]
 
-    Returns '' when it cannot be established. Callers must treat '' as
-    "unknown origin" and must not fall back to a client-supplied value.
+
+def resolve_origin(request):
+    """
+    Returns (address, status). Address is '' when nothing can be trusted.
+
+    Status is one of the RESOLVED_* constants and is safe to log.
     """
     if request is None:
-        return ''
+        return '', RESOLVED_UNAVAILABLE
+
+    header_key = trusted_client_ip_header()
+    if header_key:
+        candidate = normalise_ip(request.META.get(header_key, ''))
+        if candidate:
+            return candidate, RESOLVED_TRUSTED_HEADER
 
     hops = trusted_proxy_count()
     if hops:
-        chain = [normalise_ip(part)
-                 for part in (request.META.get(FORWARDED_FOR, '') or '').split(',')]
-        chain = [ip for ip in chain if ip]
-        # Walk in from the right past the hops we appended ourselves. With one
-        # trusted proxy the client is the last entry; the proxy's own address
-        # is in REMOTE_ADDR, not in the header.
+        chain = forwarded_chain(request)
         if len(chain) >= hops:
-            index = len(chain) - hops
-            if index < len(chain):
-                return chain[index]
-        # A chain shorter than the number of proxies we expect means the request
-        # did not arrive the way we think it does. Fall through to REMOTE_ADDR
-        # rather than trusting a truncated chain.
+            # Walk in from the right past the entries our infrastructure wrote.
+            return chain[len(chain) - hops], RESOLVED_FORWARDED_CHAIN
+        # Fail closed. REMOTE_ADDR here is the private Render address, the same
+        # for every visitor; using it would silently merge all traffic.
+        logger.warning('client_origin_chain_too_short',
+                       extra={'forwarded_hop_count': len(chain),
+                              'trusted_proxy_count': hops})
+        return '', RESOLVED_CHAIN_TOO_SHORT
 
-    return normalise_ip(request.META.get(REMOTE_ADDR, ''))
+    # No trusted proxy configured: the socket peer is the client.
+    direct = normalise_ip(request.META.get(REMOTE_ADDR, ''))
+    return (direct, RESOLVED_REMOTE_ADDR) if direct else ('', RESOLVED_UNAVAILABLE)
+
+
+def client_ip(request):
+    """The trusted client address, or '' when it cannot be established."""
+    return resolve_origin(request)[0]
 
 
 def is_private(ip):
@@ -130,37 +180,84 @@ def is_private(ip):
             or addr.is_link_local or addr.is_unspecified)
 
 
+# ── privacy-preserving correlation ──────────────────────────────────────────
+
+def _origin_key():
+    """
+    Dedicated HMAC key, or None when fingerprinting must be disabled.
+
+    Deliberately separate from SECRET_KEY: rotating SECRET_KEY invalidates
+    sessions and signed tokens, so nobody rotates it to expire abuse
+    fingerprints, and reusing it spreads one secret across unrelated purposes.
+
+    There is no literal fallback. If the key is absent in production,
+    fingerprinting is switched off and said so in the logs, rather than every
+    deployment sharing a value that is public in the source tree.
+    """
+    key = (getattr(settings, 'REQUEST_ORIGIN_HMAC_KEY', '') or '').strip()
+    if key:
+        return key.encode('utf-8')
+    if getattr(settings, 'IS_PRODUCTION', False):
+        return None
+    # Development and tests: derive from SECRET_KEY so fingerprints are stable
+    # within a run without requiring anyone to configure a second secret.
+    secret = (getattr(settings, 'SECRET_KEY', '') or '').encode('utf-8')
+    return secret or None
+
+
+def origin_key_version():
+    """Opaque version label, emitted alongside fingerprints so a rotation is legible."""
+    return (getattr(settings, 'REQUEST_ORIGIN_HMAC_KEY_VERSION', '') or 'v1').strip()[:16]
+
+
 def origin_fingerprint(request_or_ip):
     """
-    Keyed, truncated HMAC of the client address. Never the address itself.
+    Keyed HMAC-SHA256 of the client address, truncated. Never the address.
 
-    Accepts a request or an address string, so a caller that has already
-    resolved the address does not resolve it twice.
+    Returns '' when the address is unknown or no key is configured — an empty
+    fingerprint is honest about "cannot correlate", where a plain hash of an
+    empty string would look like a real, shared identity.
+
+    Not a bare SHA-256: the address space is small enough to enumerate
+    exhaustively, so an unkeyed digest of an IP is reversible in seconds.
     """
-    from notifications.antispam.fingerprint import hashed_ip
-
     if request_or_ip is None:
         return ''
-    if isinstance(request_or_ip, str):
-        ip = normalise_ip(request_or_ip)
-    else:
-        ip = client_ip(request_or_ip)
-    return hashed_ip(ip) if ip else ''
+    ip = (normalise_ip(request_or_ip) if isinstance(request_or_ip, str)
+          else client_ip(request_or_ip))
+    if not ip:
+        return ''
+    key = _origin_key()
+    if key is None:
+        return ''
+    digest = hmac.new(key, f'origin:{origin_key_version()}:{ip}'.encode('utf-8'),
+                      hashlib.sha256).hexdigest()
+    return f'{origin_key_version()}:{digest[:16]}'
+
+
+def fingerprinting_available():
+    """False when no key is configured, so callers can log the reason once."""
+    return _origin_key() is not None
 
 
 def safe_origin_context(request):
     """
     The only origin fields that may be logged, as a fixed dict.
 
-    Deliberately a closed set. No cookie, session key, Authorization header,
-    CSRF token, captcha token, referrer or user agent appears here, and a caller
-    cannot add one without editing this function.
+    A closed set by construction. No cookie, session key, Authorization header,
+    CSRF token, captcha token, referrer, user agent, raw address or raw
+    forwarding header appears here, and a caller cannot add one without editing
+    this function.
     """
-    ip = client_ip(request)
+    ip, status = resolve_origin(request)
+    chain = forwarded_chain(request) if request is not None else []
     return {
-        'origin_fp': origin_fingerprint(ip),
-        'origin_known': bool(ip),
+        'origin_available': bool(ip),
+        'origin_fingerprint': origin_fingerprint(ip),
+        'origin_resolution_status': status,
         'origin_private': is_private(ip),
         'origin_family': 'ipv6' if ip and ':' in ip else ('ipv4' if ip else 'none'),
-        'proxy_hops_trusted': trusted_proxy_count(),
+        'forwarded_hop_count': len(chain),
+        'trusted_proxy_count': trusted_proxy_count(),
+        'trusted_header_configured': bool(trusted_client_ip_header()),
     }
