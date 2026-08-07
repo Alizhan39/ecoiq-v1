@@ -404,7 +404,6 @@ from good_agents.services import (  # noqa: E402
     need_resource, prioritisation, signals as signal_service, zero_capital_strategy,
 )
 from good_agents.services.discovery_engine import run_global_discovery  # noqa: E402
-from good_agents.services.orchestrator import Signal  # noqa: E402
 
 
 def _raw_signal(signal_type='harm', title='Test signal', **overrides):
@@ -2169,7 +2168,6 @@ class MissionControlRegressionTests(TestCase):
 from capability_graph.models import Organisation  # noqa: E402
 from capability_graph.services.capabilities import record_capability  # noqa: E402
 from capability_graph.services.organisations import get_or_create_organisation  # noqa: E402
-from good_agents.services import funding_matcher  # noqa: E402
 
 
 class ResponsiblePartyCapabilityGraphIntegrationTests(TestCase):
@@ -2266,7 +2264,6 @@ class FundingMatchCapabilityGraphIntegrationTests(TestCase):
 # PR11 — Real-World Pilot Launchpad
 # =============================================================================
 from capability_graph.models import PublicRoute  # noqa: E402
-from good_agents.models import ActionContact, WorldSignal  # noqa: E402
 from good_agents.services import pilot_launchpad  # noqa: E402
 
 

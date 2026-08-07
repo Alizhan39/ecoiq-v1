@@ -2863,7 +2863,7 @@ def dashboard(request):
     """
     from django.contrib.auth.decorators import login_required as _lr
     if not request.user.is_authenticated:
-        return redirect(f'/login/?next=/dashboard/')
+        return redirect('/login/?next=/dashboard/')
     return render(request, 'dashboard.html', {'user': request.user})
 
 

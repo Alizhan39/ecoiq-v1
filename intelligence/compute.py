@@ -35,7 +35,11 @@ def compute_country_intelligence():
             continue
 
         n = len(companies)
-        avg = lambda attr: round(sum(float(getattr(c, attr)) for c in companies) / n, 1)
+        # Bind the loop variables at definition time: without the defaults this
+        # closure reads whatever `companies`/`n` hold when it is CALLED, which is
+        # correct only while every call stays inside this iteration.
+        avg = lambda attr, companies=companies, n=n: round(  # noqa: E731
+            sum(float(getattr(c, attr)) for c in companies) / n, 1)
 
         national_score = Decimal(str(round(
             sum(float(c.ecoiq_score) for c in companies) / n, 1

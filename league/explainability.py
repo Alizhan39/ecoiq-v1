@@ -217,7 +217,7 @@ def _explain_pollution(company, ctx: Dict) -> Dict:
                     factors.append(_f(
                         CAT_DRIVER, SEVERITY_POSITIVE,
                         f'GHG emissions declined {pct}% YoY ({f.numeric_value/1e6:.1f} → {prev.numeric_value/1e6:.1f} MtCO₂e)',
-                        f'Year-on-year reduction detected in AI document analysis.',
+                        'Year-on-year reduction detected in AI document analysis.',
                         source='ai_finding', source_label='AI Document Analysis',
                         confidence=f.confidence_score, score_impact=+4.0,
                         quote=f.source_quote[:160] if f.source_quote else '',

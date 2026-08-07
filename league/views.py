@@ -110,7 +110,7 @@ def _stub_recommendations(company, projects):
         recs.append({
             'priority': 'high', 'priority_label': 'High',
             'icon': '💚',
-            'title': f'Increase Environmental Capex to ≥1% of Annual Revenue',
+            'title': 'Increase Environmental Capex to ≥1% of Annual Revenue',
             'impact': 'Investment pillar +12–20 pts',
             'rationale': (
                 'Current clean investment appears below the sector median for '

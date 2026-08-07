@@ -13,8 +13,19 @@ Entry points:
 import json
 import logging
 import re
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.db import transaction
+
+if TYPE_CHECKING:
+    # generate_roadmap() is annotated `-> 'TransitionRoadmap'`, but the model is
+    # imported inside the function body to avoid importing models at module
+    # import time. The quoted annotation therefore referred to a name that never
+    # existed in module scope, so anything evaluating annotations —
+    # typing.get_type_hints(), a docs generator, a type checker — would fail on
+    # it. This makes the name resolvable without changing runtime imports.
+    from transition.models import TransitionRoadmap  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

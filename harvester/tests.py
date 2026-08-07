@@ -392,7 +392,6 @@ class NormalizationPersistTests(TestCase):
 # ════════════════════════════════════════════════════════════════════════════
 # Slice 4 — Harvest pipeline (harvest_company + process_harvest_jobs)
 # ════════════════════════════════════════════════════════════════════════════
-from harvester.models import HarvestJob
 from harvester.pipeline import run_harvest
 
 
@@ -629,7 +628,6 @@ class SeedUKRegistryTests(TestCase):
 # ════════════════════════════════════════════════════════════════════════════
 from io import StringIO as _SIO
 from unittest import mock
-from django.core.management import call_command
 from harvester.models import BatchHarvestRun
 
 
