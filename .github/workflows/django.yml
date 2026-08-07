@@ -7,7 +7,34 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # Static checks first. The Django suite below takes ~13 minutes; Ruff takes
+  # seconds, so gating on it avoids spending runner time on code with an
+  # undefined name in it. Blocking: no continue-on-error, and a non-zero exit
+  # fails the workflow.
+  ruff:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ruff
+        # The pinned version from requirements-dev.txt, installed on its own so
+        # this job does not pay for the full application dependency tree.
+        run: pip install "$(grep -E '^ruff==' requirements-dev.txt)"
+
+      - name: Ruff lint
+        # No --fix. CI reports; it never rewrites the tree. A fix belongs in a
+        # commit a human reviewed, not in a build artefact nobody sees.
+        run: ruff check --output-format=github .
+
   django-check:
+    needs: ruff
     runs-on: ubuntu-latest
 
     env:
@@ -26,9 +53,12 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
+        # requirements-dev.txt includes requirements.txt and adds the test-only
+        # packages. Production installs requirements.txt alone (render.yaml), so
+        # nothing here reaches the running service.
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Django system check
         run: python manage.py check
