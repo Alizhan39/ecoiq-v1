@@ -1016,7 +1016,6 @@ Rules:
             log.warning('[job %s] AIAnalysisJob save failed (non-fatal): %s', self.job_pk, exc)
 
         # ── IngestionSource records ───────────────────────────────────────────
-        from ingestion.models import IngestionSource
         for src in self._sources:
             if not src.get('url'):
                 continue

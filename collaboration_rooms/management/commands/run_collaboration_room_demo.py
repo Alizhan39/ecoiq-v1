@@ -122,7 +122,7 @@ class Command(BaseCommand):
                 room, user=rep_b, organisation=org_b, role='organisation_representative',
                 reason='PR10 demo — Organisation B is the proposed introduction counterpart.', actor=staff,
             )
-        self.stdout.write(f'Organisation B added to room as a real second party.')
+        self.stdout.write('Organisation B added to room as a real second party.')
 
         item = room.evidence_items.filter(title='Emergency water supply capacity').first()
         if item is None:

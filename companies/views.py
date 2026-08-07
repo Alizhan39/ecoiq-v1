@@ -5,7 +5,7 @@ EcoIQ Company Intelligence — Public Views.
 /companies/<slug>/    → full public company profile
 """
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
@@ -638,7 +638,6 @@ def company_detail(request, slug):
         'roadmaps':              roadmaps,
         'active_roadmap':        active_roadmap,
         'has_roadmap':           has_roadmap,
-        'financing_matches':     financing_matches,
         'briefing':              briefing,
         'sources':               sources,
         'disclaimer_full':       DISCLAIMER_FULL,
