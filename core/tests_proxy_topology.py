@@ -267,7 +267,7 @@ class ResolverOwnershipTests(SimpleTestCase):
         import re
 
         root = pathlib.Path(__file__).resolve().parent.parent
-        allowed = {'core/client_origin.py', 'core/origin_diagnostics.py'}
+        allowed = {'core/client_origin.py'}
         pattern = re.compile(r'HTTP_X_FORWARDED_FOR|REMOTE_ADDR')
         offenders = []
         for path in root.rglob('*.py'):

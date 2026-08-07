@@ -8,7 +8,6 @@ from django.conf.urls.static import static
 
 from companies.sitemaps import CompanySitemap, StaticSitemap
 from leads import views as leads_views
-from core.origin_diagnostics import origin_diagnostic_view
 
 _sitemaps = {
     'static':    StaticSitemap,
@@ -16,10 +15,6 @@ _sitemaps = {
 }
 
 urlpatterns = [
-    # TEMPORARY — proxy topology investigation. Returns hop classifications only
-    # (never an address); 404s unless ORIGIN_DIAGNOSTIC_ENABLED is on. Removed
-    # once TRUSTED_PROXY_COUNT is settled.
-    path('__origin-diagnostic__/', origin_diagnostic_view, name='origin_diagnostic'),
 
     # i18n — language switcher endpoint (set_language view, POST)
     path('i18n/', include('django.conf.urls.i18n')),
