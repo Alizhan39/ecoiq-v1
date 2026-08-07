@@ -74,6 +74,10 @@ def rate_limit(name, json=False):
             if _too_many(name, request):
                 logger.warning('Rate limit hit: %s by %s', name, _client_ip(request))
                 retry = WINDOW - int(time.time()) % WINDOW
+                # Annotated as the base class: the two branches build a
+                # JsonResponse and an HttpResponse, and mypy otherwise pins the
+                # variable to whichever branch it reads first.
+                resp: HttpResponse
                 if json:
                     resp = JsonResponse(
                         {'error': 'Rate limit exceeded. Please slow down and try again shortly.'},

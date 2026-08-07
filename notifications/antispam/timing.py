@@ -17,12 +17,13 @@ MIN_SECONDS = 3          # a human cannot read and complete a form faster
 MAX_SECONDS = 60 * 60 * 6
 
 
-def issue(now=None):
+def issue(now: float | None = None) -> str:
     """Signed token embedding the render time. Put this in a hidden field."""
     return signing.dumps({'t': int(now or time.time())}, salt=SALT)
 
 
-def check(token, *, min_seconds=None, max_seconds=None, now=None):
+def check(token: str | None, *, min_seconds: int | None = None,
+          max_seconds: int | None = None, now: float | None = None) -> tuple[bool, str]:
     """
     Returns (ok, code). Codes: 'ok', 'too_fast', 'expired', 'tampered'.
     A missing token counts as tampered — the form always renders one.

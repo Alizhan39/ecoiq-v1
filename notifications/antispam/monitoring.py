@@ -16,7 +16,7 @@ TEN_MINUTES = 60 * 10
 DAY = 60 * 60 * 24
 
 
-def _bump(key, ttl):
+def _bump(key: str, ttl: int) -> int:
     try:
         if cache.add(key, 1, ttl):
             return 1
@@ -29,7 +29,7 @@ def _bump(key, ttl):
         return 0
 
 
-def record(event, *, fingerprint='', form='contact'):
+def record(event: str, *, fingerprint: str = '', form: str = 'contact') -> None:
     """Count an event and raise an alert log line when a threshold trips."""
     if event == 'contact_submission_rejected':
         count = _bump(f'antispam:alert:rejected:{form}', TEN_MINUTES)

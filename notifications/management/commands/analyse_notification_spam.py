@@ -95,9 +95,9 @@ def plan_transitions(records, corpus):
         STRONG signal. Two MEDIUM signals reject a live submission, but are not
         enough to relabel a row a human may already have seen in the queue.
     """
-    planned = []
-    decisions = collections.Counter()
-    refused = collections.Counter()
+    planned: list[tuple[AdminNotification, str, list[str]]] = []
+    decisions: collections.Counter[str] = collections.Counter()
+    refused: collections.Counter[str] = collections.Counter()
 
     for r in records:
         decision, reasons = classify_record(r, corpus)
@@ -196,10 +196,10 @@ class Command(BaseCommand):
 
         corpus = build_corpus(records)
 
-        proposals = collections.Counter()
-        reason_counter = collections.Counter()
-        transitions = collections.Counter()
-        current_counter = collections.Counter()
+        proposals: collections.Counter[str] = collections.Counter()
+        reason_counter: collections.Counter[str] = collections.Counter()
+        transitions: collections.Counter[tuple[str, str]] = collections.Counter()
+        current_counter: collections.Counter[str] = collections.Counter()
 
         for r in records:
             decision, reasons = classify_record(r, corpus)

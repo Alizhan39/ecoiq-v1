@@ -32,6 +32,7 @@ none of them contributes to REJECT:
 Those were all present in the genuine enquiries in this dataset as well as the
 abusive ones, so they carry no information.
 """
+from collections.abc import Iterable
 from enum import Enum
 
 from .fingerprint import normalise_email, normalise_text
@@ -85,7 +86,7 @@ SIGNALS = {
 }
 
 
-def message_skeleton(message):
+def message_skeleton(message: str | None) -> str:
     """
     Normalised shape of a message with variable parts removed, so a template
     with small substitutions collapses to one value. Digits, URLs and emails
@@ -115,13 +116,14 @@ class Corpus:
     against history.
     """
 
-    def __init__(self):
-        self.emails_by_name = {}
-        self.emails_by_skeleton = {}
-        self.subjects_by_name = {}
-        self.fingerprint_counts = {}
+    def __init__(self) -> None:
+        self.emails_by_name: dict[str, set[str]] = {}
+        self.emails_by_skeleton: dict[str, set[str]] = {}
+        self.subjects_by_name: dict[str, set[str]] = {}
+        self.fingerprint_counts: dict[str, int] = {}
 
-    def add(self, *, name='', email='', subject='', message='', fingerprint=''):
+    def add(self, *, name: str = '', email: str = '', subject: str = '',
+            message: str = '', fingerprint: str = '') -> None:
         n = normalise_text(name)
         e = normalise_email(email)
         if n and e:
@@ -134,18 +136,20 @@ class Corpus:
         if fingerprint:
             self.fingerprint_counts[fingerprint] = self.fingerprint_counts.get(fingerprint, 0) + 1
 
-    def distinct_emails_for_name(self, name):
+    def distinct_emails_for_name(self, name: str) -> int:
         return len(self.emails_by_name.get(normalise_text(name), ()))
 
-    def distinct_emails_for_skeleton(self, message):
+    def distinct_emails_for_skeleton(self, message: str) -> int:
         return len(self.emails_by_skeleton.get(message_skeleton(message), ()))
 
-    def distinct_subjects_for_name(self, name):
+    def distinct_subjects_for_name(self, name: str) -> int:
         return len(self.subjects_by_name.get(normalise_text(name), ()))
 
 
-def signals_for(*, name='', email='', subject='', message='', fingerprint='',
-                corpus=None, live_reasons=()):
+def signals_for(*, name: str = '', email: str = '', subject: str = '',
+                message: str = '', fingerprint: str = '',
+                corpus: 'Corpus | None' = None,
+                live_reasons: Iterable[str] = ()) -> list[str]:
     """
     Return the list of signal codes present. `live_reasons` carries codes the
     request-time screening already established (honeypot, turnstile, timing,
@@ -200,7 +204,7 @@ def signals_for(*, name='', email='', subject='', message='', fingerprint='',
     return [c for c in SIGNALS if c in found]
 
 
-def decide(found):
+def decide(found: list[str]) -> str:
     """
     Fold signals into ACCEPT / REVIEW / REJECT.
 
@@ -222,8 +226,10 @@ def decide(found):
     return 'ACCEPT'
 
 
-def classify(*, name='', email='', subject='', message='', fingerprint='',
-             corpus=None, live_reasons=()):
+def classify(*, name: str = '', email: str = '', subject: str = '',
+             message: str = '', fingerprint: str = '',
+             corpus: 'Corpus | None' = None,
+             live_reasons: Iterable[str] = ()) -> tuple[str, list[str]]:
     """Returns (decision, reason_codes). Reason codes never contain message text."""
     found = signals_for(name=name, email=email, subject=subject, message=message,
                         fingerprint=fingerprint, corpus=corpus, live_reasons=live_reasons)
