@@ -718,6 +718,13 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# How many rightmost X-Forwarded-For entries our own infrastructure appended.
+# Everything to the left of them is written by the client and must not be
+# trusted — see core/client_origin.py for what goes wrong in each direction.
+# Render puts exactly one proxy in front of the app; locally there is none.
+TRUSTED_PROXY_COUNT = int(os.environ.get('TRUSTED_PROXY_COUNT',
+                                         '1' if IS_PRODUCTION else '0'))
+
 # IS_PRODUCTION, not `not DEBUG`: the test runner imports this module with
 # whatever DEBUG the surrounding environment carries, and CI sets DEBUG=False
 # so the `check` steps are production-like. Under `not DEBUG` that turned

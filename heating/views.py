@@ -7,6 +7,7 @@ from .forms import (
 )
 from .calculator import recommend, PACKAGE_PRICES, PACKAGE_LABELS
 from .emails import notify_new_lead
+from core import client_origin
 
 
 COMPANY_PACKAGES = [
@@ -22,10 +23,8 @@ COMPANY_PACKAGES = [
 
 
 def _client_ip(request):
-    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    if xff:
-        return xff.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR') or None
+    """Trusted client address, or None. See core.client_origin."""
+    return client_origin.client_ip(request) or None
 
 
 def _is_bot(request):
