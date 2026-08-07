@@ -67,6 +67,11 @@ PERSONAL_KEY_PARTS: tuple[str, ...] = (
 # against a raw IP arriving inside an f-string someone assembled by hand.
 IPV4_RE = re.compile(r'\b\d{1,3}(?:\.\d{1,3}){3}\b')
 IPV6_RE = re.compile(r'\b(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}\b')
+# Same reasoning for addresses of the other kind. An exception message is
+# user-influenced text — `ValueError("no account for alice@example.com")` is an
+# ordinary thing to write — and a key-name rule cannot catch it because the key
+# is `exception`, which we very much want to keep.
+EMAIL_RE = re.compile(r'\b[\w.+-]+@[\w-]+\.[\w.-]+\b')
 
 # Keys whose values must survive the value scan.
 #
@@ -97,6 +102,8 @@ def _scrub_value(value: Any) -> Any:
     scrubbed = IPV4_RE.sub(REDACTED, value)
     if ':' in scrubbed:
         scrubbed = IPV6_RE.sub(REDACTED, scrubbed)
+    if '@' in scrubbed:
+        scrubbed = EMAIL_RE.sub(REDACTED, scrubbed)
     return scrubbed
 
 
@@ -162,6 +169,14 @@ SHARED_PROCESSORS: list[Any] = [
     structlog.stdlib.add_logger_name,
     structlog.processors.TimeStamper(fmt='iso', utc=True),
     structlog.processors.StackInfoRenderer(),
+    # Turns exc_info into an `exception` STRING before redaction runs.
+    #
+    # Order is the whole point. Left as a (type, value, traceback) tuple, the
+    # exception is an object the scrubber cannot read, and the renderer
+    # stringifies it afterwards — so `ValueError('failed for 203.0.113.9')`
+    # reached the log intact. An exception message is user-influenced text and
+    # gets redacted like any other.
+    structlog.processors.format_exc_info,
     structlog.processors.UnicodeDecoder(),
     add_service_metadata,
     # Last, so nothing added above escapes it.
@@ -208,9 +223,24 @@ def configure_structlog(*, json_logs: bool) -> None:
         ],
     )
 
-    root = logging.getLogger()
-    for handler in root.handlers:
-        handler.setFormatter(formatter)
+    # Every handler on every configured logger, not just root.
+    #
+    # settings.LOGGING gives `django.request` and `django.db.backends` their own
+    # handlers with `propagate: False`. Formatting only root's handlers would
+    # leave those two outside the pipeline — and `django.request` is where
+    # unhandled 500s and their tracebacks go. Those lines would have stayed
+    # plain text in a JSON log stream, and unredacted.
+    seen: set[int] = set()
+    loggers: list[logging.Logger] = [logging.getLogger()]
+    for name in list(logging.root.manager.loggerDict):
+        item = logging.getLogger(name)
+        if isinstance(item, logging.Logger):
+            loggers.append(item)
+    for entry in loggers:
+        for handler in entry.handlers:
+            if id(handler) not in seen:
+                seen.add(id(handler))
+                handler.setFormatter(formatter)
 
 
 def get_logger(name: str | None = None) -> Any:

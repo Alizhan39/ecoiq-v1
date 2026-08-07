@@ -43,7 +43,7 @@ the sentence around it.
 |---|---|---|
 | `request_started` | INFO | `RequestContextMiddleware` |
 | `request_completed` | INFO | `RequestContextMiddleware` |
-| `request_failed` | ERROR | `RequestContextMiddleware` |
+| `request_failed` | ERROR | `RequestContextMiddleware` (defensive — see below) |
 | `contact_submission_accepted` | INFO | `core.views._log_submission` |
 | `contact_submission_reviewed` | INFO | `core.views._log_submission` |
 | `contact_submission_rejected` | INFO | `core.views._log_submission` |
@@ -148,10 +148,34 @@ output carries no ANSI escapes.
 
 ## Exceptions
 
-`request_failed` is logged with the exception type and traceback, then the
-exception is **re-raised**. Django's own handling is unchanged: the client still
-receives the generic 500, and a future error tracker still sees it. No request
-body, cookies or headers are attached.
+An unhandled view exception produces **two** lines, measured, not assumed:
+
+1. `django.request` at ERROR — `Internal Server Error: /path/` with the
+   traceback in an `exception` field.
+2. `request_completed` at INFO with `status_code: 500`.
+
+Both carry the same `request_id`, so they join.
+
+`request_failed` is **not** the normal path. Django wraps every middleware in
+`convert_exception_to_response`, so a view exception becomes a 500 response
+*below* this middleware and never reaches its `except` block. The handler stays
+as a defence for an exception raised above the conversion boundary, and it
+re-raises so Django's semantics are untouched.
+
+Both lines go through the same processor chain. That required work:
+`django.request` has its own handler and `propagate: False` in
+settings.LOGGING, so `configure_structlog` sets the formatter on **every**
+configured logger's handlers, not just root's. Without that the most important
+lines in production — 500s with tracebacks — would have been plain text in a
+JSON stream, and unredacted.
+
+`format_exc_info` runs **before** redaction so the traceback is a string the
+scrubber can read. As a tuple it is an opaque object, and the renderer would
+stringify it afterwards — `ValueError('failed for 203.0.113.9')` would have
+reached the log intact. Exception messages are user-influenced text: both
+address-shaped and email-shaped values inside them are scrubbed.
+
+No request body, cookies or headers are attached.
 
 ## Health checks
 

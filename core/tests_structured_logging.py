@@ -11,6 +11,7 @@ import io
 import json
 import logging
 import re
+import sys
 import threading
 
 import structlog
@@ -47,18 +48,36 @@ class CapturedLogs:
         self.stream = io.StringIO()
 
     def __enter__(self):
-        self._root = logging.getLogger()
-        self._saved = list(self._root.handlers)
-        self._saved_level = self._root.level
         self.handler = logging.StreamHandler(self.stream)
-        self._root.handlers = [self.handler]
-        self._root.setLevel(logging.DEBUG)
+        # Replace handlers on EVERY configured logger, not just root.
+        # settings.LOGGING gives django.request its own handler with
+        # propagate=False, so a root-only capture silently misses it — and any
+        # assertion about its output then passes without ever seeing a line.
+        self._saved: list[tuple[logging.Logger, list, int]] = []
+        targets = [logging.getLogger()] + [
+            logging.getLogger(n) for n in list(logging.root.manager.loggerDict)
+            if isinstance(logging.getLogger(n), logging.Logger)
+        ]
+        for target in targets:
+            if target.handlers:
+                self._saved.append((target, list(target.handlers), target.level))
+                target.handlers = [self.handler]
+                target.setLevel(logging.DEBUG)
+        # Root may have had no handlers of its own, so the loop above skipped
+        # it. Set it unconditionally; the loop already recorded the originals
+        # for anything it did touch.
+        root = logging.getLogger()
+        if not any(target is root for target, _, _ in self._saved):
+            self._saved.append((root, list(root.handlers), root.level))
+        root.handlers = [self.handler]
+        root.setLevel(logging.DEBUG)
         configure_structlog(json_logs=self.json_logs)
         return self
 
     def __exit__(self, *exc):
-        self._root.handlers = self._saved
-        self._root.setLevel(self._saved_level)
+        for target, handlers, level in self._saved:
+            target.handlers = handlers
+            target.setLevel(level)
         configure_structlog(json_logs=False)
         return False
 
@@ -174,6 +193,74 @@ class JsonRenderingTests(SimpleTestCase):
             logging.getLogger('legacy.module').warning(
                 'legacy line for %s', MARKER_IPV4)
         self.assertNotIn(MARKER_IPV4, cap.text)
+
+
+class DjangoRequestLoggerTests(TestCase):
+    """
+    `django.request` has its own handler and `propagate: False` in
+    settings.LOGGING, so it is the logger most likely to slip outside the
+    pipeline — and it is the one that carries unhandled 500s.
+    """
+
+    def test_unhandled_exceptions_go_through_the_json_pipeline(self):
+        from django.test import Client, override_settings
+        from django.urls import path
+
+        def boom(request):
+            raise ValueError(f'SYNTHETIC {MARKER_IPV4} {MARKER_EMAIL}')
+
+        module = type(sys)('urlconf_for_test')
+        module.urlpatterns = [path('boom/', boom)]
+        sys.modules['urlconf_for_test'] = module
+        self.addCleanup(sys.modules.pop, 'urlconf_for_test', None)
+
+        with CapturedLogs() as cap:
+            with override_settings(ROOT_URLCONF='urlconf_for_test', DEBUG=False,
+                                   ALLOWED_HOSTS=['testserver']):
+                Client(raise_request_exception=False).get('/boom/')
+
+        lines = [l for l in cap.text.splitlines() if l.strip()]
+        self.assertTrue(lines)
+        for line in lines:
+            with self.subTest(line=line[:50]):
+                json.loads(line)   # every line, including django.request's
+        # And the traceback line must be redacted like everything else.
+        self.assertNotIn(MARKER_IPV4, cap.text)
+        self.assertNotIn(MARKER_EMAIL, cap.text)
+
+    def test_a_500_is_reported_once_by_the_request_middleware(self):
+        """
+        In the real Django cycle `convert_exception_to_response` turns a view
+        exception into a 500 BELOW this middleware, so the lifecycle event is
+        `request_completed` with status 500 — not `request_failed`. Django's own
+        `django.request` ERROR carries the traceback. One line each, no
+        duplicate lifecycle event.
+        """
+        from django.test import Client, override_settings
+        from django.urls import path
+
+        def boom(request):
+            raise ValueError('SYNTHETIC_EXPLOSION')
+
+        module = type(sys)('urlconf_boom2')
+        module.urlpatterns = [path('boom/', boom)]
+        sys.modules['urlconf_boom2'] = module
+        self.addCleanup(sys.modules.pop, 'urlconf_boom2', None)
+
+        with CapturedLogs() as cap:
+            with override_settings(ROOT_URLCONF='urlconf_boom2', DEBUG=False,
+                                   ALLOWED_HOSTS=['testserver']):
+                Client(raise_request_exception=False).get('/boom/')
+
+        events_seen = [r.get('event') for r in cap.records()]
+        completed = [r for r in cap.records()
+                     if r.get('event') == events.REQUEST_COMPLETED]
+        self.assertEqual(len(completed), 1, 'lifecycle event logged more than once')
+        self.assertEqual(completed[0]['status_code'], 500)
+        # The traceback is present, via django.request, exactly once.
+        self.assertEqual(sum('Traceback' in str(r.get('event', '')) or
+                             'Internal Server Error' in str(r.get('event', ''))
+                             for r in cap.records()), 1)
 
 
 class RequestIdTests(SimpleTestCase):
