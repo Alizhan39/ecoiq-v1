@@ -1,0 +1,20 @@
+# Development and CI dependencies.
+#
+# Kept separate from requirements.txt so lint tooling is not installed into the
+# production image: render.yaml's buildCommand installs requirements.txt only,
+# and Ruff has no place in a running web service.
+#
+# Plain pip, matching the existing convention — no Poetry, uv or pip-tools is
+# introduced for this.
+-r requirements.txt
+
+# Pinned exactly so CI and a developer's machine cannot disagree about what a
+# violation is. A floating version means a Ruff release can turn a green branch
+# red without a commit. Bump deliberately.
+ruff==0.14.2
+
+# Used by core/tests_quality_gate.py to parse the workflow file. PyYAML is
+# currently present only as a transitive dependency of langchain-core, which is
+# not something a CI safeguard should rely on — if that package ever moves, the
+# test would fail for a reason unrelated to what it checks.
+PyYAML>=6.0

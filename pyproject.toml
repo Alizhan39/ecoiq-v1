@@ -1,0 +1,146 @@
+# Ruff — the repository's Python lint gate.
+#
+# EcoIQ had no Python linter, formatter or pre-commit configuration before this
+# file: no pyproject.toml, setup.cfg, tox.ini, .flake8 or .pre-commit-config.yaml,
+# and no lint tool in requirements.txt or either CI workflow. So there is nothing
+# to migrate from and no conflicting tool to reconcile — but it also means 1,150
+# non-migration Python files have never been linted, and a first run that
+# enforced everything would be unreviewable.
+#
+# The rule set below is therefore chosen on measured evidence, not on taste. A
+# full survey (E, W, F, I, UP, B, SIM, C4, PIE, RUF, DJ, S) produced ~24,000
+# findings. The overwhelming majority are style and modernisation, led by 20,998
+# line-too-long. Enforcing those now would mean a diff nobody could review, and
+# would find no bugs.
+#
+# What is enforced here is the part that finds defects, and it is enforced
+# everywhere including migrations. The measured cost of compliance is ~10 files.
+# Everything deferred is listed at the bottom with its real count, so the next
+# stage is a decision about churn rather than a fresh investigation.
+
+[tool.ruff]
+# Matches .github/workflows/django.yml, runtime.txt and render.yaml (3.11.0).
+target-version = "py311"
+
+# Recorded, not enforced. The repository has no line-length convention — 20,998
+# lines exceed 88 — so E501 is deferred (see below) and this value only affects
+# rules that wrap. It is not a promise that the code fits.
+line-length = 120
+
+# Ruff still parses these; they are excluded because nothing here is
+# hand-written or ours to fix.
+extend-exclude = [
+    "staticfiles",
+    "static/dist",
+    "frontend",
+    "node_modules",
+    ".venv",
+    "venv",
+]
+
+[tool.ruff.lint]
+# Selected because each one finds a genuine defect class, and because the
+# repository can satisfy all of them with a small, inspectable diff. Every rule
+# below was measured first; none is enabled speculatively.
+select = [
+    # Pyflakes — real errors, not style.
+    "F402",   # import shadowed by loop variable
+    "F501",   # invalid % format
+    "F502",   # % format expected mapping
+    "F506",   # % format mixes positional and named
+    "F522",   # .format() has unused named arguments
+    "F524",   # .format() is missing arguments
+    "F541",   # f-string with no placeholders — usually a lost variable
+    "F601",   # dict literal repeats a key — one value silently wins
+    "F602",   # same, for `in` membership tests
+    "F631",   # assertion on a tuple — always true
+    "F632",   # `is` comparison against a literal
+    "F633",   # invalid print syntax
+    "F702",   # continue outside a loop
+    "F706",   # return outside a function
+    "F707",   # bare except not last
+    "F811",   # redefinition of an unused name — one definition is dead
+    "F821",   # undefined name — NameError at runtime
+    "F822",   # undefined name in __all__
+    "F823",   # local used before assignment
+
+    # Pycodestyle errors that are genuine mistakes rather than layout. All of
+    # these already measure ZERO, so they are free to enforce and only prevent
+    # regressions.
+    "E711",   # comparison to None with ==
+    "E712",   # comparison to True/False with ==
+    "E713",   # `not x in y` instead of `not in`
+    "E714",   # `not x is y` instead of `is not`
+    "E722",   # bare except
+
+    # Bugbear rules that are already clean, and are the classic Django traps.
+    "B002",   # unary ++
+    "B006",   # mutable default argument
+    "B008",   # function call in a default argument
+    "B023",   # function definition does not bind a loop variable
+
+    # Django-specific, both already clean.
+    "DJ001",  # null=True on a string-based field
+    "DJ003",  # locals() passed to render()
+]
+
+ignore = [
+    # Nothing is ignored globally. A rule either finds defects and is enforced,
+    # or it is deferred below with its count. Blanket ignores hide the second
+    # case as if it were the first.
+]
+
+[tool.ruff.lint.per-file-ignores]
+# core/views.py defines `api_docs` twice (lines 932 and 988). Python keeps the
+# second, so the first is ~56 lines of unreachable view code, and
+# ecoiq/urls.py resolves to the second. Which one is intended is an application
+# question, not a lint question, so this PR does not delete either — and does
+# not pretend the finding is acceptable by writing `# noqa` at the site. The
+# ignore lives here, visible, until that decision is made.
+"core/views.py" = ["F811"]
+
+# Migrations are generated and are historical records; a redefinition inside one
+# is Django's own output, not a defect we may edit. Everything else above still
+# applies to them.
+"*/migrations/*" = ["F811"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = []
+
+# ── Deferred, with measured counts ───────────────────────────────────────────
+#
+# Not enabled here. Each is a follow-up PR whose size is now known:
+#
+#   E501   line-too-long                20,998   no length convention exists;
+#                                                needs a decision, then churn
+#   RUF012 mutable-class-default         1,059   mostly Django Meta/list attrs;
+#                                                needs typing.ClassVar sweep
+#   I001   unsorted-imports          752 / 403 files   isort adoption; large but
+#                                                mechanical — best done alone
+#   RUF001/2/3 ambiguous-unicode           543   mostly intentional typography
+#   RUF059 unused-unpacked-variable        243
+#   S106   hardcoded-password-func-arg     187   overwhelmingly test fixtures;
+#                                                needs triage, not a blanket ban
+#   F401   unused-import             154 / 102 files   safe autofix, but 102
+#                                                files is not a reviewable first
+#                                                PR alongside config
+#   C408   unnecessary-collection-call     150
+#   E701   multiple-statements-on-line     140
+#   F841   unused-variable            74 / 36 files
+#   B007   unused-loop-control-variable     59
+#   E402   module-import-not-at-top         56   worth doing early: this exact
+#                                                class of mistake broke CI in
+#                                                PR #222
+#   SIM117 multiple-with-statements         51
+#   UP045/UP037/UP006 typing modernisation ~101
+#   S110   try-except-pass                  34
+#   E741   ambiguous-variable-name          27
+#   B017   assert-raises-exception           9   all in tests; each needs the
+#                                                intended exception type, which
+#                                                is test-authoring work
+#   B905   zip-without-explicit-strict      18
+#   B904   raise-without-from               14
+#
+# The formatter is deliberately absent. `ruff format --check .` reports that it
+# would rewrite essentially the whole tree, so it is not wired into CI and must
+# be its own PR with its own review.
