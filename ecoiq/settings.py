@@ -403,6 +403,9 @@ EXTERNAL_PUBLIC_ACTIONS_ENABLED = False
 # ── Middleware ────────────────────────────────────────────────────────────────
 
 MIDDLEWARE = [
+    # First, so the request id covers everything below it — including anything
+    # logged by security middleware.
+    'core.logging_middleware.RequestContextMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',   # static files — must be 2nd
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -775,6 +778,16 @@ if IS_PRODUCTION:
 # docs/security/admin-credential-rotation.md for what must never be logged.
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO').upper()
+
+# Structured logging. JSON in production (one event per line, machine-readable),
+# human-readable console elsewhere. Chosen from configuration, never sniffed
+# from a hostname, so tests are deterministic.
+STRUCTLOG_JSON_LOGS = os.environ.get(
+    'STRUCTLOG_JSON_LOGS', '1' if IS_PRODUCTION else '0') == '1'
+
+# Optional release marker, surfaced on every event and read by a future error
+# tracker for release attribution.
+RELEASE_VERSION = os.environ.get('RENDER_GIT_COMMIT', '')[:12]
 
 LOGGING = {
     'version': 1,
@@ -1209,3 +1222,14 @@ if AI_FREE_ONLY and AI_ALLOW_PAID_MODELS:
         'AI_FREE_ONLY=true and AI_ALLOW_PAID_MODELS=true are contradictory. '
         'Set AI_ALLOW_PAID_MODELS=false, or turn AI_FREE_ONLY off deliberately.'
     )
+
+
+# Applied after LOGGING is in place so the handlers it created get the structlog
+# formatter. Both plain `logging.getLogger(...)` calls — 66 modules still use
+# them — and structlog calls then flow through one processor chain, which means
+# one redaction pass and one request_id source for everything.
+from core.logging_setup import configure_structlog  # noqa: E402
+
+import logging.config  # noqa: E402
+logging.config.dictConfig(LOGGING)
+configure_structlog(json_logs=STRUCTLOG_JSON_LOGS)
