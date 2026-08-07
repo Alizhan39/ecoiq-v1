@@ -722,6 +722,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Everything to the left of them is written by the client and must not be
 # trusted — see core/client_origin.py for what goes wrong in each direction.
 # Render puts exactly one proxy in front of the app; locally there is none.
+# TEMPORARY — gates the proxy topology diagnostic endpoint. Off unless set.
+ORIGIN_DIAGNOSTIC_ENABLED = os.environ.get('ORIGIN_DIAGNOSTIC_ENABLED', '') == '1'
+
 TRUSTED_PROXY_COUNT = int(os.environ.get('TRUSTED_PROXY_COUNT',
                                          '1' if IS_PRODUCTION else '0'))
 
