@@ -11,13 +11,15 @@ Tiers (requests per minute):
   staff         → unlimited
 """
 import time
-import logging
 
+import structlog
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
-from core import client_origin
 
-logger = logging.getLogger(__name__)
+from core import client_origin, events
+from core.client_origin import safe_origin_context
+
+logger = structlog.get_logger(__name__)
 
 ANON_PER_MIN = 10
 AUTH_PER_MIN = 30
@@ -72,8 +74,21 @@ def rate_limit(name, json=False):
     def decorator(view):
         def wrapped(request, *args, **kwargs):
             if _too_many(name, request):
-                logger.warning('Rate limit hit: %s by %s', name, _client_ip(request))
+                # Was: logger.warning('Rate limit hit: %s by %s', name,
+                # _client_ip(request)) — which wrote the raw client address into
+                # a persistent log line on every throttled request.
+                #
+                # INFO, not WARNING: a limiter turning traffic away is the
+                # system working as designed. At WARNING an attack floods the
+                # log with warnings exactly when it needs to stay readable.
                 retry = WINDOW - int(time.time()) % WINDOW
+                logger.info(
+                    events.RATE_LIMIT_APPLIED,
+                    limit_name=name,
+                    limit=_limit_for(request),
+                    retry_after=retry,
+                    **safe_origin_context(request),
+                )
                 # Annotated as the base class: the two branches build a
                 # JsonResponse and an HttpResponse, and mypy otherwise pins the
                 # variable to whichever branch it reads first.
