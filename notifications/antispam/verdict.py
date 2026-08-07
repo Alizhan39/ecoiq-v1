@@ -32,6 +32,7 @@ class Reason(str, Enum):
     DUPLICATE_SUBMISSION = 'duplicate_submission'
     EXCESSIVE_URLS = 'excessive_urls'
     NAME_REUSED_ACROSS_EMAILS = 'name_reused_across_emails'
+    NAME_ON_MANY_DISTINCT_EMAILS = 'name_on_many_distinct_emails'
     LOW_CONTENT_QUALITY = 'low_content_quality'
     DISPOSABLE_EMAIL_DOMAIN = 'disposable_email_domain'
     INVALID_EMAIL_FORMAT = 'invalid_email_format'
@@ -53,6 +54,10 @@ HARD_REJECT = frozenset({
     Reason.INVALID_EMAIL_FORMAT,
     Reason.INVALID_FIELD_LENGTH,
     Reason.FORM_TIMING_TAMPERED,
+    # One contact name across dozens of unrelated addresses. Decisive on
+    # its own: 965 of the 979 records in the live incident carried a
+    # single name across 93 domains, and no genuine enquiry came close.
+    Reason.NAME_ON_MANY_DISTINCT_EMAILS,
 })
 
 # Reasons that are suspicious but survivable — a real person can trip these.

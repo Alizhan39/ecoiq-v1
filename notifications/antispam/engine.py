@@ -8,7 +8,7 @@ import logging
 
 from django.core.cache import cache
 
-from . import heuristics, ratelimit, timing, turnstile
+from . import classify, heuristics, ratelimit, timing, turnstile
 from .fingerprint import submission_fingerprint
 from .verdict import Decision, Reason, Verdict
 
@@ -86,8 +86,15 @@ def evaluate(*, request=None, form='contact', name='', email='', subject='',
         verdict.add(Reason.DISPOSABLE_EMAIL_DOMAIN)
     if heuristics.low_content_quality(message):
         verdict.add(Reason.LOW_CONTENT_QUALITY)
+    # One name across a handful of addresses is a soft hint; one name across
+    # dozens is decisive on its own. Splitting the two is what closes the gap
+    # between this path and the forensic review of the live incident — see
+    # notifications/antispam/classify.py.
     try:
-        if heuristics.name_reused_across_emails(name, email):
+        distinct = heuristics.distinct_emails_for_name(name)
+        if distinct >= classify.NAME_DISTINCT_EMAILS_STRONG:
+            verdict.add(Reason.NAME_ON_MANY_DISTINCT_EMAILS)
+        elif distinct >= classify.NAME_DISTINCT_EMAILS_WEAK:
             verdict.add(Reason.NAME_REUSED_ACROSS_EMAILS)
     except Exception as exc:
         logger.warning('antispam_name_reuse_check_failed',
