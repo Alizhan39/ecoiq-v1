@@ -68,11 +68,15 @@ def check(*, ip='', email='', message='', form=''):
     if over:
         exceeded.append('global')
 
-    if ip:
-        limit, window = limits['ip']
-        over, _ = _hit(f'antispam:ip:{form}:{hashed_ip(ip)}', limit, window)
-        if over:
-            exceeded.append('ip')
+    # An origin we cannot identify shares one bucket with every other
+    # unidentifiable origin rather than escaping the limit altogether. This
+    # branch used to be `if ip:`, which meant an empty origin got no per-IP
+    # limit at all — the exact fail-open this module exists to prevent.
+    limit, window = limits['ip']
+    bucket = hashed_ip(ip) if ip else 'unknown'
+    over, _ = _hit(f'antispam:ip:{form}:{bucket}', limit, window)
+    if over:
+        exceeded.append('ip')
 
     if email:
         limit, window = limits['email']
