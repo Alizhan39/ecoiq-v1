@@ -30,29 +30,31 @@ REPLAY_TTL = 60 * 10
 class TurnstileResult:
     __slots__ = ('ok', 'code', 'detail')
 
-    def __init__(self, ok, code='', detail=''):
+    def __init__(self, ok: bool, code: str = '', detail: str = '') -> None:
         self.ok = ok
         self.code = code
         self.detail = detail
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self.ok
 
 
-def is_configured():
+def is_configured() -> bool:
     return bool(
         getattr(settings, 'TURNSTILE_SITE_KEY', '')
         and getattr(settings, 'TURNSTILE_SECRET_KEY', '')
     )
 
 
-def _token_marker(token):
+def _token_marker(token: str) -> str:
     """Short keyed marker for replay detection — never the token itself."""
     import hashlib
     return REPLAY_CACHE_PREFIX + hashlib.sha256(token.encode('utf-8')).hexdigest()[:32]
 
 
-def verify(token, *, remote_ip=None, expected_action=None, expected_hostname=None):
+def verify(token: str | None, *, remote_ip: str | None = None,
+           expected_action: str | None = None,
+           expected_hostname: str | None = None) -> 'TurnstileResult':
     """
     Verify a Turnstile token. Returns TurnstileResult; never raises.
 

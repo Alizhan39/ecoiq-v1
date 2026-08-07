@@ -7,6 +7,7 @@ submission is still viable, so an obvious bot costs no network call.
 import logging
 
 from django.core.cache import cache
+from django.http import HttpRequest
 
 from . import classify, heuristics, ratelimit, timing, turnstile
 from .fingerprint import submission_fingerprint
@@ -18,15 +19,16 @@ DUPLICATE_TTL = 60 * 60 * 24
 DUPLICATE_PREFIX = 'antispam:fp:'
 
 
-def _client_ip(request):
+def _client_ip(request: HttpRequest | None) -> str:
     """Trusted client address. See core.client_origin for why not XFF[0]."""
     from core.client_origin import client_ip
     return client_ip(request)
 
 
-def evaluate(*, request=None, form='contact', name='', email='', subject='',
-             message='', honeypot='', form_token='', turnstile_token='',
-             check_duplicates=True):
+def evaluate(*, request: HttpRequest | None = None, form: str = 'contact',
+             name: str = '', email: str = '', subject: str = '',
+             message: str = '', honeypot: str = '', form_token: str = '',
+             turnstile_token: str = '', check_duplicates: bool = True) -> Verdict:
     """
     Screen one public submission and return a Verdict.
 

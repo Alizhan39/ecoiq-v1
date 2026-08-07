@@ -87,35 +87,35 @@ class Verdict:
     score: int = 0
 
     @property
-    def accepted(self):
+    def accepted(self) -> bool:
         return self.decision is Decision.ACCEPT
 
     @property
-    def rejected(self):
+    def rejected(self) -> bool:
         return self.decision is Decision.REJECT
 
     @property
-    def quarantined(self):
+    def quarantined(self) -> bool:
         return self.decision is Decision.REVIEW
 
     @property
-    def reason_codes(self):
+    def reason_codes(self) -> list[str]:
         return [r.value for r in self.reasons]
 
     @property
-    def http_status(self):
+    def http_status(self) -> int:
         """429 for rate limits, otherwise 200 — a bot learns nothing from it."""
         for r in self.reasons:
             if r in HTTP_STATUS:
                 return HTTP_STATUS[r]
         return 200
 
-    def add(self, reason):
+    def add(self, reason: 'Reason') -> 'Verdict':
         if reason not in self.reasons:
             self.reasons.append(reason)
         return self
 
-    def resolve(self):
+    def resolve(self) -> 'Verdict':
         """Fold the collected reasons into a final decision."""
         if any(r in HARD_REJECT for r in self.reasons):
             self.decision = Decision.REJECT

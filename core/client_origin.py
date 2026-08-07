@@ -67,8 +67,30 @@ import hashlib
 import hmac
 import ipaddress
 import logging
+from typing import TypedDict
 
 from django.conf import settings
+from django.http import HttpRequest
+
+
+class OriginContext(TypedDict):
+    """
+    The complete set of origin fields that may be logged.
+
+    A TypedDict rather than a plain dict so the closed key set is enforced by
+    the type checker as well as by the function body: adding a key here is a
+    deliberate act, and adding one anywhere else is an error. That is the point
+    of the structure — it is what keeps a raw address or a header value from
+    reaching a log line by accident.
+    """
+    origin_available: bool
+    origin_fingerprint: str
+    origin_resolution_status: str
+    origin_private: bool
+    origin_family: str
+    forwarded_hop_count: int
+    trusted_proxy_count: int
+    trusted_header_configured: bool
 
 logger = logging.getLogger(__name__)
 
@@ -84,12 +106,12 @@ RESOLVED_CHAIN_TOO_SHORT = 'chain_too_short'
 RESOLVED_UNAVAILABLE = 'unavailable'
 
 
-def trusted_proxy_count():
+def trusted_proxy_count() -> int:
     """Entries our own infrastructure appends to X-Forwarded-For."""
     return max(0, int(getattr(settings, 'TRUSTED_PROXY_COUNT', 0) or 0))
 
 
-def trusted_client_ip_header():
+def trusted_client_ip_header() -> str:
     """
     META key of a header whose value the edge guarantees, or ''.
 
@@ -103,7 +125,7 @@ def trusted_client_ip_header():
     return 'HTTP_' + name.upper().replace('-', '_')
 
 
-def normalise_ip(value):
+def normalise_ip(value: str | None) -> str:
     """
     Canonical address string, or '' if it is not one.
 
@@ -126,13 +148,22 @@ def normalise_ip(value):
         return ''
 
 
-def forwarded_chain(request):
-    """Validated X-Forwarded-For entries, malformed ones discarded."""
+def forwarded_chain(request: HttpRequest | None) -> list[str]:
+    """
+    Validated X-Forwarded-For entries, malformed ones discarded.
+
+    Accepts None and returns an empty chain. Both callers already guard for it,
+    so this was never reachable, but the guard belonged here: a helper that
+    dereferences request.META while its own signature admits None hands the next
+    caller an AttributeError instead of the empty result it plainly means.
+    """
+    if request is None:
+        return []
     raw = request.META.get(FORWARDED_FOR, '') or ''
     return [ip for ip in (normalise_ip(p) for p in raw.split(',')) if ip]
 
 
-def resolve_origin(request):
+def resolve_origin(request: HttpRequest | None) -> tuple[str, str]:
     """
     Returns (address, status). Address is '' when nothing can be trusted.
 
@@ -165,12 +196,12 @@ def resolve_origin(request):
     return (direct, RESOLVED_REMOTE_ADDR) if direct else ('', RESOLVED_UNAVAILABLE)
 
 
-def client_ip(request):
+def client_ip(request: HttpRequest | None) -> str:
     """The trusted client address, or '' when it cannot be established."""
     return resolve_origin(request)[0]
 
 
-def is_private(ip):
+def is_private(ip: str | None) -> bool:
     """True for loopback, link-local, private and unspecified addresses."""
     normalised = normalise_ip(ip)
     if not normalised:
@@ -182,7 +213,7 @@ def is_private(ip):
 
 # ── privacy-preserving correlation ──────────────────────────────────────────
 
-def _origin_key():
+def _origin_key() -> bytes | None:
     """
     Dedicated HMAC key, or None when fingerprinting must be disabled.
 
@@ -205,12 +236,12 @@ def _origin_key():
     return secret or None
 
 
-def origin_key_version():
+def origin_key_version() -> str:
     """Opaque version label, emitted alongside fingerprints so a rotation is legible."""
     return (getattr(settings, 'REQUEST_ORIGIN_HMAC_KEY_VERSION', '') or 'v1').strip()[:16]
 
 
-def origin_fingerprint(request_or_ip):
+def origin_fingerprint(request_or_ip: HttpRequest | str | None) -> str:
     """
     Keyed HMAC-SHA256 of the client address, truncated. Never the address.
 
@@ -235,12 +266,12 @@ def origin_fingerprint(request_or_ip):
     return f'{origin_key_version()}:{digest[:16]}'
 
 
-def fingerprinting_available():
+def fingerprinting_available() -> bool:
     """False when no key is configured, so callers can log the reason once."""
     return _origin_key() is not None
 
 
-def safe_origin_context(request):
+def safe_origin_context(request: HttpRequest | None) -> OriginContext:
     """
     The only origin fields that may be logged, as a fixed dict.
 
@@ -250,7 +281,7 @@ def safe_origin_context(request):
     this function.
     """
     ip, status = resolve_origin(request)
-    chain = forwarded_chain(request) if request is not None else []
+    chain = forwarded_chain(request)
     return {
         'origin_available': bool(ip),
         'origin_fingerprint': origin_fingerprint(ip),

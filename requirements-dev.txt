@@ -18,3 +18,10 @@ ruff==0.14.2
 # not something a CI safeguard should rely on — if that package ever moves, the
 # test would fail for a reason unrelated to what it checks.
 PyYAML>=6.0
+
+# Static typing. Pinned for the same reason as Ruff: an unpinned type checker
+# can turn a green branch red without a commit. django-stubs and mypy are
+# version-coupled, hence the [compatible-mypy] extra.
+mypy==1.18.2
+django-stubs[compatible-mypy]==5.2.7
+djangorestframework-stubs==3.16.4

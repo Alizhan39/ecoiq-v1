@@ -16,11 +16,11 @@ _WS = re.compile(r'\s+')
 _PUNCT = re.compile(r'[^\w\s]', re.UNICODE)
 
 
-def _key():
+def _key() -> bytes:
     return (getattr(settings, 'SECRET_KEY', '') or '').encode('utf-8')
 
 
-def normalise_text(value, *, strip_punctuation=True):
+def normalise_text(value: str | None, *, strip_punctuation: bool = True) -> str:
     """Casefold, strip accents, collapse whitespace; optionally drop punctuation."""
     if not value:
         return ''
@@ -32,7 +32,7 @@ def normalise_text(value, *, strip_punctuation=True):
     return _WS.sub(' ', text).strip()
 
 
-def normalise_email(value):
+def normalise_email(value: str | None) -> str:
     """
     Lowercase, trim, and collapse the common alias tricks a single abuser uses
     to look like many people: gmail dots and +tags.
@@ -48,17 +48,18 @@ def normalise_email(value):
     return f'{local}@{domain}'
 
 
-def email_domain(value):
+def email_domain(value: str | None) -> str:
     email = normalise_email(value)
     return email.rpartition('@')[2] if '@' in email else ''
 
 
-def _digest(*parts):
+def _digest(*parts: str) -> str:
     payload = '\x1f'.join(parts).encode('utf-8')
     return hmac.new(_key(), payload, hashlib.sha256).hexdigest()[:32]
 
 
-def submission_fingerprint(*, email='', name='', subject='', message='', form=''):
+def submission_fingerprint(*, email: str = '', name: str = '', subject: str = '',
+                           message: str = '', form: str = '') -> str:
     """
     Stable identifier for "the same submission again".
 
@@ -75,12 +76,12 @@ def submission_fingerprint(*, email='', name='', subject='', message='', form=''
     )
 
 
-def content_fingerprint(message, *, form=''):
+def content_fingerprint(message: str, *, form: str = '') -> str:
     """Fingerprint of the message body alone — catches one text blasted from many addresses."""
     return _digest('content', form or '', _digest(normalise_text(message)))
 
 
-def hashed_ip(ip):
+def hashed_ip(ip: str | None) -> str:
     """
     Keyed, truncated hash of an IP for rate-limit keys and logs.
 

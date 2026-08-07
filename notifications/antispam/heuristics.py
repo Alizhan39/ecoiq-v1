@@ -32,11 +32,11 @@ MIN_MESSAGE_LENGTH = 20
 MAX_MESSAGE_LENGTH = 4000
 
 
-def count_urls(message):
+def count_urls(message: str | None) -> int:
     return len(_URL.findall(message or '')) + len(_BBCODE.findall(message or ''))
 
 
-def email_is_valid(email):
+def email_is_valid(email: str | None) -> bool:
     try:
         validate_email((email or '').strip())
         return True
@@ -44,11 +44,11 @@ def email_is_valid(email):
         return False
 
 
-def is_disposable(email):
+def is_disposable(email: str | None) -> bool:
     return email_domain(email) in DISPOSABLE_DOMAINS
 
 
-def field_lengths_ok(*, name='', subject='', message=''):
+def field_lengths_ok(*, name: str = '', subject: str = '', message: str = '') -> bool:
     if len(name or '') > MAX_NAME_LENGTH:
         return False
     if len(subject or '') > MAX_SUBJECT_LENGTH:
@@ -57,7 +57,7 @@ def field_lengths_ok(*, name='', subject='', message=''):
     return MIN_MESSAGE_LENGTH <= length <= MAX_MESSAGE_LENGTH
 
 
-def low_content_quality(message):
+def low_content_quality(message: str | None) -> bool:
     """
     True when the body carries almost no information: very few distinct words,
     or one token repeated. Length alone is never the signal — a short, genuine
@@ -76,7 +76,7 @@ def low_content_quality(message):
     return unique / len(words) < 0.2
 
 
-def distinct_emails_for_name(name, *, lookback_days=30):
+def distinct_emails_for_name(name: str, *, lookback_days: int = 30) -> int:
     """
     How many different addresses have used this contact name recently.
 
@@ -104,6 +104,7 @@ def distinct_emails_for_name(name, *, lookback_days=30):
     )
 
 
-def name_reused_across_emails(name, email=None, *, lookback_days=30, threshold=5):
+def name_reused_across_emails(name: str, email: str | None = None, *,
+                              lookback_days: int = 30, threshold: int = 5) -> bool:
     """Boolean form of `distinct_emails_for_name`, kept for existing callers."""
     return distinct_emails_for_name(name, lookback_days=lookback_days) >= threshold

@@ -33,8 +33,58 @@ jobs:
         # commit a human reviewed, not in a build artefact nobody sees.
         run: ruff check --output-format=github .
 
+  # Static typing for the Stage 1 surface only. `mypy .` reports 960 errors
+  # across the repository and is informational; this gate covers the modules
+  # that decide whether a public request is abuse. See
+  # docs/engineering/python-typing.md.
+  #
+  # Runs alongside ruff rather than after it: both are fast, independent, and a
+  # developer wants both answers at once. Both must pass before the ~13-minute
+  # suite starts.
+  mypy:
+    runs-on: ubuntu-latest
+
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: sqlite:///db.sqlite3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        # The full tree: the django-stubs plugin loads Django settings, so it
+        # needs the application's own dependencies importable.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: mypy (Stage 1 typed surface)
+        # Identical to the documented local command. No --ignore-errors, no
+        # suppression generation, no source mutation.
+        #
+        # --follow-imports=silent uses imported modules for type information but
+        # reports only the paths named here. Without it this job would fail on
+        # errors in files the PR does not claim to have typed. It is NOT
+        # follow_imports=skip, which would discard the type information itself.
+        run: |
+          python -m mypy \
+            core/client_origin.py \
+            notifications/antispam \
+            companies/throttle.py \
+            notifications/management/commands/analyse_notification_spam.py \
+            notifications/management/commands/classify_notification_spam.py \
+            --follow-imports=silent
+
   django-check:
-    needs: ruff
+    needs: [ruff, mypy]
     runs-on: ubuntu-latest
 
     env:

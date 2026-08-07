@@ -25,7 +25,7 @@ DEFAULTS = {
 }
 
 
-def _limits():
+def _limits() -> dict[str, tuple[int, int]]:
     from django.conf import settings
     configured = getattr(settings, 'ANTISPAM_LIMITS', None) or {}
     merged = dict(DEFAULTS)
@@ -33,7 +33,7 @@ def _limits():
     return merged
 
 
-def _hit(key, limit, window):
+def _hit(key: str, limit: int, window: int) -> tuple[bool, int]:
     """
     Increment a counter and report whether it is now over the limit.
 
@@ -55,7 +55,7 @@ def _hit(key, limit, window):
         return False, 0
 
 
-def check(*, ip='', email='', message='', form=''):
+def check(*, ip: str = '', email: str = '', message: str = '', form: str = '') -> list[str]:
     """
     Returns a list of exceeded scope names: 'ip', 'email', 'message', 'global'.
     Counters are incremented as a side effect — call once per submission.
