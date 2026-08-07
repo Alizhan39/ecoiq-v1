@@ -718,12 +718,35 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# How many rightmost X-Forwarded-For entries our own infrastructure appended.
-# Everything to the left of them is written by the client and must not be
-# trusted — see core/client_origin.py for what goes wrong in each direction.
-# Render puts exactly one proxy in front of the app; locally there is none.
+# ── Trusted client origin ─────────────────────────────────────────────────────
+# Measured against production on 2026-08-07 by classifying forwarding hops
+# (never addresses). Probes with 0, 1 and 3 forged RFC 5737 TEST-NET-3 entries
+# returned 2, 3 and 5 hops respectively, always ending [.., real client,
+# Cloudflare edge] — identical on ecoiq.uk and ecoiq.onrender.com. The
+# infrastructure appends exactly TWO entries, so the client sits at index -2.
+#
+# This was previously 1, which selected the Cloudflare edge address. Not
+# forgeable, but Cloudflare answers from a large rotating edge fleet, so one
+# person's requests scattered across buckets and the per-origin rate limits
+# never accumulated.
 TRUSTED_PROXY_COUNT = int(os.environ.get('TRUSTED_PROXY_COUNT',
-                                         '1' if IS_PRODUCTION else '0'))
+                                         '2' if IS_PRODUCTION else '0'))
+
+# A header whose value the edge guarantees. Cloudflare sets CF-Connecting-IP
+# itself and rejects any request that supplies one — a probe sending it got
+# HTTP 403 "error code: 1000" before reaching the origin — so it cannot be
+# forged, and unlike the hop count it does not depend on chain length.
+# Empty means trust no header. Naming one is an explicit assertion about the
+# deployment, so adding or removing a CDN is a configuration change rather than
+# a silent shift in trust.
+TRUSTED_CLIENT_IP_HEADER = os.environ.get(
+    'TRUSTED_CLIENT_IP_HEADER', 'CF-Connecting-IP' if IS_PRODUCTION else '')
+
+# Dedicated key for origin fingerprints, separate from SECRET_KEY so it can be
+# rotated to expire abuse correlation without invalidating sessions. There is
+# no literal fallback: absent in production, fingerprinting switches off.
+REQUEST_ORIGIN_HMAC_KEY = os.environ.get('REQUEST_ORIGIN_HMAC_KEY', '')
+REQUEST_ORIGIN_HMAC_KEY_VERSION = os.environ.get('REQUEST_ORIGIN_HMAC_KEY_VERSION', 'v1')
 
 # IS_PRODUCTION, not `not DEBUG`: the test runner imports this module with
 # whatever DEBUG the surrounding environment carries, and CI sets DEBUG=False

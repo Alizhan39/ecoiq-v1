@@ -41,11 +41,15 @@ class TrustedProxyParsingTests(SimpleTestCase):
         self.assertEqual(CO.client_ip(request), REAL)
 
     @override_settings(TRUSTED_PROXY_COUNT=2)
-    def test_a_chain_shorter_than_expected_falls_back_rather_than_trusting_it(self):
-        # We expect two of our own hops but only one entry arrived: the request
-        # did not reach us the way we think, so the header is not used.
+    def test_a_chain_shorter_than_expected_fails_closed(self):
+        # Changed deliberately in the proxy-topology fix. This used to fall back
+        # to REMOTE_ADDR, but behind Render that is a private address identical
+        # for every visitor, so the fallback merged all traffic into one bucket
+        # while looking like a successful resolution. Now it resolves to
+        # nothing, and the caller uses its bounded "unknown" bucket.
         request = req(SPOOFED, remote=PROXY)
-        self.assertEqual(CO.client_ip(request), PROXY)
+        self.assertEqual(CO.client_ip(request), '')
+        self.assertNotEqual(CO.client_ip(request), PROXY)
 
 
 class AddressFamilyTests(SimpleTestCase):
@@ -85,10 +89,13 @@ class FingerprintTests(SimpleTestCase):
         self.assertEqual(fp, CO.origin_fingerprint(REAL))             # same origin
         self.assertNotEqual(fp, CO.origin_fingerprint('198.51.100.8'))  # different origin
 
-        for octet in REAL.split('.') + [REAL, SPOOFED]:
-            self.assertNotIn(octet, fp)
-        self.assertNotIn('.', fp)
-        self.assertNotIn(':', fp)
+        # Version-prefixed since the fingerprint rework ("v1:<digest>"), so a
+        # colon is expected; the digest itself must still be opaque hex.
+        self.assertNotIn(REAL, fp)
+        self.assertNotIn(SPOOFED, fp)
+        digest = fp.split(':', 1)[1]
+        self.assertNotIn('.', digest)
+        self.assertRegex(digest, r'^[0-9a-f]{16}$')
 
         # Equal IPv6 spellings must not produce different fingerprints, or an
         # IPv6 client evades every per-origin limit by varying the spelling.
@@ -115,8 +122,9 @@ class SafeContextTests(SimpleTestCase):
         context = CO.safe_origin_context(request)
 
         self.assertEqual(set(context), {
-            'origin_fp', 'origin_known', 'origin_private',
-            'origin_family', 'proxy_hops_trusted'})
+            'origin_available', 'origin_fingerprint', 'origin_resolution_status',
+            'origin_private', 'origin_family', 'forwarded_hop_count',
+            'trusted_proxy_count', 'trusted_header_configured'})
 
         blob = repr(context)
         for value in self.FORBIDDEN_META.values():
@@ -126,7 +134,7 @@ class SafeContextTests(SimpleTestCase):
             self.assertNotIn(secret, blob)
 
         self.assertEqual(context['origin_family'], 'ipv4')
-        self.assertTrue(context['origin_known'])
+        self.assertTrue(context['origin_available'])
 
     def test_private_ranges_are_flagged_and_public_ones_are_not(self):
         for private in ('10.0.0.1', '192.168.1.1', '172.16.0.1',
@@ -157,6 +165,6 @@ class SafeContextTests(SimpleTestCase):
         request = RequestFactory().post('/contact/submit/')
         request.META.pop('REMOTE_ADDR', None)
         context = CO.safe_origin_context(request)
-        self.assertFalse(context['origin_known'])
-        self.assertEqual(context['origin_fp'], '')
+        self.assertFalse(context['origin_available'])
+        self.assertEqual(context['origin_fingerprint'], '')
         self.assertEqual(context['origin_family'], 'none')
