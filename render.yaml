@@ -4,7 +4,7 @@
 #
 # Services:
 #   ecoiq       — Django/Gunicorn web service (starter plan, Oregon)
-#   ecoiq-db    — PostgreSQL database (starter plan, Oregon)
+#   ecoiq-db    — PostgreSQL database (Basic-256mb, Oregon)
 #
 # build.sh is DB-FREE — the build environment cannot reach the private database
 # network (the internal hostname dpg-…-a only resolves at runtime). Migrations +
@@ -19,6 +19,11 @@ services:
     name: ecoiq                          # Blueprint matches by this name — do NOT rename
     env: python
     region: oregon
+    # WARNING — this does NOT match production, which runs on Standard. Syncing
+    # this Blueprint as written would attempt to DOWNGRADE the live web service.
+    # Left unchanged here deliberately: this PR corrects the Postgres plan only,
+    # and a plan change to the web service is a separate cost decision that
+    # needs its own review. Reconcile this before any Blueprint sync.
     plan: starter                        # $7/month — persistent disk, no cold starts
     buildCommand: pip install -r requirements.txt && ./build.sh
     # Pre-Deploy runs once per deploy in the runtime network (internal DB hostname
