@@ -119,3 +119,7 @@ langgraph>=1.0
 # whitenoise's CompressedManifestStaticFilesStorage gzips it at collectstatic
 # time the same way.
 plotly>=6.0
+
+# Structured logging. Runtime infrastructure, not a dev tool: production emits
+# JSON logs through it, so it must be in the image render.yaml builds.
+structlog==26.1.0

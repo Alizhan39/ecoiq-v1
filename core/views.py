@@ -11,6 +11,8 @@ from .models import Assessment, QuestionnaireResponse, Finding
 from .forms import AssessmentUploadForm
 from .utils import extract_text
 from .questions import QUESTIONS, grouped as grouped_questions
+import structlog
+from core.client_origin import safe_origin_context
 # run_ecoiq_analysis is imported lazily inside run_analysis() — keeps the
 # anthropic SDK (~40 MB) out of Django startup memory.
 
@@ -1213,25 +1215,30 @@ def _log_submission(event, verdict, request):
     """
     Structured screening event.
 
-    Never records the message, the full IP, or a Turnstile token — only the
-    event name, the deterministic reason codes, the keyed fingerprint and a
-    keyed IP hash.
+    Never records the message, the address, or a Turnstile token — only the
+    event name, the deterministic reason codes, the submission fingerprint and
+    the safe origin context.
     """
-    import logging
 
-    from notifications.antispam.engine import _client_ip
-    from notifications.antispam.fingerprint import hashed_ip
 
-    logging.getLogger('notifications.antispam').info(
+    # Structured event. `ip_hash` is gone: it was a second, independently-keyed
+    # hash of the client address computed here, where safe_origin_context()
+    # already supplies the canonical keyed fingerprint. Two fingerprints for one
+    # address cannot be correlated with each other and neither can be rotated
+    # without missing the other.
+    #
+    # No name, email, subject or message is included, by construction — every
+    # field below is an outcome, a code or a structural fact.
+    # Logger name deliberately unchanged. It is part of the observable contract
+    # — notifications/tests_antispam.py asserts on it, and a rename buys nothing
+    # but a broken privacy test.
+    structlog.get_logger('notifications.antispam').info(
         event,
-        extra={
-            'event': event,
-            'form': 'contact',
-            'decision': verdict.decision.value,
-            'reasons': verdict.reason_codes,
-            'fingerprint': verdict.fingerprint[:12],
-            'ip_hash': hashed_ip(_client_ip(request)),
-        },
+        form='contact',
+        decision=verdict.decision.value,
+        reason_codes=verdict.reason_codes,
+        submission_fingerprint=verdict.fingerprint[:12],
+        **safe_origin_context(request),
     )
 
     from notifications.antispam import monitoring
