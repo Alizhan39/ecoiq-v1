@@ -162,18 +162,45 @@ Both carry the same `request_id`, so they join.
 as a defence for an exception raised above the conversion boundary, and it
 re-raises so Django's semantics are untouched.
 
-Both lines go through the same processor chain. That required work:
-`django.request` has its own handler and `propagate: False` in
-settings.LOGGING, so `configure_structlog` sets the formatter on **every**
-configured logger's handlers, not just root's. Without that the most important
-lines in production — 500s with tracebacks — would have been plain text in a
-JSON stream, and unredacted.
+Both lines go through the same processor chain, and both carry the same
+`request_id`.
 
-`format_exc_info` runs **before** redaction so the traceback is a string the
-scrubber can read. As a tuple it is an opaque object, and the renderer would
-stringify it afterwards — `ValueError('failed for 203.0.113.9')` would have
-reached the log intact. Exception messages are user-influenced text: both
-address-shaped and email-shaped values inside them are scrubbed.
+Getting that right took two attempts. Attaching the `ProcessorFormatter` to
+handlers from application code does **not** survive: Django's
+`configure_logging()` runs `dictConfig` during `setup()` and replaces every
+handler named in `settings.LOGGING`, discarding a formatter installed while the
+settings module was still importing. Production ran for one deploy emitting raw
+Python dict reprs through the plain formatter, while the tests were green — they
+built their own handlers and never exercised the real configuration.
+
+The formatter is therefore declared **inside** `LOGGING` as
+`{'()': structlog.stdlib.ProcessorFormatter, ...}`, so dictConfig constructs it
+and nothing runs afterwards to undo it. `configure_structlog()` now configures
+structlog only and touches no handler.
+
+### Exception messages are not logged
+
+`format_exc_info` renders the traceback to a string, then
+`redact_exception_text` strips the **message** from it.
+
+Pattern matching cannot make arbitrary exception text safe. An IP or an email
+has a shape and can be scrubbed; `ValueError('token abc123 rejected')` has none,
+and that string could equally be a contact message, a provider response body or
+a reset token. Anything reaching `str(exc)` is text we did not choose.
+
+What survives, and is enough to debug:
+
+- the exception class, on every frame of a chained traceback
+- every `File "...", line N, in func` frame
+- the source line for each frame — that is code, not data
+- the event name, `request_id`, route and status alongside it
+
+What is lost: the message itself, rendered as `ValueError: [REDACTED]`. That is
+a real cost — "connection refused" would have been useful. The class plus the
+exact failing line locates the code, and the alternative is a log that leaks
+whatever a caller happened to interpolate. Where a specific message matters, log
+it as an explicit keyword field the author chose, which is then subject to the
+key rules like anything else.
 
 No request body, cookies or headers are attached.
 

@@ -126,6 +126,55 @@ def _redact(obj: Any, depth: int = 0) -> Any:
     return _scrub_value(obj)
 
 
+# The final line of a traceback, and of each chained section: "ExcType: message".
+# Indented lines are frames and source, which are code rather than data.
+EXCEPTION_MESSAGE_RE = re.compile(
+    r'^(?P<type>[A-Za-z_][\w.]*(?:Error|Exception|Warning|Exit|Interrupt|\w+)?): (?P<msg>.+)$')
+
+
+def redact_exception_text(
+    _logger: Any, _method: str, event_dict: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
+    """
+    Strip the *message* from a rendered traceback, keeping its structure.
+
+    Pattern matching cannot make arbitrary exception text safe. An IP or an
+    email has a shape and can be scrubbed; `ValueError('token abc123 rejected')`
+    has none, and the string could equally be a contact message, a provider
+    response body or a reset token. Anything that reaches `str(exc)` is
+    arbitrary text we did not choose.
+
+    So the message is not logged. What survives:
+
+      - the exception class, on every frame of a chained traceback
+      - every `File "...", line N, in func` frame
+      - the source line for each frame — that is code, not data
+      - the event name, request_id, route and status alongside it
+
+    The tradeoff is real and deliberate: a message like "connection refused"
+    would have been useful, and it is gone. The class plus the exact failing
+    line is enough to find the code, and the alternative is a log that leaks
+    whatever a caller happened to interpolate. Where a specific message matters,
+    log it as an explicit keyword field chosen by the author — which is then
+    subject to the key rules like anything else.
+    """
+    rendered = event_dict.get('exception')
+    if not isinstance(rendered, str) or not rendered:
+        return event_dict
+
+    out = []
+    for line in rendered.splitlines():
+        if line and not line[0].isspace():
+            match = EXCEPTION_MESSAGE_RE.match(line)
+            if match and not line.startswith(('Traceback', 'During handling',
+                                              'The above exception')):
+                out.append(f"{match.group('type')}: {REDACTED}")
+                continue
+        out.append(line)
+    event_dict['exception'] = '\n'.join(out)
+    return event_dict
+
+
 def redact_sensitive(
     _logger: Any, _method: str, event_dict: MutableMapping[str, Any]
 ) -> MutableMapping[str, Any]:
@@ -177,6 +226,8 @@ SHARED_PROCESSORS: list[Any] = [
     # reached the log intact. An exception message is user-influenced text and
     # gets redacted like any other.
     structlog.processors.format_exc_info,
+    # Immediately after rendering, before anything can copy it elsewhere.
+    redact_exception_text,
     structlog.processors.UnicodeDecoder(),
     add_service_metadata,
     # Last, so nothing added above escapes it.
@@ -184,25 +235,47 @@ SHARED_PROCESSORS: list[Any] = [
 ]
 
 
-def configure_structlog(*, json_logs: bool) -> None:
+def build_formatter_config(*, json_logs: bool) -> dict[str, Any]:
     """
-    Wire structlog and the stdlib together.
+    A `logging.config.dictConfig` formatter entry that builds a ProcessorFormatter.
 
-    `json_logs` is passed explicitly rather than sniffed from the hostname: the
-    renderer is a deployment decision, and tests need to choose it.
+    This exists because attaching the formatter afterwards does not survive.
+    Django calls `configure_logging()` during `setup()`, which runs dictConfig
+    and REPLACES every handler named in settings.LOGGING. A formatter installed
+    while the settings module was still importing is discarded moments later,
+    silently — the loggers still work, they just emit the raw event dict through
+    the plain formatter.
 
-    The stdlib bridge matters more than it looks. 66 modules already call
-    `logging.getLogger(...)`, and rewriting them is not the job of this PR — but
-    their output must still be redacted and still carry the request id. Routing
-    them through the same processor chain achieves both without touching them.
+    Letting dictConfig construct the formatter itself is the only ordering that
+    holds, because there is nothing left to run after it.
     """
     renderer: Any = (
         structlog.processors.JSONRenderer() if json_logs
-        # colors=False: ANSI escapes in a log aggregator are noise, and the dev
-        # console is readable without them.
+        # colors=False: ANSI escapes are noise in an aggregator, and the dev
+        # console is perfectly readable without them.
         else structlog.dev.ConsoleRenderer(colors=False)
     )
+    return {
+        '()': structlog.stdlib.ProcessorFormatter,
+        # Applied to records from plain `logging` calls, so a third-party
+        # WARNING is redacted and correlated exactly like one of ours.
+        'foreign_pre_chain': SHARED_PROCESSORS,
+        'processors': [
+            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            renderer,
+        ],
+    }
 
+
+def configure_structlog(*, json_logs: bool) -> None:
+    """
+    Configure structlog itself. Handler formatting is dictConfig's job.
+
+    `json_logs` is accepted for symmetry with build_formatter_config and to keep
+    the call sites honest about which renderer the process is running, but this
+    function no longer touches a single handler — an earlier version did, and
+    Django's dictConfig undid all of it.
+    """
     structlog.configure(
         processors=[
             *SHARED_PROCESSORS,
@@ -210,37 +283,8 @@ def configure_structlog(*, json_logs: bool) -> None:
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
-        cache_logger_on_first_use=True,
+        cache_logger_on_first_use=False,
     )
-
-    formatter = structlog.stdlib.ProcessorFormatter(
-        # Applied to records from plain `logging` calls, so a third-party
-        # WARNING is redacted and correlated exactly like ours.
-        foreign_pre_chain=SHARED_PROCESSORS,
-        processors=[
-            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            renderer,
-        ],
-    )
-
-    # Every handler on every configured logger, not just root.
-    #
-    # settings.LOGGING gives `django.request` and `django.db.backends` their own
-    # handlers with `propagate: False`. Formatting only root's handlers would
-    # leave those two outside the pipeline — and `django.request` is where
-    # unhandled 500s and their tracebacks go. Those lines would have stayed
-    # plain text in a JSON log stream, and unredacted.
-    seen: set[int] = set()
-    loggers: list[logging.Logger] = [logging.getLogger()]
-    for name in list(logging.root.manager.loggerDict):
-        item = logging.getLogger(name)
-        if isinstance(item, logging.Logger):
-            loggers.append(item)
-    for entry in loggers:
-        for handler in entry.handlers:
-            if id(handler) not in seen:
-                seen.add(id(handler))
-                handler.setFormatter(formatter)
 
 
 def get_logger(name: str | None = None) -> Any:
