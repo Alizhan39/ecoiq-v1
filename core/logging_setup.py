@@ -33,6 +33,7 @@ a session, or a raw address.
 """
 from __future__ import annotations
 
+import ipaddress
 import logging
 import re
 from collections.abc import MutableMapping
@@ -66,12 +67,42 @@ PERSONAL_KEY_PARTS: tuple[str, ...] = (
 # Values that look like an address even when the key is innocent — a defence
 # against a raw IP arriving inside an f-string someone assembled by hand.
 IPV4_RE = re.compile(r'\b\d{1,3}(?:\.\d{1,3}){3}\b')
-IPV6_RE = re.compile(r'\b(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}\b')
+
+# IPv6 is NOT matched by pattern alone. A colon-separated run of hex groups is
+# also what a clock reads like, and the previous pattern
+#
+#     \b(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}\b
+#
+# matched `12:34:56`, so `2026-08-08T12:34:56.394754Z` became
+# `2026-08-08T12[REDACTED].394754Z`. Sentry rejected the resulting event with
+# "Discarded invalid value / Name: timestamp" — the corruption was severe enough
+# to fail ingestion, not merely to look untidy.
+#
+# The same pattern also MISSED `::1`, because \b does not apply before a colon.
+# Over-matching and under-matching from one expression, in opposite directions.
+#
+# So: extract candidates cheaply, then ask the stdlib whether each one is
+# actually an address. `ipaddress` is the authority on that question and cannot
+# disagree with itself the way a hand-written pattern does.
+IPV6_CANDIDATE_RE = re.compile(r'[0-9A-Fa-f:]{3,45}')
+
+
 # Same reasoning for addresses of the other kind. An exception message is
 # user-influenced text — `ValueError("no account for alice@example.com")` is an
 # ordinary thing to write — and a key-name rule cannot catch it because the key
 # is `exception`, which we very much want to keep.
 EMAIL_RE = re.compile(r'\b[\w.+-]+@[\w-]+\.[\w.-]+\b')
+
+
+def _looks_like_ipv6(candidate: str) -> bool:
+    """True only if the stdlib parses it as an IPv6 address."""
+    if ':' not in candidate:
+        return False
+    try:
+        return ipaddress.ip_address(candidate).version == 6
+    except ValueError:
+        return False
+
 
 # Keys whose values must survive the value scan.
 #
@@ -101,7 +132,10 @@ def _scrub_value(value: Any) -> Any:
         return value
     scrubbed = IPV4_RE.sub(REDACTED, value)
     if ':' in scrubbed:
-        scrubbed = IPV6_RE.sub(REDACTED, scrubbed)
+        # Validate before replacing, so a timestamp survives and `::1` does not.
+        scrubbed = IPV6_CANDIDATE_RE.sub(
+            lambda m: REDACTED if _looks_like_ipv6(m.group(0)) else m.group(0),
+            scrubbed)
     if '@' in scrubbed:
         scrubbed = EMAIL_RE.sub(REDACTED, scrubbed)
     return scrubbed
