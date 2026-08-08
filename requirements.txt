@@ -123,3 +123,7 @@ plotly>=6.0
 # Structured logging. Runtime infrastructure, not a dev tool: production emits
 # JSON logs through it, so it must be in the image render.yaml builds.
 structlog==26.1.0
+
+# Error monitoring. Runtime infrastructure — it must be in the production image
+# that render.yaml builds. Inert unless SENTRY_DSN is set.
+sentry-sdk==2.66.1

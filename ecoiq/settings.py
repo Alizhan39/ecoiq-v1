@@ -1249,3 +1249,20 @@ if AI_FREE_ONLY and AI_ALLOW_PAID_MODELS:
 # it, and Django applies that via dictConfig during setup(). Calling dictConfig
 # ourselves as well would be a second, conflicting configuration pass.
 configure_structlog(json_logs=STRUCTLOG_JSON_LOGS)
+
+# ── Sentry ───────────────────────────────────────────────────────────────────
+# Initialised exactly once, here, and disabled unless SENTRY_DSN is set. No
+# network call happens at init; the SDK connects only when an event is queued.
+#
+# Environment comes from configuration and never defaults to 'production' —
+# a local machine must not be able to file issues into the production project.
+from core.sentry_setup import initialise as _init_sentry  # noqa: E402
+
+SENTRY_ENVIRONMENT = os.environ.get(
+    'SENTRY_ENVIRONMENT', 'production' if IS_PRODUCTION else 'development')
+SENTRY_ACTIVE = _init_sentry(
+    environment=SENTRY_ENVIRONMENT,
+    # Same release identifier the log pipeline already publishes, so an issue
+    # and a log line agree on which build produced them.
+    release=RELEASE_VERSION,
+)

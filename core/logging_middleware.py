@@ -105,6 +105,15 @@ class RequestContextMiddleware:
         )
         request.request_id = request_id  # type: ignore[attr-defined]
 
+        # Same id on the Sentry event. Deliberately not a second correlation
+        # id: one value has to join the HTTP response header, the log line and
+        # the Sentry issue, or none of them join at all.
+        #
+        # A tag, because tags are searchable in Sentry and a context is not.
+        # Not in the event title — that would fragment every issue into one
+        # issue per request.
+        _bind_sentry_scope(request_id, route, request)
+
         quiet = request.path_info in QUIET_PATHS
         if not quiet:
             self.logger.info(events.REQUEST_STARTED)
@@ -139,6 +148,33 @@ class RequestContextMiddleware:
         # next one handled by this thread.
         structlog.contextvars.clear_contextvars()
         return response
+
+
+def _bind_sentry_scope(request_id: str, route: str, request: HttpRequest) -> None:
+    """
+    Mirror the correlation fields onto Sentry's scope, if Sentry is active.
+
+    Silently does nothing when the SDK is absent or uninitialised, which is the
+    normal state in development, CI and any deployment without a DSN.
+
+    Only fields already approved for logging are attached. safe_origin_context()
+    returns a closed set that cannot contain an address, so Sentry receives the
+    same keyed fingerprint the logs carry and nothing more.
+    """
+    try:
+        import sentry_sdk
+    except ImportError:                                    # pragma: no cover
+        return
+    if sentry_sdk.get_client().dsn is None:
+        return
+    scope = sentry_sdk.get_current_scope()
+    scope.set_tag('request_id', request_id)
+    scope.set_tag('route', route)
+    scope.set_context('ecoiq', {
+        'request_id': request_id,
+        'route': route,
+        **safe_origin_context(request),
+    })
 
 
 def bind_operation(operation: str, operation_id: str | None = None) -> str:
