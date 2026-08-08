@@ -782,6 +782,8 @@ LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO').upper()
 # Structured logging. JSON in production (one event per line, machine-readable),
 # human-readable console elsewhere. Chosen from configuration, never sniffed
 # from a hostname, so tests are deterministic.
+from core.logging_setup import build_formatter_config, configure_structlog  # noqa: E402
+
 STRUCTLOG_JSON_LOGS = os.environ.get(
     'STRUCTLOG_JSON_LOGS', '1' if IS_PRODUCTION else '0') == '1'
 
@@ -793,14 +795,17 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'standard': {
-            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
-        },
+        # Built by dictConfig itself. Attaching a ProcessorFormatter after the
+        # settings module imports does not survive: Django's configure_logging()
+        # runs dictConfig during setup() and replaces every handler below, so
+        # the formatter went with them and production emitted raw event dicts
+        # through the plain formatter instead of JSON.
+        'structured': build_formatter_config(json_logs=STRUCTLOG_JSON_LOGS),
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'standard',
+            'formatter': 'structured',
         },
     },
     'root': {
@@ -810,12 +815,27 @@ LOGGING = {
     'loggers': {
         # Unhandled view exceptions. Django logs these at ERROR with the full
         # traceback server-side; the client still gets Django's generic 500.
+        #
+        # This is the logger a future Sentry breadcrumb reads, so it must go
+        # through the same processors as everything else — it previously had its
+        # own handler with the plain formatter and propagate=False, which put
+        # the most important lines in production outside the pipeline entirely.
         'django.request': {
             'handlers': ['console'],
             'level': 'ERROR',
             'propagate': False,
         },
+        # Django's runserver access log. Only used by `manage.py runserver`;
+        # gunicorn serves production. Routed anyway so development and
+        # production render the same way, and so its default ServerFormatter —
+        # which is neither structured nor redacted — is not left in place.
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         # Very chatty at DEBUG (one line per query) — pin it above that.
+        # SQL parameters must never reach a log.
         'django.db.backends': {
             'handlers': ['console'],
             'level': 'INFO',
@@ -1224,12 +1244,8 @@ if AI_FREE_ONLY and AI_ALLOW_PAID_MODELS:
     )
 
 
-# Applied after LOGGING is in place so the handlers it created get the structlog
-# formatter. Both plain `logging.getLogger(...)` calls — 66 modules still use
-# them — and structlog calls then flow through one processor chain, which means
-# one redaction pass and one request_id source for everything.
-from core.logging_setup import configure_structlog  # noqa: E402
-
-import logging.config  # noqa: E402
-logging.config.dictConfig(LOGGING)
+# structlog's own configuration — processors, logger factory, wrapper class.
+# Handler formatting is NOT done here: LOGGING['formatters']['structured'] does
+# it, and Django applies that via dictConfig during setup(). Calling dictConfig
+# ourselves as well would be a second, conflicting configuration pass.
 configure_structlog(json_logs=STRUCTLOG_JSON_LOGS)
