@@ -318,6 +318,64 @@
 
 
 <!-- ═══════════════ LIVING INFRASTRUCTURE EARTH (Phase 1 hero) ═══════════════ -->
+<!-- ═══════════════════ EcoIQ HERO — evidence becomes a decision ═══════════════
+     Replaces "Meet the EcoIQ AI Agents" as the first thing a visitor reads.
+     The agents are the mechanism; the decision is the product, and the product
+     is what belongs above the fold. The pipeline island sequences
+     Evidence → Risk/Readiness → Capital → Decision so the proposition is shown
+     rather than asserted. See docs/product/homepage-motion-map.md §1.
+============================================================================ -->
+<section class="eiq-mo-root" aria-labelledby="eiq-hero-title"
+         style="max-width:1100px;margin:0 auto;padding:4rem 2rem 1rem;">
+  <div style="display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:3rem;align-items:center;"
+       class="eiq-hero-grid">
+    <div>
+      <p style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin:0 0 1.1rem;">
+        Evidence-to-capital intelligence
+      </p>
+
+      <h1 id="eiq-hero-title"
+          style="font-size:clamp(2rem,4.2vw,3.1rem);font-weight:800;color:#fff;letter-spacing:-.035em;line-height:1.08;margin:0 0 1.1rem;">
+        From evidence<br><span style="color:#00e89a;">to investment-ready decisions.</span>
+      </h1>
+
+      <p style="font-size:1.02rem;line-height:1.6;color:#94a3b8;margin:0 0 1.8rem;max-width:34rem;">
+        EcoIQ assesses transition risk, evidence quality and financing readiness for a
+        company or project — then says what should happen next. AI-assisted, analyst-reviewed,
+        traceable to evidence.
+      </p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:.8rem;margin-bottom:1.6rem;">
+        <a href="{% url 'leads:request_review' %}"
+           style="display:inline-flex;align-items:center;gap:.5rem;background:#00e89a;color:#03100c;font-weight:700;font-size:.92rem;padding:.8rem 1.5rem;border-radius:999px;text-decoration:none;">
+          Request an EcoIQ Review
+        </a>
+        <a href="/companies/"
+           style="display:inline-flex;align-items:center;gap:.5rem;border:1px solid rgba(255,255,255,.16);color:#e2e8f0;font-weight:600;font-size:.92rem;padding:.8rem 1.5rem;border-radius:999px;text-decoration:none;">
+          Explore Intelligence
+        </a>
+      </div>
+
+      <!-- Proof bound to real view context. company_count is computed from the DB
+           and documented in core.views.landing as "exact integer — never inflated". -->
+      <p style="font-size:.8rem;color:#64748b;margin:0;">
+        {% if company_count %}<strong style="color:#94a3b8;">{{ company_count }}</strong> company profiles analysed · {% endif %}
+        <strong style="color:#94a3b8;">{{ market_count }}</strong> focus markets ·
+        Evidence-linked · Analyst-reviewed
+      </p>
+    </div>
+
+    <div data-island="DecisionPipeline"></div>
+  </div>
+</section>
+
+<style>
+  /* Single column before the two-column hero would crush either side. */
+  @media (max-width: 860px) {
+    .eiq-hero-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
+  }
+</style>
+
 {% include 'partials/living_earth.html' %}
 
 
