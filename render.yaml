@@ -3,8 +3,8 @@
 # Docs: https://render.com/docs/blueprint-spec
 #
 # Services:
-#   ecoiq       — Django/Gunicorn web service (starter plan, Oregon)
-#   ecoiq-db    — PostgreSQL database (starter plan, Oregon)
+#   ecoiq       — Django/Gunicorn web service (Standard, Oregon)
+#   ecoiq-db    — PostgreSQL database (Basic-256mb, Oregon)
 #
 # build.sh is DB-FREE — the build environment cannot reach the private database
 # network (the internal hostname dpg-…-a only resolves at runtime). Migrations +
@@ -19,7 +19,13 @@ services:
     name: ecoiq                          # Blueprint matches by this name — do NOT rename
     env: python
     region: oregon
-    plan: starter                        # $7/month — persistent disk, no cold starts
+    # Must match the live service. This said `starter` while production has run
+    # on Standard, so a Blueprint sync would have attempted to DOWNGRADE the
+    # live web service — a silent capacity cut, not a config tidy-up.
+    # `standard` is the spelling the Blueprint schema accepts; the API reports
+    # the same plan as `standard` too. Verified against
+    # `render blueprints validate`, which rejects e.g. `standard_plan`.
+    plan: standard                       # matches the live ecoiq web service
     buildCommand: pip install -r requirements.txt && ./build.sh
     # Pre-Deploy runs once per deploy in the runtime network (internal DB hostname
     # resolves here) — migrations + seeding live here, not in the build.
@@ -220,7 +226,12 @@ databases:
   - name: ecoiq-db
     databaseName: ecoiq
     user: ecoiq
-    plan: starter                        # $7/month PostgreSQL — 1 GB storage
+    # Must match the live instance and must be a current plan. `starter` was a
+    # legacy Postgres plan; Render retired it, and its presence here failed
+    # Blueprint validation outright — so no change in this file could sync,
+    # whatever else it contained. The live ecoiq-db has run on basic_256mb
+    # (1 GB disk, PostgreSQL 18) since 2026-06-23.
+    plan: basic-256mb                    # matches the live ecoiq-db instance
     region: oregon                       # same region as web service for low latency
 
 # ══════════════════════════════════════════════════════════════════════════════
