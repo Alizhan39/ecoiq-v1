@@ -313,11 +313,6 @@
 </header>
 
 
-<!-- ═══════════════ CINEMATIC HOMEPAGE HERO (scroll-driven scrollytelling) ═══ -->
-<div data-island="CinematicHomeHero" data-props="{}"></div>
-
-
-<!-- ═══════════════ LIVING INFRASTRUCTURE EARTH (Phase 1 hero) ═══════════════ -->
 <!-- ═══════════════════ EcoIQ HERO — evidence becomes a decision ═══════════════
      Replaces "Meet the EcoIQ AI Agents" as the first thing a visitor reads.
      The agents are the mechanism; the decision is the product, and the product
@@ -375,6 +370,18 @@
     .eiq-hero-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
   }
 </style>
+
+<!-- ═══════════════ CINEMATIC HOMEPAGE HERO (scroll-driven scrollytelling) ═══
+     Demoted below the commercial hero rather than deleted. It is 3,316px of
+     scrollytelling carrying the previous "Find the Better Way" headline, so
+     while it sat first the proposition and both CTAs were ~3,500px down —
+     measured, not assumed. The island and its component are untouched;
+     only its position in the homepage composition changed.
+============================================================================ -->
+<div data-island="CinematicHomeHero" data-props="{}" data-island-lazy></div>
+
+
+<!-- ═══════════════ LIVING INFRASTRUCTURE EARTH (Phase 1 hero) ═══════════════ -->
 
 {% include 'partials/living_earth.html' %}
 
