@@ -170,6 +170,77 @@ class RedactionTests(SimpleTestCase):
         self.assertNotIn('16', out['token'])
 
 
+class TimestampAndAddressTests(SimpleTestCase):
+    """
+    The value scan must tell a clock from an address.
+
+    The previous IPv6 pattern matched any colon-separated run of hex groups, so
+    `12:34:56` looked like an address. `2026-08-08T12:34:56.394754Z` became
+    `2026-08-08T12[REDACTED].394754Z`, and Sentry rejected the event outright:
+    "Discarded invalid value / Name: timestamp". The same pattern also missed
+    `::1`, because \\b does not apply before a colon.
+
+    IPv6 is now validated with `ipaddress` rather than guessed.
+    """
+
+    PRESERVED = [
+        ('utc iso with Z', '2026-08-08T12:34:56.394754Z'),
+        ('iso no fraction', '2026-08-08T12:34:56Z'),
+        ('plus one offset', '2026-08-08T12:34:56+01:00'),
+        ('minus five offset', '2026-08-08T12:34:56-05:00'),
+        ('bare clock', '12:34:56'),
+        ('gunicorn access', '[08/Aug/2026:06:09:52 +0000]'),
+        ('adjacent to text', 'job started at 2026-08-08T12:34:56Z and finished'),
+        ('two timestamps', 'from 2026-08-08T00:00:00Z to 2026-08-08T23:59:59Z'),
+        ('duration-like', 'elapsed 01:02:03'),
+    ]
+
+    REDACTED_CASES = [
+        ('compressed ipv6', '2001:db8::123'),
+        ('full ipv6', '2001:0db8:0000:0000:0000:0000:dead:beef'),
+        ('loopback', '::1'),
+        ('link local', 'fe80::1'),
+        ('ipv6 in prose', 'peer 2001:db8::dead:beef went away'),
+        ('ipv4', '203.0.113.42'),
+        ('ipv4 in prose', 'connection from 198.51.100.9 refused'),
+    ]
+
+    def test_timestamps_are_preserved_exactly(self):
+        from core.logging_setup import _scrub_value
+        for name, value in self.PRESERVED:
+            with self.subTest(name):
+                self.assertEqual(_scrub_value(value), value)
+
+    def test_real_addresses_are_still_redacted(self):
+        from core.logging_setup import _scrub_value
+        for name, value in self.REDACTED_CASES:
+            with self.subTest(name):
+                self.assertIn(REDACTED, _scrub_value(value))
+
+    def test_an_address_next_to_a_timestamp_loses_only_the_address(self):
+        from core.logging_setup import _scrub_value
+        out = _scrub_value('2026-08-08T12:34:56Z peer 2001:db8::1 closed')
+        self.assertIn('2026-08-08T12:34:56Z', out)
+        self.assertNotIn('2001:db8::1', out)
+
+    def test_the_rendered_log_timestamp_field_is_valid_iso(self):
+        # Through the REAL renderer, not the helper.
+        import datetime
+        with CapturedLogs() as cap:
+            structlog.get_logger('ecoiq.app').info('timestamp_probe')
+        stamp = cap.records()[0]['timestamp']
+        self.assertNotIn(REDACTED, stamp)
+        datetime.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+
+    def test_a_timestamp_inside_a_message_survives_the_real_renderer(self):
+        with CapturedLogs() as cap:
+            logging.getLogger('legacy').warning(
+                'job ran at 2026-08-08T12:34:56.394754Z from 2001:db8::9')
+        text = cap.text
+        self.assertIn('2026-08-08T12:34:56.394754Z', text)
+        self.assertNotIn('2001:db8::9', text)
+
+
 class JsonRenderingTests(SimpleTestCase):
     """Production output has to be parseable, one record per line."""
 

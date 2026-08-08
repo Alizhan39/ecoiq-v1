@@ -195,6 +195,130 @@ class ArgvScrubbingTests(SentryTestCase):
         self.assertEqual(event['extra']['sys.argv'], ['manage.py', 'migrate'])
 
 
+class TimestampIntegrityTests(SentryTestCase):
+    """
+    The Sentry-side half of the same defect, asserted on the real payload.
+
+    Production showed "Discarded invalid value / Name: timestamp" because the
+    value scan rewrote `2026-08-08T12:34:56.394754Z` into
+    `2026-08-08T12[REDACTED].394754Z`. Sentry validates that field, so the whole
+    event was thrown away — the scrubber did not merely make an event untidy, it
+    stopped it being ingested at all.
+
+    These assert on what the transport actually receives.
+    """
+
+    def _capture(self):
+        try:
+            raise RuntimeError('probe')
+        except RuntimeError:
+            sentry_sdk.capture_exception()
+        return self.events[0]
+
+    def test_the_event_timestamp_is_valid_iso_8601(self):
+        import datetime
+        event = self._capture()
+        stamp = event['timestamp']
+        self.assertNotIn(sentry_setup.REDACTED, stamp)
+        parsed = datetime.datetime.fromisoformat(str(stamp).replace('Z', '+00:00'))
+        self.assertIsNotNone(parsed)
+
+    def test_no_typed_field_in_the_payload_is_corrupted(self):
+        event = self._capture()
+        for field in ('timestamp', 'event_id', 'release', 'environment',
+                      'platform', 'level'):
+            with self.subTest(field):
+                if field in event:
+                    self.assertNotIn(sentry_setup.REDACTED, str(event[field]))
+
+    def test_breadcrumb_timestamps_survive(self):
+        import datetime
+        logging.getLogger('legacy').warning('a breadcrumb')
+        event = self._capture()
+        for crumb in event.get('breadcrumbs', {}).get('values', []):
+            with self.subTest(crumb.get('category')):
+                stamp = str(crumb.get('timestamp', ''))
+                if stamp:
+                    self.assertNotIn(sentry_setup.REDACTED, stamp)
+                    datetime.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+
+    def test_addresses_in_free_text_are_still_redacted_in_the_payload(self):
+        sentry_sdk.get_current_scope().set_extra(
+            'detail', 'peer 2001:db8::dead:beef and 203.0.113.42 both failed')
+        blob = json.dumps([self._capture()], default=str)
+        self.assertNotIn('2001:db8::dead:beef', blob)
+        self.assertNotIn('203.0.113.42', blob)
+
+    def test_a_timestamp_inside_free_text_survives_the_payload(self):
+        sentry_sdk.get_current_scope().set_extra(
+            'detail', 'started 2026-08-08T12:34:56.394754Z ended 2026-08-08T12:35:01+01:00')
+        event = self._capture()
+        detail = event['extra']['detail']
+        self.assertIn('2026-08-08T12:34:56.394754Z', detail)
+        self.assertIn('2026-08-08T12:35:01+01:00', detail)
+
+
+class ScrubberFailureTests(SentryTestCase):
+    """
+    A scrubber that raises must not send, and must not be silent.
+
+    The SDK swallows an exception from before_send and drops the event with no
+    trace. A NameError in the scrub chain once disabled error reporting entirely
+    while everything looked healthy.
+    """
+
+    def test_a_raising_scrubber_drops_the_event_rather_than_sending_it(self):
+        from unittest import mock
+        with mock.patch.object(sentry_setup, '_before_send',
+                               side_effect=RuntimeError('scrubber exploded')):
+            try:
+                raise ValueError('probe')
+            except ValueError:
+                sentry_sdk.capture_exception()
+            self.assertEqual(self.events, [], 'event sent despite scrubber failure')
+
+    def test_the_failure_is_logged_not_silent(self):
+        from unittest import mock
+        with self.assertLogs('ecoiq.sentry', level='ERROR') as captured:
+            with mock.patch.object(sentry_setup, '_before_send',
+                                   side_effect=RuntimeError('scrubber exploded')):
+                try:
+                    raise ValueError('probe')
+                except ValueError:
+                    sentry_sdk.capture_exception()
+        self.assertIn('sentry_before_send_failed', '\n'.join(captured.output))
+
+    def test_a_scrubber_failure_does_not_recurse_into_sentry(self):
+        # Reporting the failure at ERROR is captured by LoggingIntegration,
+        # producing a new event whose before_send fails the same way. Measured
+        # at 51 before_send invocations from ONE exception before
+        # ignore_logger() was added.
+        from unittest import mock
+        calls = {'n': 0}
+
+        def always_fails(event, hint):
+            calls['n'] += 1
+            if calls['n'] > 20:
+                raise AssertionError('runaway recursion in before_send')
+            raise RuntimeError('scrubber exploded')
+
+        with mock.patch.object(sentry_setup, '_before_send', always_fails):
+            try:
+                raise ValueError('probe')
+            except ValueError:
+                sentry_sdk.capture_exception()
+            sentry_sdk.get_client().flush()
+
+        self.assertEqual(calls['n'], 1, f'before_send ran {calls["n"]} times, expected 1')
+        self.assertEqual(self.events, [])
+
+    def test_a_raising_breadcrumb_scrubber_drops_the_breadcrumb(self):
+        from unittest import mock
+        with mock.patch.object(sentry_setup, 'scrub',
+                               side_effect=RuntimeError('boom')):
+            self.assertIsNone(sentry_setup.before_breadcrumb({'message': 'x'}, None))
+
+
 class RequestScrubbingTests(SentryTestCase):
 
     def test_request_section_drops_body_cookies_and_credentials(self):
