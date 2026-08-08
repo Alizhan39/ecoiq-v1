@@ -80,6 +80,21 @@ IGNORED_EXCEPTIONS = (
 # trail that tells you nothing. Exact key only: `contact_message` still goes.
 MESSAGE_KEYS = frozenset({'message'})
 
+# Typed fields whose values Sentry parses rather than displays. Scrubbing one
+# does not redact a secret; it corrupts a field the ingest pipeline validates,
+# and the event is discarded — "Discarded invalid value / Name: timestamp" is
+# what an over-eager value scan actually bought us.
+#
+# The value scan is now accurate enough not to need this (IPv6 is validated by
+# `ipaddress`, so a clock time is never mistaken for an address). It stays as
+# defence in depth: a typed field should not be at the mercy of a text pattern
+# at all, whatever that pattern currently does.
+TYPED_VALUE_KEYS = frozenset({
+    'timestamp', 'start_timestamp', 'received', 'datetime', 'event_id',
+    'span_id', 'trace_id', 'parent_span_id', 'release', 'environment',
+    'platform', 'level', 'logger', 'transaction', 'type', 'lineno',
+})
+
 
 def _is_sensitive_key(key: str) -> bool:
     lowered = key.lower()
@@ -102,6 +117,9 @@ def scrub(obj: Any, depth: int = 0) -> Any:
         for key, value in obj.items():
             if isinstance(key, str) and _is_sensitive_key(key):
                 out[key] = REDACTED
+            elif isinstance(key, str) and key.lower() in TYPED_VALUE_KEYS:
+                # Passed through untouched — see TYPED_VALUE_KEYS.
+                out[key] = value
             else:
                 out[key] = scrub(value, depth + 1)
         return out
@@ -188,7 +206,30 @@ def scrub_argv(event: MutableMapping[str, Any]) -> None:
 
 
 def before_send(event: MutableMapping[str, Any], hint: Any) -> MutableMapping[str, Any] | None:
-    """Last gate before an event leaves the process."""
+    """
+    Last gate before an event leaves the process.
+
+    Wrapped, because a raising before_send is swallowed by the SDK and the event
+    is dropped with no trace. A NameError introduced here once disabled error
+    reporting entirely and the only symptom was events quietly not arriving —
+    monitoring failing silently is worse than monitoring being switched off,
+    because nobody goes looking.
+
+    On failure the event is DROPPED, not sent unscrubbed: a scrubber that cannot
+    run has not established that the payload is safe. The drop is logged through
+    the structured pipeline, which is redacted and does not depend on this code.
+    """
+    try:
+        return _before_send(event, hint)
+    except Exception:
+        import structlog
+        structlog.get_logger('ecoiq.sentry').exception(
+            'sentry_before_send_failed',
+            note='event dropped rather than sent unscrubbed')
+        return None
+
+
+def _before_send(event: MutableMapping[str, Any], hint: Any) -> MutableMapping[str, Any] | None:
     request = event.get('request')
     if isinstance(request, MutableMapping):
         event['request'] = scrub_request(request)
@@ -210,14 +251,19 @@ def before_breadcrumb(crumb: MutableMapping[str, Any], hint: Any) -> MutableMapp
     """
     Same scrubbing for breadcrumbs, plus dropping the noisy ones.
 
+    Also wrapped: a breadcrumb that cannot be scrubbed is dropped, not kept.
+
     Request lifecycle events are the highest-volume thing this application logs.
     As breadcrumbs they would push the genuinely interesting lines out of the
     trail long before the error that needs them.
     """
-    message = str(crumb.get('message') or '')
-    if message in ('request_started', 'request_completed'):
+    try:
+        message = str(crumb.get('message') or '')
+        if message in ('request_started', 'request_completed'):
+            return None
+        return scrub(crumb)  # type: ignore[return-value]
+    except Exception:
         return None
-    return scrub(crumb)  # type: ignore[return-value]
 
 
 # ── configuration ────────────────────────────────────────────────────────────

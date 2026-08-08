@@ -98,6 +98,40 @@ text a developer chose to log. That is the same exposure the log line already
 has, and the mitigation is the logging policy — not double-redaction that
 destroys the trail.
 
+## Timestamps are not addresses
+
+The first activation event was **rejected by Sentry** — "Discarded invalid
+value / Name: timestamp". The value scan had rewritten
+`2026-08-08T12:34:56.394754Z` into `2026-08-08T12[REDACTED].394754Z`, and Sentry
+validates that field, so the whole event was discarded.
+
+Cause: IPv6 was matched by pattern, and a clock reads like one. The same pattern
+also **missed `::1`**, because `\b` does not apply before a colon — over-matching
+and under-matching from one expression, in opposite directions.
+
+IPv6 is now **validated with `ipaddress`** rather than guessed: candidates are
+extracted cheaply, then the stdlib decides. A timestamp is not an address, and
+`::1` is.
+
+Two layers, as with everything else here:
+
+1. `ipaddress` validation, which fixes free text as well as typed fields.
+2. `TYPED_VALUE_KEYS` — `timestamp`, `event_id`, `trace_id`, `release` and the
+   rest pass through the value scan untouched. Not needed now that validation is
+   accurate, kept because a field Sentry parses should not be at the mercy of a
+   text pattern at all.
+
+## A scrubber that raises drops the event
+
+The SDK swallows an exception from `before_send` and discards the event with no
+trace. A `NameError` in the scrub chain once disabled error reporting entirely,
+and the only symptom was events quietly not arriving.
+
+`before_send` and `before_breadcrumb` now catch, **drop** (never send
+unscrubbed — a scrubber that cannot run has not established the payload is
+safe), and log the failure through the structured pipeline, which is redacted
+and does not depend on this code.
+
 ## Source context
 
 Sentry captures `pre_context` / `context_line` / `post_context` — the **source
