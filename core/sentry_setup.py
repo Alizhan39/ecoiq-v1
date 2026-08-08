@@ -73,8 +73,18 @@ IGNORED_EXCEPTIONS = (
 )
 
 
+# Sentry's own top-level field for a breadcrumb or event title. It holds a
+# controlled event name — `rate_limit_applied` — not user content, and
+# `message` is in PERSONAL_KEY_PARTS to catch `contact_message` and friends.
+# Blanket-redacting it turned every breadcrumb into "[REDACTED]", which is a
+# trail that tells you nothing. Exact key only: `contact_message` still goes.
+MESSAGE_KEYS = frozenset({'message'})
+
+
 def _is_sensitive_key(key: str) -> bool:
     lowered = key.lower()
+    if lowered in MESSAGE_KEYS:
+        return False
     return any(part in lowered for part in SENSITIVE_KEY_PARTS + PERSONAL_KEY_PARTS)
 
 
@@ -149,6 +159,34 @@ def scrub_exception_values(event: MutableMapping[str, Any]) -> None:
                     frame.pop('vars', None)
 
 
+def scrub_argv(event: MutableMapping[str, Any]) -> None:
+    """
+    Keep which command ran; drop what it was given.
+
+    The SDK attaches `extra['sys.argv']` to every event. For a web worker that
+    is harmless, but this application has management commands that take secrets
+    on the command line — `create_demo_user --password …` among them — and a
+    command that raises would have shipped that argument to Sentry verbatim.
+
+    No key rule catches it: the key is `sys.argv`, not `password`. No value rule
+    catches it either, because a password has no shape. Verified: a synthetic
+    `--password ARGV_SECRET_55123` reached the transport intact before this.
+
+    argv[0] and argv[1] identify the script and the subcommand, which is the
+    diagnostic value; everything after is redacted as a unit rather than
+    guessing which arguments are sensitive.
+    """
+    extra = event.get('extra')
+    if not isinstance(extra, MutableMapping):
+        return
+    argv = extra.get('sys.argv')
+    if isinstance(argv, (list, tuple)) and argv:
+        kept = [str(part) for part in argv[:2]]
+        if len(argv) > 2:
+            kept.append(REDACTED)
+        extra['sys.argv'] = kept
+
+
 def before_send(event: MutableMapping[str, Any], hint: Any) -> MutableMapping[str, Any] | None:
     """Last gate before an event leaves the process."""
     request = event.get('request')
@@ -156,6 +194,7 @@ def before_send(event: MutableMapping[str, Any], hint: Any) -> MutableMapping[st
         event['request'] = scrub_request(request)
 
     scrub_exception_values(event)
+    scrub_argv(event)
 
     # Never send user identity beyond an internal id. DjangoIntegration will
     # populate username/email if send_default_pii is ever switched on; this
@@ -262,6 +301,17 @@ def sentry_options(*, dsn: str, environment: str, release: str) -> dict[str, Any
         # enough not to hold a shutdown open.
         'shutdown_timeout': 2,
 
+        # Only the two integrations we actually reviewed. Without this the SDK
+        # auto-enables whatever it finds installed — a captured event listed
+        # celery, fastapi, flask, httpx, langchain, langgraph, redis, sqlalchemy
+        # and starlette, none of which was assessed here.
+        #
+        # langchain is the one that matters: its instrumentation exists to
+        # record prompts and completions, which is precisely the data this
+        # application must never send. redis and httpx add breadcrumbs that can
+        # carry URLs and keys. Turning the lot off is smaller and more honest
+        # than auditing nine integrations nobody asked for.
+        'auto_enabling_integrations': False,
         'integrations': [
             DjangoIntegration(
                 # Route pattern, not the concrete URL. A URL carries slugs and

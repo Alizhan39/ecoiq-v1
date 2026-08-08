@@ -152,6 +152,49 @@ class OutboundPrivacyTests(SentryTestCase):
         self.assertEqual(user.get('id'), '42')
 
 
+class ArgvScrubbingTests(SentryTestCase):
+    """
+    Command-line arguments are an independent leak path.
+
+    `extra['sys.argv']` is attached to every event by the SDK. This repository
+    has management commands that take secrets as arguments, and neither the key
+    rules (the key is `sys.argv`) nor the value rules (a password has no shape)
+    catch them. Verified leaking before scrub_argv existed.
+    """
+
+    def test_command_line_secrets_do_not_reach_the_transport(self):
+        import sys as _sys
+        saved = _sys.argv
+        # Assembled at runtime. Sentry captures pre_context/context_line/
+        # post_context — the SOURCE around each frame — so a marker written as a
+        # literal here would appear in the payload as code, not as leaked data,
+        # and the assertion would fail for the wrong reason.
+        secret = 'ARGV' + '_SECRET_' + '55123'
+        _sys.argv = ['manage.py', 'create_demo_user', '--password',
+                     secret, '--email', MARKERS['email']]
+        self.addCleanup(setattr, _sys, 'argv', saved)
+        try:
+            raise RuntimeError('command failed')
+        except RuntimeError:
+            sentry_sdk.capture_exception()
+        blob = self.blob()
+        self.assertNotIn(secret, blob)
+        self.assertNotIn(MARKERS['email'], blob)
+
+    def test_the_command_name_is_still_identifiable(self):
+        # Redaction must not cost us knowing WHICH command failed.
+        event = {'extra': {'sys.argv': ['manage.py', 'create_demo_user',
+                                        '--password', 'a-secret-value']}}
+        sentry_setup.scrub_argv(event)
+        self.assertEqual(event['extra']['sys.argv'],
+                         ['manage.py', 'create_demo_user', sentry_setup.REDACTED])
+
+    def test_a_short_argv_is_left_alone(self):
+        event = {'extra': {'sys.argv': ['manage.py', 'migrate']}}
+        sentry_setup.scrub_argv(event)
+        self.assertEqual(event['extra']['sys.argv'], ['manage.py', 'migrate'])
+
+
 class RequestScrubbingTests(SentryTestCase):
 
     def test_request_section_drops_body_cookies_and_credentials(self):
@@ -280,6 +323,62 @@ class BreadcrumbTests(SentryTestCase):
                                        'api_key': MARKERS['token']}}, None)
         self.assertEqual(crumb['data']['email'], sentry_setup.REDACTED)
         self.assertEqual(crumb['data']['api_key'], sentry_setup.REDACTED)
+
+
+class IntegrationSurfaceTests(SentryTestCase):
+    """
+    Only reviewed integrations may run.
+
+    A captured event once listed celery, fastapi, flask, httpx, langchain,
+    langgraph, redis, sqlalchemy and starlette — auto-enabled by the SDK because
+    the packages are installed. langchain's whole purpose is recording prompts
+    and completions.
+    """
+
+    def test_only_django_and_logging_are_active(self):
+        try:
+            raise RuntimeError('probe')
+        except RuntimeError:
+            sentry_sdk.capture_exception()
+        active = set(self.events[0]['sdk']['integrations'])
+        for unwanted in ('langchain', 'langgraph', 'httpx', 'redis', 'celery',
+                         'sqlalchemy', 'flask', 'fastapi', 'starlette'):
+            with self.subTest(unwanted):
+                self.assertNotIn(unwanted, active)
+        self.assertIn('django', active)
+        self.assertIn('logging', active)
+
+    def test_auto_enabling_is_disabled_in_options(self):
+        options = sentry_setup.sentry_options(
+            dsn=FAKE_DSN, environment='test', release='r')
+        self.assertIs(options['auto_enabling_integrations'], False)
+
+
+class BreadcrumbUsefulnessTests(SentryTestCase):
+    """
+    Redaction must not destroy the trail it is protecting.
+
+    `message` is in PERSONAL_KEY_PARTS so that `contact_message` is caught. Applied
+    to Sentry's own top-level `message` field it turned every breadcrumb into
+    "[REDACTED]" — a trail that says nothing, which is the failure mode the brief
+    warned about.
+    """
+
+    def test_a_controlled_event_name_survives(self):
+        crumb = sentry_setup.before_breadcrumb({'message': 'rate_limit_applied'}, None)
+        self.assertEqual(crumb['message'], 'rate_limit_applied')
+
+    def test_but_addresses_inside_a_message_are_still_scrubbed(self):
+        crumb = sentry_setup.before_breadcrumb(
+            {'message': f"failed for {MARKERS['ipv4']} and {MARKERS['email']}"}, None)
+        self.assertNotIn(MARKERS['ipv4'], crumb['message'])
+        self.assertNotIn(MARKERS['email'], crumb['message'])
+
+    def test_a_prefixed_message_key_is_still_redacted(self):
+        # The exemption is the exact key only.
+        crumb = sentry_setup.before_breadcrumb(
+            {'message': 'ok', 'data': {'contact_message': MARKERS['message']}}, None)
+        self.assertEqual(crumb['data']['contact_message'], sentry_setup.REDACTED)
 
 
 class ConfigurationTests(SimpleTestCase):

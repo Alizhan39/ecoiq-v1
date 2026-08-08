@@ -60,6 +60,52 @@ from INFO upward · `tags.request_id` · `tags.route` · `contexts.ecoiq`
 (request_id, route, safe origin fields) · `environment` · `release` ·
 `user.id` only.
 
+## Integrations
+
+**Only `DjangoIntegration` and `LoggingIntegration`.** `auto_enabling_integrations`
+is off.
+
+Left on, the SDK enables whatever it finds installed — a captured event listed
+`celery`, `fastapi`, `flask`, `httpx`, `langchain`, `langgraph`, `redis`,
+`sqlalchemy` and `starlette`. `langchain` is the one that matters: its
+instrumentation exists to record prompts and completions, which is exactly the
+data this application must never send. `redis` and `httpx` add breadcrumbs that
+can carry URLs and keys. Disabling the lot is smaller and more honest than
+auditing nine integrations nobody asked for.
+
+## Command-line arguments
+
+`extra['sys.argv']` is attached to every event. This repository has management
+commands that take secrets as arguments (`create_demo_user --password …`), and
+neither the key rules (the key is `sys.argv`) nor the value rules (a password
+has no shape) catch them — verified leaking before `scrub_argv` existed.
+
+`argv[0]` and `argv[1]` are kept so the failing command is identifiable;
+everything after is redacted as a unit.
+
+## The `message` exemption
+
+`message` is in `PERSONAL_KEY_PARTS` so `contact_message` is caught. Applied to
+Sentry's own top-level `message` field it turned **every breadcrumb into
+`[REDACTED]`** — a trail that says nothing.
+
+The exact key `message` is therefore exempt from *key* redaction but still
+*value*-scrubbed, so `rate_limit_applied` survives while an address or email
+inside a message does not. Any other key containing "message" is still redacted.
+
+Residual risk, stated plainly: a breadcrumb message can still contain arbitrary
+text a developer chose to log. That is the same exposure the log line already
+has, and the mitigation is the logging policy — not double-redaction that
+destroys the trail.
+
+## Source context
+
+Sentry captures `pre_context` / `context_line` / `post_context` — the **source
+lines** around each frame. That is code, not runtime data, and it is the same
+tradeoff the logging pipeline already accepts for tracebacks. A secret only
+appears there if it is hardcoded in the source, which the Gitleaks gate blocks
+separately.
+
 ## What is never sent
 
 `send_default_pii=False` · raw IP (any form) · email · username · phone ·
