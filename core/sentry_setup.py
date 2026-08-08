@@ -66,6 +66,16 @@ HEADERS_DROPPED = frozenset({
 
 # Exceptions that are ordinary control flow, not defects. Kept deliberately
 # short: a long ignore list is how a real regression gets filtered out.
+# The logger the failure handler below writes to. It MUST NOT be able to become
+# a Sentry event: LoggingIntegration captures ERROR, so reporting a scrubber
+# failure at ERROR creates a new event, whose before_send fails the same way,
+# which logs again. Measured before this line existed: 51 before_send
+# invocations from one exception, climbing until the process was killed.
+#
+# Fail-closed still held — zero envelopes reached the transport — but a spinning
+# loop in a web worker is its own outage.
+SENTRY_INTERNAL_LOGGER = 'ecoiq.sentry'
+
 IGNORED_EXCEPTIONS = (
     'django.http.Http404',
     'django.core.exceptions.PermissionDenied',
@@ -223,7 +233,7 @@ def before_send(event: MutableMapping[str, Any], hint: Any) -> MutableMapping[st
         return _before_send(event, hint)
     except Exception:
         import structlog
-        structlog.get_logger('ecoiq.sentry').exception(
+        structlog.get_logger(SENTRY_INTERNAL_LOGGER).exception(
             'sentry_before_send_failed',
             note='event dropped rather than sent unscrubbed')
         return None
@@ -298,8 +308,13 @@ def sentry_options(*, dsn: str, environment: str, release: str) -> dict[str, Any
     """The complete option set, as a dict so tests can assert on it directly."""
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
-    from sentry_sdk.integrations.logging import LoggingIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration, ignore_logger
     from sentry_sdk.scrubber import DEFAULT_DENYLIST, EventScrubber
+
+    # Breaks the recursion described at SENTRY_INTERNAL_LOGGER. The SDK's own
+    # supported mechanism, so it survives an SDK upgrade better than a
+    # hand-rolled re-entrancy flag would.
+    ignore_logger(SENTRY_INTERNAL_LOGGER)
 
     denylist = list(DEFAULT_DENYLIST) + [
         *SENSITIVE_KEY_PARTS, *PERSONAL_KEY_PARTS,

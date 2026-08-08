@@ -288,6 +288,30 @@ class ScrubberFailureTests(SentryTestCase):
                     sentry_sdk.capture_exception()
         self.assertIn('sentry_before_send_failed', '\n'.join(captured.output))
 
+    def test_a_scrubber_failure_does_not_recurse_into_sentry(self):
+        # Reporting the failure at ERROR is captured by LoggingIntegration,
+        # producing a new event whose before_send fails the same way. Measured
+        # at 51 before_send invocations from ONE exception before
+        # ignore_logger() was added.
+        from unittest import mock
+        calls = {'n': 0}
+
+        def always_fails(event, hint):
+            calls['n'] += 1
+            if calls['n'] > 20:
+                raise AssertionError('runaway recursion in before_send')
+            raise RuntimeError('scrubber exploded')
+
+        with mock.patch.object(sentry_setup, '_before_send', always_fails):
+            try:
+                raise ValueError('probe')
+            except ValueError:
+                sentry_sdk.capture_exception()
+            sentry_sdk.get_client().flush()
+
+        self.assertEqual(calls['n'], 1, f'before_send ran {calls["n"]} times, expected 1')
+        self.assertEqual(self.events, [])
+
     def test_a_raising_breadcrumb_scrubber_drops_the_breadcrumb(self):
         from unittest import mock
         with mock.patch.object(sentry_setup, 'scrub',
