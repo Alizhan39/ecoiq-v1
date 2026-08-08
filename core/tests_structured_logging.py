@@ -7,9 +7,11 @@ CI rather than being discovered in an aggregator months later.
 
 Every secret below is synthetic and marked `.invalid` or `TEST_`.
 """
+import copy
 import io
 import json
 import logging
+import logging.config
 import re
 import sys
 import threading
@@ -41,44 +43,64 @@ ALL_MARKERS = (
 
 
 class CapturedLogs:
-    """Capture formatted output exactly as a log aggregator would receive it."""
+    """
+    Capture formatted output through the REAL settings.LOGGING configuration.
+
+    This is the point of the class. The previous version built an isolated
+    handler and called configure_structlog() directly — which is exactly the
+    path production does not take, so it asserted against a pipeline that only
+    existed inside the test. Production emitted raw event dicts through the
+    plain formatter for a full deploy while these tests were green.
+
+    Here dictConfig(settings.LOGGING) is applied first, precisely as Django's
+    configure_logging() does during setup(). Only then is the stream swapped on
+    the handlers dictConfig produced, leaving their formatters untouched. If the
+    formatter is ever removed from LOGGING, or a logger gains a bypass handler,
+    these tests fail.
+    """
 
     def __init__(self, *, json_logs=True):
         self.json_logs = json_logs
         self.stream = io.StringIO()
 
     def __enter__(self):
-        self.handler = logging.StreamHandler(self.stream)
-        # Replace handlers on EVERY configured logger, not just root.
-        # settings.LOGGING gives django.request its own handler with
-        # propagate=False, so a root-only capture silently misses it — and any
-        # assertion about its output then passes without ever seeing a line.
-        self._saved: list[tuple[logging.Logger, list, int]] = []
-        targets = [logging.getLogger()] + [
-            logging.getLogger(n) for n in list(logging.root.manager.loggerDict)
-            if isinstance(logging.getLogger(n), logging.Logger)
-        ]
-        for target in targets:
-            if target.handlers:
-                self._saved.append((target, list(target.handlers), target.level))
-                target.handlers = [self.handler]
-                target.setLevel(logging.DEBUG)
-        # Root may have had no handlers of its own, so the loop above skipped
-        # it. Set it unconditionally; the loop already recorded the originals
-        # for anything it did touch.
-        root = logging.getLogger()
-        if not any(target is root for target, _, _ in self._saved):
-            self._saved.append((root, list(root.handlers), root.level))
-        root.handlers = [self.handler]
-        root.setLevel(logging.DEBUG)
+        from django.conf import settings
+
+        from core.logging_setup import build_formatter_config
+
+        config = copy.deepcopy(settings.LOGGING)
+        # deepcopy cannot carry the '()' callable, so rebuild it for the chosen
+        # renderer — the same factory settings.py uses.
+        config['formatters']['structured'] = build_formatter_config(
+            json_logs=self.json_logs)
+        logging.config.dictConfig(config)
         configure_structlog(json_logs=self.json_logs)
+
+        # Redirect every stream handler dictConfig created, keeping formatters.
+        self._patched: list[tuple[logging.StreamHandler, object]] = []
+        for handler in self._all_handlers():
+            if isinstance(handler, logging.StreamHandler):
+                self._patched.append((handler, handler.stream))
+                handler.setStream(self.stream)
         return self
 
+    @staticmethod
+    def _all_handlers():
+        seen, out = set(), []
+        names = [''] + list(logging.root.manager.loggerDict)
+        for name in names:
+            logger = logging.getLogger(name)
+            if not isinstance(logger, logging.Logger):
+                continue
+            for handler in logger.handlers:
+                if id(handler) not in seen:
+                    seen.add(id(handler))
+                    out.append(handler)
+        return out
+
     def __exit__(self, *exc):
-        for target, handlers, level in self._saved:
-            target.handlers = handlers
-            target.setLevel(level)
-        configure_structlog(json_logs=False)
+        for handler, stream in self._patched:
+            handler.setStream(stream)
         return False
 
     @property
@@ -261,6 +283,147 @@ class DjangoRequestLoggerTests(TestCase):
         self.assertEqual(sum('Traceback' in str(r.get('event', '')) or
                              'Internal Server Error' in str(r.get('event', ''))
                              for r in cap.records()), 1)
+
+
+class RealLoggingConfigTests(SimpleTestCase):
+    """
+    The guarantees that only hold if settings.LOGGING itself is right.
+
+    Every assertion here runs against dictConfig(settings.LOGGING). A formatter
+    attached by application code after import would not be seen by these tests,
+    which is the whole reason they exist.
+    """
+
+    def test_settings_declares_the_structured_formatter(self):
+        from django.conf import settings
+        formatter = settings.LOGGING['formatters']['structured']
+        self.assertIs(formatter['()'], structlog.stdlib.ProcessorFormatter)
+        for handler in settings.LOGGING['handlers'].values():
+            with self.subTest(handler):
+                self.assertEqual(handler['formatter'], 'structured')
+
+    def test_every_configured_logger_uses_the_structured_formatter(self):
+        from django.conf import settings
+        config = copy.deepcopy(settings.LOGGING)
+        from core.logging_setup import build_formatter_config
+        config['formatters']['structured'] = build_formatter_config(json_logs=True)
+        logging.config.dictConfig(config)
+        for name in ['', 'django.request', 'django.server', 'django.db.backends']:
+            with self.subTest(name or 'root'):
+                for handler in logging.getLogger(name).handlers:
+                    self.assertIsInstance(
+                        handler.formatter, structlog.stdlib.ProcessorFormatter,
+                        f'{name or "root"} has a bypass formatter')
+
+    def test_sql_query_logging_stays_off(self):
+        from django.conf import settings
+        level = settings.LOGGING['loggers']['django.db.backends']['level']
+        self.assertNotEqual(level, 'DEBUG')
+
+    def test_all_three_logger_kinds_emit_valid_json(self):
+        with CapturedLogs() as cap:
+            structlog.get_logger('ecoiq.app').info('application_event', a=1)
+            logging.getLogger('legacy.module').warning('stdlib event')
+            logging.getLogger('django.request').error('django request event')
+        records = cap.records()          # json.loads on every line, or it raises
+        loggers = {r.get('logger') for r in records}
+        self.assertEqual(loggers, {'ecoiq.app', 'legacy.module', 'django.request'})
+        for record in records:
+            with self.subTest(record.get('logger')):
+                for field in ('event', 'level', 'timestamp', 'service', 'environment'):
+                    self.assertIn(field, record)
+        self.assertNotIn('\x1b[', cap.text)
+
+    def test_each_event_is_emitted_exactly_once(self):
+        # propagate=False on django.request plus a root handler is the classic
+        # way to get one line as JSON and a second as plain text.
+        for name in ('ecoiq.dup', 'django.request', 'django.db.backends', 'django.server'):
+            with self.subTest(name):
+                with CapturedLogs() as cap:
+                    logging.getLogger(name).error('unique_probe_event')
+                lines = [l for l in cap.text.splitlines() if 'unique_probe_event' in l]
+                self.assertEqual(len(lines), 1, f'{name} emitted {len(lines)} lines')
+
+
+class ExceptionPrivacyTests(TestCase):
+    """Phase 5: markers must not survive any exception-logging route."""
+
+    MARKERS = ('TOP_SECRET_EXCEPTION_918271', 'alice.testing@example.invalid',
+               'TEST_TOKEN_928374', '203.0.113.42')
+
+    def _boom(self):
+        raise ValueError(
+            'TOP_SECRET_EXCEPTION_918271 alice.testing@example.invalid '
+            'TEST_TOKEN_928374 203.0.113.42')
+
+    def _assert_clean(self, text):
+        for marker in self.MARKERS:
+            with self.subTest(marker[:22]):
+                self.assertNotIn(marker, text)
+
+    def test_logger_exception_leaks_nothing(self):
+        with CapturedLogs() as cap:
+            try:
+                self._boom()
+            except ValueError:
+                logging.getLogger('ecoiq.app').exception('operation_failed')
+        self._assert_clean(cap.text)
+        self.assertIn('operation_failed', cap.text)
+
+    def test_error_with_exc_info_leaks_nothing(self):
+        with CapturedLogs() as cap:
+            try:
+                self._boom()
+            except ValueError:
+                logging.getLogger('ecoiq.app').error('operation_failed', exc_info=True)
+        self._assert_clean(cap.text)
+
+    def test_percent_interpolation_leaks_nothing(self):
+        with CapturedLogs() as cap:
+            logging.getLogger('legacy.module').warning(
+                'failed for %s and %s', '203.0.113.42', 'alice.testing@example.invalid')
+        self._assert_clean(cap.text)
+
+    def test_structlog_keyword_fields_leak_nothing(self):
+        with CapturedLogs() as cap:
+            structlog.get_logger('ecoiq.app').error(
+                'operation_failed', email='alice.testing@example.invalid',
+                api_key='TEST_TOKEN_928374', detail='peer 203.0.113.42 gone',
+                nested={'inner': {'password': 'TOP_SECRET_EXCEPTION_918271'}})
+        self._assert_clean(cap.text)
+
+    def test_the_django_request_error_path_leaks_nothing(self):
+        from django.test import Client, override_settings
+        from django.urls import path
+
+        outer = self
+
+        def boom(request):
+            outer._boom()
+
+        module = type(sys)('urlconf_privacy')
+        module.urlpatterns = [path('boom/', boom)]
+        sys.modules['urlconf_privacy'] = module
+        self.addCleanup(sys.modules.pop, 'urlconf_privacy', None)
+
+        with CapturedLogs() as cap:
+            with override_settings(ROOT_URLCONF='urlconf_privacy', DEBUG=False,
+                                   ALLOWED_HOSTS=['testserver']):
+                Client(raise_request_exception=False).get('/boom/')
+        self._assert_clean(cap.text)
+
+    def test_useful_diagnostics_survive_redaction(self):
+        # Redaction must not cost us the ability to debug.
+        with CapturedLogs() as cap:
+            try:
+                self._boom()
+            except ValueError:
+                logging.getLogger('ecoiq.app').exception('operation_failed')
+        blob = cap.text
+        self.assertIn('ValueError', blob)          # exception class
+        self.assertIn('Traceback', blob)           # stack structure
+        self.assertIn('_boom', blob)               # the frame that raised
+        self.assertIn('operation_failed', blob)    # the event name
 
 
 class RequestIdTests(SimpleTestCase):
