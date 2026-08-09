@@ -20,6 +20,7 @@ import CountUpValue from './components/cinematic/CountUpValue'
 import InvestorScrollStory from './components/investor-story/InvestorScrollStory'
 import DecisionPipeline from './components/homepage/DecisionPipeline'
 import ProductArchitecture from './components/homepage/ProductArchitecture'
+import KhalifahFieldIntelligence from './components/homepage/KhalifahFieldIntelligence'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
@@ -40,4 +41,5 @@ export const registry: Record<string, ComponentType<any>> = {
   InvestorScrollStory,
   DecisionPipeline,
   ProductArchitecture,
+  KhalifahFieldIntelligence,
 }

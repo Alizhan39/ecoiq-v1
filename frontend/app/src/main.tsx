@@ -23,6 +23,7 @@ import './islands.css'
 import './cinematic.css'
 import './investor-story.css'
 import './product-architecture.css'
+import './khalifah-field.css'
 import { MotionProvider } from './motion'
 import { registry } from './registry'
 
