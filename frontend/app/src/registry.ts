@@ -19,6 +19,7 @@ import CinematicHomeHero from './components/cinematic/CinematicHomeHero'
 import CountUpValue from './components/cinematic/CountUpValue'
 import InvestorScrollStory from './components/investor-story/InvestorScrollStory'
 import DecisionPipeline from './components/homepage/DecisionPipeline'
+import ProductArchitecture from './components/homepage/ProductArchitecture'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
@@ -38,4 +39,5 @@ export const registry: Record<string, ComponentType<any>> = {
   CountUpValue,
   InvestorScrollStory,
   DecisionPipeline,
+  ProductArchitecture,
 }

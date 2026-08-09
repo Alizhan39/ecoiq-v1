@@ -35,12 +35,12 @@ words, 86 links across 57 destinations.
 | 9 | How it works (01–03) | 390px | Three-step process | No — superseded | **How EcoIQ Works** | — | MERGE *(after §5)* | Low | None |
 | 10 | Who uses EcoIQ | 287px | Audiences | Yes | Intent Selector | — | MERGE *(after §1)* | Low | None |
 | 11 | What EcoIQ helps you do | 372px | Capability list | Overlaps #10 | Intent Selector | — | MERGE *(after §1)* | Low | None |
-| 12 | Intelligence modules (five) | **1,142px** | Module catalogue | Yes | Product Architecture → Intelligence | `/platform/` | MERGE *(after §2)* | **Medium — largest text block** | None |
+| 12 | Intelligence modules (five) | **1,142px** | Module catalogue | Yes | Product Architecture → Intelligence + Review | `/platform/` | **REMOVED** | **Medium — largest text block** | None; `/platform/#capital-integrity` kept as a Review capability |
 | 13 | Amanah Autopilot | 494px | Product teaser | Yes | Institutional capability | deeper page | MERGE *(later)* | Low | None |
 | 14 | 6-Pillar methodology | 649px | Scoring framework | Yes | "Why 71?" + methodology link | `/methodology/` | MERGE *(after §3)* | **Medium** | None |
-| 15 | Terminal / sovereign monitor | 654px | Terminal teaser | Yes | Product Architecture → Institutional | `/platform/` | MERGE *(after §2)* | Low | None |
+| 15 | Terminal / sovereign monitor | 654px | Terminal teaser | Yes | Product Architecture → Intelligence | `/platform/` | **REMOVED** | Low | None; demo-request mailto kept as the Terminal capability |
 | 16 | Digital Twin preview | 79px | Caption only | No | — | deeper page | **REMOVE** | Low | None |
-| 17 | Institutional country intelligence | 499px | Country report CTA | Yes | Product Architecture → Institutional | `/countries/` | MERGE *(after §2)* | Low | None |
+| 17 | Institutional country intelligence | 499px | Country report CTA | Yes | Product Architecture → Institutional | `/countries/` | **REMOVED** | Low | None; `/countries/` kept as the Sovereign Intelligence capability |
 | 18 | Get started | 422px | CTA block | No — hero CTA duplicates it | hero | — | **REMOVE** | Low | None |
 | 19 | EcoIQ analytical review | 560px | Review CTA | Duplicate of hero primary CTA | hero + Product Architecture | `leads:request_review` | **REMOVE** | Low | None |
 | 20 | Real-world projects | 417px | Project cards | Yes | Intelligence teaser | `/projects/` | MERGE *(later)* | Medium | None |
@@ -53,8 +53,24 @@ Sections marked *(after §N)* are **not** removed yet. Their information has a
 named destination, but that destination is not built. Removing them first would
 lose content rather than consolidate it, which is the opposite of the goal.
 
-Executed in this pass: `CinematicHomeHero` only — the one case where the
-replacement demonstrably exists and is verified above the fold.
+Executed so far: `CinematicHomeHero` (hero duplication), then **#12, #15 and
+#17** once Product Architecture landed and was browser-verified. Those three
+were ~2,295px that named a dozen capabilities before naming a single product;
+Product Architecture (551px) states three products and folds the same
+capabilities inside them.
+
+Measured effect of the Product Architecture pass, at 1440×900:
+
+| | Before | After |
+|---|---|---|
+| Rendered height | 11,124px | **9,381px** (−1,743) |
+| Mobile height (390×844) | 19,660px | **16,690px** (−2,970) |
+| `<section>` elements | 20 | **18** |
+| Blocks ≥40px | 22 | **20** |
+| Links | 93 | 93 |
+| Rendered words | 2,024 | **1,693** |
+
+The homepage is now shorter than the production baseline it started from.
 
 Ready to remove the moment their replacements land: #5, #6, #7, #16, #18, #19
 (≈1,624px of duplicated CTA and counter blocks with no unique information).

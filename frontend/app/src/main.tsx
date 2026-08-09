@@ -22,6 +22,7 @@ import './design/system.css'
 import './islands.css'
 import './cinematic.css'
 import './investor-story.css'
+import './product-architecture.css'
 import { MotionProvider } from './motion'
 import { registry } from './registry'
 
