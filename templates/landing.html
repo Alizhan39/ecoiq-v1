@@ -355,6 +355,7 @@
            and documented in core.views.landing as "exact integer — never inflated". -->
       <p style="font-size:.8rem;color:#64748b;margin:0;">
         {% if company_count %}<strong style="color:#94a3b8;">{{ company_count }}</strong> company profiles analysed · {% endif %}
+        <strong style="color:#94a3b8;">{{ company_count_display }}</strong> companies scored ·
         <strong style="color:#94a3b8;">{{ market_count }}</strong> focus markets ·
         Evidence-linked · Analyst-reviewed
       </p>
@@ -469,6 +470,44 @@
 </noscript>
 
 
+<!-- ═══════════════ OUTCOMES — from analysis to measurable outcomes ════════
+     Answers "so what?" directly after the Decision Brief has proved EcoIQ
+     produces a decision.
+
+     One causal chain, not a benefit grid: the connectors between stages carry
+     the argument that each stage makes the next one possible. Stages are
+     always legible; the sequence only brightens them, so nothing is conveyed
+     by animation alone.
+
+     Retires legacy #5 (from intelligence to action), #6 (stats band) and
+     #7 (country-flag chips / global intelligence strip).
+============================================================================ -->
+
+<div data-island="Outcomes" data-island-lazy
+     data-props='{"enterpriseHref": "{% url "leads:enterprise_enquiry" %}"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-oc-nojs" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <p style="color:#00e89a;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;margin:0 0 .6rem;">Outcomes</p>
+      <h2 id="eiq-oc-nojs" style="color:#fff;font-size:2rem;margin:0 0 .7rem;">From analysis to measurable outcomes.</h2>
+      <p style="color:#8fa9a0;margin:0 0 1.25rem;">EcoIQ helps teams move from fragmented evidence to clearer decisions, prioritised action and measurable impact.</p>
+      <ol style="color:#8fa9a0;margin:0 0 1.25rem;padding-left:1.1rem;line-height:1.7;">
+        <li><strong style="color:#fff;">Risk — see the risk.</strong> Identify missing evidence, transition exposure, governance weaknesses and execution risk before they become expensive surprises.</li>
+        <li><strong style="color:#fff;">Decision — make the decision.</strong> Turn evidence into a clear recommendation, understand the conditions behind it and see what would change the outcome.</li>
+        <li><strong style="color:#fff;">Action — prioritise the action.</strong> Translate the decision into a focused sequence of interventions, responsibilities and next steps.</li>
+        <li><strong style="color:#fff;">Impact — measure the impact.</strong> Track what changed, verify outcomes and feed new evidence back into the next decision cycle.</li>
+      </ol>
+      <ul style="color:#e7f3ee;margin:0 0 1.25rem;padding-left:1.1rem;line-height:1.7;">
+        <li>Reduce avoidable risk</li><li>Identify waste and inefficiency</li>
+        <li>Prioritise capital and interventions</li><li>Create evidence for boards, investors and stakeholders</li>
+      </ul>
+      <p style="color:#8fa9a0;margin:0 0 1rem;">EcoIQ does not replace management judgement. It helps teams make that judgement with better evidence.</p>
+      <p style="margin:0;"><a href="{% url "leads:enterprise_enquiry" %}">Explore Enterprise Use Cases</a></p>
+    </div>
+  </section>
+</noscript>
+
+
 <!-- ═══════════════ CINEMATIC HOMEPAGE HERO — removed from composition ═══════
      Not deleted. The component, its island registration in registry.ts, its
      assets and its props all remain, so it can be mounted on a future
@@ -566,83 +605,24 @@
 </section>
 
 
-<!-- ════════════════════════ FROM INTELLIGENCE TO ACTION ═════════════════════ -->
-<section class="eiq-mo-root" style="max-width:1100px;margin:0 auto;padding:3.5rem 2rem 1rem;">
-  <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
-    From Intelligence to Action
-    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-  </div>
+<!-- ═══════ FROM INTELLIGENCE TO ACTION (#5) + STATS BAND (#6) +
+     COUNTRY-FLAG CHIPS / GLOBAL INTELLIGENCE (#7) — removed from homepage
+     composition ═══════════════════════════════════════════════════════
+     Not deleted. The GlobalIntelligence island, /countries/ and every
+     counter remain; only the homepage stops rendering them here.
 
-  <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+     #5 was a generic Intelligence/Stewardship/Implementation triptych —
+     the Outcomes section now states the same progression as an actual
+     causal chain (risk -> decision -> action -> impact).
+     #6 duplicated the hero proof line; its one unique figure (the live
+     company count) was folded into that line rather than lost.
+     #7 was a four-flag chip row restating "four focus markets", which the
+     hero already says; /countries/ stays linked from Product Architecture
+     and Khalifah Field Intelligence.
 
-    <!-- Intelligence -->
-    <div class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.8rem;position:relative;overflow:hidden;">
-      <div class="eiq-mo-line-draw" style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00e89a,transparent);"></div>
-      <div class="eiq-mo-sub-a" style="width:44px;height:44px;border-radius:11px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem;">📊</div>
-      <div class="eiq-mo-sub-b" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;letter-spacing:-.01em;">Intelligence</div>
-      <div class="eiq-mo-sub-c" style="font-size:.86rem;color:#64748b;line-height:1.65;">Climate, ESG and transition readiness analysis.</div>
-    </div>
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
 
-    <!-- Stewardship -->
-    <div class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.8rem;position:relative;overflow:hidden;">
-      <div class="eiq-mo-line-draw" style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);"></div>
-      <div class="eiq-mo-sub-a" style="width:44px;height:44px;border-radius:11px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem;">🌱</div>
-      <div class="eiq-mo-sub-b" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;letter-spacing:-.01em;">Stewardship</div>
-      <div class="eiq-mo-sub-c" style="font-size:.86rem;color:#64748b;line-height:1.65;">Responsible management of resources, communities and ecosystems.</div>
-    </div>
-
-    <!-- Implementation -->
-    <div class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.8rem;position:relative;overflow:hidden;">
-      <div class="eiq-mo-line-draw" style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#58a6ff,transparent);"></div>
-      <div class="eiq-mo-sub-a" style="width:44px;height:44px;border-radius:11px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem;">🛠️</div>
-      <div class="eiq-mo-sub-b" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;letter-spacing:-.01em;">Implementation</div>
-      <div class="eiq-mo-sub-c" style="font-size:.86rem;color:#64748b;line-height:1.65;">Real-world pilot projects delivering measurable environmental and social outcomes.</div>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════ BAND ════════════════════════════════════ -->
-<div class="eiq-mo-root" style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.015);padding:.85rem 1.5rem;">
-  <div class="eiq-mo-stagger" style="max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap;">
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:.8px;text-transform:uppercase;">{{ company_count_display }} Companies</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Globally tracked &amp; scored</div>
-    </div>
-    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--info);letter-spacing:.8px;text-transform:uppercase;">{{ market_count }} Focus Markets</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">National intelligence profiles</div>
-    </div>
-    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:#a855f7;letter-spacing:.8px;text-transform:uppercase;">6-Pillar Methodology</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Public Benefit · Environment · Modernization + more</div>
-    </div>
-    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--warn);letter-spacing:.8px;text-transform:uppercase;">AI + Evidence</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Public reports, filings &amp; disclosures</div>
-    </div>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════ GLOBAL INTELLIGENCE (island) ═════════════════ -->
-<section class="eiq-mo-root" style="max-width:1120px;margin:0 auto;padding:3.5rem 1.5rem 0;">
-  <div data-island="GlobalIntelligence" data-island-lazy
-       data-props='{"eyebrow":"Global Intelligence","title":"Four focus markets. One coverage standard."}'>
-    <!-- Server-rendered fallback (no-JS / pre-hydration) — left-to-right chip
-         stagger reuses the same primitive as the cinematic hero's evidence
-         chips; the CTA link is simply the last child, so it lands last for free. -->
-    <div class="eiq-mo-chip-row" style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.84rem;color:#94a3b8;align-items:center;">
-      <span class="eiq-mo-chip">🇬🇧 United Kingdom</span><span class="eiq-mo-chip">🇰🇿 Kazakhstan</span><span class="eiq-mo-chip">🇸🇦 Saudi Arabia</span><span class="eiq-mo-chip">🇹🇷 Türkiye</span>
-      <a href="/countries/" class="eiq-mo-chip" style="color:#00e89a;text-decoration:none;font-weight:600;">View country intelligence →</a>
-    </div>
-    <div class="eiq-mo-divider" style="height:1px;background:rgba(255,255,255,.07);margin-top:1.25rem;"></div>
-  </div>
-</section>
 
 
 <!-- ════════════════════════════════ MARKET ACCESS ════════════════════════════ -->
