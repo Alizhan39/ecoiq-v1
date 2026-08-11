@@ -25,7 +25,6 @@ documentation while missing real markup.
 from __future__ import annotations
 
 import re
-import subprocess
 from pathlib import Path
 
 from django.conf import settings
@@ -163,18 +162,34 @@ class KhalifahFieldAssetTests(SimpleTestCase):
         self.assertLess(MP4_720.stat().st_size, MP4_1080.stat().st_size)
 
     def test_derivatives_are_h264_8bit_not_hevc(self) -> None:
+        """The master is HEVC Main 10, which Chrome and Firefox cannot decode.
+
+        Read this from the MP4 boxes rather than shelling out to ffprobe. CI
+        does not install ffmpeg, and `subprocess.run(['ffprobe', ...])` raises
+        FileNotFoundError when the binary is absent — before any return-code
+        check can skip it — so the previous version of this test errored on
+        every CI run. Parsing the container needs no dependency, which means
+        the guarantee is actually enforced in CI instead of skipped there.
+
+        The sample entry names the codec (`avc1` = H.264, `hvc1`/`hev1` =
+        HEVC), and the `avcC` configuration box carries AVCProfileIndication
+        one byte after its version field: 100 is High (8-bit), 110 is High 10.
+        `moov` sits at the front because these files are +faststart, so the
+        first 64KB is enough.
+        """
         for path in (MP4_1080, MP4_720):
             with self.subTest(asset=path.name):
-                probe = subprocess.run(
-                    ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
-                     '-show_entries', 'stream=codec_name,pix_fmt',
-                     '-of', 'default=noprint_wrappers=1', str(path)],
-                    capture_output=True, text=True, check=False,
+                head = path.read_bytes()[:65536]
+                self.assertIn(b'avc1', head, f'{path.name} is not H.264')
+                for hevc in (b'hvc1', b'hev1'):
+                    self.assertNotIn(
+                        hevc, head, f'{path.name} is HEVC — undecodable in Chrome/Firefox'
+                    )
+                marker = head.find(b'avcC')
+                self.assertNotEqual(marker, -1, f'{path.name} has no avcC configuration box')
+                self.assertNotEqual(
+                    head[marker + 5], 110, f'{path.name} is High 10 (10-bit) H.264'
                 )
-                if probe.returncode != 0:
-                    self.skipTest('ffprobe unavailable')
-                self.assertIn('codec_name=h264', probe.stdout)
-                self.assertIn('pix_fmt=yuv420p', probe.stdout)
 
     def test_derivatives_are_faststart(self) -> None:
         for path in (MP4_1080, MP4_720):
