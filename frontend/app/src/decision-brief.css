@@ -1,0 +1,482 @@
+/*
+ * Sample Decision Brief — homepage proof-of-product section.
+ *
+ * Values MIRROR the locked motion library and `design/tokens.ts`; none are new:
+ *   0.18s                          = duration.fast
+ *   0.42s                          = duration.base
+ *   0.7s                           = duration.slow
+ *   cubic-bezier(0.22, 1, 0.36, 1) = ease.out
+ *   90ms                           = the locked card stagger
+ *
+ * Literals rather than interpolations, for the reason recorded in
+ * product-architecture.css: Framer `animate` props do not update after mount in
+ * these islands, and a React-rendered inline <style> never attaches to
+ * document.styleSheets. A stylesheet imported through main.tsx is the only
+ * variant that measurably applies.
+ *
+ * The reveal is causal and runs once: score -> dimensions -> finding ->
+ * recommendation. Only opacity and transform animate.
+ */
+
+.eiq-db {
+  padding: 4.5rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eiq-db-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.eiq-db-head {
+  max-width: 640px;
+  margin-bottom: 1.75rem;
+}
+
+.eiq-db-label {
+  margin: 0 0 0.55rem;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #00e89a;
+}
+
+.eiq-db-h2 {
+  margin: 0 0 0.7rem;
+  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.eiq-db-lede {
+  margin: 0;
+  color: #8fa9a0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ---- the brief ---- */
+
+.eiq-db-card {
+  position: relative;
+  padding: 1.6rem 1.5rem;
+  border-radius: 18px;
+  background: #0c211a;
+  border: 1px solid rgba(0, 232, 154, 0.16);
+}
+
+.eiq-db-illustrative {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  margin: 0;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(3, 16, 12, 0.6);
+  color: #8fa9a0;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+}
+
+/* The position: the score arrives first, everything else follows from it. */
+
+.eiq-db-verdict {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-db:not([data-step='none']) .eiq-db-verdict {
+  opacity: 1;
+  transform: none;
+}
+
+.eiq-db-score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.eiq-db-score-n {
+  font-size: clamp(2.8rem, 7vw, 4rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #00e89a;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-db-score-d {
+  color: #5f746c;
+  font-size: 0.9rem;
+}
+
+.eiq-db-asset {
+  margin: 0 0 0.2rem;
+  color: #8fa9a0;
+  font-size: 0.82rem;
+}
+
+.eiq-db-decision {
+  margin: 0;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.eiq-db-delta {
+  margin: 0.35rem 0 0;
+  color: #00e89a;
+  font-size: 0.78rem;
+}
+
+/* ---- why 71? ---- */
+
+.eiq-db-why {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  margin-top: 1.1rem;
+  padding: 0.4rem 1rem 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: #e7f3ee;
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-db-why:hover {
+  border-color: #00e89a;
+}
+
+.eiq-db-why-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-db[data-expanded='true'] .eiq-db-why-icon {
+  transform: rotate(45deg);
+}
+
+/* ---- the five dimensions ---- */
+
+.eiq-db-breakdown {
+  margin-top: 1rem;
+}
+
+.eiq-db-dims {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.eiq-db-dims li {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 2fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Dimensions emerge from the score, in reading order. */
+.eiq-db[data-step='dimensions'] .eiq-db-dims li,
+.eiq-db[data-step='finding'] .eiq-db-dims li,
+.eiq-db[data-step='recommendation'] .eiq-db-dims li,
+.eiq-db[data-step='all'] .eiq-db-dims li {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(var(--i) * 90ms);
+}
+
+.eiq-db-dim-l {
+  color: #e7f3ee;
+  font-size: 0.84rem;
+}
+
+.eiq-db-dim-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.eiq-db-dim-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #0bbf82;
+  /* Width is data, so it transitions when a lever moves it. */
+  transition:
+    width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-db-dim-fill[data-moved='true'] {
+  background: #00e89a;
+}
+
+.eiq-db-dim-n {
+  color: #fff;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 6.5rem;
+  text-align: right;
+}
+
+.eiq-db-dim-was {
+  color: #5f746c;
+  font-size: 0.7rem;
+}
+
+/* ---- finding -> recommendation ---- */
+
+.eiq-db-reads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.4rem;
+}
+
+.eiq-db-read {
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-db[data-step='finding'] .eiq-db-read[data-read='finding'],
+.eiq-db[data-step='recommendation'] .eiq-db-read,
+.eiq-db[data-step='all'] .eiq-db-read {
+  opacity: 1;
+  transform: none;
+}
+
+.eiq-db-read h3 {
+  margin: 0 0 0.3rem;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5f746c;
+}
+
+.eiq-db-read p {
+  margin: 0;
+  color: #e7f3ee;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+/* ---- levers ---- */
+
+.eiq-db-levers {
+  margin-top: 1.4rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eiq-db-levers-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+
+.eiq-db-levers-head h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.eiq-db-scenario-tag {
+  margin: 0;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 232, 154, 0.24);
+  color: #00e89a;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.eiq-db-lever-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eiq-db-lever {
+  appearance: none;
+  min-height: 44px;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #8fa9a0;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-db-lever[aria-pressed='true'] {
+  color: #03100c;
+  background: #00e89a;
+  border-color: #00e89a;
+}
+
+.eiq-db-note {
+  margin: 0.7rem 0 0;
+  color: #5f746c;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+/* ---- CTAs ---- */
+
+.eiq-db-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+.eiq-db-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: #e7f3ee;
+  border: 1px solid rgba(0, 232, 154, 0.24);
+}
+
+.eiq-db-reassure {
+  align-self: center;
+  margin: 0;
+  color: #5f746c;
+  font-size: 0.78rem;
+}
+
+.eiq-db-cta--primary {
+  background: #00e89a;
+  color: #03100c;
+  border-color: #00e89a;
+}
+
+/* ---- focus ---- */
+
+.eiq-db-why:focus-visible,
+.eiq-db-lever:focus-visible,
+.eiq-db-cta:focus-visible {
+  outline: 2px solid #00e89a;
+  outline-offset: 3px;
+}
+
+/* ---- mobile ---- */
+
+@media (max-width: 860px) {
+  .eiq-db {
+    padding: 3.25rem 1.1rem;
+  }
+
+  .eiq-db-card {
+    padding: 1.3rem 1.1rem;
+  }
+
+  .eiq-db-illustrative {
+    position: static;
+    display: inline-block;
+    margin-bottom: 0.9rem;
+  }
+
+  .eiq-db-reads {
+    grid-template-columns: 1fr;
+  }
+
+  .eiq-db-dims li {
+    grid-template-columns: 1fr auto;
+    gap: 0.3rem 0.6rem;
+  }
+
+  /* The bar spans the row beneath its label on narrow screens. */
+  .eiq-db-dim-bar {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+
+/* ---- reduced motion: everything present, nothing interpolated ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .eiq-db-verdict,
+  .eiq-db-dims li,
+  .eiq-db-read,
+  .eiq-db-dim-fill,
+  .eiq-db-why-icon,
+  .eiq-db-lever,
+  .eiq-db-score-n {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/*
+ * `data-step="all"` is what the component sets whenever reduced motion is on:
+ * the brief renders complete and open, so no information depends on the
+ * timed reveal or on clicking.
+ */
+.eiq-db[data-step='all'] .eiq-db-verdict,
+.eiq-db[data-step='all'] .eiq-db-dims li,
+.eiq-db[data-step='all'] .eiq-db-read {
+  opacity: 1;
+  transform: none;
+}

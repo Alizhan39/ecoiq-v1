@@ -433,6 +433,42 @@
 </noscript>
 
 
+<!-- ═══════════════ SAMPLE DECISION BRIEF — proof of product ═══════════════
+     Answers "what does an actual output look like?", immediately after the
+     visitor has learned which product they are (Product Architecture above).
+
+     Every number is invented for illustration — no customer, no asset, no
+     survey. The card is permanently labelled, and the scenario controls are
+     framed as illustrative, never as a forecast.
+
+     Retires legacy #18 (Get started) and #19 (EcoIQ analytical review): this
+     section carries the Review CTA at the moment the visitor has actually
+     learned enough to act on it.
+============================================================================ -->
+
+<div data-island="DecisionBrief" data-island-lazy
+     data-props='{"reviewHref": "{% url "leads:request_review" %}", "methodologyHref": "{% url "methodology" %}"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-db-nojs" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <p style="color:#00e89a;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;margin:0 0 .6rem;">Sample decision brief</p>
+      <h2 id="eiq-db-nojs" style="color:#fff;font-size:2rem;margin:0 0 .7rem;">See the decision, not the dashboard.</h2>
+      <p style="color:#8fa9a0;margin:0 0 1rem;">EcoIQ turns fragmented evidence into a decision your team can understand, challenge and act on.</p>
+      <p style="color:#8fa9a0;margin:0 0 1rem;"><em>Illustrative EcoIQ decision brief.</em></p>
+      <p style="color:#fff;margin:0 0 .5rem;"><strong style="font-size:2rem;color:#00e89a;">71</strong> / 100 — Industrial Portfolio — Transition Review — <strong>PROCEED — WITH CONDITIONS</strong></p>
+      <ul style="color:#8fa9a0;margin:0 0 1rem;padding-left:1.1rem;line-height:1.7;">
+        <li>Evidence Quality 82</li><li>Transition Risk 61</li><li>Implementation Readiness 74</li>
+        <li>Capital Readiness 68</li><li>Stewardship Alignment 76</li>
+      </ul>
+      <p style="color:#e7f3ee;margin:0 0 .5rem;"><strong>Key finding.</strong> The project is viable, but implementation risk remains concentrated in energy exposure and evidence gaps.</p>
+      <p style="color:#e7f3ee;margin:0 0 1rem;"><strong>Recommended next move.</strong> Resolve the two evidence gaps and model the preferred transition scenario before capital deployment.</p>
+      <p style="margin:0;"><a href="{% url "leads:request_review" %}">Request Your EcoIQ Review</a> &nbsp;·&nbsp; <a href="{% url "methodology" %}">See Methodology</a></p>
+      <p style="color:#5f746c;font-size:.78rem;margin:.5rem 0 0;">No payment required to submit a review request.</p>
+    </div>
+  </section>
+</noscript>
+
+
 <!-- ═══════════════ CINEMATIC HOMEPAGE HERO — removed from composition ═══════
      Not deleted. The component, its island registration in registry.ts, its
      assets and its props all remain, so it can be mounted on a future
@@ -954,102 +990,21 @@
 ============================================================================ -->
 
 
-<!-- ════════════════════════════════ CTA ════════════════════════════════════ -->
-<section class="eiq-mo-root" style="border-top:1px solid rgba(255,255,255,.07);padding:4rem 2rem;text-align:center;background:rgba(16,185,129,.04);position:relative;overflow:hidden;">
-  <div class="orb" style="width:400px;height:400px;background:rgba(0,232,154,1);opacity:.04;top:-100px;left:50%;transform:translateX(-50%);"></div>
-  <div style="max-width:600px;margin:0 auto;position:relative;">
+<!-- ═══════════ GET STARTED CTA (#18) + REVIEW CTA (#19) — removed from
+     homepage composition ═══════════════════════════════════════════════
+     Not deleted; the routes and the review request page are unchanged.
 
-    <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#10b981;font-family:'SF Mono',monospace;margin-bottom:1rem">Get started</div>
+     Both were generic CTA blocks repeating the hero's offer before the
+     visitor had learned anything new. The Sample Decision Brief now carries
+     "Request Your EcoIQ Review" at the point where the visitor has actually
+     seen what a review produces — a better moment to ask.
 
-    <h2 class="eiq-mo-heading" style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:300;letter-spacing:-.02em;margin-bottom:1rem;color:#e2e8f0;line-height:1.2">
-      See your company's<br>EcoIQ score right now
-    </h2>
+     #19's one unique line ("No payment required to submit a review request")
+     was preserved and moved onto the Decision Brief CTA row.
 
-    <p class="eiq-mo-lede" style="font-size:14px;color:#64748b;margin-bottom:2rem;line-height:1.7">
-      {{ company_count_display }} companies ranked. Search below or browse the full rankings.
-    </p>
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
 
-    <!-- Inline search -->
-    <form action="/companies/" method="get" class="eiq-mo-cta-last" style="display:flex;gap:8px;max-width:420px;margin:0 auto 1.5rem">
-      <input type="text" name="q" placeholder="Search: Shell, KazMunayGas, BP…"
-        style="flex:1;background:#0d1117;border:1px solid rgba(255,255,255,.13);border-radius:3px;padding:11px 16px;font-size:13px;color:#e2e8f0;outline:none;min-width:0;font-family:inherit"
-        onfocus="this.style.borderColor='rgba(16,185,129,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.13)'">
-      <button type="submit" style="background:#10b981;color:#000;padding:11px 20px;border:none;border-radius:3px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:'SF Mono',monospace;font-weight:700;cursor:pointer;white-space:nowrap">
-        Search →
-      </button>
-    </form>
-
-    <div class="eiq-mo-cta-last" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <a href="/companies/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">Browse all {{ company_count_display }} companies →</a>
-      <a href="/pricing/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">View pricing →</a>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════ REVIEW CTA ═══════════════════════════ -->
-<section class="eiq-mo-root" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.05);">
-  <div style="max-width:1100px;margin:0 auto;text-align:center;">
-
-    <div class="chip eiq-mo-eyebrow" style="margin-bottom:.9rem;">
-      <span style="width:5px;height:5px;border-radius:50%;background:var(--acc);"></span>
-      EcoIQ Analytical Review
-    </div>
-
-    <h2 class="eiq-mo-heading" style="font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem;">
-      Ready to get a structured intelligence review?
-    </h2>
-    <p class="eiq-mo-lede" style="color:#64748b;font-size:.9rem;max-width:500px;margin:0 auto 2.5rem;line-height:1.7;">
-      Submit a company, country, or project for scoring by the Mizan Engine —
-      or upload your sustainability report for a greenwashing risk assessment.
-    </p>
-
-    <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-bottom:1.5rem;">
-
-      <a href="/request-access/review/" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.background='rgba(255,255,255,.035)';this.style.borderColor='rgba(255,255,255,.08)'">
-        <div style="width:38px;height:38px;border-radius:9px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="17" height="17" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        </div>
-        <div>
-          <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.25rem;">Request EcoIQ Review</div>
-          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Company assessment, country intelligence, project readiness, or finance fit review.</div>
-        </div>
-        <span style="font-size:.74rem;color:var(--acc);font-weight:600;margin-top:auto;">Get started →</span>
-      </a>
-
-      <a href="/request-access/review/?type=greenwashing_review" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.background='rgba(255,255,255,.035)';this.style.borderColor='rgba(255,255,255,.08)'">
-        <div style="width:38px;height:38px;border-radius:9px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="17" height="17" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-        </div>
-        <div>
-          <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.25rem;">Upload Sustainability Report</div>
-          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Upload a PDF sustainability or ESG report for a greenwashing risk assessment.</div>
-        </div>
-        <span style="font-size:.74rem;color:var(--acc);font-weight:600;margin-top:auto;">Upload PDF →</span>
-      </a>
-
-      {% if calendly_url %}
-      <a href="{{ calendly_url }}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.2);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,232,154,.12)'" onmouseout="this.style.background='rgba(0,232,154,.07)'">
-      {% else %}
-      <a href="mailto:alizhan@ecoiq.uk?subject=Investor Briefing Request" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.2);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,232,154,.12)'" onmouseout="this.style.background='rgba(0,232,154,.07)'">
-      {% endif %}
-        <div style="width:38px;height:38px;border-radius:9px;background:rgba(0,232,154,.18);border:1px solid rgba(0,232,154,.35);display:flex;align-items:center;justify-content:center;">
-          <svg width="17" height="17" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        </div>
-        <div>
-          <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.25rem;">Book Investor Briefing</div>
-          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Schedule a 30-minute call with our analysts to discuss findings and recommendations.</div>
-        </div>
-        <span style="font-size:.74rem;color:var(--acc);font-weight:600;margin-top:auto;">Schedule now →</span>
-      </a>
-
-    </div>
-
-    <p style="font-size:.72rem;color:#1e293b;">No payment required to submit a review request.</p>
-
-  </div>
-</section>
 
 
 <!-- ═══════════════ KHALIFAH FIELD INTELLIGENCE — field/stewardship layer ═══

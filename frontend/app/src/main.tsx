@@ -24,6 +24,7 @@ import './cinematic.css'
 import './investor-story.css'
 import './product-architecture.css'
 import './khalifah-field.css'
+import './decision-brief.css'
 import { MotionProvider } from './motion'
 import { registry } from './registry'
 
