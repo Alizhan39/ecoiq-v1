@@ -23,6 +23,7 @@ import ProductArchitecture from './components/homepage/ProductArchitecture'
 import KhalifahFieldIntelligence from './components/homepage/KhalifahFieldIntelligence'
 import DecisionBrief from './components/homepage/DecisionBrief'
 import Outcomes from './components/homepage/Outcomes'
+import HowEcoIQWorks from './components/homepage/HowEcoIQWorks'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
@@ -46,4 +47,5 @@ export const registry: Record<string, ComponentType<any>> = {
   KhalifahFieldIntelligence,
   DecisionBrief,
   Outcomes,
+  HowEcoIQWorks,
 }

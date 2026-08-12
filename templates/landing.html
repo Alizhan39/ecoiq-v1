@@ -508,6 +508,41 @@
 </noscript>
 
 
+<!-- ═══════════════ HOW ECOIQ WORKS — one system, signal to impact ═════════
+     Third beat of the journey: the Decision Brief showed what EcoIQ produces,
+     Outcomes showed what that achieves, this shows how the system repeatedly
+     creates them.
+
+     Twelve real loop stages, ranked rather than simplified: four macro phases
+     up front, the stages behind disclosure. One shared detail strip means
+     opening a phase costs no page height.
+
+     Retires legacy #4 (AI agents, ~674px), #9 (how it works, ~390px) and
+     #16 (digital twin caption, ~79px).
+============================================================================ -->
+
+<div data-island="HowEcoIQWorks" data-island-lazy
+     data-props='{"platformHref": "/platform/", "methodologyHref": "{% url "methodology" %}", "agentsHref": "/ai-agents/"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-hw-nojs" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <p style="color:#00e89a;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;margin:0 0 .6rem;">EcoIQ Impact Engine&trade;</p>
+      <h2 id="eiq-hw-nojs" style="color:#fff;font-size:2rem;margin:0 0 .7rem;">One system. From signal to verified impact.</h2>
+      <p style="color:#8fa9a0;margin:0 0 1.25rem;">A conventional AI returns an answer. EcoIQ continues past it — connecting data, people, capital and technology to real-world action across complex problems.</p>
+      <ol style="color:#8fa9a0;margin:0 0 1.25rem;padding-left:1.1rem;line-height:1.7;">
+        <li><strong style="color:#fff;">Understand</strong> — Detect → Diagnose. Find the problem before it becomes expensive.</li>
+        <li><strong style="color:#fff;">Decide</strong> — Generate → Simulate → Optimize. Explore options before committing resources. Specialist AI investigates different parts of the decision: Climate · Finance · Governance · Stewardship. <a href="/ai-agents/">See the AI agents</a></li>
+        <li><strong style="color:#fff;">Act</strong> — Match → Finance → Execute. Connect the decision to the people and capital required.</li>
+        <li><strong style="color:#fff;">Prove &amp; Learn</strong> — Verify → Measure → Learn → Repeat. Prove what happened and make the next decision better.</li>
+      </ol>
+      <p style="color:#8fa9a0;margin:0 0 1rem;">Evidence → AI analysis → Verification → Analyst review → Decision.</p>
+      <p style="color:#e7f3ee;margin:0 0 1rem;"><strong>EcoIQ does not stop at recommendation.</strong> It follows the decision through execution, verification and learning — every completed decision feeds evidence back into the system, improving the next one. <em>From problems to measurable progress.</em></p>
+      <p style="margin:0;"><a href="/platform/">Explore the EcoIQ Platform</a> &nbsp;·&nbsp; <a href="{% url "methodology" %}">View Methodology</a></p>
+    </div>
+  </section>
+</noscript>
+
+
 <!-- ═══════════════ CINEMATIC HOMEPAGE HERO — removed from composition ═══════
      Not deleted. The component, its island registration in registry.ts, its
      assets and its props all remain, so it can be mounted on a future
@@ -537,72 +572,17 @@
 
 
 
-<!-- ═══════════════════════ MEET THE ECOIQ AI AGENTS ══════════════════════════ -->
-<section class="eiq-mo-root" style="max-width:1100px;margin:0 auto;padding:3.5rem 2rem 1rem;">
-  <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px">
-    Meet the EcoIQ AI Agents
-    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-  </div>
+<!-- ═══════════ MEET THE ECOIQ AI AGENTS (#4) — removed from homepage composition
+     ══════════════════════════════════════════════════════════════════
+     Not deleted: components, islands, routes and deeper pages all remain.
+     The single largest legacy explainer (~674px). Its trust chain
+     (evidence -> specialist agents -> council -> human approval -> verified
+     outcome) survives as the trust rail in How EcoIQ Works, and its agent
+     roster is reached through the "See the AI agents" link in that section's
+     DECIDE phase. /ai-agents/ and every individual agent page are unchanged.
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
 
-  <h2 class="eiq-mo-heading" style="font-size:1.7rem;font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem;line-height:1.25;">
-    The AI does not just answer.<br>It investigates, disagrees and shows its evidence.
-  </h2>
-  <p class="eiq-mo-lede" style="font-size:.92rem;color:#64748b;max-width:640px;line-height:1.65;margin-bottom:1.75rem;">
-    {{ ai_agent_count|default:12 }} specialised agents investigate evidence, challenge assumptions and help humans make better decisions.
-  </p>
-
-  <!-- Visual pipeline — progressive decision chain, each step + arrow staged via --i -->
-  <div class="eiq-mo-chip-row" style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:2rem;">
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Evidence</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Specialist Agents</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Disagreement</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip is-accent" style="background:#0d1117;border:1px solid rgba(0,232,154,.25);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#00e89a;">AI Agent Council</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Human Approval</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip is-accent" style="background:#0d1117;border:1px solid rgba(0,232,154,.25);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#00e89a;">Verified Outcome</span>
-  </div>
-
-  <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;">
-    <a href="/ai-agents/agent/document-reader-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Document Reader Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Extracts facts from bills, reports and supplier quotes.</div>
-    </a>
-    <a href="/ai-agents/agent/waste-leakage-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Waste &amp; Leakage Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Detects operational loss and quantifies capital at risk.</div>
-    </a>
-    <a href="/ai-agents/agent/finance-modelling-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Finance Modelling Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Drafts CAPEX, OPEX, payback and funding-gap logic.</div>
-    </a>
-    <a href="/ai-agents/agent/capital-allocation-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Capital Allocation Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Ranks interventions to recommend where the next £1 should go.</div>
-    </a>
-    <a href="/ai-agents/agent/mrv-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">MRV Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Separates estimated impact from verified impact.</div>
-    </a>
-    <a href="/ai-agents/agent/governance-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Governance Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Routes high-impact outputs to review and blocks unsafe claims.</div>
-    </a>
-  </div>
-
-  <div class="eiq-mo-cta-last" style="display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-top:1.5rem;">
-    <a href="/ai-agents/" style="font-size:.82rem;font-weight:700;color:#00e89a;text-decoration:none;">+ 6 more specialised agents · Explore all 12 agents →</a>
-  </div>
-
-  <div style="display:flex;flex-wrap:wrap;gap:.9rem;margin-top:1.75rem;">
-    <a href="/ai-agents/workbench/" style="font-family:'SF Mono',monospace;font-size:.82rem;font-weight:700;text-decoration:none;padding:.7rem 1.3rem;border-radius:6px;background:#00e89a;color:#06231a;">TRY THE AI AGENTS</a>
-    <a href="/ai-agents/council-demo/" style="font-family:'SF Mono',monospace;font-size:.82rem;font-weight:700;text-decoration:none;padding:.7rem 1.3rem;border-radius:6px;border:1px solid rgba(255,255,255,.12);color:#e2e8f0;">WATCH THE AGENT COUNCIL</a>
-    <a href="/agent-runtime-model-router/case/meat-cold-chain-loss-prevention-demo/" style="font-family:'SF Mono',monospace;font-size:.82rem;font-weight:700;text-decoration:none;padding:.7rem 1.3rem;border-radius:6px;border:1px solid rgba(255,255,255,.12);color:#e2e8f0;">SEE HOW A DECISION HAPPENED</a>
-  </div>
-</section>
 
 
 <!-- ═══════ FROM INTELLIGENCE TO ACTION (#5) + STATS BAND (#6) +
@@ -698,74 +678,16 @@
 </section>
 
 
-<!-- ════════════════════════════════ HOW IT WORKS ═══════════════════════════ -->
-<section class="eiq-mo-root" style="max-width:1100px;margin:0 auto 4rem;padding:3rem 2rem 0">
+<!-- ═══════════ HOW IT WORKS (#9) — removed from homepage composition
+     ══════════════════════════════════════════════════════════════════
+     Not deleted: components, islands, routes and deeper pages all remain.
+     A three-step explainer ("we read the evidence / AI scores each company /
+     you act on intelligence") that How EcoIQ Works now states properly as a
+     twelve-stage closed loop. Its "Ethical Finance Overlay" callout is a
+     separate block higher up the page and is untouched.
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
 
-  <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
-    How it works
-    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-  </div>
-
-  <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden">
-
-    <!-- Step 1 -->
-    <div style="background:#070b0f;padding:2rem">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">01</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">We read the evidence</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">Annual reports, sustainability disclosures, regulatory filings, CDP data — all public, all verified.</div>
-    </div>
-
-    <!-- Step 2 -->
-    <div style="background:#070b0f;padding:2rem">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">02</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          <circle cx="12" cy="16" r="1" fill="#10b981"/>
-          <path d="M8 16h.01M16 16h.01"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">AI scores each company</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">6 pillars × ML model = EcoIQ score 0–100. Every score is explained. No black box.</div>
-    </div>
-
-    <!-- Step 3 -->
-    <div style="background:#070b0f;padding:2rem">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">03</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="1" x2="12" y2="23"/>
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">You act on intelligence</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">Investors screen portfolios. Companies improve scores. Banks unlock green financing. Governments track progress.</div>
-    </div>
-
-    <!-- Step 4 — Unique value prop -->
-    <div style="background:rgba(16,185,129,.04);padding:2rem;border-left:2px solid rgba(16,185,129,.25)">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">04 — Unique</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 8C8 10 5.9 16.17 3.82 19.5c.95-.23 2.19-.74 3.18-1.5C9 16.5 9 13 13 11c0 2-1 5-5 7 3 0 7-1 9-5s1-8 0-5z"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Ethical Finance Overlay</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">Unlike traditional ESG datasets, EcoIQ connects transition scores with investable project opportunities and ethical-finance readiness — covering Sharia-compliant capital, DFI mandates, and green bond frameworks.</div>
-    </div>
-
-  </div>
-</section>
 
 
 <!-- ════════════════════════════════ WHO USES ECOIQ ══════════════════════════ -->
@@ -947,16 +869,14 @@
 ============================================================================ -->
 
 
-<!-- ═══════════════════════════ DIGITAL TWIN PREVIEW (island) ════════════════ -->
-<section style="max-width:1120px;margin:0 auto;padding:3.5rem 1.5rem 0;">
-  <div data-island="DigitalTwinPreview" data-island-lazy data-props='{}'>
-    <!-- Server-rendered fallback -->
-    <div style="font-size:.84rem;color:#94a3b8;line-height:1.7;">
-      <strong style="color:#e2e8f0;">EcoIQ Digital Twin (preview)</strong> — company scores, project sites,
-      manufacturer capacity, and grid context on a single country model.
-    </div>
-  </div>
-</section>
+<!-- ═══════════ DIGITAL TWIN PREVIEW (#16) — removed from homepage composition
+     ══════════════════════════════════════════════════════════════════
+     Not deleted: components, islands, routes and deeper pages all remain.
+     A caption-only island with no unique copy or destination; the platform
+     page carries the concept.
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
+
 
 
 <!-- ═══════════════ INSTITUTIONAL COUNTRY INTELLIGENCE (#17) — removed from homepage composition ═══════

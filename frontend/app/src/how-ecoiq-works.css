@@ -1,0 +1,523 @@
+/*
+ * How EcoIQ Works — the operating model, compactly.
+ *
+ * Values MIRROR the locked motion library and `design/tokens.ts`; none are new:
+ *   0.18s                          = duration.fast
+ *   0.42s                          = duration.base
+ *   0.7s                           = duration.slow
+ *   cubic-bezier(0.22, 1, 0.36, 1) = ease.out
+ *   90ms                           = the locked card stagger
+ *
+ * Literals rather than interpolations, for the reason recorded in
+ * product-architecture.css.
+ *
+ * Visual language: lines and nodes, controlled emphasis. No icons, no glow, no
+ * cards-per-stage, no SVG graph. The rail above each phase is the system; the
+ * arc at the end is the loop closing.
+ */
+
+.eiq-hw {
+  padding: 3.5rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eiq-hw-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.eiq-hw-head {
+  max-width: 640px;
+  margin-bottom: 1.25rem;
+}
+
+.eiq-hw-label {
+  margin: 0 0 0.55rem;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #00e89a;
+}
+
+.eiq-hw-h2 {
+  margin: 0 0 0.7rem;
+  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.eiq-hw-lede {
+  margin: 0;
+  color: #8fa9a0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ---- the signal entering the system ---- */
+
+.eiq-hw-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.6rem;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #5f746c;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-hw:not([data-lit='0']) .eiq-hw-signal {
+  opacity: 1;
+  transform: none;
+}
+
+.eiq-hw-signal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #00e89a;
+}
+
+/* ---- the four phases ---- */
+
+.eiq-hw-phases {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eiq-hw-phases > li {
+  padding-top: 0.9rem;
+  opacity: 0.5;
+  transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-hw[data-lit='1'] .eiq-hw-phases > li[data-index='0'],
+.eiq-hw[data-lit='2'] .eiq-hw-phases > li[data-index='0'],
+.eiq-hw[data-lit='2'] .eiq-hw-phases > li[data-index='1'],
+.eiq-hw[data-lit='3'] .eiq-hw-phases > li[data-index='0'],
+.eiq-hw[data-lit='3'] .eiq-hw-phases > li[data-index='1'],
+.eiq-hw[data-lit='3'] .eiq-hw-phases > li[data-index='2'],
+.eiq-hw[data-lit='4'] .eiq-hw-phases > li,
+.eiq-hw[data-lit='5'] .eiq-hw-phases > li,
+.eiq-hw[data-lit='all'] .eiq-hw-phases > li {
+  opacity: 1;
+}
+
+/* The rail is the system: it draws left to right as the phase activates. */
+.eiq-hw-rail {
+  display: block;
+  height: 2px;
+  margin-bottom: 0.75rem;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.eiq-hw-rail-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #00e89a;
+  transition: width 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-hw[data-lit='1'] .eiq-hw-phases > li[data-index='0'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='2'] .eiq-hw-phases > li[data-index='0'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='2'] .eiq-hw-phases > li[data-index='1'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='3'] .eiq-hw-phases > li[data-index='0'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='3'] .eiq-hw-phases > li[data-index='1'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='3'] .eiq-hw-phases > li[data-index='2'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='4'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='5'] .eiq-hw-rail-fill,
+.eiq-hw[data-lit='all'] .eiq-hw-rail-fill {
+  width: 100%;
+}
+
+.eiq-hw-phase-h {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.eiq-hw-phase-btn {
+  appearance: none;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.eiq-hw-phase-n {
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: #5f746c;
+}
+
+.eiq-hw-phase-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+/* How many stages hide behind this phase — the disclosure affordance. */
+.eiq-hw-phase-count {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #5f746c;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.62rem;
+  transition:
+    color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-hw-phase-btn[aria-expanded='true'] .eiq-hw-phase-count {
+  color: #03100c;
+  background: #00e89a;
+  border-color: #00e89a;
+}
+
+.eiq-hw-meaning {
+  margin: 0;
+  color: #8fa9a0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* ---- one shared detail strip: opening costs no height ---- */
+
+.eiq-hw-details {
+  display: grid;
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  /* Reserved so revealing a phase never shifts the page. */
+  min-height: 7.5rem;
+}
+
+.eiq-hw-detail,
+.eiq-hw-overview {
+  grid-area: 1 / 1;
+}
+
+.eiq-hw-overview-l {
+  margin: 0 0 0.5rem;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5f746c;
+}
+
+/* The whole loop, quiet, as one wrapped line. */
+.eiq-hw-overview-loop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  list-style: none;
+}
+
+.eiq-hw-overview-loop li {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #8fa9a0;
+  font-size: 0.74rem;
+}
+
+.eiq-hw-overview-loop li + li::before {
+  content: '→';
+  margin-right: 0.45rem;
+  color: #5f746c;
+}
+
+/* Repeat closes the ring, so mark it as the return rather than a twelfth item. */
+.eiq-hw-overview-loop li:last-child {
+  border-color: rgba(0, 232, 154, 0.24);
+  color: #00e89a;
+}
+
+.eiq-hw-overview-hint {
+  margin: 0;
+  color: #5f746c;
+  font-size: 0.78rem;
+}
+
+.eiq-hw-detail-copy {
+  margin: 0 0 0.6rem;
+  color: #e7f3ee;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.eiq-hw-stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eiq-hw-stages li {
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  transform: translateY(5px);
+  transition:
+    opacity 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i) * 90ms);
+}
+
+/* A revealed phase's stages arrive in loop order. */
+.eiq-hw[data-detail='understand'] .eiq-hw-detail[data-for='understand'] .eiq-hw-stages li,
+.eiq-hw[data-detail='decide'] .eiq-hw-detail[data-for='decide'] .eiq-hw-stages li,
+.eiq-hw[data-detail='act'] .eiq-hw-detail[data-for='act'] .eiq-hw-stages li,
+.eiq-hw[data-detail='learn'] .eiq-hw-detail[data-for='learn'] .eiq-hw-stages li,
+.eiq-hw[data-detail='all'] .eiq-hw-stages li {
+  opacity: 1;
+  transform: none;
+}
+
+.eiq-hw-stage-name {
+  display: block;
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.eiq-hw-stage-note {
+  display: block;
+  color: #8fa9a0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.eiq-hw-specialists {
+  margin: 0.7rem 0 0;
+  color: #8fa9a0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.eiq-hw-specialists a {
+  color: #00e89a;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 232, 154, 0.3);
+}
+
+/* ---- the loop closing ---- */
+
+.eiq-hw-loop {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e7f3ee;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/*
+ * The return path, drawn as a rule rather than an SVG arc: it appears only on
+ * the final beat, which is when LEARN hands back to UNDERSTAND.
+ */
+.eiq-hw-loop-lines {
+  flex: 1 1 380px;
+  margin: 0;
+}
+
+.eiq-hw-loop-lines strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* The product promise, quiet and last. */
+.eiq-hw-tagline {
+  flex: 0 0 auto;
+  margin: 0;
+  color: #00e89a;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.eiq-hw-loop-arc {
+  flex: 0 0 auto;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00e89a 0%, rgba(0, 232, 154, 0.15) 100%);
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-hw[data-lit='5'] .eiq-hw-loop-arc,
+.eiq-hw[data-lit='all'] .eiq-hw-loop-arc {
+  width: 56px;
+}
+
+/* ---- trust rail + CTAs ---- */
+
+.eiq-hw-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+.eiq-hw-trust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eiq-hw-trust li {
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #8fa9a0;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eiq-hw-trust li + li::before {
+  content: '→';
+  margin-right: 0.45rem;
+  color: #5f746c;
+}
+
+.eiq-hw-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.eiq-hw-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: #e7f3ee;
+  border: 1px solid rgba(0, 232, 154, 0.24);
+}
+
+.eiq-hw-cta--primary {
+  background: #00e89a;
+  color: #03100c;
+  border-color: #00e89a;
+}
+
+/* ---- focus ---- */
+
+.eiq-hw-phase-btn:focus-visible,
+.eiq-hw-cta:focus-visible,
+.eiq-hw-specialists a:focus-visible {
+  outline: 2px solid #00e89a;
+  outline-offset: 3px;
+}
+
+/* ---- mobile: vertical, no horizontal loop ---- */
+
+@media (max-width: 860px) {
+  .eiq-hw {
+    padding: 2.75rem 1.1rem;
+  }
+
+  .eiq-hw-phases {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .eiq-hw-details {
+    /* Stage notes wrap taller on one column. */
+    min-height: 10rem;
+  }
+
+  .eiq-hw-foot {
+    align-items: flex-start;
+  }
+}
+
+/* ---- reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .eiq-hw-signal,
+  .eiq-hw-phases > li,
+  .eiq-hw-rail-fill,
+  .eiq-hw-stages li,
+  .eiq-hw-loop-arc,
+  .eiq-hw-phase-count {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/*
+ * `data-detail="all"` is what the component sets under reduced motion: every
+ * phase's stages render, stacked, so the full twelve-stage loop is readable
+ * without operating a single control.
+ */
+.eiq-hw[data-detail='all'] .eiq-hw-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.eiq-hw[data-detail='all'] .eiq-hw-detail,
+.eiq-hw[data-detail='all'] .eiq-hw-overview {
+  grid-area: auto;
+}
+
+.eiq-hw[data-lit='all'] .eiq-hw-signal,
+.eiq-hw[data-lit='all'] .eiq-hw-phases > li {
+  opacity: 1;
+  transform: none;
+}

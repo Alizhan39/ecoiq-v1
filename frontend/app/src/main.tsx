@@ -26,6 +26,7 @@ import './product-architecture.css'
 import './khalifah-field.css'
 import './decision-brief.css'
 import './outcomes.css'
+import './how-ecoiq-works.css'
 import { MotionProvider } from './motion'
 import { registry } from './registry'
 
