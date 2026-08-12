@@ -92,7 +92,14 @@ jobs:
 
   build-windows:
     needs: analyze-and-test
-    runs-on: windows-latest
+    # Pinned, NOT windows-latest. `windows-latest` now resolves to the
+    # windows-2025-vs2026 image, and Flutter 3.27.4 (released 2025-01-31)
+    # predates Visual Studio 2026: it fails to detect that toolchain, falls
+    # back to the "Visual Studio 16 2019" CMake generator, and the build dies
+    # with "could not find any instance of Visual Studio" before any project
+    # code compiles. windows-2022 ships VS 2022, which this Flutter knows.
+    # Revisit when FLUTTER_VERSION is raised to a release that supports VS 2026.
+    runs-on: windows-2022
     defaults:
       run:
         working-directory: mobile
