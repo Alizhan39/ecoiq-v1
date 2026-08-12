@@ -270,13 +270,29 @@ class HomepageIntegrationTests(TestCase):
         _seed_all()
 
     def test_homepage_has_agent_ctas_and_no_template_leak(self):
+        """The three agent entry points stay reachable from the homepage.
+
+        The labels moved from shouting caps to sentence case when the oversized
+        "Meet the EcoIQ AI Agents" block was retired and its entry points were
+        folded into the Impact Engine section's Decide phase. What matters —
+        and what this still enforces — is that all three destinations are on
+        the homepage, so the assertion is case-insensitive on the copy and
+        exact on the routes.
+        """
         resp = self.client.get(reverse('home'))
         self.assertEqual(resp.status_code, 200)
         body = resp.content.decode()
-        self.assertIn('TRY THE AI AGENTS', body)
-        self.assertIn('WATCH THE AGENT COUNCIL', body)
-        self.assertIn('SEE HOW A DECISION HAPPENED', body)
-        self.assertIn('/ai-agents/workbench/', body)
+        lowered = body.lower()
+        for cta in (
+            'try the ai agents',
+            'watch the agent council',
+            'see how a decision happened',
+        ):
+            with self.subTest(cta=cta):
+                self.assertIn(cta, lowered)
+        for route in ('/ai-agents/', '/ai-agents/council-demo/', '/ai-agents/workbench/'):
+            with self.subTest(route=route):
+                self.assertIn(route, body)
         self.assertFalse(TEMPLATE_LEAK_RE.search(body))
 
     def test_homepage_reports_real_agent_count_not_hardcoded(self):

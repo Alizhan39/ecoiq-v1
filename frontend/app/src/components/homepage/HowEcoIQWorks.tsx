@@ -53,6 +53,8 @@ export type HowEcoIQWorksProps = {
   platformHref?: string
   methodologyHref?: string
   agentsHref?: string
+  workbenchHref?: string
+  councilHref?: string
 }
 
 type PhaseId = 'understand' | 'decide' | 'act' | 'learn'
@@ -121,6 +123,8 @@ export default function HowEcoIQWorks({
   platformHref = '/platform/',
   methodologyHref = '/methodology/',
   agentsHref = '/ai-agents/',
+  workbenchHref = '/ai-agents/workbench/',
+  councilHref = '/ai-agents/council-demo/',
 }: HowEcoIQWorksProps) {
   const baseId = useId()
   const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
@@ -250,11 +254,29 @@ export default function HowEcoIQWorks({
                 ))}
               </ol>
               {phase.id === 'decide' && (
-                <p className="eiq-hw-specialists">
-                  Specialist AI investigates different parts of the decision:{' '}
-                  {SPECIALISTS.join(' · ')}.{' '}
-                  <a href={agentsHref}>See the AI agents</a>
-                </p>
+                <div className="eiq-hw-specialists">
+                  <p>
+                    Specialist AI investigates different parts of the decision:{' '}
+                    {SPECIALISTS.join(' · ')}.
+                  </p>
+                  {/*
+                    The three agent entry points the retired #4 block owned. They
+                    are real destinations the product depends on being reachable
+                    from the homepage, so they move here rather than disappearing
+                    with the block — as links, not as a 674px explainer.
+                  */}
+                  <ul className="eiq-hw-agent-links" role="list">
+                    <li>
+                      <a href={agentsHref}>Try the AI agents</a>
+                    </li>
+                    <li>
+                      <a href={councilHref}>Watch the agent council</a>
+                    </li>
+                    <li>
+                      <a href={workbenchHref}>See how a decision happened</a>
+                    </li>
+                  </ul>
+                </div>
               )}
             </div>
           ))}
