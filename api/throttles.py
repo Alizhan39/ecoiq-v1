@@ -15,8 +15,12 @@ class APIKeyRateThrottle(SimpleRateThrottle):
     scope = 'anon'  # Default scope; overridden per-request in get_cache_key
 
     def get_cache_key(self, request, view):
-        # If authenticated via API key, use key prefix as cache key
-        if hasattr(request, 'auth') and request.auth is not None:
+        # If authenticated via a B2B API key, use key prefix as cache key.
+        # request.auth may also be a mobile_auth.DeviceSession (the app's own
+        # end-user auth scheme, not tier-rated here) or None -- only an
+        # actual APIKey carries a .tier to rate-limit by.
+        from api.models import APIKey
+        if isinstance(getattr(request, 'auth', None), APIKey):
             key_obj  = request.auth
             ident    = f'apikey_{key_obj.prefix}_{key_obj.pk}'
             # Set scope to the tier so the right rate is applied
@@ -25,7 +29,7 @@ class APIKeyRateThrottle(SimpleRateThrottle):
             self.num_requests, self.duration = self.parse_rate(self.rate)
             return self.cache_format % {'scope': self.scope, 'ident': ident}
 
-        # Unauthenticated — use IP
+        # Unauthenticated, or authenticated via a non-APIKey scheme — use IP
         self.scope = 'anon'
         self.rate  = self.get_rate()
         self.num_requests, self.duration = self.parse_rate(self.rate)

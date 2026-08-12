@@ -132,6 +132,7 @@ INSTALLED_APPS = [
     # market data already on league.Company. No new market-data source.
     'investor_portfolio',
     'ecoiq_commerce',
+    'mobile_auth',
     'countries',
     'ethics',
     'financing',
@@ -635,6 +636,26 @@ if STRIPE_SECRET_KEY.startswith('sk_live_') and not STRIPE_LIVE_MODE_ALLOWED:
     )
 
 
+# EcoIQ Mobile/Desktop App — device-session token lifetimes (mobile_auth app).
+# Access tokens are short-lived and re-checked against a live, non-revoked
+# DeviceSession on every request; refresh tokens are long-lived and rotate
+# on every use (see mobile_auth/models.py:DeviceSession).
+import datetime as _datetime
+MOBILE_AUTH_ACCESS_TOKEN_TTL = _datetime.timedelta(
+    minutes=int(os.environ.get('MOBILE_AUTH_ACCESS_TOKEN_TTL_MINUTES', '15')))
+MOBILE_AUTH_REFRESH_TOKEN_TTL = _datetime.timedelta(
+    days=int(os.environ.get('MOBILE_AUTH_REFRESH_TOKEN_TTL_DAYS', '60')))
+
+# EcoIQ Mobile/Desktop App — remote configuration served at /api/v1/app-config/
+# (api/app_views.py). Kept in settings (env-overridable) rather than hard-coded
+# in the client binary, per the app spec's "do not hard-code important
+# commercial or compliance decisions into the application binary".
+ECOIQ_APP_MIN_SUPPORTED_VERSION = os.environ.get('ECOIQ_APP_MIN_SUPPORTED_VERSION', '1.0.0')
+ECOIQ_APP_LATEST_VERSION = os.environ.get('ECOIQ_APP_LATEST_VERSION', '1.0.0')
+ECOIQ_APP_MAINTENANCE_MODE = os.environ.get('ECOIQ_APP_MAINTENANCE_MODE', 'false').lower() == 'true'
+ECOIQ_APP_FORCE_UPDATE = os.environ.get('ECOIQ_APP_FORCE_UPDATE', 'false').lower() == 'true'
+
+
 # Agent Runtime & Model Router — live-provider credentials. Blank by default,
 # same pattern as ANTHROPIC_API_KEY above: live adapters must fail safely
 # (not silently substitute simulated output) whenever these are unset.
@@ -847,6 +868,16 @@ LOGGING = {
 # ── Django REST Framework ─────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        # mobile_auth MUST run before APIKeyAuthentication: both read an
+        # `Authorization: Bearer <token>` header, and APIKeyAuthentication
+        # raises AuthenticationFailed (not None) for anything that isn't a
+        # valid APIKey, which would short-circuit DRF's authenticator chain
+        # before APIKeyAuthentication got a turn. MobileTokenAuthentication
+        # only claims tokens shaped like its own (colon-separated,
+        # signing.dumps() format) and defers (returns None) otherwise, so a
+        # real APIKey hex string correctly falls through to the next
+        # authenticator instead of being misclaimed.
+        'mobile_auth.authentication.MobileTokenAuthentication',
         'api.authentication.APIKeyAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
@@ -865,6 +896,9 @@ REST_FRAMEWORK = {
         'explorer':   '100/day',
         'professional': '2000/day',
         'enterprise':   '50000/day',
+        # ── EcoIQ Mobile/Desktop App (mobile_auth/throttles.py) ──
+        # Per-IP brute-force protection on /api/v1/auth/login/.
+        'auth_login': '10/hour',
         # ── EcoIQ AI Gateway (ai_gateway/throttles.py) ──
         # A generation costs a shared free allowance, so both a per-identity
         # and a per-IP ceiling apply to every chat request. The catalogue is

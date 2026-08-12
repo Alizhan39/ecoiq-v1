@@ -1,0 +1,113 @@
+name: EcoIQ Mobile/Desktop App CI
+
+# Companion to .github/workflows/django.yml. Runs against mobile/ (the
+# Flutter project) whenever it changes. NOTE: this workflow was authored
+# without a local Flutter SDK available in the authoring environment (see
+# docs/adr-0002-cross-platform-app-framework.md's "known risks" section) --
+# it has not been executed here. The job names/actions below use the
+# standard, documented subosito/flutter-action + `flutter` CLI commands;
+# verify against your own Flutter version before relying on it.
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "mobile/**", ".github/workflows/mobile.yml" ]
+  pull_request:
+    branches: [ "main" ]
+    paths: [ "mobile/**", ".github/workflows/mobile.yml" ]
+
+env:
+  FLUTTER_VERSION: '3.27.x'
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze (lint)
+        run: flutter analyze
+
+      - name: Unit + widget tests
+        run: flutter test --coverage
+
+      # Optional: upload mobile/coverage/lcov.info to a coverage service here.
+
+  build-android:
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - run: flutter pub get
+      # Release signing requires ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
+      # ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD as repo secrets (never committed) --
+      # see the final report's "required environment variables" section for the
+      # exact names this workflow expects once release signing is wired up.
+      - name: Build App Bundle (debug -- no release signing configured yet)
+        run: flutter build appbundle --debug
+
+  build-ios:
+    needs: analyze-and-test
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - run: flutter pub get
+      # Archive/signing for App Store Connect requires an Apple Developer
+      # Program certificate + provisioning profile as repo secrets (never
+      # committed) -- see the final report's "store prerequisites" section.
+      - name: Build (debug, no code signing configured yet)
+        run: flutter build ios --debug --no-codesign
+
+  build-windows:
+    needs: analyze-and-test
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - name: Build Windows desktop app
+        run: flutter build windows --debug
+      # MSIX packaging (for Microsoft Store) requires a signing certificate
+      # as a repo secret -- see the final report's "store prerequisites"
+      # section for exact package-identity/publisher requirements. Once
+      # ready: `dart run msix:create` (msix package, not yet added to
+      # pubspec.yaml -- add it under dev_dependencies when Phase 4 starts).
