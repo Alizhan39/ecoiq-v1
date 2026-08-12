@@ -19,7 +19,8 @@ enum EcoIqAnalyticsEvent {
 }
 
 abstract class AnalyticsService {
-  void track(EcoIqAnalyticsEvent event, {Map<String, Object?> properties = const {}});
+  void track(EcoIqAnalyticsEvent event,
+      {Map<String, Object?> properties = const {}});
   void setUserId(String? userId);
 }
 
@@ -31,7 +32,8 @@ abstract class AnalyticsService {
 /// that review happens.
 class NoOpAnalyticsService implements AnalyticsService {
   @override
-  void track(EcoIqAnalyticsEvent event, {Map<String, Object?> properties = const {}}) {}
+  void track(EcoIqAnalyticsEvent event,
+      {Map<String, Object?> properties = const {}}) {}
 
   @override
   void setUserId(String? userId) {}

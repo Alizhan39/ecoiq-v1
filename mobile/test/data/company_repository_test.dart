@@ -54,9 +54,12 @@ void main() {
     expect(repo.recentlyViewed(), isEmpty);
   });
 
-  test('getProfile records the company in recentlyViewed, most-recent first', () async {
-    when(() => apiClient.getCompanyProfile('company-a')).thenAnswer((_) async => _profileA);
-    when(() => apiClient.getCompanyProfile('company-b')).thenAnswer((_) async => _profileB);
+  test('getProfile records the company in recentlyViewed, most-recent first',
+      () async {
+    when(() => apiClient.getCompanyProfile('company-a'))
+        .thenAnswer((_) async => _profileA);
+    when(() => apiClient.getCompanyProfile('company-b'))
+        .thenAnswer((_) async => _profileB);
 
     await repo.getProfile('company-a');
     await repo.getProfile('company-b');
@@ -65,9 +68,13 @@ void main() {
     expect(recent.map((e) => e.$1), ['company-b', 'company-a']);
   });
 
-  test('re-viewing a company moves it back to the front instead of duplicating it', () async {
-    when(() => apiClient.getCompanyProfile('company-a')).thenAnswer((_) async => _profileA);
-    when(() => apiClient.getCompanyProfile('company-b')).thenAnswer((_) async => _profileB);
+  test(
+      're-viewing a company moves it back to the front instead of duplicating it',
+      () async {
+    when(() => apiClient.getCompanyProfile('company-a'))
+        .thenAnswer((_) async => _profileA);
+    when(() => apiClient.getCompanyProfile('company-b'))
+        .thenAnswer((_) async => _profileB);
 
     await repo.getProfile('company-a');
     await repo.getProfile('company-b');
@@ -81,8 +88,14 @@ void main() {
   test('search delegates straight to the api client', () async {
     when(() => apiClient.searchCompanies('foo')).thenAnswer((_) async => [
           const CompanySummary(
-            slug: 'company-a', name: 'Company A', sector: 'Energy', country: 'UK',
-            ecoiqScore: 80, rank: 1, isPublic: true, verified: true,
+            slug: 'company-a',
+            name: 'Company A',
+            sector: 'Energy',
+            country: 'UK',
+            ecoiqScore: 80,
+            rank: 1,
+            isPublic: true,
+            verified: true,
           ),
         ]);
     final results = await repo.search('foo');

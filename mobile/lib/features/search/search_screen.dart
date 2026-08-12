@@ -49,7 +49,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       });
       return;
     }
-    _debounce = Timer(const Duration(milliseconds: 350), () => _runSearch(query));
+    _debounce =
+        Timer(const Duration(milliseconds: 350), () => _runSearch(query));
   }
 
   Future<void> _runSearch(String query) async {
@@ -92,22 +93,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildBody() {
     if (_error != null) {
-      return EcoIqErrorView(error: _error!, onRetry: () => _runSearch(_controller.text));
+      return EcoIqErrorView(
+          error: _error!, onRetry: () => _runSearch(_controller.text));
     }
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_results == null) {
-      return const EcoIqEmptyView(message: 'Start typing to search EcoIQ\'s company coverage.');
+      return const EcoIqEmptyView(
+          message: 'Start typing to search EcoIQ\'s company coverage.');
     }
     if (_results!.isEmpty) {
-      return const EcoIqEmptyView(message: 'No companies matched your search.', icon: Icons.search_off_outlined);
+      return const EcoIqEmptyView(
+          message: 'No companies matched your search.',
+          icon: Icons.search_off_outlined);
     }
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: EcoIqSpace.sm),
       itemCount: _results!.length,
       separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, index) => _CompanyResultTile(company: _results![index]),
+      itemBuilder: (context, index) =>
+          _CompanyResultTile(company: _results![index]),
     );
   }
 }
@@ -120,7 +126,9 @@ class _CompanyResultTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(company.name),
-      subtitle: Text([company.sector, company.country].where((s) => s.isNotEmpty).join(' · ')),
+      subtitle: Text([company.sector, company.country]
+          .where((s) => s.isNotEmpty)
+          .join(' · ')),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -131,13 +139,15 @@ class _CompanyResultTile extends StatelessWidget {
                 : company.ecoiqScore >= 40
                     ? EcoIqStatusTone.caution
                     : EcoIqStatusTone.negative,
-            semanticsLabel: 'EcoIQ score ${company.ecoiqScore.toStringAsFixed(0)} out of 100',
+            semanticsLabel:
+                'EcoIQ score ${company.ecoiqScore.toStringAsFixed(0)} out of 100',
           ),
           IconButton(
             tooltip: 'Add to watchlist',
             icon: const Icon(Icons.bookmark_add_outlined),
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Watchlists are coming in a future release.')),
+              const SnackBar(
+                  content: Text('Watchlists are coming in a future release.')),
             ),
           ),
         ],

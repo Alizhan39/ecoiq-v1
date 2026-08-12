@@ -11,19 +11,23 @@ class EcoIqErrorView extends StatelessWidget {
   final VoidCallback? onRetry;
 
   String get _message => switch (error.type) {
-        EcoIqApiErrorType.network => 'No internet connection. Check your network and try again.',
-        EcoIqApiErrorType.unauthorized => 'Your session has expired. Please sign in again.',
+        EcoIqApiErrorType.network =>
+          'No internet connection. Check your network and try again.',
+        EcoIqApiErrorType.unauthorized =>
+          'Your session has expired. Please sign in again.',
         EcoIqApiErrorType.forbiddenSubscriptionRequired =>
           'Your current plan doesn\'t include this. Visit ecoiq.uk/products for options.',
         EcoIqApiErrorType.notFound => 'Not found.',
-        EcoIqApiErrorType.server => 'EcoIQ is temporarily unavailable. Please try again shortly.',
+        EcoIqApiErrorType.server =>
+          'EcoIQ is temporarily unavailable. Please try again shortly.',
         EcoIqApiErrorType.unknown => 'Something went wrong.',
       };
 
   IconData get _icon => switch (error.type) {
         EcoIqApiErrorType.network => Icons.wifi_off_outlined,
         EcoIqApiErrorType.unauthorized => Icons.lock_outline,
-        EcoIqApiErrorType.forbiddenSubscriptionRequired => Icons.workspace_premium_outlined,
+        EcoIqApiErrorType.forbiddenSubscriptionRequired =>
+          Icons.workspace_premium_outlined,
         EcoIqApiErrorType.notFound => Icons.search_off_outlined,
         EcoIqApiErrorType.server => Icons.cloud_off_outlined,
         EcoIqApiErrorType.unknown => Icons.error_outline,
@@ -37,12 +41,20 @@ class EcoIqErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(_icon, size: 40, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+            Icon(_icon,
+                size: 40,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6)),
             const SizedBox(height: EcoIqSpace.md),
-            Text(_message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+            Text(_message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium),
             if (onRetry != null) ...[
               const SizedBox(height: EcoIqSpace.md),
-              OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+              OutlinedButton(
+                  onPressed: onRetry, child: const Text('Try again')),
             ],
           ],
         ),
@@ -52,7 +64,8 @@ class EcoIqErrorView extends StatelessWidget {
 }
 
 class EcoIqEmptyView extends StatelessWidget {
-  const EcoIqEmptyView({super.key, required this.message, this.icon = Icons.inbox_outlined});
+  const EcoIqEmptyView(
+      {super.key, required this.message, this.icon = Icons.inbox_outlined});
   final String message;
   final IconData icon;
 
@@ -64,9 +77,16 @@ class EcoIqEmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+            Icon(icon,
+                size: 40,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.4)),
             const SizedBox(height: EcoIqSpace.md),
-            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+            Text(message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
       ),
@@ -92,7 +112,12 @@ class NotInvestmentAdviceBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+          Icon(Icons.info_outline,
+              size: 16,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6)),
           const SizedBox(width: EcoIqSpace.sm),
           Expanded(
             child: Text(

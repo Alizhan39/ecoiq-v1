@@ -75,17 +75,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: Theme.of(context)
                           .textTheme
                           .headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w800, color: EcoIqColors.accent),
+                          ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: EcoIqColors.accent),
                     ),
                     const SizedBox(height: 4),
-                    Text('Know what your investment supports', style: Theme.of(context).textTheme.bodyMedium),
+                    Text('Know what your investment supports',
+                        style: Theme.of(context).textTheme.bodyMedium),
                     const SizedBox(height: EcoIqSpace.xl),
                     TextFormField(
                       controller: _usernameController,
                       autofillHints: const [AutofillHints.username],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(labelText: 'Username or email'),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      decoration:
+                          const InputDecoration(labelText: 'Username or email'),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: EcoIqSpace.md),
                     TextFormField(
@@ -97,23 +102,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         suffixIcon: IconButton(
-                          tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                          icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          tooltip: _obscurePassword
+                              ? 'Show password'
+                              : 'Hide password',
+                          icon: Icon(_obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     if (_errorText != null) ...[
                       const SizedBox(height: EcoIqSpace.sm),
-                      Text(_errorText!, style: TextStyle(color: EcoIqColors.danger)),
+                      Text(_errorText!,
+                          style: TextStyle(color: EcoIqColors.danger)),
                     ],
                     const SizedBox(height: EcoIqSpace.lg),
                     ElevatedButton(
                       onPressed: _isSubmitting ? null : _submit,
                       child: _isSubmitting
                           ? const SizedBox(
-                              width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : const Text('Sign in'),
                     ),
                     const SizedBox(height: EcoIqSpace.md),

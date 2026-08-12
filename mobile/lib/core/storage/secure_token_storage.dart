@@ -23,7 +23,8 @@ class SecureTokenStorage {
   static const _kRefreshToken = 'ecoiq.refresh_token';
   static const _kDeviceId = 'ecoiq.device_id';
 
-  Future<void> saveTokens({required String accessToken, required String refreshToken}) async {
+  Future<void> saveTokens(
+      {required String accessToken, required String refreshToken}) async {
     await _storage.write(key: _kAccessToken, value: accessToken);
     await _storage.write(key: _kRefreshToken, value: refreshToken);
   }
@@ -39,5 +40,6 @@ class SecureTokenStorage {
   /// The device_id is stable but not secret — still kept alongside the
   /// tokens for simplicity, generated once on first launch (see AuthService).
   Future<String?> readDeviceId() => _storage.read(key: _kDeviceId);
-  Future<void> saveDeviceId(String id) => _storage.write(key: _kDeviceId, value: id);
+  Future<void> saveDeviceId(String id) =>
+      _storage.write(key: _kDeviceId, value: id);
 }

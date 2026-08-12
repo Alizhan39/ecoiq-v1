@@ -14,9 +14,11 @@ import '../core/storage/secure_token_storage.dart';
 import '../data/models/app_config.dart';
 import '../data/repositories/company_repository.dart';
 
-final environmentProvider = Provider<Environment>((ref) => Environment.fromDartDefine());
+final environmentProvider =
+    Provider<Environment>((ref) => Environment.fromDartDefine());
 
-final secureTokenStorageProvider = Provider<SecureTokenStorage>((ref) => SecureTokenStorage());
+final secureTokenStorageProvider =
+    Provider<SecureTokenStorage>((ref) => SecureTokenStorage());
 
 final deviceInfoServiceProvider = Provider<DeviceInfoService>(
   (ref) => DeviceInfoService(storage: ref.watch(secureTokenStorageProvider)),
@@ -26,7 +28,8 @@ final deviceInfoServiceProvider = Provider<DeviceInfoService>(
 /// SharedPreferences.getInstance() is async and must complete before the
 /// widget tree needs it (see main.dart).
 final sharedPreferencesProvider = Provider<SharedPreferences>(
-  (ref) => throw UnimplementedError('sharedPreferencesProvider must be overridden in main.dart'),
+  (ref) => throw UnimplementedError(
+      'sharedPreferencesProvider must be overridden in main.dart'),
 );
 
 /// Two-phase wiring: AuthService and EcoIqApiClient each need a reference
@@ -37,18 +40,21 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
 /// AuthTokenProvider, then attached back onto authService -- all
 /// synchronously within this provider callback, so nothing ever observes
 /// authService.apiClient in an unset state.
-final authServiceProvider = StateNotifierProvider<AuthService, AuthStatus>((ref) {
+final authServiceProvider =
+    StateNotifierProvider<AuthService, AuthStatus>((ref) {
   final storage = ref.watch(secureTokenStorageProvider);
   final env = ref.watch(environmentProvider);
 
   final authService = AuthService(storage: storage);
-  final EcoIqApiClient client =
-      env.isMock ? MockEcoIqApiClient() : DioEcoIqApiClient(environment: env, tokenProvider: authService);
+  final EcoIqApiClient client = env.isMock
+      ? MockEcoIqApiClient()
+      : DioEcoIqApiClient(environment: env, tokenProvider: authService);
   authService.apiClient = client;
   return authService;
 });
 
-final apiClientProvider = Provider<EcoIqApiClient>((ref) => ref.watch(authServiceProvider.notifier).apiClient);
+final apiClientProvider = Provider<EcoIqApiClient>(
+    (ref) => ref.watch(authServiceProvider.notifier).apiClient);
 
 final companyRepositoryProvider = Provider<CompanyRepository>(
   (ref) => CompanyRepository(
@@ -57,9 +63,11 @@ final companyRepositoryProvider = Provider<CompanyRepository>(
   ),
 );
 
-final analyticsServiceProvider = Provider<AnalyticsService>((ref) => NoOpAnalyticsService());
+final analyticsServiceProvider =
+    Provider<AnalyticsService>((ref) => NoOpAnalyticsService());
 
-final notificationServiceProvider = Provider<NotificationService>((ref) => NoOpNotificationService());
+final notificationServiceProvider =
+    Provider<NotificationService>((ref) => NoOpNotificationService());
 
 /// App-config is fetched once at startup and refreshed on demand (e.g.
 /// pull-to-refresh on the maintenance/force-update screen) — never cached

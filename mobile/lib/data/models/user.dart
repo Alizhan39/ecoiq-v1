@@ -12,7 +12,8 @@ class EcoIqPlanSummary {
   final String name;
   final String status;
 
-  factory EcoIqPlanSummary.fromJson(Map<String, dynamic> json) => EcoIqPlanSummary(
+  factory EcoIqPlanSummary.fromJson(Map<String, dynamic> json) =>
+      EcoIqPlanSummary(
         product: json['product'] as String,
         plan: json['plan'] as String,
         name: json['name'] as String,

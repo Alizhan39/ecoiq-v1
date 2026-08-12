@@ -29,7 +29,10 @@ class CompanyProfileScreen extends ConsumerWidget {
         data: (profile) => _CompanyProfileBody(profile: profile),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => EcoIqErrorView(
-          error: err is EcoIqApiException ? err : const EcoIqApiException(EcoIqApiErrorType.unknown, 'Failed to load company.'),
+          error: err is EcoIqApiException
+              ? err
+              : const EcoIqApiException(
+                  EcoIqApiErrorType.unknown, 'Failed to load company.'),
           onRetry: () => ref.invalidate(_companyProfileProvider(slug)),
         ),
       ),
@@ -37,7 +40,8 @@ class CompanyProfileScreen extends ConsumerWidget {
   }
 }
 
-final _companyProfileProvider = FutureProvider.family<CompanyProfileData, String>(
+final _companyProfileProvider =
+    FutureProvider.family<CompanyProfileData, String>(
   (ref, slug) => ref.watch(companyRepositoryProvider).getProfile(slug),
 );
 
@@ -58,7 +62,8 @@ class _CompanyProfileBody extends StatelessWidget {
               backgroundColor: EcoIqColors.accent.withValues(alpha: 0.12),
               child: Text(
                 profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
               ),
             ),
             const SizedBox(width: EcoIqSpace.md),
@@ -66,9 +71,12 @@ class _CompanyProfileBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(profile.name, style: Theme.of(context).textTheme.titleLarge),
+                  Text(profile.name,
+                      style: Theme.of(context).textTheme.titleLarge),
                   Text(
-                    [profile.sector, profile.country].where((s) => s.isNotEmpty).join(' · '),
+                    [profile.sector, profile.country]
+                        .where((s) => s.isNotEmpty)
+                        .join(' · '),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -78,7 +86,9 @@ class _CompanyProfileBody extends StatelessWidget {
               tooltip: 'Add to watchlist',
               icon: const Icon(Icons.bookmark_add_outlined),
               onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Watchlists are coming in a future release.')),
+                const SnackBar(
+                    content:
+                        Text('Watchlists are coming in a future release.')),
               ),
             ),
           ],
@@ -86,7 +96,8 @@ class _CompanyProfileBody extends StatelessWidget {
         if (!profile.isPublic)
           const Padding(
             padding: EdgeInsets.only(top: EcoIqSpace.sm),
-            child: EcoIqStatusChip(label: 'Private company', tone: EcoIqStatusTone.neutral),
+            child: EcoIqStatusChip(
+                label: 'Private company', tone: EcoIqStatusTone.neutral),
           ),
         const SizedBox(height: EcoIqSpace.lg),
 
@@ -99,17 +110,23 @@ class _CompanyProfileBody extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('EcoIQ Score', style: Theme.of(context).textTheme.labelSmall),
+                    Text('EcoIQ Score',
+                        style: Theme.of(context).textTheme.labelSmall),
                     Text(
                       profile.ecoiqScore.toStringAsFixed(0),
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: EcoIqColors.accent),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(color: EcoIqColors.accent),
                     ),
                   ],
                 ),
                 const Spacer(),
                 EcoIqStatusChip(
                   label: profile.verified ? 'Verified' : 'Unverified',
-                  tone: profile.verified ? EcoIqStatusTone.positive : EcoIqStatusTone.caution,
+                  tone: profile.verified
+                      ? EcoIqStatusTone.positive
+                      : EcoIqStatusTone.caution,
                 ),
               ],
             ),
@@ -119,14 +136,16 @@ class _CompanyProfileBody extends StatelessWidget {
 
         // ── What this company does ──
         if (profile.description.isNotEmpty) ...[
-          Text('What this company does', style: Theme.of(context).textTheme.titleSmall),
+          Text('What this company does',
+              style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: EcoIqSpace.sm),
           Text(profile.description),
           const SizedBox(height: EcoIqSpace.lg),
         ],
 
         // ── Ethical Impact & Conflict Exposure ──
-        Text('Ethical impact & conflict exposure', style: Theme.of(context).textTheme.titleSmall),
+        Text('Ethical impact & conflict exposure',
+            style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: EcoIqSpace.sm),
         if (profile.harmSignals.isEmpty)
           const EcoIqEmptyView(
@@ -134,7 +153,8 @@ class _CompanyProfileBody extends StatelessWidget {
             icon: Icons.shield_outlined,
           )
         else
-          ...profile.harmSignals.map((signal) => _HarmSignalTile(signal: signal)),
+          ...profile.harmSignals
+              .map((signal) => _HarmSignalTile(signal: signal)),
         const SizedBox(height: EcoIqSpace.lg),
 
         Card(
@@ -158,13 +178,25 @@ class _HarmSignalTile extends StatelessWidget {
   final HarmSignal signal;
 
   (EcoIqStatusTone, String) get _display => switch (signal.status) {
-        'verified_direct' => (EcoIqStatusTone.negative, 'Verified — direct involvement'),
-        'verified_indirect' => (EcoIqStatusTone.caution, 'Verified — indirect involvement'),
-        'under_investigation' => (EcoIqStatusTone.caution, 'Official investigation'),
+        'verified_direct' => (
+            EcoIqStatusTone.negative,
+            'Verified — direct involvement'
+          ),
+        'verified_indirect' => (
+            EcoIqStatusTone.caution,
+            'Verified — indirect involvement'
+          ),
+        'under_investigation' => (
+            EcoIqStatusTone.caution,
+            'Official investigation'
+          ),
         'disputed' => (EcoIqStatusTone.info, 'Disputed claim'),
         'allegation_only' => (EcoIqStatusTone.info, 'Allegation only'),
         'historical' => (EcoIqStatusTone.neutral, 'Historical exposure'),
-        'insufficient_evidence' => (EcoIqStatusTone.neutral, 'Insufficient evidence'),
+        'insufficient_evidence' => (
+            EcoIqStatusTone.neutral,
+            'Insufficient evidence'
+          ),
         _ => (EcoIqStatusTone.neutral, signal.status),
       };
 

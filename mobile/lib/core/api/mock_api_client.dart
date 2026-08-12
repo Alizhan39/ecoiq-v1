@@ -21,7 +21,8 @@ class MockEcoIqApiClient implements EcoIqApiClient {
       city: 'London',
       website: 'https://example.com',
       logoUrl: null,
-      description: 'Illustrative mock company — utility-scale solar and wind development.',
+      description:
+          'Illustrative mock company — utility-scale solar and wind development.',
       isPublic: true,
       verified: true,
       ecoiqScore: 78,
@@ -36,14 +37,23 @@ class MockEcoIqApiClient implements EcoIqApiClient {
       city: 'Arlington',
       website: 'https://example.com',
       logoUrl: null,
-      description: 'Illustrative mock company — used to demo defence-involvement labelling.',
+      description:
+          'Illustrative mock company — used to demo defence-involvement labelling.',
       isPublic: true,
       verified: true,
       ecoiqScore: 41,
       rank: 340,
       harmSignals: [
-        HarmSignal(id: 'defence-1', label: 'Defence contracts', status: 'verified_direct', penalty: 15),
-        HarmSignal(id: 'hr-1', label: 'Human-rights allegation', status: 'allegation_only', penalty: 5),
+        HarmSignal(
+            id: 'defence-1',
+            label: 'Defence contracts',
+            status: 'verified_direct',
+            penalty: 15),
+        HarmSignal(
+            id: 'hr-1',
+            label: 'Human-rights allegation',
+            status: 'allegation_only',
+            penalty: 5),
       ],
     ),
     CompanyProfileData(
@@ -54,13 +64,18 @@ class MockEcoIqApiClient implements EcoIqApiClient {
       city: 'Almaty',
       website: 'https://example.com',
       logoUrl: null,
-      description: 'Illustrative mock company — used to demo insufficient-evidence states.',
+      description:
+          'Illustrative mock company — used to demo insufficient-evidence states.',
       isPublic: true,
       verified: false,
       ecoiqScore: 55,
       rank: 890,
       harmSignals: [
-        HarmSignal(id: 'ev-1', label: 'Evidence under review', status: 'insufficient_evidence', penalty: 0),
+        HarmSignal(
+            id: 'ev-1',
+            label: 'Evidence under review',
+            status: 'insufficient_evidence',
+            penalty: 0),
       ],
     ),
   ];
@@ -78,7 +93,8 @@ class MockEcoIqApiClient implements EcoIqApiClient {
   }) async {
     await _latency();
     if (username.trim().isEmpty || password.isEmpty) {
-      throw const EcoIqApiException(EcoIqApiErrorType.unauthorized, 'Invalid username or password.');
+      throw const EcoIqApiException(
+          EcoIqApiErrorType.unauthorized, 'Invalid username or password.');
     }
     return const TokenPair(
       accessToken: 'mock-access-token',
@@ -161,7 +177,10 @@ class MockEcoIqApiClient implements EcoIqApiClient {
     await _latency();
     final q = query.trim().toLowerCase();
     return _mockCompanies
-        .where((c) => q.isEmpty || c.name.toLowerCase().contains(q) || c.sector.toLowerCase().contains(q))
+        .where((c) =>
+            q.isEmpty ||
+            c.name.toLowerCase().contains(q) ||
+            c.sector.toLowerCase().contains(q))
         .map((c) => CompanySummary(
               slug: c.slug,
               name: c.name,
@@ -180,7 +199,8 @@ class MockEcoIqApiClient implements EcoIqApiClient {
     await _latency();
     final match = _mockCompanies.where((c) => c.slug == slug);
     if (match.isEmpty) {
-      throw const EcoIqApiException(EcoIqApiErrorType.notFound, 'Company not found.');
+      throw const EcoIqApiException(
+          EcoIqApiErrorType.notFound, 'Company not found.');
     }
     return match.first;
   }

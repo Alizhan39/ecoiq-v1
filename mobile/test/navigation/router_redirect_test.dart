@@ -32,13 +32,16 @@ void main() {
   // access-control boundary is the Django backend (see mobile_auth/tests.py
   // and api/tests.py, which cover that server-side).
   group('router auth redirect', () {
-    testWidgets('unauthenticated user hitting a protected route is redirected to /login', (tester) async {
+    testWidgets(
+        'unauthenticated user hitting a protected route is redirected to /login',
+        (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
 
       final container = ProviderContainer(overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        authServiceProvider.overrideWith((ref) => _FakeAuthService(AuthStatus.unauthenticated)),
+        authServiceProvider.overrideWith(
+            (ref) => _FakeAuthService(AuthStatus.unauthenticated)),
       ]);
       addTearDown(container.dispose);
 
@@ -53,13 +56,15 @@ void main() {
       expect(find.byType(HomeScreen), findsNothing);
     });
 
-    testWidgets('authenticated user hitting /login is redirected to home', (tester) async {
+    testWidgets('authenticated user hitting /login is redirected to home',
+        (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
 
       final container = ProviderContainer(overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        authServiceProvider.overrideWith((ref) => _FakeAuthService(AuthStatus.authenticated)),
+        authServiceProvider
+            .overrideWith((ref) => _FakeAuthService(AuthStatus.authenticated)),
       ]);
       addTearDown(container.dispose);
 

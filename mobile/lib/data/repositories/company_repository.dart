@@ -11,7 +11,8 @@ import '../models/company.dart';
 /// must always be re-fetched fresh and re-authorized; see PART 14 of the
 /// app spec's cache exclusion list).
 class CompanyRepository {
-  CompanyRepository({required EcoIqApiClient apiClient, required SharedPreferences prefs})
+  CompanyRepository(
+      {required EcoIqApiClient apiClient, required SharedPreferences prefs})
       : _apiClient = apiClient,
         _prefs = prefs;
 
@@ -21,7 +22,8 @@ class CompanyRepository {
   static const _recentlyViewedKey = 'ecoiq.recently_viewed_companies';
   static const _maxRecentlyViewed = 10;
 
-  Future<List<CompanySummary>> search(String query) => _apiClient.searchCompanies(query);
+  Future<List<CompanySummary>> search(String query) =>
+      _apiClient.searchCompanies(query);
 
   Future<CompanyProfileData> getProfile(String slug) async {
     final profile = await _apiClient.getCompanyProfile(slug);
@@ -45,7 +47,8 @@ class CompanyRepository {
     final current = recentlyViewed().where((e) => e.$1 != slug).toList();
     current.insert(0, (slug, name));
     final trimmed = current.take(_maxRecentlyViewed).toList();
-    final encoded = jsonEncode(trimmed.map((e) => {'slug': e.$1, 'name': e.$2}).toList());
+    final encoded =
+        jsonEncode(trimmed.map((e) => {'slug': e.$1, 'name': e.$2}).toList());
     await _prefs.setString(_recentlyViewedKey, encoded);
   }
 }

@@ -52,21 +52,32 @@ GoRouter buildRouter(ProviderContainer container) {
       final status = container.read(authServiceProvider);
       final goingToLogin = state.matchedLocation == AppRoutes.login;
 
-      if (status == AuthStatus.unknown) return null; // still restoring session -- don't redirect yet
-      if (status == AuthStatus.unauthenticated && !goingToLogin) return AppRoutes.login;
-      if (status == AuthStatus.authenticated && goingToLogin) return AppRoutes.home;
+      if (status == AuthStatus.unknown)
+        return null; // still restoring session -- don't redirect yet
+      if (status == AuthStatus.unauthenticated && !goingToLogin)
+        return AppRoutes.login;
+      if (status == AuthStatus.authenticated && goingToLogin)
+        return AppRoutes.home;
       return null;
     },
     routes: [
-      GoRoute(path: AppRoutes.login, builder: (context, state) => const LoginScreen()),
+      GoRoute(
+          path: AppRoutes.login,
+          builder: (context, state) => const LoginScreen()),
       ShellRoute(
-        builder: (context, state, child) => AppShell(currentPath: state.matchedLocation, child: child),
+        builder: (context, state, child) =>
+            AppShell(currentPath: state.matchedLocation, child: child),
         routes: [
-          GoRoute(path: AppRoutes.home, builder: (context, state) => const HomeScreen()),
-          GoRoute(path: AppRoutes.search, builder: (context, state) => const SearchScreen()),
+          GoRoute(
+              path: AppRoutes.home,
+              builder: (context, state) => const HomeScreen()),
+          GoRoute(
+              path: AppRoutes.search,
+              builder: (context, state) => const SearchScreen()),
           GoRoute(
             path: AppRoutes.company,
-            builder: (context, state) => CompanyProfileScreen(slug: state.pathParameters['slug']!),
+            builder: (context, state) =>
+                CompanyProfileScreen(slug: state.pathParameters['slug']!),
           ),
         ],
       ),

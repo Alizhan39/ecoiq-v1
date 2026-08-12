@@ -9,7 +9,11 @@ import '../../design/tokens.dart';
 enum EcoIqStatusTone { positive, caution, negative, neutral, info }
 
 class EcoIqStatusChip extends StatelessWidget {
-  const EcoIqStatusChip({super.key, required this.label, required this.tone, this.semanticsLabel});
+  const EcoIqStatusChip(
+      {super.key,
+      required this.label,
+      required this.tone,
+      this.semanticsLabel});
 
   final String label;
   final EcoIqStatusTone tone;
@@ -19,10 +23,16 @@ class EcoIqStatusChip extends StatelessWidget {
   final String? semanticsLabel;
 
   (Color, IconData) get _visual => switch (tone) {
-        EcoIqStatusTone.positive => (EcoIqColors.accent, Icons.check_circle_outline),
+        EcoIqStatusTone.positive => (
+            EcoIqColors.accent,
+            Icons.check_circle_outline
+          ),
         EcoIqStatusTone.caution => (EcoIqColors.warn, Icons.error_outline),
         EcoIqStatusTone.negative => (EcoIqColors.danger, Icons.cancel_outlined),
-        EcoIqStatusTone.neutral => (EcoIqColors.muted, Icons.remove_circle_outline),
+        EcoIqStatusTone.neutral => (
+            EcoIqColors.muted,
+            Icons.remove_circle_outline
+          ),
         EcoIqStatusTone.info => (EcoIqColors.info, Icons.info_outline),
       };
 
@@ -33,7 +43,8 @@ class EcoIqStatusChip extends StatelessWidget {
       label: semanticsLabel ?? label,
       child: ExcludeSemantics(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: EcoIqSpace.sm, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+              horizontal: EcoIqSpace.sm, vertical: 4),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(EcoIqRadius.pill),
@@ -44,7 +55,9 @@ class EcoIqStatusChip extends StatelessWidget {
             children: [
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 4),
-              Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(label,
+                  style: TextStyle(
+                      color: color, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
         ),

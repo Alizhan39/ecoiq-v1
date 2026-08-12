@@ -25,8 +25,9 @@ void main() {
   setUp(() {
     apiClient = _MockApiClient();
     storage = _MockStorage();
-    when(() => storage.saveTokens(accessToken: any(named: 'accessToken'), refreshToken: any(named: 'refreshToken')))
-        .thenAnswer((_) async {});
+    when(() => storage.saveTokens(
+        accessToken: any(named: 'accessToken'),
+        refreshToken: any(named: 'refreshToken'))).thenAnswer((_) async {});
     when(() => storage.clearTokens()).thenAnswer((_) async {});
 
     authService = AuthService(storage: storage);
@@ -34,7 +35,8 @@ void main() {
   });
 
   group('AuthService.login', () {
-    test('transitions to authenticated and persists tokens on success', () async {
+    test('transitions to authenticated and persists tokens on success',
+        () async {
       when(() => apiClient.login(
             username: any(named: 'username'),
             password: any(named: 'password'),
@@ -55,22 +57,32 @@ void main() {
 
       expect(authService.state, AuthStatus.authenticated);
       expect(authService.currentAccessToken, 'access-1');
-      verify(() => storage.saveTokens(accessToken: 'access-1', refreshToken: 'refresh-1')).called(1);
+      verify(() => storage.saveTokens(
+          accessToken: 'access-1', refreshToken: 'refresh-1')).called(1);
     });
 
-    test('propagates the exception and stays unauthenticated on bad credentials', () async {
+    test(
+        'propagates the exception and stays unauthenticated on bad credentials',
+        () async {
       when(() => apiClient.login(
-            username: any(named: 'username'),
-            password: any(named: 'password'),
-            deviceId: any(named: 'deviceId'),
-            deviceName: any(named: 'deviceName'),
-            platform: any(named: 'platform'),
-            appVersion: any(named: 'appVersion'),
-          )).thenThrow(const EcoIqApiException(EcoIqApiErrorType.unauthorized, 'Invalid credentials'));
+                username: any(named: 'username'),
+                password: any(named: 'password'),
+                deviceId: any(named: 'deviceId'),
+                deviceName: any(named: 'deviceName'),
+                platform: any(named: 'platform'),
+                appVersion: any(named: 'appVersion'),
+              ))
+          .thenThrow(const EcoIqApiException(
+              EcoIqApiErrorType.unauthorized, 'Invalid credentials'));
 
       await expectLater(
         authService.login(
-          username: 'ali', password: 'wrong', deviceId: 'd1', deviceName: 'T', platform: 'ios', appVersion: '1',
+          username: 'ali',
+          password: 'wrong',
+          deviceId: 'd1',
+          deviceName: 'T',
+          platform: 'ios',
+          appVersion: '1',
         ),
         throwsA(isA<EcoIqApiException>()),
       );
@@ -86,8 +98,10 @@ void main() {
     });
 
     test('authenticated after a successful eager refresh', () async {
-      when(() => storage.readRefreshToken()).thenAnswer((_) async => 'stored-refresh');
-      when(() => apiClient.refresh('stored-refresh')).thenAnswer((_) async => _tokenPair);
+      when(() => storage.readRefreshToken())
+          .thenAnswer((_) async => 'stored-refresh');
+      when(() => apiClient.refresh('stored-refresh'))
+          .thenAnswer((_) async => _tokenPair);
 
       await authService.restoreSession();
 
@@ -95,10 +109,13 @@ void main() {
       expect(authService.currentAccessToken, 'access-1');
     });
 
-    test('unauthenticated and clears storage when the stored refresh token is dead', () async {
-      when(() => storage.readRefreshToken()).thenAnswer((_) async => 'stale-refresh');
-      when(() => apiClient.refresh('stale-refresh'))
-          .thenThrow(const EcoIqApiException(EcoIqApiErrorType.unauthorized, 'expired'));
+    test(
+        'unauthenticated and clears storage when the stored refresh token is dead',
+        () async {
+      when(() => storage.readRefreshToken())
+          .thenAnswer((_) async => 'stale-refresh');
+      when(() => apiClient.refresh('stale-refresh')).thenThrow(
+          const EcoIqApiException(EcoIqApiErrorType.unauthorized, 'expired'));
 
       await authService.restoreSession();
 
@@ -108,12 +125,14 @@ void main() {
   });
 
   group('AuthService logout', () {
-    test('clears local state even when the server call fails (offline logout)', () async {
+    test('clears local state even when the server call fails (offline logout)',
+        () async {
       when(() => storage.readRefreshToken()).thenAnswer((_) async => 'r1');
       when(() => apiClient.refresh('r1')).thenAnswer((_) async => _tokenPair);
       await authService.restoreSession();
 
-      when(() => apiClient.logout()).thenThrow(const EcoIqApiException(EcoIqApiErrorType.network, 'offline'));
+      when(() => apiClient.logout()).thenThrow(
+          const EcoIqApiException(EcoIqApiErrorType.network, 'offline'));
 
       await authService.logout();
 
@@ -123,14 +142,17 @@ void main() {
     });
   });
 
-  group('AuthTokenProvider contract (used by DioEcoIqApiClient interceptor)', () {
-    test('handleTokensRefreshed persists and updates in-memory tokens', () async {
+  group('AuthTokenProvider contract (used by DioEcoIqApiClient interceptor)',
+      () {
+    test('handleTokensRefreshed persists and updates in-memory tokens',
+        () async {
       await authService.handleTokensRefreshed(_tokenPair);
       expect(authService.currentAccessToken, 'access-1');
       expect(authService.currentRefreshToken, 'refresh-1');
     });
 
-    test('handleRefreshFailed clears tokens and flips to unauthenticated', () async {
+    test('handleRefreshFailed clears tokens and flips to unauthenticated',
+        () async {
       await authService.handleTokensRefreshed(_tokenPair);
       await authService.handleRefreshFailed();
       expect(authService.currentAccessToken, isNull);

@@ -27,7 +27,8 @@ enum EcoIqNotificationCategory {
 }
 
 class EcoIqNotificationPayload {
-  const EcoIqNotificationPayload({required this.category, required this.deepLink});
+  const EcoIqNotificationPayload(
+      {required this.category, required this.deepLink});
   final EcoIqNotificationCategory category;
 
   /// e.g. ecoiq://company/<slug>/ethical-impact — resolved through the
@@ -52,5 +53,6 @@ class NoOpNotificationService implements NotificationService {
   Future<String?> getDeviceToken() async => null;
 
   @override
-  Stream<EcoIqNotificationPayload> get onNotificationTapped => const Stream.empty();
+  Stream<EcoIqNotificationPayload> get onNotificationTapped =>
+      const Stream.empty();
 }

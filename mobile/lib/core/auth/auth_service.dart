@@ -11,7 +11,8 @@ import 'auth_token_provider.dart';
 /// interceptor can read the current token and hand back a freshly-rotated
 /// one without either class needing to fully construct the other first
 /// (see state/providers.dart for the two-phase wiring).
-class AuthService extends StateNotifier<AuthStatus> implements AuthTokenProvider {
+class AuthService extends StateNotifier<AuthStatus>
+    implements AuthTokenProvider {
   AuthService({required SecureTokenStorage storage})
       : _storage = storage,
         super(AuthStatus.unknown);
@@ -92,7 +93,8 @@ class AuthService extends StateNotifier<AuthStatus> implements AuthTokenProvider
   Future<void> _persist(TokenPair pair) async {
     _accessToken = pair.accessToken;
     _refreshToken = pair.refreshToken;
-    await _storage.saveTokens(accessToken: pair.accessToken, refreshToken: pair.refreshToken);
+    await _storage.saveTokens(
+        accessToken: pair.accessToken, refreshToken: pair.refreshToken);
   }
 
   Future<void> _clear() async {

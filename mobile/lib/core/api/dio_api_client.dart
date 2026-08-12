@@ -16,7 +16,9 @@ import 'ecoiq_api_client.dart';
 /// spec ("Do not duplicate scoring, compliance, subscription or
 /// publication logic inside the app").
 class DioEcoIqApiClient implements EcoIqApiClient {
-  DioEcoIqApiClient({required Environment environment, required AuthTokenProvider tokenProvider})
+  DioEcoIqApiClient(
+      {required Environment environment,
+      required AuthTokenProvider tokenProvider})
       : _tokenProvider = tokenProvider,
         _dio = Dio(BaseOptions(
           baseUrl: environment.apiBaseUrl,
@@ -26,9 +28,11 @@ class DioEcoIqApiClient implements EcoIqApiClient {
         // A second, un-intercepted Dio for the refresh call itself --
         // using the main _dio here would recurse into the 401 handler.
         _rawDio = Dio(BaseOptions(baseUrl: environment.apiBaseUrl)) {
-    _dio.interceptors.add(_AuthInterceptor(tokenProvider: _tokenProvider, rawDio: _rawDio, dio: _dio));
+    _dio.interceptors.add(_AuthInterceptor(
+        tokenProvider: _tokenProvider, rawDio: _rawDio, dio: _dio));
     if (environment.enableLogging) {
-      _dio.interceptors.add(LogInterceptor(requestBody: false, responseBody: false));
+      _dio.interceptors
+          .add(LogInterceptor(requestBody: false, responseBody: false));
     }
   }
 
@@ -40,22 +44,30 @@ class DioEcoIqApiClient implements EcoIqApiClient {
     if (error is DioException) {
       final status = error.response?.statusCode;
       final detail = (error.response?.data is Map)
-          ? ((error.response!.data as Map)['detail']?.toString() ?? error.message ?? 'Request failed')
+          ? ((error.response!.data as Map)['detail']?.toString() ??
+              error.message ??
+              'Request failed')
           : (error.message ?? 'Request failed');
       switch (status) {
         case 401:
-          return EcoIqApiException(EcoIqApiErrorType.unauthorized, detail, statusCode: status);
+          return EcoIqApiException(EcoIqApiErrorType.unauthorized, detail,
+              statusCode: status);
         case 403:
-          return EcoIqApiException(EcoIqApiErrorType.forbiddenSubscriptionRequired, detail, statusCode: status);
+          return EcoIqApiException(
+              EcoIqApiErrorType.forbiddenSubscriptionRequired, detail,
+              statusCode: status);
         case 404:
-          return EcoIqApiException(EcoIqApiErrorType.notFound, detail, statusCode: status);
+          return EcoIqApiException(EcoIqApiErrorType.notFound, detail,
+              statusCode: status);
         case null:
           return EcoIqApiException(EcoIqApiErrorType.network, detail);
         default:
           if (status != null && status >= 500) {
-            return EcoIqApiException(EcoIqApiErrorType.server, detail, statusCode: status);
+            return EcoIqApiException(EcoIqApiErrorType.server, detail,
+                statusCode: status);
           }
-          return EcoIqApiException(EcoIqApiErrorType.unknown, detail, statusCode: status);
+          return EcoIqApiException(EcoIqApiErrorType.unknown, detail,
+              statusCode: status);
       }
     }
     return EcoIqApiException(EcoIqApiErrorType.unknown, error.toString());
@@ -88,7 +100,8 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<TokenPair> refresh(String refreshToken) async {
     try {
-      final resp = await _rawDio.post('/auth/refresh/', data: {'refresh_token': refreshToken});
+      final resp = await _rawDio
+          .post('/auth/refresh/', data: {'refresh_token': refreshToken});
       return TokenPair.fromJson(resp.data as Map<String, dynamic>);
     } catch (e) {
       throw _wrap(e);
@@ -118,7 +131,9 @@ class DioEcoIqApiClient implements EcoIqApiClient {
     try {
       final resp = await _dio.get('/auth/sessions/');
       final sessions = (resp.data as Map<String, dynamic>)['sessions'] as List;
-      return sessions.map((e) => DeviceSessionInfo.fromJson(e as Map<String, dynamic>)).toList();
+      return sessions
+          .map((e) => DeviceSessionInfo.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw _wrap(e);
     }
@@ -158,7 +173,9 @@ class DioEcoIqApiClient implements EcoIqApiClient {
     try {
       final resp = await _dio.get('/search/', queryParameters: {'q': query});
       final results = (resp.data as Map<String, dynamic>)['results'] as List;
-      return results.map((e) => CompanySummary.fromJson(e as Map<String, dynamic>)).toList();
+      return results
+          .map((e) => CompanySummary.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw _wrap(e);
     }
@@ -179,7 +196,8 @@ class DioEcoIqApiClient implements EcoIqApiClient {
 /// a 401 attempts exactly one refresh-and-retry before giving up (avoids
 /// infinite retry loops if the refresh token is also dead).
 class _AuthInterceptor extends QueuedInterceptor {
-  _AuthInterceptor({required this.tokenProvider, required this.rawDio, required this.dio});
+  _AuthInterceptor(
+      {required this.tokenProvider, required this.rawDio, required this.dio});
 
   final AuthTokenProvider tokenProvider;
   final Dio rawDio;
@@ -197,7 +215,9 @@ class _AuthInterceptor extends QueuedInterceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     final isAuthEndpoint = err.requestOptions.path.startsWith('/auth/');
-    if (err.response?.statusCode != 401 || isAuthEndpoint || err.requestOptions.extra['retried'] == true) {
+    if (err.response?.statusCode != 401 ||
+        isAuthEndpoint ||
+        err.requestOptions.extra['retried'] == true) {
       handler.next(err);
       return;
     }
@@ -210,7 +230,8 @@ class _AuthInterceptor extends QueuedInterceptor {
     }
 
     try {
-      final resp = await rawDio.post('/auth/refresh/', data: {'refresh_token': refreshToken});
+      final resp = await rawDio
+          .post('/auth/refresh/', data: {'refresh_token': refreshToken});
       final pair = TokenPair.fromJson(resp.data as Map<String, dynamic>);
       await tokenProvider.handleTokensRefreshed(pair);
 

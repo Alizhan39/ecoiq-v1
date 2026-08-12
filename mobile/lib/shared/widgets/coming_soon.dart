@@ -19,7 +19,8 @@ class ComingSoonScreen extends StatelessWidget {
             children: [
               const Icon(Icons.construction_outlined, size: 40),
               const SizedBox(height: 16),
-              Text('$title is coming in a future release', style: Theme.of(context).textTheme.titleMedium),
+              Text('$title is coming in a future release',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               Text(
                 'This screen is not yet connected to live data.',

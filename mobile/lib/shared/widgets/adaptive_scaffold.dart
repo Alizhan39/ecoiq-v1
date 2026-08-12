@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../../design/tokens.dart';
 
 class EcoIqNavDestination {
-  const EcoIqNavDestination({required this.label, required this.icon, required this.selectedIcon, required this.path});
+  const EcoIqNavDestination(
+      {required this.label,
+      required this.icon,
+      required this.selectedIcon,
+      required this.path});
   final String label;
   final IconData icon;
   final IconData selectedIcon;
@@ -81,7 +85,10 @@ class _MobileScaffold extends StatelessWidget {
         onDestinationSelected: onDestinationSelected,
         destinations: [
           for (final d in destinations)
-            NavigationDestination(icon: Icon(d.icon), selectedIcon: Icon(d.selectedIcon), label: d.label),
+            NavigationDestination(
+                icon: Icon(d.icon),
+                selectedIcon: Icon(d.selectedIcon),
+                label: d.label),
         ],
       ),
     );
@@ -117,7 +124,9 @@ class _DesktopScaffold extends StatelessWidget {
             onDestinationSelected: onDestinationSelected,
             extended: extended,
             minExtendedWidth: 220,
-            labelType: extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+            labelType: extended
+                ? NavigationRailLabelType.none
+                : NavigationRailLabelType.all,
             leading: const Padding(
               padding: EdgeInsets.symmetric(vertical: EcoIqSpace.md),
               child: FlutterLogo(size: 28), // placeholder for the EcoIQ mark

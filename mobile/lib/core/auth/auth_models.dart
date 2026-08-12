@@ -37,7 +37,8 @@ class DeviceSessionInfo {
   final DateTime lastUsedAt;
   final bool isCurrent;
 
-  factory DeviceSessionInfo.fromJson(Map<String, dynamic> json) => DeviceSessionInfo(
+  factory DeviceSessionInfo.fromJson(Map<String, dynamic> json) =>
+      DeviceSessionInfo(
         id: json['id'] as int,
         deviceName: (json['device_name'] as String?)?.isNotEmpty == true
             ? json['device_name'] as String

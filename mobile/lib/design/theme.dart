@@ -84,24 +84,29 @@ class EcoIqTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: surfaceRaised,
-        labelStyle: TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w600),
+        labelStyle:
+            TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w600),
         shape: StadiumBorder(side: BorderSide(color: border)),
-        padding: const EdgeInsets.symmetric(horizontal: EcoIqSpace.sm, vertical: 4),
+        padding:
+            const EdgeInsets.symmetric(horizontal: EcoIqSpace.sm, vertical: 4),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: EcoIqColors.accent,
           foregroundColor: EcoIqColors.bg900,
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(EcoIqRadius.sm)),
-          padding: const EdgeInsets.symmetric(horizontal: EcoIqSpace.lg, vertical: EcoIqSpace.sm),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(EcoIqRadius.sm)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: EcoIqSpace.lg, vertical: EcoIqSpace.sm),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: ink,
           side: BorderSide(color: border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(EcoIqRadius.sm)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(EcoIqRadius.sm)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -111,7 +116,8 @@ class EcoIqTheme {
           borderRadius: BorderRadius.circular(EcoIqRadius.sm),
           borderSide: BorderSide(color: border),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: EcoIqSpace.md, vertical: EcoIqSpace.sm),
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: EcoIqSpace.md, vertical: EcoIqSpace.sm),
       ),
       textTheme: Typography.material2021(platform: TargetPlatform.iOS)
           .black
@@ -119,7 +125,9 @@ class EcoIqTheme {
           .copyWith(
             bodySmall: TextStyle(color: muted),
             bodyMedium: TextStyle(color: ink),
-            labelSmall: TextStyle(color: muted, fontFeatures: const [FontFeature.tabularFigures()]),
+            labelSmall: TextStyle(
+                color: muted,
+                fontFeatures: const [FontFeature.tabularFigures()]),
           ),
     );
   }

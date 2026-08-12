@@ -19,19 +19,36 @@ class AppShell extends StatelessWidget {
   final Widget child;
 
   static const _destinations = [
-    EcoIqNavDestination(label: 'Home', icon: Icons.home_outlined, selectedIcon: Icons.home, path: AppRoutes.home),
     EcoIqNavDestination(
-        label: 'Discover', icon: Icons.search_outlined, selectedIcon: Icons.search, path: AppRoutes.search),
+        label: 'Home',
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home,
+        path: AppRoutes.home),
     EcoIqNavDestination(
-        label: 'Watchlist', icon: Icons.visibility_outlined, selectedIcon: Icons.visibility, path: '/watchlist'),
+        label: 'Discover',
+        icon: Icons.search_outlined,
+        selectedIcon: Icons.search,
+        path: AppRoutes.search),
     EcoIqNavDestination(
-        label: 'Portfolio', icon: Icons.pie_chart_outline, selectedIcon: Icons.pie_chart, path: '/portfolio'),
+        label: 'Watchlist',
+        icon: Icons.visibility_outlined,
+        selectedIcon: Icons.visibility,
+        path: '/watchlist'),
     EcoIqNavDestination(
-        label: 'Profile', icon: Icons.person_outline, selectedIcon: Icons.person, path: '/profile'),
+        label: 'Portfolio',
+        icon: Icons.pie_chart_outline,
+        selectedIcon: Icons.pie_chart,
+        path: '/portfolio'),
+    EcoIqNavDestination(
+        label: 'Profile',
+        icon: Icons.person_outline,
+        selectedIcon: Icons.person,
+        path: '/profile'),
   ];
 
   int get _selectedIndex {
-    final index = _destinations.indexWhere((d) => currentPath.startsWith(d.path) && d.path != '/');
+    final index = _destinations
+        .indexWhere((d) => currentPath.startsWith(d.path) && d.path != '/');
     return index == -1 ? 0 : index;
   }
 

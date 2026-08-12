@@ -23,7 +23,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final meAsync = ref.watch(meProvider);
-    final recentlyViewed = ref.watch(companyRepositoryProvider).recentlyViewed();
+    final recentlyViewed =
+        ref.watch(companyRepositoryProvider).recentlyViewed();
 
     return Scaffold(
       appBar: AppBar(
@@ -48,15 +49,19 @@ class HomeScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: EcoIqColors.accent.withValues(alpha: 0.15),
-                        child: Text(user.username.isNotEmpty ? user.username[0].toUpperCase() : '?'),
+                        backgroundColor:
+                            EcoIqColors.accent.withValues(alpha: 0.15),
+                        child: Text(user.username.isNotEmpty
+                            ? user.username[0].toUpperCase()
+                            : '?'),
                       ),
                       const SizedBox(width: EcoIqSpace.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.username, style: Theme.of(context).textTheme.titleMedium),
+                            Text(user.username,
+                                style: Theme.of(context).textTheme.titleMedium),
                             Text(
                               user.plan?.name ?? 'Free',
                               style: Theme.of(context).textTheme.bodySmall,
@@ -75,7 +80,8 @@ class HomeScreen extends ConsumerWidget {
               error: (err, _) => EcoIqErrorView(
                 error: err is EcoIqApiException
                     ? err
-                    : const EcoIqApiException(EcoIqApiErrorType.unknown, 'Could not load your account.'),
+                    : const EcoIqApiException(EcoIqApiErrorType.unknown,
+                        'Could not load your account.'),
                 onRetry: () => ref.invalidate(meProvider),
               ),
             ),
@@ -86,10 +92,13 @@ class HomeScreen extends ConsumerWidget {
               label: const Text('Search a company'),
             ),
             const SizedBox(height: EcoIqSpace.xl),
-            Text('Recently viewed', style: Theme.of(context).textTheme.titleSmall),
+            Text('Recently viewed',
+                style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: EcoIqSpace.sm),
             if (recentlyViewed.isEmpty)
-              const EcoIqEmptyView(message: 'Companies you view will appear here.', icon: Icons.history)
+              const EcoIqEmptyView(
+                  message: 'Companies you view will appear here.',
+                  icon: Icons.history)
             else
               ...recentlyViewed.map(
                 (entry) => Card(

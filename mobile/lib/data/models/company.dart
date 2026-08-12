@@ -37,7 +37,11 @@ class CompanySummary {
 /// as a labelled status, never a bare accusation string (PART 6: "Never
 /// display an unsupported definitive accusation").
 class HarmSignal {
-  const HarmSignal({required this.id, required this.label, required this.status, required this.penalty});
+  const HarmSignal(
+      {required this.id,
+      required this.label,
+      required this.status,
+      required this.penalty});
 
   final String id;
   final String label;
@@ -88,7 +92,8 @@ class CompanyProfileData {
   final int? rank;
   final List<HarmSignal> harmSignals;
 
-  factory CompanyProfileData.fromJson(Map<String, dynamic> json) => CompanyProfileData(
+  factory CompanyProfileData.fromJson(Map<String, dynamic> json) =>
+      CompanyProfileData(
         slug: json['slug'] as String,
         name: json['name'] as String,
         sector: (json['sector'] as String?) ?? '',
