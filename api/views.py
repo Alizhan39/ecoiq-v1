@@ -31,6 +31,7 @@ from django.shortcuts import get_object_or_404
 logger = logging.getLogger(__name__)
 
 from api.authentication import APIKeyAuthentication
+from mobile_auth.authentication import MobileTokenAuthentication
 from api.permissions import IsAPIKeyAuthenticated, IsPublicOrAPIKey
 from api.serializers import (
     CompanyListSerializer,
@@ -146,10 +147,10 @@ class CompanyListView(ListAPIView):
 
 
 class CompanyDetailView(RetrieveAPIView):
-    """GET /api/v1/companies/<slug>/"""
+    """GET /api/v1/companies/<slug>/ — also used by the EcoIQ app's company profile screen."""
     serializer_class   = CompanyDetailSerializer
     lookup_field       = 'slug'
-    authentication_classes = [APIKeyAuthentication]
+    authentication_classes = [MobileTokenAuthentication, APIKeyAuthentication]
     permission_classes     = [IsPublicOrAPIKey]
 
     def get_queryset(self):
@@ -157,10 +158,10 @@ class CompanyDetailView(RetrieveAPIView):
 
 
 class CompanyScoresView(RetrieveAPIView):
-    """GET /api/v1/companies/<slug>/scores/"""
+    """GET /api/v1/companies/<slug>/scores/ — also used by the EcoIQ app's company profile screen."""
     serializer_class   = CompanyScoresSerializer
     lookup_field       = 'slug'
-    authentication_classes = [APIKeyAuthentication]
+    authentication_classes = [MobileTokenAuthentication, APIKeyAuthentication]
     permission_classes     = [IsPublicOrAPIKey]
 
     def get_queryset(self):
@@ -168,8 +169,8 @@ class CompanyScoresView(RetrieveAPIView):
 
 
 class CompanyHarmSignalsView(APIView):
-    """GET /api/v1/companies/<slug>/harm-signals/"""
-    authentication_classes = [APIKeyAuthentication]
+    """GET /api/v1/companies/<slug>/harm-signals/ — also used by the EcoIQ app's company profile screen."""
+    authentication_classes = [MobileTokenAuthentication, APIKeyAuthentication]
     permission_classes     = [IsPublicOrAPIKey]
 
     def get(self, request, slug):
@@ -290,7 +291,7 @@ class CountryDetailView(APIView):
 # ── Search ────────────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
-@authentication_classes([APIKeyAuthentication])
+@authentication_classes([MobileTokenAuthentication, APIKeyAuthentication])
 @permission_classes([IsPublicOrAPIKey])
 def search(request):
     """

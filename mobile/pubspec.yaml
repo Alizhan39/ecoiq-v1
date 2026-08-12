@@ -1,0 +1,61 @@
+name: ecoiq_app
+description: >
+  EcoIQ — Know what your investment supports. Environmental stewardship and
+  sustainability-risk intelligence. Not investment advice, not a broker.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  # >=3.6.0 required for Color.withValues() (used throughout lib/), which
+  # shipped in Flutter 3.27 / Dart 3.6.
+  sdk: '>=3.6.0 <4.0.0'
+
+# NOTE: this project was authored without a local Flutter SDK available (see
+# the final report's "known risks and limitations" section) -- run `flutter
+# create .` in this directory FIRST to generate the native ios/, android/,
+# windows/, macos/, linux/, web/ platform folders, THEN `flutter pub get`.
+# See mobile/README.md for the exact bootstrap sequence.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Networking
+  dio: ^5.7.0
+
+  # Navigation — supports adaptive shells + deep links (ecoiq://...) out of
+  # the box via GoRoute.redirect / ShellRoute.
+  go_router: ^14.6.2
+
+  # State management — plain (non-codegen) Riverpod: StateNotifierProvider /
+  # FutureProvider, no build_runner step required.
+  flutter_riverpod: ^2.6.1
+
+  # Secure token storage — iOS Keychain / Android Keystore / Windows
+  # Credential Locker, one API across all three.
+  flutter_secure_storage: ^9.2.2
+
+  # Non-sensitive local cache (last-synced companies, watchlist snapshot) —
+  # NEVER used for tokens; see core/storage/README or the final report's
+  # "offline and cache behaviour" section.
+  shared_preferences: ^2.3.3
+
+  # App/package metadata — real app_version sent on login and compared
+  # against app-config's min_supported_version (see core/device/device_info_service.dart).
+  package_info_plus: ^8.1.2
+
+  # NOTE: connectivity_plus and intl are NOT included -- neither is used by
+  # any code in this pass (no offline-status banner or i18n string
+  # formatting has been built yet; see the final report's "prepared, not
+  # operational" section). Add them when that code is written, not before —
+  # an unused dependency is a maintenance liability with no offsetting value.
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  # assets:
+  #   - assets/brand/
