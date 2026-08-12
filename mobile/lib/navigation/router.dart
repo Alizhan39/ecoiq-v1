@@ -52,12 +52,15 @@ GoRouter buildRouter(ProviderContainer container) {
       final status = container.read(authServiceProvider);
       final goingToLogin = state.matchedLocation == AppRoutes.login;
 
-      if (status == AuthStatus.unknown)
+      if (status == AuthStatus.unknown) {
         return null; // still restoring session -- don't redirect yet
-      if (status == AuthStatus.unauthenticated && !goingToLogin)
+      }
+      if (status == AuthStatus.unauthenticated && !goingToLogin) {
         return AppRoutes.login;
-      if (status == AuthStatus.authenticated && goingToLogin)
+      }
+      if (status == AuthStatus.authenticated && goingToLogin) {
         return AppRoutes.home;
+      }
       return null;
     },
     routes: [

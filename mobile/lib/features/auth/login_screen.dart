@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_exception.dart';
-import '../../core/device/device_info_service.dart';
 import '../../design/tokens.dart';
 import '../../state/providers.dart';
 

@@ -31,7 +31,7 @@ class EcoIqNotificationPayload {
       {required this.category, required this.deepLink});
   final EcoIqNotificationCategory category;
 
-  /// e.g. ecoiq://company/<slug>/ethical-impact — resolved through the
+  /// e.g. `ecoiq://company/<slug>/ethical-impact` — resolved through the
   /// same authenticated router guard as any other deep link (PART 19).
   final String deepLink;
 }

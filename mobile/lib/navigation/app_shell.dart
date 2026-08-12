@@ -62,7 +62,7 @@ class AppShell extends StatelessWidget {
         if (path == AppRoutes.home || path == AppRoutes.search) {
           context.go(path);
         } else {
-          Navigator.of(context).push(MaterialPageRoute(
+          Navigator.of(context).push(MaterialPageRoute<void>(
             builder: (_) => ComingSoonScreen(title: _destinations[index].label),
           ));
         }

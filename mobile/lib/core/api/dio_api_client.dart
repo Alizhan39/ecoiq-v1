@@ -62,7 +62,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
         case null:
           return EcoIqApiException(EcoIqApiErrorType.network, detail);
         default:
-          if (status != null && status >= 500) {
+          if (status >= 500) {
             return EcoIqApiException(EcoIqApiErrorType.server, detail,
                 statusCode: status);
           }
@@ -83,7 +83,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
     required String appVersion,
   }) async {
     try {
-      final resp = await _rawDio.post('/auth/login/', data: {
+      final resp = await _rawDio.post<dynamic>('/auth/login/', data: {
         'username': username,
         'password': password,
         'device_id': deviceId,
@@ -100,8 +100,8 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<TokenPair> refresh(String refreshToken) async {
     try {
-      final resp = await _rawDio
-          .post('/auth/refresh/', data: {'refresh_token': refreshToken});
+      final resp = await _rawDio.post<dynamic>('/auth/refresh/',
+          data: {'refresh_token': refreshToken});
       return TokenPair.fromJson(resp.data as Map<String, dynamic>);
     } catch (e) {
       throw _wrap(e);
@@ -111,7 +111,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<void> logout() async {
     try {
-      await _dio.post('/auth/logout/');
+      await _dio.post<dynamic>('/auth/logout/');
     } catch (e) {
       throw _wrap(e);
     }
@@ -120,7 +120,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<void> logoutAll() async {
     try {
-      await _dio.post('/auth/logout-all/');
+      await _dio.post<dynamic>('/auth/logout-all/');
     } catch (e) {
       throw _wrap(e);
     }
@@ -129,7 +129,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<List<DeviceSessionInfo>> listSessions() async {
     try {
-      final resp = await _dio.get('/auth/sessions/');
+      final resp = await _dio.get<dynamic>('/auth/sessions/');
       final sessions = (resp.data as Map<String, dynamic>)['sessions'] as List;
       return sessions
           .map((e) => DeviceSessionInfo.fromJson(e as Map<String, dynamic>))
@@ -142,7 +142,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<void> revokeSession(int sessionId) async {
     try {
-      await _dio.post('/auth/sessions/$sessionId/revoke/');
+      await _dio.post<dynamic>('/auth/sessions/$sessionId/revoke/');
     } catch (e) {
       throw _wrap(e);
     }
@@ -151,7 +151,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<EcoIqUser> getMe() async {
     try {
-      final resp = await _dio.get('/me/');
+      final resp = await _dio.get<dynamic>('/me/');
       return EcoIqUser.fromJson(resp.data as Map<String, dynamic>);
     } catch (e) {
       throw _wrap(e);
@@ -161,7 +161,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<EcoIqAppConfig> getAppConfig() async {
     try {
-      final resp = await _rawDio.get('/app-config/');
+      final resp = await _rawDio.get<dynamic>('/app-config/');
       return EcoIqAppConfig.fromJson(resp.data as Map<String, dynamic>);
     } catch (e) {
       throw _wrap(e);
@@ -171,7 +171,8 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<List<CompanySummary>> searchCompanies(String query) async {
     try {
-      final resp = await _dio.get('/search/', queryParameters: {'q': query});
+      final resp =
+          await _dio.get<dynamic>('/search/', queryParameters: {'q': query});
       final results = (resp.data as Map<String, dynamic>)['results'] as List;
       return results
           .map((e) => CompanySummary.fromJson(e as Map<String, dynamic>))
@@ -184,7 +185,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<CompanyProfileData> getCompanyProfile(String slug) async {
     try {
-      final resp = await _dio.get('/companies/$slug/');
+      final resp = await _dio.get<dynamic>('/companies/$slug/');
       return CompanyProfileData.fromJson(resp.data as Map<String, dynamic>);
     } catch (e) {
       throw _wrap(e);
@@ -230,15 +231,15 @@ class _AuthInterceptor extends QueuedInterceptor {
     }
 
     try {
-      final resp = await rawDio
-          .post('/auth/refresh/', data: {'refresh_token': refreshToken});
+      final resp = await rawDio.post<dynamic>('/auth/refresh/',
+          data: {'refresh_token': refreshToken});
       final pair = TokenPair.fromJson(resp.data as Map<String, dynamic>);
       await tokenProvider.handleTokensRefreshed(pair);
 
       final retryOptions = err.requestOptions;
       retryOptions.extra['retried'] = true;
       retryOptions.headers['Authorization'] = 'Bearer ${pair.accessToken}';
-      final retryResp = await dio.fetch(retryOptions);
+      final retryResp = await dio.fetch<dynamic>(retryOptions);
       handler.resolve(retryResp);
     } catch (_) {
       await tokenProvider.handleRefreshFailed();
