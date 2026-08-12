@@ -35,8 +35,13 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Anchored to the repository root on purpose. A bare `lib/` matches at ANY
+# depth, which silently swallowed the entire Flutter app source at
+# mobile/lib/ (31 files, invisible to `git status`) and
+# frontend/remotion/src/lib/. These are Python packaging artefacts and only
+# ever appear at the root.
+/lib/
+/lib64/
 parts/
 sdist/
 var/
