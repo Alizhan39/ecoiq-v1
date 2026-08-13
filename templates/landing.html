@@ -142,6 +142,61 @@
       box-shadow: 0 28px 70px -28px rgba(0,232,154,.22);
     }
 
+
+    /* ── Newsletter invitation ── secondary conversion, never a blocker.
+       Collapsed it is a ~40px pill; the form appears only on user click. */
+    .eiq-nl {
+      position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 60;
+      display: none; max-width: min(320px, calc(100vw - 2.5rem));
+    }
+    .eiq-nl[data-state="visible"] { display: block; }
+    .eiq-nl-pill {
+      display: inline-flex; align-items: center; gap: .5rem;
+      min-height: 40px; padding: .4rem .95rem;
+      border-radius: 999px; border: 1px solid rgba(0,232,154,.28);
+      background: rgba(6,20,15,.92); backdrop-filter: blur(8px);
+      color: #e7f3ee; font: inherit; font-size: .78rem; cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    }
+    .eiq-nl-dot { width: 6px; height: 6px; border-radius: 999px; background: #00e89a; }
+    .eiq-nl-panel {
+      margin-top: .5rem; padding: 1rem 1.1rem; width: 300px; max-width: 100%;
+      border-radius: 14px; border: 1px solid rgba(255,255,255,.1);
+      background: #0c211a; box-shadow: 0 20px 60px rgba(0,0,0,.55);
+    }
+    .eiq-nl-close {
+      float: right; background: none; border: none; cursor: pointer;
+      color: #8fa9a0; font-size: 14px; line-height: 1; padding: 2px 4px;
+    }
+    .eiq-nl-title { margin: 0 0 .3rem; color: #fff; font-size: .92rem; font-weight: 600; }
+    .eiq-nl-copy { margin: 0 0 .75rem; color: #8fa9a0; font-size: .78rem; line-height: 1.5; }
+    .eiq-nl-form { display: flex; gap: .4rem; }
+    .eiq-nl-form input {
+      flex: 1; min-width: 0; padding: .5rem .7rem; font-size: .78rem;
+      border-radius: 999px; border: 1px solid rgba(255,255,255,.14);
+      background: #06140f; color: #e2e8f0;
+    }
+    .eiq-nl-form button {
+      min-height: 40px; padding: .45rem .9rem; border: none; border-radius: 999px;
+      background: #00e89a; color: #03100c; font-size: .74rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .05em; cursor: pointer;
+    }
+    .eiq-nl-status { margin: .5rem 0 0; color: #00e89a; font-size: .76rem; }
+    .eiq-nl-pill:focus-visible, .eiq-nl-close:focus-visible,
+    .eiq-nl-form input:focus-visible, .eiq-nl-form button:focus-visible {
+      outline: 2px solid #00e89a; outline-offset: 2px;
+    }
+    .eiq-nl-sr {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    /* Mobile: slim, centred, and still never covering a CTA column. */
+    @media (max-width: 640px) {
+      .eiq-nl { right: .75rem; left: .75rem; bottom: .75rem; max-width: none; }
+      .eiq-nl-pill { width: 100%; justify-content: center; }
+      .eiq-nl-panel { width: 100%; }
+    }
+
     /* Numeric KPI cell — label follows the value in, count-up itself is the React island. */
     .eiq-mo-kpi-label { opacity: 0; transition: opacity .5s ease .35s; }
     .eiq-mo-root.eiq-mo-in .eiq-mo-kpi-label { opacity: 1; }
@@ -313,11 +368,253 @@
 </header>
 
 
-<!-- ═══════════════ CINEMATIC HOMEPAGE HERO (scroll-driven scrollytelling) ═══ -->
-<div data-island="CinematicHomeHero" data-props="{}"></div>
+<!-- ═══════════════════ EcoIQ HERO — evidence becomes a decision ═══════════════
+     Replaces "Meet the EcoIQ AI Agents" as the first thing a visitor reads.
+     The agents are the mechanism; the decision is the product, and the product
+     is what belongs above the fold. The pipeline island sequences
+     Evidence → Risk/Readiness → Capital → Decision so the proposition is shown
+     rather than asserted. See docs/product/homepage-motion-map.md §1.
+============================================================================ -->
+<section class="eiq-mo-root" aria-labelledby="eiq-hero-title"
+         style="max-width:1100px;margin:0 auto;padding:4rem 2rem 1rem;">
+  <div style="display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:3rem;align-items:center;"
+       class="eiq-hero-grid">
+    <div>
+      <p style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin:0 0 1.1rem;">
+        Evidence-to-capital intelligence
+      </p>
+
+      <h1 id="eiq-hero-title"
+          style="font-size:clamp(2rem,4.2vw,3.1rem);font-weight:800;color:#fff;letter-spacing:-.035em;line-height:1.08;margin:0 0 1.1rem;">
+        From evidence<br><span style="color:#00e89a;">to investment-ready decisions.</span>
+      </h1>
+
+      <p style="font-size:1.02rem;line-height:1.6;color:#94a3b8;margin:0 0 1.8rem;max-width:34rem;">
+        EcoIQ assesses transition risk, evidence quality and financing readiness for a
+        company or project — then says what should happen next. AI-assisted, analyst-reviewed,
+        traceable to evidence.
+      </p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:.8rem;margin-bottom:1.6rem;">
+        <a href="{% url 'leads:request_review' %}"
+           style="display:inline-flex;align-items:center;gap:.5rem;background:#00e89a;color:#03100c;font-weight:700;font-size:.92rem;padding:.8rem 1.5rem;border-radius:999px;text-decoration:none;">
+          Request an EcoIQ Review
+        </a>
+        <a href="/companies/"
+           style="display:inline-flex;align-items:center;gap:.5rem;border:1px solid rgba(255,255,255,.16);color:#e2e8f0;font-weight:600;font-size:.92rem;padding:.8rem 1.5rem;border-radius:999px;text-decoration:none;">
+          Explore Intelligence
+        </a>
+      </div>
+
+      <!-- Proof bound to real view context. company_count is computed from the DB
+           and documented in core.views.landing as "exact integer — never inflated". -->
+      <p style="font-size:.8rem;color:#64748b;margin:0;">
+        {% if company_count %}<strong style="color:#94a3b8;">{{ company_count }}</strong> company profiles analysed · {% endif %}
+        <strong style="color:#94a3b8;">{{ company_count_display }}</strong> companies scored ·
+        <strong style="color:#94a3b8;">{{ market_count }}</strong> focus markets ·
+        Evidence-linked · Analyst-reviewed
+      </p>
+    </div>
+
+    <div data-island="DecisionPipeline"></div>
+  </div>
+</section>
+
+<style>
+  /* Single column before the two-column hero would crush either side. */
+  @media (max-width: 860px) {
+    .eiq-hero-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
+  }
+</style>
+
+<!-- ═══════════════ PRODUCT ARCHITECTURE — one platform, three products ═════
+     Replaces legacy blocks #12 (intelligence modules), #15 (terminal) and #17
+     (country intelligence): ~2,295px that listed capabilities before naming a
+     single product. Three products are stated permanently; their capabilities
+     are disclosed on demand, as contents of a named parent.
+
+     The <noscript> block below is the no-JS/SEO fallback. It is deliberately
+     inside <noscript> rather than rendered-then-replaced, so hydration cannot
+     flash duplicate copy.
+============================================================================ -->
+
+<div data-island="ProductArchitecture"
+     data-props='{"reviewHref": "{% url "leads:request_review" %}", "intelligenceHref": "/platform/", "institutionalHref": "{% url "leads:enterprise_enquiry" %}"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-pa-nojs-title" style="padding:4.5rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <h2 id="eiq-pa-nojs-title" style="font-size:2rem;margin:0 0 .75rem;color:#fff;">One platform. Three ways to use it.</h2>
+      <p style="color:#8fa9a0;margin:0 0 2rem;">EcoIQ combines evidence, risk, capital and stewardship intelligence differently depending on the decision you need to make.</p>
+      <ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;">
+        <li>
+          <h3 style="margin:0 0 .4rem;color:#fff;">EcoIQ Review</h3>
+          <p style="margin:0 0 .4rem;color:#8fa9a0;font-size:.9rem;">Companies &amp; projects</p>
+          <p style="margin:0 0 .4rem;color:#e7f3ee;font-size:.94rem;">Understand the risks, evidence gaps, financing readiness and what should happen next.</p>
+          <p style="margin:0 0 .6rem;color:#00e89a;">From £4,900 <span style="color:#5f746c;font-size:.82rem;">Single company or project</span></p>
+          <ul style="list-style:none;margin:0 0 .6rem;padding:0;color:#8fa9a0;font-size:.82rem;">
+            <li>Evidence</li><li>Transition Risk</li><li>Governance</li>
+            <li><a href="/platform/#capital-integrity">Capital Readiness</a></li>
+            <li>Ethical Finance</li><li>90-Day Roadmap</li>
+          </ul>
+          <a href="{% url "leads:request_review" %}">Request Review</a>
+        </li>
+        <li>
+          <h3 style="margin:0 0 .4rem;color:#fff;">EcoIQ Intelligence</h3>
+          <p style="margin:0 0 .4rem;color:#8fa9a0;font-size:.9rem;">Investors, funds &amp; analysts</p>
+          <p style="margin:0 0 .6rem;color:#e7f3ee;font-size:.94rem;">Screen opportunities, compare companies and markets, and identify decision signals at scale.</p>
+          <ul style="list-style:none;margin:0 0 .6rem;padding:0;color:#8fa9a0;font-size:.82rem;">
+            <li><a href="/companies/">Companies</a></li>
+            <li><a href="/countries/">Countries</a></li>
+            <li><a href="/projects/">Projects</a></li>
+            <li><a href="/companies/">Rankings</a></li>
+            <li><a href="/platform/">Comparisons</a></li>
+            <li><a href="mailto:alizhan@ecoiq.uk?subject=Intelligence+Terminal+Demo+Request">Terminal</a></li>
+          </ul>
+          <a href="/platform/">Explore Intelligence</a>
+        </li>
+        <li>
+          <h3 style="margin:0 0 .4rem;color:#fff;">EcoIQ Institutional</h3>
+          <p style="margin:0 0 .4rem;color:#8fa9a0;font-size:.9rem;">Banks, funds, corporations &amp; governments</p>
+          <p style="margin:0 0 .6rem;color:#e7f3ee;font-size:.94rem;">Custom intelligence for portfolios, sectors, sovereign mandates and large-scale implementation.</p>
+          <ul style="list-style:none;margin:0 0 .6rem;padding:0;color:#8fa9a0;font-size:.82rem;">
+            <li>Portfolio Intelligence</li><li>Sector Analysis</li>
+            <li><a href="/countries/">Sovereign Intelligence</a></li>
+            <li>API / Data</li><li>Monitoring</li><li>Implementation</li>
+          </ul>
+          <a href="{% url "leads:enterprise_enquiry" %}">Discuss Engagement</a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</noscript>
+
+
+<!-- ═══════════════ SAMPLE DECISION BRIEF — proof of product ═══════════════
+     Answers "what does an actual output look like?", immediately after the
+     visitor has learned which product they are (Product Architecture above).
+
+     Every number is invented for illustration — no customer, no asset, no
+     survey. The card is permanently labelled, and the scenario controls are
+     framed as illustrative, never as a forecast.
+
+     Retires legacy #18 (Get started) and #19 (EcoIQ analytical review): this
+     section carries the Review CTA at the moment the visitor has actually
+     learned enough to act on it.
+============================================================================ -->
+
+<div data-island="DecisionBrief" data-island-lazy
+     data-props='{"reviewHref": "{% url "leads:request_review" %}", "methodologyHref": "{% url "methodology" %}"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-db-nojs" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <p style="color:#00e89a;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;margin:0 0 .6rem;">Sample decision brief</p>
+      <h2 id="eiq-db-nojs" style="color:#fff;font-size:2rem;margin:0 0 .7rem;">See the decision, not the dashboard.</h2>
+      <p style="color:#8fa9a0;margin:0 0 1rem;">EcoIQ turns fragmented evidence into a decision your team can understand, challenge and act on.</p>
+      <p style="color:#8fa9a0;margin:0 0 1rem;"><em>Illustrative EcoIQ decision brief.</em></p>
+      <p style="color:#fff;margin:0 0 .5rem;"><strong style="font-size:2rem;color:#00e89a;">71</strong> / 100 — Industrial Portfolio — Transition Review — <strong>PROCEED — WITH CONDITIONS</strong></p>
+      <ul style="color:#8fa9a0;margin:0 0 1rem;padding-left:1.1rem;line-height:1.7;">
+        <li>Evidence Quality 82</li><li>Transition Risk 61</li><li>Implementation Readiness 74</li>
+        <li>Capital Readiness 68</li><li>Stewardship Alignment 76</li>
+      </ul>
+      <p style="color:#e7f3ee;margin:0 0 .5rem;"><strong>Key finding.</strong> The project is viable, but implementation risk remains concentrated in energy exposure and evidence gaps.</p>
+      <p style="color:#e7f3ee;margin:0 0 1rem;"><strong>Recommended next move.</strong> Resolve the two evidence gaps and model the preferred transition scenario before capital deployment.</p>
+      <p style="margin:0;"><a href="{% url "leads:request_review" %}">Request Your EcoIQ Review</a> &nbsp;·&nbsp; <a href="{% url "methodology" %}">See Methodology</a></p>
+      <p style="color:#5f746c;font-size:.78rem;margin:.5rem 0 0;">No payment required to submit a review request.</p>
+    </div>
+  </section>
+</noscript>
+
+
+<!-- ═══════════════ OUTCOMES — from analysis to measurable outcomes ════════
+     Answers "so what?" directly after the Decision Brief has proved EcoIQ
+     produces a decision.
+
+     One causal chain, not a benefit grid: the connectors between stages carry
+     the argument that each stage makes the next one possible. Stages are
+     always legible; the sequence only brightens them, so nothing is conveyed
+     by animation alone.
+
+     Retires legacy #5 (from intelligence to action), #6 (stats band) and
+     #7 (country-flag chips / global intelligence strip).
+============================================================================ -->
+
+<div data-island="Outcomes" data-island-lazy
+     data-props='{"enterpriseHref": "{% url "leads:enterprise_enquiry" %}"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-oc-nojs" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <p style="color:#00e89a;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;margin:0 0 .6rem;">Outcomes</p>
+      <h2 id="eiq-oc-nojs" style="color:#fff;font-size:2rem;margin:0 0 .7rem;">From analysis to measurable outcomes.</h2>
+      <p style="color:#8fa9a0;margin:0 0 1.25rem;">EcoIQ helps teams move from fragmented evidence to clearer decisions, prioritised action and measurable impact.</p>
+      <ol style="color:#8fa9a0;margin:0 0 1.25rem;padding-left:1.1rem;line-height:1.7;">
+        <li><strong style="color:#fff;">Risk — see the risk.</strong> Identify missing evidence, transition exposure, governance weaknesses and execution risk before they become expensive surprises.</li>
+        <li><strong style="color:#fff;">Decision — make the decision.</strong> Turn evidence into a clear recommendation, understand the conditions behind it and see what would change the outcome.</li>
+        <li><strong style="color:#fff;">Action — prioritise the action.</strong> Translate the decision into a focused sequence of interventions, responsibilities and next steps.</li>
+        <li><strong style="color:#fff;">Impact — measure the impact.</strong> Track what changed, verify outcomes and feed new evidence back into the next decision cycle.</li>
+      </ol>
+      <ul style="color:#e7f3ee;margin:0 0 1.25rem;padding-left:1.1rem;line-height:1.7;">
+        <li>Reduce avoidable risk</li><li>Identify waste and inefficiency</li>
+        <li>Prioritise capital and interventions</li><li>Create evidence for boards, investors and stakeholders</li>
+      </ul>
+      <p style="color:#8fa9a0;margin:0 0 1rem;">EcoIQ does not replace management judgement. It helps teams make that judgement with better evidence.</p>
+      <p style="margin:0;"><a href="{% url "leads:enterprise_enquiry" %}">Explore Enterprise Use Cases</a></p>
+    </div>
+  </section>
+</noscript>
+
+
+<!-- ═══════════════ HOW ECOIQ WORKS — one system, signal to impact ═════════
+     Third beat of the journey: the Decision Brief showed what EcoIQ produces,
+     Outcomes showed what that achieves, this shows how the system repeatedly
+     creates them.
+
+     Twelve real loop stages, ranked rather than simplified: four macro phases
+     up front, the stages behind disclosure. One shared detail strip means
+     opening a phase costs no page height.
+
+     Retires legacy #4 (AI agents, ~674px), #9 (how it works, ~390px) and
+     #16 (digital twin caption, ~79px).
+============================================================================ -->
+
+<div data-island="HowEcoIQWorks" data-island-lazy
+     data-props='{"platformHref": "/platform/", "methodologyHref": "{% url "methodology" %}", "agentsHref": "/ai-agents/"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-hw-nojs" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <p style="color:#00e89a;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;margin:0 0 .6rem;">EcoIQ Impact Engine&trade;</p>
+      <h2 id="eiq-hw-nojs" style="color:#fff;font-size:2rem;margin:0 0 .7rem;">One system. From signal to verified impact.</h2>
+      <p style="color:#8fa9a0;margin:0 0 1.25rem;">A conventional AI returns an answer. EcoIQ continues past it — connecting data, people, capital and technology to real-world action across complex problems.</p>
+      <ol style="color:#8fa9a0;margin:0 0 1.25rem;padding-left:1.1rem;line-height:1.7;">
+        <li><strong style="color:#fff;">Understand</strong> — Detect → Diagnose. Find the problem before it becomes expensive.</li>
+        <li><strong style="color:#fff;">Decide</strong> — Generate → Simulate → Optimize. Explore options before committing resources. Specialist AI investigates different parts of the decision: Climate · Finance · Governance · Stewardship. <a href="/ai-agents/">Try the AI agents</a> · <a href="/ai-agents/council-demo/">Watch the agent council</a> · <a href="/ai-agents/workbench/">See how a decision happened</a></li>
+        <li><strong style="color:#fff;">Act</strong> — Match → Finance → Execute. Connect the decision to the people and capital required.</li>
+        <li><strong style="color:#fff;">Prove &amp; Learn</strong> — Verify → Measure → Learn → Repeat. Prove what happened and make the next decision better.</li>
+      </ol>
+      <p style="color:#8fa9a0;margin:0 0 1rem;">Evidence → AI analysis → Verification → Analyst review → Decision.</p>
+      <p style="color:#e7f3ee;margin:0 0 1rem;"><strong>EcoIQ does not stop at recommendation.</strong> It follows the decision through execution, verification and learning — every completed decision feeds evidence back into the system, improving the next one. <em>From problems to measurable progress.</em></p>
+      <p style="margin:0;"><a href="/platform/">Explore the EcoIQ Platform</a> &nbsp;·&nbsp; <a href="{% url "methodology" %}">View Methodology</a></p>
+    </div>
+  </section>
+</noscript>
+
+
+<!-- ═══════════════ CINEMATIC HOMEPAGE HERO — removed from composition ═══════
+     Not deleted. The component, its island registration in registry.ts, its
+     assets and its props all remain, so it can be mounted on a future
+     About/Story page with one line of markup.
+
+     Removed from the HOMEPAGE because it is a second hero: 3,316px of
+     scrollytelling carrying the previous "Find the Better Way" headline,
+     directly beneath the commercial hero that now states the proposition. Two
+     heroes is the duplication this consolidation exists to end, and while it
+     sat first the CTAs measured ~3,500px down the page.
+
+     See docs/product/homepage-consolidation.md for the full section map.
+============================================================================ -->
 
 
 <!-- ═══════════════ LIVING INFRASTRUCTURE EARTH (Phase 1 hero) ═══════════════ -->
+
 {% include 'partials/living_earth.html' %}
 
 
@@ -330,151 +627,37 @@
 
 
 
-<!-- ═══════════════════════ MEET THE ECOIQ AI AGENTS ══════════════════════════ -->
-<section class="eiq-mo-root" style="max-width:1100px;margin:0 auto;padding:3.5rem 2rem 1rem;">
-  <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px">
-    Meet the EcoIQ AI Agents
-    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-  </div>
-
-  <h2 class="eiq-mo-heading" style="font-size:1.7rem;font-weight:800;color:#fff;letter-spacing:-.02em;margin:0 0 .6rem;line-height:1.25;">
-    The AI does not just answer.<br>It investigates, disagrees and shows its evidence.
-  </h2>
-  <p class="eiq-mo-lede" style="font-size:.92rem;color:#64748b;max-width:640px;line-height:1.65;margin-bottom:1.75rem;">
-    {{ ai_agent_count|default:12 }} specialised agents investigate evidence, challenge assumptions and help humans make better decisions.
-  </p>
-
-  <!-- Visual pipeline — progressive decision chain, each step + arrow staged via --i -->
-  <div class="eiq-mo-chip-row" style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:2rem;">
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Evidence</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Specialist Agents</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Disagreement</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip is-accent" style="background:#0d1117;border:1px solid rgba(0,232,154,.25);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#00e89a;">AI Agent Council</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip" style="background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#e2e8f0;">Human Approval</span>
-    <span class="eiq-mo-arrow" style="color:#475569;">→</span>
-    <span class="eiq-mo-chip is-accent" style="background:#0d1117;border:1px solid rgba(0,232,154,.25);border-radius:999px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;color:#00e89a;">Verified Outcome</span>
-  </div>
-
-  <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;">
-    <a href="/ai-agents/agent/document-reader-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Document Reader Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Extracts facts from bills, reports and supplier quotes.</div>
-    </a>
-    <a href="/ai-agents/agent/waste-leakage-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Waste &amp; Leakage Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Detects operational loss and quantifies capital at risk.</div>
-    </a>
-    <a href="/ai-agents/agent/finance-modelling-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Finance Modelling Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Drafts CAPEX, OPEX, payback and funding-gap logic.</div>
-    </a>
-    <a href="/ai-agents/agent/capital-allocation-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Capital Allocation Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Ranks interventions to recommend where the next £1 should go.</div>
-    </a>
-    <a href="/ai-agents/agent/mrv-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">MRV Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Separates estimated impact from verified impact.</div>
-    </a>
-    <a href="/ai-agents/agent/governance-agent/" class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.4rem;text-decoration:none;display:block;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'">
-      <div style="font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.35rem;">Governance Agent</div>
-      <div style="font-size:.8rem;color:#64748b;line-height:1.55;">Routes high-impact outputs to review and blocks unsafe claims.</div>
-    </a>
-  </div>
-
-  <div class="eiq-mo-cta-last" style="display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-top:1.5rem;">
-    <a href="/ai-agents/" style="font-size:.82rem;font-weight:700;color:#00e89a;text-decoration:none;">+ 6 more specialised agents · Explore all 12 agents →</a>
-  </div>
-
-  <div style="display:flex;flex-wrap:wrap;gap:.9rem;margin-top:1.75rem;">
-    <a href="/ai-agents/workbench/" style="font-family:'SF Mono',monospace;font-size:.82rem;font-weight:700;text-decoration:none;padding:.7rem 1.3rem;border-radius:6px;background:#00e89a;color:#06231a;">TRY THE AI AGENTS</a>
-    <a href="/ai-agents/council-demo/" style="font-family:'SF Mono',monospace;font-size:.82rem;font-weight:700;text-decoration:none;padding:.7rem 1.3rem;border-radius:6px;border:1px solid rgba(255,255,255,.12);color:#e2e8f0;">WATCH THE AGENT COUNCIL</a>
-    <a href="/agent-runtime-model-router/case/meat-cold-chain-loss-prevention-demo/" style="font-family:'SF Mono',monospace;font-size:.82rem;font-weight:700;text-decoration:none;padding:.7rem 1.3rem;border-radius:6px;border:1px solid rgba(255,255,255,.12);color:#e2e8f0;">SEE HOW A DECISION HAPPENED</a>
-  </div>
-</section>
+<!-- ═══════════ MEET THE ECOIQ AI AGENTS (#4) — removed from homepage composition
+     ══════════════════════════════════════════════════════════════════
+     Not deleted: components, islands, routes and deeper pages all remain.
+     The single largest legacy explainer (~674px). Its trust chain
+     (evidence -> specialist agents -> council -> human approval -> verified
+     outcome) survives as the trust rail in How EcoIQ Works, and its agent
+     roster is reached through the "See the AI agents" link in that section's
+     DECIDE phase. /ai-agents/ and every individual agent page are unchanged.
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
 
 
-<!-- ════════════════════════ FROM INTELLIGENCE TO ACTION ═════════════════════ -->
-<section class="eiq-mo-root" style="max-width:1100px;margin:0 auto;padding:3.5rem 2rem 1rem;">
-  <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
-    From Intelligence to Action
-    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-  </div>
 
-  <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+<!-- ═══════ FROM INTELLIGENCE TO ACTION (#5) + STATS BAND (#6) +
+     COUNTRY-FLAG CHIPS / GLOBAL INTELLIGENCE (#7) — removed from homepage
+     composition ═══════════════════════════════════════════════════════
+     Not deleted. The GlobalIntelligence island, /countries/ and every
+     counter remain; only the homepage stops rendering them here.
 
-    <!-- Intelligence -->
-    <div class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.8rem;position:relative;overflow:hidden;">
-      <div class="eiq-mo-line-draw" style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00e89a,transparent);"></div>
-      <div class="eiq-mo-sub-a" style="width:44px;height:44px;border-radius:11px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem;">📊</div>
-      <div class="eiq-mo-sub-b" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;letter-spacing:-.01em;">Intelligence</div>
-      <div class="eiq-mo-sub-c" style="font-size:.86rem;color:#64748b;line-height:1.65;">Climate, ESG and transition readiness analysis.</div>
-    </div>
+     #5 was a generic Intelligence/Stewardship/Implementation triptych —
+     the Outcomes section now states the same progression as an actual
+     causal chain (risk -> decision -> action -> impact).
+     #6 duplicated the hero proof line; its one unique figure (the live
+     company count) was folded into that line rather than lost.
+     #7 was a four-flag chip row restating "four focus markets", which the
+     hero already says; /countries/ stays linked from Product Architecture
+     and Khalifah Field Intelligence.
 
-    <!-- Stewardship -->
-    <div class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.8rem;position:relative;overflow:hidden;">
-      <div class="eiq-mo-line-draw" style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);"></div>
-      <div class="eiq-mo-sub-a" style="width:44px;height:44px;border-radius:11px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem;">🌱</div>
-      <div class="eiq-mo-sub-b" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;letter-spacing:-.01em;">Stewardship</div>
-      <div class="eiq-mo-sub-c" style="font-size:.86rem;color:#64748b;line-height:1.65;">Responsible management of resources, communities and ecosystems.</div>
-    </div>
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
 
-    <!-- Implementation -->
-    <div class="eiq-mo-hover-lift" style="background:#0d1117;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.8rem;position:relative;overflow:hidden;">
-      <div class="eiq-mo-line-draw" style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#58a6ff,transparent);"></div>
-      <div class="eiq-mo-sub-a" style="width:44px;height:44px;border-radius:11px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem;">🛠️</div>
-      <div class="eiq-mo-sub-b" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:.5rem;letter-spacing:-.01em;">Implementation</div>
-      <div class="eiq-mo-sub-c" style="font-size:.86rem;color:#64748b;line-height:1.65;">Real-world pilot projects delivering measurable environmental and social outcomes.</div>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════ BAND ════════════════════════════════════ -->
-<div class="eiq-mo-root" style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.015);padding:.85rem 1.5rem;">
-  <div class="eiq-mo-stagger" style="max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap;">
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--acc);letter-spacing:.8px;text-transform:uppercase;">{{ company_count_display }} Companies</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Globally tracked &amp; scored</div>
-    </div>
-    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--info);letter-spacing:.8px;text-transform:uppercase;">{{ market_count }} Focus Markets</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">National intelligence profiles</div>
-    </div>
-    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:#a855f7;letter-spacing:.8px;text-transform:uppercase;">6-Pillar Methodology</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Public Benefit · Environment · Modernization + more</div>
-    </div>
-    <div style="width:1px;height:28px;background:rgba(255,255,255,.06);" class="hide-sm"></div>
-    <div style="text-align:center;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--warn);letter-spacing:.8px;text-transform:uppercase;">AI + Evidence</div>
-      <div style="font-size:.65rem;color:#475569;margin-top:.1rem;">Public reports, filings &amp; disclosures</div>
-    </div>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════ GLOBAL INTELLIGENCE (island) ═════════════════ -->
-<section class="eiq-mo-root" style="max-width:1120px;margin:0 auto;padding:3.5rem 1.5rem 0;">
-  <div data-island="GlobalIntelligence" data-island-lazy
-       data-props='{"eyebrow":"Global Intelligence","title":"Four focus markets. One coverage standard."}'>
-    <!-- Server-rendered fallback (no-JS / pre-hydration) — left-to-right chip
-         stagger reuses the same primitive as the cinematic hero's evidence
-         chips; the CTA link is simply the last child, so it lands last for free. -->
-    <div class="eiq-mo-chip-row" style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.84rem;color:#94a3b8;align-items:center;">
-      <span class="eiq-mo-chip">🇬🇧 United Kingdom</span><span class="eiq-mo-chip">🇰🇿 Kazakhstan</span><span class="eiq-mo-chip">🇸🇦 Saudi Arabia</span><span class="eiq-mo-chip">🇹🇷 Türkiye</span>
-      <a href="/countries/" class="eiq-mo-chip" style="color:#00e89a;text-decoration:none;font-weight:600;">View country intelligence →</a>
-    </div>
-    <div class="eiq-mo-divider" style="height:1px;background:rgba(255,255,255,.07);margin-top:1.25rem;"></div>
-  </div>
-</section>
 
 
 <!-- ════════════════════════════════ MARKET ACCESS ════════════════════════════ -->
@@ -550,74 +733,16 @@
 </section>
 
 
-<!-- ════════════════════════════════ HOW IT WORKS ═══════════════════════════ -->
-<section class="eiq-mo-root" style="max-width:1100px;margin:0 auto 4rem;padding:3rem 2rem 0">
+<!-- ═══════════ HOW IT WORKS (#9) — removed from homepage composition
+     ══════════════════════════════════════════════════════════════════
+     Not deleted: components, islands, routes and deeper pages all remain.
+     A three-step explainer ("we read the evidence / AI scores each company /
+     you act on intelligence") that How EcoIQ Works now states properly as a
+     twelve-stage closed loop. Its "Ethical Finance Overlay" callout is a
+     separate block higher up the page and is untouched.
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
 
-  <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
-    How it works
-    <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-  </div>
-
-  <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden">
-
-    <!-- Step 1 -->
-    <div style="background:#070b0f;padding:2rem">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">01</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">We read the evidence</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">Annual reports, sustainability disclosures, regulatory filings, CDP data — all public, all verified.</div>
-    </div>
-
-    <!-- Step 2 -->
-    <div style="background:#070b0f;padding:2rem">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">02</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          <circle cx="12" cy="16" r="1" fill="#10b981"/>
-          <path d="M8 16h.01M16 16h.01"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">AI scores each company</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">6 pillars × ML model = EcoIQ score 0–100. Every score is explained. No black box.</div>
-    </div>
-
-    <!-- Step 3 -->
-    <div style="background:#070b0f;padding:2rem">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">03</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="1" x2="12" y2="23"/>
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">You act on intelligence</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">Investors screen portfolios. Companies improve scores. Banks unlock green financing. Governments track progress.</div>
-    </div>
-
-    <!-- Step 4 — Unique value prop -->
-    <div style="background:rgba(16,185,129,.04);padding:2rem;border-left:2px solid rgba(16,185,129,.25)">
-      <div style="font-size:11px;color:#10b981;font-family:'SF Mono',monospace;letter-spacing:.1em;margin-bottom:1rem">04 — Unique</div>
-      <div style="margin-bottom:1rem;line-height:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 8C8 10 5.9 16.17 3.82 19.5c.95-.23 2.19-.74 3.18-1.5C9 16.5 9 13 13 11c0 2-1 5-5 7 3 0 7-1 9-5s1-8 0-5z"/>
-        </svg>
-      </div>
-      <div style="font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:.5rem">Ethical Finance Overlay</div>
-      <div style="font-size:12px;color:#475569;line-height:1.6">Unlike traditional ESG datasets, EcoIQ connects transition scores with investable project opportunities and ethical-finance readiness — covering Sharia-compliant capital, DFI mandates, and green bond frameworks.</div>
-    </div>
-
-  </div>
-</section>
 
 
 <!-- ════════════════════════════════ WHO USES ECOIQ ══════════════════════════ -->
@@ -724,128 +849,15 @@
 </section>
 
 
-<!-- ════════════════════════════════ INTELLIGENCE MODULES ════════════════════ -->
-<section class="eiq-mo-root" style="padding:4rem 1.5rem;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);">
-  <div style="max-width:1100px;margin:0 auto;">
+<!-- ═══════════════ INTELLIGENCE MODULES (#12) — removed from homepage composition ═══════
+     Not deleted. Its template markup lived here (~1,142px — the largest legacy block); every
+     destination it linked to still exists and is still reachable.
 
-    <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2rem;display:flex;align-items:center;gap:12px">
-      Intelligence Modules
-      <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
-      <a href="/platform/" style="font-size:9px;color:#475569;text-decoration:none;white-space:nowrap;" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#475569'">View all modules →</a>
-    </div>
+     Replaced by: Product Architecture -> EcoIQ Intelligence + Review ("Capital Readiness" keeps /platform/#capital-integrity)
+     Why: a flat five-module catalogue names features before the visitor knows which product they need
 
-    <div style="text-align:center;margin-bottom:2.5rem;">
-      <div class="chip eiq-mo-heading" style="margin-bottom:.9rem;">Five Analytical Modules</div>
-      <h2 class="eiq-mo-heading" style="font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem;">Investor-Grade Ethical Climate Intelligence</h2>
-      <p class="eiq-mo-lede" style="color:#64748b;font-size:.9rem;max-width:560px;margin:0 auto;line-height:1.7;">
-        From country-level transition intelligence to ethical finance compatibility —
-        five structured modules built for responsible capital, development banks, and sovereign funds.
-      </p>
-    </div>
-
-    <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
-
-      <!-- Module 01: Country Transition Intelligence -->
-      <a href="/countries/" style="display:block;text-decoration:none;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.5rem;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.transform='none'">
-        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
-          <div style="width:40px;height:40px;border-radius:9px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a13.5 13.5 0 0 1 0 18a13.5 13.5 0 0 1 0-18"/></svg></div>
-          <div>
-            <div style="font-size:.65rem;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.15rem;">Module 01</div>
-            <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;">Country Transition Intelligence</div>
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Policy environment, energy infrastructure, industrial composition, and regulatory trajectory — scored across {{ market_count }} key markets: UK, Kazakhstan, Saudi Arabia, and Türkiye.</p>
-        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <span style="font-size:.65rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">Country Scores</span>
-          <span style="font-size:.65rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">JETP Alignment</span>
-          <span style="font-size:.65rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">Sector Exposure</span>
-        </div>
-        <div style="font-size:.75rem;color:var(--acc);font-weight:600;">View country intelligence →</div>
-      </a>
-
-      <!-- Module 02: Company EcoIQ Assessment -->
-      <a href="/companies/" style="display:block;text-decoration:none;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.5rem;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(88,166,255,.3)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.transform='none'">
-        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
-          <div style="width:40px;height:40px;border-radius:9px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V10.5l5 3.5v-3.5l5 3.5v-3.5l4 3V21z"/><line x1="3" y1="21" x2="21" y2="21"/></svg></div>
-          <div>
-            <div style="font-size:.65rem;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.15rem;">Module 02</div>
-            <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;">Company EcoIQ Assessment</div>
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Six-pillar scoring for {{ company_count }} industrial companies: public benefit, environmental stewardship, responsible modernisation, transparent governance, anti-corruption, and ethical alignment. Score 0–100.</p>
-        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <span style="font-size:.65rem;background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.15);color:#58a6ff;padding:.2rem .5rem;border-radius:4px;">EcoIQ Score</span>
-          <span style="font-size:.65rem;background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.15);color:#58a6ff;padding:.2rem .5rem;border-radius:4px;">6 Pillars</span>
-          <span style="font-size:.65rem;background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.15);color:#58a6ff;padding:.2rem .5rem;border-radius:4px;">Harm Signals</span>
-        </div>
-        <div style="font-size:.75rem;color:var(--info);font-weight:600;">Browse company rankings →</div>
-      </a>
-
-      <!-- Module 03: Project Readiness Review -->
-      <a href="{% url 'leads:request_review' %}?type=project_readiness" style="display:block;text-decoration:none;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.5rem;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(168,85,247,.3)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.transform='none'">
-        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
-          <div style="width:40px;height:40px;border-radius:9px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="1.2"/><line x1="7.5" y1="7" x2="7.5" y2="11"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="16.5" y1="7" x2="16.5" y2="11"/></svg></div>
-          <div>
-            <div style="font-size:.65rem;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.15rem;">Module 03</div>
-            <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;">Project Readiness Review</div>
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Ten-dimension assessment for climate finance and development bank review. Covers technical feasibility, governance, revenue model, and evidence quality. Labels range from early-stage to investment-ready.</p>
-        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <span style="font-size:.65rem;background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.15);color:#a855f7;padding:.2rem .5rem;border-radius:4px;">Readiness Score</span>
-          <span style="font-size:.65rem;background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.15);color:#a855f7;padding:.2rem .5rem;border-radius:4px;">10 Dimensions</span>
-          <span style="font-size:.65rem;background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.15);color:#a855f7;padding:.2rem .5rem;border-radius:4px;">DFI Criteria</span>
-        </div>
-        <div style="font-size:.75rem;color:#a855f7;font-weight:600;">Request a project review →</div>
-      </a>
-
-      <!-- Module 04: Capital Integrity Score -->
-      <a href="/platform/#capital-integrity" style="display:block;text-decoration:none;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.5rem;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(244,162,97,.3)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.transform='none'">
-        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
-          <div style="width:40px;height:40px;border-radius:9px;background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f4a261" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 21 8 3 8"/><line x1="6" y1="11" x2="6" y2="18"/><line x1="10" y1="11" x2="10" y2="18"/><line x1="14" y1="11" x2="14" y2="18"/><line x1="18" y1="11" x2="18" y2="18"/><line x1="3" y1="22" x2="21" y2="22"/></svg></div>
-          <div>
-            <div style="font-size:.65rem;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.15rem;">Module 04</div>
-            <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;">Capital Integrity Score</div>
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">How capital is structured and deployed relative to responsible finance standards. Evaluates debt structure, ownership transparency, profit reinvestment, and long-term orientation against DFI and green bond criteria.</p>
-        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <span style="font-size:.65rem;background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.15);color:#f4a261;padding:.2rem .5rem;border-radius:4px;">DFI Compatibility</span>
-          <span style="font-size:.65rem;background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.15);color:#f4a261;padding:.2rem .5rem;border-radius:4px;">Green Bond Fit</span>
-          <span style="font-size:.65rem;background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.15);color:#f4a261;padding:.2rem .5rem;border-radius:4px;">Integrity Rating</span>
-        </div>
-        <div style="font-size:.75rem;color:#f4a261;font-weight:600;">Learn more →</div>
-      </a>
-
-      <!-- Module 05: Ethical Finance Fit -->
-      <a href="{% url 'leads:request_review' %}" style="display:block;text-decoration:none;background:#070b0f;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1.5rem;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(0,232,154,.3)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.transform='none'">
-        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
-          <div style="width:40px;height:40px;border-radius:9px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><line x1="4" y1="7" x2="20" y2="7"/><path d="M4 7l-2.2 5.2a3 3 0 0 0 6 0z"/><path d="M20 7l-2.2 5.2a3 3 0 0 0 6 0z"/></svg></div>
-          <div>
-            <div style="font-size:.65rem;color:#475569;font-family:'SF Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.15rem;">Module 05</div>
-            <div style="font-size:.9rem;font-weight:700;color:#e2e8f0;">Ethical Finance Fit</div>
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:#475569;line-height:1.65;margin-bottom:1rem;">Compatibility with responsible capital frameworks emphasising ethical stewardship, public benefit, and long-term resilience. Covers asset structure, ethical revenue analysis, and governance quality. All outputs require qualified review.</p>
-        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <span style="font-size:.65rem;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">Ethical Compatibility</span>
-          <span style="font-size:.65rem;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">Stewardship Score</span>
-          <span style="font-size:.65rem;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.15);color:#10b981;padding:.2rem .5rem;border-radius:4px;">Analyst Review</span>
-        </div>
-        <div style="font-size:.75rem;color:#10b981;font-weight:600;">Request ethical finance review →</div>
-      </a>
-
-    </div>
-
-    <div style="text-align:center;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.05);">
-      <a href="/platform/" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,232,154,.08);border:1px solid rgba(0,232,154,.2);color:var(--acc);font-weight:600;font-size:.9rem;padding:.65rem 1.4rem;border-radius:8px;text-decoration:none;">
-        Explore the full platform →
-      </a>
-      <p style="margin-top:.9rem;font-size:.72rem;color:#1e293b;">All module outputs are AI-assisted and indicative. Analyst review required before any investment or financing decision.</p>
-    </div>
-
-  </div>
-</section>
+     See docs/product/homepage-consolidation.md for the full section map.
+============================================================================ -->
 
 
 <!-- ════════════════════════════ AMANAH AUTOPILOT ═══════════════════════════ -->
@@ -901,331 +913,100 @@
 </section>
 
 
-<!-- ════════════════════════════════ INTELLIGENCE TERMINAL ═══════════════════ -->
-<section class="eiq-mo-root" style="padding:5rem 1.5rem;background:#020608;border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);">
-  <div style="max-width:1120px;margin:0 auto;">
+<!-- ═══════════════ INTELLIGENCE TERMINAL / SOVEREIGN MONITOR (#15) — removed from homepage composition ═══════
+     Not deleted. Its template markup lived here (~654px); every
+     destination it linked to still exists and is still reachable.
 
-    <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#475569;font-family:'SF Mono',monospace;margin-bottom:2.5rem;display:flex;align-items:center;gap:12px">
-      Intelligence Terminal
-      <span style="flex:1;height:1px;background:rgba(255,255,255,.07)"></span>
+     Replaced by: Product Architecture -> EcoIQ Intelligence -> "Terminal" (demo-request mailto preserved)
+     Why: a product teaser competing with the three named products
+
+     See docs/product/homepage-consolidation.md for the full section map.
+============================================================================ -->
+
+
+<!-- ═══════════ DIGITAL TWIN PREVIEW (#16) — removed from homepage composition
+     ══════════════════════════════════════════════════════════════════
+     Not deleted: components, islands, routes and deeper pages all remain.
+     A caption-only island with no unique copy or destination; the platform
+     page carries the concept.
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
+
+
+
+<!-- ═══════════════ INSTITUTIONAL COUNTRY INTELLIGENCE (#17) — removed from homepage composition ═══════
+     Not deleted. Its template markup lived here (~499px); every
+     destination it linked to still exists and is still reachable.
+
+     Replaced by: Product Architecture -> EcoIQ Institutional -> "Sovereign Intelligence" (/countries/)
+     Why: a country-report CTA is one institutional capability, not a homepage section
+
+     See docs/product/homepage-consolidation.md for the full section map.
+============================================================================ -->
+
+
+<!-- ═══════════ GET STARTED CTA (#18) + REVIEW CTA (#19) — removed from
+     homepage composition ═══════════════════════════════════════════════
+     Not deleted; the routes and the review request page are unchanged.
+
+     Both were generic CTA blocks repeating the hero's offer before the
+     visitor had learned anything new. The Sample Decision Brief now carries
+     "Request Your EcoIQ Review" at the point where the visitor has actually
+     seen what a review produces — a better moment to ask.
+
+     #19's one unique line ("No payment required to submit a review request")
+     was preserved and moved onto the Decision Brief CTA row.
+
+     See docs/product/homepage-consolidation.md.
+============================================================================ -->
+
+
+
+<!-- ═══════════════ KHALIFAH FIELD INTELLIGENCE — field/stewardship layer ═══
+     Second half of the homepage, below the commercial core. A differentiation
+     layer, never above the hero or Product Architecture.
+
+     Consolidated from a longer first version: the audience switch, three-card
+     path grid and Field Passport block were removed so this stops competing
+     with the commercial proposition. One primary CTA remains. Product choice
+     lives in Product Architecture, which is still above this.
+
+     Video is lazy: <source> is attached by the island only after the media
+     frame intersects, so the 7.9MB derivative cannot load with the homepage.
+     The frame reserves its 16:9 box, so there is no layout shift.
+
+     The tour operation is NOT confirmed operational — the copy describes a
+     model in development and never offers dates.
+============================================================================ -->
+
+<div data-island="KhalifahFieldIntelligence" data-island-lazy
+     data-props='{"src1080": "{% static "video/khalifah-field-1080.mp4" %}", "src720": "{% static "video/khalifah-field-720.mp4" %}", "poster": "{% static "video/khalifah-field-poster.jpg" %}", "toursHref": "{% url "khalifa_stewardship_tours" %}", "howItWorksHref": "{% url "methodology" %}"}'></div>
+<noscript>
+  <section class="eiq-mo-root" aria-labelledby="eiq-kfi-nojs" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+    <div style="max-width:1120px;margin:0 auto;">
+      <p style="color:#00e89a;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;margin:0 0 .6rem;">Khalifah Field Intelligence</p>
+      <h2 id="eiq-kfi-nojs" style="color:#fff;font-size:2rem;margin:0 0 .7rem;">Don&rsquo;t just visit a place. Understand it.</h2>
+      <p style="color:#8fa9a0;margin:0 0 .75rem;">EcoIQ Eco Tours connect people with the ecological, cultural and economic intelligence of a place — turning a journey into an understanding of how that place works, what it needs and what could be built next.</p>
+      <p style="color:#e7f3ee;margin:0 0 1.25rem;">See the system. Understand the place. Steward what comes next. <em>Illustrative field experience.</em></p>
+      <img src="{% static "video/khalifah-field-poster.jpg" %}" alt="Illustrative Khalifah field experience: a highland trail ride at sunrise." style="max-width:100%;height:auto;border-radius:18px;" />
+      <ol style="color:#8fa9a0;margin:1.25rem 0 0;padding-left:1.1rem;line-height:1.7;">
+        <li><strong style="color:#fff;">Observe</strong> — landscape, people, biodiversity, infrastructure and local context.</li>
+        <li><strong style="color:#fff;">Understand</strong> — EcoIQ connects what is observed with evidence, systems and opportunities.</li>
+        <li><strong style="color:#fff;">Steward</strong> — understand how to care for a place, improve it and take part in it.</li>
+        <li><strong style="color:#fff;">Act</strong> — connect field observations to projects, enterprises, conservation and local value creation.</li>
+      </ol>
+      <p style="margin:1.25rem 0 .5rem;"><a href="{% url "khalifa_stewardship_tours" %}">Explore Eco Tours</a> &nbsp;·&nbsp; <a href="{% url "methodology" %}">See how EcoIQ works</a></p>
+      <p style="color:#5f746c;font-size:.8rem;margin:0;">The EcoIQ field model is in development. Explore the approach and register interest — no dates are on sale.</p>
     </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;">
-
-      <!-- Left: copy -->
-      <div>
-        <div class="chip eiq-mo-heading" style="margin-bottom:1.1rem;">Sovereign Performance Monitor</div>
-        <h2 class="eiq-mo-heading" style="font-size:clamp(1.5rem,2.5vw,2.1rem);font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1.15;margin-bottom:1rem;">
-          Dashboard-grade intelligence.<br>
-          <span style="color:#c9a84c;">Ethical finance overlay included.</span>
-        </h2>
-        <p class="eiq-mo-lede" style="font-size:.88rem;color:#475569;line-height:1.75;margin-bottom:1.5rem;">
-          The EcoIQ Intelligence Terminal combines company-level transition scoring with an
-          ethical finance overlay — calibrated for Sharia-compliant capital, Islamic funds,
-          and transition-linked investment mandates. Two scores, one decision.
-        </p>
-
-        <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:2rem;">
-          <div style="display:flex;align-items:flex-start;gap:.75rem;">
-            <div style="width:7px;height:7px;border-radius:50%;background:#00e89a;flex-shrink:0;margin-top:.35rem;"></div>
-            <div>
-              <span style="font-size:.83rem;font-weight:600;color:#e2e8f0;">EcoIQ Score</span>
-              <span style="font-size:.78rem;color:#475569;margin-left:.5rem;">0–100 · six-pillar evidence-based scoring</span>
-            </div>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:.75rem;">
-            <div style="width:7px;height:7px;border-radius:50%;background:#c9a84c;flex-shrink:0;margin-top:.35rem;"></div>
-            <div>
-              <span style="font-size:.83rem;font-weight:600;color:#e2e8f0;">Maqasid Score</span>
-              <span style="font-size:.78rem;color:#475569;margin-left:.5rem;">ethical finance compatibility overlay</span>
-            </div>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:.75rem;">
-            <div style="width:7px;height:7px;border-radius:50%;background:#58a6ff;flex-shrink:0;margin-top:.35rem;"></div>
-            <div>
-              <span style="font-size:.83rem;font-weight:600;color:#e2e8f0;">Mizan Engine</span>
-              <span style="font-size:.78rem;color:#475569;margin-left:.5rem;">harm-adjusted value distribution index</span>
-            </div>
-          </div>
-        </div>
-
-        <a href="mailto:alizhan@ecoiq.uk?subject=Intelligence+Terminal+Demo+Request"
-           style="display:inline-flex;align-items:center;gap:.5rem;background:#c9a84c;color:#0a0f14;font-weight:700;font-size:.88rem;padding:.72rem 1.5rem;border-radius:8px;text-decoration:none;transition:opacity .2s;"
-           onmouseover="this.style.opacity='.87'" onmouseout="this.style.opacity='1'">
-          Request Terminal Demo →
-        </a>
-      </div>
-
-      <!-- Right: terminal mockup -->
-      <div style="background:#0a0f14;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6);">
-
-        <!-- Terminal bar -->
-        <div style="padding:.65rem 1rem;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:.5rem;">
-          <div style="width:10px;height:10px;border-radius:50%;background:#ff5f56;"></div>
-          <div style="width:10px;height:10px;border-radius:50%;background:#febc2e;"></div>
-          <div style="width:10px;height:10px;border-radius:50%;background:#28c840;"></div>
-          <span style="font-size:.65rem;font-family:'SF Mono',monospace;color:#334155;margin-left:auto;">Sovereign Performance Monitor · v2.1</span>
-        </div>
-
-        <!-- Score header -->
-        <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;">
-          <div>
-            <div style="font-size:.6rem;font-family:'SF Mono',monospace;color:#334155;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;">EcoIQ Score</div>
-            <div style="font-size:2.2rem;font-weight:300;color:#00e89a;letter-spacing:-.04em;line-height:1;">84.2</div>
-            <div style="font-size:.65rem;color:#10b981;margin-top:.2rem;">▲ Regenerative Leader</div>
-          </div>
-          <div style="width:1px;height:52px;background:rgba(255,255,255,.07);"></div>
-          <div>
-            <div style="font-size:.6rem;font-family:'SF Mono',monospace;color:#334155;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;">Maqasid Score</div>
-            <div style="font-size:2.2rem;font-weight:300;color:#c9a84c;letter-spacing:-.04em;line-height:1;">92</div>
-            <div style="font-size:.65rem;color:#c9a84c;margin-top:.2rem;">▲ High Compatibility</div>
-          </div>
-          <div style="width:1px;height:52px;background:rgba(255,255,255,.07);"></div>
-          <div>
-            <div style="font-size:.6rem;font-family:'SF Mono',monospace;color:#334155;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;">Country Grade</div>
-            <div style="font-size:2.2rem;font-weight:300;color:#58a6ff;letter-spacing:-.04em;line-height:1;">AAA</div>
-            <div style="font-size:.65rem;color:#58a6ff;margin-top:.2rem;">Transition Ready</div>
-          </div>
-        </div>
-
-        <!-- Pillar bars -->
-        <div style="padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.05);">
-          <div style="font-size:.6rem;font-family:'SF Mono',monospace;color:#334155;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.8rem;">Pillar Breakdown · Illustrative</div>
-          <!-- Illustrative mockup bars — static sample, not live data -->
-          <div style="display:flex;flex-direction:column;gap:.5rem;">
-            <div style="display:flex;align-items:center;gap:.75rem;">
-              <span style="font-size:.65rem;color:#334155;width:90px;flex-shrink:0;font-family:'SF Mono',monospace;">Environment</span>
-              <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;">
-                <div style="height:4px;width:88%;background:#00e89a;border-radius:2px;"></div>
-              </div>
-              <span style="font-size:.65rem;color:#00e89a;width:28px;text-align:right;font-family:'SF Mono',monospace;">88</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:.75rem;">
-              <span style="font-size:.65rem;color:#334155;width:90px;flex-shrink:0;font-family:'SF Mono',monospace;">Governance</span>
-              <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;">
-                <div style="height:4px;width:79%;background:#c9a84c;border-radius:2px;"></div>
-              </div>
-              <span style="font-size:.65rem;color:#c9a84c;width:28px;text-align:right;font-family:'SF Mono',monospace;">79</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:.75rem;">
-              <span style="font-size:.65rem;color:#334155;width:90px;flex-shrink:0;font-family:'SF Mono',monospace;">Public Benefit</span>
-              <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;">
-                <div style="height:4px;width:91%;background:#00e89a;border-radius:2px;"></div>
-              </div>
-              <span style="font-size:.65rem;color:#00e89a;width:28px;text-align:right;font-family:'SF Mono',monospace;">91</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:.75rem;">
-              <span style="font-size:.65rem;color:#334155;width:90px;flex-shrink:0;font-family:'SF Mono',monospace;">Modernisation</span>
-              <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;">
-                <div style="height:4px;width:82%;background:#58a6ff;border-radius:2px;"></div>
-              </div>
-              <span style="font-size:.65rem;color:#58a6ff;width:28px;text-align:right;font-family:'SF Mono',monospace;">82</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:.75rem;">
-              <span style="font-size:.65rem;color:#334155;width:90px;flex-shrink:0;font-family:'SF Mono',monospace;">Ethics</span>
-              <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;">
-                <div style="height:4px;width:85%;background:#a855f7;border-radius:2px;"></div>
-              </div>
-              <span style="font-size:.65rem;color:#a855f7;width:28px;text-align:right;font-family:'SF Mono',monospace;">85</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer strip -->
-        <div style="padding:.7rem 1.5rem;background:rgba(201,168,76,.04);display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
-          <span style="font-size:.62rem;font-family:'SF Mono',monospace;color:#334155;">AI-Assisted · Indicative · Updated monthly</span>
-          <a href="/dashboard/" style="font-size:.65rem;font-weight:700;color:#c9a84c;font-family:'SF Mono',monospace;text-decoration:none;">Open terminal →</a>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-</section>
+  </section>
+</noscript>
 
 
-<!-- ═══════════════════════════ DIGITAL TWIN PREVIEW (island) ════════════════ -->
-<section style="max-width:1120px;margin:0 auto;padding:3.5rem 1.5rem 0;">
-  <div data-island="DigitalTwinPreview" data-island-lazy data-props='{}'>
-    <!-- Server-rendered fallback -->
-    <div style="font-size:.84rem;color:#94a3b8;line-height:1.7;">
-      <strong style="color:#e2e8f0;">EcoIQ Digital Twin (preview)</strong> — company scores, project sites,
-      manufacturer capacity, and grid context on a single country model.
-    </div>
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════ REQUEST COUNTRY REPORT ══════════════════ -->
-<section class="eiq-mo-root" style="padding:5rem 1.5rem;background:linear-gradient(135deg,rgba(27,67,50,.25) 0%,rgba(10,15,10,.8) 100%);border-top:1px solid rgba(27,67,50,.4);border-bottom:1px solid rgba(27,67,50,.3);">
-  <div style="max-width:900px;margin:0 auto;">
-
-    <div style="display:grid;grid-template-columns:1fr auto;gap:3rem;align-items:center;">
-
-      <div>
-        <div class="eiq-mo-eyebrow" style="font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#c9a84c;margin-bottom:.75rem;">◈ Institutional Country Intelligence</div>
-        <h2 class="eiq-mo-heading" style="font-size:clamp(1.5rem,2.5vw,2.1rem);font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1.15;margin-bottom:1rem;">
-          Request an Institutional Country Report
-        </h2>
-        <p class="eiq-mo-lede" style="font-size:.9rem;color:#64748b;line-height:1.75;max-width:520px;margin-bottom:1.5rem;">
-          Receive a structured briefing on any of EcoIQ's {{ market_count }} focus markets:
-          industrial composition, transition readiness score, sector-level EcoIQ averages,
-          pollution hotspots, and green finance pipeline — formatted for investment committees.
-        </p>
-
-        <div class="eiq-mo-chip-row" style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:2rem;">
-          <div class="eiq-mo-chip">
-            <div style="font-size:1.4rem;font-weight:800;color:#00e89a;line-height:1;">{{ company_count_display }}</div>
-            <div style="font-size:.7rem;color:#334155;text-transform:uppercase;letter-spacing:.7px;margin-top:.15rem;">Companies tracked</div>
-          </div>
-          <div class="eiq-mo-chip">
-            <div style="font-size:1.4rem;font-weight:800;color:#c9a84c;line-height:1;">{{ market_count }}</div>
-            <div style="font-size:.7rem;color:#334155;text-transform:uppercase;letter-spacing:.7px;margin-top:.15rem;">Focus markets</div>
-          </div>
-          <div class="eiq-mo-chip">
-            <div style="font-size:1.4rem;font-weight:800;color:#58a6ff;line-height:1;">5 days</div>
-            <div style="font-size:.7rem;color:#334155;text-transform:uppercase;letter-spacing:.7px;margin-top:.15rem;">Delivery time</div>
-          </div>
-        </div>
-
-        <div class="eiq-mo-cta-last" style="display:flex;gap:.75rem;flex-wrap:wrap;">
-          <a href="mailto:alizhan@ecoiq.uk?subject=Institutional+Country+Report+Request"
-             style="display:inline-flex;align-items:center;gap:.5rem;background:#c9a84c;color:#0a0f14;font-weight:700;font-size:.9rem;padding:.8rem 1.65rem;border-radius:8px;text-decoration:none;transition:opacity .2s;"
-             onmouseover="this.style.opacity='.87'" onmouseout="this.style.opacity='1'">
-            Request Institutional Country Report →
-          </a>
-          <a href="/countries/"
-             style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#94a3b8;font-weight:600;font-size:.9rem;padding:.8rem 1.4rem;border-radius:8px;text-decoration:none;transition:all .2s;"
-             onmouseover="this.style.borderColor='rgba(255,255,255,.2)';this.style.color='#e2e8f0'"
-             onmouseout="this.style.borderColor='rgba(255,255,255,.12)';this.style.color='#94a3b8'">
-            Browse countries
-          </a>
-        </div>
-      </div>
-
-      <!-- Market chips -->
-      <div class="eiq-mo-stagger hide-sm" style="display:flex;flex-direction:column;gap:.6rem;min-width:160px;">
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.7rem 1rem;text-align:center;">
-          <div style="font-size:.7rem;font-weight:700;color:#e2e8f0;">🇬🇧 United Kingdom</div>
-          <div style="font-size:.6rem;color:#334155;margin-top:.2rem;font-family:'SF Mono',monospace;">AVAILABLE</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.7rem 1rem;text-align:center;">
-          <div style="font-size:.7rem;font-weight:700;color:#e2e8f0;">🇰🇿 Kazakhstan</div>
-          <div style="font-size:.6rem;color:#334155;margin-top:.2rem;font-family:'SF Mono',monospace;">AVAILABLE</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.7rem 1rem;text-align:center;">
-          <div style="font-size:.7rem;font-weight:700;color:#e2e8f0;">🇸🇦 Saudi Arabia</div>
-          <div style="font-size:.6rem;color:#334155;margin-top:.2rem;font-family:'SF Mono',monospace;">AVAILABLE</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.7rem 1rem;text-align:center;">
-          <div style="font-size:.7rem;font-weight:700;color:#e2e8f0;">🇹🇷 Türkiye</div>
-          <div style="font-size:.6rem;color:#334155;margin-top:.2rem;font-family:'SF Mono',monospace;">AVAILABLE</div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════ CTA ════════════════════════════════════ -->
-<section class="eiq-mo-root" style="border-top:1px solid rgba(255,255,255,.07);padding:4rem 2rem;text-align:center;background:rgba(16,185,129,.04);position:relative;overflow:hidden;">
-  <div class="orb" style="width:400px;height:400px;background:rgba(0,232,154,1);opacity:.04;top:-100px;left:50%;transform:translateX(-50%);"></div>
-  <div style="max-width:600px;margin:0 auto;position:relative;">
-
-    <div class="eiq-mo-eyebrow" style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#10b981;font-family:'SF Mono',monospace;margin-bottom:1rem">Get started</div>
-
-    <h2 class="eiq-mo-heading" style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:300;letter-spacing:-.02em;margin-bottom:1rem;color:#e2e8f0;line-height:1.2">
-      See your company's<br>EcoIQ score right now
-    </h2>
-
-    <p class="eiq-mo-lede" style="font-size:14px;color:#64748b;margin-bottom:2rem;line-height:1.7">
-      {{ company_count_display }} companies ranked. Search below or browse the full rankings.
-    </p>
-
-    <!-- Inline search -->
-    <form action="/companies/" method="get" class="eiq-mo-cta-last" style="display:flex;gap:8px;max-width:420px;margin:0 auto 1.5rem">
-      <input type="text" name="q" placeholder="Search: Shell, KazMunayGas, BP…"
-        style="flex:1;background:#0d1117;border:1px solid rgba(255,255,255,.13);border-radius:3px;padding:11px 16px;font-size:13px;color:#e2e8f0;outline:none;min-width:0;font-family:inherit"
-        onfocus="this.style.borderColor='rgba(16,185,129,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.13)'">
-      <button type="submit" style="background:#10b981;color:#000;padding:11px 20px;border:none;border-radius:3px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:'SF Mono',monospace;font-weight:700;cursor:pointer;white-space:nowrap">
-        Search →
-      </button>
-    </form>
-
-    <div class="eiq-mo-cta-last" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <a href="/companies/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">Browse all {{ company_count_display }} companies →</a>
-      <a href="/pricing/" style="color:#94a3b8;font-size:12px;font-family:'SF Mono',monospace;text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:8px 18px;border-radius:2px;transition:all .15s" onmouseover="this.style.borderColor='rgba(16,185,129,.3)';this.style.color='#10b981'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='#94a3b8'">View pricing →</a>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════ REVIEW CTA ═══════════════════════════ -->
-<section class="eiq-mo-root" style="padding:4rem 1.5rem;border-top:1px solid rgba(255,255,255,.05);">
-  <div style="max-width:1100px;margin:0 auto;text-align:center;">
-
-    <div class="chip eiq-mo-eyebrow" style="margin-bottom:.9rem;">
-      <span style="width:5px;height:5px;border-radius:50%;background:var(--acc);"></span>
-      EcoIQ Analytical Review
-    </div>
-
-    <h2 class="eiq-mo-heading" style="font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.7rem;">
-      Ready to get a structured intelligence review?
-    </h2>
-    <p class="eiq-mo-lede" style="color:#64748b;font-size:.9rem;max-width:500px;margin:0 auto 2.5rem;line-height:1.7;">
-      Submit a company, country, or project for scoring by the Mizan Engine —
-      or upload your sustainability report for a greenwashing risk assessment.
-    </p>
-
-    <div class="eiq-mo-stagger" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-bottom:1.5rem;">
-
-      <a href="/request-access/review/" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.background='rgba(255,255,255,.035)';this.style.borderColor='rgba(255,255,255,.08)'">
-        <div style="width:38px;height:38px;border-radius:9px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="17" height="17" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        </div>
-        <div>
-          <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.25rem;">Request EcoIQ Review</div>
-          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Company assessment, country intelligence, project readiness, or finance fit review.</div>
-        </div>
-        <span style="font-size:.74rem;color:var(--acc);font-weight:600;margin-top:auto;">Get started →</span>
-      </a>
-
-      <a href="/request-access/review/?type=greenwashing_review" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.borderColor='rgba(0,232,154,.3)'" onmouseout="this.style.background='rgba(255,255,255,.035)';this.style.borderColor='rgba(255,255,255,.08)'">
-        <div style="width:38px;height:38px;border-radius:9px;background:rgba(0,232,154,.1);border:1px solid rgba(0,232,154,.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="17" height="17" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-        </div>
-        <div>
-          <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.25rem;">Upload Sustainability Report</div>
-          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Upload a PDF sustainability or ESG report for a greenwashing risk assessment.</div>
-        </div>
-        <span style="font-size:.74rem;color:var(--acc);font-weight:600;margin-top:auto;">Upload PDF →</span>
-      </a>
-
-      {% if calendly_url %}
-      <a href="{{ calendly_url }}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.2);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,232,154,.12)'" onmouseout="this.style.background='rgba(0,232,154,.07)'">
-      {% else %}
-      <a href="mailto:alizhan@ecoiq.uk?subject=Investor Briefing Request" style="display:flex;flex-direction:column;gap:.65rem;padding:1.4rem;background:rgba(0,232,154,.07);border:1px solid rgba(0,232,154,.2);border-radius:14px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,232,154,.12)'" onmouseout="this.style.background='rgba(0,232,154,.07)'">
-      {% endif %}
-        <div style="width:38px;height:38px;border-radius:9px;background:rgba(0,232,154,.18);border:1px solid rgba(0,232,154,.35);display:flex;align-items:center;justify-content:center;">
-          <svg width="17" height="17" fill="none" stroke="#00e89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        </div>
-        <div>
-          <div style="font-size:.85rem;font-weight:700;color:#e2e8f0;margin-bottom:.25rem;">Book Investor Briefing</div>
-          <div style="font-size:.74rem;color:#475569;line-height:1.55;">Schedule a 30-minute call with our analysts to discuss findings and recommendations.</div>
-        </div>
-        <span style="font-size:.74rem;color:var(--acc);font-weight:600;margin-top:auto;">Schedule now →</span>
-      </a>
-
-    </div>
-
-    <p style="font-size:.72rem;color:#1e293b;">No payment required to submit a review request.</p>
-
-  </div>
-</section>
-
+<!-- Newsletter eligibility marker: everything above is the commercial core
+     (hero, product architecture, decision brief, outcomes, impact engine,
+     field intelligence). The invitation may not appear until this scrolls
+     into view, so a high-intent reader is never interrupted mid-journey. -->
+<div id="newsletter-sentinel" aria-hidden="true" style="height:1px;"></div>
 
 <!-- ════════════════════════════ PROJECTS PREVIEW ════════════════════════════ -->
 <section class="eiq-mo-root" style="max-width:1100px;margin:0 auto;padding:2.5rem 2rem 1rem;">
@@ -1273,16 +1054,12 @@
   </div>
   <p class="eiq-mo-cta-last" style="font-size:.7rem;color:#334155;margin-top:1.25rem;text-align:center;">Pilot budgets and outcomes shown across the portfolio are indicative estimates. <a href="/projects/" style="color:#475569;">Explore the full portfolio →</a></p>
 
-  <!-- Khalifa Tours pipeline (island; inner markup is the no-JS fallback) -->
-  <div class="eiq-mo-cta-last" style="margin-top:1.75rem;" data-island="KhalifaPipeline" data-island-lazy data-props='{"ctaHref":"/khalifa-tours-impact/"}'>
-    <div style="border-top:1px solid rgba(255,255,255,.04);padding-top:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-      <div>
-        <span style="font-size:.72rem;font-weight:700;color:#c9a84c;letter-spacing:.05em;">Khalifa Tours — Community Climate Action</span>
-        <span style="font-size:.72rem;color:#334155;margin-left:.75rem;">Ethical finance overlay for transition-linked community investment in Kazakhstan.</span>
-      </div>
-      <a href="/khalifa-tours/" style="font-size:.72rem;font-weight:600;color:#475569;text-decoration:none;white-space:nowrap;">View programme →</a>
-    </div>
-  </div>
+  <!-- Khalifa Tours strip — removed from homepage composition ─────────────
+       Not deleted: the KhalifaPipeline island, its route and /khalifa-tours/
+       all remain. It duplicated the Eco Tours destination that Khalifah
+       Field Intelligence now owns higher up the page, giving the homepage
+       two Eco Tours entry points competing for the same click.
+  ==================================================================== -->
 </section>
 
 
@@ -1410,75 +1187,151 @@
 }());
 </script>
 
-<!-- ── Newsletter popup ───────────────────────────────────────────── -->
-<div id="newsletter-popup" style="
-  display:none;position:fixed;bottom:2rem;right:2rem;
-  background:#0d1117;border:1px solid rgba(16,185,129,0.3);
-  border-radius:6px;padding:1.5rem;width:320px;z-index:9999;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-  <button onclick="dismissNewsletter()"
-    style="position:absolute;top:10px;right:14px;background:none;border:none;
-    color:#475569;cursor:pointer;font-size:16px">✕</button>
-  <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-    color:#10b981;font-weight:700;margin-bottom:8px">EcoIQ Intelligence</div>
-  <div style="font-size:15px;font-weight:700;color:#e6edf3;margin-bottom:6px">
-    Get weekly climate intelligence
+<!-- ── Newsletter invitation ──────────────────────────────────────────────
+     Deliberately NOT a popup. The previous implementation was a 320px fixed
+     panel at bottom-right on a 30-second timer with no mobile handling; it was
+     observed covering the Product Architecture, Khalifah and Impact Engine
+     CTAs across several iterations. Newsletter is a secondary conversion and
+     must never outrank the commercial journey.
+
+     What replaces it:
+       * a collapsed pill, ~40px tall, that expands to the form only when the
+         visitor clicks it — nothing opens on its own;
+       * eligibility by engagement, not a timer: it appears only once the
+         visitor has scrolled past the whole commercial core (a sentinel placed
+         after the Impact Engine), so a high-intent reader is never interrupted
+         mid-journey;
+       * on mobile the pill is centred and slim, and expansion is always
+         user-initiated;
+       * dismissal remembered for 30 days via localStorage, with the timestamp
+         stored so it expires rather than persisting forever.
+
+     Subscription endpoint, consent handling and mailing infrastructure are
+     untouched — only presentation and timing changed.
+========================================================================== -->
+
+<div id="newsletter-invite" class="eiq-nl" data-state="hidden">
+  <button type="button" class="eiq-nl-pill" id="newsletter-toggle"
+          aria-expanded="false" aria-controls="newsletter-panel">
+    <span class="eiq-nl-dot" aria-hidden="true"></span>
+    Weekly climate intelligence
+  </button>
+
+  <div class="eiq-nl-panel" id="newsletter-panel" hidden>
+    <button type="button" class="eiq-nl-close" id="newsletter-close"
+            aria-label="Dismiss newsletter invitation">&#10005;</button>
+    <p class="eiq-nl-title">Get weekly climate intelligence</p>
+    <p class="eiq-nl-copy">Top movers, sector alerts, and transition signals from the EcoIQ platform. Free.</p>
+    <form id="newsletter-form" class="eiq-nl-form">
+      {% csrf_token %}
+      <label class="eiq-nl-sr" for="newsletter-email">Email address</label>
+      <input id="newsletter-email" type="email" name="email" required placeholder="your@email.com" />
+      <button type="submit">Subscribe</button>
+    </form>
+    <p class="eiq-nl-status" id="newsletter-status" role="status" aria-live="polite"></p>
   </div>
-  <div style="font-size:12px;color:#94a3b8;margin-bottom:1rem;line-height:1.5">
-    Top movers, sector alerts, and transition signals from the EcoIQ platform. Free.
-  </div>
-  <form id="newsletter-form" style="display:flex;gap:6px">
-    {% csrf_token %}
-    <input type="email" name="email" placeholder="your@email.com"
-      style="flex:1;background:#111820;border:1px solid rgba(255,255,255,.13);
-      border-radius:3px;padding:8px 12px;font-size:12px;
-      color:#e2e8f0;outline:none;min-width:0;">
-    <button type="submit"
-      style="background:#10b981;color:#000;border:none;padding:8px 14px;
-      border-radius:3px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
-      font-weight:700;cursor:pointer;white-space:nowrap">Subscribe</button>
-  </form>
 </div>
 
 <script>
-var popupShown = false;
-function showNewsletter() {
-  if (!popupShown && !localStorage.getItem('ecoiq_newsletter_dismissed')) {
-    document.getElementById('newsletter-popup').style.display = 'block';
-    popupShown = true;
+(function () {
+  var KEY = 'ecoiq_newsletter_dismissed_at';
+  var THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
+  var invite = document.getElementById('newsletter-invite');
+  var toggle = document.getElementById('newsletter-toggle');
+  var panel = document.getElementById('newsletter-panel');
+  var closeBtn = document.getElementById('newsletter-close');
+  var sentinel = document.getElementById('newsletter-sentinel');
+  var form = document.getElementById('newsletter-form');
+  var status = document.getElementById('newsletter-status');
+  if (!invite || !toggle || !panel || !sentinel) return;
+
+  function dismissedRecently() {
+    try {
+      var at = parseInt(localStorage.getItem(KEY) || '0', 10);
+      return at > 0 && (Date.now() - at) < THIRTY_DAYS;
+    } catch (err) { return false; }
   }
-}
-setTimeout(showNewsletter, 30000);
 
-function dismissNewsletter() {
-  document.getElementById('newsletter-popup').style.display = 'none';
-  localStorage.setItem('ecoiq_newsletter_dismissed', '1');
-}
+  function remember() {
+    try { localStorage.setItem(KEY, String(Date.now())); } catch (err) { /* private mode */ }
+  }
 
-document.getElementById('newsletter-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  var email = this.querySelector('[name="email"]').value;
-  try {
-    var resp = await fetch('/newsletter/signup/', {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': '{{ csrf_token }}',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email: email })
-    });
-    var data = await resp.json();
-    if (data.success) {
-      document.getElementById('newsletter-popup').innerHTML =
-        '<div style="padding:1.25rem;text-align:center;color:#10b981;font-size:13px;font-weight:700;">✓ Subscribed. Watch your inbox.</div>';
-      setTimeout(dismissNewsletter, 3000);
-    } else {
-      dismissNewsletter();
+  function collapse() {
+    toggle.setAttribute('aria-expanded', 'false');
+    panel.hidden = true;
+  }
+
+  function expand() {
+    toggle.setAttribute('aria-expanded', 'true');
+    panel.hidden = false;
+  }
+
+  // Eligibility: the visitor has passed the entire commercial core. No timer.
+  //
+  // Tested by position rather than intersection. An IntersectionObserver only
+  // fires if the 1px sentinel is inside a rendered frame, so a fast flick — or
+  // a jump-scroll — can clear it without ever triggering. Asking "is the
+  // sentinel above the fold line yet" is true from the moment it is passed,
+  // however the visitor got there.
+  var eligible = false;
+  function checkEligibility() {
+    if (eligible || dismissedRecently()) return;
+    if (sentinel.getBoundingClientRect().top < window.innerHeight) {
+      eligible = true;
+      invite.setAttribute('data-state', 'visible');
+      window.removeEventListener('scroll', onScroll);
     }
-  } catch(err) {
-    dismissNewsletter();
   }
-});
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(function () { ticking = false; checkEligibility(); });
+  }
+  if (!dismissedRecently()) {
+    window.addEventListener('scroll', onScroll, { passive: true });
+    checkEligibility();
+  }
+
+  toggle.addEventListener('click', function () {
+    if (panel.hidden) { expand(); } else { collapse(); }
+  });
+
+  closeBtn.addEventListener('click', function () {
+    collapse();
+    invite.setAttribute('data-state', 'hidden');
+    remember();
+  });
+
+  // Non-modal, so Escape collapses but never traps focus.
+  invite.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) { collapse(); toggle.focus(); }
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var email = this.querySelector('[name="email"]').value;
+    try {
+      var resp = await fetch('/newsletter/signup/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      });
+      var data = await resp.json();
+      if (data.success) {
+        status.textContent = 'Subscribed. Watch your inbox.';
+        form.hidden = true;
+        remember();
+        setTimeout(function () { invite.setAttribute('data-state', 'hidden'); }, 3000);
+      } else {
+        status.textContent = 'That did not go through. Please try again.';
+      }
+    } catch (err) {
+      status.textContent = 'That did not go through. Please try again.';
+    }
+  });
+}());
 </script>
 
 <!-- EcoIQ Visual Intelligence islands — mounts data-island="..." elements

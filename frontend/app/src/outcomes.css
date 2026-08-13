@@ -1,0 +1,316 @@
+/*
+ * Outcomes — homepage "so what?" section.
+ *
+ * Values MIRROR the locked motion library and `design/tokens.ts`; none are new:
+ *   0.18s                          = duration.fast
+ *   0.42s                          = duration.base
+ *   0.7s                           = duration.slow
+ *   cubic-bezier(0.22, 1, 0.36, 1) = ease.out
+ *   90ms                           = the locked card stagger
+ *
+ * Literals rather than interpolations, for the reason recorded in
+ * product-architecture.css: Framer `animate` props do not update after mount in
+ * these islands, and a React-rendered inline <style> never attaches to
+ * document.styleSheets.
+ *
+ * The chain is the content. Stages never appear or disappear — they start
+ * quiet and brighten as the causality reaches them, so the section reads
+ * completely with animation switched off.
+ */
+
+.eiq-oc {
+  padding: 3.5rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eiq-oc-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.eiq-oc-head {
+  max-width: 640px;
+  margin-bottom: 1.5rem;
+}
+
+.eiq-oc-label {
+  margin: 0 0 0.55rem;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #00e89a;
+}
+
+.eiq-oc-h2 {
+  margin: 0 0 0.7rem;
+  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.eiq-oc-lede {
+  margin: 0;
+  color: #8fa9a0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ---- the chain ---- */
+
+.eiq-oc-chain {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eiq-oc-chain > li {
+  position: relative;
+  padding-top: 1.5rem;
+  /*
+   * Quiet, not hidden: every stage is legible from the first paint. Activation
+   * only raises contrast, so no information depends on the sequence running.
+   */
+  opacity: 0.55;
+  transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-oc[data-active='1'] .eiq-oc-chain > li[data-index='0'],
+.eiq-oc[data-active='2'] .eiq-oc-chain > li[data-index='0'],
+.eiq-oc[data-active='2'] .eiq-oc-chain > li[data-index='1'],
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='0'],
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='1'],
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='2'],
+.eiq-oc[data-active='4'] .eiq-oc-chain > li,
+.eiq-oc[data-active='all'] .eiq-oc-chain > li {
+  opacity: 1;
+}
+
+/* The connector is the causality: it draws from the previous stage. */
+.eiq-oc-connector {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.eiq-oc-connector-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #00e89a;
+  transition: width 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-oc[data-active='1'] .eiq-oc-chain > li[data-index='0'] .eiq-oc-connector-fill,
+.eiq-oc[data-active='2'] .eiq-oc-chain > li[data-index='0'] .eiq-oc-connector-fill,
+.eiq-oc[data-active='2'] .eiq-oc-chain > li[data-index='1'] .eiq-oc-connector-fill,
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='0'] .eiq-oc-connector-fill,
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='1'] .eiq-oc-connector-fill,
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='2'] .eiq-oc-connector-fill,
+.eiq-oc[data-active='4'] .eiq-oc-connector-fill,
+.eiq-oc[data-active='all'] .eiq-oc-connector-fill {
+  width: 100%;
+}
+
+.eiq-oc-step {
+  margin: 0 0 0.3rem;
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #5f746c;
+  transition: color 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eiq-oc[data-active='4'] .eiq-oc-chain > li .eiq-oc-step,
+.eiq-oc[data-active='all'] .eiq-oc-chain > li .eiq-oc-step {
+  color: #00e89a;
+}
+
+.eiq-oc-stage-label {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.eiq-oc-copy {
+  margin: 0 0 0.7rem;
+  color: #8fa9a0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.eiq-oc-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.eiq-oc-items li {
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #8fa9a0;
+  font-size: 0.72rem;
+  transform: translateY(4px);
+  opacity: 0;
+  transition:
+    opacity 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Chips arrive with their stage, in reading order. */
+.eiq-oc[data-active='1'] .eiq-oc-chain > li[data-index='0'] .eiq-oc-items li,
+.eiq-oc[data-active='2'] .eiq-oc-chain > li[data-index='0'] .eiq-oc-items li,
+.eiq-oc[data-active='2'] .eiq-oc-chain > li[data-index='1'] .eiq-oc-items li,
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='0'] .eiq-oc-items li,
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='1'] .eiq-oc-items li,
+.eiq-oc[data-active='3'] .eiq-oc-chain > li[data-index='2'] .eiq-oc-items li,
+.eiq-oc[data-active='4'] .eiq-oc-items li,
+.eiq-oc[data-active='all'] .eiq-oc-items li {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(var(--i) * 90ms);
+}
+
+/*
+ * `data-active="0"` is the pre-entry state. The chips are the only thing that
+ * starts invisible, and they carry no unique meaning — the stage copy above
+ * them already says it — so a visitor who never triggers the sequence loses
+ * nothing. Reduced motion sets `all` and shows everything at once.
+ */
+.eiq-oc[data-active='0'] .eiq-oc-items li {
+  opacity: 0;
+}
+
+.eiq-oc-loop {
+  margin: 1.1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e7f3ee;
+  font-size: 0.92rem;
+}
+
+/* ---- commercial value + trust ---- */
+
+.eiq-oc-foot {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 1.25rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+
+.eiq-oc-value {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.eiq-oc-value li {
+  position: relative;
+  padding-left: 1.1rem;
+  color: #e7f3ee;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.eiq-oc-value li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #00e89a;
+}
+
+.eiq-oc-trust {
+  padding: 1.1rem 1.2rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.eiq-oc-trust-line {
+  margin: 0 0 0.9rem;
+  color: #8fa9a0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.eiq-oc-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: #03100c;
+  background: #00e89a;
+  border: 1px solid #00e89a;
+}
+
+.eiq-oc-cta:focus-visible {
+  outline: 2px solid #00e89a;
+  outline-offset: 3px;
+}
+
+/* ---- mobile: vertical progression ---- */
+
+@media (max-width: 860px) {
+  .eiq-oc {
+    padding: 2.75rem 1.1rem;
+  }
+
+  .eiq-oc-chain {
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+  }
+
+  .eiq-oc-foot {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .eiq-oc-chain > li,
+  .eiq-oc-connector-fill,
+  .eiq-oc-items li,
+  .eiq-oc-step {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/*
+ * `data-active="all"` is what the component sets under reduced motion: every
+ * stage bright, every connector drawn, every chip present. The argument does
+ * not depend on the sequence having run.
+ */
+.eiq-oc[data-active='all'] .eiq-oc-chain > li,
+.eiq-oc[data-active='all'] .eiq-oc-items li {
+  opacity: 1;
+  transform: none;
+}
