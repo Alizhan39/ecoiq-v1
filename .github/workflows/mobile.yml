@@ -36,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       mobile: ${{ steps.detect.outputs.mobile }}
+      contract: ${{ steps.detect.outputs.contract }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,12 +68,29 @@ jobs:
           # rather than assumed fine. (The Django side of those files is
           # separately covered by the required `django-check` job, which runs
           # mobile_auth's own tests.)
-          if echo "$changed" | grep -qE '^(mobile/|mobile_auth/|api/app_views\.py|api/commercial_views\.py|api/logging_mixin\.py|\.github/workflows/mobile\.yml)'; then
-            echo "mobile-relevant change detected"
+          # Two distinct questions, because the answers have very different
+          # costs. NATIVE work (Android/iOS/Windows builds, ~10 min, macOS
+          # billed 10x) is only needed when Flutter-buildable code changes.
+          # CONTRACT work (the E2E test, ~2 min) is needed whenever either side
+          # of the client<->server agreement moves -- which includes Django
+          # files that no Flutter build would ever compile.
+          native='^(mobile/|\.github/workflows/mobile\.yml)'
+          contract='^(mobile/lib/core/api/|mobile/lib/core/auth/|mobile/lib/data/models/|mobile/test_e2e/|mobile_auth/|api/app_views\.py|api/commercial_views\.py|api/logging_mixin\.py|api/urls\.py|api/authentication\.py|api/permissions\.py|api/throttles\.py|ecoiq_commerce/services/entitlements\.py|\.github/workflows/mobile\.yml|\.github/scripts/e2e_seed\.py)'
+
+          if echo "$changed" | grep -qE "$native"; then
+            echo "native mobile change detected"
             echo "mobile=true" >> "$GITHUB_OUTPUT"
           else
-            echo "no mobile-relevant change"
+            echo "no native mobile change"
             echo "mobile=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if echo "$changed" | grep -qE "$contract"; then
+            echo "contract-relevant change detected"
+            echo "contract=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no contract-relevant change"
+            echo "contract=false" >> "$GITHUB_OUTPUT"
           fi
 
   analyze-and-test:
@@ -179,6 +197,120 @@ jobs:
       # ready: `dart run msix:create` (msix package, not yet added to
       # pubspec.yaml -- add it under dev_dependencies when Phase 4 starts).
 
+  # ── Mobile <-> Django CONTRACT test ────────────────────────────────────────
+  # The one place the real Flutter API client talks to a real Django server.
+  # Both isolated suites can stay green while the contract between them breaks;
+  # this catches that. Runs on contract-relevant changes only (~2 min), which
+  # includes Django files no Flutter build would ever compile.
+  mobile-backend-e2e:
+    needs: changes
+    if: needs.changes.outputs.contract == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate CI-only credentials
+        id: creds
+        run: |
+          set -euo pipefail
+          # Per-run, random, never reused, never committed. Masked so they
+          # cannot leak into logs even if a later step echoes them.
+          user="e2e_ci_$(openssl rand -hex 4)"
+          pass="$(openssl rand -base64 24)"
+          echo "::add-mask::$pass"
+          echo "E2E_USERNAME=$user" >> "$GITHUB_ENV"
+          echo "E2E_PASSWORD=$pass" >> "$GITHUB_ENV"
+          echo "E2E_EMAIL=$user@ci.invalid" >> "$GITHUB_ENV"
+
+      - name: Migrate a fresh throwaway database
+        env:
+          DJANGO_SECRET_KEY: e2e-ephemeral-not-a-production-key
+          DEBUG: "True"
+          DATABASE_URL: sqlite:///e2e.sqlite3
+          # No external side effects: mail is captured in memory, Celery runs
+          # inline, Stripe is left unconfigured. Only the integration boundary
+          # is disabled -- every Django API behaviour under test is real.
+          EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+          CELERY_TASK_ALWAYS_EAGER: "True"
+          ECOIQ_BILLING_PROVIDER: none
+        run: |
+          set -euo pipefail
+          rm -f e2e.sqlite3
+          python manage.py migrate --no-input
+
+      - name: Seed the CI fixture user
+        env:
+          DJANGO_SECRET_KEY: e2e-ephemeral-not-a-production-key
+          DEBUG: "True"
+          DATABASE_URL: sqlite:///e2e.sqlite3
+          EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+          CELERY_TASK_ALWAYS_EAGER: "True"
+          ECOIQ_BILLING_PROVIDER: none
+        run: python manage.py shell < .github/scripts/e2e_seed.py
+
+      - name: Start Django on localhost
+        env:
+          DJANGO_SECRET_KEY: e2e-ephemeral-not-a-production-key
+          DEBUG: "True"
+          DATABASE_URL: sqlite:///e2e.sqlite3
+          EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+          CELERY_TASK_ALWAYS_EAGER: "True"
+          ECOIQ_BILLING_PROVIDER: none
+        run: |
+          set -euo pipefail
+          nohup python manage.py runserver 127.0.0.1:8731 --noreload \
+            > "$RUNNER_TEMP/django.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/django.pid"
+
+      - name: Wait for the server to answer
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' \
+              http://127.0.0.1:8731/api/v1/app-config/ || true)
+            if [ "$code" = "200" ]; then
+              echo "server ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Django did not become ready"
+          exit 1
+
+      - name: Run the contract test against the live server
+        working-directory: mobile
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test test_e2e/ --dart-define=ECOIQ_ENV=dev
+
+      - name: Django log on failure
+        if: failure()
+        run: |
+          echo "--- last 200 lines of the Django server log ---"
+          tail -200 "$RUNNER_TEMP/django.log" || true
+
+      - name: Stop the server
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/django.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/django.pid")" 2>/dev/null || true
+          fi
+
   # ── THE REQUIRED CONTEXT ────────────────────────────────────────────────────
   # `mobile-gate` is the ONLY context from this workflow listed as a required
   # status check on main. It exists on every PR (this workflow has no
@@ -192,7 +324,7 @@ jobs:
   # So this job never infers anything — it asserts the exact result of every
   # job it depends on, and exits non-zero on anything it does not recognise.
   mobile-gate:
-    needs: [changes, analyze-and-test, build-android, build-ios, build-windows]
+    needs: [changes, analyze-and-test, build-android, build-ios, build-windows, mobile-backend-e2e]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -204,11 +336,14 @@ jobs:
           ANDROID_RESULT: ${{ needs['build-android'].result }}
           IOS_RESULT:     ${{ needs['build-ios'].result }}
           WINDOWS_RESULT: ${{ needs['build-windows'].result }}
+          CONTRACT_TOUCHED: ${{ needs.changes.outputs.contract }}
+          E2E_RESULT: ${{ needs['mobile-backend-e2e'].result }}
         run: |
           set -euo pipefail
 
           echo "changes=$CHANGES_RESULT mobile=$MOBILE_TOUCHED"
           echo "analyze=$ANALYZE_RESULT android=$ANDROID_RESULT ios=$IOS_RESULT windows=$WINDOWS_RESULT"
+          echo "contract=$CONTRACT_TOUCHED e2e=$E2E_RESULT"
 
           # Change detection must have succeeded. If it failed or was
           # cancelled its output is meaningless, and treating an empty output
@@ -216,6 +351,24 @@ jobs:
           # through.
           if [ "$CHANGES_RESULT" != "success" ]; then
             echo "::error::change detection did not succeed (result=$CHANGES_RESULT); refusing to pass"
+            exit 1
+          fi
+
+          # The contract test is gated on its own change set, so it is checked
+          # independently of the native builds. A Django-only contract change
+          # runs the E2E and skips the native builds entirely.
+          if [ "$CONTRACT_TOUCHED" = "true" ]; then
+            if [ "$E2E_RESULT" != "success" ]; then
+              echo "::error::mobile<->Django contract test reported '$E2E_RESULT'"
+              exit 1
+            fi
+          elif [ "$CONTRACT_TOUCHED" = "false" ]; then
+            if [ "$E2E_RESULT" != "skipped" ]; then
+              echo "::error::no contract change but the E2E job reported '$E2E_RESULT'; refusing to pass"
+              exit 1
+            fi
+          else
+            echo "::error::unexpected contract-change value '$CONTRACT_TOUCHED'; refusing to pass"
             exit 1
           fi
 
