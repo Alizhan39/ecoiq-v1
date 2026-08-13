@@ -236,7 +236,8 @@ void main() {
     // Verified from the first device's own session list, which is an
     // authenticated call and confirms the server really tracks both.
     final before = await client.listSessions();
-    expect(before.map((s) => s.id), containsAll([first.sessionId, second.sessionId]));
+    expect(before.map((s) => s.id),
+        containsAll([first.sessionId, second.sessionId]));
 
     await client.logoutAll();
 
