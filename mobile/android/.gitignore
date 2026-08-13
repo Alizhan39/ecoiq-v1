@@ -9,5 +9,9 @@ GeneratedPluginRegistrant.java
 # Remember to never publicly share your keystore.
 # See https://flutter.dev/to/reference-keystore
 key.properties
+# Same content as key.properties (storePassword / keyPassword / keyAlias /
+# storeFile) under the filename several Android signing guides use instead.
+# flutter create does not generate this rule, so it was missing.
+keystore.properties
 **/*.keystore
 **/*.jks
