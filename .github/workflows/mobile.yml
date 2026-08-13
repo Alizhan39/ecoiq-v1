@@ -8,19 +8,76 @@ name: EcoIQ Mobile/Desktop App CI
 # standard, documented subosito/flutter-action + `flutter` CLI commands;
 # verify against your own Flutter version before relying on it.
 
+# NOTE: deliberately NO trigger-level `paths:` filter.
+#
+# A path filter here stops the whole workflow, so none of its check contexts
+# are ever created on a non-mobile PR. GitHub treats a *required* check that
+# never reports as permanently pending, so requiring any context from a
+# path-filtered workflow makes every unrelated PR unmergeable.
+#
+# Instead the filter moved INSIDE the workflow: the `changes` job decides, and
+# the expensive Flutter/native jobs are conditional on it. That keeps exactly
+# one always-present context, `mobile-gate`, which is the one made required in
+# the branch ruleset. Non-mobile PRs still skip the expensive work.
 on:
   push:
     branches: [ "main" ]
-    paths: [ "mobile/**", ".github/workflows/mobile.yml" ]
   pull_request:
     branches: [ "main" ]
-    paths: [ "mobile/**", ".github/workflows/mobile.yml" ]
 
 env:
   FLUTTER_VERSION: '3.27.x'
 
 jobs:
+  # Cheap (~10s) and ALWAYS runs. Decides whether the mobile platform is
+  # affected. Its own failure must never be read as "no mobile change" — the
+  # gate below checks this job's result explicitly before trusting its output.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.detect.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect mobile-relevant changes
+        id: detect
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Non-PR events (push to main) get the full suite. Cheaper to run it
+          # than to reason about what a merge commit touched.
+          if [ -z "${BASE_SHA:-}" ] || [ -z "${HEAD_SHA:-}" ]; then
+            echo "not a pull_request event — running full mobile validation"
+            echo "mobile=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "changed files:"; echo "$changed" | sed 's/^/  /'
+
+          # Mobile-relevant paths. mobile/ and this workflow are direct Flutter
+          # build inputs. mobile_auth/ and the mobile API modules are the
+          # backend contract the client consumes: a change there does not break
+          # the Dart build, but it should force the client to be re-validated
+          # rather than assumed fine. (The Django side of those files is
+          # separately covered by the required `django-check` job, which runs
+          # mobile_auth's own tests.)
+          if echo "$changed" | grep -qE '^(mobile/|mobile_auth/|api/app_views\.py|api/commercial_views\.py|api/logging_mixin\.py|\.github/workflows/mobile\.yml)'; then
+            echo "mobile-relevant change detected"
+            echo "mobile=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no mobile-relevant change"
+            echo "mobile=false" >> "$GITHUB_OUTPUT"
+          fi
+
   analyze-and-test:
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,7 +105,8 @@ jobs:
       # Optional: upload mobile/coverage/lcov.info to a coverage service here.
 
   build-android:
-    needs: analyze-and-test
+    needs: [changes, analyze-and-test]
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -72,7 +130,8 @@ jobs:
         run: flutter build appbundle --debug
 
   build-ios:
-    needs: analyze-and-test
+    needs: [changes, analyze-and-test]
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: macos-latest
     defaults:
       run:
@@ -91,7 +150,8 @@ jobs:
         run: flutter build ios --debug --no-codesign
 
   build-windows:
-    needs: analyze-and-test
+    needs: [changes, analyze-and-test]
+    if: needs.changes.outputs.mobile == 'true'
     # Pinned, NOT windows-latest. `windows-latest` now resolves to the
     # windows-2025-vs2026 image, and Flutter 3.27.4 (released 2025-01-31)
     # predates Visual Studio 2026: it fails to detect that toolchain, falls
@@ -118,3 +178,78 @@ jobs:
       # section for exact package-identity/publisher requirements. Once
       # ready: `dart run msix:create` (msix package, not yet added to
       # pubspec.yaml -- add it under dev_dependencies when Phase 4 starts).
+
+  # ── THE REQUIRED CONTEXT ────────────────────────────────────────────────────
+  # `mobile-gate` is the ONLY context from this workflow listed as a required
+  # status check on main. It exists on every PR (this workflow has no
+  # trigger-level path filter), so it can be required without deadlocking
+  # unrelated PRs — which is exactly what requiring the four build contexts
+  # directly would have done.
+  #
+  # `if: always()` is required so the gate still reports when the jobs it
+  # depends on were skipped. That alone would be dangerous: a bare always()
+  # gate goes green when an upstream job is skipped *because something failed*.
+  # So this job never infers anything — it asserts the exact result of every
+  # job it depends on, and exits non-zero on anything it does not recognise.
+  mobile-gate:
+    needs: [changes, analyze-and-test, build-android, build-ios, build-windows]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify mobile validation
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          MOBILE_TOUCHED: ${{ needs.changes.outputs.mobile }}
+          ANALYZE_RESULT: ${{ needs['analyze-and-test'].result }}
+          ANDROID_RESULT: ${{ needs['build-android'].result }}
+          IOS_RESULT:     ${{ needs['build-ios'].result }}
+          WINDOWS_RESULT: ${{ needs['build-windows'].result }}
+        run: |
+          set -euo pipefail
+
+          echo "changes=$CHANGES_RESULT mobile=$MOBILE_TOUCHED"
+          echo "analyze=$ANALYZE_RESULT android=$ANDROID_RESULT ios=$IOS_RESULT windows=$WINDOWS_RESULT"
+
+          # Change detection must have succeeded. If it failed or was
+          # cancelled its output is meaningless, and treating an empty output
+          # as "no mobile change" would let a broken detector wave everything
+          # through.
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            echo "::error::change detection did not succeed (result=$CHANGES_RESULT); refusing to pass"
+            exit 1
+          fi
+
+          if [ "$MOBILE_TOUCHED" = "false" ]; then
+            # Nothing mobile-relevant changed, so the expensive jobs must have
+            # been SKIPPED. Any other state means the conditions and the
+            # detector disagree, which is a bug, not a pass.
+            for r in "$ANALYZE_RESULT" "$ANDROID_RESULT" "$IOS_RESULT" "$WINDOWS_RESULT"; do
+              if [ "$r" != "skipped" ]; then
+                echo "::error::no mobile change detected but a mobile job reported '$r'; refusing to pass"
+                exit 1
+              fi
+            done
+            echo "No mobile-relevant changes — native builds correctly skipped."
+            exit 0
+          fi
+
+          if [ "$MOBILE_TOUCHED" = "true" ]; then
+            # Every required mobile job must have SUCCEEDED. failure,
+            # cancelled and skipped are all non-success and all block merge.
+            failed=0
+            for pair in "analyze-and-test:$ANALYZE_RESULT" "build-android:$ANDROID_RESULT" \
+                        "build-ios:$IOS_RESULT" "build-windows:$WINDOWS_RESULT"; do
+              name="${pair%%:*}"; res="${pair#*:}"
+              if [ "$res" != "success" ]; then
+                echo "::error::required mobile job '$name' reported '$res'"
+                failed=1
+              fi
+            done
+            [ "$failed" -eq 0 ] || exit 1
+            echo "All required mobile validation passed."
+            exit 0
+          fi
+
+          # Unrecognised detector output — fail closed.
+          echo "::error::unexpected mobile-change value '$MOBILE_TOUCHED'; refusing to pass"
+          exit 1
