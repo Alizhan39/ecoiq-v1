@@ -789,6 +789,34 @@ if IS_PRODUCTION:
     SECURE_HSTS_PRELOAD      = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
+# The one path SECURE_SSL_REDIRECT must not redirect: the Render health check.
+#
+# Render probes the service on its internal port, so the request does not pass
+# through the edge that sets X-Forwarded-Proto: https. SECURE_PROXY_SSL_HEADER
+# therefore does not mark it secure, SecurityMiddleware answers 301, and Render
+# — which wants a 2xx — reads a healthy process as unhealthy and replaces it.
+# Pointing healthCheckPath at an endpoint that always 301s is worse than having
+# no health check at all, so this exemption is a correctness requirement of the
+# health check, not a convenience.
+#
+# What it does NOT do, so this is not a security relaxation in disguise:
+#   - The pattern is anchored `^healthz/$`. SecurityMiddleware matches it
+#     against request.path.lstrip('/'), so it matches `/healthz/` and nothing
+#     else — not a prefix, not a subpath, not a query variant.
+#   - SECURE_REDIRECT_EXEMPT is read only in SecurityMiddleware.process_request,
+#     and only to skip the HTTP->HTTPS redirect. process_response is untouched,
+#     so HSTS, X-Content-Type-Options and Referrer-Policy still apply to every
+#     response including this one.
+#   - Nothing here touches TRUSTED_PROXY_COUNT, TRUSTED_CLIENT_IP_HEADER, or
+#     any forwarding-header trust. Client-origin resolution is unchanged.
+#   - The endpoint's entire response is the constant `ok`. There is no session,
+#     no cookie, no user data and no secret that plaintext could expose.
+#
+# Set unconditionally rather than inside the IS_PRODUCTION block: it is inert
+# whenever SECURE_SSL_REDIRECT is off, and being able to assert on it without
+# re-importing settings under a production environment keeps the test honest.
+SECURE_REDIRECT_EXEMPT = [r'^healthz/$']
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 # Explicit configuration so application code can rely on `logging.getLogger()`
 # reaching the Render log stream instead of falling back to Django's implicit

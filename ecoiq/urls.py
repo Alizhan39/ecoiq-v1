@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from companies.sitemaps import CompanySitemap, StaticSitemap
+from core import health as health_views
 from leads import views as leads_views
 
 _sitemaps = {
@@ -15,6 +16,12 @@ _sitemaps = {
 }
 
 urlpatterns = [
+
+    # Liveness probe for the Render health check (render.yaml healthCheckPath).
+    # First so it resolves without walking the rest of this URLconf, and so it
+    # can never be shadowed by a later prefix. Touches no database — see
+    # core/health.py for why a liveness probe must not.
+    path('healthz/', health_views.healthz, name='healthz'),
 
     # i18n — language switcher endpoint (set_language view, POST)
     path('i18n/', include('django.conf.urls.i18n')),
