@@ -1,4 +1,5 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% include', '{% intelligence_block', '{% extends', '{% block',
@@ -6,7 +7,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class OmnimodalEvidencePanelPageTests(TestCase):
+class OmnimodalEvidencePanelPageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/omnimodal-evidence-panel/')
         self.assertEqual(response.status_code, 200)

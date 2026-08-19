@@ -1,4 +1,5 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 from django.utils import timezone
 
 from agent_runtime_model_router.models import AgentRegistryEntry, AgentRun
@@ -14,7 +15,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class AgentTrainingEvaluationLabPageTests(TestCase):
+class AgentTrainingEvaluationLabPageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/agent-training-evaluation-lab/')
         self.assertEqual(response.status_code, 200)

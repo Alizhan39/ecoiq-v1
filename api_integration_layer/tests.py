@@ -1,4 +1,5 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% intelligence_block', '{% extends', '{% block',
@@ -6,7 +7,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class ApiIntegrationLayerPageTests(TestCase):
+class ApiIntegrationLayerPageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/api-integration-layer/')
         self.assertEqual(response.status_code, 200)

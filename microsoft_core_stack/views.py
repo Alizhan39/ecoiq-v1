@@ -8,6 +8,7 @@ no repository listed here is installed, called, or wired into the running app, n
 calls are made, and no API keys are used. EcoIQ is described as "Microsoft ecosystem-ready", not
 as a Microsoft partner, unless a partnership is confirmed separately.
 """
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
 STACK_LAYERS = [
@@ -200,6 +201,10 @@ CTA_BUTTONS = [
 ]
 
 
+# Internal concept page — staff-only. This app is a hard-coded architecture
+# description with no models, no migrations and no ORM access; it was never a
+# customer-facing product surface. See docs/product/PHASE_1_ARCHITECTURE.md §3.
+@staff_member_required(login_url='/login/')
 def overview(request):
     return render(request, 'microsoft_core_stack/overview.html', {
         'stack_layers': STACK_LAYERS,
