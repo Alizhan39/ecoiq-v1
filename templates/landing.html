@@ -25,12 +25,50 @@
   <link rel="stylesheet" href="{% static 'css/section-bg.css' %}">
   <!-- Visual Intelligence islands — React-mounted sections (scoped .eiq-*) -->
   <link rel="stylesheet" href="{% static 'dist/ecoiq-islands.css' %}">
-  <!-- Cinematic hero background — preloaded, above the fold -->
-  <link rel="preload" as="image" href="{% static 'img/hero/ecoiq-better-way-hero.png' %}">
+  {% comment %}
+    Cinematic hero background — above the fold, and rendered by a React island
+    rather than by this template. That is why the preload matters: without it
+    the hero request cannot even start until dist/ecoiq-islands.js has
+    downloaded, parsed and hydrated, which puts the whole bundle on the LCP
+    path. The preload lets the browser fetch it in parallel from first paint.
+
+    Only the AVIF is preloaded, deliberately. `type` makes a browser skip a
+    preload it cannot decode, so listing AVIF *and* WebP would make every
+    browser that supports both (most of them) download the hero twice. AVIF
+    covers the large majority; browsers without it simply fetch the WebP after
+    hydration, which is where they were before this change anyway.
+
+    imagesrcset/imagesizes mirror the <picture> in
+    frontend/app/src/components/cinematic/heroImage.ts — if one changes, change
+    both, or the browser preloads a variant <picture> then declines to use.
+  {% endcomment %}
+  <link rel="preload" as="image" type="image/avif"
+        imagesrcset="{% static 'img/hero/ecoiq-better-way-hero-768.avif' %} 768w,
+                     {% static 'img/hero/ecoiq-better-way-hero-1152.avif' %} 1152w,
+                     {% static 'img/hero/ecoiq-better-way-hero-1536.avif' %} 1536w"
+        imagesizes="100vw">
   <meta name="theme-color" content="#070b0f">
 
+  {% comment %}
+    Inter is served by Google Fonts as a VARIABLE font, so the seven weights
+    this used to request were never seven downloads — measured, the latin
+    subset is the same 48,432-byte file either way. What the long list did cost
+    was the stylesheet itself: 17,549 bytes of @font-face rules versus 2,535
+    for the range form, on a render-blocking request.
+
+    300..800 is the range actually used across landing.html and
+    ecoiq-islands.css. Weight 900 was requested and never used anywhere, so it
+    is dropped; every weight still in use is still covered, so nothing renders
+    differently. Typography is not being changed here.
+
+    preconnect to fonts.gstatic.com as well as fonts.googleapis.com: the
+    stylesheet comes from the first host but the font binary from the second,
+    and without the hint that second connection is only opened after the CSS
+    has been parsed.
+  {% endcomment %}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
 
   <style>
     :root {

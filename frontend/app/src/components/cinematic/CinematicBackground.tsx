@@ -17,8 +17,9 @@ import { ease } from '../../design/tokens'
 import { AGENTS_SUB_RANGES } from './sceneRanges'
 import GlobeRotationOverlay, { GlobeInterventionSpots } from './GlobeRotationOverlay'
 import HeroCanvas from './HeroCanvas'
-
-const HERO_IMAGE = '/static/img/hero/ecoiq-better-way-hero.png'
+import {
+  HERO_AVIF_SRCSET, HERO_FALLBACK, HERO_HEIGHT, HERO_SIZES, HERO_WEBP_SRCSET, HERO_WIDTH,
+} from './heroImage'
 
 export default function CinematicBackground({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
   const baseScale = useTransform(scrollYProgress, [0.14, 0.29], [1, 1.03])
@@ -29,19 +30,28 @@ export default function CinematicBackground({ scrollYProgress }: { scrollYProgre
   return (
     <div className="eiq-cine__bg" aria-hidden="true">
       <m.div style={{ scale: scrollScale }} className="eiq-cine__bg-scale-wrap">
-        <m.img
-          src={HERO_IMAGE}
-          alt=""
-          className="eiq-cine__bg-img"
-          initial={{ opacity: 0, scale: 1.04 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.4, ease: ease.out }}
-          width={1536}
-          height={1024}
-          loading="eager"
-          // @ts-expect-error fetchpriority is valid HTML but not yet in React's img typings
-          fetchpriority="high"
-        />
+        {/*
+          <picture> so the browser picks AVIF where it can, WebP next, and the
+          JPEG only on browsers that support neither. The motion props stay on
+          the <img>: <picture> only chooses the source, it does not render.
+        */}
+        <picture>
+          <source type="image/avif" srcSet={HERO_AVIF_SRCSET} sizes={HERO_SIZES} />
+          <source type="image/webp" srcSet={HERO_WEBP_SRCSET} sizes={HERO_SIZES} />
+          <m.img
+            src={HERO_FALLBACK}
+            alt=""
+            className="eiq-cine__bg-img"
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.4, ease: ease.out }}
+            width={HERO_WIDTH}
+            height={HERO_HEIGHT}
+            loading="eager"
+            // @ts-expect-error fetchpriority is valid HTML but not yet in React's img typings
+            fetchpriority="high"
+          />
+        </picture>
       </m.div>
       <div className="eiq-cine__bg-scrim" />
       <div className="eiq-cine__bg-glow" />

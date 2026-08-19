@@ -7,22 +7,32 @@
  */
 import { Reveal, fadeUp } from '../../motion'
 import { intro, evidence, agents, stewardship } from './content'
-
-const HERO_IMAGE = '/static/img/hero/ecoiq-better-way-hero.png'
+import {
+  HERO_AVIF_SRCSET, HERO_FALLBACK, HERO_HEIGHT, HERO_SIZES, HERO_WEBP_SRCSET, HERO_WIDTH,
+} from './heroImage'
 
 export default function CinematicStaticStack() {
   return (
     <div className="eiq-cine-static">
       <Reveal as="section" variants={fadeUp} className="eiq-cine-static__hero">
-        <img
-          src={HERO_IMAGE}
-          alt=""
-          aria-hidden="true"
-          className="eiq-cine-static__hero-img"
-          width={1536}
-          height={1024}
-          loading="eager"
-        />
+        {/*
+          This stack is the mobile fallback as well as the reduced-motion one,
+          so it is the path most phones actually take — the srcset below is what
+          stops a 390pt handset pulling the 1536px desktop asset.
+        */}
+        <picture>
+          <source type="image/avif" srcSet={HERO_AVIF_SRCSET} sizes={HERO_SIZES} />
+          <source type="image/webp" srcSet={HERO_WEBP_SRCSET} sizes={HERO_SIZES} />
+          <img
+            src={HERO_FALLBACK}
+            alt=""
+            aria-hidden="true"
+            className="eiq-cine-static__hero-img"
+            width={HERO_WIDTH}
+            height={HERO_HEIGHT}
+            loading="eager"
+          />
+        </picture>
         <div className="eiq-cine-static__hero-scrim" aria-hidden="true" />
         <div className="eiq-cine-static__hero-body">
           <div className="eiq-eyebrow eiq-cine__eyebrow">{intro.eyebrow}</div>
