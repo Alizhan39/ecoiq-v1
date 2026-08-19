@@ -106,3 +106,31 @@ def risk_color(score):
     if s < 75:
         return '#e63946'
     return '#b91c1c'
+
+
+# ── Public score containment (D1.5) ───────────────────────────────────────────
+
+@register.filter
+def public_score(obj):
+    """
+    Public presentation state for a company score — fail closed.
+
+    Usage:
+        {% with pss=profile|public_score %}
+          {% if pss.available %}{{ pss.score|floatformat:1 }}
+          {% else %}{{ pss.headline }}{% endif %}
+        {% endwith %}
+
+    Accepts a CompanyProfile or a league.Company; both render a composite that
+    derives from the same unevidenced inputs. Returns a PublicScoreState whose
+    `.available` is False whenever no material input has real evidence
+    provenance, so a template that forgets to branch shows nothing rather than
+    an unsupported number.
+    """
+    from companies.evidence import public_score_state, public_score_state_for_company
+
+    if obj is not None and hasattr(obj, 'ecoiq_total_score'):
+        return public_score_state(obj)
+    # league.Company, or nothing at all — both route through the company gate,
+    # which treats a missing profile as zero evidence.
+    return public_score_state_for_company(obj)

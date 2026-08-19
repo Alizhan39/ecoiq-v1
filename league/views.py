@@ -191,6 +191,30 @@ def leaderboard(request):
         co.tier = get_tier(float(co.ecoiq_score))
         co.ecoiq_profile = _profile_map.get(co.pk)
 
+    # ── Public evidence gate (D1.5) ───────────────────────────────────────────
+    # No evidence, no rank.
+    #
+    # A league table makes a comparative claim about every organisation in it,
+    # including the ones near the bottom. Substituting 0, 50 or "unranked" for a
+    # missing score would not make that claim safer — it would just make it
+    # quieter. So an organisation whose score has no evidence provenance is
+    # removed from the ordering rather than placed within it.
+    #
+    # Removed from the *ranking*, not from the database and not from its own
+    # page: companies/views.py serves those separately. Staff still see the full
+    # table, so the seeded data stays inspectable.
+    ineligible_count = 0
+    if not request.user.is_staff:
+        from companies.evidence import public_score_state_for_company
+
+        eligible = []
+        for co in companies:
+            if public_score_state_for_company(co).available:
+                eligible.append(co)
+            else:
+                ineligible_count += 1
+        companies = eligible
+
     all_cos   = Company.objects.prefetch_related('projects')
     total_co2 = sum(c.total_co2_reduced for c in all_cos)
     total_inv = sum(c.total_investment_usd for c in all_cos)
@@ -244,6 +268,10 @@ def leaderboard(request):
         'company_count':     Company.objects.count(),
         'chart_sectors':     chart_sectors,
         'chart_companies':   chart_companies,
+        # How many organisations were withheld from the ranking for lack of
+        # evidence. Shown so the table's emptiness is explained rather than
+        # looking like a failure.
+        'ineligible_count':  ineligible_count,
     })
 
 

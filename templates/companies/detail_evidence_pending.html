@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+  Public company page for an organisation whose score has no evidence provenance.
+
+  Deliberately contains NO numerical score, no tier, no rank, no financing
+  estimate and no schema.org rating — not hidden ones, not commented-out ones.
+  A number suppressed on screen but left in meta tags or JSON-LD is still
+  published, so the safe version of this page is one the number never reaches.
+
+  It says only what EcoIQ lacks. It makes no statement about the organisation:
+  no "poor", no "unrated", no zero, no bottom rank. Absence of evidence about a
+  company is a fact about EcoIQ, not about the company.
+
+  Staff see the full page instead (companies/views.py).
+{% endcomment %}
+
+{% block title %}{{ company.name }} — EcoIQ{% endblock %}
+{% block meta_description_content %}{{ company.name }} — {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. {{ score_state.headline }} on EcoIQ.{% endblock %}
+{% block og_title %}{{ company.name }} — EcoIQ{% endblock %}
+{% block og_description %}{{ company.name }} ({{ company.sector }}{% if company.country %}, {{ company.country }}{% endif %}) — {{ score_state.headline }}.{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:760px;margin:0 auto;">
+
+  <p style="font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:#2d6a4f;margin-bottom:.75rem;">
+    {{ company.sector }}{% if company.country %} · {{ company.country }}{% endif %}
+  </p>
+
+  <h1 style="font-size:1.9rem;line-height:1.2;margin-bottom:1.5rem;">{{ company.name }}</h1>
+
+  <div style="border-left:3px solid #2d6a4f;padding:1rem 0 1rem 1.25rem;margin-bottom:1.75rem;">
+    <p style="margin:0 0 .5rem;font-weight:600;font-size:1.05rem;">
+      {{ score_state.headline }}
+    </p>
+    <p style="margin:0;color:#555;line-height:1.65;">
+      {{ score_state.detail }}
+    </p>
+  </div>
+
+  <p style="color:#555;line-height:1.65;margin-bottom:1.5rem;">
+    {% blocktrans trimmed %}
+      EcoIQ publishes an assessment only when the inputs behind it can be traced
+      to verifiable evidence. Where that evidence is not yet in place, no score,
+      rank or estimate is shown — rather than a figure that would look like a
+      finding.
+    {% endblocktrans %}
+  </p>
+
+  {% if profile.public_sources %}
+  <h2 style="font-size:1rem;margin-bottom:.6rem;">{% trans "Sources on file" %}</h2>
+  <ul style="margin:0 0 1.5rem 1.1rem;color:#555;line-height:1.7;">
+    {% for source in profile.public_sources %}
+      <li>{% if source.url %}<a href="{{ source.url }}" rel="nofollow noopener">{{ source.title|default:source.url }}</a>{% else %}{{ source.title|default:source }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p style="margin:0;">
+    <a class="btn btn-secondary" href="{% url 'companies:directory' %}">{% trans "All organisations" %}</a>
+    <a class="btn btn-primary" style="margin-left:.5rem;" href="{% url 'contact' %}">{% trans "Contribute evidence" %}</a>
+  </p>
+
+  {% if request.user.is_staff %}
+  <p style="margin-top:1.75rem;padding-top:1rem;border-top:1px solid #e5e5e5;font-size:.8rem;color:#888;">
+    {% trans "Staff note" %}: {{ coverage }} —
+    {% trans "this organisation's stored values carry no evidence provenance. Staff see the full profile; the public sees this page." %}
+  </p>
+  {% endif %}
+
+</div>
+{% endblock %}

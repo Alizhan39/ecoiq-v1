@@ -633,7 +633,28 @@
       {% endfor %}
     {% else %}
       <div class="empty">
+        {% comment %}
+          Two different empty states. "No results for this filter" and "we will
+          not rank organisations we have no evidence for" mean opposite things,
+          and showing the first when the second is true would misrepresent why
+          the table is empty.
+        {% endcomment %}
+        {% if ineligible_count %}
+        <p><strong>Evidence assessment pending</strong></p>
+        <p>
+          EcoIQ does not currently have sufficient verified evidence to publish a
+          defensible ranking. {{ ineligible_count }} organisation{{ ineligible_count|pluralize }}
+          {{ ineligible_count|pluralize:"is,are" }} held back rather than ranked on
+          unverified inputs.
+        </p>
+        <p style="opacity:.75">
+          A rank is a comparative claim about every organisation in the table,
+          including the ones near the bottom. We would rather publish nothing
+          than publish that claim without evidence behind it.
+        </p>
+        {% else %}
         <p>No companies found for the selected sector.</p>
+        {% endif %}
       </div>
     {% endif %}
   </div>

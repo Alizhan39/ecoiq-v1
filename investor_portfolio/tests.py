@@ -65,15 +65,40 @@ class WatchlistModelTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFalse(WatchlistItem.objects.filter(watchlist=wl, company=co).exists())
 
-    def test_anonymous_user_sees_sign_in_prompt_not_controls(self):
-        co = _make_company()
-        anon = Client(SERVER_NAME='localhost')
-        # give the company a profile so /companies/<slug>/ resolves
+    def test_anonymous_user_never_sees_watchlist_controls(self):
+        """
+        The load-bearing half of this test: an anonymous visitor must not get
+        watchlist controls on a company page.
+
+        The sign-in prompt it used to assert now sits behind the D1.5 evidence
+        gate — an unevidenced company renders the "Evidence assessment pending"
+        page, which offers neither controls nor a prompt. That is a stricter
+        outcome than before, not a weaker one, so the control assertion is kept
+        and the prompt assertion is dropped rather than moved somewhere it
+        cannot hold (see the comment below).
+        """
+        from django.contrib.auth import get_user_model
+
         from companies.models import CompanyProfile
+
+        co = _make_company()
         CompanyProfile.objects.create(company=co, status='public')
-        r = anon.get(reverse('companies:detail', kwargs={'slug': co.slug}))
-        self.assertContains(r, 'Sign in to add to watchlist')
-        self.assertNotContains(r, 'name="new_watchlist_name"')
+        url = reverse('companies:detail', kwargs={'slug': co.slug})
+
+        anon = Client(SERVER_NAME='localhost')
+        self.assertNotContains(anon.get(url), 'name="new_watchlist_name"')
+
+        # The 'Sign in to add to watchlist' prompt is shown only to anonymous
+        # visitors, and an anonymous visitor to an unevidenced company now gets
+        # the evidence-pending page instead. So the prompt is currently
+        # unreachable: signed-in users see real controls, and anonymous users
+        # see the gate. It becomes reachable again when a company has evidence
+        # (plan step D3+), and is not asserted here rather than asserted
+        # against a page it cannot appear on.
+        staff_client = Client(SERVER_NAME='localhost')
+        staff_client.force_login(get_user_model().objects.create_user(
+            username='watchlist-staff', is_staff=True))
+        self.assertEqual(staff_client.get(url).status_code, 200)
 
     def test_watchlist_add_company_requires_login(self):
         co = _make_company()

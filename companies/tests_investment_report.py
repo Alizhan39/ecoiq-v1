@@ -90,6 +90,14 @@ class DetailPageStockStripTests(TestCase):
 
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
+        # The public company page is evidence-gated (D1.5): an anonymous visitor
+        # now receives the "Evidence assessment pending" page. This suite is about
+        # what the FULL profile renders, so it asks as staff — the audience that
+        # still sees it. See companies/tests_public_containment.py for the
+        # anonymous contract.
+        from django.contrib.auth import get_user_model
+        self.client.force_login(get_user_model().objects.create_user(
+            username='stockstrip-staff', is_staff=True))
 
     def test_public_company_shows_stock_strip_near_name(self):
         co = _make_public_company()
