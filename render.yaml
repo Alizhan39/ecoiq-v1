@@ -31,6 +31,15 @@ services:
     # 300 requests to prevent WeasyPrint PDF memory from accumulating.
     startCommand: ./start.sh
 
+    # Liveness only. /healthz/ returns a constant `ok` and touches no database,
+    # cache or broker, so a database blip cannot make Render replace a web
+    # process that is actually healthy. Do NOT repoint this at "/" (renders the
+    # homepage: 12 queries and ~149 KB, measured) or at a future /readyz/
+    # (which would check the database) —
+    # readiness and liveness are different signals and only one of them belongs
+    # in a restart decision. See core/health.py.
+    healthCheckPath: /healthz/
+
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"
