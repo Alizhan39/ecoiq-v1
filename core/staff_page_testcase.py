@@ -30,10 +30,14 @@ class StaffPageTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
+        # No password argument: force_login() below never checks one, so setting
+        # a literal here would add an unused credential to a module that
+        # core/tests_no_hardcoded_secrets.py scans as runtime code. This file is
+        # deliberately not named tests_*, so it is not covered by that guard's
+        # TEST_FILE_MARKERS exclusion — and it should not need to be.
         cls.staff_user = get_user_model().objects.create_user(
             username='staff-page-tests',
             email='staff-page-tests@example.com',
-            password='not-a-real-password',
             is_staff=True,
         )
 
