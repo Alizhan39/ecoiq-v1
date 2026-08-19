@@ -249,10 +249,22 @@ class NavigationIntegrationTests(TestCase):
     def setUpTestData(cls):
         call_command('seed_khalifa_stewardship_demo')
 
-    def test_geo_intelligence_reachable_from_global_nav(self):
+    def test_geo_intelligence_is_not_in_the_public_global_nav(self):
+        """
+        Geo Intelligence was a header item on every page. It is an internal
+        analysis surface, so it left the public navigation when that was
+        reduced to five items. Still reachable at its own URL — this asserts
+        placement, not existence.
+        """
+        import re as _re
         for url in (reverse('home'), '/about/', '/pricing/'):
-            resp = self.client.get(url)
-            self.assertContains(resp, '/geo-intelligence/')
+            body = self.client.get(url).content.decode()
+            nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
+            self.assertIsNotNone(nav, url)
+            self.assertNotIn('/geo-intelligence/', nav.group(1), url)
+
+    def test_geo_intelligence_is_still_reachable_at_its_own_url(self):
+        self.assertEqual(self.client.get('/geo-intelligence/').status_code, 200)
 
     def test_kazakhstan_tour_links_back_to_geo_intelligence(self):
         resp = self.client.get(

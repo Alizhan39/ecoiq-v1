@@ -8,6 +8,7 @@ impact reports for human approval. All figures below are illustrative demo conte
 production data — no agents actually run, no external services are called, and Maqasid/Mizan
 are presented as an ethical decision-support framework, not a religious ruling.
 """
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
 OVERNIGHT_TIMELINE = [
@@ -96,6 +97,12 @@ VERIFIED_IMPACT_INDICATORS = [
 ]
 
 
+# Internal concept page — staff-only, matching the 28 modules gated in PR
+# #235. This module's own docstring records that it is presentational demo
+# content: no agents run and every figure is illustrative. It stayed public
+# only because the GCC investor pages linked to it; that link now points at
+# /about/. See docs/product/PHASE_1_ARCHITECTURE.md §3.
+@staff_member_required(login_url='/login/')
 def overview(request):
     return render(request, 'amanah_autopilot/overview.html', {
         'timeline': OVERNIGHT_TIMELINE,

@@ -1,13 +1,13 @@
 """
 EcoIQ Environmental Intelligence OS — Views.
 
-/intelligence/              → Bloomberg-style intelligence hub
-/intelligence/country/<code>/ → National intelligence dashboard
-/intelligence/compare/      → Multi-company comparison engine
-/intelligence/alerts/       → Real-time alert feed
-/intelligence/tracker/<mod>/→ Strategic intelligence module
-/intelligence/api/alerts/   → Alert JSON feed (poll)
-/intelligence/briefing/<slug>/ → AI executive briefing
+/intelligence-os/              → Bloomberg-style intelligence hub
+/intelligence-os/country/<code>/ → National intelligence dashboard
+/intelligence-os/compare/      → Multi-company comparison engine
+/intelligence-os/alerts/       → Real-time alert feed
+/intelligence-os/tracker/<mod>/→ Strategic intelligence module
+/intelligence-os/api/alerts/   → Alert JSON feed (poll)
+/intelligence-os/briefing/<slug>/ → AI executive briefing
 """
 import json
 from collections import defaultdict

@@ -326,10 +326,15 @@ class InternalLinkingTests(TestCase):
             content = self.client.get(URL_BY_PAGE_LANG[(page, 'en')]).content.decode()
             self.assertIn('/gcc-investors/', content, page)
 
-    def test_pricing_page_and_amanah_page_link_to_gcc_hub(self):
-        for url in ('/pricing/', '/amanah-autopilot/'):
-            content = self.client.get(url).content.decode()
-            self.assertIn('/gcc-investors/', content, url)
+    def test_pricing_page_links_to_gcc_hub(self):
+        """
+        /amanah-autopilot/ was checked here too, but it is now staff-only, so an
+        anonymous client no longer receives its body. Its own inbound link from
+        the GCC pages was replaced with /about/ — see
+        core/tests_public_navigation.GccInvestorPageTests.
+        """
+        content = self.client.get('/pricing/').content.decode()
+        self.assertIn('/gcc-investors/', content)
 
     def test_every_page_links_to_enquiry_form(self):
         for (page, lang), url in URL_BY_PAGE_LANG.items():

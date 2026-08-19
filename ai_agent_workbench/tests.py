@@ -284,12 +284,24 @@ class HomepageIntegrationTests(TestCase):
         resp = self.client.get(reverse('home'))
         self.assertContains(resp, f'{len(OPERATIONAL_AGENTS)} operational agents')
 
-    def test_global_nav_has_ask_ecoiq_ai_entry_point(self):
-        # The AI agents must be reachable from anywhere on the platform, not just the homepage.
+    def test_ai_agents_are_not_in_the_public_global_nav(self):
+        """
+        "Ask EcoIQ AI" used to sit in the header of every page. The public
+        navigation was reduced to Intelligence / Eco Tours / Projects / About /
+        Contact, because an AI-agent showcase is an internal capability rather
+        than the public product. The workbench itself is untouched: this asserts
+        placement, not existence.
+        """
+        import re as _re
         for url in (reverse('home'), '/about/', '/pricing/'):
-            resp = self.client.get(url)
-            self.assertContains(resp, 'Ask EcoIQ AI')
-            self.assertContains(resp, '/ai-agents/')
+            body = self.client.get(url).content.decode()
+            nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
+            self.assertIsNotNone(nav, url)
+            self.assertNotIn('/ai-agents/', nav.group(1), url)
+            self.assertNotIn('Ask EcoIQ AI', nav.group(1), url)
+
+    def test_workbench_is_still_reachable_at_its_own_url(self):
+        self.assertEqual(self.client.get('/ai-agents/').status_code, 200)
 
 
 class ProductPageIntegrationTests(TestCase):
