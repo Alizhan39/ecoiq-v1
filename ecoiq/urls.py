@@ -50,8 +50,13 @@ urlpatterns = [
     # AI company ingestion
     path('ingest/', include('ingestion.urls', namespace='ingestion')),
 
-    # Environmental Intelligence OS
-    path('intelligence/', include('intelligence.urls', namespace='intelligence')),
+    # Environmental Intelligence OS — moved off /intelligence/ so that path can
+    # carry the PUBLIC Intelligence page (see core.urls). Every view in this app
+    # is already @staff_member_required, it is absent from sitemap.xml and
+    # robots.txt, and every inbound link uses {% url 'intelligence:...' %}, so
+    # the namespace is unchanged and those links follow this move automatically.
+    # /intelligence/ itself is NOT redirected here: it is now a public page.
+    path('intelligence-os/', include('intelligence.urls', namespace='intelligence')),
 
     # Industrial Transition Engine
     path('transition/', include('transition.urls', namespace='transition')),

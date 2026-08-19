@@ -929,6 +929,23 @@ def about(request):
     return render(request, 'about.html', context)
 
 
+def intelligence(request):
+    """
+    /intelligence/ — public EcoIQ Intelligence page.
+
+    A deliberate placeholder. The primary navigation needs an Intelligence
+    destination, and this path was freed by moving the staff-only Environmental
+    Intelligence OS to /intelligence-os/ (its namespace is unchanged, so every
+    {% url 'intelligence:...' %} followed it automatically).
+
+    No database access and no figures on purpose: the page states what EcoIQ is
+    for and says plainly that the full experience is still being built, rather
+    than showing a demonstration that would imply results we have not produced.
+    Public, no auth required.
+    """
+    return render(request, 'intelligence_public.html')
+
+
 # ── API documentation page ───────────────────────────────────────────────────
 
 def api_docs(request):

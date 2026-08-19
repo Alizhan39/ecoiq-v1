@@ -49,6 +49,12 @@ urlpatterns = [
     # EcoIQ About — founder story, mission, framework
     path('about/',                                   views.about,              name='about'),
 
+    # EcoIQ Intelligence — public. A deliberate placeholder until the full
+    # experience ships; the primary navigation needs a destination and the path
+    # was freed by moving the staff-only Environmental Intelligence OS to
+    # /intelligence-os/. Claims no capability and shows no figures.
+    path('intelligence/',                            views.intelligence,       name='intelligence'),
+
     # EcoIQ Pricing — plan comparison, billing toggle, FAQ
     path('pricing/',                                 views.pricing,            name='pricing'),
 
