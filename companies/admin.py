@@ -12,7 +12,7 @@ from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils.html import format_html, mark_safe
 
-from .models import (CompanyProfile, CompanyGuidanceVideo, CompanySource,
+from .models import (CompanyMetricProvenance, CompanyProfile, CompanyGuidanceVideo, CompanySource,
                      CompanyScoreSnapshot, DataIngestionLog, InvestmentRelevanceReport)
 
 logger = logging.getLogger(__name__)
@@ -680,3 +680,32 @@ class InvestmentRelevanceReportAdmin(admin.ModelAdmin):
         'generated_at', 'generated_by',
     ]
     fields = readonly_fields + ['status', 'classification', 'reviewed_by', 'reviewed_at', 'published_at']
+
+
+@admin.register(CompanyMetricProvenance)
+class CompanyMetricProvenanceAdmin(admin.ModelAdmin):
+    """
+    D3A — read-mostly visibility into where each metric came from.
+
+    Deliberately lightweight. Provenance is written through
+    companies.provenance.record(), which supersedes the previous row atomically;
+    editing is_current by hand in the admin would break that discipline, so it
+    is not editable here.
+    """
+    list_display  = ['company', 'metric_key', 'origin', 'resolved_value',
+                     'review_status', 'is_current', 'created_at']
+    list_filter   = ['origin', 'review_status', 'is_current']
+    search_fields = ['company__company__name', 'metric_key', 'written_by']
+    ordering      = ['-created_at']
+    list_select_related = ['company', 'company__company']
+    readonly_fields = ['company', 'metric_key', 'origin', 'resolved_value', 'evidence',
+                       'confidence', 'methodology', 'calculation_version', 'observed_at',
+                       'is_current', 'created_at', 'created_by', 'written_by']
+    fields = readonly_fields + ['source_quality', 'review_status', 'reviewed_by',
+                                'reviewed_at', 'notes']
+
+    @admin.display(description='Value')
+    def resolved_value(self, obj):
+        """Read through to the live field — never a stored second copy."""
+        value = obj.value
+        return '—' if value is None else value
