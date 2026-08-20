@@ -58,6 +58,8 @@ class CompanyV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
     name = serializers.CharField()
     sector = serializers.CharField()
     country = serializers.CharField()
+    is_public = serializers.BooleanField()
+    verified = serializers.BooleanField()
 
     ecoiq_score = serializers.SerializerMethodField()
     score_status = serializers.SerializerMethodField()
@@ -93,17 +95,32 @@ class CompanyProfileV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
     """
     Detail response for one company profile.
 
-    Deliberately narrow. v1's detail endpoint returns seventeen score fields;
-    this returns the composite plus its evidence state. Re-exposing fifteen
-    unevidenced sub-scores in a contract built to stop publishing unevidenced
-    numbers would defeat its purpose — those return when they carry provenance
-    (plan step D3).
+    The gate is on SCORES, not on facts about the company.
+
+    v1's detail endpoint returns seventeen score fields; this returns the
+    composite plus its evidence state. Re-exposing fifteen unevidenced
+    sub-scores in a contract built to stop publishing unevidenced numbers would
+    defeat its purpose — those return when they carry provenance (plan step D3).
+
+    Descriptive fields are a different matter and are included: a company's
+    website, description, sector, city, logo and public/verified flags are not
+    assessments and withholding them would be caution without a purpose.
+    harm_signals likewise — each carries its own server-authoritative status
+    vocabulary (including insufficient_evidence), so it already states its own
+    confidence rather than implying one.
     """
 
     slug = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
     sector = serializers.SerializerMethodField()
     country = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
+    website = serializers.SerializerMethodField()
+    logo_url = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    is_public = serializers.SerializerMethodField()
+    verified = serializers.SerializerMethodField()
+    harm_signals = serializers.SerializerMethodField()
 
     ecoiq_score = serializers.SerializerMethodField()
     score_status = serializers.SerializerMethodField()
@@ -128,6 +145,33 @@ class CompanyProfileV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
 
     def get_country(self, obj) -> str:
         return obj.company.country
+
+    def get_city(self, obj) -> str:
+        return getattr(obj.company, 'city', '') or ''
+
+    def get_website(self, obj) -> str:
+        return getattr(obj.company, 'website', '') or ''
+
+    def get_logo_url(self, obj):
+        return getattr(obj.company, 'logo_url', None) or None
+
+    def get_description(self, obj) -> str:
+        return getattr(obj.company, 'description', '') or ''
+
+    def get_is_public(self, obj) -> bool:
+        return obj.status in ('public', 'verified')
+
+    def get_verified(self, obj) -> bool:
+        return bool(obj.is_verified)
+
+    def get_harm_signals(self, obj) -> list:
+        """
+        Reuses the v1 helper rather than a second implementation — one harm
+        vocabulary, one place that produces it.
+        """
+        from companies.views import _get_harm_signals
+
+        return _get_harm_signals(obj)
 
     def get_evidence_note(self, obj):
         """

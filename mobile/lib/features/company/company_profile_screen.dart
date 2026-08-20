@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/models/evidence.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_exception.dart';
@@ -112,13 +113,26 @@ class _CompanyProfileBody extends StatelessWidget {
                   children: [
                     Text('EcoIQ Score',
                         style: Theme.of(context).textTheme.labelSmall),
-                    Text(
-                      profile.ecoiqScore.toStringAsFixed(0),
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(color: EcoIqColors.accent),
-                    ),
+                    // No number when there is nothing to stand behind it.
+                    // Deliberately not "0", "0/100", "50" or a bare dash: each
+                    // of those reads as a result, and this is the absence of
+                    // one.
+                    if (profile.score.canDisplay)
+                      Text(
+                        profile.score.value!.toStringAsFixed(0),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(color: EcoIqColors.accent),
+                      )
+                    else
+                      SizedBox(
+                        width: 200,
+                        child: Text(
+                          profile.score.note ?? EvidenceScore.pendingLabel,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
                   ],
                 ),
                 const Spacer(),

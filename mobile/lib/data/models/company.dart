@@ -1,12 +1,18 @@
-/// Mirrors api.serializers.CompanyListSerializer — used by
-/// GET /api/v1/search/ and the company search screen's result list.
+import 'evidence.dart';
+
+/// Mirrors api.v2_serializers.CompanyV2Serializer — used by
+/// GET /api/v2/companies/?q= and the company search screen's result list.
+///
+/// The score is an [EvidenceScore], not a bare double: v2 returns null when
+/// EcoIQ cannot support a score with evidence, and that must stay
+/// distinguishable from a real score of 0.
 class CompanySummary {
   const CompanySummary({
     required this.slug,
     required this.name,
     required this.sector,
     required this.country,
-    required this.ecoiqScore,
+    required this.score,
     required this.rank,
     required this.isPublic,
     required this.verified,
@@ -16,7 +22,10 @@ class CompanySummary {
   final String name;
   final String sector;
   final String country;
-  final double ecoiqScore;
+  final EvidenceScore score;
+
+  /// Null when the score is not publishable — a rank asserts the comparison
+  /// the score is withholding, so the server omits it and so do we.
   final int? rank;
   final bool isPublic;
   final bool verified;
@@ -26,8 +35,8 @@ class CompanySummary {
         name: json['name'] as String,
         sector: (json['sector'] as String?) ?? '',
         country: (json['country'] as String?) ?? '',
-        ecoiqScore: double.tryParse('${json['ecoiq_score']}') ?? 0,
-        rank: json['rank'] as int?,
+        score: EvidenceScore.fromJson(json),
+        rank: parseNullableInt(json['rank']),
         isPublic: json['is_public'] as bool? ?? true,
         verified: json['verified'] as bool? ?? false,
       );
@@ -60,7 +69,9 @@ class HarmSignal {
       );
 }
 
-/// Mirrors api.serializers.CompanyDetailSerializer — the company profile screen.
+/// Mirrors api.v2_serializers.CompanyProfileV2Serializer — the company profile
+/// screen. Descriptive fields come through unchanged; only the score carries
+/// evidence semantics.
 class CompanyProfileData {
   const CompanyProfileData({
     required this.slug,
@@ -73,7 +84,7 @@ class CompanyProfileData {
     required this.description,
     required this.isPublic,
     required this.verified,
-    required this.ecoiqScore,
+    required this.score,
     required this.rank,
     required this.harmSignals,
   });
@@ -88,7 +99,7 @@ class CompanyProfileData {
   final String description;
   final bool isPublic;
   final bool verified;
-  final double ecoiqScore;
+  final EvidenceScore score;
   final int? rank;
   final List<HarmSignal> harmSignals;
 
@@ -104,8 +115,8 @@ class CompanyProfileData {
         description: (json['description'] as String?) ?? '',
         isPublic: json['is_public'] as bool? ?? true,
         verified: json['verified'] as bool? ?? false,
-        ecoiqScore: double.tryParse('${json['ecoiq_score']}') ?? 0,
-        rank: json['rank'] as int?,
+        score: EvidenceScore.fromJson(json),
+        rank: parseNullableInt(json['rank']),
         harmSignals: ((json['harm_signals'] as List?) ?? [])
             .map((e) => HarmSignal.fromJson(e as Map<String, dynamic>))
             .toList(),
