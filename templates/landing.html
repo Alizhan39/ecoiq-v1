@@ -1558,5 +1558,8 @@ document.getElementById('newsletter-form').addEventListener('submit', async func
 <!-- Hero globe v2 island — three.js / three-globe, lazy-loaded after first paint.
      Falls back to the CSS radial glow on mobile / no-WebGL / reduced-motion / failure. -->
 <script src="{% static 'js/hero-globe-v2.js' %}" defer></script>
+
+<!-- Ask EcoIQ Customer Assistant Widget -->
+{% include 'customer_ai_chat/_widget.html' %}
 </body>
 </html>

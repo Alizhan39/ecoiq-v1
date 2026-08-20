@@ -1,0 +1,75 @@
+{% load static %}
+<!-- EcoIQ Customer AI Chat ("Ask EcoIQ") Subsystem -->
+<link rel="stylesheet" href="{% static 'css/customer-chat.css' %}">
+
+<button id="ecoiq-chat-launcher" class="ecoiq-chat-launcher" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Open Ask EcoIQ Assistant">
+  <span class="ecoiq-chat-pulse" aria-hidden="true"></span>
+  <span class="ecoiq-chat-icon" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </span>
+  <span>Ask EcoIQ</span>
+</button>
+
+<div id="ecoiq-chat-widget" class="ecoiq-chat-widget" role="dialog" aria-modal="true" aria-label="Ask EcoIQ Assistant">
+  <div class="ecoiq-chat-header">
+    <div class="ecoiq-chat-brand">
+      <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="9" fill="#070b0f"/>
+        <polygon points="20,4 33.9,12 33.9,28 20,36 6.1,28 6.1,12" stroke="#00e89a" stroke-width="2.2" stroke-linejoin="round"/>
+        <polygon points="20,11 27.8,24.5 12.2,24.5" fill="rgba(0,232,154,0.12)" stroke="#00e89a" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="20" cy="20" r="3" fill="#00e89a"/>
+      </svg>
+      <div class="ecoiq-chat-title-group">
+        <h3>Ask EcoIQ <span class="ecoiq-chat-badge">Assistant</span></h3>
+      </div>
+    </div>
+    <div class="ecoiq-chat-header-actions">
+      <button id="ecoiq-chat-clear" class="ecoiq-chat-btn-icon" type="button" title="Clear conversation" aria-label="Clear conversation">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
+      <button id="ecoiq-chat-close" class="ecoiq-chat-btn-icon" type="button" title="Close chat" aria-label="Close chat">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="ecoiq-chat-body" class="ecoiq-chat-body" aria-live="polite">
+    <div id="ecoiq-chat-welcome" class="ecoiq-chat-welcome">
+      <p><strong>Welcome to EcoIQ.</strong></p>
+      <p>I can assist with questions regarding our ethical climate intelligence, 6-pillar company scoring, project readiness reviews, Islamic finance fit, and enterprise options.</p>
+      <div id="ecoiq-chat-starters" class="ecoiq-chat-starters">
+        <button type="button" class="ecoiq-starter-btn" data-prompt="What does EcoIQ do?">What does EcoIQ do? &rarr;</button>
+        <button type="button" class="ecoiq-starter-btn" data-prompt="How does EcoIQ assess industrial companies?">How does EcoIQ assess industrial companies? &rarr;</button>
+        <button type="button" class="ecoiq-starter-btn" data-prompt="How can EcoIQ help financial institutions & DFIs?">How can EcoIQ help financial institutions & DFIs? &rarr;</button>
+        <button type="button" class="ecoiq-starter-btn" data-prompt="What is EcoIQ's Islamic & ethical finance capability?">What is EcoIQ's Islamic & ethical finance capability? &rarr;</button>
+        <button type="button" class="ecoiq-starter-btn" data-prompt="How can I arrange a demo or trial?">How can I arrange a demo or trial? &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ecoiq-chat-footer">
+    <form id="ecoiq-chat-form" class="ecoiq-chat-form">
+      {% csrf_token %}
+      <input id="ecoiq-chat-input" class="ecoiq-chat-input" type="text" placeholder="Ask about EcoIQ intelligence, scoring, or demos..." maxlength="2000" autocomplete="off" />
+      <button id="ecoiq-chat-send" class="ecoiq-chat-send" type="submit" aria-label="Send message">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </form>
+    <div class="ecoiq-chat-disclaimer">
+      AI decision support · Grounded in verified EcoIQ documentation · Not investment advice
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/customer-chat.js' %}" defer></script>

@@ -116,6 +116,9 @@ urlpatterns = [
     path('api/ai/',     include('ai_gateway.urls',     namespace='ai_gateway')),
     path('ai-assistant/', include('ai_gateway.web_urls', namespace='ai_gateway_web')),
 
+    # EcoIQ Customer AI Chat — customer-facing grounded assistant ("Ask EcoIQ")
+    path('api/customer-chat/', include('customer_ai_chat.urls', namespace='customer_ai_chat')),
+
     # EcoIQ Mizan Engine — ethical intelligence API
     path('api/mizan/',  include('mizan.urls',          namespace='mizan')),
 

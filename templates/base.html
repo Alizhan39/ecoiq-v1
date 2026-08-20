@@ -266,5 +266,8 @@
      data-island="…". No-ops on pages without islands; never blocks render. {% endcomment %}
   <script type="module" src="{% static 'dist/ecoiq-islands.js' %}" defer></script>
   {% block extra_js %}{% endblock %}
+
+  {% comment %} ── Ask EcoIQ Customer Assistant Widget ── {% endcomment %}
+  {% include 'customer_ai_chat/_widget.html' %}
 </body>
 </html>

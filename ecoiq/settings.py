@@ -246,6 +246,9 @@ INSTALLED_APPS = [
     # (presentation-only: reuses the registry, runtime and Council models above)
     'ai_agent_workbench',
 
+    # Customer-facing AI Chat ("Ask EcoIQ") — grounded assistant for visitors and prospective clients
+    'customer_ai_chat',
+
     # Geo-spatial climate intelligence: company/asset locations, climate risk
     # zones and investment opportunities on an interactive map (Phase 1: Kazakhstan)
     'geo_intelligence',
@@ -935,6 +938,9 @@ REST_FRAMEWORK = {
         'ai_chat_user': '60/hour',
         'ai_chat_ip':   '120/hour',
         'ai_catalog':   '120/hour',
+        # ── Customer AI Chat (customer_ai_chat/throttles.py) ──
+        # Per-IP rate limiting for anonymous visitors exploring EcoIQ.
+        'customer_chat_ip': '30/hour',
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
