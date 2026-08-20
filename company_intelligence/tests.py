@@ -418,6 +418,14 @@ class WatchlistTests(TestCase):
 class CompanyDetailIntegrationTests(TestCase):
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
+        # The public company page is evidence-gated (D1.5): an anonymous visitor
+        # now receives the "Evidence assessment pending" page. This suite is about
+        # what the FULL profile renders, so it asks as staff — the audience that
+        # still sees it. See companies/tests_public_containment.py for the
+        # anonymous contract.
+        from django.contrib.auth import get_user_model
+        self.client.force_login(get_user_model().objects.create_user(
+            username='ci-detail-staff', is_staff=True))
         self.methodology = _methodology()
         self.profile = _profile(slug='detail-co', description='Operates solar power assets.')
 
@@ -1542,7 +1550,13 @@ class KPIExplorerDiscoveryIntegrationTests(TestCase):
         methodology = _methodology()
         profile = _profile(slug='kpi-explorer-link-co', description='Operates solar power assets.')
         shariah_screening.run_shariah_screen(profile, methodology)
+        # Evidence-gated public page (D1.5) — this asserts what the FULL profile
+        # renders, so it asks as staff. companies/tests_public_containment.py
+        # owns the anonymous contract.
+        from django.contrib.auth import get_user_model
         client = Client()
+        client.force_login(get_user_model().objects.create_user(
+            username='ci-kpi-staff', is_staff=True))
         response = client.get(reverse('companies:detail', args=[profile.company.slug]))
         self.assertContains(response, f"{reverse('companies:discover')}?kpi=1")
 

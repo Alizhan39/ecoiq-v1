@@ -2,11 +2,12 @@
 {% load humanize %}
 {% load harvester_panels %}
 {% load portfolio_extras %}
+{% load company_extras %}
 
 {% block title %}{{ company.name }} — EcoIQ Intelligence Profile{% endblock %}
-{% block meta_description %}<meta name="description" content="{{ company.name }} EcoIQ climate score: {{ profile.ecoiq_total_score|floatformat:1 }}/100. {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
-{% block og_title %}{{ company.name }} — EcoIQ Score {{ profile.ecoiq_total_score|default:0|floatformat:0 }}/100{% endblock %}
-{% block og_description %}{{ company.name }} ({{ company.sector }}{% if company.country %}, {{ company.country }}{% endif %}) — EcoIQ climate intelligence score: {{ profile.ecoiq_total_score|default:0|floatformat:1 }}/100. Tier: {{ profile.moral_label_display }}.{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ company.name }} — {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. {% with pss=profile|public_score %}{% if pss.available %}EcoIQ climate score: {{ pss.score|floatformat:1 }}/100. {% else %}{{ pss.headline }}. {% endif %}{% endwith %}Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
+{% block og_title %}{{ company.name }}{% with pss=profile|public_score %}{% if pss.available %} — EcoIQ Score {{ pss.score|floatformat:0 }}/100{% endif %}{% endwith %} — EcoIQ{% endblock %}
+{% block og_description %}{{ company.name }} ({{ company.sector }}{% if company.country %}, {{ company.country }}{% endif %}){% with pss=profile|public_score %}{% if pss.available %} — EcoIQ climate intelligence score: {{ pss.score|floatformat:1 }}/100. Tier: {{ profile.moral_label_display }}.{% else %} — {{ pss.headline }}.{% endif %}{% endwith %}{% endblock %}
 
 {% block extra_head %}
 <!-- JSON-LD structured data for Google -->
@@ -15,19 +16,32 @@
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "{{ company.name|escapejs }}",
-  "description": "{{ company.name|escapejs }} EcoIQ climate intelligence score: {{ profile.ecoiq_total_score|default:0|floatformat:1 }}/100. Tier: {{ profile.moral_label_display|escapejs }}.",
+  "description": "{{ company.name|escapejs }}{% with pss=profile|public_score %}{% if pss.available %} EcoIQ climate intelligence score: {{ pss.score|floatformat:1 }}/100. Tier: {{ profile.moral_label_display|escapejs }}.{% else %} {{ pss.headline|escapejs }}.{% endif %}{% endwith %}",
   "url": "https://ecoiq.uk/companies/{{ company.slug }}/",
-  "sameAs": [],
-  "identifier": {
-    "@type": "PropertyValue",
-    "name": "EcoIQ Score",
-    "value": "{{ profile.ecoiq_total_score|default:0|floatformat:1 }}"
-  }{% if company.sector %},
+  {% comment %}
+    Every key below is optional and therefore carries a LEADING comma, so any
+    combination of them still produces valid JSON. "sameAs" is the last
+    unconditional key and must not have a trailing one.
+
+    The EcoIQ Score is emitted as structured data only when it is publishable.
+    Hiding a number on screen while leaving it in schema.org markup would still
+    publish it — to search engines, aggregators and anything else that reads the
+    machine-readable version rather than the page.
+
+    The previous `|default:0` was its own hazard: a missing score would have been
+    published to Google as a score of 0.0.
+  {% endcomment %}
+  "sameAs": []{% if company.sector %},
   "industry": "{{ company.sector|escapejs }}"{% endif %}{% if company.country %},
   "location": {
     "@type": "Place",
     "addressCountry": "{{ company.country|escapejs }}"
-  }{% endif %}
+  }{% endif %}{% with pss=profile|public_score %}{% if pss.available %},
+  "identifier": {
+    "@type": "PropertyValue",
+    "name": "EcoIQ Score",
+    "value": "{{ pss.score|floatformat:1 }}"
+  }{% endif %}{% endwith %}
 }
 </script>
 <style>

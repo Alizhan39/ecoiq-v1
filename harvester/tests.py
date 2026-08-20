@@ -762,6 +762,14 @@ from harvester.rollups import company_rollup as _rollup
 class CompanyEvidencePanelTests(TestCase):
     def setUp(self):
         self.company, self.profile = make_company("national-grid")
+        # The public company page is evidence-gated (D1.5): an anonymous visitor
+        # now receives the "Evidence assessment pending" page. This suite is about
+        # what the FULL profile renders, so it asks as staff — the audience that
+        # still sees it. See companies/tests_public_containment.py for the
+        # anonymous contract.
+        from django.contrib.auth import get_user_model
+        self.client.force_login(get_user_model().objects.create_user(
+            username='harvester-panel-staff', is_staff=True))
         from harvester.pipeline import run_harvest
         run_harvest(_HJ.objects.create(
             company=self.profile, company_slug="national-grid", status="pending"))
@@ -800,8 +808,14 @@ class CompanyEvidencePanelTests(TestCase):
         self.assertIn("No evidence harvested", html)
 
     def test_panel_on_canonical_company_page(self):
+        # Builds its own Client, so setUp's staff login does not apply here —
+        # authenticate explicitly. The full company page is evidence-gated
+        # (D1.5) and this asserts what the full page renders.
+        from django.contrib.auth import get_user_model
         from django.test import Client
         c = Client(SERVER_NAME="localhost")
+        c.force_login(get_user_model().objects.create_user(
+            username="harvester-panel-page-staff", is_staff=True))
         r = c.get("/companies/national-grid/")
         self.assertEqual(r.status_code, 200)
         body = r.content.decode()

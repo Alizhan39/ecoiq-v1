@@ -5,7 +5,7 @@ EcoIQ Company Intelligence — Public Views.
 /companies/<slug>/    → full public company profile
 """
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
+from django.http import Http404, JsonResponse, HttpResponse, HttpResponseForbidden
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
@@ -418,6 +418,31 @@ def company_detail(request, slug):
     profile = get_object_or_404(CompanyProfile, company=company,
                                 status__in=('public', 'verified', 'draft'))
 
+    # ── Public evidence gate (D1.5) ───────────────────────────────────────────
+    # Fail closed. This page renders the composite score in seventeen places —
+    # a counter, an arc, gauges, pillar cards, comparison bands, two inline
+    # scripts, the meta description, the OpenGraph tags and schema.org
+    # structured data. Gating each one individually would be seventeen chances
+    # to miss one, and a number left in JSON-LD is still published even when the
+    # visible one is hidden.
+    #
+    # So the decision is made once, here, and an organisation without evidence
+    # gets a page that has no score in it at all rather than a page with the
+    # score suppressed in seventeen places.
+    #
+    # The route, the profile and every stored value are untouched; only what is
+    # rendered changes. Staff keep the full page — see the template.
+    from companies.evidence import coverage_for, public_score_state
+
+    score_state = public_score_state(profile)
+    if not score_state.available and not request.user.is_staff:
+        return render(request, 'companies/detail_evidence_pending.html', {
+            'company': company,
+            'profile': profile,
+            'score_state': score_state,
+            'coverage': coverage_for(profile),
+        })
+
     # Score breakdown for display
     score_cards = [
         {
@@ -722,6 +747,20 @@ def company_pdf_report(request, slug):
     company = get_object_or_404(Company, slug=slug)
     profile = get_object_or_404(CompanyProfile, company=company,
                                 status__in=('public', 'verified', 'draft'))
+
+    # ── Public evidence gate (D1.5) ───────────────────────────────────────────
+    # A downloadable PDF is the most quotable artefact EcoIQ produces: it leaves
+    # the site, gets forwarded, and carries no context about when it was
+    # generated or on what basis. Gating the HTML page while still emitting the
+    # same scores as a document would defeat the containment entirely.
+    #
+    # 404 rather than a stub PDF: there is no report to give, and rendering an
+    # empty one through WeasyPrint would spend the memory this route is already
+    # rate-limited for.
+    from companies.evidence import public_score_state
+
+    if not public_score_state(profile).available and not request.user.is_staff:
+        raise Http404('No published assessment for this organisation.')
 
     score = float(profile.ecoiq_total_score or 0)
 

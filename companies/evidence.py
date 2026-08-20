@@ -225,3 +225,77 @@ def eligibility(coverage: float, minimum: float, full: float) -> str:
     if coverage >= minimum:
         return ELIGIBILITY_PROVISIONAL
     return ELIGIBILITY_UNAVAILABLE
+
+
+# ── Public presentation gate (D1.5 containment) ───────────────────────────────
+#
+# The floor below is deliberately NOT one of the candidate thresholds in the
+# plan's §8. Choosing 20% / 40% / 60% is a product decision that needs the real
+# distribution behind it. This is a different, weaker statement that needs no
+# such decision:
+#
+#     a score may be published only if at least ONE material input has real
+#     evidence provenance.
+#
+# A company for which nothing at all is evidenced cannot have a defensible
+# public assessment under any threshold anyone might later choose, so gating on
+# it now pre-empts no decision. Real thresholds arrive with D5.
+
+STATUS_PUBLISHED = 'PUBLISHED'
+STATUS_INSUFFICIENT_EVIDENCE = 'INSUFFICIENT_EVIDENCE'
+
+#: Wording is fixed here rather than in templates so every surface says the same
+#: thing, and so it can be asserted once in tests. It states what EcoIQ lacks,
+#: never anything about the organisation.
+PENDING_HEADLINE = 'Evidence assessment pending'
+PENDING_DETAIL = (
+    'EcoIQ does not currently have sufficient verified evidence to publish a '
+    'defensible assessment for this organisation.'
+)
+
+
+@dataclass(frozen=True)
+class PublicScoreState:
+    """Whether a company score may be shown publicly, and what to show instead."""
+    available: bool
+    score: float | None
+    status: str
+    coverage_percent: int
+    headline: str = ''
+    detail: str = ''
+
+    def __bool__(self) -> bool:          # `{% if state %}` reads naturally
+        return self.available
+
+
+def _state_from(profile, raw_score) -> PublicScoreState:
+    if profile is None:
+        return PublicScoreState(
+            False, None, STATUS_INSUFFICIENT_EVIDENCE, 0,
+            PENDING_HEADLINE, PENDING_DETAIL)
+
+    report = coverage_for(profile)
+    if report.covered_inputs <= 0 or raw_score is None:
+        return PublicScoreState(
+            False, None, STATUS_INSUFFICIENT_EVIDENCE, report.coverage_percent,
+            PENDING_HEADLINE, PENDING_DETAIL)
+    return PublicScoreState(
+        True, float(raw_score), STATUS_PUBLISHED, report.coverage_percent)
+
+
+def public_score_state(profile) -> PublicScoreState:
+    """Public presentation state for a CompanyProfile's composite score."""
+    return _state_from(profile, getattr(profile, 'ecoiq_total_score', None))
+
+
+def public_score_state_for_company(company) -> PublicScoreState:
+    """
+    Same gate for a league.Company.
+
+    The league table renders `Company.ecoiq_score`, a separate field from
+    `CompanyProfile.ecoiq_total_score`, but it is derived from the same
+    unevidenced inputs — so it is gated on the linked profile's coverage. A
+    company with no profile at all has no evidence by definition.
+    """
+    profile = getattr(company, 'profile', None)
+    return _state_from(profile, getattr(company, 'ecoiq_score', None))
