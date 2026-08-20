@@ -1,4 +1,5 @@
 import '../../data/models/app_config.dart';
+import '../../data/models/evidence.dart';
 import '../../data/models/company.dart';
 import '../../data/models/user.dart';
 import '../auth/auth_models.dart';
@@ -25,7 +26,8 @@ class MockEcoIqApiClient implements EcoIqApiClient {
           'Illustrative mock company — utility-scale solar and wind development.',
       isPublic: true,
       verified: true,
-      ecoiqScore: 78,
+      score: EvidenceScore(
+          value: 78, status: ScoreStatus.published, coveragePercent: 91),
       rank: 12,
       harmSignals: [],
     ),
@@ -41,7 +43,8 @@ class MockEcoIqApiClient implements EcoIqApiClient {
           'Illustrative mock company — used to demo defence-involvement labelling.',
       isPublic: true,
       verified: true,
-      ecoiqScore: 41,
+      score: EvidenceScore(
+          value: 41, status: ScoreStatus.published, coveragePercent: 74),
       rank: 340,
       harmSignals: [
         HarmSignal(
@@ -68,8 +71,15 @@ class MockEcoIqApiClient implements EcoIqApiClient {
           'Illustrative mock company — used to demo insufficient-evidence states.',
       isPublic: true,
       verified: false,
-      ecoiqScore: 55,
-      rank: 890,
+      // Was 55/rank 890. This fixture exists to demo insufficient
+      // evidence, so it now exercises the real pending path: null score,
+      // null rank, evidence-pending UI. Without one such fixture the
+      // mock environment could never reach that branch.
+      score: EvidenceScore(
+          value: null,
+          status: ScoreStatus.insufficientEvidence,
+          coveragePercent: 0),
+      rank: null,
       harmSignals: [
         HarmSignal(
             id: 'ev-1',
@@ -186,7 +196,7 @@ class MockEcoIqApiClient implements EcoIqApiClient {
               name: c.name,
               sector: c.sector,
               country: c.country,
-              ecoiqScore: c.ecoiqScore,
+              score: c.score,
               rank: c.rank,
               isPublic: c.isPublic,
               verified: c.verified,
