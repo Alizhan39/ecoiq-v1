@@ -23,6 +23,10 @@ if TYPE_CHECKING:
 
 import logging
 
+from django.db import transaction
+
+from companies import metric_registry as registry
+from companies.evidence import PROVENANCE_MODELLED
 from core.unknown import clamp, mean_of_known, weighted_mean_of_known
 
 log = logging.getLogger('ethics.scoring')
@@ -662,6 +666,140 @@ def compute_ethics_profile(profile: 'CompanyProfile') -> dict:
     }
 
 
+# ── Derived provenance (D3C-3b) ───────────────────────────────────────────────
+
+#: Reused, not invented. CompanyEthicsProfile.formula_version already exists
+#: with default '1.0' and compute_ethics_profile already returns it, so the
+#: calculation identity is the one the model has always carried.
+ETHICS_METHOD = 'ecoiq-ethics-assessment'
+ETHICS_VERSION = '1.0'
+
+#: Which metrics each master formula ACTUALLY consumes, traced from the
+#: functions rather than assumed. Values are registry keys, so the three sets
+#: mix MATERIAL and DERIVED — NEI in particular rests mostly on the six
+#: CompanyProfile pillars, which are themselves derived.
+#:
+#: This is the derived-on-derived edge D3C-3 deferred. It needs no new
+#: machinery: CompanyMetricProvenance.inputs is self-referential, so a derived
+#: row can cite another derived row as its lineage.
+#:
+#: Note anti_corruption_score appears as a MATERIAL key: its pillar formula is
+#: the identity function, so the pillar and the material input are the same
+#: number, and there is only one provenance row to cite.
+#:
+#: KNOWN GAP: all three formulas also read pollution_level. It is a
+#: categorical, is not a registered metric, and has no provenance row, so it
+#: cannot be linked. Documented rather than silently omitted.
+NEI_INPUTS: tuple[str, ...] = (
+    'company.public_benefit', 'company.environmental', 'company.modernization',
+    'company.transparency_governance', 'company.ethical_alignment',
+    'anti_corruption_score', 'controversy_risk_score', 'transparency_score_detail',
+)
+
+TSS_INPUTS: tuple[str, ...] = (
+    'company.environmental', 'company.modernization',
+    'company.transparency_governance',
+    'energy_transition_score', 'future_readiness_score', 'controversy_risk_score',
+)
+
+RVI_INPUTS: tuple[str, ...] = (
+    'company.ethical_alignment',
+    'national_value_score', 'regional_development_score', 'future_readiness_score',
+    'jobs_created_score', 'biodiversity_impact_score',
+    'infrastructure_contribution_score', 'transparency_score_detail',
+)
+
+#: metric key -> (result field, declared inputs)
+DERIVED_OUTPUTS: dict[str, tuple[str, tuple[str, ...]]] = {
+    'ethics.nei': ('net_ethical_impact', NEI_INPUTS),
+    'ethics.tss': ('transition_stewardship', TSS_INPUTS),
+    'ethics.rvi': ('regenerative_value', RVI_INPUTS),
+}
+
+
+def _record_ethics_provenance(profile, data) -> dict:
+    """
+    Record MODELLED lineage for NEI, TSS and RVI, or explain why not.
+
+    Three metrics, three rows — never one. Each value is independently
+    addressable, each may later change formula or version, and each has its
+    own input set. Merging them would make it impossible to say that TSS's
+    lineage changed while NEI's did not.
+
+    They do share a methodology, a version and a calculation event, which is
+    why this is one helper rather than three.
+
+    Called inside compute_and_save's transaction: raising here rolls back the
+    ethics values too, which is the point — we must never end up with a new
+    NEI plus lineage, a new TSS without, and a stale RVI.
+
+    Returns {metric_key: status} where status is one of
+    'recorded' | 'unchanged' | 'incomplete' | 'unavailable'.
+    """
+    from companies import provenance as prov
+
+    statuses = {}
+    current_rows = prov.current_map(profile)
+
+    for metric_key, (field, declared) in DERIVED_OUTPUTS.items():
+        value = data.get(field)
+
+        # STEP 14 — the calculation produced no value. There is no derived
+        # result to attest to, and any previous row must stop claiming to
+        # describe current state: it says what we used to think, not what we
+        # think now. Superseding is the smallest correct mechanism and the
+        # #248 schema already supports it.
+        if value is None:
+            prov.supersede(profile, metric_key)
+            statuses[metric_key] = 'unavailable'
+            continue
+
+        # Only the inputs this profile actually has. A formula that
+        # re-normalised around an unknown input did not consume it, and
+        # citing it would overstate the lineage.
+        consumed = [
+            key for key in declared
+            if registry.resolve_value(profile, key) is not None
+        ]
+        missing = [key for key in consumed if key not in current_rows]
+        if not consumed or missing:
+            # Same policy as #249: no lineage-complete row rather than one
+            # with an input list that understates what the number rests on.
+            log.debug(
+                'Ethics provenance not recorded for %s / %s — consumed inputs '
+                'without provenance: %s.',
+                profile, metric_key, ', '.join(missing) or '(none consumed)',
+            )
+            statuses[metric_key] = 'incomplete'
+            continue
+
+        input_rows = [current_rows[key] for key in consumed]
+
+        # Identity is (origin, methodology, version, exact input rows) — the
+        # rule proven in #249. Not the output: the formula is deterministic
+        # over its input rows.
+        existing = prov.current(profile, metric_key)
+        if (existing is not None
+                and existing.origin == PROVENANCE_MODELLED
+                and existing.methodology == ETHICS_METHOD
+                and existing.calculation_version == ETHICS_VERSION
+                and set(existing.inputs.values_list('pk', flat=True))
+                    == {row.pk for row in input_rows}):
+            statuses[metric_key] = 'unchanged'
+            continue
+
+        prov.record_derived(
+            profile, metric_key,
+            writer='ethics.scoring.compute_and_save',
+            methodology=ETHICS_METHOD,
+            calculation_version=ETHICS_VERSION,
+            inputs=input_rows,
+        )
+        statuses[metric_key] = 'recorded'
+
+    return statuses
+
+
 def compute_and_save(profile: 'CompanyProfile') -> 'CompanyEthicsProfile | None':
     """
     Compute master scores and persist to CompanyEthicsProfile.
@@ -715,13 +853,35 @@ def compute_and_save(profile: 'CompanyProfile') -> 'CompanyEthicsProfile | None'
             profile.company.name, ', '.join(unknown),
         )
 
-    ethics, created = CompanyEthicsProfile.objects.update_or_create(
-        profile=profile,
-        defaults=data,
-    )
+    # STEP 7/8 — ONE assessment, one transaction.
+    #
+    # Three derived outputs are written together, so the failure mode to rule
+    # out is a partial assessment: a new NEI with lineage, a new TSS without,
+    # and a stale RVI. All-or-nothing across the whole calculation is the only
+    # state that is ever coherent.
+    #
+    # The function had no transaction boundary before; this adds one around
+    # the work it already did plus the provenance. An inner atomic() joins an
+    # outer one as a savepoint, so the ingestion pipeline and admin callers
+    # are unaffected.
+    with transaction.atomic():
+        ethics, created = CompanyEthicsProfile.objects.update_or_create(
+            profile=profile,
+            defaults=data,
+        )
+        provenance_status = _record_ethics_provenance(profile, data)
 
-    # Rebuild milestones for 'recommended' status only
-    ethics.milestones.filter(status='recommended').delete()
+        # Rebuild milestones for 'recommended' status only
+        ethics.milestones.filter(status='recommended').delete()
+        _rebuild_milestones(ethics, opps)
+
+    ethics.provenance_status = provenance_status
+    return _log_and_return(profile, ethics, data)
+
+
+def _rebuild_milestones(ethics, opps) -> None:
+    from ethics.models import ImprovementMilestone
+
     for i, opp in enumerate(opps, 1):
         ImprovementMilestone.objects.create(
             ethics_profile=ethics,
@@ -738,6 +898,8 @@ def compute_and_save(profile: 'CompanyProfile') -> 'CompanyEthicsProfile | None'
             status='recommended',
         )
 
+
+def _log_and_return(profile, ethics, data):
     # %.1f would raise TypeError on an unknown score, so format defensively.
     def _fmt(value):
         return 'unknown' if value is None else f'{value:.1f}'
