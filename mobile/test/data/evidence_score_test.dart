@@ -187,7 +187,7 @@ void main() {
         'verified': true,
         'ecoiq_score': null,
         'score_status': 'INSUFFICIENT_EVIDENCE',
-        'harm_signals': [],
+        'harm_signals': <dynamic>[],
       });
 
       expect(profile.score.canDisplay, isFalse);

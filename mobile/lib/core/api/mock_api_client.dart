@@ -26,7 +26,8 @@ class MockEcoIqApiClient implements EcoIqApiClient {
           'Illustrative mock company — utility-scale solar and wind development.',
       isPublic: true,
       verified: true,
-      score: EvidenceScore.published(78, coveragePercent: 91),
+      score: EvidenceScore(
+          value: 78, status: ScoreStatus.published, coveragePercent: 91),
       rank: 12,
       harmSignals: [],
     ),
@@ -42,7 +43,8 @@ class MockEcoIqApiClient implements EcoIqApiClient {
           'Illustrative mock company — used to demo defence-involvement labelling.',
       isPublic: true,
       verified: true,
-      score: EvidenceScore.published(41, coveragePercent: 74),
+      score: EvidenceScore(
+          value: 41, status: ScoreStatus.published, coveragePercent: 74),
       rank: 340,
       harmSignals: [
         HarmSignal(
@@ -73,7 +75,10 @@ class MockEcoIqApiClient implements EcoIqApiClient {
       // evidence, so it now exercises the real pending path: null score,
       // null rank, evidence-pending UI. Without one such fixture the
       // mock environment could never reach that branch.
-      score: EvidenceScore.pending(),
+      score: EvidenceScore(
+          value: null,
+          status: ScoreStatus.insufficientEvidence,
+          coveragePercent: 0),
       rank: null,
       harmSignals: [
         HarmSignal(
