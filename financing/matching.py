@@ -76,6 +76,43 @@ _COUNTRY_REGION = {
 }
 
 
+# ── Unknown handling ──────────────────────────────────────────────────────────
+
+def _known(value):
+    """
+    A score if it is known, else None.
+
+    Replaces the `value or 50` idiom that appeared 25 times in this module.
+    That idiom failed twice over:
+
+      - an unknown score became 50, so a company we had no data about was
+        matched, tiered and quoted as if it were average;
+      - `or` is falsy-triggered, so a genuine measured 0.0 ALSO became 50 —
+        turning the worst real observation into an average one.
+
+    Callers must decide explicitly what an unknown means for them. Where the
+    value drives a threshold, the threshold simply does not fire: absence of
+    evidence is not evidence that a company needs financing, any more than it is
+    evidence of harm.
+    """
+    return None if value is None else float(value)
+
+
+def _weighted(*pairs):
+    """
+    Weighted mean over the KNOWN (value, weight) pairs, re-normalised.
+
+    Dropping an unknown term from a weighted sum without re-normalising would
+    quietly shrink the dimension — a company missing one input would score lower
+    than an identical company that has it, purely for the absence. Re-weighting
+    across what is known keeps the scale honest; None when nothing is known.
+    """
+    known = [(v, w) for v, w in pairs if v is not None]
+    if not known:
+        return None
+    return sum(v * w for v, w in known) / sum(w for _, w in known)
+
+
 def _get_region(country: str) -> str:
     return _COUNTRY_REGION.get(country, 'Other')
 
@@ -108,10 +145,14 @@ def _focus_score(profile, opportunity) -> int:
     if not focus:
         return 12  # universal instrument
 
+    # `pollution_level or 'medium'` is left alone deliberately: 'medium' is the
+    # model's own documented default for that CharField, not a stand-in for
+    # missing evidence, and the branch below only fires on high/severe.
     pollution = profile.pollution_level or 'medium'
-    mod       = profile.modernization_score or 50.0
-    energy    = profile.energy_transition_score or 50.0
-    transparency = profile.transparency_score_detail or 50.0
+    mod = _known(profile.modernization_score)
+    energy = _known(profile.energy_transition_score)
+    transparency = _known(profile.transparency_score_detail)
+    water = _known(profile.water_impact_score)
 
     pts = 0
     # High-pollution companies need coal/industrial transition
@@ -119,16 +160,16 @@ def _focus_score(profile, opportunity) -> int:
         if focus & {'coal_transition', 'industrial', 'methane', 'energy_efficiency'}:
             pts += 12
     # Modernization gap
-    if mod < 60 and focus & {'industrial', 'energy_efficiency', 'renewable', 'clean_energy'}:
+    if mod is not None and mod < 60 and focus & {'industrial', 'energy_efficiency', 'renewable', 'clean_energy'}:
         pts += 6
     # Energy transition
-    if energy < 60 and focus & {'renewable', 'clean_energy', 'energy_efficiency'}:
+    if energy is not None and energy < 60 and focus & {'renewable', 'clean_energy', 'energy_efficiency'}:
         pts += 5
     # Transparency / governance
-    if transparency < 50 and 'governance' in focus:
+    if transparency is not None and transparency < 50 and 'governance' in focus:
         pts += 4
     # Water / biodiversity
-    if (profile.water_impact_score or 50) < 50 and 'water' in focus:
+    if water is not None and water < 50 and 'water' in focus:
         pts += 3
 
     return min(pts, 20)
@@ -139,8 +180,11 @@ def _focus_score(profile, opportunity) -> int:
 def _instrument_score(profile, opportunity) -> int:
     """Returns 0–10 based on instrument type vs company profile."""
     instrument = opportunity.instrument
+    # revenue or 0 is retained: the loan branch below reads it as "how much
+    # revenue is demonstrated", and an undemonstrated revenue genuinely scores
+    # lowest there. ecoiq is different — unknown is not a low score.
     revenue    = profile.annual_revenue or 0
-    ecoiq      = profile.ecoiq_total_score or 0
+    ecoiq      = _known(profile.ecoiq_total_score)
     pollution  = profile.pollution_level or 'medium'
 
     if instrument == 'grant':
@@ -153,7 +197,7 @@ def _instrument_score(profile, opportunity) -> int:
         if revenue >= 5_000_000:   return 5
         return 3
     if instrument == 'bond':
-        return 10 if ecoiq >= 65 else 4
+        return 4 if ecoiq is None else (10 if ecoiq >= 65 else 4)
     if instrument == 'blended':
         return 9
     if instrument == 'guarantee':
@@ -167,8 +211,15 @@ def _instrument_score(profile, opportunity) -> int:
 
 # ── EcoIQ baseline ────────────────────────────────────────────────────────────
 
-def _ecoiq_score(ecoiq: float) -> int:
-    """Returns 0–20 based on EcoIQ total score."""
+def _ecoiq_score(ecoiq: float | None) -> int:
+    """
+    0–20 contribution from the EcoIQ total score, or 0 when it is unknown.
+
+    An unknown composite previously arrived here as 0 and scored 2 — a small
+    but non-zero contribution invented out of nothing. It now contributes
+    nothing, which is the honest weight of an input we do not have.
+    """
+    if ecoiq is None: return 0
     if ecoiq >= 70: return 20
     if ecoiq >= 55: return 16
     if ecoiq >= 40: return 11
@@ -196,7 +247,7 @@ def _score_opportunity(profile, opportunity) -> float:
     Returns float 0–100.
     """
     company = profile.company
-    ecoiq   = profile.ecoiq_total_score or 0
+    ecoiq   = _known(profile.ecoiq_total_score)
 
     geo        = _geo_score(company.country, opportunity)          # 0–30
     sector     = _sector_score(company.sector, opportunity)        # 0–10
@@ -204,7 +255,9 @@ def _score_opportunity(profile, opportunity) -> float:
     focus      = _focus_score(profile, opportunity)                # 0–20
     instrument = _instrument_score(profile, opportunity)           # 0–10
     # Bonus: transparency (0–10)
-    trans_bonus = min(int((profile.transparency_score_detail or 50) / 10), 10)
+    # No transparency evidence means no transparency bonus — not an average one.
+    _trans = _known(profile.transparency_score_detail)
+    trans_bonus = 0 if _trans is None else min(int(_trans / 10), 10)
 
     raw = geo + sector + ecoiq_pts + focus + instrument + trans_bonus
     return min(float(raw), 100.0)
@@ -240,55 +293,40 @@ def _clamp(v: float) -> float:
 def compute_readiness(profile) -> dict:
     """Compute all six readiness dimensions from existing profile fields."""
     ev = _evidence_completeness(profile)
-    ecoiq   = profile.ecoiq_total_score or 0
-    trans   = profile.transparency_score_detail or 50
-    gov     = profile.transparency_anti_corruption_score or 50
-    ac      = profile.anti_corruption_score or 50
-    mod     = profile.modernization_score or 50
-    energy  = profile.energy_transition_score or 50
-    env     = profile.environmental_responsibility_score or 50
-    waste   = profile.waste_management_score or 50
-    water   = profile.water_impact_score or 50
-    infra   = profile.infrastructure_upgrade_score or 50
-    future  = profile.future_readiness_score or 50
-    audit   = profile.audit_quality_score or 50
-    proc    = profile.procurement_transparency_score or 50
+    # `ecoiq_total_score or 0` was the same defect in its other direction: an
+    # unknown composite was treated as the worst possible one and dragged
+    # financing readiness down. Unknown now simply does not contribute.
+    ecoiq   = _known(profile.ecoiq_total_score)
+    trans   = _known(profile.transparency_score_detail)
+    gov     = _known(profile.transparency_anti_corruption_score)
+    ac      = _known(profile.anti_corruption_score)
+    mod     = _known(profile.modernization_score)
+    energy  = _known(profile.energy_transition_score)
+    env     = _known(profile.environmental_responsibility_score)
+    waste   = _known(profile.waste_management_score)
+    water   = _known(profile.water_impact_score)
+    infra   = _known(profile.infrastructure_upgrade_score)
+    future  = _known(profile.future_readiness_score)
+    audit   = _known(profile.audit_quality_score)
+    proc    = _known(profile.procurement_transparency_score)
 
-    financing_readiness = _clamp(
-        ecoiq * 0.25
-        + trans  * 0.25
-        + gov    * 0.20
-        + mod    * 0.15
-        + ev     * 0.15
-    )
+    controversy = _known(profile.controversy_risk_score)
+    inv_controversy = None if controversy is None else max(0, 100 - controversy)
 
-    modernization_readiness = _clamp(
-        mod    * 0.35
-        + energy * 0.30
-        + infra  * 0.20
-        + future * 0.15
-    )
+    financing_readiness = _weighted(
+        (ecoiq, 0.25), (trans, 0.25), (gov, 0.20), (mod, 0.15), (ev, 0.15))
 
-    transparency_readiness = _clamp(
-        trans  * 0.40
-        + audit  * 0.25
-        + proc   * 0.20
-        + ev     * 0.15
-    )
+    modernization_readiness = _weighted(
+        (mod, 0.35), (energy, 0.30), (infra, 0.20), (future, 0.15))
 
-    climate_readiness = _clamp(
-        env    * 0.35
-        + energy * 0.30
-        + waste  * 0.20
-        + water  * 0.15
-    )
+    transparency_readiness = _weighted(
+        (trans, 0.40), (audit, 0.25), (proc, 0.20), (ev, 0.15))
 
-    governance_readiness = _clamp(
-        gov    * 0.35
-        + ac     * 0.30
-        + audit  * 0.25
-        + max(0, 100 - (profile.controversy_risk_score or 30)) * 0.10
-    )
+    climate_readiness = _weighted(
+        (env, 0.35), (energy, 0.30), (waste, 0.20), (water, 0.15))
+
+    governance_readiness = _weighted(
+        (gov, 0.35), (ac, 0.30), (audit, 0.25), (inv_controversy, 0.10))
 
     return {
         'financing_readiness':     financing_readiness,
@@ -300,7 +338,10 @@ def compute_readiness(profile) -> dict:
     }
 
 
-def _readiness_tier(financing_readiness: float) -> str:
+def _readiness_tier(financing_readiness: float | None) -> str:
+    # No readiness score means no tier claim. 'early_stage' is a judgement about
+    # a company; 'unknown' is a statement about our evidence.
+    if financing_readiness is None: return 'unknown'
     if financing_readiness >= 72: return 'investment_ready'
     if financing_readiness >= 55: return 'nearly_ready'
     if financing_readiness >= 38: return 'developing'
@@ -309,13 +350,16 @@ def _readiness_tier(financing_readiness: float) -> str:
 
 def _funding_urgency(profile) -> str:
     pollution = profile.pollution_level or 'medium'
-    mod       = profile.modernization_score or 50
-    ecoiq     = profile.ecoiq_total_score or 0
-    if pollution == 'severe' and mod < 40:
+    # Bound with _known: an unknown input must not trip a threshold. Telling a
+    # company it needs to 'raise transparency to 50+' when we have never
+    # measured its transparency is a fabricated recommendation.
+    mod = _known(profile.modernization_score)
+    ecoiq = _known(profile.ecoiq_total_score)
+    if pollution == 'severe' and mod is not None and mod < 40:
         return 'critical'
-    if pollution in ('severe', 'high') and mod < 55:
+    if pollution in ('severe', 'high') and mod is not None and mod < 55:
         return 'high'
-    if ecoiq < 55 and pollution in ('medium', 'high'):
+    if ecoiq is not None and ecoiq < 55 and pollution in ('medium', 'high'):
         return 'medium'
     return 'low'
 
@@ -323,9 +367,28 @@ def _funding_urgency(profile) -> str:
 # ── Capex estimation ──────────────────────────────────────────────────────────
 
 def _estimate_capex(profile):
-    revenue   = profile.annual_revenue or 50_000_000
+    """
+    (low, high, annual_impact) in USD, or (None, None, None).
+
+    Every figure here is a multiple of annual revenue, so revenue is the
+    material input: without it there is no estimate, only arithmetic. The old
+    version substituted `annual_revenue or 50_000_000` — inventing a $50m
+    company — and then floored the output at $2m/$10m, which guaranteed a
+    confident-looking range for a company we knew nothing about.
+
+    Returning None is directly storable: estimated_capex_low_usd and its
+    siblings are already null=True, and CompanyFinancingProfile.capex_range_label
+    already renders 'Not estimated'. That path existed and was simply
+    unreachable while this function always produced numbers.
+    """
+    revenue = profile.annual_revenue
+    if revenue is None:
+        return None, None, None
+
     pollution = profile.pollution_level or 'medium'
-    mod_gap   = max(0, 70 - (profile.modernization_score or 50))
+    modernization = _known(profile.modernization_score)
+    # An unknown modernization score means no gap multiplier, not a gap of 20.
+    mod_gap = 0 if modernization is None else max(0, 70 - modernization)
 
     base_pct = {'severe': 0.16, 'high': 0.10, 'medium': 0.06, 'low': 0.03}.get(pollution, 0.06)
     gap_mult = 1.0 + mod_gap / 120
@@ -340,9 +403,12 @@ def _estimate_capex(profile):
 
 def generate_missing_requirements(profile) -> list:
     reqs = []
-    trans  = profile.transparency_score_detail or 50
-    ac     = profile.anti_corruption_score or 50
-    ecoiq  = profile.ecoiq_total_score or 0
+    # Bound with _known: an unknown input must not trip a threshold. Telling a
+    # company it needs to 'raise transparency to 50+' when we have never
+    # measured its transparency is a fabricated recommendation.
+    trans = _known(profile.transparency_score_detail)
+    ac = _known(profile.anti_corruption_score)
+    ecoiq = _known(profile.ecoiq_total_score)
 
     if not profile.annual_report_url:
         reqs.append({
@@ -360,7 +426,7 @@ def generate_missing_requirements(profile) -> list:
             'impact':   15,
         })
 
-    if ecoiq < 40:
+    if ecoiq is not None and ecoiq < 40:
         reqs.append({
             'label':    'EcoIQ Minimum Score',
             'detail':   f'Score {ecoiq:.0f}/100 — most instruments require 40+ for initial eligibility.',
@@ -368,7 +434,7 @@ def generate_missing_requirements(profile) -> list:
             'impact':   25,
         })
 
-    if trans < 50:
+    if trans is not None and trans < 50:
         reqs.append({
             'label':    'Transparency Improvement',
             'detail':   f'Transparency {trans:.0f}/100 — DFIs require minimum 50+ for standard programmes.',
@@ -376,7 +442,7 @@ def generate_missing_requirements(profile) -> list:
             'impact':   12,
         })
 
-    if ac < 50:
+    if ac is not None and ac < 50:
         reqs.append({
             'label':    'Anti-Corruption Policy',
             'detail':   'Documented anti-corruption and compliance framework required by most DFIs.',
@@ -397,10 +463,13 @@ def generate_missing_requirements(profile) -> list:
 
 def _generate_next_actions(profile, matches) -> list:
     actions = []
-    ecoiq     = profile.ecoiq_total_score or 0
-    trans     = profile.transparency_score_detail or 50
+    # Bound with _known: an unknown input must not trip a threshold. Telling a
+    # company it needs to 'raise transparency to 50+' when we have never
+    # measured its transparency is a fabricated recommendation.
+    ecoiq = _known(profile.ecoiq_total_score)
+    trans = _known(profile.transparency_score_detail)
     pollution = profile.pollution_level or 'medium'
-    mod       = profile.modernization_score or 50
+    mod = _known(profile.modernization_score)
 
     eligible_count = sum(1 for m in matches if m.get('match_tier') == 'eligible')
 
@@ -408,11 +477,11 @@ def _generate_next_actions(profile, matches) -> list:
         actions.append('Publish a current annual report to satisfy DFI documentation requirements.')
     if not profile.sustainability_report_url:
         actions.append('Prepare ESG / sustainability disclosure aligned with GRI or TCFD standards.')
-    if trans < 50:
+    if trans is not None and trans < 50:
         actions.append(f'Increase transparency score from {trans:.0f} to 50+ by improving reporting quality and governance disclosures.')
-    if pollution in ('high', 'severe') and mod < 60:
+    if pollution in ('high', 'severe') and mod is not None and mod < 60:
         actions.append('Develop a structured modernization programme with documented milestones and environmental targets.')
-    if ecoiq < 55:
+    if ecoiq is not None and ecoiq < 55:
         actions.append(f'Raise EcoIQ score from {ecoiq:.0f} to 55+ to expand access to standard DFI programmes.')
     if eligible_count == 0:
         actions.append('Engage a development finance advisor to support application preparation and co-financing structuring.')
@@ -455,15 +524,18 @@ def _match_rationale(profile, opportunity, score: float, tier: str) -> str:
 
 def _match_missing(profile, opportunity) -> list:
     missing = []
-    trans   = profile.transparency_score_detail or 50
-    ecoiq   = profile.ecoiq_total_score or 0
+    # Bound with _known: an unknown input must not trip a threshold. Telling a
+    # company it needs to 'raise transparency to 50+' when we have never
+    # measured its transparency is a fabricated recommendation.
+    trans = _known(profile.transparency_score_detail)
+    ecoiq = _known(profile.ecoiq_total_score)
     revenue = profile.annual_revenue or 0
 
     if opportunity.instrument == 'loan' and revenue < 5_000_000:
         missing.append('Revenue documentation needed for loan sizing')
-    if ecoiq < 40:
+    if ecoiq is not None and ecoiq < 40:
         missing.append(f'EcoIQ score below minimum threshold ({ecoiq:.0f}/100 — target 40+)')
-    if trans < 40 and opportunity.source_type in ('dfi', 'climate_fund'):
+    if trans is not None and trans < 40 and opportunity.source_type in ('dfi', 'climate_fund'):
         missing.append(f'Transparency score {trans:.0f}/100 below DFI standard (target 50+)')
     if not profile.annual_report_url:
         missing.append('Annual report not on file')

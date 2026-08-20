@@ -169,28 +169,36 @@ class CoverageReportingTests(TestCase):
 
 class CurrentBehaviourIsRecordedTests(TestCase):
     """
-    Where the codebase still violates the principle. Asserted as-is so the
-    violation is visible and tracked, not implied.
+    Behaviour recorded against the plan's steps.
+
+    Two of these were written inverted in #238 to record defects that D2 has
+    since fixed; their assertions moved rather than being deleted, so the file
+    shows what changed. The rest still record genuinely open items — field
+    nullability is D4.
     """
 
-    def test_scoring_engine_still_turns_unknown_into_zero(self):
+    def test_scoring_engine_no_longer_turns_unknown_into_zero(self):
         """
-        companies.scoring._clamp does `float(v or 0)`, so None becomes 0 — the
-        worst score, not a neutral one. This is why the plan does NOT make these
-        fields nullable first: doing so today would publish 0 for unevidenced
-        companies. Plan step D2 changes this; this assertion should then fail.
+        FIXED by D2. This assertion was written inverted — `_clamp(None) == 0.0`
+        — to record the defect, with a note that D2 would make it fail. It did,
+        so the assertion moved here rather than being deleted: the pair is the
+        record that the fix actually changed behaviour.
+
+        `float(v or 0)` turned unknown into the worst possible score, and could
+        not tell None from a real 0.0. Both now hold.
         """
         from companies.scoring import _clamp
-        self.assertEqual(_clamp(None), 0.0)
+        self.assertIsNone(_clamp(None))
+        self.assertEqual(_clamp(0.0), 0.0)
 
-    def test_scoring_engine_still_invents_fifty_when_everything_is_missing(self):
+    def test_scoring_engine_no_longer_invents_fifty(self):
         """
-        companies.scoring._avg returns 50.0 when every input is None — the exact
-        'unknown becomes average' behaviour this work exists to remove. Plan
-        step D2.
+        FIXED by D2. Was asserted as `_avg(None, None, None) == 50.0` — the
+        'unknown becomes average' behaviour this programme exists to remove.
         """
         from companies.scoring import _avg
-        self.assertEqual(_avg(None, None, None), 50.0)
+        self.assertIsNone(_avg(None, None, None))
+        self.assertEqual(_avg(50.0), 50.0)
 
     def test_score_fields_are_still_non_nullable(self):
         """Nullability is plan step D4, deliberately not D1."""
