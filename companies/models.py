@@ -781,9 +781,11 @@ class CompanyMetricProvenance(models.Model):
     )
     metric_key = models.CharField(
         max_length=60,
-        help_text='CompanyProfile field name. Validated against '
-                  'companies.evidence.MATERIAL_INPUTS on save — a typo is '
-                  'rejected rather than becoming a silently orphaned row.',
+        help_text='Registered metric key. Validated against '
+                  'companies.metric_registry on save — a typo is rejected '
+                  'rather than becoming a silently orphaned row. Material keys '
+                  'are bare CompanyProfile field names; derived keys are '
+                  'namespaced (ethics.nei, mizan.score).',
     )
 
     # ── Origin: HOW the value was created ────────────────────────────────────
@@ -848,6 +850,34 @@ class CompanyMetricProvenance(models.Model):
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
+    #: D3C-2 — the value, ONLY for ephemeral derived metrics.
+    #:
+    #: D3A's rule stands for everything with a home: no duplicate value, because
+    #: two copies can drift. But Mizan, responsible-finance and greenwashing are
+    #: recomputed per request and never stored, so provenance that recorded only
+    #: their method could not reconstruct what was actually computed — the
+    #: lineage would describe a number nobody could see again.
+    #:
+    #: Enforced in clean(): NULL unless the metric is registered as ephemeral.
+    recorded_value = models.FloatField(
+        null=True, blank=True,
+        help_text='The computed value, for ephemeral derived metrics only. '
+                  'Must be NULL for any metric whose value has a persisted home '
+                  '— that value is resolved through the registry instead.',
+    )
+
+    #: D3C-2 — lineage AS COMPUTED.
+    #:
+    #: Points at the specific provenance ROWS a calculation consumed, not at
+    #: metric keys. Keys would resolve to whatever is current when asked, which
+    #: answers "what would this metric's lineage be if computed now?" — not
+    #: "what was it when computed?". Only the second is an audit trail.
+    inputs = models.ManyToManyField(
+        'self', symmetrical=False, blank=True, related_name='derived_from',
+        help_text='The provenance rows this calculation consumed. Empty for '
+                  'material metrics, which have no inputs.',
+    )
+
     notes = models.TextField(blank=True)
 
     is_current = models.BooleanField(
@@ -893,28 +923,56 @@ class CompanyMetricProvenance(models.Model):
     @property
     def value(self):
         """
-        The number this row is provenance FOR, resolved rather than stored.
+        The number this row is provenance FOR.
 
-        Same approach as CompanyFinancialFactSource.value, for the same two
-        reasons: a stored copy could drift from the field it describes, and
-        Django templates cannot look up a model field by a variable name.
+        Resolved through the registry for anything with a persisted home — a
+        stored copy could drift from the field it describes. For an ephemeral
+        metric there is no field to read, so the recorded value is returned:
+        that is the whole reason recorded_value exists.
         """
-        return getattr(self.company, self.metric_key, None)
+        from companies.metric_registry import get_metric_definition
+
+        definition = get_metric_definition(self.metric_key)
+        if definition is None:
+            return None
+        if definition.is_ephemeral:
+            return self.recorded_value
+        return definition.resolve(self.company)
 
     def clean(self):
         from django.core.exceptions import ValidationError
 
-        from companies.evidence import MATERIAL_INPUTS, PROVENANCE_CHOICES
+        from companies.evidence import PROVENANCE_CHOICES
+        from companies.metric_registry import get_metric_definition
 
         valid_origins = {code for code, _ in PROVENANCE_CHOICES}
         if self.origin not in valid_origins:
             raise ValidationError({'origin': f'Unknown provenance state: {self.origin!r}.'})
 
-        valid_metrics = {item.field_name for item in MATERIAL_INPUTS}
-        if self.metric_key not in valid_metrics:
+        definition = get_metric_definition(self.metric_key)
+        if definition is None:
             raise ValidationError({
-                'metric_key': f'{self.metric_key!r} is not a material EcoIQ metric. '
-                              'Valid keys come from companies.evidence.MATERIAL_INPUTS.',
+                'metric_key': f'{self.metric_key!r} is not a registered EcoIQ metric. '
+                              'Register it in companies/metric_registry.py — '
+                              'provenance never accepts an unregistered key.',
+            })
+
+        # An origin must be honest for the KIND of metric. This is the guard
+        # against the mislabel D3C-1 identified as most likely to slip through:
+        # a derived composite recorded as MEASURED, claiming an observation that
+        # never happened however good its inputs were.
+        if self.origin not in definition.allowed_origins:
+            raise ValidationError({
+                'origin': f'{self.origin!r} is not an honest origin for '
+                          f'{self.metric_key!r} ({definition.kind}). Allowed: '
+                          f'{", ".join(sorted(definition.allowed_origins))}.',
+            })
+
+        if self.recorded_value is not None and not definition.is_ephemeral:
+            raise ValidationError({
+                'recorded_value': f'{self.metric_key!r} has a persisted value at '
+                                  f'{definition.value_location}; storing a second '
+                                  f'copy here would let the two drift.',
             })
 
     def save(self, *args, **kwargs):

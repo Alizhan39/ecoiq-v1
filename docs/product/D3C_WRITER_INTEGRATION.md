@@ -138,7 +138,47 @@ forensic exercise.
 
 ---
 
-## Recommended first D3C PR
+## Re-ranked after D3C-2 (registry landed)
+
+The registry changed the ordering, because it changed what is *possible*.
+
+| PR | scope | status |
+|---|---|---|
+| D3C-1 | seed command provenance | **done** (#247) |
+| D3C-2 | derived metric registry | **done** (this PR) |
+| **D3C-3** | **derived writer integration** | **next — recommended** |
+| D3C-4 | trusted evidence ingestion | after D3C-3 |
+| D3C-5 | human analyst workflow | last |
+
+**Why derived writers now come before ingestion.** Before the registry, only the
+16 material metrics could be recorded, so ingestion was the only writer that
+could do anything at all. That is no longer true: sixteen derived metrics are
+now registerable, `record_derived()` exists, and the calculators that produce
+them (`companies.scoring`, `ethics.scoring`, `mizan`, `qdf`, `financing`, `ml`)
+already know which inputs they consumed — the D2 re-normalisation work made that
+knowable.
+
+Ingestion also has a dependency the derived writers do not: the D3C-1 finding
+that an assessed score written by ingestion should be `INFERRED`, not
+`MEASURED`. Settling that is a semantics decision (see
+`DERIVED_METRIC_REGISTRY.md` §8), and it is better made deliberately than under
+the pressure of shipping an ingestion PR.
+
+### D3C-3 shape
+
+Start with **one** calculator — `companies.scoring.recalculate_and_save` — because
+it produces the composite every other surface reads, it already runs inside a
+transaction, and its inputs are exactly the 16 material metrics the registry
+already covers. Extend to ethics, financing, QDF, Mizan and ML once the pattern
+is proven on one.
+
+The invariant is D3C-1's, unchanged: the value write and the provenance write
+are one atomic operation, and `record_derived()` must be called inside the
+caller's block.
+
+---
+
+## Recommended first D3C PR (superseded — kept for the record)
 
 **D3C-1 — seed command provenance.**
 

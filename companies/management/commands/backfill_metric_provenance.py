@@ -29,7 +29,13 @@ from companies.evidence import (
     PROVENANCE_NO_VALUE, PROVENANCE_SEEDED, PROVENANCE_UNKNOWN,
 )
 from companies.models import CompanyMetricProvenance, CompanyProfile
-from companies.provenance import VALID_METRIC_KEYS
+# MATERIAL_METRIC_KEYS, not MATERIAL_METRIC_KEYS. D3C-2 widened the latter to
+# include derived metrics, and D3B must keep labelling exactly what it labelled
+# before: legacy MATERIAL values. A derived metric with no provenance has simply
+# not been calculated through a wired-up writer yet (D3C-4) — a different fact
+# from a material input whose origin nobody recorded, and not this command's to
+# assert.
+from companies.provenance import MATERIAL_METRIC_KEYS
 
 #: Tags every row this command writes, so rollback can remove exactly its own
 #: work and nothing else. Never widen this filter.
@@ -122,12 +128,12 @@ class Command(BaseCommand):
             return self._rollback()
 
         metric_filter = options.get('metric')
-        if metric_filter and metric_filter not in VALID_METRIC_KEYS:
+        if metric_filter and metric_filter not in MATERIAL_METRIC_KEYS:
             self.stderr.write(self.style.ERROR(
                 f'{metric_filter!r} is not a material EcoIQ metric.'))
             return
 
-        metrics = [metric_filter] if metric_filter else sorted(VALID_METRIC_KEYS)
+        metrics = [metric_filter] if metric_filter else sorted(MATERIAL_METRIC_KEYS)
 
         profiles = CompanyProfile.objects.select_related('company').prefetch_related(
             # 2976 pairs is small, but the seed-lineage check touches four

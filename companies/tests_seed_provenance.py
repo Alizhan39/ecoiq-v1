@@ -138,10 +138,10 @@ class D_E_F_G_NothingIsFabricated(TestCase):
             prov.is_publicly_defensible(self.profile, 'water_impact_score'))
 
     def test_g_a_whole_seeded_profile_is_not_publicly_defensible(self):
-        record_seed_write(self.profile, sorted(prov.VALID_METRIC_KEYS), WRITER)
+        record_seed_write(self.profile, sorted(prov.MATERIAL_METRIC_KEYS), WRITER)
 
         defensible = sum(
-            1 for m in prov.VALID_METRIC_KEYS
+            1 for m in prov.MATERIAL_METRIC_KEYS
             if prov.is_publicly_defensible(self.profile, m))
         self.assertEqual(defensible, 0)
 
@@ -343,7 +343,7 @@ class K_TrustedDataProtection(TestCase):
                     written_by='ingestion')
 
         with self.assertRaises(TrustedProvenanceOverwrite):
-            record_seed_write(self.profile, sorted(prov.VALID_METRIC_KEYS), WRITER)
+            record_seed_write(self.profile, sorted(prov.MATERIAL_METRIC_KEYS), WRITER)
 
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(origin=PROVENANCE_SEEDED).count(), 0)
@@ -470,7 +470,7 @@ class SeedCommandIntegration(TestCase):
         self.assertGreater(profiles, 0)
 
         rows = CompanyMetricProvenance.objects.all()
-        self.assertEqual(rows.count(), profiles * len(prov.VALID_METRIC_KEYS))
+        self.assertEqual(rows.count(), profiles * len(prov.MATERIAL_METRIC_KEYS))
         self.assertEqual(set(rows.values_list('origin', flat=True)),
                          {PROVENANCE_SEEDED})
         self.assertEqual(set(rows.values_list('written_by', flat=True)),
@@ -498,7 +498,7 @@ class SeedCommandIntegration(TestCase):
         defensible = sum(
             1
             for profile in CompanyProfile.objects.all()
-            for metric in prov.VALID_METRIC_KEYS
+            for metric in prov.MATERIAL_METRIC_KEYS
             if prov.is_publicly_defensible(profile, metric)
         )
         self.assertEqual(defensible, 0)
