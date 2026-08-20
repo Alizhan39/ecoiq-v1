@@ -469,11 +469,18 @@ class SeedCommandIntegration(TestCase):
         profiles = CompanyProfile.objects.count()
         self.assertGreater(profiles, 0)
 
-        rows = CompanyMetricProvenance.objects.all()
-        self.assertEqual(rows.count(), profiles * len(prov.MATERIAL_METRIC_KEYS))
-        self.assertEqual(set(rows.values_list('origin', flat=True)),
+        # D3C-3 added composite lineage to the same chain: the seeder writes
+        # SEEDED material rows, then recalculate_and_save records a MODELLED
+        # composite over them. Asserted separately so the two writers stay
+        # distinguishable — a seeder must never produce MODELLED, and a
+        # calculation must never produce SEEDED.
+        material = CompanyMetricProvenance.objects.filter(
+            metric_key__in=prov.MATERIAL_METRIC_KEYS)
+        self.assertEqual(material.count(),
+                         profiles * len(prov.MATERIAL_METRIC_KEYS))
+        self.assertEqual(set(material.values_list('origin', flat=True)),
                          {PROVENANCE_SEEDED})
-        self.assertEqual(set(rows.values_list('written_by', flat=True)),
+        self.assertEqual(set(material.values_list('written_by', flat=True)),
                          {'seed:seed_global_companies'})
 
     def test_a_real_seed_command_is_idempotent_for_provenance(self):
@@ -485,6 +492,9 @@ class SeedCommandIntegration(TestCase):
 
         call_command('seed_global_companies', stdout=StringIO(), stderr=StringIO())
 
+        # Covers BOTH writers now: the seeder skips unchanged material rows,
+        # and the composite writer skips when its inputs and formula are
+        # unchanged. Neither may churn on a repeat run.
         self.assertEqual(CompanyMetricProvenance.objects.count(), first)
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(is_current=False).count(), 0)
