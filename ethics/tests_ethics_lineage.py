@@ -44,26 +44,30 @@ def _profile(slug, **kwargs):
 def _record_inputs(profile, keys=None, origin=PROVENANCE_MEASURED,
                    writer='ingestion'):
     """
-    Give each declared ethics input a current provenance row.
+    Build the REAL provenance chain beneath the ethics inputs.
 
-    The origin is chosen per KIND, because #248 rejects MEASURED on a derived
-    metric — a composite is a model output however good its inputs. A material
-    input may be MEASURED; the derived pillars it feeds are MODELLED.
+    Rewritten in D3C-3c. It used to record the derived pillars directly as
+    MODELLED with no inputs — which the transitive defensibility rule now
+    correctly rejects: a modelled value that cannot show its lineage cannot be
+    defended. The fixture was asserting a state the system should never reach.
 
-    SEEDED and LEGACY_UNKNOWN_PROVENANCE are honest for both kinds, so a
-    caller asking for either gets it on every key. That matters: a seed run
-    really does write SEEDED pillars.
+    So it records MATERIAL provenance and then runs recalculate_and_save, which
+    produces the pillar rows the way production does. The ethics tests now
+    exercise the whole pipeline rather than a hand-built approximation of it.
     """
-    rows = {}
-    for key in (keys if keys is not None else ALL_INPUTS):
-        if registry.resolve_value(profile, key) is None:
-            continue
-        definition = registry.REGISTRY[key]
-        actual = origin
-        if origin not in definition.allowed_origins:
-            actual = PROVENANCE_MODELLED
-        rows[key] = prov.record(profile, key, actual, written_by=writer)
-    return rows
+    from companies.scoring import recalculate_and_save
+
+    material = [k for k in (keys if keys is not None else ALL_INPUTS)
+               if k in prov.MATERIAL_METRIC_KEYS]
+    for key in sorted(set(material) | set(prov.MATERIAL_METRIC_KEYS)):
+        if registry.resolve_value(profile, key) is not None:
+            prov.record(profile, key, origin, written_by=writer)
+
+    recalculate_and_save(profile)
+
+    return {row.metric_key: row for row in
+            CompanyMetricProvenance.objects.filter(company=profile,
+                                                   is_current=True)}
 
 
 class DeclaredInputsAreTraced(SimpleTestCase):
@@ -753,30 +757,36 @@ class SeedFlowEndToEnd(TestCase):
 
         self.assertIsNotNone(nei)
         self.assertEqual(nei.origin, PROVENANCE_MODELLED)
-        self.assertEqual({r.origin for r in prov.lineage(nei)},
+
+        # NEI's DIRECT inputs are the pillars (MODELLED) plus the material
+        # anti_corruption_score (SEEDED). The seeded contamination beneath the
+        # pillars is what the transitive check finds.
+        direct = {r.origin for r in prov.lineage(nei)}
+        self.assertIn(PROVENANCE_MODELLED, direct)
+
+        pillar = prov.current(profile, 'company.public_benefit')
+        self.assertEqual({r.origin for r in prov.lineage(pillar)},
                          {PROVENANCE_SEEDED})
+
         self.assertFalse(
             prov.is_derived_publicly_defensible(profile, 'ethics.nei'),
-            'MODELLED over SEEDED is still synthetic')
+            'MODELLED over SEEDED is still synthetic, however many layers down')
 
-    def test_a_real_seed_run_cannot_yet_complete_ethics_lineage(self):
+    def test_y_a_real_seed_run_now_completes_ethics_lineage(self):
         """
-        THE FINDING of D3C-3b, asserted rather than left in a report.
+        STEP 16 — the gap #250 pinned is CLOSED, and this is the proof.
 
-        NEI and TSS consume the derived CompanyProfile pillars. The seeder
-        records SEEDED provenance for the 16 MATERIAL inputs, and
-        recalculate_and_save (#249) records provenance for the COMPOSITE
-        only — not for the five pillars it also writes.
+        #250 could only assert 'incomplete': the seeder wrote SEEDED material
+        provenance, but recalculate_and_save recorded the composite alone, so
+        the pillars NEI and TSS consume had values and no provenance.
 
-        So the pillars have values and no provenance, and ethics lineage is
-        correctly reported incomplete rather than recorded with an input list
-        that understates what the number rests on.
+        D3C-3c records the pillars, so the whole chain now forms:
 
-        Extending recalculate_and_save to record pillar provenance is the
-        immediate next step. It is deliberately NOT done here: this PR owns
-        the ethics writer, and quietly changing #249's writer to make this
-        test go green would be exactly the kind of scope drift the one-writer
-        -per-PR discipline exists to prevent.
+            SEEDED material -> MODELLED pillars -> MODELLED composite
+                            -> MODELLED NEI / TSS / RVI
+
+        The assertion is strengthened, not weakened: it now demands complete
+        lineage AND still-false defensibility.
         """
         from io import StringIO
 
@@ -785,36 +795,48 @@ class SeedFlowEndToEnd(TestCase):
         call_command('seed_global_companies', stdout=StringIO(), stderr=StringIO())
         profile = CompanyProfile.objects.select_related('company').first()
 
-        # The material inputs DO have provenance...
-        self.assertIsNotNone(prov.current(profile, 'controversy_risk_score'))
-        # ...but the derived pillars NEI consumes do not.
-        self.assertIsNone(prov.current(profile, 'company.public_benefit'))
+        # The pillars the seed run's recalculate_and_save produced.
+        self.assertIsNotNone(prov.current(profile, 'company.public_benefit'))
+        self.assertIsNotNone(prov.current(profile, 'company.ethical_alignment'))
 
         ethics = compute_and_save(profile)
 
-        self.assertEqual(ethics.provenance_status['ethics.nei'], 'incomplete')
-        self.assertIsNone(prov.current(profile, 'ethics.nei'))
+        self.assertEqual(set(ethics.provenance_status.values()), {'recorded'},
+                         'all three ethics metrics must now have complete lineage')
+
+        for key in DERIVED_OUTPUTS:
+            with self.subTest(key=key):
+                row = prov.current(profile, key)
+                self.assertIsNotNone(row)
+                self.assertEqual(row.origin, PROVENANCE_MODELLED)
+                self.assertTrue(prov.lineage(row))
+                self.assertFalse(
+                    prov.is_derived_publicly_defensible(profile, key),
+                    'complete lineage over SEEDED inputs is still not publishable')
+
+    def test_y_the_seeded_contamination_is_found_through_the_pillar_layer(self):
+        """
+        The defect D3C-3c introduced and fixed: NEI cites MODELLED pillars, so
+        a single-level defensibility check would see honest inputs and pass
+        while SEEDED material sat two layers below. Transitive traversal is
+        what makes this False.
+        """
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        call_command('seed_global_companies', stdout=StringIO(), stderr=StringIO())
+        profile = CompanyProfile.objects.select_related('company').first()
+        compute_and_save(profile)
+
+        nei = prov.current(profile, 'ethics.nei')
+        direct = {r.origin for r in prov.lineage(nei)}
+
+        self.assertIn(PROVENANCE_MODELLED, direct,
+                      'NEI cites the pillar layer, which is honest MODELLED')
         self.assertFalse(
-            prov.is_derived_publicly_defensible(profile, 'ethics.nei'))
-
-    def test_rvi_does_complete_from_a_real_seed_run(self):
-        """
-        The useful contrast: RVI consumes only one derived pillar
-        (company.ethical_alignment), so it is affected the same way — but
-        this pins WHICH metrics are blocked rather than asserting a vague
-        'ethics does not work yet'.
-        """
-        from io import StringIO
-
-        from django.core.management import call_command
-
-        call_command('seed_global_companies', stdout=StringIO(), stderr=StringIO())
-        profile = CompanyProfile.objects.select_related('company').first()
-
-        ethics = compute_and_save(profile)
-
-        # All three are blocked by the same missing-pillar-provenance gap.
-        self.assertEqual(set(ethics.provenance_status.values()), {'incomplete'})
+            prov.is_derived_publicly_defensible(profile, 'ethics.nei'),
+            'and yet it is not defensible, because the traversal goes deeper')
 
 
 class X_Y_PublicSurfaces(TestCase):

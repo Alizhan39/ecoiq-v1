@@ -25,8 +25,9 @@ from companies.evidence import (
 )
 from companies.models import CompanyMetricProvenance, CompanyProfile
 from companies.scoring import (
-    COMPOSITE_METHOD, COMPOSITE_METRIC_KEY, COMPOSITE_VERSION, DIMENSION_INPUTS,
-    HARM_PENALTY_INPUTS, consumed_material_inputs, recalculate_and_save,
+    COMPOSITE_INPUTS, COMPOSITE_METHOD, COMPOSITE_METRIC_KEY, COMPOSITE_VERSION,
+    DIMENSION_INPUTS, HARM_PENALTY_INPUTS, PILLAR_OUTPUTS,
+    consumed_material_inputs, recalculate_and_save,
 )
 from league.models import Company
 
@@ -174,11 +175,38 @@ class A_B_C_D_DerivedRowContents(TestCase):
         self.assertEqual(self.row.written_by,
                          'companies.scoring.recalculate_and_save')
 
-    def test_d_the_exact_consumed_rows_are_attached(self):
-        consumed = consumed_material_inputs(self.profile)
+    def test_d_the_composite_cites_the_layer_it_actually_reads(self):
+        """
+        D3C-3c corrected the graph. compute_ecoiq_profile_score weights the six
+        DIMENSION VALUES and subtracts the harm penalty — it does not read the
+        16 raw material fields. #249 linked the raw rows, which bypassed a whole
+        layer and gave 'which values produced this score?' a plausible answer
+        that was not the true one.
+        """
+        linked = {r.metric_key for r in prov.lineage(self.row)}
 
-        self.assertEqual({r.pk for r in prov.lineage(self.row)},
-                         {self.inputs[key].pk for key in consumed})
+        self.assertEqual(linked, set(COMPOSITE_INPUTS))
+        self.assertIn('company.public_benefit', linked)
+        self.assertIn('company.harm_penalty', linked)
+
+    def test_d_the_composite_no_longer_cites_raw_material_rows_directly(self):
+        """
+        The material rows have not left the graph — they are now reached
+        THROUGH the pillars, which is where they actually sit.
+        """
+        linked = {r.metric_key for r in prov.lineage(self.row)}
+
+        self.assertNotIn('water_impact_score', linked)
+        self.assertNotIn('jobs_created_score', linked)
+        # anti_corruption_score IS cited: its pillar formula is the identity
+        # function, so there is only one row and it is the material one.
+        self.assertIn('anti_corruption_score', linked)
+
+    def test_d_the_material_rows_are_reachable_one_layer_down(self):
+        environmental = prov.current(self.profile, 'company.environmental')
+        beneath = {r.metric_key for r in prov.lineage(environmental)}
+
+        self.assertIn('water_impact_score', beneath)
 
     def test_d_no_human_review_is_fabricated(self):
         """Calculation success is not review."""
@@ -195,7 +223,7 @@ class A_B_C_D_DerivedRowContents(TestCase):
         _record_all_inputs(profile)
         recalculate_and_save(profile)
 
-        self.assertEqual(profile.provenance_status, 'recorded')
+        self.assertEqual(profile.provenance_status[COMPOSITE_METRIC_KEY], 'recorded')
 
 
 class E_UnconsumedInputsAreNotAttached(TestCase):
@@ -227,62 +255,108 @@ class E_UnconsumedInputsAreNotAttached(TestCase):
         self.assertEqual(set(consumed_material_inputs(profile)),
                          set(prov.MATERIAL_METRIC_KEYS))
 
-    def test_e_only_declared_inputs_appear(self):
+    def test_e_each_pillar_gets_only_its_own_declared_inputs(self):
         profile = _profile('declared-only')
         _record_all_inputs(profile)
         recalculate_and_save(profile)
 
-        row = prov.current(profile, COMPOSITE_METRIC_KEY)
-        linked = {r.metric_key for r in prov.lineage(row)}
+        for metric_key, (_field, declared) in PILLAR_OUTPUTS.items():
+            with self.subTest(pillar=metric_key):
+                linked = {r.metric_key
+                          for r in prov.lineage(prov.current(profile, metric_key))}
+                self.assertEqual(linked, set(declared))
 
-        self.assertEqual(linked, set(consumed_material_inputs(profile)))
+    def test_e_an_input_of_one_pillar_is_not_attached_to_another(self):
+        """
+        The payoff for per-pillar input sets: water feeds environmental only,
+        jobs feeds public benefit only.
+        """
+        profile = _profile('pillar-isolation')
+        _record_all_inputs(profile)
+        recalculate_and_save(profile)
+
+        env = {r.metric_key
+               for r in prov.lineage(prov.current(profile, 'company.environmental'))}
+        pb = {r.metric_key
+              for r in prov.lineage(prov.current(profile, 'company.public_benefit'))}
+
+        self.assertIn('water_impact_score', env)
+        self.assertNotIn('water_impact_score', pb)
+        self.assertIn('jobs_created_score', pb)
+        self.assertNotIn('jobs_created_score', env)
 
 
 class F_G_LineageAsComputed(TestCase):
     """
-    F/G — the central invariant. THE reason inputs is an M2M to rows rather
-    than to metric keys.
+    F/G — the central invariant, now proven through the layer that actually
+    reads the material row.
+
+    Before D3C-3c the composite cited water_impact_score directly. It does not
+    read it: company.environmental does. So the proof moves one layer down,
+    which is where the edge really is.
     """
 
     def setUp(self):
         self.profile = _profile('lineage')
         self.original = _record_all_inputs(self.profile)
         recalculate_and_save(self.profile)
-        self.first = prov.current(self.profile, COMPOSITE_METRIC_KEY)
+        self.first_pillar = prov.current(self.profile, 'company.environmental')
+        self.first_composite = prov.current(self.profile, COMPOSITE_METRIC_KEY)
 
-    def test_f_a_new_material_event_produces_new_derived_lineage(self):
+    def test_f_a_new_material_event_produces_new_pillar_lineage(self):
         replacement = prov.record(self.profile, 'water_impact_score',
                                   PROVENANCE_SEEDED, written_by='analyst')
-        self.profile.water_impact_score = 42.0
-        self.profile.save()
 
         recalculate_and_save(self.profile)
-        second = prov.current(self.profile, COMPOSITE_METRIC_KEY)
+        second = prov.current(self.profile, 'company.environmental')
 
-        self.assertNotEqual(second.pk, self.first.pk)
+        self.assertNotEqual(second.pk, self.first_pillar.pk)
         self.assertIn(replacement, prov.lineage(second))
 
-    def test_g_the_old_derived_row_still_points_at_the_old_input(self):
+    def test_f_the_change_propagates_up_to_the_composite(self):
+        """
+        The three-layer graph working end to end: a new material event makes a
+        new pillar row, which makes a new composite row citing it.
+        """
+        prov.record(self.profile, 'water_impact_score', PROVENANCE_SEEDED)
+
+        recalculate_and_save(self.profile)
+        new_pillar = prov.current(self.profile, 'company.environmental')
+        new_composite = prov.current(self.profile, COMPOSITE_METRIC_KEY)
+
+        self.assertNotEqual(new_composite.pk, self.first_composite.pk)
+        self.assertIn(new_pillar, prov.lineage(new_composite))
+
+    def test_g_the_old_pillar_row_still_points_at_the_old_material_row(self):
         old_input = self.original['water_impact_score']
         prov.record(self.profile, 'water_impact_score', PROVENANCE_SEEDED)
-        self.profile.water_impact_score = 42.0
-        self.profile.save()
         recalculate_and_save(self.profile)
 
-        self.first.refresh_from_db()
+        self.first_pillar.refresh_from_db()
         old_input.refresh_from_db()
 
-        self.assertFalse(self.first.is_current)
+        self.assertFalse(self.first_pillar.is_current)
         self.assertFalse(old_input.is_current)
-        self.assertIn(old_input, prov.lineage(self.first),
+        self.assertIn(old_input, prov.lineage(self.first_pillar),
                       'lineage must be as computed, not as recomputable')
 
-    def test_g_the_superseded_input_keeps_its_origin(self):
+    def test_g_the_old_composite_row_still_points_at_the_old_pillar_row(self):
+        prov.record(self.profile, 'water_impact_score', PROVENANCE_SEEDED)
+        recalculate_and_save(self.profile)
+
+        self.first_composite.refresh_from_db()
+        self.first_pillar.refresh_from_db()
+
+        self.assertFalse(self.first_composite.is_current)
+        self.assertIn(self.first_pillar, prov.lineage(self.first_composite),
+                      'the whole historical chain must stay pinned')
+
+    def test_g_the_superseded_material_row_keeps_its_origin(self):
         old_input = self.original['water_impact_score']
         prov.record(self.profile, 'water_impact_score', PROVENANCE_SEEDED)
         recalculate_and_save(self.profile)
 
-        preserved = [r for r in prov.lineage(self.first)
+        preserved = [r for r in prov.lineage(self.first_pillar)
                      if r.metric_key == 'water_impact_score'][0]
         self.assertEqual(preserved.origin, PROVENANCE_MEASURED)
 
@@ -319,15 +393,24 @@ class H_I_J_Idempotency(TestCase):
     def test_h_the_status_says_unchanged(self):
         recalculate_and_save(self.profile)
 
-        self.assertEqual(self.profile.provenance_status, 'unchanged')
+        self.assertEqual(set(self.profile.provenance_status.values()), {'unchanged'})
 
-    def test_i_a_changed_input_creates_a_new_event(self):
+    def test_i_a_changed_input_creates_a_new_event_up_the_chain(self):
+        """
+        water feeds company.environmental, which feeds the composite. Both get
+        a new event; the pillars water does NOT feed stay unchanged, which is
+        the payoff for per-pillar input sets.
+        """
         prov.record(self.profile, 'water_impact_score', PROVENANCE_SEEDED)
 
         recalculate_and_save(self.profile)
+        status = self.profile.provenance_status
 
         self.assertEqual(self._composite_rows().count(), 2)
-        self.assertEqual(self.profile.provenance_status, 'recorded')
+        self.assertEqual(status['company.environmental'], 'recorded')
+        self.assertEqual(status[COMPOSITE_METRIC_KEY], 'recorded')
+        self.assertEqual(status['company.public_benefit'], 'unchanged')
+        self.assertEqual(status['company.modernization'], 'unchanged')
 
     def test_i_a_value_change_without_a_provenance_event_is_not_a_new_event(self):
         """
@@ -350,7 +433,7 @@ class H_I_J_Idempotency(TestCase):
         self.assertNotEqual(self.profile.ecoiq_total_score, before,
                             'the score must still be recalculated')
         self.assertEqual(self._composite_rows().count(), 1)
-        self.assertEqual(self.profile.provenance_status, 'unchanged')
+        self.assertEqual(set(self.profile.provenance_status.values()), {'unchanged'})
 
     def test_j_a_changed_calculation_version_creates_a_new_event(self):
         with patch('companies.scoring.COMPOSITE_VERSION', '2'):
@@ -485,7 +568,9 @@ class M_N_O_PublicDefensibility(TestCase):
 
         recalculate_and_save(profile)
 
-        self.assertEqual(profile.provenance_status, 'incomplete')
+        self.assertEqual(
+            set(profile.provenance_status.values()), {'incomplete'},
+            'every layer is incomplete when the material layer has no provenance')
         self.assertIsNone(prov.current(profile, COMPOSITE_METRIC_KEY))
         self.assertEqual(CompanyMetricProvenance.objects.count(), 0,
                          'no material provenance may be invented either')
@@ -508,7 +593,8 @@ class M_N_O_PublicDefensibility(TestCase):
 
         recalculate_and_save(profile)
 
-        self.assertEqual(profile.provenance_status, 'incomplete')
+        self.assertEqual(profile.provenance_status[COMPOSITE_METRIC_KEY],
+                         'incomplete')
         self.assertIsNone(prov.current(profile, COMPOSITE_METRIC_KEY))
 
     def test_o_an_empty_input_list_is_never_recorded_as_lineage(self):
@@ -532,20 +618,22 @@ class P_Q_RealValues(TestCase):
         rows = _record_all_inputs(profile)
 
         recalculate_and_save(profile)
-        row = prov.current(profile, COMPOSITE_METRIC_KEY)
+        pillar = prov.current(profile, 'company.environmental')
 
         self.assertIn('water_impact_score', consumed_material_inputs(profile))
-        self.assertIn(rows['water_impact_score'], prov.lineage(row))
-        self.assertEqual(row.origin, PROVENANCE_MODELLED)
+        self.assertIn(rows['water_impact_score'], prov.lineage(pillar))
+        self.assertEqual(pillar.origin, PROVENANCE_MODELLED)
+        self.assertEqual(
+            prov.current(profile, COMPOSITE_METRIC_KEY).origin, PROVENANCE_MODELLED)
 
     def test_q_a_fifty_input_is_consumed_as_a_number(self):
         profile = _profile('fifty-input', water_impact_score=50.0)
         rows = _record_all_inputs(profile)
 
         recalculate_and_save(profile)
-        row = prov.current(profile, COMPOSITE_METRIC_KEY)
+        pillar = prov.current(profile, 'company.environmental')
 
-        self.assertIn(rows['water_impact_score'], prov.lineage(row))
+        self.assertIn(rows['water_impact_score'], prov.lineage(pillar))
 
     def test_a_zero_input_changes_the_score_but_not_the_origin(self):
         zeroed = _profile('all-zero')
@@ -583,15 +671,23 @@ class R_SeedFlowEndToEnd(TestCase):
         self.assertIsNotNone(composite, 'the seed run must record composite lineage')
         self.assertEqual(composite.origin, PROVENANCE_MODELLED)
 
+        # The composite now cites the pillar layer, which is MODELLED...
         linked = prov.lineage(composite)
         self.assertTrue(linked)
-        self.assertEqual({r.origin for r in linked}, {PROVENANCE_SEEDED})
-        self.assertEqual({r.written_by for r in linked},
+        self.assertEqual(set(COMPOSITE_INPUTS),
+                         {r.metric_key for r in linked})
+
+        # ...and the SEEDED material rows sit one layer beneath it.
+        pillar = prov.current(profile, 'company.environmental')
+        beneath = prov.lineage(pillar)
+        self.assertTrue(beneath)
+        self.assertEqual({r.origin for r in beneath}, {PROVENANCE_SEEDED})
+        self.assertEqual({r.written_by for r in beneath},
                          {'seed:seed_global_companies'})
 
         self.assertFalse(
             prov.is_derived_publicly_defensible(profile, COMPOSITE_METRIC_KEY),
-            'a modelled composite over seeded inputs must not be publishable')
+            'seeded contamination one layer down must still disqualify')
 
     def test_r_every_seeded_company_gets_composite_lineage(self):
         from io import StringIO
@@ -678,7 +774,7 @@ class CallerCompatibility(TestCase):
         with transaction.atomic():
             recalculate_and_save(profile)
 
-        self.assertEqual(profile.provenance_status, 'recorded')
+        self.assertEqual(profile.provenance_status[COMPOSITE_METRIC_KEY], 'recorded')
         self.assertIsNotNone(prov.current(profile, COMPOSITE_METRIC_KEY))
 
     def test_it_works_outside_a_transaction(self):
@@ -688,7 +784,7 @@ class CallerCompatibility(TestCase):
 
         recalculate_and_save(profile)
 
-        self.assertEqual(profile.provenance_status, 'recorded')
+        self.assertEqual(profile.provenance_status[COMPOSITE_METRIC_KEY], 'recorded')
 
     def test_provenance_can_be_switched_off_for_a_caller_that_needs_it(self):
         profile = _profile('opt-out')
@@ -697,6 +793,8 @@ class CallerCompatibility(TestCase):
         recalculate_and_save(profile, record_provenance=False)
 
         self.assertEqual(profile.provenance_status, 'skipped')
+        self.assertEqual(CompanyMetricProvenance.objects.filter(
+            metric_key__in=PILLAR_OUTPUTS).count(), 0)
         self.assertIsNone(prov.current(profile, COMPOSITE_METRIC_KEY))
 
     def test_no_composite_means_nothing_to_attest(self):
@@ -709,5 +807,6 @@ class CallerCompatibility(TestCase):
 
         recalculate_and_save(profile)
 
-        self.assertEqual(profile.provenance_status, 'no_composite')
+        self.assertEqual(profile.provenance_status[COMPOSITE_METRIC_KEY],
+                         'unavailable')
         self.assertIsNone(prov.current(profile, COMPOSITE_METRIC_KEY))

@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
+from companies import metric_registry as registry
 from companies.evidence import PROVENANCE_MODELLED
 from core.unknown import clamp, mean_of_known
 
@@ -359,6 +360,62 @@ def compute_ecoiq_profile_score(p: 'CompanyProfile') -> dict:
     }
 
 
+#: STEP 1 — the derived values recalculate_and_save writes, each with its
+#: registry key and the inputs its formula consumes.
+#:
+#: SIX, not five. The brief said five pillars; the function also writes
+#: harm_penalty, which is a registered derived metric the composite consumes.
+#: Recording five and omitting the sixth would leave the composite's lineage
+#: incomplete in exactly the way this PR exists to fix.
+#:
+#: anti_corruption_score is absent because it is NOT written here: its pillar
+#: formula is the identity function, so the dimension value and the material
+#: input are the same number and there is one provenance row, the material one.
+PILLAR_OUTPUTS: dict[str, tuple[str, tuple[str, ...]]] = {
+    'company.public_benefit': (
+        'public_benefit_score', DIMENSION_INPUTS['public_benefit_score']),
+    'company.environmental': (
+        'environmental_responsibility_score',
+        DIMENSION_INPUTS['environmental_responsibility_score']),
+    'company.modernization': (
+        'modernization_score', DIMENSION_INPUTS['modernization_score']),
+    'company.transparency_governance': (
+        'transparency_anti_corruption_score',
+        DIMENSION_INPUTS['transparency_anti_corruption_score']),
+    'company.ethical_alignment': (
+        'ethical_alignment_score', DIMENSION_INPUTS['ethical_alignment_score']),
+}
+
+#: The harm penalty reads two material fields AND two derived pillars, so it
+#: sits between the pillars and the composite in the graph.
+#:
+#: KNOWN GAPS: it also reads profit_extraction_score (not a registered metric)
+#: and pollution_level (categorical, no provenance row). Neither can be linked.
+HARM_PENALTY_OUTPUT: tuple[str, str, tuple[str, ...]] = (
+    'company.harm_penalty', 'harm_penalty',
+    HARM_PENALTY_INPUTS + ('company.public_benefit', 'company.modernization'),
+)
+
+#: STEP 6 — what the COMPOSITE actually consumes.
+#:
+#: A provenance-graph defect inherited from #249, fixed here. That PR linked
+#: the composite directly to the 16 raw material rows, but
+#: compute_ecoiq_profile_score does not read them: it weights the six
+#: DIMENSION VALUES and subtracts the harm penalty. The old graph bypassed a
+#: whole layer, so 'which values produced this score?' had a plausible answer
+#: that was not the true one.
+#:
+#: Fixed rather than deferred because the fix is one mapping in the same
+#: function whose pillar rows now exist — and a truthful graph beats a
+#: convenient one. The material rows have not disappeared from the graph; they
+#: are now reached THROUGH the pillars, which is where they actually sit.
+COMPOSITE_INPUTS: tuple[str, ...] = (
+    'company.public_benefit', 'company.environmental', 'company.modernization',
+    'company.transparency_governance', 'anti_corruption_score',
+    'company.ethical_alignment', 'company.harm_penalty',
+)
+
+
 #: STEP 2 — a stable, human-readable calculation identity.
 #:
 #: The scoring engine had no version constant; this is the smallest explicit,
@@ -373,6 +430,13 @@ COMPOSITE_VERSION = '1'
 #: The registry key this function produces. Confirmed against
 #: companies.metric_registry, not assumed.
 COMPOSITE_METRIC_KEY = 'company.ecoiq_total'
+
+#: STEP 5 — the pillars share the composite's methodology and version. They
+#: are one scoring methodology computed in one pass, so five arbitrary
+#: versions would be five things to forget to bump together. Each metric
+#: stays independently addressable through its own row and input set.
+PILLAR_METHOD = COMPOSITE_METHOD
+PILLAR_VERSION = COMPOSITE_VERSION
 
 
 def recalculate_and_save(profile: 'CompanyProfile',
@@ -452,73 +516,124 @@ def recalculate_and_save(profile: 'CompanyProfile',
     with transaction.atomic():
         profile.save(update_fields=written + ['updated_at'])
         profile.provenance_status = (
-            _record_composite_provenance(profile, results)
+            _record_scoring_provenance(profile, results)
             if record_provenance else 'skipped'
         )
     return profile
 
 
-def _record_composite_provenance(profile, results) -> str:
+def _record_derived_metric(profile, metric_key, value, declared, current_rows,
+                           method, version) -> str:
     """
-    Record MODELLED provenance for the composite, or explain why it was not.
+    Record MODELLED provenance for one derived value, or explain why not.
 
-    Called inside recalculate_and_save's transaction, so raising here rolls the
-    score write back with it.
+    One function for pillars, the harm penalty and the composite, because the
+    rules are identical and three copies would be three places for them to
+    drift. What differs per metric is only its value and its input set.
+
+    Returns 'recorded' | 'unchanged' | 'incomplete' | 'unavailable'.
     """
     from companies import provenance as prov
 
-    if results['ecoiq_total_score'] is None:
-        # No composite was produced, so there is nothing to attest to.
-        return 'no_composite'
+    # STEP 9 — no value, so nothing to attest to. Any previous row must also
+    # stop claiming to describe current state: it says what we used to think.
+    # The stale NUMBER may remain in its NOT NULL column until D4; what does
+    # not remain is a provenance row asserting it is current.
+    if value is None:
+        prov.supersede(profile, metric_key)
+        return 'unavailable'
 
-    consumed = results.get('_consumed_inputs', [])
-    if not consumed:
-        return 'incomplete'
-
-    current_rows = prov.current_map(profile)
+    # STEP 8 — only the inputs that exist. A formula that re-normalised around
+    # an unknown input did not consume it, and citing it would overstate the
+    # lineage.
+    consumed = [
+        key for key in declared
+        if registry.resolve_value(profile, key) is not None
+    ]
     missing = [key for key in consumed if key not in current_rows]
-    if missing:
+    if not consumed or missing:
+        # STEP 7 — no lineage-complete row rather than one whose input list
+        # understates what the number rests on. Nothing is fabricated and no
+        # LEGACY row is invented; D3B owns historical labelling.
         log.debug(
-            'Composite provenance not recorded for %s — consumed inputs without '
-            'provenance: %s. The score was still written.',
-            profile, ', '.join(missing),
+            'Provenance not recorded for %s / %s — consumed inputs without '
+            'provenance: %s.',
+            profile, metric_key, ', '.join(missing) or '(none consumed)',
         )
         return 'incomplete'
 
     input_rows = [current_rows[key] for key in consumed]
 
-    # STEP 7 — identity is (origin, methodology, version, exact input rows).
-    #
-    # NOT the output value, deliberately. Two reasons:
-    #
-    #   1. It cannot be compared. `existing.value` resolves live through the
-    #      registry, and by this point profile.save() has already written the
-    #      new number — so the comparison would always find them equal and
-    #      never fire. A check that cannot fail is worse than no check.
-    #
-    #   2. It should not be compared. The formula is deterministic, so the
-    #      same input ROWS under the same version give the same answer. If the
-    #      number moved while the input rows did not, a material VALUE changed
-    #      without anyone recording a provenance event for it — a gap in the
-    #      writer that wrote it, not a new lineage claim for this one to make.
-    #      Value history is CompanyScoreSnapshot's job; this records lineage.
-    existing = prov.current(profile, COMPOSITE_METRIC_KEY)
+    # STEP 11 — identity is (origin, methodology, version, exact input rows).
+    # Not the output: the formula is deterministic over its input rows.
+    existing = prov.current(profile, metric_key)
     if (existing is not None
             and existing.origin == PROVENANCE_MODELLED
-            and existing.methodology == COMPOSITE_METHOD
-            and existing.calculation_version == COMPOSITE_VERSION
+            and existing.methodology == method
+            and existing.calculation_version == version
             and set(existing.inputs.values_list('pk', flat=True))
                 == {row.pk for row in input_rows}):
         return 'unchanged'
 
     prov.record_derived(
-        profile, COMPOSITE_METRIC_KEY,
+        profile, metric_key,
         writer='companies.scoring.recalculate_and_save',
-        methodology=COMPOSITE_METHOD,
-        calculation_version=COMPOSITE_VERSION,
+        methodology=method, calculation_version=version,
         inputs=input_rows,
     )
     return 'recorded'
+
+
+def _record_scoring_provenance(profile, results) -> dict:
+    """
+    Record lineage for every derived value this function writes.
+
+    STEP 6 — ORDER MATTERS, because the graph has three layers and each reads
+    the rows the previous one created:
+
+        material inputs
+            -> five pillars        (consume material)
+            -> harm penalty        (consumes material AND two pillars)
+            -> company.ecoiq_total (consumes the six dimensions + the penalty)
+
+    current_rows is re-read between stages rather than fetched once, so each
+    layer can cite rows the layer before it just wrote. Fetching once would
+    silently produce 'incomplete' for everything downstream of a pillar.
+
+    Called inside recalculate_and_save's transaction: raising here rolls back
+    every value and every row, which is the point — there is no coherent state
+    in which three pillars have lineage and two do not.
+
+    Returns {metric_key: status}.
+    """
+    from companies import provenance as prov
+
+    statuses = {}
+
+    # ── Layer 1: the five pillars ────────────────────────────────────────
+    current_rows = prov.current_map(profile)
+    for metric_key, (field, declared) in PILLAR_OUTPUTS.items():
+        statuses[metric_key] = _record_derived_metric(
+            profile, metric_key, results.get(field), declared, current_rows,
+            PILLAR_METHOD, PILLAR_VERSION,
+        )
+
+    # ── Layer 2: the harm penalty, which consumes two of those pillars ───
+    penalty_key, penalty_field, penalty_inputs = HARM_PENALTY_OUTPUT
+    current_rows = prov.current_map(profile)
+    statuses[penalty_key] = _record_derived_metric(
+        profile, penalty_key, results.get(penalty_field), penalty_inputs,
+        current_rows, PILLAR_METHOD, PILLAR_VERSION,
+    )
+
+    # ── Layer 3: the composite, which consumes the dimensions and penalty ─
+    current_rows = prov.current_map(profile)
+    statuses[COMPOSITE_METRIC_KEY] = _record_derived_metric(
+        profile, COMPOSITE_METRIC_KEY, results.get('ecoiq_total_score'),
+        COMPOSITE_INPUTS, current_rows, COMPOSITE_METHOD, COMPOSITE_VERSION,
+    )
+
+    return statuses
 
 
 # ── Label helpers ──────────────────────────────────────────────────────────────
