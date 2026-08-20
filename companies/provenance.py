@@ -18,16 +18,23 @@ from __future__ import annotations
 
 from django.db import transaction
 
+from companies import metric_registry as registry
 from companies.evidence import (
-    EVIDENCED_PROVENANCE, MATERIAL_INPUTS, PROVENANCE_CHOICES, PROVENANCE_NO_VALUE,
-    PROVENANCE_SEEDED, UNEVIDENCED_PROVENANCE,
+    EVIDENCED_PROVENANCE, MATERIAL_INPUTS, PROVENANCE_CHOICES, PROVENANCE_MODELLED,
+    PROVENANCE_NO_VALUE, PROVENANCE_SEEDED, UNEVIDENCED_PROVENANCE,
 )
 
-#: The metric keys provenance may be recorded for. MATERIAL_INPUTS is already the
-#: repository's registry of material EcoIQ metrics — it carries the composite
-#: weights, and coverage and eligibility already read from it. A second registry
-#: table would add a migration and a join to restate the same fifteen names.
-VALID_METRIC_KEYS: frozenset[str] = frozenset(i.field_name for i in MATERIAL_INPUTS)
+#: Every key provenance may be recorded for — material AND derived (D3C-2).
+#:
+#: MATERIAL_INPUTS remains the canonical list for material COVERAGE: it carries
+#: the composite weights that coverage_for() and eligibility() read, and D3C-2
+#: deliberately does not migrate them. What changes is only which keys
+#: provenance accepts, which now includes registered derived metrics.
+VALID_METRIC_KEYS: frozenset[str] = registry.VALID_KEYS
+
+#: The material subset, unchanged in meaning. Callers that mean "the sixteen
+#: assessed inputs" — seed writers, coverage — must use this, not VALID_METRIC_KEYS.
+MATERIAL_METRIC_KEYS: frozenset[str] = frozenset(i.field_name for i in MATERIAL_INPUTS)
 
 VALID_ORIGINS: frozenset[str] = frozenset(code for code, _ in PROVENANCE_CHOICES)
 
@@ -64,13 +71,15 @@ def record(company, metric_key: str, origin: str, **fields):
 
     Returns the new row.
     """
-    if metric_key not in VALID_METRIC_KEYS:
-        raise ValueError(
-            f'{metric_key!r} is not a material EcoIQ metric. '
-            f'Valid keys come from companies.evidence.MATERIAL_INPUTS.'
-        )
+    definition = registry.require_metric_definition(metric_key)
     if origin not in VALID_ORIGINS:
         raise ValueError(f'Unknown provenance state: {origin!r}.')
+    if origin not in definition.allowed_origins:
+        raise ValueError(
+            f'{origin!r} is not an honest origin for {metric_key!r} '
+            f'({definition.kind}). Allowed: '
+            f'{", ".join(sorted(definition.allowed_origins))}.'
+        )
 
     from companies.models import CompanyMetricProvenance
 
@@ -133,19 +142,23 @@ def is_publicly_defensible(company, metric_key: str) -> bool:
 
 def unrecorded_metrics(company) -> list[str]:
     """
-    Material metrics with no current provenance row.
+    MATERIAL metrics with no current provenance row.
 
-    The measurement D3B needs: how much of the estate still has no stated origin.
+    Material-scoped on purpose. D3C-2 widened VALID_METRIC_KEYS to include
+    derived metrics, and counting an unrecorded derived metric here would say
+    the estate is less covered than it is — a derived metric with no provenance
+    has simply not been calculated through a wired-up writer yet, which is a
+    different fact from a material input whose origin nobody stated.
     """
     recorded = set(
         company.metric_provenance.filter(is_current=True).values_list('metric_key', flat=True)
     )
-    return sorted(VALID_METRIC_KEYS - recorded)
+    return sorted(MATERIAL_METRIC_KEYS - recorded)
 
 
 def summarise(company) -> dict:
     """
-    Provenance coverage for one company, as counts by origin.
+    MATERIAL provenance coverage for one company, as counts by origin.
 
     Metrics with no row are reported under PROVENANCE_NO_VALUE only when the
     field itself is empty; otherwise they are counted as 'unrecorded', which is
@@ -155,7 +168,7 @@ def summarise(company) -> dict:
     by_origin: dict[str, int] = {}
     unrecorded_with_value = 0
 
-    for metric_key in sorted(VALID_METRIC_KEYS):
+    for metric_key in sorted(MATERIAL_METRIC_KEYS):
         row = rows.get(metric_key)
         if row is not None:
             by_origin[row.origin] = by_origin.get(row.origin, 0) + 1
@@ -165,11 +178,11 @@ def summarise(company) -> dict:
             unrecorded_with_value += 1
 
     return {
-        'total_metrics': len(VALID_METRIC_KEYS),
+        'total_metrics': len(MATERIAL_METRIC_KEYS),
         'by_origin': by_origin,
         'unrecorded_with_value': unrecorded_with_value,
         'defensible': sum(
-            1 for m in VALID_METRIC_KEYS if is_publicly_defensible(company, m)
+            1 for m in MATERIAL_METRIC_KEYS if is_publicly_defensible(company, m)
         ),
     }
 
@@ -215,7 +228,11 @@ def record_seed_write(profile, metric_keys, writer: str, *,
     """
     from companies.models import CompanyMetricProvenance
 
-    material = sorted(set(metric_keys) & VALID_METRIC_KEYS)
+    # MATERIAL_METRIC_KEYS, not VALID_METRIC_KEYS: a seeder hands over its
+    # profile_defaults, which now overlaps derived keys too (ecoiq_total_score
+    # is written by seeders). Those are recorded by the calculation that
+    # produces them, not by the command that triggered it.
+    material = sorted(set(metric_keys) & MATERIAL_METRIC_KEYS)
     if not material:
         return []
 
@@ -289,3 +306,123 @@ def record_seed_write(profile, metric_keys, writer: str, *,
         )
         for key in to_write
     ])
+
+
+# ── Derived metrics (D3C-2) ───────────────────────────────────────────────────
+
+class LineageCycle(Exception):
+    """Raised when a provenance row would list itself among its own inputs."""
+
+
+def record_derived(profile, metric_key: str, *, writer: str, methodology: str,
+                   calculation_version: str, inputs=None, recorded_value=None,
+                   origin=PROVENANCE_MODELLED, **fields):
+    """
+    Record provenance for a calculated metric.
+
+    MUST be called inside the caller's transaction.atomic(), alongside whatever
+    persisted the value — same rule and same reason as record_seed_write().
+
+    `methodology` and `calculation_version` are REQUIRED, unlike on the base
+    record(). A modelled value is only as attributable as the model behind it,
+    and a MODELLED row with no version cannot answer "which formula produced
+    this?" — the question derived provenance exists for.
+
+    `inputs` is an iterable of CompanyMetricProvenance rows the calculation
+    ACTUALLY consumed. Not the rows the formula mentions: a calculation that
+    re-normalised around an unknown input did not consume it, and listing it
+    would overstate the lineage. The D2 work makes this knowable — _weighted()
+    and mean_of_known() already track which inputs they used, because they had
+    to in order to re-normalise.
+
+    `recorded_value` is required for an ephemeral metric and rejected for any
+    other. See CompanyMetricProvenance.recorded_value.
+
+    Returns the new row.
+    """
+    from companies.models import CompanyMetricProvenance
+
+    definition = registry.require_metric_definition(metric_key)
+
+    if not methodology or not calculation_version:
+        raise ValueError(
+            f'{metric_key!r}: methodology and calculation_version are required '
+            f'for a derived metric. Without them the row records that something '
+            f'was computed but not what computed it.'
+        )
+    if definition.is_ephemeral and recorded_value is None:
+        raise ValueError(
+            f'{metric_key!r} is ephemeral, so its provenance must carry the '
+            f'value it was recorded for — nothing else can reconstruct it.'
+        )
+
+    row = record(
+        profile, metric_key, origin,
+        written_by=writer, methodology=methodology,
+        calculation_version=calculation_version,
+        recorded_value=recorded_value, **fields,
+    )
+
+    if inputs:
+        input_rows = list(inputs)
+        # STEP 8 — a row must never be its own input. Full DAG validation across
+        # the whole graph is deferred (documented in DERIVED_METRIC_REGISTRY.md);
+        # direct self-reference is the case that is both cheap to detect and
+        # certain to be wrong.
+        if any(candidate.pk == row.pk for candidate in input_rows):
+            raise LineageCycle(
+                f'{metric_key!r}: a provenance row cannot be its own input.'
+            )
+        row.inputs.set(input_rows)
+
+    return row
+
+
+def lineage(row) -> list:
+    """
+    The provenance rows one derived row was calculated from.
+
+    Returns what was consumed AT CALCULATION TIME, including rows that have
+    since been superseded — which is the point. Re-reading current input
+    provenance would answer a different question.
+    """
+    return list(row.inputs.select_related('evidence').all())
+
+
+def is_derived_publicly_defensible(profile, metric_key: str) -> bool:
+    """
+    Could a derived metric be published, on provenance grounds alone?
+
+    ADVISORY, like is_publicly_defensible(). Nothing on a public path calls it.
+
+    A derived metric needs BOTH:
+
+      1. its own origin to be defensible — MODELLED qualifies, SEEDED does not;
+      2. every input it consumed to be defensible.
+
+    The second is what stops a MODELLED composite laundering SEEDED inputs into
+    a publishable number. A perfectly-executed calculation over synthetic data
+    is still synthetic.
+
+    Deliberately NOT included: coverage thresholds, or how many inputs a
+    composite needs. Those are D5's, and guessing at them here would make them
+    invisible when D5 comes to decide them.
+
+    A derived row with NO recorded inputs returns False. That is the honest
+    reading before D3C-4 wires the calculators up: we cannot show the lineage,
+    so we cannot defend it.
+    """
+    definition = registry.get_metric_definition(metric_key)
+    if definition is None or definition.kind != registry.DERIVED:
+        return False
+
+    row = current(profile, metric_key)
+    if row is None or row.origin in UNEVIDENCED_PROVENANCE:
+        return False
+    if row.value is None:
+        return False
+
+    input_rows = row.inputs.all()
+    if not input_rows:
+        return False
+    return all(item.origin not in UNEVIDENCED_PROVENANCE for item in input_rows)

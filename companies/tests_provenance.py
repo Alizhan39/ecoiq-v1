@@ -98,7 +98,7 @@ class B_NoImplicitMeasured(TestCase):
     def test_b_every_material_metric_starts_unrecorded(self):
         """The honest starting state for the whole estate."""
         self.assertEqual(sorted(prov.unrecorded_metrics(self.profile)),
-                         sorted(prov.VALID_METRIC_KEYS))
+                         sorted(prov.MATERIAL_METRIC_KEYS))
 
     def test_b_an_invalid_origin_is_rejected(self):
         with self.assertRaises(ValueError):
@@ -504,7 +504,7 @@ class QueryPatterns(TestCase):
 
     def test_current_map_is_a_single_query(self):
         profile = _profile('n-plus-one')
-        for metric in sorted(prov.VALID_METRIC_KEYS)[:6]:
+        for metric in sorted(prov.MATERIAL_METRIC_KEYS)[:6]:
             prov.record(profile, metric, PROVENANCE_MODELLED)
 
         with self.assertNumQueries(1):
@@ -524,7 +524,7 @@ class QueryPatterns(TestCase):
 
         summary = prov.summarise(profile)
 
-        self.assertEqual(summary['total_metrics'], len(prov.VALID_METRIC_KEYS))
+        self.assertEqual(summary['total_metrics'], len(prov.MATERIAL_METRIC_KEYS))
         self.assertEqual(summary['by_origin'].get(PROVENANCE_MEASURED), 1)
         self.assertGreater(summary['unrecorded_with_value'], 0)
         self.assertEqual(summary['by_origin'].get(PROVENANCE_NO_VALUE), 1)
@@ -548,7 +548,7 @@ class PublicSurfacesUnchanged(TestCase):
                                          country='UK', ecoiq_score=71.4)
         profile = CompanyProfile.objects.create(
             company=company, status='public', ecoiq_total_score=71.4)
-        for metric in sorted(prov.VALID_METRIC_KEYS):
+        for metric in sorted(prov.MATERIAL_METRIC_KEYS):
             prov.record(profile, metric, PROVENANCE_MEASURED)
 
         body = Client().get('/companies/still-contained/').content.decode()

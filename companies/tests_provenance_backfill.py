@@ -61,7 +61,7 @@ class A_DryRunWritesNothing(TestCase):
 
         self.assertIn('DRY RUN', output)
         self.assertIn('Pairs considered', output)
-        self.assertIn(str(len(prov.VALID_METRIC_KEYS)), output)
+        self.assertIn(str(len(prov.MATERIAL_METRIC_KEYS)), output)
 
 
 class B_ApplyCreatesDeterministicRecords(TestCase):
@@ -73,7 +73,7 @@ class B_ApplyCreatesDeterministicRecords(TestCase):
         _run('--apply')
 
         self.assertEqual(CompanyMetricProvenance.objects.count(),
-                         len(prov.VALID_METRIC_KEYS))
+                         len(prov.MATERIAL_METRIC_KEYS))
 
     def test_b_every_row_is_tagged_with_the_writer(self):
         _run('--apply')
@@ -86,7 +86,7 @@ class B_ApplyCreatesDeterministicRecords(TestCase):
 
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(is_current=True).count(),
-            len(prov.VALID_METRIC_KEYS))
+            len(prov.MATERIAL_METRIC_KEYS))
 
     def test_b_scoping_to_one_metric_writes_only_that_metric(self):
         _run('--apply', '--metric', 'audit_quality_score')
@@ -118,7 +118,7 @@ class C_Idempotency(TestCase):
         _run('--apply')
         output = _run('--apply')
 
-        self.assertIn(f'Existing provenance skipped        {len(prov.VALID_METRIC_KEYS)}',
+        self.assertIn(f'Existing provenance skipped        {len(prov.MATERIAL_METRIC_KEYS)}',
                       output)
         self.assertIn('Rows written                       0', output)
 
@@ -145,7 +145,7 @@ class C_Idempotency(TestCase):
         _run('--apply')
 
         self.assertEqual(CompanyMetricProvenance.objects.count(),
-                         len(prov.VALID_METRIC_KEYS))
+                         len(prov.MATERIAL_METRIC_KEYS))
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(is_current=False).count(), 0)
 
@@ -202,7 +202,7 @@ class D_E_ExistingProvenanceIsPreserved(TestCase):
 
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(written_by=WRITER).count(),
-            len(prov.VALID_METRIC_KEYS) - 1)
+            len(prov.MATERIAL_METRIC_KEYS) - 1)
 
 
 class F_G_H_NothingBecomesPubliclyDefensible(TestCase):
@@ -220,14 +220,14 @@ class F_G_H_NothingBecomesPubliclyDefensible(TestCase):
         self.profile.save()
         _run('--apply')
 
-        for metric in sorted(prov.VALID_METRIC_KEYS):
+        for metric in sorted(prov.MATERIAL_METRIC_KEYS):
             with self.subTest(metric=metric):
                 self.assertFalse(prov.is_publicly_defensible(self.profile, metric))
 
     def test_g_legacy_unknown_is_not_publicly_defensible(self):
         _run('--apply')
 
-        for metric in sorted(prov.VALID_METRIC_KEYS):
+        for metric in sorted(prov.MATERIAL_METRIC_KEYS):
             with self.subTest(metric=metric):
                 row = prov.current(self.profile, metric)
                 self.assertEqual(row.origin, PROVENANCE_UNKNOWN)
@@ -267,7 +267,7 @@ class F_G_H_NothingBecomesPubliclyDefensible(TestCase):
         defensible = sum(
             1
             for profile in CompanyProfile.objects.all()
-            for metric in prov.VALID_METRIC_KEYS
+            for metric in prov.MATERIAL_METRIC_KEYS
             if prov.is_publicly_defensible(profile, metric)
         )
         self.assertEqual(defensible, 0)
@@ -449,7 +449,7 @@ class N_TransactionPolicy(TestCase):
 
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(company=good).count(),
-            len(prov.VALID_METRIC_KEYS))
+            len(prov.MATERIAL_METRIC_KEYS))
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(company=bad).count(), 0,
             'the failed company must be all-or-nothing, not half written')
@@ -475,7 +475,7 @@ class O_ReportingAndRollback(TestCase):
 
     def test_o_counts_are_accurate(self):
         output = _run('--apply')
-        n = len(prov.VALID_METRIC_KEYS)
+        n = len(prov.MATERIAL_METRIC_KEYS)
 
         self.assertIn('Companies scanned                  1', output)
         self.assertIn(f'Metrics scanned                    {n}', output)
@@ -488,7 +488,7 @@ class O_ReportingAndRollback(TestCase):
                     written_by='analyst_review')
 
         output = _run('--apply')
-        n = len(prov.VALID_METRIC_KEYS)
+        n = len(prov.MATERIAL_METRIC_KEYS)
 
         self.assertIn('Existing provenance skipped        1', output)
         self.assertIn(f'LEGACY_UNKNOWN_PROVENANCE          {n - 1}', output)
@@ -522,7 +522,7 @@ class O_ReportingAndRollback(TestCase):
 
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(written_by=WRITER).count(),
-            len(prov.VALID_METRIC_KEYS))
+            len(prov.MATERIAL_METRIC_KEYS))
 
 
 class DeploymentSafety(TestCase):
