@@ -15,6 +15,9 @@ from django.utils.text import slugify
 
 from league.models import Company
 from companies.models import CompanyProfile, CompanyGuidanceVideo
+from django.db import transaction
+
+from companies.provenance import record_seed_write
 from companies.scoring import recalculate_and_save
 
 DISCLAIMER = (
@@ -987,10 +990,15 @@ class Command(BaseCommand):
                 'ai_recommendations':       entry.get('ai_recommendations', []),
             }
 
-            profile, p_created = CompanyProfile.objects.update_or_create(
-                company=co,
-                defaults=profile_defaults,
-            )
+            # D3C-1 — value and provenance in one atomic block.
+            with transaction.atomic():
+                profile, p_created = CompanyProfile.objects.update_or_create(
+                    company=co,
+                    defaults=profile_defaults,
+                )
+                record_seed_write(profile, profile_defaults,
+                                  'seed:seed_phase2_companies')
+
             if p_created:
                 created_profiles += 1
             else:
