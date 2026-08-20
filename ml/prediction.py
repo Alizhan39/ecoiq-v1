@@ -9,6 +9,8 @@ Method:
 
 Fallback: if fewer than 3 data points, returns current ecoiq_score + estimated delta
 based on recent DataIngestionLog signals (harm → small negative, positive → small positive).
+Returns None if the company has no current score — a forecast is a projection
+FROM something, and there is nothing to project from.
 
 Usage:
     from ml.prediction import predict_12m
@@ -19,6 +21,8 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 import numpy as np
+
+from core.unknown import known
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +52,28 @@ def predict_12m(company) -> float | None:
         try:
             slope, intercept = np.linalg.lstsq(A, scores, rcond=None)[0]
         except np.linalg.LinAlgError:
-            slope, intercept = 0.0, float(company.ecoiq_score or 50.0)
+            # Was `company.ecoiq_score or 50.0` — a degenerate fit fell back to
+            # forecasting an average company. With no current score there is
+            # nothing to project from, so refuse.
+            fallback = known(company.ecoiq_score)
+            if fallback is None:
+                return None
+            slope, intercept = 0.0, fallback
 
         days_forward = (target_date - history[0][0]).days
         predicted = slope * days_forward + intercept
         return float(np.clip(predicted, 0, 100))
 
     # ── Fallback: signal-based delta ──────────────────────────────────────
-    base = float(company.ecoiq_score or 50.0)
+    #
+    # Was `float(company.ecoiq_score or 50.0)`. That produced a 12-month
+    # FORECAST for a company with no score at all — anchored on an invented
+    # average, nudged by news signals, and written to ml_predicted_score_12m as
+    # though it projected something. `or` also rewrote a genuine 0.0 to 50,
+    # forecasting the worst-scoring company as an average one.
+    base = known(company.ecoiq_score)
+    if base is None:
+        return None
     delta = 0.0
 
     try:

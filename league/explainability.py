@@ -112,8 +112,11 @@ def _pillar_result(
     trends   = [f for f in factors if f['category'] == CAT_TREND]
 
     # Overall explanation confidence = weighted average of factor confidences
+    # No factors means no basis for a confidence figure. `else 0.5` reported
+    # "50% confident" in an explanation built from nothing — the same
+    # self-undermining fallback fixed in pandas_scoring_engine in #242.
     all_conf = [f['confidence'] for f in factors]
-    confidence = round(sum(all_conf) / max(len(all_conf), 1), 2) if all_conf else 0.5
+    confidence = round(sum(all_conf) / len(all_conf), 2) if all_conf else None
 
     # Trend label
     if delta_12m is not None:

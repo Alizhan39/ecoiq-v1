@@ -134,12 +134,20 @@ def _product_specification_position(mission, technology_candidate, product_candi
 
 def _independent_evidence_position(mission, technology_candidate, product_candidate, compat, contradictions):
     candidate = product_candidate or technology_candidate
+    # The missing-data penalty here is a LEGITIMATE explicit penalty (40 points
+    # when there is no score) and is left exactly as it is. The defect was only
+    # that `or`/truthiness treated a genuine evidence_score of 0.0 as missing:
+    # the summary printed 'Aggregate evidence score: 0.0' while the breakdown
+    # penalised it as unscored, and the two disagreed about the same company.
     score = candidate.evidence_score if candidate else None
-    breakdown = _confidence_breakdown(score or 0, missing_data_penalty=0 if score else 40)
+    is_known = score is not None
+    breakdown = _confidence_breakdown(
+        score if is_known else 0, missing_data_penalty=0 if is_known else 40)
+    meets_threshold = is_known and score >= 40
     return _position(
-        f'Aggregate evidence score: {score if score is not None else "not yet scored"}.',
-        breakdown, [], [] if score and score >= 40 else ['evidence score below the threshold for a shortlist recommendation'],
-        [] if score and score >= 40 else ['insufficient_independent_evidence'],
+        f'Aggregate evidence score: {score if is_known else "not yet scored"}.',
+        breakdown, [], [] if meets_threshold else ['evidence score below the threshold for a shortlist recommendation'],
+        [] if meets_threshold else ['insufficient_independent_evidence'],
     )
 
 

@@ -91,7 +91,7 @@ body { background:var(--bg);color:var(--text); }
           <div class="hkpi-label">Companies monitored</div>
         </div>
         <div class="hkpi">
-          <div class="hkpi-val">{{ sector_avg }}</div>
+          <div class="hkpi-val">{% if sector_avg is None %}<span style="color:var(--muted2,#94a3b8)">Not assessed</span>{% else %}{{ sector_avg }}{% endif %}</div>
           <div class="hkpi-label">Sector avg EcoIQ</div>
         </div>
         <div class="hkpi">

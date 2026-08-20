@@ -593,6 +593,9 @@ a{color:inherit;text-decoration:none}
   display:flex;flex-wrap:wrap;gap:.5rem .9rem;font-size:.67rem;color:var(--muted2);
   margin-top:.4rem;
 }
+.imp-tag-not_assessed{background:rgba(148,163,184,.12);color:var(--muted2)}
+.imp-card-not_assessed{opacity:.72}
+.imp-uplift-unknown{color:var(--muted2)}
 .imp-traj-legend-dot{
   display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;
 }
@@ -1494,6 +1497,13 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     </div>
 
     {# ── Score Trajectory ── #}
+    {% comment %}
+      trajectory is None when the company has no current EcoIQ score. Every
+      number in this block is relative to that score, so without it the whole
+      block would render blanks around a bar of zero width. Omitted entirely
+      instead — the milestone list below still stands on its own.
+    {% endcomment %}
+    {% if traj %}
     <div class="imp-trajectory">
       <div class="imp-traj-title">
         <span>Potential EcoIQ Improvement Trajectory</span>
@@ -1520,6 +1530,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         <span><span class="imp-traj-legend-dot" style="background:rgba(0,232,154,.2)"></span>Potential range (staged implementation)</span>
       </div>
     </div>
+    {% endif %}
 
     {# ── Milestone Cards ── #}
     <div class="imp-list">
@@ -1528,7 +1539,11 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         <summary>
           <div class="imp-sum-top">
             <span class="imp-card-title">{{ ms.title }}</span>
+            {% if ms.status == 'not_assessed' %}
+            <span class="imp-uplift imp-uplift-unknown">Not assessed</span>
+            {% else %}
             <span class="imp-uplift">+{{ ms.uplift_low }}–{{ ms.uplift_high }} pts</span>
+            {% endif %}
           </div>
           <div class="imp-card-tags">
             <span class="imp-tag imp-tag-{{ ms.status }}">{{ ms.status_label }}</span>

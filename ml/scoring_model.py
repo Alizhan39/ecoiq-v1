@@ -21,6 +21,8 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+from core.unknown import known
+
 MODEL_PATH = Path(__file__).resolve().parent / 'models' / 'scoring_gbr.joblib'
 SCALER_PATH = Path(__file__).resolve().parent / 'models' / 'scoring_scaler.joblib'
 
@@ -142,14 +144,18 @@ class EcoIQScoringModel:
 
         preds = self.model.predict(X_scaled)
         id_to_pred = dict(zip(ids, preds.tolist()))
-        id_to_base = {c.pk: float(c.ecoiq_score or 0) for c in companies}
+        id_to_base = {c.pk: known(c.ecoiq_score) for c in companies}
 
         now = timezone.now()
         for pk, raw_pred in id_to_pred.items():
-            pred       = float(np.clip(raw_pred, 0, 100))
-            base       = id_to_base.get(pk, 50.0)
-            deviation  = abs(pred - base)
-            confidence = round(max(0.0, min(1.0, 1.0 - deviation / 50.0)), 3)
+            pred = float(np.clip(raw_pred, 0, 100))
+            # Two fabrications in one line previously: `ecoiq_score or 0` made
+            # an unknown base zero, and `.get(pk, 50.0)` made an absent one
+            # average. Confidence is a claim about how much to trust the
+            # prediction; without a base there is nothing to compare against.
+            base = id_to_base.get(pk)
+            confidence = (None if base is None
+                          else round(max(0.0, min(1.0, 1.0 - abs(pred - base) / 50.0)), 3))
             Company.objects.filter(pk=pk).update(
                 ml_score=round(pred, 1),
                 ml_score_confidence=confidence,
@@ -162,12 +168,38 @@ class EcoIQScoringModel:
 
         Returns dict with:
             score, confidence, shap_values, top_features
+        or None when no prediction can honestly be made.
+
+        FAIL CLOSED on missing material inputs. The estimator is a
+        GradientBoostingRegressor that requires a dense float matrix, and
+        ml.features imputes 50.0 to satisfy it — a value the model reads as an
+        average company. Predicting from that would return a confident number,
+        a confidence figure and a SHAP attribution, all describing a company
+        assembled from defaults.
+
+        Refusing is not a degraded outcome, it is the correct one, and it costs
+        nothing at the call sites: None is already this method's documented
+        "unavailable" return and every caller handles it.
+
+        Proper imputation would require retraining — see the note at the top of
+        ml/features.py. That is deliberately not attempted here.
         """
         if not self._load():
             return None
 
-        from ml.features import company_to_vector, get_feature_names
+        from ml.features import (
+            company_to_vector, get_feature_names, missing_material_features,
+        )
         import shap
+
+        missing = missing_material_features(company)
+        if missing:
+            logger.info(
+                'Prediction refused for %s — material inputs unknown: %s. '
+                'The model would have received imputed 50.0 for each.',
+                company, ', '.join(missing),
+            )
+            return None
 
         try:
             vec     = company_to_vector(company).reshape(1, -1)
@@ -193,14 +225,22 @@ class EcoIQScoringModel:
             ]
 
             # Confidence proxy: inverse distance to nearest training neighbour
-            # (simple: use raw score deviation from base ecoiq_score)
-            base = float(company.ecoiq_score or 0)
-            deviation = abs(pred - base)
-            confidence = max(0.0, min(1.0, 1.0 - deviation / 50.0))
+            # (simple: use raw score deviation from base ecoiq_score).
+            #
+            # Was `float(company.ecoiq_score or 0)`: with no base score the
+            # deviation was measured from zero, so a company with an unknown
+            # score got the LOWEST confidence — a statement about the model's
+            # certainty derived entirely from our own missing data. Without a
+            # base there is nothing to deviate from, so confidence is None.
+            base = known(company.ecoiq_score)
+            if base is None:
+                confidence = None
+            else:
+                confidence = max(0.0, min(1.0, 1.0 - abs(pred - base) / 50.0))
 
             return {
                 'score':        round(pred, 1),
-                'confidence':   round(confidence, 3),
+                'confidence':   None if confidence is None else round(confidence, 3),
                 'shap_values':  shap_pairs[:8],
                 'top_features': top_features,
             }

@@ -17,9 +17,11 @@ from collections import Counter
 from dataclasses import dataclass, field, asdict
 from typing import Any, Optional
 
+from core.unknown import clamp, mean_of_known, weighted_mean_of_known
+
 from ml.ethics.greenwashing_risk import (
-    GreenwashingInput, assess_greenwashing_risk,
-    _POLLUTION_TO_FF,
+    RISK_INSUFFICIENT_EVIDENCE, GreenwashingInput, assess_greenwashing_risk,
+    greenwashing_from_profile, _POLLUTION_TO_FF,
 )
 
 
@@ -62,16 +64,51 @@ _PLACEHOLDER_MARKERS = (
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
-    return max(lo, min(hi, float(v or 0)))
+# core.unknown is the single authority (D2b). Was `float(v or 0)`.
+#
+# STEP 8 classification: this is a MISSING-INPUT FALLBACK, not a Mizan domain
+# midpoint. The genuine midpoints in this module — `s < 50` at the weak-dimension
+# check and the `energy_tr >= 50` mitigation tier — are thresholds applied to
+# already-computed dimension scores, and they are left exactly as they are.
+_clamp = clamp
+_weighted = weighted_mean_of_known
 
 
-def _mean(*vals: float) -> float:
-    vals = [v for v in vals if v is not None]
-    return _clamp(sum(vals) / len(vals)) if vals else 0.0
+def _mean(*vals):
+    """
+    Mean of the known values, or None when none are known.
+
+    Was `... if vals else 0.0`. Invisible to the `or 50` / `float(v or 0)`
+    sweeps that found everything else in this programme, and worse than either:
+    every dimension of an unassessed company came back as 0.0, so the profile
+    collected all four deficiency flags, the 'Deficient' Mizan label, and a full
+    set of remediation recommendations.
+
+    Found by a test rather than by grep, which is the argument for writing the
+    behavioural tests before trusting the pattern search.
+    """
+    return mean_of_known(*vals)
 
 
-def _mizan_label(score: float) -> str:
+def _known_and(value, predicate) -> bool:
+    """Apply a threshold only when the value is known. Unknown asserts nothing."""
+    return value is not None and predicate(value)
+
+
+def _r2(value):
+    """round(v, 2) that leaves unknown alone."""
+    return None if value is None else round(value, 2)
+
+
+# Outside the ordered tiers: not a degree of balance, but the absence of an
+# assessment. 'Deficient' was the fall-through, so an unassessed company landed
+# on the harshest Mizan label by default.
+LABEL_INSUFFICIENT_EVIDENCE = 'Insufficient Evidence'
+
+
+def _mizan_label(score) -> str:
+    if score is None:
+        return LABEL_INSUFFICIENT_EVIDENCE
     for threshold, label in MIZAN_LABELS:
         if score >= threshold:
             return label
@@ -87,19 +124,21 @@ class MizanResult:
     risk flags, and three narrative fields.
 
     Fully serialisable via .to_dict().
-    All float fields are in range 0 – 100.
+    All float fields are in range 0 – 100, or None where the underlying
+    evidence does not exist. See LABEL_INSUFFICIENT_EVIDENCE.
     """
-    # Six dimensions
-    public_benefit_score:               float
-    harm_reduction_score:               float
-    justice_distribution_score:         float
-    transparency_accountability_score:  float
-    stewardship_score:                  float
-    evidence_confidence_score:          float
+    # Six dimensions. Each is None where EcoIQ has no evidence to compute it —
+    # never 0, which on a 0-100 balance scale is the worst possible finding.
+    public_benefit_score:               float | None
+    harm_reduction_score:               float | None
+    justice_distribution_score:         float | None
+    transparency_accountability_score:  float | None
+    stewardship_score:                  float | None
+    evidence_confidence_score:          float | None
 
     # Aggregate
-    final_mizan_score:  float
-    mizan_label:        str       # 'Exemplary' | 'Strong' | 'Moderate' | 'Developing' | 'Deficient'
+    final_mizan_score:  float | None
+    mizan_label:        str  # 'Exemplary'|'Strong'|'Moderate'|'Developing'|'Deficient'|'Insufficient Evidence'
 
     # Narrative
     risk_flags:                list[str]
@@ -125,9 +164,15 @@ class MizanResult:
 
 # ── Narrative builders ────────────────────────────────────────────────────────
 
-def _investor_note(score: float, risk_flags: list[str]) -> str:
+def _investor_note(score, risk_flags: list[str]) -> str:
     top_flags = '; '.join(risk_flags[:2])
     suffix    = f' Key concerns: {top_flags}.' if top_flags else ''
+    if score is None:
+        return (
+            'No Mizan score has been produced for this profile because the underlying '
+            'evidence is not available to EcoIQ. This is a statement about the data, '
+            f'not about the entity, and it is not a negative finding.{suffix}'
+        )
     if score >= 85:
         return (
             'Exemplary Mizan alignment across all six dimensions. Strong candidate for '
@@ -166,14 +211,24 @@ def _islamic_finance_note(
     Uses principle-based language only.
     No religious terminology — see docs/mizan-engine.md for internal mapping.
     """
+    # A dimension we could not compute is not a WEAK dimension. Listing it as
+    # one would name it in the note as an area the company falls short in.
     weak = [
         name for name, s in [
             ('public benefit delivery', pb),
             ('harm reduction', hr),
             ('justice & fair distribution', jd),
         ]
-        if s < 50
+        if s is not None and s < 50
     ]
+
+    if score is None:
+        return (
+            'EcoIQ does not hold enough evidence to assess this profile against the '
+            'principles of ethical capital allocation. No compatibility conclusion has '
+            'been drawn in either direction, and the absence of one must not be read '
+            'as either alignment or misalignment.'
+        )
 
     if score >= 70 and not weak:
         return (
@@ -229,11 +284,16 @@ def _due_diligence_note(confidence: str, risk_flags: list[str]) -> str:
     return base
 
 
-def _recommended_actions(
-    pb: float, hr: float, jd: float,
-    ta: float, st: float, ec: float,
-) -> list[str]:
-    """Return up to 4 prioritised, actionable recommendations."""
+def _recommended_actions(pb, hr, jd, ta, st, ec) -> list[str]:
+    """
+    Return up to 4 prioritised, actionable recommendations.
+
+    Dimensions we could not compute are EXCLUDED from the ranking. A
+    recommendation here asserts that a specific dimension falls short of 70 and
+    tells the company how to fix it; with the pre-D2c _clamp an unassessed
+    profile scored 0 on everything, sorted to the top of the ranking, and
+    received the full set of four.
+    """
     _map = {
         'public_benefit': (
             'Quantify community benefit commitments — publish job quality metrics, '
@@ -260,20 +320,32 @@ def _recommended_actions(
             'from AI-seeded to analyst-reviewed or fully verified status.'
         ),
     }
-    ranked = sorted([
-        (pb, 'public_benefit'),
-        (hr, 'harm_reduction'),
-        (jd, 'justice_distribution'),
-        (ta, 'transparency_accountability'),
-        (st, 'stewardship'),
-        (ec, 'evidence_confidence'),
-    ])
+    ranked = sorted(
+        (score, name) for score, name in [
+            (pb, 'public_benefit'),
+            (hr, 'harm_reduction'),
+            (jd, 'justice_distribution'),
+            (ta, 'transparency_accountability'),
+            (st, 'stewardship'),
+            (ec, 'evidence_confidence'),
+        ]
+        if score is not None
+    )
     actions = [_map[name] for score, name in ranked[:4] if score < 70]
     if not actions:
-        actions = [
-            'Maintain current performance across all six Mizan dimensions.',
-            'Pursue verified profile status to strengthen investor confidence.',
-        ]
+        # Distinguish "nothing to improve" from "nothing to go on". The old
+        # code returned the first message in both cases, congratulating a
+        # company on performance nobody had measured.
+        if all(v is None for v in (pb, hr, jd, ta, st)):
+            actions = [
+                'Submit verified disclosures to EcoIQ so a Mizan assessment can be '
+                'produced — no dimension currently has enough evidence to score.'
+            ]
+        else:
+            actions = [
+                'Maintain current performance across all six Mizan dimensions.',
+                'Pursue verified profile status to strengthen investor confidence.',
+            ]
     return actions
 
 
@@ -300,23 +372,28 @@ def score_company(profile: Any) -> MizanResult:
     )
 
     # ── 2. Harm Reduction ─────────────────────────────────────────────────────
-    pollution = (getattr(profile, 'pollution_level', 'medium') or 'medium').lower()
-    harm_base  = _POLLUTION_HARM_BASE.get(pollution, 30.0)
+    # `or 'medium'` substituted a real pollution classification for a missing one.
+    raw_pollution = getattr(profile, 'pollution_level', None)
+    pollution   = raw_pollution.lower() if raw_pollution else None
+    harm_base   = _POLLUTION_HARM_BASE.get(pollution)
     controversy = _clamp(profile.controversy_risk_score)
     energy_tr   = _clamp(profile.energy_transition_score)
 
-    # Composite harm (0-100, higher = worse)
-    raw_harm = _clamp(harm_base * 0.60 + controversy * 0.40)
+    # Composite harm (0-100, higher = worse), re-normalised across the known
+    # channels. The old form counted an unknown controversy score as zero harm,
+    # which is a positive claim rather than silence.
+    raw_harm = _clamp(_weighted((harm_base, 0.60), (controversy, 0.40)))
 
-    # Mitigation discount: active energy transition reduces net harm
+    # Mitigation discount: active energy transition reduces net harm. Unknown
+    # earns none — a discount asserts the company is actively reducing harm.
     discount = (
-        0.30 if energy_tr >= 70 else
-        0.15 if energy_tr >= 50 else
-        0.07 if energy_tr >= 35 else
+        0.30 if _known_and(energy_tr, lambda v: v >= 70) else
+        0.15 if _known_and(energy_tr, lambda v: v >= 50) else
+        0.07 if _known_and(energy_tr, lambda v: v >= 35) else
         0.0
     )
-    net_harm = _clamp(raw_harm * (1 - discount))
-    hr = _clamp(100.0 - net_harm)   # invert: high score = low harm
+    net_harm = _clamp(None if raw_harm is None else raw_harm * (1 - discount))
+    hr = _clamp(None if net_harm is None else 100.0 - net_harm)   # invert
 
     # ── 3. Justice & Fair Distribution ────────────────────────────────────────
     jd_raw = _mean(
@@ -325,9 +402,16 @@ def score_company(profile: Any) -> MizanResult:
         _clamp(profile.audit_quality_score),
         _clamp(profile.procurement_transparency_score),
     )
-    # Governance-vs-controversy gap penalty
-    gap_penalty = max(0.0, (jd_raw - (100.0 - controversy)) / 2.0)
-    jd = _clamp(jd_raw - gap_penalty)
+    # Governance-vs-controversy gap penalty. A gap is a COMPARISON, so both
+    # halves must be known — comparing against an unknown controversy level
+    # asserts the level.
+    if jd_raw is None:
+        jd = None
+    elif controversy is None:
+        jd = _clamp(jd_raw)
+    else:
+        gap_penalty = max(0.0, (jd_raw - (100.0 - controversy)) / 2.0)
+        jd = _clamp(jd_raw - gap_penalty)
 
     # ── 4. Transparency & Accountability ──────────────────────────────────────
     ta = _mean(
@@ -337,7 +421,7 @@ def score_company(profile: Any) -> MizanResult:
         _clamp(profile.transparency_anti_corruption_score),
     )
     # Verified profiles get a 5 % uplift (capped at 100)
-    if getattr(profile, 'is_verified', False):
+    if ta is not None and getattr(profile, 'is_verified', False):
         ta = _clamp(ta * 1.05)
 
     # ── 5. Stewardship ────────────────────────────────────────────────────────
@@ -365,15 +449,25 @@ def score_company(profile: Any) -> MizanResult:
         ec, confidence = 30.0, 'ai-seeded'
 
     # ── Weighted final score ──────────────────────────────────────────────────
+    # Re-normalised across the known dimensions. evidence_confidence is always
+    # known (it is derived from status and verification, not from a score), so
+    # the composite is None only when every substantive dimension is unknown —
+    # at which point the remaining term would be evidence confidence alone, and
+    # a Mizan score built purely from "how much we trust data we do not have"
+    # is not a score.
     w = DIMENSION_WEIGHTS
-    final = _clamp(
-        pb  * w['public_benefit']
-        + hr * w['harm_reduction']
-        + jd * w['justice_distribution']
-        + ta * w['transparency_accountability']
-        + st * w['stewardship']
-        + ec * w['evidence_confidence']
-    )
+    substantive = (pb, hr, jd, ta, st)
+    if all(v is None for v in substantive):
+        final = None
+    else:
+        final = _clamp(_weighted(
+            (pb, w['public_benefit']),
+            (hr, w['harm_reduction']),
+            (jd, w['justice_distribution']),
+            (ta, w['transparency_accountability']),
+            (st, w['stewardship']),
+            (ec, w['evidence_confidence']),
+        ))
 
     # ── Risk flags ────────────────────────────────────────────────────────────
     flags: list[str] = []
@@ -381,13 +475,21 @@ def score_company(profile: Any) -> MizanResult:
         flags.append('Severe environmental harm detected')
     if pollution == 'high':
         flags.append('High pollution — active mitigation plan required')
-    if controversy >= 60:
+    if _known_and(controversy, lambda v: v >= 60):
         flags.append('Material controversy exposure')
-    if pb  < 40: flags.append('Below-threshold public benefit delivery')
-    if ta  < 40: flags.append('Governance transparency deficit')
-    if jd  < 40: flags.append('Justice & distribution gap identified')
-    if st  < 40: flags.append('Weak long-term stewardship signal')
-    if float(getattr(profile, 'harm_penalty', 0) or 0) >= 12:
+    # Each of these is a finding about the company. With the old _clamp an
+    # unassessed profile scored 0 on every dimension and collected all four.
+    if _known_and(pb, lambda v: v < 40): flags.append('Below-threshold public benefit delivery')
+    if _known_and(ta, lambda v: v < 40): flags.append('Governance transparency deficit')
+    if _known_and(jd, lambda v: v < 40): flags.append('Justice & distribution gap identified')
+    if _known_and(st, lambda v: v < 40): flags.append('Weak long-term stewardship signal')
+    # Classified per STEP 8 as a MISSING-INPUT FALLBACK, not a domain midpoint.
+    # Its direction was already safe — unknown became 0, which never reaches the
+    # 12-point trigger, so no flag was fabricated. Made explicit so it stays
+    # safe once harm_penalty becomes nullable, and so a genuine measured 0.0 is
+    # no longer indistinguishable from an unmeasured one.
+    _harm = clamp(getattr(profile, 'harm_penalty', None), hi=100.0)
+    if _harm is not None and _harm >= 12:
         flags.append('Maximum harm penalty applied to EcoIQ total score')
     if confidence == 'ai-seeded':
         flags.append('AI-assisted profile — independent verification required')
@@ -395,22 +497,16 @@ def score_company(profile: Any) -> MizanResult:
     # ── Greenwashing risk assessment ──────────────────────────────────────────
     is_verified = getattr(profile, 'is_verified', False)
 
-    gw_inp = GreenwashingInput(
-        climate_claims_strength     = round(_clamp(energy_tr * 0.55 + _clamp(profile.future_readiness_score) * 0.45), 2),
-        verified_emissions_data     = round(90.0 if is_verified else _clamp(_clamp(profile.audit_quality_score) * 0.35), 2),
-        third_party_assurance       = round(85.0 if is_verified else _clamp(_clamp(profile.audit_quality_score) * 0.30), 2),
-        transition_capex_disclosure = round(_clamp(energy_tr * 0.55 + _clamp(profile.infrastructure_upgrade_score) * 0.45), 2),
-        fossil_fuel_exposure        = round(_clamp(_POLLUTION_TO_FF.get(pollution, 35.0) * (1.0 - energy_tr / 250.0)), 2),
-        target_quality              = round(_clamp(profile.future_readiness_score), 2),
-        evidence_confidence         = round(92.0 if is_verified else (55.0 if str(getattr(profile, 'status', 'public')) == 'public' else 35.0), 2),
-        controversy_flags           = (3 if controversy >= 80 else 2 if controversy >= 60 else 1 if controversy >= 40 else 0),
-        ownership_transparency      = round(_clamp((_clamp(profile.transparency_anti_corruption_score) + _clamp(profile.procurement_transparency_score)) / 2.0), 2),
-        entity_type                 = 'company',
-    )
-    gw_result = assess_greenwashing_risk(gw_inp)
+    # Was a second, inline copy of greenwashing_from_profile's derivation —
+    # the same nine formulas, written out again. Two copies of a greenwashing
+    # derivation is two places for it to drift, and the copy here carried the
+    # same `_clamp(None) -> 0` defect. Delegating means one derivation, already
+    # corrected, and mizan inherits the insufficient_evidence state for free.
+    gw_result = greenwashing_from_profile(profile)
 
     # Surface greenwashing flags into the main risk_flags list
-    if gw_result.risk_level in ('high', 'severe'):
+    if (gw_result.risk_level in ('high', 'severe')
+            and gw_result.greenwashing_risk_score is not None):
         flags.append(
             f'Greenwashing risk indicators: {gw_result.risk_level} '
             f'(score {gw_result.greenwashing_risk_score:.0f}/100, public-data based) — '
@@ -418,13 +514,13 @@ def score_company(profile: Any) -> MizanResult:
         )
 
     return MizanResult(
-        public_benefit_score               = round(pb,    2),
-        harm_reduction_score               = round(hr,    2),
-        justice_distribution_score         = round(jd,    2),
-        transparency_accountability_score  = round(ta,    2),
-        stewardship_score                  = round(st,    2),
-        evidence_confidence_score          = round(ec,    2),
-        final_mizan_score                  = round(final, 2),
+        public_benefit_score               = _r2(pb),
+        harm_reduction_score               = _r2(hr),
+        justice_distribution_score         = _r2(jd),
+        transparency_accountability_score  = _r2(ta),
+        stewardship_score                  = _r2(st),
+        evidence_confidence_score          = _r2(ec),
+        final_mizan_score                  = _r2(final),
         mizan_label                        = _mizan_label(final),
         risk_flags                         = flags,
         investor_note                      = _investor_note(final, flags),
@@ -453,8 +549,19 @@ def score_country(profiles: list[Any]) -> MizanResult:
     results = [score_company(p) for p in profiles]
     n = len(results)
 
-    def _avg(attr: str) -> float:
-        return _clamp(sum(getattr(r, attr) for r in results) / n)
+    def _avg(attr: str):
+        """
+        Mean over the companies that HAVE this dimension.
+
+        The old form summed every company's value and divided by n, so a
+        company we could not assess entered the country average as a 0 — and
+        with the pre-D2c _clamp, unassessed companies were all zeros. A country
+        of unmeasured companies averaged near the bottom of the scale, and the
+        result was published as that country's Mizan standing.
+
+        None when no company in the country has the dimension.
+        """
+        return _clamp(mean_of_known(*[getattr(r, attr) for r in results]))
 
     pb  = _avg('public_benefit_score')
     hr  = _avg('harm_reduction_score')
@@ -464,14 +571,17 @@ def score_country(profiles: list[Any]) -> MizanResult:
     ec  = _avg('evidence_confidence_score')
 
     w = DIMENSION_WEIGHTS
-    final = _clamp(
-        pb * w['public_benefit']
-        + hr * w['harm_reduction']
-        + jd * w['justice_distribution']
-        + ta * w['transparency_accountability']
-        + st * w['stewardship']
-        + ec * w['evidence_confidence']
-    )
+    if all(v is None for v in (pb, hr, jd, ta, st)):
+        final = None
+    else:
+        final = _clamp(_weighted(
+            (pb, w['public_benefit']),
+            (hr, w['harm_reduction']),
+            (jd, w['justice_distribution']),
+            (ta, w['transparency_accountability']),
+            (st, w['stewardship']),
+            (ec, w['evidence_confidence']),
+        ))
 
     # Aggregate flags: keep those appearing in ≥20 % of profiles
     all_flags: list[str] = [f for r in results for f in r.risk_flags]
@@ -490,19 +600,25 @@ def score_country(profiles: list[Any]) -> MizanResult:
     )
 
     # ── Country-level greenwashing aggregate ─────────────────────────────────
+    # `.get(..., 0.0)` treated an unassessable company as zero greenwashing
+    # risk — the most favourable value on the scale — and `.get(..., 'low')`
+    # said the same in words. Companies without an assessment are excluded from
+    # the country aggregate rather than counted as clean.
     gw_scores = [
-        r.greenwashing_risk.get('greenwashing_risk_score', 0.0)
+        r.greenwashing_risk['greenwashing_risk_score']
         for r in results
         if r.greenwashing_risk
+        and r.greenwashing_risk.get('greenwashing_risk_score') is not None
     ]
     gw_levels = [
-        r.greenwashing_risk.get('risk_level', 'low')
+        r.greenwashing_risk['risk_level']
         for r in results
         if r.greenwashing_risk
+        and r.greenwashing_risk.get('risk_level') not in (None, RISK_INSUFFICIENT_EVIDENCE)
     ]
-    avg_gw_score = round(sum(gw_scores) / len(gw_scores), 2) if gw_scores else 0.0
+    avg_gw_score = round(sum(gw_scores) / len(gw_scores), 2) if gw_scores else None
     gw_level_dist = dict(Counter(gw_levels).most_common())
-    dominant_gw_level = gw_levels[0] if gw_levels else 'low'  # already ordered by most_common
+    dominant_gw_level = gw_levels[0] if gw_levels else RISK_INSUFFICIENT_EVIDENCE
     if gw_level_dist:
         dominant_gw_level = max(gw_level_dist, key=gw_level_dist.get)  # type: ignore[arg-type]
     high_risk_n  = sum(1 for lvl in gw_levels if lvl in ('high', 'severe'))
@@ -520,13 +636,13 @@ def score_country(profiles: list[Any]) -> MizanResult:
     }
 
     return MizanResult(
-        public_benefit_score               = round(pb,    2),
-        harm_reduction_score               = round(hr,    2),
-        justice_distribution_score         = round(jd,    2),
-        transparency_accountability_score  = round(ta,    2),
-        stewardship_score                  = round(st,    2),
-        evidence_confidence_score          = round(ec,    2),
-        final_mizan_score                  = round(final, 2),
+        public_benefit_score               = _r2(pb),
+        harm_reduction_score               = _r2(hr),
+        justice_distribution_score         = _r2(jd),
+        transparency_accountability_score  = _r2(ta),
+        stewardship_score                  = _r2(st),
+        evidence_confidence_score          = _r2(ec),
+        final_mizan_score                  = _r2(final),
         mizan_label                        = _mizan_label(final),
         risk_flags                         = agg_flags,
         investor_note                      = _investor_note(final, agg_flags),

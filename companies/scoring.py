@@ -25,6 +25,8 @@ Moral Labels:
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from core.unknown import clamp, mean_of_known
+
 if TYPE_CHECKING:
     from companies.models import CompanyProfile
 
@@ -34,6 +36,10 @@ if TYPE_CHECKING:
 def _clamp(v, lo=0.0, hi=100.0) -> float | None:
     """
     Bound a known value. Unknown stays unknown.
+
+    Delegates to core.unknown, which is the single authority since D2b. The
+    behaviour is identical — parity is asserted by test across None/0/50/100 and
+    out-of-range values — but there is now exactly one implementation to change.
 
     Was `float(v or 0)`, which had two defects in one expression:
 
@@ -47,9 +53,7 @@ def _clamp(v, lo=0.0, hi=100.0) -> float | None:
     Returning None makes the unknown case explicit and forces every caller to
     decide what to do with it, which is the point.
     """
-    if v is None:
-        return None
-    return max(lo, min(hi, float(v)))
+    return clamp(v, lo, hi)
 
 
 def _avg(*values) -> float | None:
@@ -75,8 +79,7 @@ def _avg(*values) -> float | None:
         _avg(80, None)      -> 80.0   (known-only, coverage reports the gap)
         _avg(None, None)    -> None   (was 50.0)
     """
-    known = [c for c in (_clamp(v) for v in values) if c is not None]
-    return sum(known) / len(known) if known else None
+    return mean_of_known(*values)
 
 
 def _pollution_to_env_base(pollution_level: str) -> float | None:

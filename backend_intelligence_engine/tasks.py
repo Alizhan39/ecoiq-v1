@@ -23,6 +23,8 @@ import logging
 
 from celery import shared_task
 
+from core.unknown import known
+
 from backend_intelligence_engine.models import BackgroundTaskRun
 
 logger = logging.getLogger(__name__)
@@ -103,8 +105,15 @@ def company_intelligence_refresh(self, company_profile_id):
 
     # Only surface a notification for a real, meaningful change — not noise
     # on every routine refresh where nothing moved.
-    score_delta = abs((profile.ecoiq_total_score or 0) - (score_before or 0))
-    if score_delta >= 2.0:
+    # A delta is a COMPARISON between two scores. `or 0` supplied a zero for
+    # either side, so a company gaining its first score registered as a
+    # full-magnitude "move" and a company losing one registered the same in
+    # reverse — a notification announcing a change that never happened, with a
+    # fabricated before/after in its message body. Both sides must be known.
+    before = known(score_before)
+    after  = known(profile.ecoiq_total_score)
+    score_delta = None if before is None or after is None else abs(after - before)
+    if score_delta is not None and score_delta >= 2.0:
         from notifications.models import create_notification
         create_notification(
             title=f'{profile.company.name if profile.company_id else profile}: score moved {score_delta:.1f} points',

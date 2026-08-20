@@ -11,9 +11,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from companies.models import CompanyProfile
 
+from core.unknown import clamp, mean_of_known, weighted_mean_of_known
 
-def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
-    return max(lo, min(hi, float(v or 0)))
+
+# One authority for unknown handling — core.unknown (D2b). Was a private
+# `float(v or 0)`, one of six identical copies across ml/ethics alone, each of
+# which turned an unmeasured score into 0 and a genuine 0.0 into 0 as well.
+_clamp = clamp
+_avg = mean_of_known
+_weighted = weighted_mean_of_known
 
 
 def compute_public_benefit_composite(profile: 'CompanyProfile') -> dict:
@@ -33,19 +39,20 @@ def compute_public_benefit_composite(profile: 'CompanyProfile') -> dict:
     pillar = _clamp(profile.public_benefit_score)
 
     # Weighted composite: pillar 40 %, jobs 20 %, regional 15 %, infra 15 %, NV 10 %
-    composite = (
-        pillar * 0.40
-        + jobs   * 0.20
-        + reg    * 0.15
-        + infra  * 0.15
-        + nv     * 0.10
+    # Re-normalised across the known terms, so a company is not scored lower
+    # purely for an input it was never assessed on. None when nothing is known.
+    composite = _weighted(
+        (pillar, 0.40), (jobs, 0.20), (reg, 0.15), (infra, 0.15), (nv, 0.10),
     )
 
+    def _r(value):
+        return None if value is None else round(value, 2)
+
     return {
-        'score':          round(_clamp(composite), 2),
-        'jobs':           round(jobs,   2),
-        'regional':       round(reg,    2),
-        'infrastructure': round(infra,  2),
-        'national_value': round(nv,     2),
-        'pillar_base':    round(pillar, 2),
+        'score':          _r(_clamp(composite)),
+        'jobs':           _r(jobs),
+        'regional':       _r(reg),
+        'infrastructure': _r(infra),
+        'national_value': _r(nv),
+        'pillar_base':    _r(pillar),
     }
