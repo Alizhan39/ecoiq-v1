@@ -161,15 +161,20 @@ void main() {
 
     test('F: a null rank is null, not zero', () {
       final summary = CompanySummary.fromJson(const {
-        'slug': 'acme', 'name': 'Acme', 'sector': '', 'country': '',
-        'ecoiq_score': null, 'score_status': 'INSUFFICIENT_EVIDENCE',
+        'slug': 'acme',
+        'name': 'Acme',
+        'sector': '',
+        'country': '',
+        'ecoiq_score': null,
+        'score_status': 'INSUFFICIENT_EVIDENCE',
         'rank': null,
       });
       expect(summary.rank, isNot(0));
       expect(summary.rank, isNull);
     });
 
-    test('a profile keeps its descriptive fields regardless of score state', () {
+    test('a profile keeps its descriptive fields regardless of score state',
+        () {
       final profile = CompanyProfileData.fromJson(const {
         'slug': 'acme',
         'name': 'Acme',

@@ -80,6 +80,5 @@ class Environment {
   /// Only company data has moved to v2. Auth, /me and app-config stay on v1
   /// because v2 does not define them and they carry no score, which is why the
   /// cutover is per-endpoint rather than a change of [apiBaseUrl].
-  String get apiV2BaseUrl =>
-      apiBaseUrl.replaceFirst(RegExp(r'/v1/?$'), '/v2');
+  String get apiV2BaseUrl => apiBaseUrl.replaceFirst(RegExp(r'/v1/?$'), '/v2');
 }
