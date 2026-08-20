@@ -910,6 +910,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from league.models import Company
         from companies.models import CompanyProfile
+        from companies.provenance import record_seed_write
         from companies.scoring import recalculate_and_save
 
         if options['clear']:
@@ -966,6 +967,12 @@ class Command(BaseCommand):
                     created_pr += 1
                 else:
                     updated += 1
+
+                # D3C-1 — provenance is written in the SAME atomic block as the
+                # value. A crash between the two would leave a seeded number
+                # indistinguishable from a real one, which is exactly the
+                # unreconstructible state D3B measured across the whole estate.
+                record_seed_write(profile, profile_fields, 'seed:seed_companies')
 
                 # Recalculate EcoIQ scores from the individual component scores
                 recalculate_and_save(profile)
