@@ -93,6 +93,26 @@ def record(company, metric_key: str, origin: str, **fields):
     )
 
 
+def supersede(profile, metric_key: str) -> int:
+    """
+    Mark a metric's current provenance historical WITHOUT recording a new row.
+
+    D3C-3b needs this for the case where a derived value becomes unavailable:
+    a calculation that previously produced a number now returns None because
+    the evidence no longer supports it.
+
+    Leaving the old row marked current would be the provenance layer asserting
+    that a superseded calculation still describes the current state — which is
+    the same class of untruth as a stale score. Superseding says instead: this
+    is what we used to think, and we no longer have a current answer.
+
+    Returns the number of rows superseded (0 or 1).
+    """
+    return profile.metric_provenance.filter(
+        metric_key=metric_key, is_current=True,
+    ).update(is_current=False)
+
+
 def history(company, metric_key: str):
     """Every provenance row ever recorded for one metric, newest first."""
     return company.metric_provenance.filter(

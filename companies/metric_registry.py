@@ -241,6 +241,20 @@ _DERIVED_DEFINITIONS = [
         calculation='companies.scoring.calculate_transparency',
     ),
     MetricDefinition(
+        key='company.ethical_alignment', label='Ethical Alignment Pillar',
+        kind=DERIVED,
+        value_location='companies.CompanyProfile.ethical_alignment_score',
+        resolver=_profile_field('ethical_alignment_score'),
+        allowed_origins=DERIVED_ORIGINS,
+        calculation='companies.scoring.calculate_ethical_alignment',
+        description=(
+            'Registered in D3C-3b. It is a DERIVED pillar — computed from '
+            'controversy_risk_score and national_value_score — but was the one '
+            'pillar with no registry key, so a calculation consuming it could '
+            'not record complete lineage. Found by tracing the ethics formulas.'
+        ),
+    ),
+    MetricDefinition(
         key='company.harm_penalty', label='Harm Penalty', kind=DERIVED,
         value_location='companies.CompanyProfile.harm_penalty',
         resolver=_profile_field('harm_penalty'),
