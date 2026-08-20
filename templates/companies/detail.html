@@ -332,11 +332,16 @@ a{color:inherit;text-decoration:none}
 .harm-cell.moderate::before{background:var(--warn)}
 .harm-cell.elevated::before{background:var(--danger)}
 .harm-cell.critical::before{background:#b91c1c}
+/* insufficient_evidence: a signal we could not assess. Deliberately the
+   muted neutral, never the green 'clear' treatment — an unassessed signal
+   must not read as a passed one. */
+.harm-cell.insufficient_evidence::before{background:var(--muted2)}
 .harm-cell-label{font-size:.7rem;font-weight:700;margin-bottom:.2rem;padding-left:.1rem}
 .harm-cell.clear .harm-cell-label{color:var(--accent)}
 .harm-cell.moderate .harm-cell-label{color:var(--warn)}
 .harm-cell.elevated .harm-cell-label{color:var(--danger)}
 .harm-cell.critical .harm-cell-label{color:#f97316}
+.harm-cell.insufficient_evidence .harm-cell-label{color:var(--muted2)}
 .harm-cell-detail{font-size:.63rem;color:var(--muted2);line-height:1.5;padding-left:.1rem}
 .harm-cell-penalty{
   font-size:.6rem;font-weight:700;

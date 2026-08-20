@@ -9,6 +9,8 @@ from django.http import Http404, JsonResponse, HttpResponse, HttpResponseForbidd
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
+from core.unknown import clamp, mean_of_known
+
 from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_CHOICES
 from companies.scoring import get_path_to_100_actions
 from companies.throttle import rate_limit, cache_response
@@ -63,8 +65,18 @@ def _get_harm_signals(profile):
         })
 
     # Controversy risk
-    cr = profile.controversy_risk_score or 0
-    if cr >= 70:
+    #
+    # `or 0` made an unknown score read as 0, which fell through to the else
+    # branch and told the reader "within acceptable range" — a clean bill of
+    # health for a company that had never been assessed. Unknown now says so.
+    cr = clamp(profile.controversy_risk_score)
+    if cr is None:
+        signals.append({
+            'id': 'controversy', 'label': 'Controversy Risk',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Controversy risk has not been assessed for this organisation.',
+        })
+    elif cr >= 70:
         signals.append({
             'id': 'controversy', 'label': 'Controversy Risk',
             'status': 'elevated', 'penalty': 5,
@@ -84,8 +96,18 @@ def _get_harm_signals(profile):
         })
 
     # Transparency quality
-    tr = profile.transparency_score_detail or 0
-    if tr < 30:
+    #
+    # The most consequential of the three: `or 0` put an unknown score below the
+    # 30 threshold, so an unassessed company was published with a "Transparency
+    # Deficit — below minimum threshold" finding and a 5-point penalty.
+    tr = clamp(profile.transparency_score_detail)
+    if tr is None:
+        signals.append({
+            'id': 'transparency', 'label': 'Transparency Quality',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Disclosure quality has not been assessed for this organisation.',
+        })
+    elif tr < 30:
         signals.append({
             'id': 'transparency', 'label': 'Transparency Deficit',
             'status': 'elevated', 'penalty': 5,
@@ -105,9 +127,20 @@ def _get_harm_signals(profile):
         })
 
     # Profit extraction
-    pe = profile.profit_extraction_score or 0
-    pb = profile.public_benefit_score or 50
-    if pe > 75 and pb < 50:
+    #
+    # `pb = ... or 50` was the falsy-trigger bug in its purest form: it rewrote a
+    # genuine measured 0.0 public benefit to 50, which then failed the `< 50`
+    # test — so the company with the worst possible public-benefit score was the
+    # one guaranteed NOT to be flagged for it.
+    pe = clamp(profile.profit_extraction_score)
+    pb = clamp(profile.public_benefit_score)
+    if pe is None:
+        signals.append({
+            'id': 'profit_extraction', 'label': 'Profit Distribution',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Profit distribution has not been assessed for this organisation.',
+        })
+    elif pe > 75 and pb is not None and pb < 50:
         signals.append({
             'id': 'profit_extraction', 'label': 'Profit Extraction',
             'status': 'elevated', 'penalty': 5,
@@ -127,8 +160,17 @@ def _get_harm_signals(profile):
         })
 
     # High pollution + low modernization
-    mod = profile.modernization_score or 50
-    if p in ('high', 'severe') and mod < 40:
+    #
+    # `or 50` here suppressed the flag for unknown modernization (50 >= 40) but
+    # also rewrote a real 0.0 to 50, hiding the worst genuine transition gaps.
+    mod = clamp(profile.modernization_score)
+    if mod is None:
+        signals.append({
+            'id': 'transition_gap', 'label': 'Transition Readiness',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Modernization progress has not been assessed for this organisation.',
+        })
+    elif p in ('high', 'severe') and mod < 40:
         signals.append({
             'id': 'transition_gap', 'label': 'Transition Gap',
             'status': 'elevated', 'penalty': 3,
@@ -172,7 +214,14 @@ def _get_ai_confidence(profile):
         'jobs_created_score', 'regional_development_score', 'waste_management_score',
         'energy_transition_score', 'transparency_score_detail', 'anti_corruption_score',
     ]
-    default_count = sum(1 for f in check_fields if abs(getattr(profile, f, 50) - 50.0) < 0.5)
+    # An UNKNOWN field is not evidence either, and counts the same as one parked
+    # at the seeded default. Also guards against abs(None - 50.0) raising once
+    # these columns become nullable in D4.
+    def _is_not_evidence(field):
+        v = getattr(profile, field, None)
+        return v is None or abs(float(v) - 50.0) < 0.5
+
+    default_count = sum(1 for f in check_fields if _is_not_evidence(f))
     score += max(0, 10 - default_count * 2)
 
     # Verification and public data (30 pts)
@@ -195,7 +244,18 @@ def _get_financing_eligibility(profile):
     Indicative financing eligibility cards based on EcoIQ profile.
     All results are indicative only — not investment advice.
     """
-    s = profile.ecoiq_total_score
+    # Not a fallback site — these comparisons have no `or 50`, so nothing is
+    # fabricated today. But every card here is a POSITIVE eligibility claim, and
+    # once these columns become nullable (D4) a bare `s >= 70` would raise
+    # TypeError on the public company page. Refusing up front is both the safe
+    # answer and the truthful one: we cannot assert a company qualifies for
+    # Green Bond finance on the strength of a score we do not have.
+    s = clamp(profile.ecoiq_total_score)
+    transparency = clamp(profile.transparency_score_detail)
+    energy = clamp(profile.energy_transition_score)
+    if s is None:
+        return []
+
     items = []
 
     if s >= 70 and profile.pollution_level in ('low', 'medium'):
@@ -207,7 +267,7 @@ def _get_financing_eligibility(profile):
             'detail': 'Responsible Builder tier meets indicative Green Bond use-of-proceeds criteria.',
         })
 
-    if s >= 60 and profile.transparency_score_detail >= 50:
+    if s >= 60 and transparency is not None and transparency >= 50:
         items.append({
             'type': 'ESG Fund',
             'institution': 'ESG-Screened Portfolios',
@@ -216,7 +276,7 @@ def _get_financing_eligibility(profile):
             'detail': 'Transparency and governance scores meet indicative ESG fund screening thresholds.',
         })
 
-    if profile.transparency_score_detail >= 50 and s >= 50:
+    if transparency is not None and transparency >= 50 and s >= 50:
         items.append({
             'type': 'IFC / EBRD',
             'institution': 'Multilateral Development Banks',
@@ -225,7 +285,7 @@ def _get_financing_eligibility(profile):
             'detail': 'Governance and transparency standards meet MDB indicative assessment criteria.',
         })
 
-    if profile.energy_transition_score >= 60 and profile.pollution_level in ('low', 'medium'):
+    if energy is not None and energy >= 60 and profile.pollution_level in ('low', 'medium'):
         items.append({
             'type': 'Climate Finance',
             'institution': 'Climate Bonds / GCF',
@@ -255,56 +315,61 @@ def _get_institutional_signals(profile):
     Used to render the Institutional Signals strip on company profile pages.
     All outputs are indicative.
     """
-    def _clamp(v): return max(0.0, min(100.0, float(v or 0)))
-
+    # Was a local `float(v or 0)` — the same defect as ethics and core scoring,
+    # in a third copy. core.unknown is now the single authority.
+    #
+    # The shape of the bug here was the trailing `else:` on each signal. With
+    # unknown arriving as 0, every unassessed company fell into the worst tier
+    # and was published as 'High Risk', 'Early Stage', 'Limited' and 'Poor' —
+    # four negative institutional claims generated purely by absence of data.
     signals = []
 
+    def _tiered(label, value, tiers, unknown_value='Not assessed'):
+        """
+        Emit one signal, or an explicit not-assessed one when value is unknown.
+
+        `tiers` is [(threshold, value, level), ...] highest first. The final
+        tier is reached only by a KNOWN value below every threshold, so the
+        worst label is now a finding rather than a default.
+        """
+        if value is None:
+            signals.append({'label': label, 'value': unknown_value,
+                            'level': 'insufficient_evidence'})
+            return
+        for threshold, tier_value, level in tiers:
+            if value >= threshold:
+                signals.append({'label': label, 'value': tier_value, 'level': level})
+                return
+        _, tier_value, level = tiers[-1]
+        signals.append({'label': label, 'value': tier_value, 'level': level})
+
     # 1. Governance Risk — transparency + anti-corruption
-    gov = (_clamp(profile.transparency_score_detail) + _clamp(profile.anti_corruption_score)) / 2
-    if gov >= 68:
-        signals.append({'label': 'Governance Risk',        'value': 'Low Risk',    'level': 'good'})
-    elif gov >= 50:
-        signals.append({'label': 'Governance Risk',        'value': 'Moderate',    'level': 'moderate'})
-    elif gov >= 34:
-        signals.append({'label': 'Governance Risk',        'value': 'Elevated',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Governance Risk',        'value': 'High Risk',   'level': 'critical'})
+    _tiered('Governance Risk',
+            mean_of_known(profile.transparency_score_detail, profile.anti_corruption_score),
+            [(68, 'Low Risk', 'good'), (50, 'Moderate', 'moderate'),
+             (34, 'Elevated', 'elevated'), (0, 'High Risk', 'critical')])
 
     # 2. Transition Readiness — energy + future + modernization
-    trans = (_clamp(profile.energy_transition_score)
-             + _clamp(profile.future_readiness_score)
-             + _clamp(profile.modernization_score)) / 3
-    if trans >= 68:
-        signals.append({'label': 'Transition Readiness',   'value': 'Leading',     'level': 'good'})
-    elif trans >= 52:
-        signals.append({'label': 'Transition Readiness',   'value': 'Advancing',   'level': 'moderate'})
-    elif trans >= 37:
-        signals.append({'label': 'Transition Readiness',   'value': 'Developing',  'level': 'elevated'})
-    else:
-        signals.append({'label': 'Transition Readiness',   'value': 'Early Stage', 'level': 'critical'})
+    _tiered('Transition Readiness',
+            mean_of_known(profile.energy_transition_score,
+                          profile.future_readiness_score,
+                          profile.modernization_score),
+            [(68, 'Leading', 'good'), (52, 'Advancing', 'moderate'),
+             (37, 'Developing', 'elevated'), (0, 'Early Stage', 'critical')])
 
     # 3. Financing Compatibility — overall score adjusted for pollution
     pol_adj = {'low': 0, 'medium': 4, 'high': 14, 'severe': 24}.get(profile.pollution_level, 0)
-    fin = max(0, _clamp(profile.ecoiq_total_score) - pol_adj)
-    if fin >= 64:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Strong',     'level': 'good'})
-    elif fin >= 44:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Eligible',   'level': 'moderate'})
-    elif fin >= 28:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Partial',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Limited',    'level': 'critical'})
+    total = clamp(profile.ecoiq_total_score)
+    fin = None if total is None else max(0, total - pol_adj)
+    _tiered('Financing Compatibility', fin,
+            [(64, 'Strong', 'good'), (44, 'Eligible', 'moderate'),
+             (28, 'Partial', 'elevated'), (0, 'Limited', 'critical')])
 
     # 4. Transparency Quality — transparency detail + audit
-    transp = (_clamp(profile.transparency_score_detail) + _clamp(profile.audit_quality_score)) / 2
-    if transp >= 70:
-        signals.append({'label': 'Transparency Quality',   'value': 'Institutional','level': 'good'})
-    elif transp >= 54:
-        signals.append({'label': 'Transparency Quality',   'value': 'Strong',      'level': 'moderate'})
-    elif transp >= 38:
-        signals.append({'label': 'Transparency Quality',   'value': 'Moderate',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Transparency Quality',   'value': 'Poor',        'level': 'critical'})
+    _tiered('Transparency Quality',
+            mean_of_known(profile.transparency_score_detail, profile.audit_quality_score),
+            [(70, 'Institutional', 'good'), (54, 'Strong', 'moderate'),
+             (38, 'Moderate', 'elevated'), (0, 'Poor', 'critical')])
 
     # 5. Industrial Complexity — driven by pollution level classification
     ic_map = {
@@ -317,15 +382,9 @@ def _get_institutional_signals(profile):
     signals.append({'label': 'Industrial Complexity',      'value': ic_val,         'level': ic_level})
 
     # 6. Public Benefit Alignment — public_benefit_score
-    pb = _clamp(profile.public_benefit_score)
-    if pb >= 70:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Exemplary',  'level': 'good'})
-    elif pb >= 54:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Aligned',    'level': 'moderate'})
-    elif pb >= 38:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Partial',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Developing', 'level': 'critical'})
+    _tiered('Public Benefit Alignment', clamp(profile.public_benefit_score),
+            [(70, 'Exemplary', 'good'), (54, 'Aligned', 'moderate'),
+             (38, 'Partial', 'elevated'), (0, 'Developing', 'critical')])
 
     return signals
 
@@ -762,7 +821,11 @@ def company_pdf_report(request, slug):
     if not public_score_state(profile).available and not request.user.is_staff:
         raise Http404('No published assessment for this organisation.')
 
-    score = float(profile.ecoiq_total_score or 0)
+    # Behind the D1.5 gate above, so an unpublishable score never reaches here;
+    # the guard is belt-and-braces against a future caller that forgets it.
+    score = clamp(profile.ecoiq_total_score)
+    if score is None:
+        raise Http404('No published assessment for this organisation.')
 
     # Score breakdown cards (reuse the same structure as company_detail)
     score_cards = [
@@ -961,10 +1024,14 @@ def company_ml_insights(request, slug):
     try:
         from ml.prediction import predict_12m
         pred = predict_12m(company)
+        current = clamp(company.ecoiq_score)
         if pred is not None:
             payload['prediction'] = {
                 'score_12m': round(pred, 1),
-                'delta':     round(pred - float(company.ecoiq_score or 0), 1),
+                # A delta is a comparison. Without a current score there is
+                # nothing to compare against, so it is null rather than a
+                # difference measured from an invented zero.
+                'delta': None if current is None else round(pred - current, 1),
             }
     except Exception as exc:
         if not payload['error']:
@@ -1028,9 +1095,13 @@ def sector_pdf_report(request, sector):
         is_preview = True
 
     sector_label = _SECTOR_DISPLAY.get(sector, sector.replace('_', ' ').title())
-    names   = [p.company.name[:22] for p in profiles_data]
-    scores  = [float(p.ecoiq_total_score or 0) for p in profiles_data]
-    poll_levels = [p.pollution_level or 'medium' for p in profiles_data]
+    # Companies without a score are EXCLUDED from the chart rather than plotted
+    # as a zero-length bar. A bar at 0 is a visual claim that the company scored
+    # worst in its sector; an absent bar claims nothing.
+    plotted = [p for p in profiles_data if p.ecoiq_total_score is not None]
+    names   = [p.company.name[:22] for p in plotted]
+    scores  = [float(p.ecoiq_total_score) for p in plotted]
+    poll_levels = [p.pollution_level or 'medium' for p in plotted]
 
     def _bar_color(s):
         if s >= 70: return '#10b981'
@@ -1088,10 +1159,13 @@ def sector_pdf_report(request, sector):
                  f'{score:.1f}', va='center', ha='left',
                  fontsize=8, color=WHITE, fontfamily=MONO)
 
-    avg = np.mean(scores) if scores else 50
-    ax1.axvline(x=avg, color=EMERALD, linestyle='--', alpha=0.6, linewidth=1)
-    ax1.text(avg + 0.5, len(names) - 0.5, f'avg {avg:.1f}',
-             fontsize=7, color=EMERALD, fontfamily=MONO)
+    # No scores means no average. Drawing one at 50 put a labelled 'avg 50.0'
+    # line on a chart of nothing — an invented sector benchmark.
+    if scores:
+        avg = float(np.mean(scores))
+        ax1.axvline(x=avg, color=EMERALD, linestyle='--', alpha=0.6, linewidth=1)
+        ax1.text(avg + 0.5, len(names) - 0.5, f'avg {avg:.1f}',
+                 fontsize=7, color=EMERALD, fontfamily=MONO)
 
     # Tier zone lines
     for threshold, col in [(85, EMERALD), (70, '#38bdf8'), (55, AMBER), (40, '#f97316')]:
@@ -1201,7 +1275,9 @@ def report_index(request):
             'slug':      s,
             'label':     _SECTOR_DISPLAY.get(s, s.replace('_', ' ').title()),
             'count':     row['count'],
-            'avg_score': round(float(row['avg'] or 0), 1),
+            # Avg() returns None for a group with no scored members. Reporting
+            # that as 0.0 would publish a sector average nobody computed.
+            'avg_score': None if row['avg'] is None else round(float(row['avg']), 1),
             'pdf_url':   f'/companies/reports/sector/{s}/',
         })
 
@@ -1237,7 +1313,14 @@ def generate_certificate(request, slug):
 
     cert_id  = f'ECOIQ-{slug[:6].upper()}-{uuid.uuid4().hex[:8].upper()}'
     issued   = datetime.now().strftime('%d %B %Y')
-    score    = float(profile.ecoiq_total_score or 0)
+    score    = clamp(profile.ecoiq_total_score)
+    if score is None:
+        return HttpResponse(
+            '<h2 style="font-family:sans-serif;color:#475569;padding:2rem">'
+            'Certificate not available — no published assessment for this '
+            'organisation.</h2>',
+            status=404,
+        )
     tier     = profile.moral_label_display
     color    = profile.moral_label_color
 
