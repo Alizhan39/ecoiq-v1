@@ -738,3 +738,188 @@ class InvestmentRelevanceReport(models.Model):
 
 
 # ── DataIngestionLog ──────────────────────────────────────────────────────────
+
+
+# ── CompanyMetricProvenance (D3A) ──────────────────────────────────────────────
+
+class CompanyMetricProvenance(models.Model):
+    """
+    Where one metric on one CompanyProfile came from.
+
+    D3A — provenance foundation. Answers "where did this value come from?", and
+    deliberately nothing else. It does not decide whether a value may be
+    published (D5), and it does not touch the score columns' nullability (D4).
+
+    Shaped after company_intelligence.CompanyFinancialFactSource, which already
+    solved this problem for financial facts: an ENUMERATED metric key, evidence
+    by ForeignKey, and a `value` property that RESOLVES the number rather than
+    storing a second copy of it. Following an existing, working pattern beats
+    inventing a parallel one — see docs/product/PROVENANCE_ARCHITECTURE.md.
+
+    Three things this model deliberately does NOT do:
+
+    1.  It does not copy the value. `CompanyProfile.public_benefit_score = 72`
+        and a provenance row storing `value = 72` would be two numbers free to
+        drift. The `value` property reads through instead.
+
+    2.  It does not duplicate EvidenceMemory. Source URL, source type,
+        verification status, review tier, reviewer and expiry all already live
+        there, and are reached through `evidence`.
+
+    3.  It does not conflate ORIGIN with EVIDENCE QUALITY. Those vary
+        independently — a MODELLED value can rest on excellent sources, and a
+        MEASURED one on poor ones — so origin lives here and quality is read
+        from the linked evidence.
+
+    Append-only: a partial unique constraint allows exactly one `is_current` row
+    per (company, metric_key) while history accumulates behind it. Overwriting
+    in place would destroy the previous provenance, which is precisely what
+    makes an audit trail impossible.
+    """
+    company = models.ForeignKey(
+        CompanyProfile, on_delete=models.CASCADE, related_name='metric_provenance',
+    )
+    metric_key = models.CharField(
+        max_length=60,
+        help_text='CompanyProfile field name. Validated against '
+                  'companies.evidence.MATERIAL_INPUTS on save — a typo is '
+                  'rejected rather than becoming a silently orphaned row.',
+    )
+
+    # ── Origin: HOW the value was created ────────────────────────────────────
+    origin = models.CharField(
+        max_length=30,
+        help_text='One of companies.evidence.PROVENANCE_CHOICES. No default: a '
+                  'value whose origin nobody stated must not silently become '
+                  'MEASURED, which is the strongest claim in the vocabulary.',
+    )
+
+    # ── Supporting evidence, by reference ────────────────────────────────────
+    evidence = models.ForeignKey(
+        'evidence_memory.EvidenceMemory', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='metric_provenance',
+        help_text='SET_NULL rather than CASCADE: losing the evidence record '
+                  'must not erase the fact that this value once had a stated '
+                  'origin. The row survives and says so.',
+    )
+    source_quality = models.CharField(
+        max_length=20, blank=True,
+        help_text='Optional analyst override for cases with no EvidenceMemory '
+                  'row. Where evidence IS linked, its own source_type and '
+                  'review_tier are authoritative and this stays blank.',
+    )
+
+    # ── Confidence — nullable, never defaulted ───────────────────────────────
+    confidence = models.FloatField(
+        null=True, blank=True,
+        help_text='0-100. NULL means unknown confidence — never fabricated, and '
+                  'never 50. A genuine 0.0 stays distinguishable from unknown.',
+    )
+
+    # ── Method and versioning ────────────────────────────────────────────────
+    methodology = models.TextField(
+        blank=True,
+        help_text='How the value was produced. Expected for ESTIMATED, MODELLED '
+                  'and INFERRED, where the number is only as defensible as the '
+                  'method behind it.',
+    )
+    calculation_version = models.CharField(
+        max_length=30, blank=True,
+        help_text='Version of the model or formula that produced a MODELLED or '
+                  'ESTIMATED value, so a later change is attributable.',
+    )
+    observed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='When the underlying observation was made — distinct from '
+                  'created_at, which is when EcoIQ recorded it.',
+    )
+
+    # ── Human review: independent of origin ──────────────────────────────────
+    review_status = models.CharField(
+        max_length=25, default='proposed',
+        help_text="Reuses company_intelligence.CompanyKPIEvidenceLink's review "
+                  'vocabulary rather than inventing a sixth. Independent of '
+                  'origin: MEASURED is not auto-reviewed, and MODELLED is not '
+                  'auto-distrusted.',
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    notes = models.TextField(blank=True)
+
+    is_current = models.BooleanField(
+        default=True,
+        help_text='Exactly one current row per company+metric, enforced by a '
+                  'partial unique constraint. Superseded rows stay for audit.',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+',
+    )
+    written_by = models.CharField(
+        max_length=100, blank=True,
+        help_text="Machine writer that created this row (e.g. 'seed_companies', "
+                  "'ingest_sec_edgar', 'companies.scoring'). Populated by D3C.",
+    )
+
+    class Meta:
+        ordering = ['metric_key', '-created_at']
+        verbose_name = 'Company Metric Provenance'
+        verbose_name_plural = 'Company Metric Provenance'
+        constraints = [
+            # Partial unique index — supported on both SQLite and PostgreSQL.
+            # History accumulates; the current state stays unambiguous.
+            models.UniqueConstraint(
+                fields=['company', 'metric_key'],
+                condition=models.Q(is_current=True),
+                name='companies_unique_current_metric_provenance',
+            ),
+        ]
+        indexes = [
+            # The only access pattern D3A has. Deliberately NOT indexing origin,
+            # review_status or created_at: no query needs them yet, and an
+            # unused index is a write cost with no reader.
+            models.Index(fields=['company', 'metric_key'],
+                         name='companies_prov_company_metric'),
+        ]
+
+    def __str__(self):
+        return f'{self.company} — {self.metric_key} ({self.origin})'
+
+    @property
+    def value(self):
+        """
+        The number this row is provenance FOR, resolved rather than stored.
+
+        Same approach as CompanyFinancialFactSource.value, for the same two
+        reasons: a stored copy could drift from the field it describes, and
+        Django templates cannot look up a model field by a variable name.
+        """
+        return getattr(self.company, self.metric_key, None)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        from companies.evidence import MATERIAL_INPUTS, PROVENANCE_CHOICES
+
+        valid_origins = {code for code, _ in PROVENANCE_CHOICES}
+        if self.origin not in valid_origins:
+            raise ValidationError({'origin': f'Unknown provenance state: {self.origin!r}.'})
+
+        valid_metrics = {item.field_name for item in MATERIAL_INPUTS}
+        if self.metric_key not in valid_metrics:
+            raise ValidationError({
+                'metric_key': f'{self.metric_key!r} is not a material EcoIQ metric. '
+                              'Valid keys come from companies.evidence.MATERIAL_INPUTS.',
+            })
+
+    def save(self, *args, **kwargs):
+        # Validate on every save, including programmatic ones. full_clean() is
+        # not called by Model.save() in Django, so an unvalidated metric_key
+        # would otherwise reach the database from a script.
+        self.clean()
+        return super().save(*args, **kwargs)
