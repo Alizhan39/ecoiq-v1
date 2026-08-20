@@ -102,6 +102,15 @@ urlpatterns = [
     path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
     path('api/v1/',     include('api.urls',   namespace='api')),
 
+    # EcoIQ REST API v2 — the canonical contract, with explicit evidence
+    # semantics: a score is null when EcoIQ cannot support it with evidence,
+    # and score_status/evidence_coverage say so rather than a stand-in number.
+    #
+    # Purely additive. v1 above is unchanged and stays mounted for existing
+    # integrators; see docs/product/API_EVIDENCE_MIGRATION.md for the
+    # deprecation conditions.
+    path('api/v2/',     include('api.v2_urls', namespace='api_v2')),
+
     # EcoIQ AI Gateway — one provider-neutral, free-only AI system over
     # OpenRouter / Bytez / NVIDIA NIM, with automatic free-only model routing.
     path('api/ai/',     include('ai_gateway.urls',     namespace='ai_gateway')),
