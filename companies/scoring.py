@@ -23,9 +23,15 @@ Moral Labels:
   0–29    Extractive / Harmful
 """
 from __future__ import annotations
+import logging
 from typing import TYPE_CHECKING
 
+from django.db import transaction
+
+from companies.evidence import PROVENANCE_MODELLED
 from core.unknown import clamp, mean_of_known
+
+log = logging.getLogger('companies.scoring')
 
 if TYPE_CHECKING:
     from companies.models import CompanyProfile
@@ -93,6 +99,75 @@ def _pollution_to_env_base(pollution_level: str) -> float | None:
     """
     return {'low': 85.0, 'medium': 60.0, 'high': 30.0, 'severe': 10.0}.get(
         pollution_level
+    )
+
+
+#: Which CompanyProfile fields each dimension reads.
+#:
+#: Declared next to the calculators rather than inferred at the call site,
+#: because D3C-3 has to record the inputs a calculation ACTUALLY CONSUMED — and
+#: a lineage assembled from a guess about the formula is worse than none.
+#: tests_composite_lineage asserts this mapping against the fields each function
+#: really references, by parsing them, so the two cannot drift silently.
+#:
+#: `pollution_level` is deliberately absent: it is a categorical, it is not a
+#: MATERIAL_INPUTS metric, and no provenance row exists for it. That is a real
+#: gap in the lineage and it is documented rather than papered over.
+DIMENSION_INPUTS: dict[str, tuple[str, ...]] = {
+    'public_benefit_score': (
+        'jobs_created_score', 'regional_development_score',
+        'infrastructure_contribution_score', 'national_value_score',
+    ),
+    'environmental_responsibility_score': (
+        'waste_management_score', 'water_impact_score', 'biodiversity_impact_score',
+    ),
+    'modernization_score': (
+        'energy_transition_score', 'digitalization_score',
+        'infrastructure_upgrade_score', 'future_readiness_score',
+    ),
+    'transparency_anti_corruption_score': (
+        'transparency_score_detail', 'audit_quality_score',
+        'procurement_transparency_score',
+    ),
+    'anti_corruption_score': ('anti_corruption_score',),
+    'ethical_alignment_score': ('controversy_risk_score', 'national_value_score'),
+}
+
+#: calculate_harm_penalty's inputs. Separate because the penalty is subtracted
+#: from the composite rather than being one of the six weighted dimensions.
+#:
+#: Note that two of these — public_benefit_score and modernization_score — are
+#: DERIVED fields, so the penalty reads outputs of the same calculation round.
+#: Only the material ones are linked as lineage here; the derived-on-derived
+#: edge needs the recursive case and is left to a later writer PR.
+HARM_PENALTY_INPUTS: tuple[str, ...] = (
+    'controversy_risk_score', 'transparency_score_detail',
+)
+
+
+def consumed_material_inputs(p: 'CompanyProfile') -> list[str]:
+    """
+    The material metrics this profile's composite would actually consume.
+
+    "Actually" is the operative word. _avg() and _weighted() skip unknown values
+    and re-normalise, so a formula that MENTIONS four inputs may consume three.
+    Attaching all four as lineage would overstate what supported the number.
+
+    Returns sorted, de-duplicated field names — national_value_score feeds two
+    dimensions and must appear once.
+    """
+    from companies.evidence import MATERIAL_INPUTS
+
+    material = {item.field_name for item in MATERIAL_INPUTS}
+    referenced = {
+        field
+        for fields in DIMENSION_INPUTS.values()
+        for field in fields
+    } | set(HARM_PENALTY_INPUTS)
+
+    return sorted(
+        field for field in referenced & material
+        if getattr(p, field, None) is not None
     )
 
 
@@ -275,6 +350,8 @@ def compute_ecoiq_profile_score(p: 'CompanyProfile') -> dict:
         'moral_label':                       label,
         'ecoiq_category':                    None if total is None else get_ecoiq_category(total),
         'harm_penalty':                      round(penalty, 1),
+        # D3C-3 — the inputs this run actually read, for provenance lineage.
+        '_consumed_inputs':                  consumed_material_inputs(p),
         '_base_score':                       _round(base),
         # Named so a caller cannot mistake an absent score for a computed one.
         '_unknown_dimensions':               unknown,
@@ -282,10 +359,55 @@ def compute_ecoiq_profile_score(p: 'CompanyProfile') -> dict:
     }
 
 
-def recalculate_and_save(profile: 'CompanyProfile') -> 'CompanyProfile':
+#: STEP 2 — a stable, human-readable calculation identity.
+#:
+#: The scoring engine had no version constant; this is the smallest explicit,
+#: code-owned one. Not a git SHA: a SHA changes on every unrelated commit, so it
+#: cannot answer "did the formula change?" — which is the only question a
+#: version on a MODELLED row exists to answer.
+#:
+#: Bump COMPOSITE_VERSION when the formula, weights or dimension set change.
+COMPOSITE_METHOD = 'ecoiq-company-composite'
+COMPOSITE_VERSION = '1'
+
+#: The registry key this function produces. Confirmed against
+#: companies.metric_registry, not assumed.
+COMPOSITE_METRIC_KEY = 'company.ecoiq_total'
+
+
+def recalculate_and_save(profile: 'CompanyProfile',
+                         record_provenance: bool = True) -> 'CompanyProfile':
     """
-    Compute EcoIQ scores, apply to profile fields, and save.
-    Returns the updated profile instance.
+    Compute EcoIQ scores, apply to profile fields, save, and record lineage.
+
+    Returns the updated profile instance, with a transient
+    `provenance_status` attribute describing what was recorded:
+
+        'recorded'      a MODELLED row with complete input lineage
+        'unchanged'     nothing semantically changed; the existing row stands
+        'incomplete'    an input it consumed has no provenance row, so no
+                        derived row was created — see below
+        'no_composite'  the composite is None, so there is nothing to attest
+        'skipped'       record_provenance=False
+
+    THE INCOMPLETE CASE, which is the one that matters today.
+
+    D3B has not been applied in production, so a profile can hold material
+    values with no provenance rows at all. When that happens this function
+    records NO derived provenance rather than a row with an empty input list.
+    An empty list would read as "this composite rests on nothing", which is
+    indistinguishable from "we did not record what it rests on" — and the
+    second is the truth. The schema cannot express partial lineage, so the
+    honest option is to abstain (option A of the D3C-3 brief).
+
+    It also does NOT create material provenance to fill the gap. Inventing a
+    LEGACY_UNKNOWN_PROVENANCE row here would be this function labelling history
+    it did not witness. D3B owns historical labelling, deliberately, because it
+    reports what it did and can be rolled back by writer.
+
+    The SCORE is written either way. Provenance completeness does not gate the
+    calculation, and the public surface is gated on evidence (#239/#240) rather
+    than on these columns' face value.
     """
     results = compute_ecoiq_profile_score(profile)
 
@@ -318,8 +440,85 @@ def recalculate_and_save(profile: 'CompanyProfile') -> 'CompanyProfile':
     for name in written:
         setattr(profile, name, assignable[name])
 
-    profile.save(update_fields=written + ['updated_at'])
+    # STEP 6 — the value and its lineage commit together or not at all.
+    #
+    # This function owns the transaction, unlike record_seed_write() where the
+    # caller does: here the same call writes both the value and the provenance,
+    # so the boundary belongs around both. Callers vary — three seed commands,
+    # the admin action, the ingestion pipeline and a Celery task, some already
+    # inside a transaction and some not — and an inner atomic() joins an outer
+    # one as a savepoint, so this is correct in either context rather than
+    # creating a second inconsistent layer.
+    with transaction.atomic():
+        profile.save(update_fields=written + ['updated_at'])
+        profile.provenance_status = (
+            _record_composite_provenance(profile, results)
+            if record_provenance else 'skipped'
+        )
     return profile
+
+
+def _record_composite_provenance(profile, results) -> str:
+    """
+    Record MODELLED provenance for the composite, or explain why it was not.
+
+    Called inside recalculate_and_save's transaction, so raising here rolls the
+    score write back with it.
+    """
+    from companies import provenance as prov
+
+    if results['ecoiq_total_score'] is None:
+        # No composite was produced, so there is nothing to attest to.
+        return 'no_composite'
+
+    consumed = results.get('_consumed_inputs', [])
+    if not consumed:
+        return 'incomplete'
+
+    current_rows = prov.current_map(profile)
+    missing = [key for key in consumed if key not in current_rows]
+    if missing:
+        log.debug(
+            'Composite provenance not recorded for %s — consumed inputs without '
+            'provenance: %s. The score was still written.',
+            profile, ', '.join(missing),
+        )
+        return 'incomplete'
+
+    input_rows = [current_rows[key] for key in consumed]
+
+    # STEP 7 — identity is (origin, methodology, version, exact input rows).
+    #
+    # NOT the output value, deliberately. Two reasons:
+    #
+    #   1. It cannot be compared. `existing.value` resolves live through the
+    #      registry, and by this point profile.save() has already written the
+    #      new number — so the comparison would always find them equal and
+    #      never fire. A check that cannot fail is worse than no check.
+    #
+    #   2. It should not be compared. The formula is deterministic, so the
+    #      same input ROWS under the same version give the same answer. If the
+    #      number moved while the input rows did not, a material VALUE changed
+    #      without anyone recording a provenance event for it — a gap in the
+    #      writer that wrote it, not a new lineage claim for this one to make.
+    #      Value history is CompanyScoreSnapshot's job; this records lineage.
+    existing = prov.current(profile, COMPOSITE_METRIC_KEY)
+    if (existing is not None
+            and existing.origin == PROVENANCE_MODELLED
+            and existing.methodology == COMPOSITE_METHOD
+            and existing.calculation_version == COMPOSITE_VERSION
+            and set(existing.inputs.values_list('pk', flat=True))
+                == {row.pk for row in input_rows}):
+        return 'unchanged'
+
+    prov.record_derived(
+        profile, COMPOSITE_METRIC_KEY,
+        writer='companies.scoring.recalculate_and_save',
+        methodology=COMPOSITE_METHOD,
+        calculation_version=COMPOSITE_VERSION,
+        inputs=input_rows,
+    )
+    return 'recorded'
 
 
 # ── Label helpers ──────────────────────────────────────────────────────────────
