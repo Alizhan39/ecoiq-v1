@@ -42,6 +42,8 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from companies.models import CompanyProfile
 
+from core.unknown import clamp, mean_of_known, weighted_mean_of_known
+
 
 # ── Risk level tiers ──────────────────────────────────────────────────────────
 
@@ -51,6 +53,30 @@ RISK_LEVELS: list[tuple[float, str]] = [
     (30.0, 'medium'),
     (0.0,  'low'),
 ]
+
+# A fourth state, outside the ordered tiers because it is not a degree of risk.
+#
+# Greenwashing is the most sensitive assessment EcoIQ makes, and it failed in
+# BOTH directions. With the old `float(v or 0)` an unassessed company produced
+# climate_claims_strength=0 and therefore claim_evidence_gap=0 — a computed
+# 'low' greenwashing risk, which reads as "we looked, and this company is not
+# greenwashing." The same absence pushed ownership_opacity to 70, contributing
+# risk from nothing at all. Absence must not become either verdict.
+#
+# Three states must stay distinct:
+#     NO EVIDENCE TO ASSESS      <- this one
+#     EVIDENCE OF GREENWASHING   <- 'high' / 'severe'
+#     EVIDENCE OF LOW RISK       <- 'low'
+RISK_INSUFFICIENT_EVIDENCE = 'insufficient_evidence'
+
+# Assessment needs the claim side AND at least one evidence channel: without a
+# claim there is nothing to test for exaggeration, and without evidence there is
+# nothing to test it against.
+_EVIDENCE_CHANNELS = (
+    'verified_emissions_data',
+    'third_party_assurance',
+    'target_quality',
+)
 
 # ── Pollution level → fossil fuel exposure proxy ──────────────────────────────
 
@@ -64,11 +90,14 @@ _POLLUTION_TO_FF: dict[str, float] = {
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
-    return max(lo, min(hi, float(v or 0)))
+# core.unknown is the single authority (D2b). Was `float(v or 0)`.
+_clamp = clamp
 
 
-def _risk_level(score: float) -> str:
+def _risk_level(score):
+    """Risk tier, or the explicit not-assessable state. Never 'low' by default."""
+    if score is None:
+        return RISK_INSUFFICIENT_EVIDENCE
     for threshold, label in RISK_LEVELS:
         if score >= threshold:
             return label
@@ -82,8 +111,11 @@ class GreenwashingInput:
     """
     Structured inputs for the Greenwashing Risk Detector.
 
-    All float fields are normalised to 0–100.
-    controversy_flags is an integer count (0, 1, 2, 3 …).
+    All float fields are normalised to 0–100, or None where the caller does not
+    know the value. The defaults are kept as-is so existing direct constructions
+    are unchanged; None must be passed EXPLICITLY, by a caller that knows the
+    input is unmeasured rather than zero.
+    controversy_flags is an integer count (0, 1, 2, 3 …), or None if unassessed.
     entity_type identifies the source: 'company' | 'project' | 'country'.
     """
     climate_claims_strength:     float = 50.0   # 0-100: strength of stated climate / green claims
@@ -113,8 +145,8 @@ class GreenwashingAssessment:
     Fully serialisable via .to_dict().
     All language uses cautious, public-data-based framing.
     """
-    greenwashing_risk_score:    float       # 0-100 (higher = more risk indicators)
-    risk_level:                 str         # 'low' | 'medium' | 'high' | 'severe'
+    greenwashing_risk_score:    float | None  # 0-100 (higher = more risk), None if unassessable
+    risk_level:                 str           # 'low'|'medium'|'high'|'severe'|'insufficient_evidence'
     main_red_flags:             list[str]
     missing_evidence:           list[str]
     explanation:                str
@@ -133,12 +165,12 @@ def _evidence_composite(inp: GreenwashingInput) -> float:
     Weighted composite of evidence quality signals.
     Higher score = more evidence backing the claims.
     """
-    return _clamp(
-        inp.verified_emissions_data  * 0.30
-        + inp.third_party_assurance  * 0.30
-        + inp.target_quality         * 0.25
-        + inp.evidence_confidence    * 0.15
-    )
+    return _clamp(weighted_mean_of_known(
+        (inp.verified_emissions_data, 0.30),
+        (inp.third_party_assurance,   0.30),
+        (inp.target_quality,          0.25),
+        (inp.evidence_confidence,     0.15),
+    ))
 
 
 def _score_components(inp: GreenwashingInput) -> dict[str, float]:
@@ -147,32 +179,49 @@ def _score_components(inp: GreenwashingInput) -> dict[str, float]:
     Higher component score = more risk signal for that factor.
     """
     ev_composite = _evidence_composite(inp)
+    claims = _clamp(inp.climate_claims_strength)
+
+    def _pair(a, b, fn):
+        return None if a is None or b is None else fn(a, b)
 
     # 1. Claim-to-evidence gap: the primary greenwashing signal.
     #    High claims with low evidence = high gap risk.
-    claim_evidence_gap = _clamp(inp.climate_claims_strength - ev_composite)
+    claim_evidence_gap = _clamp(_pair(claims, ev_composite, lambda c, e: c - e))
 
     # 2. Fossil fuel amplifier: high FF exposure combined with high green claims.
     #    A coal company claiming carbon neutrality is the extreme case.
-    ff_risk = _clamp(
-        (inp.fossil_fuel_exposure / 100.0) * (inp.climate_claims_strength / 100.0) * 100.0
-    )
+    ff_risk = _clamp(_pair(
+        _clamp(inp.fossil_fuel_exposure), claims,
+        lambda f, c: (f / 100.0) * (c / 100.0) * 100.0,
+    ))
 
-    # 3. Controversy signal: each verified controversy flag is direct risk evidence.
-    controversy_score = _clamp(inp.controversy_flags * 25.0)
+    # 3. Controversy signal: each verified controversy flag is direct risk
+    #    evidence. Unknown is NOT zero flags — zero flags is a finding that the
+    #    company has no active controversies, which is a claim in its favour.
+    controversy_score = (None if inp.controversy_flags is None
+                         else _clamp(inp.controversy_flags * 25.0))
 
     # 4. Transition capex gap: claiming transition ambition without disclosing investment.
-    capex_gap = _clamp(inp.climate_claims_strength - inp.transition_capex_disclosure)
+    capex_gap = _clamp(_pair(
+        claims, _clamp(inp.transition_capex_disclosure), lambda c, t: c - t,
+    ))
 
     # 5. Ownership opacity: opaque structures prevent independent verification.
-    ownership_opacity = _clamp(70.0 - inp.ownership_transparency)
+    #    Was `70 - _clamp(None)` = 70, so an unmeasured company scored near the
+    #    top of this component purely because nobody had looked.
+    transparency = _clamp(inp.ownership_transparency)
+    ownership_opacity = (None if transparency is None
+                         else _clamp(70.0 - transparency))
+
+    def _r(value):
+        return None if value is None else round(value, 2)
 
     return {
-        'claim_evidence_gap': round(claim_evidence_gap, 2),
-        'ff_risk':            round(ff_risk,            2),
-        'controversy_score':  round(controversy_score,  2),
-        'capex_gap':          round(capex_gap,          2),
-        'ownership_opacity':  round(ownership_opacity,  2),
+        'claim_evidence_gap': _r(claim_evidence_gap),
+        'ff_risk':            _r(ff_risk),
+        'controversy_score':  _r(controversy_score),
+        'capex_gap':          _r(capex_gap),
+        'ownership_opacity':  _r(ownership_opacity),
     }
 
 
@@ -182,27 +231,45 @@ def _main_red_flags(inp: GreenwashingInput, comp: dict[str, float]) -> list[str]
     """
     Generate specific, evidence-based red flags using cautious language.
     Each flag cites the signal — not the conclusion.
+
+    Every comparison is guarded on the value being known. A red flag is an
+    accusation, and the old bare comparisons produced them from absence: with
+    `_clamp(None) -> 0`, `ownership_transparency < 35` was always true, so every
+    unassessed entity was flagged for 'Low ownership and governance transparency
+    (indicator: 0/100)'.
     """
     flags: list[str] = []
 
-    if comp['claim_evidence_gap'] >= 40:
+    def _ge(value, threshold: float) -> bool:
+        v = _clamp(value)
+        return v is not None and v >= threshold
+
+    def _lt(value, threshold: float) -> bool:
+        v = _clamp(value)
+        return v is not None and v < threshold
+
+    if _ge(comp['claim_evidence_gap'], 40):
         flags.append(
             'Large gap between stated climate ambition and available verification evidence — '
             'may indicate claims are not fully substantiated by independent data'
         )
-    elif comp['claim_evidence_gap'] >= 20:
+    elif _ge(comp['claim_evidence_gap'], 20):
         flags.append(
             'Moderate gap between climate claims and verification evidence — '
             'requires third-party assurance to confirm accuracy'
         )
 
-    if inp.fossil_fuel_exposure >= 60 and inp.climate_claims_strength >= 55:
+    if _ge(inp.fossil_fuel_exposure, 60) and _ge(inp.climate_claims_strength, 55):
         flags.append(
             f'High fossil fuel or high-carbon exposure (indicator: {inp.fossil_fuel_exposure:.0f}/100) '
             'alongside strong green claims — transition credibility requires verification'
         )
 
-    if inp.controversy_flags >= 2:
+    # Unknown flag count produces no statement in either direction: neither
+    # "controversies detected" nor the implicit "none detected".
+    if inp.controversy_flags is None:
+        pass
+    elif inp.controversy_flags >= 2:
         flags.append(
             f'{inp.controversy_flags} active controversy signal(s) detected — '
             'public-data indicators of potential misalignment between stated and actual performance'
@@ -212,25 +279,25 @@ def _main_red_flags(inp: GreenwashingInput, comp: dict[str, float]) -> list[str]
             '1 controversy signal detected — warrants review of stated sustainability commitments'
         )
 
-    if comp['capex_gap'] >= 45 and inp.climate_claims_strength >= 50:
+    if _ge(comp['capex_gap'], 45) and _ge(inp.climate_claims_strength, 50):
         flags.append(
             'Transition capital expenditure disclosure is low relative to climate claims — '
             'investment evidence does not yet corroborate stated ambition'
         )
 
-    if inp.third_party_assurance < 20 and inp.climate_claims_strength >= 50:
+    if _lt(inp.third_party_assurance, 20) and _ge(inp.climate_claims_strength, 50):
         flags.append(
             'No or minimal third-party assurance identified for entities making climate claims — '
             'independent verification required'
         )
 
-    if inp.ownership_transparency < 35:
+    if _lt(inp.ownership_transparency, 35):
         flags.append(
             'Low ownership and governance transparency (indicator: '
             f'{inp.ownership_transparency:.0f}/100) — opaque structures limit independent assessment'
         )
 
-    if inp.target_quality < 25 and inp.climate_claims_strength >= 50:
+    if _lt(inp.target_quality, 25) and _ge(inp.climate_claims_strength, 50):
         flags.append(
             'Climate targets appear vague, time-unbound, or unquantified relative to the '
             'strength of claims being made — specific, measurable targets with baseline years required'
@@ -243,17 +310,24 @@ def _missing_evidence(inp: GreenwashingInput) -> list[str]:
     """Identify the most important missing verification items."""
     items: list[str] = []
 
-    if inp.verified_emissions_data < 30:
+    # An UNKNOWN input is itself a missing-evidence item, which is exactly what
+    # this function is for — so unknown and below-threshold both list it. The
+    # bare `<` would have raised TypeError on None.
+    def _gap(value, threshold: float) -> bool:
+        v = _clamp(value)
+        return v is None or v < threshold
+
+    if _gap(inp.verified_emissions_data, 30):
         items.append('Independently verified emissions data (Scope 1, 2, and 3)')
-    if inp.third_party_assurance < 25:
+    if _gap(inp.third_party_assurance, 25):
         items.append('Third-party assurance, certification, or second-party opinion')
-    if inp.target_quality < 30:
+    if _gap(inp.target_quality, 30):
         items.append('Specific, time-bound, quantified climate targets with a stated baseline year')
-    if inp.transition_capex_disclosure < 25:
+    if _gap(inp.transition_capex_disclosure, 25):
         items.append('Disclosed capital expenditure allocated to transition activities')
-    if inp.ownership_transparency < 40:
+    if _gap(inp.ownership_transparency, 40):
         items.append('Beneficial ownership disclosure and governance transparency')
-    if inp.evidence_confidence < 50:
+    if _gap(inp.evidence_confidence, 50):
         items.append('Analyst-reviewed or independently verified profile data')
 
     return items or ['No critical evidence gaps identified based on available public data.']
@@ -297,13 +371,13 @@ def _explanation(
 
     if risk_level == 'high':
         detail = []
-        if comp['claim_evidence_gap'] >= 30:
-            detail.append(
-                f'a significant claim-to-evidence gap ({comp["claim_evidence_gap"]:.0f} points)'
-            )
-        if comp['ff_risk'] >= 40:
+        gap = _clamp(comp['claim_evidence_gap'])
+        ff  = _clamp(comp['ff_risk'])
+        if gap is not None and gap >= 30:
+            detail.append(f'a significant claim-to-evidence gap ({gap:.0f} points)')
+        if ff is not None and ff >= 40:
             detail.append('high fossil fuel or carbon-intensive exposure alongside green claims')
-        if inp.controversy_flags >= 1:
+        if inp.controversy_flags is not None and inp.controversy_flags >= 1:
             detail.append(f'{inp.controversy_flags} controversy signal(s)')
         detail_str = '; '.join(detail) if detail else 'multiple indicator gaps'
         return (
@@ -371,38 +445,55 @@ def _recommended_due_diligence(
 ) -> list[str]:
     items: list[str] = []
 
-    if inp.verified_emissions_data < 40:
+    # Two different predicates, deliberately.
+    #
+    # _gap counts UNKNOWN as a gap: "obtain X" is exactly the right advice when
+    # we do not have X, and it is the one recommendation shape the unknown state
+    # is allowed to produce — it asks for evidence rather than asserting a
+    # finding.
+    #
+    # _ge does not: those items are triggered by evidence OF a risk, and an
+    # unknown must not manufacture one.
+    def _gap(value, threshold: float) -> bool:
+        v = _clamp(value)
+        return v is None or v < threshold
+
+    def _ge(value, threshold: float) -> bool:
+        v = _clamp(value)
+        return v is not None and v >= threshold
+
+    if _gap(inp.verified_emissions_data, 40):
         items.append(
             'Commission an independent GHG inventory audit (Scope 1, 2, and material Scope 3 '
             'categories) against a verifiable baseline year'
         )
-    if inp.third_party_assurance < 30:
+    if _gap(inp.third_party_assurance, 30):
         items.append(
             'Obtain a third-party second-party opinion, CBI certification, or equivalent '
             'external assurance for all climate-related claims'
         )
-    if inp.target_quality < 35:
+    if _gap(inp.target_quality, 35):
         items.append(
             'Require publication of specific, time-bound, science-aligned targets '
             '(SBTi-validated or equivalent) with annual progress disclosure'
         )
-    if inp.transition_capex_disclosure < 30:
+    if _gap(inp.transition_capex_disclosure, 30):
         items.append(
             'Request a detailed transition capital expenditure breakdown — confirm '
             'investment in low-carbon assets is material and independently verifiable'
         )
-    if inp.fossil_fuel_exposure >= 55:
+    if _ge(inp.fossil_fuel_exposure, 55):
         items.append(
             'Conduct a credible transition pathway assessment — verify any phase-out '
             'commitments are time-bound and backed by disclosed investment plans'
         )
-    if inp.controversy_flags >= 1:
+    if inp.controversy_flags is not None and inp.controversy_flags >= 1:
         items.append(
             'Review all active controversies and enforcement actions — confirm that '
             'stated sustainability performance has not been subject to regulatory findings '
             'or material misrepresentation'
         )
-    if inp.ownership_transparency < 40:
+    if _gap(inp.ownership_transparency, 40):
         items.append(
             'Verify beneficial ownership structure in a well-regulated jurisdiction — '
             'opaque structures limit the reliability of externally reported figures'
@@ -423,6 +514,43 @@ def _recommended_due_diligence(
 
 # ── Main assessment function ──────────────────────────────────────────────────
 
+def _not_assessable(inp: GreenwashingInput) -> GreenwashingAssessment:
+    """
+    The output for "we cannot assess this", as distinct from either verdict.
+
+    greenwashing_risk_score is None rather than 0. A 0 here would be read as the
+    best possible result — the strongest positive claim this module can make —
+    about a company nobody has examined.
+    """
+    return GreenwashingAssessment(
+        greenwashing_risk_score = None,
+        risk_level              = RISK_INSUFFICIENT_EVIDENCE,
+        main_red_flags          = [],
+        missing_evidence        = _missing_evidence(inp),
+        explanation             = (
+            'EcoIQ does not hold enough public evidence to assess greenwashing risk '
+            'for this entity. This is a statement about the available data, not about '
+            'the entity: it is neither an indication of greenwashing nor an indication '
+            'that the entity is free of it.'
+        ),
+        investor_warning        = (
+            'No greenwashing risk assessment is available. Absence of an assessment '
+            'must not be treated as a favourable finding. Independent due diligence '
+            'is required before any capital decision.'
+        ),
+        recommended_due_diligence = [
+            'Obtain the entity\'s published climate claims and targets.',
+            'Obtain independently verified emissions data (Scope 1, 2 and 3).',
+            'Obtain third-party assurance or a second-party opinion.',
+        ],
+        confidence_note = (
+            'No greenwashing risk assessment was produced because the required public '
+            'evidence is not available to EcoIQ. This is not a legal finding, a '
+            'regulatory determination, or a statement of fact about any entity.'
+        ),
+    )
+
+
 def assess_greenwashing_risk(inp: GreenwashingInput) -> GreenwashingAssessment:
     """
     Core Greenwashing Risk assessment.
@@ -440,15 +568,29 @@ def assess_greenwashing_risk(inp: GreenwashingInput) -> GreenwashingAssessment:
 
     Cautious language is mandatory in all output fields.
     """
-    comp  = _score_components(inp)
+    comp = _score_components(inp)
 
-    raw_score = _clamp(
-        comp['claim_evidence_gap'] * 0.40
-        + comp['ff_risk']          * 0.25
-        + comp['controversy_score'] * 0.20
-        + comp['capex_gap']        * 0.10
-        + comp['ownership_opacity'] * 0.05
+    # Gate BEFORE scoring. The primary signal is the claim-to-evidence gap, and
+    # without a claim or without any evidence channel there is no gap to
+    # measure — only arithmetic on absences. Re-normalising the remaining
+    # components would produce a confident-looking number from the two weakest
+    # signals, so this refuses instead.
+    claims_known   = _clamp(inp.climate_claims_strength) is not None
+    evidence_known = any(
+        _clamp(getattr(inp, channel)) is not None for channel in _EVIDENCE_CHANNELS
     )
+    if not (claims_known and evidence_known):
+        return _not_assessable(inp)
+
+    raw_score = _clamp(weighted_mean_of_known(
+        (comp['claim_evidence_gap'],  0.40),
+        (comp['ff_risk'],             0.25),
+        (comp['controversy_score'],   0.20),
+        (comp['capex_gap'],           0.10),
+        (comp['ownership_opacity'],   0.05),
+    ))
+    if raw_score is None:
+        return _not_assessable(inp)
 
     risk_level = _risk_level(raw_score)
     flags      = _main_red_flags(inp, comp)
@@ -488,8 +630,13 @@ def greenwashing_from_profile(profile: 'CompanyProfile') -> GreenwashingAssessme
       controversy_flags            ← controversy_risk_score: <40→0, 40–59→1, 60–79→2, ≥80→3
       ownership_transparency       ← mean(transparency_anti_corruption, procurement_transparency)
     """
-    def _f(attr: str) -> float:
-        return _clamp(float(getattr(profile, attr, 0) or 0))
+    # Was `_clamp(float(getattr(profile, attr, 0) or 0))` — a missing attribute
+    # AND an unmeasured score AND a genuine 0.0 all collapsed into 0.
+    def _f(attr: str):
+        return _clamp(getattr(profile, attr, None))
+
+    def _r(value):
+        return None if value is None else round(value, 2)
 
     is_verified = bool(getattr(profile, 'is_verified', False))
     status      = str(getattr(profile, 'status', 'public') or 'public')
@@ -500,21 +647,29 @@ def greenwashing_from_profile(profile: 'CompanyProfile') -> GreenwashingAssessme
     infra_u     = _f('infrastructure_upgrade_score')
     controversy = _f('controversy_risk_score')
 
-    # Climate claims: how actively the company is projecting a green/transition identity
-    climate_claims = _clamp(energy_tr * 0.55 + future_r * 0.45)
+    # Climate claims: how actively the company is projecting a green/transition
+    # identity. Re-normalised across the known half rather than treating an
+    # unknown half as zero ambition.
+    climate_claims = _clamp(weighted_mean_of_known((energy_tr, 0.55), (future_r, 0.45)))
 
-    # Verified data: conservative — unverified audit scores only partially count
-    verified_data  = 90.0 if is_verified else _clamp(audit_q * 0.35)
-    third_party    = 85.0 if is_verified else _clamp(audit_q * 0.30)
+    # Verified data: conservative — unverified audit scores only partially count.
+    # An unknown audit score is NOT zero assurance: zero assurance is a finding.
+    verified_data = 90.0 if is_verified else _clamp(
+        None if audit_q is None else audit_q * 0.35)
+    third_party   = 85.0 if is_verified else _clamp(
+        None if audit_q is None else audit_q * 0.30)
 
     # Transition capex: investment signals
-    transition_capex = _clamp(energy_tr * 0.55 + infra_u * 0.45)
+    transition_capex = _clamp(weighted_mean_of_known((energy_tr, 0.55), (infra_u, 0.45)))
 
-    # Fossil fuel exposure: pollution level as proxy, discounted by active transition
-    pollution_level = (getattr(profile, 'pollution_level', 'medium') or 'medium').lower()
-    ff_base         = _POLLUTION_TO_FF.get(pollution_level, 35.0)
-    # Active energy transition partially mitigates FF exposure signal
-    ff_exposure     = _clamp(ff_base * (1.0 - energy_tr / 250.0))
+    # Fossil fuel exposure: pollution level as proxy, discounted by active
+    # transition. `or 'medium'` substituted a real classification for a missing
+    # one; an unrecognised level now yields no exposure figure at all.
+    raw_level       = getattr(profile, 'pollution_level', None)
+    pollution_level = raw_level.lower() if raw_level else None
+    ff_base         = _POLLUTION_TO_FF.get(pollution_level)
+    discount        = 0.0 if energy_tr is None else energy_tr / 250.0
+    ff_exposure     = _clamp(None if ff_base is None else ff_base * (1.0 - discount))
 
     # Target quality: future readiness as proxy for target specificity
     target_q = future_r
@@ -527,8 +682,11 @@ def greenwashing_from_profile(profile: 'CompanyProfile') -> GreenwashingAssessme
     else:
         ev_conf = 35.0
 
-    # Controversy count
-    if controversy >= 80:
+    # Controversy count. Unknown is None, not 0 — a count of 0 is the finding
+    # "no active controversies", which is a statement in the company's favour.
+    if controversy is None:
+        controversy_flags = None
+    elif controversy >= 80:
         controversy_flags = 3
     elif controversy >= 60:
         controversy_flags = 2
@@ -538,20 +696,21 @@ def greenwashing_from_profile(profile: 'CompanyProfile') -> GreenwashingAssessme
         controversy_flags = 0
 
     # Ownership transparency
-    t_anti  = _f('transparency_anti_corruption_score')
-    procure = _f('procurement_transparency_score')
-    ownership_transp = _clamp((t_anti + procure) / 2.0)
+    ownership_transp = _clamp(mean_of_known(
+        _f('transparency_anti_corruption_score'),
+        _f('procurement_transparency_score'),
+    ))
 
     inp = GreenwashingInput(
-        climate_claims_strength     = round(climate_claims, 2),
-        verified_emissions_data     = round(verified_data,  2),
-        third_party_assurance       = round(third_party,    2),
-        transition_capex_disclosure = round(transition_capex, 2),
-        fossil_fuel_exposure        = round(ff_exposure,    2),
-        target_quality              = round(target_q,       2),
-        evidence_confidence         = round(ev_conf,        2),
+        climate_claims_strength     = _r(climate_claims),
+        verified_emissions_data     = _r(verified_data),
+        third_party_assurance       = _r(third_party),
+        transition_capex_disclosure = _r(transition_capex),
+        fossil_fuel_exposure        = _r(ff_exposure),
+        target_quality              = _r(target_q),
+        evidence_confidence         = _r(ev_conf),
         controversy_flags           = controversy_flags,
-        ownership_transparency      = round(ownership_transp, 2),
+        ownership_transparency      = _r(ownership_transp),
         entity_type                 = 'company',
     )
     return assess_greenwashing_risk(inp)

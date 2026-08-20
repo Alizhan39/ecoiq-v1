@@ -466,8 +466,12 @@ def tracker(request, module: str):
     )
 
     # Score distribution for relevant sector companies
+    # `if scores else 0` published a sector average of 0.0 for a sector with no
+    # scored companies — the worst possible sector, computed from nothing. Not
+    # caught by the `or 50` sweep; found by the same class of check that caught
+    # mizan's `_mean(...) if vals else 0.0`.
     scores = [float(co.ecoiq_score) for co in sector_companies]
-    sector_avg = round(sum(scores) / len(scores), 1) if scores else 0
+    sector_avg = round(sum(scores) / len(scores), 1) if scores else None
 
     # Key stats
     positive_signals = sum(1 for s in module_signals if s.polarity == 'positive')

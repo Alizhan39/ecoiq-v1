@@ -36,8 +36,49 @@ SECTOR_MAP = {
 }
 
 
+# ── Missingness and the trained model ────────────────────────────────────────
+#
+# READ THIS BEFORE CHANGING _safe_float OR ANY FEATURE DEFINITION.
+#
+# The estimator is a scikit-learn GradientBoostingRegressor loaded from a
+# COMMITTED artefact (ml/models/scoring_gbr.joblib, with scoring_scaler.joblib).
+# Two consequences follow, and they pull in opposite directions:
+#
+#   1. GBR.predict() requires a dense float matrix. It cannot accept None or
+#      NaN. sklearn's HistGradientBoosting can; this estimator cannot.
+#
+#   2. The scaler's means and variances, and every split the trees learned, were
+#      fitted on a matrix in which missing values were ALREADY 50.0. Changing
+#      what a feature means — including making its missingness explicit — would
+#      silently invalidate the fitted artefact, because the model would receive
+#      a distribution it was never trained on.
+#
+# So the vector is NOT changed here, and `_safe_float` keeps its behaviour
+# exactly. That is a deliberate decision, not an oversight: correcting the
+# imputation would require retraining, and inventing a statistical imputation
+# methodology is out of scope for this change.
+#
+# What changes instead is the BOUNDARY. `missing_material_features()` reports,
+# separately from the vector, which material inputs are unknown, and
+# EcoIQScoringModel.predict_company() refuses before predicting rather than
+# feeding a 50 the model will read as an average company. Fail closed at the
+# gate; leave the trained artefact's contract untouched.
+#
+# The correct long-term fix is one of:
+#   A. retrain on nullable inputs with a missingness-aware estimator, or
+#   B. retrain with explicit `<feature>_missing` indicator columns.
+# Both need a retraining pass, and neither belongs in a semantics PR.
+
+
 def _safe_float(value, default=50.0) -> float:
-    """Return float or default if None / NaN."""
+    """
+    Return float or default if None / NaN.
+
+    The 50.0 default is a TRAINING-TIME ARTEFACT, not a claim that an unmeasured
+    company is average. See the note above: it is preserved on purpose so the
+    committed model receives the input distribution it was fitted on. Callers
+    must consult `missing_material_features()` to learn what is actually known.
+    """
     try:
         v = float(value)
         return default if math.isnan(v) else v
@@ -107,6 +148,11 @@ def extract_features(company) -> dict:
         annual_rev = company.annual_revenue_usd
 
     # ── Evidence coverage (derived): fraction of pillar scores != 50.0 ────
+    # This feature INFERS missingness from the value being 50 — the exact
+    # conflation the D-programme removes everywhere else. It is left untouched
+    # because it is a fitted model input: changing its definition would shift
+    # the distribution the committed artefact was trained on. Superseded by
+    # missing_material_features() everywhere outside the vector.
     pillar_vals   = [pollution_fp, reduction, investment, transparency, community]
     evidence_cov  = sum(1 for v in pillar_vals if abs(v - 50.0) > 5) / max(len(pillar_vals), 1)
 
@@ -215,8 +261,48 @@ def get_feature_names() -> list[str]:
     ]
 
 
+# Inputs whose absence makes a prediction a statement about nothing. Not every
+# feature: the model tolerates a missing employee count, but it cannot say
+# anything meaningful about a company whose pillar scores are all unknown.
+MATERIAL_FEATURE_SOURCES: tuple[str, ...] = (
+    'public_benefit_score',
+    'environmental_responsibility_score',
+    'modernization_score',
+    'transparency_anti_corruption_score',
+    'ethical_alignment_score',
+    'anti_corruption_score',
+)
+
+
+def missing_material_features(company) -> list[str]:
+    """
+    Material model inputs that are UNKNOWN for this company.
+
+    Reported separately from the feature vector, because the vector must keep
+    the shape and imputation the committed artefact was fitted on (see the note
+    at the top of this module). This is how a caller learns the difference
+    between "the model saw 50" and "we do not know", which the vector itself can
+    no longer express.
+
+    Empty list means every material input is known.
+    """
+    profile = getattr(company, 'profile', None)
+    if profile is None:
+        return list(MATERIAL_FEATURE_SOURCES)
+    return [
+        name for name in MATERIAL_FEATURE_SOURCES
+        if getattr(profile, name, None) is None
+    ]
+
+
 def company_to_vector(company) -> np.ndarray:
-    """Extract features and return as numpy array in canonical order."""
+    """
+    Extract features and return as numpy array in canonical order.
+
+    Missing values become 50.0 — deliberately, to match the fitted artefact.
+    Check missing_material_features() BEFORE calling this if the result will be
+    presented as a finding about the company.
+    """
     feats = extract_features(company)
     names = get_feature_names()
     return np.array([feats.get(n, 50.0) for n in names], dtype=np.float64)

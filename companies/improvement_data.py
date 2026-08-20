@@ -23,6 +23,7 @@ Milestone schema
   public_benefit     str         expected public-benefit outcome
   governance_reqs    str         governance prerequisites
   status             str         'not_started'|'in_progress'|'achievable'|'advanced'
+                                 |'not_assessed'
   status_label       str         display label for status badge
   relevant_score     float       the underlying profile score that drives status
   priority           int         lower = higher priority (for sorting)
@@ -40,15 +41,41 @@ Trajectory schema
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from core.unknown import clamp
+
 if TYPE_CHECKING:
     from companies.models import CompanyProfile
 
 
 # ── Status helpers ────────────────────────────────────────────────────────────
 
-def _status(score: float) -> tuple[str, str]:
-    """Return (status_key, status_label) from a 0-100 score."""
-    s = float(score or 0)
+def _urgent(score, threshold: float) -> bool:
+    """
+    True only when the score is KNOWN and below the threshold.
+
+    Priority ranks how urgently a milestone should be addressed, which is a
+    claim about the company. An unknown score must not be ranked urgent — and
+    the bare `score < threshold` would raise TypeError on None besides.
+    """
+    return score is not None and score < threshold
+
+
+def _status(score) -> tuple[str, str]:
+    """
+    Return (status_key, status_label) from a 0-100 score, or the not-assessed
+    state when the score is unknown.
+
+    'not_started' was the fall-through, and with `float(score or 0)` every
+    unknown landed there — so an unassessed company was handed a full ten-item
+    improvement roadmap, each item asserting a deficiency in a KPI nobody had
+    measured, each sorted to the top by the not_started priority.
+
+    A milestone for an unmeasured KPI is not a remediation claim. It is a
+    request for evidence, which is the one thing the unknown state may say.
+    """
+    if score is None:
+        return ('not_assessed', 'Not Assessed')
+    s = float(score)
     if s >= 75:
         return ('advanced',    'Advanced')
     elif s >= 55:
@@ -59,8 +86,8 @@ def _status(score: float) -> tuple[str, str]:
         return ('not_started', 'Not Started')
 
 
-def _clamp(v, lo=0.0, hi=100.0) -> float:
-    return max(lo, min(hi, float(v or 0)))
+# core.unknown is the single authority (D2b). Was `float(v or 0)`.
+_clamp = clamp
 
 
 # ── Milestone template library ────────────────────────────────────────────────
@@ -79,12 +106,19 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
     future     = _clamp(p.future_readiness_score)
     audit      = _clamp(p.audit_quality_score)
     procure    = _clamp(p.procurement_transparency_score)
-    renew      = _clamp(p.renewable_energy_share or 0)  # 0-100 %
+    renew      = _clamp(p.renewable_energy_share)  # 0-100 %, or None
 
     # --------------------------------------------------------------------------
     # Emissions Monitoring
     # --------------------------------------------------------------------------
-    em_score = min(transp, 100 - (_clamp(p.controversy_risk_score)))
+    # min()/max() over a known and an unknown is not the known one — it is
+    # unknown. `min(80, _clamp(None))` used to be 0, which read as a total
+    # deficiency in whichever KPI happened to be unmeasured.
+    def _both(a, b, fn):
+        return None if a is None or b is None else fn(a, b)
+
+    controversy = _clamp(p.controversy_risk_score)
+    em_score = _both(transp, controversy, lambda t, c: min(t, 100 - c))
     em_status, em_label = _status(em_score)
     milestones = [
         {
@@ -124,7 +158,8 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
     # --------------------------------------------------------------------------
     # Methane Reduction
     # --------------------------------------------------------------------------
-    meth_score = energy if pol in ('high', 'severe') else max(energy, 60.0)
+    meth_score = (None if energy is None else
+                  energy if pol in ('high', 'severe') else max(energy, 60.0))
     meth_status, meth_label = _status(meth_score)
     milestones.append({
         'key':           'methane_reduction',
@@ -194,13 +229,13 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
         'status':         eff_status,
         'status_label':   eff_label,
         'relevant_score': eff_score,
-        'priority':       12 if eff_score < 50 else 28,
+        'priority':       12 if _urgent(eff_score, 50) else 28,
     })
 
     # --------------------------------------------------------------------------
     # Renewable Energy Integration
     # --------------------------------------------------------------------------
-    ren_score  = max(energy, renew)
+    ren_score  = _both(energy, renew, max)
     ren_status, ren_label = _status(ren_score)
     milestones.append({
         'key':           'renewable_integration',
@@ -232,7 +267,7 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
         'status':         ren_status,
         'status_label':   ren_label,
         'relevant_score': ren_score,
-        'priority':       11 if ren_score < 45 else 29,
+        'priority':       11 if _urgent(ren_score, 45) else 29,
     })
 
     # --------------------------------------------------------------------------
@@ -269,13 +304,13 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
         'status':         waste_status,
         'status_label':   waste_label,
         'relevant_score': waste,
-        'priority':       14 if waste < 50 else 32,
+        'priority':       14 if _urgent(waste, 50) else 32,
     })
 
     # --------------------------------------------------------------------------
     # Transparency Reporting
     # --------------------------------------------------------------------------
-    rep_score  = min(transp, audit)
+    rep_score  = _both(transp, audit, min)
     rep_status, rep_label = _status(rep_score)
     milestones.append({
         'key':           'transparency_reporting',
@@ -307,13 +342,13 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
         'status':         rep_status,
         'status_label':   rep_label,
         'relevant_score': rep_score,
-        'priority':       9 if rep_score < 50 else 27,
+        'priority':       9 if _urgent(rep_score, 50) else 27,
     })
 
     # --------------------------------------------------------------------------
     # Supply Chain Verification
     # --------------------------------------------------------------------------
-    sc_score   = min(anti_corr, procure)
+    sc_score   = _both(anti_corr, procure, min)
     sc_status, sc_label = _status(sc_score)
     milestones.append({
         'key':           'supply_chain_verification',
@@ -345,7 +380,7 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
         'status':         sc_status,
         'status_label':   sc_label,
         'relevant_score': sc_score,
-        'priority':       15 if sc_score < 50 else 33,
+        'priority':       15 if _urgent(sc_score, 50) else 33,
     })
 
     # --------------------------------------------------------------------------
@@ -383,13 +418,13 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
         'status':         ws_status,
         'status_label':   ws_label,
         'relevant_score': ws_score,
-        'priority':       13 if ws_score < 55 else 31,
+        'priority':       13 if _urgent(ws_score, 55) else 31,
     })
 
     # --------------------------------------------------------------------------
     # Circular Economy Improvements
     # --------------------------------------------------------------------------
-    circ_score = min(waste, biodiv)
+    circ_score = _both(waste, biodiv, min)
     circ_status, circ_label = _status(circ_score)
     milestones.append({
         'key':           'circular_economy',
@@ -421,20 +456,37 @@ def _build_milestones(p: 'CompanyProfile') -> list[dict]:
         'status':         circ_status,
         'status_label':   circ_label,
         'relevant_score': circ_score,
-        'priority':       16 if circ_score < 50 else 34,
+        'priority':       16 if _urgent(circ_score, 50) else 34,
     })
 
     # Sort: not_started first, then in_progress, then achievable, then advanced
     # Within each group, sort by priority (lower = more urgent)
-    status_order = {'not_started': 0, 'in_progress': 1, 'achievable': 2, 'advanced': 3}
+    # not_assessed sorts LAST: it is not the most urgent thing to fix, it is
+    # the thing we cannot yet say anything about.
+    status_order = {'not_started': 0, 'in_progress': 1, 'achievable': 2,
+                    'advanced': 3, 'not_assessed': 4}
     milestones.sort(key=lambda m: (status_order[m['status']], m['priority']))
     return milestones
 
 
 # ── Trajectory ────────────────────────────────────────────────────────────────
 
-def _build_trajectory(p: 'CompanyProfile', milestones: list[dict]) -> dict:
+def _build_trajectory(p: 'CompanyProfile', milestones: list[dict]) -> dict | None:
+    """
+    Score trajectory, or None when there is no current score to project from.
+
+    Every field here is relative to `current`: potential_low, potential_high and
+    gap_to_100 are all "current plus/minus something". With `_clamp(None) -> 0`
+    the whole block was computed from a starting point of zero, publishing a
+    company at 'current 0.0' with a 'gap to 100' of exactly 100.
+
+    not_assessed milestones contribute NO uplift. An uplift figure is a claim
+    that fixing a specific deficiency would raise the score by so many points,
+    and there is no established deficiency to fix.
+    """
     current = _clamp(p.ecoiq_total_score)
+    if current is None:
+        return None
     # Include uplift from not_started, in_progress and achievable (partial credit for achievable)
     active = [m for m in milestones if m['status'] in ('not_started', 'in_progress')]
     partial = [m for m in milestones if m['status'] == 'achievable']

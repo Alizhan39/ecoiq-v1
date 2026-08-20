@@ -10,6 +10,8 @@ No Celery, no external calls — derives everything from existing CompanyProfile
 """
 import logging
 
+from core.unknown import known, weighted_mean_of_known
+
 log = logging.getLogger(__name__)
 
 # ── Country → region mapping ───────────────────────────────────────────────────
@@ -94,8 +96,10 @@ def _known(value):
     value drives a threshold, the threshold simply does not fire: absence of
     evidence is not evidence that a company needs financing, any more than it is
     evidence of harm.
+
+    Delegates to core.unknown since D2c — one authority, parity asserted by test.
     """
-    return None if value is None else float(value)
+    return known(value)
 
 
 def _weighted(*pairs):
@@ -106,11 +110,14 @@ def _weighted(*pairs):
     quietly shrink the dimension — a company missing one input would score lower
     than an identical company that has it, purely for the absence. Re-weighting
     across what is known keeps the scale honest; None when nothing is known.
+
+    Delegates to core.unknown since D2c. Note core's version also clamps each
+    value, which this one did not — a difference with no effect here, since
+    every caller already passes profile scores bounded to 0-100, and clamping a
+    value already inside the range is a no-op. Asserted by test rather than
+    assumed.
     """
-    known = [(v, w) for v, w in pairs if v is not None]
-    if not known:
-        return None
-    return sum(v * w for v, w in known) / sum(w for _, w in known)
+    return weighted_mean_of_known(*pairs)
 
 
 def _get_region(country: str) -> str:
