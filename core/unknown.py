@@ -99,3 +99,28 @@ def weighted_mean_of_known(*pairs) -> float | None:
     if not present or total_weight == 0:
         return None
     return sum(v * w for v, w in present) / total_weight
+
+
+def format_known(value, spec: str = '.1f', absent: str = 'not assessed') -> str:
+    """
+    Render a possibly-unknown number for a human or a language model.
+
+    D4A. Format specifiers are where unknown values crash — `f'{score:.1f}'`
+    raises on None — and the reflex fix is to substitute a number so the string
+    builds. That reflex is how `50` got into so much of this codebase.
+
+    So the substitute is WORDS, not a number. A report that says
+    "Public Benefit: not assessed" is honest; one that says
+    "Public Benefit: 50.0" is a fabricated measurement, and neither the reader
+    nor a language model reading it downstream can tell the difference.
+
+    The distinction matters most in prompts. An LLM handed "50.0" will reason
+    about an average company and write fluent, confident prose about a
+    measurement nobody made.
+    """
+    if value is None:
+        return absent
+    try:
+        return format(float(value), spec)
+    except (TypeError, ValueError):
+        return absent

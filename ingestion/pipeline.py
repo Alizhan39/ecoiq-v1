@@ -893,7 +893,8 @@ Rules:
 
             _progress(self.job_pk, 95,
                       f'{"Created" if profile_created else "Updated"} EcoIQ profile: '
-                      f'score {profile.ecoiq_total_score:.1f} — {profile.moral_label}')
+                      f'score {ing_prov.fmt_score(profile.ecoiq_total_score)} — '
+                      f'{profile.moral_label}')
 
         except Exception as exc:
             log.warning('[job %s] CompanyProfile save failed (non-fatal): %s', self.job_pk, exc)
