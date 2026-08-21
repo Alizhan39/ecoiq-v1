@@ -351,6 +351,74 @@ def _recommended_actions(pb, hr, jd, ta, st, ec) -> list[str]:
 
 # ── Company scorer ─────────────────────────────────────────────────────────────
 
+# ── Derived provenance (D3C-3e) ───────────────────────────────────────────────
+
+#: No methodology identifier existed here; the smallest stable, code-owned
+#: constants. Not a git SHA, which changes on every unrelated commit.
+MIZAN_METHOD = 'ecoiq-mizan-balance'
+MIZAN_VERSION = '1'
+
+MIZAN_METRIC_KEY = 'mizan.score'
+
+#: The 17 registered metrics score_company reads BEFORE it computes the final
+#: score. Traced from the function, not assumed: three resolve to DERIVED
+#: pillars, fourteen are MATERIAL. Derived inputs are linked as derived rows
+#: rather than flattened to their own material inputs.
+#:
+#: KNOWN GAPS — inputs the score depends on that have no provenance row:
+#:   pollution_level   categorical, not a registered metric
+#:   is_verified       a flag, not a metric
+#:   status            a flag, not a metric
+#:   ai_summary        scanned for placeholder markers by the evidence
+#:                     -confidence dimension
+#:
+#: These four are why the ephemeral identity rule includes the output — see
+#: companies.provenance.record_calculated. They can move the score without
+#: moving the lineage.
+MIZAN_INPUTS: tuple[str, ...] = (
+    'company.public_benefit', 'company.transparency_governance',
+    'company.ethical_alignment',
+    'anti_corruption_score', 'audit_quality_score', 'biodiversity_impact_score',
+    'controversy_risk_score', 'energy_transition_score', 'future_readiness_score',
+    'infrastructure_contribution_score', 'jobs_created_score',
+    'national_value_score', 'procurement_transparency_score',
+    'regional_development_score', 'transparency_score_detail',
+    'waste_management_score', 'water_impact_score',
+)
+
+
+def score_and_record(profile):
+    """
+    Score a company AND record the lineage of the number produced.
+
+    Separate from score_company() on purpose. That function is PURE and is
+    called from mizan/views.py on every request — three times on the index
+    page alone. Recording provenance inside it would write rows on every page
+    view, so Mizan is the first metric to need an explicit write path rather
+    than gaining one on an existing save.
+
+    mizan.score is EPHEMERAL: nothing persists it, so the provenance row must
+    carry recorded_value or the lineage describes a number nobody can see
+    again. This is the first writer to use the recorded_value column #248
+    added.
+
+    Returns the MizanResult, with a transient `provenance_status`.
+    """
+    from django.db import transaction
+
+    from companies import provenance as prov
+
+    with transaction.atomic():
+        result = score_company(profile)
+        result.provenance_status = prov.record_calculated(
+            profile, MIZAN_METRIC_KEY, result.final_mizan_score, MIZAN_INPUTS,
+            writer='mizan.scoring.score_and_record',
+            methodology=MIZAN_METHOD,
+            calculation_version=MIZAN_VERSION,
+        )
+    return result
+
+
 def score_company(profile: Any) -> MizanResult:
     """
     Compute full Mizan score from a CompanyProfile instance.

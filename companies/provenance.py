@@ -444,19 +444,45 @@ def record_calculated(profile, metric_key: str, value, declared, *, writer: str,
         return 'incomplete'
 
     input_rows = [current_rows[key] for key in consumed]
+    definition = registry.require_metric_definition(metric_key)
+    ephemeral = definition.is_ephemeral
 
     existing = current(profile, metric_key)
-    if (existing is not None
-            and existing.origin == PROVENANCE_MODELLED
-            and existing.methodology == methodology
-            and existing.calculation_version == calculation_version
-            and set(existing.inputs.values_list('pk', flat=True))
-                == {row.pk for row in input_rows}):
+    same_lineage = (
+        existing is not None
+        and existing.origin == PROVENANCE_MODELLED
+        and existing.methodology == methodology
+        and existing.calculation_version == calculation_version
+        and set(existing.inputs.values_list('pk', flat=True))
+            == {row.pk for row in input_rows}
+    )
+
+    # EPHEMERAL METRICS ADD THE OUTPUT TO THE IDENTITY, and persisted ones
+    # deliberately do not. The asymmetry is not an inconsistency.
+    #
+    # For a persisted metric the comparison is impossible: `existing.value`
+    # resolves live through the registry, and the new number has already been
+    # written by the time this runs, so it always matches (#249 shipped that
+    # bug before a test caught it). It is also unnecessary — the formula is
+    # deterministic over its input rows.
+    #
+    # For an ephemeral metric neither holds. recorded_value is stored
+    # immutably on the row, so the comparison genuinely fires; and the
+    # determinism assumption can fail, because a calculator may read inputs
+    # that are not registered metrics and therefore leave no provenance row —
+    # a categorical field, a verification flag, a status. When one of those
+    # changes, the lineage is identical and the answer is not.
+    #
+    # Comparing the output is the smallest representation that catches this
+    # without inventing an opaque parameter blob: if an unrepresented input
+    # moved the number, the number says so.
+    if same_lineage and (not ephemeral or existing.recorded_value == value):
         return 'unchanged'
 
     record_derived(
         profile, metric_key, writer=writer, methodology=methodology,
         calculation_version=calculation_version, inputs=input_rows,
+        recorded_value=value if ephemeral else None,
     )
     return 'recorded'
 
