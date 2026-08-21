@@ -151,3 +151,16 @@
 .signal__dot--severe { background: var(--danger); }
 .signal__dot--insufficient_evidence { background: var(--unknown); }
 .signal__status { color: var(--ink-soft); font-size: .85rem; }
+
+.labs section { margin-top: 2rem; }
+.labs h2 { display: flex; align-items: center; gap: .5rem; }
+.labs__count {
+  font-size: .75rem; font-weight: 600; color: var(--ink-soft);
+  background: var(--paper-soft); padding: .1rem .5rem; border-radius: 999px;
+}
+.status-badge--planned { background: rgba(148,163,184,.18); color: var(--ink-soft); }
+.trust section { margin-top: 2rem; }
+.trust h2 { font-size: 1.05rem; }
+.trust dl { display: grid; gap: .8rem; }
+.trust dt { font-weight: 600; }
+.trust dd { margin: .15rem 0 0; color: var(--ink-soft); }
