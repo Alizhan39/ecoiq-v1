@@ -447,25 +447,24 @@ def _state_from(profile, raw_score) -> PublicScoreState:
             False, None, STATUS_INSUFFICIENT_EVIDENCE, 0,
             PENDING_HEADLINE, PENDING_DETAIL)
 
-    report = coverage_for(profile)
-
-    # D5. The floor was `covered_inputs > 0` while coverage was inert and
-    # nothing could ever pass it. Now that coverage reads the provenance store
-    # that floor would publish a company with ONE evidenced input out of
-    # sixteen, so it is replaced with the most conservative rule available:
-    # every material input the score claims to weigh must be evidenced.
+    # D5. The rule lives in companies.eligibility, which is the ONE place that
+    # decides publication. This function stays as the presentation-shaped view
+    # of that decision, because a dozen templates already read PublicScoreState
+    # and moving them is not what this step is for.
     #
-    # Deliberately stricter than any threshold D5's eligibility step is likely
-    # to choose, and chosen for that reason -- a threshold picked against the
-    # real distribution is a product decision, and this must not pre-empt it in
-    # the permissive direction. Tightening later is a policy change; publishing
-    # something that should not have been published is not recoverable.
-    if raw_score is None or report.availability != AVAILABILITY_AVAILABLE:
+    # Delegating rather than duplicating matters here specifically: the detail
+    # page renders the composite in seventeen places, and a second copy of the
+    # threshold would eventually disagree with the first.
+    from companies.eligibility import decide
+
+    decision = decide(profile, score=raw_score)
+    if not decision.is_published:
         return PublicScoreState(
-            False, None, STATUS_INSUFFICIENT_EVIDENCE, report.coverage_percent,
-            PENDING_HEADLINE, PENDING_DETAIL)
+            False, None, STATUS_INSUFFICIENT_EVIDENCE,
+            decision.coverage_percent, PENDING_HEADLINE, PENDING_DETAIL)
     return PublicScoreState(
-        True, float(raw_score), STATUS_PUBLISHED, report.coverage_percent)
+        True, float(decision.score), STATUS_PUBLISHED,
+        decision.coverage_percent)
 
 
 def public_score_state(profile) -> PublicScoreState:

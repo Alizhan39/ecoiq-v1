@@ -252,6 +252,22 @@ def _get_financing_eligibility(profile):
     # TypeError on the public company page. Refusing up front is both the safe
     # answer and the truthful one: we cannot assert a company qualifies for
     # Green Bond finance on the strength of a score we do not have.
+    # D5. Every card below is a COMPANY-SPECIFIC, POSITIVE financing claim —
+    # "this organisation meets Green Bond use-of-proceeds criteria". That is a
+    # stronger statement than the score itself, and it must obey the same
+    # evidence gate.
+    #
+    # The stored composite exists for companies whose score is NOT publishable
+    # (a legacy value with no evidenced provenance behind it), so gating on
+    # `s is None` alone would let those companies collect eligibility cards
+    # while their score was withheld. The page-level gate happens to contain
+    # this today; relying on that would make the containment a property of the
+    # caller rather than of the claim.
+    from companies.eligibility import decide
+
+    if not decide(profile).is_published:
+        return []
+
     s = clamp(profile.ecoiq_total_score)
     transparency = clamp(profile.transparency_score_detail)
     energy = clamp(profile.energy_transition_score)
