@@ -23,6 +23,21 @@ work**:
 - [`docs/AI-DEVELOPMENT-STACK.md`](docs/AI-DEVELOPMENT-STACK.md) — what's
   installed, what was skipped and why, security findings.
 
+## Context navigation
+
+Before broad repository scans:
+
+1. Read [`docs/repo-map/OBSIDIAN_BRIDGE.md`](docs/repo-map/OBSIDIAN_BRIDGE.md).
+2. Consult the relevant EcoIQ Obsidian MOC/index if accessible
+   (`~/Desktop/ecoiq/_MOC/`).
+3. Identify the smallest relevant subsystem.
+4. Read only the authoritative code files for that subsystem.
+5. Do not recursively scan the whole repository unless both the bridge and the
+   vault are insufficient.
+6. **Code is authoritative when it conflicts with knowledge notes.** The vault's
+   architecture notes predate the current evidence architecture.
+7. Update the bridge only when architecture materially changes.
+
 ## Standing rules
 
 1. **EcoIQ is the source of truth.** `frontend/app/src/design/tokens.ts`,
