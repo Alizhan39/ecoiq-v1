@@ -502,14 +502,29 @@ class K_L_Atomicity(TestCase):
             'the M2M rows must roll back too')
 
     def test_l_a_derived_save_failure_leaves_no_provenance(self):
+        """
+        A failure after the provenance write rolls the provenance back with it.
+
+        The failure used to be induced by assigning None to ecoiq_total_score,
+        which raised IntegrityError while the column was NOT NULL. D4B made it
+        nullable, so that assignment now succeeds and the injected failure
+        silently stopped firing — the test would have passed vacuously.
+
+        Injecting the failure explicitly is also better than depending on a
+        schema constraint, which is exactly the kind of thing a later migration
+        can remove without anyone noticing.
+        """
+        from unittest.mock import patch
+
         profile = _profile('rollback-save')
         _record_all_inputs(profile)
 
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 recalculate_and_save(profile)
-                profile.ecoiq_total_score = None   # NOT NULL until D4
-                profile.save()
+                with patch.object(type(profile), 'save',
+                                  side_effect=IntegrityError('injected')):
+                    profile.save()
 
         self.assertEqual(
             CompanyMetricProvenance.objects.filter(
