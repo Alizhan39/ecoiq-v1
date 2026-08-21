@@ -92,3 +92,30 @@
     padding-left: 1.4rem; border-left: 1px solid var(--line);
   }
 }
+
+.hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); margin-bottom: .6rem; }
+.hero__direction { color: var(--ink-soft); font-size: .95rem; }
+.cta {
+  display: inline-block; margin-top: .6rem; padding: .6rem 1.1rem;
+  background: var(--accent); color: #fff; text-decoration: none;
+  border-radius: var(--radius); font-weight: 600;
+}
+.home section { margin-top: 2.6rem; }
+.home h2 { letter-spacing: -.02em; }
+.card--muted { background: var(--paper-soft); }
+.card h3 { font-size: 1rem; margin-bottom: .3rem; }
+.card p { color: var(--ink-soft); font-size: .9rem; margin: 0; }
+.capability-list, .grid { list-style: none; padding: 0; }
+
+.pipeline { list-style: none; padding: 0; display: grid; gap: .5rem; }
+.pipeline li {
+  display: flex; gap: .8rem; align-items: baseline;
+  padding: .5rem .8rem; border-left: 3px solid var(--accent);
+  background: var(--paper-soft); border-radius: 0 var(--radius) var(--radius) 0;
+}
+.pipeline strong { min-width: 8.5rem; }
+.pipeline span { color: var(--ink-soft); font-size: .9rem; }
+
+.direction { margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px dashed var(--line); }
+.direction__stages { color: var(--ink-soft); font-size: .88rem; }
+.verticals .card h3 { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
