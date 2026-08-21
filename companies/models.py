@@ -290,7 +290,11 @@ class CompanyProfile(models.Model):
         verbose_name_plural = 'Company Profiles'
 
     def __str__(self):
-        return f'{self.company.name} — EcoIQ {self.ecoiq_total_score:.1f}'
+        # D4A: the composite becomes nullable, and a profile with no score must
+        # still be nameable — in the admin, in logs, and in error messages.
+        score = self.ecoiq_total_score
+        suffix = 'EcoIQ not yet scored' if score is None else f'EcoIQ {score:.1f}'
+        return f'{self.company.name} — {suffix}'
 
     # ── Derived properties ─────────────────────────────────────────────────────
 
@@ -326,34 +330,61 @@ class CompanyProfile(models.Model):
 
     @property
     def score_label(self):
+        """
+        Band for the composite, or None when there is no composite.
+
+        None rather than 'Needs Improvement'. The old code fell through to the
+        worst band for a company nobody had scored, which reads as a finding.
+        """
         s = self.ecoiq_total_score
+        if s is None: return None
         if s >= 85: return 'Exceptional'
         if s >= 70: return 'Strong'
         if s >= 60: return 'Moderate'
         if s >= 50: return 'Fair'
         return 'Needs Improvement'
 
+    # D4A — these three are WARNINGS. Each says something adverse about a
+    # company, so an unknown input must produce False, not a warning and not a
+    # crash. False here means "we are not raising this flag", which is the
+    # honest reading of an absent input; it is not a claim that the company is
+    # fine, and nothing downstream treats it as one.
+
     @property
     def high_transition_need(self):
         return (
             self.pollution_level in ('high', 'severe') and
+            self.modernization_score is not None and
             self.modernization_score < 40
         )
 
     @property
     def low_transparency_warning(self):
-        return self.transparency_score_detail < 30
+        return (
+            self.transparency_score_detail is not None and
+            self.transparency_score_detail < 30
+        )
 
     @property
     def profit_extraction_warning(self):
         return (
+            self.profit_extraction_score is not None and
+            self.public_benefit_score is not None and
             self.profit_extraction_score > 75 and
             self.public_benefit_score < 50
         )
 
     @property
     def path_to_100_gap(self):
-        return max(0, 100 - self.ecoiq_total_score)
+        """
+        Points remaining to 100, or None when there is no score.
+
+        Not 100. A company with no assessment has not been shown to have the
+        largest possible gap — that would be the harshest reading of an
+        absence, presented as a measurement.
+        """
+        score = self.ecoiq_total_score
+        return None if score is None else max(0, 100 - score)
 
 
 # ── CompanyGuidanceVideo ───────────────────────────────────────────────────────
