@@ -143,27 +143,86 @@ MATERIAL_INPUTS: tuple[MaterialInput, ...] = tuple(
 )
 
 
+#: Origins that count as evidence FOR A MATERIAL INPUT.
+#:
+#: MODELLED is deliberately absent, and the omission is the substantive
+#: decision in this module. A material input is supposed to be something
+#: somebody observed, estimated, or derived from a source. If one carries
+#: MODELLED it is a model output wearing an input's clothes, and counting it as
+#: evidence would let a model corroborate itself.
+#:
+#: MODELLED remains correct for DERIVED metrics, whose defensibility comes
+#: transitively from their own inputs (see provenance._row_is_defensible).
+EVIDENCED_MATERIAL_ORIGINS = frozenset({
+    PROVENANCE_MEASURED, PROVENANCE_INFERRED, PROVENANCE_ESTIMATED,
+})
+
+
+def _weight_by_field() -> dict:
+    """
+    Material field -> its share of the composite, counted ONCE.
+
+    national_value_score feeds two pillars, so it appears twice in
+    MATERIAL_INPUTS. Its weight is legitimately the sum of both contributions,
+    but the DENOMINATOR must count the field once -- otherwise a company is
+    asked for 17 pieces of evidence when there are 16 to give, and 100%
+    coverage becomes unreachable.
+    """
+    weights = {}
+    for item in MATERIAL_INPUTS:
+        weights[item.field_name] = weights.get(item.field_name, 0.0) + item.weight
+    return weights
+
+
 @dataclass
 class CoverageReport:
-    """What is actually known about one profile's score."""
+    """
+    What is actually known about one profile's score.
+
+    Answers one question: HOW MUCH of the information this assessment requires
+    is defensibly supported?
+
+    Weighted by the scoring engine's own composite weights rather than by a
+    count, so a company missing the 25%-weighted public-benefit pillar does not
+    read the same as one missing the 5%-weighted ethical-alignment one.
+
+    Both the ratio and its two halves are exposed, so a surface can say
+    "78% -- 11 of 14 material inputs supported" rather than a contextless
+    percentage.
+    """
     covered_weight: float = 0.0
     total_weight: float = 0.0
     covered_inputs: int = 0
     total_inputs: int = 0
-    missing: list[str] = field(default_factory=list)
+    missing: list = field(default_factory=list)
+    #: Inputs that HAVE a value and a provenance row, but an unevidenced one --
+    #: SEEDED or LEGACY. Reported separately from `missing`, because "we hold a
+    #: number we cannot stand behind" is a different problem from "we hold
+    #: nothing", and they need different work to fix.
+    unevidenced: list = field(default_factory=list)
 
     @property
     def coverage(self) -> float:
-        """0.0–1.0. Weighted share of material inputs with real provenance."""
+        """0.0-1.0. Weighted share of material inputs with real provenance."""
         return self.covered_weight / self.total_weight if self.total_weight else 0.0
 
     @property
     def coverage_percent(self) -> int:
         """
-        Whole percent only. The denominator is ~16 inputs, so a figure like
+        Whole percent only. The denominator is 16 inputs, so a figure like
         '82.4%' would imply a precision the underlying data cannot support.
         """
         return round(self.coverage * 100)
+
+    @property
+    def numerator(self) -> int:
+        """Inputs supported by defensible provenance."""
+        return self.covered_inputs
+
+    @property
+    def denominator(self) -> int:
+        """Inputs this assessment requires."""
+        return self.total_inputs
 
     @property
     def availability(self) -> str:
@@ -174,39 +233,48 @@ class CoverageReport:
         return AVAILABILITY_INSUFFICIENT
 
     def __str__(self) -> str:
-        return (f'Evidence coverage {self.coverage_percent}% · '
-                f'{self.covered_inputs} of {self.total_inputs} material inputs')
+        return (f'Evidence coverage {self.coverage_percent}% - '
+                f'{self.numerator} of {self.denominator} material inputs')
 
 
 def field_provenance(profile, field_name: str) -> str:
     """
-    Provenance of one field on one profile.
+    Recorded provenance of one field on one profile.
 
-    There is no per-field provenance store yet, so this reports what can be
-    established rather than guessing. It returns SEEDED only for the one case
-    that is deterministic — a value still exactly equal to the model default on
-    a profile with no linked evidence — and LEGACY_UNKNOWN_PROVENANCE for
-    everything else. It never returns MEASURED: nothing in the current schema
-    can justify that claim.
+    D5. This used to GUESS: it compared the stored value against the model
+    default and called a match SEEDED. That was a stand-in for a store which
+    did not exist yet, and D4C removed the defaults it compared against,
+    leaving it inert.
+
+    It now reads the store D3 built. No inference, no comparison against a
+    magic number -- either a writer recorded where this value came from or
+    nobody did, and LEGACY_UNKNOWN_PROVENANCE is the honest answer to the
+    second case.
+
+    Returns PROVENANCE_NO_VALUE when the field itself is unknown: there is no
+    origin for a number that does not exist.
     """
-    value = getattr(profile, field_name, None)
-    if value is None:
-        return PROVENANCE_UNKNOWN
+    if getattr(profile, field_name, None) is None:
+        return PROVENANCE_NO_VALUE
 
-    default = _model_default(profile, field_name)
-    if default is not None and abs(float(value) - float(default)) < 1e-9:
-        if not _has_linked_evidence(profile):
-            return PROVENANCE_SEEDED
-    return PROVENANCE_UNKNOWN
+    from companies import provenance as prov
+
+    row = prov.current(profile, field_name)
+    return row.origin if row is not None else PROVENANCE_UNKNOWN
 
 
 def _model_default(profile, field_name: str):
+    """
+    Retained for callers that still ask, and for the record.
+
+    D4C removed every neutral default, so this returns None for the score
+    fields now. Nothing in coverage depends on it any more.
+    """
     try:
         f = profile._meta.get_field(field_name)
     except Exception:
         return None
     default = getattr(f, 'default', None)
-    # Django uses a sentinel class for "no default"; it is not callable-safe here.
     return default if isinstance(default, (int, float)) else None
 
 
@@ -214,9 +282,8 @@ def _has_linked_evidence(profile) -> bool:
     """
     True when anything in the repository links evidence to this profile.
 
-    Checked rather than assumed: company_intelligence.CompanyKPIEvidenceLink is
-    the only real per-assessment evidence linkage that exists today, and
-    public_sources is a profile-level JSON list.
+    No longer consulted by coverage -- provenance rows carry their own evidence
+    FK -- but still a useful question for analyst surfaces.
     """
     if getattr(profile, 'public_sources', None):
         return True
@@ -229,14 +296,84 @@ def _has_linked_evidence(profile) -> bool:
 def coverage_for(profile) -> CoverageReport:
     """Evidence coverage for one CompanyProfile. Reads only."""
     report = CoverageReport()
-    for item in MATERIAL_INPUTS:
-        report.total_weight += item.weight
+    if profile is None:
+        return report
+
+    from companies import provenance as prov
+
+    current = prov.current_map(profile)
+    for field_name, weight in _weight_by_field().items():
+        report.total_weight += weight
         report.total_inputs += 1
-        if field_provenance(profile, item.field_name) in EVIDENCED_PROVENANCE:
-            report.covered_weight += item.weight
+
+        row = current.get(field_name)
+        if getattr(profile, field_name, None) is None or row is None:
+            report.missing.append(field_name)
+        elif row.origin in EVIDENCED_MATERIAL_ORIGINS:
+            report.covered_weight += weight
             report.covered_inputs += 1
         else:
-            report.missing.append(item.field_name)
+            # SEEDED or LEGACY: a number we hold but cannot stand behind.
+            report.unevidenced.append(field_name)
+    return report
+
+
+def derived_coverage_for(profile, metric_key: str) -> CoverageReport:
+    """
+    Coverage for a DERIVED metric, from the graph it actually consumed.
+
+    Not the same question as `coverage_for`. The composite reads all sixteen
+    material inputs; Mizan reads seventeen things, most of them pillars; the
+    financing metric reads four. Reporting whole-estate coverage against any of
+    them would describe a different calculation from the one that produced the
+    number.
+
+    The traversal walks the recorded lineage down to its MATERIAL ancestors and
+    counts each DISTINCT one once. Diamonds are common here -- several pillars
+    share material inputs -- and counting a shared ancestor once per path would
+    inflate coverage for exactly the metrics whose evidence is most
+    concentrated.
+
+    A metric with no recorded lineage returns an empty report: coverage 0.0,
+    availability INSUFFICIENT. Correct rather than pessimistic -- a derived
+    value whose lineage was never recorded cannot be shown to rest on anything.
+    """
+    from companies import provenance as prov
+
+    report = CoverageReport()
+    row = prov.current(profile, metric_key)
+    if row is None:
+        return report
+
+    weights = _weight_by_field()
+    ancestors = {}
+
+    def walk(node, seen):
+        if node.pk in seen:
+            return
+        seen.add(node.pk)
+        inputs = list(node.inputs.all())
+        if not inputs:
+            if node.metric_key in weights:
+                ancestors[node.metric_key] = (
+                    node.origin in EVIDENCED_MATERIAL_ORIGINS
+                    and node.value is not None
+                )
+            return
+        for item in inputs:
+            walk(item, seen)
+
+    walk(row, set())
+
+    for field_name, evidenced in ancestors.items():
+        weight = weights[field_name]
+        report.total_weight += weight
+        report.total_inputs += 1
+        if evidenced:
+            report.covered_weight += weight
+            report.covered_inputs += 1
+        else:
+            report.unevidenced.append(field_name)
     return report
 
 
@@ -311,7 +448,19 @@ def _state_from(profile, raw_score) -> PublicScoreState:
             PENDING_HEADLINE, PENDING_DETAIL)
 
     report = coverage_for(profile)
-    if report.covered_inputs <= 0 or raw_score is None:
+
+    # D5. The floor was `covered_inputs > 0` while coverage was inert and
+    # nothing could ever pass it. Now that coverage reads the provenance store
+    # that floor would publish a company with ONE evidenced input out of
+    # sixteen, so it is replaced with the most conservative rule available:
+    # every material input the score claims to weigh must be evidenced.
+    #
+    # Deliberately stricter than any threshold D5's eligibility step is likely
+    # to choose, and chosen for that reason -- a threshold picked against the
+    # real distribution is a product decision, and this must not pre-empt it in
+    # the permissive direction. Tightening later is a policy change; publishing
+    # something that should not have been published is not recoverable.
+    if raw_score is None or report.availability != AVAILABILITY_AVAILABLE:
         return PublicScoreState(
             False, None, STATUS_INSUFFICIENT_EVIDENCE, report.coverage_percent,
             PENDING_HEADLINE, PENDING_DETAIL)
