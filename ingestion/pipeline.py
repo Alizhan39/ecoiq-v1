@@ -28,7 +28,10 @@ from decimal import Decimal
 import requests as http_requests
 
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
+
+from ingestion import provenance as ing_prov
 
 log = logging.getLogger('ingestion.pipeline')
 
@@ -593,6 +596,47 @@ Rules:
 
     # ── Step 5: Save ──────────────────────────────────────────────────────────
 
+    def _persist_source_evidence(self, company):
+        """
+        Create Evidence + EvidenceMemory rows for every downloaded source.
+
+        Idempotent via get_or_create, so calling it twice in one run is a
+        no-op the second time. It is called BEFORE the profile write (so
+        ingestion provenance can link to a real EvidenceMemory) and again at
+        the original point in the flow.
+
+        Returns the league.Evidence rows persisted, so the caller can pick the
+        strongest one to cite in provenance.
+        """
+        from evidence_memory.services.memory import create_memory_from_league_evidence
+        from league.models import Evidence
+
+        doc_map = {
+            'esg_report':    'audit_report',
+            'annual_report': 'audit_report',
+            'pdf':           'other',
+            'government':    'government_report',
+            'news':          'press_release',
+            'web':           'press_release',
+        }
+        persisted = []
+        for src in self._sources:
+            if not src.get('url') or not src.get('downloaded'):
+                continue
+            evidence, _ = Evidence.objects.get_or_create(
+                company=company,
+                url=src['url'][:2000],
+                defaults={
+                    'doc_type':   doc_map.get(src['source_type'], 'other'),
+                    'title':      src['title'][:255] or src['url'][:255],
+                    'notes':      src['snippet'][:1000] if src.get('snippet') else '',
+                    'verification_status': 'pending',
+                },
+            )
+            create_memory_from_league_evidence(evidence)
+            persisted.append(evidence)
+        return persisted
+
     def _step_save(self):
         from ingestion.models import IngestionJob, IngestionSource
         from league.models import Company, EnvironmentalProject, Evidence, ScoreHistory, SECTOR_CHOICES
@@ -805,16 +849,39 @@ Rules:
                 status = 'public',
             )
 
-            profile, profile_created = CompanyProfile.objects.get_or_create(
-                company=company,
-                defaults=profile_data,
-            )
-            if not profile_created:
-                for field, value in profile_data.items():
-                    setattr(profile, field, value)
-                profile.save()
+            # Sources first, so the provenance rows below can link to a real
+            # EvidenceMemory instead of recording an origin with no source.
+            evidence_rows = self._persist_source_evidence(company)
+            source_evidence = ing_prov.best_evidence_memory(evidence_rows)
 
-            # Compute 6-pillar composite + moral label via scoring engine
+            # The value write and the provenance write are ONE operation. A
+            # value stored without provenance is indistinguishable from a
+            # legacy value and would be relabelled LEGACY_UNKNOWN_PROVENANCE by
+            # the next backfill, laundering a known origin into an unknown one.
+            with transaction.atomic():
+                profile, profile_created = CompanyProfile.objects.get_or_create(
+                    company=company,
+                    defaults=profile_data,
+                )
+                if not profile_created:
+                    for field, value in profile_data.items():
+                        setattr(profile, field, value)
+                    profile.save()
+
+                prov_result = ing_prov.record_ingestion_write(
+                    profile, profile_data, evidence=source_evidence,
+                )
+
+            log.info(
+                '[job %s] Ingestion provenance: %s INFERRED rows, evidence '
+                'linked=%s', self.job_pk, prov_result['recorded'],
+                prov_result['evidence_linked'],
+            )
+
+            # Compute 6-pillar composite + moral label via scoring engine.
+            # Runs OUTSIDE the block above: it records its own MODELLED
+            # provenance for the pillars, and must see the material rows this
+            # write just created rather than racing them.
             profile_rescore(profile)
 
             # Compute Ethical Intelligence layer (NEI / TSS / RVI) — non-fatal
@@ -890,30 +957,10 @@ Rules:
         _progress(self.job_pk, 96, f'Saved {projects_saved} projects.')
 
         # ── Evidence from report URLs ─────────────────────────────────────────
-        for src in self._sources:
-            if not src.get('url') or not src.get('downloaded'):
-                continue
-            doc_map = {
-                'esg_report':    'audit_report',
-                'annual_report': 'audit_report',
-                'pdf':           'other',
-                'government':    'government_report',
-                'news':          'press_release',
-                'web':           'press_release',
-            }
-            doc_type = doc_map.get(src['source_type'], 'other')
-            evidence, _ = Evidence.objects.get_or_create(
-                company=company,
-                url=src['url'][:2000],
-                defaults={
-                    'doc_type':   doc_type,
-                    'title':      src['title'][:255] or src['url'][:255],
-                    'notes':      src['snippet'][:1000] if src.get('snippet') else '',
-                    'verification_status': 'pending',
-                },
-            )
-            from evidence_memory.services.memory import create_memory_from_league_evidence
-            create_memory_from_league_evidence(evidence)
+        # Idempotent, and already run before the profile write so provenance
+        # had something real to link to. Kept here so the ordering change
+        # cannot drop evidence if the earlier call is ever removed.
+        self._persist_source_evidence(company)
 
         # ── ScoreHistory ──────────────────────────────────────────────────────
         today = date.today()
