@@ -47,12 +47,21 @@ def _company(name, slug, **kwargs):
 
 
 class J_V1ApiCompatibility(TestCase):
+
     """
     v1 is the legacy public contract with unknowable integrators. D2b may change
     what a signal SAYS; it may not change the shape a client parses.
     """
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _company('V1 Compat Ltd', 'v1-compat-ltd')
 
     def test_j_harm_signal_shape_is_unchanged(self):
@@ -161,6 +170,14 @@ class L_PublicCompanyContainment(TestCase):
     """The D1.5 gate still fires before any of D2b's new output is reached."""
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _company('Contained Ltd', 'contained-ltd')
         self.body = Client().get('/companies/contained-ltd/').content.decode()
 

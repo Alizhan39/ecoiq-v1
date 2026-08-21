@@ -39,7 +39,6 @@ def _populated(company, **fields):
     set up a company; they set up nothing. Now the data is stated, and a
     caller that wants an unknown overrides that one field by name.
     """
-    from companies.models import CompanyProfile
     from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
 
     values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
@@ -604,6 +603,14 @@ class U_Atomicity(TestCase):
 class W_PublicSurfaces(TestCase):
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _profile('public', ecoiq_total_score=71.4)
         self.profile.company.ecoiq_score = 71.4
         self.profile.company.save()

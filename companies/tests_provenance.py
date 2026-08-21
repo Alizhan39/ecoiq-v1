@@ -37,7 +37,6 @@ def _populated(company, **fields):
     set up a company; they set up nothing. Now the data is stated, and a
     caller that wants an unknown overrides that one field by name.
     """
-    from companies.models import CompanyProfile
     from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
 
     values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
