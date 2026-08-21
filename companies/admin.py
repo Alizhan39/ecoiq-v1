@@ -276,8 +276,9 @@ class CompanyProfileAdmin(admin.ModelAdmin):
                 f'</div>'
             )
         # Harm penalty row
-        penalty = obj.harm_penalty or 0
-        if penalty > 0:
+        # `or 0` drew a zero-length "no harm" bar for an unassessed company.
+        penalty = obj.harm_penalty
+        if penalty is not None and penalty > 0:
             html += (
                 f'<div style="margin:.4rem 0 .3rem;display:flex;gap:.6rem;align-items:center;">'
                 f'<span style="min-width:170px;color:#e63946;font-size:.72rem;">⚠ Harm Penalty</span>'
