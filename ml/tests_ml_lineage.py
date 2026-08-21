@@ -71,7 +71,7 @@ from ml.scoring_model import (
 
 def _profile(slug, **kwargs):
     company = Company.objects.create(name=slug, slug=slug, country='UK',
-                                     ecoiq_score=64.0)
+                                     ecoiq_score=64.0, score_pollution_footprint=64, score_reduction_progress=64, score_investment=64, score_transparency=64, score_community_impact=64)
     return _populated(company=company, status='public',
                                          pollution_level='low', **kwargs)
 
@@ -811,7 +811,7 @@ class MlScorePersistedLineage(TestCase):
 
     def test_a_company_without_a_profile_still_gets_its_value(self):
         bare = Company.objects.create(name='bare', slug='bare-co', country='UK',
-                                      ecoiq_score=50.0)
+                                      ecoiq_score=50.0, score_pollution_footprint=50, score_reduction_progress=50, score_investment=50, score_transparency=50, score_community_impact=50)
         self.model._write_score(bare.pk, 55.0, 0.5, timezone.now(), bare)
 
         bare.refresh_from_db()

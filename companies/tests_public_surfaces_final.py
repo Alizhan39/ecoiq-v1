@@ -26,8 +26,12 @@ SCORE = 76.4
 
 
 def _company(slug, origin):
-    company = Company.objects.create(name=slug.title(), slug=slug, country='UK',
-                                     ecoiq_score=SCORE)
+    # The legacy league pillars are what Company.save() computes ecoiq_score
+    # FROM, so a fixture that only passes ecoiq_score= has it recomputed away.
+    company = Company.objects.create(
+        name=slug.title(), slug=slug, country='UK',
+        score_pollution_footprint=76, score_reduction_progress=76,
+        score_investment=76, score_transparency=76, score_community_impact=76)
     profile = populated(company, ecoiq_total_score=SCORE, pollution_level='low')
     for key in sorted(prov.MATERIAL_METRIC_KEYS):
         prov.record(profile, key, origin, written_by='t')

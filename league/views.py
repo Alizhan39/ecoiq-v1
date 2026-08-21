@@ -187,8 +187,11 @@ def leaderboard(request):
     except Exception:
         pass
 
+    # A company with no score has no tier. get_tier() bands a number; handing
+    # it None crashes, and handing it 0 would band an unscored company as the
+    # worst one.
     for co in companies:
-        co.tier = get_tier(float(co.ecoiq_score))
+        co.tier = None if co.ecoiq_score is None else get_tier(float(co.ecoiq_score))
         co.ecoiq_profile = _profile_map.get(co.pk)
 
     # ── Public evidence gate (D1.5) ───────────────────────────────────────────
@@ -224,8 +227,11 @@ def leaderboard(request):
     SECTOR_LABEL = dict(SECTOR_CHOICES)
     from collections import defaultdict
     _sector_scores = defaultdict(list)
+    # Unscored companies are EXCLUDED from the sector average rather than
+    # contributing a zero, which would drag every sector they appear in.
     for co in all_cos:
-        _sector_scores[co.sector].append(float(co.ecoiq_score))
+        if co.ecoiq_score is not None:
+            _sector_scores[co.sector].append(float(co.ecoiq_score))
 
     chart_sectors = json.dumps(sorted([
         {
@@ -243,7 +249,11 @@ def leaderboard(request):
     # sector-filtered `qs` the main table uses. `chart_sectors`/`total_*`
     # below are intentionally left platform-wide — they're cross-sector
     # comparison/overview figures, not part of the "current sector" table.
-    _all_ranked = list(qs.order_by('rank', '-ecoiq_score')[:15])
+    # Companies without a score are excluded from the chart rather than
+    # plotted at zero: a zero-length bar is a visual claim that the company
+    # scored worst, and an absent bar claims nothing.
+    _all_ranked = [co for co in qs.order_by('rank', '-ecoiq_score')[:20]
+                   if co.ecoiq_score is not None][:15]
     chart_companies = json.dumps([
         {
             'name':         co.name[:22] + ('…' if len(co.name) > 22 else ''),
@@ -285,7 +295,7 @@ def company_profile(request, slug):
         Company.objects.prefetch_related('projects', 'evidence', 'history'),
         slug=slug,
     )
-    tier = get_tier(float(company.ecoiq_score))
+    tier = None if company.ecoiq_score is None else get_tier(float(company.ecoiq_score))
 
     # ── Projects ──────────────────────────────────────────────────────────────
     all_projects       = list(company.projects.order_by('start_date', 'name'))
@@ -308,7 +318,8 @@ def company_profile(request, slug):
     # ── Score history ─────────────────────────────────────────────────────────
     history_qs           = list(company.history.order_by('date'))
     history_labels       = [str(h.date)[:7] for h in history_qs]
-    history_scores       = [float(h.ecoiq_score) for h in history_qs]
+    history_scores       = [float(h.ecoiq_score) for h in history_qs
+                            if h.ecoiq_score is not None]
     history_pollution    = [h.score_pollution_footprint for h in history_qs]
     history_reduction    = [h.score_reduction_progress  for h in history_qs]
     history_invest       = [h.score_investment           for h in history_qs]
@@ -318,7 +329,11 @@ def company_profile(request, slug):
     # ── Year-on-year delta ────────────────────────────────────────────────────
     twelve_ago  = date.today() - timedelta(days=365)
     old_snap    = company.history.filter(date__lte=twelve_ago).order_by('-date').first()
-    yoy_delta   = round(float(company.ecoiq_score) - float(old_snap.ecoiq_score), 1) if old_snap else None
+    # A delta is a comparison between two scores; with either side missing
+    # there is no comparison to report.
+    yoy_delta   = (round(float(company.ecoiq_score) - float(old_snap.ecoiq_score), 1)
+                   if old_snap and old_snap.ecoiq_score is not None
+                   and company.ecoiq_score is not None else None)
 
     # ── Score history change table (last 6 snapshots) ─────────────────────────
     recent_snaps  = list(company.history.order_by('-date')[:7])

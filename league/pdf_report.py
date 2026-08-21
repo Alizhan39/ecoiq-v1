@@ -161,8 +161,13 @@ def build_pdf_context(company) -> dict:
     """
     from .views import _SDG_MAP, _SDG_ALL, PROJECT_TYPE_META, _stub_recommendations
 
-    score = float(company.ecoiq_score)
-    tier_label, tier_color = _score_to_tier(score)
+    # A PDF is a document someone keeps. It must not contain a score the
+    # product would refuse to show on the page it was generated from.
+    if company.ecoiq_score is None:
+        score, tier_label, tier_color = None, 'Not yet scored', '#64748b'
+    else:
+        score = float(company.ecoiq_score)
+        tier_label, tier_color = _score_to_tier(score)
 
     # Projects
     all_projects       = list(company.projects.order_by('start_date', 'name'))
@@ -186,7 +191,8 @@ def build_pdf_context(company) -> dict:
 
     # Score history
     history_qs     = list(company.history.order_by('date'))
-    history_scores = [float(h.ecoiq_score) for h in history_qs]
+    history_scores = [float(h.ecoiq_score) for h in history_qs
+                      if h.ecoiq_score is not None]
     history_labels = [str(h.date)[:7] for h in history_qs]   # "YYYY-MM"
 
     # First / last / delta for trend summary

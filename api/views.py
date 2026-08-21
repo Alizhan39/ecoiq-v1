@@ -15,6 +15,7 @@ Endpoints:
     GET  /api/v1/countries/<slug>/           Country detail
     GET  /api/v1/search/                     Cross-entity search
 """
+from core.unknown import known
 import logging
 
 from rest_framework import status
@@ -408,7 +409,12 @@ def semantic_search(request):
             'slug':        c.slug,
             'sector':      c.sector,
             'country':     c.country,
-            'ecoiq_score': float(c.ecoiq_score),
+            # v1 CONTRACT NOTE. The KEY is preserved for legacy consumers;
+            # the VALUE is now null when there is no score, rather than a
+            # crash or a substituted number. Domain truthfulness is not
+            # weakened to satisfy a legacy assumption -- v1 simply reports the
+            # absence it always should have.
+            'ecoiq_score': known(c.ecoiq_score),
             'tier':        profile.moral_label_display if profile else '',
             'url':         f'/companies/{c.slug}/',
         })
