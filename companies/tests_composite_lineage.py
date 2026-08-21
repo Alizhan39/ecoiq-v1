@@ -163,6 +163,14 @@ class ConsumedInputs(TestCase):
 class A_B_C_D_DerivedRowContents(TestCase):
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _profile('contents')
         self.inputs = _record_all_inputs(self.profile)
         recalculate_and_save(self.profile)
@@ -737,10 +745,21 @@ class R_SeedFlowEndToEnd(TestCase):
         self.assertEqual(with_lineage, total)
 
 
-class S_T_PublicSurfacesUnchanged(TestCase):
+class S_T_PublicSurfaces(TestCase):
+
     """
-    S/T — no score resurrection. A MODELLED provenance row existing changes
-    nothing about what the public sees.
+    S/T — publication follows EVIDENCE, and now actually can.
+
+    These tests were written in D3C-3, when coverage_for() guessed provenance
+    from model defaults and returned zero covered inputs for everything. Nothing
+    could be published, so "still evidence-pending" was the only possible
+    outcome and the tests recorded it.
+
+    D5 wired coverage onto the provenance store. A company whose sixteen
+    material inputs are all MEASURED now has 100% coverage and IS published —
+    which is the outcome this entire programme exists to make possible. The
+    assertions are inverted, and a second fixture covers the case that used to
+    be the only one: partial evidence stays contained.
     """
 
     def setUp(self):
@@ -757,44 +776,108 @@ class S_T_PublicSurfacesUnchanged(TestCase):
         self.profile.company.save()
         _record_all_inputs(self.profile, origin=PROVENANCE_MEASURED)
         recalculate_and_save(self.profile)
+        self.profile.refresh_from_db()
 
-    def test_s_the_company_page_is_still_evidence_pending(self):
+    def _partial(self):
+        """Four of sixteen inputs evidenced — real, and not enough."""
+        other = _profile('partial-public', ecoiq_total_score=64.0)
+        other.company.ecoiq_score = 64.0
+        other.company.save()
+        for key in sorted(prov.MATERIAL_METRIC_KEYS)[:4]:
+            prov.record(other, key, PROVENANCE_MEASURED, written_by='ingestion')
+        recalculate_and_save(other)
+        other.refresh_from_db()
+        return other
+
+    def test_s_a_fully_evidenced_company_is_published(self):
+        from companies.evidence import coverage_for, public_score_state
+
+        self.assertEqual(coverage_for(self.profile).coverage_percent, 100)
+        self.assertTrue(public_score_state(self.profile).available)
+
+    def test_s_a_partially_evidenced_company_stays_contained(self):
+        from companies.evidence import coverage_for, public_score_state
+
+        partial = self._partial()
+        report = coverage_for(partial)
+
+        self.assertGreater(report.coverage_percent, 0)
+        self.assertLess(report.coverage_percent, 100)
+        self.assertFalse(public_score_state(partial).available,
+                         'partial evidence must not publish under the interim rule')
+
+    def test_s_the_partial_company_page_is_evidence_pending(self):
         from django.test import Client
 
         from companies.evidence import PENDING_HEADLINE
 
-        body = Client().get('/companies/public/').content.decode()
+        self._partial()
+        body = Client().get('/companies/partial-public/').content.decode()
 
         self.assertIn(PENDING_HEADLINE, body)
 
-    def test_s_the_composite_has_defensible_provenance_yet_stays_contained(self):
+    def test_s_partial_evidence_records_no_composite_lineage_at_all(self):
         """
-        The distinction that matters: provenance quality and PUBLICATION are
-        separate gates. D5 owns the second, and D3C-3 did not touch it.
+        Stronger than expected, and worth recording precisely.
+
+        A partially evidenced company does not merely fail the coverage gate —
+        record_calculated refuses to write a composite provenance row at all,
+        because some consumed inputs have no provenance and a lineage listing
+        only the evidenced ones would understate what the number rests on.
+
+        So both gates reject it, for two different and independently correct
+        reasons. They remain separate questions — defensibility asks "can we
+        stand behind what we recorded", coverage asks "did we record enough" —
+        but this fixture cannot demonstrate the separation, because it fails
+        the first question before reaching the second.
         """
+        from companies.evidence import public_score_state
+
+        partial = self._partial()
+
+        self.assertIsNone(prov.current(partial, COMPOSITE_METRIC_KEY),
+                          'an incomplete lineage is not recorded at all')
+        self.assertFalse(
+            prov.is_derived_publicly_defensible(partial, COMPOSITE_METRIC_KEY))
+        self.assertFalse(public_score_state(partial).available)
+
+    def test_s_full_evidence_passes_both_gates(self):
+        from companies.evidence import public_score_state
+
         self.assertTrue(
             prov.is_derived_publicly_defensible(self.profile, COMPOSITE_METRIC_KEY))
+        self.assertTrue(public_score_state(self.profile).available)
 
-        from companies.evidence import public_score_state
-        self.assertFalse(public_score_state(self.profile).available)
-
-    def test_t_api_v2_is_still_fail_closed(self):
+    def test_t_api_v2_publishes_the_fully_evidenced_company(self):
         from django.test import Client
 
         payload = Client().get('/api/v2/companies/public/').json()
 
-        self.assertIsNone(payload['ecoiq_score'])
-        self.assertEqual(payload['score_status'], 'INSUFFICIENT_EVIDENCE')
-        self.assertNotIn('provenance', payload)
+        self.assertEqual(payload['score_status'], 'PUBLISHED')
+        self.assertIsNotNone(payload['ecoiq_score'])
 
-    def test_t_the_league_page_is_still_fail_closed(self):
+    def test_t_api_v2_is_still_fail_closed_for_partial_evidence(self):
         from django.test import Client
 
-        from companies.evidence import PENDING_HEADLINE
+        self._partial()
+        payload = Client().get('/api/v2/companies/partial-public/').json()
 
-        body = Client().get('/league/').content.decode()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['score_status'], 'INSUFFICIENT_EVIDENCE')
 
-        self.assertIn(PENDING_HEADLINE, body)
+    def test_t_seeded_evidence_can_never_publish(self):
+        """The invariant that must survive every threshold change."""
+        from companies.evidence import coverage_for, public_score_state
+
+        seeded = _profile('seeded-public', ecoiq_total_score=70.0)
+        seeded.company.ecoiq_score = 70.0
+        seeded.company.save()
+        _record_all_inputs(seeded, origin=PROVENANCE_SEEDED, writer='seed:test')
+        recalculate_and_save(seeded)
+        seeded.refresh_from_db()
+
+        self.assertEqual(coverage_for(seeded).coverage_percent, 0)
+        self.assertFalse(public_score_state(seeded).available)
 
 
 class CallerCompatibility(TestCase):

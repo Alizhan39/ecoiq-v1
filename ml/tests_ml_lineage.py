@@ -76,9 +76,10 @@ def _profile(slug, **kwargs):
                                          pollution_level='low', **kwargs)
 
 
-def _chain(profile, origin=PROVENANCE_MEASURED, writer='ingestion'):
+def _chain(profile, origin=PROVENANCE_MEASURED, writer='ingestion', limit=None):
     """Material provenance, then the derived pillars."""
-    for key in sorted(prov.MATERIAL_METRIC_KEYS):
+    keys = sorted(prov.MATERIAL_METRIC_KEYS)
+    for key in (keys if limit is None else keys[:limit]):
         if registry.resolve_value(profile, key) is not None:
             prov.record(profile, key, origin, written_by=writer)
     recalculate_and_save(profile)
@@ -147,6 +148,14 @@ class Inventory(SimpleTestCase):
 class GreenwashingLineage(TestCase):
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _profile('gw')
         _chain(self.profile)
         self.result = assess_and_record(self.profile)
@@ -1005,6 +1014,17 @@ class PredictionLineage(TestCase):
 
 class PublicContainment(TestCase):
 
+
+    # D5 note. Coverage now reads the provenance store, so a fixture whose
+    # sixteen material inputs are ALL evidenced reaches 100% coverage and is
+    # legitimately PUBLISHED -- which is the outcome the programme exists to
+    # make possible, and the opposite of what this class tests.
+    #
+    # The subject here is CONTAINMENT, so the fixture is partially evidenced:
+    # real provenance on some inputs, not enough of it to publish. That is also
+    # the state every company in the production estate is actually in.
+    PARTIAL_EVIDENCE_LIMIT = 4
+
     def setUp(self):
         # The API rate-limits anonymous callers to 20 requests/day through the
         # Django cache, which is NOT reset between tests. A full-suite run
@@ -1015,7 +1035,7 @@ class PublicContainment(TestCase):
         cache.clear()
 
         self.profile = _profile('ml-public', ecoiq_total_score=71.4)
-        _chain(self.profile, origin=PROVENANCE_MEASURED)
+        _chain(self.profile, origin=PROVENANCE_MEASURED, limit=self.PARTIAL_EVIDENCE_LIMIT)
         assess_and_record(self.profile)
         compute_and_record(self.profile)
         EcoIQScoringModel()._write_score(self.profile.company.pk, 73.0, 0.9,
@@ -1056,11 +1076,27 @@ class PublicContainment(TestCase):
         self.assertIn(PENDING_HEADLINE,
                       Client().get('/league/').content.decode())
 
-    def test_defensible_ml_lineage_still_does_not_publish(self):
-        from companies.evidence import public_score_state
+    def test_partial_evidence_publishes_nothing(self):
+        """
+        With four of sixteen material inputs evidenced, BOTH gates reject.
 
-        self.assertTrue(prov.is_derived_publicly_defensible(
-            self.profile, GREENWASHING_METRIC_KEY))
+        Coverage is under 100%, so the publication gate refuses — and the
+        derived lineage is ABSENT rather than weak, because record_calculated
+        declines to write a row when some consumed inputs have no provenance:
+        a lineage listing only the evidenced ones would understate what the
+        number rests on.
+
+        Before D5 this passed for a much weaker reason — coverage was inert, so
+        nothing could ever be published.
+        """
+        from companies.evidence import coverage_for, public_score_state
+
+        report = coverage_for(self.profile)
+
+        self.assertGreater(report.coverage_percent, 0)
+        self.assertLess(report.coverage_percent, 100)
+        self.assertFalse(
+            prov.is_derived_publicly_defensible(self.profile, GREENWASHING_METRIC_KEY))
         self.assertFalse(public_score_state(self.profile).available)
 
     def test_page_metadata_does_not_leak(self):

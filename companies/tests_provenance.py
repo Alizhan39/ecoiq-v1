@@ -561,14 +561,34 @@ class QueryPatterns(TestCase):
 
 
 class PublicSurfacesUnchanged(TestCase):
+    def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has
+        # no score keys -- a test-isolation problem that reads exactly like a
+        # containment regression. Cleared here so these assert what they claim.
+        from django.core.cache import cache
+
+        cache.clear()
+        super().setUp()
+
     """
     D3A is infrastructure. It must not have moved anything the user can see.
     """
 
-    def test_public_eligibility_is_unchanged_by_provenance(self):
+    def test_public_eligibility_now_follows_provenance(self):
         """
-        is_publicly_defensible() is advisory in D3A. Recording MEASURED
-        provenance must NOT make an unevidenced company's score appear.
+        Inverted by D5, and this is the inversion the programme was built for.
+
+        In D3A, is_publicly_defensible() was advisory: recording MEASURED
+        provenance could not make a score appear, because coverage guessed from
+        model defaults and returned zero for everything. This test recorded
+        that containment.
+
+        D5 wired coverage onto the provenance store. Recording MEASURED
+        provenance for every material input now DOES make the score publishable
+        — which is the point. What still cannot publish is seeded, legacy or
+        partial evidence, and those are asserted elsewhere in this suite.
         """
         from django.test import Client
 
@@ -581,6 +601,26 @@ class PublicSurfacesUnchanged(TestCase):
             prov.record(profile, metric, PROVENANCE_MEASURED)
 
         body = Client().get('/companies/still-contained/').content.decode()
+
+        self.assertNotIn(PENDING_HEADLINE, body,
+                         'full MEASURED coverage is exactly what publication '
+                         'is supposed to require')
+        self.assertIn('71.4', body)
+
+    def test_partial_provenance_is_still_contained(self):
+        """The containment the previous test used to assert, at the level
+        where it is still true: some evidence is not enough evidence."""
+        from django.test import Client
+
+        from companies.evidence import PENDING_HEADLINE
+
+        company = Company.objects.create(name='Partly Evidenced', slug='partly-evidenced',
+                                         country='UK', ecoiq_score=71.4)
+        profile = _populated(company=company, status='public', ecoiq_total_score=71.4)
+        for metric in sorted(prov.MATERIAL_METRIC_KEYS)[:4]:
+            prov.record(profile, metric, PROVENANCE_MEASURED)
+
+        body = Client().get('/companies/partly-evidenced/').content.decode()
 
         self.assertIn(PENDING_HEADLINE, body)
         self.assertNotIn('71.4', body)

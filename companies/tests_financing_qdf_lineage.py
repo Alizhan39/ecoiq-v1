@@ -61,7 +61,7 @@ def _profile(slug, **kwargs):
                                          pollution_level='low', **kwargs)
 
 
-def _build_chain(profile, origin=PROVENANCE_MEASURED, writer='ingestion'):
+def _build_chain(profile, origin=PROVENANCE_MEASURED, writer='ingestion', limit=None):
     """
     Build the real provenance chain: material rows, then the pillars and
     composite that recalculate_and_save produces from them.
@@ -69,7 +69,8 @@ def _build_chain(profile, origin=PROVENANCE_MEASURED, writer='ingestion'):
     The financing and QDF inputs are mostly DERIVED, so a fixture that recorded
     them by hand would be asserting a shape the pipeline never produces.
     """
-    for key in sorted(prov.MATERIAL_METRIC_KEYS):
+    keys = sorted(prov.MATERIAL_METRIC_KEYS)
+    for key in (keys if limit is None else keys[:limit]):
         if registry.resolve_value(profile, key) is not None:
             prov.record(profile, key, origin, written_by=writer)
     recalculate_and_save(profile)
@@ -152,6 +153,14 @@ class NoCircularDependency(SimpleTestCase):
 class A_B_C_D_E_RowContents(TestCase):
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _profile('contents')
         self.chain = _build_chain(self.profile)
         financing_save(self.profile)
@@ -651,9 +660,20 @@ class QdfInputSemantics(TestCase):
 
 
 class AK_AL_PublicSurfaces(TestCase):
+
     """
     STEP 18 — lineage existing does not publish anything.
     """
+
+    # D5 note. Coverage now reads the provenance store, so a fixture whose
+    # sixteen material inputs are ALL evidenced reaches 100% coverage and is
+    # legitimately PUBLISHED -- which is the outcome the programme exists to
+    # make possible, and the opposite of what this class tests.
+    #
+    # The subject here is CONTAINMENT, so the fixture is partially evidenced:
+    # real provenance on some inputs, not enough of it to publish. That is also
+    # the state every company in the production estate is actually in.
+    PARTIAL_EVIDENCE_LIMIT = 4
 
     def setUp(self):
         # The API rate-limits anonymous callers to 20 requests/day through the
@@ -667,7 +687,7 @@ class AK_AL_PublicSurfaces(TestCase):
         self.profile = _profile('public', ecoiq_total_score=71.4)
         self.profile.company.ecoiq_score = 71.4
         self.profile.company.save()
-        _build_chain(self.profile, origin=PROVENANCE_MEASURED)
+        _build_chain(self.profile, origin=PROVENANCE_MEASURED, limit=self.PARTIAL_EVIDENCE_LIMIT)
         financing_save(self.profile)
         qdf_save(self.profile)
 
@@ -709,11 +729,27 @@ class AK_AL_PublicSurfaces(TestCase):
         self.assertEqual(payload['score_status'], 'INSUFFICIENT_EVIDENCE')
         self.assertNotIn('provenance', payload)
 
-    def test_defensible_lineage_still_does_not_publish(self):
-        from companies.evidence import public_score_state
+    def test_partial_evidence_publishes_nothing(self):
+        """
+        With four of sixteen inputs evidenced, BOTH gates reject, for two
+        independently correct reasons: coverage is under 100%, and the
+        financing lineage is ABSENT rather than weak — record_calculated
+        declines to write a row when some consumed inputs have no provenance,
+        because a lineage listing only the evidenced ones would understate what
+        the number rests on.
 
-        self.assertTrue(
-            prov.is_derived_publicly_defensible(self.profile, FINANCING_METRIC_KEY))
+        Before D5 this passed for a much weaker reason: nothing could be
+        published at all, because coverage was inert.
+        """
+        from companies.evidence import coverage_for, public_score_state
+
+        report = coverage_for(self.profile)
+
+        self.assertGreater(report.coverage_percent, 0)
+        self.assertLess(report.coverage_percent, 100)
+        self.assertFalse(
+            prov.is_derived_publicly_defensible(self.profile, FINANCING_METRIC_KEY),
+            'an incomplete lineage is not recorded at all, so it cannot be defended')
         self.assertFalse(public_score_state(self.profile).available)
 
 

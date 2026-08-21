@@ -60,7 +60,7 @@ def _profile(slug, **kwargs):
 
 
 def _record_inputs(profile, keys=None, origin=PROVENANCE_MEASURED,
-                   writer='ingestion'):
+                   writer='ingestion', limit=None):
     """
     Build the REAL provenance chain beneath the ethics inputs.
 
@@ -77,7 +77,15 @@ def _record_inputs(profile, keys=None, origin=PROVENANCE_MEASURED,
 
     material = [k for k in (keys if keys is not None else ALL_INPUTS)
                if k in prov.MATERIAL_METRIC_KEYS]
-    for key in sorted(set(material) | set(prov.MATERIAL_METRIC_KEYS)):
+    if limit is not None:
+        material = material[:limit]
+    # The union with MATERIAL_METRIC_KEYS exists so the pillars beneath the
+    # ethics inputs get a complete lineage. When a caller asks for PARTIAL
+    # evidence it must not silently re-add the rest, or `limit` would do
+    # nothing — which is exactly what happened, and coverage read 100%.
+    to_record = (material if limit is not None
+                 else sorted(set(material) | set(prov.MATERIAL_METRIC_KEYS)))
+    for key in to_record:
         if registry.resolve_value(profile, key) is not None:
             prov.record(profile, key, origin, written_by=writer)
 
@@ -183,6 +191,14 @@ class DeclaredInputsAreTraced(SimpleTestCase):
 class A_B_C_D_E_ThreeRowsPerAssessment(TestCase):
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _profile('three-rows')
         self.inputs = _record_inputs(self.profile)
         compute_and_save(self.profile)
@@ -858,7 +874,17 @@ class SeedFlowEndToEnd(TestCase):
 
 
 class X_Y_PublicSurfaces(TestCase):
-    """X/Y — no ethics score resurrection."""
+
+    """
+    X/Y — no ethics score resurrection.
+
+    D5 note: coverage now reads the provenance store, so a fully evidenced
+    fixture reaches 100% coverage and is legitimately PUBLISHED. The subject
+    here is CONTAINMENT, so this fixture is partially evidenced — which is also
+    the state every company in the production estate is actually in.
+    """
+
+    PARTIAL_EVIDENCE_LIMIT = 4
 
     def setUp(self):
         # The API rate-limits anonymous callers to 20 requests/day through the
@@ -872,7 +898,8 @@ class X_Y_PublicSurfaces(TestCase):
         self.profile = _profile('public', ecoiq_total_score=71.4)
         self.profile.company.ecoiq_score = 71.4
         self.profile.company.save()
-        _record_inputs(self.profile, origin=PROVENANCE_MEASURED)
+        _record_inputs(self.profile, origin=PROVENANCE_MEASURED,
+                       limit=self.PARTIAL_EVIDENCE_LIMIT)
         compute_and_save(self.profile)
 
     def test_x_the_company_page_is_still_evidence_pending(self):
@@ -911,14 +938,24 @@ class X_Y_PublicSurfaces(TestCase):
         self.assertEqual(payload['score_status'], 'INSUFFICIENT_EVIDENCE')
         self.assertNotIn('provenance', payload)
 
-    def test_defensible_provenance_still_does_not_publish(self):
+    def test_partial_evidence_publishes_nothing(self):
         """
-        The distinction: provenance quality and PUBLICATION are separate gates.
-        D5 owns the second and this PR did not touch it.
-        """
-        from companies.evidence import public_score_state
+        With four of sixteen inputs evidenced, BOTH gates reject — and for two
+        independently correct reasons.
 
-        self.assertTrue(
+        Coverage is under 100%, so the publication gate refuses. And the ethics
+        lineage is not merely weak but ABSENT: record_calculated declines to
+        write a row when some consumed inputs have no provenance, because a
+        lineage listing only the evidenced ones would understate what the
+        number rests on.
+        """
+        from companies.evidence import coverage_for, public_score_state
+
+        report = coverage_for(self.profile)
+
+        self.assertGreater(report.coverage_percent, 0)
+        self.assertLess(report.coverage_percent, 100)
+        self.assertFalse(
             prov.is_derived_publicly_defensible(self.profile, 'ethics.nei'))
         self.assertFalse(public_score_state(self.profile).available)
 
