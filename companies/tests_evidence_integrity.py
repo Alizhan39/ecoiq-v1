@@ -104,37 +104,85 @@ class ScenarioTests(TestCase):
         Essential, and the reason a bulk `50 -> NULL` migration is forbidden.
 
         A genuine measurement of 50 must stay distinguishable from an unset
-        default. Provenance — not the number — is what separates them, so a
-        profile carrying real linked sources is not reported as SEEDED even when
-        the value equals the default exactly.
+        default. Provenance — not the number — is what separates them.
+
+        HOW THIS IS ESTABLISHED CHANGED IN D4C. The original test relied on
+        field_provenance()'s heuristic, which inferred SEEDED by comparing the
+        stored value against the model default. D4C removed the defaults, so
+        there is nothing left to compare against and that heuristic can no
+        longer fire for anything.
+
+        That is a gain, not a loss: guessing provenance from a number was
+        always a stand-in for recording it, and D3 built the store that records
+        it properly. The discriminator is now the provenance row, which is the
+        authority the heuristic was approximating. Wiring coverage onto that
+        store is D5's first job; until then field_provenance() is inert and
+        this test asserts against the store directly.
         """
+        from companies import provenance as prov
+        from companies.evidence import PROVENANCE_MEASURED
+
         evidenced = CompanyProfile.objects.create(
             company=_company('Exactly Fifty Ltd', 'exactly-fifty'),
             waste_management_score=50.0,
-            public_sources=[{'url': 'https://example.org/report', 'title': 'Waste audit 2026'}],
+            public_sources=[{'url': 'https://example.org/report',
+                             'title': 'Waste audit 2026'}],
         )
         bare = CompanyProfile.objects.create(
             company=_company('Bare Ltd', 'bare-ltd'),
             waste_management_score=50.0,
         )
+        prov.record(evidenced, 'waste_management_score', PROVENANCE_MEASURED,
+                    written_by='analyst')
+        prov.record(bare, 'waste_management_score', PROVENANCE_SEEDED,
+                    written_by='seed:test')
 
-        self.assertEqual(field_provenance(bare, 'waste_management_score'), PROVENANCE_SEEDED)
+        self.assertEqual(prov.current(bare, 'waste_management_score').origin,
+                         PROVENANCE_SEEDED)
         self.assertNotEqual(
-            field_provenance(evidenced, 'waste_management_score'), PROVENANCE_SEEDED,
-            'a value with linked sources was written off as a seeded default')
+            prov.current(evidenced, 'waste_management_score').origin,
+            PROVENANCE_SEEDED,
+            'a value with recorded provenance was written off as a seeded default')
 
     def test_scenario_e_the_two_profiles_are_distinguishable(self):
         """Same stored number, different provenance — the distinction must survive."""
+        from companies import provenance as prov
+        from companies.evidence import PROVENANCE_MEASURED
+
         a = CompanyProfile.objects.create(
             company=_company('A Ltd', 'a-ltd'), waste_management_score=50.0,
             public_sources=[{'url': 'https://example.org/a'}])
         b = CompanyProfile.objects.create(
             company=_company('B Ltd', 'b-ltd'), waste_management_score=50.0)
+        prov.record(a, 'waste_management_score', PROVENANCE_MEASURED,
+                    written_by='analyst')
+        prov.record(b, 'waste_management_score', PROVENANCE_SEEDED,
+                    written_by='seed:test')
 
         self.assertEqual(a.waste_management_score, b.waste_management_score)
         self.assertNotEqual(
-            field_provenance(a, 'waste_management_score'),
-            field_provenance(b, 'waste_management_score'))
+            prov.current(a, 'waste_management_score').origin,
+            prov.current(b, 'waste_management_score').origin)
+
+    def test_the_default_heuristic_is_now_inert(self):
+        """
+        Recorded explicitly so D5 cannot miss it.
+
+        field_provenance() guessed SEEDED by comparing a value against its
+        model default. D4C removed the defaults, so it now returns
+        LEGACY_UNKNOWN_PROVENANCE for everything and coverage_for() — which
+        calls it — reports zero covered inputs for every company regardless of
+        what the provenance store actually holds.
+
+        Nothing is published as a result, so this fails CLOSED. D5 replaces the
+        heuristic with a read of the store.
+        """
+        bare = CompanyProfile.objects.create(
+            company=_company('Inert Ltd', 'inert-ltd'),
+            waste_management_score=50.0)
+
+        self.assertEqual(field_provenance(bare, 'waste_management_score'),
+                         PROVENANCE_UNKNOWN)
 
     def test_scenario_a_a_non_default_value_is_still_not_evidence_without_provenance(self):
         """
@@ -200,19 +248,19 @@ class CurrentBehaviourIsRecordedTests(TestCase):
         self.assertIsNone(_avg(None, None, None))
         self.assertEqual(_avg(50.0), 50.0)
 
-    def test_score_fields_are_nullable_as_of_d4b(self):
+    def test_score_fields_are_nullable_and_undefaulted(self):
         """
-        Was `test_score_fields_are_still_non_nullable`, asserting that D1
-        deliberately left nullability alone. D4B is the step that changed it,
-        so the assertion is inverted rather than deleted — the fact it pins is
-        still worth pinning, it has simply become the opposite fact.
+        Originally `test_score_fields_are_still_non_nullable`, recording that
+        D1 deliberately left nullability alone. D4B made the field nullable and
+        D4C removed its default, so the assertion has been inverted twice —
+        each time because the fact it pins genuinely changed, and each time
+        keeping the same subject.
+        """
+        from django.db.models.fields import NOT_PROVIDED
 
-        The default is still 50.0 here: D4B relaxes the constraint, D4C removes
-        the default.
-        """
         f = CompanyProfile._meta.get_field('waste_management_score')
         self.assertTrue(f.null)
-        self.assertEqual(f.default, 50.0)
+        self.assertIs(f.default, NOT_PROVIDED)
 
     def test_this_module_changes_no_score(self):
         """

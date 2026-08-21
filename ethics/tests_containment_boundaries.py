@@ -22,11 +22,28 @@ from companies.views import _get_harm_signals, _get_institutional_signals
 from league.models import Company
 
 
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.models import CompanyProfile
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
+
+
 def _company(name, slug, **kwargs):
     company = Company.objects.create(
         name=name, slug=slug, country='United Kingdom', ecoiq_score=71.4)
-    return CompanyProfile.objects.create(
-        company=company, status='public', ecoiq_total_score=71.4, **kwargs)
+    return _populated(company=company, status='public', ecoiq_total_score=71.4, **kwargs)
 
 
 class J_V1ApiCompatibility(TestCase):

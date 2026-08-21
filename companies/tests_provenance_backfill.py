@@ -25,13 +25,31 @@ from companies.management.commands.backfill_metric_provenance import (
 from companies.models import CompanyMetricProvenance, CompanyProfile
 from league.models import Company
 
+
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.models import CompanyProfile
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
+
 #: The marker mizan.scoring already relies on to identify seeded profiles.
 SEED_SUMMARY = 'Profile seeded by add_400_companies — placeholder text pending research.'
 
 
 def _profile(slug, **kwargs):
     company = Company.objects.create(name=slug, slug=slug, country='UK')
-    return CompanyProfile.objects.create(company=company, status='public', **kwargs)
+    return _populated(company=company, status='public', **kwargs)
 
 
 def _run(*args):

@@ -62,8 +62,15 @@ def _defendable(verification_status, has_value):
 def _boardroom(value, unit, verification_status, confidence, evidence_used, evidence_missing, origin, defend_text):
     has = value is not None
     return {
-        "1_trust": ("%.0f%% confidence, verification: %s" % ((confidence or 0) * 100, verification_status))
-                   if has else "Insufficient evidence — do not rely on a value.",
+        # D4C. `confidence or 0` rendered "0% confidence" for a figure whose
+        # confidence was simply never recorded -- an adverse claim about the
+        # figure, invented from an absence -- and did the same to a genuine
+        # 0.0. An unrecorded confidence now says so.
+        "1_trust": (
+            ("%.0f%% confidence, verification: %s" % (confidence * 100, verification_status))
+            if confidence is not None
+            else "Confidence not recorded, verification: %s" % verification_status
+        ) if has else "Insufficient evidence — do not rely on a value.",
         "2_origin": origin,
         "3_supports": ("%d source(s) on record" % len(evidence_used)) if evidence_used else "No supporting evidence on record.",
         "4_missing": ("%d gap(s): %s" % (len(evidence_missing), ", ".join(evidence_missing[:4]))) if evidence_missing else "No material gaps detected.",

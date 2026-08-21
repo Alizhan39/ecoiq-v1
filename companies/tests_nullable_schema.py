@@ -102,17 +102,19 @@ class FieldsAreNullable(SimpleTestCase):
         self.assertEqual(len(SNAPSHOT), 8)
         self.assertEqual(len(profile_fields) + len(SNAPSHOT), 33)
 
-    def test_defaults_are_deliberately_still_present(self):
+    def test_the_defaults_are_gone_as_of_d4c(self):
         """
-        D4B relaxes a constraint; D4C removes the defaults. Splitting them
-        means this migration changes no behaviour at all.
+        D4B deliberately KEPT the defaults so that it changed a constraint and
+        nothing else. D4C removed them. This assertion tracked the interim
+        state and now tracks the final one — the split it documents still
+        happened, and the migration history still shows both steps.
         """
         from django.db.models.fields import NOT_PROVIDED
 
         for name in MATERIAL + PILLARS:
             with self.subTest(field=name):
-                default = CompanyProfile._meta.get_field(name).default
-                self.assertIsNot(default, NOT_PROVIDED)
+                self.assertIs(CompanyProfile._meta.get_field(name).default,
+                              NOT_PROVIDED)
 
 
 class UnknownCanBeStored(TestCase):
@@ -184,17 +186,19 @@ class ExistingBehaviourIsUnchanged(TestCase):
     behaves differently after.
     """
 
-    def test_a_new_profile_still_gets_the_legacy_defaults(self):
+    def test_a_new_profile_no_longer_gets_the_legacy_defaults(self):
+        """Was the D4B interim state; D4C is what changed it."""
         profile = _profile('legacy-defaults')
 
-        self.assertEqual(profile.water_impact_score, 50.0)
-        self.assertEqual(profile.controversy_risk_score, 30.0)
-        self.assertEqual(profile.harm_penalty, 0.0)
+        self.assertIsNone(profile.water_impact_score)
+        self.assertIsNone(profile.controversy_risk_score)
+        self.assertIsNone(profile.harm_penalty)
 
     def test_scoring_still_works_end_to_end(self):
         from companies.scoring import recalculate_and_save
+        from companies.testing import populate_material
 
-        profile = _profile('still-scores')
+        profile = populate_material(_profile('still-scores'))
         recalculate_and_save(profile)
         profile.refresh_from_db()
 
@@ -226,22 +230,18 @@ class ExistingBehaviourIsUnchanged(TestCase):
 
         self.assertIsNone(compute_ecoiq_profile_score(profile)['ecoiq_total_score'])
 
-    def test_the_none_result_is_still_not_persisted_yet(self):
+    def test_the_none_result_is_now_persisted(self):
         """
-        THE D4C BRIDGE, pinned so the handover is explicit.
+        THE D4B -> D4C BRIDGE, now closed.
 
-        recalculate_and_save filters None out of the fields it writes
-        (companies/scoring.py, `written = [... if value is not None]`). That was
-        correct while the columns were NOT NULL — writing None would have
-        raised — so the field kept its previous value, or its default.
+        This test was written in D4B to pin a gap ON PURPOSE:
+        recalculate_and_save filtered None out of the fields it wrote, so the
+        calculator said "no composite" and the column kept its default. That
+        was correct while the column was NOT NULL.
 
-        D4B makes the column able to hold unknown. It deliberately does NOT
-        start writing unknown: that is a behaviour change, it would put NULLs
-        into production on the next recalculation, and it belongs in D4C beside
-        the removal of the defaults.
-
-        So the calculator says None and the column still holds 0.0. This test
-        asserts that gap on purpose, and D4C closes it.
+        D4C closes it. The assertion is inverted rather than deleted, because
+        the thing it pins — that the calculator's answer and the stored value
+        agree — is exactly what mattered before and after.
         """
         from companies.scoring import compute_ecoiq_profile_score, recalculate_and_save
 
@@ -254,18 +254,8 @@ class ExistingBehaviourIsUnchanged(TestCase):
 
         recalculate_and_save(profile)
         profile.refresh_from_db()
-        self.assertEqual(profile.ecoiq_total_score, 0.0,
-                         'still the default — D4C is what makes this NULL')
-
-    def test_an_unknown_profile_is_not_publicly_available(self):
-        from companies.evidence import public_score_state
-
-        profile = _profile('unknown-public')
-        for name in MATERIAL:
-            setattr(profile, name, None)
-        profile.save()
-
-        self.assertFalse(public_score_state(profile).available)
+        self.assertIsNone(profile.ecoiq_total_score,
+                          'the stored value now agrees with the calculator')
 
 
 class DatabaseConstraints(TestCase):

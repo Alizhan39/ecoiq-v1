@@ -19,11 +19,28 @@ from companies.models import CompanyProfile
 from league.models import Company
 
 
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.models import CompanyProfile
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
+
+
 def _profile(name, slug, **kwargs):
     company = Company.objects.create(
         name=name, slug=slug, country='United Kingdom', ecoiq_score=71.4)
-    return CompanyProfile.objects.create(
-        company=company, status='public', ecoiq_total_score=71.4, **kwargs)
+    return _populated(company=company, status='public', ecoiq_total_score=71.4, **kwargs)
 
 
 class InvariantA_NoPublicScoreWithoutEvidence(TestCase):
@@ -133,18 +150,37 @@ class InvariantD_MeasuredFiftyIsNotMissing(TestCase):
     """
 
     def test_evidence_status_not_the_number_decides(self):
-        from companies.evidence import PROVENANCE_SEEDED, field_provenance
+        """
+        Two identical stored 50s, different provenance — the distinction must
+        survive.
+
+        Established against the provenance STORE rather than
+        field_provenance(), whose default-comparison heuristic D4C made inert:
+        with no model defaults left there is nothing to compare a value
+        against. The store is the authority that heuristic was approximating,
+        and wiring coverage onto it is D5's first job.
+        """
+        from companies import provenance as prov
+        from companies.evidence import PROVENANCE_MEASURED, PROVENANCE_SEEDED
 
         evidenced = _profile(
             'Fifty Evidenced', 'fifty-evidenced',
             waste_management_score=50.0,
-            public_sources=[{'url': 'https://example.org/audit', 'title': 'Waste audit'}])
+            public_sources=[{'url': 'https://example.org/audit',
+                             'title': 'Waste audit'}])
         bare = _profile('Fifty Bare', 'fifty-bare', waste_management_score=50.0)
+        prov.record(evidenced, 'waste_management_score', PROVENANCE_MEASURED,
+                    written_by='analyst')
+        prov.record(bare, 'waste_management_score', PROVENANCE_SEEDED,
+                    written_by='seed:test')
 
-        self.assertEqual(evidenced.waste_management_score, bare.waste_management_score)
-        self.assertEqual(field_provenance(bare, 'waste_management_score'), PROVENANCE_SEEDED)
+        self.assertEqual(evidenced.waste_management_score,
+                         bare.waste_management_score)
+        self.assertEqual(prov.current(bare, 'waste_management_score').origin,
+                         PROVENANCE_SEEDED)
         self.assertNotEqual(
-            field_provenance(evidenced, 'waste_management_score'), PROVENANCE_SEEDED)
+            prov.current(evidenced, 'waste_management_score').origin,
+            PROVENANCE_SEEDED)
 
 
 class InvariantE_SyntheticDataStaysInternal(TestCase):
