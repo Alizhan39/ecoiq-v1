@@ -57,6 +57,16 @@ from companies.evidence import (
     AVAILABILITY_AVAILABLE, CoverageReport, coverage_for,
 )
 
+#: Sentinel for "the caller did not supply a score".
+#:
+#: `score=None` cannot mean that, because None is a VALID and meaningful value
+#: here -- it is precisely how "this score is unknown" is expressed everywhere
+#: else in the system. Using None as the not-supplied marker made
+#: decide_for_company() fall back to the PROFILE composite whenever a
+#: league.Company had no score of its own, publishing one number under
+#: another's name.
+_NOT_SUPPLIED = object()
+
 STATUS_PUBLISHED = 'PUBLISHED'
 STATUS_PROVISIONAL = 'PROVISIONAL'
 STATUS_INSUFFICIENT = 'INSUFFICIENT_EVIDENCE'
@@ -113,7 +123,7 @@ class EligibilityDecision:
         return self.is_published
 
 
-def decide(profile, score=None) -> EligibilityDecision:
+def decide(profile, score=_NOT_SUPPLIED) -> EligibilityDecision:
     """
     The canonical publication decision for one profile's composite score.
 
@@ -132,7 +142,7 @@ def decide(profile, score=None) -> EligibilityDecision:
     decision.coverage = coverage_for(profile)
     decision.confidence = confidence_for(profile)
     decision.score = (getattr(profile, 'ecoiq_total_score', None)
-                      if score is None else score)
+                      if score is _NOT_SUPPLIED else score)
 
     if decision.score is None:
         decision.reasons.append(
@@ -201,6 +211,10 @@ def decide_for_company(company) -> EligibilityDecision:
     evidence by definition.
     """
     profile = getattr(company, 'profile', None)
+    # Passed explicitly, including when it is None: a company with no league
+    # score of its own must NOT inherit the profile's composite. They are
+    # different numbers over different inputs, and publishing one under the
+    # other's name is exactly the substitution this system exists to prevent.
     return decide(profile, score=getattr(company, 'ecoiq_score', None))
 
 

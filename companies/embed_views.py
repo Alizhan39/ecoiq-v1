@@ -114,12 +114,15 @@ def _badge_svg(label_left: str, label_right: str, color: str, theme: str) -> str
 def ecoiq_score_badge(request, slug):
     """GET /embed/<slug>/badge.svg — overall EcoIQ Score badge."""
     company, _profile = _public_profile_or_404(slug)
-    score = float(company.ecoiq_score)
     color = {
         'restorative': '#00c68a', 'transition': '#3fb950', 'improving': '#f4a261',
         'high-impact': '#f0883e', 'polluter': '#ef4444',
     }.get(company.status_css, '#94a3b8')
-    svg = _badge_svg('EcoIQ Score', f'{score:.0f}/100', color, _theme(request))
+    # A badge is embedded on someone else's site, which makes it the least
+    # supervised surface EcoIQ has. It must never render a substituted number.
+    value = ('not yet scored' if company.ecoiq_score is None
+             else f'{float(company.ecoiq_score):.0f}/100')
+    svg = _badge_svg('EcoIQ Score', value, color, _theme(request))
     return _svg_response(svg)
 
 

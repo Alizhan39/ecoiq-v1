@@ -172,7 +172,7 @@ class D_PredictionRefusesWithoutEvidence(TestCase):
         from ml.prediction import predict_12m
 
         company = Company.objects.create(name='Has Score', slug='has-score-fc',
-                                         country='UK', ecoiq_score=64.0)
+                                         country='UK', ecoiq_score=64.0, score_pollution_footprint=64, score_reduction_progress=64, score_investment=64, score_transparency=64, score_community_impact=64)
         pred = predict_12m(company)
 
         self.assertIsNotNone(pred)
@@ -184,7 +184,7 @@ class D_PredictionRefusesWithoutEvidence(TestCase):
         from ml.prediction import predict_12m
 
         company = Company.objects.create(name='Zero', slug='zero-fc',
-                                         country='UK', ecoiq_score=0.0)
+                                         country='UK', ecoiq_score=0.0, score_pollution_footprint=0, score_reduction_progress=0, score_investment=0, score_transparency=0, score_community_impact=0)
         self.assertIsNotNone(predict_12m(company))
 
 
@@ -430,7 +430,7 @@ class I_J_ApiBoundaries(TestCase):
         cache.clear()
 
         Company.objects.create(name='Api Ltd', slug='api-ltd', country='UK',
-                               ecoiq_score=71.4)
+                               ecoiq_score=71.4, score_pollution_footprint=71, score_reduction_progress=71, score_investment=71, score_transparency=71, score_community_impact=71)
         CompanyProfile.objects.create(
             company=Company.objects.get(slug='api-ltd'),
             status='public', ecoiq_total_score=71.4)

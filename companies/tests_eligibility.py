@@ -24,8 +24,15 @@ from league.models import Company
 
 
 def _profile(slug, score=71.4, **overrides):
-    company = Company.objects.create(name=slug, slug=slug, country='UK',
-                                     ecoiq_score=score)
+    # league.Company.ecoiq_score is COMPUTED by save() from the five legacy
+    # pillars, so passing ecoiq_score= alone is recomputed away. Since D4C's
+    # companion fix those pillars are nullable with no default, which means a
+    # fixture that omits them correctly gets no league score at all.
+    company = Company.objects.create(
+        name=slug, slug=slug, country='UK',
+        score_pollution_footprint=int(score), score_reduction_progress=int(score),
+        score_investment=int(score), score_transparency=int(score),
+        score_community_impact=int(score))
     profile = populated(company, ecoiq_total_score=score, **overrides)
     return profile
 
@@ -261,3 +268,63 @@ class ThresholdSimulation(TestCase):
             with self.subTest(threshold=threshold):
                 self.assertEqual(counts['eligible'], 0)
                 self.assertEqual(counts['unavailable'], 3)
+
+
+class TheNotSuppliedSentinel(TestCase):
+    """
+    `score=None` cannot mean "not supplied", because None is a VALID value
+    here — it is precisely how "unknown" is expressed everywhere else.
+
+    Using None as the marker made decide_for_company() fall back to the PROFILE
+    composite whenever a league.Company had no score of its own, publishing one
+    number under another's name. Found by the frontend contract work.
+    """
+
+    def _company_without_a_score(self, slug):
+        from companies.testing import populated
+
+        company = Company.objects.create(name=slug, slug=slug, country='UK')
+        profile = populated(company, pollution_level='low')
+        for key in sorted(prov.MATERIAL_METRIC_KEYS):
+            prov.record(profile, key, PROVENANCE_MEASURED, written_by='t')
+        recalculate_and_save(profile)
+        profile.refresh_from_db()
+        company.refresh_from_db()
+        return company, profile
+
+    def test_an_explicit_none_is_honoured(self):
+        profile = _evidence(_profile('sentinel-explicit'))
+
+        decision = decide(profile, score=None)
+
+        self.assertIsNone(decision.score)
+        self.assertFalse(decision.is_published)
+
+    def test_omitting_the_score_falls_back_to_the_profile(self):
+        profile = _evidence(_profile('sentinel-omitted'))
+
+        decision = decide(profile)
+
+        self.assertEqual(decision.score, profile.ecoiq_total_score)
+
+    def test_a_company_does_not_inherit_the_profile_composite(self):
+        company, profile = self._company_without_a_score('sentinel-inherit')
+
+        self.assertIsNone(company.ecoiq_score)
+        self.assertIsNotNone(profile.ecoiq_total_score)
+
+        decision = decide_for_company(company)
+
+        self.assertIsNone(decision.score,
+                          'the profile composite is a different number over '
+                          'different inputs')
+        self.assertFalse(decision.is_published)
+
+    def test_a_genuine_zero_is_not_mistaken_for_absence(self):
+        profile = _evidence(_profile('sentinel-zero'))
+
+        decision = decide(profile, score=0.0)
+
+        self.assertEqual(decision.score, 0.0)
+        self.assertTrue(decision.is_published,
+                        'a measured zero is a finding, and publishable')

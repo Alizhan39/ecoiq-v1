@@ -99,3 +99,21 @@ def unpopulated(company, *, status: str = 'public',
     return CompanyProfile.objects.create(
         company=company, status=status, pollution_level=pollution_level,
         **overrides)
+
+
+#: The five legacy league.Company pillar inputs. Company.save() recomputes
+#: ecoiq_score from these, so a fixture that leaves them unset now gets a
+#: correctly-None score -- which is right, and useless for a test that needs a
+#: scored company.
+LEAGUE_PILLARS: tuple[str, ...] = (
+    'score_pollution_footprint', 'score_reduction_progress', 'score_investment',
+    'score_transparency', 'score_community_impact',
+)
+
+
+def scored_company(company, value: int = 70):
+    """Give a league.Company the inputs its own score is computed from."""
+    for name in LEAGUE_PILLARS:
+        setattr(company, name, value)
+    company.save()
+    return company
