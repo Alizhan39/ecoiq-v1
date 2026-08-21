@@ -177,3 +177,10 @@ def record_ingestion_write(profile, written: dict, *, evidence=None) -> dict:
 
     return {'recorded': recorded, 'skipped': skipped,
             'evidence_linked': evidence is not None}
+
+
+def fmt_score(value) -> str:
+    """Progress-message rendering for a score that may not exist yet."""
+    from core.unknown import format_known
+
+    return format_known(value, spec='.1f', absent='not yet scored')

@@ -19,6 +19,12 @@ Retries are bounded and explicit (`autoretry_for`, `max_retries`,
 `retry_backoff`) — nothing retries forever, per the platform-wide safety
 requirement.
 """
+from core.unknown import format_known as _fk
+
+
+def fmt_log(v):
+    """Log-friendly: unknown reads as "unknown", never as a number."""
+    return _fk(v, spec=".1f", absent="unknown")
 import logging
 
 from celery import shared_task
@@ -117,7 +123,7 @@ def company_intelligence_refresh(self, company_profile_id):
         from notifications.models import create_notification
         create_notification(
             title=f'{profile.company.name if profile.company_id else profile}: score moved {score_delta:.1f} points',
-            source_type='background_task', message=f'EcoIQ total score: {score_before} → {profile.ecoiq_total_score}.',
+            source_type='background_task', message=f'EcoIQ total score: {fmt_log(score_before)} → {fmt_log(profile.ecoiq_total_score)}.',
             priority='normal', metadata=result_summary,
         )
 

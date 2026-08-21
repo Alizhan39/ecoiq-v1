@@ -286,11 +286,19 @@ class CompanyProfileAdmin(admin.ModelAdmin):
                 f'<span style="color:#e63946;min-width:32px;text-align:right;font-weight:700;">−{penalty:.0f}</span>'
                 f'</div>'
             )
-        total_color = '#00e89a' if obj.ecoiq_total_score >= 70 else '#f4a261' if obj.ecoiq_total_score >= 50 else '#e63946'
+        # D4A. Grey, not red: an unscored profile must not be coloured like a
+        # failing one in the analyst's own list.
+        total = obj.ecoiq_total_score
+        if total is None:
+            total_color, total_text = '#64748b', 'EcoIQ Total: not yet scored'
+        else:
+            total_color = ('#00e89a' if total >= 70
+                           else '#f4a261' if total >= 50 else '#e63946')
+            total_text = f'EcoIQ Total: {total:.1f} / 100'
         html += (
             f'<div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(255,255,255,.08);'
             f'font-weight:800;font-size:.9rem;color:{total_color};">'
-            f'EcoIQ Total: {obj.ecoiq_total_score:.1f} / 100 &nbsp;·&nbsp; '
+            f'{total_text} &nbsp;·&nbsp; '
             f'<span style="font-weight:500;font-size:.75rem;color:#64748b;">'
             f'{obj.moral_label_display} · {obj.get_pollution_level_display()} Pollution</span>'
             f'</div>'

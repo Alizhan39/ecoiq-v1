@@ -27,6 +27,7 @@ pipeline (training packs, golden tests, cross-examination), which is a
 heavier system built for multi-agent deliberation, not a single grounded
 company report.
 """
+from core.unknown import format_known as fmt, known
 import logging
 import re
 
@@ -259,8 +260,14 @@ def build_grounding_context(profile) -> str:
     parts = [
         base,
         '',
-        f'Controversy Risk Score: {profile.controversy_risk_score:.1f}/100 (higher = more risk)',
-        f'Harm Penalty Applied: -{profile.harm_penalty:.1f} pts',
+        # D4A. 'not assessed', never a substituted number: this text is a
+        # model prompt, and a fabricated 50 would be reasoned about as a real
+        # measurement. The harm-penalty line drops its minus sign when there is
+        # nothing to subtract, so it cannot read as "-not assessed pts".
+        f'Controversy Risk Score: {fmt(profile.controversy_risk_score)}/100 (higher = more risk)',
+        (f'Harm Penalty Applied: -{profile.harm_penalty:.1f} pts'
+         if profile.harm_penalty is not None
+         else 'Harm Penalty Applied: not assessed'),
         f'Emissions Reduction Target: {profile.emissions_reduction_target}% vs baseline' if profile.emissions_reduction_target else 'Emissions Reduction Target: Not disclosed',
         f'Profile Verified: {"Yes" if profile.is_verified else "No"}',
         f'Profile Status: {profile.get_status_display()}',
@@ -378,14 +385,18 @@ the data above, do not include it.
         status='draft',
         classification=classification,
         content=content,
+        # A snapshot records what was true when the report was written. An
+        # unknown must stay null in it: a substituted number would be
+        # indistinguishable from a real reading forever after, and this is the
+        # record a future reader would use to check the report's claims.
         source_snapshot={
-            'ecoiq_total_score': float(profile.ecoiq_total_score),
-            'public_benefit_score': float(profile.public_benefit_score),
-            'environmental_responsibility_score': float(profile.environmental_responsibility_score),
-            'modernization_score': float(profile.modernization_score),
-            'transparency_anti_corruption_score': float(profile.transparency_anti_corruption_score),
-            'controversy_risk_score': float(profile.controversy_risk_score),
-            'harm_penalty': float(profile.harm_penalty),
+            'ecoiq_total_score': known(profile.ecoiq_total_score),
+            'public_benefit_score': known(profile.public_benefit_score),
+            'environmental_responsibility_score': known(profile.environmental_responsibility_score),
+            'modernization_score': known(profile.modernization_score),
+            'transparency_anti_corruption_score': known(profile.transparency_anti_corruption_score),
+            'controversy_risk_score': known(profile.controversy_risk_score),
+            'harm_penalty': known(profile.harm_penalty),
             'pollution_level': profile.pollution_level,
             'is_verified': profile.is_verified,
             'cited_sources_count': profile.cited_sources.count(),
