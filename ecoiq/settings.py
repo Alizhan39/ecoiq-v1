@@ -127,6 +127,7 @@ INSTALLED_APPS = [
     'intelligence',
     'transition',
     'companies',
+    'platform_registry',
 
     # Investor portfolios and watchlists — user-owned holdings valued from the
     # market data already on league.Company. No new market-data source.
