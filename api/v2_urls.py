@@ -12,12 +12,15 @@ maintenance surface for no truthfulness gain.
 """
 from django.urls import path
 
-from api import v2_views
+from api import v2_platform, v2_views
 
 app_name = 'api_v2'
 
 urlpatterns = [
     path('',                       v2_views.api_root_v2,       name='root'),
+    # Platform counters and module statuses. The single source of truth for
+    # any number the product shows about itself.
+    path('platform/',              v2_platform.platform, name='platform'),
     path('companies/',             v2_views.CompanyListV2View.as_view(), name='company_list'),
     path('companies/<slug:slug>/', v2_views.company_detail_v2, name='company_detail'),
     path('leaderboard/',           v2_views.leaderboard_v2,    name='leaderboard'),
