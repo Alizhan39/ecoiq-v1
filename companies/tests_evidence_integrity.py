@@ -200,10 +200,18 @@ class CurrentBehaviourIsRecordedTests(TestCase):
         self.assertIsNone(_avg(None, None, None))
         self.assertEqual(_avg(50.0), 50.0)
 
-    def test_score_fields_are_still_non_nullable(self):
-        """Nullability is plan step D4, deliberately not D1."""
+    def test_score_fields_are_nullable_as_of_d4b(self):
+        """
+        Was `test_score_fields_are_still_non_nullable`, asserting that D1
+        deliberately left nullability alone. D4B is the step that changed it,
+        so the assertion is inverted rather than deleted — the fact it pins is
+        still worth pinning, it has simply become the opposite fact.
+
+        The default is still 50.0 here: D4B relaxes the constraint, D4C removes
+        the default.
+        """
         f = CompanyProfile._meta.get_field('waste_management_score')
-        self.assertFalse(f.null)
+        self.assertTrue(f.null)
         self.assertEqual(f.default, 50.0)
 
     def test_this_module_changes_no_score(self):

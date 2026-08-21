@@ -171,14 +171,24 @@ class H_I_Atomicity(TestCase):
         self.assertEqual(CompanyMetricProvenance.objects.count(), 0)
 
     def test_i_metric_write_failure_leaves_no_provenance(self):
+        """
+        The failure was previously induced by assigning None to a NOT NULL
+        column. D4B made that column nullable, so the assignment now succeeds
+        and the injected failure stopped firing — the test would have passed
+        without ever exercising the rollback.
+
+        Injected explicitly instead, which no future migration can defuse.
+        """
+        from unittest.mock import patch
+
         profile = _profile('rollback-value')
 
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 record_seed_write(profile, ['water_impact_score'], WRITER)
-                # NOT NULL until D4 — a realistic in-transaction failure.
-                profile.water_impact_score = None
-                profile.save()
+                with patch.object(type(profile), 'save',
+                                  side_effect=IntegrityError('injected')):
+                    profile.save()
 
         self.assertEqual(CompanyMetricProvenance.objects.count(), 0,
                          'provenance must not survive a failed value write')

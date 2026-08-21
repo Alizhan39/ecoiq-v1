@@ -474,17 +474,30 @@ class M_MigrationSafety(TestCase):
 
     def test_m_no_existing_score_field_was_altered(self):
         """
-        D3A must not touch the 39 score fields. Spot-checking the six composite
-        pillars: still NOT NULL, still defaulted. Nullability is D4's decision,
-        not a side effect of adding provenance.
+        D3A must not touch the score fields. Nullability is D4's decision, not
+        a side effect of adding provenance.
+
+        This originally read live model state, which was a fair proxy until D4B
+        legitimately made those fields nullable — at which point the test began
+        failing for the right reason and asserting the wrong thing. It now
+        inspects D3A's OWN migration, which is what it always meant, and which
+        stays true no matter what later migrations do.
         """
+        from importlib import import_module
+
+        migration = import_module('companies.migrations.0009_companymetricprovenance')
+        touched = {
+            getattr(op, 'name', None)
+            for op in migration.Migration.operations
+            if type(op).__name__ in ('AlterField', 'AddField', 'RemoveField')
+        }
+
         for name in ('public_benefit_score', 'environmental_responsibility_score',
                      'modernization_score', 'transparency_anti_corruption_score',
                      'anti_corruption_score', 'ethical_alignment_score'):
             with self.subTest(field=name):
-                field = CompanyProfile._meta.get_field(name)
-                self.assertFalse(field.null, f'{name} became nullable — that is D4')
-                self.assertTrue(field.has_default())
+                self.assertNotIn(name, touched,
+                                 f'D3A altered {name} — nullability is D4')
 
     def test_m_rollback_removes_only_the_new_table(self):
         module_deps = __import__(
