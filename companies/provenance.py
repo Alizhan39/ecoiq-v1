@@ -413,36 +413,61 @@ def is_derived_publicly_defensible(profile, metric_key: str) -> bool:
     """
     Could a derived metric be published, on provenance grounds alone?
 
-    ADVISORY, like is_publicly_defensible(). Nothing on a public path calls it.
+    ADVISORY. Nothing on a public path calls this.
 
     A derived metric needs BOTH:
 
       1. its own origin to be defensible — MODELLED qualifies, SEEDED does not;
-      2. every input it consumed to be defensible.
+      2. every input it consumed to be defensible, TRANSITIVELY.
 
-    The second is what stops a MODELLED composite laundering SEEDED inputs into
-    a publishable number. A perfectly-executed calculation over synthetic data
-    is still synthetic.
+    The word transitively is doing real work, and D3C-3c is why. Once the graph
+    gained a middle layer, the composite stopped citing material rows directly:
+    it cites the pillars, which are MODELLED. A single-level check would see
+    five honest MODELLED inputs and pass — while a SEEDED water reading sat one
+    layer below, invisible.
+
+    That is laundering by indirection, and a deeper graph is exactly what makes
+    it easy. Contamination anywhere beneath a value disqualifies it.
+
+    A derived row with NO recorded inputs returns False: we cannot show the
+    lineage, so we cannot defend it.
 
     Deliberately NOT included: coverage thresholds, or how many inputs a
-    composite needs. Those are D5's, and guessing at them here would make them
-    invisible when D5 comes to decide them.
-
-    A derived row with NO recorded inputs returns False. That is the honest
-    reading before D3C-4 wires the calculators up: we cannot show the lineage,
-    so we cannot defend it.
+    composite needs. Those are D5's.
     """
     definition = registry.get_metric_definition(metric_key)
     if definition is None or definition.kind != registry.DERIVED:
         return False
 
     row = current(profile, metric_key)
-    if row is None or row.origin in UNEVIDENCED_PROVENANCE:
+    return row is not None and _row_is_defensible(row, seen=set())
+
+
+def _row_is_defensible(row, seen: set) -> bool:
+    """
+    Whether one provenance row and everything beneath it is defensible.
+
+    `seen` guards against a cycle. record_derived() rejects direct
+    self-reference, but full DAG validation is still deferred, so a traversal
+    must not assume the graph is acyclic. A row already being examined is
+    treated as not-yet-disqualifying rather than recursed into again.
+    """
+    if row.pk in seen:
+        return True
+    seen.add(row.pk)
+
+    if row.origin in UNEVIDENCED_PROVENANCE:
         return False
     if row.value is None:
+        # A MEASURED row over a NULL field is a contradiction, and the safe
+        # reading of a contradiction is that there is nothing to publish.
         return False
 
-    input_rows = row.inputs.all()
-    if not input_rows:
-        return False
-    return all(item.origin not in UNEVIDENCED_PROVENANCE for item in input_rows)
+    inputs = list(row.inputs.all())
+    if not inputs:
+        # A MATERIAL row has no inputs and needs none — its own origin is the
+        # whole claim. A DERIVED row with none cannot show its lineage.
+        definition = registry.get_metric_definition(row.metric_key)
+        return definition is not None and definition.kind == registry.MATERIAL
+
+    return all(_row_is_defensible(item, seen) for item in inputs)
