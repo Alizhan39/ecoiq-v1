@@ -19,6 +19,8 @@ import pathlib
 from django.conf import settings
 from django.db import transaction
 
+from core.unknown import known, mean_of_known
+
 log = logging.getLogger(__name__)
 
 SEED_PATH = pathlib.Path(__file__).resolve().parent / 'seed' / 'decision_questions.json'
@@ -77,12 +79,50 @@ def _clamp10(v):
 
 
 def _f(profile, name, default=50.0):
-    return float(getattr(profile, name, default) or default)
+    """
+    Read a profile score, substituting `default` when it is unknown.
+
+    A D2 RESIDUAL, found by tracing these formulas for D3C-3d rather than by
+    the pattern sweeps. Those searched for `or 50` and `float(v or 0)`; this
+    is `or default` where default is a VARIABLE, so the regex never matched
+    it. The behaviour is the same fabrication: an unknown score, a missing
+    attribute, and a genuine measured 0.0 all become 50.
+
+    It is corrected rather than merely noted because D3C-3d cannot record
+    truthful lineage over a calculator that invents its own inputs — the
+    provenance row would claim sixteen consumed inputs when several were
+    never measured.
+
+    Unknown now returns None and callers decide, exactly as in #242.
+    """
+    return known(getattr(profile, name, None))
+
+
+def _f_or(profile, name, default=50.0):
+    """
+    _f with an explicit fallback, for the few sites where the QDF scale
+    genuinely needs a number and the domain treats a missing signal as
+    mid-scale. Naming it separately makes each such substitution a visible
+    decision rather than a default nobody chose.
+    """
+    value = _f(profile, name)
+    return default if value is None else value
 
 
 def _avg(*vals):
-    vals = [v for v in vals if v is not None]
-    return sum(vals) / len(vals) if vals else 50.0
+    """
+    Mean of the known values, or None when none are known.
+
+    Was `... if vals else 50.0` — the same residual as _f, and the same shape
+    as mizan's `_mean(...) if vals else 0.0` that a test caught in #244.
+    """
+    return mean_of_known(*vals)
+
+
+def _avg_or(default=50.0, *vals):
+    """Mean of the known values, or an explicit fallback."""
+    value = _avg(*vals)
+    return default if value is None else value
 
 
 def _evidence_for_profile(profile):
@@ -123,45 +163,45 @@ def _question_signals(profile):
     Each entry: key -> (score_0_10, rationale).
     These are PROXIES derived from existing signals — not new claims.
     """
-    pb   = _f(profile, 'public_benefit_score')
-    env  = _f(profile, 'environmental_responsibility_score')
-    mod  = _f(profile, 'modernization_score')
-    gov  = _f(profile, 'transparency_anti_corruption_score')
-    ac   = _f(profile, 'anti_corruption_score')
-    eth  = _f(profile, 'ethical_alignment_score')
-    contr = _f(profile, 'controversy_risk_score', 30.0)     # higher = worse
-    pextr = _f(profile, 'profit_extraction_risk_score', 30.0)  # higher = worse
-    jobs  = _f(profile, 'jobs_created_score')
-    region = _f(profile, 'regional_development_score')
-    natval = _f(profile, 'national_value_score')
-    infra  = _f(profile, 'infrastructure_contribution_score')
-    audit  = _f(profile, 'audit_quality_score')
-    procure = _f(profile, 'procurement_transparency_score')
-    future = _f(profile, 'future_readiness_score')
-    water  = _f(profile, 'water_impact_score')
+    pb   = _f_or(profile, 'public_benefit_score')
+    env  = _f_or(profile, 'environmental_responsibility_score')
+    mod  = _f_or(profile, 'modernization_score')
+    gov  = _f_or(profile, 'transparency_anti_corruption_score')
+    ac   = _f_or(profile, 'anti_corruption_score')
+    eth  = _f_or(profile, 'ethical_alignment_score')
+    contr = _f_or(profile, 'controversy_risk_score', 30.0)     # higher = worse
+    pextr = _f_or(profile, 'profit_extraction_risk_score', 30.0)  # higher = worse
+    jobs  = _f_or(profile, 'jobs_created_score')
+    region = _f_or(profile, 'regional_development_score')
+    natval = _f_or(profile, 'national_value_score')
+    infra  = _f_or(profile, 'infrastructure_contribution_score')
+    audit  = _f_or(profile, 'audit_quality_score')
+    procure = _f_or(profile, 'procurement_transparency_score')
+    future = _f_or(profile, 'future_readiness_score')
+    water  = _f_or(profile, 'water_impact_score')
 
     inv = lambda x: 100.0 - x  # invert a "higher = worse" signal
 
     return {
-        'niyyah':  (_avg(pb, inv(pextr)) / 10.0,
+        'niyyah':  (_avg_or(50.0, pb, inv(pextr)) / 10.0,
                     'Derived from public-benefit orientation vs profit-extraction risk.'),
-        'halal':   (_avg(eth, inv(contr)) / 10.0,
+        'halal':   (_avg_or(50.0, eth, inv(contr)) / 10.0,
                     'Screening proxy from ethical-alignment and controversy signals (not a Shariah ruling).'),
-        'adl':     (_avg(gov, ac, region) / 10.0,
+        'adl':     (_avg_or(50.0, gov, ac, region) / 10.0,
                     'Derived from transparency, anti-corruption, and fair regional distribution signals.'),
-        'rahmah':  (_avg(jobs, region, water) / 10.0,
+        'rahmah':  (_avg_or(50.0, jobs, region, water) / 10.0,
                     'Derived from employment, community development, and water/community protection signals.'),
-        'mizan':   (_avg(env, future) / 10.0,
+        'mizan':   (_avg_or(50.0, env, future) / 10.0,
                     'Derived from environmental responsibility and long-term balance signals.'),
-        'amanah':  (_avg(gov, audit, ac) / 10.0,
+        'amanah':  (_avg_or(50.0, gov, audit, ac) / 10.0,
                     'Derived from disclosure quality, audit standards, and anti-corruption signals.'),
-        'maslahah':(_avg(pb, natval, infra) / 10.0,
+        'maslahah':(_avg_or(50.0, pb, natval, infra) / 10.0,
                     'Derived from public-benefit, national-value, and infrastructure contribution signals.'),
-        'darar':   (inv(_avg(contr, pextr, inv(env))) / 10.0,
+        'darar':   (inv(_avg_or(50.0, contr, pextr, inv(env))) / 10.0,
                     'Freedom-from-harm: inverse of controversy, extraction, and environmental-harm signals.'),
-        'shura':   (_avg(procure, gov) / 10.0,
+        'shura':   (_avg_or(50.0, procure, gov) / 10.0,
                     'Consultation proxy from procurement transparency and governance openness (proxy only).'),
-        'akhirah': (_avg(eth, ac, pb, inv(contr)) / 10.0,
+        'akhirah': (_avg_or(50.0, eth, ac, pb, inv(contr)) / 10.0,
                     'Integrity synthesis from ethical-alignment, anti-corruption, public-benefit, and controversy signals.'),
     }
 
@@ -294,8 +334,63 @@ def compute_from_scores(scores_by_key, subject_name='Decision',
     }
 
 
-@transaction.atomic
+# ── Derived provenance (D3C-3d) ───────────────────────────────────────────────
+
+#: QDF is the Quranic Decision Filter: a rule-based decision-integrity screen
+#: that scores a profile against DecisionQuestion records on a 0-10 scale and
+#: reduces them to one 0-100 overall. Traced from the implementation, not
+#: inferred from the acronym (STEP 4). Nothing here embellishes it: the
+#: methodology name says what the code does and no more.
+QDF_METHOD = 'ecoiq-qdf-decision-integrity'
+QDF_VERSION = '1'
+
+QDF_METRIC_KEY = 'qdf.decision_integrity'
+
+#: The profile fields _question_signals() actually reads, as registry keys.
+#: Four resolve to DERIVED pillars, so the lineage links those rather than
+#: flattening to their material inputs.
+#:
+#: KNOWN GAP: profit_extraction_risk_score is read by the formula but is not a
+#: registered metric, so it cannot be linked. It is a real CompanyProfile
+#: field — checked, not assumed — not a typo.
+QDF_INPUTS = (
+    'company.public_benefit', 'company.environmental', 'company.modernization',
+    'company.transparency_governance', 'company.ethical_alignment',
+    'anti_corruption_score', 'audit_quality_score', 'controversy_risk_score',
+    'future_readiness_score', 'infrastructure_contribution_score',
+    'jobs_created_score', 'national_value_score',
+    'procurement_transparency_score', 'regional_development_score',
+    'water_impact_score',
+)
+
+
 def compute_and_save(profile):
+    """
+    Compute and persist the QDF assessment, and record its lineage.
+
+    Value and provenance in one transaction; the returned assessment carries a
+    transient `provenance_status`.
+    """
+    from companies import provenance as prov
+
+    # QDF already had @transaction.atomic on this work; the outer block exists
+    # so the provenance write joins the SAME unit rather than committing
+    # separately after it. Reusing the existing boundary rather than adding a
+    # competing one.
+    with transaction.atomic():
+        assessment = _compute_and_save_inner(profile)
+        assessment.provenance_status = prov.record_calculated(
+            profile, QDF_METRIC_KEY, assessment.decision_integrity_score,
+            QDF_INPUTS,
+            writer='qdf.scoring.compute_and_save',
+            methodology=QDF_METHOD,
+            calculation_version=QDF_VERSION,
+        )
+    return assessment
+
+
+@transaction.atomic
+def _compute_and_save_inner(profile):
     """Compute and persist the auto QDF assessment + its 10 QuestionScores."""
     from qdf.models import DecisionQuestion, DecisionAssessment, QuestionScore
 

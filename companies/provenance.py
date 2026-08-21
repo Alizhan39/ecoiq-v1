@@ -409,6 +409,58 @@ def lineage(row) -> list:
     return list(row.inputs.select_related('evidence').all())
 
 
+def record_calculated(profile, metric_key: str, value, declared, *, writer: str,
+                      methodology: str, calculation_version: str) -> str:
+    """
+    Record MODELLED lineage for one calculated value, or explain why not.
+
+    The rules proven across #249, #250 and #251, extracted here so the
+    financing and QDF writers inherit them rather than restating them. Three
+    copies of a policy is three places for it to drift, and the policy is the
+    part that matters.
+
+    MUST be called inside the caller's transaction.atomic().
+
+    Returns 'recorded' | 'unchanged' | 'incomplete' | 'unavailable'.
+    """
+    # No value, so nothing to attest to — and any previous row must stop
+    # claiming to describe current state.
+    if value is None:
+        supersede(profile, metric_key)
+        return 'unavailable'
+
+    # Only the inputs that exist: a formula that re-normalised around an
+    # unknown input did not consume it.
+    consumed = [
+        key for key in declared
+        if registry.resolve_value(profile, key) is not None
+    ]
+    current_rows = current_map(profile)
+    missing = [key for key in consumed if key not in current_rows]
+    if not consumed or missing:
+        # No lineage-complete row rather than one whose input list
+        # understates what the number rests on. Nothing is fabricated, and no
+        # LEGACY row is invented — D3B owns historical labelling.
+        return 'incomplete'
+
+    input_rows = [current_rows[key] for key in consumed]
+
+    existing = current(profile, metric_key)
+    if (existing is not None
+            and existing.origin == PROVENANCE_MODELLED
+            and existing.methodology == methodology
+            and existing.calculation_version == calculation_version
+            and set(existing.inputs.values_list('pk', flat=True))
+                == {row.pk for row in input_rows}):
+        return 'unchanged'
+
+    record_derived(
+        profile, metric_key, writer=writer, methodology=methodology,
+        calculation_version=calculation_version, inputs=input_rows,
+    )
+    return 'recorded'
+
+
 def is_derived_publicly_defensible(profile, metric_key: str) -> bool:
     """
     Could a derived metric be published, on provenance grounds alone?

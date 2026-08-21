@@ -10,6 +10,8 @@ No Celery, no external calls — derives everything from existing CompanyProfile
 """
 import logging
 
+from django.db import transaction
+
 from core.unknown import known, weighted_mean_of_known
 
 log = logging.getLogger(__name__)
@@ -550,7 +552,25 @@ def _match_missing(profile, opportunity) -> list:
 
 
 def _recommended_amount(profile, opportunity) -> int | None:
+    """
+    A recommended ticket size, or None when there is no capex estimate.
+
+    A latent crash, surfaced by D3C-3d's tests. #242 correctly made
+    _estimate_capex return (None, None, None) when annual_revenue is unknown —
+    it had been inventing a $50m company — but this caller still did
+    `(lo + hi) // 2` and raised TypeError.
+
+    It went unnoticed because companies/views.py wraps the financing call in a
+    bare `except: pass`, so the panel silently vanished instead of erroring.
+    annual_revenue is NULL for every profile in the current dataset, so this
+    fired on every company page that reached a financing match.
+
+    Returning None is the honest answer and the one the signature already
+    promised: without a capex estimate there is no ticket size to recommend.
+    """
     lo, hi, _ = _estimate_capex(profile)
+    if lo is None or hi is None:
+        return None
     avg = (lo + hi) // 2
     mn, mx = opportunity.min_ticket_usd or 0, opportunity.max_ticket_usd or 0
     if mx:
@@ -611,7 +631,73 @@ def compute_financing_profile(profile) -> dict:
 
 # ── DB write ──────────────────────────────────────────────────────────────────
 
+# ── Derived provenance (D3C-3d) ───────────────────────────────────────────────
+
+#: No methodology identifier existed here; these are the smallest stable,
+#: code-owned constants. Not a git SHA, which changes on every unrelated
+#: commit and so cannot answer 'did the formula change?'.
+FINANCING_METHOD = 'ecoiq-financing-readiness'
+FINANCING_VERSION = '1'
+
+#: The ONE registered financing metric, and the only one this writer attests
+#: to (STEP 3).
+#:
+#: CompanyFinancingProfile persists eleven values — five more readiness
+#: dimensions, two capex bounds, an annual-impact estimate, a tier and an
+#: urgency. They are semantically distinct outputs and only
+#: financing.readiness is registered, so this row attests to that number
+#: alone. It must NOT be read as covering the capex estimates: those were the
+#: figures #242 found fabricated from an invented $50m revenue, and implying
+#: provenance for them would quietly undo that finding.
+#:
+#: Registering the other ten is a registry decision, not a writer decision.
+FINANCING_METRIC_KEY = 'financing.readiness'
+
+#: What financing_readiness actually consumes:
+#:
+#:     _weighted((ecoiq, .25), (trans, .25), (gov, .20), (mod, .15), (ev, .15))
+#:
+#: Three of the four registered inputs are DERIVED, so this links to the
+#: composite and two pillars rather than flattening back to raw material rows
+#: (STEP 7). The graph should say what the formula does.
+#:
+#: KNOWN GAP: `ev` is _evidence_completeness(profile), computed inline from
+#: profile completeness rather than read from a registered metric. It has no
+#: provenance row and cannot be linked.
+FINANCING_INPUTS = (
+    'company.ecoiq_total',
+    'transparency_score_detail',
+    'company.transparency_governance',
+    'company.modernization',
+)
+
+
 def compute_and_save(profile):
+    """
+    Compute and persist the financing profile, and record its lineage.
+
+    The value and its provenance commit together or not at all. This function
+    had no transaction boundary; one is added around the work it already did
+    plus the provenance write. An inner atomic() joins an outer one as a
+    savepoint, so the admin action and the detail view are unaffected.
+
+    The returned profile carries a transient `provenance_status`.
+    """
+    from companies import provenance as prov
+
+    with transaction.atomic():
+        fp = _compute_and_save_inner(profile)
+        fp.provenance_status = prov.record_calculated(
+            profile, FINANCING_METRIC_KEY, fp.financing_readiness,
+            FINANCING_INPUTS,
+            writer='financing.matching.compute_and_save',
+            methodology=FINANCING_METHOD,
+            calculation_version=FINANCING_VERSION,
+        )
+    return fp
+
+
+def _compute_and_save_inner(profile):
     """
     Compute and persist the CompanyFinancingProfile + DirectFinancingMatch records.
     Returns CompanyFinancingProfile.
