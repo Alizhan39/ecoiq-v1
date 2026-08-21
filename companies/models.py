@@ -177,23 +177,23 @@ class CompanyProfile(models.Model):
                                  help_text='Target % reduction vs baseline year')
     renewable_energy_share     = models.FloatField(null=True, blank=True,
                                  help_text='% of energy from renewable sources')
-    waste_management_score     = models.FloatField(null=True, blank=True, default=50.0,
+    waste_management_score     = models.FloatField(null=True, blank=True,
                                  help_text='0-100: quality of waste management practices')
-    water_impact_score         = models.FloatField(null=True, blank=True, default=50.0,
+    water_impact_score         = models.FloatField(null=True, blank=True,
                                  help_text='0-100: water stewardship quality')
-    biodiversity_impact_score  = models.FloatField(null=True, blank=True, default=50.0,
+    biodiversity_impact_score  = models.FloatField(null=True, blank=True,
                                  help_text='0-100: impact on biodiversity and ecosystems')
 
     # ── Social / Public Benefit ──
-    jobs_created_score               = models.FloatField(null=True, blank=True, default=50.0,
+    jobs_created_score               = models.FloatField(null=True, blank=True,
                                        help_text='0-100: quality and quantity of employment')
-    regional_development_score       = models.FloatField(null=True, blank=True, default=50.0,
+    regional_development_score       = models.FloatField(null=True, blank=True,
                                        help_text='0-100: contribution to regional economy')
     community_investment             = models.BigIntegerField(null=True, blank=True,
                                        help_text='Annual community investment in USD')
-    infrastructure_contribution_score= models.FloatField(null=True, blank=True, default=50.0,
+    infrastructure_contribution_score= models.FloatField(null=True, blank=True,
                                        help_text='0-100: infrastructure contribution')
-    national_value_score             = models.FloatField(null=True, blank=True, default=50.0,
+    national_value_score             = models.FloatField(null=True, blank=True,
                                        help_text='0-100: long-term national benefit')
 
     # ── Modernization ──
@@ -201,41 +201,41 @@ class CompanyProfile(models.Model):
                                     help_text='Annual modernization capex in USD')
     modernization_projects        = models.JSONField(default=list, blank=True,
                                     help_text='List of active modernization project names')
-    energy_transition_score       = models.FloatField(null=True, blank=True, default=50.0,
+    energy_transition_score       = models.FloatField(null=True, blank=True,
                                     help_text='0-100: energy transition progress')
-    digitalization_score          = models.FloatField(null=True, blank=True, default=50.0,
+    digitalization_score          = models.FloatField(null=True, blank=True,
                                     help_text='0-100: digital transformation maturity')
-    infrastructure_upgrade_score  = models.FloatField(null=True, blank=True, default=50.0,
+    infrastructure_upgrade_score  = models.FloatField(null=True, blank=True,
                                     help_text='0-100: physical infrastructure modernity')
-    future_readiness_score        = models.FloatField(null=True, blank=True, default=50.0,
+    future_readiness_score        = models.FloatField(null=True, blank=True,
                                     help_text='0-100: preparedness for future economy')
 
     # ── Transparency & Governance ──
-    transparency_score_detail         = models.FloatField(null=True, blank=True, default=50.0,
+    transparency_score_detail         = models.FloatField(null=True, blank=True,
                                         help_text='0-100: reporting quality and openness')
-    audit_quality_score               = models.FloatField(null=True, blank=True, default=50.0,
+    audit_quality_score               = models.FloatField(null=True, blank=True,
                                         help_text='0-100: audit standards and independence')
-    procurement_transparency_score    = models.FloatField(null=True, blank=True, default=50.0,
+    procurement_transparency_score    = models.FloatField(null=True, blank=True,
                                         help_text='0-100: procurement process openness')
-    anti_corruption_score             = models.FloatField(null=True, blank=True, default=50.0,
+    anti_corruption_score             = models.FloatField(null=True, blank=True,
                                         help_text='0-100: anti-corruption practices')
-    controversy_risk_score            = models.FloatField(null=True, blank=True, default=30.0,
+    controversy_risk_score            = models.FloatField(null=True, blank=True,
                                         help_text='0-100: higher = more controversy risk')
     governance_notes                  = models.TextField(blank=True)
 
     # ── EcoIQ Composite Scores (computed + stored) ──
-    profit_extraction_score          = models.FloatField(null=True, blank=True, default=50.0,
+    profit_extraction_score          = models.FloatField(null=True, blank=True,
                                        help_text='0-100: how much profit flows back to people vs. owners')
-    profit_extraction_risk_score     = models.FloatField(null=True, blank=True, default=30.0,
+    profit_extraction_risk_score     = models.FloatField(null=True, blank=True,
                                        help_text='0-100: risk indicator — higher = more concern')
-    public_benefit_score             = models.FloatField(null=True, blank=True, default=50.0)
-    environmental_responsibility_score = models.FloatField(null=True, blank=True, default=50.0)
-    modernization_score              = models.FloatField(null=True, blank=True, default=50.0)
-    transparency_anti_corruption_score = models.FloatField(null=True, blank=True, default=50.0)
-    ethical_alignment_score          = models.FloatField(null=True, blank=True, default=50.0)
-    harm_penalty                     = models.FloatField(null=True, blank=True, default=0.0,
+    public_benefit_score             = models.FloatField(null=True, blank=True)
+    environmental_responsibility_score = models.FloatField(null=True, blank=True)
+    modernization_score              = models.FloatField(null=True, blank=True)
+    transparency_anti_corruption_score = models.FloatField(null=True, blank=True)
+    ethical_alignment_score          = models.FloatField(null=True, blank=True)
+    harm_penalty                     = models.FloatField(null=True, blank=True,
                                        help_text='Points deducted for pollution/harm (0-30)')
-    ecoiq_total_score                = models.FloatField(null=True, blank=True, default=0.0)
+    ecoiq_total_score                = models.FloatField(null=True, blank=True)
     ecoiq_category                   = models.CharField(max_length=50, blank=True)
     moral_label                      = models.CharField(max_length=30,
                                        choices=MORAL_LABEL_CHOICES,
@@ -516,13 +516,13 @@ class CompanyScoreSnapshot(models.Model):
 
     # Full pillar snapshot at time of recording
     total_score                    = models.FloatField(null=True, blank=True)
-    public_benefit_score           = models.FloatField(null=True, blank=True, default=50.0)
-    environmental_score            = models.FloatField(null=True, blank=True, default=50.0)
-    modernization_score            = models.FloatField(null=True, blank=True, default=50.0)
-    governance_score               = models.FloatField(null=True, blank=True, default=50.0)
-    anti_corruption_score          = models.FloatField(null=True, blank=True, default=50.0)
-    ethical_alignment_score        = models.FloatField(null=True, blank=True, default=50.0)
-    harm_penalty                   = models.FloatField(null=True, blank=True, default=0.0)
+    public_benefit_score           = models.FloatField(null=True, blank=True)
+    environmental_score            = models.FloatField(null=True, blank=True)
+    modernization_score            = models.FloatField(null=True, blank=True)
+    governance_score               = models.FloatField(null=True, blank=True)
+    anti_corruption_score          = models.FloatField(null=True, blank=True)
+    ethical_alignment_score        = models.FloatField(null=True, blank=True)
+    harm_penalty                   = models.FloatField(null=True, blank=True)
 
     moral_label = models.CharField(max_length=40, blank=True)
     notes       = models.TextField(blank=True,

@@ -28,9 +28,26 @@ from companies.models import CompanyMetricProvenance, CompanyProfile
 from league.models import Company
 
 
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
+
+
 def _profile(slug):
     company = Company.objects.create(name=slug, slug=slug, country='UK')
-    return CompanyProfile.objects.create(company=company, status='public')
+    return _populated(company=company, status='public')
 
 
 class A_CanonicalStates(SimpleTestCase):
@@ -559,8 +576,7 @@ class PublicSurfacesUnchanged(TestCase):
 
         company = Company.objects.create(name='Still Contained', slug='still-contained',
                                          country='UK', ecoiq_score=71.4)
-        profile = CompanyProfile.objects.create(
-            company=company, status='public', ecoiq_total_score=71.4)
+        profile = _populated(company=company, status='public', ecoiq_total_score=71.4)
         for metric in sorted(prov.MATERIAL_METRIC_KEYS):
             prov.record(profile, metric, PROVENANCE_MEASURED)
 
@@ -574,8 +590,7 @@ class PublicSurfacesUnchanged(TestCase):
 
         company = Company.objects.create(name='V2 Unchanged', slug='v2-unchanged',
                                          country='UK', ecoiq_score=71.4)
-        profile = CompanyProfile.objects.create(
-            company=company, status='public', ecoiq_total_score=71.4)
+        profile = _populated(company=company, status='public', ecoiq_total_score=71.4)
         prov.record(profile, 'audit_quality_score', PROVENANCE_MEASURED)
 
         payload = Client().get('/api/v2/companies/v2-unchanged/').json()

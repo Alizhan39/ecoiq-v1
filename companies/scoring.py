@@ -500,9 +500,26 @@ def recalculate_and_save(profile: 'CompanyProfile',
         'moral_label':                        results['moral_label'],
         'ecoiq_category':                     results['ecoiq_category'],
     }
-    written = [name for name, value in assignable.items() if value is not None]
-    for name in written:
-        setattr(profile, name, assignable[name])
+    # D4C. Unknown results are now WRITTEN as NULL rather than skipped.
+    #
+    # Skipping them was correct while the columns were NOT NULL — assigning
+    # None would have raised — but it meant a recalculation that found no
+    # evidence left the previous number in place. A company whose inputs were
+    # withdrawn kept its old composite indefinitely, and a new profile kept the
+    # default. The stored value stopped being a statement about the evidence.
+    #
+    # `moral_label` and `ecoiq_category` are CharFields with no NULL: they are
+    # blanked instead, because a label with no score behind it asserts a
+    # category nobody assessed (#258 removed the same claim from the LLM
+    # prompt).
+    _BLANKABLE = {'moral_label', 'ecoiq_category'}
+
+    written = list(assignable)
+    for name, value in assignable.items():
+        if value is None and name in _BLANKABLE:
+            setattr(profile, name, '')
+        else:
+            setattr(profile, name, value)
 
     # STEP 6 — the value and its lineage commit together or not at all.
     #

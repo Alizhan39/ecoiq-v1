@@ -302,8 +302,14 @@ Rules:
             risks_json=data.get('key_risks', []),
             technology_options_json=data.get('technology_options', []),
             # Meta
-            confidence=_safe_float(data.get('confidence')) or 0.5,
-            data_quality=data.get('data_quality', 'medium'),
+            # D4C. `or 0.5` invented a mid-confidence for a model that
+            # reported none -- and `or` also rewrote a genuine 0.0, the
+            # model's own statement that it was not confident, into the same
+            # middling number. Unknown confidence is NULL.
+            confidence=_safe_float(data.get('confidence')),
+            # `'medium'` likewise asserted a data-quality tier the model did
+            # not state. Blank means unstated.
+            data_quality=data.get('data_quality') or '',
             model_used=model,
             token_count=token_count,
         )

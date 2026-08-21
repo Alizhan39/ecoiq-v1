@@ -179,29 +179,53 @@ class CompositePropagatesUnknown(TestCase):
         self.assertIn('public_benefit_score', result['_unknown_dimensions'])
 
     def test_a_fully_known_profile_still_scores(self):
-        profile = CompanyProfile(company=self._company('fully-known'))
+        """
+        "Fully known" used to mean an unsaved CompanyProfile, because the field
+        defaults quietly populated sixteen inputs. Post-D4C that constructs a
+        company about which nothing is known, so the inputs are named here —
+        which is what the test always claimed to be doing.
+        """
+        from companies.testing import FIXTURE_VALUE, MATERIAL_FIELDS
+
+        profile = CompanyProfile(
+            company=self._company('fully-known'), pollution_level='low',
+            **{name: FIXTURE_VALUE for name in MATERIAL_FIELDS})
         result = compute_ecoiq_profile_score(profile)
 
         self.assertIsNotNone(result['ecoiq_total_score'])
         self.assertTrue(result['_is_complete'])
         self.assertEqual(result['_unknown_dimensions'], [])
 
-    def test_save_never_writes_none_into_a_not_null_column(self):
+    def test_save_writes_none_for_a_dimension_that_is_unknown(self):
         """
-        These columns are still NOT NULL — nullability is D4. An unknown
-        dimension must be skipped, not written, or save() raises IntegrityError.
+        Was `test_save_never_writes_none_into_a_not_null_column`, which
+        asserted the opposite: while the columns were NOT NULL an unknown
+        dimension had to be SKIPPED, leaving the previously stored value in
+        place.
+
+        D4B made the columns nullable and D4C made the writer persist unknown,
+        so the stored value now describes the current evidence rather than the
+        last time there happened to be some. The subject is unchanged — what
+        save() does with an unknown dimension — and the answer has inverted.
         """
+        from companies.testing import FIXTURE_VALUE, MATERIAL_FIELDS
+
         company = self._company('save-safe')
-        profile = CompanyProfile.objects.create(company=company, status='public')
-        profile.jobs_created_score = None
-        profile.regional_development_score = None
-        profile.infrastructure_contribution_score = None
-        profile.national_value_score = None
+        profile = CompanyProfile.objects.create(
+            company=company, status='public', pollution_level='low',
+            **{name: FIXTURE_VALUE for name in MATERIAL_FIELDS})
+        recalculate_and_save(profile)
+        profile.refresh_from_db()
+        self.assertIsNotNone(profile.ecoiq_total_score)
+
+        # anti_corruption is a one-input dimension, so this removes it entirely.
+        profile.anti_corruption_score = None
+        profile.save()
 
         recalculate_and_save(profile)      # must not raise
         profile.refresh_from_db()
-        self.assertIsNotNone(profile.ecoiq_total_score,
-                             'the previously stored value should remain, not become NULL')
+        self.assertIsNone(profile.ecoiq_total_score,
+                          'a stale value would no longer describe the evidence')
 
 
 class G_H_FinancingRefusesToInvent(TestCase):

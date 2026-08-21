@@ -32,6 +32,23 @@ from companies.models import CompanyMetricProvenance, CompanyProfile
 from companies.scoring import recalculate_and_save
 from league.models import Company
 
+
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
+
 from ml.ethics.greenwashing_risk import (
     GREENWASHING_INPUTS, GREENWASHING_METHOD, GREENWASHING_METRIC_KEY,
     GREENWASHING_VERSION, RISK_INSUFFICIENT_EVIDENCE, assess_and_record,
@@ -55,7 +72,7 @@ from ml.scoring_model import (
 def _profile(slug, **kwargs):
     company = Company.objects.create(name=slug, slug=slug, country='UK',
                                      ecoiq_score=64.0)
-    return CompanyProfile.objects.create(company=company, status='public',
+    return _populated(company=company, status='public',
                                          pollution_level='low', **kwargs)
 
 
@@ -960,7 +977,7 @@ class PredictionLineage(TestCase):
         """STEP 5 — a forecast is a projection FROM something."""
         blank = Company.objects.create(name='blank', slug='blank-co',
                                        country='UK')
-        CompanyProfile.objects.create(company=blank, status='public')
+        _populated(company=blank, status='public')
         # league.Company.ecoiq_score is NOT NULL with a default of 0.0, so
         # "no score" and "a score of exactly zero" are indistinguishable in the
         # database today. Unknown is set in memory, which is what predict_12m
@@ -989,6 +1006,14 @@ class PredictionLineage(TestCase):
 class PublicContainment(TestCase):
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _profile('ml-public', ecoiq_total_score=71.4)
         _chain(self.profile, origin=PROVENANCE_MEASURED)
         assess_and_record(self.profile)

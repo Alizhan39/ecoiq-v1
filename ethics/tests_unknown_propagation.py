@@ -413,9 +413,15 @@ class I_IngestionDoesNotFabricate(TestCase):
                          'the unknown must not be written as 0.0')
 
     def test_i_a_fully_known_profile_still_persists(self):
+        """
+        "Fully known" relied on the model defaults to populate the inputs.
+        D4C removed them, so the inputs are named explicitly here.
+        """
         from ethics.models import CompanyEthicsProfile
+        from companies.testing import populate_material
 
         profile = self._profile('known-ethics')
+        populate_material(profile)
         profile.pollution_level = 'low'
         result = compute_and_save(profile)
 

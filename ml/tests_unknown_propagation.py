@@ -22,9 +22,25 @@ from league.models import Company
 
 
 def _profile(slug, **overrides):
-    """A saved profile whose scoring inputs can then be blanked in memory."""
+    """
+    A saved profile whose scoring inputs can then be blanked in memory.
+
+    D4C removed the neutral defaults, so this fixture no longer inherits a
+    populated company by accident. The material inputs are set explicitly and
+    the DERIVED pillars are produced by the real calculator rather than being
+    assigned — assigning them would let a fixture disagree with what the
+    scoring engine would actually compute from the same inputs, which is how a
+    test starts passing for a reason that does not exist in production.
+    """
+    from companies.scoring import recalculate_and_save
+    from companies.testing import FIXTURE_VALUE, MATERIAL_FIELDS
+
     company = Company.objects.create(name=slug, slug=slug, country='UK')
-    profile = CompanyProfile.objects.create(company=company, status='public')
+    profile = CompanyProfile.objects.create(
+        company=company, status='public', pollution_level='low',
+        **{name: FIXTURE_VALUE for name in MATERIAL_FIELDS})
+    recalculate_and_save(profile)
+    profile.refresh_from_db()
     for field, value in overrides.items():
         setattr(profile, field, value)
     return profile
@@ -396,6 +412,7 @@ class H_EthicalIntelligenceStaysUnknown(TestCase):
 
 
 class I_J_ApiBoundaries(TestCase):
+
     """
     I/J — v1 stays stable, v2 stays evidence-aware.
 
@@ -404,6 +421,14 @@ class I_J_ApiBoundaries(TestCase):
     """
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         Company.objects.create(name='Api Ltd', slug='api-ltd', country='UK',
                                ecoiq_score=71.4)
         CompanyProfile.objects.create(

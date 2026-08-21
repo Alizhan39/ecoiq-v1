@@ -22,20 +22,46 @@ from companies.views import _get_harm_signals, _get_institutional_signals
 from league.models import Company
 
 
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.models import CompanyProfile
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
+
+
 def _company(name, slug, **kwargs):
     company = Company.objects.create(
         name=name, slug=slug, country='United Kingdom', ecoiq_score=71.4)
-    return CompanyProfile.objects.create(
-        company=company, status='public', ecoiq_total_score=71.4, **kwargs)
+    return _populated(company=company, status='public', ecoiq_total_score=71.4, **kwargs)
 
 
 class J_V1ApiCompatibility(TestCase):
+
     """
     v1 is the legacy public contract with unknowable integrators. D2b may change
     what a signal SAYS; it may not change the shape a client parses.
     """
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _company('V1 Compat Ltd', 'v1-compat-ltd')
 
     def test_j_harm_signal_shape_is_unchanged(self):
@@ -144,6 +170,14 @@ class L_PublicCompanyContainment(TestCase):
     """The D1.5 gate still fires before any of D2b's new output is reached."""
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _company('Contained Ltd', 'contained-ltd')
         self.body = Client().get('/companies/contained-ltd/').content.decode()
 

@@ -27,6 +27,23 @@ from financing.matching import (
 )
 from financing.matching import compute_and_save as financing_save
 from league.models import Company
+
+
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
 from qdf.scoring import QDF_INPUTS, QDF_METHOD, QDF_METRIC_KEY, QDF_VERSION
 from qdf.scoring import compute_and_save as qdf_save
 
@@ -40,7 +57,7 @@ WRITERS = (
 
 def _profile(slug, **kwargs):
     company = Company.objects.create(name=slug, slug=slug, country='UK')
-    return CompanyProfile.objects.create(company=company, status='public',
+    return _populated(company=company, status='public',
                                          pollution_level='low', **kwargs)
 
 
@@ -639,6 +656,14 @@ class AK_AL_PublicSurfaces(TestCase):
     """
 
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _profile('public', ecoiq_total_score=71.4)
         self.profile.company.ecoiq_score = 71.4
         self.profile.company.save()

@@ -319,12 +319,19 @@ class Defensibility(TestCase):
     """
     INFERRED is an evidenced origin, so ingested metrics CAN be defensible —
     unlike SEEDED or LEGACY. That is the whole point of recording it.
+
+    The profile carries real values here. Post-D4C a bare profile is genuinely
+    all-NULL, and a provenance row over a NULL field is correctly rejected as
+    a contradiction — so a fixture with no values would test nothing.
     """
 
     def setUp(self):
+        from companies.testing import FIXTURE_VALUE, MATERIAL_FIELDS
+
         self.company = _company('defensible')
         self.profile = CompanyProfile.objects.create(
-            company=self.company, status='public', pollution_level='medium')
+            company=self.company, status='public', pollution_level='medium',
+            **{name: FIXTURE_VALUE for name in MATERIAL_FIELDS})
 
     def test_an_ingested_metric_is_defensible(self):
         ing_prov.record_ingestion_write(self.profile, _written())
