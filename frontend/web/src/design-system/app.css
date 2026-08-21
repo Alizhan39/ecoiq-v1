@@ -119,3 +119,35 @@
 .direction { margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px dashed var(--line); }
 .direction__stages { color: var(--ink-soft); font-size: .88rem; }
 .verticals .card h3 { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+
+.intelligence__layout { display: grid; gap: 1.6rem; margin-top: 1.4rem; }
+@media (min-width: 900px) {
+  .intelligence__layout { grid-template-columns: 290px 1fr; align-items: start; }
+  .intelligence__picker { position: sticky; top: 5rem; }
+}
+.picker__label { display: block; font-size: .8rem; color: var(--ink-soft); }
+.picker__input {
+  width: 100%; padding: .5rem .7rem; margin: .3rem 0 .7rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper); color: var(--ink); font: inherit;
+}
+.picker__list { list-style: none; padding: 0; margin: 0; max-height: 60vh; overflow-y: auto; }
+.picker__item {
+  width: 100%; display: flex; justify-content: space-between; gap: .6rem;
+  padding: .5rem .6rem; background: none; border: 0; border-radius: var(--radius);
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.picker__item:hover { background: var(--paper-soft); }
+.picker__item--active { background: var(--accent-soft); font-weight: 600; }
+.picker__coverage { color: var(--ink-soft); font-size: .8rem; white-space: nowrap; }
+
+.assessment section { margin-top: 1.6rem; }
+.assessment h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+.signals { list-style: none; padding: 0; display: grid; gap: .7rem; }
+.signal { display: flex; gap: .6rem; align-items: flex-start; }
+.signal__dot { width: .6rem; height: .6rem; border-radius: 50%; margin-top: .45rem; flex: none; background: var(--unknown); }
+.signal__dot--clear { background: var(--accent); }
+.signal__dot--moderate { background: var(--warn); }
+.signal__dot--severe { background: var(--danger); }
+.signal__dot--insufficient_evidence { background: var(--unknown); }
+.signal__status { color: var(--ink-soft); font-size: .85rem; }
