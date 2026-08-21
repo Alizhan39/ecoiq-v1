@@ -77,3 +77,18 @@
 
 .prose { max-width: var(--measure); }
 .prose h1 { letter-spacing: -.03em; line-height: 1.15; }
+
+/* Secondary nav: inline under the primary links on mobile, pushed right on
+   desktop so it reads as a distinct tier rather than six equal destinations. */
+.nav__link--minor { font-size: .85rem; opacity: .75; }
+.nav__link--signin { font-weight: 600; }
+.nav__identity { font-size: .85rem; color: var(--ink-soft); }
+.nav__staff { color: var(--accent); font-weight: 600; }
+.nav__secondary { display: flex; flex-direction: column; gap: .3rem; }
+
+@media (min-width: 768px) {
+  .nav__secondary {
+    flex-direction: row; gap: 1rem; margin-left: 1.4rem;
+    padding-left: 1.4rem; border-left: 1px solid var(--line);
+  }
+}
