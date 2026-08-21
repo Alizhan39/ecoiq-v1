@@ -190,8 +190,20 @@ def compute_responsible_finance_score(profile):
         return _insufficient_evidence(profile)
 
     # ── Penalties ───────────────────────────────────────────────────────────
-    pollution_level  = getattr(profile, 'pollution_level', 'medium') or 'medium'
-    pollution_penalty = _POLLUTION_PENALTY.get(pollution_level, 0)
+    # Was `getattr(profile, 'pollution_level', 'medium') or 'medium'` — an
+    # unclassified company was silently treated as a medium polluter and
+    # docked 5 points. That is an adverse finding invented from an absence,
+    # and it is the same fabrication greenwashing_from_profile already fixed
+    # ("`or 'medium'` substituted a real classification for a missing one").
+    #
+    # Unknown now applies no penalty, matching the harm_penalty treatment
+    # immediately below: absence of evidence is not evidence of harm. The
+    # unknown is surfaced rather than swallowed, so it is not mistaken for a
+    # measured 'low'.
+    raw_pollution    = getattr(profile, 'pollution_level', None)
+    pollution_level  = raw_pollution.lower() if raw_pollution else None
+    pollution_penalty = (0 if pollution_level is None
+                         else _POLLUTION_PENALTY.get(pollution_level, 0))
     weighted_total   += pollution_penalty
 
     # An unknown harm penalty applies no deduction — absence of evidence is not
@@ -259,6 +271,12 @@ def compute_responsible_finance_score(profile):
         summary_factors.append(
             'Sector carries responsible-finance exclusion concerns — reduced eligibility.'
         )
+    if pollution_level is None:
+        summary_factors.append(
+            'Pollution level is not classified for this organisation, so no '
+            'environmental harm penalty has been applied. This is a gap in the '
+            'evidence, not a finding that the organisation is low-polluting.'
+        )
     unknown_pillars = [name for name, value in pillars.items() if value is None]
     if unknown_pillars:
         summary_factors.append(
@@ -284,3 +302,64 @@ def compute_responsible_finance_score(profile):
 def get_responsible_finance_score(profile) -> float | None:
     """Convenience — returns just the score (0–100), or None if unassessable."""
     return compute_responsible_finance_score(profile)['responsible_finance_score']
+
+
+# ── Derived provenance (D3C-3f) ───────────────────────────────────────────────
+
+RESPONSIBLE_FINANCE_METHOD = 'ecoiq-responsible-finance-stewardship'
+RESPONSIBLE_FINANCE_VERSION = '1'
+RESPONSIBLE_FINANCE_METRIC_KEY = 'ml.responsible_finance'
+
+#: Registry keys this scorer reads. Five of the six pillars are DERIVED, so
+#: the lineage points at pillar provenance rows rather than being flattened to
+#: their material ancestors; company.harm_penalty is derived too.
+#:
+#: NOT the same thing as financing.readiness (#252). That metric is persisted
+#: on CompanyFinancingProfile and computed by financing/matching.py, which has
+#: no reference to this module in either direction. Two independent
+#: assessments that both concern capital, not one wrapping the other.
+RESPONSIBLE_FINANCE_INPUTS: tuple[str, ...] = (
+    'company.public_benefit',
+    'company.environmental',
+    'company.modernization',
+    'company.transparency_governance',
+    'anti_corruption_score',
+    'company.ethical_alignment',
+    'company.harm_penalty',
+)
+
+#: KNOWN GAPS — pollution_level (penalty up to -30) and company.sector
+#: (exclusion penalty) have no provenance rows. See
+#: docs/product/CALCULATION_CONTEXT_PROVENANCE.md.
+
+
+def compute_and_record(profile) -> dict:
+    """
+    Compute the Responsible Finance assessment AND record its lineage.
+
+    Separate from `compute_responsible_finance_score`, which is pure and is
+    called per request from api/views.py.
+
+    ml.responsible_finance is EPHEMERAL — the scorer returns a dict and nothing
+    persists the composite — so the provenance row carries `recorded_value`.
+
+    An insufficient-evidence result records nothing: the score is None there,
+    and both eligibility flags are False because we cannot assert eligibility,
+    not because we found ineligibility. A provenance row would turn that
+    absence into an assertion.
+
+    Returns the result dict with a 'provenance_status' key added.
+    """
+    from django.db import transaction
+    from companies import provenance as prov
+
+    with transaction.atomic():
+        result = compute_responsible_finance_score(profile)
+        result['provenance_status'] = prov.record_calculated(
+            profile, RESPONSIBLE_FINANCE_METRIC_KEY,
+            result['responsible_finance_score'], RESPONSIBLE_FINANCE_INPUTS,
+            writer='ml.responsible_finance.compute_and_record',
+            methodology=RESPONSIBLE_FINANCE_METHOD,
+            calculation_version=RESPONSIBLE_FINANCE_VERSION,
+        )
+    return result

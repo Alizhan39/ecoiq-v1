@@ -99,6 +99,40 @@ def predict_12m(company) -> float | None:
     return float(np.clip(base + delta, 0, 100))
 
 
+# ── Derived provenance (D3C-3f) ───────────────────────────────────────────────
+
+PREDICTION_METHOD = 'ecoiq-forecast-ols-12m'
+PREDICTION_VERSION = '1'
+PREDICTION_METRIC_KEY = 'ml.predicted_12m'
+
+#: The ONLY registered metric this forecast consumes.
+#:
+#: Read this before treating the lineage as complete. predict_12m has two
+#: paths and neither is well described by metric provenance:
+#:
+#:   * PRIMARY (>= 3 history points) — an OLS fit over ScoreHistory rows. It
+#:     does not read company.ecoiq_total at all. The declared input below is
+#:     therefore NOT the thing that produced the number; it is the closest
+#:     provenance-bearing relative of it, since the history rows are snapshots
+#:     of that same composite over time. ScoreHistory is a record, not a
+#:     metric, and has no provenance rows to point at.
+#:
+#:   * FALLBACK (< 3 points) — anchored on company.ecoiq_score, nudged by up to
+#:     +/-10 points of DataIngestionLog RSS signal. The anchor IS this input;
+#:     the signals are again records with no provenance.
+#:
+#: So the recorded lineage understates both paths, in different ways. This is
+#: stated here, asserted in the tests, and tracked in
+#: docs/product/CALCULATION_CONTEXT_PROVENANCE.md rather than papered over.
+#:
+#: The forecast is MODELLED regardless. It must never inherit the provenance of
+#: the current score: a projection about the future is a model output even when
+#: every input to it was measured.
+PREDICTION_INPUTS: tuple[str, ...] = (
+    'company.ecoiq_total',
+)
+
+
 def apply_predictions(companies=None) -> dict:
     """
     Compute and write ml_predicted_score_12m for all (or provided) companies.
@@ -117,13 +151,45 @@ def apply_predictions(companies=None) -> dict:
         try:
             pred = predict_12m(company)
             if pred is not None:
-                Company.objects.filter(pk=company.pk).update(
-                    ml_predicted_score_12m=round(pred, 1),
-                    ml_last_run=timezone.now(),
-                )
+                _write_prediction(company, round(pred, 1), timezone.now())
                 updated += 1
         except Exception as exc:
             logger.error('Prediction failed for %s: %s', company, exc)
             failed += 1
 
     return {'updated': updated, 'failed': failed}
+
+
+def _write_prediction(company, prediction: float, now) -> str:
+    """
+    Persist one 12-month forecast together with its provenance, atomically.
+
+    ml.predicted_12m IS persisted (league.Company.ml_predicted_score_12m), so
+    the provenance row stores no recorded_value.
+
+    Value write and provenance write share a transaction: a provenance failure
+    rolls back the forecast rather than leaving a persisted projection with no
+    recorded origin.
+
+    Returns the provenance status, or 'no-profile' when there is nothing to
+    attach lineage to.
+    """
+    from django.db import transaction
+    from league.models import Company
+    from companies import provenance as prov
+
+    profile = getattr(company, 'profile', None)
+
+    with transaction.atomic():
+        Company.objects.filter(pk=company.pk).update(
+            ml_predicted_score_12m=prediction,
+            ml_last_run=now,
+        )
+        if profile is None:
+            return 'no-profile'
+        return prov.record_calculated(
+            profile, PREDICTION_METRIC_KEY, prediction, PREDICTION_INPUTS,
+            writer='ml.prediction.apply_predictions',
+            methodology=PREDICTION_METHOD,
+            calculation_version=PREDICTION_VERSION,
+        )
