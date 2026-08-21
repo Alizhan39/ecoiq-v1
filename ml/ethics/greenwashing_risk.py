@@ -714,3 +714,85 @@ def greenwashing_from_profile(profile: 'CompanyProfile') -> GreenwashingAssessme
         entity_type                 = 'company',
     )
     return assess_greenwashing_risk(inp)
+
+
+# ── Derived provenance (D3C-3f) ───────────────────────────────────────────────
+
+GREENWASHING_METHOD = 'ecoiq-greenwashing-public-data'
+GREENWASHING_VERSION = '1'
+GREENWASHING_METRIC_KEY = 'greenwashing.risk'
+
+#: Registry keys `greenwashing_from_profile` can read. Which of them are
+#: ACTUALLY consumed depends on the profile — see consumed_inputs() — so this
+#: tuple is the superset, used for documentation and tests rather than passed
+#: to the recorder directly.
+#:
+#: transparency_anti_corruption_score is a DERIVED pillar
+#: (company.transparency_governance), not a material score, so the lineage
+#: points at the pillar's own provenance row and the graph stays layered.
+GREENWASHING_INPUTS: tuple[str, ...] = (
+    'energy_transition_score',
+    'future_readiness_score',
+    'audit_quality_score',
+    'infrastructure_upgrade_score',
+    'controversy_risk_score',
+    'company.transparency_governance',
+    'procurement_transparency_score',
+)
+
+#: KNOWN GAPS — inputs the assessment depends on that have no provenance row:
+#: pollution_level (fossil-fuel exposure proxy), is_verified and status (both
+#: feed evidence confidence). Classified in
+#: docs/product/CALCULATION_CONTEXT_PROVENANCE.md. They can move the score
+#: without moving the lineage, which is why the ephemeral identity rule
+#: includes the output.
+
+
+def consumed_inputs(profile) -> tuple[str, ...]:
+    """
+    The registry keys this profile's assessment actually reads.
+
+    Not simply GREENWASHING_INPUTS: when a company is verified, both assurance
+    channels take the flat 90/85 values and `audit_quality_score` is never
+    read. Declaring it anyway would attach a provenance row the calculation
+    did not consume, which overstates the lineage in exactly the direction
+    that makes it useless — a reader would conclude the audit score supported
+    a number it never touched.
+    """
+    keys = [k for k in GREENWASHING_INPUTS if k != 'audit_quality_score']
+    if not bool(getattr(profile, 'is_verified', False)):
+        keys.append('audit_quality_score')
+    return tuple(keys)
+
+
+def assess_and_record(profile) -> GreenwashingAssessment:
+    """
+    Assess greenwashing risk for a profile AND record its lineage.
+
+    Deliberately separate from `greenwashing_from_profile`, which is pure and
+    is called per request by Mizan, the ethical score and the API. Recording
+    inside it would write provenance rows on every page view.
+
+    greenwashing.risk is EPHEMERAL: no field holds it, so the provenance row
+    carries `recorded_value` and is the only durable record of the assessment.
+
+    An unassessable profile records NOTHING. `greenwashing_risk_score` is None
+    there, and a provenance row asserting a model ran would be a claim that no
+    assessment supports — precisely the confusion between INSUFFICIENT_EVIDENCE
+    and LOW RISK that `_not_assessable` exists to prevent.
+
+    Returns the assessment, with a transient `provenance_status` attribute.
+    """
+    from django.db import transaction
+    from companies import provenance as prov
+
+    with transaction.atomic():
+        result = greenwashing_from_profile(profile)
+        result.provenance_status = prov.record_calculated(
+            profile, GREENWASHING_METRIC_KEY, result.greenwashing_risk_score,
+            consumed_inputs(profile),
+            writer='ml.ethics.greenwashing_risk.assess_and_record',
+            methodology=GREENWASHING_METHOD,
+            calculation_version=GREENWASHING_VERSION,
+        )
+    return result
