@@ -4,6 +4,7 @@ EcoIQ Good Deeds League — public views.
 /league/                  → leaderboard (public)
 /league/<slug>/           → company ESG intelligence profile (public)
 """
+from companies.eligibility import publishable_company_ids
 import json
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
@@ -208,14 +209,14 @@ def leaderboard(request):
     # table, so the seeded data stays inspectable.
     ineligible_count = 0
     if not request.user.is_staff:
-        from companies.evidence import public_score_state_for_company
-
-        eligible = []
-        for co in companies:
-            if public_score_state_for_company(co).available:
-                eligible.append(co)
-            else:
-                ineligible_count += 1
+        # Bulk, not per-company. The loop this replaces ran the eligibility
+        # decision once per row -- roughly two queries each -- which is the
+        # reason the CHARTS below were left ungated: the correct check looked
+        # too expensive to run twice on one page. Making it cheap removes the
+        # incentive to skip it.
+        eligible_ids = publishable_company_ids(companies)
+        eligible = [co for co in companies if co.pk in eligible_ids]
+        ineligible_count = len(companies) - len(eligible)
         companies = eligible
 
     all_cos   = Company.objects.prefetch_related('projects')
@@ -227,10 +228,22 @@ def leaderboard(request):
     SECTOR_LABEL = dict(SECTOR_CHOICES)
     from collections import defaultdict
     _sector_scores = defaultdict(list)
-    # Unscored companies are EXCLUDED from the sector average rather than
-    # contributing a zero, which would drag every sector they appear in.
+
+    # CHART DATA IS PUBLISHED DATA.
+    #
+    # These figures are serialised into inline JavaScript on a public page, so
+    # they are as published as the table above them -- and for a while they
+    # were not gated like it. The table filtered on evidence; the charts
+    # filtered only on `is not None`, which let a company with a real but
+    # UNEVIDENCED score into the chart JSON with its score and all five pillar
+    # values, while the visible row said "evidence assessment pending".
+    #
+    # Hiding a number in the table and shipping it in a <script> tag is not
+    # containment. Both now use the same gate.
+    _publishable = publishable_company_ids(all_cos)
+
     for co in all_cos:
-        if co.ecoiq_score is not None:
+        if co.pk in _publishable and co.ecoiq_score is not None:
             _sector_scores[co.sector].append(float(co.ecoiq_score))
 
     chart_sectors = json.dumps(sorted([
@@ -252,8 +265,11 @@ def leaderboard(request):
     # Companies without a score are excluded from the chart rather than
     # plotted at zero: a zero-length bar is a visual claim that the company
     # scored worst, and an absent bar claims nothing.
-    _all_ranked = [co for co in qs.order_by('rank', '-ecoiq_score')[:20]
-                   if co.ecoiq_score is not None][:15]
+    _ranked_candidates = list(qs.order_by('rank', '-ecoiq_score')[:40])
+    _ranked_publishable = publishable_company_ids(_ranked_candidates)
+    _all_ranked = [co for co in _ranked_candidates
+                   if co.pk in _ranked_publishable
+                   and co.ecoiq_score is not None][:15]
     chart_companies = json.dumps([
         {
             'name':         co.name[:22] + ('…' if len(co.name) > 22 else ''),
@@ -355,10 +371,16 @@ def company_profile(request, slug):
     sector_percentile = round(sector_below / max(sector_total, 1) * 100)
 
     # Top 6 peers in same sector (include self for chart)
-    sector_peers = list(
+    # Same gate as the leaderboard charts: a peer comparison is a published
+    # claim about every company plotted in it, not only the one being viewed.
+    _peer_candidates = list(
         Company.objects.filter(sector=company.sector)
-        .order_by('-ecoiq_score')[:6]
+        .order_by('-ecoiq_score')[:30]
     )
+    _peer_publishable = publishable_company_ids(_peer_candidates)
+    sector_peers = [p for p in _peer_candidates
+                    if p.pk in _peer_publishable
+                    and p.ecoiq_score is not None][:6]
     peer_chart = json.dumps([
         {
             'name':  p.name[:22] + ('…' if len(p.name) > 22 else ''),

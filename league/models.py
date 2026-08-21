@@ -254,11 +254,22 @@ class Company(models.Model):
         if s >= 40: return 'high-impact'
         return 'polluter'
 
+    # These three filter in PYTHON, not in the ORM, on purpose.
+    #
+    # `self.projects.filter(...)` issues a fresh query and therefore bypasses
+    # any prefetch_related('projects') the caller set up -- three queries per
+    # company on a page that lists hundreds. Iterating the prefetched list and
+    # filtering here is free when the caller prefetched, and no worse when it
+    # did not.
+    #
+    # `or 0` is arithmetic over a set, not a substituted measurement: a project
+    # with no recorded tonnage contributes nothing to a total.
+
     @property
     def total_co2_reduced(self) -> int:
         return sum(
             p.co2_reduction_tonnes or 0
-            for p in self.projects.filter(status='completed')
+            for p in self.projects.all() if p.status == 'completed'
         )
 
     @property
@@ -272,7 +283,7 @@ class Company(models.Model):
     def total_households_helped(self) -> int:
         return sum(
             p.households_helped or 0
-            for p in self.projects.filter(status='completed')
+            for p in self.projects.all() if p.status == 'completed'
         )
 
     # ── Public markets ─────────────────────────────────────────────────────────
