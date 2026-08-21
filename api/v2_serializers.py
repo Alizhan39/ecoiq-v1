@@ -50,6 +50,31 @@ class _EvidenceScoreMixin:
         """Whole percent of material inputs with real evidence provenance."""
         return self._state(obj).coverage_percent
 
+    def _profile(self, obj):
+        raise NotImplementedError
+
+    def get_confidence(self, obj):
+        """
+        How good the evidence is, as distinct from how much of it there is.
+
+        A separate field from evidence_coverage on purpose. A company can be
+        100% covered by unverified press releases (complete, weak) or 40%
+        covered by independently verified audits (incomplete, strong). One
+        number cannot say both, and averaging them would produce a figure true
+        of neither.
+
+        HIGH / MEDIUM / LOW / INSUFFICIENT_EVIDENCE — never a percentage. The
+        inputs are categorical, and rendering them as 0.72 would manufacture a
+        precision the underlying data cannot support.
+        """
+        from companies.confidence import confidence_for
+
+        cached = getattr(obj, '_v2_confidence', None)
+        if cached is None:
+            cached = confidence_for(self._profile(obj))
+            obj._v2_confidence = cached
+        return cached.label
+
 
 class CompanyV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
     """One company in a v2 list or detail response."""
@@ -64,6 +89,7 @@ class CompanyV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
     ecoiq_score = serializers.SerializerMethodField()
     score_status = serializers.SerializerMethodField()
     evidence_coverage = serializers.SerializerMethodField()
+    confidence = serializers.SerializerMethodField()
     rank = serializers.SerializerMethodField()
     url = serializers.SerializerMethodField()
 
@@ -75,6 +101,9 @@ class CompanyV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
             cached = public_score_state_for_company(obj)
             obj._v2_score_state = cached
         return cached
+
+    def _profile(self, obj):
+        return getattr(obj, 'profile', None)
 
     def get_rank(self, obj):
         """
@@ -125,6 +154,7 @@ class CompanyProfileV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
     ecoiq_score = serializers.SerializerMethodField()
     score_status = serializers.SerializerMethodField()
     evidence_coverage = serializers.SerializerMethodField()
+    confidence = serializers.SerializerMethodField()
     evidence_note = serializers.SerializerMethodField()
 
     def _state(self, obj):
@@ -133,6 +163,9 @@ class CompanyProfileV2Serializer(_EvidenceScoreMixin, serializers.Serializer):
             cached = public_score_state(obj)
             obj._v2_score_state = cached
         return cached
+
+    def _profile(self, obj):
+        return obj
 
     def get_slug(self, obj) -> str:
         return obj.company.slug
