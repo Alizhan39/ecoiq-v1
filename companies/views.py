@@ -4,6 +4,8 @@ EcoIQ Company Intelligence — Public Views.
 /companies/           → directory with search + filters
 /companies/<slug>/    → full public company profile
 """
+import json
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404, JsonResponse, HttpResponse, HttpResponseForbidden
 from django.contrib import messages
@@ -571,7 +573,9 @@ def company_detail(request, slug):
             'icon':   '✦',
             'desc':   'Long-term ethical value creation, controversy management, stakeholder trust',
             'sub': [
-                {'label': 'Controversy Control', 'val': max(0, 100 - profile.controversy_risk_score)},
+                {'label': 'Controversy Control',
+                 'val': None if profile.controversy_risk_score is None
+                        else max(0, 100 - profile.controversy_risk_score)},
                 {'label': 'Long-Term Value', 'val': profile.national_value_score},
             ],
         },
@@ -631,15 +635,26 @@ def company_detail(request, slug):
     ai_confidence      = _get_ai_confidence(profile)
     financing_eligibility = _get_financing_eligibility(profile)
 
-    # Radar chart data (6 pillars, 0-100)
-    radar_scores = [
-        round(profile.public_benefit_score, 1),
-        round(profile.environmental_responsibility_score, 1),
-        round(profile.modernization_score, 1),
-        round(profile.transparency_anti_corruption_score, 1),
-        round(profile.anti_corruption_score, 1),
-        round(profile.ethical_alignment_score, 1),
-    ]
+    # Radar chart data (6 pillars, 0-100).
+    #
+    # An unassessed pillar is null, NOT zero. Chart.js skips a null point, so
+    # the shape shows a gap where there is no evidence — which is the honest
+    # picture. A zero would draw the polygon all the way to the centre and
+    # read as "this company scored zero on governance".
+    #
+    # json.dumps, not str(): a Python None renders as `None` in a template and
+    # is a syntax error in JavaScript. This list is injected with |safe.
+    radar_scores = json.dumps([
+        None if value is None else round(value, 1)
+        for value in (
+            profile.public_benefit_score,
+            profile.environmental_responsibility_score,
+            profile.modernization_score,
+            profile.transparency_anti_corruption_score,
+            profile.anti_corruption_score,
+            profile.ethical_alignment_score,
+        )
+    ])
 
     # ── Ethical Intelligence layer (NEI / TSS / RVI) ───────────────────────────
     ethics_profile = None
@@ -1101,7 +1116,10 @@ def sector_pdf_report(request, sector):
     plotted = [p for p in profiles_data if p.ecoiq_total_score is not None]
     names   = [p.company.name[:22] for p in plotted]
     scores  = [float(p.ecoiq_total_score) for p in plotted]
-    poll_levels = [p.pollution_level or 'medium' for p in plotted]
+    # `or 'medium'` invented a pollution classification for companies nobody
+    # had classified, and coloured a bar with it. Unknown now gets its own
+    # neutral colour rather than borrowing a real category's.
+    poll_levels = [p.pollution_level or None for p in plotted]
 
     def _bar_color(s):
         if s >= 70: return '#10b981'
