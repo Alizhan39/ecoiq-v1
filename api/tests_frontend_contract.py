@@ -227,3 +227,86 @@ class TheDocumentMatchesReality(SimpleTestCase):
 
     def test_it_states_that_zero_is_a_real_score(self):
         self.assertIn('0.0` is a real, publishable score', self._doc())
+
+
+class TheApiNeverSendsWhatTheUiWouldHide(TestCase):
+    """
+    The rule carried forward from the #270 league-chart breach.
+
+    That leak happened because the SERVER handed a template numbers the UI
+    intended to hide, and one surface forgot to hide them. Containment that
+    depends on every renderer remembering is not containment.
+
+    So the boundary is here, not in React: an unpublished score must not be in
+    the payload at all. These tests read the raw JSON bytes, because that is
+    what a browser receives and what `view source` shows.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.withheld = _company('api-withheld', PROVENANCE_UNKNOWN, score=91)
+        self.client = Client()
+
+    def test_the_withheld_score_is_absent_from_the_raw_detail_bytes(self):
+        body = self.client.get('/api/v2/companies/api-withheld/').content.decode()
+
+        self.assertNotIn('91.0', body)
+        self.assertNotIn('"ecoiq_score": 91', body)
+
+    def test_the_withheld_score_is_absent_from_the_raw_list_bytes(self):
+        body = self.client.get('/api/v2/companies/').content.decode()
+
+        self.assertNotIn('91.0', body)
+
+    def test_the_pillar_values_are_not_exposed_either(self):
+        """
+        The league leak shipped all five pillars alongside the score. The v2
+        contract does not carry them at all, and this asserts that stays true.
+        """
+        body = self.client.get('/api/v2/companies/api-withheld/').content.decode()
+
+        for pillar in ('score_pollution_footprint', 'score_reduction_progress',
+                       'score_investment', 'score_transparency',
+                       'score_community_impact'):
+            with self.subTest(pillar=pillar):
+                self.assertNotIn(pillar, body)
+
+    def test_the_client_is_not_asked_to_conceal_anything(self):
+        payload = self.client.get('/api/v2/companies/api-withheld/').json()
+
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['score_status'], 'INSUFFICIENT_EVIDENCE')
+
+    def test_a_published_score_is_present(self):
+        """
+        The rule is containment, not blanket suppression.
+
+        The value is not asserted against the league pillars on purpose: the
+        DETAIL endpoint serves CompanyProfile.ecoiq_total_score, computed from
+        the profile's sixteen material inputs, while the LIST serves
+        league.Company.ecoiq_score, computed from five legacy pillars. Two
+        different numbers over different inputs -- which is exactly why #264
+        had to stop one being published under the other's name.
+        """
+        _company('api-published', PROVENANCE_MEASURED, score=64)
+
+        payload = self.client.get('/api/v2/companies/api-published/').json()
+
+        self.assertEqual(payload['score_status'], 'PUBLISHED')
+        self.assertIsNotNone(payload['ecoiq_score'])
+        self.assertIsInstance(payload['ecoiq_score'], (int, float))
+
+    def test_the_list_and_detail_scores_come_from_different_fields(self):
+        """
+        Recorded because it looks like a bug and is not. Conflating them is
+        what #264 fixed.
+        """
+        _company('api-two-fields', PROVENANCE_MEASURED, score=64)
+
+        detail = self.client.get('/api/v2/companies/api-two-fields/').json()
+        rows = {r['slug']: r
+                for r in self.client.get('/api/v2/companies/').json()['results']}
+
+        self.assertEqual(rows['api-two-fields']['score_status'], 'PUBLISHED')
+        self.assertEqual(detail['score_status'], 'PUBLISHED')
