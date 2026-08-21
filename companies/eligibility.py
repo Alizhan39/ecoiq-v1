@@ -238,3 +238,56 @@ def simulate_thresholds(profiles, candidates=(0.2, 0.4, 0.6, 0.8, 1.0)) -> dict:
             'unavailable': len(reports) - eligible - partial,
         }
     return results
+
+
+def publishable_company_ids(companies) -> set:
+    """
+    The subset of `companies` whose scores may be shown publicly.
+
+    Exists because charts need the SAME gate as tables, and the obvious
+    implementation -- calling decide_for_company() in a loop -- is around two
+    queries per company. On a 467-row leaderboard that is a thousand queries on
+    a public page, which is why the charts ended up ungated in the first place:
+    the correct check looked too expensive to run.
+
+    So the expensive decision is bounded first. A company with no evidenced
+    provenance row cannot be publishable under any threshold, and that question
+    is answerable in ONE query against the provenance table.
+
+    Returns league.Company primary keys.
+    """
+    from companies.evidence import EVIDENCED_MATERIAL_ORIGINS
+    from companies.models import CompanyMetricProvenance, CompanyProfile
+
+    companies = list(companies)
+    if not companies:
+        return set()
+
+    company_ids = [c.pk for c in companies]
+
+    # One query: which profiles hold any evidenced provenance at all?
+    evidenced_profiles = set(
+        CompanyMetricProvenance.objects
+        .filter(is_current=True, origin__in=EVIDENCED_MATERIAL_ORIGINS)
+        .values_list('company_id', flat=True)
+        .distinct()
+    )
+    if not evidenced_profiles:
+        return set()
+
+    # One query: map those profiles back to the companies in scope.
+    candidates = {
+        profile.company_id: profile
+        for profile in CompanyProfile.objects
+        .filter(pk__in=evidenced_profiles, company_id__in=company_ids)
+        .select_related('company')
+    }
+    if not candidates:
+        return set()
+
+    return {
+        company.pk for company in companies
+        if company.pk in candidates
+        and decide(candidates[company.pk],
+                   score=getattr(company, 'ecoiq_score', None)).is_published
+    }

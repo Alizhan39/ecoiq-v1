@@ -15,7 +15,22 @@ from .scoring import compute_ecoiq_score, get_tier, rerank_all
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _make_company(name='Test Corp', **kwargs):
+def _make_company(name='Test Corp', evidenced=True, **kwargs):
+    """
+    A league company.
+
+    `evidenced=True` by default because most of these tests are about the
+    leaderboard SHOWING something, and since D5 a company is only shown when
+    its material inputs carry defensible provenance.
+
+    Before the chart-containment fix these tests passed without any provenance
+    at all -- `assertContains(response, name)` was satisfied by the company's
+    name inside the chart <script> tag, which was ungated. The tests were
+    unknowingly asserting the leak. Giving the fixture real evidence makes them
+    assert what they were written to mean.
+
+    Pass `evidenced=False` for a company that should be contained.
+    """
     defaults = {
         'sector': 'oil_gas',
         'score_pollution_footprint': 60,
@@ -25,7 +40,21 @@ def _make_company(name='Test Corp', **kwargs):
         'score_community_impact':    70,
     }
     defaults.update(kwargs)
-    return Company.objects.create(name=name, **defaults)
+    company = Company.objects.create(name=name, **defaults)
+
+    if evidenced:
+        from companies import provenance as prov
+        from companies.evidence import PROVENANCE_MEASURED
+        from companies.scoring import recalculate_and_save
+        from companies.testing import populated
+
+        profile = populated(company, pollution_level='low')
+        for key in sorted(prov.MATERIAL_METRIC_KEYS):
+            prov.record(profile, key, PROVENANCE_MEASURED, written_by='test')
+        recalculate_and_save(profile)
+        company.refresh_from_db()
+
+    return company
 
 
 def _make_project(company, **kwargs):

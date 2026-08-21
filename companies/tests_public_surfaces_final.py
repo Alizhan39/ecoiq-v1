@@ -118,19 +118,25 @@ class PublicSurfaces(TestCase):
     def test_the_league_renders(self):
         self.assertEqual(self.client.get('/league/').status_code, 200)
 
-    def test_the_league_does_not_rank_the_legacy_company(self):
+    def test_the_league_omits_the_legacy_company_entirely(self):
         """
-        Asserted on the legacy ROW, not on the page. The evidenced company now
-        legitimately appears with a score, so a page-wide "everything is
-        pending" assertion would only pass while nothing could be published --
-        which is the state this programme exists to leave behind.
+        Stronger than it used to be, and the change is the point.
+
+        This previously asserted that 'Legacy-Co' APPEARED on the page with no
+        score beside it — which passed because the company's name and score
+        were being serialised into the chart <script> tag while the visible row
+        said "evidence assessment pending". The assertion was describing the
+        leak.
+
+        The company is now absent from the page altogether.
         """
         body = self.client.get('/league/').content.decode()
 
-        self.assertIn('Legacy-Co', body)
-        at = body.index('Legacy-Co')
-        row = body[max(0, at - 800):at + 800]
-        self.assertNotIn(str(SCORE), row)
+        # Asserted on the COMPANY, not on the number: the evidenced company in
+        # this fixture legitimately publishes a similar score, so a page-wide
+        # numeric assertion would fail for the right product behaviour.
+        self.assertNotIn('Legacy-Co', body)
+        self.assertNotIn('legacy-co', body)
 
     def test_the_league_does_show_the_evidenced_company(self):
         body = self.client.get('/league/').content.decode()
