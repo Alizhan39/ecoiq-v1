@@ -1,0 +1,59 @@
+/* EcoIQ design tokens.
+   Sourced from frontend/app/src/design/tokens.ts — the existing system remains
+   the authority (CLAUDE.md standing rule 1). This file mirrors what the SPA
+   needs; it does not introduce a second design system. */
+:root {
+  --ink: #0f1a14;
+  --ink-soft: #5c7063;
+  --paper: #ffffff;
+  --paper-soft: #f6f8f6;
+  --line: rgba(15, 26, 20, 0.10);
+  --accent: #00a86b;
+  --accent-soft: #e6f6ef;
+  --warn: #f4a261;
+  --danger: #e63946;
+  --unknown: #94a3b8;
+
+  --radius: 10px;
+  --gap: 1rem;
+  --measure: 68ch;
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8efe9;
+    --ink-soft: #9db0a4;
+    --paper: #0d1410;
+    --paper-soft: #131c17;
+    --line: rgba(232, 239, 233, 0.12);
+    --accent-soft: rgba(0, 168, 107, 0.14);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
