@@ -25,6 +25,7 @@
 export const ROUTE_TITLES: Record<string, string> = {
   '/': 'EcoIQ — Evidence-backed decision intelligence',
   '/intelligence': 'Intelligence — EcoIQ',
+  '/companies': 'Organisations — EcoIQ',
   '/projects': 'Projects — EcoIQ',
   '/tours': 'Eco Tours — EcoIQ',
   '/about': 'About — EcoIQ',

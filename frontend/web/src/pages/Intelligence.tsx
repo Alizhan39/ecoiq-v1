@@ -19,7 +19,7 @@ import { Picker } from '@/features/intelligence/Picker';
 export default function Intelligence() {
   const [selected, setSelected] = useState<string | null>(null);
 
-  const list = useApi(listCompanies, []);
+  const list = useApi((signal) => listCompanies({}, signal), []);
   const detail = useApi(
     (signal) =>
       selected ? getCompany(selected, signal) : Promise.resolve(null),

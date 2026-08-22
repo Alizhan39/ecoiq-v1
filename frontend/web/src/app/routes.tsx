@@ -5,6 +5,7 @@ import { useDocumentTitle } from './useDocumentTitle';
 
 const Home = lazy(() => import('@/pages/Home'));
 const Intelligence = lazy(() => import('@/pages/Intelligence'));
+const Companies = lazy(() => import('@/pages/Companies'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const ProjectConcept = lazy(() => import('@/pages/ProjectConcept'));
 const Tours = lazy(() => import('@/pages/Tours'));
@@ -17,10 +18,11 @@ const TrustCenter = lazy(() => import('@/pages/TrustCenter'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 /**
- * /companies AND /companies/:slug ARE DELIBERATELY NOT ROUTED HERE.
+ * /companies/:slug IS DELIBERATELY NOT ROUTED HERE.
  *
- * They are still served by Django, and the React implementations
- * (pages/Companies.tsx, pages/CompanyDetail.tsx) are built but not claimed.
+ * The directory (/companies) IS routed — see pages/Companies.tsx. The
+ * individual organisation page is still served by Django, and the React
+ * implementation (pages/CompanyDetail.tsx) is built but not claimed.
  *
  * Why: parity is not proven. The server-rendered company profile carries
  * eleven panels — ethics master scores, improvement roadmap, financing
@@ -33,11 +35,11 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
  *
  * Routing a URL is a claim to own it. This one is not owned yet.
  *
- * The components stay in the tree, with their tests, so the next phase starts
+ * CompanyDetail stays in the tree, with its tests, so the next phase starts
  * from working code rather than from a rewrite. To finish the migration:
- * expose those eleven panels through API v2, build them here, prove parity for
- * a PUBLISHED organisation, then route these two paths and repoint
- * companies/urls.py at spa.spa_view.
+ * audit those eleven panels against the product EcoIQ actually wants, expose
+ * the survivors through API v2, build them here, prove parity for a PUBLISHED
+ * organisation, then route /companies/:slug and repoint companies/urls.py.
  */
 export function AppRoutes() {
   // Django titles the document for whatever URL was requested; client-side
@@ -49,6 +51,7 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/intelligence" element={<Intelligence />} />
+        <Route path="/companies" element={<Companies />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:slug" element={<ProjectConcept />} />
         <Route path="/tours" element={<Tours />} />

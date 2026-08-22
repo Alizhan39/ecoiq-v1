@@ -1,4 +1,6 @@
 from django.urls import path
+
+from core import spa
 from . import views
 from company_intelligence import views as ci_views
 from company_intelligence import discovery_views as discovery
@@ -9,7 +11,16 @@ from company_intelligence import monitor_views as monitor
 app_name = 'companies'
 
 urlpatterns = [
-    path('',                                       views.directory,            name='directory'),
+    # React. Path and URL name unchanged — only the view.
+    #
+    # The template this replaces ordered all 467 cards by
+    # -ecoiq_total_score and offered a filter over moral_label, the tier
+    # derived from that score. Neither printed a digit and both published
+    # the withheld number: one by position, one by selection.
+    #
+    # /companies/<slug>/ below is still Django — see the note at the top of
+    # frontend/web/src/app/routes.tsx for what has to be true first.
+    path('',                                       spa.spa_view,               name='directory'),
     # feat/company-halal-intelligence (PR 9) — the one user-scoped route
     # ('watchlist/') must be registered before the '<slug:slug>/' catch-all
     # below, same discipline as capital_guardian/urls.py, since a bare
