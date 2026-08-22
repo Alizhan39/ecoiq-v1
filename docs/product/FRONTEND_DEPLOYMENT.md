@@ -166,6 +166,42 @@ failure mode.
 
 ---
 
+## Verified live
+
+Confirmed against `ecoiq.uk` after the cutover deploy:
+
+| check | result |
+|---|---|
+| 11 React routes | 200, React mounted, correct per-route `<title>` |
+| console | zero errors, zero failed requests |
+| direct deep-link refresh | renders, correct title |
+| client-side navigation | routes without a page load |
+| `/api/v2/` | `200 application/json` |
+| unknown `/api/…` | `404 {"detail": "Not found."}` |
+| `/admin/` | 302 to login, no React shell |
+| `/healthz/` | `200 ok`, plain text |
+| unknown page | 404 with the shell and `noindex` |
+| SPA assets | `content-encoding: br`, `cache-control: max-age=315360000, public, immutable` |
+| shell | `cache-control: no-store, must-revalidate` |
+| every built chunk | 200, no 404s |
+| unpublished company page | `noindex, follow`, no JSON-LD, no `ratingValue`, API score `null` |
+| sitemap | 0 company URLs, static pages only |
+| league | `count: 0`, `withheld: 467`, zero embedded chart payloads |
+
+The brotli encoding is the visible result of the `STATICFILES_STORAGE` fix: the
+entry bundle is 173 kB on disk and **49.5 kB on the wire**. Before it, that
+setting was dead config and nothing was compressed at all.
+
+### One defect this verification found
+
+Client-side navigation left the browser tab showing the previous route's title.
+Django titles the document for the URL that was requested, which is right for a
+direct load and for a crawler — but a click replaces no document. Fixed with a
+route→title map on the client, and `core/tests_spa.TitleMapsAgreeTests` reads
+the TypeScript source from disk and fails if the two maps ever disagree.
+
+---
+
 ## Rollback
 
 The cutover is deliberately reversible, and was sequenced so that it stays
@@ -195,6 +231,12 @@ Render redeploys from `main` automatically. Or, faster, in the Render dashboard:
 | step | last-good SHA to return to |
 |---|---|
 | before any SPA work | `ad47ef23d8a10269534551480ca8eea9b141012f` |
+| React live, templates still present | `3bda3dc130e5c00a8c45f9400d11f76520018d31` |
+
+The middle row is the useful one. Reverting to it puts the React routing back
+under Django with every deleted template still on disk, so nothing has to be
+restored — that is the whole reason the cutover and the cleanup were two
+deploys instead of one.
 
 Recorded here rather than in a runbook nobody opens under pressure.
 

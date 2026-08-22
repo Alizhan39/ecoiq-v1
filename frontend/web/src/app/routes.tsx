@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { Loading } from '@/components/States';
+import { useDocumentTitle } from './useDocumentTitle';
 
 const Home = lazy(() => import('@/pages/Home'));
 const Intelligence = lazy(() => import('@/pages/Intelligence'));
@@ -39,6 +40,10 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
  * companies/urls.py at spa.spa_view.
  */
 export function AppRoutes() {
+  // Django titles the document for whatever URL was requested; client-side
+  // navigation changes no document, so the tab has to be kept in step here.
+  useDocumentTitle();
+
   return (
     <Suspense fallback={<Loading />}>
       <Routes>

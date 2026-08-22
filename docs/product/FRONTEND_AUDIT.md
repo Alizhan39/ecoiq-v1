@@ -12,6 +12,9 @@ Measured, not estimated. Re-measured after the React cutover.
 | served by React **in production** | **11** |
 | still server-rendered | **2** |
 
+All eleven verified live on `ecoiq.uk` after deploy: correct status, correct
+injected title, React mounted, zero console errors, zero failed requests.
+
 | route | served by | note |
 |---|---|---|
 | `/` | React | |
@@ -58,19 +61,45 @@ a PUBLISHED organisation.
 | | count |
 |---|---|
 | `templates/*.html` at programme start | **338** |
-| now | **338** |
-| **removed** | **0** |
+| after the cutover PR | 338 |
+| **now** | **330** |
+| **removed** | **8** |
 
-Zero, deliberately, and this is the *cutover* change. Templates are deleted in
-the follow-up, **after** the React routing is verified in production — so
-rollback is a single revert with no content to restore. See
-`docs/product/FRONTEND_DEPLOYMENT.md`.
+Removed, in the cleanup that followed live verification:
 
-Scheduled for that pass: `landing.html`, `about.html`, `contact.html`,
-`pricing.html`, `intelligence.html`, `projects/index.html`,
-`projects/detail.html`, `league/company.html`, and their views.
+| template | lines |
+|---|---|
+| `landing.html` | 1,562 |
+| `league/company.html` | 1,950 |
+| `pricing.html` | 721 |
+| `about.html` | 451 |
+| `contact.html` | 275 |
+| `projects/detail.html` | 246 |
+| `projects/index.html` | 102 |
+| `intelligence_public.html` | 73 |
 
----
+With their views: `core.views.landing`, `about`, `contact`, `contact_submit`,
+`pricing`, `intelligence`; `projects.views.project_index`, `project_detail`;
+`league.views.company_profile`. `core/views.py` shrank from 3,421 to 3,047
+lines, including nine module constants that only the deleted pages read.
+
+`/contact/submit/` went with the form that posted to it. Leaving a second
+public write endpoint into the same notification table would be a second door
+into the same room — which is how the June–August abuse incident got in.
+
+### Static assets: identified, not removed
+
+`landing.html` was the only consumer of six hero image variants and
+`hero-globe.js` — **646 kB**, now unreferenced by any template.
+
+They are **kept**. Removing them properly means retiring the hero island from
+`frontend/app` and rebuilding `static/dist/ecoiq-islands.js`, which is a second
+Node layer and a different piece of work from template cleanup. Deleting the
+files while the bundle still names them would break
+`core/tests_hero_assets.BuiltBundleTests` for the wrong reason.
+
+Two brand SVGs are also unreferenced, and were already unreferenced before this
+programme. Not this PR's to remove.
 
 ## Templates intentionally retained
 

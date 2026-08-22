@@ -1,7 +1,6 @@
 from django.urls import path
 
 from core import spa
-from . import views
 
 # NOTE: the namespace is 'projects_site' (not 'projects') because the API app
 # (api/projects_urls.py) already registers the 'projects' namespace. URL paths

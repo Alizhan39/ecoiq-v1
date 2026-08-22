@@ -43,6 +43,19 @@ class AntispamTestCase(TestCase):
         self.addCleanup(cache.clear)
         super().setUp()
 
+    #: The live public contact endpoint.
+    #:
+    #: This suite guards the June–August abuse incident, in which one endpoint
+    #: with no captcha, no rate limit, no honeypot and no email validation
+    #: produced 937 admin notifications while the leads/ forms — which had all
+    #: four — received none. It therefore has to point at whatever endpoint is
+    #: actually reachable by the public, and that is now the JSON one: the
+    #: server-rendered form and its /contact/submit/ view went with the React
+    #: cutover.
+    #:
+    #: Same screening, same engine, same call arguments — see api/v2_contact.py.
+    URL = '/api/v2/contact/'
+
     def post(self, **overrides):
         payload = {
             'name': 'Jane Smith',
@@ -52,10 +65,12 @@ class AntispamTestCase(TestCase):
             'message': VALID_MESSAGE,
             'website': '',                       # honeypot, must stay empty
             'form_token': timing.issue(now=time.time() - 30),
-            'cf-turnstile-response': 'test-token',
+            # The JSON endpoint names this field for itself rather than
+            # carrying Cloudflare's form-field name into an API contract.
+            'turnstile_token': 'test-token',
         }
         payload.update(overrides)
-        return self.client.post(reverse('contact_submit'), payload)
+        return self.client.post(self.URL, payload)
 
 
 class LegitimateSubmissionTests(AntispamTestCase):
@@ -66,7 +81,7 @@ class LegitimateSubmissionTests(AntispamTestCase):
         self.assertEqual(AdminNotification.objects.count(), 1)
         n = AdminNotification.objects.get()
         self.assertEqual(n.spam_status, 'accepted')
-        self.assertEqual(n.source_endpoint, 'contact')
+        self.assertEqual(n.source_endpoint, 'api_v2_contact')
         self.assertEqual(n.risk_reasons, [])
 
     def test_free_mail_users_are_accepted(self):
@@ -234,9 +249,23 @@ class RejectedSubmissionsHaveNoSideEffectsTests(AntispamTestCase):
         get.assert_not_called()
 
     def test_rejected_response_does_not_reveal_detection(self):
+        """
+        Byte-identical to an accepted one.
+
+        Stronger than the assertion this replaces, which only checked that a
+        rejected submission got the same 302 the old form issued. A bot that
+        can tell it was caught can iterate until it isn't, so the comparison is
+        against a real accepted response rather than against a status code.
+        """
         with turnstile_fail():
-            response = self.post()
-        self.assertEqual(response.status_code, 302)   # same redirect as success
+            rejected = self.post()
+
+        cache.clear()
+        with turnstile_ok():
+            accepted = self.post(email='someone.else@example.com')
+
+        self.assertEqual(rejected.status_code, accepted.status_code)
+        self.assertEqual(rejected.content, accepted.content)
 
 
 class QuarantineTests(AntispamTestCase):
