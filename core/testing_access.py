@@ -29,8 +29,10 @@ class SignedIn:
 
     def _pre_setup(self):
         super()._pre_setup()
+        # No password. `force_login` skips authentication entirely, so setting
+        # one would be a literal credential in a tracked file for no benefit —
+        # which core/tests_no_hardcoded_secrets.py correctly refuses, and did.
         user = get_user_model().objects.create_user(
-            username=self.signed_in_username,
-            password='correct-horse-battery-staple')
+            username=self.signed_in_username)
         self.client.force_login(user)
         self.signed_in_user = user
