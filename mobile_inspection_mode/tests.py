@@ -51,15 +51,3 @@ class MobileInspectionModePageTests(StaffPageTestCase):
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
-
-class PlatformPageMobileInspectionModeTeaserTests(TestCase):
-    def test_platform_page_mentions_mobile_inspection_mode(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Mobile / iPad Inspection Mode')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

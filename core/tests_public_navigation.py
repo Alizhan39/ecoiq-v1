@@ -35,9 +35,14 @@ from django.urls import reverse
 # The five public items plus the utility sign-in.
 EXPECTED_NAV = ['/intelligence/', '/tours/', '/projects/', '/about/', '/contact/']
 
-#: A page base.html still renders. `/` and `/about/` are React now, so asserting
-#: the Django header against them would assert nothing.
-SERVER_RENDERED = '/methodology/'
+#: A page base.html still renders, whose <nav> IS base.html's global
+#: navigation.
+#:
+#: `/` and `/about/` are React now, so asserting the Django header against them
+#: would assert nothing. /methodology/ used to serve here and is a 301 now.
+#: /governance-principles/ and /countries/ render their own in-page nav on top
+#: of the global one, which is not what these tests measure.
+SERVER_RENDERED = '/heating/'
 
 # Destinations that must no longer appear in the primary public navigation.
 # They remain reachable — this asserts placement, not existence.
@@ -45,7 +50,7 @@ BANISHED_FROM_NAV = [
     '/companies/', '/countries/', '/league/', '/rankings/',
     '/ai-agents/', '/geo-intelligence/', '/gold-intelligence/',
     '/capital-guardian/', '/methodology/', '/stewardship/',
-    '/governance-principles/', '/ethical-governance/', '/platform/',
+    '/heating/', '/khalifa-tours/', '/platform/',
     '/heating/', '/ingest/', '/admin/',
 ]
 
@@ -131,7 +136,7 @@ class FooterTests(TestCase):
     """A simplified header is pointless if the footer restates the old tree."""
 
     def test_footer_is_small(self):
-        for path in (SERVER_RENDERED, '/press/'):
+        for path in (SERVER_RENDERED, '/khalifa-tours/'):
             with self.subTest(path=path):
                 links = footer_links(self.client.get(path).content.decode())
                 self.assertLessEqual(
@@ -139,7 +144,7 @@ class FooterTests(TestCase):
                     'the footer is growing back into a second navigation tree')
 
     def test_footer_drops_technical_module_links(self):
-        for path in (SERVER_RENDERED, '/press/'):
+        for path in (SERVER_RENDERED, '/khalifa-tours/'):
             body = self.client.get(path).content.decode()
             links = footer_links(body)
             for gone in ('/platform/', '/ethical-governance/', '/governance-principles/',
@@ -182,13 +187,27 @@ class PublicPagesStillWorkTests(TestCase):
 
     def test_demoted_pages_are_still_reachable(self):
         """
-        Demoted from navigation, NOT removed. A 404 here would mean this PR
-        quietly deleted a public surface.
+        Demoted from navigation, NOT removed. A 404 here would mean a public
+        surface was quietly deleted.
         """
-        for path in ('/companies/', '/countries/', '/league/', '/methodology/',
-                     '/stewardship/', '/platform/', '/pricing/'):
+        for path in ('/companies/', '/countries/', '/league/', '/pricing/',
+                     '/heating/', '/khalifa-tours/'):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
+
+    def test_retired_pages_redirect_rather_than_disappear(self):
+        """
+        /methodology/, /platform/ and /stewardship/ were retired, not deleted
+        from the web: each 301s to the React page that covers its subject, so
+        an old link still lands somewhere true. See core/redirects.py.
+        """
+        from core.redirects import PERMANENT
+
+        for path in ('/methodology/', '/platform/', '/stewardship/'):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 301)
+                self.assertEqual(response['Location'], PERMANENT[path])
 
 
 class IntelligenceRouteTests(TestCase):

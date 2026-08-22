@@ -29,6 +29,7 @@ from waste_to_value_capital_allocation_engine.models import (
     CapitalAllocationDecision, InterventionOption, LossEvidence, OperationalLoss, VerifiedCapitalOutcome,
 )
 from waste_to_value_capital_allocation_engine.services.governance import create_governed_investment_case
+from core.testing_access import SignedIn
 
 
 class ProjectGovernanceModelTests(TestCase):
@@ -286,9 +287,12 @@ class InvestorDashboardServiceTests(TestCase):
         self.assertEqual(self.project.total_capex_usd, original_capex)
 
 
-class ViewTests(TestCase):
+class ViewTests(SignedIn, TestCase):
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.signed_in_user)  # page now requires sign-in
+        # This setUp replaces the mixin's client, so re-authenticate it.
+        self.client.force_login(self.signed_in_user)
         self.kz = CountryProfile.objects.create(name='Kazakhstan', slug='kazakhstan', iso_code='KZ', is_published=True)
         self.project = GoldProject.objects.create(
             name='View Test Project', slug='cg-view-test-project', country=self.kz, is_demo=True,
@@ -870,9 +874,12 @@ class AuditLogTests(TestCase):
         self.assertIsNone(result)
 
 
-class Phase2ViewTests(TestCase):
+class Phase2ViewTests(SignedIn, TestCase):
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.signed_in_user)  # page now requires sign-in
+        # This setUp replaces the mixin's client, so re-authenticate it.
+        self.client.force_login(self.signed_in_user)
         self.kz = CountryProfile.objects.create(name='Kazakhstan', slug='kazakhstan-p2', iso_code='KZ', is_published=True)
         self.project = GoldProject.objects.create(
             name='Phase2 View Test Project', slug='cg-p2-view-test-project', country=self.kz, is_demo=True,
@@ -1226,9 +1233,12 @@ class CapitalTraceEntryAuditTests(TestCase):
         self.assertEqual(logged.new_value, 'paid')
 
 
-class Phase3ViewTests(TestCase):
+class Phase3ViewTests(SignedIn, TestCase):
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.signed_in_user)  # page now requires sign-in
+        # This setUp replaces the mixin's client, so re-authenticate it.
+        self.client.force_login(self.signed_in_user)
         self.kz = CountryProfile.objects.create(name='Kazakhstan', slug='kazakhstan-p3', iso_code='KZ', is_published=True)
         self.project = GoldProject.objects.create(
             name='Phase3 View Test Project', slug='cg-p3-view-test-project', country=self.kz, is_demo=True,
@@ -2461,13 +2471,16 @@ class InterventionOptionCreationViewTests(TestCase):
         self.assertNotContains(r, 'Traceback')
 
 
-class BetterWayViewTests(TestCase):
+class BetterWayViewTests(SignedIn, TestCase):
     """Vertical-slice PR 4 — operational_loss_detail + run_better_way_comparison views."""
 
     def setUp(self):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.signed_in_user)  # page now requires sign-in
+        # This setUp replaces the mixin's client, so re-authenticate it.
+        self.client.force_login(self.signed_in_user)
         self.staff = User.objects.create_user('staff_bw', 'staff_bw@ecoiq.uk', 'password123', is_staff=True)
         self.normal = User.objects.create_user('normal_bw', 'normal_bw@example.com', 'password123', is_staff=False)
         self.project = GoldProject.objects.create(
@@ -3444,7 +3457,7 @@ class VerifiedOutcomeMonitoringViewTests(TestCase):
         self.assertEqual(r.status_code, 404)
 
 
-class RedFlagsHeatingProjectTests(TestCase):
+class RedFlagsHeatingProjectTests(SignedIn, TestCase):
     """Vertical-slice PR 6 — Task 10: generic rules apply, mining-specific rules stay silent."""
 
     def setUp(self):
@@ -3479,6 +3492,7 @@ class RedFlagsHeatingProjectTests(TestCase):
     def test_open_red_flags_shown_on_monitoring_page(self):
         CapitalBudgetLine.objects.create(project=self.project, category='other', label='Heating budget 2', planned_usd=10000, committed_usd=15000)
         client = Client(SERVER_NAME='localhost')
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         r = client.get(reverse('capital_guardian:project_monitoring', args=[self.project.slug]))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'CAPEX variance')

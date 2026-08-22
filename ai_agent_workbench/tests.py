@@ -8,6 +8,7 @@ from agent_runtime_model_router.models import AgentRegistryEntry
 from ai_agent_council.agents import OPERATIONAL_AGENTS
 from ai_agent_council.models import CouncilRun
 from ai_agent_workbench.services import agent_data, demo_cases, recommender
+from core.testing_access import SignedIn
 
 TEMPLATE_LEAK_RE = re.compile(r'\{%|\{\{')
 
@@ -20,7 +21,7 @@ def _seed_all():
     call_command('seed_financial_intelligence_cloud_demo')
 
 
-class AgentDirectoryTests(TestCase):
+class AgentDirectoryTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -83,7 +84,7 @@ class AgentDirectoryTests(TestCase):
         self.assertIn('<svg', body)
 
 
-class WorkbenchTests(TestCase):
+class WorkbenchTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -210,7 +211,7 @@ class WorkbenchTests(TestCase):
             self.assertIn(escape(name), body)
 
 
-class CouncilDemoAndPresentationTests(TestCase):
+class CouncilDemoAndPresentationTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -264,7 +265,7 @@ class SafetyAndPrivacyTests(TestCase):
                 self.assertTrue(council_run.is_simulated)
 
 
-class HomepageIntegrationTests(TestCase):
+class HomepageIntegrationTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -319,7 +320,7 @@ class HomepageIntegrationTests(TestCase):
         # base.html still renders the pages that were not migrated, and its
         # navigation is still the thing this protects. /about/ and /pricing/
         # are React now and carry no server-rendered nav at all.
-        for url in ('/methodology/', '/platform/'):
+        for url in ('/heating/', '/khalifa-tours/'):
             body = self.client.get(url).content.decode()
             nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
             self.assertIsNotNone(nav, url)
@@ -337,7 +338,7 @@ class HomepageIntegrationTests(TestCase):
         self.assertEqual(self.client.get('/ai-agents/').status_code, 200)
 
 
-class ProductPageIntegrationTests(TestCase):
+class ProductPageIntegrationTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -364,7 +365,7 @@ class ProductPageIntegrationTests(TestCase):
         self.assertContains(resp, 'Agents working on this case')
 
 
-class AllRoutesReturn200Tests(TestCase):
+class AllRoutesReturn200Tests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -385,7 +386,7 @@ class AllRoutesReturn200Tests(TestCase):
                 self.assertFalse(TEMPLATE_LEAK_RE.search(resp.content.decode()))
 
 
-class EvaluationWorkbenchIntegrationTests(TestCase):
+class EvaluationWorkbenchIntegrationTests(SignedIn, TestCase):
     """
     Phase 9 — the minimum necessary UI: latest quality score, benchmark
     trend, regression status, evaluation history, human review status.

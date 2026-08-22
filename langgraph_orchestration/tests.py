@@ -9,6 +9,7 @@ from countries.models import CountryProfile
 from langgraph_orchestration.graph import run_orchestration
 from langgraph_orchestration.models import OrchestrationRun
 from langgraph_orchestration.state import new_state
+from core.testing_access import SignedIn
 
 TEMPLATE_LEAK_RE = re.compile(r'\{%|\{\{')
 
@@ -351,7 +352,7 @@ class OrchestrationRunModelTests(TestCase):
         self.assertEqual(run.failed_node, 'run_agent_analysis')
 
 
-class AdminAndWorkbenchIntegrationTests(TestCase):
+class AdminAndWorkbenchIntegrationTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_base()

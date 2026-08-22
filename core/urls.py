@@ -53,7 +53,6 @@ urlpatterns = [
     path('share/<uuid:token>/',                      views.share_report,      name='share_report'),
 
     # EcoIQ Methodology — public Ethical Intelligence Framework page
-    path('methodology/',                             views.methodology,        name='methodology'),
 
     # EcoIQ About — founder story, mission, framework
     path('about/',                                   spa.spa_view,             name='about'),
@@ -80,7 +79,6 @@ urlpatterns = [
     path('claim/', RedirectView.as_view(url='/request-access/claim/', permanent=False), name='claim'),
 
     # EcoIQ Platform — five intelligence modules overview
-    path('platform/',              views.platform,              name='platform'),
 
     # EcoIQ Ethical Governance Intelligence Framework
     path('ethical-governance/',    views.ethical_governance,    name='ethical_governance'),
@@ -98,17 +96,12 @@ urlpatterns = [
     path('newsletter/signup/',  views.newsletter_signup,  name='newsletter_signup'),
 
     # EcoIQ Value Distribution — stakeholder value map + Rizq model
-    path('value-distribution/', views.value_distribution, name='value_distribution'),
 
     # EcoIQ Visual Intelligence — Khalifa Impact + Kazakhstan transition map
-    path('khalifa-impact/', views.khalifa_impact,  name='khalifa_impact'),
-    path('kazakhstan-map/', views.kazakhstan_map,  name='kazakhstan_map'),
 
     # EcoIQ Sample Investor Readiness Report — public demo report
-    path('sample-report/', views.sample_report, name='sample_report'),
 
     # EcoIQ Stewardship — climate intelligence + real-world stewardship
-    path('stewardship/', views.stewardship, name='stewardship'),
 
     # Tazkiyah 114 — PUBLIC concept/marketing landing page (no draft content).
     # Detailed Surah/reflection content stays in the staff-only previews
@@ -117,16 +110,13 @@ urlpatterns = [
     path('surah-map/',    views.tazkiyah_landing, name='surah_map'),   # public alias
 
     # EcoIQ Global Intelligence — interactive country coverage map
-    path('global-intelligence/', views.global_intelligence, name='global_intelligence'),
 
     # EcoIQ Khalifa Tours Impact Story — flagship visual narrative
-    path('khalifa-tours-impact/', views.khalifa_tours_impact, name='khalifa_tours_impact'),
 
     # Khalifa Stewardship Tours — premium institutional landing page
     path('khalifa-tours/', views.khalifa_stewardship_tours, name='khalifa_stewardship_tours'),
 
     # EcoIQ Kazakhstan Transition Brief — flagship visual intelligence page
-    path('kazakhstan-transition-brief/', views.kazakhstan_transition_brief, name='kazakhstan_transition_brief'),
 
     # EcoIQ Visual Lab — staff-only verification page for Visual Intelligence islands
     path('visual-lab/', views.visual_lab, name='visual_lab'),
@@ -161,6 +151,29 @@ urlpatterns = [
     # screening moved with it: see api/v2_contact.py and
     # notifications/tests_antispam.py.
     path('contact/',        spa.spa_view,         name='contact'),
+
+    # ── Permanent redirects to the React app ─────────────────────────────
+    #
+    # These paths kept their URL NAMES, so `{% url 'methodology' %}` in the
+    # templates that are still server-rendered continues to resolve — it now
+    # resolves to a 301. See core/redirects.py for why each destination is the
+    # one it is.
+    *[
+        path(old.strip('/') + '/', RedirectView.as_view(url=new, permanent=True),
+             name=name)
+        for old, new, name in (
+            ('/methodology/', '/trust/', 'methodology'),
+            ('/platform/', '/labs/', 'platform'),
+            ('/value-distribution/', '/about/', 'value_distribution'),
+            ('/stewardship/', '/intelligence/', 'stewardship'),
+            ('/global-intelligence/', '/intelligence/', 'global_intelligence'),
+            ('/kazakhstan-map/', '/intelligence/', 'kazakhstan_map'),
+            ('/kazakhstan-transition-brief/', '/intelligence/', 'kazakhstan_transition_brief'),
+            ('/khalifa-impact/', '/intelligence/', 'khalifa_impact'),
+            ('/sample-report/', '/intelligence/', 'sample_report'),
+            ('/khalifa-tours-impact/', '/tours/', 'khalifa_tours_impact'),
+        )
+    ],
 
     # SEO — robots.txt served as plain text from templates/robots.txt
     path('robots.txt', views.robots_txt, name='robots_txt'),

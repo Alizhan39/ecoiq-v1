@@ -417,6 +417,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Immediately after authentication, because it reads request.user.
+    # De-publishes the experimental and legacy surfaces — see core/access.py
+    # for the list and the reasoning.
+    'core.access.ExperimentalSurfaceMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # wagtail.contrib.redirects.middleware removed — site-specific redirects

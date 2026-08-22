@@ -13,6 +13,7 @@ from legacy_safe.services.planner import generate_modernisation_plan
 from legacy_safe.services.retrieval import retrieve_allowed_chunks
 from legacy_safe.services.revocation import revoke_source_document
 from legacy_safe.services.seed_demo import create_demo_data
+from core.testing_access import SignedIn
 
 User = get_user_model()
 
@@ -164,7 +165,7 @@ class MockProviderTests(TestCase):
         self.assertIn('answer', result)
 
 
-class ModelIntegrationReadinessPageTests(TestCase):
+class ModelIntegrationReadinessPageTests(SignedIn, TestCase):
     def setUp(self):
         self.project = create_demo_data()
 
@@ -189,7 +190,7 @@ class ModelIntegrationReadinessPageTests(TestCase):
         self.assertContains(response, 'Permission Guard Agent')
 
 
-class RepositorySupportPageTests(TestCase):
+class RepositorySupportPageTests(SignedIn, TestCase):
     def setUp(self):
         self.project = create_demo_data()
 
@@ -202,7 +203,7 @@ class RepositorySupportPageTests(TestCase):
         self.assertContains(response, 'Not implemented in this hackathon build')
 
 
-class ProcessOptimisationPageTests(TestCase):
+class ProcessOptimisationPageTests(SignedIn, TestCase):
     def setUp(self):
         self.project = create_demo_data()
 
@@ -215,7 +216,7 @@ class ProcessOptimisationPageTests(TestCase):
         self.assertContains(response, 'Source documents ingested')
 
 
-class JusticeMaqasidPageTests(TestCase):
+class JusticeMaqasidPageTests(SignedIn, TestCase):
     def setUp(self):
         self.project = create_demo_data()
 
@@ -244,7 +245,7 @@ class JusticeMaqasidPageTests(TestCase):
         self.assertContains(response, 'justice-aware')
 
 
-class AgentRepositoryMapPageTests(TestCase):
+class AgentRepositoryMapPageTests(SignedIn, TestCase):
     def test_page_returns_200(self):
         response = self.client.get('/legacy-safe/agent-repository-map/')
         self.assertEqual(response.status_code, 200)
@@ -270,7 +271,7 @@ class AgentRepositoryMapPageTests(TestCase):
         self.assertContains(response, 'EnergyPlus')
 
 
-class AIAgentEcosystem200PageTests(TestCase):
+class AIAgentEcosystem200PageTests(SignedIn, TestCase):
     def test_page_returns_200(self):
         response = self.client.get('/legacy-safe/ai-agent-ecosystem-200/')
         self.assertEqual(response.status_code, 200)
@@ -336,7 +337,7 @@ class AIAgentEcosystem200PageTests(TestCase):
         self.assertContains(response, 'Azure OpenAI-ready')
 
 
-class MicrosoftEcosystemReadinessPageTests(TestCase):
+class MicrosoftEcosystemReadinessPageTests(SignedIn, TestCase):
     def test_page_returns_200(self):
         response = self.client.get('/legacy-safe/microsoft-ecosystem-readiness/')
         self.assertEqual(response.status_code, 200)
@@ -500,7 +501,7 @@ class FullIndustrialModernisationPlannerTests(TestCase):
             self.assertIn(title, allowed_titles)
 
 
-class PermissionDemoAndDashboardContentTests(TestCase):
+class PermissionDemoAndDashboardContentTests(SignedIn, TestCase):
     def setUp(self):
         self.project = create_demo_data()
 

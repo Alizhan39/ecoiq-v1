@@ -26,6 +26,7 @@ from khalifa_stewardship_tour_operating_system.services.launch_readiness import 
     calculate_tour_launch_readiness, ensure_launch_checklist, is_technical_work_authorized,
     mark_tour_ready_to_launch, update_checklist_item,
 )
+from core.testing_access import SignedIn
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% extends', '{% block',
@@ -247,7 +248,7 @@ class HumanApprovalGateTests(TestCase):
         self.assertIn('public_impact_claim', ACTIONS_REQUIRING_APPROVAL)
 
 
-class RouteTests(TestCase):
+class RouteTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         sync_registry()
@@ -353,19 +354,6 @@ class RouteTests(TestCase):
             self.assertNotIn('verified outcome achieved', content)
             self.assertNotIn('fully autonomous', content)
             self.assertNotIn('technical installation approved', content)
-
-    def test_platform_page_mentions_khalifa_tours(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Khalifa Stewardship Tour Operating System')
-        self.assertContains(response, 'Open Khalifa Tours Operating System')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into /platform/')
-
 
 class SeedCommandTests(TestCase):
     def test_seed_command_is_idempotent(self):

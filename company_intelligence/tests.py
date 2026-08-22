@@ -25,6 +25,7 @@ from company_intelligence.services import identity_sync, kpi_engine, rate_limite
 from company_intelligence.services.company_trace import build_company_trace
 from evidence_memory.models import EvidenceMemory
 from league.models import Company
+from core.testing_access import SignedIn
 
 User = get_user_model()
 
@@ -1366,20 +1367,23 @@ class ExplainMatchTests(TestCase):
         self.assertFalse(shariah_node.available)
 
 
-class DiscoveryViewTests(TestCase):
+class DiscoveryViewTests(SignedIn, TestCase):
     def test_discover_view_public_get(self):
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'))
         self.assertEqual(response.status_code, 200)
 
     def test_strongest_alignment_view_public_get(self):
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         self.assertEqual(response.status_code, 200)
 
     def test_strongest_alignment_view_excludes_no_qualifying_evidence(self):
         _profile(slug='sa-no-evidence-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         self.assertNotContains(response, 'sa-no-evidence-co')
 
@@ -1387,6 +1391,7 @@ class DiscoveryViewTests(TestCase):
         profile = _profile(slug='sa-with-evidence-co')
         _confirmed_kpi_link(profile, kpi_id=11, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         self.assertContains(response, profile.company.name)
 
@@ -1394,6 +1399,7 @@ class DiscoveryViewTests(TestCase):
         profile = _profile(slug='sa-clean-co')
         _confirmed_kpi_link(profile, kpi_id=12, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         body = response.content.decode().lower()
         for banned in BANNED_INVESTMENT_WORDS:
@@ -1401,6 +1407,7 @@ class DiscoveryViewTests(TestCase):
 
     def test_strongest_alignment_view_shows_mandatory_disclaimer(self):
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         normalized = ' '.join(response.content.decode().split())
         self.assertIn(
@@ -1412,6 +1419,7 @@ class DiscoveryViewTests(TestCase):
     def test_discover_view_never_contains_investment_language(self):
         _profile(slug='disc-view-clean-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'))
         body = response.content.decode().lower()
         for banned in BANNED_INVESTMENT_WORDS:
@@ -1422,6 +1430,7 @@ class DiscoveryViewTests(TestCase):
         demo = _profile(slug='disc-view-demo-co')
         shariah_screening.run_shariah_screen(demo, methodology, is_demo=True)
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'))
         self.assertNotContains(response, 'disc-view-demo-co')
 
@@ -1429,6 +1438,7 @@ class DiscoveryViewTests(TestCase):
         profile = _profile(slug='disc-view-kpi-co')
         _confirmed_kpi_link(profile, kpi_id=7, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'), {'kpi': ['7']})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, profile.company.name)
@@ -1436,12 +1446,14 @@ class DiscoveryViewTests(TestCase):
     def test_explain_match_view_public_get(self):
         profile = _profile(slug='disc-explain-view-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:explain_match', args=[profile.company.slug]))
         self.assertEqual(response.status_code, 200)
 
     def test_compare_view_requires_at_least_two_companies(self):
         profile = _profile(slug='disc-compare-solo-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': profile.company.slug})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Select 2')
@@ -1450,6 +1462,7 @@ class DiscoveryViewTests(TestCase):
         a = _profile(slug='disc-compare-a')
         b = _profile(slug='disc-compare-b')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, a.company.name)
@@ -1460,6 +1473,7 @@ class DiscoveryViewTests(TestCase):
         b = _profile(slug='disc-compare-extras-b')
         _confirmed_kpi_link(a, kpi_id=13, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Confirmed KPIs Supported')
@@ -1472,6 +1486,7 @@ class DiscoveryViewTests(TestCase):
         b = _profile(slug='disc-compare-clean-b')
         _confirmed_kpi_link(a, kpi_id=14, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         body = response.content.decode().lower()
         for banned in BANNED_INVESTMENT_WORDS:
@@ -1561,12 +1576,13 @@ class KPIExplorerDiscoveryIntegrationTests(TestCase):
         self.assertContains(response, f"{reverse('companies:discover')}?kpi=1")
 
 
-class DiscoveryObservatoryTelemetryTests(TestCase):
+class DiscoveryObservatoryTelemetryTests(SignedIn, TestCase):
     def test_discover_view_records_company_discovery_session_with_no_anchor(self):
         from ai_observatory.models import AnalysisSession
 
         _profile(slug='disc-observatory-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         client.get(reverse('companies:discover'))
         session = AnalysisSession.objects.filter(kind='company_discovery').order_by('-pk').first()
         self.assertIsNotNone(session)
@@ -1581,6 +1597,7 @@ class DiscoveryObservatoryTelemetryTests(TestCase):
         a = _profile(slug='disc-observatory-cmp-a')
         b = _profile(slug='disc-observatory-cmp-b')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         session = AnalysisSession.objects.filter(kind='company_discovery').order_by('-pk').first()
         self.assertIsNotNone(session)

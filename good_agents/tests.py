@@ -36,6 +36,7 @@ from good_agents.services import good_deeds_engine, opportunity_cost, pipeline, 
 from good_agents.services.discovery_run import run_discovery
 from good_agents.services.orchestrator import Signal, classify_relevant_agents, record_activations, run_deep_reasoning
 from good_agents.services.principles import get_principle
+from core.testing_access import SignedIn
 
 
 class PrincipleAgentMappingTests(TestCase):
@@ -373,11 +374,14 @@ class AlmatyDemoCommandTests(TestCase):
         self.assertEqual(InterventionOption.objects.count(), first_loss_count)
 
 
-class ViewTests(TestCase):
+class ViewTests(SignedIn, TestCase):
     def setUp(self):
         call_command('run_almaty_good_agent_demo')
         self.opportunity = GoodOpportunity.objects.first()
         self.client = Client()
+        self.client.force_login(self.signed_in_user)  # page now requires sign-in
+        # This setUp replaces the mixin's client, so re-authenticate it.
+        self.client.force_login(self.signed_in_user)
 
     def test_opportunity_list_view(self):
         response = self.client.get(reverse('good_agents:opportunity_list'))
@@ -814,7 +818,7 @@ class DogfoodMissionTests(TestCase):
         self.assertEqual(GoodDiscoveryRun.objects.filter(mission_config=mission).count(), 0)
 
 
-class GoodMapApiTests(TestCase):
+class GoodMapApiTests(SignedIn, TestCase):
     def test_map_api_returns_json_with_expected_keys(self):
         GoodOpportunity.objects.create(title='Map test', problem_statement='x', theme='energy')
         response = self.client.get(reverse('good_agents:good_map_api'))
@@ -833,7 +837,7 @@ class GoodMapApiTests(TestCase):
         self.assertNotIn('Water one', titles)
 
 
-class ObservatoryHealthApiTests(TestCase):
+class ObservatoryHealthApiTests(SignedIn, TestCase):
     def test_health_api_reports_provider_counts(self):
         SignalProvider.objects.create(slug='p1', name='P1', provider_type='news', status='active')
         SignalProvider.objects.create(slug='p2', name='P2', provider_type='news', status='failed')
@@ -1726,7 +1730,7 @@ class ImpactActionCentreViewTests(TestCase):
         self.assertContains(response, opp.title)
 
 
-class OpportunityDetailPR5SectionsTests(TestCase):
+class OpportunityDetailPR5SectionsTests(SignedIn, TestCase):
     def setUp(self):
         self.staff = _staff_user('detail-staff')
         self.opp = _make_opportunity()
@@ -2578,7 +2582,7 @@ class DossierTests(TestCase):
             self.assertIn(key, dossier)
 
 
-class PilotLaunchpadViewTests(TestCase):
+class PilotLaunchpadViewTests(SignedIn, TestCase):
     def setUp(self):
         self.staff = _staff_user('launchpad-staff')
         self.opp = _make_opportunity()

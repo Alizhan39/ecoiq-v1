@@ -25,6 +25,7 @@ from ecoiq_commerce.services.entitlements import (
     check_and_record_usage, has_entitlement, record_usage,
 )
 from ecoiq_commerce.services.events import track_event
+from core.testing_access import SignedIn
 
 User = get_user_model()
 
@@ -90,7 +91,7 @@ class SelfServiceAPIKeyTest(TestCase):
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)
-class ProductsPageTest(TestCase):
+class ProductsPageTest(SignedIn, TestCase):
     def test_products_page_renders_all_catalogue_products(self):
         call_command('seed_commercial_catalogue')
         resp = self.client.get('/products/')

@@ -65,15 +65,3 @@ class PortfolioCountryTransitionAtlasPageTests(StaffPageTestCase):
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
-
-class PlatformPagePortfolioCountryTransitionAtlasTeaserTests(TestCase):
-    def test_platform_page_mentions_portfolio_country_transition_atlas(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Portfolio & Country Transition Atlas')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

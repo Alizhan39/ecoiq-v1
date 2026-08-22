@@ -20,6 +20,7 @@ from gold_intelligence.models import (
     CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption,
 )
 from gold_intelligence.services import aggregates, project_finance, risk_intelligence
+from core.testing_access import SignedIn
 
 
 class GoldProjectModelTests(TestCase):
@@ -347,9 +348,12 @@ class AggregatesServiceTests(TestCase):
         self.assertEqual(len(result['milestones']), 1)
 
 
-class ViewTests(TestCase):
+class ViewTests(SignedIn, TestCase):
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.signed_in_user)  # page now requires sign-in
+        # This setUp replaces the mixin's client, so re-authenticate it.
+        self.client.force_login(self.signed_in_user)
         self.kz = CountryProfile.objects.create(name='Kazakhstan', slug='kazakhstan', iso_code='KZ', is_published=True)
         self.project = GoldProject.objects.create(
             name='View Test Project', slug='view-test-project', country=self.kz, is_demo=True, **BASE_CASE_KWARGS,

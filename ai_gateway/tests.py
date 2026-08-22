@@ -30,6 +30,7 @@ from ai_gateway.registry import registry
 from ai_gateway.routing import RoutingProfile
 from ai_gateway.service import service
 from ai_gateway.types import AIResponse
+from core.testing_access import SignedIn
 
 User = get_user_model()
 
@@ -1119,7 +1120,7 @@ class EndpointTests(GatewayTestCase):
 
 # ── Existing routes still work ────────────────────────────────────────────────
 
-class ExistingRoutesUnaffectedTests(TestCase):
+class ExistingRoutesUnaffectedTests(SignedIn, TestCase):
     def test_landing_and_api_docs_still_render(self):
         for path in ('/', '/api/'):
             self.assertEqual(self.client.get(path).status_code, 200, path)

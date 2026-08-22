@@ -67,7 +67,9 @@ class StaticSitemap(Sitemap):
         'trust',
         'pricing',
         'countries:directory',
-        'methodology',
+        # 'methodology' is gone: it is a 301 to /trust/ now, and a sitemap
+        # entry that redirects asks a crawler to fetch two URLs to reach one
+        # page. /trust/ is listed above in its own right.
         'api_docs',
         # GCC investor SEO pages — English + Arabic
         'gcc_investors:hub_en',
