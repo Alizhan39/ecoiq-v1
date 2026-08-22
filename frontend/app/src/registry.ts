@@ -1,6 +1,12 @@
 /**
  * EcoIQ Visual Intelligence — component registry.
  * Maps `data-island="Name"` → React component.
+ *
+ * CinematicHomeHero was removed with templates/landing.html. It was the only
+ * consumer of the six hero image variants under static/img/hero/ — 646 kB that
+ * no page referenced once `/` became React. Dropping it from the registry is
+ * what lets the bundle stop naming those files, which is what lets them be
+ * deleted.
  */
 import type { ComponentType } from 'react'
 import ImpactGlobe from './components/ImpactGlobe'
@@ -15,7 +21,6 @@ import HeatingTransitionStory from './components/stories/HeatingTransitionStory'
 import NarrativeStory from './components/stories/NarrativeStory'
 import DigitalTwinPreview from './components/intelligence/DigitalTwinPreview'
 import GlobalCountryExplorer from './components/global/GlobalCountryExplorer'
-import CinematicHomeHero from './components/cinematic/CinematicHomeHero'
 import CountUpValue from './components/cinematic/CountUpValue'
 import InvestorScrollStory from './components/investor-story/InvestorScrollStory'
 
@@ -33,7 +38,6 @@ export const registry: Record<string, ComponentType<any>> = {
   NarrativeStory,
   DigitalTwinPreview,
   GlobalCountryExplorer,
-  CinematicHomeHero,
   CountUpValue,
   InvestorScrollStory,
 }
