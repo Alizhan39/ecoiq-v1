@@ -264,12 +264,10 @@ ROUTE_META: dict[str, dict[str, str]] = {
             'and duration are agreed per engagement rather than sold as '
             'fixed tiers.'),
     },
-    '/companies': {
-        'title': 'Companies — EcoIQ',
-        'description': (
-            'The organisations EcoIQ tracks, and what evidence is recorded for '
-            'each. An assessment appears only where the evidence supports it.'),
-    },
+    # No '/companies' entry. That route is served by Django, not by spa_view —
+    # see the note at the top of frontend/web/src/app/routes.tsx — so an entry
+    # here would be metadata nothing reads, describing a page this module does
+    # not render. The template supplies its own title.
     '/league': {
         'title': 'League — EcoIQ',
         'description': (

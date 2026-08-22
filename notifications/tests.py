@@ -146,17 +146,19 @@ class FormSubmissionNotificationTests(TestCase):
 
     def test_contact_form(self):
         """
-        /contact/submit/ is now screened for abuse, so a genuine submission
-        must carry the anti-abuse fields the real form renders: an empty
+        The public contact endpoint is /api/v2/contact/ now — the React page
+        posts to it and /contact/submit/ went with the server-rendered form.
+
+        A genuine submission still has to carry the anti-abuse fields: an empty
         honeypot and a signed render timestamp. Turnstile is unconfigured in
-        tests, so it passes through (see notifications/tests_antispam.py for
-        the screening behaviour itself).
+        tests so it passes through; see notifications/tests_antispam.py for the
+        screening behaviour itself.
         """
         import time
 
         from notifications.antispam import timing
 
-        self._assert_one('contact', '/contact/submit/', dict(
+        self._assert_one('contact', '/api/v2/contact/', dict(
             name='Visitor', email='v@x.com', subject='Partnership', company='X',
             message='This is a genuine enquiry about a partnership opportunity.',
             website='',

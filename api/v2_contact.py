@@ -31,8 +31,10 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core import events
 from notifications.antispam import Decision, evaluate
 from notifications.antispam import timing as _timing
+from notifications.antispam.telemetry import log_submission
 
 #: Mirrors the server-rendered form's own limits. Truncation rather than
 #: rejection: a message one character over the limit is a real enquiry, and
@@ -90,6 +92,11 @@ def contact(request):
     )
 
     if verdict.decision is Decision.REJECT:
+        # Recorded BEFORE the early return. monitoring.record() drives the
+        # rejection-spike and fingerprint-flood alerts, and an endpoint that
+        # screens without recording turns those alerts off without failing
+        # anything — which is how the first version of this endpoint shipped.
+        log_submission(events.CONTACT_SUBMISSION_REJECTED, verdict, request)
         if verdict.http_status == 429:
             return Response(
                 {'errors': {'detail': 'Too many submissions from this '
@@ -98,8 +105,13 @@ def contact(request):
         # Same wording as success. A bot must not learn that it was caught.
         return Response({'status': 'received', 'detail': ACCEPTED_DETAIL})
 
-    _deliver(fields, quarantined=verdict.decision is Decision.REVIEW,
-             verdict=verdict)
+    quarantined = verdict.decision is Decision.REVIEW
+    log_submission(
+        events.CONTACT_SUBMISSION_REVIEWED if quarantined
+        else events.CONTACT_SUBMISSION_ACCEPTED,
+        verdict, request)
+
+    _deliver(fields, quarantined=quarantined, verdict=verdict)
     return Response({'status': 'received', 'detail': ACCEPTED_DETAIL})
 
 

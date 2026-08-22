@@ -152,9 +152,15 @@ urlpatterns = [
     # Hikma Company Intelligence — Evidence Layer terminal (read-only, API-driven)
     path('company-intelligence/<slug:slug>/', views.company_intelligence, name='company_intelligence'),
 
-    # EcoIQ Contact — enquiry form + founder/company details
+    # EcoIQ Contact — React, posting to /api/v2/contact/.
+    #
+    # /contact/submit/ is gone with the server-rendered form. It was the only
+    # thing that posted to it, and leaving a second public write endpoint into
+    # the same notification table would be a second door into the same room —
+    # which is exactly how the June-August abuse incident got in. The abuse
+    # screening moved with it: see api/v2_contact.py and
+    # notifications/tests_antispam.py.
     path('contact/',        spa.spa_view,         name='contact'),
-    path('contact/submit/', views.contact_submit, name='contact_submit'),
 
     # SEO — robots.txt served as plain text from templates/robots.txt
     path('robots.txt', views.robots_txt, name='robots_txt'),

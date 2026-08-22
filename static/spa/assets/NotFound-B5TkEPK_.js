@@ -1,0 +1,1 @@
+import{j as e}from"./index-Ck8W5V0Z.js";function o(){return e.jsxs("div",{className:"prose",children:[e.jsx("h1",{children:"Page not found"}),e.jsx("p",{children:"That page does not exist."})]})}export{o as default};

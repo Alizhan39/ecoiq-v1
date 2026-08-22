@@ -18,6 +18,7 @@ here rather than in production.
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -728,3 +729,65 @@ class WithheldScoreIsAbsentEverywhereTests(TestCase):
             with self.subTest(url=url):
                 self.assertNotIn(
                     stored, self.client.get(url).content.decode())
+
+
+class TitleMapsAgreeTests(TestCase):
+    """
+    core/spa.py's ROUTE_META and the SPA's ROUTE_TITLES must cover the same
+    routes, and agree on the text.
+
+    There are two copies because there have to be: Django titles the document
+    at request time (what a crawler reads, and what the page carries before any
+    JavaScript runs), and the client re-titles on navigation (what the tab
+    reads after a click). Django cannot reach into a bundle and a bundle cannot
+    import a Python dict.
+
+    Two copies are fine. Two copies that drift are not — a route renamed in one
+    would leave the tab saying something the page does not. So the TypeScript
+    source is read from disk and compared, which turns a silent divergence into
+    a failing test.
+    """
+
+    TITLES_TS = (
+        Path(__file__).resolve().parent.parent
+        / 'frontend' / 'web' / 'src' / 'app' / 'documentTitle.ts'
+    )
+
+    def client_titles(self) -> dict:
+        source = self.TITLES_TS.read_text(encoding='utf-8')
+        block = re.search(
+            r'ROUTE_TITLES:\s*Record<string,\s*string>\s*=\s*\{(.*?)\n\};',
+            source, re.DOTALL)
+        self.assertIsNotNone(
+            block, 'ROUTE_TITLES is no longer a literal object in '
+                   'documentTitle.ts, so this test can no longer read it.')
+        return dict(re.findall(r"'([^']+)':\s*'([^']*)'", block.group(1)))
+
+    def test_the_typescript_map_is_readable(self):
+        self.assertGreaterEqual(len(self.client_titles()), 8)
+
+    def test_both_maps_cover_the_same_routes(self):
+        server = set(spa.ROUTE_META)
+        client = set(self.client_titles())
+        self.assertEqual(
+            server, client,
+            'core/spa.py ROUTE_META and frontend/web/src/app/documentTitle.ts '
+            'ROUTE_TITLES cover different routes. Add the route to both.')
+
+    def test_both_maps_agree_on_every_title(self):
+        client = self.client_titles()
+        for route, meta in spa.ROUTE_META.items():
+            with self.subTest(route=route):
+                self.assertEqual(
+                    meta['title'], client.get(route),
+                    f'The title for {route} differs between core/spa.py and '
+                    'documentTitle.ts. The tab would say one thing and the '
+                    'served document another.')
+
+    def test_the_not_found_title_matches_the_catch_all(self):
+        source = self.TITLES_TS.read_text(encoding='utf-8')
+        served = self.client.get('/no-such-page-at-all/').content.decode()
+        client_not_found = re.search(r"NOT_FOUND\s*=\s*'([^']+)'", source)
+
+        self.assertIsNotNone(client_not_found)
+        self.assertIn(f'<title>{client_not_found.group(1)}</title>', served)

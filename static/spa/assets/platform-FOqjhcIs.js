@@ -1,0 +1,1 @@
+import{c as a}from"./index-Ck8W5V0Z.js";function r(t){return a.get("/platform/",t)}function e(t){return t.value===null?"—":t.value.toLocaleString()}const n="NOT YET MEASURED";function u(t){return t.evaluation!==n}export{e as c,r as g,u as i};
