@@ -46,6 +46,26 @@ class SharedSocialCopy(SimpleTestCase):
     def test_it_describes_what_the_product_actually_does(self):
         self.assertIn('Evidence-backed decision intelligence', _read('base.html'))
 
+    def test_no_page_override_promises_scores_unconditionally(self):
+        """
+        base.html is only the DEFAULT. A page that overrides og_description
+        can reintroduce the claim, and about.html did -- "EcoIQ scores
+        companies globally", with no evidence condition attached.
+        """
+        import re
+
+        offenders = []
+        for path in TEMPLATES.rglob('*.html'):
+            text = path.read_text(encoding='utf-8', errors='ignore')
+            for match in re.finditer(
+                    r'{%\s*block og_description\s*%}(.*?){%\s*endblock', text, re.S):
+                body = match.group(1).lower()
+                if 'scores companies' in body and 'evidence' not in body:
+                    offenders.append(path.name)
+
+        self.assertEqual(offenders, [],
+                         f'unconditional score claim in meta: {offenders}')
+
 
 class PressKit(SimpleTestCase):
 
