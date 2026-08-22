@@ -18,7 +18,12 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://ecoiq.uk{{ request.path }}">
   <meta property="og:title" content="{% block og_title %}EcoIQ — Ethical Intelligence Platform{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}AI-powered climate intelligence: company rankings, ESG scores, transition roadmaps.{% endblock %}">
+  {# The previous text promised "company rankings, ESG scores, transition
+     roadmaps". No organisation currently has a publishable score, so rankings
+     and scores are withheld -- and this tag is the copy that appears when any
+     page is shared, which made it the most widely seen unsupported claim in
+     the product. #}
+  <meta property="og:description" content="{% block og_description %}Evidence-backed decision intelligence. Every assessment shows how much evidence supports it, and how good that evidence is.{% endblock %}">
   <meta property="og:image" content="https://ecoiq.uk/static/brand/ecoiq-og.png">
 
   <!-- Favicon -->
