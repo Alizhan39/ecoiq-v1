@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 /**
  * Eco Tours.
  *
@@ -6,7 +8,15 @@
  * none of those — a booking form that cannot book is a lie with a submit
  * button.
  *
- * The enquiry goes to the existing leads app rather than a new mechanism.
+ * The enquiry goes through /contact, which is a real endpoint with real abuse
+ * screening. An earlier version of this page published a `hello@ecoiq.uk`
+ * address that appears nowhere else in the repository and that nothing shows
+ * to exist — an invented contact route is the same category of fabrication as
+ * an invented number, and worse, because someone would write to it.
+ *
+ * The full programme narrative lives at /khalifa-tours/, which is still
+ * server-rendered. This page leads with the status and links there, rather
+ * than restating it less well.
  */
 export default function Tours() {
   return (
@@ -29,15 +39,28 @@ export default function Tours() {
         </p>
       </section>
 
+      <section aria-labelledby="tours-programme">
+        <h2 id="tours-programme">The programme</h2>
+        <p>
+          <a href="/khalifa-tours/">
+            Khalifa Stewardship Tours — the full itinerary and intent
+          </a>
+        </p>
+        <p className="state__detail">
+          That page describes what an expedition is designed to be. Nothing on
+          it has run yet.
+        </p>
+      </section>
+
       <section aria-labelledby="tours-register">
         <h2 id="tours-register">Register interest</h2>
         <p>
-          Email <a href="mailto:hello@ecoiq.uk">hello@ecoiq.uk</a> with the
-          region you are interested in.
+          <Link className="cta" to="/contact">Tell us where to run the first one</Link>
         </p>
         <p className="state__detail">
-          A form here would need a lead endpoint that this page does not yet
-          have. Email works today, and is honest about what happens next.
+          Registering interest tells us which regions to plan for. We will come
+          back to you before anything is scheduled — there is nothing to book
+          yet.
         </p>
       </section>
     </div>

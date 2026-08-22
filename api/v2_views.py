@@ -102,11 +102,38 @@ def leaderboard_v2(request):
         else:
             withheld += 1
 
+    from companies.evidence import PENDING_HEADLINE
+
     return Response({
         'count': len(eligible),
         'withheld_insufficient_evidence': withheld,
         'leaderboard': CompanyV2Serializer(
             eligible, many=True, context={'request': request}).data,
+        # The BACKEND owns the wording for an absent ranking, in the same
+        # constants every other surface uses.
+        #
+        # The league page used to be server-rendered and carried this text in
+        # its HTML; it is React now, and if the page wrote its own sentence the
+        # explanation would drift from the one the company pages give. An
+        # evidence system that explains itself differently depending on which
+        # page you are on has two explanations, which is one too many.
+        #
+        # The HEADLINE is the shared constant — that is the claim which must
+        # not drift between surfaces. The DETAIL is written for this one:
+        # PENDING_DETAIL says "for this organisation", which is right on a
+        # company page and wrong on a leaderboard, and a sentence that does not
+        # fit the page it is on reads as boilerplate rather than as an
+        # explanation.
+        #
+        # Null when something IS ranked: there is then nothing to explain.
+        'evidence_note': None if eligible else {
+            'headline': PENDING_HEADLINE,
+            'detail': (
+                'No organisation currently has the evidence coverage a '
+                'published score requires, so none can be ranked. A rank is a '
+                'comparative claim, and publishing one would assert exactly '
+                'what the score is withholding.'),
+        },
     })
 
 

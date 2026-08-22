@@ -39,13 +39,29 @@ Provenance engines            confidence,metric_registry,scoring}.py
     PostgreSQL
 ```
 
-Three frontend directories, only one of which is a runtime:
+Three frontend directories, **none** of which is a runtime dependency:
 
-| path | what | runtime? |
+| path | what | built to |
 |---|---|---|
-| `frontend/web` | public product SPA | **yes** |
-| `frontend/app` | build-time React islands → `static/dist/` | no |
-| `frontend/remotion` | offline video authoring | no |
+| `frontend/web` | public product SPA | `static/spa/` — committed |
+| `frontend/app` | React islands for the server-rendered pages | `static/dist/` — committed |
+| `frontend/remotion` | offline video authoring | not deployed |
+
+Django serves the SPA itself, from one origin — no second hostname, no separate
+static host, no SSR framework. Render's build runs Python only; the built SPA
+is committed, and CI rebuilds it and fails the PR if the committed artefact
+does not match a fresh build.
+
+After changing anything under `frontend/web/src`:
+
+```bash
+npm --prefix frontend/web ci && npm --prefix frontend/web run build
+```
+
+and commit `static/spa/` with the source change.
+
+See [`docs/product/FRONTEND_DEPLOYMENT.md`](docs/product/FRONTEND_DEPLOYMENT.md)
+for the routing, the catch-all's exclusions, the SEO position and the rollback.
 
 ---
 
@@ -111,9 +127,12 @@ python manage.py runserver 8731
 
 ```bash
 cd frontend/web
-npm install
+npm ci
 npm run dev          # :5173, proxies /api to :8731
 ```
+
+Or, to see it exactly as production serves it — Django rendering the built
+shell — run `npm run build` and use `:8731`.
 
 ---
 
@@ -128,8 +147,10 @@ cd frontend/web
 npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-CI runs `ruff`, `mypy`, Django checks, the full suite, Gitleaks and a mobile
-gate on every PR.
+CI runs `ruff`, `mypy`, Django checks, the full suite, Gitleaks, a mobile gate
+and the frontend job on every PR. The frontend job rebuilds `static/spa/` from
+a clean `npm ci` and fails if the committed artefact is stale — a committed
+build artefact is only trustworthy if something proves it matches its source.
 
 ---
 

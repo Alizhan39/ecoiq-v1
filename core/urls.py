@@ -4,10 +4,19 @@ from . import views
 from . import globe as globe_views
 from . import why_views
 from harvester import views as harvester_views
+from . import spa
 
 urlpatterns = [
     # Landing page — public homepage
-    path('',                                        views.landing,           name='home'),
+    # ── React SPA ─────────────────────────────────────────────────────────
+    #
+    # These routes keep their PATH and their URL NAME and change only their
+    # view, so `{% url 'home' %}` and friends still resolve from the ~100
+    # pages that are still server-rendered, and nothing about ordering or
+    # prefix behaviour changes. The Django views and templates they used to
+    # render are removed in the follow-up commit, AFTER the React routing has
+    # been verified in production — see docs/product/FRONTEND_DEPLOYMENT.md.
+    path('',                                        spa.spa_view,            name='home'),
 
     # /rankings/ → canonical company rankings (alias for /companies/)
     path('rankings/', RedirectView.as_view(url='/companies/', permanent=False), name='rankings'),
@@ -47,16 +56,16 @@ urlpatterns = [
     path('methodology/',                             views.methodology,        name='methodology'),
 
     # EcoIQ About — founder story, mission, framework
-    path('about/',                                   views.about,              name='about'),
+    path('about/',                                   spa.spa_view,             name='about'),
 
     # EcoIQ Intelligence — public. A deliberate placeholder until the full
     # experience ships; the primary navigation needs a destination and the path
     # was freed by moving the staff-only Environmental Intelligence OS to
     # /intelligence-os/. Claims no capability and shows no figures.
-    path('intelligence/',                            views.intelligence,       name='intelligence'),
+    path('intelligence/',                            spa.spa_view,             name='intelligence'),
 
     # EcoIQ Pricing — plan comparison, billing toggle, FAQ
-    path('pricing/',                                 views.pricing,            name='pricing'),
+    path('pricing/',                                 spa.spa_view,             name='pricing'),
 
     # EcoIQ API Documentation — v1 endpoints, auth, rate limits, SDK quick-start
     path('api-docs/',                                views.api_docs,           name='api_docs'),
@@ -144,7 +153,7 @@ urlpatterns = [
     path('company-intelligence/<slug:slug>/', views.company_intelligence, name='company_intelligence'),
 
     # EcoIQ Contact — enquiry form + founder/company details
-    path('contact/',        views.contact,        name='contact'),
+    path('contact/',        spa.spa_view,         name='contact'),
     path('contact/submit/', views.contact_submit, name='contact_submit'),
 
     # SEO — robots.txt served as plain text from templates/robots.txt

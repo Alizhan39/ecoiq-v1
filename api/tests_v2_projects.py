@@ -6,13 +6,15 @@ frontend needs a real shape to render an honest empty state against — and
 inventing demo rows to make a page look populated is the failure this
 programme exists to remove.
 """
+import re
+
+from django.core.cache import cache
 from django.test import Client, TestCase
 
 
 class ProjectsEndpoint(TestCase):
 
     def setUp(self):
-        from django.core.cache import cache
         cache.clear()
         self.client = Client()
 
@@ -96,3 +98,81 @@ class ProjectQuantities(TestCase):
         body = json.dumps(self.client.get('/api/v2/projects/').json())
 
         self.assertNotIn('ecoiq_score', body)
+
+
+class ProjectConceptTests(TestCase):
+    """
+    Programme concepts travel in their own key, and are never counted.
+
+    Five concepts rendered next to zero recorded projects becomes "five
+    projects" the moment they share a list — the same substitution as a score
+    standing in for evidence, and more tempting, because the merged page looks
+    finished.
+    """
+
+    def setUp(self):
+        cache.clear()
+
+    def payload(self):
+        return self.client.get('/api/v2/projects/').json()
+
+    def test_concepts_are_returned(self):
+        """
+        They are real founder content. Migrating the frontend must not delete
+        them, and re-typing them into React would fork the source of truth.
+        """
+        self.assertGreater(len(self.payload()['concepts']), 0)
+
+    def test_concepts_read_from_the_same_module_the_templates_used(self):
+        from projects.data import PROJECTS
+
+        concepts = self.payload()['concepts']
+        self.assertEqual(len(concepts), len(PROJECTS))
+        self.assertEqual({c['slug'] for c in concepts},
+                         {p['slug'] for p in PROJECTS})
+
+    def test_count_counts_recorded_projects_only(self):
+        from league.models import EnvironmentalProject
+
+        body = self.payload()
+        self.assertEqual(body['count'], EnvironmentalProject.objects.count())
+        self.assertNotEqual(body['count'], len(body['concepts']))
+
+    def test_concepts_are_not_in_results(self):
+        body = self.payload()
+        concept_slugs = {c['slug'] for c in body['concepts']}
+        result_slugs = {r['slug'] for r in body['results']}
+        self.assertEqual(concept_slugs & result_slugs, set())
+
+    def test_no_concept_claims_to_be_complete_or_verified(self):
+        """
+        A concept has no verification state, because there is nothing to have
+        verified. If one ever acquired a `verified` field, a UI that renders
+        both lists with the same component would show a badge saying so.
+        """
+        for concept in self.payload()['concepts']:
+            with self.subTest(slug=concept['slug']):
+                self.assertNotIn('verified', concept)
+                self.assertNotIn(concept['status_key'],
+                                 ('complete', 'completed', 'delivered'))
+
+    def test_every_funding_figure_travels_with_its_qualifier(self):
+        """
+        A CURRENCY FIGURE must never appear without the words that qualify it.
+        A bare "£15,000" on a concept page reads as committed capital; the same
+        figure beside "pilot (indicative)" does not.
+
+        Scoped to figures, not to the field: one concept carries the text
+        "Concept stage" in `funding_amount`, which is a qualifier already and
+        needs no second one.
+        """
+        for concept in self.payload()['concepts']:
+            with self.subTest(slug=concept['slug']):
+                amount = concept['funding_amount']
+                if not re.search(r'[£$€]\s?\d', amount):
+                    continue
+                qualifiers = (concept['funding_label'] + ' '
+                              + concept['funding_note']).lower()
+                self.assertIn('indicative', qualifiers,
+                              f'{concept["slug"]} publishes {amount} with no '
+                              'qualifier.')

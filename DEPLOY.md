@@ -145,6 +145,37 @@ webhook endpoint registered with its own signing secret, live price ids set and
 synced, tax registrations resolved, and the Customer Portal configured in the
 live account.
 
+## The React frontend
+
+`ecoiq.uk` serves the React SPA through Django. There is no second service, no
+second hostname and no static host to configure — the built app lives in
+`static/spa/`, is committed to the repository, and WhiteNoise serves its assets
+like any other static file.
+
+**Render's Python environment has no Node toolchain**, and `build.sh` does not
+run Vite. It *verifies* the committed artefact instead, and **refuses to
+deploy** if `static/spa/index.html` is missing, has lost its metadata markers,
+or names an asset that is not on disk. A half-committed frontend would
+otherwise ship as a blank white page with one 404 in the console and no
+server-side error at all.
+
+So the rule for anyone changing the frontend is:
+
+```bash
+npm --prefix frontend/web ci && npm --prefix frontend/web run build
+```
+
+and commit `static/spa/` in the same change. CI fails the pull request if you
+forget.
+
+Nothing else about the Render configuration changes: same service, same start
+command, same health check, no new environment variable, no Redis, no worker.
+
+Full detail — routing, the catch-all's exclusions, caching, the SEO position
+and the rollback procedure — is in `docs/product/FRONTEND_DEPLOYMENT.md`.
+
+---
+
 ## Post-deploy smoke check
 
 ```

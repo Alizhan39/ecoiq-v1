@@ -139,9 +139,19 @@ class PublicSurfaces(TestCase):
         self.assertNotIn('legacy-co', body)
 
     def test_the_league_does_show_the_evidenced_company(self):
-        body = self.client.get('/league/').content.decode()
+        """
+        The gate withholds; it does not hide everything.
 
-        self.assertIn('Evidenced-Co', body)
+        Asserted against /api/v2/leaderboard/ now that the league is React —
+        that is the data the page renders, and it is where the ranking decision
+        is actually made.
+        """
+        payload = self.client.get('/api/v2/leaderboard/').json()
+        names = [row['name'] for row in payload['leaderboard']]
+
+        self.assertIn('Evidenced-Co', names)
+        self.assertNotIn('Legacy-Co', names)
+        self.assertIsNone(payload['evidence_note'])
 
     # ── API v2 ───────────────────────────────────────────────────────────────
 

@@ -117,9 +117,17 @@ class InvariantB_NoRankWithoutEvidence(TestCase):
         """
         'No companies found for the selected sector' would be a different and
         untrue explanation for why the table is empty.
+
+        Asserted against the API now that the league is React. The wording
+        lives in the backend's constants and the page renders it, so the
+        explanation cannot drift from the one the company pages give.
         """
-        self.assertIn(PENDING_HEADLINE, self.body)
-        self.assertNotIn('No companies found for the selected sector', self.body)
+        payload = Client().get('/api/v2/leaderboard/').json()
+
+        self.assertEqual(payload['count'], 0)
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
+        self.assertNotIn('No companies found for the selected sector',
+                         self.body)
 
     def test_companies_are_not_given_a_bottom_rank_instead(self):
         lowered = self.body.lower()
@@ -216,9 +224,25 @@ class InvariantE_SyntheticDataStaysInternal(TestCase):
         self.assertIn('71.4', response.content.decode())
 
     def test_staff_still_see_the_full_league_table(self):
+        """
+        The PUBLIC league is fail-closed for everybody, staff included — it
+        reads /api/v2/leaderboard/, which applies the gate with no exemption.
+        The full internal table moved to a staff-only route rather than being
+        deleted: the people who have to see what the estate holds still can.
+        """
         client = Client()
         client.force_login(self.staff)
-        self.assertIn('/league/internal-ltd/', client.get('/league/').content.decode())
+
+        internal = client.get('/league/internal/').content.decode()
+        self.assertIn('/league/internal-ltd/', internal)
+
+        # And the public page still shows them nothing.
+        self.assertNotIn('71.4', client.get('/league/').content.decode())
+
+    def test_the_internal_league_table_is_staff_only(self):
+        response = Client().get('/league/internal/')
+        self.assertNotEqual(response.status_code, 200)
+        self.assertNotIn(b'71.4', response.content)
 
     def test_anonymous_visitors_do_not(self):
         self.assertNotIn('71.4', Client().get('/companies/internal-ltd/').content.decode())

@@ -171,7 +171,21 @@
         header too; staff reach them from /admin/ and from the platform itself.
       {% endcomment %}
       <a href="{% url 'intelligence' %}">{% trans "Intelligence" %}</a>
-      <a href="/khalifa-tours/">{% trans "Eco Tours" %}</a>
+      {% comment %}
+        /tours/ is the Eco Tours destination in BOTH navigations. It leads
+        with the real status — interest only, nothing bookable — and links on
+        to /khalifa-tours/ for the full programme.
+
+        The React header used to point at /tours and this one at
+        /khalifa-tours/, so the same label led to two different pages
+        depending on which page you were already on.
+
+        A comment tag, not a multi-line hash comment: Django renders those
+        literally, and because base.html is included everywhere, one of them
+        leaked template syntax onto every page of the site earlier in this
+        programme. companies/tests_template_comments.py caught this one too.
+      {% endcomment %}
+      <a href="/tours/">{% trans "Eco Tours" %}</a>
       <a href="/projects/">{% trans "Projects" %}</a>
       <a href="/about/">{% trans "About" %}</a>
       <a href="{% url 'contact' %}">{% trans "Contact" %}</a>
@@ -246,7 +260,7 @@
       <div>
         <div style="font-size:.7em;letter-spacing:.12em;text-transform:uppercase;color:#666;margin-bottom:.6rem;">{% trans "Explore" %}</div>
         <a href="{% url 'intelligence' %}" style="color:#888;text-decoration:none;display:block;margin-bottom:.35rem;">{% trans "Intelligence" %}</a>
-        <a href="/khalifa-tours/" style="color:#888;text-decoration:none;display:block;margin-bottom:.35rem;">{% trans "Eco Tours" %}</a>
+        <a href="/tours/" style="color:#888;text-decoration:none;display:block;margin-bottom:.35rem;">{% trans "Eco Tours" %}</a>
         <a href="/projects/" style="color:#888;text-decoration:none;display:block;">{% trans "Projects" %}</a>
       </div>
       <div>

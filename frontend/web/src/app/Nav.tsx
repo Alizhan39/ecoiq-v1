@@ -22,16 +22,29 @@ const LINKS = [
 /**
  * Reachable, but not primary.
  *
- * Companies is a secondary EVIDENCE surface, not the product — it is where you
- * inspect what EcoIQ knows about an organisation, reached from Intelligence or
- * a direct link. Labs holds the experimental work. Putting either in the
- * primary nav would say the product is a data directory, or thirty prototypes.
+ * Labs holds the experimental work; putting it in the primary nav would say
+ * the product is thirty prototypes.
+ *
+ * Companies is a secondary EVIDENCE surface and is NOT in this list, because
+ * it is not a React route — Django still serves /companies/. It is linked from
+ * the footer with a plain anchor, so a click and a refresh do the same thing.
+ * See the note at the top of app/routes.tsx.
  */
 const SECONDARY = [
-  { to: '/companies', label: 'Companies' },
+  { to: '/pricing', label: 'Pricing' },
   { to: '/labs', label: 'EcoIQ Labs' },
   { to: '/trust', label: 'Trust' },
 ] as const;
+
+/**
+ * League is deliberately in neither list.
+ *
+ * A ranking is the most confident statement a system like this can make, and
+ * EcoIQ currently cannot make it about anybody — the leaderboard truthfully
+ * contains zero ranked organisations. Promoting it would say the product is a
+ * ranking. It stays reachable from the footer and from Companies, which is
+ * where somebody looking for a comparison will actually go.
+ */
 
 export function Nav() {
   const [open, setOpen] = useState(false);

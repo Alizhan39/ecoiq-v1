@@ -326,14 +326,22 @@ class InternalLinkingTests(TestCase):
             content = self.client.get(URL_BY_PAGE_LANG[(page, 'en')]).content.decode()
             self.assertIn('/gcc-investors/', content, page)
 
-    def test_pricing_page_links_to_gcc_hub(self):
+    def test_the_hub_keeps_an_internal_entry_point(self):
         """
-        /amanah-autopilot/ was checked here too, but it is now staff-only, so an
-        anonymous client no longer receives its body. Its own inbound link from
-        the GCC pages was replaced with /about/ — see
-        core/tests_public_navigation.GccInvestorPageTests.
+        /gcc-investors/ fronts eight sitemap-registered pages, and an inbound
+        internal link is what keeps them from being orphaned.
+
+        It used to come from /pricing/ and from the server-rendered homepage.
+        Both are React now, so the link moved to the React footer — which puts
+        it on EVERY page of the app rather than one, and is asserted in
+        frontend/web/src/app/App.test.tsx. This asserts the half Django still
+        owns: the server-rendered pages carry it too.
         """
-        content = self.client.get('/pricing/').content.decode()
+        content = self.client.get('/methodology/').content.decode()
+        self.assertIn('/gcc-investors/', content)
+
+    def test_the_hub_is_still_in_the_sitemap(self):
+        content = self.client.get('/sitemap.xml').content.decode()
         self.assertIn('/gcc-investors/', content)
 
     def test_every_page_links_to_enquiry_form(self):

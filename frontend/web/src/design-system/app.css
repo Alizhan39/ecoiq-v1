@@ -164,3 +164,27 @@
 .trust dl { display: grid; gap: .8rem; }
 .trust dt { font-weight: 600; }
 .trust dd { margin: .15rem 0 0; color: var(--ink-soft); }
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+.field { margin: 0 0 1.25rem; }
+.field__label { display: block; font-weight: 600; margin-bottom: .35rem; }
+.field__optional { font-weight: 400; color: var(--ink-soft); }
+.field__input {
+  width: 100%; padding: .6rem .7rem; font: inherit; color: inherit;
+  background: var(--paper-soft); border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.field__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.field__hint, .field__error { margin: .35rem 0 0; font-size: .875rem; }
+.field__hint { color: var(--ink-soft); }
+.field__error { color: var(--danger); }
+.field__input[aria-invalid='true'] { border-color: var(--danger); }
+.contact form { max-width: 34rem; }
+
+/* ── League table ────────────────────────────────────────────────────────── */
+.league-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.league-table th, .league-table td {
+  text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--line);
+}
+.league-table th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
+.league-table td:first-child, .league-table th:first-child { width: 4rem; }

@@ -10,6 +10,15 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly url: string,
+    /**
+     * The parsed error body, when the server sent one.
+     *
+     * Carried rather than discarded because a 400 from a form endpoint says
+     * WHICH field was wrong, and a client that throws that away has to replace
+     * it with a generic message that helps nobody. `undefined` when the
+     * response had no JSON body — which is the normal case for a 404 or a 500.
+     */
+    readonly body?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -70,10 +79,20 @@ export async function request<T>(
   });
 
   if (!response.ok) {
+    // Best effort. A body that is not JSON, or absent entirely, is a normal
+    // outcome here (404 pages, proxy errors) and must not turn into a second
+    // exception that hides the first.
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      body = undefined;
+    }
     throw new ApiError(
       `${method} ${url} failed with ${response.status}`,
       response.status,
       url,
+      body,
     );
   }
 

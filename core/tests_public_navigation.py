@@ -14,6 +14,17 @@ still responds; it is simply no longer promoted on every public page.
 
 These tests are written against link destinations rather than whole-page
 strings, so restyling the header does not break them.
+
+AFTER THE REACT CUTOVER
+-----------------------
+`/` and `/about/` are served by the React app now, so they carry no Django
+navigation at all. base.html still renders the ~100 pages that were NOT
+migrated, and its navigation is still the thing these tests exist to protect —
+so they assert against a page that base.html still renders.
+
+The React navigation has its own tests, in frontend/web/src/app/Nav.test.tsx,
+asserting the same rule: five primary destinations, and nothing internal
+promoted alongside them.
 """
 import re
 
@@ -22,7 +33,11 @@ from django.test import Client, SimpleTestCase, TestCase
 from django.urls import reverse
 
 # The five public items plus the utility sign-in.
-EXPECTED_NAV = ['/intelligence/', '/khalifa-tours/', '/projects/', '/about/', '/contact/']
+EXPECTED_NAV = ['/intelligence/', '/tours/', '/projects/', '/about/', '/contact/']
+
+#: A page base.html still renders. `/` and `/about/` are React now, so asserting
+#: the Django header against them would assert nothing.
+SERVER_RENDERED = '/methodology/'
 
 # Destinations that must no longer appear in the primary public navigation.
 # They remain reachable — this asserts placement, not existence.
@@ -53,33 +68,41 @@ def footer_links(html):
     return re.findall(r'href="([^"]+)"', match.group(1)) if match else []
 
 
-class HomepageNavigationTests(TestCase):
-    """landing.html carries its own header — it does not extend base.html."""
+class ReactHomepageTests(TestCase):
+    """
+    `/` is the React app. It carries no Django navigation at all.
+
+    The React header is asserted in frontend/web/src/app/Nav.test.tsx, against
+    the same rule this module protects. Duplicating it here would mean
+    asserting on a string in a JavaScript bundle, which passes for as long as
+    nobody minifies it differently.
+    """
 
     def setUp(self):
         self.body = self.client.get('/').content.decode()
 
-    def test_nav_contains_exactly_the_approved_public_items(self):
-        self.assertEqual(nav_links(self.body), EXPECTED_NAV)
+    def test_the_homepage_is_the_react_shell(self):
+        self.assertIn('id="root"', self.body)
 
-    def test_no_internal_module_appears_in_the_header(self):
-        links = header_links(self.body)
+    def test_it_carries_no_server_rendered_navigation(self):
+        self.assertEqual(nav_links(self.body), [])
+        self.assertEqual(header_links(self.body), [])
+
+    def test_it_promotes_no_internal_module(self):
+        """
+        Still worth asserting: the shell is where a stray marketing link would
+        be added if someone wanted one on every page.
+        """
         for path in BANISHED_FROM_NAV:
             with self.subTest(path=path):
-                self.assertNotIn(path, links)
-
-    def test_sign_in_is_reachable_for_anonymous_visitors(self):
-        self.assertIn('/login/', header_links(self.body))
-
-    def test_logo_still_links_home(self):
-        self.assertIn('/', header_links(self.body))
+                self.assertNotIn(f'href="{path}"', self.body)
 
 
 class BaseTemplateNavigationTests(TestCase):
-    """Every non-homepage public page renders base.html."""
+    """base.html still renders the pages that were not migrated to React."""
 
     def setUp(self):
-        self.body = self.client.get('/about/').content.decode()
+        self.body = self.client.get(SERVER_RENDERED).content.decode()
 
     def test_nav_contains_exactly_the_approved_public_items(self):
         links = [link for link in nav_links(self.body) if link != '/login/']
@@ -98,24 +121,17 @@ class BaseTemplateNavigationTests(TestCase):
         self.assertNotIn('/admin/', links)
 
 
-class HeadersMatchTests(TestCase):
-    """
-    landing.html and base.html define the header twice. They must not drift, or
-    the homepage silently keeps an older navigation than the rest of the site.
-    """
-
-    def test_homepage_and_inner_page_offer_the_same_public_items(self):
-        home = nav_links(self.client.get('/').content.decode())
-        inner = [link for link in nav_links(self.client.get('/about/').content.decode())
-                 if link != '/login/']
-        self.assertEqual(home, inner)
+# HeadersMatchTests is gone. It compared landing.html's header with
+# base.html's, because the homepage defined its own and could silently drift.
+# `/` is React now, so there is exactly one server-rendered header left and
+# nothing for it to drift from.
 
 
 class FooterTests(TestCase):
     """A simplified header is pointless if the footer restates the old tree."""
 
     def test_footer_is_small(self):
-        for path in ('/', '/about/'):
+        for path in (SERVER_RENDERED, '/press/'):
             with self.subTest(path=path):
                 links = footer_links(self.client.get(path).content.decode())
                 self.assertLessEqual(
@@ -123,7 +139,7 @@ class FooterTests(TestCase):
                     'the footer is growing back into a second navigation tree')
 
     def test_footer_drops_technical_module_links(self):
-        for path in ('/', '/about/'):
+        for path in (SERVER_RENDERED, '/press/'):
             body = self.client.get(path).content.decode()
             links = footer_links(body)
             for gone in ('/platform/', '/ethical-governance/', '/governance-principles/',
@@ -134,14 +150,19 @@ class FooterTests(TestCase):
 
     def test_footer_keeps_the_gcc_seo_entry_point(self):
         """
-        /gcc-investors/ fronts eight sitemap-registered pages and this is their
-        only internal link; dropping it would be an SEO regression.
+        /gcc-investors/ fronts eight sitemap-registered pages and the footer is
+        their only internal link; dropping it would orphan all eight.
+
+        It used to be linked from the server-rendered homepage and from
+        /pricing/. Both are React now, so the React footer carries it too —
+        asserted in frontend/web/src/app/App.test.tsx.
         """
-        self.assertIn('/gcc-investors/', footer_links(self.client.get('/').content.decode()))
+        body = self.client.get(SERVER_RENDERED).content.decode()
+        self.assertIn('/gcc-investors/', footer_links(body))
 
     def test_footer_invents_no_legal_pages(self):
         """EcoIQ has no privacy/terms/cookie pages; we must not link to them."""
-        links = footer_links(self.client.get('/about/').content.decode())
+        links = footer_links(self.client.get(SERVER_RENDERED).content.decode())
         for absent in ('/privacy/', '/terms/', '/cookies/'):
             with self.subTest(absent=absent):
                 self.assertNotIn(absent, links)
@@ -177,9 +198,15 @@ class IntelligenceRouteTests(TestCase):
     """
 
     def test_public_intelligence_page_is_anonymous_and_renders(self):
+        """
+        The placeholder this used to assert on is gone: /intelligence/ is the
+        React assessment flow now. What still matters is that it is public, it
+        responds, and it is the app rather than a stray Django page.
+        """
         response = self.client.get('/intelligence/')
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'responsible steward')
+        self.assertContains(response, 'id="root"')
+        self.assertContains(response, '<title>Intelligence — EcoIQ</title>')
 
     def test_public_page_makes_no_capability_claims_with_numbers(self):
         """
