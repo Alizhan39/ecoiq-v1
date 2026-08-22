@@ -155,10 +155,12 @@
       </div>
       <div class="fact-cell">
         <span class="fact-label">Coverage</span>
-        {# Was "219+ companies · 25+ countries" -- a hand-maintained figure that
-    was already stale (the estate holds 467 rows) and which counted TABLE ROWS
-    rather than anything assessed. Coverage figures come from
-    /api/v2/platform/, which derives them. #}
+        {% comment %}
+          Was "219+ companies · 25+ countries" -- a hand-maintained figure,
+          already stale (the estate holds 467 rows), and counting TABLE ROWS
+          rather than anything assessed. Coverage figures come from
+          /api/v2/platform/, which derives them.
+        {% endcomment %}
         <span class="fact-value">Coverage figures: ecoiq.uk/api/v2/platform/</span>
       </div>
       <div class="fact-cell">

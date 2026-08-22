@@ -54,9 +54,13 @@ class PressKit(SimpleTestCase):
         A count in copy drifts silently, which makes a stale figure
         indistinguishable from an invented one.
         """
-        source = _read('press.html')
-        body = '\n'.join(
-            line for line in source.splitlines() if not line.strip().startswith('{#'))
+        import re
+
+        # Strip {% comment %} blocks: the historical figure is quoted inside
+        # one, explaining what it was and why it went. The test must read what
+        # RENDERS, not the note about what used to.
+        body = re.sub(r'{%\s*comment\s*%}.*?{%\s*endcomment\s*%}', '',
+                      _read('press.html'), flags=re.S)
 
         self.assertNotIn('219+ companies', body)
         self.assertNotIn('25+ countries', body)
