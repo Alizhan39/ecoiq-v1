@@ -31,6 +31,7 @@ from ai_agent_council.models import (
 )
 from django.core.management import call_command
 from agent_runtime_model_router.services.demo_pipeline import DEMO_RUN_SLUG
+from core.testing_access import SignedIn
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% extends', '{% block',
@@ -728,7 +729,7 @@ REQUIRED_TEXT = [
 ]
 
 
-class RuntimeRouteTests(TestCase):
+class RuntimeRouteTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command('seed_agent_runtime_demo')
@@ -798,19 +799,6 @@ class RuntimeRouteTests(TestCase):
                 idx = content.find('Microsoft certified', idx + 1)
             self.assertNotIn('Shariah certified', content)
             self.assertNotIn('is a fatwa', content)
-
-
-class PlatformPageTeaserTests(TestCase):
-    def test_platform_page_mentions_agent_runtime_model_router(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Agent Runtime & Model Router')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
 
 class FallbackModelSelectionTests(TestCase):

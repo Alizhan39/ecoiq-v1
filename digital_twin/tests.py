@@ -26,6 +26,7 @@ from digital_twin.services import scenario_simulation
 from digital_twin.services import stewardship as stewardship_service
 from digital_twin.services import units as units_service
 from waste_to_value_capital_allocation_engine.models import CapitalAllocationDecision, InterventionOption, OperationalLoss
+from core.testing_access import SignedIn
 
 User = get_user_model()
 
@@ -588,24 +589,41 @@ class OutcomesTests(TestCase):
         self.assertEqual(cad.verified_impact_score, 95.0)  # 100 - |5%| variance
 
 
-class PermissionBoundaryTests(TestCase):
+class PermissionBoundaryTests(SignedIn, TestCase):
+    """
+    digital_twin.council is EXPERIMENTAL, so the whole prefix requires sign-in
+    (core/access.py). The write actions keep their own stricter checks on top;
+    this asserts the floor and the ceiling separately.
+    """
+
     def test_approve_view_requires_login(self):
         scenario = _make_scenario()
-        client = Client()
-        response = client.get(reverse('digital_twin:scenario_approve', args=[scenario.pk]))
+        response = Client().get(
+            reverse('digital_twin:scenario_approve', args=[scenario.pk]))
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login/', response.url)
 
     def test_promote_view_requires_login(self):
         scenario = _make_scenario()
-        client = Client()
-        response = client.get(reverse('digital_twin:scenario_promote', args=[scenario.pk]))
+        response = Client().get(
+            reverse('digital_twin:scenario_promote', args=[scenario.pk]))
         self.assertEqual(response.status_code, 302)
 
-    def test_read_only_views_are_public(self):
+    def test_read_only_views_are_no_longer_public(self):
+        """
+        They were. A scenario baseline is model output from an experimental
+        module, and it answered anonymously.
+        """
         scenario = _make_scenario()
-        client = Client()
-        response = client.get(reverse('digital_twin:twin_baseline', args=[scenario.twin.pk]))
+        response = Client().get(
+            reverse('digital_twin:twin_baseline', args=[scenario.twin.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_a_signed_in_user_can_still_read_them(self):
+        scenario = _make_scenario()
+        response = self.client.get(
+            reverse('digital_twin:twin_baseline', args=[scenario.twin.pk]))
         self.assertEqual(response.status_code, 200)
 
 

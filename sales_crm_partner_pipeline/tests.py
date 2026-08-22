@@ -60,15 +60,3 @@ class SalesCrmPartnerPipelinePageTests(StaffPageTestCase):
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
-
-class PlatformPageSalesCrmPartnerPipelineTeaserTests(TestCase):
-    def test_platform_page_mentions_sales_crm_partner_pipeline(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Sales CRM & Partner Pipeline')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

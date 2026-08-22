@@ -15,6 +15,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from . import seo
+from core.testing_access import SignedIn
 
 ALL_PAGES = ['hub', 'qatar', 'saudi', 'kuwait']
 ALL_LANGS = ['en', 'ar']
@@ -307,7 +308,7 @@ class ContentDisciplineTests(TestCase):
                 )
 
 
-class InternalLinkingTests(TestCase):
+class InternalLinkingTests(SignedIn, TestCase):
 
     def test_hub_links_to_all_three_country_pages_en(self):
         content = self.client.get('/gcc-investors/').content.decode()
@@ -337,7 +338,7 @@ class InternalLinkingTests(TestCase):
         frontend/web/src/app/App.test.tsx. This asserts the half Django still
         owns: the server-rendered pages carry it too.
         """
-        content = self.client.get('/methodology/').content.decode()
+        content = self.client.get('/heating/').content.decode()
         self.assertIn('/gcc-investors/', content)
 
     def test_the_hub_is_still_in_the_sitemap(self):

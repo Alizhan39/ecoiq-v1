@@ -12,6 +12,7 @@ from companies.models import CompanyProfile
 from countries.models import CountryProfile
 from harvester.models import RegistryCompany, HarvestJob
 from harvester.pipeline import run_harvest
+from core.testing_access import SignedIn
 
 
 class GlobeLayersEndpointTests(TestCase):
@@ -632,7 +633,7 @@ class CompareCountriesServiceTests(TestCase):
         self.assertIn("same engine as find_similar_countries", result["method"])
 
 
-class DecisionStudioPrefillTests(TestCase):
+class DecisionStudioPrefillTests(SignedIn, TestCase):
     """Optional ?q= prefill added for the globe's "Ask EcoIQ about the
     world" action — never auto-submits, never bypasses the existing
     rate-limit/cost-control path in ask()."""

@@ -8,6 +8,7 @@ from companies.models import CompanyProfile, CompanyScoreSnapshot
 from decision_studio.models import DecisionQuery
 from decision_studio.services import capability_routing, data_availability, query_understanding
 from decision_studio.services.decision_engine import answer_question
+from core.testing_access import SignedIn
 
 
 def _seed_baseline():
@@ -310,7 +311,7 @@ class DecisionQueryPersistenceTests(TestCase):
         self.assertIn(follow_up, parent.follow_ups.all())
 
 
-class ViewTests(TestCase):
+class ViewTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_baseline()

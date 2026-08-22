@@ -14,6 +14,7 @@ from qdf.scoring import (
     compute_from_scores, get_or_compute, RED_LINE_KEYS, RED_LINE_CAP,
 )
 from qdf import engine
+from core.testing_access import SignedIn
 
 
 # ── Seed / schema integrity ─────────────────────────────────────────────────────
@@ -148,7 +149,7 @@ class EngineTests(TestCase):
 
 # ── Web + API ────────────────────────────────────────────────────────────────────
 
-class WebAndApiTests(TestCase):
+class WebAndApiTests(SignedIn, TestCase):
 
     def setUp(self):
         self.profile = _make_profile(name='Web Co', slug='web-co')

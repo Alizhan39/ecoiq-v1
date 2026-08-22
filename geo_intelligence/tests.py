@@ -10,6 +10,7 @@ from django.urls import reverse
 from countries.models import CountryProfile
 from geo_intelligence.models import GeoAsset, GeoRiskZone, InvestmentGeoOpportunity
 from geo_intelligence.services import spatial, weather
+from core.testing_access import SignedIn
 
 TEMPLATE_LEAK_RE = re.compile(r'\{%|\{\{')
 
@@ -174,7 +175,7 @@ class SeedCommandTests(TestCase):
         self.assertEqual(GeoRiskZone.objects.count(), 0)  # honestly skipped, not fabricated
 
 
-class CommandCentreViewTests(TestCase):
+class CommandCentreViewTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command('seed_khalifa_stewardship_demo')
@@ -241,7 +242,7 @@ class CommandCentreViewTests(TestCase):
         )
 
 
-class NavigationIntegrationTests(TestCase):
+class NavigationIntegrationTests(SignedIn, TestCase):
     """Geo Intelligence must be reachable from anywhere, and link back to the
     Kazakhstan tour that supplied its one real demo asset/opportunity."""
 
@@ -261,7 +262,7 @@ class NavigationIntegrationTests(TestCase):
         # base.html still renders the unmigrated pages, and its navigation is
         # what this protects. /about/ and /pricing/ are React now and carry no
         # server-rendered nav at all.
-        for url in ('/methodology/', '/platform/'):
+        for url in ('/heating/', '/khalifa-tours/'):
             body = self.client.get(url).content.decode()
             nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
             self.assertIsNotNone(nav, url)

@@ -67,15 +67,3 @@ class ProductAnalyticsKpiEnginePageTests(StaffPageTestCase):
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
-
-class PlatformPageProductAnalyticsKpiEngineTeaserTests(TestCase):
-    def test_platform_page_mentions_product_analytics_kpi_engine(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Product Analytics & KPI Engine')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

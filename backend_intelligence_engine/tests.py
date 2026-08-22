@@ -6,6 +6,7 @@ from backend_intelligence_engine import tasks
 from backend_intelligence_engine.models import BackgroundTaskRun
 from backend_intelligence_engine.services import http_client
 from ecoiq.celery import app as celery_app
+from core.testing_access import SignedIn
 
 
 class CeleryConfigurationTests(TestCase):
@@ -178,7 +179,7 @@ class GeoIntelligenceRefreshTaskTests(TestCase):
         self.assertFalse(hasattr(geo_models, 'ClimateObservation'))
 
 
-class AIAnalysisBackgroundTaskTests(TestCase):
+class AIAnalysisBackgroundTaskTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         from django.core.management import call_command
