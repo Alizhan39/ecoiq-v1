@@ -354,19 +354,15 @@ class SessionAuthAfterCatchAllTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
-class CompanyPageIsStillServerRenderedTests(TestCase):
+class CompanyPageTests(TestCase):
     """
-    /companies/<slug>/ is NOT migrated, deliberately. The directory above it
-    is.
+    /companies/ and /companies/<slug>/ are both React now.
 
-    The server-rendered company profile carries eleven panels the React page
-    does not have. Today every organisation falls through to the
-    evidence-pending page so nobody sees them — but routing the URL is a claim
-    to own it, and the moment one organisation becomes publishable, owning it
-    would silently delete eleven public sections.
-
-    These tests pin that decision so it is a decision, not a thing someone
-    forgot. They fail if the route is cut over without the parity work.
+    The organisation page was the last route to move. It reads
+    /api/v2/companies/<slug>/assessment/, which applies the same publication
+    gate as every other surface; the four panels that were not ported live on
+    /companies/<slug>/internal/ behind sign-in.
+    docs/product/COMPANY_PAGE_PANELS.md
     """
 
     def setUp(self):
@@ -380,18 +376,19 @@ class CompanyPageIsStillServerRenderedTests(TestCase):
         unpopulated(self.company, status='public')
 
     def test_the_directory_is_react(self):
-        """
-        The directory migrated; the individual organisation page did not. They
-        are separate decisions and this class pins both.
-        """
         response = self.client.get('/companies/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="root"')
 
-    def test_the_company_page_is_still_django(self):
+    def test_the_company_page_is_react(self):
         response = self.client.get('/companies/northwind-energy/')
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'id="root"')
+        self.assertContains(response, 'id="root"')
+
+    def test_the_title_names_the_organisation(self):
+        self.assertContains(
+            self.client.get('/companies/northwind-energy/'),
+            '<title>Northwind Energy — EcoIQ</title>')
 
     def test_an_unpublished_company_page_is_noindexed(self):
         """
@@ -399,17 +396,46 @@ class CompanyPageIsStillServerRenderedTests(TestCase):
         worth indexing, and with 467 of 467 organisations in this state it
         would mean 467 indexed pages that all say the same thing.
         """
-        response = self.client.get('/companies/northwind-energy/')
-        self.assertContains(response, '<meta name="robots" content="noindex, follow">')
+        self.assertContains(
+            self.client.get('/companies/northwind-energy/'),
+            '<meta name="robots" content="noindex, follow" />')
 
-    def test_the_noindexed_page_still_carries_no_score(self):
-        """
-        The containment guarantee is unchanged by any of this.
-        """
+    def test_the_document_carries_no_assessment_figure(self):
         html = self.client.get('/companies/northwind-energy/').content.decode()
-        for forbidden in ('ratingValue', 'aggregateRating', 'ecoiq_score'):
+        for forbidden in ('ratingValue', 'aggregateRating', 'ecoiq_score',
+                          'application/ld+json'):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, html)
+
+    def test_a_company_with_no_profile_is_a_404(self):
+        """
+        Mirrors the API's own existence rule. Serving a shell whose only API
+        call 404s gives a crawler a 200 for a page that renders an error.
+        """
+        from league.models import Company
+
+        Company.objects.create(name='No Profile', slug='no-profile')
+        self.assertEqual(
+            self.client.get('/companies/no-profile/').status_code, 404)
+
+    def test_the_internal_profile_requires_sign_in(self):
+        """
+        "Move to authenticated" has to mean somewhere. This is that somewhere,
+        and it is not public.
+        """
+        response = self.client.get('/companies/northwind-energy/internal/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response['Location'])
+
+    def test_a_signed_in_user_reaches_the_internal_profile(self):
+        from django.contrib.auth import get_user_model
+
+        client = Client()
+        client.force_login(
+            get_user_model().objects.create_user(username='panel-reader'))
+        self.assertEqual(
+            client.get('/companies/northwind-energy/internal/').status_code,
+            200)
 
 
 class LeagueRouteTests(TestCase):
@@ -543,7 +569,7 @@ class SitemapAgreesWithTheRobotsTagTests(TestCase):
         page = self.client.get('/companies/northwind-energy/').content.decode()
         sitemap = self.client.get('/sitemap.xml').content.decode()
 
-        self.assertIn('<meta name="robots" content="noindex, follow">', page)
+        self.assertIn('<meta name="robots" content="noindex, follow" />', page)
         self.assertNotIn('/companies/northwind-energy/', sitemap)
 
     def test_the_static_pages_are_still_listed(self):

@@ -13,7 +13,8 @@ maintenance surface for no truthfulness gain.
 from django.urls import path
 
 from api import (
-    v2_contact, v2_platform, v2_projects, v2_session, v2_views,
+    v2_assessment, v2_contact, v2_platform, v2_projects, v2_session,
+    v2_views,
 )
 
 app_name = 'api_v2'
@@ -35,5 +36,10 @@ urlpatterns = [
     path('projects/',              v2_projects.projects, name='projects'),
     path('companies/',             v2_views.CompanyListV2View.as_view(), name='company_list'),
     path('companies/<slug:slug>/', v2_views.company_detail_v2, name='company_detail'),
+    # The full organisation assessment. One gate, applied at the top: an
+    # organisation without a publishable score gets identity, evidence state
+    # and gaps, and none of the panel keys at all.
+    path('companies/<slug:slug>/assessment/', v2_assessment.company_assessment,
+         name='company_assessment'),
     path('leaderboard/',           v2_views.leaderboard_v2,    name='leaderboard'),
 ]

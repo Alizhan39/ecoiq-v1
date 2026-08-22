@@ -65,7 +65,15 @@ class InvariantA_NoPublicScoreWithoutEvidence(TestCase):
         self.assertNotIn('71.4', self.body)
 
     def test_the_pending_state_is_shown_instead(self):
-        self.assertIn(PENDING_HEADLINE, self.body)
+        """
+        The page is React; the wording lives in the assessment payload. Every
+        other assertion in this class is about the DOCUMENT and is unchanged —
+        those are the ones that check a number is absent.
+        """
+        payload = Client().get(
+            '/api/v2/companies/unevidenced-ltd/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
     def test_no_score_appears_in_structured_data(self):
         """
@@ -217,11 +225,33 @@ class InvariantE_SyntheticDataStaysInternal(TestCase):
         self.assertEqual(self.profile.ecoiq_total_score, 71.4)
 
     def test_staff_still_see_the_full_profile(self):
+        """
+        The full profile moved to /companies/<slug>/internal/ when the public
+        page became React. Signing in still shows what it always showed —
+        including the seeded number, which is the point of this invariant:
+        synthetic data stays available internally and is never presented
+        publicly as measured evidence.
+        """
         client = Client()
         client.force_login(self.staff)
-        response = client.get('/companies/internal-ltd/')
+        response = client.get('/companies/internal-ltd/internal/')
         self.assertEqual(response.status_code, 200)
         self.assertIn('71.4', response.content.decode())
+
+    def test_the_internal_profile_is_not_public(self):
+        response = Client().get('/companies/internal-ltd/internal/')
+        self.assertNotEqual(response.status_code, 200)
+        self.assertNotIn(b'71.4', response.content)
+
+    def test_the_public_page_shows_staff_no_score_either(self):
+        """
+        Signing in unlocks the operational panels, not a score. The evidence
+        gate is the same for everybody.
+        """
+        client = Client()
+        client.force_login(self.staff)
+        body = client.get('/companies/internal-ltd/').content.decode()
+        self.assertNotIn('71.4', body)
 
     def test_staff_still_see_the_full_league_table(self):
         """

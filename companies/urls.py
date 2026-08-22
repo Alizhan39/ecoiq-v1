@@ -46,7 +46,17 @@ urlpatterns = [
     # feat/stewardship-monitor (PR 14) — staff-only, cross-company dashboard,
     # so 'monitor/' must also precede the '<slug:slug>/' catch-all.
     path('monitor/',                                monitor.monitor_dashboard_view, name='monitor'),
-    path('<slug:slug>/',                            views.company_detail,       name='detail'),
+    # React, with request-time metadata: title and description from the
+    # organisation's own fields, and `noindex` while its assessment is not
+    # publishable. Never the score — see core.spa.company_spa_view.
+    #
+    # Position is unchanged: this bare-slug pattern must stay AFTER every
+    # fixed segment above it, or it swallows them.
+    # The full profile, signed-in only. Four panels were audited off the public
+    # page and moved here rather than deleted — "move to authenticated" has to
+    # mean somewhere. See docs/product/COMPANY_PAGE_PANELS.md.
+    path('<slug:slug>/internal/',                   views.company_detail_internal, name='detail_internal'),
+    path('<slug:slug>/',                            spa.company_spa_view,       name='detail'),
     path('<slug:slug>/explain-match/',              discovery.explain_match_view, name='explain_match'),
     path('<slug:slug>/register-document-source/',   discovery.register_document_source_view, name='register_document_source'),
     path('<slug:slug>/explain/',                    ci_views.explain_view,      name='explain'),

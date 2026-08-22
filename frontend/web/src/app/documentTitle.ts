@@ -55,5 +55,8 @@ export function titleFor(pathname: string): string | null {
   const title = ROUTE_TITLES[key];
   if (title) return title;
   if (key.startsWith('/projects/')) return null;
+  // Same reasoning for an organisation page: its title is the organisation's
+  // own name, which core.spa.company_spa_view already injected.
+  if (key.startsWith('/companies/')) return null;
   return NOT_FOUND;
 }

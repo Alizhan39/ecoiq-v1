@@ -318,6 +318,58 @@ def spa_view(request, *args, **kwargs) -> HttpResponse:
                         path=request.path)
 
 
+def company_spa_view(request, slug: str) -> HttpResponse:
+    """
+    /companies/<slug>/ — the React organisation page, with truthful metadata.
+
+    NO SCORE, EVER
+    --------------
+    Title and description are built from the organisation's name, sector and
+    country. They never carry the score, the rank or the coverage figure, even
+    when the score is publishable, because a metadata pipeline that CAN emit a
+    score is one refactor away from emitting a withheld one. The page reads the
+    number from /api/v2/companies/<slug>/assessment/, where one gate decides.
+
+    NOINDEX WHILE UNPUBLISHED
+    -------------------------
+    An organisation with no publishable assessment gets `noindex, follow`. The
+    page is truthful and reachable; it is simply not worth putting in an index,
+    and inviting a crawler to rank it would be asking to be judged on content
+    EcoIQ is deliberately withholding. `follow` keeps its links alive.
+
+    The tag disappears the moment the assessment becomes publishable — derived
+    per request, so no rebuild and no resubmission. companies/sitemaps.py
+    applies the same gate, so no URL carrying this tag is ever submitted.
+    """
+    from django.shortcuts import get_object_or_404
+
+    from companies.eligibility import decide_for_company
+    from companies.models import CompanyProfile
+    from league.models import Company
+
+    company = get_object_or_404(
+        Company.objects.select_related('profile'), slug=slug)
+    # Mirror the API's own existence rule exactly. Serving a shell whose only
+    # API call 404s gives a crawler a 200 for a page that renders an error.
+    get_object_or_404(CompanyProfile, company=company,
+                      status__in=('public', 'verified', 'draft'))
+
+    where = ' · '.join(part for part in (company.sector, company.country) if part)
+    description = (
+        f'What EcoIQ records about {company.name}'
+        + (f' ({where})' if where else '')
+        + ': evidence coverage, provenance and confidence. An assessment is '
+          'published only where the evidence supports one.')
+
+    published = decide_for_company(company).is_published
+    return render_shell(
+        title=f'{company.name} — EcoIQ',
+        description=description,
+        path=request.path,
+        robots='' if published else 'noindex, follow',
+    )
+
+
 def project_concept_spa_view(request, slug: str) -> HttpResponse:
     """
     /projects/<slug>/ — one programme concept, with its own metadata.

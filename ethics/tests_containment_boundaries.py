@@ -182,9 +182,20 @@ class L_PublicCompanyContainment(TestCase):
         self.body = Client().get('/companies/contained-ltd/').content.decode()
 
     def test_l_pending_state_still_shown(self):
+        """
+        The page is React; the wording lives in the assessment payload it
+        reads. The document assertions in this class are unchanged and still
+        apply — they check the number is absent, which is the half the server
+        still owns.
+        """
+        from django.test import Client
+
         from companies.evidence import PENDING_HEADLINE
 
-        self.assertIn(PENDING_HEADLINE, self.body)
+        payload = Client().get(
+            '/api/v2/companies/contained-ltd/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
     def test_l_the_synthetic_number_is_still_absent(self):
         self.assertNotIn('71.4', self.body)

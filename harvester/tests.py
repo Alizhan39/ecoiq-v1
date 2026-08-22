@@ -820,7 +820,7 @@ class CompanyEvidencePanelTests(TestCase):
         c = Client(SERVER_NAME="localhost")
         c.force_login(get_user_model().objects.create_user(
             username="harvester-panel-page-staff", is_staff=True))
-        r = c.get("/companies/national-grid/")
+        r = c.get("/companies/national-grid/internal/")
         self.assertEqual(r.status_code, 200)
         body = r.content.decode()
         self.assertIn("hv-ev-panel", body)             # panel injected

@@ -692,12 +692,33 @@ class AK_AL_PublicSurfaces(TestCase):
         qdf_save(self.profile)
 
     def test_ak_the_company_page_is_still_evidence_pending(self):
+        """
+        The organisation page is React now, so the claim is asserted where it
+        lives, in both halves and neither weakened:
+
+          * the DOCUMENT the server sends carries no score and no panel — a
+            stronger statement than the old one, which checked that a headline
+            appeared somewhere in a page that also rendered eleven panels;
+          * the ASSESSMENT the page reads withholds the score and omits every
+            panel key, in the backend's own constants.
+        """
         from django.test import Client
 
         from companies.evidence import PENDING_HEADLINE
 
-        body = Client().get('/companies/public/').content.decode()
-        self.assertIn(PENDING_HEADLINE, body)
+        client = Client()
+
+        document = client.get('/companies/public/').content.decode()
+        self.assertNotIn('ecoiq_score', document)
+        self.assertNotIn('ratingValue', document)
+
+        payload = client.get('/api/v2/companies/public/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['score_status'], 'INSUFFICIENT_EVIDENCE')
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
+        for panel in ('ethics', 'financing_readiness', 'shariah',
+                      'material_evidence', 'decision_risks'):
+            self.assertNotIn(panel, payload)
 
     def test_ak_no_financing_estimate_leaks_for_an_ineligible_company(self):
         """

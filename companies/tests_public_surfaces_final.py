@@ -66,16 +66,27 @@ class PublicSurfaces(TestCase):
     # ── company page ─────────────────────────────────────────────────────────
 
     def test_the_legacy_company_page_is_evidence_pending(self):
+        # The document carries no number; the assessment says why.
         body = self.client.get('/companies/legacy-co/').content.decode()
-
-        self.assertIn(PENDING_HEADLINE, body)
         self.assertNotIn(str(SCORE), body)
 
-    def test_the_evidenced_company_page_shows_its_score(self):
-        body = self.client.get('/companies/evidenced-co/').content.decode()
+        payload = self.client.get(
+            '/api/v2/companies/legacy-co/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
-        self.assertNotIn(PENDING_HEADLINE, body)
-        self.assertIn(str(SCORE), body)
+    def test_the_evidenced_company_page_shows_its_score(self):
+        """
+        The gate withholds; it does not hide everything. Asserted against the
+        assessment API now that the page is React — that is where the gate is
+        applied and what the page renders.
+        """
+        payload = self.client.get(
+            '/api/v2/companies/evidenced-co/assessment/').json()
+
+        self.assertEqual(payload['score_status'], 'PUBLISHED')
+        self.assertEqual(payload['ecoiq_score'], SCORE)
+        self.assertNotIn('evidence_note', payload)
 
     def test_no_score_leaks_into_legacy_page_metadata(self):
         import re
@@ -237,5 +248,8 @@ class PublicSurfaces(TestCase):
         seeded = _company('seeded-co', PROVENANCE_SEEDED)
 
         self.assertFalse(decide(seeded).is_published)
-        self.assertIn(PENDING_HEADLINE,
-                      self.client.get('/companies/seeded-co/').content.decode())
+
+        payload = self.client.get(
+            '/api/v2/companies/seeded-co/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
