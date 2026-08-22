@@ -807,14 +807,19 @@ class S_T_PublicSurfaces(TestCase):
                          'partial evidence must not publish under the interim rule')
 
     def test_s_the_partial_company_page_is_evidence_pending(self):
+        """
+        The organisation page is React; the pending wording lives in the
+        assessment payload it reads.
+        """
         from django.test import Client
 
         from companies.evidence import PENDING_HEADLINE
 
         self._partial()
-        body = Client().get('/companies/partial-public/').content.decode()
-
-        self.assertIn(PENDING_HEADLINE, body)
+        payload = Client().get(
+            '/api/v2/companies/partial-public/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
     def test_s_partial_evidence_records_no_composite_lineage_at_all(self):
         """

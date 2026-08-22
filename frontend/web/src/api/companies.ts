@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { Assessment } from '@/types/assessment';
 import type {
   CompanyDetail,
   CompanySummary,
@@ -58,4 +59,21 @@ export function getCompany(
  */
 export function getLeaderboard(signal?: AbortSignal): Promise<Leaderboard> {
   return api.get<Leaderboard>('/leaderboard/', signal);
+}
+
+/**
+ * The full assessment for one organisation.
+ *
+ * Separate from getCompany() because it is a different question: that one asks
+ * what the directory needs, this one asks everything the page shows. Both go
+ * through the same publication gate on the server.
+ */
+export function getAssessment(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<Assessment> {
+  return api.get<Assessment>(
+    `/companies/${encodeURIComponent(slug)}/assessment/`,
+    signal,
+  );
 }

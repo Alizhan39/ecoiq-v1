@@ -431,8 +431,16 @@ class CompanyDetailIntegrationTests(TestCase):
         self.profile = _profile(slug='detail-co', description='Operates solar power assets.')
 
     def test_detail_page_shows_shariah_and_kpi_sections(self):
+        """
+        These panels live on the internal profile now. The PUBLIC page is React
+        and renders the Shariah result from the assessment API, with the
+        disclaimer in the same component — asserted in
+        frontend/web/src/pages/CompanyDetail.test.tsx.
+        """
         shariah_screening.run_shariah_screen(self.profile, self.methodology)
-        r = self.client.get(reverse('companies:detail', args=[self.profile.company.slug]))
+        r = self.client.get(
+            reverse('companies:detail_internal',
+                    args=[self.profile.company.slug]))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Shariah Eligibility Screen')
         self.assertContains(r, '114-KPI Alignment')
@@ -447,7 +455,13 @@ class CompanyDetailIntegrationTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_never_shows_not_screened_as_pass(self):
-        r = self.client.get(reverse('companies:detail', args=[self.profile.company.slug]))
+        """
+        An unrun screen must read as unrun, never as a pass. On the internal
+        profile, where the panel lives now.
+        """
+        r = self.client.get(
+            reverse('companies:detail_internal',
+                    args=[self.profile.company.slug]))
         self.assertContains(r, 'Not Screened')
 
     def test_no_buy_sell_language_anywhere_on_page(self):
@@ -1572,7 +1586,8 @@ class KPIExplorerDiscoveryIntegrationTests(TestCase):
         client = Client()
         client.force_login(get_user_model().objects.create_user(
             username='ci-kpi-staff', is_staff=True))
-        response = client.get(reverse('companies:detail', args=[profile.company.slug]))
+        response = client.get(
+            reverse('companies:detail_internal', args=[profile.company.slug]))
         self.assertContains(response, f"{reverse('companies:discover')}?kpi=1")
 
 

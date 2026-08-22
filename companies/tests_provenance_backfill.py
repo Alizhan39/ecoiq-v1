@@ -296,10 +296,17 @@ class F_G_H_NothingBecomesPubliclyDefensible(TestCase):
         from companies.evidence import PENDING_HEADLINE
 
         _run('--apply')
-        body = Client().get('/companies/containment/').content.decode()
+        client = Client()
 
-        self.assertIn(PENDING_HEADLINE, body)
+        # The document: still no number, and now no panel to hide one in.
+        body = client.get('/companies/containment/').content.decode()
         self.assertNotIn('71.4', body)
+
+        # The data the page reads.
+        payload = client.get(
+            '/api/v2/companies/containment/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
 
 class I_J_K_ValueNeverDeterminesOrigin(TestCase):

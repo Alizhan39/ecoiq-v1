@@ -562,6 +562,11 @@ class R_MaterialCompatibility(TestCase):
         self.assertEqual(keys & registry.DERIVED_KEYS, set())
 
     def test_r_public_surfaces_are_unchanged(self):
+        """
+        A MODELLED composite is not evidence, and recording one must not make a
+        score appear on any surface. Asserted at both ends now that the page is
+        React.
+        """
         from django.test import Client
 
         from companies.evidence import PENDING_HEADLINE
@@ -569,9 +574,14 @@ class R_MaterialCompatibility(TestCase):
         profile = _profile('registry-contained', ecoiq_total_score=71.4)
         prov.record(profile, 'company.ecoiq_total', PROVENANCE_MODELLED)
 
-        body = Client().get('/companies/registry-contained/').content.decode()
-        self.assertIn(PENDING_HEADLINE, body)
-        self.assertNotIn('71.4', body)
+        client = Client()
+        document = client.get('/companies/registry-contained/').content.decode()
+        self.assertNotIn('71.4', document)
+
+        payload = client.get(
+            '/api/v2/companies/registry-contained/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
     def test_r_api_v2_exposes_no_provenance_yet(self):
         from django.test import Client

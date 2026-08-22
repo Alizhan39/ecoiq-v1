@@ -99,10 +99,27 @@ class DetailPageStockStripTests(TestCase):
         self.client.force_login(get_user_model().objects.create_user(
             username='stockstrip-staff', is_staff=True))
 
-    def test_public_company_shows_stock_strip_near_name(self):
+    def test_the_stock_strip_is_gone_from_the_public_page(self):
+        """
+        Removed by the panel audit, not relocated by accident: a share price
+        beside an ethics assessment implies a relationship EcoIQ does not
+        assert, and the strip was the one panel with no engine behind it.
+        docs/product/COMPANY_PAGE_PANELS.md
+        """
         co = _make_public_company()
         _make_profile(co)
-        r = self.client.get(reverse('companies:detail', kwargs={'slug': co.slug}))
+        body = self.client.get(
+            reverse('companies:detail', kwargs={'slug': co.slug})
+        ).content.decode()
+        self.assertNotIn('View stock profile', body)
+        self.assertNotIn('ACME', body)
+
+    def test_the_stock_strip_survives_on_the_internal_profile(self):
+        """It is still useful to an analyst; it is not a public claim."""
+        co = _make_public_company()
+        _make_profile(co)
+        r = self.client.get(
+            reverse('companies:detail_internal', kwargs={'slug': co.slug}))
         self.assertContains(r, 'View stock profile')
         self.assertContains(r, 'ACME')
 

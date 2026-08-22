@@ -600,12 +600,14 @@ class PublicSurfacesUnchanged(TestCase):
         for metric in sorted(prov.MATERIAL_METRIC_KEYS):
             prov.record(profile, metric, PROVENANCE_MEASURED)
 
-        body = Client().get('/companies/still-contained/').content.decode()
+        payload = Client().get(
+            '/api/v2/companies/still-contained/assessment/').json()
 
-        self.assertNotIn(PENDING_HEADLINE, body,
+        self.assertEqual(payload['score_status'], 'PUBLISHED',
                          'full MEASURED coverage is exactly what publication '
                          'is supposed to require')
-        self.assertIn('71.4', body)
+        self.assertEqual(payload['ecoiq_score'], 71.4)
+        self.assertNotIn('evidence_note', payload)
 
     def test_partial_provenance_is_still_contained(self):
         """The containment the previous test used to assert, at the level
@@ -620,10 +622,18 @@ class PublicSurfacesUnchanged(TestCase):
         for metric in sorted(prov.MATERIAL_METRIC_KEYS)[:4]:
             prov.record(profile, metric, PROVENANCE_MEASURED)
 
-        body = Client().get('/companies/partly-evidenced/').content.decode()
+        client = Client()
 
-        self.assertIn(PENDING_HEADLINE, body)
-        self.assertNotIn('71.4', body)
+        # The document carries no number and no panel to hide one in.
+        self.assertNotIn(
+            '71.4',
+            client.get('/companies/partly-evidenced/').content.decode())
+
+        # The assessment the page reads withholds it, and says why.
+        payload = client.get(
+            '/api/v2/companies/partly-evidenced/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
     def test_api_v2_is_unchanged_by_provenance(self):
         from django.test import Client

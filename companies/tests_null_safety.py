@@ -219,9 +219,18 @@ class RadarChartData(TestCase):
         self.profile.company.refresh_from_db()
 
     def _response(self):
+        """
+        The full profile moved to /companies/<slug>/internal/ when the public
+        page became React. The radar is page content, so it followed.
+        """
+        from django.contrib.auth import get_user_model
         from django.test import Client
 
-        return Client().get(f'/companies/{self.profile.company.slug}/')
+        client = Client()
+        client.force_login(get_user_model().objects.create_user(
+            username=f'radar-{self.profile.company.slug}'[:150]))
+        return client.get(
+            f'/companies/{self.profile.company.slug}/internal/')
 
     def test_the_page_renders(self):
         self.assertEqual(self._response().status_code, 200)

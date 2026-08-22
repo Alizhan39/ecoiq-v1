@@ -1047,8 +1047,18 @@ class PublicContainment(TestCase):
         return Client().get('/companies/ml-public/').content.decode()
 
     def test_the_company_page_is_still_evidence_pending(self):
+        """
+        The organisation page is React; the pending wording lives in the
+        assessment payload it reads, in the backend's own constant.
+        """
+        from django.test import Client
+
         from companies.evidence import PENDING_HEADLINE
-        self.assertIn(PENDING_HEADLINE, self._page())
+
+        payload = Client().get(
+            '/api/v2/companies/ml-public/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
     def test_no_ml_or_greenwashing_value_leaks_to_the_page(self):
         body = self._page()
