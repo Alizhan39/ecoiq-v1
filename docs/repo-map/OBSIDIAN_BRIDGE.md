@@ -28,11 +28,20 @@ and wiki-link names only.
 - `07-Technology/Architecture/Django Application Inventory.md` — every app
 - `10-Decisions/Architecture Decisions/` — why a thing is shaped as it is
 
-> **Known staleness.** The architecture notes are dated `2026-08-12` and predate
-> the Evidence Integrity programme. They contain **no** reference to
-> `companies/evidence.py`, `eligibility`, `metric_registry`,
-> `platform_registry/`, `frontend/web/` or `api/v2`. Use them for *why*; use
-> this bridge for *where*.
+> **Staleness, partially resolved 2026-08-22.** Four notes were rewritten
+> against the current architecture and now carry `updated: 2026-08-22`:
+>
+> - `07-Technology/Architecture/Frontend Architecture.md` — it described Django
+>   templates as *"the actual runtime rendering layer"*
+> - `07-Technology/Architecture/API Surface.md` — it documented v1 only
+> - `07-Technology/Architecture/Implementation Status Map.md` — now defers to
+>   `platform_registry/agents.py` as the authority
+> - `_MOC/Technology MOC.md`
+>
+> **Everything else in the vault still predates the Evidence Integrity
+> programme.** Notes dated `2026-08-12` contain no reference to
+> `companies/eligibility.py`, `metric_registry`, `core/spa.py` or
+> `core/access.py`. Use them for *why*; use this bridge for *where*.
 
 ---
 
@@ -158,7 +167,28 @@ Vault: `07-Technology/APIs/`, [[API Surface]]
 **Entry point:** `frontend/web/src/main.tsx` → `src/app/App.tsx` → `src/app/routes.tsx`
 **Contract types:** `frontend/web/src/types/evidence.ts`
 
+### How Django serves it
+
+| concern | file |
+|---|---|
+| Shell, per-route `<head>`, catch-all | `core/spa.py` |
+| Immutable caching for the Vite bundle | `core/whitenoise.py` |
+| Which experimental surfaces require sign-in | `core/access.py` |
+| Permanent redirects to React pages | `core/redirects.py` |
+| Client-side title map (mirrors `spa.ROUTE_META`) | `frontend/web/src/app/documentTitle.ts` |
+
+**One origin.** No second hostname, no static host, no SSR — the API is
+session-authenticated and a second origin would mean `SameSite=None` cookies
+and CORS for no product gain. `docs/product/FRONTEND_DEPLOYMENT.md`
+
+**Not routed on purpose:** `/companies/<slug>/`. The server-rendered
+organisation page carries eleven panels the React page does not; the audit and
+the decision for each are in `docs/product/COMPANY_PAGE_PANELS.md`.
+
+**Route inventory:** `docs/product/FINAL_TEMPLATE_MIGRATION.md` — all 102
+anonymous server-rendered routes classified.
 **Migration state:** `docs/product/FRONTEND_MIGRATION_MATRIX.md`
+**Audit:** `docs/product/FRONTEND_AUDIT.md`
 
 Vault: [[Frontend Architecture]]
 
