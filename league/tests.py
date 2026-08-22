@@ -186,24 +186,37 @@ class ReRankTests(TestCase):
 # ── View tests ────────────────────────────────────────────────────────────────
 
 class LeaderboardViewTests(TestCase):
+    """
+    The server-rendered leaderboard, which is staff-only now.
+
+    /league/ is React and reads /api/v2/leaderboard/, which applies the
+    publication gate with no exemption. The full table survives at
+    /league/internal/ for the people who have to see what the estate actually
+    holds — these tests follow the view there rather than being deleted with
+    the public route.
+    """
 
     def setUp(self):
+        from django.contrib.auth import get_user_model
+
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(get_user_model().objects.create_user(
+            username='league-staff', is_staff=True))
         self.co = _make_company('Green Corp')
         rerank_all()
 
     def test_leaderboard_200(self):
-        r = self.client.get(reverse('league:leaderboard'))
+        r = self.client.get('/league/internal/')
         self.assertEqual(r.status_code, 200)
 
     def test_leaderboard_contains_company_name(self):
-        r = self.client.get(reverse('league:leaderboard'))
+        r = self.client.get('/league/internal/')
         self.assertContains(r, 'Green Corp')
 
     def test_leaderboard_sector_filter(self):
         _make_company('Oil Co', sector='oil_gas')
         _make_company('Miner', sector='mining')
-        r = self.client.get(reverse('league:leaderboard') + '?sector=mining')
+        r = self.client.get('/league/internal/?sector=mining')
         self.assertContains(r, 'Miner')
         self.assertNotContains(r, 'Oil Co')
 
@@ -218,51 +231,72 @@ class LeaderboardViewTests(TestCase):
         """
         _make_company('Oil Co', sector='oil_gas')
         _make_company('Miner', sector='mining')
-        r = self.client.get(reverse('league:leaderboard') + '?sector=mining')
+        r = self.client.get('/league/internal/?sector=mining')
         chart_names = [c['name'] for c in json.loads(r.context['chart_companies'])]
         self.assertIn('Miner', chart_names)
         self.assertNotIn('Oil Co', chart_names)
 
-    def test_leaderboard_is_public(self):
-        """No login required."""
+    def test_the_public_leaderboard_is_public_and_shows_no_table(self):
+        """
+        Public, and fail-closed. The React page renders whatever
+        /api/v2/leaderboard/ publishes — which today is nothing.
+        """
         self.client.logout()
         r = self.client.get(reverse('league:leaderboard'))
         self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Green Corp')
+
+    def test_the_internal_table_is_not_public(self):
+        self.client.logout()
+        r = self.client.get('/league/internal/')
+        self.assertNotEqual(r.status_code, 200)
+        self.assertNotIn(b'Green Corp', r.content)
 
 
-class CompanyProfileViewTests(TestCase):
+class CompanyRedirectTests(TestCase):
+    """
+    /league/<slug>/ defers to /companies/<slug>/.
+
+    Both routes rendered league.Company by the same slug. Two surfaces for one
+    organisation is two chances for them to disagree about what is publishable.
+
+    The pillar and tier context assertions that used to live here went with the
+    view. They covered `league.views.company_profile`, which no public route
+    reaches any more; the logic itself — compute_score, get_tier — is covered
+    by the model tests above, which is where it belongs.
+    """
 
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
         self.co = _make_company('Energy Giant')
         _make_project(self.co)
 
-    def test_profile_200(self):
-        r = self.client.get(reverse('league:company', kwargs={'slug': self.co.slug}))
-        self.assertEqual(r.status_code, 200)
+    def test_it_redirects_to_the_company_page(self):
+        r = self.client.get(
+            reverse('league:company', kwargs={'slug': self.co.slug}))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r['Location'], f'/companies/{self.co.slug}/')
 
-    def test_profile_contains_company_name(self):
-        r = self.client.get(reverse('league:company', kwargs={'slug': self.co.slug}))
+    def test_the_destination_resolves(self):
+        """A redirect to a 404 is worse than no redirect."""
+        r = self.client.get(
+            reverse('league:company', kwargs={'slug': self.co.slug}),
+            follow=True)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Energy Giant')
 
-    def test_profile_shows_project(self):
-        r = self.client.get(reverse('league:company', kwargs={'slug': self.co.slug}))
-        self.assertContains(r, 'Test Project')
-
-    def test_profile_404_on_bad_slug(self):
-        r = self.client.get(reverse('league:company', kwargs={'slug': 'does-not-exist'}))
+    def test_404_on_an_unknown_slug_rather_than_a_redirect(self):
+        """
+        A 302 followed by a 404 tells a crawler the URL moved before telling it
+        the destination does not exist.
+        """
+        r = self.client.get(
+            reverse('league:company', kwargs={'slug': 'does-not-exist'}))
         self.assertEqual(r.status_code, 404)
 
-    def test_profile_is_public(self):
+    def test_it_is_public(self):
         self.client.logout()
-        r = self.client.get(reverse('league:company', kwargs={'slug': self.co.slug}))
-        self.assertEqual(r.status_code, 200)
+        r = self.client.get(
+            reverse('league:company', kwargs={'slug': self.co.slug}))
+        self.assertEqual(r.status_code, 302)
 
-    def test_profile_context_has_pillars(self):
-        r = self.client.get(reverse('league:company', kwargs={'slug': self.co.slug}))
-        self.assertEqual(len(r.context['pillars']), 5)
-
-    def test_profile_context_has_tier(self):
-        r = self.client.get(reverse('league:company', kwargs={'slug': self.co.slug}))
-        self.assertIn('tier', r.context)
-        self.assertIsNotNone(r.context['tier'])

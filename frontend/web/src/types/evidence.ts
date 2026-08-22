@@ -120,3 +120,25 @@ export function confidenceLabel(value: Confidence): string {
 export function isSignalClear(signal: HarmSignal): boolean {
   return signal.status === 'clear';
 }
+
+/**
+ * The leaderboard.
+ *
+ * `withheld_insufficient_evidence` is carried beside the results because an
+ * empty list means two very different things — "nothing exists" and "nothing
+ * qualifies" — and a page that cannot tell them apart will describe the second
+ * as the first.
+ */
+export interface Leaderboard {
+  count: number;
+  withheld_insufficient_evidence: number;
+  leaderboard: CompanySummary[];
+  /**
+   * Why nothing is ranked, in the backend's own words. Null when something is.
+   *
+   * Rendered rather than restated: a page that writes its own sentence about
+   * withheld evidence will eventually disagree with the one the company pages
+   * give, and an evidence system with two explanations has one too many.
+   */
+  evidence_note: { headline: string; detail: string } | null;
+}

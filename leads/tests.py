@@ -325,43 +325,54 @@ class PricingPageTests(TestCase):
         r = self.c.get('/pricing/')
         self.assertEqual(r.status_code, 200)
 
-    def test_pricing_page_shows_all_four_engagement_cards(self):
-        r = self.c.get('/pricing/')
-        content = r.content.decode()
-        for title in ('Enterprise Diagnostic', '90-Day Enterprise Pilot', 'Enterprise Deployment', 'Annual Platform Licence'):
-            self.assertIn(title, content)
+    def test_pricing_is_the_react_page(self):
+        self.assertIn('id="root"', self.c.get('/pricing/').content.decode())
 
-    def test_pricing_page_shows_government_tiers(self):
-        r = self.c.get('/pricing/')
-        content = r.content.decode()
-        for title in ('Government Pilot', 'First-Year Deployment', 'Multi-Year National'):
-            self.assertIn(title, content)
+    def test_the_pricing_page_publishes_no_price(self):
+        """
+        The page this replaces published four bands — £15,000 to £400,000 —
+        plus government tiers and a founding-partner price, for engagements
+        that have never been sold. EcoIQ has not delivered a commercial
+        engagement, so any figure would be an asking price presented as a going
+        rate.
 
-    def test_pricing_page_shows_founding_partner_prices(self):
-        r = self.c.get('/pricing/')
-        content = r.content.decode()
-        self.assertIn('£125,000', content)
-        self.assertIn('From £85,000', content)
+        Asserted on the served document. The React page's own copy is asserted
+        in frontend/web/src/pages/Pricing.test.tsx.
+        """
+        import re
+
+        content = self.c.get('/pricing/').content.decode()
+        self.assertIsNone(re.search(r'[£$€]\s?\d', content))
 
     def test_pricing_page_never_shows_buy_now(self):
-        """PART: 'Do not show Buy now' — every CTA must be a proposal/discovery request."""
-        r = self.c.get('/pricing/')
-        self.assertNotIn('Buy now', r.content.decode())
-        self.assertNotIn('Buy Now', r.content.decode())
+        """PART: 'Do not show Buy now' — every CTA is a proposal request."""
+        content = self.c.get('/pricing/').content.decode()
+        self.assertNotIn('Buy now', content)
+        self.assertNotIn('Buy Now', content)
 
-    def test_pricing_page_addons_all_marked_custom_scope(self):
-        r = self.c.get('/pricing/')
-        content = r.content.decode()
-        self.assertGreaterEqual(content.count('Custom scope'), 12)
+    def test_the_enterprise_enquiry_funnel_still_accepts_every_engagement(self):
+        """
+        The pricing CTAs still feed leads.EnterpriseEnquiry with the engagement
+        pre-selected. The links live in the React bundle now, so what is
+        asserted here is the half this app owns: that every key those links use
+        is still one the form understands.
 
-    def test_pricing_page_ctas_link_to_enterprise_enquiry_with_engagement(self):
-        r = self.c.get('/pricing/')
-        content = r.content.decode()
+        A key that stopped resolving would send that segment into a generic
+        enquiry with no error anywhere.
+        """
         for engagement in (
             'enterprise_diagnostic', 'pilot_90day', 'enterprise_deployment',
             'annual_licence', 'government_sovereign', 'founding_partner',
         ):
-            self.assertIn(f'/request-access/enterprise/?engagement={engagement}', content)
+            with self.subTest(engagement=engagement):
+                response = self.c.get(
+                    reverse('leads:enterprise_enquiry')
+                    + f'?engagement={engagement}')
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.context['form'].initial.get(
+                        'preferred_engagement'),
+                    engagement)
 
 
 class EnterpriseEnquiryFormTests(TestCase):

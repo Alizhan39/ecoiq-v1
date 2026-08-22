@@ -2,8 +2,20 @@
 EcoIQ Sitemaps — companies/sitemaps.py
 
 Registered in ecoiq/urls.py and served at /sitemap.xml.
-Tells Google and other crawlers about all public company profiles
-plus the main static pages.
+
+A SITEMAP IS A REQUEST TO INDEX
+-------------------------------
+So it must agree with what the page itself says. A company page whose
+assessment is not publishable carries `noindex` (see core/spa.company_spa_view),
+and submitting a noindex URL in a sitemap is a direct contradiction — Search
+Console reports it as an error, and every such URL spends crawl budget to be
+told not to index.
+
+This sitemap therefore lists only companies whose assessment is genuinely
+publishable, using the SAME gate every other surface asks. Today that is zero
+of 467, so /sitemap.xml contains the static pages and nothing else. That is the
+correct answer, not a broken one: EcoIQ is not currently asking anyone to index
+a company page, because it is not currently publishing anything on one.
 """
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
@@ -12,16 +24,25 @@ from league.models import Company
 
 
 class CompanySitemap(Sitemap):
-    """One URL per public company profile."""
+    """One URL per company with a PUBLISHABLE assessment."""
     changefreq = 'monthly'
     priority = 0.8
 
     def items(self):
-        # Only companies that have a public/verified CompanyProfile
-        # Related name on CompanyProfile → Company is 'profile'
-        return Company.objects.filter(
-            profile__status__in=('public', 'verified')
-        ).distinct()
+        from companies.eligibility import publishable_company_ids
+
+        candidates = list(
+            Company.objects
+            .filter(profile__status__in=('public', 'verified'))
+            .select_related('profile')
+            .distinct()
+        )
+        # Bounded by one query against the provenance table before the
+        # per-company decision runs — see publishable_company_ids. Without that
+        # bound this is two queries per company on a 467-row estate.
+        publishable = publishable_company_ids(candidates)
+        return [company for company in candidates
+                if company.pk in publishable]
 
     def location(self, obj):
         return f'/companies/{obj.slug}/'
@@ -32,13 +53,21 @@ class StaticSitemap(Sitemap):
     priority = 0.9
     changefreq = 'weekly'
 
+    #: Named URLs, so the list survives a route moving. Every entry is a page
+    #: that exists, is public, and says something EcoIQ can support.
     _pages = [
         'home',
+        'intelligence',
         'companies:directory',
+        'projects_site:index',
+        'tours',
+        'khalifa_stewardship_tours',
+        'about',
+        'contact',
+        'trust',
+        'pricing',
         'countries:directory',
         'methodology',
-        'pricing',
-        'about',
         'api_docs',
         # GCC investor SEO pages — English + Arabic
         'gcc_investors:hub_en',

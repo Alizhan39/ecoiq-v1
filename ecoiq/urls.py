@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
 from companies.sitemaps import CompanySitemap, StaticSitemap
 from core import health as health_views
+from core import spa
 from leads import views as leads_views
 
 _sitemaps = {
@@ -315,4 +316,34 @@ urlpatterns = [
 
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
+
+    # ── React SPA ────────────────────────────────────────────────────────────
+    #
+    # Routes that exist ONLY in the React app — they have no Django template
+    # equivalent and never had one. Registered explicitly rather than left to
+    # the catch-all so they answer 200 rather than 404, and so `{% url %}` can
+    # reach them from the templates that are still server-rendered.
+    #
+    # The routes that ARE being migrated off Django templates keep their
+    # registration where it already is (core/urls.py, companies/urls.py,
+    # league/urls.py) and swap their view for spa.spa_view there, so URL names,
+    # ordering and prefix behaviour are unchanged. See core/spa.py.
+    path('tours/', spa.spa_view, name='tours'),
+    path('labs/',  spa.spa_view, name='labs'),
+    path('trust/', spa.spa_view, name='trust'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# ── SPA history fallback ─────────────────────────────────────────────────────
+#
+# LAST, and it must stay last: it matches everything, so anything appended
+# below it becomes unreachable.
+#
+# It is a fallback, not a router. Server-owned prefixes (/api/, /admin/,
+# /static/, the Stripe webhook, …) are refused inside spa_catch_all with a
+# plain 404 — a mistyped API route must never answer `200 text/html`. Unknown
+# frontend paths get the React shell with HTTP 404: the NotFound page for a
+# person, the true status code for a crawler.
+urlpatterns += [
+    re_path(r'^(?P<path>.*)$', spa.spa_catch_all, name='spa_catch_all'),
+]

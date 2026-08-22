@@ -1070,11 +1070,33 @@ class PublicContainment(TestCase):
                 self.assertNotIn(leaked, payload)
 
     def test_the_league_page_remains_fail_closed(self):
+        """
+        The league is React now, so the claim is asserted where it lives.
+
+        Two halves, both still true and neither weakened:
+
+          * the DOCUMENT the server sends carries no score at all — a stronger
+            statement than the old one, which only checked that the pending
+            headline was present somewhere in a page that also rendered a table
+            and, until #239, an ungated chart payload;
+          * the DATA the page renders carries the pending explanation, in the
+            backend's own constants. The React page renders that text rather
+            than writing its own, so the wording cannot drift from the one the
+            company pages give.
+        """
         from django.test import Client
+
         from companies.evidence import PENDING_HEADLINE
 
-        self.assertIn(PENDING_HEADLINE,
-                      Client().get('/league/').content.decode())
+        client = Client()
+
+        document = client.get('/league/').content.decode()
+        self.assertNotIn('ecoiq_score', document)
+        self.assertNotIn('score_status', document)
+
+        payload = client.get('/api/v2/leaderboard/').json()
+        self.assertEqual(payload['count'], 0)
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
 
     def test_partial_evidence_publishes_nothing(self):
         """

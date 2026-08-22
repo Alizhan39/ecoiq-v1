@@ -907,14 +907,28 @@ class HomepageIntelligenceBlockTests(_SeededHarvest):
         self.assertEqual(s["rankings_url"], "/rankings/utilities/")
         self.assertEqual(s["evidence_url"], "/evidence/")
 
-    def test_block_renders_on_homepage(self):
-        r = self.client.get("/")
-        self.assertEqual(r.status_code, 200)
-        body = r.content.decode()
-        self.assertIn("Companies tracked", body)
-        self.assertIn("Evidence collected", body)
-        self.assertIn("Datapoints extracted", body)
-        self.assertIn("View Rankings", body)
+    def test_block_is_no_longer_on_the_homepage(self):
+        """
+        The homepage is React and does not carry this block.
+
+        Kept as an assertion rather than deleted, because the counters it
+        rendered — companies tracked, evidence collected, datapoints extracted
+        — are exactly the kind of figure that gets re-added to a marketing page
+        without going through the platform SSOT. The React homepage shows only
+        `is_proof` counters from /api/v2/platform/, and omits any that are zero.
+
+        The block itself still renders on /evidence/, which is its own surface.
+        """
+        body = self.client.get("/").content.decode()
+
+        self.assertNotIn("Companies tracked", body)
+        self.assertNotIn("Datapoints extracted", body)
+
+    def test_the_stats_the_block_used_are_still_computed(self):
+        """The data source is unaffected by where it is displayed."""
+        stats = _pstats()
+        self.assertEqual(stats["companies_tracked"], 25)
+        self.assertGreater(stats["evidence_count"], 0)
 
     def test_company_panel_exposes_confidence(self):
         from harvester.rollups import company_rollup

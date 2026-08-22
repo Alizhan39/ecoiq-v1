@@ -257,11 +257,20 @@ class NavigationIntegrationTests(TestCase):
         placement, not existence.
         """
         import re as _re
-        for url in (reverse('home'), '/about/', '/pricing/'):
+
+        # base.html still renders the unmigrated pages, and its navigation is
+        # what this protects. /about/ and /pricing/ are React now and carry no
+        # server-rendered nav at all.
+        for url in ('/methodology/', '/platform/'):
             body = self.client.get(url).content.decode()
             nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
             self.assertIsNotNone(nav, url)
             self.assertNotIn('/geo-intelligence/', nav.group(1), url)
+
+        # The React shell promotes it no more than base.html does.
+        for url in (reverse('home'), '/about/', '/pricing/'):
+            self.assertNotIn('/geo-intelligence/',
+                             self.client.get(url).content.decode(), url)
 
     def test_geo_intelligence_is_still_reachable_at_its_own_url(self):
         self.assertEqual(self.client.get('/geo-intelligence/').status_code, 200)

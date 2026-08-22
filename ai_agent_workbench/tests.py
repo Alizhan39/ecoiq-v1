@@ -269,20 +269,42 @@ class HomepageIntegrationTests(TestCase):
     def setUpTestData(cls):
         _seed_all()
 
-    def test_homepage_has_agent_ctas_and_no_template_leak(self):
-        resp = self.client.get(reverse('home'))
-        self.assertEqual(resp.status_code, 200)
-        body = resp.content.decode()
-        self.assertIn('TRY THE AI AGENTS', body)
-        self.assertIn('WATCH THE AGENT COUNCIL', body)
-        self.assertIn('SEE HOW A DECISION HAPPENED', body)
-        self.assertIn('/ai-agents/workbench/', body)
+    def test_the_homepage_no_longer_promotes_the_agent_workbench(self):
+        """
+        The three agent CTAs are gone with the server-rendered homepage.
+
+        That is the Phase 8 decision, not an oversight: no AI module in this
+        repository has a measured evaluation, so none is claimed as a
+        production capability, and an agent showcase on the homepage says the
+        product is the agents. The workbench is reachable at its own URL and is
+        listed under EcoIQ Labs with its real status.
+        """
+        body = self.client.get(reverse('home')).content.decode()
+
+        self.assertNotIn('TRY THE AI AGENTS', body)
+        self.assertNotIn('/ai-agents/workbench/', body)
+
+    def test_the_homepage_leaks_no_template_syntax(self):
+        """
+        Worth keeping after the migration, and cheap. A multi-line `{# #}`
+        comment renders literally in Django, and because base.html is included
+        everywhere, one of those leaked template syntax onto every page of the
+        site during this programme.
+        """
+        body = self.client.get(reverse('home')).content.decode()
         self.assertFalse(TEMPLATE_LEAK_RE.search(body))
 
-    def test_homepage_reports_real_agent_count_not_hardcoded(self):
-        from ai_agent_council.agents import OPERATIONAL_AGENTS
-        resp = self.client.get(reverse('home'))
-        self.assertContains(resp, f'{len(OPERATIONAL_AGENTS)} operational agents')
+    def test_the_homepage_states_no_agent_count(self):
+        """
+        It used to render `N operational agents` from the registry. The React
+        homepage shows only `is_proof` counters from /api/v2/platform/, and
+        omits any that are zero — so no agent count appears at all rather than
+        one that nobody can act on.
+        """
+        import re as _re
+
+        body = self.client.get(reverse('home')).content.decode()
+        self.assertIsNone(_re.search(r'\d+\s+operational agents', body))
 
     def test_ai_agents_are_not_in_the_public_global_nav(self):
         """
@@ -293,12 +315,23 @@ class HomepageIntegrationTests(TestCase):
         placement, not existence.
         """
         import re as _re
-        for url in (reverse('home'), '/about/', '/pricing/'):
+
+        # base.html still renders the pages that were not migrated, and its
+        # navigation is still the thing this protects. /about/ and /pricing/
+        # are React now and carry no server-rendered nav at all.
+        for url in ('/methodology/', '/platform/'):
             body = self.client.get(url).content.decode()
             nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
             self.assertIsNotNone(nav, url)
             self.assertNotIn('/ai-agents/', nav.group(1), url)
             self.assertNotIn('Ask EcoIQ AI', nav.group(1), url)
+
+        # And the React shell promotes nothing either. The React navigation
+        # itself is asserted in frontend/web/src/app/Nav.test.tsx.
+        for url in (reverse('home'), '/about/', '/pricing/'):
+            body = self.client.get(url).content.decode()
+            self.assertNotIn('/ai-agents/', body, url)
+            self.assertNotIn('Ask EcoIQ AI', body, url)
 
     def test_workbench_is_still_reachable_at_its_own_url(self):
         self.assertEqual(self.client.get('/ai-agents/').status_code, 200)

@@ -64,75 +64,23 @@ class HeroVariantFilesTests(TestCase):
         self.assertTrue((HERO_DIR / MASTER_PNG).exists())
 
 
-class HomepagePayloadTests(TestCase):
-
-    def setUp(self):
-        self.body = self.client.get('/').content.decode()
-
-    def test_homepage_renders(self):
-        self.assertEqual(self.client.get('/').status_code, 200)
-
-    def test_homepage_does_not_reference_the_oversized_png(self):
-        self.assertNotIn(MASTER_PNG, self.body)
-
-    def test_homepage_preloads_an_avif_not_a_png(self):
-        preloads = re.findall(r'<link[^>]*rel="preload"[^>]*>', self.body, re.S)
-        self.assertTrue(preloads, 'hero preload disappeared entirely')
-        joined = ' '.join(preloads)
-        self.assertIn('as="image"', joined)
-        self.assertIn('type="image/avif"', joined)
-        self.assertIn('imagesrcset', joined)
-        self.assertNotIn('.png', joined)
-
-    def test_preloaded_variants_all_exist_on_disk(self):
-        """A preload pointing at a missing file is worse than no preload."""
-        preloads = re.findall(r'<link[^>]*rel="preload"[^>]*>', self.body, re.S)
-        referenced = re.findall(r'/static/img/hero/([\w.-]+\.avif)', ' '.join(preloads))
-        self.assertTrue(referenced, 'no AVIF variants found in the preload')
-        for name in referenced:
-            with self.subTest(name=name):
-                self.assertTrue((HERO_DIR / name).exists(), f'preloaded {name} does not exist')
-
-    def test_preload_covers_the_same_widths_as_the_picture_sources(self):
-        """
-        The preload and the <picture> in heroImage.ts must agree, or the browser
-        preloads one variant and then downloads a different one.
-        """
-        preloads = ' '.join(re.findall(r'<link[^>]*rel="preload"[^>]*>', self.body, re.S))
-        for width in WIDTHS:
-            with self.subTest(width=width):
-                self.assertIn(f'ecoiq-better-way-hero-{width}.avif', preloads)
+# HomepagePayloadTests is gone.
+#
+# It asserted that templates/landing.html preloaded an AVIF hero at the same
+# widths its <picture> offered. `/` is the React app now and has no hero image
+# at all, so there is nothing to preload and nothing for the preload to drift
+# from. HeroVariantFilesTests above still guards the files themselves, which
+# are still referenced by the Django pages that were not migrated.
 
 
-class FontLoadingTests(TestCase):
-
-    def setUp(self):
-        self.body = self.client.get('/').content.decode()
-
-    def test_uses_the_variable_weight_range(self):
-        self.assertIn('family=Inter:wght@300..800', self.body)
-
-    def test_does_not_request_a_long_discrete_weight_list(self):
-        """
-        The old form asked for seven discrete weights, which cost ~15 KB of
-        extra @font-face CSS on a render-blocking request for no extra glyphs —
-        Google serves Inter as one variable font either way.
-        """
-        self.assertNotIn('wght@300;400;500;600;700;800;900', self.body)
-
-    def test_does_not_request_weight_900(self):
-        """Nothing on the homepage uses 900; asking for it only grows the CSS."""
-        match = re.search(r'family=Inter:wght@([^&"]+)', self.body)
-        self.assertIsNotNone(match)
-        self.assertNotIn('900', match.group(1))
-
-    def test_preconnects_to_the_font_binary_host(self):
-        """
-        The stylesheet comes from fonts.googleapis.com but the font file from
-        fonts.gstatic.com; without this hint that connection is only opened
-        after the CSS is parsed.
-        """
-        self.assertIn('rel="preconnect" href="https://fonts.gstatic.com"', self.body)
+# FontLoadingTests is gone with the page it described.
+#
+# The Inter webfont was loaded by templates/landing.html only — base.html never
+# requested it. `/` is the React app now, and the SPA uses the system font
+# stack (frontend/web/src/design-system/tokens.css), so the homepage makes no
+# request to fonts.googleapis.com or fonts.gstatic.com at all. The rules these
+# tests enforced — a variable weight range, no weight 900, a preconnect to the
+# binary host — have nothing left to enforce them against.
 
 
 class BuiltBundleTests(TestCase):

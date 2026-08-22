@@ -634,3 +634,21 @@ def report_pdf(request, slug):
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+def company_redirect(request, slug):
+    """
+    /league/<slug>/ → /companies/<slug>/
+
+    Both routes rendered league.Company by the same slug. Keeping two surfaces
+    for one organisation would be two chances for them to disagree about what
+    is publishable, so the league defers to the company page.
+
+    404s on an unknown slug rather than redirecting to one: a 302 followed by a
+    404 tells a crawler the URL moved before telling it the destination does
+    not exist, and existing inbound links to real companies still resolve in
+    one hop.
+    """
+    from django.shortcuts import redirect
+
+    get_object_or_404(Company, slug=slug)
+    return redirect(f'/companies/{slug}/', permanent=False)

@@ -1,25 +1,6 @@
 # Frontend Audit
 
-**Phase 23.** Measured, not estimated.
-
----
-
-## Templates
-
-| | count |
-|---|---|
-| `templates/*.html` at programme start (`bf2727a3`) | **338** |
-| `templates/*.html` now | **338** |
-| **removed** | **0** |
-
-**Zero templates have been removed, and that is deliberate.**
-
-Removal (Phase 15) requires React parity confirmed *and the React app actually
-serving production traffic*. The SPA is built and tested but **not deployed** —
-`ecoiq.uk` is still served by Django. Deleting a template whose replacement is
-not reachable would take the product offline.
-
-Template removal is blocked on deployment (Phase 16), not on the React work.
+Measured, not estimated. Re-measured after the React cutover.
 
 ---
 
@@ -27,27 +8,101 @@ Template removal is blocked on deployment (Phase 16), not on the React work.
 
 | | count |
 |---|---|
-| public product routes identified | 12 |
-| React routes implemented | **11** |
-| public routes still template-rendered **in production** | **12** |
+| public product routes | 13 |
+| served by React **in production** | **11** |
+| still server-rendered | **2** |
 
-Every public route now has a React implementation, and none of them is live.
-The gap is deployment.
-
-| route | React | notes |
+| route | served by | note |
 |---|---|---|
-| `/` | ✅ rebuilt | capability-verified copy |
-| `/intelligence` | ✅ rebuilt | real assessment flow |
-| `/projects` | ✅ | honest empty state — estate holds zero |
-| `/tours` | ✅ | interest capture; route did not previously exist |
-| `/about` | ⬜ scaffold | |
-| `/contact` | ⬜ scaffold | |
-| `/companies` | ✅ | secondary evidence surface |
-| `/companies/:slug` | ✅ | |
-| `/labs` | ✅ | registry-driven; route did not previously exist |
-| `/trust` | ✅ | route did not previously exist |
-| `/league` | ⬜ | not migrated; de-emphasised |
-| `/pricing` | ⬜ | not migrated |
+| `/` | React | |
+| `/intelligence/` | React | |
+| `/projects/` | React | recorded projects + programme concepts, separated |
+| `/projects/<slug>/` | React | the five concepts, with per-page metadata |
+| `/tours/` | React | now the Eco Tours destination in **both** navigations |
+| `/about/` | React | rewritten |
+| `/contact/` | React | posts to `/api/v2/contact/`, same abuse screening |
+| `/pricing/` | React | enquiry-led; no figures |
+| `/league/` | React | fail-closed; zero ranked organisations today |
+| `/league/<slug>/` | → `/companies/<slug>/` | 404s on an unknown slug |
+| `/labs/` | React | route did not previously exist |
+| `/trust/` | React | route did not previously exist |
+| `/companies/` | **Django** | see below |
+| `/companies/<slug>/` | **Django** | see below |
+
+### Why the two Companies routes were not cut over
+
+**Parity is not proven, and the instruction was to migrate after parity is
+proven.**
+
+The server-rendered company profile carries eleven panels the React page does
+not have: ethics master scores, improvement roadmap, financing readiness,
+financing matches, the QDF decision filter, data status, Shariah screening, KPI
+alignment, controversies, watchlist and the stock strip.
+
+Today every organisation in production falls through to
+`detail_evidence_pending.html`, so **nobody sees those panels** — which makes
+cutting over look free. It is not: routing a URL is a claim to own it, and the
+moment one organisation becomes publishable, owning it would silently delete
+eleven public sections from that organisation's page.
+
+The React components exist (`pages/Companies.tsx`, `pages/CompanyDetail.tsx`)
+with their tests, and are deliberately **not routed** — the note at the top of
+`app/routes.tsx` says so and says what has to be true before they are. Finishing
+it means exposing those eleven panels through API v2 and proving parity against
+a PUBLISHED organisation.
+
+---
+
+## Templates
+
+| | count |
+|---|---|
+| `templates/*.html` at programme start | **338** |
+| now | **338** |
+| **removed** | **0** |
+
+Zero, deliberately, and this is the *cutover* change. Templates are deleted in
+the follow-up, **after** the React routing is verified in production — so
+rollback is a single revert with no content to restore. See
+`docs/product/FRONTEND_DEPLOYMENT.md`.
+
+Scheduled for that pass: `landing.html`, `about.html`, `contact.html`,
+`pricing.html`, `intelligence.html`, `projects/index.html`,
+`projects/detail.html`, `league/company.html`, and their views.
+
+---
+
+## Templates intentionally retained
+
+| category | why |
+|---|---|
+| Django Admin | out of scope by instruction |
+| Email templates | an email client is not a React runtime |
+| PDF generation | server-rendered HTML is the correct WeasyPrint input |
+| `/league/internal/` | the full league table, **staff only** — the public one is fail-closed for everybody, including staff |
+| `/companies/` and `/companies/<slug>/` | parity not proven, above |
+| Staff review tools (`leads`, `company_intelligence`) | internal, authenticated |
+| ~97 other public Django pages | marketing, Labs and legacy surfaces — measured below |
+
+### The wider public surface, measured
+
+**109 anonymously-reachable HTML routes** exist (excluding parameterised ones),
+of which 11 are now React. The remaining ~97 are marketing pages
+(`/methodology/`, `/platform/`, `/press/`, `/investors/`, …) and publicly
+reachable Labs/experimental surfaces (`/legacy-safe/*`, `/digital-twin/`,
+`/financial-intelligence-cloud/`, `/capital-guardian/`, `/gold-intelligence/`,
+`/decision-studio/`, `/ai-agents/*`, …).
+
+They are outside this phase, which covered the public **product** routes. Two
+of them are worth naming as open questions rather than leaving implied:
+
+- **Publicly reachable experimental surfaces.** A dozen Labs modules answer
+  anonymously. EcoIQ Labs lists them with their real status, but the modules
+  themselves are not gated.
+- **`/khalifa-tours/` overclaims.** "Verified", "measured legacy", "Impact
+  Ledger" describe expeditions that have not run. `/tours/` now leads with the
+  real status and links there, but the deeper page's copy was not rewritten —
+  that is the founder's marketing voice, not a defect to silently edit.
 
 ---
 
@@ -55,14 +110,32 @@ The gap is deployment.
 
 | | |
 |---|---|
-| TypeScript/TSX files | 46 |
-| frontend tests | **102** |
-| production bundle | **56.5 kB gzipped**, code-split per route |
-| legacy JS removed | 0 |
-| legacy CSS removed | 0 |
+| TypeScript/TSX files | 56 |
+| frontend tests | **143** |
+| production bundle | **56.7 kB gzipped** entry, code-split per route |
+| total committed artefact | 225 kB across 22 files |
+| legacy JS/CSS removed | 0 — downstream of template removal |
 
-Legacy asset removal is downstream of template removal, which is downstream of
-deployment.
+---
+
+## What this cutover changed beyond rendering
+
+Recorded because each is a product change, not a port:
+
+- **`/pricing/`** no longer publishes four price bands (£15,000–£400,000) or
+  their feature checklists. EcoIQ has never delivered a commercial engagement,
+  and several itemised capabilities — SSO, workflow automation, overnight
+  monitoring — are not built. The six engagement tracks and the
+  `?engagement=` pre-selection into `leads.EnterpriseEnquiry` are unchanged.
+- **`/` lost the Living Earth globe**, the agent CTAs and the harvester
+  counters block. The globe API endpoints are untouched.
+- **`/league/`** lost its charts and sector filter publicly. They ran on data
+  that is entirely withheld; the code and its containment tests moved to
+  `/league/internal/`.
+- **`/tours/`** replaced an invented `hello@ecoiq.uk` address — which appears
+  nowhere else in the repository — with the real `/contact/` flow.
+- **`/` no longer loads a webfont.** Inter was requested by `landing.html`
+  only; the SPA uses the system stack.
 
 ---
 
@@ -71,49 +144,6 @@ deployment.
 | | count |
 |---|---|
 | hard-coded public counters remaining | **0** |
-| unsupported product claims in templates | **0** |
-
-Corrected in this programme:
-
-- `base.html` `og:description` — promised "company rankings, ESG scores" on
-  every shared page
-- `about.html` `og:description` — "EcoIQ scores companies globally", with no
-  evidence condition
-- `press.html` — "219+ companies · 25+ countries" as a key fact *and* in the
-  boilerplate journalists are told to copy
-
-Nine regression tests scan every template, including a guard asserting the scan
-covers 100+ files.
-
----
-
-## Templates intentionally retained
-
-| category | why |
-|---|---|
-| Django Admin (1,560 routes) | out of scope by instruction |
-| Email templates | an email client is not a React runtime |
-| PDF generation | server-rendered HTML is the correct WeasyPrint input |
-| Staff review tools (`leads`, `company_intelligence`) | internal, authenticated, low-traffic |
-| `/healthz/` | infrastructure, not a page |
-| ~250 Labs / legacy / dead template routes | should be deleted, not ported |
-
----
-
-## What blocks "public template routes = 0"
-
-**One thing: deployment.**
-
-The React app builds, typechecks, lints and passes 102 tests. It is not served
-anywhere. Making it live needs a decision this audit cannot make on its own:
-
-1. **How `ecoiq.uk` serves the SPA** — a static host in front of Django, or
-   Django serving the built `index.html` with a catch-all route.
-2. **History fallback** for React Router.
-3. **SEO.** The company and league pages are indexed server-rendered HTML.
-   Client-rendering changes how they are crawled. Prerender, SSR, or accept the
-   change — a real decision with real consequences.
-
-Until those are settled, the honest count of public Django-template routes is
-**12**, not 0 — and stating otherwise because the React code exists would be
-the same category of claim this programme has spent itself removing.
+| unsupported product claims on migrated routes | **0** |
+| price figures published without a delivered engagement | **0** |
+| invented contact addresses | **0** |

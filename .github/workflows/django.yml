@@ -83,6 +83,61 @@ jobs:
             notifications/management/commands/classify_notification_spam.py \
             --follow-imports=silent
 
+  # The React SPA. Typecheck, lint and unit tests, then a REBUILD-AND-DIFF.
+  #
+  # static/spa/ is a committed build artefact (Render's Python environment has
+  # no Node toolchain — see vite.config.ts). A committed artefact is only
+  # trustworthy if something proves it matches the source it claims to be built
+  # from, so this job rebuilds it from a clean `npm ci` and fails if the tree is
+  # dirty afterwards. Without that step, an edit to a .tsx file that nobody
+  # rebuilt would pass every test in the repository and ship nothing.
+  frontend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend/web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/web/package-lock.json
+
+      # `npm ci`, never `npm install`: it installs exactly the lockfile and
+      # fails if package.json and package-lock.json disagree.
+      - name: Install dependencies (deterministic)
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Committed artefact matches source
+        working-directory: .
+        run: |
+          if ! git diff --quiet -- static/spa; then
+            echo "::error::static/spa/ is stale — it does not match a fresh build of frontend/web/src."
+            echo "Run: npm --prefix frontend/web ci && npm --prefix frontend/web run build"
+            echo "then commit static/spa/."
+            git --no-pager diff --stat -- static/spa
+            exit 1
+          fi
+          echo "static/spa/ matches a fresh build."
+
   django-check:
     needs: [ruff, mypy]
     runs-on: ubuntu-latest

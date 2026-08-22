@@ -11,6 +11,18 @@ Production was serving 15 companies and 8 sector averages that way.
 Hiding a number in the table and shipping it in a script tag is not
 containment, and these tests read the actual serialised JSON rather than the
 visible text, because that is where the leak was.
+
+AFTER THE REACT CUTOVER
+-----------------------
+The PUBLIC league has no charts and no inline data at all — it is the React
+shell, and everything it renders comes from /api/v2/leaderboard/, which applies
+the publication gate. That is asserted first, below, and it is a strictly
+stronger statement than the old one.
+
+The chart-building code still exists and still runs, at the staff-only
+/league/internal/. Its gate is unchanged and is still worth guarding, so the
+original assertions follow it there rather than being deleted along with the
+public route — the leak was a bug in that code, and that code is still here.
 """
 import json
 import re
@@ -46,7 +58,45 @@ def _chart(body, name):
     return json.loads(match.group(1)) if match else None
 
 
+class PublicLeagueHasNoChartData(TestCase):
+    """
+    The strongest form of the guarantee: there is nothing to leak.
+
+    The public league is the React shell. It carries no company names, no
+    scores and no serialised chart payload of any kind.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        _company('Legacy Co', 'legacy-chart', PROVENANCE_UNKNOWN)
+        _company('Evidenced Co', 'evidenced-chart', PROVENANCE_MEASURED,
+                 score=80)
+        self.body = Client().get('/league/').content.decode()
+
+    def test_the_page_renders(self):
+        self.assertEqual(Client().get('/league/').status_code, 200)
+
+    def test_there_is_no_serialised_chart_at_all(self):
+        for name in ('_companies', '_sectors', '_pillars'):
+            with self.subTest(name=name):
+                self.assertIsNone(_chart(self.body, name))
+
+    def test_no_company_name_reaches_the_document(self):
+        self.assertNotIn('Legacy Co', self.body)
+        self.assertNotIn('Evidenced Co', self.body)
+
+    def test_no_score_reaches_the_document(self):
+        self.assertNotRegex(self.body, r'\b\d{2}\.\d\b')
+
+
 class LeaderboardCharts(TestCase):
+    """
+    The chart-building code, which now runs only for staff.
+
+    Unchanged assertions against unchanged code. The leak these were written
+    for was a bug in this view, and the view is still here.
+    """
 
     def setUp(self):
         from django.core.cache import cache
@@ -54,10 +104,13 @@ class LeaderboardCharts(TestCase):
         self.unevidenced = _company('Legacy Co', 'legacy-chart', PROVENANCE_UNKNOWN)
         self.evidenced = _company('Evidenced Co', 'evidenced-chart',
                                   PROVENANCE_MEASURED, score=80)
-        self.body = Client().get('/league/').content.decode()
+        self.client = Client()
+        self.client.force_login(get_user_model().objects.create_user(
+            username='chart-staff', is_staff=True))
+        self.body = self.client.get('/league/internal/').content.decode()
 
     def test_the_page_renders(self):
-        self.assertEqual(Client().get('/league/').status_code, 200)
+        self.assertEqual(self.client.get('/league/internal/').status_code, 200)
 
     def test_an_unevidenced_company_is_absent_from_the_company_chart(self):
         chart = _chart(self.body, '_companies')

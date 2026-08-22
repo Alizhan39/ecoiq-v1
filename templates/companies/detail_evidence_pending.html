@@ -21,6 +21,32 @@
 {% block og_title %}{{ company.name }} — EcoIQ{% endblock %}
 {% block og_description %}{{ company.name }} ({{ company.sector }}{% if company.country %}, {{ company.country }}{% endif %}) — {{ score_state.headline }}.{% endblock %}
 
+{% block extra_head %}
+{% comment %}
+  noindex, follow.
+
+  This page is truthful and reachable, and it is not worth indexing: it exists
+  to say that EcoIQ has no publishable assessment for this organisation.
+  Inviting a crawler to rank it would be asking to be judged on content EcoIQ
+  is deliberately withholding — and with 467 of 467 organisations currently in
+  this state, it would mean asking Google to index 467 pages that all say the
+  same thing.
+
+  `follow`, not `nofollow`: the links on the page (sources on file, the
+  directory, contact) stay alive.
+
+  The tag disappears on the next request once the assessment becomes
+  publishable, because companies/views.py then renders the full profile
+  instead of this template. Nothing has to be rebuilt or resubmitted.
+
+  companies/sitemaps.py applies the SAME gate, so no URL carrying this tag is
+  ever submitted for indexing. A sitemap that asks Google to index a noindex
+  page is reported as an error in Search Console, and spends crawl budget to
+  be told no.
+{% endcomment %}
+<meta name="robots" content="noindex, follow">
+{% endblock %}
+
 {% block content %}
 <div class="card" style="max-width:760px;margin:0 auto;">
 

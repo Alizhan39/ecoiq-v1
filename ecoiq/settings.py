@@ -409,7 +409,9 @@ MIDDLEWARE = [
     # logged by security middleware.
     'core.logging_middleware.RequestContextMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # static files — must be 2nd
+    # WhiteNoise, subclassed so the Vite-hashed SPA bundle under
+    # /static/spa/assets/ is cached as immutable. See core/whitenoise.py.
+    'core.whitenoise.SpaAwareWhiteNoiseMiddleware',   # static files — must be 2nd
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',   # language detection from cookie/Accept-Language
     'django.middleware.common.CommonMiddleware',
@@ -513,7 +515,33 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Only include custom static dir if it actually exists (safe for fresh clones)
 _static_src = BASE_DIR / 'static'
 STATICFILES_DIRS = [_static_src] if _static_src.exists() else []
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STORAGES, not STATICFILES_STORAGE.
+#
+# `STATICFILES_STORAGE` was removed in Django 5.1. This project pins Django
+# 5.2, so the line that used to live here — naming
+# CompressedManifestStaticFilesStorage — was silently ignored, and production
+# has been serving static files through the plain StaticFilesStorage: no gzip,
+# no brotli, no content hashing. Verified by reading
+# `settings.STORAGES['staticfiles']` on a booted instance.
+#
+# Compression is restored here. Content HASHING deliberately is not: the
+# manifest backend rewrites every url() and sourceMappingURL it finds and fails
+# the build when a referenced file is missing, and this repository has 338
+# templates and a large legacy asset tree that has never been through that
+# check. Turning it on is its own piece of work with its own failure mode, not
+# a side effect of a frontend deployment.
+#
+# The SPA does not need it. Vite content-hashes its own filenames, and
+# core.whitenoise.SpaAwareWhiteNoiseMiddleware marks that directory immutable —
+# so the bundle gets far-future caching without the manifest machinery.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 # ── Media files ───────────────────────────────────────────────────────────────
 

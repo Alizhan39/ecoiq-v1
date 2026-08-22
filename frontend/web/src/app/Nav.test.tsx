@@ -41,12 +41,28 @@ describe('primary navigation', () => {
     }
   });
 
-  it('keeps Companies reachable but not primary', async () => {
+  it('does not link Companies from the navigation at all', async () => {
+    // /companies/ is served by Django, not by this app. A NavLink would render
+    // a React page on click and a Django page on refresh. It is linked from
+    // the footer with a plain anchor instead — see app/App.test.tsx.
     renderNav();
-    const link = screen.getByRole('link', { name: 'Companies' });
 
-    expect(link).toBeInTheDocument();
-    expect(link.className).toContain('nav__link--minor');
+    expect(screen.queryByRole('link', { name: 'Companies' })).toBeNull();
+  });
+
+  it('keeps Pricing reachable but not primary', async () => {
+    renderNav();
+
+    expect(screen.getByRole('link', { name: 'Pricing' }).className)
+      .toContain('nav__link--minor');
+  });
+
+  it('does not promote League anywhere in the navigation', async () => {
+    // The leaderboard truthfully contains zero ranked organisations.
+    // Promoting it would say the product is a ranking.
+    renderNav();
+
+    expect(screen.queryByRole('link', { name: 'League' })).toBeNull();
   });
 
   it('keeps Labs reachable as a secondary destination', async () => {
