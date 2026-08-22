@@ -28,12 +28,24 @@ asserts on it, and renaming it buys nothing but a broken privacy test.
 from __future__ import annotations
 
 import structlog
+from django.http import HttpRequest
+
+from .verdict import Verdict
 
 _LOGGER = 'notifications.antispam'
 
 
-def log_submission(event: str, verdict, request, *, form: str = 'contact') -> None:
-    """Record one screening outcome, and feed the alert counters."""
+def log_submission(event: str, verdict: Verdict,
+                   request: HttpRequest | None, *,
+                   form: str = 'contact') -> None:
+    """
+    Record one screening outcome, and feed the alert counters.
+
+    `request` is optional because `safe_origin_context` accepts None — a
+    screening invoked outside a request cycle still deserves a record, and
+    refusing one would mean the only path that logs is the one that already
+    logs.
+    """
     from core.client_origin import safe_origin_context
 
     structlog.get_logger(_LOGGER).info(
