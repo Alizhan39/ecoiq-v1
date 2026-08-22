@@ -356,7 +356,8 @@ class SessionAuthAfterCatchAllTests(TestCase):
 
 class CompanyPageIsStillServerRenderedTests(TestCase):
     """
-    /companies/ and /companies/<slug>/ are NOT migrated, deliberately.
+    /companies/<slug>/ is NOT migrated, deliberately. The directory above it
+    is.
 
     The server-rendered company profile carries eleven panels the React page
     does not have. Today every organisation falls through to the
@@ -378,10 +379,14 @@ class CompanyPageIsStillServerRenderedTests(TestCase):
             sector='Energy', country='UK')
         unpopulated(self.company, status='public')
 
-    def test_the_directory_is_still_django(self):
+    def test_the_directory_is_react(self):
+        """
+        The directory migrated; the individual organisation page did not. They
+        are separate decisions and this class pins both.
+        """
         response = self.client.get('/companies/')
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'id="root"')
+        self.assertContains(response, 'id="root"')
 
     def test_the_company_page_is_still_django(self):
         response = self.client.get('/companies/northwind-energy/')

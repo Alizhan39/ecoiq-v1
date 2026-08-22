@@ -249,17 +249,50 @@ class InvariantE_SyntheticDataStaysInternal(TestCase):
 
 
 class DirectoryCardsTests(TestCase):
-    """The directory renders a ring and four pillar bars — all score in disguise."""
+    """
+    The directory used to render a ring and four pillar bars per card — all
+    score in disguise — and to ORDER 467 cards by -ecoiq_total_score, which
+    published the withheld number by position.
+
+    It is React now and reads /api/v2/companies/. The claim is asserted at both
+    ends: the document carries no score, and the data it renders carries none
+    either. The pending wording itself is asserted in
+    frontend/web/src/pages/Companies.test.tsx, against the component that
+    renders it.
+    """
 
     def setUp(self):
         _profile('Card Ltd', 'card-ltd')
 
-    def test_cards_show_no_score_number(self):
+    def test_the_document_carries_no_score_number(self):
         body = Client().get('/companies/').content.decode()
         self.assertNotIn('71.4', body)
 
-    def test_cards_show_the_pending_state(self):
-        self.assertIn(PENDING_HEADLINE, Client().get('/companies/').content.decode())
+    def test_the_document_carries_no_card_data_at_all(self):
+        """
+        Stronger than the assertion it replaces: there is no per-company markup
+        in the response to hide a number in.
+        """
+        body = Client().get('/companies/').content.decode()
+        self.assertNotIn('Card Ltd', body)
+        self.assertIn('id="root"', body)
+
+    def test_the_api_the_page_reads_withholds_the_score(self):
+        payload = Client().get('/api/v2/companies/').json()
+        rows = [r for r in payload['results'] if r['name'] == 'Card Ltd']
+        self.assertEqual(len(rows), 1)
+        self.assertIsNone(rows[0]['ecoiq_score'])
+        self.assertEqual(rows[0]['score_status'], 'INSUFFICIENT_EVIDENCE')
+
+    def test_the_api_does_not_order_by_score(self):
+        """
+        Ordering by a withheld score publishes it: a reader infers standing
+        from position without a digit ever being printed.
+        """
+        _profile('Aardvark Ltd', 'aardvark-ltd')
+        payload = Client().get('/api/v2/companies/').json()
+        names = [r['name'] for r in payload['results']]
+        self.assertEqual(names, sorted(names))
 
 
 class ApiContractUnchangedTests(TestCase):

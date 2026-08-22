@@ -423,68 +423,6 @@ def _get_confidence_label(ai_confidence: int, is_verified: bool) -> str:
 
 # ── Company Directory ──────────────────────────────────────────────────────────
 
-def directory(request):
-    """
-    /companies/ — searchable, filterable company directory.
-    Shows all public CompanyProfile records with EcoIQ cards.
-    """
-    qs = CompanyProfile.objects.filter(
-        status__in=('public', 'verified')
-    ).select_related('company').order_by('-ecoiq_total_score')
-
-    # Search
-    q = request.GET.get('q', '').strip()
-    if q:
-        qs = qs.filter(company__name__icontains=q)
-
-    # Filters
-    sector    = request.GET.get('sector', '')
-    country   = request.GET.get('country', '')
-    label     = request.GET.get('label', '')
-    verified  = request.GET.get('verified', '')
-    funding   = request.GET.get('funding', '')
-    pollution = request.GET.get('pollution', '')
-
-    if sector:
-        qs = qs.filter(company__sector=sector)
-    if country:
-        qs = qs.filter(company__country__icontains=country)
-    if label:
-        qs = qs.filter(moral_label=label)
-    if verified == '1':
-        qs = qs.filter(is_verified=True)
-    if funding:
-        qs = qs.filter(funding_status=funding)
-    if pollution:
-        qs = qs.filter(pollution_level=pollution)
-
-    # Distinct countries for filter dropdown
-    countries = (
-        CompanyProfile.objects
-        .filter(status__in=('public', 'verified'))
-        .values_list('company__country', flat=True)
-        .distinct()
-        .order_by('company__country')
-    )
-
-    return render(request, 'companies/directory.html', {
-        'profiles':       qs,
-        'total_count':    CompanyProfile.objects.filter(status__in=('public','verified')).count(),
-        'result_count':   qs.count(),
-        'q':              q,
-        'sector':         sector,
-        'country':        country,
-        'label':          label,
-        'verified':       verified,
-        'funding':        funding,
-        'pollution':      pollution,
-        'sector_choices': SECTOR_CHOICES,
-        'moral_choices':  MORAL_LABEL_CHOICES,
-        'countries':      countries,
-        'disclaimer_light': DISCLAIMER_LIGHT,
-    })
-
-
 # ── Company Detail ─────────────────────────────────────────────────────────────
 
 def company_detail(request, slug):

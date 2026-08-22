@@ -188,3 +188,17 @@
 }
 .league-table th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
 .league-table td:first-child, .league-table th:first-child { width: 4rem; }
+
+/* ── Directory filters and pagination ────────────────────────────────────── */
+.filters { margin: 1.2rem 0; max-width: 34rem; }
+.filters__row { display: flex; gap: .6rem; align-items: center; margin-bottom: .6rem; }
+.filters__row .field__input { flex: 1; }
+.card__title { font-size: 1.05rem; margin: 0 0 .25rem; }
+.card__title a { color: inherit; }
+.pager { display: flex; gap: 1rem; align-items: center; justify-content: center; margin: 1.6rem 0; }
+.pager__button {
+  font: inherit; padding: .45rem .9rem; cursor: pointer; color: inherit;
+  background: var(--paper-soft); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.pager__button:disabled { opacity: .45; cursor: default; }
+.pager__position { color: var(--ink-soft); font-size: .9rem; }

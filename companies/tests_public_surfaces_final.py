@@ -106,12 +106,26 @@ class PublicSurfaces(TestCase):
         self.assertEqual(self.client.get('/companies/').status_code, 200)
 
     def test_the_directory_does_not_show_the_legacy_score(self):
+        """
+        Asserted against the API now that the directory is React: that is the
+        data the page renders, and it is where the gate is applied.
+
+        The old assertion sliced 600 characters around the company's name in
+        the HTML. That worked, and it only ever inspected the window it chose —
+        this inspects the value itself.
+        """
+        payload = self.client.get('/api/v2/companies/').json()
+        rows = {r['name']: r for r in payload['results']}
+
+        self.assertIn('Legacy-Co', rows)
+        self.assertIsNone(rows['Legacy-Co']['ecoiq_score'])
+        self.assertEqual(rows['Legacy-Co']['score_status'],
+                         'INSUFFICIENT_EVIDENCE')
+
+        # And the served document holds no company data to hide it in.
         body = self.client.get('/companies/').content.decode()
-        # The evidenced company may legitimately show SCORE, so this asserts on
-        # the legacy row specifically.
-        self.assertIn('Legacy-Co', body)
-        legacy_row = body[body.index('Legacy-Co') - 600:body.index('Legacy-Co') + 600]
-        self.assertNotIn(str(SCORE), legacy_row)
+        self.assertNotIn('Legacy-Co', body)
+        self.assertNotIn(str(SCORE), body)
 
     # ── league ───────────────────────────────────────────────────────────────
 
