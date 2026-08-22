@@ -11,7 +11,8 @@ SECURE_SSL_REDIRECT is overridden because settings enables it whenever DEBUG
 is False; without this the test client is 301'd before reaching any view and
 these assertions would pass for the wrong reason.
 """
-from django.test import TestCase, override_settings
+from django.contrib.auth import get_user_model
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from companies.models import CompanyProfile
@@ -38,15 +39,42 @@ class StockAndEmbedRouteSmokeTests(TestCase):
             sector='energy', country='United Kingdom', ticker='DOC',
         )
         CompanyProfile.objects.create(company=cls.draft_co, status='draft')
+        cls.reader = get_user_model().objects.create_user('route-reader')
+
+    def signed_in(self):
+        """
+        A client for /companies/<slug>/stock/, which stopped answering
+        anonymously in Phase 10 (core.access.COMPANY_LEAF_SUFFIXES).
+
+        The EMBED routes below deliberately do NOT use this: an embed that
+        needed a session would not work in a third-party iframe, which is the
+        whole point of the surface. They stay anonymous, and this file still
+        pins that.
+        """
+        client = Client()
+        client.force_login(self.reader)
+        return client
 
     # ── Stock profile ────────────────────────────────────────────────────────
 
-    def test_stock_profile_renders_for_public_company(self):
+    def test_stock_profile_does_not_answer_anonymously(self):
         r = self.client.get(reverse('companies:stock', args=[self.public_co.slug]))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login/', r['Location'])
+
+    def test_stock_profile_renders_for_public_company(self):
+        r = self.signed_in().get(
+            reverse('companies:stock', args=[self.public_co.slug]))
         self.assertEqual(r.status_code, 200)
 
     def test_stock_profile_unknown_slug_is_404(self):
-        r = self.client.get(reverse('companies:stock', args=['no-such-company']))
+        """
+        Still a 404, not a redirect-to-login that leaks nothing either way:
+        a signed-in reader asking for a company that does not exist must be
+        told so.
+        """
+        r = self.signed_in().get(
+            reverse('companies:stock', args=['no-such-company']))
         self.assertEqual(r.status_code, 404)
 
     def test_report_generation_is_staff_only(self):
@@ -103,7 +131,8 @@ class StockAndEmbedRouteSmokeTests(TestCase):
 
     def test_other_pages_keep_frame_protection(self):
         """Global clickjacking protection must not be weakened elsewhere."""
-        r = self.client.get(reverse('companies:stock', args=[self.public_co.slug]))
+        r = self.signed_in().get(
+            reverse('companies:stock', args=[self.public_co.slug]))
         self.assertEqual(r.status_code, 200)
         self.assertIsNotNone(r.headers.get('X-Frame-Options'))
 

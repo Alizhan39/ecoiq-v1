@@ -822,3 +822,37 @@ class TitleMapsAgreeTests(TestCase):
 
         self.assertIsNotNone(client_not_found)
         self.assertIn(f'<title>{client_not_found.group(1)}</title>', served)
+
+
+class ShellFaviconTests(TestCase):
+    """
+    The SPA shell carries the site icon.
+
+    Found in production verification, not in a test: every Django template
+    linked /static/favicon.svg and the shell linked nothing, so browsers fell
+    back to /favicon.ico — which core.spa treats as server-owned and nothing
+    serves. Once the React routes became the whole public site, the whole
+    public site 404ed on its own favicon.
+    """
+
+    def test_the_shell_declares_an_icon(self):
+        body = self.client.get('/').content.decode()
+        self.assertIn('rel="icon"', body)
+        self.assertIn('/static/favicon.svg', body)
+
+    def test_the_icon_survives_the_per_request_head_substitution(self):
+        """
+        The icon sits OUTSIDE the ecoiq:head markers on purpose. Inside them it
+        would be replaced — and silently, because the substitution succeeds
+        either way.
+        """
+        body = self.client.get('/companies/').content.decode()
+        head = body.split('<!--ecoiq:head:start-->')[0]
+        self.assertIn('/static/favicon.svg', head)
+
+    def test_the_icon_file_is_collected(self):
+        from django.contrib.staticfiles import finders
+
+        self.assertIsNotNone(
+            finders.find('favicon.svg'),
+            'The shell links /static/favicon.svg; staticfiles must find it.')

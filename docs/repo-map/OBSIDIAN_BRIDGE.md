@@ -174,7 +174,9 @@ Vault: `07-Technology/APIs/`, [[API Surface]]
 | Shell, per-route `<head>`, catch-all | `core/spa.py` |
 | Immutable caching for the Vite bundle | `core/whitenoise.py` |
 | Which experimental surfaces require sign-in | `core/access.py` |
+| De-published leaves under a public `/companies/<slug>/` | `core.access.COMPANY_LEAF_SUFFIXES` |
 | Permanent redirects to React pages | `core/redirects.py` |
+| What actually survives as a Django HTML route, measured | `docs/product/FINAL_TEMPLATE_MIGRATION.md` § Phase 10 |
 | Client-side title map (mirrors `spa.ROUTE_META`) | `frontend/web/src/app/documentTitle.ts` |
 
 **One origin.** No second hostname, no static host, no SSR — the API is

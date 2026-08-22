@@ -2,6 +2,7 @@
 WHY Engine tests — explainability, Boardroom Mode, Decision Defense Pack, API.
 Read-only, evidence-derived; verifies honest defendability + no fabrication.
 """
+from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 
 from league.models import Company
@@ -76,8 +77,22 @@ class WhyViewsTests(TestCase):
                                        slug="national-grid", sector="utilities", country="GB")
         run_harvest(HarvestJob.objects.create(company_slug="national-grid", status="pending"))
 
-    def test_boardroom_page_renders(self):
+    def test_the_company_page_is_no_longer_anonymous(self):
+        """
+        De-published in the Phase 10 route audit. It is an unlinked
+        per-organisation page from before /companies/<slug>/ became React,
+        and it answered 200 for a slug EcoIQ holds nothing on.
+        """
         r = self.client.get("/why/company/national-grid/")
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login/", r["Location"])
+
+    def test_boardroom_page_renders_for_a_signed_in_user(self):
+        """Sign-in, not deletion — the page still works."""
+        user = get_user_model().objects.create_user(username="why-boardroom")
+        client = Client(SERVER_NAME="localhost")
+        client.force_login(user)
+        r = client.get("/why/company/national-grid/")
         self.assertEqual(r.status_code, 200)
         body = r.content.decode()
         self.assertIn("Boardroom Mode", body)
@@ -88,8 +103,19 @@ class WhyViewsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.json()["reports"])
 
-    def test_decision_defense_pack_pdf(self):
+    def test_decision_defense_pack_pdf_is_gated_with_its_page(self):
+        """
+        The PDF carries the same per-organisation content as the page. Exempt
+        it as a "server document" and the de-publication is undone in another
+        format.
+        """
         r = self.client.get("/why/company/national-grid/pack.pdf")
+        self.assertEqual(r.status_code, 302)
+
+        user = get_user_model().objects.create_user(username="why-pdf")
+        client = Client(SERVER_NAME="localhost")
+        client.force_login(user)
+        r = client.get("/why/company/national-grid/pack.pdf")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "application/pdf")
         self.assertEqual(r.content[:4], b"%PDF")

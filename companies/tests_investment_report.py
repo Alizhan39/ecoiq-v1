@@ -137,9 +137,27 @@ class DetailPageStockStripTests(TestCase):
 # ── Stock profile page (/companies/<slug>/stock/) ──────────────────────────
 
 class StockProfilePageTests(TestCase):
+    """
+    What the stock page says about price, for a reader who can reach it.
+
+    /companies/<slug>/stock/ stopped answering anonymously in Phase 10
+    (core.access.COMPANY_LEAF_SUFFIXES), so these render as a signed-in
+    reader. The subject of every assertion below is unchanged: no fabricated
+    price, no placeholder zero, a stale value labelled as stale.
+    """
 
     def setUp(self):
+        self.reader = User.objects.create_user('stock-reader', password='x')
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.reader)
+
+    def test_the_page_does_not_answer_anonymously(self):
+        co = _make_public_company(slug='anon-probe')
+        _make_profile(co)
+        r = Client(SERVER_NAME='localhost').get(
+            reverse('companies:stock', kwargs={'slug': co.slug}))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login/', r['Location'])
 
     def test_private_company_shows_not_public_message_no_price(self):
         co = _make_public_company(
@@ -333,7 +351,23 @@ class ReportPublishWorkflowTests(TestCase):
         self.staff = User.objects.create_user('staffer', password='x', is_staff=True)
         self.staff_client = Client(SERVER_NAME='localhost')
         self.staff_client.force_login(self.staff)
+        # The distinction these tests are about is STAFF vs NON-STAFF: a draft
+        # report must not reach a reader who is not staff. That is unchanged.
+        #
+        # What changed is that /companies/<slug>/stock/ no longer answers
+        # anonymously at all (core.access.COMPANY_LEAF_SUFFIXES), so a reader
+        # who is merely not-staff now has to be signed in to be a reader. The
+        # anonymous case is asserted separately below rather than dropped.
+        self.reader = User.objects.create_user('reader', password='x')
+        self.reader_client = Client(SERVER_NAME='localhost')
+        self.reader_client.force_login(self.reader)
         self.anon_client = Client(SERVER_NAME='localhost')
+
+    def test_the_stock_page_does_not_answer_anonymously(self):
+        r = self.anon_client.get(
+            reverse('companies:stock', kwargs={'slug': self.co.slug}))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login/', r['Location'])
 
     def _make_report(self, **kwargs):
         defaults = dict(
@@ -345,7 +379,7 @@ class ReportPublishWorkflowTests(TestCase):
 
     def test_draft_report_hidden_from_public(self):
         self._make_report(status='draft')
-        r = self.anon_client.get(reverse('companies:stock', kwargs={'slug': self.co.slug}))
+        r = self.reader_client.get(reverse('companies:stock', kwargs={'slug': self.co.slug}))
         self.assertNotContains(r, _CANNED_REPORT_JSON['executive_assessment'])
 
     def test_draft_report_visible_to_staff(self):
@@ -355,11 +389,11 @@ class ReportPublishWorkflowTests(TestCase):
 
     def test_published_report_visible_to_public(self):
         self._make_report(status='published', published_at=datetime.datetime.now(datetime.timezone.utc))
-        r = self.anon_client.get(reverse('companies:stock', kwargs={'slug': self.co.slug}))
+        r = self.reader_client.get(reverse('companies:stock', kwargs={'slug': self.co.slug}))
         self.assertContains(r, _CANNED_REPORT_JSON['executive_assessment'])
 
     def test_no_report_yet_public_sees_clear_insufficient_message(self):
-        r = self.anon_client.get(reverse('companies:stock', kwargs={'slug': self.co.slug}))
+        r = self.reader_client.get(reverse('companies:stock', kwargs={'slug': self.co.slug}))
         self.assertContains(r, 'has not yet published an Investment Relevance Report')
 
     def test_anonymous_cannot_generate_report(self):
