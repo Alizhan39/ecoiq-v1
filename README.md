@@ -1,536 +1,175 @@
-# EcoIQ — AI Industrial Audit Platform
+# EcoIQ
 
-An AI-powered facility modernisation platform that analyses industrial operations and delivers McKinsey-grade audit reports with ranked recommendations, ROI analysis, and phased implementation roadmaps.
+**Evidence-backed decision intelligence for companies, investments and
+projects.**
 
-Built with Django, Anthropic Claude, and WeasyPrint. Synchronous architecture — no workers, no containers, just `python manage.py runserver`.
-
----
-
-## Hackathon Work Started Today
-
-EcoIQ existed before this hackathon as a climate intelligence and industrial modernisation
-platform. On **2026-07-01**, we started building **EcoIQ LegacySafe AI** as a new AI agents
-module inside EcoIQ. This new module adds permission-aware memory, deterministic retrieval
-controls, lineage tracking, revocation, audit logs, and agentic legacy modernisation workflows
-for the **Conduct AI** and **BasedAI** bounties.
-
-Everything below in this section (and the `legacy_safe` Django app) is new as of today. The
-rest of this README describes the pre-existing EcoIQ platform. See also
-[`legacy_safe/DEMO_SCRIPT.md`](legacy_safe/DEMO_SCRIPT.md) for the 60-second pitch and 3-minute
-walkthrough, [`legacy_safe/PITCH.md`](legacy_safe/PITCH.md) for shorter pitches, and
-[`legacy_safe/SUBMISSION_SUMMARY.md`](legacy_safe/SUBMISSION_SUMMARY.md) for the full hackathon
-submission writeup.
-
-`New AI Agents Module — started today for hackathon`
-&nbsp;·&nbsp; `Conduct-aligned: enterprise legacy modernisation`
-&nbsp;·&nbsp; `BasedAI-aligned: permission-aware memory and model-provider readiness`
-&nbsp;·&nbsp; `Repository-aware`
-&nbsp;·&nbsp; `Language-aware`
-&nbsp;·&nbsp; `Permission-aware`
-&nbsp;·&nbsp; `Model-provider-ready`
-
-### Project: EcoIQ LegacySafe AI
-
-**One-line:** A permission-aware agentic change-management layer that lets enterprises
-modernise legacy systems without ever leaking restricted content through an LLM.
-
-LegacySafe AI plans the full EcoIQ modernisation pathway: solar PV, battery storage, heat
-pumps, boiler replacement, insulation, smart meters, IoT sensors, grid optimisation,
-procurement, finance, process optimisation, worker transition, and Justice/Maqasid governance.
-
-### Problem
-
-Enterprises sit on decades of legacy systems, code, process manuals, and reports. Modernising
-them safely requires reading sensitive, mixed-permission material — but handing all of that
-material to an LLM at once means access control disappears the moment retrieval happens.
-
-### Solution
-
-LegacySafe AI is a permission-aware, agentic change-management layer. It retrieves only the
-legacy content a specific user is allowed to see, tracks the lineage of every derived summary
-back to its sources, propagates revocation automatically, and logs every access decision —
-before any content ever reaches a model or a user.
-
-### Why Conduct
-
-- Reads legacy documents, code snippets, process manuals, ESG reports, and policy documents
-- Maps dependencies between systems, documents, teams, risks, and required changes
-- Produces controlled change proposals and modernisation plans
-- Supports human-in-the-loop approval (`ChangeProposal` status workflow)
-
-### Why BasedAI
-
-- Permission-aware memory: `MemoryChunk` and `DerivedMemory` carry an explicit `access_level`
-- Access enforced **before** retrieval, not after LLM generation
-- Deterministic permission checks (`legacy_safe/services/permissions.py`) — never an LLM decision
-- Source lineage tracked from raw document → chunk → derived memory
-- Revocation propagates: source document → its chunks → any derived memory built from it
-- Audit log (`AuditLog`) for every question, retrieval, blocked source, allowed source, and revocation
-
-### Architecture
-
-```
-legacy_safe/
-  models.py            LegacyProject, SourceDocument, MemoryChunk, DerivedMemory,
-                        AuditLog, ChangeProposal
-  services/
-    permissions.py      deterministic access matrix (role × access_level → allow/deny)
-    retrieval.py         permission-filtered keyword retrieval + audit logging
-    planner.py           mock structured modernisation-plan generator (LLM seam for later)
-    revocation.py        cascading revocation (source → chunks → derived memories)
-    graph_builder.py      NetworkX dependency/lineage graph → JSON
-    audit.py             AuditLog writer
-    seed_demo.py          idempotent demo data (Samruk Energy)
-  views.py / urls.py     dashboard, ask agent, permission demo, audit logs,
-                          dependency graph, revocation demo — mounted at /legacy-safe/
-```
-
-### Demo flow
-
-1. **Dashboard** (`/legacy-safe/`) — module overview, Conduct/BasedAI alignment, hackathon badge
-2. **Ask Agent** (`/legacy-safe/ask/`) — ask "What is the full industrial modernisation plan,
-   from solar panels and equipment upgrades to process optimisation?" and see the answer built
-   only from evidence you're allowed to see
-3. **Permission Demo** (`/legacy-safe/permission-demo/`) — the same question run as four roles
-   (public, engineering, finance, executive) side by side
-4. **Audit Logs** (`/legacy-safe/audit-logs/`) — every retrieval decision, logged
-5. **Dependency Graph** (`/legacy-safe/dependency-graph/`) — NetworkX nodes/edges for the demo project
-6. **Revocation Demo** (`/legacy-safe/revocation-demo/`) — revoke a source and watch its chunks
-   and derived memories go dark in the same request
-
-### Security model
-
-- Access decisions are pure functions of `(access_level, roles, is_revoked)` — no LLM is ever
-  asked whether a user may see something
-- A seeded "Malicious Prompt Injection Document" (public access) demonstrates that document
-  *content* is never treated as instructions, regardless of what it says
-- Revoked sources and their derived memories are excluded from retrieval unconditionally
-
-### Permission-aware memory
-
-Every `MemoryChunk` and `DerivedMemory` stores its own `access_level` (public / engineering /
-finance / executive) rather than inheriting it implicitly at read time. `retrieve_allowed_chunks()`
-partitions every chunk in a project into `allowed` / `blocked` *before* any relevance scoring or
-answer generation happens, by calling the deterministic `can_access()` matrix in
-`services/permissions.py`. There is no code path where restricted content reaches the planner
-unfiltered.
-
-### Revocation
-
-`revoke_source_document()` in `services/revocation.py` does three things in one call: marks the
-`SourceDocument` revoked, marks all of its `MemoryChunk`s revoked, and marks any `DerivedMemory`
-whose `lineage` names that document as revoked. A derived summary can never outlive the source
-it was built from — there is no separate cleanup job or delay.
-
-### Audit log
-
-Every retrieval (`ask`), every permission-demo run, and every revocation writes an `AuditLog`
-row via `services/audit.py` — recording the acting user (or `None` for anonymous), the action,
-the question asked, the decision, the allowed/blocked source titles, and a reason. The log is
-written as a side effect of the operation itself, not reconstructed afterwards, so it can't
-drift from what actually happened.
-
-### Tech stack
-
-Django, PostgreSQL, Django auth groups, NetworkX (dependency/lineage graph). Planned:
-pgvector (semantic retrieval), LangGraph (agent workflow), LlamaIndex, pycasbin, PyVis
-(interactive graph rendering), Pydantic/Instructor (structured LLM output), Semgrep/Tree-sitter
-(legacy code scanning), Langfuse (observability), Ragas (evaluation).
-
-### Roadmap
-
-- Wire `planner.py` to a real Anthropic/OpenAI call, with the injection-safety guarantee
-  enforced by a system prompt (never just relying on retrieval filtering)
-- Real embeddings + pgvector for retrieval instead of keyword overlap
-- LangGraph multi-step agent workflow (retrieve → plan → propose → await approval)
-- PyVis interactive rendering of the dependency/lineage graph
-- Legacy code scanning via Semgrep/Tree-sitter feeding into `ChangeProposal`
-
-### Model + Enterprise Integration Readiness
-
-This is our own hackathon MVP, built inside EcoIQ and inspired by the Conduct AI and BasedAI
-bounty requirements — not a clone of either. See the full breakdown at
-`/legacy-safe/model-integration-readiness/`.
-
-**LegacySafe AI is model-agnostic.** The permission layer sits before the model, so we can
-switch between Claude, OpenAI-compatible endpoints, BasedAPIs, Mistral, GLM, local open-weight
-models, or future code-focused agents without changing the security model.
-
-#### Model Switching & Open-Weight Readiness
-
-- The current hackathon MVP uses `MockProvider` — a deterministic provider where needed; no
-  external API calls are required for the demo
-- Future providers can include Anthropic Claude, OpenAI-compatible endpoints, BasedAPIs,
-  Mistral, GLM, and local open-weight models — **roadmap-ready, not already integrated**
-- Future code-focused agents can analyse repositories, but only after permission-aware retrieval
-- The model never receives blocked finance, engineering, or executive memory
-- The same retrieval guard and audit logs apply regardless of model provider
-- This supports lower cost, data sovereignty, and enterprise flexibility
-
-```
-User request → Permission Guard → Allowed context only → Selected model provider → Agent output → Audit log
-```
-
-- **Provider abstraction** — `services/llm_provider.py` defines `LLMProvider`, with `MockProvider`
-  (fully deterministic, no network call, no API key) shipped for the hackathon, and typed stubs
-  for `OpenAICompatibleProvider` and `AnthropicProvider` describing the integration seam
-- **Open-weight model readiness** — the same provider interface accommodates BasedAPIs, Mistral,
-  GLM, or a locally hosted open-weight model; permission filtering never changes based on which
-  provider is plugged in
-- **OpenAI-compatible endpoint readiness** — any drop-in-compatible chat completions server can
-  implement `OpenAICompatibleProvider.generate()` without touching retrieval or permissions
-- **Data sovereignty design** — every provider, including local/air-gapped models, receives only
-  permission-filtered `allowed_context`; no provider ever sees blocked finance, engineering, or
-  executive memory
-- **Enterprise integrations roadmap** — SAP/ERP, Salesforce/CRM, Oracle databases, Workday/HR,
-  Jira, Confluence, ServiceNow, GitHub/GitLab, SAP Signavio, SAP LeanIX, ESG reporting systems,
-  and climate/asset data repositories, each mapped to a specific agent use case and the
-  permission risk it handles
-- **Conduct-style lifecycle mapping** — business change request → classify → find affected
-  systems/documents/code → build dependency graph → generate change proposal → audit trail →
-  human approval → testing checklist
-- **BasedAI-style AI workforce mapping** — five specialised agents (Legacy Scanner, Permission
-  Guard, Dependency Mapper, Modernisation Planner, Audit & Compliance), each with a defined
-  input, output, and optimisation value
-
-### AI Agent Ecosystem 200
-
-A curated, 17-category roadmap of open-source agent, RAG, permissions, code-analysis, evaluation,
-security, document-ingestion, workflow-automation, frontend, MCP, climate/ESG, geospatial, data
-science, and justice/responsible-AI repositories that could strengthen LegacySafe AI — plus a
-dedicated Microsoft/Enterprise AI Stack section (AutoGen, Semantic Kernel, GraphRAG, Presidio,
-MarkItDown, Playwright, TypeScript, VS Code, and an Azure OpenAI-ready deployment option). Every
-entry is labelled MVP now, Next integration, Roadmap-ready, or Research watchlist — nothing is
-claimed as already integrated beyond what's genuinely true today. See
-[`legacy_safe/AI_AGENT_ECOSYSTEM_200.md`](legacy_safe/AI_AGENT_ECOSYSTEM_200.md) and
-`/legacy-safe/ai-agent-ecosystem-200/`.
-
-### Microsoft Ecosystem Readiness
-
-An architecture-alignment layer mapping LegacySafe AI onto a Microsoft-style enterprise AI
-project pattern (User → Agent → Model, Data → Action) and a Design Thinking flow (Empathise →
-Define → Ideate → Prototype → Test), for industrial modernisation across energy, factories,
-heating, water, mining, logistics, and public-sector infrastructure — not just the Samruk
-Energy demo scenario. Includes a Microsoft ecosystem mapping (Azure AI, Fabric, Digital Twins,
-IoT, Entra ID, Power BI, Teams/Copilot, SharePoint, GitHub Copilot), a Microsoft open-source
-tools table (AutoGen, Semantic Kernel, GraphRAG, Presidio, MarkItDown, Playwright, TypeScript,
-VS Code), a suggested pilot proposal, enterprise safety principles, and questions for Microsoft
-advisers. The current hackathon MVP does not claim full Microsoft/Azure integration — every
-item is marked MVP now, Next integration, Roadmap-ready, or Research watchlist. See
-[`legacy_safe/MICROSOFT_ECOSYSTEM_READINESS.md`](legacy_safe/MICROSOFT_ECOSYSTEM_READINESS.md)
-and `/legacy-safe/microsoft-ecosystem-readiness/`.
-
-### Justice & Maqasid Intelligence Layer
-
-A hackathon MVP and conceptual governance layer — not a certified ethics or compliance
-product — at `/legacy-safe/justice-maqasid/`.
-
-- **Why EcoIQ adds justice beyond efficiency** — most enterprise AI tools optimise
-  modernisation plans for speed, cost, and efficiency alone. EcoIQ adds a justice and
-  stewardship review so plans are also evaluated for human impact, worker transition,
-  community protection, environmental stewardship, fair cost/benefit allocation, future
-  generations, and governance accountability
-- **How this differentiates EcoIQ from normal enterprise AI** — a Justice-Aware Agent Workflow
-  (Permission Guard → Evidence Retrieval → Conduct-style Legacy Analysis → Maqasid Justice
-  Review Agent → Future Generations Impact Agent → Worker & Community Risk Agent → Final Just
-  Transition Plan → Audit Log) runs alongside the existing permission-aware retrieval pipeline,
-  so a modernisation answer isn't just permission-filtered — it's reviewed for fairness before
-  being presented as final
-- **How it supports responsible climate transition** — a coal-to-clean-heat plan, for example,
-  is checked not only for emissions reduction but for whether the transition's costs land
-  unfairly on vulnerable households, workers, or future generations
-- **How it connects to Maqasid, amanah, khalifa stewardship, and intergenerational justice** —
-  presented professionally, not as religious preaching: six evaluation principles (Hifz
-  al-Nafs/life, Hifz al-Aql/intellect, Hifz al-Mal/wealth, Hifz al-Nasl/family & future
-  generations, Hifz al-Din/values, and Amanah/Khalifa stewardship of the Earth) are reframed as
-  plain modernisation-planning questions, each with an example risk and mitigation
-- **Why this matters for emerging markets and industrial modernisation** — coal-to-clean-heat
-  and similar transitions in emerging markets carry real risk of unfair cost transfer to
-  workers and low-income households; a justice-aware review layer surfaces that risk before a
-  plan is finalised, not after
-- Five conceptual agents (Justice Review, Maqasid Impact, Future Generations, Worker &
-  Community, Amanah Stewardship) and a set of demo "Justice Metrics" scorecards — explicitly
-  labelled as demo evaluation dimensions, not final production scores
-
-### Intellectual Property & Public Benefit
-
-EcoIQ's core platform, brand, commercial workflows, proprietary scoring logic, the Justice &
-Maqasid Intelligence framework, enterprise integrations, datasets, and patentable inventions are
-intended to remain founder/company-owned intellectual property, subject to legal registration
-and professional advice. No patents have been filed or granted at this stage, and nothing in
-this repository should be read as claiming otherwise.
-
-Selected public-benefit components — such as educational templates, demo data, community
-climate checklists, and selected non-commercial guides — may be shared for NGOs, schools,
-vulnerable communities, and public benefit under an appropriate open or community-use licence,
-to be determined separately. This repository currently has no `LICENSE` file; no licence terms
-are implied by this note, and none are changed by it.
+EcoIQ assesses organisations and shows exactly how much evidence sits behind
+every answer — and how good that evidence is. When the evidence does not
+support a number, EcoIQ shows the gap instead of the number.
 
 ---
 
-## Features
+## The rule the system is built around
 
-- **Two-call AI orchestration** — Diagnostic (findings + root causes) → Recommendations (ROI + roadmap)
-- **Enterprise audit reports** — 6 sections: Executive Summary, Projections, Before/After, Findings, Recommendations, Roadmap
-- **PDF export** — Server-side WeasyPrint A4 PDFs
-- **Priority scoring** — Composite score from ROI speed, complexity, savings scale, and quick-win status
-- **Demo seeder** — Pre-built Oil Refinery and Logistics Warehouse demos
+> **Unknown is `null`. Never `0`, never `50`, never a substitute.**
 
----
-
-## Quick Start
-
-```bash
-# 1. Clone and set up virtual environment
-git clone <repo-url>
-cd ecoiq-v1
-python -m venv .venv
-source .venv/bin/activate
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Configure environment
-cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
-
-# 4. Apply migrations
-python manage.py migrate
-
-# 5. Run the development server
-python manage.py runserver
-```
-
-Open http://127.0.0.1:8000/ in your browser.
+A score of `0` means an organisation was assessed at zero. A missing score is
+missing. The distinction is enforced by the schema, the calculators, the API,
+the TypeScript types and a lint rule — not by convention.
 
 ---
 
-## Seeding Demo Data
-
-Run the built-in demo seeder to create two fully analysed example facilities:
-
-```bash
-# Both demos (Oil Refinery + Logistics Warehouse) — takes ~6-10 min
-python manage.py seed_demos
-
-# Single demo
-python manage.py seed_demos --name refinery
-python manage.py seed_demos --name warehouse
-
-# Create sessions only, skip AI (useful for testing UI without API calls)
-python manage.py seed_demos --skip-ai
-
-# Re-create even if already exists
-python manage.py seed_demos --force
-```
-
----
-
-## Project Structure
+## Architecture
 
 ```
-ecoiq-v1/
-├── audit/                   # Industrial audit app
-│   ├── models.py            # AuditSession, Finding, Recommendation, ActionPlan, AuditReport
-│   ├── views.py             # All views + report context builder
-│   ├── ai.py                # Two-call AI orchestration (diagnostic + recommendations)
-│   ├── forms.py             # AuditSessionForm
-│   ├── questions.py         # Questionnaire definitions
-│   ├── urls.py              # Audit URL patterns
-│   ├── templatetags/
-│   │   └── audit_tags.py    # fmt_usd, fmt_num, fmt_usd_compact filters
-│   └── management/commands/
-│       └── seed_demos.py    # Demo data seeder
-├── core/                    # ESG core app
-├── templates/audit/         # All audit templates
-│   ├── report.html          # Full enterprise web report
-│   └── report_pdf.html      # WeasyPrint A4 PDF version
-├── requirements.txt
-├── .env.example
-└── manage.py
+React / TypeScript            frontend/web — public product SPA
+        │                     Vite · React Router · strictNullChecks
+        ▼
+      API v2                  api/v2_* — the canonical contract
+        │                     score · score_status · evidence_coverage
+        │                     confidence · rank
+        ▼
+      Django 5.2              70 apps, session auth, DRF
+        │
+        ▼
+Decision / Evidence /         companies/{evidence,provenance,eligibility,
+Provenance engines            confidence,metric_registry,scoring}.py
+        │                     ethics/ · financing/ · qdf/ · mizan/ · ml/
+        ▼
+    PostgreSQL
 ```
 
----
+Three frontend directories, only one of which is a runtime:
 
-## Environment Variables
-
-| Variable | Required | Description |
+| path | what | runtime? |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key (`sk-ant-...`) |
-| `DJANGO_SECRET_KEY` | Yes (prod) | Django secret key — change in production |
-| `DEBUG` | No | `True` for development, `False` for production |
-| `STRIPE_SECRET_KEY` | No | Stripe secret key. Blank = billing disabled (safe default) |
-| `STRIPE_PUBLISHABLE_KEY` | No | Stripe publishable key |
-| `STRIPE_WEBHOOK_SECRET` | No | Webhook signing secret (`whsec_...`), one per endpoint |
-| `STRIPE_PRICE_STARTER_MONTHLY` | No | Stripe Price id for the Starter monthly plan |
-| `STRIPE_PRICE_STARTER_YEARLY` | No | Stripe Price id for the Starter annual plan |
-| `STRIPE_PRICE_PRO_MONTHLY` | No | Stripe Price id for the Pro monthly plan |
-| `STRIPE_PRICE_PRO_YEARLY` | No | Stripe Price id for the Pro annual plan |
-| `STRIPE_AUTOMATIC_TAX_ENABLED` | No | Stripe Tax. **Leave `false`** until tax registrations are confirmed |
-| `STRIPE_LIVE_MODE_ALLOWED` | No | Safety latch. Must be `true` before an `sk_live_` key is accepted |
-| `ECOIQ_BILLING_PROVIDER` | No | `none` (manual invoicing, default) or `stripe` |
-
-See `.env.example` for the full annotated list.
+| `frontend/web` | public product SPA | **yes** |
+| `frontend/app` | build-time React islands → `static/dist/` | no |
+| `frontend/remotion` | offline video authoring | no |
 
 ---
 
-## Billing (Stripe)
+## Evidence integrity
 
-Merchant of record: **Stoke Share Ltd**, trading as EcoIQ. Lives in the
-existing `ecoiq_commerce` app; routes are mounted at `/billing/`.
+Four concepts, deliberately separate. Collapsing any two was the original
+defect.
 
-Supports Stripe Checkout (monthly/annual subscriptions and one-time
-sustainability assessments or consulting), Billing, Subscriptions, the Customer
-Portal, and Invoicing. Stripe Tax is wired but **disabled by default**.
+| concept | question | authority |
+|---|---|---|
+| **Provenance** | where did this number come from? | `companies/provenance.py` |
+| **Coverage** | how much of what we need is supported? | `companies/evidence.py` |
+| **Confidence** | how good is that support? | `companies/confidence.py` |
+| **Review** | did a person look? | `companies/analyst.py` |
 
-### Local setup (test mode only)
+Provenance is per-metric and append-only. Derived values record the exact
+provenance **rows** they consumed, so history stays pinned to what was actually
+read. Defensibility is transitive — contamination anywhere beneath a value
+disqualifies it.
+
+**Publication requires full coverage.** Seeded and legacy data can never
+satisfy it, however much of it exists.
+
+Full architecture: [`docs/product/EVIDENCE_INTEGRITY_FINAL.md`](docs/product/EVIDENCE_INTEGRITY_FINAL.md)
+
+---
+
+## Product status
+
+Statuses come from the code-owned registry
+([`platform_registry/agents.py`](platform_registry/agents.py)). This README
+does **not** restate counts that can drift — read them from
+`GET /api/v2/platform/`.
+
+| tier | what it means |
+|---|---|
+| **Production** | active path, meaningful tests, dependencies available, and an evaluation basis |
+| **Beta** | real code and tests; evaluation incomplete |
+| **Experimental** | working experiment, no readiness claim |
+| **Planned** | not functional |
+
+**There are no production AI agents.** No LLM-backed module has a measured
+evaluation, and for a generative system output quality is precisely what an
+evaluation measures. The production modules are **deterministic engines** —
+formulas pinned by tests, recording provenance for every value they write.
+That is a different claim from "our AI is validated", and the difference is
+deliberate.
+
+`ai_agents/` contains **298 markdown files and no Python**. Those are
+training-pack specifications — designs, not running software — and are counted
+separately.
+
+---
+
+## Running locally
 
 ```bash
-# 1. Install dependencies (adds stripe==15.4.0)
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# 2. Copy the Stripe block from .env.example into .env and fill in TEST keys
-#    from https://dashboard.stripe.com/test/apikeys
-#    Never commit .env — it is gitignored, and it must stay that way.
-
-# 3. Apply migrations
 python manage.py migrate
-
-# 4. Create products and prices in the Stripe test dashboard, put the four
-#    price ids in .env, then map them onto local Plan rows
-python manage.py sync_stripe_prices
-
-# 5. Forward webhooks to the local server (Stripe CLI, separate terminal).
-#    This prints its OWN whsec_… — put that in .env, not the dashboard one.
-stripe listen --forward-to localhost:8731/billing/webhook/
-
-# 6. Enable the gateway
-#    ECOIQ_BILLING_PROVIDER=stripe
 python manage.py runserver 8731
 ```
 
-Then: `/billing/plans/` to buy, `/billing/manage/` to manage, and
-`stripe trigger checkout.session.completed` to exercise the webhook.
-
-Use Stripe's test cards — `4242 4242 4242 4242` succeeds,
-`4000 0000 0000 0341` fails after attaching.
-
-### How access is granted
-
-Paid access is granted **only** by a signature-verified webhook. The browser
-success redirect (`/billing/success/`) reports status and grants nothing — it
-can be visited, shared or forged without any payment having occurred. Every
-event id is recorded in `StripeEvent`, so a duplicate delivery is acknowledged
-without provisioning twice.
-
-A refund withdraws access; a chargeback *suspends* it and restores exactly
-what it suspended if the dispute is won.
-
-EcoIQ stores only non-sensitive Stripe identifiers (customer, subscription,
-price and invoice ids, status, period dates, cancellation state). **No card
-data is ever received or stored** — all card entry happens on Stripe-hosted
-Checkout and Portal pages.
-
-Discounts have one source of truth per payment flow: Stripe Checkout uses
-Stripe promotion codes, and the local `Coupon` model applies to manual and
-invoiced billing only. Exactly one billing provider may write invoices at a
-time (`ECOIQ_BILLING_PROVIDER`), enforced at the write sites.
-
-### Tests
-
 ```bash
-python manage.py test ecoiq_commerce
+cd frontend/web
+npm install
+npm run dev          # :5173, proxies /api to :8731
 ```
 
-Covers webhook signature verification, idempotency, permission and ownership,
-checkout creation, the full subscription lifecycle, refunds, chargebacks, and
-entitlement precedence across multiple subscriptions. No test touches the
-network.
-
-Production deployment notes — including the webhook endpoint URL, the exact
-event list to subscribe to, and the live-mode checklist — are in
-[`DEPLOY.md`](DEPLOY.md).
-
 ---
 
-## AI Model & Token Budget
-
-| Call | Model | Max Tokens | Purpose |
-|---|---|---|---|
-| Diagnostic | `claude-sonnet-4-6` | 4,000 | 6–10 findings with root causes and financial impact |
-| Recommendations | `claude-sonnet-4-6` | 16,000 | 6–10 recommendations + roadmap + projections |
-
-A complete analysis typically takes 3–5 minutes.
-
----
-
-## Tech Stack
-
-- **Backend** — Django 5.2, SQLite, Python 3.11
-- **AI** — Anthropic Claude (`claude-sonnet-4-6`) via `anthropic` SDK
-- **PDF** — WeasyPrint 68.1 (server-side A4 rendering)
-- **Document parsing** — pypdf (PDF text extraction)
-
----
-
-## Deploying to Railway (recommended)
-
-Railway provides free-tier hosting with zero-config Django support.
-
-### 1. Install Railway CLI
-```bash
-npm install -g @railway/cli   # or brew install railway
-railway login
-```
-
-### 2. Create a new project and deploy
-```bash
-railway init          # creates new Railway project
-railway up            # deploys from current directory
-```
-
-### 3. Set environment variables in Railway dashboard
-| Variable | Value |
-|---|---|
-| `ANTHROPIC_API_KEY` | `sk-ant-...` (your key) |
-| `DJANGO_SECRET_KEY` | Generate with: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
-| `DEBUG` | `False` |
-| `ALLOWED_HOSTS` | `yourapp.up.railway.app` (Railway gives you this URL) |
-| `CSRF_TRUSTED_ORIGINS` | `https://yourapp.up.railway.app` |
-
-### 4. First deploy runs automatically
-- `migrate` runs via the `release` phase in `Procfile`
-- `collectstatic` runs during Nixpacks build
-- WeasyPrint system libraries (Cairo, Pango) are installed via `nixpacks.toml`
-
-> **Note on SQLite + Railway:** Railway's filesystem is ephemeral — data resets on redeploy. For a persistent production database, upgrade to PostgreSQL (Railway has a one-click Postgres plugin). When ready, set `DATABASE_URL` and add `dj-database-url` to requirements.
-
----
-
-## Deploying to Render (alternative)
-
-1. Create a new **Web Service** pointing at your GitHub repo
-2. Build command: `pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate`
-3. Start command: `gunicorn ecoiq.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 300`
-4. Add the same environment variables as above
-
----
-
-## Generating a Secure Secret Key
+## Testing
 
 ```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+python manage.py test          # backend
+ruff check .
+python manage.py makemigrations --check --dry-run
+
+cd frontend/web
+npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-Set this as `DJANGO_SECRET_KEY` in your platform's environment variables. Never commit it.
+CI runs `ruff`, `mypy`, Django checks, the full suite, Gitleaks and a mobile
+gate on every PR.
 
 ---
 
-## Roadmap (Future)
+## Deployment
 
-- [ ] PostgreSQL + Celery async analysis
-- [ ] Multi-tenant with Wagtail CMS
-- [ ] Sector benchmarking database
-- [ ] Interactive charts (Chart.js)
-- [ ] Email delivery of PDF reports
-- [ ] CI/CD deployment (Railway / Render)
+One Render web service and one PostgreSQL database. Migrations run in
+`preDeployCommand`, so a failing migration fails the deploy rather than serving
+half-migrated.
+
+**Redis and Celery are not deployed.** They are commented out in `render.yaml`.
+The code contains `@shared_task` definitions, which makes it look otherwise —
+nothing in the request path calls them asynchronously.
+
+Runbook: [`docs/operations/PRODUCTION_RUNBOOK.md`](docs/operations/PRODUCTION_RUNBOOK.md)
+
+---
+
+## Limitations
+
+Stated because a README listing only capabilities is a brochure.
+
+- **No organisation currently has a published score.** All 467 carry legacy
+  provenance, so coverage is 0% and the product says so. This is the system
+  working, not failing.
+- **No AI evaluation has been performed.** Citation precision, groundedness and
+  hallucination rate are unmeasured.
+- **No certifications.** Not SOC 2 audited, not ISO certified.
+- **No case studies.** No project has been executed through to measured
+  outcome.
+- **`ml.predicted_12m` lineage is partial** — its primary path reads
+  `ScoreHistory`, which carries no provenance.
+- **Single web instance, no staging, no tested restore.**
+
+---
+
+## Navigating this repository
+
+Start with [`docs/repo-map/OBSIDIAN_BRIDGE.md`](docs/repo-map/OBSIDIAN_BRIDGE.md)
+— it maps knowledge areas to subsystems and authoritative files, so a question
+takes two files rather than a scan of 70 apps.
+
+Code is the source of truth. Where a document disagrees with it, the code is
+right.
