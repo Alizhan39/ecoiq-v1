@@ -231,6 +231,12 @@ Render redeploys from `main` automatically. Or, faster, in the Render dashboard:
 | step | last-good SHA to return to |
 |---|---|
 | before any SPA work | `ad47ef23d8a10269534551480ca8eea9b141012f` |
+| React live, templates still present | `3bda3dc130e5c00a8c45f9400d11f76520018d31` |
+
+The middle row is the useful one. Reverting to it puts the React routing back
+under Django with every deleted template still on disk, so nothing has to be
+restored — that is the whole reason the cutover and the cleanup were two
+deploys instead of one.
 
 Recorded here rather than in a runbook nobody opens under pressure.
 
