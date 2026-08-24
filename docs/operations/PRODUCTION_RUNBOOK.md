@@ -71,9 +71,18 @@ Render reads a 301 as unhealthy and would replace a perfectly healthy process.
 
 **Do not "fix" that exemption.** It is a correctness requirement.
 
-There is no separate readiness endpoint. With one web service and synchronous
-execution there is nothing a readiness probe would tell you that `/healthz/`
-does not.
+`/readyz/` returns JSON and checks PostgreSQL (and Redis, only when
+`REDIS_URL` is explicitly set — it is not, in production). It is **not** wired
+to `healthCheckPath` and must not be: readiness failing means stop sending
+traffic, never restart the process.
+
+Use it during an incident. `/healthz/` `200` with `/readyz/` `503` means the
+process is fine and a dependency is not — restarting fixes nothing.
+
+    curl -s https://ecoiq.uk/readyz/
+
+It reports check names and outcomes only: no host, port, credential or
+traceback. See `docs/architecture/reliability.md`.
 
 ---
 
@@ -146,6 +155,10 @@ Render's automatic PostgreSQL backups, 7-day retention on the starter plan.
 drill. Nobody has performed a restore. That is a real gap and it is recorded
 here rather than assumed away.
 
+The drill procedure, proposed RPO/RTO and the (empty) verification log are in
+`docs/runbooks/backup-and-restore.md`. Uploaded files under `MEDIA_ROOT` are
+**not** covered by the database backup — see the same document.
+
 ---
 
 ## Known operational limits
@@ -154,6 +167,9 @@ Recorded because a runbook listing only procedures implies the rest is covered.
 
 - **Single web instance.** No horizontal scaling, no zero-downtime deploy.
 - **No off-platform backup**, and no tested restore.
-- **No error tracking service.** Failures surface in Render logs only.
+- **Error tracking is integrated but not activated.** `core/sentry_setup.py`
+  is complete and `sentry-sdk` is pinned, but no `SENTRY_DSN` is set in
+  `render.yaml`, so Sentry is inert and failures surface in Render logs only.
+  Setting the DSN in the dashboard is all that is required.
 - **No uptime monitoring** beyond Render's own health check.
 - **No staging environment.** Changes go from CI to production.

@@ -41,7 +41,8 @@ INBOUND_ID_RE = re.compile(r'\A[A-Za-z0-9._-]{8,64}\Z')
 
 # Paths whose successful completion is not worth a line each. A failure on any
 # of them still logs — the filter is on `request_completed` at 2xx/3xx only.
-QUIET_PATHS: tuple[str, ...] = ('/healthz', '/healthz/', '/health', '/health/')
+QUIET_PATHS: tuple[str, ...] = ('/healthz', '/healthz/', '/health', '/health/',
+                                '/readyz', '/readyz/')
 
 
 def _new_request_id() -> str:
