@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Outside the markers below, so the per-request head substitution cannot
+         drop it. Every Django template linked this icon; the SPA shell did not,
+         so browsers fell back to /favicon.ico, which is server-owned and served
+         by nothing. The whole public site 404ed on its own favicon. -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <!-- Replaced per request by Django. See core/spa.py. -->
     <!--ecoiq:head:start-->
     <title>EcoIQ</title>

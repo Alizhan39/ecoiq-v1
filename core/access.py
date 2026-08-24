@@ -76,6 +76,31 @@ SIGN_IN_PREFIXES: tuple[str, ...] = (
     # Commerce catalogue while ECOIQ_BILLING_PROVIDER is "none" — nothing here
     # is purchasable, so nothing here should be browsable.
     '/products/',
+    # Two per-organisation Django pages that outlived the React company page.
+    #
+    # Found by the Phase 10 route audit, not by anyone using them: both are
+    # orphans. Nothing in the React app, the Django templates or the sitemap
+    # links to either, and both answered 200 for a slug that does not exist —
+    # /company-intelligence/does-not-exist-xyz/ rendered a full page in
+    # production. A public per-company URL that never 404s is an unbounded
+    # supply of indexable pages about organisations EcoIQ holds nothing on.
+    #
+    # /companies/<slug>/ is now the organisation page and it is gated by
+    # companies.eligibility. These two are not: /company-intelligence/ fetches
+    # the Hikma endpoints client-side, and /why/company/ renders harvested
+    # datapoints with a percentage confidence. Neither asks decide().
+    #
+    # /why/company/<slug>/pack.pdf is gated WITH the page, not exempted as a
+    # server document. The PDF carries the same per-organisation content, so
+    # leaving it open would de-publish the page and publish it again in another
+    # format. It is still generated, for signed-in users.
+    #
+    # KNOWN GAP, deliberately not closed here: /api/why/company/<slug>/ serves
+    # the same payload as JSON and stays public. Gating it is an API contract
+    # change, which is not this phase's to make. Recorded in
+    # docs/product/FINAL_TEMPLATE_MIGRATION.md.
+    '/company-intelligence/',
+    '/why/company/',
 )
 
 #: Exact paths that require sign-in where the PREFIX must stay public.
@@ -95,9 +120,66 @@ SIGN_IN_EXACT: frozenset[str] = frozenset({
 })
 
 
+#: Per-organisation pages that hang off the PUBLIC /companies/<slug>/ route.
+#:
+#: A prefix cannot express these and an exact path cannot either — the slug is
+#: in the middle. /companies/ must stay public because /companies/<slug>/ IS
+#: the organisation page; only these three leaves are de-published.
+#:
+#: All three are Django full pages with their own dark-theme CSS and their own
+#: navigation, left over from when the organisation page was server-rendered.
+#: Found by the Phase 10 route audit.
+#:
+#: They ARE linked — and every page that links them already requires sign-in:
+#: /companies/discover/ and /companies/strongest-alignment/ (both in
+#: SIGN_IN_EXACT), the @login_required portfolio dashboard, and
+#: companies/detail.html, which since the React cutover is rendered only by the
+#: @login_required /companies/<slug>/internal/. So gating the leaves costs
+#: those journeys nothing: the user arriving at them is signed in already.
+#:
+#: What it removes is the anonymous route — the leaf answering 200 to anyone
+#: who types the URL, which is the same charge this module was written for.
+#:
+#: Nor were they unmaintained: 13 tests asserted their anonymous 200, and those
+#: tests are what caught this change. None was deleted; each now asserts the
+#: new boundary instead, so the suite still pins what the pages SAY.
+#:
+#: /stock/ is not a new decision. docs/product/COMPANY_PAGE_PANELS.md already
+#: removed the stock strip from the organisation page, because a share price
+#: beside an ethics assessment implies a relationship EcoIQ does not assert and
+#: has no evidence for. The standalone page makes the same implication over a
+#: whole page; leaving it public would have honoured the decision on the panel
+#: and reversed it one URL away.
+#:
+#: MEASURED, not assumed: none of the three publishes a withheld composite. A
+#: probe rendered all three for a profile holding 73.6 at 0% coverage — the
+#: production state — and the number appears in none of them. They are gated
+#: for being unlinked, unmaintained duplicates of a page React now owns, which
+#: is a different and lesser charge. Asserted in core/tests_access.py.
+COMPANY_LEAF_SUFFIXES: tuple[str, ...] = (
+    '/explain/',
+    '/explain-match/',
+    '/stock/',
+)
+
+
+def _is_gated_company_leaf(path: str) -> bool:
+    """One of the de-published leaves under a public /companies/<slug>/."""
+    if not path.startswith('/companies/'):
+        return False
+    if not path.endswith(COMPANY_LEAF_SUFFIXES):
+        return False
+    # Exactly /companies/<slug>/<leaf>/ — three non-empty segments. Anything
+    # deeper is a route this rule was not written for, and guessing at it would
+    # gate pages nobody looked at.
+    return len([segment for segment in path.split('/') if segment]) == 3
+
+
 def requires_sign_in(path: str) -> bool:
     """Is this path one of the de-published surfaces?"""
     if path in SIGN_IN_EXACT:
+        return True
+    if _is_gated_company_leaf(path):
         return True
     return path.startswith(SIGN_IN_PREFIXES)
 

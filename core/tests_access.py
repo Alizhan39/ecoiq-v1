@@ -185,3 +185,145 @@ class PermanentRedirectTests(TestCase):
                 if f'"{old}"' in text or f"'{old}'" in text:
                     offenders.append(f'{path} -> {old}')
         self.assertEqual(offenders, [])
+
+
+class PerCompanyOrphanPagesTests(TestCase):
+    """
+    The two per-organisation Django pages the Phase 10 audit found.
+
+    Gated at the slugged path, not just at the bare prefix the declaration
+    test walks — /company-intelligence/ has no route of its own, so a gate
+    that only covered the prefix would prove nothing about the page anyone
+    could actually reach.
+    """
+
+    def setUp(self):
+        cache.clear()
+
+    def test_the_company_intelligence_page_requires_sign_in(self):
+        response = self.client.get('/company-intelligence/abb-turkiye/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response['Location'])
+
+    def test_the_why_page_requires_sign_in(self):
+        response = self.client.get('/why/company/abb-turkiye/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response['Location'])
+
+    def test_the_why_pdf_is_gated_with_its_page(self):
+        """
+        The PDF carries the same per-organisation content. Exempting it as a
+        "server document" would de-publish the page and republish it in
+        another format.
+        """
+        response = self.client.get('/why/company/abb-turkiye/pack.pdf')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response['Location'])
+
+    def test_a_slug_that_does_not_exist_no_longer_answers_anonymously(self):
+        """
+        The defect that put these on the list: both rendered a full 200 for a
+        slug EcoIQ holds nothing on, in production. A public per-company URL
+        that never 404s is an unbounded supply of indexable pages.
+        """
+        for path in ('/company-intelligence/does-not-exist-xyz/',
+                     '/why/company/does-not-exist-xyz/'):
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(path).status_code, 302)
+
+    def test_a_signed_in_user_still_gets_both_pages(self):
+        user = get_user_model().objects.create_user(username='why-reader')
+        client = Client()
+        client.force_login(user)
+        for path in ('/company-intelligence/abb-turkiye/',
+                     '/why/company/abb-turkiye/'):
+            with self.subTest(path=path):
+                self.assertEqual(client.get(path).status_code, 200)
+
+    def test_the_public_organisation_page_is_untouched(self):
+        """
+        /companies/<slug>/ is the organisation page and stays public. A gate
+        that caught it would be the regression, not the fix.
+        """
+        response = self.client.get('/companies/abb-turkiye/')
+        self.assertIn(response.status_code, (200, 404))
+        self.assertNotEqual(response.status_code, 302)
+
+
+class CompanyLeafPagesTests(TestCase):
+    """
+    /companies/<slug>/ stays public; three leaves under it do not.
+
+    The slug sits in the middle, so neither a prefix nor an exact path can
+    express this — which is why these three outlived every earlier sweep.
+    """
+
+    def setUp(self):
+        cache.clear()
+        from companies.testing import populated
+        from league.models import Company
+
+        self.company = Company.objects.create(
+            name='Leaf Co', slug='leaf-co', sector='energy', country='GB')
+        self.profile = populated(self.company)
+
+    def test_each_leaf_requires_sign_in(self):
+        for suffix in access.COMPANY_LEAF_SUFFIXES:
+            with self.subTest(suffix=suffix):
+                response = self.client.get(f'/companies/leaf-co{suffix}')
+                self.assertEqual(response.status_code, 302)
+                self.assertIn('/login/', response['Location'])
+
+    def test_the_organisation_page_itself_stays_public(self):
+        """The rule this class exists to not break."""
+        response = self.client.get('/companies/leaf-co/')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(access.requires_sign_in('/companies/leaf-co/'))
+
+    def test_the_directory_stays_public(self):
+        self.assertFalse(access.requires_sign_in('/companies/'))
+        self.assertEqual(self.client.get('/companies/').status_code, 200)
+
+    def test_a_signed_in_user_still_gets_the_leaves(self):
+        user = get_user_model().objects.create_user(username='leaf-reader')
+        client = Client()
+        client.force_login(user)
+        for suffix in access.COMPANY_LEAF_SUFFIXES:
+            with self.subTest(suffix=suffix):
+                response = client.get(f'/companies/leaf-co{suffix}')
+                self.assertEqual(response.status_code, 200)
+
+    def test_the_rule_does_not_reach_outside_companies(self):
+        """
+        A suffix rule is a blunt instrument. It must not gate a same-named
+        path under another app.
+        """
+        for path in ('/portfolio/leaf-co/stock/', '/labs/explain/',
+                     '/companies/leaf-co/deeper/stock/'):
+            with self.subTest(path=path):
+                self.assertFalse(access.requires_sign_in(path))
+
+    def test_no_gated_leaf_publishes_a_withheld_score(self):
+        """
+        The charge against these pages is that they are unlinked duplicates,
+        NOT that they leak. Asserting the difference keeps the record honest —
+        and turns a measurement into a guarantee, so a future edit to any of
+        the three templates cannot quietly start publishing the composite.
+        """
+        from companies.eligibility import decide
+
+        self.profile.ecoiq_total_score = 73.6
+        self.profile.save(update_fields=['ecoiq_total_score'])
+        self.profile.refresh_from_db()
+        self.assertFalse(decide(self.profile).is_published,
+                         'Fixture must be unpublishable for this to mean '
+                         'anything.')
+
+        user = get_user_model().objects.create_user(username='leaf-auditor')
+        client = Client()
+        client.force_login(user)
+        for suffix in access.COMPANY_LEAF_SUFFIXES:
+            with self.subTest(suffix=suffix):
+                body = client.get(
+                    f'/companies/leaf-co{suffix}').content.decode()
+                self.assertNotIn('73.6', body)

@@ -473,11 +473,31 @@ class CompanyDetailIntegrationTests(TestCase):
 
 
 class ExplainViewTests(TestCase):
+    """
+    The explain page, for a reader who can reach it.
+
+    /companies/<slug>/explain/ stopped answering anonymously in Phase 10
+    (core.access.COMPANY_LEAF_SUFFIXES) — it is a Django page left over from
+    when the organisation page was server-rendered, reachable now only from
+    surfaces that already require sign-in. What it SAYS is unchanged, so every
+    assertion below is unchanged; only the client is.
+    """
+
     def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        self.reader = get_user_model().objects.create_user('explain-reader')
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.reader)
         self.profile = _profile(slug='explain-view-co')
 
-    def test_explain_view_public_get(self):
+    def test_explain_view_does_not_answer_anonymously(self):
+        r = Client(SERVER_NAME='localhost').get(
+            reverse('companies:explain', args=[self.profile.company.slug]))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login/', r['Location'])
+
+    def test_explain_view_signed_in_get(self):
         r = self.client.get(reverse('companies:explain', args=[self.profile.company.slug]))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Why Does EcoIQ Classify This Company This Way?')

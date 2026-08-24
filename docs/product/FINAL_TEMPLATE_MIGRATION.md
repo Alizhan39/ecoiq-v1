@@ -21,9 +21,14 @@ The result was blunt. **67 of the 102 were reachable only by typing the URL** �
 | **I** | AUTH FLOW — KEEP DJANGO IF INTENTIONAL | 12 |
 | | **total** | **102** |
 
+> **Phase 10 re-measured this.** See the final route audit at the end of this
+> document: the counts below describe the 102-route inventory as classified,
+> and the audit reports what actually survives on `main` today (40 anonymous
+> Django HTML routes, of which one is commercial).
+
 | action | routes |
 |---|---|
-| AUTHENTICATE | 58 |
+| AUTHENTICATE | 58 (+5 in Phase 10 = 63) |
 | KEEP DJANGO (documented) | 32 |
 | REDIRECT 301 | 11 |
 | MIGRATE (Phase 3) | 1 |
@@ -301,3 +306,114 @@ counts 8 as PRODUCTION and 33 as specification packs: documents, not software.
 They are gone with the page. The guarantee they were reaching for — that a
 module is publicly listed with its status — is what EcoIQ Labs provides, from
 the registry, with the status attached.
+
+---
+
+## Phase 10 — final route audit
+
+Measured against `main` at `6d7feff`, after the React organisation page went
+live. Method: walk the root URLconf, build a concrete path for every pattern,
+GET each one **anonymously** with the Django test client, and count a route as
+a surviving Django HTML route only when the response is a 200 with an HTML
+content type whose body is not the SPA shell.
+
+**2,134 URL patterns walked. 52 answer an anonymous GET with HTML: 12 SPA, 40
+Django.**
+
+### Why the first pass under-counted, and how it was corrected
+
+The first pass substituted a placeholder slug (`audit-probe`) and reported 37.
+That is wrong in a way worth recording, because it is wrong in the flattering
+direction: a route like `/countries/<slug>/` correctly 404s for a slug that
+does not exist, so it was scored as "not a public HTML route" when it renders
+a full page for every real country.
+
+The audit was re-run with a published `CountryProfile` and a populated
+`Company` seeded first. Seven routes moved from 404 to 200 — `/countries/
+<slug>/`, `/countries/<slug>/briefing/`, `/why/country/<slug>/`,
+`/companies/<slug>/explain/`, `/companies/<slug>/explain-match/`,
+`/companies/<slug>/stock/` and `/embed/<slug>/`. The real pre-Phase-10 figure
+was **44**, not 37.
+
+### The five routes this phase de-published
+
+| route | why |
+|---|---|
+| `/company-intelligence/<slug>/` | unlinked; answered **200 for a slug that does not exist**, in production |
+| `/why/company/<slug>/` | unlinked; per-organisation page from before `/companies/<slug>/` became React |
+| `/why/company/<slug>/pack.pdf` | same content as the page above, in another format |
+| `/companies/<slug>/explain/` | anonymous leaf under a route React now owns; every page linking it already needs sign-in |
+| `/companies/<slug>/explain-match/` | as above |
+| `/companies/<slug>/stock/` | as above, **and** `COMPANY_PAGE_PANELS.md` had already removed the stock strip from the organisation page |
+
+Sign-in, not deletion — the same instrument used in Phase 5. Every view,
+template and test survives; reversing it is deleting entries from
+`core.access.SIGN_IN_PREFIXES` / `COMPANY_LEAF_SUFFIXES`.
+
+**Correction to an earlier claim in this section.** The three `/companies/
+<slug>/` leaves are *not* unlinked. They are linked from
+`/companies/discover/`, `/companies/strongest-alignment/`, the portfolio
+dashboard and `companies/detail.html` — all four of which already require
+sign-in (the last is now reached only through `@login_required`
+`/companies/<slug>/internal/`). Gating the leaves therefore costs those
+journeys nothing, because the user arriving at them is signed in already. What
+it removes is the anonymous route: the leaf answering 200 to anyone who types
+the URL. The two `why` / `company-intelligence` pages *are* genuinely unlinked.
+
+They were also not unmaintained: **13 tests asserted their anonymous 200**, and
+those tests are what caught the change. None was deleted. Each now asserts the
+new boundary — anonymous is redirected, a signed-in reader gets the page — so
+the suite still pins what the pages *say*, which none of this changed. The
+staff-vs-reader distinction inside the stock page (a draft investment report
+must not reach a non-staff reader) is unchanged and still tested; "public" in
+those tests now means "signed-in and not staff".
+
+**None of the five published a withheld composite.** Measured, not assumed: a
+probe rendered all of them for a profile holding `73.6` at 0% coverage — the
+production state — and the number appears in none of them. They were
+de-published for being unlinked duplicates, which is a lesser charge, and
+`core/tests_access.py` now asserts the absence so a future template edit cannot
+quietly start publishing it.
+
+### The 40 that remain, by exception
+
+| # | bucket | routes |
+|---|---|---|
+| 1 | Django Admin | `/admin/login/` |
+| 2 | Server-owned auth | `/login/`, `/register/` |
+| 10 | Lead-capture forms (server-owned POST + CSRF) | `/request-access/` ×10 |
+| 20 | Public marketing / SEO, retained by documented decision | `/gcc-investors/*` ×8, `/heating/*` ×5, `/press/`, `/investors/`, `/ethical-governance/`, `/governance-principles/`, `/khalifa-tours/`, `/api-docs/`, `/api/` |
+| 4 | Country intelligence, retained by documented decision | `/countries/`, `/countries/<slug>/`, `/countries/<slug>/briefing/`, `/why/country/<slug>/` |
+| 2 | Embeds — must be server-rendered to work in a third-party iframe | `/embed/<slug>/`, `/embed/<slug>/risk-card/` |
+| 1 | **Commercial, still Django** | `/billing/plans/` |
+
+### The migration is not complete, and this is the reason
+
+The brief's completion test is **commercial / public product Django template
+routes = 0**. It is not zero. Counting honestly rather than by redefinition:
+
+- **`/billing/plans/` — 1 genuinely commercial route.** Public, Django-rendered,
+  currently reading *"No self-serve plans are configured yet."* under a header
+  nav that no longer matches the React one. It is the Stripe self-serve funnel,
+  and `/billing/` is in `SERVER_OWNED_PREFIXES` deliberately, because hosted
+  checkout needs server-side session handling.
+
+  **Not changed here, and flagged for a decision.** Gating or migrating a
+  purchase funnel is a payments decision, not a routing one, and the standing
+  instruction is not to touch the Stripe billing work. Three options: migrate
+  the plan *display* to React and keep the checkout POST in Django; gate the
+  page until a plan is actually configured; or leave it and accept one
+  Django-rendered commercial page.
+
+- **The country surface — 4 routes** — is public product, not marketing. It is
+  retained under the decision already recorded in class C above: country
+  intelligence has no React surface and no API v2 resource, building one is its
+  own phase, and the pages publish no company score. That decision predates
+  this audit; it is not a definition changed to reach a number.
+
+### One further gap, deliberately left open
+
+`/api/why/company/<slug>/` serves the same payload as the page that was just
+de-published, as public JSON. Gating it is an API contract change and was out
+of scope for a routing phase. It should be closed with the `/billing/plans/`
+decision.
