@@ -74,7 +74,7 @@ Status is measured, not estimated. "File evidence" is the primary artefact.
 | 3 | Models / migrations / indexes | 82 apps, 626 routes; `models.Index`/`db_index` across high-volume models | `harvester/models.py` (13), `ecoiq_commerce/models.py` (13), `leads/models.py` (8) | COMPLETE | LOW | verify against real plans before adding more | P3 | M | NO |
 | 4 | Background jobs (Redis/Celery) | Celery app + settings complete; **services commented out in `render.yaml`** | `ecoiq/celery.py`, `ecoiq/__init__.py`, `backend_intelligence_engine/tasks.py`, `good_agents/tasks.py` | PARTIAL | **HIGH** | code ready, not deployed — a cost decision, not a code gap | P1 | S | **YES** |
 | 5 | AI provider calls | `ai_gateway` with router, fallback chain, typed exceptions, provider attempts | `ai_gateway/service.py`, `ai_gateway/exceptions.py` | PARTIAL | MED | no shared timeout/retry policy across providers | P1 | M | NO |
-| 6 | Caching | **`CACHES` is not configured at all** — Django falls back to per-process `LocMemCache` | `ecoiq/settings.py` (0 `CACHES` blocks) | **MISSING** | **HIGH** | see note below — this silently weakens rate limiting | P0 | S | NO |
+| 6 | Caching | Explicit `CACHES`: Redis when `REDIS_CONFIGURED`, named `LocMemCache` otherwise, always LocMem under tests | `ecoiq/settings.py` (Cache block), `core/tests_cache.py` | **COMPLETE** (config) | LOW | configured; Redis itself still unprovisioned — a Render action, not code | — | — | **YES** (to enable Redis) |
 | 7 | Logging | structlog, JSON-capable, request/correlation IDs, `QUIET_PATHS` | `core/logging_setup.py`, `core/logging_middleware.py`, `core/tests_structured_logging.py` | **COMPLETE** | LOW | add task/run/stage fields when Celery is enabled | P2 | S | NO |
 | 8 | Error reporting | Sentry, optional, scrubbed, release/environment labelled | `core/sentry_setup.py`, `requirements.txt:129` | **COMPLETE** | LOW | none | — | — | opt |
 | 9 | Email | env-driven; console backend default; guard when SMTP user absent | `ecoiq/settings.py:707-737` | COMPLETE | LOW | none | — | — | opt |
@@ -102,24 +102,29 @@ Status is measured, not estimated. "File evidence" is the primary artefact.
 
 ---
 
-## The finding that connects several others
+## The finding that connects several others — now configured
 
-**`CACHES` is never configured.** Django therefore uses `LocMemCache`.
+**Originally: `CACHES` was never configured**, so Django used `LocMemCache` and
+every DRF throttle (`ai_gateway/throttles.py`, `api/throttles.py`) counted in
+it. On `--workers 1 --threads 4` (`start.sh:18-20`) the four threads share one
+process, so rate limiting was **not** broken — it was fragile in a way that
+fails silently: counters reset on each `--max-requests 300` recycle
+(`start.sh:22`), and raising `WEB_CONCURRENCY` would multiply every limit with
+no error and no log line.
 
-Every DRF throttle in the repository (`ai_gateway/throttles.py`,
-`api/throttles.py`) stores its counters in that cache. On the current Render
-configuration — `--workers 1 --threads 4` (`start.sh:18-20`) — the four threads
-do share one process, so rate limiting is **not** currently broken. But:
+**Now:** `CACHES` is explicit in both directions. Redis is selected when
+`REDIS_URL` is set in the environment — the same `REDIS_CONFIGURED` signal
+`/readyz/` uses, never `REDIS_URL`'s own truthiness, which is always true
+because of its localhost default. Otherwise a named `LocMemCache`, and always
+LocMem under tests so no test needs an external service. No new dependency:
+Django 5.2's Redis backend runs on the `redis-py` already present for Celery.
 
-1. every counter resets on deploy and on each `--max-requests 300` worker
-   recycle (`start.sh:22`), so limits are silently shorter than configured;
-2. raising `WEB_CONCURRENCY` above 1 would multiply every limit by the worker
-   count with no error and no log line.
+**Still outstanding, and it is not code.** No Redis instance is provisioned, so
+production still runs on LocMem — now with a startup warning instead of
+silence. Provisioning is a paid Render action; see
+`docs/architecture/reliability.md`.
 
-This is the single highest-leverage P0 fix, and it is also the prerequisite for
-Redis being useful for anything else. Stating it precisely matters: the brief
-would have me report rate limiting as broken; it is not broken today, it is
-**fragile in a way that fails silently on a configuration change**.
+Durable rate limiting is the next package. No throttle policy was changed here.
 
 ---
 
@@ -129,8 +134,8 @@ would have me report rate limiting as broken; it is not broken today, it is
    gap in §4.1. No external service. `core/health.py` already names it.
 2. **Backup & restore runbook** + `docs/runbooks/`, `docs/architecture/` —
    documentation of an admitted gap; requires a manual Render action, not code.
-3. **Cache configuration** — Redis-backed when `REDIS_URL` is present, explicit
-   documented `LocMemCache` fallback when it is not.
+3. ~~**Cache configuration**~~ — done: Redis when `REDIS_CONFIGURED`, named
+   `LocMemCache` otherwise. Enabling Redis remains a Render action.
 4. **Auth-surface rate limiting** — depends on (3) to be durable.
 
 Items 3 and 4 depend on a Redis instance being provisioned, which is a **cost

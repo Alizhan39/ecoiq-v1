@@ -82,26 +82,121 @@ Two known gaps, both recorded rather than fixed here:
   `company_intelligence/services/url_safety.py` gates URLs at *registration*
   time, so a redirect to a private address after acceptance is not revalidated.
 
-## Caching — the one that fails silently
+## Caching
 
-**`CACHES` is never configured.** Django falls back to per-process
-`LocMemCache`, and every DRF throttle stores its counters there.
+`CACHES` is configured explicitly, in both directions.
 
-On today's configuration (`--workers 1`) the four threads share one process, so
-rate limiting is **not broken**. But:
+| condition | backend | why |
+|---|---|---|
+| `REDIS_URL` set in the environment | `django.core.cache.backends.redis.RedisCache` | one shared cache across processes |
+| not set | `LocMemCache`, `LOCATION='ecoiq-locmem-default'` | deliberate, documented local state |
+| running tests | `LocMemCache`, always | a test run must never need an external service, or touch another process's cache |
 
-- counters reset on deploy and on each `--max-requests 300` worker recycle, so
-  effective limits are shorter than configured; and
+**No new dependency.** Django 5.2 ships a Redis backend built on `redis-py`,
+which this repository already depends on for Celery. `django-redis` would mean
+a second Redis client and a second set of connection semantics for nothing this
+needs.
+
+### The signal is `REDIS_CONFIGURED`, never `REDIS_URL`
+
+`REDIS_URL` has a localhost default, so it is *always* truthy. Selecting the
+backend on its truthiness would pick Redis in production — where none is
+deployed — and every cache read would fail against a healthy service. The cache
+and `/readyz/` therefore key off the same `settings.REDIS_CONFIGURED`, so
+"readiness enforces Redis" and "the cache is Redis" cannot disagree.
+
+### Why LocMem is not enough for throttling
+
+Every DRF throttle counts in the default cache. Under `LocMemCache` those
+counters live in **one process's memory**, which means:
+
+- they reset on every deploy, and on each `--max-requests 300` worker recycle,
+  so effective limits are shorter than the configured ones; and
 - raising `WEB_CONCURRENCY` above 1 multiplies every limit by the worker count,
-  with no error and no log line.
+  **with no error and no log line**.
 
-That silence is the problem. It is the highest-leverage remaining fix, and it
-is the prerequisite for Redis being useful for anything else.
+On today's `--workers 1 --threads 4` the four threads share one process, so
+rate limiting is not broken — it is fragile in a way that fails silently on a
+configuration change. That is why production without Redis now prints a startup
+warning rather than saying nothing.
 
-When a shared cache is added, keys must carry organisation scope plus evidence,
-formula and methodology versions. A cache that can return one organisation's
-figure to another, or serve a pre-recalculation score as current, breaks the
-provenance guarantee more quietly than any outage.
+**Durable rate limiting is a separate change.** This configuration is its
+prerequisite; no throttle policy or rate was altered.
+
+### Connection options
+
+Bounded on purpose: `socket_connect_timeout` and `socket_timeout` at 2s so a
+stalled Redis cannot hold a web thread open — a cache is an optimisation, and
+waiting indefinitely for one inverts that. `retry_on_timeout` covers a dropped
+idle connection; `health_check_interval=30` catches a silently-dead pooled
+connection; `max_connections=24` sits above `--workers 1 --threads 4` plus a
+worker's concurrency and far below any managed instance's ceiling. A `rediss://`
+URL additionally sets `ssl_cert_reqs='required'`.
+
+### Keys, TTL and invalidation
+
+`KEY_PREFIX` is `ecoiq:<environment>`, so a staging service pointed at the same
+instance cannot read or overwrite production's entries. Default `TIMEOUT` is
+300s, stated rather than inherited.
+
+**The release is deliberately NOT in the prefix.** Release-scoping sounds safer
+and is actively wrong here: it would invalidate the whole cache on every deploy,
+including every throttle counter — reintroducing the exact fragility this
+configuration removes, as a side effect. A value whose correctness depends on a
+version must carry that version **in its own key**.
+
+Rules for anything cached from here on:
+
+- **Tenant-sensitive values carry the organisation id.** A cache that can return
+  one organisation's figure to another is a data breach with a short TTL.
+- **Evidence- or analysis-derived values carry every version they depend on** —
+  evidence version, formula version, methodology version, prompt/model version,
+  and the analysis run or input hash where applicable. Serving a
+  pre-recalculation score as current breaks the provenance guarantee more
+  quietly than any outage.
+- **Never cache an unknown as a confirmed value.** `null` means "not known",
+  and a cached `null` that later reads as a real answer is the failure this
+  platform exists to prevent.
+- **No confidential user content, and no authentication or permission
+  decisions** — the latter until there is a proven invalidation design, because
+  a stale permission is a security bug, not a stale page.
+
+**Invalidation:** prefer a short TTL and version-bearing keys over explicit
+deletion. A key that includes the versions it depends on is invalidated by a
+new version *existing* — nothing has to remember to delete it.
+
+### Failure behaviour and rollback
+
+With Redis configured there is **no fallback to local memory**: Django's
+`RedisCache` raises on connection failure. Degrading quietly to per-process
+memory during an outage would reintroduce the multiplied-limit bug at the
+moment nobody is watching for it.
+
+Without Redis, production starts on LocMem and logs a warning. Refusing to start
+would be a self-inflicted outage on a service that runs this way today.
+
+Rollback is removing `REDIS_URL` from the Render dashboard: the next deploy
+selects LocMem and warns. No migration, no code change, no data to restore —
+nothing in the cache is a source of truth.
+
+### Provisioning — not done in this change
+
+**No Render resource was provisioned by this PR.** Turning this on requires,
+by hand:
+
+1. Create a Render Key Value (Redis) instance in `oregon`, `ipAllowList: []`
+   (internal only).
+2. Set `REDIS_URL` on the `ecoiq` web service from that instance's connection
+   string.
+3. Redeploy; confirm the startup warning is gone and `/readyz/` reports
+   `"redis": "ok"` rather than `"skipped"`.
+
+Cost is a paid add-on — **treat any figure here as unverified until checked in
+the Render dashboard**, since plan pricing changes and this repository cannot
+observe it.
+
+Environment variables involved, names only: `REDIS_URL`,
+`ECOIQ_CACHE_ENVIRONMENT` (optional, defaults to `production`/`development`).
 
 ## Reliability is not only availability
 
