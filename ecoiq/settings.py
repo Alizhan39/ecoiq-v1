@@ -848,7 +848,11 @@ if IS_PRODUCTION:
 # Set unconditionally rather than inside the IS_PRODUCTION block: it is inert
 # whenever SECURE_SSL_REDIRECT is off, and being able to assert on it without
 # re-importing settings under a production environment keeps the test honest.
-SECURE_REDIRECT_EXEMPT = [r'^healthz/$']
+# `readyz/` is exempt for the same reason and on the same terms: it is probed
+# over the internal network where X-Forwarded-Proto is absent, and its body is
+# a fixed set of check names with boolean outcomes — no session, no cookie, no
+# credential. See core/health.py for what it deliberately does not report.
+SECURE_REDIRECT_EXEMPT = [r'^healthz/$', r'^readyz/$']
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 # Explicit configuration so application code can rely on `logging.getLogger()`
@@ -984,6 +988,19 @@ REST_FRAMEWORK = {
 # `redis-server` on localhost:6379 (the standard homebrew/apt default) just
 # works in development with zero configuration.
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+#: Whether Redis is a dependency this deployment actually expects.
+#:
+#: Derived from the ENVIRONMENT, not from REDIS_URL, and that distinction is the
+#: whole point: REDIS_URL above always has a value because of its localhost
+#: default, so a truthiness check on it would report Redis as required on
+#: production — where no Redis service is deployed (render.yaml keeps the Key
+#: Value and worker blocks commented out). The readiness probe would then fail
+#: permanently against a perfectly healthy web service.
+#:
+#: Setting REDIS_URL explicitly is therefore the act that makes Redis a
+#: dependency worth failing readiness over.
+REDIS_CONFIGURED = 'REDIS_URL' in os.environ
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL

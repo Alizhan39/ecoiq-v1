@@ -8,6 +8,9 @@ a specific failure mode if it regresses, named in the test.
 """
 import re
 from pathlib import Path
+from unittest import mock
+
+from django.db.utils import OperationalError
 
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
@@ -174,3 +177,149 @@ class RenderBlueprintHealthCheckTests(SimpleTestCase):
         """
         for bad in ('healthCheckPath: /', 'healthCheckPath: "/"'):
             self.assertNotIn(f'{bad}\n', self.blueprint)
+
+
+class ReadyzResponseTests(TestCase):
+    """
+    The readiness contract. TestCase, not SimpleTestCase: this endpoint is
+    SUPPOSED to query the database, so the test needs a real one.
+    """
+
+    def test_returns_200_when_dependencies_answer(self):
+        self.assertEqual(self.client.get('/readyz/').status_code, 200)
+
+    def test_reports_ready_and_names_each_check(self):
+        payload = self.client.get('/readyz/').json()
+        self.assertEqual(payload['status'], 'ready')
+        self.assertEqual(payload['checks']['database'], 'ok')
+
+    def test_is_reachable_by_name(self):
+        self.assertEqual(reverse('readyz'), '/readyz/')
+
+    def test_requires_no_authentication(self):
+        """A probe runs anonymously; a redirect to /login/ would read as down."""
+        response = Client().get('/readyz/')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('Location', response)
+
+    def test_response_is_not_cacheable(self):
+        """A replayed `ready` would report a disconnected process as serving."""
+        response = self.client.get('/readyz/')
+        self.assertIn('no-cache', response['Cache-Control'])
+        self.assertIn('no-store', response['Cache-Control'])
+
+    def test_redis_is_skipped_when_not_configured(self):
+        """
+        The production case today: no Redis service is deployed, so readiness
+        must not fail over it. REDIS_URL alone must never trigger the check —
+        it has a localhost default and is therefore always truthy.
+        """
+        with self.settings(REDIS_CONFIGURED=False):
+            payload = self.client.get('/readyz/').json()
+        self.assertEqual(payload['checks']['redis'], 'skipped')
+        self.assertEqual(payload['status'], 'ready')
+
+
+class ReadyzFailureTests(TestCase):
+    """What it does when a dependency is down, and what it refuses to say."""
+
+    #: A realistic driver error: these carry host, port and user in the text,
+    #: which is exactly what must not reach an anonymous response body.
+    DRIVER_ERROR = ('FATAL: password authentication failed for user "ecoiq" '
+                    'on host db.internal:5432')
+
+    def _fail_database(self):
+        """
+        Make `connections['default']` itself raise.
+
+        MagicMock, because `__getitem__` is a magic method and a plain Mock
+        does not support configuring one.
+        """
+        handler = mock.MagicMock()
+        handler.__getitem__.side_effect = OperationalError(self.DRIVER_ERROR)
+        return mock.patch('core.health.connections', handler)
+
+    def test_returns_503_when_the_database_is_unavailable(self):
+        """
+        503, not 500: "not ready" is an expected operational state that tells a
+        load balancer to retry, not an application crash.
+        """
+        with self._fail_database():
+            response = self.client.get('/readyz/')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()['status'], 'not_ready')
+        self.assertEqual(response.json()['checks']['database'], 'unavailable')
+
+    def test_failure_body_leaks_no_connection_detail(self):
+        """
+        The single most important property here. Driver errors routinely carry
+        the host, port and user they failed against, and this endpoint answers
+        anonymously. The category is stable; the detail goes to the logs.
+        """
+        with self._fail_database():
+            body = self.client.get('/readyz/').content.decode()
+        for secret in ('password', 'ecoiq', 'db.internal', '5432', 'FATAL', 'Traceback'):
+            self.assertNotIn(secret, body, f'readiness body leaked {secret!r}')
+
+    def test_redis_failure_alone_makes_the_service_not_ready(self):
+        with self.settings(REDIS_CONFIGURED=True):
+            with mock.patch('redis.Redis.from_url',
+                            side_effect=OSError('connect to redis://:hunter2@cache:6379 failed')):
+                response = self.client.get('/readyz/')
+        self.assertEqual(response.status_code, 503)
+        payload = response.json()
+        self.assertEqual(payload['checks']['redis'], 'unavailable')
+        self.assertEqual(payload['checks']['database'], 'ok')
+
+    def test_redis_failure_body_leaks_no_credential(self):
+        """A broker URL carries a password. It must never reach the response."""
+        with self.settings(REDIS_CONFIGURED=True):
+            with mock.patch('redis.Redis.from_url',
+                            side_effect=OSError('connect to redis://:hunter2@cache:6379 failed')):
+                body = self.client.get('/readyz/').content.decode()
+        for secret in ('hunter2', 'cache:6379', 'redis://', 'Traceback'):
+            self.assertNotIn(secret, body, f'readiness body leaked {secret!r}')
+
+
+class ReadinessIsSeparateFromLivenessTests(SimpleTestCase):
+    """
+    The property that makes this safe to add at all: readiness must never
+    become the thing Render restarts on.
+    """
+
+    def setUp(self):
+        self.blueprint = (REPO_ROOT / 'render.yaml').read_text()
+
+    def test_render_health_check_still_points_at_liveness(self):
+        match = re.search(r'^\s*healthCheckPath:\s*(\S+)\s*$',
+                          self.blueprint, re.MULTILINE)
+        self.assertEqual(match.group(1), '/healthz/')
+
+    def test_render_health_check_is_not_pointed_at_readiness(self):
+        """
+        Pointing healthCheckPath here would restart the web service every time
+        the database blipped — the precise failure /healthz/ exists to avoid.
+        """
+        self.assertNotIn('healthCheckPath: /readyz/', self.blueprint)
+
+    def test_readiness_path_is_in_the_request_logger_quiet_list(self):
+        from core.logging_middleware import QUIET_PATHS
+
+        self.assertIn('/readyz/', QUIET_PATHS)
+
+    def test_readiness_is_exempt_from_the_ssl_redirect(self):
+        """
+        Probed over the internal network, where X-Forwarded-Proto is absent.
+        Without the exemption a healthy service answers 301 to its monitor.
+        """
+        from django.conf import settings
+
+        patterns = [re.compile(p) for p in settings.SECURE_REDIRECT_EXEMPT]
+
+        def exempt(path):
+            return any(p.search(path.lstrip('/')) for p in patterns)
+
+        self.assertTrue(exempt('/readyz/'))
+        # The exemption must not have widened while being extended.
+        for path in ('/', '/readyz', '/not-readyz/', '/readyz/extra/', '/admin/'):
+            self.assertFalse(exempt(path), f'unexpectedly exempt: {path}')

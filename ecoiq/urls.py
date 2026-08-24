@@ -23,6 +23,9 @@ urlpatterns = [
     # can never be shadowed by a later prefix. Touches no database — see
     # core/health.py for why a liveness probe must not.
     path('healthz/', health_views.healthz, name='healthz'),
+    # Readiness. Deliberately NOT render.yaml's healthCheckPath: a dependency
+    # outage should stop traffic, not restart a healthy process. See core/health.py.
+    path('readyz/', health_views.readyz, name='readyz'),
 
     # i18n — language switcher endpoint (set_language view, POST)
     path('i18n/', include('django.conf.urls.i18n')),
