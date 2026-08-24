@@ -49,7 +49,10 @@ done and must **not** be rebuilt:
   route, duration, status and origin fingerprinting are already emitted.
 - **Sentry error reporting** (§4.3) — `core/sentry_setup.py` with
   `EventScrubber`, `before_send` filtering and `ignore_logger`; `sentry-sdk`
-  2.66.1 pinned; inert without `SENTRY_DSN`.
+  2.66.1 pinned. `SENTRY_DSN` is reported as configured in the Render
+  dashboard; repository inspection cannot independently verify
+  dashboard-managed secret values, so delivery of safely-sanitised events
+  should be confirmed operationally rather than inferred from this file.
 - **Secret management** (§4.5) — `.env.example` with 58 variables, placeholder
   values only, no real secrets; production validation in `ecoiq/settings.py`
   refuses to start on `ALLOWED_HOSTS = "*"` or on an `sk_live_` Stripe key

@@ -167,9 +167,13 @@ Recorded because a runbook listing only procedures implies the rest is covered.
 
 - **Single web instance.** No horizontal scaling, no zero-downtime deploy.
 - **No off-platform backup**, and no tested restore.
-- **Error tracking is integrated but not activated.** `core/sentry_setup.py`
-  is complete and `sentry-sdk` is pinned, but no `SENTRY_DSN` is set in
-  `render.yaml`, so Sentry is inert and failures surface in Render logs only.
-  Setting the DSN in the dashboard is all that is required.
+- **Error tracking integration is complete** (`core/sentry_setup.py`,
+  `sentry-sdk` pinned), and `SENTRY_DSN` is reported as configured in the
+  Render dashboard. The DSN is intentionally NOT in `render.yaml`: it is a
+  dashboard-managed secret, so its absence from the blueprint is not evidence
+  that it is unset. **Not yet verified operationally:** that sanitised events
+  actually arrive in Sentry, with PII scrubbing behaving as
+  `core/sentry_setup.py` intends. Confirm that in the Sentry UI — repository
+  inspection cannot establish it.
 - **No uptime monitoring** beyond Render's own health check.
 - **No staging environment.** Changes go from CI to production.
