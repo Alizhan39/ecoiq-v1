@@ -2283,6 +2283,21 @@ class TrackingModelTests(TestCase):
         self.assertIsNone(run.duration_seconds)  # completed_at never set here
 
 
+def _safe_verdict(reason='ok'):
+    """
+    A passing UrlSafetyVerdict, for tests that are not testing URL safety.
+
+    These call sites previously patched `is_safe_external_url` to force-allow a
+    fixture URL. The production code now calls `validate_url`, so the patch has
+    to move with it — same intent, same bypass, no assertion changed. Patching
+    the old name would have silently stopped taking effect and let the fixture
+    URL be resolved for real against the network.
+    """
+    from company_intelligence.services.url_safety import UrlSafetyVerdict, CATEGORY_OK
+
+    return UrlSafetyVerdict(True, CATEGORY_OK, reason, reason, frozenset({'93.184.216.34'}))
+
+
 class UrlSafetyTests(TestCase):
     def test_non_http_scheme_blocked(self):
         safe, reason = url_safety.is_safe_external_url('ftp://example.com/file')
@@ -2438,7 +2453,8 @@ class SourceRegistryTests(TestCase):
         [candidate] = source_discovery.discover_sources_for_company(profile)
         staff = User.objects.create_user(username='approver1', password='pw', is_staff=True)
 
-        with patch('company_intelligence.services.source_registry.is_safe_external_url', return_value=(True, 'test override')):
+        with patch('company_intelligence.services.source_registry.validate_url',
+                   return_value=_safe_verdict('test override')):
             source_registry.approve_discovered_source(candidate, actor=staff, notes='Looks legitimate.')
         candidate.refresh_from_db()
         self.assertEqual(candidate.status, 'registered')
@@ -2812,7 +2828,8 @@ class StewardshipViewsTests(TestCase):
         [candidate] = source_discovery.discover_sources_for_company(profile)
         client = Client()
         client.login(username='su_staff', password='pw')
-        with patch('company_intelligence.services.source_registry.is_safe_external_url', return_value=(True, 'ok')):
+        with patch('company_intelligence.services.source_registry.validate_url',
+                        return_value=_safe_verdict('ok')):
             response = client.post(reverse('companies:approve_source', args=[profile.company.slug, candidate.pk]), {'notes': 'ok'})
         self.assertEqual(response.status_code, 302)
         candidate.refresh_from_db()

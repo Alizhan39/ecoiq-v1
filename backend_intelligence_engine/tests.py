@@ -237,10 +237,23 @@ class AIAnalysisBackgroundTaskTests(SignedIn, TestCase):
         self.assertIn(result['agent_run_status'], ('needs_human_review', 'failed', 'blocked'))
 
 
+def _public_dns(*_a, **_k):
+    """
+    A resolver answer in a public range.
+
+    fetch() now validates every URL before requesting it, which means these
+    tests — which are about retry, backoff and headers, not URL safety — need
+    their fixture host to resolve. Patched rather than changed to a real
+    hostname, because a unit test must not depend on the public internet.
+    """
+    return [(2, 1, 6, '', ('93.184.216.34', 0))]
+
+
+@patch('company_intelligence.services.url_safety.socket.getaddrinfo', _public_dns)
 class HTTPClientTests(TestCase):
     def test_successful_fetch(self):
         mock_response = type('R', (), {
-            'status_code': 200, 'content': b'ok', 'text': 'ok', 'headers': {},
+            'status_code': 200, 'content': b'ok', 'text': 'ok', 'headers': {}, 'is_redirect': False,
             'json': lambda self: (_ for _ in ()).throw(ValueError()),
         })()
         with patch('httpx.Client') as MockClient:
@@ -252,8 +265,8 @@ class HTTPClientTests(TestCase):
 
     def test_retries_on_5xx_then_succeeds(self):
         responses = [
-            type('R', (), {'status_code': 503, 'content': b'', 'text': '', 'headers': {}, 'json': lambda self: {}})(),
-            type('R', (), {'status_code': 200, 'content': b'ok', 'text': 'ok', 'headers': {}, 'json': lambda self: {}})(),
+            type('R', (), {'status_code': 503, 'content': b'', 'text': '', 'headers': {}, 'is_redirect': False, 'json': lambda self: {}})(),
+            type('R', (), {'status_code': 200, 'content': b'ok', 'text': 'ok', 'headers': {}, 'is_redirect': False, 'json': lambda self: {}})(),
         ]
         with patch('httpx.Client') as MockClient, patch('backend_intelligence_engine.services.http_client.time.sleep'):
             MockClient.return_value.__enter__.return_value.request.side_effect = responses
@@ -273,7 +286,7 @@ class HTTPClientTests(TestCase):
 
         def _capture_request(method, url, headers=None, **kwargs):
             captured['headers'] = headers
-            return type('R', (), {'status_code': 200, 'content': b'', 'text': '', 'headers': {}, 'json': lambda self: {}})()
+            return type('R', (), {'status_code': 200, 'content': b'', 'text': '', 'headers': {}, 'is_redirect': False, 'json': lambda self: {}})()
 
         with patch('httpx.Client') as MockClient:
             MockClient.return_value.__enter__.return_value.request.side_effect = _capture_request
