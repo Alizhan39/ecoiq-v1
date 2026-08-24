@@ -12,8 +12,10 @@ These are additional to (not a replacement for) the project-wide
 """
 from rest_framework.throttling import SimpleRateThrottle
 
+from core.throttling import TrustedIdentThrottleMixin
 
-class AIChatUserThrottle(SimpleRateThrottle):
+
+class AIChatUserThrottle(TrustedIdentThrottleMixin, SimpleRateThrottle):
     """Per authenticated identity (Django user, or API key when there is no user)."""
     scope = 'ai_chat_user'
 
@@ -34,7 +36,7 @@ class AIChatUserThrottle(SimpleRateThrottle):
         return self.cache_format % {'scope': self.scope, 'ident': ident}
 
 
-class AIChatIPThrottle(SimpleRateThrottle):
+class AIChatIPThrottle(TrustedIdentThrottleMixin, SimpleRateThrottle):
     """Per source IP, regardless of which account is being used."""
     scope = 'ai_chat_ip'
 
@@ -42,7 +44,7 @@ class AIChatIPThrottle(SimpleRateThrottle):
         return self.cache_format % {'scope': self.scope, 'ident': self.get_ident(request)}
 
 
-class AICatalogThrottle(SimpleRateThrottle):
+class AICatalogThrottle(TrustedIdentThrottleMixin, SimpleRateThrottle):
     """
     Bounds catalogue polling. The registry itself is cached for
     AI_MODEL_CATALOG_CACHE_SECONDS, so this protects EcoIQ's own workers

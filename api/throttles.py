@@ -8,8 +8,10 @@ Rates defined in settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']:
 """
 from rest_framework.throttling import SimpleRateThrottle
 
+from core.throttling import TrustedIdentThrottleMixin
 
-class APIKeyRateThrottle(SimpleRateThrottle):
+
+class APIKeyRateThrottle(TrustedIdentThrottleMixin, SimpleRateThrottle):
     """Rate limit by API key tier. Falls back to 'anon' rate if no key."""
 
     scope = 'anon'  # Default scope; overridden per-request in get_cache_key

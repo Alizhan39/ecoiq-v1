@@ -953,7 +953,11 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
+        # core.throttling's subclass, not the stock class: DRF's default
+        # get_ident() returns the concatenated X-Forwarded-For chain when
+        # NUM_PROXIES is unset, which is partly client-supplied behind
+        # Cloudflare. Same scope, same rate — a real identity.
+        'core.throttling.TrustedAnonRateThrottle',
         'api.throttles.APIKeyRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
@@ -1036,6 +1040,22 @@ REDIS_CONFIGURED = 'REDIS_URL' in os.environ
 # Key Value instance is provisioned (render.yaml keeps that block commented
 # out). A warning is logged rather than raising, because refusing to start
 # would take down a service that is otherwise healthy.
+# ── Authentication rate limits ────────────────────────────────────────────────
+#
+# Per-IP ceilings on the two unauthenticated write surfaces the estate exposes:
+# the sign-in form and registration. Both were previously unlimited — DRF's
+# throttles cover /api/, not Django's own auth views.
+#
+# Chosen as brute-force ceilings, not cost controls, and deliberately generous
+# enough not to interfere with ordinary pilot use: a real person mistyping a
+# password a few times, or a shared office NAT with several people signing in
+# at once, stays well inside them. They are per-minute so a tripped limit
+# clears in under a minute rather than locking someone out of their account —
+# this throttles an ADDRESS, never an account, so no attacker can lock a named
+# user out by attacking them.
+LOGIN_RATE_PER_MIN = int(os.environ.get('LOGIN_RATE_PER_MIN', '10'))
+REGISTER_RATE_PER_MIN = int(os.environ.get('REGISTER_RATE_PER_MIN', '5'))
+
 CACHE_ENVIRONMENT = os.environ.get(
     'ECOIQ_CACHE_ENVIRONMENT', 'production' if IS_PRODUCTION else 'development')
 
