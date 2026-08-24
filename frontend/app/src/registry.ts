@@ -2,42 +2,41 @@
  * EcoIQ Visual Intelligence — component registry.
  * Maps `data-island="Name"` → React component.
  *
- * CinematicHomeHero was removed with templates/landing.html. It was the only
- * consumer of the six hero image variants under static/img/hero/ — 646 kB that
- * no page referenced once `/` became React. Dropping it from the registry is
- * what lets the bundle stop naming those files, which is what lets them be
- * deleted.
+ * AN ENTRY HERE IS WHAT KEEPS A MODULE ALIVE
+ * ------------------------------------------
+ * main.tsx mounts by `data-island` attribute and nothing else, so a component
+ * reaches the bundle only by being named below. That makes this file the whole
+ * liveness boundary for `frontend/app`: a registry entry whose island no
+ * template mounts keeps its component — and everything that component imports —
+ * in a bundle every page downloads, for a page that no longer exists.
+ *
+ * CinematicHomeHero was the first instance, removed with templates/landing.html
+ * because it was the only consumer of the 646 kB hero image tree.
+ *
+ * Ten more went the same way once the public product routes became React. Their
+ * templates were deleted by the migration and are now 301 redirects:
+ *
+ *   global_intelligence.html         DigitalTwinPreview, GlobalCountryExplorer
+ *   kazakhstan_transition_brief.html AIStorytelling, ESGGraph, KazakhstanHero,
+ *                                    ScenarioSimulator, StakeholderMap,
+ *                                    TransitionMap
+ *   khalifa_tours_impact.html        NarrativeStory
+ *   landing.html                     InvestorScrollStory
+ *
+ * The four below are mounted by templates that still exist — checked against
+ * every `data-island` in the repository, not assumed. Before adding an entry,
+ * make sure a live template actually mounts it.
  */
 import type { ComponentType } from 'react'
 import ImpactGlobe from './components/ImpactGlobe'
 import RiskRadar from './components/RiskRadar'
-import ESGGraph from './components/ESGGraph'
-import ScenarioSimulator from './components/ScenarioSimulator'
-import StakeholderMap from './components/StakeholderMap'
-import AIStorytelling from './components/AIStorytelling'
-import KazakhstanHero from './components/kazakhstan/KazakhstanHero'
-import TransitionMap from './components/kazakhstan/TransitionMap'
 import HeatingTransitionStory from './components/stories/HeatingTransitionStory'
-import NarrativeStory from './components/stories/NarrativeStory'
-import DigitalTwinPreview from './components/intelligence/DigitalTwinPreview'
-import GlobalCountryExplorer from './components/global/GlobalCountryExplorer'
 import CountUpValue from './components/cinematic/CountUpValue'
-import InvestorScrollStory from './components/investor-story/InvestorScrollStory'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const registry: Record<string, ComponentType<any>> = {
   ImpactGlobe,
   RiskRadar,
-  ESGGraph,
-  ScenarioSimulator,
-  StakeholderMap,
-  AIStorytelling,
-  KazakhstanHero,
-  TransitionMap,
   HeatingTransitionStory,
-  NarrativeStory,
-  DigitalTwinPreview,
-  GlobalCountryExplorer,
   CountUpValue,
-  InvestorScrollStory,
 }

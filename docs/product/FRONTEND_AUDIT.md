@@ -87,19 +87,59 @@ lines, including nine module constants that only the deleted pages read.
 public write endpoint into the same notification table would be a second door
 into the same room — which is how the June–August abuse incident got in.
 
-### Static assets: identified, not removed
+### Static assets: removed
 
 `landing.html` was the only consumer of six hero image variants and
-`hero-globe.js` — **646 kB**, now unreferenced by any template.
+`hero-globe.js` — 646 kB. They were retained at the time of the cutover,
+because deleting them while `static/dist/ecoiq-islands.js` still named them
+would have broken `core/tests_hero_assets.BuiltBundleTests` for the wrong
+reason.
 
-They are **kept**. Removing them properly means retiring the hero island from
-`frontend/app` and rebuilding `static/dist/ecoiq-islands.js`, which is a second
-Node layer and a different piece of work from template cleanup. Deleting the
-files while the bundle still names them would break
-`core/tests_hero_assets.BuiltBundleTests` for the wrong reason.
+That debt is now paid, in two passes.
 
-Two brand SVGs are also unreferenced, and were already unreferenced before this
-programme. Not this PR's to remove.
+**The hero tree** went with `CinematicHomeHero`'s registry entry — the single
+line that kept it in the bundle. `static/img/hero/` (8 files, 3.5 MB), the
+`build_hero_images` command, 13 cinematic modules and
+`core/tests_hero_assets.py` went with it. Tracked `static/` fell from 10.6 MB
+to 7.1 MB.
+
+**Ten further islands** went the same way once the public product routes were
+React. `frontend/app/src/registry.ts` is the whole liveness boundary for that
+layer: `main.tsx` mounts by `data-island` and nothing else, so a component
+reaches the bundle only by being named in the registry. Ten entries named
+components whose templates the migration had deleted:
+
+| deleted template | now | islands it had mounted |
+|---|---|---|
+| `global_intelligence.html` | 301 → `/intelligence/` | DigitalTwinPreview, GlobalCountryExplorer |
+| `kazakhstan_transition_brief.html` | 301 → `/intelligence/` | AIStorytelling, ESGGraph, KazakhstanHero, ScenarioSimulator, StakeholderMap, TransitionMap |
+| `khalifa_tours_impact.html` | 301 → `/tours/` | NarrativeStory |
+| `landing.html` | React `/` | InvestorScrollStory |
+
+Dropping those ten entries made 33 modules unreachable from the entry point —
+measured by walking the import graph from `main.tsx`, not by reading names.
+`cinematic.css` (680 lines) and `investor-story.css` (631) went with them: both
+were imported directly by `main.tsx`, so no import graph would have caught
+them, and a repository-wide search found no consumer of a single `.eiq-cine*`
+or `.eiq-inv*` class. `static/js/hero-globe-v2.js`, orphaned by the same
+commit that removed `landing.html`, went too.
+
+Four islands remain, and each was confirmed against a live `data-island` mount
+rather than assumed: ImpactGlobe, RiskRadar, HeatingTransitionStory,
+CountUpValue.
+
+| | before | after |
+|---|---|---|
+| `ecoiq-islands.js` | 326,396 B | **226,900 B** |
+| `ecoiq-islands.css` | 54,723 B | **22,490 B** |
+| files under `frontend/app/src` | 54 | **18** |
+
+Every page on the estate loads that bundle, so this is 131 kB off every
+server-rendered page — for components no page could mount.
+
+Two brand SVGs remain unreferenced, and `templates/partials/_hero.html` is a
+third. All three were already unreferenced before this programme — they are not
+migration debt, and are left for a pass that owns them.
 
 ## Templates intentionally retained
 
@@ -143,7 +183,7 @@ of them are worth naming as open questions rather than leaving implied:
 | frontend tests | **143** |
 | production bundle | **56.7 kB gzipped** entry, code-split per route |
 | total committed artefact | 225 kB across 22 files |
-| legacy JS/CSS removed | 0 — downstream of template removal |
+| legacy JS/CSS removed | **1,311 CSS lines + 34 modules** — see "Static assets: removed" |
 
 ---
 
