@@ -1002,6 +1002,127 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 #: dependency worth failing readiness over.
 REDIS_CONFIGURED = 'REDIS_URL' in os.environ
 
+# ── Cache ─────────────────────────────────────────────────────────────────────
+#
+# Until now `CACHES` was never configured at all, so Django fell back to a
+# per-process LocMemCache — and every DRF throttle counts in it. On the current
+# service (`--workers 1 --threads 4`) the four threads share one process, so
+# rate limiting was not broken. It was fragile in a way that fails SILENTLY:
+# counters reset on every deploy and on each `--max-requests 300` worker
+# recycle, and raising WEB_CONCURRENCY above 1 would multiply every configured
+# limit by the worker count with no error and no log line.
+#
+# This block makes the choice explicit in both directions. It does NOT change
+# any throttle policy — that is the next package, and it depends on this one.
+#
+# SAME SIGNAL AS READINESS
+# ------------------------
+# Redis is used when REDIS_CONFIGURED — i.e. when REDIS_URL was set in the
+# environment — never on REDIS_URL's own truthiness, which is always true
+# because of its localhost default above. core/health.py's readiness probe
+# keys off exactly the same flag, so "readiness enforces Redis" and "the cache
+# is Redis" can never disagree.
+#
+# NO SILENT FALLBACK
+# ------------------
+# When Redis IS configured there is no LocMem fallback: Django's RedisCache
+# raises on a connection failure, which is the intended behaviour. A cache that
+# quietly degrades to per-process memory when the shared backend is unreachable
+# would reintroduce exactly the multiplied-rate-limit bug this exists to remove,
+# and would do it during an outage, when nobody is looking for it.
+#
+# When Redis is NOT configured the backend is LocMem and that is a deliberate,
+# documented state — not a failure. Production runs this way today, because no
+# Key Value instance is provisioned (render.yaml keeps that block commented
+# out). A warning is logged rather than raising, because refusing to start
+# would take down a service that is otherwise healthy.
+CACHE_ENVIRONMENT = os.environ.get(
+    'ECOIQ_CACHE_ENVIRONMENT', 'production' if IS_PRODUCTION else 'development')
+
+#: Namespaces every key by environment, so a staging service pointed at the
+#: same Redis instance can never read or overwrite production's entries.
+#:
+#: The RELEASE is deliberately NOT part of this prefix. Including it would
+#: invalidate the entire cache on every deploy, which sounds safe and is
+#: actively wrong here: it would also reset every throttle counter on every
+#: deploy — the precise fragility this package exists to remove, reintroduced
+#: as a side effect. A value whose correctness depends on a version must carry
+#: that version IN ITS OWN KEY (see the cache-key rules in
+#: docs/architecture/reliability.md); it must not lean on a global prefix.
+CACHE_KEY_PREFIX = f'ecoiq:{CACHE_ENVIRONMENT}'
+
+#: Django's own default. Set explicitly so a `cache.set()` without a timeout has
+#: a stated lifetime rather than an inherited one.
+CACHE_DEFAULT_TIMEOUT = 300
+
+#: Never use Redis for the test suite, even on a developer machine that has
+#: REDIS_URL exported. A test run must not depend on an external service being
+#: up, and must never read or write another process's cache.
+CACHE_USES_REDIS = REDIS_CONFIGURED and not RUNNING_TESTS
+
+if CACHE_USES_REDIS:
+    _redis_cache_options = {
+        # Bounded so a stalled Redis cannot hold a web thread open. A cache is
+        # an optimisation; waiting indefinitely for one inverts that.
+        'socket_connect_timeout': 2,
+        'socket_timeout': 2,
+        # Retry once on a timeout — covers a dropped idle connection without
+        # turning a real outage into a long stall.
+        'retry_on_timeout': True,
+        # Detects a silently-dead connection from the pool before it is used.
+        'health_check_interval': 30,
+        # Comfortably above `--workers 1 --threads 4` plus a worker's
+        # concurrency, and far below any managed instance's connection ceiling.
+        'max_connections': 24,
+    }
+    if REDIS_URL.startswith('rediss://'):
+        # Only meaningful for a TLS URL. Set under the scheme test rather than
+        # unconditionally so the intent is visible at the point it applies.
+        _redis_cache_options['ssl_cert_reqs'] = 'required'
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            # Django 5.2's built-in Redis backend over redis-py, which this
+            # repository already depends on for Celery. No new package: adding
+            # django-redis would mean a second Redis client and a second set of
+            # connection semantics for no capability this needs.
+            'LOCATION': REDIS_URL,
+            'KEY_PREFIX': CACHE_KEY_PREFIX,
+            'TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+            'OPTIONS': _redis_cache_options,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            # Named, not left to Django's implicit default. Two LocMem caches
+            # with the same LOCATION share one dict; an explicit unique name
+            # means a future second cache alias cannot silently collide.
+            'LOCATION': 'ecoiq-locmem-default',
+            'KEY_PREFIX': CACHE_KEY_PREFIX,
+            'TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+        }
+    }
+
+    if IS_PRODUCTION:
+        # Visible, not fatal. Production genuinely runs this way today and
+        # refusing to start would be a self-inflicted outage — but it must not
+        # be silent, because the consequence (throttle counters that are
+        # per-process and reset on deploy) is invisible from the outside.
+        # stderr directly, matching the ALLOWED_HOSTS banner above: LOGGING is
+        # not applied until Django finishes loading this module. No URL, no
+        # credential — the message states a configuration fact, not a value.
+        print(
+            '[ecoiq] WARNING: REDIS_URL is not set — cache is a process-local '
+            'LocMemCache. Throttle counters are NOT shared between processes and '
+            'reset on every deploy and worker recycle. '
+            'See docs/architecture/reliability.md.',
+            file=sys.stderr, flush=True,
+        )
+
+
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_ACCEPT_CONTENT = ['json']
