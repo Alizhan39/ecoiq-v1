@@ -10,7 +10,7 @@ second copy of any of it.
 """
 from django.utils import timezone
 
-from company_intelligence.services.url_safety import is_safe_external_url
+from company_intelligence.services.url_safety import validate_url
 
 
 def register_discovered_source(discovered, actor=None):
@@ -34,13 +34,19 @@ def register_discovered_source(discovered, actor=None):
     if discovered.status != 'approved':
         raise ValueError(f'Cannot register a DiscoveredSource with status "{discovered.status}" — approve it first.')
 
-    is_safe, reason = is_safe_external_url(discovered.url)
-    if not is_safe:
+    verdict = validate_url(discovered.url)
+    if not verdict.safe:
         discovered.status = 'rejected'
-        discovered.review_notes = f'Registration blocked by URL safety check: {reason}'
+        # review_notes is a staff-only triage field, so it gets the DETAIL —
+        # an analyst deciding whether a rejection was correct needs to know it
+        # resolved to a private address. The exception message stays public-safe
+        # because it can surface in places this record does not.
+        discovered.review_notes = (
+            f'Registration blocked by URL safety check '
+            f'[{verdict.category}]: {verdict.detail}')
         discovered.reviewed_at = timezone.now()
         discovered.save(update_fields=['status', 'review_notes', 'reviewed_at'])
-        raise ValueError(f'Refusing to register unsafe URL: {reason}')
+        raise ValueError(f'Refusing to register unsafe URL: {verdict.public_reason}')
 
     confidence_base = discovered.confidence if discovered.confidence is not None else {
         1: 0.9, 2: 0.75, 3: 0.6, 4: 0.5,

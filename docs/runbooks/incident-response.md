@@ -14,9 +14,13 @@ Stated first because they determine what responses are actually available:
 - **No staging environment** — changes go from CI to production.
 - **No uptime monitoring** beyond Render's own health check, so *detection is
   usually a human noticing*.
-- **Error tracking is integrated but not activated**: `core/sentry_setup.py`
-  is complete and `sentry-sdk` is pinned, but no `SENTRY_DSN` is set in
-  `render.yaml`, so Sentry is inert. Failures surface in Render logs only.
+- **Error tracking**: `core/sentry_setup.py` is complete and `sentry-sdk` is
+  pinned. `SENTRY_DSN` is reported as configured in the Render dashboard.
+  It is deliberately absent from `render.yaml` — a DSN is a dashboard-managed
+  secret, and its absence from the blueprint says nothing about whether it is
+  set. Repository inspection cannot verify dashboard values either way, so
+  during an incident confirm in Sentry itself that events are arriving before
+  concluding that silence means no errors.
 
 ## Severity
 
