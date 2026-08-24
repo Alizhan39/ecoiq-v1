@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 
 from companies.sitemaps import CompanySitemap, StaticSitemap
 from core import health as health_views
+from companies.throttle import rate_limit
 from core import spa
 from leads import views as leads_views
 
@@ -34,7 +35,13 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Auth
-    path('login/',  auth_views.LoginView.as_view(template_name='registration/login.html'),  name='login'),
+    # Rate-limited: the sign-in form is an unauthenticated write surface and
+    # was previously unlimited (DRF's throttles cover /api/, not Django's auth
+    # views). staff_exempt=False on purpose — the request that needs limiting
+    # is made by someone who is not signed in as anybody yet.
+    path('login/',  rate_limit('auth_login_web', anon_per_min='LOGIN_RATE_PER_MIN',
+                               auth_per_min='LOGIN_RATE_PER_MIN', staff_exempt=False)(
+        auth_views.LoginView.as_view(template_name='registration/login.html')),  name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'),                           name='logout'),
 
     # Existing Django apps (unchanged)

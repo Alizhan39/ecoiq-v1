@@ -13,6 +13,8 @@ from .utils import extract_text
 from .questions import QUESTIONS, grouped as grouped_questions
 import structlog
 from core.client_origin import safe_origin_context
+from django.conf import settings as _settings
+from companies.throttle import rate_limit
 # run_ecoiq_analysis is imported lazily inside run_analysis() — keeps the
 # anthropic SDK (~40 MB) out of Django startup memory.
 
@@ -474,6 +476,8 @@ def robots_txt(request):
 
 # ── Register ─────────────────────────────────────────────────────────────────
 
+@rate_limit('auth_register_web', anon_per_min='REGISTER_RATE_PER_MIN',
+            auth_per_min='REGISTER_RATE_PER_MIN', staff_exempt=False)
 def register(request):
     """
     /register/ — Account registration / access request.
