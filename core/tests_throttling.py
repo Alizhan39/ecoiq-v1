@@ -24,6 +24,23 @@ class _Req:
         self.META = meta
 
 
+#: A timestamp deliberately mid-window, not on a 60s boundary.
+#:
+#: companies.throttle keys its counter on `int(time.time() // WINDOW)`, so a
+#: test that issues several requests across a window boundary sees the counter
+#: reset half way through and never trips the limit. That is a real property of
+#: a fixed-window limiter, not a bug in it — but it makes any multi-request test
+#: time-sensitive, and it failed exactly that way in CI, where the single-process
+#: suite runs slowly enough to straddle a boundary. Freezing the clock removes
+#: the nondeterminism without weakening a single assertion.
+FROZEN_NOW = 1_800_000_030.0
+
+
+def frozen_window():
+    """`new=` rather than a MagicMock, so the decorator injects no argument."""
+    return patch('companies.throttle.time.time', new=lambda: FROZEN_NOW)
+
+
 class TrustedIdentTests(SimpleTestCase):
 
     def setUp(self):
@@ -100,6 +117,7 @@ class TrustedIdentTests(SimpleTestCase):
 
 
 @override_settings(TRUSTED_CLIENT_IP_HEADER='CF-Connecting-IP', TRUSTED_PROXY_COUNT=2)
+@patch('companies.throttle.time.time', new=lambda: FROZEN_NOW)
 class AuthViewRateLimitTests(TestCase):
     """The sign-in and registration forms were previously unlimited."""
 
@@ -176,6 +194,7 @@ class AuthViewRateLimitTests(TestCase):
         self.assertNotEqual(self._post_login().status_code, 429)
 
 
+@patch('companies.throttle.time.time', new=lambda: FROZEN_NOW)
 class RateLimitLoggingTests(TestCase):
     """A throttled request must be logged without the raw address."""
 
