@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from core.storage import upload_to_ai_analysis, upload_to_audit
 
 
 SECTOR_CHOICES = [
@@ -69,7 +70,7 @@ class AuditSession(models.Model):
     annual_revenue  = models.BigIntegerField(null=True, blank=True, help_text='USD, optional — used to scale ROI estimates')
 
     status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    uploaded_file   = models.FileField(upload_to='audit_uploads/', blank=True, null=True)
+    uploaded_file   = models.FileField(upload_to=upload_to_audit, blank=True, null=True)
     extracted_text  = models.TextField(blank=True)
     notes           = models.TextField(blank=True)
 
@@ -260,7 +261,7 @@ class AIAnalysisJob(models.Model):
     """
 
     # ── Input ─────────────────────────────────────────────────────────────────
-    pdf_file          = models.FileField(upload_to='ai_analysis/%Y/%m/')
+    pdf_file          = models.FileField(upload_to=upload_to_ai_analysis)
     original_filename = models.CharField(max_length=255)
 
     # Optionally linked to an existing league company

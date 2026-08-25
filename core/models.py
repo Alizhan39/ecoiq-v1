@@ -1,6 +1,7 @@
 import uuid
 from django.conf import settings
 from django.db import models
+from core.storage import upload_to_assessment
 
 
 class Assessment(models.Model):
@@ -23,7 +24,7 @@ class Assessment(models.Model):
     updated_at   = models.DateTimeField(auto_now=True)
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     share_token    = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    uploaded_file = models.FileField(upload_to='uploads/', blank=True, null=True)
+    uploaded_file = models.FileField(upload_to=upload_to_assessment, blank=True, null=True)
     extracted_text = models.TextField(blank=True)
     notes        = models.TextField(blank=True)
     # Phase 0 privacy fix — this model previously had no owner at all, so

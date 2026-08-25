@@ -24,15 +24,41 @@ rollback and database-failure procedure. This document does not repeat it.
 
 ### Uploaded files
 
-`MEDIA_ROOT` is on the web service's disk. Render's PostgreSQL backup does
-**not** cover it, and a service replacement does not preserve it. Any uploaded
-evidence document is therefore currently at risk in a way the database is not.
+`MEDIA_ROOT` was the web service's own disk, which Render replaces on every
+deploy. Render's PostgreSQL backup does not cover it, so an uploaded evidence
+document survived until the next release while its database row survived
+forever — a reference to a file that no longer exists, which the application
+reads as "the document is on file".
 
-This is a real gap. It is not fixed here because fixing it properly means
-choosing an object store (S3/R2 + `django-storages`), which is a cost and
-architecture decision, not a runbook entry.
+**Measured on production, 2026-08-25:** `MEDIA_ROOT` did not exist, **0 files,
+0 bytes, 0 database references** across all six upload fields
+(`core.Assessment`, `leads.ReviewRequest`, `league.Evidence`,
+`audit.AuditSession`, `audit.AIAnalysisJob`,
+`companies.CompanyGuidanceVideo`). Nothing had been lost because nothing had
+been uploaded. There was no migration to perform and none was invented.
 
----
+**Code status: ready, not enabled.** `MEDIA_STORAGE_BACKEND=r2` switches the
+default storage to private Cloudflare R2 with short-lived presigned reads; the
+filesystem remains the default everywhere else. If `r2` is selected and any
+required variable is missing, settings raise rather than start — falling back
+to the ephemeral disk silently is the failure being fixed.
+
+**Blocked on one account action.** R2 is not enabled on the Cloudflare account
+(`wrangler r2 bucket list` → error 10042, *"Please enable R2 through the
+Cloudflare Dashboard"*), and the current OAuth token carries no `r2` scope.
+Enabling R2 requires completing a checkout flow in the dashboard, which is an
+account-owner action. Until then uploads still land on the ephemeral disk.
+
+Verify state at any time — before a cutover, after one, or when a row might
+point at nothing:
+
+    python manage.py reconcile_media                    # report only
+    python manage.py reconcile_media --migrate          # copy into the configured storage
+
+It reports `referenced_and_present`, `referenced_but_missing`,
+`present_but_unreferenced`, `copied` and `failed`. It never deletes a source
+object, never rewrites a database reference, skips objects already present
+(so re-running is a no-op), and prints no file content.
 
 ## Objectives — proposed, not yet ratified
 

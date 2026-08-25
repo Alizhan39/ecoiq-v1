@@ -8,6 +8,17 @@ python-dotenv==1.2.2
 weasyprint==68.1
 whitenoise==6.9.0
 
+# ── Durable media storage (Cloudflare R2, S3-compatible) ─────────────────────
+# Uploaded files previously lived on the web service's own filesystem, which
+# Render replaces on every deploy — the database row outlived the file it
+# pointed at. django-storages' S3 backend talks to R2 unchanged; R2 is
+# S3-compatible and needs no R2-specific client.
+#
+# Both are inert unless MEDIA_STORAGE_BACKEND=r2: core/storage.py imports them
+# lazily, so a filesystem or test process never loads boto3.
+django-storages==1.14.4
+boto3==1.35.99
+
 # ── Billing (Stripe) ─────────────────────────────────────────────────────────
 # Official Stripe Python SDK, pinned exactly like the other core dependencies
 # above. 15.4.0 pins Stripe API version 2026-07-29.dahlia by default; note
