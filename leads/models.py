@@ -2,6 +2,7 @@ import os
 import random
 from django.db import models
 from django.utils import timezone
+from core.storage import upload_to_sustainability_report
 
 
 INDUSTRY_CHOICES = [
@@ -269,7 +270,7 @@ class ReviewRequest(models.Model):
 
     # Optional sustainability report upload
     sustainability_report = models.FileField(
-        upload_to='review_reports/%Y/%m/',
+        upload_to=upload_to_sustainability_report,
         blank=True,
         null=True,
         help_text='PDF only · max 10 MB',

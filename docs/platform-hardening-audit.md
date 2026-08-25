@@ -149,3 +149,20 @@ no Pinecone, no Kubernetes, no Kafka. Additionally — **do not rebuild**
 structured logging, Sentry, `.env.example`, API versioning or evidence
 provenance. They exist, they are tested, and they are better than a generic
 replacement would be.
+
+---
+
+## Media durability (added 2026-08-25)
+
+| | |
+|---|---|
+| Before | `MEDIA_ROOT` on the web service disk; destroyed every deploy; not in any backup |
+| Measured | **0 files, 0 bytes, 0 DB references** — nothing lost, nothing to migrate |
+| Now | R2 integration merged, **opt-in** via `MEDIA_STORAGE_BACKEND=r2`, fail-closed |
+| Blocked on | R2 not enabled on the Cloudflare account (dashboard checkout) + OAuth token lacks `r2` scope |
+
+Private objects, no ACLs (R2 implements none — `default_acl` is `None`, and
+sending `private` would make R2 reject the upload), presigned reads expiring in
+300s, `file_overwrite=False`, uuid4 keys that carry no filename-derived
+personal information, and `org/<company_id>/` scoping on the three upload models
+that reach a company. See `docs/architecture/reliability.md`.

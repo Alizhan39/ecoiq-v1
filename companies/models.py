@@ -18,6 +18,7 @@ NOTE: The `Company` model (industrial companies, league scores) lives in
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
+from core.storage import upload_to_guidance_thumbnail
 
 
 # ── Choice sets ────────────────────────────────────────────────────────────────
@@ -404,7 +405,7 @@ class CompanyGuidanceVideo(models.Model):
 
     # Video assets (filled manually by admin after Higgsfield production)
     video_url  = models.URLField(blank=True, help_text='Paste Higgsfield / Vimeo / YouTube URL')
-    thumbnail  = models.ImageField(upload_to='guidance_videos/thumbnails/', null=True, blank=True)
+    thumbnail  = models.ImageField(upload_to=upload_to_guidance_thumbnail, null=True, blank=True)
 
     # AI-generated content
     script             = models.TextField(blank=True,

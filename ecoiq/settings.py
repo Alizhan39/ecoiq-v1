@@ -552,6 +552,64 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ── Durable media storage (Cloudflare R2) ─────────────────────────────────────
+#
+# MEDIA_ROOT above is the web service's own filesystem, which Render replaces on
+# every deploy. An uploaded evidence document therefore survived until the next
+# release while its database row survived forever — a reference to a file that
+# no longer exists, which the application reads as "the document is on file".
+#
+# Measured on production before this was written: MEDIA_ROOT did not exist,
+# 0 files, 0 bytes, 0 database references across all six upload fields. Nothing
+# had been lost because nothing had been uploaded. That is the good moment.
+#
+# OPT-IN. The filesystem stays the default so local development and the test
+# suite need no credentials and no network. R2 is selected only by setting
+# MEDIA_STORAGE_BACKEND=r2.
+MEDIA_STORAGE_BACKEND = os.environ.get('MEDIA_STORAGE_BACKEND', 'filesystem').strip().lower()
+
+#: Presigned read URLs expire in five minutes by default. A URL that leaks —
+#: pasted into a ticket, captured by an intermediary — stops working quickly.
+#: The signature is derived from the credentials and never contains them.
+R2_SIGNED_URL_EXPIRY_SECONDS = int(os.environ.get('R2_SIGNED_URL_EXPIRY_SECONDS', '300'))
+
+MEDIA_USES_R2 = MEDIA_STORAGE_BACKEND == 'r2'
+
+if MEDIA_USES_R2:
+    _r2 = {name: os.environ.get(name, '').strip() for name in (
+        'R2_ACCOUNT_ID', 'R2_BUCKET_NAME', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY')}
+    _missing = sorted(k for k, v in _r2.items() if not v)
+    if _missing:
+        # FAIL CLOSED. Falling back to the local filesystem here would write
+        # uploads to a disk that is destroyed on the next deploy, and would do
+        # it silently — the exact failure this configuration exists to end.
+        raise ImproperlyConfigured(
+            'MEDIA_STORAGE_BACKEND=r2 but these variables are missing: '
+            f'{", ".join(_missing)}. Refusing to start on ephemeral local '
+            'storage. Unset MEDIA_STORAGE_BACKEND to use the filesystem.'
+        )
+
+    # Account-scoped S3 endpoint. Derived rather than configured so the endpoint
+    # can never disagree with the account the credentials belong to.
+    R2_ENDPOINT_URL = os.environ.get(
+        'R2_ENDPOINT_URL', f'https://{_r2["R2_ACCOUNT_ID"]}.r2.cloudflarestorage.com').strip()
+
+    STORAGES['default'] = {
+        'BACKEND': 'core.storage_r2.R2MediaStorage',
+        'OPTIONS': {
+            'bucket_name': _r2['R2_BUCKET_NAME'],
+            'access_key': _r2['R2_ACCESS_KEY_ID'],
+            'secret_key': _r2['R2_SECRET_ACCESS_KEY'],
+            'endpoint_url': R2_ENDPOINT_URL,
+            # R2 implements neither ACLs nor regions; 'auto' is what it expects,
+            # and signature v4 is required.
+            'region_name': 'auto',
+            'signature_version': 's3v4',
+            'querystring_expire': R2_SIGNED_URL_EXPIRY_SECONDS,
+        },
+    }
+
+
 # ── Misc ──────────────────────────────────────────────────────────────────────
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
