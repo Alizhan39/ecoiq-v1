@@ -21,7 +21,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.16"
+
+      # Print the resolved interpreter. The version is pinned above, but the
+      # log is what lets anyone confirm which one a given run actually used —
+      # production once drifted to 3.14 while CI tested 3.11 and nothing said so.
+      - name: Report Python version
+        run: python -VV
 
       - name: Install Ruff
         # The pinned version from requirements-dev.txt, installed on its own so
@@ -57,7 +63,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.16"
+
+      # Print the resolved interpreter. The version is pinned above, but the
+      # log is what lets anyone confirm which one a given run actually used —
+      # production once drifted to 3.14 while CI tested 3.11 and nothing said so.
+      - name: Report Python version
+        run: python -VV
 
       - name: Install dependencies
         # The full tree: the django-stubs plugin loads Django settings, so it
@@ -155,7 +167,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.16"
+
+      # Print the resolved interpreter. The version is pinned above, but the
+      # log is what lets anyone confirm which one a given run actually used —
+      # production once drifted to 3.14 while CI tested 3.11 and nothing said so.
+      - name: Report Python version
+        run: python -VV
 
       - name: Install dependencies
         # requirements-dev.txt includes requirements.txt and adds the test-only

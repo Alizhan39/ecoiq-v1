@@ -198,6 +198,38 @@ observe it.
 Environment variables involved, names only: `REDIS_URL`,
 `ECOIQ_CACHE_ENVIRONMENT` (optional, defaults to `production`/`development`).
 
+## Python runtime — one version, three declarations
+
+| where | value | role |
+|---|---|---|
+| `.python-version` | `3.11.16` | the repository's canonical declaration |
+| `render.yaml` → `PYTHON_VERSION` | `3.11.16` | sets the env var, which **overrides** the file |
+| `.github/workflows/django.yml` | `3.11.16` | the interpreter every test actually runs on |
+
+Render's precedence is `PYTHON_VERSION` env var → `.python-version` → a default
+based on when the service was created. The blueprint therefore wins over the
+file, which is exactly why they must agree.
+
+**What went wrong before this was pinned.** `render.yaml` said `3.11.0`, CI
+resolved a bare `"3.11"` to `3.11.16`, the Celery worker ran 3.11, and the web
+service had **no `PYTHON_VERSION` at all** — so it fell through to Render's
+default and ran **3.14.3**. Every dependency in production was installed and
+exercised on an interpreter no test had ever seen, and nothing in the
+repository could show it, because the declarations disagreed with each other
+and nothing compared them.
+
+`core/tests_python_runtime.py` now compares them, and fails with a diagnostic
+naming each file and its value.
+
+`runtime.txt` was **removed** rather than corrected. Render does not read it, so
+it could drift indefinitely without ever taking effect — a declaration that
+looks authoritative and is inert is worse than no declaration.
+
+The test cannot see the env var actually set on a running service; that is
+dashboard state. To check the live interpreter:
+
+    render logs --resources <service-id> | grep -o 'python3\.[0-9]*'
+
 ## Reliability is not only availability
 
 The failure this platform exists to prevent is **publishing something
