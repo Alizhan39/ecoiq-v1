@@ -13,7 +13,7 @@ maintenance surface for no truthfulness gain.
 from django.urls import path
 
 from api import (
-    v2_assessment, v2_contact, v2_platform, v2_projects, v2_session,
+    v2_assessment, v2_contact, v2_kpi, v2_platform, v2_projects, v2_session,
     v2_views,
 )
 
@@ -39,6 +39,11 @@ urlpatterns = [
     # The full organisation assessment. One gate, applied at the top: an
     # organisation without a publishable score gets identity, evidence state
     # and gaps, and none of the panel keys at all.
+    # One organisation against one of the 114 principles. Separate from
+    # assessment/ on purpose: an investigation needs one KPI's full evidence
+    # chain, a company page needs a summary of many.
+    path('companies/<slug:slug>/kpis/<int:kpi_id>/', v2_kpi.company_kpi,
+         name='company_kpi'),
     path('companies/<slug:slug>/assessment/', v2_assessment.company_assessment,
          name='company_assessment'),
     path('leaderboard/',           v2_views.leaderboard_v2,    name='leaderboard'),

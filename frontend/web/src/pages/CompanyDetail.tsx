@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { getAssessment } from '@/api/companies';
 import { useApi } from '@/hooks/useApi';
 import { ErrorState, Loading } from '@/components/States';
@@ -67,6 +67,8 @@ export default function CompanyDetail() {
         ? <FinancingPanel financing={a.financing_readiness} /> : null}
 
       <Gaps gaps={a.evidence_gaps} published={a.score_status === 'PUBLISHED'} />
+
+      <StewardshipKpiPreview slug={slug ?? ''} />
 
       <section aria-labelledby="methodology">
         <h2 id="methodology">Provenance and methodology</h2>
@@ -301,6 +303,41 @@ function Gaps({ gaps, published }: { gaps: EvidenceGaps; published: boolean }) {
           <ul>{gaps.missing.map((m) => <li key={m}>{m}</li>)}</ul>
         </details>
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * The entry point into the 114-principle framework (§21).
+ *
+ * Deliberately a doorway rather than a summary. Rendering a verdict here would
+ * mean fetching every principle's evidence to show one line each, and would
+ * put an assessment on a page that has not loaded the evidence behind it.
+ * The investigation is where the evidence lives, so the link goes there.
+ *
+ * Hard-coded to #114 only because that is the one principle with a worked
+ * corpus today. The route it points at is generic.
+ */
+function StewardshipKpiPreview({ slug }: { slug: string }) {
+  return (
+    <section aria-labelledby="stewardship-kpis" className="kpi-preview">
+      <h2 id="stewardship-kpis">Stewardship principles</h2>
+      <p className="kpi-preview__lede">
+        EcoIQ assesses organisations against 114 stewardship principles. Each is
+        evidence-led: a principle with no confirmed evidence is reported as
+        unassessed rather than scored.
+      </p>
+      <Link className="kpi-preview__item" to={`/companies/${slug}/kpis/114/`}  /* trailing slash: Django owns this
+           path and the SPA catch-all 404s the slashless form on a cold load */>
+        <span className="kpi-preview__num">#114</span>
+        <span className="kpi-preview__title">
+          Consumer Protection &amp; Anti-Manipulation
+        </span>
+        <span className="kpi-preview__go" aria-hidden="true">Investigate →</span>
+        <span className="visually-hidden">
+          Investigate principle 114 for this organisation
+        </span>
+      </Link>
     </section>
   );
 }

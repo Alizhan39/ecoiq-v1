@@ -869,6 +869,81 @@ class StewardshipAlert(models.Model):
         return f'{self.get_alert_type_display()} — {self.company.company.slug} ({self.get_state_display()})'
 
 
+class KPIRemediationStep(models.Model):
+    """
+    A remediation chain hanging off one CompanyKPIAssessment.
+
+    DELIBERATELY NOT A `relationship` VALUE
+    ---------------------------------------
+    `CompanyKPIEvidenceLink.relationship` answers "what does this evidence say
+    about the principle?" — supports, conflicts, context, or not enough to
+    conclude. Remediation is not an answer to that question. A remediation
+    record does not support the principle; it describes what an organisation
+    did AFTER something conflicted with it.
+
+    Collapsing the two would also let remediation quietly cancel a finding,
+    because `derive_status_from_evidence` counts supports against conflicts.
+    An organisation could then fix a problem and have the historical finding
+    disappear from its own assessment. Remediation and the finding it responds
+    to are separate dimensions, and this model keeps them separate: nothing
+    here is read by the status engine.
+
+    The chain is ordered: finding -> response -> change -> regulatory response
+    -> residual concern. `residual_concern` is a first-class field precisely
+    because "we fixed it" is a claim, not an outcome.
+    """
+    STEP_KIND_CHOICES = [
+        ('finding', 'Finding'),
+        ('company_response', 'Company Response'),
+        ('product_or_policy_change', 'Product or Policy Change'),
+        ('regulatory_response', 'Regulatory Response'),
+        ('residual_concern', 'Residual Concern'),
+    ]
+
+    #: Whether the remediation is claimed, evidenced, or independently
+    #: confirmed. A company saying it changed something is not the same as a
+    #: regulator agreeing that it did.
+    VERIFICATION_CHOICES = [
+        ('claimed', 'Claimed by Organisation'),
+        ('evidenced', 'Evidenced'),
+        ('independently_confirmed', 'Independently Confirmed'),
+        ('contested', 'Contested'),
+    ]
+
+    assessment = models.ForeignKey(
+        CompanyKPIAssessment, on_delete=models.CASCADE, related_name='remediation_steps',
+    )
+    position = models.PositiveSmallIntegerField(
+        help_text='Order within the chain. Not a date: several steps can share a month.',
+    )
+    kind = models.CharField(max_length=30, choices=STEP_KIND_CHOICES)
+    summary = models.CharField(max_length=300)
+    detail = models.TextField(blank=True)
+    occurred_on = models.DateField(null=True, blank=True)
+    verification = models.CharField(
+        max_length=30, choices=VERIFICATION_CHOICES, default='claimed',
+    )
+    #: The evidence this step rests on, when there is one. Nullable because a
+    #: residual concern is often the ABSENCE of evidence that something closed.
+    evidence = models.ForeignKey(
+        'evidence_memory.EvidenceMemory', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='kpi_remediation_steps',
+    )
+    is_demo = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['assessment', 'position']
+        verbose_name = 'KPI Remediation Step'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['assessment', 'position'], name='ci_unique_remediation_position'),
+        ]
+
+    def __str__(self):
+        return f'{self.assessment} — {self.position}. {self.get_kind_display()}'
+
+
 class EvidenceReviewAction(models.Model):
     """
     feat/company-evidence-ingestion (PR 10), extended by feat/evidence-

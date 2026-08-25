@@ -7,6 +7,9 @@ const Home = lazy(() => import('@/pages/Home'));
 const Intelligence = lazy(() => import('@/pages/Intelligence'));
 const Companies = lazy(() => import('@/pages/Companies'));
 const CompanyDetail = lazy(() => import('@/pages/CompanyDetail'));
+// Lazy on its own chunk: the graph and drawer are only paid for by readers who
+// open an investigation, not by every visitor to a company page.
+const KPIInvestigation = lazy(() => import('@/pages/KPIInvestigation'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const ProjectConcept = lazy(() => import('@/pages/ProjectConcept'));
 const Tours = lazy(() => import('@/pages/Tours'));
@@ -40,6 +43,7 @@ export function AppRoutes() {
         <Route path="/intelligence" element={<Intelligence />} />
         <Route path="/companies" element={<Companies />} />
         <Route path="/companies/:slug" element={<CompanyDetail />} />
+        <Route path="/companies/:slug/kpis/:kpiId" element={<KPIInvestigation />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:slug" element={<ProjectConcept />} />
         <Route path="/tours" element={<Tours />} />

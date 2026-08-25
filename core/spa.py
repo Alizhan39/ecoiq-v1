@@ -318,6 +318,55 @@ def spa_view(request, *args, **kwargs) -> HttpResponse:
                         path=request.path)
 
 
+def company_kpi_spa_view(request, slug: str, kpi_id: int) -> HttpResponse:
+    """
+    /companies/<slug>/kpis/<n>/ — the investigation shell.
+
+    NO VERDICT IN THE METADATA
+    --------------------------
+    Same rule as company_spa_view's "no score, ever", for the same reason. A
+    title carrying "MIXED — MATERIAL CONFLICT" would publish an assessment to
+    search results and social cards, stripped of the evidence that produced it
+    and of the review state that decides whether it counts. The verdict is
+    rendered by the page, from the API, where one gate decides.
+
+    NOINDEX, ALWAYS
+    ---------------
+    Unconditionally, unlike the organisation page which indexes once a score is
+    publishable. An investigation is a working surface over evidence whose
+    review state can change; a crawler snapshot of it would outlive the review
+    that justified it.
+
+    404s for an unknown principle so a mistyped id cannot render an empty shell
+    that looks like a real, unassessed assessment.
+    """
+    from core.esg_principles_data import PRINCIPLES
+
+    principle = next((p for p in PRINCIPLES if p['id'] == int(kpi_id)), None)
+    if principle is None:
+        raise Http404(f'No stewardship principle with id {kpi_id}.')
+
+    from django.shortcuts import get_object_or_404
+
+    from companies.models import CompanyProfile
+    from league.models import Company
+
+    company = get_object_or_404(Company.objects.select_related('profile'), slug=slug)
+    # Mirror the API's existence rule, exactly as company_spa_view does.
+    get_object_or_404(CompanyProfile, company=company,
+                      status__in=('public', 'verified', 'draft'))
+
+    return render_shell(
+        title=f'{company.name} — {principle["title"]} — EcoIQ',
+        description=(
+            f'Evidence recorded for {company.name} against stewardship principle '
+            f'#{principle["id"]}: {principle["title"]}. Each item carries its source, '
+            'evidentiary standing and review state.'),
+        path=request.path,
+        robots='noindex, follow',
+    )
+
+
 def company_spa_view(request, slug: str) -> HttpResponse:
     """
     /companies/<slug>/ — the React organisation page, with truthful metadata.
