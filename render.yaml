@@ -42,7 +42,7 @@ services:
 
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.0"
+        value: "3.11.16"
 
       - key: WEB_CONCURRENCY
         value: "1"                       # belt-and-suspenders: matches --workers above
@@ -262,7 +262,7 @@ databases:
 #     startCommand: celery -A ecoiq worker --loglevel=info --concurrency=2 --max-tasks-per-child=100
 #     envVars:
 #       - key: PYTHON_VERSION
-#         value: "3.11.0"
+#         value: "3.11.16"
 #       - key: DJANGO_SETTINGS_MODULE
 #         value: ecoiq.settings
 #       - key: DJANGO_SECRET_KEY
@@ -308,7 +308,7 @@ databases:
 #     startCommand: python manage.py refresh_stewardship_universe --due-only --scheduled --limit 50
 #     envVars:
 #       - key: PYTHON_VERSION
-#         value: "3.11.0"
+#         value: "3.11.16"
 #       - key: DJANGO_SETTINGS_MODULE
 #         value: ecoiq.settings
 #       - key: DJANGO_SECRET_KEY
@@ -345,7 +345,7 @@ databases:
 #     startCommand: python manage.py run_good_while_you_sleep
 #     envVars:
 #       - key: PYTHON_VERSION
-#         value: "3.11.0"
+#         value: "3.11.16"
 #       - key: DJANGO_SETTINGS_MODULE
 #         value: ecoiq.settings
 #       - key: DJANGO_SECRET_KEY
