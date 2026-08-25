@@ -151,13 +151,24 @@ that way.
 
 Render's automatic PostgreSQL backups, 7-day retention on the starter plan.
 
-**Not yet in place:** an off-platform backup copy, and a documented restore
-drill. Nobody has performed a restore. That is a real gap and it is recorded
-here rather than assumed away.
+Point-in-time recovery is also available (window opens `2026-08-21T12:16:54Z`),
+and one logical export is retained from the restore drill.
 
-The drill procedure, proposed RPO/RTO and the (empty) verification log are in
-`docs/runbooks/backup-and-restore.md`. Uploaded files under `MEDIA_ROOT` are
-**not** covered by the database backup — see the same document.
+**A restore drill was performed on 2026-08-25 and passed:** a fresh logical
+export restored into an isolated local PostgreSQL 18 instance in 1 second with
+zero errors, matching production exactly — 374 tables, 30,258 rows, 698 foreign
+keys, 1,420 indexes, 378 migration rows, and 873 constraints re-validated with
+0 failures. Measured **RPO ~0–5 min** (via PITR) and **RTO ~15–20 min** at the
+current size.
+
+**Still not in place:** an off-platform backup copy, and a rehearsed
+Render-hosted recovery cutover. The drill restored to an isolated local
+instance, which proves the data — not the cutover. Exports are also manual;
+nothing schedules one.
+
+The full procedure, the verification log and the limitations are in
+`docs/runbooks/backup-and-restore.md`. Uploaded files now live in Cloudflare R2
+rather than `MEDIA_ROOT` — see the same document.
 
 ---
 
@@ -166,7 +177,9 @@ The drill procedure, proposed RPO/RTO and the (empty) verification log are in
 Recorded because a runbook listing only procedures implies the rest is covered.
 
 - **Single web instance.** No horizontal scaling, no zero-downtime deploy.
-- **No off-platform backup**, and no tested restore.
+- **No off-platform backup.** The restore path itself is tested (drill passed
+  2026-08-25), but PITR, snapshots and the retained export all live in one
+  Render account, and a Render-hosted cutover has never been rehearsed.
 - **Error tracking integration is complete** (`core/sentry_setup.py`,
   `sentry-sdk` pinned), and `SENTRY_DSN` is reported as configured in the
   Render dashboard. The DSN is intentionally NOT in `render.yaml`: it is a
