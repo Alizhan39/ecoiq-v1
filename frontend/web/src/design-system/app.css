@@ -202,3 +202,217 @@
 }
 .pager__button:disabled { opacity: .45; cursor: default; }
 .pager__position { color: var(--ink-soft); font-size: .9rem; }
+
+/* ── KPI investigation ──────────────────────────────────────────────────────
+   Uses the existing tokens only. No new palette: --accent carries support,
+   --danger conflict (sparingly, and never alone), --warn context, --unknown
+   absence. Relation is always stated in text as well as colour.            */
+
+.kpi-investigation { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+.kpi-header__eyebrow {
+  display: flex; gap: .5rem; align-items: baseline;
+  font-size: .8125rem; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.kpi-header__company { font-weight: 600; color: var(--ink); }
+.kpi-header__title {
+  margin: .5rem 0 .25rem; font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1; letter-spacing: -0.02em;
+}
+.kpi-header__question {
+  margin: 0 0 1.5rem; max-width: var(--measure);
+  font-size: 1.125rem; color: var(--ink-soft);
+}
+.kpi-header__verdict { display: flex; flex-wrap: wrap; gap: 2.5rem; margin: 0 0 1rem; }
+.kpi-verdict dt {
+  font-size: .75rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: .25rem;
+}
+.kpi-verdict dd { margin: 0; font-size: 1.0625rem; font-weight: 600; }
+.kpi-verdict dd[data-tone='conflict'] { color: var(--danger); }
+.kpi-verdict dd[data-tone='mixed']    { color: var(--warn); }
+.kpi-verdict dd[data-tone='support']  { color: var(--accent); }
+.kpi-verdict dd[data-tone='unknown']  { color: var(--unknown); }
+.kpi-header__demo {
+  border-left: 3px solid var(--warn); padding: .625rem .875rem;
+  background: var(--paper-soft); color: var(--ink-soft);
+  font-size: .875rem; max-width: var(--measure);
+}
+
+.kpi-investigation__body { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+.kpi-investigation__hint { color: var(--ink-soft); font-size: .9375rem; }
+
+/* Graph ------------------------------------------------------------------- */
+.kpi-graph { margin: 0 0 2rem; }
+.kpi-graph__caption {
+  color: var(--ink-soft); font-size: .9375rem; max-width: var(--measure);
+  margin-bottom: 1rem;
+}
+.kpi-graph__svg { width: 100%; height: auto; display: block; }
+.kpi-graph__node rect {
+  fill: var(--paper); stroke: var(--line); stroke-width: 1;
+}
+.kpi-graph__node--protect rect   { stroke: var(--accent); }
+.kpi-graph__node--control rect   { stroke: var(--danger); }
+.kpi-graph__node--principle rect { fill: var(--ink); stroke: var(--ink); }
+.kpi-graph__node--principle text { fill: var(--paper); }
+.kpi-graph__node.is-selected rect { stroke-width: 2; fill: var(--accent-soft); }
+.kpi-graph__node-label {
+  text-anchor: middle; font-size: 12px; font-weight: 600; fill: var(--ink);
+}
+.kpi-graph__node-sub {
+  text-anchor: middle; font-size: 10px; fill: var(--ink-soft);
+}
+.kpi-graph__edge { fill: none; stroke-width: 1.25; }
+.kpi-graph__edge--support  { stroke: var(--accent); }
+.kpi-graph__edge--conflict { stroke: var(--danger); }
+.kpi-graph__edge--context  { stroke: var(--warn); stroke-dasharray: 4 4; }
+.kpi-graph__arrowhead { fill: var(--ink-soft); }
+
+/* Motion explains the reasoning: branches resolve before the principle does. */
+@media (prefers-reduced-motion: no-preference) {
+  .kpi-graph__node { animation: kpi-node-in .4s ease-out both; }
+  .kpi-graph__edge {
+    stroke-dasharray: 400; stroke-dashoffset: 400;
+    animation: kpi-edge-draw .7s ease-out both;
+  }
+  .kpi-graph__edge--context { stroke-dasharray: 4 4; animation: none; }
+}
+@keyframes kpi-node-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes kpi-edge-draw { to { stroke-dashoffset: 0; } }
+
+.kpi-graph__semantic { list-style: none; padding: 0; margin: 1.5rem 0 0; }
+.kpi-graph__semantic > li > h3 {
+  font-size: .75rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-soft); margin: 1.25rem 0 .5rem;
+}
+.kpi-graph__semantic ol { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.kpi-graph__hit {
+  display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; width: 100%;
+  text-align: left; background: var(--paper); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: .625rem .75rem; cursor: pointer;
+  font: inherit; color: inherit;
+}
+.kpi-graph__hit:hover { border-color: var(--ink-soft); }
+.kpi-graph__hit[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); }
+.kpi-graph__hit--static { cursor: default; }
+.kpi-graph__hit-label { font-weight: 600; margin-right: auto; }
+
+/* Chips: relation and standing, always as words. */
+.kpi-chip {
+  font-size: .75rem; padding: .1875rem .5rem; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--ink-soft); white-space: nowrap;
+}
+.kpi-chip--supports  { border-color: var(--accent); color: var(--accent); }
+.kpi-chip--conflicts { border-color: var(--danger); color: var(--danger); }
+.kpi-chip--context   { border-color: var(--warn);   color: var(--warn); }
+.kpi-chip--status.is-established { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+.kpi-chip--excluded  { border-style: dashed; color: var(--unknown); }
+.kpi-chip--verify-independently_confirmed { border-color: var(--accent); color: var(--accent); }
+.kpi-chip--verify-contested { border-color: var(--warn); color: var(--warn); }
+
+/* Drawer ------------------------------------------------------------------ */
+.kpi-drawer {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.25rem; margin: 1.5rem 0; background: var(--paper-soft);
+}
+.kpi-drawer__top { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.kpi-drawer__chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.kpi-drawer__close { background: none; border: 0; cursor: pointer; color: var(--ink-soft); font: inherit; }
+.kpi-drawer__title { margin: .75rem 0; font-size: 1.25rem; line-height: 1.3; }
+.kpi-drawer__caution {
+  border-left: 3px solid var(--warn); padding: .5rem .75rem;
+  background: var(--paper); font-size: .875rem;
+}
+.kpi-chain { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: .875rem; }
+.kpi-chain > li { padding-left: 1rem; border-left: 2px solid var(--line); }
+.kpi-chain h3 {
+  font-size: .75rem; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-soft); margin: 0 0 .25rem;
+}
+.kpi-chain p { margin: 0; font-size: .9375rem; }
+.kpi-chain__whose {
+  font-size: .625rem; border: 1px solid var(--line); border-radius: 999px;
+  padding: .0625rem .375rem; margin-left: .375rem; letter-spacing: .04em;
+}
+.kpi-provenance { margin-top: 1.25rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.kpi-provenance h3 { font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.kpi-provenance dl { display: grid; gap: .375rem; margin: .5rem 0; }
+.kpi-provenance dl > div { display: flex; gap: .75rem; font-size: .875rem; }
+.kpi-provenance dt { color: var(--ink-soft); min-width: 12rem; }
+.kpi-provenance dd { margin: 0; }
+.kpi-provenance__link { font-size: .875rem; }
+
+/* Khalifah ---------------------------------------------------------------- */
+.khalifah, .affected {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.125rem; background: var(--paper);
+}
+.affected { margin-top: 1rem; }
+.khalifah__head { display: flex; align-items: baseline; gap: .5rem; }
+.khalifah__head h2 { margin: 0; font-size: 1rem; letter-spacing: .02em; }
+.khalifah__sub { margin: 0; font-size: .75rem; color: var(--ink-soft); }
+.khalifah__lede { font-size: .9375rem; margin: .75rem 0; }
+.khalifah__verdict { display: grid; gap: .5rem; margin: 0 0 1rem; }
+.khalifah__verdict dt { font-size: .6875rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.khalifah__verdict dd { margin: 0; font-weight: 600; }
+.khalifah__actions { display: grid; gap: .375rem; }
+.khalifah__action {
+  text-align: left; background: none; border: 1px solid var(--line);
+  border-radius: var(--radius); padding: .5rem .625rem; cursor: pointer;
+  font: inherit; font-size: .875rem; color: inherit;
+}
+.khalifah__action.is-open { border-color: var(--accent); background: var(--accent-soft); }
+.khalifah__body { margin-top: .875rem; font-size: .875rem; }
+.khalifah__body ul { padding-left: 1.125rem; display: grid; gap: .375rem; }
+.khalifah__body h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+.khalifah__label { color: var(--warn); font-size: .8125rem; }
+
+/* Remediation -------------------------------------------------------------- */
+.remediation { margin-top: 2.5rem; }
+.remediation__note { color: var(--ink-soft); font-size: .9375rem; max-width: var(--measure); }
+.remediation__list { list-style: none; padding: 0; margin: 1.25rem 0 0; }
+.remediation__step { display: grid; grid-template-columns: 20px 1fr; gap: .875rem; padding-bottom: 1.25rem; }
+.remediation__marker {
+  width: 10px; height: 10px; border-radius: 50%; margin-top: .375rem;
+  background: var(--ink-soft); box-shadow: 0 0 0 3px var(--paper);
+  position: relative;
+}
+.remediation__step:not(:last-child) .remediation__marker::after {
+  content: ''; position: absolute; left: 50%; top: 14px; bottom: -22px;
+  width: 1px; background: var(--line); transform: translateX(-50%);
+}
+.remediation__step--finding .remediation__marker { background: var(--danger); }
+.remediation__step--residual_concern .remediation__marker { background: var(--warn); }
+.remediation__kind { font-size: .6875rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+.remediation__summary { margin: .1875rem 0; font-weight: 600; }
+.remediation__detail { margin: .25rem 0; color: var(--ink-soft); font-size: .875rem; }
+.remediation__meta { display: flex; gap: .625rem; align-items: center; margin: .375rem 0 0; }
+.remediation__date { font-size: .8125rem; color: var(--ink-soft); }
+
+/* Insufficient evidence — visually distinct from a negative finding (§28). */
+.kpi-empty {
+  border: 1px dashed var(--unknown); border-radius: var(--radius);
+  padding: 1.5rem; background: var(--paper-soft); max-width: var(--measure);
+}
+.kpi-empty h2 { margin-top: 0; color: var(--unknown); }
+
+/* Mobile: the graph becomes a vertical trace rather than an unreadable SVG. */
+@media (max-width: 900px) {
+  .kpi-investigation__body { grid-template-columns: 1fr; }
+  .kpi-graph__svg { display: none; }
+  .kpi-graph__semantic > li > h3 { margin-top: 1rem; }
+  .kpi-provenance dt { min-width: 9rem; }
+}
+
+.kpi-preview__lede { color: var(--ink-soft); max-width: var(--measure); }
+.kpi-preview__item {
+  display: flex; gap: .875rem; align-items: baseline; text-decoration: none;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: .875rem 1rem; color: inherit; margin-top: .75rem;
+}
+.kpi-preview__item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.kpi-preview__num { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.kpi-preview__title { font-weight: 600; margin-right: auto; }
+.kpi-preview__go { font-size: .875rem; color: var(--accent); }

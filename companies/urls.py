@@ -56,6 +56,8 @@ urlpatterns = [
     # page and moved here rather than deleted — "move to authenticated" has to
     # mean somewhere. See docs/product/COMPANY_PAGE_PANELS.md.
     path('<slug:slug>/internal/',                   views.company_detail_internal, name='detail_internal'),
+    # More specific than <slug>/ and therefore declared before it.
+    path('<slug:slug>/kpis/<int:kpi_id>/',          spa.company_kpi_spa_view,   name='kpi_investigation'),
     path('<slug:slug>/',                            spa.company_spa_view,       name='detail'),
     path('<slug:slug>/explain-match/',              discovery.explain_match_view, name='explain_match'),
     path('<slug:slug>/register-document-source/',   discovery.register_document_source_view, name='register_document_source'),
