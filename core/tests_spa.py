@@ -856,3 +856,69 @@ class ShellFaviconTests(TestCase):
         self.assertIsNotNone(
             finders.find('favicon.svg'),
             'The shell links /static/favicon.svg; staticfiles must find it.')
+
+
+class SpaTrailingSlashTests(TestCase):
+    """
+    A real page reached without its trailing slash.
+
+    Django registers the SPA routes WITH a trailing slash; React Router
+    declares them WITHOUT one. So the URL sitting in the address bar after
+    client-side navigation is the slashless form, and that is the form users
+    copy, share and bookmark, and the form a crawler follows.
+
+    APPEND_SLASH cannot fix it: CommonMiddleware only appends a slash when the
+    URLconf matched nothing, and `spa_catch_all` matches everything. Before
+    this was handled in the catch-all, every one of those URLs answered 404.
+    """
+
+    def test_every_spa_route_redirects_to_its_slashed_form(self):
+        for url in SPA_ROUTES:
+            if url == '/':
+                continue
+            slashless = url.rstrip('/')
+            with self.subTest(url=slashless):
+                response = self.client.get(slashless)
+                self.assertEqual(
+                    response.status_code, 301,
+                    f'{slashless} must redirect, not 404 — it is a real page.')
+                self.assertEqual(response['Location'], url)
+
+    def test_the_redirect_lands_on_the_shell(self):
+        """The redirect is only worth anything if its target actually serves."""
+        response = self.client.get('/companies', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="root"')
+        self.assertEqual(response.redirect_chain, [('/companies/', 301)])
+
+    def test_the_query_string_survives_the_redirect(self):
+        """
+        Campaign and filter parameters ride on shared links. Dropping them
+        here would silently break attribution for every slashless inbound URL.
+        """
+        response = self.client.get('/labs?from=email&utm_source=x')
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response['Location'], '/labs/?from=email&utm_source=x')
+
+    def test_an_unknown_path_still_gets_the_shell_with_404(self):
+        """
+        The fix must not turn the NotFound page into a redirect loop: a path
+        that is not a real page has no slashed form to go to.
+        """
+        response = self.client.get('/no-such-page')
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'id="root"', status_code=404)
+
+    def test_an_unknown_api_path_is_still_a_json_404(self):
+        """A missing API route must never become a redirect to itself."""
+        response = self.client.get('/api/v2/typo')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response['Content-Type'], 'application/json')
+
+    def test_a_post_is_not_redirected(self):
+        """
+        A 301 does not carry a body. Redirecting a POST would drop it in
+        silence, which is worse than the 404 the caller can actually see.
+        """
+        response = self.client.post('/companies')
+        self.assertEqual(response.status_code, 404)

@@ -41,7 +41,10 @@ from functools import lru_cache
 from pathlib import Path
 
 from django.conf import settings
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import (
+    Http404, HttpResponse, HttpResponsePermanentRedirect, JsonResponse,
+)
+from django.urls import Resolver404, resolve
 from django.utils.html import escape
 
 #: The built artefact. Committed to the repository — see vite.config.ts for why
@@ -458,14 +461,57 @@ def _is_server_owned(path: str) -> bool:
     return stripped.lower().endswith(SERVER_OWNED_SUFFIXES)
 
 
+def _redirect_target_with_slash(request, path: str) -> str | None:
+    """
+    The URL this path would have matched if it ended in a slash — or None.
+
+    WHY THIS IS NEEDED AT ALL
+    -------------------------
+    Django's APPEND_SLASH is a fallback: CommonMiddleware only appends a slash
+    when the URLconf matched *nothing*. `spa_catch_all` matches everything, so
+    the URLconf always matches and APPEND_SLASH never fires. The routes below
+    it are registered with trailing slashes (`path('companies/', ...)`) while
+    React Router declares them without (`path="/companies"`), so every canonical
+    SPA URL a user copies out of the address bar after client-side navigation
+    used to answer 404 on reload, on share and to every crawler.
+
+    So the behaviour APPEND_SLASH would have provided is restored here, at the
+    only point that can still see the request.
+
+    GET AND HEAD ONLY
+    -----------------
+    A redirect replays the request against the new URL, and a 301 does not
+    carry a body. Redirecting a POST would silently drop it; those fall through
+    to the 404 shell instead, which is the honest answer for a frontend path
+    that does not exist.
+    """
+    if request.method not in ('GET', 'HEAD'):
+        return None
+    stripped = path.strip('/')
+    if not stripped or path.endswith('/'):
+        return None
+    try:
+        match = resolve(f'/{stripped}/')
+    except Resolver404:
+        return None
+    # resolve() can only fail to raise by matching the catch-all itself, which
+    # would send the browser straight back here — a loop, not a fix.
+    if match.url_name == 'spa_catch_all':
+        return None
+    return request.get_full_path(force_append_slash=True)
+
+
 def spa_catch_all(request, path: str = '') -> HttpResponse:
     """
     Anything the URLconf did not match.
 
-    Registered last. Two outcomes and no third:
+    Registered last. Four outcomes and no fifth:
 
       unknown /api/ path → JSON 404, so a client parses an error, not HTML.
       server-owned path  → Http404, plain. Never the React shell.
+      real page, no slash→ 301 to the slashed URL. Restores what APPEND_SLASH
+                           would have done if this catch-all did not pre-empt
+                           it. GET and HEAD only.
       anything else      → the React shell with HTTP 404, so the browser shows
                            the NotFound page and a crawler reads the real
                            status.
@@ -480,6 +526,12 @@ def spa_catch_all(request, path: str = '') -> HttpResponse:
 
     if _is_server_owned(path):
         raise Http404(f'No server route matches /{path}')
+
+    # A real page reached without its trailing slash. See the helper for why
+    # Django's own APPEND_SLASH cannot do this once a catch-all is registered.
+    target = _redirect_target_with_slash(request, path)
+    if target is not None:
+        return HttpResponsePermanentRedirect(target)
 
     return render_shell(
         title='Page not found — EcoIQ',
