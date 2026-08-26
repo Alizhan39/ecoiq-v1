@@ -25,8 +25,6 @@ import traceback
 from datetime import date, datetime
 from decimal import Decimal
 
-import requests as http_requests
-
 import httpx
 
 from backend_intelligence_engine.services import http_client
