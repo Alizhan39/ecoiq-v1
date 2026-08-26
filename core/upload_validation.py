@@ -47,9 +47,13 @@ _TYPES = {
     '.docx': ('Word document',     (b'PK\x03\x04',), 'zip'),
     '.csv':  ('CSV file',          (), 'text'),
     '.txt':  ('Text file',         (), 'text'),
+    # .md is accepted because core/forms.py and audit/forms.py have always
+    # advertised it. Omitting it here would have silently broken a documented
+    # upload type — validation must not quietly narrow what the product offers.
+    '.md':   ('Markdown file',     (), 'text'),
 }
 
-DOCUMENT_EXTENSIONS = frozenset({'.pdf', '.csv', '.txt', '.xlsx', '.docx'})
+DOCUMENT_EXTENSIONS = frozenset({'.pdf', '.csv', '.txt', '.md', '.xlsx', '.docx'})
 IMAGE_EXTENSIONS = frozenset({'.png', '.jpg', '.jpeg', '.gif', '.webp'})
 EVIDENCE_EXTENSIONS = DOCUMENT_EXTENSIONS | IMAGE_EXTENSIONS
 
