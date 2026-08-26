@@ -18,7 +18,8 @@ layers that sit beside it.
 | If the task is about… | Use | Not |
 |---|---|---|
 | Tracing company → KPI → evidence → assessment → finding → remediation | `ecoiq-evidence-audit` | `ecoiq-impact-claims` (that's about the *claim*, not the chain) |
-| Where a feature sits in DETECT→…→REPEAT, or wiring a new stage | `ecoiq-khalifah-loop` | — |
+| Where a feature sits in DETECT→…→REPEAT, or wiring a new stage | `ecoiq-khalifah-loop` | `ecoiq-khalifah-engine` (that answers *what to do*, not *where code goes*) |
+| Answering a decision question across the loop, with every claim labelled | `ecoiq-khalifah-engine` | `ecoiq-khalifah-loop` (that's the architecture question) |
 | A regulation, jurisdiction, effective date, or compliance conclusion | `ecoiq-regulatory-review` | — |
 | A green / impact / emissions / savings claim shown to a user | `ecoiq-impact-claims` | — |
 | Authn/authz, tenancy, uploads, R2, Celery, Redis, LLM input, secrets | `ecoiq-security-review` | The generic `security-review` skill (it has no EcoIQ context) |
@@ -66,6 +67,14 @@ with its source URL, pinned version, licence, and what was adapted. Nothing
 was vendored wholesale; no installer, hook, or MCP server from any candidate
 repository was executed. Rationale per candidate is in
 [`docs/ECOIQ-ENGINEERING-OS.md`](../../../docs/ECOIQ-ENGINEERING-OS.md).
+
+Third-party **skills** installed under `.claude/skills/` (frontend-design,
+canvas-design, algorithmic-art, theme-factory, web-artifacts-builder,
+systematic-debugging, obsidian-markdown, context-optimization,
+context-compression) and the Excel MCP server are audited separately in
+[`docs/ai-tooling/THIRD_PARTY_SKILLS_AUDIT.md`](../../../docs/ai-tooling/THIRD_PARTY_SKILLS_AUDIT.md),
+with their restrictions in
+[`docs/ai-tooling/SECURITY_BOUNDARIES.md`](../../../docs/ai-tooling/SECURITY_BOUNDARIES.md).
 
 ## Validation
 
