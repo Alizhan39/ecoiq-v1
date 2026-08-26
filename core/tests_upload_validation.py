@@ -322,12 +322,16 @@ class ValidatorObjectTests(SimpleTestCase):
 
 
 class FieldWiringTests(SimpleTestCase):
-    """All four upload surfaces must actually carry the validator."""
+    """All four upload surfaces must actually carry the validator.
 
-    def test_every_evidence_field_is_validated_and_uses_evidence_storage(self):
+    Storage is deliberately NOT asserted here: core/storage.py already owns
+    that on main, via the upload_to callables and MEDIA_STORAGE_BACKEND. This
+    change adds validation only and does not touch storage selection.
+    """
+
+    def test_every_evidence_field_is_validated(self):
         from django.apps import apps
 
-        from core.storage import evidence_storage
         from core.upload_validation import UploadValidator as _UV
 
         targets = [
@@ -343,10 +347,21 @@ class FieldWiringTests(SimpleTestCase):
                     any(isinstance(v, _UV) for v in field.validators),
                     'no UploadValidator attached',
                 )
-                # Compare the callable, not the instance: the instance is
-                # memoised and other tests legitimately reset that cache, so
-                # identity of the object would be a flaky assertion.
-                self.assertIs(field._storage_callable, evidence_storage)
+
+    def test_storage_wiring_is_left_to_core_storage(self):
+        # Guard against a future change re-introducing a second storage
+        # mechanism alongside the one main already has.
+        from django.apps import apps
+
+        for app_label, model_name, field_name in [
+            ('core', 'Assessment', 'uploaded_file'),
+            ('audit', 'AuditSession', 'uploaded_file'),
+            ('league', 'Evidence', 'file'),
+        ]:
+            with self.subTest(field=field_name):
+                field = apps.get_model(app_label, model_name)._meta.get_field(field_name)
+                self.assertTrue(callable(field.upload_to))
+                self.assertTrue(field.upload_to.__module__.startswith('core.storage'))
 
     def test_leads_field_enforces_the_limits_its_help_text_promises(self):
         from django.apps import apps

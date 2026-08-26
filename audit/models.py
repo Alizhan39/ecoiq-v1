@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+
+from core.upload_validation import validate_evidence_upload
 from core.storage import upload_to_ai_analysis, upload_to_audit
 
 
@@ -70,7 +72,10 @@ class AuditSession(models.Model):
     annual_revenue  = models.BigIntegerField(null=True, blank=True, help_text='USD, optional — used to scale ROI estimates')
 
     status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    uploaded_file   = models.FileField(upload_to=upload_to_audit, blank=True, null=True)
+    uploaded_file   = models.FileField(
+        upload_to=upload_to_audit, blank=True, null=True,
+        validators=[validate_evidence_upload],
+    )
     extracted_text  = models.TextField(blank=True)
     notes           = models.TextField(blank=True)
 

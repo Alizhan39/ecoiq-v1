@@ -1,6 +1,8 @@
 import uuid
 from django.conf import settings
 from django.db import models
+
+from core.upload_validation import validate_evidence_upload
 from core.storage import upload_to_assessment
 
 
@@ -24,7 +26,14 @@ class Assessment(models.Model):
     updated_at   = models.DateTimeField(auto_now=True)
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     share_token    = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    uploaded_file = models.FileField(upload_to=upload_to_assessment, blank=True, null=True)
+    # Validators run on full_clean() — ModelForms, the admin and DRF
+    # serializers all call it — so new uploads are checked while existing
+    # stored files are left exactly as they are. Storage stays with
+    # core/storage.py's upload_to callable; nothing about it changes here.
+    uploaded_file = models.FileField(
+        upload_to=upload_to_assessment, blank=True, null=True,
+        validators=[validate_evidence_upload],
+    )
     extracted_text = models.TextField(blank=True)
     notes        = models.TextField(blank=True)
     # Phase 0 privacy fix — this model previously had no owner at all, so

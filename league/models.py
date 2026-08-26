@@ -10,6 +10,8 @@ Three core concerns:
 from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
+
+from core.upload_validation import validate_evidence_upload
 from core.storage import upload_to_evidence
 
 
@@ -449,7 +451,10 @@ class Evidence(models.Model):
 
     doc_type    = models.CharField(max_length=30, choices=EVIDENCE_TYPE_CHOICES)
     title       = models.CharField(max_length=255)
-    file        = models.FileField(upload_to=upload_to_evidence, null=True, blank=True)
+    file        = models.FileField(
+        upload_to=upload_to_evidence, null=True, blank=True,
+        validators=[validate_evidence_upload],
+    )
     url         = models.URLField(blank=True)
     date_issued = models.DateField(null=True, blank=True)
     issuer      = models.CharField(max_length=255, blank=True)

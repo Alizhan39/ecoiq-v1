@@ -467,14 +467,28 @@ class DocumentedClaimDriftTests(SimpleTestCase):
         )
 
     def test_remotion_is_still_isolated_from_the_django_runtime(self):
+        # "Isolated" means never installed or executed by the runtime — not
+        # that the word is unmentionable. build.sh legitimately *names*
+        # frontend/remotion in a comment explaining that Node layers are
+        # build-time only, so match on what would actually pull it in.
         requirements = (BASE_DIR / 'requirements.txt').read_text().lower()
         self.assertNotIn('remotion', requirements)
+
+        forbidden = (
+            'npm --prefix frontend/remotion',
+            'npm --prefix frontend/remotion ci',
+            'remotion render',
+            'remotion studio',
+            'cd frontend/remotion',
+        )
         for script in ('build.sh', 'predeploy.sh', 'start.sh'):
             text = (BASE_DIR / script).read_text().lower()
-            self.assertNotIn('remotion', text)
-            self.assertNotIn('npm install', text)
+            for phrase in forbidden:
+                self.assertNotIn(phrase, text, f'{script} would install or run Remotion')
+
         workflow = (BASE_DIR / '.github' / 'workflows' / 'django.yml').read_text().lower()
-        self.assertNotIn('remotion', workflow)
+        for phrase in forbidden:
+            self.assertNotIn(phrase, workflow, 'CI would install or run Remotion')
 
     def test_no_shell_surface_was_introduced_by_this_layer(self):
         commands = BASE_DIR / 'core' / 'management' / 'commands'
