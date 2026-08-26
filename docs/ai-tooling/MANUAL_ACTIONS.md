@@ -17,6 +17,9 @@ credential of any kind was created, requested or stored on this branch.
 | 4 | Decide on the red baseline test suite | An honest CI signal | **Yes, for the repo** |
 | 5 | Push and open the pull request | Review | Yes, if you want it reviewed |
 
+A non-destructive rollback procedure is at the end of this file. It never
+uses `git reset --hard`, which would destroy the working tree.
+
 ---
 
 ## 1. Restart Claude Code — not actually needed
@@ -133,6 +136,82 @@ introduced the dependency.
 
 Not doing this is a choice too — but with the suite red, no future change can
 be shown to be safe by running it.
+
+---
+
+## Rollback — non-destructive
+
+**Do not use `git reset --hard`, `git clean`, `git checkout --`, or
+`git restore` to undo this work.** Those commands discard uncommitted
+changes, and this repository is normally worked with a large dirty working
+tree (112 modified/untracked files at the time of writing). `git reset --hard`
+does **not** preserve a dirty working tree — it destroys it. Nothing about
+undoing these six commits requires touching the working tree at all.
+
+The pre-toolkit commit is `d8cb9bb`. The six toolkit commits are
+`d8cb9bb..chore/ecoiq-ai-toolkit`.
+
+### Option 1 — revert the commits on a separate branch (preferred)
+
+Leaves history, the current branch, and the working tree intact. Produces a
+reviewable revert commit rather than a silent erasure.
+
+```bash
+git switch -c revert/ecoiq-ai-toolkit chore/ecoiq-ai-toolkit
+git revert --no-commit d8cb9bb..chore/ecoiq-ai-toolkit
+git commit -m "revert: back out the AI toolkit branch"
+```
+
+`git revert --no-commit` stages only the inverse of those six commits. It
+does not stage, modify or discard any unrelated working-tree file. Verify
+before committing:
+
+```bash
+git diff --cached --name-status     # must list only the 23 toolkit files
+git status --short | wc -l          # unrelated changes still present
+```
+
+To abandon a revert midway: `git revert --quit` (keeps the working tree) —
+not `git revert --abort`, which resets.
+
+### Option 2 — inspect the pre-toolkit state in a separate worktree
+
+Touches nothing in the working copy. Best when the goal is to compare rather
+than to undo.
+
+```bash
+git worktree add --detach ../ecoiq-pre-toolkit d8cb9bb
+# ...inspect ../ecoiq-pre-toolkit ...
+git worktree remove ../ecoiq-pre-toolkit
+```
+
+### Option 3 — drop the commits but keep every file
+
+If the branch itself should go away while the *content* stays on disk as
+uncommitted changes:
+
+```bash
+git reset --soft d8cb9bb     # --soft only: moves HEAD, keeps index and tree
+```
+
+`--soft` is safe here where `--hard` is not: it changes no file on disk.
+
+### Undoing the non-git side effects
+
+All of these are gitignored and outside version control:
+
+```bash
+pkill -f "excel_mcp streamable-http"   # stop the server if running
+rm -rf .venv-mcp                       # generated venv, safe to delete
+```
+
+Third-party skills under `.claude/skills/` are gitignored payloads. Removing
+one is a plain directory delete; reinstall with
+`bash scripts/ai-tooling/install-third-party-skills.sh`. Do **not** delete
+`.claude/skills/ecoiq-*/` — those are tracked project source.
+
+`data/mcp/excel/` may contain spreadsheets a human put there deliberately.
+Inspect before deleting; nothing in this branch requires its removal.
 
 ---
 
