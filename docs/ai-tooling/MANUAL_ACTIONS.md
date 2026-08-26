@@ -14,7 +14,7 @@ credential of any kind was created, requested or stored on this branch.
 | 1 | Restart Claude Code | Nothing — already confirmed live | No |
 | 2 | Approve + start the Excel MCP server | Excel MCP tools | Only if you want them |
 | 3 | Install Obsidian | Graph view over `docs/knowledge/` | No — optional convenience |
-| 4 | Decide on the red baseline test suite | An honest CI signal | **Yes, for the repo** |
+| 4 | Nothing — baseline is green (6197 tests OK on main) | — | No |
 | 5 | Push and open the pull request | Review | Yes, if you want it reviewed |
 
 A non-destructive rollback procedure is at the end of this file. It never
@@ -106,36 +106,28 @@ folder you can delete.
 
 ---
 
-## 4. Decide what to do about the red baseline
+## 4. Nothing — the baseline is green
 
-**This is the one item with a real deadline, and it is not caused by this
-branch.**
+Recorded here because an earlier revision of this file claimed the opposite,
+and a stale "known-red suite" note is exactly the kind of thing that gets a
+real regression waved through.
 
-The suite on the current working tree fails: **3067 tests, 1114 failures,
-123 errors**, measured before any change on this branch. Separately, the
-committed tree at `d8cb9bb` **cannot run tests at all**:
+This branch is cut from `origin/main` (`23decfb`). Measured on that commit
+with the same interpreter and dependency set this branch uses:
 
-```
-NodeNotFoundError: Migration league.0007_alter_evidence_file dependencies
-reference nonexistent parent node ('league', '0006_company_day_change_pct_…')
-```
+| | Tests | Result | Skipped | Failures | Errors |
+|---|---|---|---|---|---|
+| `main` @ `23decfb` | 6197 | OK | 9 | 0 | 0 |
+| this branch | 6216 | OK | 9 | 0 | 0 |
 
-`league/migrations/0006_…` is **untracked** while `0007` is committed and
-depends on it. Anyone cloning this repository gets a tree that cannot
-migrate. CI on `main` is green only because `main` predates the commit that
-introduced the dependency.
+The +19 is `core/tests_ai_tooling.py`. No new failures, and nothing to triage.
 
-**Two things to decide:**
-
-1. **Commit `league/migrations/0006_…`** (and the other untracked migrations)
-   so the committed tree is self-consistent. This is a normal `git add`, not
-   a destructive change — but it is your call, since it is your in-flight
-   work, and I did not stage files that are not mine.
-2. **Triage the 1237 failing tests** before the `django.yml` "Run tests" step
-   can mean anything. That workflow is blocking on `main`.
-
-Not doing this is a choice too — but with the suite red, no future change can
-be shown to be safe by running it.
+The earlier "3067 tests, 1114 failures, 123 errors" figure came from a feature
+branch 358 commits behind main whose migration graph could not even be built —
+`league/0007_alter_evidence_file` depended on migrations that existed on main
+but not in that branch's history. That was a property of the obsolete branch,
+never of `main`. It does not apply here and should not be quoted as a
+current-main result.
 
 ---
 
@@ -144,12 +136,12 @@ be shown to be safe by running it.
 **Do not use `git reset --hard`, `git clean`, `git checkout --`, or
 `git restore` to undo this work.** Those commands discard uncommitted
 changes, and this repository is normally worked with a large dirty working
-tree (112 modified/untracked files at the time of writing). `git reset --hard`
+tree. `git reset --hard`
 does **not** preserve a dirty working tree — it destroys it. Nothing about
 undoing these six commits requires touching the working tree at all.
 
-The pre-toolkit commit is `d8cb9bb`. The six toolkit commits are
-`d8cb9bb..chore/ecoiq-ai-toolkit`.
+The branch point is `23decfb` (`origin/main`). The seven toolkit commits are
+`23decfb..chore/ecoiq-ai-toolkit-main`.
 
 ### Option 1 — revert the commits on a separate branch (preferred)
 
@@ -157,12 +149,12 @@ Leaves history, the current branch, and the working tree intact. Produces a
 reviewable revert commit rather than a silent erasure.
 
 ```bash
-git switch -c revert/ecoiq-ai-toolkit chore/ecoiq-ai-toolkit
-git revert --no-commit d8cb9bb..chore/ecoiq-ai-toolkit
+git switch -c revert/ecoiq-ai-toolkit-main chore/ecoiq-ai-toolkit-main
+git revert --no-commit 23decfb..chore/ecoiq-ai-toolkit-main
 git commit -m "revert: back out the AI toolkit branch"
 ```
 
-`git revert --no-commit` stages only the inverse of those six commits. It
+`git revert --no-commit` stages only the inverse of those seven commits. It
 does not stage, modify or discard any unrelated working-tree file. Verify
 before committing:
 
@@ -180,7 +172,7 @@ Touches nothing in the working copy. Best when the goal is to compare rather
 than to undo.
 
 ```bash
-git worktree add --detach ../ecoiq-pre-toolkit d8cb9bb
+git worktree add --detach ../ecoiq-pre-toolkit 23decfb
 # ...inspect ../ecoiq-pre-toolkit ...
 git worktree remove ../ecoiq-pre-toolkit
 ```
@@ -191,7 +183,7 @@ If the branch itself should go away while the *content* stays on disk as
 uncommitted changes:
 
 ```bash
-git reset --soft d8cb9bb     # --soft only: moves HEAD, keeps index and tree
+git reset --soft 23decfb     # --soft only: moves HEAD, keeps index and tree
 ```
 
 `--soft` is safe here where `--hard` is not: it changes no file on disk.
@@ -221,10 +213,10 @@ Not done autonomously: pushing publishes work to a shared remote, and the
 mission scope was to prepare the branch, not to publish it.
 
 ```bash
-git push -u origin chore/ecoiq-ai-toolkit
-gh pr create --base main --head chore/ecoiq-ai-toolkit \
+git push -u origin chore/ecoiq-ai-toolkit-main
+gh pr create --base main --head chore/ecoiq-ai-toolkit-main \
   --title "chore: audited AI toolkit — third-party skills, Excel MCP boundary, context policy"
 ```
 
-**Do not merge automatically.** Note that PR CI will run `manage.py test`,
-which is red for the pre-existing reasons in item 4.
+**Do not merge automatically.** PR CI runs Ruff, mypy, the frontend job and
+`manage.py test`; all were reproduced green locally before pushing.
