@@ -2,6 +2,8 @@ import os
 import random
 from django.db import models
 from django.utils import timezone
+
+from core.upload_validation import UploadValidator
 from core.storage import upload_to_sustainability_report
 
 
@@ -274,6 +276,9 @@ class ReviewRequest(models.Model):
         blank=True,
         null=True,
         help_text='PDF only · max 10 MB',
+        # help_text has always promised these two limits; nothing
+        # enforced either until now.
+        validators=[UploadValidator(allowed_extensions={'.pdf'}, max_bytes=10 * 1024 * 1024)],
     )
 
     # Security

@@ -25,8 +25,9 @@ import traceback
 from datetime import date, datetime
 from decimal import Decimal
 
-import requests as http_requests
+import httpx
 
+from backend_intelligence_engine.services import http_client
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -101,28 +102,41 @@ def _extract_html_text(content: bytes, max_chars: int = 8_000) -> str:
 
 
 def _fetch_url(url: str, timeout: int = 20) -> bytes | None:
-    """Download URL content with a browser-like UA. Returns raw bytes or None."""
+    """Download URL content with a browser-like UA. Returns raw bytes or None.
+
+    This URL arrives from `request.POST['url']` in ingestion/views.py, so it is
+    attacker-influenced even though the view is staff-only. It previously went
+    straight to `requests.get(..., allow_redirects=True)` with no destination
+    check at all: an allowed host answering `302 Location:
+    http://169.254.169.254/…` reached the cloud metadata service and the body
+    was stored as evidence.
+
+    It now goes through the shared client, which validates the initial URL and
+    every redirect hop against company_intelligence.services.url_safety, caps
+    the redirect chain, and caps the response at MAX_RESPONSE_BYTES. That is
+    the repository's existing SSRF authority — this function deliberately does
+    not re-derive those rules.
+
+    Behaviour note: the shared client's 5 MB cap replaces the 8 MB truncate
+    that used to happen here, and an oversized body is now a refusal rather
+    than silently-truncated bytes. One cap, one policy.
+    """
+    headers = {
+        'User-Agent': (
+            'Mozilla/5.0 (compatible; EcoIQ-Bot/1.0; '
+            '+https://ecoiq.uk/about)'
+        ),
+        'Accept': 'text/html,application/pdf,*/*;q=0.8',
+    }
     try:
-        headers = {
-            'User-Agent': (
-                'Mozilla/5.0 (compatible; EcoIQ-Bot/1.0; '
-                '+https://ecoiq.uk/about)'
-            ),
-            'Accept': 'text/html,application/pdf,*/*;q=0.8',
-        }
-        resp = http_requests.get(url, headers=headers, timeout=timeout,
-                                  allow_redirects=True, stream=True)
-        if resp.status_code != 200:
+        result = http_client.fetch(
+            url, headers=headers,
+            timeout=httpx.Timeout(connect=5.0, read=float(timeout), write=5.0, pool=5.0),
+        )
+        if not result.success or result.status_code != 200:
+            log.warning('Fetch rejected or failed for %s: %s', url, result.error)
             return None
-        # Guard against huge files (>8 MB)
-        chunks = []
-        total = 0
-        for chunk in resp.iter_content(chunk_size=65536):
-            chunks.append(chunk)
-            total += len(chunk)
-            if total > 8_000_000:
-                break
-        return b''.join(chunks)
+        return result.content
     except Exception as exc:
         log.warning('Fetch failed for %s: %s', url, exc)
         return None

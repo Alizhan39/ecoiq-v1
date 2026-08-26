@@ -14,7 +14,7 @@ Usage:
 """
 
 import json
-import requests
+from backend_intelligence_engine.services import http_client
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
@@ -93,16 +93,21 @@ class Command(BaseCommand):
         elif options.get('pdf_url'):
             self.stdout.write(f"  Fetching: {options['pdf_url'][:60]}…")
             try:
-                resp = requests.get(options['pdf_url'], timeout=30, stream=True)
-                resp.raise_for_status()
-                content_type = resp.headers.get('content-type', '')
+                # --pdf-url is operator-supplied. The shared client applies
+                # the repository's SSRF rules (company_intelligence.services.
+                # url_safety) to the URL and to every redirect hop.
+                result = http_client.fetch(options['pdf_url'])
+                if not result.success:
+                    raise RuntimeError(result.error or 'fetch failed')
+                resp = result
+                content_type = result.headers.get('Content-Type', '') or result.headers.get('content-type', '')
 
                 if 'pdf' in content_type:
                     # Try pypdf if available
                     try:
                         from pypdf import PdfReader
                         from io import BytesIO
-                        reader = PdfReader(BytesIO(resp.content))
+                        reader = PdfReader(BytesIO(result.content))
                         pages = []
                         for page in reader.pages[:8]:  # first 8 pages
                             pages.append(page.extract_text() or '')
@@ -110,10 +115,10 @@ class Command(BaseCommand):
                         self.stdout.write(f'  PDF parsed: {len(source_text)} chars from {len(pages)} pages')
                     except ImportError:
                         # Fall back to raw bytes (may contain garbage for PDFs)
-                        source_text = resp.text[:3000]
+                        source_text = result.content.decode('utf-8', 'replace')[:3000]
                         self.stdout.write('  pypdf not available — using raw text')
                 else:
-                    source_text = resp.text[:4000]
+                    source_text = result.content.decode('utf-8', 'replace')[:4000]
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f'  Could not fetch PDF: {e}'))
                 source_text = ''

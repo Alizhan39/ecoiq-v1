@@ -1,5 +1,17 @@
 # Project-specific
-.claude/
+# `.claude/` stays ignored by default (CLAUDE.md rule 14: it holds
+# settings.local.json, worktrees, and machine-local vendored third-party
+# skills — none of which belong in git). The EcoIQ Engineering OS is the one
+# deliberate exception: its skills are project source, reviewed in pull
+# requests and validated in CI by `manage.py validate_skills`, so the
+# `ecoiq-*` skill directories are re-included below. Git cannot re-include a
+# path whose parent directory is excluded, which is why this is written as
+# `dir/*` plus a negation at each level rather than one `!` line. Same
+# precedent as the `!static/dist/` re-inclusion at the bottom of this file.
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/ecoiq-*/
 media/
 staticfiles/
 *.pdf
