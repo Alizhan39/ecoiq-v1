@@ -30,46 +30,56 @@ weak spots. Do not re-derive the whole model each time.
   no allowlist (`.github/workflows/secret-scan.yml`). A new `.gitleaks.toml`
   entry must be narrow and individually justified.
 
-## The four known weak spots — check these on every relevant change
+## The known weak spots — check these on every relevant change
 
-### 1. SSRF in the ingestion fetcher (open, staff-gated)
-[`ingestion/pipeline.py:100`](../../../ingestion/pipeline.py) `_fetch_url()`
-calls `requests.get(url, allow_redirects=True)` with **no scheme allowlist
-and no private/loopback/link-local IP check**. The URL is user-supplied via
-`request.POST['url']` at
-[`ingestion/views.py:35`](../../../ingestion/views.py).
+### 1. Outbound fetching has one authority
+[`company_intelligence/services/url_safety.py`](../../../company_intelligence/services/url_safety.py)
+is the single URL validator: scheme and port allowlists, hostname denylist,
+credentials refused, and every resolved address checked (including
+100.64.0.0/10, which Python reports as public but holds Alibaba's metadata
+endpoint). Crucially it separates `public_reason` from loggable `detail`, so a
+rejection echoed back to a submitter cannot be used as an internal port
+scanner.
 
-Mitigation today is only `@staff_member_required`. Reachable targets include
-`http://127.0.0.1:8731/`, RFC1918 ranges, and cloud metadata endpoints, and
-`allow_redirects=True` means an allowed host can redirect into them.
+[`backend_intelligence_engine/services/http_client.py`](../../../backend_intelligence_engine/services/http_client.py)
+`fetch()` applies it to the initial URL **and every redirect hop**, caps the
+chain, and caps the body. Every fetch of an externally supplied URL goes
+through `fetch()` — `ingestion/pipeline.py`, `intelligence/compute.py` and
+`companies/.../extract_pdf_kpis.py` all delegate to it.
 
-**If you touch this path**: add a scheme allowlist (`http`/`https` only),
-resolve the host and reject private/loopback/link-local/multicast addresses,
-and re-check after each redirect. Do not widen who can submit a URL until
-that exists.
+**Do not write a second validator.** `good_agents/services/safe_http.py` keeps
+its own per-adapter host allowlist on purpose — that is a narrower trust
+decision, not a competing denylist.
 
-### 2. Unvalidated file uploads
-`FileField`s at `core/models.py:26`, `audit/models.py:72`,
-`league/models.py:420`, `leads/models.py:271` have **no
-`FileExtensionValidator`, no size cap, and no content-type check**. Uploaded
-files are parsed downstream (`pypdf`, WeasyPrint). Adding a new upload field
-without validation is a finding.
+Residual risk: DNS rebinding. Validation happens at connection time on every
+hop, but neither requests nor httpx exposes a hook to pin the socket to an
+already-validated address.
 
-### 3. Media is on local disk, not object storage
-`MEDIA_ROOT = BASE_DIR / 'media'` and there is **no `STORAGES`/
-`DEFAULT_FILE_STORAGE` override, no `boto3`, no `django-storages`** in
-`requirements.txt`. Cloudflare R2 is described in project docs but is not
-configured in this repository. On Render's ephemeral filesystem this means
-uploaded evidence does not survive a redeploy. Never describe R2 signed URLs
-as an implemented control, and never assume an uploaded file will still be
-there later.
+### 2. Uploads go through `core/upload_validation.py`
+The four user-facing upload fields (`core.Assessment.uploaded_file`,
+`audit.AuditSession.uploaded_file`, `league.Evidence.file`,
+`leads.ReviewRequest.sustainability_report`) carry an `UploadValidator`: it
+allowlists extensions, confirms type by **inspecting leading bytes**, refuses
+extension/content mismatches and double extensions, sanitises filenames
+against traversal under both separator conventions, rejects executables and
+scripts, refuses active content in text files, inspects xlsx/docx ZIP members
+for traversal and compression bombs, and caps image megapixels.
+
+Validators run on `full_clean()` — ModelForms, the admin and DRF serializers
+call it; a bare `.save()` does not. Existing stored files are untouched.
+**A new upload field without a validator is a finding.**
+
+Two fields are deliberately not validated: `audit.AIAnalysisJob.pdf_file` and
+`companies…thumbnail` are written by EcoIQ, not uploaded by a user.
+
+### 3. Storage belongs to `core/storage.py`
+Object storage, key sanitisation and presigned URLs are already solved there
+via `MEDIA_STORAGE_BACKEND` and the `upload_to_*` callables. **Do not add a
+second storage mechanism**, a per-field `storage=`, or a parallel set of
+environment variables — a test in `core/tests_upload_validation.py` asserts
+the upload fields still resolve their path through `core.storage`.
 
 ### 4. Email is SMTP with a password, not Resend
-`EMAIL_BACKEND`/`EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD` —
-`ecoiq/settings.py` ~line 568. Resend is not integrated. Treat
-`EMAIL_HOST_PASSWORD` as a live credential: never log it, never echo it,
-never place it in a template context.
-
 ## Checklist by area
 
 - **Authz**: every new API view declares a permission class; staff-only views

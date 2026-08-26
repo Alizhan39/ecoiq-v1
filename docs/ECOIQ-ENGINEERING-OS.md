@@ -123,21 +123,22 @@ Discovered while building; none introduced by it.
   `LANGUAGES`.
 
 ### Security
-- **SSRF, staff-gated, open.** `ingestion/pipeline.py:100` `_fetch_url()` calls
-  `requests.get(url, allow_redirects=True)` with no scheme allowlist and no
-  private/loopback/link-local check, on a URL supplied via
-  `request.POST['url']` at `ingestion/views.py:35`. Only
-  `@staff_member_required` stands in front of it. Reachable: `127.0.0.1`,
-  RFC1918, cloud metadata — and redirects are followed. Detail and the fix
-  shape are in `ecoiq-security-review`.
-- **No upload validation** on `FileField`s at `core/models.py:26`,
-  `audit/models.py:72`, `league/models.py:420`, `leads/models.py:271` — no
-  extension validator, size cap, or content-type check, and the files are
-  parsed downstream by `pypdf`/WeasyPrint.
-- Strong existing controls, deliberately left alone: no shell surface,
-  server-assembled system prompt unreachable from user input, structurally
-  free-only model routing, Gitleaks on every push and PR, full production
-  hardening.
+Findings from the original audit, reassessed against current `main`:
+- **SSRF** — `backend_intelligence_engine/services/http_client.py` and
+  `company_intelligence/services/url_safety.py` already solved this on main.
+  Three call sites still bypassed them (`ingestion/pipeline.py`,
+  `intelligence/compute.py`, `companies/.../extract_pdf_kpis.py`); this branch
+  routes all three through the existing guarded client.
+- **No upload validation** on six `FileField`s whose files are parsed by
+  `pypdf`/WeasyPrint. **Fixed** by `core/upload_validation.py` on the four
+  user-facing surfaces. `leads.ReviewRequest.sustainability_report` promised
+  "PDF only · max 10 MB" with nothing enforcing it.
+- **Evidence storage** — already solved on main by `core/storage.py`
+  (`MEDIA_STORAGE_BACKEND`, key sanitisation, presigned URLs). This branch
+  adds nothing there and deliberately does not duplicate it.
+- Strong existing controls, left alone: no shell surface, server-assembled
+  system prompt unreachable from user input, structurally free-only model
+  routing, Gitleaks on every push and PR, full production hardening.
 
 ### SEO
 - **Every page's `og:image` is a 404.** `templates/base.html:22` and
