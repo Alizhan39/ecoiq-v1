@@ -195,7 +195,7 @@ PRINCIPLES = [
     },
     {
         'id': 18,
-        'title': 'Stewardship of Trust & Sacred Duty',
+        'title': 'Trust, Accountability & Duty of Care',
         'category': 'governance',
         'tagline': 'Is custodianship of assets and relationships treated as a genuine duty?',
         'question': 'Do fiduciaries act as true stewards — or primarily as extractors?',
@@ -321,7 +321,7 @@ PRINCIPLES = [
     },
     {
         'id': 32,
-        'title': 'Sacred Respect & Dignity at Work',
+        'title': 'Respect & Dignity at Work',
         'category': 'social',
         'tagline': 'Is workplace dignity protected as a non-negotiable standard?',
         'question': 'Are all workers — regardless of level, location or contract type — treated with full dignity?',

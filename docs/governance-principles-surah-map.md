@@ -34,7 +34,7 @@ for the full list of approved and prohibited language.
 | 15 | Al-Hijr | الحجر | Stone & Immovable Standards | governance |
 | 16 | An-Nahl | النحل | Bees & Sustainable Production Systems | earth |
 | 17 | Al-Isra | الإسراء | Night, Cycles & Temporal Accountability | longterm |
-| 18 | Al-Kahf | الكهف | Stewardship of Trust & Sacred Duty | governance |
+| 18 | Al-Kahf | الكهف | Trust, Accountability & Duty of Care | governance |
 | 19 | Maryam | مريم | Visible Consequences & Accountability Culture | justice |
 | 20 | Ta-Ha | طه | Prophetic Leadership & Transformational Vision | governance |
 | 21 | Al-Anbiya | الأنبياء | Social Proof & Peer Accountability | community |
@@ -48,7 +48,7 @@ for the full list of approved and prohibited language.
 | 29 | Al-'Ankabut | العنكبوت | Spider's Web & Systemic Fragility Mapping | risk |
 | 30 | Ar-Rum | الروم | Romans & Civilisational Resilience | risk |
 | 31 | Luqman | لقمان | Mentorship & Talent Development | human |
-| 32 | As-Sajdah | السجدة | Sacred Respect & Dignity at Work | social |
+| 32 | As-Sajdah | السجدة | Respect & Dignity at Work | social |
 | 33 | Al-Ahzab | الأحزاب | Confederates & Coalition Risk | risk |
 | 34 | Saba | سبأ | Illumination & Energy Transition | earth |
 | 35 | Fatir | فاطر | Origination of Value | economy |
