@@ -45,6 +45,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET
 
 from companies.models import CompanyProfile
+from companies.visibility import profile_for
 from company_intelligence.models import CompanyKPIAssessment
 from company_intelligence.services.kpi_engine import derive_status_from_evidence
 from company_intelligence.services.investigation_chain import investigation_chain
@@ -193,8 +194,13 @@ def _verdict(links) -> str:
 def company_kpi(request, slug: str, kpi_id: int):
     """One organisation against one principle. Anonymous, read-only."""
     principle = _principle(int(kpi_id))
-    profile = get_object_or_404(
-        CompanyProfile.objects.select_related('company'), company__slug=slug)
+    # Archived profiles answer 404 to the public and resolve for staff — see
+    # companies/visibility.py. Previously this had no status filter at all,
+    # so an archived organisation's evidence chain was served anonymously
+    # while the page built on it 404'd for everyone.
+    profile = profile_for(
+        slug, request.user,
+        queryset=CompanyProfile.objects.select_related('company'))
 
     assessment = (CompanyKPIAssessment.objects
                   .filter(company=profile, kpi_id=kpi_id)
