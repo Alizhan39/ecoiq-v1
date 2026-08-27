@@ -13,6 +13,7 @@ import type { Identity } from '@/types/session';
  */
 const LINKS = [
   { to: '/intelligence', label: 'Intelligence' },
+  { to: '/principles', label: 'Principles' },
   { to: '/projects', label: 'Projects' },
   { to: '/tours', label: 'Eco Tours' },
   { to: '/about', label: 'About' },
