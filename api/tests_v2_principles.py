@@ -456,3 +456,115 @@ class SacredSourceContainmentAcrossAll114Tests(TestCase):
             and re.search(rf'\b{re.escape(surah)}\b', raw)
         })
         self.assertEqual(leaked, [], f'Surah names served publicly: {leaked}')
+
+
+class SurahDerivedTitleTests(TestCase):
+    """
+    Public titles that carry their Surah name IN TRANSLATION.
+
+    WHY THIS IS SEPARATE FROM THE TRANSLITERATION GUARD
+    ---------------------------------------------------
+    SacredSourceContainmentAcrossAll114Tests catches transliterations —
+    'Luqman', 'Quraysh', 'Ya-Sin'. It cannot catch translations, because the
+    surah map has no translation column, and two of its assertions skip
+    ordinary English homographs ('Iron', 'Light', 'Bee') precisely so that
+    innocent prose does not trip them.
+
+    The effect was a blind spot: 48 of the 114 public titles were built on the
+    English translation of their Surah name, and nothing looked. Principle 57
+    is Al-Hadid, 'The Iron', and was titled 'Iron & Infrastructure
+    Responsibility'.
+
+    THE POSITION THIS ENCODES
+    -------------------------
+    Reviewed, and deliberately not "rename everything". A translated common
+    noun that reads as ordinary governance English — Iron, Consultation, The
+    Pen, Light — is allowed to stand. Thirteen titles that did NOT read that
+    way were changed, because 'The Disbelievers & Value Pluralism' and
+    'Hypocrites & Integrity Testing' are indefensible on a page shown to an
+    investment committee, quite apart from the governance boundary.
+
+    So this asserts an EXACT set rather than an empty one. The thirty-five
+    below are a reviewed decision. A new title that derives from a Surah
+    translation fails here and has to be looked at; one of these thirty-five
+    being renamed away also fails, which is the cheap way to keep the list
+    honest rather than letting it rot.
+    """
+
+    #: Reviewed 2026-08-27. Translated Surah names judged to read as ordinary
+    #: governance English. NOT a licence to add more — see the docstring.
+    REVIEWED_DERIVED_TITLES = {
+        13, 24, 25, 26, 27, 29, 30, 39, 42, 44, 49, 51,
+        53, 54, 56, 57, 61, 67, 68, 69, 88, 89, 90, 91,
+        92, 93, 95, 97, 99, 101, 103, 105, 107, 108, 110,
+    }
+
+    SEEDS = 'content/tazkiyah114/surah_seeds.json'
+
+    @classmethod
+    def _translations(cls):
+        """id -> English translation of the Surah name."""
+        import json
+        from pathlib import Path
+
+        from django.conf import settings
+
+        data = json.loads(
+            (Path(settings.BASE_DIR) / cls.SEEDS).read_text(encoding='utf-8'))
+        return {
+            int(s['surah_number']): s['surah_name_translation'].strip()
+            for s in data['surahs']
+            if s.get('surah_number') and s.get('surah_name_translation')
+        }
+
+    @classmethod
+    def _derived(cls):
+        import re
+
+        translations = cls._translations()
+        found = set()
+        for principle in PRINCIPLES:
+            translation = translations.get(principle['id'])
+            if not translation:
+                continue
+            # Singular, plural and article-stripped: 'The Ants' must match a
+            # title reading 'Ants & Collective Intelligence Systems'.
+            forms = {translation, translation.rstrip('s'), translation + 's',
+                     translation.replace('The ', '')}
+            for form in {f for f in forms if len(f) > 2}:
+                if re.search(rf'\b{re.escape(form)}\b', principle['title'], re.I):
+                    found.add(principle['id'])
+                    break
+        return found
+
+    def test_the_translation_source_is_readable(self):
+        """If the seed file moves, the guard below silently stops guarding."""
+        self.assertEqual(len(self._translations()), 114)
+
+    def test_derived_titles_match_the_reviewed_set(self):
+        derived = self._derived()
+        new = sorted(derived - self.REVIEWED_DERIVED_TITLES)
+        gone = sorted(self.REVIEWED_DERIVED_TITLES - derived)
+        by_id = {p['id']: p['title'] for p in PRINCIPLES}
+        self.assertEqual(
+            (new, gone), ([], []),
+            'Surah-derived public titles no longer match the reviewed set.\n'
+            f'  NEW (needs review): {[(i, by_id[i]) for i in new]}\n'
+            f'  NO LONGER DERIVED (drop from the list): {gone}')
+
+    def test_the_thirteen_renamed_titles_stay_renamed(self):
+        """
+        The specific names that were judged indefensible in a public ESG
+        product. Pinned by id so a well-meaning revert is loud.
+        """
+        by_id = {p['id']: p['title'] for p in PRINCIPLES}
+        for kpi_id, banned in [
+            (45, 'Kneeling'), (62, 'Friday'), (63, 'Hypocrites'),
+            (65, 'Divorce'), (66, 'Prohibition'), (71, 'Noah'),
+            (75, 'Resurrection'), (78, 'Great News'), (82, 'Cleaving'),
+            (87, 'The Most High'), (96, 'Clot'), (109, 'Disbelievers'),
+            (111, 'Palm Fibre'),
+        ]:
+            self.assertNotIn(
+                banned.lower(), by_id[kpi_id].lower(),
+                f'principle #{kpi_id} is titled {by_id[kpi_id]!r} again')
