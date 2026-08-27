@@ -16,12 +16,31 @@ import { CONFIDENCE_LABEL, isEstablishedFinding } from '@/types/kpi';
  * "Challenge this conclusion" (§14) is the panel's most important control. A
  * system that states what would falsify it is auditable; one that only asserts
  * is not.
+ *
+ * EVERY SENTENCE COMES FROM THIS PRINCIPLE
+ * ----------------------------------------
+ * The falsification criteria and the strengthening list were once written for
+ * principle #114 and rendered for whatever principle was open. That was
+ * invisible while #114 was the only one the product linked to; once the matrix
+ * made all 114 reachable, Walmart against "Time Risk & Transition Urgency" was
+ * being advised to "keep security warnings proportionate to actual risk" —
+ * App Store guidance, on a principle about the pace of transition.
+ *
+ * So nothing here is written per principle any more. The indicators come from
+ * `stewardship_principle.metrics`, which is the canonical registry's own
+ * statement of what evidence against this principle consists of, and the rest
+ * is derived from counts and evidence fields in the payload. A sentence this
+ * panel cannot ground in the principle it is describing is one it does not
+ * say.
  */
 export function KhalifahPanel({ inv }: { inv: KpiInvestigation }) {
   const [open, setOpen] = useState<'why' | 'challenge' | 'improve' | 'audit' | null>('why');
   const { counts, assessment } = inv;
   const established = inv.evidence.filter(isEstablishedFinding)
     .filter((e) => e.counts_toward_assessment);
+  // The canonical registry's own statement of what evidence against THIS
+  // principle consists of. Never a list written for a different one.
+  const indicators = inv.stewardship_principle.metrics;
 
   return (
     <section className="khalifah" aria-labelledby="khalifah-heading">
@@ -47,7 +66,7 @@ export function KhalifahPanel({ inv }: { inv: KpiInvestigation }) {
         {([
           ['why', 'Why this assessment?'],
           ['challenge', 'Challenge this conclusion'],
-          ['improve', 'What would improve this?'],
+          ['improve', 'What would strengthen this?'],
           ['audit', 'How was this produced?'],
         ] as const).map(([key, label]) => (
           <button
@@ -94,14 +113,25 @@ export function KhalifahPanel({ inv }: { inv: KpiInvestigation }) {
               <li>A regulator concludes proceedings either way, replacing
                   provisional material with a settled finding.</li>
             )}
-            <li>
-              Independent measurement shows alternatives are presented neutrally,
-              rather than merely being permitted.
-            </li>
-            <li>
-              Evidence currently excluded from the assessment is reviewed and
-              confirmed, changing the balance of what counts.
-            </li>
+            {indicators[0] ? (
+              <li>
+                Independent measurement of {indicators[0]} contradicts what the
+                current evidence shows.
+              </li>
+            ) : null}
+            {counts.excluded_from_assessment > 0 ? (
+              <li>
+                The {counts.excluded_from_assessment} item
+                {counts.excluded_from_assessment === 1 ? '' : 's'} currently
+                excluded {counts.excluded_from_assessment === 1 ? 'is' : 'are'}
+                {' '}reviewed and confirmed, changing the balance of what counts.
+              </li>
+            ) : (
+              <li>
+                Evidence not yet linked to this principle is found and
+                confirmed, changing the balance of what counts.
+              </li>
+            )}
           </ul>
         </div>
       ) : null}
@@ -109,15 +139,35 @@ export function KhalifahPanel({ inv }: { inv: KpiInvestigation }) {
       {open === 'improve' ? (
         <div className="khalifah__body">
           <p className="khalifah__label">
-            Recommendations — not findings, and not evidence of intent.
+            What evidence would make this assessment firmer — not advice to the
+            organisation, and not a finding about it.
           </p>
-          <ul>
-            <li>Present alternatives with equivalent prominence to the default path.</li>
-            <li>Keep security warnings proportionate to actual risk, so caution does
-                not function as friction.</li>
-            <li>Publish switching-friction measurements openly enough to be checked.</li>
-            <li>Obtain independent confirmation that remediation achieved its aim.</li>
-          </ul>
+          {indicators.length > 0 ? (
+            <>
+              <p>
+                EcoIQ assesses this principle against the following indicators.
+                Evidence bearing on any of them, from a source that can be
+                checked, would strengthen what can be concluded here.
+              </p>
+              <ul>
+                {indicators.map((indicator) => <li key={indicator}>{indicator}</li>)}
+              </ul>
+            </>
+          ) : (
+            <p>
+              The registry records no measurable indicators for this principle,
+              so there is nothing specific to name here. That is a gap in the
+              framework rather than in this organisation&rsquo;s disclosure.
+            </p>
+          )}
+          {counts.confirmed > 0 && counts.supports > 0 && counts.conflicts === 0 ? (
+            <p>
+              Nothing currently conflicts. A conclusion resting only on evidence
+              that agrees is weaker than one that survived disagreement, so
+              evidence pointing the other way would firm this up rather than
+              undermine it.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
