@@ -1,6 +1,7 @@
 import { BrowserRouter } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Nav } from './Nav';
+import { CommandPalette } from '@/features/search/CommandPalette';
 import { AppRoutes } from './routes';
 
 export function App() {
@@ -8,6 +9,9 @@ export function App() {
     <BrowserRouter>
       <a className="skip-link" href="#main">Skip to content</a>
       <Nav />
+      {/* Inside the router: it navigates. Rendered above <main> so the
+          dialog is not a descendant of the content it covers. */}
+      <CommandPalette />
       <main id="main" className="main">
         <ErrorBoundary>
           <AppRoutes />
