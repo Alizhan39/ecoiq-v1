@@ -12,6 +12,10 @@ requires an explicit, named human action; there is no code path that moves
 a link to 'confirmed' without a reviewer argument recording who did it.
 """
 from company_intelligence.services import evidence_quality, kpi_engine
+from company_intelligence.services.review_recommendation import (
+    recommendation_for_link,
+)
+from company_intelligence.services.source_provenance import provenance_for_memory
 from company_intelligence.services.evidence_quality import _harvester_evidence_for_memory
 from core.esg_principles_data import PRINCIPLES
 
@@ -268,7 +272,15 @@ def pending_review_queue(criteria=None):
             'company': link.assessment.company,
             'kpi_id': link.assessment.kpi_id,
             'kpi_title': principle.get('title', f'KPI #{link.assessment.kpi_id}'),
+            # The question is what the reviewer is actually deciding against; a
+            # title alone is a category label.
+            'kpi_question': principle.get('question', ''),
             'kpi_category': principle.get('category', ''),
+            # Real source metadata, resolved through the harvester lineage —
+            # never `source_reference`, which is the idempotency key.
+            'provenance': provenance_for_memory(link.evidence),
+            # Non-binding, and never a valence. See review_recommendation.
+            'recommendation': recommendation_for_link(link),
             'source_tier': tier,
             'evidence_quality': quality,
             'evidence_freshness': evidence_freshness_info(link),
