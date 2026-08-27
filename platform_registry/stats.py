@@ -111,6 +111,57 @@ def _country_counter() -> Counter:
                    'DISTINCT league_company.country, excluding blank')
 
 
+def _investigation_counters() -> list:
+    """
+    The INVESTIGATION evidence layer: EvidenceMemory records and the KPI links
+    a reviewer works through.
+
+    SEPARATE FROM THE COUNTERS BELOW, ON PURPOSE
+    --------------------------------------------
+    `_evidence_counters` measures CompanyMetricProvenance — the sixteen material
+    inputs behind the composite score. This measures a different system
+    entirely: documents harvested against the 114 principles.
+
+    The first real production ingestion made the difference visible and
+    confusing at once. Eleven real evidence records existed while
+    `companies_with_evidence` still read 0, and both were true — of different
+    things. Adding them together would produce a number describing neither, so
+    they are counted apart and each says which system it belongs to.
+    """
+    from company_intelligence.models import CompanyKPIEvidenceLink
+    from evidence_memory.models import EvidenceMemory
+
+    real = EvidenceMemory.objects.filter(is_demo=False)
+    links = CompanyKPIEvidenceLink.objects.filter(evidence__is_demo=False)
+
+    return [
+        Counter('investigation_evidence_records',
+                'Evidence records held for investigations',
+                real.count(),
+                'COUNT(EvidenceMemory WHERE NOT is_demo) — the investigation '
+                'layer, not the composite-score provenance below',
+                is_proof=True),
+        Counter('investigation_evidence_awaiting_review',
+                'Evidence awaiting human review',
+                links.filter(review_state='proposed').count(),
+                "Non-demo CompanyKPIEvidenceLink rows in review_state "
+                "'proposed'. Recorded and visible; counts toward no verdict",
+                is_proof=True),
+        Counter('investigation_evidence_confirmed',
+                'Evidence confirmed by a reviewer',
+                links.filter(review_state='confirmed').count(),
+                "Non-demo CompanyKPIEvidenceLink rows in review_state "
+                "'confirmed' — the only state that reaches a verdict",
+                is_proof=True),
+        Counter('organisations_under_investigation',
+                'Organisations with evidence on file',
+                real.exclude(company=None).values('company').distinct().count(),
+                'DISTINCT company over non-demo EvidenceMemory rows. Not the '
+                'same as an assessed or published organisation',
+                is_proof=True),
+    ]
+
+
 def _evidence_counters() -> list:
     from companies.models import CompanyMetricProvenance
 
@@ -120,8 +171,10 @@ def _evidence_counters() -> list:
         origin__in=('MEASURED', 'INFERRED', 'ESTIMATED')).count()
 
     return [
-        Counter('provenance_rows_current', 'Current provenance records', rows,
-                'COUNT(CompanyMetricProvenance WHERE is_current)'),
+        Counter('provenance_rows_current',
+                'Score provenance records (composite-score inputs)', rows,
+                'COUNT(CompanyMetricProvenance WHERE is_current) — the '
+                'composite-score input layer, not investigation evidence'),
         Counter('evidenced_metrics', 'Metrics backed by evidenced provenance',
                 evidenced,
                 "Current provenance rows whose origin is MEASURED, INFERRED "
@@ -189,6 +242,7 @@ def platform_stats() -> dict:
     """
     counters = (_company_counters()
                 + [_country_counter()]
+                + _investigation_counters()
                 + _evidence_counters()
                 + _project_counters()
                 + _module_counters())

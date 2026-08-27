@@ -47,6 +47,7 @@ from django.views.decorators.http import require_GET
 from companies.models import CompanyProfile
 from company_intelligence.models import CompanyKPIAssessment
 from company_intelligence.services.kpi_engine import derive_status_from_evidence
+from company_intelligence.services.source_provenance import provenance_for_memory
 from core.esg_principles_data import PRINCIPLES
 
 #: Verdict vocabulary the UI renders. Mirrors KPI_STATUS_CHOICES, with the
@@ -87,14 +88,25 @@ def _evidence_payload(link) -> dict:
     One evidence item. Never includes the raw source text unless the record is
     a demo fixture: a third-party excerpt is a licensing question, and this
     endpoint answers anonymously.
+
+    `title` used to fall back to `source_reference`, which is the idempotency
+    key `create_memory_from_evidence()` writes — so the first real production
+    ingestion served an evidence item titled `harvester.Evidence:41`. The title
+    now comes from the source record, and is null when the source recorded
+    none. `record_reference` carries the key, labelled as the key.
     """
     evidence = link.evidence
+    provenance = provenance_for_memory(evidence)
     return {
         'id': evidence.pk,
-        'title': (evidence.source_reference or evidence.text_chunk[:120] or 'Untitled evidence'),
+        'title': provenance['title'],
+        'provenance': provenance,
         'relation': link.relationship,
         'legal_status': evidence.legal_status or 'unclassified',
         'legal_status_strength': evidence.LEGAL_STATUS_STRENGTH.get(evidence.legal_status, 0),
+        # Kept for callers that already read it. `provenance.authority` is the
+        # structured form, derived from source type via the canonical tier
+        # table rather than from how the text reads.
         'source_authority': evidence.source_authority or '',
         'source_url': evidence.source_url or '',
         'source_type': evidence.source_type,
