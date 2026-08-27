@@ -588,3 +588,16 @@
   font: inherit; font-size: .8rem; border: 1px solid var(--line);
   border-radius: 4px; padding: 0 .3rem;
 }
+
+/* ── "How it works" pipeline canvas ───────────────────────────────────────
+   Decoration behind the list, never instead of it. The canvas is aria-hidden
+   and every stage it draws is an <li>, so nothing is lost if it never paints. */
+.pipeline-wrap { position: relative; }
+.pipeline-canvas {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+}
+.pipeline-canvas canvas { display: block; width: 100%; height: 100%; }
+.pipeline-wrap .pipeline { position: relative; z-index: 1; }
+.pipeline__note {
+  color: var(--ink-soft); font-size: .9rem; max-width: var(--measure);
+}
