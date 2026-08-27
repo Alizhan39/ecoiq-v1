@@ -13,8 +13,8 @@ maintenance surface for no truthfulness gain.
 from django.urls import path
 
 from api import (
-    v2_assessment, v2_contact, v2_kpi, v2_platform, v2_projects, v2_session,
-    v2_views,
+    v2_assessment, v2_contact, v2_kpi, v2_platform, v2_principles, v2_projects,
+    v2_session, v2_views,
 )
 
 app_name = 'api_v2'
@@ -34,6 +34,9 @@ urlpatterns = [
     # not optional.
     path('contact/',               v2_contact.contact,   name='contact'),
     path('projects/',              v2_projects.projects, name='projects'),
+    # The 114 stewardship principles EcoIQ assesses against. A fact about the
+    # method, not about any organisation — so it takes no slug.
+    path('principles/',            v2_principles.principles, name='principles'),
     path('companies/',             v2_views.CompanyListV2View.as_view(), name='company_list'),
     path('companies/<slug:slug>/', v2_views.company_detail_v2, name='company_detail'),
     # The full organisation assessment. One gate, applied at the top: an
@@ -42,6 +45,10 @@ urlpatterns = [
     # One organisation against one of the 114 principles. Separate from
     # assessment/ on purpose: an investigation needs one KPI's full evidence
     # chain, a company page needs a summary of many.
+    # One organisation across all 114 — the matrix, and the way into an
+    # investigation. Registered before the single-KPI route it feeds.
+    path('companies/<slug:slug>/principles/', v2_principles.company_principles,
+         name='company_principles'),
     path('companies/<slug:slug>/kpis/<int:kpi_id>/', v2_kpi.company_kpi,
          name='company_kpi'),
     path('companies/<slug:slug>/assessment/', v2_assessment.company_assessment,
