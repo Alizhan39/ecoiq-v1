@@ -552,6 +552,51 @@ class SurahDerivedTitleTests(TestCase):
             f'  NEW (needs review): {[(i, by_id[i]) for i in new]}\n'
             f'  NO LONGER DERIVED (drop from the list): {gone}')
 
+    def test_no_public_title_uses_devotional_language(self):
+        """
+        Principle #18 was "Stewardship of Trust & Sacred Duty".
+
+        "Sacred" is neither Arabic nor a Surah name, so it passed both guards
+        above while still reading as devotional language on a page shown to an
+        investment committee. The words below are the ones that would carry
+        that register into a public title; the framework's own subject matter
+        does not need any of them to be stated accurately.
+
+        The internal mapping is untouched: docs/governance-principles-surah-map
+        still records #18 as Al-Kahf. This is a presentation-layer rule, not an
+        attempt to erase the architecture's origins.
+        """
+        devotional = ('sacred', 'divine', 'holy', 'worship', 'prayer',
+                      'scripture', 'revelation', 'blessed', 'sanctity')
+        offenders = [
+            (p['id'], p['title']) for p in PRINCIPLES
+            if any(word in p['title'].lower() for word in devotional)
+        ]
+        self.assertEqual(offenders, [],
+                         f'devotional language in public titles: {offenders}')
+
+    def test_principle_32_keeps_its_identity(self):
+        """
+        Found by the test above rather than by review: #32 was "Sacred Respect
+        & Dignity at Work". A pure redaction — the principle is entirely about
+        workplace dignity, so the surviving half was already its working name
+        and no replacement had to be invented. As-Sajdah stays in the internal
+        map.
+        """
+        matches = [p for p in PRINCIPLES if p['id'] == 32]
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]['title'], 'Respect & Dignity at Work')
+        self.assertIn('dignity', matches[0]['tagline'].lower())
+
+    def test_principle_18_keeps_its_identity(self):
+        """Retitled, not renumbered, and not duplicated."""
+        matches = [p for p in PRINCIPLES if p['id'] == 18]
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]['title'], 'Trust, Accountability & Duty of Care')
+        # The substance is unchanged — only the label moved.
+        self.assertEqual(matches[0]['category'], 'governance')
+        self.assertIn('custodianship', matches[0]['tagline'])
+
     def test_the_thirteen_renamed_titles_stay_renamed(self):
         """
         The specific names that were judged indefensible in a public ESG
