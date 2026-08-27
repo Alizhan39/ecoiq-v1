@@ -416,3 +416,35 @@
 .kpi-preview__num { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 .kpi-preview__title { font-weight: 600; margin-right: auto; }
 .kpi-preview__go { font-size: .875rem; color: var(--accent); }
+
+/* The doorway lists what has actually been investigated, so it needs a list,
+   a per-cell state and the two orthogonal flags the API reports beside a
+   state. State is carried in TEXT, never colour alone — a reader who cannot
+   distinguish hues must still be able to tell a conflict from a support. */
+.kpi-preview__list { list-style: none; padding: 0; margin: .75rem 0 0;
+  display: flex; flex-direction: column; gap: .5rem; }
+/* The item kept a margin-top from when it was a single link. Inside the
+   list, `gap` already spaces them and the two together double it.
+
+   It also gained a state and up to two flags, which crowd a long principle
+   title into a three-line column on a normal desktop width. Wrapping, plus a
+   title that may grow but not shrink below a readable measure, keeps the row
+   on one line where it fits and breaks cleanly where it does not. */
+.kpi-preview__list .kpi-preview__item {
+  margin-top: 0; flex-wrap: wrap; align-items: center; row-gap: .4rem;
+}
+.kpi-preview__list .kpi-preview__title { flex: 1 1 16rem; margin-right: 0; }
+.kpi-preview__list .kpi-preview__go { margin-left: auto; }
+.kpi-preview__coverage { color: var(--ink-soft); font-size: .9rem; margin: .5rem 0 0; }
+.kpi-preview__empty { color: var(--ink-soft); max-width: var(--measure);
+  margin: .75rem 0 0; }
+.kpi-preview__state {
+  font-size: .7rem; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-soft); white-space: nowrap;
+}
+.kpi-preview__flag {
+  font-size: .7rem; font-weight: 600; padding: .1rem .4rem; border-radius: 3px;
+  background: var(--danger-soft); color: var(--danger);
+  white-space: nowrap;
+}
+.kpi-preview__flag--muted { background: var(--paper-soft); color: var(--ink-soft); }
