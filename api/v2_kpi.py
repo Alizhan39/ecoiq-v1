@@ -47,6 +47,7 @@ from django.views.decorators.http import require_GET
 from companies.models import CompanyProfile
 from company_intelligence.models import CompanyKPIAssessment
 from company_intelligence.services.kpi_engine import derive_status_from_evidence
+from company_intelligence.services.investigation_chain import investigation_chain
 from company_intelligence.services.source_provenance import provenance_for_memory
 from core.esg_principles_data import PRINCIPLES
 
@@ -258,4 +259,8 @@ def company_kpi(request, slug: str, kpi_id: int):
         },
         'evidence': [_evidence_payload(l) for l in links],
         'remediation': remediation,
+        # The full chain from requirement to decision, every node carrying an
+        # explicit state. NOT_INVESTIGATED and NONE_FOUND are different claims
+        # and are never collapsed into an empty section.
+        'chain': investigation_chain(assessment, links),
     })
