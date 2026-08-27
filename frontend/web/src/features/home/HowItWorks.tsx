@@ -1,3 +1,5 @@
+import { PipelineCanvas } from './PipelineCanvas';
+
 /**
  * How EcoIQ works — the pipeline that actually runs.
  *
@@ -26,14 +28,27 @@ export function HowItWorks() {
     <section aria-labelledby="how">
       <h2 id="how">How it works</h2>
 
-      <ol className="pipeline">
-        {PIPELINE.map((stage) => (
-          <li key={stage.step}>
-            <strong>{stage.step}</strong>
-            <span>{stage.detail}</span>
-          </li>
-        ))}
-      </ol>
+      {/*
+        The list is the primary and the canvas is decoration behind it: every
+        stage drawn is an <li> here, so a screen reader, a crawler and anyone
+        with JavaScript off lose nothing. See PipelineCanvas for why the
+        drawing stops most of its particles short of Decision.
+      */}
+      <div className="pipeline-wrap">
+        <PipelineCanvas stages={PIPELINE.length} />
+        <ol className="pipeline">
+          {PIPELINE.map((stage) => (
+            <li key={stage.step}>
+              <strong>{stage.step}</strong>
+              <span>{stage.detail}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <p className="pipeline__note">
+        Most evidence does not carry a publishable conclusion. That is the
+        normal outcome, not a failure of the pipeline.
+      </p>
 
       <div className="direction">
         <h3>

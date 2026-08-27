@@ -1,1 +1,0 @@
-import{r as s}from"./index-2VpmC6-q.js";function i(a,n=[]){const[o,r]=s.useState({status:"loading"});return s.useEffect(()=>{const e=new AbortController;return r({status:"loading"}),a(e.signal).then(t=>r({status:"ready",data:t})).catch(t=>{e.signal.aborted||r({status:"error",error:t instanceof Error?t:new Error(String(t))})}),()=>e.abort()},n),o}export{i as u};
