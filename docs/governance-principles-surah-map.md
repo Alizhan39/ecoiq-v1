@@ -61,7 +61,7 @@ for the full list of approved and prohibited language.
 | 42 | Ash-Shura | الشورى | Consultation & Multi-Stakeholder Governance | community |
 | 43 | Az-Zukhruf | الزخرف | Luxury, Excess & Consumption Ethics | economy |
 | 44 | Ad-Dukhan | الدخان | Smoke & Transition Uncertainty | risk |
-| 45 | Al-Jathiyah | الجاثية | Kneeling & Equitable Access | social |
+| 45 | Al-Jathiyah | الجاثية | Equitable Access | social |
 | 46 | Al-Ahqaf | الأحقاف | Dunes & Patient, Long-Horizon Investment | longterm |
 | 47 | Muhammad | محمد | Victory & Just Outcomes | justice |
 | 48 | Al-Fath | الفتح | Conquest & Resource Extraction Ethics | earth |
@@ -78,32 +78,32 @@ for the full list of approved and prohibited language.
 | 59 | Al-Hashr | الحشر | Mobilisation & Urgent Action Culture | governance |
 | 60 | Al-Mumtahanah | الممتحنة | Testing & Proof of Commitment | governance |
 | 61 | As-Saf | الصف | Ranks & Ordered Accountability Structures | governance |
-| 62 | Al-Jumu'ah | الجمعة | Friday & Collective Commitment Rhythms | community |
-| 63 | Al-Munafiqun | المنافقون | Hypocrites & Integrity Testing | governance |
+| 62 | Al-Jumu'ah | الجمعة | Recurring Collective Accountability | community |
+| 63 | Al-Munafiqun | المنافقون | Integrity Testing | governance |
 | 64 | At-Taghabun | التغابن | Mutual Exchange & Fair Trade | economy |
-| 65 | At-Talaq | الطلاق | Divorce & Clean Separation Protocols | governance |
-| 66 | At-Tahrim | التحريم | Prohibition & Harm Exclusion Lists | justice |
+| 65 | At-Talaq | الطلاق | Exit & Separation Obligations | governance |
+| 66 | At-Tahrim | التحريم | Harm Exclusion & Enforcement | justice |
 | 67 | Al-Mulk | الملك | Dominion & Responsible Power Use | governance |
 | 68 | Al-Qalam | القلم | Pen & Documentation Standards | knowledge |
 | 69 | Al-Haqqah | الحاقة | Inevitable Reality & Absolute Materiality | risk |
 | 70 | Al-Ma'arij | المعارج | Ascending Pathways & Improvement Trajectories | longterm |
-| 71 | Nuh | نوح | Noah's Patience & Long-Term Persistence | longterm |
+| 71 | Nuh | نوح | Long-Term Persistence | longterm |
 | 72 | Al-Jinn | الجن | Hidden Knowledge & Latent Risk Detection | risk |
 | 73 | Al-Muzzammil | المزمل | Wrapped & Protected Core Assets | governance |
 | 74 | Al-Muddaththir | المدثر | Cloaked & Hidden Harm Detection | risk |
-| 75 | Al-Qiyamah | القيامة | Resurrection & Transformation Readiness | longterm |
+| 75 | Al-Qiyamah | القيامة | Transformation Readiness | longterm |
 | 76 | Al-Insan | الإنسان | Human Responsibility & Agency | human |
 | 77 | Al-Mursalat | المرسلات | Sent Signs & Leading Indicators | risk |
-| 78 | An-Naba | النبأ | Great News & Material Positive Impact | longterm |
+| 78 | An-Naba | النبأ | Material Positive Impact | longterm |
 | 79 | An-Nazi'at | النازعات | Extractors & Responsible Harvest Ethics | earth |
 | 80 | 'Abasa | عبس | Frowning & Blind Spots in Stakeholder Engagement | community |
 | 81 | At-Takwir | التكوير | Folding & Adaptive Governance | governance |
-| 82 | Al-Infitar | الانفطار | Cleaving & Separation of Powers | governance |
+| 82 | Al-Infitar | الانفطار | Separation of Powers | governance |
 | 83 | Al-Mutaffifin | المطففين | Fair Measurement & Weighing Standards | justice |
 | 84 | Al-Inshiqaq | الانشقاق | Rending & Irreversible Decision Protocols | risk |
 | 85 | Al-Buruj | البروج | The Constellations & System Mapping | knowledge |
 | 86 | At-Tariq | الطارق | The Night Visitor & Deep Due Diligence | knowledge |
-| 87 | Al-A'la | الأعلى | The Most High & Aspirational Standards | governance |
+| 87 | Al-A'la | الأعلى | Aspirational Standards | governance |
 | 88 | Al-Ghashiyah | الغاشية | The Overwhelming & Systemic Pressure Points | risk |
 | 89 | Al-Fajr | الفجر | Dawn & New Beginning Frameworks | longterm |
 | 90 | Al-Balad | البلد | The City & Urban System Responsibility | community |
@@ -112,7 +112,7 @@ for the full list of approved and prohibited language.
 | 93 | Ad-Duha | الضحى | The Morning Brightness & Positive Future Signal | longterm |
 | 94 | Ash-Sharh | الشرح | The Opening Up & Systemic Expansion of Opportunity | social |
 | 95 | At-Tin | التين | The Fig & Nutritive Value Creation | economy |
-| 96 | Al-'Alaq | العلق | The Clot & Origin of Value | economy |
+| 96 | Al-'Alaq | العلق | Recognition of Value Creators | economy |
 | 97 | Al-Qadr | القدر | Power & Legitimate Authority | governance |
 | 98 | Al-Bayyinah | البينة | The Proof & Evidence-Based Governance | knowledge |
 | 99 | Az-Zalzalah | الزلزلة | The Earthquake & Magnitude of Impact | risk |
@@ -125,9 +125,9 @@ for the full list of approved and prohibited language.
 | 106 | Quraysh | قريش | Anchor Community Obligations | community |
 | 107 | Al-Ma'un | الماعون | Small Kindnesses & Everyday Ethics | human |
 | 108 | Al-Kawthar | الكوثر | Abundance & Sufficiency Ethics | economy |
-| 109 | Al-Kafirun | الكافرون | The Disbelievers & Value Pluralism | governance |
+| 109 | Al-Kafirun | الكافرون | Value Pluralism | governance |
 | 110 | An-Nasr | النصر | The Help & Collective Recovery Mechanisms | community |
-| 111 | Al-Masad | المسد | Palm Fibre & Consequences of Harm | justice |
+| 111 | Al-Masad | المسد | Traceable Accountability for Harm | justice |
 | 112 | Al-Ikhlas | الإخلاص | Sincere Action & Undivided Commitment | governance |
 | 113 | Al-Falaq | الفلق | Dawn Breaking & Crisis Preparedness | risk |
 | 114 | An-Nas | الناس | Consumer Protection & Anti-Manipulation | social |
