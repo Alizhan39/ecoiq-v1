@@ -448,3 +448,102 @@
   white-space: nowrap;
 }
 .kpi-preview__flag--muted { background: var(--paper-soft); color: var(--ink-soft); }
+
+/* ── The 114 principles: registry, detail and matrix ──────────────────────
+   State is carried by text and glyph as well as colour. On this product
+   "insufficient evidence" and "concern" are opposite claims, so a reader who
+   cannot distinguish hues must still be able to tell them apart. */
+
+.chip {
+  font: inherit; font-size: .8rem; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: .3rem .75rem; background: var(--paper); color: var(--ink-soft);
+}
+.chip:hover { border-color: var(--accent); }
+.chip--on { background: var(--accent-soft); color: var(--accent);
+  border-color: var(--accent); font-weight: 600; }
+.chip__count { font-variant-numeric: tabular-nums; opacity: .75; }
+.filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 1.4rem; }
+
+.principles__count, .matrix__count {
+  font-size: .8rem; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.principles__list { list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: .4rem; }
+.principles__item {
+  display: flex; gap: .875rem; align-items: baseline; text-decoration: none;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: .75rem .9rem; color: inherit;
+}
+.principles__item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.principles__num { font-variant-numeric: tabular-nums; color: var(--ink-soft);
+  min-width: 2.75rem; }
+.principles__body { display: flex; flex-direction: column; gap: .15rem; flex: 1; }
+.principles__title { font-weight: 600; }
+.principles__question { font-size: .9rem; color: var(--ink-soft); }
+.principles__go { color: var(--accent); }
+
+.principle__eyebrow { font-size: .85rem; color: var(--ink-soft); }
+.principle__num { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.principle__tagline { font-size: 1.05rem; color: var(--ink-soft);
+  max-width: var(--measure); }
+.principle__question { font-size: 1.1rem; font-weight: 600;
+  max-width: var(--measure); }
+.principle__metrics { max-width: var(--measure); color: var(--ink-soft); }
+
+.matrix__lede, .matrix__pending, .matrix__empty {
+  max-width: var(--measure); color: var(--ink-soft);
+}
+.matrix__pending { font-size: .9rem; }
+.matrix__grid {
+  list-style: none; padding: 0; margin: 0; display: grid; gap: .3rem;
+  grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr));
+}
+.matrix__cell {
+  font: inherit; cursor: pointer; width: 100%; aspect-ratio: 1;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: .05rem;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--paper-soft); color: var(--ink-soft);
+}
+.matrix__cell:hover { border-color: var(--accent); }
+.matrix__cell[aria-pressed="true"] { outline: 2px solid var(--accent);
+  outline-offset: 1px; }
+.matrix__num { font-size: .7rem; font-variant-numeric: tabular-nums; }
+.matrix__glyph { font-size: .8rem; font-weight: 700; line-height: 1; }
+
+/* Colour is the SECOND channel. The glyph above and the accessible name
+   carry the same information without it. */
+.matrix__cell--strong_support,
+.matrix__cell--support { background: var(--accent-soft); color: var(--accent);
+  border-color: var(--accent); }
+.matrix__cell--mixed,
+.matrix__cell--mixed_material_conflict { background: var(--warn-soft);
+  color: var(--warn-strong); border-color: var(--warn); }
+.matrix__cell--conflict { background: var(--danger-soft); color: var(--danger);
+  border-color: var(--danger); }
+/* Two different absences, told apart without colour: dashed means "we looked
+   and the evidence did not carry a conclusion", dotted means "nobody has
+   looked". Collapsing them would report absence of work as absence of
+   evidence. */
+.matrix__cell--insufficient_evidence { border-style: dashed; }
+.matrix__cell--not_assessed { background: var(--paper); border-style: dotted; }
+/* NOT opacity. Dimming the whole cell took the number to 2.2:1 against its own
+   ground — under the 4.5:1 AA floor, on the state 113 of 114 cells are in for
+   most organisations. A flatter background recedes just as well and leaves the
+   text at 5:1. */
+
+.matrix__detail {
+  margin-top: 1.2rem; border: 1px solid var(--line-firm, var(--line));
+  border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--paper-soft);
+}
+.matrix__detail-eyebrow { font-size: .75rem; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+.matrix__detail-question { color: var(--ink-soft); max-width: var(--measure); }
+.matrix__detail-state { display: flex; flex-wrap: wrap; gap: .4rem; }
+.matrix__detail-empty { color: var(--ink-soft); max-width: var(--measure); }
+.matrix__counts { display: flex; flex-wrap: wrap; gap: 1.2rem; margin: .8rem 0; }
+.matrix__counts dt { font-size: .72rem; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--ink-soft); }
+.matrix__counts dd { margin: .1rem 0 0; font-weight: 700;
+  font-variant-numeric: tabular-nums; }
