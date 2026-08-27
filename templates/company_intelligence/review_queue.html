@@ -85,9 +85,41 @@
             </div>
             <span class="rq-rel-badge rq-rel-{{ row.link.relationship }}">{{ row.link.get_relationship_display }}</span>
           </div>
+          {% comment %} The question is what the reviewer is deciding against. A title
+             alone is a category label. {% endcomment %}
+          <p class="rq-question">{{ row.kpi_question }}</p>
+
+          {% comment %} Real source metadata, resolved from the harvester lineage. Never
+             source_reference, which is the idempotency key — showing that is
+             what produced "harvester.Evidence:41" on the first real evidence. {% endcomment %}
+          <div class="rq-source">
+            <span class="rq-source-title">{{ row.provenance.title|default:"(no title recorded)" }}</span>
+            <span class="rq-source-meta">
+              {{ row.provenance.publisher|default:"(no publisher recorded)" }}
+              &middot; Tier {{ row.provenance.authority.tier|default:"?" }}
+              {{ row.provenance.authority.label }}
+              &middot; Published {{ row.provenance.publication_date|default:"UNKNOWN" }}
+            </span>
+            {% if row.provenance.location %}
+            <span class="rq-source-meta">{{ row.provenance.location }}</span>
+            {% endif %}
+          </div>
+
           <p class="rq-excerpt">{{ row.link.evidence.text_chunk|truncatechars:220 }}</p>
+
+          {% comment %} Non-binding. review_recommendation never suggests a valence,
+             because keyword overlap cannot establish one. {% endcomment %}
+          <div class="rq-recommendation">
+            <span class="rq-recommendation-label">{{ row.recommendation.label }}</span>
+            <span class="rq-recommendation-standing">
+              {{ row.recommendation.standing|default:"No standing suggested" }}
+            </span>
+            <span class="rq-recommendation-reason">{{ row.recommendation.reason }}</span>
+          </div>
+
           <div class="rq-meta-row">
             <span>Tier: {{ row.source_tier|default:"Unknown" }}</span>
+            <span>Why linked: {{ row.link.match_basis|default:"(no basis recorded)" }}</span>
             <span>Proposed by: {{ row.proposed_by }}</span>
             <span>State: {{ row.link.get_review_state_display }}</span>
             <span>Priority: {{ row.priority_score }}/6</span>
@@ -154,6 +186,23 @@
   .rq-rel-supports{background:rgba(0,232,154,.1);color:#00e89a}
   .rq-rel-conflicts{background:rgba(230,57,70,.12);color:#fca5a5}
   .rq-excerpt{font-size:.8rem;color:#cbd5e1;line-height:1.55;margin:.6rem 0}
+  /* The principle's question — what the reviewer is deciding against. */
+  .rq-question{font-size:.82rem;color:#e2e8f0;line-height:1.5;margin:.45rem 0;font-style:italic}
+  /* Real source metadata, resolved from the harvester lineage. */
+  .rq-source{display:flex;flex-direction:column;gap:.15rem;margin:.55rem 0;
+             padding:.5rem .65rem;background:rgba(148,163,184,.08);
+             border-left:2px solid rgba(148,163,184,.45);border-radius:0 4px 4px 0}
+  .rq-source-title{font-size:.82rem;font-weight:600;color:#f1f5f9}
+  .rq-source-meta{font-size:.72rem;color:#94a3b8}
+  /* Non-binding suggestion. Deliberately quieter than the actions below it:
+     it must not read as the decision, and it never asserts a valence. */
+  .rq-recommendation{display:flex;flex-direction:column;gap:.2rem;margin:.55rem 0;
+                     padding:.5rem .65rem;border:1px dashed rgba(148,163,184,.4);
+                     border-radius:4px}
+  .rq-recommendation-label{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;
+                           color:#fbbf24;font-weight:700}
+  .rq-recommendation-standing{font-size:.8rem;font-weight:600;color:#e2e8f0}
+  .rq-recommendation-reason{font-size:.74rem;color:#94a3b8;line-height:1.5}
   .rq-meta-row{display:flex;flex-wrap:wrap;gap:1rem;font-size:.7rem;color:#64748b}
   .rq-watchlist-flag{color:#c9a84c;font-weight:700}
   .rq-appearance-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
