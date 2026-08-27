@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { fetchKpiInvestigation } from '@/api/kpi';
 import { Loading } from '@/components/States';
 import { EvidenceDrawer } from '@/features/kpi/EvidenceDrawer';
@@ -19,16 +19,28 @@ import { isInsufficient } from '@/types/kpi';
  * as route parameters and everything else is payload. The same route renders
  * any of the 114 principles for any company that has an assessment, and a
  * company with none gets the insufficient-evidence state rather than a zero.
+ *
+ * THE SELECTED EVIDENCE ITEM LIVES IN THE URL
+ * -------------------------------------------
+ * `?evidence=<id>`, not component state. An investigation is a thing people
+ * send each other — "look at this source" is the whole point of the page — and
+ * a selection held only in memory cannot be linked to, bookmarked, or reopened
+ * after a refresh. It also means the browser's back button closes the drawer,
+ * which is what a reader expects it to do.
+ *
+ * An id that is not in this investigation is ignored rather than treated as an
+ * error: a stale link should show the investigation, not a failure. There is no
+ * such thing as a half-loaded evidence chain here.
  */
 export default function KPIInvestigation() {
   const { slug = '', kpiId = '' } = useParams();
   const [inv, setInv] = useState<Investigation | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<KpiEvidence | null>(null);
+  const [params, setParams] = useSearchParams();
 
   useEffect(() => {
     const controller = new AbortController();
-    setInv(null); setError(null); setSelected(null);
+    setInv(null); setError(null);
     fetchKpiInvestigation(slug, Number(kpiId), controller.signal)
       .then(setInv)
       .catch((err: unknown) => {
@@ -38,7 +50,25 @@ export default function KPIInvestigation() {
     return () => controller.abort();
   }, [slug, kpiId]);
 
-  const select = useCallback((e: KpiEvidence | null) => setSelected(e), []);
+  // Resolved against the payload, so a link to an item this investigation does
+  // not contain simply shows the investigation.
+  const selected = useMemo<KpiEvidence | null>(() => {
+    const raw = params.get('evidence');
+    if (!raw || !inv) return null;
+    return inv.evidence.find((item) => String(item.id) === raw) ?? null;
+  }, [params, inv]);
+
+  const select = useCallback((evidence: KpiEvidence | null) => {
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (evidence) next.set('evidence', String(evidence.id));
+      else next.delete('evidence');
+      return next;
+      // Opening the drawer pushes, so back closes it. Switching between items
+      // replaces, so reading through ten sources does not leave ten entries to
+      // press back through to leave the page.
+    }, { replace: Boolean(evidence) && params.has('evidence') });
+  }, [setParams, params]);
 
   if (error) return <p className="state state--error" role="alert">{error}</p>;
   if (!inv) return <Loading />;
@@ -80,7 +110,7 @@ export default function KPIInvestigation() {
               <EvidenceDrawer
                 evidence={selected}
                 principle={inv.stewardship_principle}
-                onClose={() => setSelected(null)}
+                onClose={() => select(null)}
               />
             ) : (
               <p className="kpi-investigation__hint">
