@@ -312,7 +312,7 @@ PRINCIPLES = [
     },
     {
         'id': 31,
-        'title': 'Luqman & Parental Wisdom',
+        'title': 'Mentorship & Talent Development',
         'category': 'human',
         'tagline': 'Does the organisation mentor, develop and protect the next generation of contributors?',
         'question': 'Are there genuine programmes for developing, mentoring and retaining talent — especially younger workers?',
@@ -348,7 +348,7 @@ PRINCIPLES = [
     },
     {
         'id': 35,
-        'title': 'Fatir & Origination of Value',
+        'title': 'Origination of Value',
         'category': 'economy',
         'tagline': 'Is value created from genuine activity — not financial engineering?',
         'question': 'Does financial performance reflect real-economy value creation, not accounting manipulation?',
@@ -357,7 +357,7 @@ PRINCIPLES = [
     },
     {
         'id': 36,
-        'title': 'Ya-Sin & Core Commitment',
+        'title': 'Core Commitment',
         'category': 'governance',
         'tagline': 'What is the organisation\'s irreducible core commitment — and is it honoured?',
         'question': 'Is there an explicit, binding commitment that drives governance above and beyond compliance?',
@@ -375,7 +375,7 @@ PRINCIPLES = [
     },
     {
         'id': 38,
-        'title': 'Sad & Adversarial Testing',
+        'title': 'Adversarial Testing',
         'category': 'risk',
         'tagline': 'Has governance been tested under real pressure — not just in calm conditions?',
         'question': 'Are governance systems stress-tested against realistic adversarial scenarios?',
@@ -483,7 +483,7 @@ PRINCIPLES = [
     },
     {
         'id': 50,
-        'title': 'Qaf & Limits',
+        'title': 'Explicit Limits & Thresholds',
         'category': 'risk',
         'tagline': 'Are there explicit limits — and are they respected?',
         'question': 'Has the organisation defined clear upper bounds on risk, harm and resource use — and enforced them?',
@@ -987,7 +987,7 @@ PRINCIPLES = [
     },
     {
         'id': 106,
-        'title': "Quraysh & Anchor Community Obligations",
+        'title': "Anchor Community Obligations",
         'category': 'community',
         'tagline': 'Does the organisation honour its obligations to the communities that enabled its growth?',
         'question': 'Is there a deliberate programme to maintain and invest in the communities from which value was originally drawn?',
