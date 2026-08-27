@@ -438,7 +438,7 @@ PRINCIPLES = [
     },
     {
         'id': 45,
-        'title': 'Kneeling & Equitable Access',
+        'title': 'Equitable Access',
         'category': 'social',
         'tagline': 'Are products and services accessible to all — not only the privileged?',
         'question': 'Is the organisation working to close access gaps across income, geography and ability?',
@@ -591,7 +591,7 @@ PRINCIPLES = [
     },
     {
         'id': 62,
-        'title': 'Friday & Collective Commitment Rhythms',
+        'title': 'Recurring Collective Accountability',
         'category': 'community',
         'tagline': 'Are there regular collective moments of accountability and renewal?',
         'question': 'Does governance include structured, recurring reviews of community commitments and collective performance?',
@@ -600,7 +600,7 @@ PRINCIPLES = [
     },
     {
         'id': 63,
-        'title': 'Hypocrites & Integrity Testing',
+        'title': 'Integrity Testing',
         'category': 'governance',
         'tagline': 'Does behaviour match stated values — consistently, under scrutiny and without audience?',
         'question': 'Is there a credible integrity testing process — not just formal compliance?',
@@ -618,7 +618,7 @@ PRINCIPLES = [
     },
     {
         'id': 65,
-        'title': 'Divorce & Clean Separation Protocols',
+        'title': 'Exit & Separation Obligations',
         'category': 'governance',
         'tagline': 'Are exits, divestments and separations handled equitably?',
         'question': 'When ending relationships — with suppliers, employees, communities or assets — are obligations met in full?',
@@ -627,7 +627,7 @@ PRINCIPLES = [
     },
     {
         'id': 66,
-        'title': 'Prohibition & Harm Exclusion Lists',
+        'title': 'Harm Exclusion & Enforcement',
         'category': 'justice',
         'tagline': 'Are harm-generating activities genuinely excluded — not just disclosed?',
         'question': 'Is the exclusion list actively enforced — with clear triggers and independent verification?',
@@ -672,7 +672,7 @@ PRINCIPLES = [
     },
     {
         'id': 71,
-        'title': "Noah's Patience & Long-Term Persistence",
+        'title': "Long-Term Persistence",
         'category': 'longterm',
         'tagline': 'Does the organisation have the structural patience to see long-term change through?',
         'question': 'Are governance and incentive structures built for a long transformation horizon — not just the next cycle?',
@@ -708,7 +708,7 @@ PRINCIPLES = [
     },
     {
         'id': 75,
-        'title': 'Resurrection & Transformation Readiness',
+        'title': 'Transformation Readiness',
         'category': 'longterm',
         'tagline': 'Is the organisation capable of genuine transformation — not just incremental improvement?',
         'question': 'Are there structural capabilities for fundamental business model transformation when needed?',
@@ -735,7 +735,7 @@ PRINCIPLES = [
     },
     {
         'id': 78,
-        'title': 'Great News & Material Positive Impact',
+        'title': 'Material Positive Impact',
         'category': 'longterm',
         'tagline': 'Is positive impact real, material and verifiable — not performative?',
         'question': 'Can the organisation substantiate genuine positive ESG outcomes with independent evidence?',
@@ -771,7 +771,7 @@ PRINCIPLES = [
     },
     {
         'id': 82,
-        'title': 'Cleaving & Separation of Powers',
+        'title': 'Separation of Powers',
         'category': 'governance',
         'tagline': 'Are checks and balances genuinely independent — not structurally compromised?',
         'question': 'Is there genuine independence between audit, oversight, executive and board functions?',
@@ -816,7 +816,7 @@ PRINCIPLES = [
     },
     {
         'id': 87,
-        'title': 'The Most High & Aspirational Standards',
+        'title': 'Aspirational Standards',
         'category': 'governance',
         'tagline': 'Is the organisation benchmarked against the best — not just the compliant?',
         'question': 'Does the organisation aim to lead on ESG — or simply to avoid falling below the minimum?',
@@ -897,7 +897,7 @@ PRINCIPLES = [
     },
     {
         'id': 96,
-        'title': 'The Clot & Origin of Value',
+        'title': 'Recognition of Value Creators',
         'category': 'economy',
         'tagline': 'Does the organisation understand the true source of its value — and honour those who create it?',
         'question': 'Is there full recognition and fair compensation for the people and systems at the source of value creation?',
@@ -1014,7 +1014,7 @@ PRINCIPLES = [
     },
     {
         'id': 109,
-        'title': 'The Disbelievers & Value Pluralism',
+        'title': 'Value Pluralism',
         'category': 'governance',
         'tagline': 'Does the organisation respect genuine diversity of values among stakeholders?',
         'question': 'Are decision-making processes designed to accommodate and integrate diverse stakeholder values — not suppress them?',
@@ -1032,7 +1032,7 @@ PRINCIPLES = [
     },
     {
         'id': 111,
-        'title': 'Palm Fibre & Consequences of Harm',
+        'title': 'Traceable Accountability for Harm',
         'category': 'justice',
         'tagline': 'Are harmful actors held accountable — not shielded by structural complexity?',
         'question': 'Does the governance system allow harm to be traced back to individuals and entities — not diffused into systems?',
