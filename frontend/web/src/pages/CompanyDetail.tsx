@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getAssessment } from '@/api/companies';
 import type { AsyncState } from '@/hooks/useApi';
 import { useApi } from '@/hooks/useApi';
@@ -10,8 +10,8 @@ import type {
   Assessment, Controversy, DecisionIntegrity, Ethics, EvidenceGaps,
   FinancingReadiness, Pillar, Shariah,
 } from '@/types/assessment';
+import { PrincipleMatrix } from '@/features/principles/PrincipleMatrix';
 import type { CompanyPrincipleMatrix } from '@/types/principles';
-import { hasBeenInvestigated } from '@/types/principles';
 
 /**
  * One organisation.
@@ -342,15 +342,14 @@ function StewardshipKpiPreview({ slug }: { slug: string }) {
   const state = useApi((signal) => fetchCompanyPrinciples(slug, signal), [slug]);
 
   return (
-    <section aria-labelledby="stewardship-kpis" className="kpi-preview">
-      <h2 id="stewardship-kpis">Stewardship principles</h2>
+    <div className="kpi-preview">
       <p className="kpi-preview__lede">
         EcoIQ assesses organisations against 114 stewardship principles. Each is
         evidence-led: a principle with no confirmed evidence is reported as
         unassessed rather than scored.
       </p>
       <StewardshipKpiBody slug={slug} state={state} />
-    </section>
+    </div>
   );
 }
 
@@ -362,62 +361,5 @@ function StewardshipKpiBody(
     return <ErrorState error={state.error} />;
   }
 
-  const { summary, principles } = state.data;
-  const investigated = principles.filter(hasBeenInvestigated);
-
-  if (investigated.length === 0) {
-    return (
-      <p className="kpi-preview__empty">
-        None of the {summary.total} principles has been investigated for this
-        organisation yet. That is a statement about EcoIQ&rsquo;s coverage, not a
-        finding about the organisation.
-      </p>
-    );
-  }
-
-  return (
-    <>
-      <p className="kpi-preview__coverage">
-        {summary.assessed} of {summary.total} principles investigated
-        {summary.not_assessed > 0
-          ? `; ${summary.not_assessed} not yet looked at`
-          : ''}
-        .
-      </p>
-      <ul className="kpi-preview__list">
-        {investigated.map((principle) => (
-          <li key={principle.kpi_id}>
-            {/* Trailing slash: Django owns this path. The slashless form now
-                redirects rather than 404ing, but linking to the canonical URL
-                avoids making every reader pay for the extra hop. */}
-            <Link
-              className="kpi-preview__item"
-              to={`/companies/${slug}/kpis/${principle.kpi_id}/`}
-            >
-              <span className="kpi-preview__num">#{principle.kpi_id}</span>
-              <span className="kpi-preview__title">{principle.title}</span>
-              <span className="kpi-preview__state">{principle.state_label}</span>
-              {principle.has_material_conflict ? (
-                <span className="kpi-preview__flag">
-                  Material regulatory conflict
-                </span>
-              ) : null}
-              {principle.remediation_step_count > 0 ? (
-                <span className="kpi-preview__flag kpi-preview__flag--muted">
-                  Remediation recorded
-                </span>
-              ) : null}
-              <span className="kpi-preview__go" aria-hidden="true">
-                Investigate &rarr;
-              </span>
-              <span className="visually-hidden">
-                Investigate principle {principle.kpi_id}, {principle.title}, for
-                this organisation
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
+  return <PrincipleMatrix matrix={state.data} slug={slug} />;
 }

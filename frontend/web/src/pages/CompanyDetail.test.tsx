@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CompanyDetail from './CompanyDetail';
 
@@ -182,15 +183,15 @@ describe('a published organisation', () => {
   });
 });
 
-describe('the stewardship principles doorway', () => {
-  const investigated = (over: Record<string, unknown> = {}) => ({
+describe('the 114 principle matrix', () => {
+  const matrix = (over: Record<string, unknown> = {}) => ({
     ...NO_PRINCIPLES,
-    summary: { ...NO_PRINCIPLES.summary, assessed: 2, not_assessed: 112, assessed_pct: 1.8 },
+    summary: { ...NO_PRINCIPLES.summary, assessed: 1, not_assessed: 113, assessed_pct: 0.9 },
     principles: [
       {
         kpi_id: 14, title: 'Water Stewardship', category: 'earth',
-        tagline: 't', question: 'q', metrics: [], principle_statement: '',
-        state: 'conflict', state_label: 'CONFLICTS',
+        tagline: 't', question: 'Is water managed responsibly?', metrics: [],
+        principle_statement: '', state: 'conflict', state_label: 'CONFLICTS',
         counts: {
           total: 2, confirmed: 2, supports: 0, conflicts: 2, context: 0,
           insufficient_to_conclude: 0, excluded_from_assessment: 0,
@@ -199,79 +200,123 @@ describe('the stewardship principles doorway', () => {
         has_material_conflict: false, is_demo: false, last_assessed_at: null,
         ...over,
       },
-      {
-        kpi_id: 114, title: 'Consumer Protection & Anti-Manipulation',
-        category: 'community', tagline: 't', question: 'q', metrics: [],
-        principle_statement: '', state: 'insufficient_evidence',
-        state_label: 'INSUFFICIENT EVIDENCE',
+      ...Array.from({ length: 113 }, (_, i) => ({
+        kpi_id: i + 15, title: `Principle ${i + 15}`, category: 'governance',
+        tagline: 't', question: 'q', metrics: [], principle_statement: '',
+        state: 'not_assessed', state_label: 'NOT ASSESSED',
         counts: {
           total: 0, confirmed: 0, supports: 0, conflicts: 0, context: 0,
           insufficient_to_conclude: 0, excluded_from_assessment: 0,
         },
         pending_review_count: 0, remediation_step_count: 0,
         has_material_conflict: false, is_demo: false, last_assessed_at: null,
-      },
+      })),
     ],
   });
 
   beforeEach(() => vi.unstubAllGlobals());
 
-  it('is no longer hard-coded to principle 114', async () => {
-    mock(PUBLISHED, investigated());
-    show();
-    expect(await screen.findByText('#14')).toBeInTheDocument();
-    expect(screen.getByText('Water Stewardship')).toBeInTheDocument();
-  });
-
-  it('links each principle to its own investigation', async () => {
-    mock(PUBLISHED, investigated());
-    show();
-    const link = await screen.findByRole('link', {
-      name: /Investigate principle 14, Water Stewardship/i,
-    });
-    expect(link).toHaveAttribute('href', '/companies/acme/kpis/14/');
-  });
-
-  it('says nobody has looked rather than hiding the section', async () => {
+  it('renders every principle, not only the investigated ones', async () => {
     /**
-     * A missing section reads as "nothing to say here". The true statement is
-     * "nobody has investigated this organisation yet", which is about EcoIQ.
+     * Hiding the unassessed would make a nearly-empty assessment look
+     * complete, which is the failure this product exists to avoid.
      */
+    mock(PUBLISHED, matrix());
+    const { container } = show();
+    await screen.findByRole('heading', { name: /All 114 principles/i });
+    expect(container.querySelectorAll('.matrix__cell')).toHaveLength(114);
+  });
+
+  it('says in words how much has not been looked at', async () => {
+    mock(PUBLISHED, matrix());
+    show();
+    expect(await screen.findByText(/1 of 114 principles investigated/i))
+      .toBeInTheDocument();
+    expect(screen.getByText(/113 have not been looked at/i)).toBeInTheDocument();
+  });
+
+  it('does not carry state in colour alone', async () => {
+    /**
+     * "Insufficient evidence" and "concern" are opposite claims. A reader who
+     * cannot distinguish hues must still be able to tell them apart, so the
+     * state is in every cell's accessible name.
+     */
+    mock(PUBLISHED, matrix());
+    show();
+    expect(await screen.findByRole('button', {
+      name: /Principle 14, Water Stewardship: Substantiated concern/i,
+    })).toBeInTheDocument();
+  });
+
+  it('opens a cell into its evidence counts and both links', async () => {
+    mock(PUBLISHED, matrix());
+    show();
+    const cell = await screen.findByRole('button', { name: /Principle 14, Water/i });
+    await userEvent.click(cell);
+    expect(await screen.findByRole('heading', { name: 'Water Stewardship' }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Open the investigation/i }))
+      .toHaveAttribute('href', '/companies/acme/kpis/14/');
+    expect(screen.getByRole('link', { name: /What this principle asks/i }))
+      .toHaveAttribute('href', '/principles/14/');
+  });
+
+  it('explains an empty cell rather than leaving it blank', async () => {
+    mock(PUBLISHED, matrix());
+    show();
+    // Exact name: /Principle 15,/ also matches 150-159 and the filter chips.
+    await userEvent.click(await screen.findByRole('button', {
+      name: 'Principle 15, Principle 15: Not yet investigated',
+    }));
+    expect(await screen.findByText(/No evidence has been linked to this principle/i))
+      .toBeInTheDocument();
+  });
+
+  it('filters without pretending the hidden principles do not exist', async () => {
+    mock(PUBLISHED, matrix());
+    const { container } = show();
+    await screen.findByRole('heading', { name: /All 114 principles/i });
+    // Exact name: 113 cells carry "Not yet investigated" in their accessible
+    // name, so a loose /Investigated/ matches the grid as well as the chip.
+    await userEvent.click(screen.getByRole('button', { name: 'Investigated 1' }));
+    expect(container.querySelectorAll('.matrix__cell')).toHaveLength(1);
+    // The count on the "All" chip still reports the full framework.
+    expect(screen.getByRole('button', { name: 'All 114 114' })).toBeInTheDocument();
+  });
+
+  it('shows remediation beside a finding, never instead of it', async () => {
+    mock(PUBLISHED, matrix({ remediation_step_count: 3, has_material_conflict: true }));
+    show();
+    await userEvent.click(await screen.findByRole('button', { name: /Principle 14, Water/i }));
+    const detail = await screen.findByRole('complementary');
+    expect(detail).toHaveTextContent(/3 remediation steps recorded/i);
+    // The conflict is still the verdict; remediation sits beside it.
+    expect(detail).toHaveTextContent('Substantiated concern');
+    expect(detail).toHaveTextContent(/Material regulatory conflict/i);
+  });
+
+  it('reports evidence awaiting review as counting toward nothing', async () => {
+    mock(PUBLISHED, {
+      ...matrix({ pending_review_count: 4, state: 'not_assessed' }),
+      summary: { ...NO_PRINCIPLES.summary, assessed: 0, not_assessed: 114, pending_review_total: 4 },
+    });
+    show();
+    expect(await screen.findByText(/counting toward no verdict until reviewed/i))
+      .toBeInTheDocument();
+  });
+
+  it('says nobody has looked when nothing is assessed', async () => {
     mock(PUBLISHED, NO_PRINCIPLES);
     show();
     expect(await screen.findByText(/None of the 114 principles has been investigated/i))
       .toBeInTheDocument();
   });
 
-  it('reports how much of the framework is still unlooked-at', async () => {
-    mock(PUBLISHED, investigated());
-    show();
-    expect(await screen.findByText(/2 of 114 principles investigated/i))
-      .toBeInTheDocument();
-    expect(screen.getByText(/112 not yet looked at/i)).toBeInTheDocument();
-  });
-
-  it('flags a material regulatory conflict, and only when confirmed', async () => {
-    mock(PUBLISHED, investigated({ has_material_conflict: true }));
-    show();
-    expect(await screen.findByText(/Material regulatory conflict/i))
-      .toBeInTheDocument();
-  });
-
-  it('shows remediation beside a finding, never instead of it', async () => {
-    mock(PUBLISHED, investigated({ remediation_step_count: 3 }));
-    show();
-    expect(await screen.findByText(/Remediation recorded/i)).toBeInTheDocument();
-    // The conflict is still the verdict.
-    expect(screen.getByText('CONFLICTS')).toBeInTheDocument();
-  });
-
   it('renders no numeric score for any principle', async () => {
-    mock(PUBLISHED, investigated());
+    mock(PUBLISHED, matrix());
     const { container } = show();
-    await screen.findByText('#14');
-    const list = container.querySelector('.kpi-preview__list');
-    expect(list?.textContent).not.toMatch(/\d+\s*\/\s*100/);
-    expect(list?.textContent).not.toMatch(/score/i);
+    await screen.findByRole('heading', { name: /All 114 principles/i });
+    const grid = container.querySelector('.matrix__grid');
+    expect(grid?.textContent).not.toMatch(/\d+\s*\/\s*100|score/i);
   });
 });

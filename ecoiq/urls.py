@@ -338,6 +338,14 @@ urlpatterns = [
     # registration where it already is (core/urls.py, companies/urls.py,
     # league/urls.py) and swap their view for spa.spa_view there, so URL names,
     # ordering and prefix behaviour are unchanged. See core/spa.py.
+    # The framework itself. Registered explicitly, like the routes below it,
+    # so a direct hit answers 200 rather than falling to the catch-all's 404.
+    # The detail route validates the 1-114 bound server-side and 404s outside
+    # it — React can show a reader "no such principle", but a crawler reads the
+    # status line, and 200 for a principle that does not exist misstates how
+    # big the framework is. Same rule company_kpi_spa_view already applies.
+    path('principles/', spa.spa_view, name='principles'),
+    path('principles/<int:kpi_id>/', spa.principle_spa_view, name='principle_detail'),
     path('tours/', spa.spa_view, name='tours'),
     path('labs/',  spa.spa_view, name='labs'),
     path('trust/', spa.spa_view, name='trust'),

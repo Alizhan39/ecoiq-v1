@@ -922,3 +922,82 @@ class SpaTrailingSlashTests(TestCase):
         """
         response = self.client.post('/companies')
         self.assertEqual(response.status_code, 404)
+
+
+class PrincipleRouteTests(TestCase):
+    """
+    The framework's own pages.
+
+    Unlike an investigation, these are indexable: they name no organisation and
+    carry no finding, so there is nothing here whose review state can change
+    underneath a crawler's snapshot.
+    """
+
+    def test_the_registry_serves_the_shell(self):
+        response = self.client.get('/principles/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="root"')
+
+    def test_a_real_principle_serves_the_shell(self):
+        response = self.client.get('/principles/114/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="root"')
+
+    def test_the_title_names_the_principle(self):
+        """A crawler and a tab both need to know which principle this is."""
+        from core.esg_principles_data import PRINCIPLES
+
+        title = next(p['title'] for p in PRINCIPLES if p['id'] == 114)
+        response = self.client.get('/principles/114/')
+        from django.utils.html import escape
+
+        self.assertContains(response, escape(f'#114 {title}'))
+
+    def test_every_principle_id_resolves(self):
+        """1-114 all exist. A gap would mean the framework has a hole in it."""
+        from core.esg_principles_data import PRINCIPLES
+
+        for principle in PRINCIPLES:
+            with self.subTest(kpi_id=principle['id']):
+                response = self.client.get(f'/principles/{principle["id"]}/')
+                self.assertEqual(response.status_code, 200)
+
+    def test_an_unknown_principle_is_404_not_an_empty_page(self):
+        """
+        115 does not exist. Serving 200 would tell a crawler the framework is
+        bigger than it is — the same category of untruth as serving a score for
+        an organisation with no evidence.
+        """
+        for bad in ('115', '999', '0'):
+            with self.subTest(kpi_id=bad):
+                self.assertEqual(
+                    self.client.get(f'/principles/{bad}/').status_code, 404)
+
+    def test_a_non_numeric_principle_is_404(self):
+        self.assertEqual(self.client.get('/principles/abc/').status_code, 404)
+
+    def test_the_slashless_forms_redirect(self):
+        for url in ('/principles', '/principles/57'):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 301)
+                self.assertEqual(response['Location'], url + '/')
+
+    def test_the_registry_page_carries_no_organisation(self):
+        """
+        The document Django renders describes the method. If it named an
+        organisation, the framework page would be making an assessment claim
+        before React had loaded anything.
+        """
+        body = self.client.get('/principles/').content.decode()
+        self.assertNotIn('Apple', body)
+        self.assertNotIn('assessment', body.lower())
+
+    def test_no_sacred_source_material_in_a_principle_document(self):
+        """Same boundary as the API — enforced on what Django renders too."""
+        for kpi_id in (31, 35, 36, 38, 50, 57, 106, 109, 114):
+            body = self.client.get(f'/principles/{kpi_id}/').content.decode()
+            for term in ('Surah', 'surah', 'ayah', 'Ayah', 'Qur', 'Arabic',
+                         'Luqman', 'Quraysh', 'Disbelievers'):
+                self.assertNotIn(term, body,
+                                 f'#{kpi_id} document leaked {term!r}')

@@ -29,6 +29,22 @@ describe('route titles', () => {
     expect(titleFor('/projects')).toBe('Projects — EcoIQ');
   });
 
+  it('leaves one principle to the server', () => {
+    /**
+     * core.spa.principle_spa_view puts '#57 Iron & Infrastructure
+     * Responsibility' in the document and 404s outside 1-114. Before this,
+     * every principle page read 'Page not found' in the tab while showing the
+     * principle perfectly well — caught in browser verification, not by a
+     * test, because the route-key guard only compares the static maps.
+     */
+    expect(titleFor('/principles/57')).toBeNull();
+    expect(titleFor('/principles/57/')).toBeNull();
+  });
+
+  it('still titles the principles index itself', () => {
+    expect(titleFor('/principles')).toBe('The 114 stewardship principles — EcoIQ');
+  });
+
   it('reads as not-found for a route that does not exist', () => {
     expect(titleFor('/no-such-page')).toBe('Page not found — EcoIQ');
   });

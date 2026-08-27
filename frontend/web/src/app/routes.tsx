@@ -10,6 +10,10 @@ const CompanyDetail = lazy(() => import('@/pages/CompanyDetail'));
 // Lazy on its own chunk: the graph and drawer are only paid for by readers who
 // open an investigation, not by every visitor to a company page.
 const KPIInvestigation = lazy(() => import('@/pages/KPIInvestigation'));
+// The framework itself. Static text, no organisation, no evidence — so it
+// is cheap and cacheable in a way an investigation is not.
+const Principles = lazy(() => import('@/pages/Principles'));
+const PrincipleDetail = lazy(() => import('@/pages/PrincipleDetail'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const ProjectConcept = lazy(() => import('@/pages/ProjectConcept'));
 const Tours = lazy(() => import('@/pages/Tours'));
@@ -44,6 +48,8 @@ export function AppRoutes() {
         <Route path="/companies" element={<Companies />} />
         <Route path="/companies/:slug" element={<CompanyDetail />} />
         <Route path="/companies/:slug/kpis/:kpiId" element={<KPIInvestigation />} />
+        <Route path="/principles" element={<Principles />} />
+        <Route path="/principles/:kpiId" element={<PrincipleDetail />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:slug" element={<ProjectConcept />} />
         <Route path="/tours" element={<Tours />} />

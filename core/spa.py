@@ -234,6 +234,13 @@ ROUTE_META: dict[str, dict[str, str]] = {
             'how much of it is supported, and where the gaps are. No score is '
             'shown unless the evidence supports one.'),
     },
+    '/principles': {
+        'title': 'The 114 stewardship principles — EcoIQ',
+        'description': (
+            'The 114 questions EcoIQ investigates an organisation against, '
+            'grouped into ten domains. A principle is a question evidence has '
+            'to answer, not a metric and not a score.'),
+    },
     '/projects': {
         'title': 'Projects — EcoIQ',
         'description': (
@@ -319,6 +326,36 @@ def spa_view(request, *args, **kwargs) -> HttpResponse:
     meta = meta_for(path)
     return render_shell(title=meta['title'], description=meta['description'],
                         path=request.path)
+
+
+def principle_spa_view(request, kpi_id: int) -> HttpResponse:
+    """
+    One principle of the framework. 200 for 1-114, 404 for anything else.
+
+    The bound is checked HERE rather than left to React, for the same reason
+    company_kpi_spa_view checks it: React can render "no such principle" for a
+    reader, but a crawler reads the status line, and answering 200 for a
+    principle that does not exist misstates the size of the framework. It is
+    the same category of untruth as serving a score for an organisation with no
+    evidence — this module's own docstring says so.
+
+    Indexable, unlike an investigation. This page is stable framework text that
+    names no organisation and carries no finding, so there is nothing here whose
+    review state can change underneath a crawler snapshot.
+    """
+    from core.esg_principles_data import PRINCIPLES
+
+    principle = next((p for p in PRINCIPLES if p['id'] == kpi_id), None)
+    if principle is None:
+        raise Http404(f'No stewardship principle with id {kpi_id}.')
+
+    return render_shell(
+        title=f'#{principle["id"]} {principle["title"]} — EcoIQ',
+        description=(
+            f'Stewardship principle {principle["id"]}: {principle["question"]} '
+            'A principle is a question evidence has to answer, not a score.'),
+        path=request.path,
+    )
 
 
 def company_kpi_spa_view(request, slug: str, kpi_id: int) -> HttpResponse:

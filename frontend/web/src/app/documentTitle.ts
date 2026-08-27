@@ -26,6 +26,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   '/': 'EcoIQ — Evidence-backed decision intelligence',
   '/intelligence': 'Intelligence — EcoIQ',
   '/companies': 'Organisations — EcoIQ',
+  '/principles': 'The 114 stewardship principles — EcoIQ',
   '/projects': 'Projects — EcoIQ',
   '/tours': 'Eco Tours — EcoIQ',
   '/about': 'About — EcoIQ',
@@ -58,5 +59,9 @@ export function titleFor(pathname: string): string | null {
   // Same reasoning for an organisation page: its title is the organisation's
   // own name, which core.spa.company_spa_view already injected.
   if (key.startsWith('/companies/')) return null;
+  // And for one principle: core.spa.principle_spa_view puts the principle's
+  // number and title in the document, and 404s outside 1-114, so an id that
+  // reaches the client is one the server already vouched for.
+  if (key.startsWith('/principles/')) return null;
   return NOT_FOUND;
 }

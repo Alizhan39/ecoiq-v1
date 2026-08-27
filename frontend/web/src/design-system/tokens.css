@@ -11,6 +11,11 @@
   --accent: #00a86b;
   --accent-soft: #e6f6ef;
   --warn: #f4a261;
+  /* --warn is a FILL, not a text colour: #f4a261 on white is 2.06:1,
+     far under the 4.5:1 AA floor. --warn-strong is the readable pair,
+     mirroring the --accent / --accent-soft split. */
+  --warn-soft: rgba(244, 162, 97, 0.18);
+  --warn-strong: #8a4008;
   --danger: #e63946;
   /* Mirrors --accent-soft: the tinted ground for a danger-coloured chip. */
   --danger-soft: rgba(230, 57, 70, 0.12);
@@ -32,6 +37,10 @@
     --paper-soft: #131c17;
     --line: rgba(232, 239, 233, 0.12);
     --accent-soft: rgba(0, 168, 107, 0.14);
+    --warn-soft: rgba(244, 162, 97, 0.20);
+    /* On this ground the light --warn IS readable (6.3:1); the dark
+       brown of the light theme would be 2.6:1. */
+    --warn-strong: #f4a261;
     --danger-soft: rgba(230, 57, 70, 0.22);
     /* The light --danger (#e63946) is too dark for this ground: 4.48:1 on
        --paper and 3.65:1 on a --danger-soft chip, both under the 4.5:1 AA
