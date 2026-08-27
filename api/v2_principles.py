@@ -65,6 +65,7 @@ from django.views.decorators.http import require_GET
 
 from api.v2_kpi import MATERIAL_STATUSES, VERDICT_LABELS
 from companies.models import CompanyProfile
+from companies.visibility import profile_for
 from company_intelligence.services.kpi_engine import kpi_alignment_profile
 from core.esg_principles_data import PRINCIPLE_CATEGORIES, PRINCIPLES
 
@@ -173,14 +174,20 @@ def company_principles(request, slug: str):
     """
     GET /api/v2/companies/<slug>/principles/
 
-    One organisation across all 114. Anonymous and read-only, on the same
-    footing as `company_kpi`: this reports evidence state, not a score, so the
-    publication gate that governs `/assessment/` does not apply. A principle
+    One organisation across all 114. Read-only, and on the same footing as
+    `company_kpi`: this reports evidence state, not a score, so the publication
+    gate that governs `/assessment/` does not apply.
+
+    It does apply the VISIBILITY gate. When this endpoint was added it copied
+    `company_kpi`'s profile lookup, which had no status filter — so an archived
+    organisation's matrix answered 200 anonymously. Both now go through
+    `companies.visibility.profile_for`. A principle
     with no assessment is reported as `not_assessed` and stays in the
     denominator — never dropped to make coverage look better than it is.
     """
-    profile = get_object_or_404(
-        CompanyProfile.objects.select_related('company'), company__slug=slug)
+    profile = profile_for(
+        slug, request.user,
+        queryset=CompanyProfile.objects.select_related('company'))
 
     alignment = kpi_alignment_profile(profile)
     evidence_counts, remediation_counts = _evidence_detail(profile)

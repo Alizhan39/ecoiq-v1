@@ -388,13 +388,14 @@ def company_kpi_spa_view(request, slug: str, kpi_id: int) -> HttpResponse:
 
     from django.shortcuts import get_object_or_404
 
-    from companies.models import CompanyProfile
+    from companies.visibility import profile_for
     from league.models import Company
 
     company = get_object_or_404(Company.objects.select_related('profile'), slug=slug)
-    # Mirror the API's existence rule, exactly as company_spa_view does.
-    get_object_or_404(CompanyProfile, company=company,
-                      status__in=('public', 'verified', 'draft'))
+    # Mirror the API's rule, which now includes the staff bypass: an archived
+    # organisation must stay unreachable publicly AND remain reviewable by the
+    # people whose queue its evidence sits in.
+    profile_for(slug, request.user)
 
     return render_shell(
         title=f'{company.name} — {principle["title"]} — EcoIQ',
@@ -433,15 +434,17 @@ def company_spa_view(request, slug: str) -> HttpResponse:
     from django.shortcuts import get_object_or_404
 
     from companies.eligibility import decide_for_company
-    from companies.models import CompanyProfile
+    from companies.visibility import profile_for
     from league.models import Company
 
     company = get_object_or_404(
         Company.objects.select_related('profile'), slug=slug)
-    # Mirror the API's own existence rule exactly. Serving a shell whose only
-    # API call 404s gives a crawler a 200 for a page that renders an error.
-    get_object_or_404(CompanyProfile, company=company,
-                      status__in=('public', 'verified', 'draft'))
+    # Mirror the API's own rule exactly. Serving a shell whose only API call
+    # 404s gives a crawler a 200 for a page that renders an error — and now
+    # that the API resolves archived profiles for staff, this must too, or a
+    # reviewer opening an archived organisation gets a 404 page while its
+    # evidence sits in their queue.
+    profile_for(slug, request.user)
 
     where = ' · '.join(part for part in (company.sector, company.country) if part)
     description = (
