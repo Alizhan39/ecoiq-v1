@@ -12,6 +12,8 @@
   --accent-soft: #e6f6ef;
   --warn: #f4a261;
   --danger: #e63946;
+  /* Mirrors --accent-soft: the tinted ground for a danger-coloured chip. */
+  --danger-soft: rgba(230, 57, 70, 0.12);
   --unknown: #94a3b8;
 
   --radius: 10px;
@@ -30,6 +32,11 @@
     --paper-soft: #131c17;
     --line: rgba(232, 239, 233, 0.12);
     --accent-soft: rgba(0, 168, 107, 0.14);
+    --danger-soft: rgba(230, 57, 70, 0.22);
+    /* The light --danger (#e63946) is too dark for this ground: 4.48:1 on
+       --paper and 3.65:1 on a --danger-soft chip, both under the 4.5:1 AA
+       floor for small text. This lifts them to 8.3:1 and 5.6:1. */
+    --danger: #ff8b93;
   }
 }
 

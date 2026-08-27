@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 import { getAssessment } from '@/api/companies';
+import type { AsyncState } from '@/hooks/useApi';
 import { useApi } from '@/hooks/useApi';
+import { fetchCompanyPrinciples } from '@/api/principles';
 import { ErrorState, Loading } from '@/components/States';
 import { EvidenceSummary, ScoreDisplay } from '@/components/EvidenceState';
 import { metric } from '@/types/assessment';
@@ -8,6 +10,8 @@ import type {
   Assessment, Controversy, DecisionIntegrity, Ethics, EvidenceGaps,
   FinancingReadiness, Pillar, Shariah,
 } from '@/types/assessment';
+import type { CompanyPrincipleMatrix } from '@/types/principles';
+import { hasBeenInvestigated } from '@/types/principles';
 
 /**
  * One organisation.
@@ -310,15 +314,33 @@ function Gaps({ gaps, published }: { gaps: EvidenceGaps; published: boolean }) {
 /**
  * The entry point into the 114-principle framework (§21).
  *
- * Deliberately a doorway rather than a summary. Rendering a verdict here would
- * mean fetching every principle's evidence to show one line each, and would
- * put an assessment on a page that has not loaded the evidence behind it.
- * The investigation is where the evidence lives, so the link goes there.
+ * WHAT CHANGED, AND WHY IT COULD
+ * ------------------------------
+ * This was hard-coded to principle #114 — the one principle with a worked
+ * corpus — with a note that rendering anything wider "would mean fetching every
+ * principle's evidence to show one line each". That objection was correct
+ * against the endpoints that existed then.
  *
- * Hard-coded to #114 only because that is the one principle with a worked
- * corpus today. The route it points at is generic.
+ * `/api/v2/companies/<slug>/principles/` now returns all 114 states in one
+ * request and a fixed number of queries, so the doorway can show what has
+ * actually been investigated instead of one hardcoded link.
+ *
+ * STILL A DOORWAY, NOT A VERDICT
+ * ------------------------------
+ * It lists the principles someone has looked at and sends the reader to the
+ * investigation for the evidence. It does not render a verdict here, because a
+ * verdict on a page that has not loaded the evidence behind it is exactly the
+ * claim this product refuses to make.
+ *
+ * THE EMPTY STATE IS THE HONEST ONE
+ * ---------------------------------
+ * With no assessments this says so, and says it as a fact about EcoIQ's
+ * coverage. It does not hide the section: a missing section reads as "nothing
+ * to say here" when the true statement is "nobody has investigated this yet".
  */
 function StewardshipKpiPreview({ slug }: { slug: string }) {
+  const state = useApi((signal) => fetchCompanyPrinciples(slug, signal), [slug]);
+
   return (
     <section aria-labelledby="stewardship-kpis" className="kpi-preview">
       <h2 id="stewardship-kpis">Stewardship principles</h2>
@@ -327,17 +349,75 @@ function StewardshipKpiPreview({ slug }: { slug: string }) {
         evidence-led: a principle with no confirmed evidence is reported as
         unassessed rather than scored.
       </p>
-      <Link className="kpi-preview__item" to={`/companies/${slug}/kpis/114/`}  /* trailing slash: Django owns this
-           path and the SPA catch-all 404s the slashless form on a cold load */>
-        <span className="kpi-preview__num">#114</span>
-        <span className="kpi-preview__title">
-          Consumer Protection &amp; Anti-Manipulation
-        </span>
-        <span className="kpi-preview__go" aria-hidden="true">Investigate →</span>
-        <span className="visually-hidden">
-          Investigate principle 114 for this organisation
-        </span>
-      </Link>
+      <StewardshipKpiBody slug={slug} state={state} />
     </section>
+  );
+}
+
+function StewardshipKpiBody(
+  { slug, state }: { slug: string; state: AsyncState<CompanyPrincipleMatrix> },
+) {
+  if (state.status === 'loading') return <Loading />;
+  if (state.status === 'error') {
+    return <ErrorState error={state.error} />;
+  }
+
+  const { summary, principles } = state.data;
+  const investigated = principles.filter(hasBeenInvestigated);
+
+  if (investigated.length === 0) {
+    return (
+      <p className="kpi-preview__empty">
+        None of the {summary.total} principles has been investigated for this
+        organisation yet. That is a statement about EcoIQ&rsquo;s coverage, not a
+        finding about the organisation.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <p className="kpi-preview__coverage">
+        {summary.assessed} of {summary.total} principles investigated
+        {summary.not_assessed > 0
+          ? `; ${summary.not_assessed} not yet looked at`
+          : ''}
+        .
+      </p>
+      <ul className="kpi-preview__list">
+        {investigated.map((principle) => (
+          <li key={principle.kpi_id}>
+            {/* Trailing slash: Django owns this path. The slashless form now
+                redirects rather than 404ing, but linking to the canonical URL
+                avoids making every reader pay for the extra hop. */}
+            <Link
+              className="kpi-preview__item"
+              to={`/companies/${slug}/kpis/${principle.kpi_id}/`}
+            >
+              <span className="kpi-preview__num">#{principle.kpi_id}</span>
+              <span className="kpi-preview__title">{principle.title}</span>
+              <span className="kpi-preview__state">{principle.state_label}</span>
+              {principle.has_material_conflict ? (
+                <span className="kpi-preview__flag">
+                  Material regulatory conflict
+                </span>
+              ) : null}
+              {principle.remediation_step_count > 0 ? (
+                <span className="kpi-preview__flag kpi-preview__flag--muted">
+                  Remediation recorded
+                </span>
+              ) : null}
+              <span className="kpi-preview__go" aria-hidden="true">
+                Investigate &rarr;
+              </span>
+              <span className="visually-hidden">
+                Investigate principle {principle.kpi_id}, {principle.title}, for
+                this organisation
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

@@ -47,14 +47,14 @@ for the full list of approved and prohibited language.
 | 28 | Al-Qasas | القصص | Storytelling & Truthful Disclosure | knowledge |
 | 29 | Al-'Ankabut | العنكبوت | Spider's Web & Systemic Fragility Mapping | risk |
 | 30 | Ar-Rum | الروم | Romans & Civilisational Resilience | risk |
-| 31 | Luqman | لقمان | Luqman & Parental Wisdom | human |
+| 31 | Luqman | لقمان | Mentorship & Talent Development | human |
 | 32 | As-Sajdah | السجدة | Sacred Respect & Dignity at Work | social |
 | 33 | Al-Ahzab | الأحزاب | Confederates & Coalition Risk | risk |
 | 34 | Saba | سبأ | Illumination & Energy Transition | earth |
-| 35 | Fatir | فاطر | Fatir & Origination of Value | economy |
-| 36 | Ya-Sin | يس | Ya-Sin & Core Commitment | governance |
+| 35 | Fatir | فاطر | Origination of Value | economy |
+| 36 | Ya-Sin | يس | Core Commitment | governance |
 | 37 | As-Saffat | الصافات | The Rows & Structured Systems Thinking | governance |
-| 38 | Sad | ص | Sad & Adversarial Testing | risk |
+| 38 | Sad | ص | Adversarial Testing | risk |
 | 39 | Az-Zumar | الزمر | Groups & Collective Moral Responsibility | community |
 | 40 | Ghafir | غافر | Forgiveness & Restorative Governance | justice |
 | 41 | Fussilat | فصلت | Detailed Explanation & Full Disclosure | knowledge |
@@ -66,7 +66,7 @@ for the full list of approved and prohibited language.
 | 47 | Muhammad | محمد | Victory & Just Outcomes | justice |
 | 48 | Al-Fath | الفتح | Conquest & Resource Extraction Ethics | earth |
 | 49 | Al-Hujurat | الحجرات | Rooms & Private Accountability | governance |
-| 50 | Qaf | ق | Qaf & Limits | risk |
+| 50 | Qaf | ق | Explicit Limits & Thresholds | risk |
 | 51 | Adh-Dhariyat | الذاريات | Scattering Winds & Distributed Impact | earth |
 | 52 | At-Tur | الطور | Mountain & Foundational Stability | governance |
 | 53 | An-Najm | النجم | Star & Navigation Ethics | governance |
@@ -122,7 +122,7 @@ for the full list of approved and prohibited language.
 | 103 | Al-'Asr | العصر | Time Risk & Transition Urgency | risk |
 | 104 | Al-Humazah | الهمزة | The Backbiter & Reputational Integrity | governance |
 | 105 | Al-Fil | الفيل | The Elephant & Scale of Systemic Impact | risk |
-| 106 | Quraysh | قريش | Quraysh & Anchor Community Obligations | community |
+| 106 | Quraysh | قريش | Anchor Community Obligations | community |
 | 107 | Al-Ma'un | الماعون | Small Kindnesses & Everyday Ethics | human |
 | 108 | Al-Kawthar | الكوثر | Abundance & Sufficiency Ethics | economy |
 | 109 | Al-Kafirun | الكافرون | The Disbelievers & Value Pluralism | governance |
