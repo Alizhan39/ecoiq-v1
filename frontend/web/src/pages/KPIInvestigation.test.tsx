@@ -51,10 +51,10 @@ const base: Investigation = {
   }],
 };
 
-function renderPage(data: Investigation) {
+function renderPage(data: Investigation, entry = '/companies/testco/kpis/114') {
   vi.mocked(fetchKpiInvestigation).mockResolvedValue(data);
   return render(
-    <MemoryRouter initialEntries={['/companies/testco/kpis/114']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/companies/:slug/kpis/:kpiId" element={<KPIInvestigation />} />
       </Routes>
@@ -176,5 +176,65 @@ describe('KPI investigation', () => {
     renderPage(base);
     expect(await screen.findByRole('heading', { name: 'Whose choice is affected' }))
       .toBeInTheDocument();
+  });
+});
+
+
+describe('the selected evidence item lives in the URL', () => {
+  /**
+   * An investigation is a thing people send each other — "look at this source"
+   * is the point of the page. A selection held only in component state cannot
+   * be linked to, bookmarked, or reopened after a refresh.
+   */
+
+  it('opens the drawer for the evidence item named in the query string', async () => {
+    // Queried by the drawer's own accessible name: the title also appears on
+    // the graph node behind it, so a bare text match finds two elements and
+    // proves nothing about which one opened.
+    renderPage(base, '/companies/testco/kpis/114?evidence=2');
+    expect(await screen.findByRole('complementary', {
+      name: 'Evidence: Regulator decision on steering',
+    })).toBeInTheDocument();
+  });
+
+  it('ignores an evidence id this investigation does not contain', async () => {
+    /** A stale link shows the investigation, not a failure. */
+    renderPage(base, '/companies/testco/kpis/114?evidence=9999');
+    expect(await screen.findByText('Consumer Protection & Anti-Manipulation'))
+      .toBeInTheDocument();
+    expect(screen.getByText(/Select any evidence item/i)).toBeInTheDocument();
+  });
+
+  it('ignores a non-numeric evidence id', async () => {
+    renderPage(base, '/companies/testco/kpis/114?evidence=drop-table');
+    expect(await screen.findByText(/Select any evidence item/i)).toBeInTheDocument();
+  });
+
+  it('closing the drawer clears the selection', async () => {
+    renderPage(base, '/companies/testco/kpis/114?evidence=1');
+    const drawer = await screen.findByRole('complementary', {
+      name: 'Evidence: Platform tracking permission',
+    });
+    await userEvent.click(screen.getByRole('button', { name: /close/i }));
+    expect(drawer).not.toBeInTheDocument();
+    expect(await screen.findByText(/Select any evidence item/i)).toBeInTheDocument();
+  });
+
+  it('selecting a different item swaps the drawer', async () => {
+    renderPage(base, '/companies/testco/kpis/114?evidence=1');
+    await screen.findByRole('complementary', {
+      name: 'Evidence: Platform tracking permission',
+    });
+    await userEvent.click(screen.getByRole('button', {
+      name: /Regulator decision on steering/i,
+    }));
+    expect(await screen.findByRole('complementary', {
+      name: 'Evidence: Regulator decision on steering',
+    })).toBeInTheDocument();
+  });
+
+  it('shows the hint rather than a drawer when nothing is selected', async () => {
+    renderPage(base);
+    expect(await screen.findByText(/Select any evidence item/i)).toBeInTheDocument();
   });
 });
