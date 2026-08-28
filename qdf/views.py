@@ -10,6 +10,7 @@ from django.db.models import Avg, Count
 
 from league.models import Company
 from companies.models import CompanyProfile
+from companies.visibility import PUBLICLY_VISIBLE_STATUSES
 from qdf.models import DecisionAssessment, VERDICT_CHOICES, RISK_LEVEL_CHOICES
 from qdf.scoring import get_or_compute
 from qdf import engine
@@ -70,8 +71,10 @@ def stewardship_dashboard(request):
 def decision_engine(request, slug):
     """Decision Engine for one company: cards, action queue, roadmap, scenario."""
     company = get_object_or_404(Company, slug=slug)
+    # The shared list rather than another copy of it — every hand-written
+    # copy of this triple had gone stale on `public_demo`.
     profile = get_object_or_404(CompanyProfile, company=company,
-                                status__in=('public', 'verified', 'draft'))
+                                status__in=PUBLICLY_VISIBLE_STATUSES)
     assessment = get_or_compute(profile)
     if assessment is None:
         return render(request, 'qdf/decision_engine.html',

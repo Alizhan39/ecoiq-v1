@@ -230,3 +230,190 @@ class NoOrganisationInventedFromTheUrlTests(TestCase):
 
     def url_for(self, slug):
         return f'/api/why/company/{slug}/'
+
+
+@override_settings(ALLOWED_HOSTS=['*'])
+class CompanyListTests(TestCase):
+    """
+    The directory, against the entries it links to.
+
+    /api/v2/companies/ started from `Company.objects` with no status filter at
+    all, so it listed every organisation the detail endpoint and the page both
+    withheld. A list that names what its own entries refuse to open is not a
+    smaller leak than the entry leaking; it is the index to it.
+    """
+
+    def setUp(self):
+        Company.objects.create(name='Orphan Org', slug='orphan-org')  # no profile
+        make_organisation('withdrawn-org', 'archived')
+        make_organisation('demo-org', 'public_demo')
+        make_organisation('draft-org', 'draft')
+        make_organisation('current-org', 'public')
+
+    def listed(self, client=None):
+        client = client or self.client
+        return {row['slug'] for row in client.get('/api/v2/companies/').json()['results']}
+
+    def test_an_archived_organisation_is_not_listed(self):
+        self.assertNotIn('withdrawn-org', self.listed())
+
+    def test_an_organisation_with_no_profile_is_not_listed(self):
+        """
+        It has no status, so nothing has decided it may be shown. The detail
+        endpoint and the page both 404 it.
+        """
+        self.assertNotIn('orphan-org', self.listed())
+
+    def test_the_published_statuses_are_listed(self):
+        self.assertEqual(self.listed(),
+                         {'demo-org', 'draft-org', 'current-org'})
+
+    def test_search_cannot_reach_what_the_list_withholds(self):
+        """Filtering narrows the visible set; it never widens it."""
+        results = self.client.get('/api/v2/companies/?q=Withdrawn').json()['results']
+        self.assertEqual(results, [])
+
+    def test_staff_see_the_archived_one(self):
+        get_user_model().objects.create_user(
+            username='reviewer', password='x', is_staff=True)
+        staff = self.client_class()
+        staff.login(username='reviewer', password='x')
+        self.assertIn('withdrawn-org', self.listed(staff))
+
+    def test_the_list_and_the_detail_endpoint_agree(self):
+        """
+        The property that was actually broken, asserted directly: anything the
+        directory names must open, and anything it withholds must not.
+        """
+        listed = self.listed()
+        for slug in ('orphan-org', 'withdrawn-org', 'demo-org',
+                     'draft-org', 'current-org'):
+            with self.subTest(slug=slug):
+                opens = self.client.get(
+                    f'/api/v2/companies/{slug}/').status_code == 200
+                self.assertEqual(
+                    slug in listed, opens,
+                    f'{slug}: listed={slug in listed} but detail opens={opens}')
+
+
+@override_settings(ALLOWED_HOSTS=['*'])
+class DemonstrationProfileTests(TestCase):
+    """
+    `public_demo` was added so Apple x 114 could be reachable as a labelled
+    worked example. The literal in api/v2_views.py predated it and was never
+    updated, so the demonstration profile 404'd on its own API while the page
+    served it — a page and its data source disagreeing about whether the
+    organisation is reachable at all.
+    """
+
+    def setUp(self):
+        make_organisation('demo-org', 'public_demo')
+
+    def test_the_page_and_its_api_agree(self):
+        self.assertEqual(self.client.get('/companies/demo-org/').status_code, 200)
+        self.assertEqual(
+            self.client.get('/api/v2/companies/demo-org/').status_code, 200)
+
+    def test_visibility_is_not_a_publication_claim(self):
+        """
+        Reachable is not published. companies/eligibility.decide() never reads
+        status, and this pins that making the profile visible did not quietly
+        start publishing it.
+        """
+        from companies.eligibility import decide
+        from companies.models import CompanyProfile
+
+        profile = CompanyProfile.objects.get(company__slug='demo-org')
+        self.assertFalse(decide(profile).is_published)
+
+
+@override_settings(ALLOWED_HOSTS=['*'])
+class StaffSeeTheSameThingEverywhereTests(TestCase):
+    """
+    A staff reviewer opening an archived organisation must get the same answer
+    from every surface that serves it.
+
+    They did not. /api/v2/companies/<slug>/kpis/<id>/ is a plain Django view,
+    so it read the session and let a reviewer in; its own parent resource,
+    /api/v2/companies/<slug>/, is a DRF view whose `authentication_classes`
+    override dropped SessionAuthentication — a pure subtraction from the
+    default chain, which already contained the API key class it re-declared.
+    Same person, same browser, same organisation, two answers.
+    """
+
+    def setUp(self):
+        make_organisation('withdrawn-org', 'archived')
+        get_user_model().objects.create_user(
+            username='reviewer', password='x', is_staff=True)
+        self.staff = self.client_class()
+        self.staff.login(username='reviewer', password='x')
+
+    def test_staff_open_the_archived_organisation_on_every_surface(self):
+        for path in ('/api/v2/companies/withdrawn-org/',
+                     '/api/v2/companies/withdrawn-org/principles/',
+                     '/api/v2/companies/withdrawn-org/kpis/16/',
+                     '/companies/withdrawn-org/ml-insights.json'):
+            with self.subTest(path=path):
+                self.assertEqual(self.staff.get(path).status_code, 200, path)
+
+    def test_an_ordinary_account_opens_none_of_them(self):
+        """Signed in is not staff, and staff is what the rule names."""
+        get_user_model().objects.create_user(username='ordinary', password='x')
+        client = self.client_class()
+        client.login(username='ordinary', password='x')
+        for path in ('/api/v2/companies/withdrawn-org/',
+                     '/api/v2/companies/withdrawn-org/principles/',
+                     '/companies/withdrawn-org/ml-insights.json'):
+            with self.subTest(path=path):
+                self.assertEqual(client.get(path).status_code, 404, path)
+
+
+class NoHandWrittenCopiesOfTheRuleTests(TestCase):
+    """
+    companies/visibility.py exists because this list had been written out by
+    hand in six places, and the copies drifted: every one of them still said
+    ('public', 'verified', 'draft') long after `public_demo` was added, so a
+    demonstration organisation's page served while its own API and its own PDF
+    answered 404.
+
+    A rule you have to remember to copy is not one rule. This fails if a copy
+    comes back.
+    """
+
+    #: The scoring and analytics queries select on ('public', 'verified') and
+    #: are deliberately NOT this list — they must keep excluding demonstration
+    #: profiles without being told the status exists. See visibility.py.
+    LITERAL = "'public', 'verified', 'draft'"
+
+    def test_the_visibility_list_is_written_once(self):
+        import pathlib
+
+        from django.conf import settings
+
+        root = pathlib.Path(settings.BASE_DIR)
+        skip = {'.venv', 'node_modules', '.git', '__pycache__', 'static'}
+        offenders = []
+        for path in root.rglob('*.py'):
+            if any(part in skip or part.startswith('.') for part in path.parts):
+                continue
+            if path.name == 'visibility.py' or path.name.startswith('tests'):
+                continue
+            if self.LITERAL in path.read_text(encoding='utf-8', errors='replace'):
+                offenders.append(str(path.relative_to(root)))
+        self.assertEqual(
+            offenders, [],
+            f'The visibility list is written out by hand in {offenders}. '
+            f'Import PUBLICLY_VISIBLE_STATUSES from companies.visibility — '
+            f'every previous copy of this literal went stale.')
+
+    def test_the_guard_would_notice(self):
+        """
+        Non-vacuous: the literal it searches for must be the one that actually
+        appears in the module it comes from.
+        """
+        from companies.visibility import PUBLICLY_VISIBLE_STATUSES
+
+        for status in ('public', 'verified', 'draft'):
+            self.assertIn(status, PUBLICLY_VISIBLE_STATUSES)
+        self.assertIn('public_demo', PUBLICLY_VISIBLE_STATUSES,
+                      'the status every hand-written copy was missing')

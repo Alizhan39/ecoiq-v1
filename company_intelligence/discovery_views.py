@@ -18,6 +18,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
 from companies.models import CompanyProfile
+from companies.visibility import PUBLICLY_VISIBLE_STATUSES
 from league.models import Company, SECTOR_CHOICES
 
 from company_intelligence.models import CompanyShariahScreen
@@ -31,7 +32,7 @@ SHARIAH_STATUS_CHOICES = [c for c, _ in CompanyShariahScreen._meta.get_field('ov
 
 def _profile_or_404(slug):
     company = get_object_or_404(Company, slug=slug)
-    return get_object_or_404(CompanyProfile, company=company, status__in=('public', 'verified', 'draft'))
+    return get_object_or_404(CompanyProfile, company=company, status__in=PUBLICLY_VISIBLE_STATUSES)
 
 
 def _criteria_from_request(request):

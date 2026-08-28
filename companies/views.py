@@ -18,7 +18,7 @@ from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_C
 from companies.scoring import get_path_to_100_actions
 from companies.throttle import rate_limit, cache_response
 from companies.improvement_data import get_improvement_pathway
-from companies.visibility import profile_for
+from companies.visibility import PUBLICLY_VISIBLE_STATUSES, profile_for
 from league.models import Company, SECTOR_CHOICES
 from company_intelligence.models import ResearchWatchlistEntry
 
@@ -460,9 +460,11 @@ def company_pdf_report(request, slug):
     from django.template.loader import render_to_string
     from django.http import HttpResponse
 
-    company = get_object_or_404(Company, slug=slug)
-    profile = get_object_or_404(CompanyProfile, company=company,
-                                status__in=('public', 'verified', 'draft'))
+    # The last hand-written copy of the visibility rule. It predated
+    # `public_demo`, so a demonstration organisation's page served while its
+    # own PDF 404'd. companies/visibility.py is the one list.
+    profile = profile_for(slug, request.user)
+    company = profile.company
 
     # ── Public evidence gate (D1.5) ───────────────────────────────────────────
     # A downloadable PDF is the most quotable artefact EcoIQ produces: it leaves
@@ -1055,8 +1057,12 @@ def company_stock_profile(request, slug):
     explanation instead of fabricated market data.
     """
     company = get_object_or_404(Company, slug=slug)
+    # The shared list rather than another copy of it. Not profile_for(): this
+    # page tolerates a missing profile and must keep doing so, and widening it
+    # to show staff archived organisations is a separate decision from fixing
+    # a list that had drifted out of date.
     profile = CompanyProfile.objects.filter(
-        company=company, status__in=('public', 'verified', 'draft'),
+        company=company, status__in=PUBLICLY_VISIBLE_STATUSES,
     ).first()
 
     is_staff = request.user.is_authenticated and request.user.is_staff
@@ -1184,8 +1190,9 @@ def company_detail_internal(request, slug):
     Signing in does not unlock a score; it unlocks the operational panels.
     """
     company = get_object_or_404(Company, slug=slug)
+    # The shared list, for the same reason as above.
     profile = get_object_or_404(CompanyProfile, company=company,
-                                status__in=('public', 'verified', 'draft'))
+                                status__in=PUBLICLY_VISIBLE_STATUSES)
 
     # ── Public evidence gate (D1.5) ───────────────────────────────────────────
     # Fail closed. This page renders the composite score in seventeen places —

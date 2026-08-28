@@ -146,18 +146,48 @@ def rate_limit(name, json=False, anon_per_min=None, auth_per_min=None, staff_exe
     return decorator
 
 
+def _cache_audience(request):
+    """
+    Which bucket this caller reads from and writes to.
+
+    Two buckets, not one per user: the cache exists so a heavy artifact is not
+    regenerated for every visitor, and a per-user key would end that. `is_staff`
+    is the only distinction any cached view actually makes, so it is the only
+    one the key needs to carry.
+    """
+    user = getattr(request, 'user', None)
+    return 'staff' if (user is not None and user.is_authenticated
+                       and user.is_staff) else 'public'
+
+
 def cache_response(name, timeout=600):
     """
-    Decorator: cache a successful (200) GET response body by request path so the
-    same heavy artifact (PDF/certificate/JSON) is not regenerated on every hit.
-    Output depends only on the URL (company/sector data), not the user, so a
-    path-keyed cache is safe. Short TTL bounds staleness.
+    Decorator: cache a successful (200) GET response body so the same heavy
+    artifact (PDF/certificate/JSON) is not regenerated on every hit. Short TTL
+    bounds staleness.
+
+    KEYED BY AUDIENCE AS WELL AS PATH
+    ---------------------------------
+    This used to say output "depends only on the URL, not the user, so a
+    path-keyed cache is safe". That was not true of every view wearing the
+    decorator, and the exception mattered.
+
+    sector_pdf_report serves twenty-five rows to staff and five to everybody
+    else — a deliberate preview gate, stated in its own docstring. Cached by
+    path alone, whichever audience arrived first decided what the other one
+    got: a staff request populated the key, and the next anonymous visitor to
+    the same URL was handed the full report, byte for byte, for the rest of the
+    TTL. Measured in both directions before this was changed.
+
+    A gate the cache in front of it can hand around is not a gate. So the key
+    carries the audience, and a response computed for a privileged caller can
+    no longer be served to an unprivileged one.
     """
     def decorator(view):
         def wrapped(request, *args, **kwargs):
             if request.method != 'GET':
                 return view(request, *args, **kwargs)
-            key = f'cr:{name}:{request.get_full_path()}'
+            key = f'cr:{name}:{_cache_audience(request)}:{request.get_full_path()}'
             cached = cache.get(key)
             if cached is not None:
                 content, content_type = cached
