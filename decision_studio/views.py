@@ -11,6 +11,9 @@ Security/cost controls enforced here, not left to the caller:
   can submit — there is no existing rate-limit precedent for plain Django
   views in this codebase (only the DRF JSON API has one), so this is a new,
   minimal safeguard rather than a reused one.
+- a question belongs to whoever asked it. Every read of a DecisionQuery goes
+  through decision_studio/visibility.py, so the list and the detail view
+  cannot disagree about who may see what.
 """
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,6 +21,7 @@ from django.urls import reverse
 
 from decision_studio.models import DecisionQuery
 from decision_studio.services.decision_engine import answer_question
+from decision_studio.visibility import queries_visible_to
 
 MAX_QUESTION_LENGTH = 500
 RATE_LIMIT_MAX_REQUESTS = 10
@@ -49,7 +53,7 @@ def _is_rate_limited(request):
 def studio(request):
     if not request.session.session_key:
         request.session.save()
-    recent_queries = DecisionQuery.objects.filter(session_key=request.session.session_key)[:10]
+    recent_queries = queries_visible_to(request)[:10]
     # Optional prefill only — e.g. from the globe's "Ask EcoIQ about the
     # world" action. Never auto-submits; the user still presses Ask, so the
     # existing rate-limit/cost-control path in ask() is untouched.
@@ -76,8 +80,12 @@ def ask(request):
     if not request.session.session_key:
         request.session.save()
 
+    # Scoped like everything else: a follow-up may only continue a question
+    # this requester actually asked. Unscoped, any id could be named as the
+    # parent, threading one visitor's question onto another's.
     parent_id = request.POST.get('parent_query_id')
-    parent_query = DecisionQuery.objects.filter(pk=parent_id).first() if parent_id else None
+    parent_query = (queries_visible_to(request).filter(pk=parent_id).first()
+                    if parent_id else None)
 
     outcome = answer_question(question_text, execution_mode='deterministic_test')
 
@@ -93,5 +101,12 @@ def ask(request):
 
 
 def result_detail(request, query_id):
-    query = get_object_or_404(DecisionQuery, pk=query_id)
+    """
+    One question's result — only for the visitor who asked it.
+
+    404 rather than 403: whether a given id has ever been asked is itself not
+    public, and a 403 would confirm it. Same reasoning as
+    companies/visibility.py.
+    """
+    query = get_object_or_404(queries_visible_to(request), pk=query_id)
     return render(request, 'decision_studio/result.html', {'query': query, 'result': query.result})
