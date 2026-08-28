@@ -8,6 +8,7 @@ Permissions match v1 exactly (`IsPublicOrAPIKey`): v2 is not a privilege change,
 it is a truthfulness change. The same audience gets the same data, described
 honestly.
 """
+from django.db.models import Q
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.generics import ListAPIView
@@ -64,9 +65,29 @@ class CompanyListV2View(ListAPIView):
               .filter(profile__in=profiles_visible_to(self.request.user))
               .select_related('profile').order_by('name'))
 
-        q = self.request.query_params.get('q')
-        if q:
-            qs = qs.filter(name__icontains=q)
+        # Stripped and split into words, not matched as one raw substring.
+        #
+        # `name__icontains=q` meant the query had to appear in the name exactly
+        # as typed, whitespace and all. Measured against the real directory:
+        # "coca cola" found nothing while "coca-cola" found the company, a
+        # trailing space from a paste or an autocomplete found nothing, and any
+        # word order but the stored one found nothing.
+        #
+        # On this product an empty result is not a blank screen — it reads as
+        # "EcoIQ holds nothing on this organisation", which is a claim about
+        # evidence coverage. Making it depend on whether the reader typed the
+        # hyphen is the kind of accidental assertion the rest of this file
+        # exists to avoid.
+        #
+        # v1 has stripped and tokenised since it was written (api/views.py); v2
+        # is what the React app actually calls, and it did neither.
+        #
+        # Tokens are ANDed, not ORed: this is a directory being narrowed, so
+        # every word the reader typed should still be true of what comes back.
+        # v1 ORs because it is a recall-oriented search across several fields —
+        # a different job, deliberately left alone.
+        for token in (self.request.query_params.get('q') or '').split():
+            qs = qs.filter(Q(name__icontains=token) | Q(slug__icontains=token))
         sector = self.request.query_params.get('sector')
         if sector:
             qs = qs.filter(sector__iexact=sector)
