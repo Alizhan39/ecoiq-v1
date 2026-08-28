@@ -59,6 +59,10 @@ def apply_review_decision(link, action, reviewer, reason=''):
         kpi_evidence_link=link, evidence=link.evidence, action=action, reviewer=reviewer, reason=reason,
         previous_review_state=previous_state, new_review_state=new_state,
         relationship_decision=new_relationship or '',
+        # Pin WHICH text this judgement was about. Read from the evidence as it
+        # stands at this moment, never recomputed later — a hash computed at
+        # read time would say what the text is now, not what the reviewer saw.
+        evidence_version=getattr(link.evidence, 'integrity_reference', '') or '',
     )
 
     link.review_state = new_state
