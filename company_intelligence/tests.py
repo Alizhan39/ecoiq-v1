@@ -656,6 +656,39 @@ STALE_CONCEPT_XBRL_FACTS = {
 }
 
 
+#: A resolver that always answers with one ordinary public address.
+#:
+#: WHY THESE CLASSES PATCH DNS
+#: ---------------------------
+#: `url_safety.validate_url` resolves the hostname for real, and registering a
+#: source runs it. So the classes below — which register real SEC EDGAR and
+#: document sources — performed live DNS lookups as a side effect of testing
+#: the registry.
+#:
+#: Under `--parallel 4` one lookup timing out took fifteen tests red at once,
+#: with a message indistinguishable from a genuine security rejection:
+#:
+#:     ValueError: Refusing to register unsafe URL: This URL cannot be used
+#:     as a source.
+#:
+#: The same tests passed in isolation, and the same suite passed and then
+#: failed across two runs of unchanged code. A suite whose greenness depends
+#: on the resolver cannot be used to decide whether a change is safe.
+#:
+#: The guard's own behaviour is not what these classes are for and is already
+#: pinned without a network, here (test_dns_resolving_to_private_ip_blocked
+#: and its neighbours) and in backend_intelligence_engine/tests_ssrf.py. This
+#: only stops the registry tests depending on DNS to reach their own subject.
+def _resolves_to_a_public_address(host, *args, **kwargs):
+    return [(2, 1, 6, '', ('93.184.216.34', 0))]
+
+
+#: Applied to every class whose subject is registration, not resolution.
+deterministic_dns = patch(
+    'company_intelligence.services.url_safety.socket.getaddrinfo',
+    new=_resolves_to_a_public_address)
+
+
 def _real_profile(slug='apple'):
     """Uses a real CIK-mapped slug from US_COMPANY_CIKS so
     resolve_company_identity() finds it — the HTTP call itself is mocked,
@@ -1527,6 +1560,7 @@ class DiscoveryViewTests(SignedIn, TestCase):
             self.assertNotIn(banned, body)
 
 
+@deterministic_dns
 class RegisterDocumentSourceViewTests(TestCase):
     def setUp(self):
         self.profile = _profile(slug='register-doc-co')
@@ -2406,6 +2440,7 @@ class SourceDiscoveryTests(TestCase):
         self.assertIsNotNone(profile.last_source_discovery_at)
 
 
+@deterministic_dns
 class SourceRegistryTests(TestCase):
     def test_register_approved_candidate_creates_harvester_source(self):
         from harvester.models import Source as HarvesterSource
@@ -2575,6 +2610,7 @@ class StewardshipHealthAndStateTests(TestCase):
         self.assertEqual(state['state'], 'CURRENT')
 
 
+@deterministic_dns
 class RefreshOrchestratorTests(TestCase):
     def test_dry_run_performs_zero_database_writes(self):
         profile = _real_profile('apple')
@@ -3217,6 +3253,7 @@ class ChangeTimelineTests(TestCase):
         self.assertEqual(len(timeline), 2)
 
 
+@deterministic_dns
 class RefreshOrchestratorLockingAndSchedulingTests(TestCase):
     def test_concurrent_refresh_is_refused_not_double_run(self):
         profile = _profile(slug='lock-co')
@@ -3263,6 +3300,7 @@ class RefreshOrchestratorLockingAndSchedulingTests(TestCase):
         self.assertEqual(run2.sources_skipped_not_due, 0)
 
 
+@deterministic_dns
 class RefreshOrchestratorChangeWiringTests(TestCase):
     @patch('harvester.services.fetchers.fetch_sustainability_document')
     @patch('harvester.services.fetchers.fetch_sec_edgar')
@@ -3528,6 +3566,7 @@ class MonitorViewsTests(TestCase):
         self.assertGreaterEqual(row['open_alerts_count'], 1)
 
 
+@deterministic_dns
 class SchedulerManagementCommandTests(TestCase):
     @patch('harvester.services.fetchers.fetch_sustainability_document')
     @patch('harvester.services.fetchers.fetch_sec_edgar')
@@ -4018,6 +4057,7 @@ class RateLimiterTests(TestCase):
         self.assertEqual(dropped, 0)
 
 
+@deterministic_dns
 class RefreshOrchestratorRateLimitingTests(TestCase):
     @patch('harvester.services.fetchers.fetch_sustainability_document')
     @patch('harvester.services.fetchers.fetch_sec_edgar')
