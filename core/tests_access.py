@@ -13,6 +13,7 @@ from django.test import Client, TestCase
 
 from core import access
 from core.redirects import PERMANENT
+from harvester.models import RegistryCompany
 
 
 class GatedSurfacesTests(TestCase):
@@ -25,12 +26,34 @@ class GatedSurfacesTests(TestCase):
         """
         Driven from the declaration, so adding a prefix adds its test and
         removing one fails here rather than silently re-publishing a page.
+
+        A prefix under /api/ is turned away in JSON rather than redirected —
+        the middleware branches on it deliberately, because redirecting an XHR
+        to a login page hands the caller an HTML body and a 200, which reads as
+        a parse error rather than as "sign in". Nothing exercised that branch
+        until /api/why/company/ became the first API prefix on the list.
         """
         for prefix in access.SIGN_IN_PREFIXES:
             with self.subTest(prefix=prefix):
                 response = self.client.get(prefix)
-                self.assertEqual(response.status_code, 302)
-                self.assertIn('/login/', response['Location'])
+                if '/api/' in prefix:
+                    self.assertEqual(response.status_code, 403)
+                    self.assertEqual(response['Content-Type'], 'application/json')
+                    self.assertEqual(response.json(),
+                                     {'detail': 'Authentication required.'})
+                else:
+                    self.assertEqual(response.status_code, 302)
+                    self.assertIn('/login/', response['Location'])
+
+    def test_at_least_one_prefix_takes_each_branch(self):
+        """
+        Guards the test above from silently testing only one branch if the
+        list ever loses its API prefix or its page prefixes.
+        """
+        api = [p for p in access.SIGN_IN_PREFIXES if '/api/' in p]
+        pages = [p for p in access.SIGN_IN_PREFIXES if '/api/' not in p]
+        self.assertTrue(api, 'no API prefix — the JSON branch is untested')
+        self.assertTrue(pages, 'no page prefix — the redirect branch is untested')
 
     def test_every_declared_exact_path_is_gated(self):
         for path in sorted(access.SIGN_IN_EXACT):
@@ -232,6 +255,19 @@ class PerCompanyOrphanPagesTests(TestCase):
                 self.assertEqual(self.client.get(path).status_code, 302)
 
     def test_a_signed_in_user_still_gets_both_pages(self):
+        """
+        Sign-in, not deletion — for an organisation that is actually on record.
+
+        This used to pass with no fixture at all, because /why/company/ built
+        its report out of the URL: any slug produced a 200 and a name
+        title-cased from the path. So the assertion was resting on the very
+        defect the sibling test below describes. It now names a registered
+        organisation, which is what "the page still works" was always meant to
+        assert.
+        """
+        RegistryCompany.objects.create(
+            company_name='ABB Türkiye', slug='abb-turkiye',
+            sector='utilities', country='TR')
         user = get_user_model().objects.create_user(username='why-reader')
         client = Client()
         client.force_login(user)
@@ -239,6 +275,24 @@ class PerCompanyOrphanPagesTests(TestCase):
                      '/why/company/abb-turkiye/'):
             with self.subTest(path=path):
                 self.assertEqual(client.get(path).status_code, 200)
+
+    def test_signing_in_does_not_conjure_an_organisation(self):
+        """
+        The sibling test above could only take the unknown-slug defect as far
+        as the sign-in redirect; behind the gate, /why/company/<anything>/ still
+        answered 200. It now 404s, so the page holds the same line for a signed-
+        in analyst that it holds for an anonymous crawler.
+
+        /company-intelligence/ is deliberately not asserted here: it renders a
+        client-side shell with empty states and fabricates no name server-side.
+        It answers 200 for any slug and that remains open — a lesser charge,
+        and one whose fix needs the Hikma data model rather than a guess.
+        """
+        user = get_user_model().objects.create_user(username='why-reader-2')
+        client = Client()
+        client.force_login(user)
+        self.assertEqual(
+            client.get('/why/company/does-not-exist-xyz/').status_code, 404)
 
     def test_the_public_organisation_page_is_untouched(self):
         """

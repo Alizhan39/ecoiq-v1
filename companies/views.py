@@ -18,6 +18,7 @@ from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_C
 from companies.scoring import get_path_to_100_actions
 from companies.throttle import rate_limit, cache_response
 from companies.improvement_data import get_improvement_pathway
+from companies.visibility import profile_for
 from league.models import Company, SECTOR_CHOICES
 from company_intelligence.models import ResearchWatchlistEntry
 
@@ -629,10 +630,12 @@ def company_ml_insights(request, slug):
     for a single company. Runs on-demand using saved model files; returns
     graceful error payload if models aren't trained yet.
     """
-    company = get_object_or_404(
-        __import__('league.models', fromlist=['Company']).Company,
-        slug=slug,
-    )
+    # Through companies.visibility, not league.Company directly. Looking the
+    # organisation up by slug alone served an ARCHIVED profile's cluster label
+    # and anomaly score to anonymous callers, while /companies/<slug>/ — the
+    # page — answered 404 to everybody. A withdrawn assessment is withdrawn in
+    # every format it is published in.
+    company = profile_for(slug, request.user).company
 
     payload: dict = {
         'company': company.name,

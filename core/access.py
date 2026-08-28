@@ -95,12 +95,23 @@ SIGN_IN_PREFIXES: tuple[str, ...] = (
     # leaving it open would de-publish the page and publish it again in another
     # format. It is still generated, for signed-in users.
     #
-    # KNOWN GAP, deliberately not closed here: /api/why/company/<slug>/ serves
-    # the same payload as JSON and stays public. Gating it is an API contract
-    # change, which is not this phase's to make. Recorded in
-    # docs/product/FINAL_TEMPLATE_MIGRATION.md.
     '/company-intelligence/',
     '/why/company/',
+    # The JSON behind the page above. It was left open when the page was
+    # gated, on the reasoning that changing an API contract was not a routing
+    # phase's decision — and recorded as a known gap in
+    # docs/product/FINAL_TEMPLATE_MIGRATION.md.
+    #
+    # It is closed here because the authorization pass is the phase whose
+    # decision it is. Until now /why/company/<slug>/ redirected to sign-in
+    # while /api/why/company/<slug>/ returned the identical payload to anyone,
+    # which de-published the page and published it again one path away — the
+    # same reasoning that already gated the pack.pdf rather than exempting it
+    # as a "server document".
+    #
+    # The country pair is untouched: /why/country/ and /api/why/country/ are
+    # both public, and consistently so.
+    '/api/why/company/',
 )
 
 #: Exact paths that require sign-in where the PREFIX must stay public.
