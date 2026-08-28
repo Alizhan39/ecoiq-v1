@@ -66,12 +66,60 @@ PROJECT_TYPE_META = {
     'other':         {'label': 'Other Initiative',        'icon': '🌱', 'accent': '#16a085'},
 }
 
+#: The pillar scores the recommendation engine reads, with the label a reader
+#: sees when one of them has not been assessed.
+_RECOMMENDATION_PILLARS = (
+    ('score_pollution_footprint', 'Pollution footprint'),
+    ('score_reduction_progress', 'Reduction progress'),
+    ('score_investment', 'Investment'),
+    ('score_transparency', 'Transparency'),
+    ('score_community_impact', 'Community impact'),
+)
+
+
+def _below(value, threshold) -> bool:
+    """
+    Is this score measurably below the threshold?
+
+    UNKNOWN IS NOT A GAP
+    --------------------
+    `company.score_pollution_footprint < 60` raised
+
+        TypeError: '<' not supported between instances of 'NoneType' and 'int'
+
+    for any organisation whose pillar scores have not been computed — which is
+    most of them — so /league/<slug>/report.pdf returned a 500 to anonymous
+    callers rather than a report.
+
+    Coercing the unknown to 0 would have been worse than the crash: every
+    recommendation would fire, and the PDF would tell a reader that an
+    organisation nobody has assessed has a critical pollution-monitoring gap.
+    A recommendation is a claim about a measured deficiency. No measurement,
+    no claim.
+    """
+    return value is not None and value < threshold
+
+
+def unassessed_pillars(company):
+    """
+    The pillars carrying no score, so the report can say which.
+
+    Without this the empty recommendation list rendered "No critical
+    recommendations — company scores above threshold on all pillars", which for
+    an unassessed organisation reports silence as a pass. That is the exact
+    substitution — UNKNOWN read as a clean bill of health — that the rest of
+    this codebase is written to prevent.
+    """
+    return [label for field, label in _RECOMMENDATION_PILLARS
+            if getattr(company, field, None) is None]
+
+
 # Stub AI recommendations — generated from pillar score gaps
 def _stub_recommendations(company, projects):
     sdg_lkp = _SDG_LOOKUP
     recs = []
 
-    if company.score_pollution_footprint < 60:
+    if _below(company.score_pollution_footprint, 60):
         recs.append({
             'priority': 'critical', 'priority_label': 'Critical',
             'icon': '📡',
@@ -89,7 +137,7 @@ def _stub_recommendations(company, projects):
             ],
         })
 
-    if company.score_reduction_progress < 60:
+    if _below(company.score_reduction_progress, 60):
         recs.append({
             'priority': 'high', 'priority_label': 'High',
             'icon': '🎯',
@@ -107,7 +155,7 @@ def _stub_recommendations(company, projects):
             ],
         })
 
-    if company.score_investment < 60:
+    if _below(company.score_investment, 60):
         recs.append({
             'priority': 'high', 'priority_label': 'High',
             'icon': '💚',
@@ -125,7 +173,7 @@ def _stub_recommendations(company, projects):
             ],
         })
 
-    if company.score_transparency < 65:
+    if _below(company.score_transparency, 65):
         recs.append({
             'priority': 'medium', 'priority_label': 'Medium',
             'icon': '📊',
@@ -143,7 +191,7 @@ def _stub_recommendations(company, projects):
             ],
         })
 
-    if company.score_community_impact < 60:
+    if _below(company.score_community_impact, 60):
         recs.append({
             'priority': 'medium', 'priority_label': 'Medium',
             'icon': '🌡️',
