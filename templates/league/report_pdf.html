@@ -1639,6 +1639,18 @@ p  { margin-bottom: 7px; }
       </div>
     </div>
     {% endfor %}
+  {% elif unassessed_pillars %}
+  {% comment %}
+    An empty recommendation list has two very different causes, and this used
+    to report both as the good one: "company scores above threshold on all
+    pillars" was rendered for organisations whose pillars carry no score at
+    all. Silence read as a pass.
+  {% endcomment %}
+  <p style="color:var(--muted); padding:12px;">
+    No recommendations — these pillars have not been assessed for this
+    organisation, so no gap has been measured to recommend against:
+    {% for pillar in unassessed_pillars %}{{ pillar }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+  </p>
   {% else %}
   <p style="color:var(--muted); padding:12px;">
     No critical recommendations — company scores above threshold on all pillars.
