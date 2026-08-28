@@ -243,13 +243,188 @@ def _decision_implication(verdict: str, confirmed, conflict: dict) -> dict:
             'detail': 'Evidence exists but does not carry a conclusion.'}
 
 
-def investigation_chain(assessment, links=None) -> dict:
+def _primary_source(confirmed) -> dict:
+    """
+    The strongest source behind the confirmed evidence.
+
+    Strongest by AUTHORITY TIER, which says what the source IS. It is not a
+    claim that this source carries the argument — a Tier 1 regulator filing and
+    a Tier 2 company report can sit on opposite sides of the same principle.
+    """
+    from company_intelligence.services.source_provenance import provenance_for_memory
+
+    if not confirmed:
+        return {'state': NOT_INVESTIGATED,
+                'detail': 'No evidence is confirmed, so no source stands behind '
+                          'anything yet.'}
+    resolved = [(provenance_for_memory(l.evidence), l) for l in confirmed]
+    ranked = sorted(
+        resolved,
+        key=lambda pair: (pair[0]['authority']['tier']
+                          if pair[0]['authority']['tier'] is not None else 99))
+    provenance, _ = ranked[0]
+    return {
+        'state': 'IDENTIFIED',
+        'title': provenance['title'],
+        'publisher': provenance['publisher'],
+        'url': provenance['url'],
+        'authority': provenance['authority'],
+        'detail': (f'{provenance["title"] or "An untitled source"} — '
+                   f'{provenance["authority"]["label"].lower()}. Strongest by '
+                   'source type among the confirmed evidence; that is what the '
+                   'source is, not which way it points.'),
+    }
+
+
+def _provenance_completeness(confirmed) -> dict:
+    """
+    Whether the confirmed evidence can be traced and re-checked.
+
+    A finding nobody can verify against its source is an assertion. This reports
+    which of the checkable fields are actually present rather than assuming a
+    citation is complete because it exists.
+    """
+    from company_intelligence.services.source_provenance import provenance_for_memory
+
+    if not confirmed:
+        return {'state': NOT_INVESTIGATED, 'complete': 0, 'total': 0,
+                'missing': [], 'detail': 'Nothing is confirmed, so there is no '
+                                         'provenance to check.'}
+    fields = ('title', 'publisher', 'url', 'publication_date', 'content_hash')
+    missing: dict[str, int] = {}
+    complete = 0
+    for link in confirmed:
+        provenance = provenance_for_memory(link.evidence)
+        absent = [f for f in fields if not provenance.get(f)]
+        if not absent:
+            complete += 1
+        for f in absent:
+            missing[f] = missing.get(f, 0) + 1
+    return {
+        'state': 'COMPLETE' if complete == len(confirmed) else 'PARTIAL',
+        'complete': complete,
+        'total': len(confirmed),
+        'missing': sorted(missing),
+        'detail': (f'{complete} of {len(confirmed)} confirmed item(s) carry a '
+                   'full citation.'
+                   + (f' Missing across the rest: {", ".join(sorted(missing))}.'
+                      if missing else '')),
+    }
+
+
+def _human_standing(assessment, confirmed) -> dict:
+    """
+    WHO decided this, and when — as distinct from what the evidence is.
+
+    `standing` above is evidentiary: what kind of source the claim rests on.
+    This is procedural: whether a named person classified it. A finding that
+    looks strong on evidence and has never been reviewed is a different object
+    from one a reviewer signed, and collapsing them would let automated
+    matching inherit a human's credibility.
+    """
+    from company_intelligence.models import EvidenceReviewAction
+
+    if assessment is None or not confirmed:
+        return {'state': NOT_INVESTIGATED, 'reviewers': [], 'review_count': 0,
+                'detail': 'No evidence has been confirmed, so nobody has ruled '
+                          'on this principle.'}
+    actions = list(EvidenceReviewAction.objects
+                   .filter(kpi_evidence_link__assessment=assessment)
+                   .select_related('reviewer')
+                   .order_by('created_at'))
+    if not actions:
+        return {'state': 'CONFIRMED_WITHOUT_RECORDED_REVIEW',
+                'reviewers': [], 'review_count': 0,
+                'detail': 'Evidence is confirmed but no review action is on '
+                          'record — it predates the review workbench or was '
+                          'seeded as a fixture.'}
+    reviewers = sorted({a.reviewer.username for a in actions if a.reviewer})
+    latest = actions[-1]
+    return {
+        'state': 'REVIEWED_BY_NAMED_HUMAN',
+        'reviewers': reviewers,
+        'review_count': len(actions),
+        'last_reviewed_at': latest.created_at.isoformat() if latest.created_at else None,
+        'last_action': latest.action,
+        'rationale': latest.reason or None,
+        'evidence_version': latest.evidence_version or None,
+        'detail': (f'{len(actions)} review action(s) by '
+                   f'{", ".join(reviewers) or "an unnamed reviewer"}. The '
+                   'classification is a human act, recorded immutably.'),
+    }
+
+
+def _confidence(confirmed, requirements) -> dict:
+    """
+    Categorical, never a percentage — the inputs are categorical too, and a
+    number would manufacture precision the evidence cannot support.
+
+    Derived from how many structural requirements the evidence meets, so the
+    level and the reason are the same fact rather than two.
+    """
+    if not confirmed:
+        return {'state': 'INSUFFICIENT_EVIDENCE', 'met': 0, 'of': len(requirements),
+                'detail': 'No confirmed evidence, so nothing to be confident '
+                          'about either way.'}
+    met = [r for r in requirements if r['state'] == 'MET']
+    unmet = [r['requirement'] for r in requirements if r['state'] == 'NOT_MET']
+    level = ('VERY_HIGH' if len(met) == 4 else
+             'HIGH' if len(met) == 3 else
+             'MEDIUM' if len(met) == 2 else
+             'LOW' if len(met) == 1 else 'VERY_LOW')
+    return {
+        'state': level,
+        'met': len(met),
+        'of': len(requirements),
+        'unmet': unmet,
+        'detail': (f'{len(met)} of {len(requirements)} evidence requirements '
+                   'met.' + (f' Not met: {"; ".join(unmet)}.' if unmet else '')),
+    }
+
+
+def _publication_eligibility(profile, confirmed) -> dict:
+    """
+    Whether a composite score may be published — decided where it always was.
+
+    `companies.eligibility.decide()` reads coverage, confidence and score, and
+    never reads visibility. Reported here so the chain ends where a reader
+    expects, not recomputed: a second publication rule is how two answers to one
+    question start.
+    """
+    from companies import eligibility
+
+    decision = eligibility.decide(profile)
+    return {
+        'state': 'PUBLISHED' if decision.is_published else decision.status,
+        'is_published': decision.is_published,
+        'reasons': list(decision.reasons),
+        'detail': ('A composite score is publishable.' if decision.is_published
+                   else 'No composite score is publishable for this '
+                        'organisation. That is decided from coverage and '
+                        'confidence across all inputs, not from this principle '
+                        'alone.'),
+    }
+
+
+def investigation_chain(assessment, links=None, *, profile=None,
+                       principle=None) -> dict:
     """
     The full chain for one organisation against one principle.
 
     `assessment` may be None — an organisation that has never been looked at
     against this principle gets the chain with every node NOT_INVESTIGATED,
     rather than no chain at all.
+
+    Every node in the sequence the brief names is present:
+
+        entity → principle → question → evidence requirement → evidence →
+        primary source → provenance → human standing → finding →
+        conflict status → remediation status → residual concern →
+        confidence → publication eligibility → decision implication
+
+    No value is invented to fill one. Where a node has no answer it says which
+    KIND of nothing it is: NOT_INVESTIGATED when nobody looked, NONE_FOUND when
+    somebody did.
     """
     from api.v2_kpi import VERDICT_LABELS
 
@@ -261,10 +436,34 @@ def investigation_chain(assessment, links=None) -> dict:
     verdict = assessment.status if assessment else 'not_assessed'
     conflict = _conflict(confirmed)
     remediation = _remediation(assessment, confirmed)
+    requirements = _requirement_states(confirmed)
+
+    if profile is None and assessment is not None:
+        profile = assessment.company
+    if principle is None and assessment is not None:
+        from core.esg_principles_data import PRINCIPLES
+        principle = next(
+            (p for p in PRINCIPLES if p['id'] == assessment.kpi_id), None)
 
     return {
         'investigation_started': bool(confirmed),
-        'evidence_requirements': _requirement_states(confirmed),
+        # The chain opens with what is being asked of whom, so a reader never
+        # has to hold the question in their head while reading the answer.
+        'entity': {
+            'state': 'IDENTIFIED' if profile is not None else NOT_INVESTIGATED,
+            'slug': getattr(getattr(profile, 'company', None), 'slug', None),
+            'name': getattr(getattr(profile, 'company', None), 'name', None),
+        },
+        'principle': {
+            'state': 'IDENTIFIED' if principle else NOT_INVESTIGATED,
+            'kpi_id': (principle or {}).get('id'),
+            'title': (principle or {}).get('title'),
+        },
+        'question': {
+            'state': 'STATED' if principle else NOT_INVESTIGATED,
+            'text': (principle or {}).get('question'),
+        },
+        'evidence_requirements': requirements,
         'evidence': {
             'total': len(links),
             'confirmed': len(confirmed),
@@ -279,7 +478,13 @@ def investigation_chain(assessment, links=None) -> dict:
                 if confirmed else
                 'No evidence is linked to this principle.'),
         },
+        'primary_source': _primary_source(confirmed),
+        'provenance': _provenance_completeness(confirmed),
+        # Evidentiary standing: what KIND of source the claim rests on.
         'standing': _standing(confirmed),
+        # Procedural standing: WHO ruled on it. Distinct on purpose — a finding
+        # nobody reviewed must not inherit a reviewer's credibility.
+        'human_standing': _human_standing(assessment, confirmed),
         'finding': {
             'state': verdict.upper() if confirmed else NOT_INVESTIGATED,
             'label': (VERDICT_LABELS.get(verdict, verdict.upper()) if confirmed
@@ -290,5 +495,7 @@ def investigation_chain(assessment, links=None) -> dict:
         'conflict': conflict,
         'remediation': remediation,
         'residual_concern': _residual_concern(conflict, remediation),
+        'confidence': _confidence(confirmed, requirements),
+        'publication_eligibility': _publication_eligibility(profile, confirmed),
         'decision_implication': _decision_implication(verdict, confirmed, conflict),
     }

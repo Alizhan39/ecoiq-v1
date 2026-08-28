@@ -266,3 +266,140 @@ class DecisionImplicationTests(ChainTestCase):
         for word in ('you should', 'we recommend', 'buy', 'sell', 'divest',
                      'invest in'):
             self.assertNotIn(word, text, f'action recommended: {word!r}')
+
+
+class FullNodeSequenceTests(ChainTestCase):
+    """
+    Every node the brief names is present, and none is invented to fill a gap.
+    """
+
+    REQUIRED = (
+        'entity', 'principle', 'question', 'evidence_requirements', 'evidence',
+        'primary_source', 'provenance', 'human_standing', 'finding', 'conflict',
+        'remediation', 'residual_concern', 'confidence',
+        'publication_eligibility', 'decision_implication',
+    )
+
+    def test_every_node_is_present_even_before_anyone_looks(self):
+        chain = self.chain()
+        for node in self.REQUIRED:
+            self.assertIn(node, chain, node)
+
+    def test_the_question_is_this_principle_s_own(self):
+        question = self.chain()['question']
+        self.assertEqual(question['state'], 'STATED')
+        self.assertIn('pace', question['text'].lower())
+
+    def test_the_entity_is_named(self):
+        entity = self.chain()['entity']
+        self.assertEqual(entity['slug'], 'testco')
+        self.assertEqual(entity['name'], 'Testco')
+
+
+class HumanStandingTests(ChainTestCase):
+    """
+    Procedural standing, distinct from evidentiary standing.
+
+    A finding that looks strong on evidence and was never reviewed is a
+    different object from one a named reviewer signed. Collapsing them would let
+    automated matching inherit a human's credibility.
+    """
+
+    def setUp(self):
+        super().setUp()
+        from django.contrib.auth import get_user_model
+        self.reviewer = get_user_model().objects.create_user(
+            username='named-reviewer', is_staff=True)
+
+    def test_nothing_confirmed_means_nobody_ruled(self):
+        self.assertEqual(self.chain()['human_standing']['state'], NOT_INVESTIGATED)
+
+    def test_a_fixture_confirmed_without_review_says_so(self):
+        """
+        The demonstration corpus is confirmed but carries no review action. It
+        must not read as though a person signed it.
+        """
+        self._link(self._evidence('harvester.Evidence:70'))
+        standing = self.chain()['human_standing']
+        self.assertEqual(standing['state'], 'CONFIRMED_WITHOUT_RECORDED_REVIEW')
+        self.assertEqual(standing['reviewers'], [])
+
+    def test_a_reviewed_link_names_the_reviewer_and_pins_the_version(self):
+        from company_intelligence.services.evidence_review import apply_review_decision
+
+        link = self._link(self._evidence('harvester.Evidence:71'), state='proposed')
+        apply_review_decision(link, 'confirm_context', self.reviewer,
+                              reason='Priorities, not demonstrated practice.')
+        standing = self.chain()['human_standing']
+        self.assertEqual(standing['state'], 'REVIEWED_BY_NAMED_HUMAN')
+        self.assertEqual(standing['reviewers'], ['named-reviewer'])
+        self.assertEqual(standing['last_action'], 'confirm_context')
+        self.assertIn('Priorities', standing['rationale'])
+        self.assertTrue(standing['evidence_version'])
+
+    def test_human_standing_is_not_evidentiary_standing(self):
+        """Reviewed by a person says nothing about what the source is."""
+        from company_intelligence.services.evidence_review import apply_review_decision
+
+        link = self._link(self._evidence('harvester.Evidence:72'), state='proposed')
+        apply_review_decision(link, 'confirm_context', self.reviewer, reason='ok')
+        chain = self.chain()
+        self.assertEqual(chain['human_standing']['state'], 'REVIEWED_BY_NAMED_HUMAN')
+        self.assertEqual(chain['standing']['state'], 'UNCLASSIFIED')
+
+
+class ConfidenceAndPublicationTests(ChainTestCase):
+
+    def test_confidence_is_categorical_and_explains_itself(self):
+        self._link(self._evidence('harvester.Evidence:80'))
+        confidence = self.chain()['confidence']
+        self.assertEqual(confidence['state'], 'VERY_LOW')
+        self.assertEqual(confidence['met'], 0)
+        self.assertTrue(confidence['unmet'])
+
+    def test_confidence_is_never_a_percentage(self):
+        self._link(self._evidence('harvester.Evidence:81'))
+        self.assertNotIn('%', self.chain()['confidence']['detail'])
+
+    def test_nothing_confirmed_is_insufficient_not_low(self):
+        """
+        Absent evidence and weak evidence are different claims. VERY_LOW would
+        say we looked and were unconvinced.
+        """
+        self.assertEqual(self.chain()['confidence']['state'], 'INSUFFICIENT_EVIDENCE')
+
+    def test_publication_is_decided_where_it_always_was(self):
+        """
+        Reported, never recomputed: companies.eligibility owns it, and a second
+        publication rule is how two answers to one question start.
+        """
+        self._link(self._evidence('harvester.Evidence:82'))
+        publication = self.chain()['publication_eligibility']
+        self.assertFalse(publication['is_published'])
+        self.assertIn('coverage', publication['detail'])
+
+    def test_a_reviewed_principle_does_not_publish_an_organisation(self):
+        """One principle is not an assessment of the whole organisation."""
+        self._link(self._evidence('harvester.Evidence:83'))
+        self.assertFalse(self.chain()['publication_eligibility']['is_published'])
+
+
+class PrimarySourceTests(ChainTestCase):
+
+    def test_no_confirmed_evidence_means_no_primary_source(self):
+        self.assertEqual(self.chain()['primary_source']['state'], NOT_INVESTIGATED)
+
+    def test_the_primary_source_is_strongest_by_type_not_by_side(self):
+        """
+        Strongest source, not strongest argument. It says what the source IS.
+        """
+        self._link(self._evidence('harvester.Evidence:90'))
+        source = self.chain()['primary_source']
+        self.assertEqual(source['state'], 'IDENTIFIED')
+        self.assertIn('not which way it points', source['detail'])
+
+    def test_provenance_reports_what_is_missing(self):
+        self._link(self._evidence('harvester.Evidence:91'))
+        provenance = self.chain()['provenance']
+        self.assertEqual(provenance['state'], 'PARTIAL')
+        self.assertTrue(provenance['missing'])

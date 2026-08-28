@@ -291,5 +291,5 @@ def company_kpi(request, slug: str, kpi_id: int):
         # The full chain from requirement to decision, every node carrying an
         # explicit state. NOT_INVESTIGATED and NONE_FOUND are different claims
         # and are never collapsed into an empty section.
-        'chain': investigation_chain(assessment, links),
+        'chain': investigation_chain(assessment, links, profile=profile),
     })
