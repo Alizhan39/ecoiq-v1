@@ -123,10 +123,34 @@ class AnomalyDetector:
             )
 
     def score_company(self, company) -> dict | None:
-        """Score a single company. Returns anomaly_score and is_anomaly."""
+        """
+        Score a single company, or None when it cannot honestly be scored.
+
+        FAIL CLOSED ON MISSING MATERIAL INPUTS
+        --------------------------------------
+        Same rule as EcoIQScoringModel.predict_company and
+        CompanyClusterer.assign_company. `company_to_vector` imputes 50.0 for
+        unknown inputs, and this result is published as a finding:
+        /companies/<slug>/ml-insights.json returns it as `anomaly`.
+
+        An organisation with no data scored -0.45 and `is_anomaly: false` —
+        which reads as "we looked and it is unremarkable" when nothing was
+        looked at. Both halves are wrong in the same way, and the false one is
+        the more reassuring, which makes it the worse one to publish.
+        """
         if not self._load():
             return None
-        from ml.features import company_to_vector
+        from ml.features import company_to_vector, missing_material_features
+
+        missing = missing_material_features(company)
+        if missing:
+            logger.info(
+                'Anomaly scoring refused for %s — material inputs unknown: %s. '
+                'The model would have received imputed 50.0 for each.',
+                company, ', '.join(missing),
+            )
+            return None
+
         try:
             vec    = company_to_vector(company).reshape(1, -1)
             scaled = self.scaler.transform(vec)
