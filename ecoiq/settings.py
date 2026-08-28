@@ -1019,7 +1019,26 @@ REST_FRAMEWORK = {
         'api.throttles.APIKeyRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon':    '20/day',
+        # WHY THIS IS PER-HOUR AND NOT 20/day
+        #
+        # 20/day was a DATA-API quota, set when /api/ was something a third
+        # party called deliberately. The frontend migration made API v2 the way
+        # the WEBSITE renders: /platform/, /companies/, /leaderboard/,
+        # /projects/ and one call per investigation are all fetched by the SPA
+        # on ordinary page views.
+        #
+        # So every visitor was spending a developer quota to read the site. At
+        # 2-4 calls per page view, roughly five to seven pages exhausted it —
+        # after which /companies/ rendered "Could not load this section" for the
+        # rest of the DAY, and a shared NAT could exhaust it for a whole office
+        # in minutes. Observed in production: Retry-After 22248, six hours.
+        #
+        # Third-party data consumers are unaffected by this number: an API key
+        # carries its own tier below, and those are the real quotas. This one
+        # only has to permit a person reading the site while still bounding a
+        # scraper — 600/hour is ~150-300 page views an hour per address, and
+        # recovers in an hour rather than at midnight.
+        'anon':    '600/hour',
         'explorer':   '100/day',
         'professional': '2000/day',
         'enterprise':   '50000/day',
