@@ -998,6 +998,23 @@ class EvidenceReviewAction(models.Model):
     new_review_state = models.CharField(max_length=25, blank=True)
     # The relationship this specific decision set (blank for
     # reject/needs_more_evidence/mark_disputed, which don't assert one).
+    # WHICH VERSION OF THE EVIDENCE WAS REVIEWED
+    #
+    # A review is a judgement about a specific piece of text. Sources get
+    # re-fetched, and SourceDocument is UNIQUE on (company_slug, url,
+    # content_hash) precisely so a changed document becomes a new version
+    # rather than overwriting the old one — but nothing recorded which version
+    # a reviewer actually read.
+    #
+    # Without it, a later reader cannot tell a confirmation that still stands
+    # from one made against text that has since changed, and an evaluation case
+    # built from the review would pair a human's judgement with text they never
+    # saw. Blank on rows written before this existed: honestly unknown, never
+    # backfilled with a hash computed today, which would assert a fact about
+    # the past that nobody recorded.
+    evidence_version = models.CharField(
+        max_length=64, blank=True,
+        help_text='SHA-256 of the evidence text as it stood when reviewed.')
     relationship_decision = models.CharField(
         max_length=30, blank=True, choices=CompanyKPIEvidenceLink.RELATIONSHIP_CHOICES,
     )
