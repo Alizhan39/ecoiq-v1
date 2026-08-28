@@ -300,3 +300,10 @@ data/mcp/excel/*
 # been through the evidence boundary.
 docs/knowledge/vault/*
 !docs/knowledge/vault/.gitkeep
+
+# Playwright MCP session output. Console logs and accessibility-tree dumps
+# written by the project's browser-verification server (.mcp.json). It records
+# whatever page was being verified — including signed-in staff surfaces and the
+# review workbench — so it is working material, not project source, and it must
+# not reach a commit by being sitting in the tree when someone types `git add`.
+.playwright-mcp/
