@@ -86,10 +86,38 @@ Recorded here rather than acted on, because both are cost and product calls:
 1. A Key Value instance and a background worker are being paid for while
    nothing schedules work. Either that is deliberate headroom, or one or both
    should be suspended.
-2. `render.yaml` does not describe the running estate. A blueprint sync acts on
-   the blueprint, so the divergence should be closed in whichever direction is
-   intended — by adding the real services to `render.yaml`, or by removing
-   them from Render. Do not assume a sync will leave hand-made services alone.
+2. `render.yaml` does not describe the running estate, and **cannot currently
+   sync at all** — which is very likely why the estate drifted in the first
+   place. Measured:
+
+   ```
+   $ render blueprints validate render.yaml
+   {"errors": [{"path": "databases[0].plan",
+     "error": "Legacy Postgres plans, including 'starter', are no longer
+               supported for new databases."}],
+    "valid": false}
+   ```
+
+   So the blueprint is presently decorative: no change in it can be applied,
+   whatever it contains. Creating a Key Value instance and a worker by hand was
+   not someone bypassing the blueprint — it was the only way to add anything.
+
+   Two further mismatches, verified against the live plans:
+
+   | | `render.yaml` | live |
+   |---|---|---|
+   | `ecoiq` web | `starter` | `standard` |
+   | `ecoiq-db` | `starter` (retired) | `basic_256mb` |
+
+   **Sequencing matters here.** PR #220 fixes exactly these two lines and makes
+   the blueprint valid again. The moment it merges, a sync becomes possible
+   against a file that still does not declare `ecoiq-keyvalue`, the worker or
+   the four cron jobs — and the web plan line, uncorrected, would have
+   attempted to downgrade production from Standard to Starter. That is the
+   order to think about: make the blueprint describe the estate BEFORE making
+   the blueprint able to act on it, or at least establish what a sync does to
+   services it does not declare. This runbook does not assert what Render does
+   with them, because that has not been tested here.
 
 ---
 

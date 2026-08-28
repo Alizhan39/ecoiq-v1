@@ -22,10 +22,21 @@
 # wrong; read as a description of THIS FILE it is still accurate, which is
 # exactly how the estate and its blueprint came apart without anyone noticing.
 #
+# AND THIS FILE CURRENTLY CANNOT SYNC AT ALL.
+#   $ render blueprints validate render.yaml   ->   "valid": false
+#   databases[0].plan: legacy Postgres plan 'starter' is no longer supported.
+# Which is very likely why the estate drifted: creating those services by hand
+# was not bypassing the blueprint, it was the only way to add anything.
+#
+# PR #220 fixes that line, and the web `plan: starter` below, which does not
+# match the live Standard service either. When it merges the blueprint becomes
+# able to act — against a file that still does not declare the Key Value
+# instance, the worker or the crons. Make this file describe the estate before
+# making it able to apply itself.
+#
 # Closing the gap — adding the real services here, or removing them from Render
 # — is an owner decision with a monthly cost attached, and is deliberately not
-# made by editing this comment. Do not assume a blueprint sync will leave
-# hand-made services alone.
+# made by editing this comment.
 # See docs/operations/PRODUCTION_RUNBOOK.md for the measured inventory.
 #
 # build.sh is DB-FREE — the build environment cannot reach the private database
