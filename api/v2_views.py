@@ -8,7 +8,7 @@ Permissions match v1 exactly (`IsPublicOrAPIKey`): v2 is not a privilege change,
 it is a truthfulness change. The same audience gets the same data, described
 honestly.
 """
-from django.shortcuts import get_object_or_404
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -19,7 +19,7 @@ from api.permissions import IsPublicOrAPIKey
 # paginate identically to v1, and a second copy would be free to drift.
 from api.views import StandardPagination
 from api.v2_serializers import CompanyProfileV2Serializer, CompanyV2Serializer
-from companies.models import CompanyProfile
+from companies.visibility import profile_for, profiles_visible_to
 from league.models import Company
 
 
@@ -40,11 +40,29 @@ class CompanyListV2View(ListAPIView):
     """
     serializer_class = CompanyV2Serializer
     pagination_class = StandardPagination
-    authentication_classes = [APIKeyAuthentication]
+    #: SessionAuthentication alongside the API key, so a signed-in staff
+    #: session is recognised here as it already is on the sub-resources.
+    #:
+    #: `[APIKeyAuthentication]` alone was a pure SUBTRACTION from DRF's default
+    #: chain — the default already contains APIKeyAuthentication, so overriding
+    #: with just it added nothing and only removed session auth. The cost was
+    #: measured by the authorization pass: /api/v2/companies/<slug>/kpis/<id>/
+    #: is a plain Django view and lets a staff reviewer open an archived
+    #: organisation, while its own parent resource answered 404 to the same
+    #: person in the same browser. GET-only, so restoring session auth carries
+    #: no CSRF surface.
+    authentication_classes = [APIKeyAuthentication, SessionAuthentication]
     permission_classes = [IsPublicOrAPIKey]
 
     def get_queryset(self):
-        qs = Company.objects.select_related('profile').order_by('name')
+        # Through companies.visibility, not Company.objects. Starting from the
+        # company table listed every organisation the DETAIL endpoint and the
+        # page both withhold: archived ones, and ones carrying no profile at
+        # all. A directory that lists what its own entries refuse to open is
+        # the index to the thing it is withholding.
+        qs = (Company.objects
+              .filter(profile__in=profiles_visible_to(self.request.user))
+              .select_related('profile').order_by('name'))
 
         q = self.request.query_params.get('q')
         if q:
@@ -59,17 +77,21 @@ class CompanyListV2View(ListAPIView):
 
 
 @api_view(['GET'])
-@authentication_classes([APIKeyAuthentication])
+@authentication_classes([APIKeyAuthentication, SessionAuthentication])
 @permission_classes([IsPublicOrAPIKey])
 def company_detail_v2(request, slug):
     """GET /api/v2/companies/<slug>/ — one company, with its evidence state."""
-    company = get_object_or_404(Company, slug=slug)
-    profile = get_object_or_404(
-        CompanyProfile, company=company, status__in=('public', 'verified', 'draft'))
+    # The literal this replaced was written before `public_demo` existed, so a
+    # demonstration profile 404'd here while /companies/<slug>/ served it — the
+    # page and its own API disagreeing about whether the organisation is
+    # reachable. companies/visibility.py is the one list, and it is not copied.
+    profile = profile_for(slug, request.user)
     return Response(CompanyProfileV2Serializer(profile, context={'request': request}).data)
 
 
 @api_view(['GET'])
+# Not given SessionAuthentication with the two above: the leaderboard ranks
+# only publishable organisations, so who is asking cannot change its contents.
 @authentication_classes([APIKeyAuthentication])
 @permission_classes([IsPublicOrAPIKey])
 def leaderboard_v2(request):

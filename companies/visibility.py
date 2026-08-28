@@ -78,6 +78,25 @@ def visible_statuses(user) -> tuple[str, ...] | None:
     return None if can_see_every_status(user) else PUBLICLY_VISIBLE_STATUSES
 
 
+def profiles_visible_to(user=None, *, queryset=None):
+    """
+    The CompanyProfile rows this user may see, as a queryset.
+
+    The list half of `profile_for`. It exists because the rule kept being
+    applied to detail endpoints and skipped on the lists that link to them:
+    /api/v2/companies/ served archived organisations — and organisations with
+    no profile at all — while /api/v2/companies/<slug>/ and /companies/<slug>/
+    both answered 404 for exactly those rows. A directory that lists what its
+    own entries withhold is not a smaller leak than the entry leaking; it is
+    the index to it.
+    """
+    from companies.models import CompanyProfile
+
+    queryset = queryset if queryset is not None else CompanyProfile.objects.all()
+    statuses = visible_statuses(user)
+    return queryset if statuses is None else queryset.filter(status__in=statuses)
+
+
 def profile_for(slug: str, user=None, *, queryset=None):
     """
     The CompanyProfile for `slug` that this user is allowed to see, or 404.
@@ -87,13 +106,8 @@ def profile_for(slug: str, user=None, *, queryset=None):
     it. A staff caller gets the profile, which is what makes an archived
     organisation reviewable internally.
     """
-    from companies.models import CompanyProfile
-
-    queryset = queryset if queryset is not None else CompanyProfile.objects.all()
-    statuses = visible_statuses(user)
-    if statuses is not None:
-        queryset = queryset.filter(status__in=statuses)
-    return get_object_or_404(queryset, company__slug=slug)
+    return get_object_or_404(
+        profiles_visible_to(user, queryset=queryset), company__slug=slug)
 
 
 def is_demonstration(profile) -> bool:

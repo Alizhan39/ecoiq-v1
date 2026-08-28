@@ -98,8 +98,19 @@ class WhyViewsTests(TestCase):
         self.assertIn("Boardroom Mode", body)
         self.assertIn("Can I defend this to an IC", body)
 
-    def test_api_returns_reports(self):
+    def test_api_is_gated_with_its_page(self):
+        """
+        It served the same payload as the page publicly, which de-published the
+        page and published it again one path away. See core/access.py.
+        """
         r = self.client.get("/api/why/company/national-grid/")
+        self.assertEqual(r.status_code, 403)
+
+    def test_api_returns_reports(self):
+        user = get_user_model().objects.create_user(username="why-api")
+        client = Client(SERVER_NAME="localhost")
+        client.force_login(user)
+        r = client.get("/api/why/company/national-grid/")
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.json()["reports"])
 

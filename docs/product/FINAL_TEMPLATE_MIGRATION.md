@@ -411,9 +411,19 @@ routes = 0**. It is not zero. Counting honestly rather than by redefinition:
   own phase, and the pages publish no company score. That decision predates
   this audit; it is not a definition changed to reach a number.
 
-### One further gap, deliberately left open
+### One further gap, deliberately left open — since closed
 
-`/api/why/company/<slug>/` serves the same payload as the page that was just
+`/api/why/company/<slug>/` served the same payload as the page that was just
 de-published, as public JSON. Gating it is an API contract change and was out
-of scope for a routing phase. It should be closed with the `/billing/plans/`
-decision.
+of scope for a routing phase.
+
+**Closed by the authorization pass**, which is the phase whose decision it was:
+the prefix is now in `core.access.SIGN_IN_PREFIXES`, so the JSON answers 403
+where the page redirects to sign-in. The country pair stays public on both
+sides, consistently.
+
+The same pass found two things the routing phase had not looked for. The
+endpoint served an **archived** organisation's report, and it **never 404'd** —
+any slug at all returned 200 with a name title-cased out of the URL. Both are
+fixed in `core/why.py` and `companies/views.py`; see
+`core/tests_organisation_visibility.py`.

@@ -43,8 +43,8 @@ from __future__ import annotations
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 
+from companies.visibility import profile_for
 from core.unknown import known
 
 
@@ -54,13 +54,14 @@ def company_assessment(request, slug):
     """GET /api/v2/companies/<slug>/assessment/"""
     from companies.eligibility import decide
     from companies.evidence import PENDING_DETAIL, PENDING_HEADLINE
-    from companies.models import CompanyProfile
-    from league.models import Company
 
-    company = get_object_or_404(Company, slug=slug)
-    profile = get_object_or_404(
-        CompanyProfile, company=company,
-        status__in=('public', 'verified', 'draft'))
+    # companies/visibility.py, like the sibling endpoints under this slug.
+    # The literal here predated `public_demo`, so a demonstration organisation
+    # 404'd on its assessment while /companies/<slug>/ served the page built on
+    # it. This view takes DRF's default authentication chain, which includes
+    # SessionAuthentication, so a staff reviewer is recognised.
+    profile = profile_for(slug, request.user)
+    company = profile.company
 
     decision = decide(profile)
     payload = {

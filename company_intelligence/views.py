@@ -30,6 +30,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
 from companies.models import CompanyProfile
+from companies.visibility import PUBLICLY_VISIBLE_STATUSES
 from league.models import Company
 
 from company_intelligence.models import CompanyKPIEvidenceLink, EvidenceReviewAction, ResearchWatchlistEntry
@@ -38,7 +39,7 @@ from company_intelligence.services.company_trace import build_company_trace
 
 def _profile_or_404(slug):
     company = get_object_or_404(Company, slug=slug)
-    return get_object_or_404(CompanyProfile, company=company, status__in=('public', 'verified', 'draft'))
+    return get_object_or_404(CompanyProfile, company=company, status__in=PUBLICLY_VISIBLE_STATUSES)
 
 
 def explain_view(request, slug):
