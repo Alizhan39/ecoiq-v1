@@ -112,6 +112,14 @@ def _authority(source_type: str | None) -> dict:
     }
 
 
+def _reference_as_title(memory) -> str | None:
+    """A source_reference that names the source rather than keying it."""
+    reference = (getattr(memory, 'source_reference', '') or '').strip()
+    if not reference or reference.startswith(HARVESTER_SOURCE_PREFIX):
+        return None
+    return reference
+
+
 def provenance_for_memory(memory) -> dict:
     """
     Everything known about where one evidence record came from.
@@ -143,7 +151,9 @@ def provenance_for_memory(memory) -> dict:
         'has_source_record': evidence is not None,
         # The identity key, exposed as what it is rather than as a title.
         'record_reference': getattr(memory, 'source_reference', '') or None,
-        'title': title or None,
+        # Same rule as display_title: the harvester key is never a title, a
+        # human-written reference is one.
+        'title': (title or _reference_as_title(memory)),
         'publisher': publisher or None,
         'source_type': source_type or None,
         'url': (getattr(evidence, 'url', '') or getattr(document, 'url', '')
@@ -170,9 +180,24 @@ def display_title(memory) -> str | None:
     """
     A human-readable name for one evidence record, or None.
 
-    None rather than a fallback: `source_reference` is an idempotency key, and
-    showing it was the defect this module was written for. A record whose source
-    recorded no title has no title, and the interface should say so in its own
-    words rather than printing a primary key at a reader.
+    NOT EVERY source_reference IS A KEY
+    -----------------------------------
+    The defect this module was written for was `harvester.Evidence:41` being
+    shown as a title. The first fix refused `source_reference` outright — which
+    was too blunt, and broke the hand-seeded corpus where the reference IS the
+    citation: "European Commission — non-compliance decision, App Store".
+
+    So the rule is the pattern, not the field. A reference matching the
+    harvester key format is an idempotency key and never a title; anything else
+    was written by a person to name the source, and is exactly what a reader
+    should see.
+
+    None only when there is genuinely nothing to show.
     """
-    return provenance_for_memory(memory)['title']
+    resolved = provenance_for_memory(memory)['title']
+    if resolved:
+        return resolved
+    reference = (getattr(memory, 'source_reference', '') or '').strip()
+    if not reference or reference.startswith(HARVESTER_SOURCE_PREFIX):
+        return None
+    return reference

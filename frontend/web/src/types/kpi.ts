@@ -97,7 +97,24 @@ export interface StewardshipPrinciple {
   metrics: string[];
 }
 
+/**
+ * Three separate facts the server refuses to collapse into one flag.
+ *
+ * A demonstration is publicly visible AND carries demo evidence AND is
+ * unpublished. Merging them would let a surface assert something none of them
+ * says — that visibility implies a finding, which is the failure the whole
+ * publication gate exists to prevent.
+ */
+export interface Presentation {
+  is_demonstration: boolean;
+  evidence_is_demo?: boolean;
+  is_published: boolean;
+  label: string;
+  explanation?: string;
+}
+
 export interface KpiInvestigation {
+  presentation?: Presentation;
   company: { slug: string; name: string; sector: string };
   stewardship_principle: StewardshipPrinciple;
   assessment: {

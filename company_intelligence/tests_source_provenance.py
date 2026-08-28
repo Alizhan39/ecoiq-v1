@@ -83,14 +83,43 @@ class TitleTests(ProvenanceTestCase):
         memory = self._memory(self._lineage(title=''))
         self.assertIsNone(display_title(memory))
 
-    def test_a_memory_with_no_harvester_lineage_is_honest(self):
+    def test_a_memory_with_no_harvester_lineage_reports_no_source_record(self):
         memory = EvidenceMemory.objects.create(
             text_chunk='Hand-written fixture.', source_type='manual',
             source_reference='fixture:1', company=self.profile, is_demo=True)
         provenance = provenance_for_memory(memory)
         self.assertFalse(provenance['has_source_record'])
-        self.assertIsNone(provenance['title'])
         self.assertIsNone(provenance['publisher'])
+
+    def test_a_human_written_reference_IS_a_title(self):
+        """
+        The rule is the PATTERN, not the field.
+
+        The first version of this module refused `source_reference` outright,
+        which was too blunt: the hand-seeded corpus writes real citations there
+        — "European Commission — non-compliance decision" — and refusing them
+        left the investigation page with a null title, which crashed it.
+        """
+        memory = EvidenceMemory.objects.create(
+            text_chunk='Body.', source_type='manual',
+            source_reference='European Commission — non-compliance decision',
+            company=self.profile, is_demo=True)
+        self.assertEqual(display_title(memory),
+                         'European Commission — non-compliance decision')
+
+    def test_the_harvester_key_is_still_never_a_title(self):
+        """The original defect must not return through the new fallback."""
+        memory = EvidenceMemory.objects.create(
+            text_chunk='Body.', source_type='harvester_evidence',
+            source_reference='harvester.Evidence:999999',
+            company=self.profile, is_demo=False)
+        self.assertIsNone(display_title(memory))
+
+    def test_a_record_with_no_reference_at_all_has_no_title(self):
+        memory = EvidenceMemory.objects.create(
+            text_chunk='Body.', source_type='manual', source_reference='',
+            company=self.profile, is_demo=True)
+        self.assertIsNone(display_title(memory))
 
 
 class SourceMetadataTests(ProvenanceTestCase):

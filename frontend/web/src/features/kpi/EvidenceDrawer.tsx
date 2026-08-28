@@ -25,7 +25,8 @@ export function EvidenceDrawer({
   const established = isEstablishedFinding(evidence);
 
   return (
-    <aside className="kpi-drawer" aria-label={`Evidence: ${evidence.title}`}>
+    <aside className="kpi-drawer"
+           aria-label={`Evidence: ${evidence.title ?? 'untitled source'}`}>
       <div className="kpi-drawer__top">
         <div className="kpi-drawer__chips">
           <span className={`kpi-chip kpi-chip--${evidence.relation}`}>
@@ -43,7 +44,11 @@ export function EvidenceDrawer({
         </button>
       </div>
 
-      <h2 className="kpi-drawer__title">{evidence.title}</h2>
+      {/* Nullable since the API stopped substituting the idempotency key for
+          a missing title. Saying so beats rendering an empty heading. */}
+      <h2 className="kpi-drawer__title">
+        {evidence.title ?? 'Untitled source'}
+      </h2>
 
       {/* §5: a preliminary finding must never read like a concluded one. */}
       {evidence.legal_status === 'preliminary_regulatory_finding' ? (

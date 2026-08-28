@@ -65,7 +65,7 @@ from django.views.decorators.http import require_GET
 
 from api.v2_kpi import MATERIAL_STATUSES, VERDICT_LABELS
 from companies.models import CompanyProfile
-from companies.visibility import profile_for
+from companies.visibility import is_demonstration, profile_for
 from company_intelligence.services.kpi_engine import kpi_alignment_profile
 from core.esg_principles_data import PRINCIPLE_CATEGORIES, PRINCIPLES
 
@@ -227,6 +227,12 @@ def company_principles(request, slug: str):
             'slug': profile.company.slug,
             'name': profile.company.name,
             'sector': profile.company.sector,
+        },
+        'presentation': {
+            'is_demonstration': is_demonstration(profile),
+            'is_published': False,
+            'label': ('DEMONSTRATION — not a published EcoIQ assessment'
+                      if is_demonstration(profile) else ''),
         },
         'summary': {
             'total': alignment['total'],

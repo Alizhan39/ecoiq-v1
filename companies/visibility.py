@@ -41,7 +41,21 @@ from django.shortcuts import get_object_or_404
 #: Statuses any caller may see. `draft` is included because it is a
 #: work-in-progress profile that the product deliberately shows; `archived` is
 #: not, because it is a withdrawn one.
-PUBLICLY_VISIBLE_STATUSES = ('public', 'verified', 'draft')
+PUBLICLY_VISIBLE_STATUSES = ('public', 'verified', 'draft', 'public_demo')
+
+#: Publicly visible, and explicitly a worked example rather than a finding.
+#:
+#: VISIBILITY IS NOT AN EVIDENCE CLAIM
+#: A demonstration profile is reachable so a reader can see how the evidence
+#: architecture works end to end. It asserts nothing about the organisation.
+#: Publication is decided elsewhere and always was — companies/eligibility.py
+#: reads coverage, confidence and score, and never reads this field — so making
+#: something visible has never made it published, and cannot start doing so now.
+#:
+#: Deliberately absent from ('public', 'verified'), the pair the scoring and
+#: analytics queries select on. Those keep excluding demonstration profiles
+#: without being told this value exists.
+DEMONSTRATION_STATUS = 'public_demo'
 
 
 def can_see_every_status(user) -> bool:
@@ -80,3 +94,15 @@ def profile_for(slug: str, user=None, *, queryset=None):
     if statuses is not None:
         queryset = queryset.filter(status__in=statuses)
     return get_object_or_404(queryset, company__slug=slug)
+
+
+def is_demonstration(profile) -> bool:
+    """
+    Is this profile published as a worked example rather than a finding?
+
+    A separate question from whether its EVIDENCE is demonstration data
+    (`EvidenceMemory.is_demo`) and from whether its assessment is publishable
+    (`eligibility.decide`). All three can disagree, and a surface that collapses
+    them would be asserting something none of them says.
+    """
+    return getattr(profile, 'status', None) == DEMONSTRATION_STATUS

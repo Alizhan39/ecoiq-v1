@@ -23,11 +23,27 @@ from core.storage import upload_to_guidance_thumbnail
 
 # ── Choice sets ────────────────────────────────────────────────────────────────
 
+# VISIBILITY, WITH ONE EPISTEMIC VALUE THAT PREDATES THE SPLIT
+#
+# `archived` and `public` are visibility. `verified` is an evidence-quality
+# claim, and roughly six scoring and analytics queries select on
+# status__in=('public','verified') to mean "organisations worth computing over".
+# That conflation is real but causes no live defect, and unpicking it would
+# change what those queries select — so it is documented rather than rewritten.
+#
+# Publication is NOT in this field and never was: companies/eligibility.py
+# decides it from coverage, confidence and score, and never reads status. A
+# profile being visible has therefore never implied a published assessment.
+#
+# `public_demo` is the one value added for that reason. It is publicly visible
+# and it is deliberately NOT in ('public','verified'), so every scoring and
+# analytics query excludes it without needing to know it exists.
 COMPANY_STATUS = [
-    ('draft',    'Draft'),
-    ('public',   'Public'),
-    ('verified', 'Verified'),
-    ('archived', 'Archived'),
+    ('draft',       'Draft'),
+    ('public',      'Public'),
+    ('public_demo', 'Public — demonstration only'),
+    ('verified',    'Verified'),
+    ('archived',    'Archived'),
 ]
 
 SUBSCRIPTION_TIER = [

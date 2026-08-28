@@ -295,7 +295,22 @@ def pending_review_queue(criteria=None):
             'appearance': appearance_context(link),
         })
 
-    rows.sort(key=lambda r: (-r['priority_score'], r['link'].added_at))
+    # Strongest source authority first, then the deterministic relevance
+    # signals, then oldest — so a regulator filing never sits below a blog post
+    # because the blog post happened to trip more indicators.
+    #
+    # ORDERING IS NOT A VERDICT. Tier 1 means the SOURCE is a regulator or
+    # statutory filing; it says nothing about whether the evidence supports or
+    # damns the organisation, and every component stays visible beside the row
+    # so a reviewer sees what produced the position rather than a rank.
+    #
+    # Unclassified sources sort last rather than middle, matching the tier
+    # table's own conservative default.
+    rows.sort(key=lambda r: (
+        r['source_tier'] if r['source_tier'] is not None else 99,
+        -r['priority_score'],
+        r['link'].added_at,
+    ))
     return rows
 
 
