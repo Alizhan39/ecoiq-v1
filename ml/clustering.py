@@ -176,10 +176,46 @@ class CompanyClusterer:
             )
 
     def assign_company(self, company) -> dict | None:
-        """Assign a single company to a cluster."""
+        """
+        Assign a single company to a cluster, or None when it cannot honestly
+        be assigned.
+
+        FAIL CLOSED ON MISSING MATERIAL INPUTS
+        --------------------------------------
+        Same rule, and the same reason, as EcoIQScoringModel.predict_company.
+        `ml.features.company_to_vector` imputes 50.0 for anything it does not
+        know — its own docstring says to call `missing_material_features()`
+        first "if the result will be presented as a finding about the company".
+        This is presented as a finding: /companies/<slug>/ml-insights.json
+        publishes it as `cluster.label`.
+
+        Measured before this changed: an organisation with no data at all came
+        back as
+
+            {"scoring": null, "prediction": null,
+             "cluster": {"cluster": 5, "label": "Governance Champion"}}
+
+        Scoring and prediction refused, correctly. Clustering answered — with a
+        commendation, assembled entirely from the imputed average. A label a
+        reader would take as a judgement about the organisation was a
+        description of the default vector.
+
+        Returning None costs nothing at the call sites: it is already this
+        method's documented "unavailable" return and every caller handles it.
+        """
         if not self._load():
             return None
-        from ml.features import company_to_vector
+        from ml.features import company_to_vector, missing_material_features
+
+        missing = missing_material_features(company)
+        if missing:
+            logger.info(
+                'Cluster assignment refused for %s — material inputs unknown: '
+                '%s. The model would have received imputed 50.0 for each.',
+                company, ', '.join(missing),
+            )
+            return None
+
         try:
             vec   = company_to_vector(company).reshape(1, -1)
             scaled = self.scaler.transform(vec)

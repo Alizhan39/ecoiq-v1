@@ -29,8 +29,29 @@ def _angle(i: int, n: int = 5) -> float:
     return math.radians(270 + i * 360 / n)
 
 
-def _radar_polygon(scores: list[int]) -> str:
-    """SVG polygon `points` attribute for the data shape."""
+def _radar_polygon(scores: list) -> str:
+    """
+    SVG polygon `points` for the data shape, or "" when it cannot be drawn.
+
+    AN UNASSESSED PILLAR HAS NO POINT
+    ---------------------------------
+    `s / 100` raised TypeError for any organisation whose pillars carry no
+    score, which is most of them — the PDF returned a 500 rather than a report.
+
+    The obvious repair, `(s or 0)`, would put the vertex at the centre, which
+    on a radar is indistinguishable from a measured zero: the chart would state
+    that an organisation nobody has assessed scored worst on every axis. The
+    same reasoning is already recorded in companies/views.py for the sector
+    bar chart — "a bar at 0 is a visual claim that the company scored worst in
+    its sector; an absent bar claims nothing".
+
+    A partial polygon is no better: three known vertices and two at the centre
+    is still a shape, and a reader reads shapes. So the data layer is omitted
+    entirely unless every axis is measured. The grid, axes and labels still
+    render, and the template says why the shape is missing.
+    """
+    if any(score is None for score in scores):
+        return ""
     pts = []
     for i, s in enumerate(scores):
         a = _angle(i)
@@ -159,7 +180,8 @@ def build_pdf_context(company) -> dict:
     Assemble the full template context for `league/report_pdf.html`.
     Imports view-layer helpers to avoid duplicating SDG / project-type data.
     """
-    from .views import _SDG_MAP, _SDG_ALL, PROJECT_TYPE_META, _stub_recommendations
+    from .views import (_SDG_MAP, _SDG_ALL, PROJECT_TYPE_META, _stub_recommendations,
+                    unassessed_pillars)
 
     # A PDF is a document someone keeps. It must not contain a score the
     # product would refuse to show on the page it was generated from.
@@ -236,6 +258,9 @@ def build_pdf_context(company) -> dict:
 
     # AI Recommendations
     recommendations = _stub_recommendations(company, all_projects)
+    # Which pillars carry no score, so an empty list is not reported as a
+    # pass. See league.views.unassessed_pillars.
+    unassessed = unassessed_pillars(company)
 
     # Roadmap
     roadmap_projects = sorted(
@@ -265,8 +290,18 @@ def build_pdf_context(company) -> dict:
     sparkline_fill= _sparkline_fill(history_scores)
     tier_bands    = _tier_bands()
 
-    # SVG score ring (r=52, circumference ≈ 327)
-    score_arc = round(score / 100 * 327, 1)
+    # SVG score ring (r=52, circumference ≈ 327).
+    #
+    # 0, not None, and the distinction is the point: the arc is a
+    # stroke-dasharray length, so 0 draws NOTHING. The block above already
+    # refuses to put a score in this document when the product would not show
+    # one on the page — an arc computed from that absent score raised
+    # TypeError and returned a 500 instead of the report.
+    #
+    # An empty ring beside the "Not yet scored" label the block above sets is
+    # the honest rendering. A ring filled to zero would be a drawn claim of the
+    # worst possible score; an undrawn one claims nothing.
+    score_arc = round(score / 100 * 327, 1) if score is not None else 0
 
     return {
         'company':        company,
@@ -312,6 +347,7 @@ def build_pdf_context(company) -> dict:
         'sdg_grid':        sdg_grid,
         'sdg_active':      sdg_active,
         'recommendations': recommendations,
+        'unassessed_pillars': unassessed,
 
         # SVG chart data
         'radar_data':     radar_data,
