@@ -46,9 +46,48 @@ export type Verdict =
 export type KpiConfidence =
   | 'INSUFFICIENT_EVIDENCE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
 
+/**
+ * Where one evidence record came from, resolved server-side from the harvester
+ * lineage. Every field is null when the source genuinely did not provide it —
+ * see company_intelligence/services/source_provenance.py.
+ */
+export interface EvidenceProvenance {
+  has_source_record: boolean;
+  /** The idempotency key, exposed as a key. Never a title. */
+  record_reference: string | null;
+  title: string | null;
+  publisher: string | null;
+  source_type: string | null;
+  url: string | null;
+  publication_date: string | null;
+  retrieved_at: string | null;
+  /** Page or section the chunk came from. */
+  location: string | null;
+  content_hash: string | null;
+  text_integrity_reference: string | null;
+  authority: {
+    tier: number | null;
+    class: string;
+    label: string;
+    /** False when the source type was not in the tier table at all. */
+    classified?: boolean;
+  };
+  ingestion_method: string | null;
+  ingested_at: string | null;
+  is_demo: boolean;
+}
+
 export interface KpiEvidence {
   id: number;
-  title: string;
+  /**
+   * NULL when the source recorded no title.
+   *
+   * This was `string` while the API already returned null, so the compiler
+   * happily allowed `title.split()` — which crashed the entire investigation
+   * page in production. The guard added at that call site fixed the symptom;
+   * this fixes the reason nothing caught it.
+   */
+  title: string | null;
   relation: EvidenceRelation;
   legal_status: LegalStatus;
   /** 0–5. Presentation ordering only; never a score. */
@@ -69,6 +108,8 @@ export interface KpiEvidence {
   match_basis: string;
   is_demo: boolean;
   excerpt: string;
+  /** Sent by the API since the provenance work; previously undeclared here. */
+  provenance?: EvidenceProvenance;
 }
 
 export type RemediationKind =
