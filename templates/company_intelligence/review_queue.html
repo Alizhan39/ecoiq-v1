@@ -23,7 +23,7 @@
     <div class="rq-stat"><span class="rq-stat-v">{{ analytics.oldest_unresolved_age_days|default:"—" }}</span><span class="rq-stat-k">Oldest (days)</span></div>
   </div>
 
-  <form method="get" class="rq-filters">
+  <form method="get" class="rq-filters" autocomplete="off">
     <div class="rq-filter-grid">
       <div class="rq-filter-col">
         <label class="rq-label">Review State</label>
@@ -35,9 +35,9 @@
       </div>
       <div class="rq-filter-col">
         <label class="rq-label" for="rq-company">Company Slug</label>
-        <input type="text" name="company" id="rq-company" class="rq-input" value="{{ criteria.company_slug }}" placeholder="e.g. apple">
+        <input type="text" name="company" id="rq-company" class="rq-input" autocomplete="off" value="{{ criteria.company_slug }}" placeholder="e.g. apple">
         <label class="rq-label" for="rq-kpi">KPI Number</label>
-        <input type="number" name="kpi" id="rq-kpi" class="rq-input" value="{{ criteria.kpi_id|default:'' }}" min="1" max="114">
+        <input type="number" name="kpi" id="rq-kpi" class="rq-input" autocomplete="off" value="{{ criteria.kpi_id|default:'' }}" min="1" max="114">
         <label class="rq-label" for="rq-category">KPI Category</label>
         <select name="category" id="rq-category" class="rq-select">
           <option value="">Any category</option>
@@ -68,6 +68,26 @@
 
   <div class="rq-results-head">
     <span class="rq-results-count">{{ rows|length }} item(s) in queue</span>
+    {% comment %}
+      Rendered from the criteria the SERVER applied, never from the form
+      fields. A browser refills a text input from a previous session, so the
+      box could read "EcoIQ Test" while the rows below were the whole queue —
+      the form saying one thing and the evidence being another. On a
+      governance surface a reviewer has to know which queue they are ruling on.
+    {% endcomment %}
+    {% if active_filters %}
+    <div class="rq-active" role="status">
+      <span class="rq-active-label">Filtered by</span>
+      {% for f in active_filters %}
+        <span class="rq-active-chip">{{ f.label }}: {{ f.value }}</span>
+      {% endfor %}
+      <a class="rq-active-clear" href="{% url 'companies:review_queue' %}">Clear filters</a>
+    </div>
+    {% else %}
+    <div class="rq-active rq-active--none" role="status">
+      <span class="rq-active-label">No filters applied — showing the whole queue</span>
+    </div>
+    {% endif %}
     <span class="rq-priority-note">Sorted by documented priority components (conflict present, high-authority source, fresh evidence, KPI unresolved, on watchlist, corroborated) — never an opaque score, oldest first within equal priority.</span>
   </div>
 
@@ -186,6 +206,18 @@
   .rq-rel-supports{background:rgba(0,232,154,.1);color:#00e89a}
   .rq-rel-conflicts{background:rgba(230,57,70,.12);color:#fca5a5}
   .rq-excerpt{font-size:.8rem;color:#cbd5e1;line-height:1.55;margin:.6rem 0}
+  /* What is really narrowing the queue. Deliberately louder than the form:
+     the form is a draft, this is what the rows below actually are. */
+  .rq-active{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;
+             margin:.5rem 0 .2rem;font-size:.78rem}
+  .rq-active-label{color:#fbbf24;font-weight:700;letter-spacing:.05em;
+                   text-transform:uppercase;font-size:.68rem}
+  .rq-active--none .rq-active-label{color:#94a3b8;text-transform:none;
+                                    letter-spacing:0;font-weight:600;font-size:.76rem}
+  .rq-active-chip{background:rgba(251,191,36,.14);color:#fbbf24;
+                  border:1px solid rgba(251,191,36,.4);border-radius:999px;
+                  padding:.1rem .55rem}
+  .rq-active-clear{color:#e2e8f0;text-decoration:underline;margin-left:.3rem}
   /* The principle's question — what the reviewer is deciding against. */
   .rq-question{font-size:.82rem;color:#e2e8f0;line-height:1.5;margin:.45rem 0;font-style:italic}
   /* Real source metadata, resolved from the harvester lineage. */
