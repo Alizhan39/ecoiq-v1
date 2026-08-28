@@ -18,6 +18,18 @@ export function StewardshipPrincipleHeader({ inv }: { inv: KpiInvestigation }) {
 
   return (
     <header className="kpi-header">
+      {/*
+        Near the assessment, never a footnote or a tooltip. A reader who scrolls
+        straight to the verdict must meet this first — a demonstration mistaken
+        for a finding is a false statement about a real company.
+      */}
+      {inv.presentation?.is_demonstration ? (
+        <aside className="kpi-demo" role="note" aria-label="Demonstration notice">
+          <p className="kpi-demo__label">{inv.presentation.label}</p>
+          <p className="kpi-demo__body">{inv.presentation.explanation}</p>
+        </aside>
+      ) : null}
+
       <div className="kpi-header__eyebrow">
         <span className="kpi-header__company">{company.name}</span>
         <span className="kpi-header__sep" aria-hidden="true">·</span>

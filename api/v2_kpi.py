@@ -45,7 +45,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET
 
 from companies.models import CompanyProfile
-from companies.visibility import profile_for
+from companies.visibility import is_demonstration, profile_for
 from company_intelligence.models import CompanyKPIAssessment
 from company_intelligence.services.kpi_engine import derive_status_from_evidence
 from company_intelligence.services.investigation_chain import investigation_chain
@@ -232,6 +232,29 @@ def company_kpi(request, slug: str, kpi_id: int):
             'slug': profile.company.slug,
             'name': profile.company.name,
             'sector': profile.company.sector,
+        },
+        # Three separate answers, deliberately not collapsed into one flag.
+        #
+        #   is_demonstration   this profile is published as a worked example
+        #   evidence_is_demo   the evidence itself is demonstration data
+        #   is_published       the assessment passed the publication gate
+        #
+        # They can disagree, and a surface that merged them would assert
+        # something none of them says. A demonstration is visible AND carries
+        # demo evidence AND is unpublished — three facts, each independently
+        # true and independently checkable.
+        'presentation': {
+            'is_demonstration': is_demonstration(profile),
+            'evidence_is_demo': bool(assessment and assessment.is_demo),
+            'is_published': False,
+            'label': ('DEMONSTRATION — not a published EcoIQ assessment'
+                      if is_demonstration(profile) else ''),
+            'explanation': (
+                'This worked example demonstrates how EcoIQ records evidence and '
+                'reaches a conclusion. Demonstration evidence is held separately '
+                'from reviewed production evidence, counts toward no EcoIQ '
+                'assessment, and is not a rating of this organisation.'
+                if is_demonstration(profile) else ''),
         },
         # The operational principle ONLY. No surah number, name, Arabic term,
         # ayah text or translation — see the module docstring.

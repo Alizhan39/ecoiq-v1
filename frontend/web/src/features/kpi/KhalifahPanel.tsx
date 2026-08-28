@@ -49,6 +49,14 @@ export function KhalifahPanel({ inv }: { inv: KpiInvestigation }) {
         <p className="khalifah__sub">Evidence analyst</p>
       </div>
 
+      {inv.presentation?.is_demonstration ? (
+        <p className="khalifah__demo" role="note">
+          Explaining a worked example. The evidence below is demonstration data
+          held separately from reviewed production evidence, so nothing here is
+          an EcoIQ finding about this organisation.
+        </p>
+      ) : null}
+
       <p className="khalifah__lede">
         {counts.confirmed === 0
           ? 'No confirmed evidence is linked to this principle, so no assessment has been made.'

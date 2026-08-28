@@ -95,6 +95,32 @@ export default function Home() {
 
       <HowItWorks />
 
+      {/*
+        A worked example, labelled as one. Placed before the pathways because
+        "how does this reach a conclusion?" is the question a first visitor
+        actually has, and the honest answer is a chain they can walk rather
+        than a description of one.
+      */}
+      <section aria-labelledby="worked-example" className="worked">
+        <h2 id="worked-example">See how EcoIQ reaches a conclusion</h2>
+        <p className="worked__lede">
+          A complete investigation, end to end: the question, the evidence, each
+          source and its standing, what supports and what conflicts, the
+          regulatory position, what remediation followed, and what remains
+          unresolved.
+        </p>
+        <p className="worked__note">
+          A demonstration, and labelled as one throughout. It shows how the
+          evidence architecture works; it is not a published EcoIQ assessment of
+          the organisation it names.
+        </p>
+        <p>
+          <Link className="cta" to="/companies/apple/kpis/114/">
+            Explore a worked investigation
+          </Link>
+        </p>
+      </section>
+
       <section aria-labelledby="pathways">
         <h2 id="pathways">Where to start</h2>
         <ul className="grid grid--3">

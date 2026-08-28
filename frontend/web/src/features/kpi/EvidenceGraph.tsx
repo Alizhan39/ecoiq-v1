@@ -238,7 +238,13 @@ function curve(x1: number, y1: number, x2: number, y2: number): string {
  * the node's sublabel. Taking the first segment therefore labelled every node
  * with the same company name; the informative half is what follows the dash.
  */
-function shorten(title: string): string {
+function shorten(title: string | null | undefined): string {
+  // `title` is nullable: an evidence record whose source recorded no title has
+  // none, and the API stopped substituting the idempotency key for one. A graph
+  // node is not the place to discover that — this crashed the whole
+  // investigation page with "Cannot read properties of null" until it was
+  // caught in a browser.
+  if (!title) return 'Untitled source';
   const parts = title.split('—').map((p) => p.trim()).filter(Boolean);
   const distinctive = (parts.length > 1 ? parts[1] : parts[0]) ?? title;
   const clean = distinctive.replace(/\s*\([^)]*\)\s*$/, '');

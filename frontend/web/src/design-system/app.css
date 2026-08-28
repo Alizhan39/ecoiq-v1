@@ -601,3 +601,37 @@
 .pipeline__note {
   color: var(--ink-soft); font-size: .9rem; max-width: var(--measure);
 }
+
+/* ── Demonstration notice ─────────────────────────────────────────────────
+   Publicly visible does not mean published. This sits beside the assessment
+   rather than under it: a reader who scrolls to the verdict must meet the
+   notice first, because a demonstration mistaken for a finding is a false
+   statement about a real company. Warn tone, not danger — nothing is wrong,
+   it is simply not a finding. */
+.kpi-demo {
+  margin: 0 0 1rem; padding: .8rem 1rem;
+  background: var(--warn-soft); border: 1px solid var(--warn-strong);
+  border-left-width: 4px; border-radius: var(--radius);
+}
+.kpi-demo__label {
+  margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--warn-strong);
+}
+.kpi-demo__body {
+  margin: .35rem 0 0; font-size: .88rem; color: var(--ink);
+  max-width: var(--measure); line-height: 1.5;
+}
+.khalifah__demo {
+  margin: 0 0 .7rem; padding: .55rem .7rem; font-size: .84rem;
+  color: var(--ink); background: var(--warn-soft);
+  border-left: 3px solid var(--warn-strong); border-radius: 0 4px 4px 0;
+}
+
+/* ── Worked-example entry point ───────────────────────────────────────────
+   Production-quality, not toy-like: the demonstration status is carried by
+   words, not by making the surface look unfinished. */
+.worked__lede { max-width: var(--measure); }
+.worked__note {
+  max-width: var(--measure); font-size: .9rem; color: var(--warn-strong);
+  border-left: 3px solid var(--warn-strong); padding-left: .8rem;
+}
