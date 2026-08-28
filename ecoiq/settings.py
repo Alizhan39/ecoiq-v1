@@ -1074,10 +1074,22 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 #:
 #: Derived from the ENVIRONMENT, not from REDIS_URL, and that distinction is the
 #: whole point: REDIS_URL above always has a value because of its localhost
-#: default, so a truthiness check on it would report Redis as required on
-#: production — where no Redis service is deployed (render.yaml keeps the Key
-#: Value and worker blocks commented out). The readiness probe would then fail
+#: default, so a truthiness check on it would report Redis as required on any
+#: deployment that had never heard of Redis, and the readiness probe would fail
 #: permanently against a perfectly healthy web service.
+#:
+#: This comment used to justify itself with "production, where no Redis service
+#: is deployed (render.yaml keeps the Key Value and worker blocks commented
+#: out)". That stopped being true on 2026-08-24, when ecoiq-keyvalue and
+#: ecoiq-celery-worker were created by hand — render.yaml still carries them
+#: commented out and never learned. /readyz/ now reports redis: ok, which only
+#: happens when REDIS_URL is set explicitly, so production genuinely runs on a
+#: shared Redis cache. See docs/operations/PRODUCTION_RUNBOOK.md.
+#:
+#: The MECHANISM below is unchanged and was never the problem: keying off
+#: explicit configuration rather than a defaulted URL is right either way, and
+#: it is why this deployment reports its Redis dependency correctly today
+#: without anyone having to edit this line.
 #:
 #: Setting REDIS_URL explicitly is therefore the act that makes Redis a
 #: dependency worth failing readiness over.

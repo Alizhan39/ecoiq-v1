@@ -2,9 +2,31 @@
 # EcoIQ — Render Blueprint
 # Docs: https://render.com/docs/blueprint-spec
 #
-# Services:
+# THIS BLUEPRINT DOES NOT DESCRIBE THE RUNNING ESTATE.
+#
+# Services declared here:
 #   ecoiq       — Django/Gunicorn web service (starter plan, Oregon)
 #   ecoiq-db    — PostgreSQL database (starter plan, Oregon)
+#
+# Services ALSO RUNNING in production, created by hand in the Render dashboard
+# on 2026-08-24 and therefore absent from this file:
+#   ecoiq-keyvalue        — Redis. Django cache AND Celery broker/result
+#                           backend. /readyz/ reports redis: ok.
+#   ecoiq-celery-worker   — running, connected, idle (nothing schedules work)
+#   four cron jobs        — ecoiq-daily-yfinance, ecoiq-ml-retrain,
+#                           ecoiq-rss-signals, ecoiq-weekly-full-ingest,
+#                           ALL SUSPENDED
+#
+# The commented Key Value and worker blocks further down say those services are
+# "NOT enabled by default". Read as a description of production that is now
+# wrong; read as a description of THIS FILE it is still accurate, which is
+# exactly how the estate and its blueprint came apart without anyone noticing.
+#
+# Closing the gap — adding the real services here, or removing them from Render
+# — is an owner decision with a monthly cost attached, and is deliberately not
+# made by editing this comment. Do not assume a blueprint sync will leave
+# hand-made services alone.
+# See docs/operations/PRODUCTION_RUNBOOK.md for the measured inventory.
 #
 # build.sh is DB-FREE — the build environment cannot reach the private database
 # network (the internal hostname dpg-…-a only resolves at runtime). Migrations +
