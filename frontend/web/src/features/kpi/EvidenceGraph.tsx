@@ -120,7 +120,23 @@ export function EvidenceGraph({
         The same graph, as content. Not a summary of the picture — the picture
         is a rendering of this.
       */}
-      <ol className="kpi-graph__semantic">
+
+      {/*
+        Visually hidden, because the figcaption above already introduces this
+        section on screen and a second visible heading would change a design
+        nobody asked to change.
+
+        It exists so the three branch headings below have a parent. Without it
+        they sat at H3 directly under the page H1, and a reader navigating by
+        heading level — which is how screen-reader users move through a long
+        page — got an outline that skipped a level exactly where the evidence
+        starts. Measured across the public routes, this was the only page with
+        a broken outline.
+      */}
+      <h2 className="visually-hidden" id="evidence-graph-heading">
+        The evidence, as a chain
+      </h2>
+      <ol className="kpi-graph__semantic" aria-labelledby="evidence-graph-heading">
         {(['protect', 'control', 'spine'] as const).map((branch) => {
           const inBranch = nodes.filter((n) => n.branch === branch);
           if (!inBranch.length) return null;
