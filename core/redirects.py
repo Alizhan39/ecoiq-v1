@@ -60,4 +60,5 @@ PERMANENT: dict[str, str] = {
 
     # A third Eco Tours surface. One product, one destination.
     '/khalifa-tours-impact/': '/tours/',
+
 }

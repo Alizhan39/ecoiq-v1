@@ -961,3 +961,495 @@
 }
 .itpage__imageslot p { margin: 0 0 .4rem; }
 .itpage__note--slot { border: 0; padding: 0; font-size: .74rem; }
+
+/* ── Public sector ──────────────────────────────────────────────────────────
+   /public-sector/, /public-sector/procurement/ and the borough demonstration.
+
+   RESTRAINT IS THE BRIEF. The reader is a procurement officer with a minute,
+   and every decorative gradient is a second they spend not reading a number.
+   So: one accent, borders instead of shadows, generous vertical rhythm, and
+   tabular data rendered as tables.
+
+   NO NEW TOKENS. Everything below resolves to design-system/tokens.css, which
+   mirrors frontend/app/src/design/tokens.ts — the authority (CLAUDE.md rule
+   1). Nothing here introduces a colour, a radius or a font of its own.
+
+   NO ANIMATION beyond a border and background transition on interactive
+   elements, which are already covered by the global reduced-motion rule in
+   tokens.css. A dashboard that moves is a dashboard being read twice. */
+
+.pspage { max-width: 68rem; margin: 0 auto; }
+.pspage > * + * { margin-top: 3.5rem; }
+
+/* Hero */
+.pshero { max-width: 46rem; padding-top: 1.5rem; }
+.pshero--compact { padding-top: .5rem; }
+.pshero__eyebrow {
+  text-transform: uppercase; letter-spacing: .09em; font-size: .72rem;
+  font-weight: 700; color: var(--ink-soft); margin: 0 0 .8rem;
+}
+.pshero h1 {
+  font-size: clamp(1.9rem, 4.6vw, 3.1rem); line-height: 1.08;
+  letter-spacing: -.03em; margin: 0 0 1.1rem;
+}
+.pshero__lede { font-size: 1.15rem; line-height: 1.55; margin: 0 0 1rem; }
+.pshero__supporting {
+  font-size: .96rem; line-height: 1.6; color: var(--ink-soft); margin: 0 0 1.6rem;
+}
+.pshero__actions {
+  display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.4rem;
+}
+
+.psbutton {
+  display: inline-block; padding: .62rem 1.1rem; border-radius: var(--radius);
+  border: 1px solid var(--line); text-decoration: none; font-weight: 600;
+  font-size: .95rem; background: var(--paper); color: var(--ink);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.psbutton:hover { border-color: var(--accent); }
+/* --accent-strong, not --accent: white on #00a86b is 3.08:1, under the AA
+   floor for a 15px label. The pair flips with the theme — see tokens.css. */
+.psbutton--primary {
+  background: var(--accent-strong); border-color: var(--accent-strong);
+  color: var(--on-accent-strong);
+}
+.psbutton--primary:hover { border-color: var(--ink); }
+.psbutton--quiet { border-color: transparent; color: var(--ink-soft); }
+.psbutton--quiet:hover { border-color: var(--line); color: var(--ink); }
+
+/* Sections */
+.pssection { scroll-margin-top: 1.5rem; }
+.pssection > h2 {
+  font-size: 1.5rem; letter-spacing: -.02em; margin: 0 0 .6rem;
+  padding-bottom: .6rem; border-bottom: 1px solid var(--line);
+}
+.pssection__lede {
+  max-width: var(--measure); color: var(--ink-soft); margin: 0 0 1.4rem;
+}
+.pssection__subhead {
+  font-size: 1.05rem; margin: 2.2rem 0 .8rem;
+  padding-top: 1.2rem; border-top: 1px solid var(--line);
+}
+.psnote {
+  max-width: var(--measure); font-size: .86rem; line-height: 1.55;
+  color: var(--ink-soft); border-left: 3px solid var(--line);
+  padding-left: .8rem; margin: 1.4rem 0 0;
+}
+
+/* Card grids */
+.psgrid {
+  list-style: none; margin: 1.2rem 0 0; padding: 0;
+  display: grid; gap: .9rem;
+}
+.psgrid--outcomes { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.psgrid--services { grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+.psgrid--bands    { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+
+.pscard {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1rem 1.1rem; background: var(--paper);
+}
+.pscard h3 { margin: 0 0 .4rem; font-size: 1rem; letter-spacing: -.01em; }
+.pscard p { margin: 0; font-size: .89rem; line-height: 1.55; color: var(--ink-soft); }
+.pscard__number {
+  font-variant-numeric: tabular-nums; font-size: .74rem; font-weight: 700;
+  letter-spacing: .08em; color: var(--accent-strong); margin: 0 0 .35rem !important;
+}
+.pscard--band { border-top: 3px solid var(--accent); }
+.pscard__range {
+  font-size: 1.25rem; font-weight: 700; color: var(--ink) !important;
+  letter-spacing: -.02em; margin: .2rem 0 .5rem !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Delivery flow. An ordered list that reads left-to-right on desktop and
+   top-to-bottom on mobile, with the connector as a border rather than a glyph
+   so nothing is announced twice. */
+.psflow {
+  list-style: none; margin: 1.2rem 0 0; padding: 0;
+  display: grid; gap: 0; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+.psflow__stage {
+  border-top: 3px solid var(--accent); padding: .9rem 1rem .9rem 0;
+}
+.psflow__number {
+  display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--accent-strong); font-variant-numeric: tabular-nums;
+}
+.psflow__stage h3 { margin: .3rem 0 .35rem; font-size: .98rem; }
+.psflow__stage p { margin: 0; font-size: .85rem; line-height: 1.5; color: var(--ink-soft); }
+
+/* Definition-style lists */
+.pslist { list-style: none; margin: 1.2rem 0 0; padding: 0; }
+.pslist__item {
+  border-top: 1px solid var(--line); padding: .95rem 0;
+}
+.pslist__item h3, .pslist__item h4 { margin: 0 0 .3rem; font-size: 1rem; }
+.pslist__item p {
+  margin: 0; max-width: var(--measure); font-size: .89rem; line-height: 1.6;
+  color: var(--ink-soft);
+}
+.pslist__head {
+  display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap;
+  margin-bottom: .3rem;
+}
+.pslist__head h3 { margin: 0; }
+.pslist--absent .pslist__item { border-left: 3px solid var(--warn); padding-left: .9rem; }
+
+/* Chips. The word is always present; the tint only speeds a scan up.
+   Text colours are the -strong pair: these are 11px, and --accent/--danger
+   are fills at that size, not text. Borders stay on the plain hue — a border
+   carries no reading. */
+.pschip {
+  display: inline-block; font-size: .68rem; font-weight: 700;
+  letter-spacing: .05em; padding: .16rem .5rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap;
+}
+.pschip--tech-production { color: var(--accent-strong); }
+.pschip--tech-partial    { color: var(--warn-strong); }
+.pschip--tech-defined    { color: var(--ink-soft); }
+.pschip--confidence-high   { color: var(--accent-strong); }
+.pschip--confidence-medium { color: var(--warn-strong); }
+.pschip--confidence-low    { color: var(--danger-strong); }
+.pschip--status-verified    { color: var(--accent-strong); }
+.pschip--status-recorded    { color: var(--ink-soft); }
+.pschip--status-modelled    { color: var(--ink-soft); }
+.pschip--status-outstanding { color: var(--danger-strong); }
+.pschip--pending { color: var(--warn-strong); }
+
+/* Supplier */
+.pssupplier__statement { font-size: 1.08rem; margin: 1.1rem 0 1.2rem; max-width: var(--measure); }
+.pssupplier__facts {
+  display: grid; gap: .8rem; margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.pssupplier__facts > div {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: .8rem .9rem;
+}
+.pssupplier__facts dt {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-soft); margin-bottom: .3rem;
+}
+.pssupplier__facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Closing call to action */
+.pscta {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.8rem 1.5rem; background: var(--paper-soft);
+}
+.pscta h2 { margin: 0 0 .7rem; font-size: 1.35rem; letter-spacing: -.02em; }
+.pscta p { margin: 0; max-width: var(--measure); color: var(--ink-soft); line-height: 1.6; }
+
+/* The seven-step narrative */
+.psnarrative > :is(h2, h3) {
+  font-size: 1.15rem; letter-spacing: -.02em; margin: 0 0 1rem;
+}
+.psnarrative__list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: .7rem;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+}
+.psnarrative__step {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  border-top: 3px solid var(--accent); padding: .8rem .85rem;
+}
+.psnarrative__number {
+  font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--accent-strong); font-variant-numeric: tabular-nums;
+}
+.psnarrative__name { margin: .3rem 0 .3rem; font-size: .95rem; }
+.psnarrative__detail { margin: 0; font-size: .82rem; line-height: 1.5; color: var(--ink-soft); }
+
+/* ── Demonstration notice ──────────────────────────────────────────────────
+   Above the figures it qualifies, never below them. Warn-coloured rather than
+   accent-coloured: this is a caution, and the accent means "good" everywhere
+   else in this product. */
+.psnotice {
+  border: 1px solid var(--warn); border-left-width: 4px;
+  border-radius: var(--radius); background: var(--warn-soft);
+  padding: .85rem 1rem; margin: 1.2rem 0;
+}
+.psnotice__badge {
+  margin: 0 0 .35rem; font-size: .72rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--warn-strong);
+}
+.psnotice__body {
+  margin: 0; font-size: .87rem; line-height: 1.55; max-width: var(--measure);
+}
+.psnotice--compact { margin: 1.2rem 0 0; }
+.psnotice--compact .psnotice__body { font-size: .82rem; }
+
+/* ── The demonstration ─────────────────────────────────────────────────────
+   A SECTION of /public-sector/, not a page. It is the longest thing on the
+   page and the most interactive, so it is set inside a tinted, bordered well:
+   a reader scrolling past should be able to see where the demonstration
+   starts and stops without reading a word. */
+.psdemo {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper-soft); padding: 2rem 1.6rem 2.2rem;
+}
+.psdemo > h2 {
+  font-size: clamp(1.5rem, 3.2vw, 2.1rem); line-height: 1.12;
+  letter-spacing: -.03em; margin: 0 0 .5rem;
+}
+.psdemo > * + * { margin-top: 2.2rem; }
+.psdemo > .pshero__eyebrow + h2 { margin-top: 0; }
+.psdemo > h2 + .psdemo__lede { margin-top: .5rem; }
+.psdemo__lede {
+  font-size: 1.05rem; line-height: 1.55; margin: 0; max-width: var(--measure);
+}
+/* The panels inside the well sit on --paper so they read as content on a
+   ground rather than as a flat continuation of it. */
+.psdemo .psdetail, .psdemo .psapproval, .psdemo .psfigure,
+.psdemo .psnarrative__step, .psdemo .psmrv__stage {
+  background: var(--paper);
+}
+/* minmax(0, 1fr), NOT 1fr. A grid item's default min-width is `auto`, which
+   means "as wide as my content" — and this item contains a table with a
+   44rem min-width. With a plain 1fr the track grew to 704px inside a 360px
+   viewport and the whole PAGE scrolled sideways, taking the header and every
+   other section with it. Found in the browser at mobile width, not reasoned
+   about: the give-away was a horizontal scrollbar on the document rather than
+   on the table.
+
+   The table still scrolls — inside .psassets__scroll, which is where it
+   should. */
+.psdemo__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
+
+/* Headline figures */
+.psestate__figures {
+  display: grid; gap: .8rem; margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.psfigure {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: .9rem 1rem; background: var(--paper);
+}
+.psfigure dt {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-soft); margin-bottom: .4rem;
+}
+.psfigure dd {
+  margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; line-height: 1.15;
+}
+.psfigure--accent { border-color: var(--accent); background: var(--accent-soft); }
+.psfigure__unit { font-size: .85rem; font-weight: 600; color: var(--ink-soft); }
+.psfigure--small dd { font-size: 1.05rem; letter-spacing: -.01em; }
+.psfigure--small dd.is-adverse { color: var(--danger-strong); }
+
+.psestate__callout {
+  margin: 1.2rem 0 .5rem; font-size: 1.02rem; max-width: var(--measure);
+}
+.psestate__derivation {
+  margin: 0; font-size: .84rem; color: var(--ink-soft);
+  max-width: var(--measure); line-height: 1.55;
+}
+
+/* Tables */
+/* :is(), not a fixed tag. These blocks moved down a heading level when the
+   demonstration stopped being a page and became a section of /public-sector/,
+   and every one of these selectors silently stopped matching. Matching the
+   role rather than the level means the next such move is a no-op here. */
+.psassets > :is(h2, h3, h4),
+.pscompare > :is(h2, h3, h4),
+.psevidence > :is(h2, h3, h4),
+.psapproval > :is(h2, h3, h4),
+.psmrv > :is(h2, h3, h4),
+.psdetail > :is(h2, h3, h4) {
+  font-size: 1.3rem; letter-spacing: -.02em; margin: 0 0 .5rem;
+}
+.psassets__hint { margin: 0 0 1rem; color: var(--ink-soft); font-size: .9rem; }
+/* Wide content scrolls inside its own container. The page body never scrolls
+   sideways — a table that widens the document is how a phone layout breaks.
+
+   max-width and min-width belt-and-brace the overflow: `overflow-x: auto`
+   alone does not stop a box from being sized by its content when it is a
+   grid or flex item, which is exactly how this broke the first time. */
+.psassets__scroll { overflow-x: auto; max-width: 100%; min-width: 0; }
+
+/* min-width is what makes six columns readable rather than wrapped into
+   unreadable slivers; the container above scrolls to accommodate it. Kept off
+   `.pstable` itself for the three-column procurement tables, which fit. */
+.pstable {
+  width: 100%; border-collapse: collapse; font-size: .88rem;
+  min-width: min(44rem, 100%);
+}
+.psassets .pstable, .pscompare .pstable, .psevidence .pstable { min-width: 44rem; }
+.pstable th, .pstable td {
+  text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.pstable thead th {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-soft); border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+.pstable tbody th { font-weight: 600; }
+.pstable__num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pstable tfoot th, .pstable tfoot td {
+  border-top: 2px solid var(--line); border-bottom: 0; font-weight: 700;
+}
+.pstable tr.is-selected { background: var(--accent-soft); }
+.pstable__pick {
+  background: none; border: 0; padding: 0; font: inherit; font-weight: 600;
+  color: var(--ink); text-align: left; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: var(--line);
+}
+.pstable__pick:hover { text-decoration-color: var(--accent); }
+.pstable__pick[aria-current='true'] { color: var(--accent-strong); }
+.pstable__sub {
+  display: block; font-weight: 400; font-size: .78rem; color: var(--ink-soft);
+  line-height: 1.45; margin-top: .25rem; max-width: 22rem; white-space: normal;
+}
+.pstable__method { font-size: .82rem; color: var(--ink-soft); min-width: 16rem; }
+
+/* Asset drill-down */
+.psdetail {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.4rem 1.4rem 1.6rem;
+}
+.psdetail__eyebrow {
+  margin: 0 0 .3rem; font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent-strong);
+}
+.psdetail h2:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.psdetail__figures, .psanomaly__figures, .psmrv__figures {
+  display: grid; gap: .7rem; margin: 1rem 0 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+.psdetail__shallow {
+  margin: 0; font-size: .88rem; line-height: 1.6; color: var(--ink-soft);
+  max-width: var(--measure); border-left: 3px solid var(--line); padding-left: .9rem;
+}
+
+.psanomaly { border-top: 1px solid var(--line); padding-top: 1.3rem; }
+.psanomaly__method, .psanomaly__note {
+  margin: 0; font-size: .84rem; line-height: 1.55; color: var(--ink-soft);
+  max-width: var(--measure);
+}
+.psanomaly__causes-heading {
+  margin: 1.2rem 0 .5rem; font-size: .76rem; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--ink-soft);
+}
+.pschips {
+  list-style: none; margin: 0 0 .7rem; padding: 0;
+  display: flex; flex-wrap: wrap; gap: .35rem;
+}
+.pschips li {
+  font-size: .82rem; padding: .2rem .6rem; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--paper-soft);
+}
+
+.pscompare { border-top: 1px solid var(--line); margin-top: 1.6rem; padding-top: 1.3rem; }
+.psrecommend {
+  margin-top: 1.3rem; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--paper-soft);
+}
+.psrecommend h4 { margin: 0 0 .5rem; font-size: .95rem; }
+.psrecommend__sequence { margin: 0 0 .8rem; padding-left: 1.2rem; font-size: .9rem; }
+.psrecommend__sequence li { margin-bottom: .2rem; }
+.psrecommend__why, .psrecommend__gate {
+  margin: 0 0 .6rem; font-size: .86rem; line-height: 1.6; max-width: var(--measure);
+}
+.psrecommend__gate { margin-bottom: 0; color: var(--ink); }
+
+/* Evidence */
+.psevidence__lede, .psevidence__note, .psapproval__lede, .psmrv__lede,
+.psmrv__caveat {
+  max-width: var(--measure); font-size: .89rem; line-height: 1.6; color: var(--ink-soft);
+}
+.psevidence__lede { margin: 0 0 1rem; }
+.psevidence__note { margin: 1rem 0 0; color: var(--ink); }
+
+/* Approval */
+.psapproval {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem;
+}
+.psapproval__status { display: flex; align-items: center; gap: .7rem; margin: 0 0 .9rem; }
+.psapproval__label {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-soft);
+}
+.psapproval__lede { margin: 0 0 1.1rem; }
+.psapproval__actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1.1rem; }
+.psapproval__button {
+  font: inherit; font-weight: 600; font-size: .92rem; cursor: pointer;
+  padding: .55rem 1rem; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.psapproval__button:hover { border-color: var(--accent); }
+.psapproval__button.is-chosen { border-color: var(--accent); background: var(--accent-soft); }
+.psapproval__outcome {
+  border-top: 1px solid var(--line); padding-top: .9rem; min-height: 3.4rem;
+}
+.psapproval__outcome p {
+  margin: 0 0 .5rem; font-size: .88rem; line-height: 1.6; max-width: var(--measure);
+}
+.psapproval__outcome p:last-child { margin-bottom: 0; }
+.psapproval__nothing, .psapproval__prompt { color: var(--ink-soft); font-size: .84rem !important; }
+
+/* MRV */
+.psmrv__lede { margin: 0 0 1.2rem; }
+.psmrv__stages {
+  list-style: none; margin: 0 0 1.6rem; padding: 0;
+  display: grid; gap: .6rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.psmrv__stage {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  border-top: 3px solid var(--accent); padding: .75rem .8rem;
+}
+.psmrv__step {
+  font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--accent-strong); font-variant-numeric: tabular-nums;
+}
+.psmrv__stage h4 { margin: .25rem 0 .3rem; font-size: .92rem; }
+.psmrv__stage p { margin: 0; font-size: .8rem; line-height: 1.5; color: var(--ink-soft); }
+.psmrv__outcome {
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  padding: 1.1rem 1.2rem; background: var(--accent-soft);
+}
+.psmrv__outcome h4 { margin: 0 0 .3rem; font-size: 1rem; }
+.psmrv__figures { margin: .8rem 0 .9rem; }
+.psmrv__outcome .psfigure { background: var(--paper); }
+.psmrv__caveat { margin: 0; }
+
+/* Technology, in two groups: what runs, and what a delivery builds. Columns
+   on desktop so the distinction is visible at a glance; stacked on mobile,
+   where the headings carry it instead. */
+.pscolumns {
+  display: grid; gap: 1.5rem 2.5rem; margin-top: 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
+.pscolumns__head {
+  font-size: .74rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent-strong); margin: 0; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--line);
+}
+.pscolumns .pslist { margin-top: 0; }
+
+/* Procurement and supplier detail: denser, list-first. */
+.psdl { margin: 1rem 0 0; display: grid; gap: .85rem; }
+.psdl > div { border-top: 1px solid var(--line); padding-top: .75rem; }
+.psdl dt { font-weight: 700; font-size: .92rem; margin-bottom: .25rem; }
+.psdl dd {
+  margin: 0; font-size: .88rem; line-height: 1.6; color: var(--ink-soft);
+  max-width: var(--measure);
+}
+.psdl--absent > div { border-left: 3px solid var(--warn); padding-left: .9rem; }
+.psdense { margin: 1rem 0 0; padding-left: 1.3rem; }
+.psdense li { margin-bottom: .55rem; font-size: .9rem; line-height: 1.6; color: var(--ink-soft); }
+.psdense strong { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .pspage > * + * { margin-top: 2.5rem; }
+  .psfigure dd { font-size: 1.35rem; }
+  .pscta { padding: 1.3rem 1.1rem; }
+  .psdetail, .psapproval { padding: 1.1rem; }
+  .psdemo { padding: 1.3rem 1rem 1.5rem; }
+  .psdemo > * + * { margin-top: 1.8rem; }
+  .psflow__stage { padding-right: 0; }
+}

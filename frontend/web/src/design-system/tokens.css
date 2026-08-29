@@ -21,6 +21,30 @@
   --danger-soft: rgba(230, 57, 70, 0.12);
   --unknown: #94a3b8;
 
+  /* The same split --warn / --warn-strong makes, for the other two hues.
+     Measured in a browser against the public-sector pages, which put both
+     colours on small text for the first time:
+
+       --accent  #00a86b on --paper .......... 3.08:1   FILL only
+       --accent-strong ....................... 5.38:1   text, 5.04 on
+                                                        --paper-soft, 4.82 on
+                                                        --accent-soft
+       --danger  #e63946 on --paper .......... 4.17:1   FILL only
+       --danger-strong ....................... 6.95:1   text, 5.87 on
+                                                        --danger-soft
+
+     4.17 is the more dangerous of the two, because it looks fine. It is still
+     under the 4.5 AA floor for text below 24px, and every chip on those pages
+     is 11px.
+
+     --on-accent-strong is the readable FOREGROUND for a solid
+     --accent-strong button: white here, near-black in the dark theme, because
+     --accent-strong itself flips. A single hard-coded #fff would be 3.08:1 in
+     dark mode, which is the bug this pair exists to prevent. */
+  --accent-strong: #007a51;
+  --on-accent-strong: #ffffff;
+  --danger-strong: #b3121e;
+
   --radius: 10px;
   --gap: 1rem;
   --measure: 68ch;
@@ -46,6 +70,15 @@
        --paper and 3.65:1 on a --danger-soft chip, both under the 4.5:1 AA
        floor for small text. This lifts them to 8.3:1 and 5.6:1. */
     --danger: #ff8b93;
+    /* Both strong pairs invert, for the reason --warn-strong does. On this
+       ground the LIGHT --accent is the readable one (6.06:1 on --paper,
+       5.05:1 on an --accent-soft chip); the light --accent-strong would be
+       3.47:1. And a solid --accent-strong button now needs a dark
+       foreground, not white — hence --on-accent-strong flipping with it
+       (6.06:1). --danger-strong follows --danger for the same reason. */
+    --accent-strong: #00a86b;
+    --on-accent-strong: #0d1410;
+    --danger-strong: #ff8b93;
   }
 }
 

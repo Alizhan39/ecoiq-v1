@@ -362,6 +362,20 @@ urlpatterns = [
     path('industrial-modernisation-preview/', spa.spa_view,
          name='industrial_modernisation_preview'),
 
+    # ── Public sector ────────────────────────────────────────────────────────
+    #
+    # ONE route. The borough demonstration and the procurement information are
+    # sections of this page, not destinations — a buyer should never need a
+    # second URL to understand the proposition, and two URLs holding the same
+    # subject is duplicate content a canonical tag then has to apologise for.
+    #
+    # PUBLIC, like /industrial-modernisation/ and unlike the preview beside
+    # it: every claim on the page is one the repository supports.
+    #
+    # Registered explicitly rather than left to the catch-all so a direct hit
+    # answers 200 rather than the shell-with-404 an unknown frontend path gets.
+    path('public-sector/', spa.spa_view, name='public_sector'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # ── SPA history fallback ─────────────────────────────────────────────────────

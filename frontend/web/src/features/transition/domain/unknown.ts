@@ -42,7 +42,15 @@ export type QuantityBasis =
   | 'derived'
   /** A stated assumption in a scenario. Never a finding. */
   | 'assumed'
-  /** A figure for illustration only. Must never leave the prototype. */
+  /**
+   * A figure for illustration only.
+   *
+   * Never reportable as fact — `isReportable` refuses it, and it may only be
+   * displayed by a surface that labels itself as demonstration or
+   * illustration on its face. Two do: the industrial-modernisation scene, and
+   * the borough demo in features/publicsector, whose dataset is illustrative
+   * throughout and says so in its own header and on every screen.
+   */
   | 'illustrative';
 
 /** The bases a caller may present to a reader as a fact about a facility. */

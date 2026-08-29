@@ -27,6 +27,11 @@ const TrustCenter = lazy(() => import('@/pages/TrustCenter'));
 // scene, its canvas painter and the whole transition model cost nothing to a
 // visitor who never opens it.
 const IndustrialModernisation = lazy(() => import('@/pages/IndustrialModernisation'));
+// The public-sector page. ONE route: the borough demonstration and the
+// procurement detail are sections of it, not destinations of their own. Lazy
+// on its own chunk, so a visitor who never opens it pays for none of it —
+// including the seventeen-asset demonstration, which is the bulk of it.
+const PublicSector = lazy(() => import('@/pages/PublicSector'));
 // INTERNAL PREVIEW, not in the navigation and not linked from anywhere. Lazy
 // on its own chunk so the scene, its canvas painter and the whole transition
 // model cost nothing to a visitor who never opens it.
@@ -72,6 +77,10 @@ export function AppRoutes() {
           path="/industrial-modernisation"
           element={<IndustrialModernisation />}
         />
+        {/* One canonical public-sector URL. The demonstration and the
+            procurement detail are sections of this page, reachable by the
+            in-page anchors #borough-demo and #procurement. */}
+        <Route path="/public-sector" element={<PublicSector />} />
         <Route
           path="/industrial-modernisation-preview"
           element={<IndustrialModernisationPreview />}
