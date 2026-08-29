@@ -60,18 +60,42 @@ export function heatLossFraction(progress: number): number {
 }
 
 /**
- * Heat captured AND returned to a useful input, as a fraction of the heat the
+ * Heat CAPTURED at the exchanger, as a fraction of the heat the process
+ * rejects.
+ *
+ * Capture is not recovery. A heat exchanger takes heat out of a stream that
+ * was leaving; whether that heat then does any work depends entirely on
+ * whether something needs it when it is available. This function answers only
+ * the first question, and it is the honest thing to report during RECOVER —
+ * at which point the plant has an exchanger and nowhere to send its output.
+ */
+export function heatCaptureFraction(progress: number): number {
+  return stageProgress(clampProgress(progress), 'recover');
+}
+
+/**
+ * Heat captured AND delivered to a useful sink, as a fraction of the heat the
  * process rejects.
  *
- * Deliberately gated on CIRCULARISE as well as RECOVER: a heat exchanger that
- * captures heat with nowhere to send it has recovered nothing useful. The
- * value only reaches 1 once the return path exists.
+ * THE DISTINCTION THIS FUNCTION EXISTS FOR
+ * ----------------------------------------
+ * These were one function, `heatRecoveryFraction`, weighted half on capture
+ * and half on the return path. That average was defensible as animation
+ * pacing and wrong as engineering: it reported 50% "recovery" for a plant with
+ * an exchanger and no sink, which is not partial recovery — it is a captured
+ * stream going nowhere. Heat with no demand and no store is not recovered, and
+ * a model that scores it as half-recovered teaches the reader the wrong thing
+ * about the most common way retrofits underdeliver.
+ *
+ * So: bounded by capture (you cannot deliver what you did not take) and gated
+ * on the sink existing — the thermal store and the return path that CIRCULARISE
+ * installs.
  */
-export function heatRecoveryFraction(progress: number): number {
+export function usefulHeatRecoveryFraction(progress: number): number {
   const p = clampProgress(progress);
-  const captured = stageProgress(p, 'recover');
-  const returned = stageProgress(p, 'circularise');
-  return 0.5 * captured + 0.5 * returned;
+  const captured = heatCaptureFraction(p);
+  const sinkAvailable = stageProgress(p, 'circularise');
+  return Math.min(captured, sinkAvailable);
 }
 
 /**
@@ -128,7 +152,8 @@ export function systemIntegrationFraction(progress: number): number {
 
 export type StateFunctionKey =
   | 'heatLossFraction'
-  | 'heatRecoveryFraction'
+  | 'heatCaptureFraction'
+  | 'usefulHeatRecoveryFraction'
   | 'waterReuseFraction'
   | 'materialRecoveryFraction'
   | 'electrificationFraction'
@@ -165,11 +190,21 @@ export const STATE_FUNCTIONS: readonly StateFunctionSpec[] = [
     atOne: 0,
   },
   {
-    key: 'heatRecoveryFraction',
-    fn: heatRecoveryFraction,
+    key: 'heatCaptureFraction',
+    fn: heatCaptureFraction,
     semantics:
-      'Share of rejected process heat that is both captured and returned to a '
-      + 'useful input.',
+      'Share of rejected process heat taken out of the stream by an exchanger. '
+      + 'Capture only — says nothing about whether the heat is then used.',
+    monotonicity: 'increasing',
+    atZero: 0,
+    atOne: 1,
+  },
+  {
+    key: 'usefulHeatRecoveryFraction',
+    fn: usefulHeatRecoveryFraction,
+    semantics:
+      'Share of rejected process heat that is captured AND delivered to a sink '
+      + 'that needs it. Heat with nowhere to go is not recovered.',
     monotonicity: 'increasing',
     atZero: 0,
     atOne: 1,

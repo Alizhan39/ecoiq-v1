@@ -56,6 +56,12 @@ export function TransitionNarrative({
       </ol>
 
       <h3>What a diagnosis looks for</h3>
+      {/*
+        Its own scroll container. Four columns do not fit a 390px viewport, and
+        a table that widens the PAGE makes every other element on it scroll
+        sideways too. Wide content scrolls inside itself.
+      */}
+      <div className="transition-narrative__scroll">
       <table className="transition-narrative__losses">
         <caption>
           Loss categories, and what EcoIQ holds about each. Every magnitude is
@@ -80,6 +86,7 @@ export function TransitionNarrative({
           ))}
         </tbody>
       </table>
+      </div>
 
       <h3>Outcome</h3>
       <p>{scenario.outcomeNote}</p>

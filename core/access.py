@@ -101,6 +101,11 @@ SIGN_IN_PREFIXES: tuple[str, ...] = (
     # docs/product/FINAL_TEMPLATE_MIGRATION.md.
     '/company-intelligence/',
     '/why/company/',
+    # An unfinished prototype of the industrial-modernisation scene. Gated for
+    # the reason this module exists: a surface one anonymous URL away from the
+    # homepage is not being presented as experimental, whatever anyone intends.
+    # It is a preview to look at and argue with, not a page.
+    '/industrial-modernisation-preview/',
 )
 
 #: Exact paths that require sign-in where the PREFIX must stay public.

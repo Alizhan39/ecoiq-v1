@@ -661,3 +661,154 @@
 }
 .itscene__node--recovery path, .itscene__node--measure path { stroke: var(--accent); }
 .itscene__node--thermal path  { stroke: var(--warn-strong); }
+
+/* ── Industrial modernisation preview ─────────────────────────────────────────
+   INTERNAL. The scene is a schematic, so the visual language is a P&ID: white
+   ground, hairline rules, tagged equipment, flows distinguished by dash pattern
+   as well as colour. Deliberately not a dark "AI landing page" — an engineer
+   should recognise the drawing, and a reader with no colour vision should still
+   be able to tell a heat line from a water line. */
+
+.itpreview { display: block; }
+.itpreview__intro {
+  max-width: var(--measure); margin: 0 auto; padding: 3rem 1.25rem 2rem;
+}
+.itpreview__eyebrow {
+  text-transform: uppercase; letter-spacing: .08em; font-size: .7rem;
+  font-weight: 700; color: var(--warn-strong); margin: 0 0 .5rem;
+}
+.itpreview__intro h1 { font-size: clamp(1.7rem, 4vw, 2.6rem); margin: 0 0 .75rem; }
+.itpreview__lede { font-size: 1.1rem; line-height: 1.6; margin: 0 0 1rem; }
+.itpreview__disclaimer {
+  font-size: .85rem; color: var(--ink-soft); border-left: 3px solid var(--warn);
+  padding-left: .75rem; margin: 0;
+}
+
+/* The scroll driver. Tall enough that each of the eight stages gets real
+   travel; the visual is pinned while it passes. */
+.itpreview__scroller { position: relative; }
+.itpreview__track { height: 640vh; }
+.itpreview__sticky {
+  position: sticky; top: 0; height: 100vh;
+  display: grid; grid-template-columns: 1fr 20rem; gap: 1rem;
+  align-items: stretch; padding: 1rem; box-sizing: border-box;
+  background: var(--paper);
+}
+/* The scene needs a positioned ancestor of its own, since .itscene is
+   absolutely inset into whatever contains it. */
+.itpreview__sticky > .itscene {
+  position: relative; grid-column: 1; border: 1px solid var(--line);
+  border-radius: var(--radius); background:
+    linear-gradient(var(--paper-soft) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, var(--paper-soft) 1px, transparent 1px) 0 0 / 28px 100%,
+    var(--paper);
+}
+
+/* Equipment tags. Small, sentence case, always legible against the grid. */
+.itscene__label {
+  font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  fill: var(--ink); stroke: none; paint-order: stroke;
+  stroke-width: 3px; stroke-linejoin: round;
+}
+.itscene__nodes .itscene__label { stroke: var(--paper); }
+.itscene__glyph, .itscene__glyph-detail {
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.itscene__glyph { stroke-width: 1.5; }
+.itscene__glyph-detail { stroke-width: 1.1; }
+
+.itscene__edge--fuel { stroke: var(--danger); }
+/* A loss line is dimmer and thinner than a working line: it is leaving. */
+.itscene__edge.is-loss { stroke-dasharray: 2 4; }
+/* A returning line is the argument. Slightly heavier, so a closed loop reads
+   as a deliberate route rather than an incidental one. */
+.itscene__edge.is-loop { stroke-width: 0.7; }
+
+/* ── State panel ─────────────────────────────────────────────────────────── */
+.itstate {
+  grid-column: 2; overflow-y: auto; border: 1px solid var(--line);
+  border-radius: var(--radius); padding: .9rem 1rem; background: var(--paper);
+  font-size: .82rem;
+}
+.itstate h2 {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-soft); margin: 0 0 .75rem;
+}
+.itstate__list { margin: 0; display: grid; gap: .7rem; }
+.itstate__row { display: grid; gap: .2rem; }
+.itstate__row dt { font-weight: 700; font-size: .78rem; }
+.itstate__row dd { margin: 0; }
+.itstate__track {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .3rem;
+}
+/* The arrow between states is generated, so the markup stays a plain list and
+   a screen reader reads "Lost, Captured, Reused" rather than punctuation. */
+.itstate__step + .itstate__step::before {
+  content: '→'; margin-right: .3rem; color: var(--ink-soft);
+}
+.itstate__step { color: var(--unknown); }
+.itstate__step.is-past { color: var(--ink-soft); text-decoration: line-through; }
+.itstate__step.is-now {
+  color: var(--ink); font-weight: 700;
+  background: var(--accent-soft); border-radius: 4px; padding: 0 .3rem;
+}
+.itstate__row.is-complete .itstate__step.is-now { background: var(--accent-soft); }
+.itstate__row--unknown strong { color: var(--warn-strong); }
+.itstate__note {
+  font-size: .72rem; color: var(--ink-soft); line-height: 1.45; margin: .3rem 0 0;
+}
+.itstate__debug { margin-top: 1rem; font-size: .72rem; }
+.itstate__debug table { width: 100%; border-collapse: collapse; }
+.itstate__debug th, .itstate__debug td {
+  text-align: left; padding: .15rem .3rem; border-bottom: 1px solid var(--line);
+  font-weight: 400;
+}
+
+/* ── Narrative ───────────────────────────────────────────────────────────── */
+.transition-narrative {
+  max-width: var(--measure); margin: 0 auto; padding: 3rem 1.25rem 5rem;
+}
+.transition-narrative__disclaimer {
+  font-size: .85rem; color: var(--ink-soft);
+  border-left: 3px solid var(--warn); padding-left: .75rem;
+}
+.transition-narrative__steps { display: grid; gap: 1.5rem; padding-left: 1.2rem; }
+.transition-narrative__step { padding-left: .4rem; border-left: 3px solid transparent; }
+.transition-narrative__step.is-reached { border-left-color: var(--line); }
+.transition-narrative__step.is-current { border-left-color: var(--accent); }
+.transition-narrative__step h3 { margin: 0 0 .35rem; font-size: 1.05rem; }
+.transition-narrative__step h4 {
+  margin: .8rem 0 .25rem; font-size: .75rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-soft);
+}
+.transition-narrative__step ul { margin: 0; padding-left: 1.1rem; font-size: .88rem; }
+.transition-narrative__scroll { overflow-x: auto; }
+.transition-narrative__losses {
+  width: 100%; min-width: 26rem; border-collapse: collapse; font-size: .85rem;
+}
+.transition-narrative__losses caption {
+  text-align: left; color: var(--ink-soft); font-size: .8rem; padding-bottom: .5rem;
+}
+.transition-narrative__losses th, .transition-narrative__losses td {
+  text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--line);
+}
+
+/* Narrow screens: the panel goes under the drawing rather than beside it, and
+   the drawing keeps the taller share — a schematic squeezed into a third of a
+   phone screen stops being readable, which defeats the point. */
+@media (max-width: 900px) {
+  .itpreview__sticky {
+    grid-template-columns: 1fr; grid-template-rows: 58vh 1fr; gap: .5rem;
+  }
+  .itpreview__sticky > .itscene { grid-column: 1; grid-row: 1; }
+  .itstate { grid-column: 1; grid-row: 2; }
+  .itscene__label { font-size: 7px; }
+}
+
+/* Reduced motion: the scene pins to the finished system, so the sticky
+   container has nothing to animate and the page reads as a document. */
+@media (prefers-reduced-motion: reduce) {
+  .itpreview__track { height: 100vh; }
+  .itpreview__sticky { position: static; height: auto; }
+}

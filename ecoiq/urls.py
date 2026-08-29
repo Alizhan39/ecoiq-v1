@@ -349,6 +349,13 @@ urlpatterns = [
     path('tours/', spa.spa_view, name='tours'),
     path('labs/',  spa.spa_view, name='labs'),
     path('trust/', spa.spa_view, name='trust'),
+    # Internal preview of the industrial-modernisation scene. Registered so it
+    # answers 200 rather than falling through the catch-all with a 404 status,
+    # and gated in core/access.py because it is an unfinished prototype — the
+    # same policy that module already applies to every other experimental
+    # surface. Not in the navigation, not in the sitemap, not linked.
+    path('industrial-modernisation-preview/', spa.spa_view,
+         name='industrial_modernisation_preview'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

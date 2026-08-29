@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useScrollProgress } from '@/hooks/useScrollProgress';
 import {
   buildPulsePool, edgePath, FLOW_STYLE, MOBILE_PULSE_BUDGET, paintFlows,
   PULSE_BUDGET, REDUCED_PULSE_BUDGET, type Pulse,
 } from './flowPainter';
+import { glyphFor } from './equipmentGlyphs';
 import { currentStage, sceneAt, recoveredFraction } from './topology';
 
 /**
@@ -48,17 +48,9 @@ import { currentStage, sceneAt, recoveredFraction } from './topology';
 
 const MAX_DPR = 2;
 const MOBILE_WIDTH = 720;
+/** Glyphs are drawn in a 40x40 box; this makes them legible in the container. */
+const GLYPH_SCALE = 1.9;
 
-const NODE_GLYPH: Record<string, string> = {
-  grid: 'M -7 -7 L 7 -7 M -7 0 L 7 0 M -7 7 L 7 7 M 0 -7 L 0 7',
-  process: 'M -9 -7 L 9 -7 L 9 7 L -9 7 Z',
-  thermal: 'M -8 6 Q -4 -8 0 0 Q 4 8 8 -6',
-  motor: 'M -7 -7 L 7 -7 L 7 7 L -7 7 Z M -7 0 L 7 0',
-  water: 'M 0 -8 Q 7 0 0 8 Q -7 0 0 -8 Z',
-  store: 'M -8 -5 L 8 -5 L 8 5 L -8 5 Z M -8 0 L 8 0',
-  recovery: 'M -7 3 A 7 7 0 1 1 4 6 M 4 6 L 7 1 M 4 6 L 0 8',
-  measure: 'M -8 6 L -3 -2 L 2 3 L 8 -6',
-};
 
 function readColors(el: HTMLElement) {
   const style = getComputedStyle(el);
@@ -71,14 +63,42 @@ function readColors(el: HTMLElement) {
     material: token('--ink-soft', '#5c7063'),
     waste: token('--danger', '#c02734'),
     evidence: token('--ink', '#0f1a14'),
+    fuel: token('--danger-strong', '#7a1420'),
   };
 }
 
-export function IndustrialTransitionScene() {
-  const { ref, progress } = useScrollProgress<HTMLDivElement>();
+export interface IndustrialTransitionSceneProps {
+  /**
+   * Scroll progress, 0 to 1, from whoever owns the scroll container.
+   *
+   * NOT read here. This component's own element is inside a position:sticky
+   * panel, so it does not move relative to the viewport as the page scrolls —
+   * an internal useScrollProgress therefore froze, and the drawing showed
+   * modernised equipment at the legacy stage because its progress never
+   * advanced past whatever it measured on mount.
+   *
+   * One scroll source of truth, owned by the page, passed down. That is also
+   * what keeps the drawing, the state panel and the narrative on the same
+   * frame — they are all given the same number rather than each measuring.
+   */
+  progress: number;
+}
+
+export function IndustrialTransitionScene({ progress }: IndustrialTransitionSceneProps) {
+  const ref = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const poolRef = useRef<Pulse[] | null>(null);
   const [reduced, setReduced] = useState(false);
+  /**
+   * Container size in CSS pixels.
+   *
+   * Needed because SVG's `transform` attribute does NOT accept percentages —
+   * `translate(8%, 30%)` is invalid and browsers drop it, which stacked every
+   * piece of equipment on the origin. It went unnoticed while this was a faint
+   * background; it is fatal now the schematic is the point. Positions are
+   * therefore computed against a measured box.
+   */
+  const [size, setSize] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     const wantsReduced = typeof window.matchMedia === 'function'
@@ -123,6 +143,7 @@ export function IndustrialTransitionScene() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       paintFlows(ctx, shown, poolRef.current ?? [], { w, h }, readColors(container));
+      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
     };
 
     paint();
@@ -151,11 +172,23 @@ export function IndustrialTransitionScene() {
           return (
             <path
               key={edge.id}
-              className={`itscene__edge itscene__edge--${edge.kind}`}
+              className={[
+                'itscene__edge',
+                `itscene__edge--${edge.kind}`,
+                edge.loss ? 'is-loss' : '',
+                // A returning flow is drawn as a loop and named as one, so a
+                // reader can tell "this goes back" from "this goes on".
+                edge.bow ? 'is-loop' : '',
+              ].filter(Boolean).join(' ')}
               d={`M ${path.a.x * 100} ${path.a.y * 100} Q ${mx * 100} ${my * 100} ${path.b.x * 100} ${path.b.y * 100}`}
               strokeDasharray={style.dash.join(' ') || undefined}
-              strokeWidth={style.width / 4}
-              opacity={opacity * (edge.loss ? 0.5 : 0.75)}
+              // Real screen pixels. This was width/4 when the scene was a
+              // faint background behind text; with vectorEffect the result was
+              // a 0.4px line, which is invisible. The schematic is the primary
+              // visual now, so the pipes are drawn at the width the flow style
+              // actually specifies.
+              strokeWidth={style.width}
+              opacity={opacity * (edge.loss ? 0.75 : 1)}
               vectorEffect="non-scaling-stroke"
               fill="none"
             />
@@ -166,16 +199,37 @@ export function IndustrialTransitionScene() {
       {/* Equipment sits in its own SVG so it is never distorted by the
           non-uniform viewBox the topology needs. */}
       <svg className="itscene__nodes" focusable="false">
-        {scene.nodes.map(({ node, opacity }) => (
-          <g
-            key={node.id}
-            className={`itscene__node itscene__node--${node.kind}`}
-            transform={`translate(${node.x * 100}% , ${node.y * 100}%)`}
-            opacity={opacity}
-          >
-            <path d={NODE_GLYPH[node.kind] ?? NODE_GLYPH.process} />
-          </g>
-        ))}
+        {size.w > 0 ? scene.nodes.map(({ node, opacity }) => {
+          const glyph = glyphFor(node.equipment);
+          return (
+            <g
+              key={node.id}
+              className={`itscene__node itscene__node--${node.kind}`}
+              transform={`translate(${(node.x * size.w).toFixed(1)}, ${(node.y * size.h).toFixed(1)})`}
+              opacity={opacity}
+            >
+              {/* Glyphs are authored in a 40x40 box; this SVG has no viewBox
+                  because the node positions are percentages of the container.
+                  So the symbol is scaled here rather than being redrawn at
+                  whatever size the container happens to be. */}
+              <g transform={`scale(${GLYPH_SCALE})`}>
+                <path className="itscene__glyph" d={glyph.d} />
+                {glyph.detail
+                  ? <path className="itscene__glyph-detail" d={glyph.detail} />
+                  : null}
+              </g>
+              {/* The label is part of the schematic, not a tooltip. A P&ID
+                  without tags is a picture of pipes. */}
+              <text
+                className="itscene__label"
+                y={16 * GLYPH_SCALE + 12}
+                textAnchor="middle"
+              >
+                {node.label}
+              </text>
+            </g>
+          );
+        }) : null}
       </svg>
 
       <canvas className="itscene__canvas" ref={canvasRef} />

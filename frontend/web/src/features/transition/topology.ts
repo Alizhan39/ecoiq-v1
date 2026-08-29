@@ -38,6 +38,7 @@
  * one status list had been copied into six files and every copy had gone
  * stale. Re-exported rather than re-declared so there is one.
  */
+import type { EquipmentKind } from './domain/entities';
 import { ramp, stageAt } from './model/stages';
 
 export { STAGES, stageProgress, ramp as span } from './model/stages';
@@ -45,11 +46,20 @@ export type { Stage, StageKey } from './model/stages';
 
 /** What a flow carries. Never distinguished by colour alone — see the painter. */
 export type FlowKind =
-  | 'electricity' | 'heat' | 'water' | 'material' | 'waste' | 'evidence';
+  | 'electricity' | 'heat' | 'water' | 'material' | 'waste' | 'evidence' | 'fuel';
 
 export interface Node {
   id: string;
   label: string;
+  /**
+   * The domain equipment class, which chooses the glyph.
+   *
+   * Separate from `kind` below: `kind` is a coarse visual family (how it is
+   * coloured and grouped), `equipment` is what the thing actually IS. A boiler
+   * and an electric heater share a family and must not share a symbol — the
+   * whole point of the ELECTRIFY stage is that the equipment changed.
+   */
+  equipment: EquipmentKind;
   /** Schematic position in a unit square; the painter scales it. */
   x: number;
   y: number;
@@ -89,21 +99,28 @@ export { stageAt as currentStage, FINAL_STAGE } from './model/stages';
  * as a crossfade between unrelated shapes.
  */
 export const NODES: Node[] = [
-  { id: 'grid', label: 'Grid connection', x: 0.08, y: 0.30, kind: 'grid', appearsAt: 0 },
-  { id: 'process', label: 'Industrial process', x: 0.44, y: 0.42, kind: 'process', appearsAt: 0 },
-  { id: 'boiler', label: 'Fired process heat', x: 0.26, y: 0.16, kind: 'thermal', appearsAt: 0, retiredAt: 0.50 },
-  { id: 'motor', label: 'Fixed-speed motor', x: 0.26, y: 0.62, kind: 'motor', appearsAt: 0, retiredAt: 0.36 },
-  { id: 'water', label: 'Water system', x: 0.44, y: 0.80, kind: 'water', appearsAt: 0 },
-  { id: 'waste', label: 'Waste stream', x: 0.80, y: 0.72, kind: 'process', appearsAt: 0, retiredAt: 0.78 },
-  { id: 'output', label: 'Product output', x: 0.86, y: 0.42, kind: 'process', appearsAt: 0 },
+  { id: 'grid', label: 'Grid connection', x: 0.08, y: 0.30, equipment: 'grid_connection', kind: 'grid', appearsAt: 0 },
+  { id: 'process', label: 'Industrial process', x: 0.44, y: 0.42, equipment: 'process_unit', kind: 'process', appearsAt: 0 },
+  { id: 'boiler', label: 'Fired process heat', x: 0.26, y: 0.16, equipment: 'boiler', kind: 'thermal', appearsAt: 0, retiredAt: 0.50 },
+  { id: 'motor', label: 'Fixed-speed motor', x: 0.26, y: 0.62, equipment: 'motor', kind: 'motor', appearsAt: 0, retiredAt: 0.36 },
+  { id: 'water', label: 'Water system', x: 0.44, y: 0.80, equipment: 'pump', kind: 'water', appearsAt: 0 },
+  { id: 'waste', label: 'Waste stream', x: 0.80, y: 0.72, equipment: 'process_unit', kind: 'process', appearsAt: 0, retiredAt: 0.78 },
+  { id: 'output', label: 'Product output', x: 0.86, y: 0.42, equipment: 'process_unit', kind: 'process', appearsAt: 0 },
+  // The fuel the legacy plant burns. Retires at ELECTRIFY — the whole point of
+  // that stage is that this arrow stops existing, not that it changes colour.
+  { id: 'fuel', label: 'Fuel supply', x: 0.08, y: 0.06, equipment: 'storage', kind: 'thermal', appearsAt: 0, retiredAt: 0.50 },
+  // Where discharged water goes. A named sink rather than a self-loop, so the
+  // legacy plant visibly sends water OUT of the system.
+  { id: 'discharge', label: 'Discharge', x: 0.20, y: 0.92, equipment: 'process_unit', kind: 'water', appearsAt: 0, retiredAt: 0.76 },
 
   // Modernised equipment. Each appears where its predecessor retires.
-  { id: 'drive', label: 'Variable-speed drive', x: 0.26, y: 0.62, kind: 'motor', appearsAt: 0.32 },
-  { id: 'exchanger', label: 'Heat recovery', x: 0.62, y: 0.16, kind: 'recovery', appearsAt: 0.60 },
-  { id: 'electricHeat', label: 'Electrified process heat', x: 0.26, y: 0.16, kind: 'thermal', appearsAt: 0.48 },
-  { id: 'store', label: 'Thermal store', x: 0.44, y: 0.06, kind: 'store', appearsAt: 0.64 },
-  { id: 'recovery', label: 'Material recovery', x: 0.80, y: 0.72, kind: 'recovery', appearsAt: 0.74 },
-  { id: 'measure', label: 'Measurement', x: 0.62, y: 0.92, kind: 'measure', appearsAt: 0.86 },
+  { id: 'drive', label: 'Variable-speed drive', x: 0.26, y: 0.62, equipment: 'variable_speed_drive', kind: 'motor', appearsAt: 0.32 },
+  { id: 'exchanger', label: 'Heat recovery', x: 0.62, y: 0.16, equipment: 'heat_exchanger', kind: 'recovery', appearsAt: 0.60 },
+  { id: 'electricHeat', label: 'Electrified process heat', x: 0.26, y: 0.16, equipment: 'electric_heater', kind: 'thermal', appearsAt: 0.48 },
+  { id: 'store', label: 'Thermal store', x: 0.44, y: 0.06, equipment: 'storage', kind: 'store', appearsAt: 0.64 },
+  { id: 'recovery', label: 'Material recovery', x: 0.80, y: 0.72, equipment: 'material_recovery', kind: 'recovery', appearsAt: 0.74 },
+  { id: 'treatment', label: 'Water treatment', x: 0.30, y: 0.80, equipment: 'water_treatment', kind: 'water', appearsAt: 0.72 },
+  { id: 'measure', label: 'Measurement', x: 0.62, y: 0.92, equipment: 'metering', kind: 'measure', appearsAt: 0.86 },
 ];
 
 /**
@@ -115,6 +132,7 @@ export const NODES: Node[] = [
  * substitution is the whole argument the drawing makes.
  */
 export const EDGES: Edge[] = [
+  { id: 'fuel-boiler', from: 'fuel', to: 'boiler', kind: 'fuel', appearsAt: 0, retiredAt: 0.50 },
   { id: 'grid-boiler', from: 'grid', to: 'boiler', kind: 'electricity', appearsAt: 0, retiredAt: 0.50 },
   { id: 'grid-motor', from: 'grid', to: 'motor', kind: 'electricity', appearsAt: 0, retiredAt: 0.36 },
   { id: 'boiler-process', from: 'boiler', to: 'process', kind: 'heat', appearsAt: 0, retiredAt: 0.50 },
@@ -126,7 +144,7 @@ export const EDGES: Edge[] = [
   // Losses in the legacy system. These do not move — they leave.
   { id: 'loss-heat', from: 'boiler', to: 'boiler', kind: 'heat', appearsAt: 0, retiredAt: 0.50, loss: true },
   { id: 'loss-process', from: 'process', to: 'process', kind: 'heat', appearsAt: 0, retiredAt: 0.62, loss: true },
-  { id: 'loss-water', from: 'water', to: 'water', kind: 'water', appearsAt: 0, retiredAt: 0.76, loss: true },
+  { id: 'loss-water', from: 'process', to: 'discharge', kind: 'water', appearsAt: 0, retiredAt: 0.76, loss: true },
 
   // Retrofit: the lost heat becomes recovered heat, returned to the process.
   { id: 'process-exchanger', from: 'process', to: 'exchanger', kind: 'heat', appearsAt: 0.60 },
@@ -143,7 +161,8 @@ export const EDGES: Edge[] = [
   // Circularity: waste becomes recovery, and both material and water return.
   { id: 'process-recovery', from: 'process', to: 'recovery', kind: 'material', appearsAt: 0.74 },
   { id: 'recovery-process', from: 'recovery', to: 'process', kind: 'material', appearsAt: 0.76, bow: 0.28 },
-  { id: 'process-water', from: 'process', to: 'water', kind: 'water', appearsAt: 0.76, bow: 0.24 },
+  { id: 'process-treatment', from: 'process', to: 'treatment', kind: 'water', appearsAt: 0.72 },
+  { id: 'treatment-water', from: 'treatment', to: 'water', kind: 'water', appearsAt: 0.76, bow: 0.20 },
 
   // Verify. Evidence is the one flow that leaves and does not come back —
   // it is the record, not a resource.

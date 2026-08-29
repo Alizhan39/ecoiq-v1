@@ -44,6 +44,9 @@ export const FLOW_STYLE: Record<FlowKind, FlowStyle> = {
   material: { dash: [10, 3], width: 2.2, pulse: 'square', speed: 0.55 },
   waste: { dash: [1, 5], width: 1.4, pulse: 'square', speed: 0.5 },
   evidence: { dash: [4, 3, 1, 3], width: 1.2, pulse: 'dot', speed: 1.0 },
+  // Fuel: the heaviest dash in the set. It is the flow the whole exercise
+  // exists to remove, so it must read as substantial before it goes.
+  fuel: { dash: [12, 4], width: 2.4, pulse: 'square', speed: 0.45 },
 };
 
 export interface Pulse {
@@ -136,6 +139,7 @@ export interface Colors {
   material: string;
   waste: string;
   evidence: string;
+  fuel: string;
 }
 
 export interface Size { w: number; h: number }

@@ -13,8 +13,9 @@ import {
   STATE_FUNCTIONS,
   assertNotPresentedAsMeasurement,
   heatLossFraction,
-  heatRecoveryFraction,
+  heatCaptureFraction,
   materialRecoveryFraction,
+  usefulHeatRecoveryFraction,
   waterReuseFraction,
 } from './state';
 
@@ -176,14 +177,30 @@ describe('loss falls only where an intervention acts on it', () => {
     expect(materialRecoveryFraction(circularise.to)).toBeCloseTo(1, 6);
   });
 
-  it('capture without a return path is not credited as full recovery', () => {
-    // The engineering point: a heat exchanger with nowhere to send the heat
-    // has recovered nothing useful. At the end of RECOVER, before CIRCULARISE
-    // has run, the value must be partial.
+  it('capture is complete before any of it is usefully recovered', () => {
+    // The engineering point, and the reason these are two functions. At the
+    // end of RECOVER the exchanger is installed and taking heat out of the
+    // stream — capture is 1 — but nothing needs that heat yet, so useful
+    // recovery is still 0. Reporting "50% recovered" there, as the single
+    // averaged function did, describes a plant that does not exist.
     const recover = STAGES.find((s) => s.key === 'recover')!;
-    const atEndOfCapture = heatRecoveryFraction(recover.to);
-    expect(atEndOfCapture).toBeGreaterThan(0);
-    expect(atEndOfCapture).toBeLessThan(1);
+    expect(heatCaptureFraction(recover.to)).toBeCloseTo(1, 6);
+    expect(usefulHeatRecoveryFraction(recover.to)).toBe(0);
+  });
+
+  it('useful recovery can never exceed capture', () => {
+    // You cannot deliver heat you did not take.
+    for (let i = 0; i <= 200; i += 1) {
+      const p = i / 200;
+      expect(usefulHeatRecoveryFraction(p), `progress ${p}`)
+        .toBeLessThanOrEqual(heatCaptureFraction(p) + 1e-9);
+    }
+  });
+
+  it('both reach 1 only once the sink exists', () => {
+    const circularise = STAGES.find((s) => s.key === 'circularise')!;
+    expect(usefulHeatRecoveryFraction(circularise.from)).toBe(0);
+    expect(usefulHeatRecoveryFraction(circularise.to)).toBeCloseTo(1, 6);
   });
 });
 

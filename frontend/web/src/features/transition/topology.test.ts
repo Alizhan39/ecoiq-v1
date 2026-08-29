@@ -92,7 +92,38 @@ describe('the topology itself improves', () => {
     const late = sceneAt(1).edges.map((e) => e.edge.id);
     expect(late).toContain('recovery-process');
     expect(late).toContain('exchanger-process');
-    expect(late).toContain('process-water');
+    // Water returns THROUGH treatment, not straight back. This test named a
+    // direct process->water edge, which was the shortcut the drawing used
+    // before the domain model said what water reuse actually requires:
+    // discharged water is not reusable until something has treated it.
+    expect(late).toContain('process-treatment');
+    expect(late).toContain('treatment-water');
+  });
+
+  it('the legacy plant burns fuel, and the modernised one does not', () => {
+    // The arrow the whole exercise exists to remove. Not recoloured — gone.
+    expect(sceneAt(0).edges.map((e) => e.edge.id)).toContain('fuel-boiler');
+    expect(sceneAt(1).edges.map((e) => e.edge.id)).not.toContain('fuel-boiler');
+    expect(sceneAt(1).nodes.map((n) => n.node.id)).not.toContain('fuel');
+  });
+
+  it('the legacy plant discharges water to a named sink', () => {
+    // A self-loop hid the fact that water LEAVES. It now goes somewhere, and
+    // that somewhere disappears when the loop closes.
+    expect(sceneAt(0).nodes.map((n) => n.node.id)).toContain('discharge');
+    expect(sceneAt(1).nodes.map((n) => n.node.id)).not.toContain('discharge');
+  });
+
+  it('every drawn node carries a recognisable equipment class', () => {
+    // Colour is never the only difference between two pieces of equipment.
+    for (const { node } of sceneAt(1).nodes) {
+      expect(node.equipment, node.id).toBeTruthy();
+    }
+    // The boiler and its electric replacement must not share a symbol — the
+    // point of ELECTRIFY is that the equipment changed.
+    const boiler = NODES.find((n) => n.id === 'boiler')!;
+    const electric = NODES.find((n) => n.id === 'electricHeat')!;
+    expect(boiler.equipment).not.toBe(electric.equipment);
   });
 
   it('turns waste into recovery', () => {
