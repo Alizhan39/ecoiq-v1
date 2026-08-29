@@ -50,6 +50,14 @@ const MAX_DPR = 2;
 const MOBILE_WIDTH = 720;
 /** Glyphs are drawn in a 40x40 box; this makes them legible in the container. */
 const GLYPH_SCALE = 1.9;
+/**
+ * Opacity at which a node's label appears.
+ *
+ * Above one half, so at a replacement exactly one of the two labels is ever
+ * shown: the outgoing one drops below the threshold as the incoming one
+ * crosses it.
+ */
+const LABEL_THRESHOLD = 0.55;
 
 
 function readColors(el: HTMLElement) {
@@ -220,13 +228,32 @@ export function IndustrialTransitionScene({ progress }: IndustrialTransitionScen
               </g>
               {/* The label is part of the schematic, not a tooltip. A P&ID
                   without tags is a picture of pipes. */}
-              <text
-                className="itscene__label"
-                y={16 * GLYPH_SCALE + 12}
-                textAnchor="middle"
-              >
-                {node.label}
-              </text>
+              {/*
+                Anchor follows position. A label centred on a node near either
+                edge is clipped by the container — "Grid connection" lost its
+                first characters at 390px. Anchoring to the start on the left
+                and to the end on the right keeps the text inside the frame
+                whatever the container width, rather than nudging one node
+                until it happens to fit one viewport.
+
+                Shown only while this node is the dominant one. A replacement
+                puts the old equipment and the new in the SAME position, which
+                is the point — the glyphs crossfade so a retrofit reads as one
+                thing becoming another. Two labels doing the same thing is not
+                a crossfade, it is unreadable: "Fixed-speed motor" and
+                "Variable-speed drive" overprinted each other for the whole
+                transition. The glyphs still blend; the text hands over.
+              */}
+              {opacity >= LABEL_THRESHOLD ? (
+                <text
+                  className="itscene__label"
+                  x={node.x < 0.2 ? -14 : node.x > 0.8 ? 14 : 0}
+                  y={16 * GLYPH_SCALE + 12}
+                  textAnchor={node.x < 0.2 ? 'start' : node.x > 0.8 ? 'end' : 'middle'}
+                >
+                  {node.label}
+                </text>
+              ) : null}
             </g>
           );
         }) : null}

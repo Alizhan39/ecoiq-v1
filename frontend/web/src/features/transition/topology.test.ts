@@ -114,6 +114,44 @@ describe('the topology itself improves', () => {
     expect(sceneAt(1).nodes.map((n) => n.node.id)).not.toContain('discharge');
   });
 
+  it('replacement pairs hand over cleanly', () => {
+    /**
+     * A replacement puts two pieces of equipment in the SAME position, so the
+     * glyphs can crossfade and a retrofit reads as one thing becoming another.
+     * That only works if the handover is aligned: the outgoing node must fade
+     * out over exactly the window the incoming one fades in.
+     *
+     * Staggered, both are briefly opaque at once, and both labels print on top
+     * of each other — measured in the browser at 390px as "Fixed-speed motor"
+     * overprinting "Variable-speed drive". This asserts the alignment rather
+     * than the symptom, because the symptom is only visible in a real browser.
+     */
+    const REPLACEMENTS: [string, string][] = [
+      ['motor', 'drive'],
+      ['boiler', 'electricHeat'],
+      ['waste', 'recovery'],
+      ['discharge', 'treatment'],
+    ];
+    for (const [oldId, newId] of REPLACEMENTS) {
+      const outgoing = NODES.find((n) => n.id === oldId)!;
+      const incoming = NODES.find((n) => n.id === newId)!;
+      expect(outgoing.retiredAt, `${oldId} must retire`).toBeDefined();
+      expect(incoming.appearsAt, `${oldId} -> ${newId} handover`)
+        .toBeCloseTo(outgoing.retiredAt!, 6);
+
+      // And the consequence the alignment exists for: their presences sum to
+      // 1 across the handover, so exactly one is ever the dominant label.
+      for (let i = 0; i <= 20; i += 1) {
+        const p = outgoing.retiredAt! - 0.02 + (i / 20) * 0.10;
+        const a = presence(outgoing, p);
+        const b = presence(incoming, p);
+        expect(a + b, `${oldId}/${newId} at ${p.toFixed(3)}`).toBeCloseTo(1, 6);
+        expect(Math.min(a, b), `${oldId}/${newId} both dominant at ${p.toFixed(3)}`)
+          .toBeLessThanOrEqual(0.5);
+      }
+    }
+  });
+
   it('every drawn node carries a recognisable equipment class', () => {
     // Colour is never the only difference between two pieces of equipment.
     for (const { node } of sceneAt(1).nodes) {

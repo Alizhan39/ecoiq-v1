@@ -1,1 +1,0 @@
-import{d as a}from"./index-DwGs6OKT.js";function r(t){return a.get("/platform/",t)}function e(t){return t.value===null?"—":t.value.toLocaleString()}const n="NOT YET MEASURED";function u(t){return t.evaluation!==n}export{e as c,r as g,u as i};

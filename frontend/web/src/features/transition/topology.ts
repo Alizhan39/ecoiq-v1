@@ -99,7 +99,7 @@ export { stageAt as currentStage, FINAL_STAGE } from './model/stages';
  * as a crossfade between unrelated shapes.
  */
 export const NODES: Node[] = [
-  { id: 'grid', label: 'Grid connection', x: 0.08, y: 0.30, equipment: 'grid_connection', kind: 'grid', appearsAt: 0 },
+  { id: 'grid', label: 'Grid connection', x: 0.12, y: 0.30, equipment: 'grid_connection', kind: 'grid', appearsAt: 0 },
   { id: 'process', label: 'Industrial process', x: 0.44, y: 0.42, equipment: 'process_unit', kind: 'process', appearsAt: 0 },
   { id: 'boiler', label: 'Fired process heat', x: 0.26, y: 0.16, equipment: 'boiler', kind: 'thermal', appearsAt: 0, retiredAt: 0.50 },
   { id: 'motor', label: 'Fixed-speed motor', x: 0.26, y: 0.62, equipment: 'motor', kind: 'motor', appearsAt: 0, retiredAt: 0.36 },
@@ -113,13 +113,19 @@ export const NODES: Node[] = [
   // legacy plant visibly sends water OUT of the system.
   { id: 'discharge', label: 'Discharge', x: 0.20, y: 0.92, equipment: 'process_unit', kind: 'water', appearsAt: 0, retiredAt: 0.76 },
 
-  // Modernised equipment. Each appears where its predecessor retires.
-  { id: 'drive', label: 'Variable-speed drive', x: 0.26, y: 0.62, equipment: 'variable_speed_drive', kind: 'motor', appearsAt: 0.32 },
+  // Modernised equipment. Each appears EXACTLY where its predecessor retires,
+  // and that alignment is load-bearing rather than tidy: `presence()` fades a
+  // node out over the same window it fades its replacement in, so the two
+  // opacities sum to 1 and exactly one label is ever above the threshold that
+  // shows it. Stagger them and both labels print at once, which is what
+  // "Fixed-speed motor" overprinting "Variable-speed drive" was.
+  // Asserted by `replacement pairs hand over cleanly`.
+  { id: 'drive', label: 'Variable-speed drive', x: 0.26, y: 0.62, equipment: 'variable_speed_drive', kind: 'motor', appearsAt: 0.36 },
   { id: 'exchanger', label: 'Heat recovery', x: 0.62, y: 0.16, equipment: 'heat_exchanger', kind: 'recovery', appearsAt: 0.60 },
-  { id: 'electricHeat', label: 'Electrified process heat', x: 0.26, y: 0.16, equipment: 'electric_heater', kind: 'thermal', appearsAt: 0.48 },
+  { id: 'electricHeat', label: 'Electrified process heat', x: 0.26, y: 0.16, equipment: 'electric_heater', kind: 'thermal', appearsAt: 0.50 },
   { id: 'store', label: 'Thermal store', x: 0.44, y: 0.06, equipment: 'storage', kind: 'store', appearsAt: 0.64 },
-  { id: 'recovery', label: 'Material recovery', x: 0.80, y: 0.72, equipment: 'material_recovery', kind: 'recovery', appearsAt: 0.74 },
-  { id: 'treatment', label: 'Water treatment', x: 0.30, y: 0.80, equipment: 'water_treatment', kind: 'water', appearsAt: 0.72 },
+  { id: 'recovery', label: 'Material recovery', x: 0.80, y: 0.72, equipment: 'material_recovery', kind: 'recovery', appearsAt: 0.78 },
+  { id: 'treatment', label: 'Water treatment', x: 0.26, y: 0.92, equipment: 'water_treatment', kind: 'water', appearsAt: 0.76 },
   { id: 'measure', label: 'Measurement', x: 0.62, y: 0.92, equipment: 'metering', kind: 'measure', appearsAt: 0.86 },
 ];
 
