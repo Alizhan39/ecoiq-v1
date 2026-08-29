@@ -56,7 +56,13 @@ describe('span', () => {
 
   it('is linear in between', () => {
     expect(span(0.5, 0, 1)).toBeCloseTo(0.5);
-    expect(stageProgress(0.225, 'diagnose')).toBeCloseTo(0.5, 1);
+    // Midpoint DERIVED from the stage, not hardcoded. This test held 0.225,
+    // the midpoint of diagnose under the seven-stage boundaries, and went
+    // stale the moment RECOVER was split out of CIRCULARISE. A test that
+    // repeats a constant the source owns is a second copy of it.
+    const diagnose = STAGES.find((s) => s.key === 'diagnose')!;
+    const middle = (diagnose.from + diagnose.to) / 2;
+    expect(stageProgress(middle, 'diagnose')).toBeCloseTo(0.5, 6);
   });
 });
 
