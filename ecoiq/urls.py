@@ -349,6 +349,11 @@ urlpatterns = [
     path('tours/', spa.spa_view, name='tours'),
     path('labs/',  spa.spa_view, name='labs'),
     path('trust/', spa.spa_view, name='trust'),
+    # The industrial-modernisation product page. PUBLIC and deliberately not
+    # in core/access.py's gated list: unlike the preview beside it, this one
+    # states what does and does not exist on its face, so it is presentable.
+    path('industrial-modernisation/', spa.spa_view,
+         name='industrial_modernisation'),
     # Internal preview of the industrial-modernisation scene. Registered so it
     # answers 200 rather than falling through the catch-all with a 404 status,
     # and gated in core/access.py because it is an unfinished prototype — the

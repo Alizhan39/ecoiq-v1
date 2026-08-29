@@ -234,6 +234,14 @@ ROUTE_META: dict[str, dict[str, str]] = {
             'how much of it is supported, and where the gaps are. No score is '
             'shown unless the evidence supports one.'),
     },
+    '/industrial-modernisation': {
+        'title': 'Industrial modernisation — EcoIQ',
+        'description': (
+            'EcoIQ maps industrial systems, identifies where energy, heat, '
+            'water and material are lost, structures the engineering '
+            'interventions that stop the losses, and builds an evidence trail '
+            'from diagnosis to verification.'),
+    },
     '/industrial-modernisation-preview': {
         'title': 'Industrial modernisation preview — EcoIQ',
         'description': (

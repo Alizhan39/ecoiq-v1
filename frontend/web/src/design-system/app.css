@@ -812,3 +812,152 @@
   .itpreview__track { height: 100vh; }
   .itpreview__sticky { position: static; height: auto; }
 }
+
+/* ── Industrial modernisation, the product page ───────────────────────────────
+   Two axes, laid out so they cannot be read as one sequence: the plant
+   transformation is a pinned schematic, the EcoIQ workflow is a separate
+   card list further down with its own heading and its own vocabulary. */
+
+.itpage__hero {
+  max-width: var(--measure); margin: 0 auto; padding: 4rem 1.25rem 2.5rem;
+}
+.itpage__eyebrow {
+  text-transform: uppercase; letter-spacing: .09em; font-size: .72rem;
+  font-weight: 700; color: var(--warn-strong); margin: 0 0 .6rem;
+}
+.itpage__hero h1 {
+  font-size: clamp(1.8rem, 4.4vw, 3rem); line-height: 1.12; margin: 0 0 1rem;
+}
+.itpage__lede { font-size: 1.12rem; line-height: 1.6; margin: 0 0 1.1rem; }
+.itpage__note {
+  font-size: .85rem; color: var(--ink-soft); line-height: 1.5;
+  border-left: 3px solid var(--warn); padding-left: .75rem; margin: 0;
+}
+
+/* Axis A — the pinned schematic. */
+.itpage__scroller { position: relative; }
+.itpage__track { height: 640vh; }
+.itpage__sticky {
+  position: sticky; top: 0; height: 100vh;
+  display: grid; grid-template-columns: 1fr 20rem; gap: 1rem;
+  padding: 1rem; box-sizing: border-box; background: var(--paper);
+}
+.itpage__sticky > .itscene {
+  position: relative; grid-column: 1;
+  border: 1px solid var(--line); border-radius: var(--radius); background:
+    linear-gradient(var(--paper-soft) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, var(--paper-soft) 1px, transparent 1px) 0 0 / 28px 100%,
+    var(--paper);
+}
+
+/* Axis B — the workflow. Cards, not a track: a second horizontal sequence
+   beside the first is exactly the misreading this layout has to prevent. */
+.itworkflow { max-width: 62rem; margin: 0 auto; padding: 3.5rem 1.25rem; }
+.itworkflow__lede { font-size: 1.02rem; margin: 0 0 .6rem; }
+.itworkflow__disclaimer {
+  font-size: .85rem; color: var(--ink-soft);
+  border-left: 3px solid var(--warn); padding-left: .75rem; margin: 0 0 1.6rem;
+}
+.itworkflow__list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: .8rem;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+.itworkflow__step {
+  border: 1px solid var(--line); border-left: 4px solid var(--unknown);
+  border-radius: var(--radius); padding: .9rem 1rem; background: var(--paper);
+}
+.itworkflow__step.is-active { border-left-color: var(--accent); background: var(--accent-soft); }
+.itworkflow__head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.itworkflow__step h3 { margin: 0; font-size: 1.02rem; }
+.itworkflow__status {
+  font-size: .62rem; font-weight: 700; letter-spacing: .07em;
+  padding: .12rem .45rem; border-radius: 999px; border: 1px solid currentColor;
+}
+/* Status colour never carries the meaning alone — the word is always there. */
+.itworkflow__status.is-experimental { color: var(--warn-strong); }
+.itworkflow__status.is-planned { color: var(--unknown); }
+.itworkflow__status.is-specification { color: var(--ink-soft); }
+.itworkflow__summary { font-size: .88rem; line-height: 1.5; margin: .5rem 0 0; }
+.itworkflow__contains {
+  margin-top: .75rem; padding: .55rem .7rem;
+  border: 1px dashed var(--line); border-radius: 8px; background: var(--paper-soft);
+}
+.itworkflow__contains h4 {
+  margin: 0 0 .35rem; font-size: .66rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-soft);
+}
+.itworkflow__contains ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: .3rem; font-size: .78rem;
+}
+.itworkflow__contains li {
+  padding: .1rem .45rem; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--paper);
+}
+.itworkflow__contains li.is-current {
+  border-color: var(--accent); color: var(--ink); font-weight: 700;
+}
+.itworkflow__basis { margin-top: .7rem; font-size: .8rem; }
+.itworkflow__basis summary { color: var(--ink-soft); cursor: pointer; }
+.itworkflow__basis p { margin: .45rem 0 0; line-height: 1.5; }
+
+/* Boundary, data, principles, CTA. */
+.itpage__boundary, .itdata, .itpage__principles, .itpage__cta {
+  max-width: 62rem; margin: 0 auto; padding: 3rem 1.25rem;
+}
+.itpage__columns {
+  display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+.itpage__column { border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
+.itpage__status {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--warn-strong); margin: 0 0 .6rem;
+}
+.itpage__status--future { color: var(--unknown); }
+.itpage__chain { margin: 0 0 .8rem; padding-left: 1.2rem; font-size: .88rem; line-height: 1.7; }
+.itdata__scroll { overflow-x: auto; }
+.itdata__table { width: 100%; min-width: 42rem; border-collapse: collapse; font-size: .85rem; }
+.itdata__table caption {
+  text-align: left; color: var(--ink-soft); font-size: .8rem; padding-bottom: .5rem;
+}
+.itdata__table th, .itdata__table td {
+  text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.itdata__table code { font-size: .78rem; color: var(--ink-soft); }
+.itdata__yes { color: var(--ink); }
+.itdata__no { color: var(--warn-strong); font-weight: 600; }
+.itpage__cta { text-align: center; padding-bottom: 5rem; }
+.itpage__button {
+  display: inline-block; margin-top: 1rem; padding: .7rem 1.4rem;
+  background: var(--accent); color: #fff; border-radius: 999px;
+  text-decoration: none; font-weight: 700;
+}
+
+/* An explicit slot where photography belongs, so the gap is visible rather
+   than filled with whatever stock image was to hand. */
+.itpage__imageslot {
+  border: 2px dashed var(--line); border-radius: var(--radius);
+  padding: 2rem 1rem; text-align: center; color: var(--ink-soft);
+  font-size: .82rem; background: var(--paper-soft); margin: 1.5rem 0;
+}
+
+@media (max-width: 900px) {
+  .itpage__sticky {
+    grid-template-columns: 1fr; grid-template-rows: 58vh 1fr; gap: .5rem;
+  }
+  .itpage__sticky > .itscene { grid-column: 1; grid-row: 1; }
+  .itpage__sticky > .itstate { grid-column: 1; grid-row: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itpage__track { height: 100vh; }
+  .itpage__sticky { position: static; height: auto; }
+}
+.itpage__gallery {
+  max-width: 62rem; margin: 0 auto; padding: 0 1.25rem;
+  display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+.itpage__imageslot p { margin: 0 0 .4rem; }
+.itpage__note--slot { border: 0; padding: 0; font-size: .74rem; }

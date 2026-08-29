@@ -23,6 +23,10 @@ const League = lazy(() => import('@/pages/League'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
 const Labs = lazy(() => import('@/pages/Labs'));
 const TrustCenter = lazy(() => import('@/pages/TrustCenter'));
+// The industrial-modernisation product page. Lazy on its own chunk: the
+// scene, its canvas painter and the whole transition model cost nothing to a
+// visitor who never opens it.
+const IndustrialModernisation = lazy(() => import('@/pages/IndustrialModernisation'));
 // INTERNAL PREVIEW, not in the navigation and not linked from anywhere. Lazy
 // on its own chunk so the scene, its canvas painter and the whole transition
 // model cost nothing to a visitor who never opens it.
@@ -64,6 +68,10 @@ export function AppRoutes() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/labs" element={<Labs />} />
         <Route path="/trust" element={<TrustCenter />} />
+        <Route
+          path="/industrial-modernisation"
+          element={<IndustrialModernisation />}
+        />
         <Route
           path="/industrial-modernisation-preview"
           element={<IndustrialModernisationPreview />}
