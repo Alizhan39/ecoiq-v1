@@ -33,6 +33,43 @@ def _criteria_from_request(request):
     }
 
 
+#: Human labels for the criteria a reviewer can apply, in the order they are
+#: shown. Used to describe what is ACTUALLY filtering the queue.
+_FILTER_LABELS = (
+    ('company_slug', 'Organisation'),
+    ('kpi_id', 'Principle'),
+    ('kpi_category', 'Domain'),
+    ('relationship', 'Proposed as'),
+    ('min_source_tier', 'Minimum source tier'),
+    ('date_from', 'From'),
+    ('date_to', 'To'),
+)
+
+
+def active_filters(criteria):
+    """
+    What is really narrowing this queue, derived from the criteria the SERVER
+    applied — never from the form fields.
+
+    The two can disagree. A browser refills a text input from a previous
+    session, so a reviewer could see "EcoIQ Test" in the organisation box while
+    the list below showed every pending candidate: the form said one queue, the
+    rows were another. For a governance surface that is not cosmetic — a
+    reviewer has to know which evidence they are ruling on.
+
+    Review states are excluded: the queue always filters by state, so listing
+    it as a "filter" would make the default view look narrowed when it is the
+    normal one.
+    """
+    active = []
+    for key, label in _FILTER_LABELS:
+        value = criteria.get(key)
+        if value in (None, '', []):
+            continue
+        active.append({'key': key, 'label': label, 'value': value})
+    return active
+
+
 @staff_member_required(login_url='/login/')
 def review_queue_view(request):
     """
@@ -59,6 +96,9 @@ def review_queue_view(request):
         'rows': rows,
         'analytics': analytics,
         'criteria': criteria,
+        # Derived from what the server applied, so it cannot disagree with the
+        # rows below it.
+        'active_filters': active_filters(criteria),
         'review_state_choices': CompanyKPIEvidenceLink.REVIEW_STATE_CHOICES,
         'relationship_choices': CompanyKPIEvidenceLink.RELATIONSHIP_CHOICES,
         'kpi_categories': PRINCIPLE_CATEGORIES,

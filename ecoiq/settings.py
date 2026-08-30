@@ -1019,7 +1019,26 @@ REST_FRAMEWORK = {
         'api.throttles.APIKeyRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon':    '20/day',
+        # WHY THIS IS PER-HOUR AND NOT 20/day
+        #
+        # 20/day was a DATA-API quota, set when /api/ was something a third
+        # party called deliberately. The frontend migration made API v2 the way
+        # the WEBSITE renders: /platform/, /companies/, /leaderboard/,
+        # /projects/ and one call per investigation are all fetched by the SPA
+        # on ordinary page views.
+        #
+        # So every visitor was spending a developer quota to read the site. At
+        # 2-4 calls per page view, roughly five to seven pages exhausted it —
+        # after which /companies/ rendered "Could not load this section" for the
+        # rest of the DAY, and a shared NAT could exhaust it for a whole office
+        # in minutes. Observed in production: Retry-After 22248, six hours.
+        #
+        # Third-party data consumers are unaffected by this number: an API key
+        # carries its own tier below, and those are the real quotas. This one
+        # only has to permit a person reading the site while still bounding a
+        # scraper — 600/hour is ~150-300 page views an hour per address, and
+        # recovers in an hour rather than at midnight.
+        'anon':    '600/hour',
         'explorer':   '100/day',
         'professional': '2000/day',
         'enterprise':   '50000/day',
@@ -1055,10 +1074,22 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 #:
 #: Derived from the ENVIRONMENT, not from REDIS_URL, and that distinction is the
 #: whole point: REDIS_URL above always has a value because of its localhost
-#: default, so a truthiness check on it would report Redis as required on
-#: production — where no Redis service is deployed (render.yaml keeps the Key
-#: Value and worker blocks commented out). The readiness probe would then fail
+#: default, so a truthiness check on it would report Redis as required on any
+#: deployment that had never heard of Redis, and the readiness probe would fail
 #: permanently against a perfectly healthy web service.
+#:
+#: This comment used to justify itself with "production, where no Redis service
+#: is deployed (render.yaml keeps the Key Value and worker blocks commented
+#: out)". That stopped being true on 2026-08-24, when ecoiq-keyvalue and
+#: ecoiq-celery-worker were created by hand — render.yaml still carries them
+#: commented out and never learned. /readyz/ now reports redis: ok, which only
+#: happens when REDIS_URL is set explicitly, so production genuinely runs on a
+#: shared Redis cache. See docs/operations/PRODUCTION_RUNBOOK.md.
+#:
+#: The MECHANISM below is unchanged and was never the problem: keying off
+#: explicit configuration rather than a defaulted URL is right either way, and
+#: it is why this deployment reports its Redis dependency correctly today
+#: without anyone having to edit this line.
 #:
 #: Setting REDIS_URL explicitly is therefore the act that makes Redis a
 #: dependency worth failing readiness over.

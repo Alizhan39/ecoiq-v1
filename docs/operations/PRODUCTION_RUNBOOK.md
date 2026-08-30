@@ -1,34 +1,123 @@
 # Production Runbook
 
-What actually exists, and what to do when it breaks. Audited against
-`render.yaml` and the running service — not from memory.
+What actually exists, and what to do when it breaks.
+
+Audited against the RUNNING estate, not against `render.yaml`. That distinction
+is the reason this document was wrong for four days: services were created by
+hand in the dashboard, the blueprint never learned about them, and every claim
+here that cited the blueprint as evidence inherited its blind spot.
 
 ---
 
 ## What is deployed
 
-| service | plan | role |
-|---|---|---|
-| `ecoiq` (web) | starter | Django 5.2, gunicorn, WhiteNoise static |
-| `ecoiq-db` | starter | PostgreSQL, 1 GB |
+Audited against the live estate with the Render CLI on 2026-08-28, not against
+`render.yaml` — the blueprint and the running services had drifted apart, and
+this document had drifted with the blueprint.
 
-**That is the entire production estate.** One web service and one database.
+| service | type | state | role |
+|---|---|---|---|
+| `ecoiq` | web | running | Django 5.2, gunicorn, WhiteNoise static |
+| `ecoiq-db` | postgres | running | PostgreSQL, 1 GB |
+| `ecoiq-keyvalue` | key value | running | Redis — Django cache AND Celery broker/result backend |
+| `ecoiq-celery-worker` | background worker | running | `celery -A ecoiq worker --concurrency=2` |
+| `ecoiq-daily-yfinance` | cron | **suspended** | — |
+| `ecoiq-ml-retrain` | cron | **suspended** | — |
+| `ecoiq-rss-signals` | cron | **suspended** | — |
+| `ecoiq-weekly-full-ingest` | cron | **suspended** | — |
 
-### Redis and Celery are NOT deployed
+### Redis and Celery ARE deployed — this document used to say they were not
 
-They are **commented out** in `render.yaml`. This is worth stating plainly
-because the code contains `@shared_task` definitions in
-`backend_intelligence_engine/tasks.py`, and their presence makes it look like
-a worker is running somewhere.
+Until 2026-08-28 this section read "Redis and Celery are NOT deployed" and
+"that is the entire production estate. One web service and one database." Both
+statements were false. `ecoiq-keyvalue` was created on 2026-08-24 and
+`ecoiq-celery-worker` alongside it, by hand in the Render dashboard rather than
+through the blueprint — so `render.yaml`, which still carries them as commented
+out, never learned about them, and every document that cited `render.yaml` as
+evidence inherited the error.
 
-Nothing in the production request path calls `.delay()` or `.apply_async()`.
-Tasks are invoked synchronously via `.apply()` from management commands when
-they are needed at all.
+Measured, not assumed:
 
-**Do not claim Redis or Celery as production infrastructure.** If a feature
-ever requires asynchronous execution, the blueprint entries are ready to
-uncomment — until then, the honest description is that EcoIQ runs
-synchronously.
+```
+$ curl -s https://ecoiq.onrender.com/readyz/
+{"status": "ready", "checks": {"database": "ok", "redis": "ok"}}
+
+$ render logs -r srv-da69jd2jnfac73a8rceg
+celery@srv-da69jd2jnfac73a8rceg-... ready.
+Connected to redis://red-da67e6uk1f9s739a9g5g:6379//
+concurrency: 2
+```
+
+`redis: ok` in the readiness probe is only reported when `REDIS_URL` is set
+explicitly in the environment (`settings.REDIS_CONFIGURED`), so the web service
+is genuinely configured against it, not falling back to the localhost default.
+
+**What this changes for an operator.** The production cache is Redis, not a
+per-process LocMemCache. That means it is SHARED — across threads, across
+worker recycles, and across deploys until the TTL expires. A cached response is
+not a per-process convenience here; whatever is written to a cache key is what
+every subsequent visitor gets. See `companies/throttle.py`, whose keys carry
+the audience for exactly this reason.
+
+DRF throttle counters live there too, so they now survive a deploy and a
+`--max-requests 300` recycle instead of resetting.
+
+### Nothing runs on a schedule
+
+This part of the old text was right, and stays right.
+
+- There is **no Celery beat schedule** anywhere in the codebase — grep for
+  `beat_schedule` or `crontab(` and you will find nothing.
+- All four cron jobs are **suspended**.
+- Nothing in the request path calls `.delay()` or `.apply_async()`. The two
+  call sites are `backend_intelligence_engine/admin.py` (a staff admin action)
+  and `backend_intelligence_engine/tasks.py`.
+
+So the worker is running, connected and idle: it will execute a task if one is
+ever enqueued, and nothing enqueues one on its own. **"Continuous monitoring"
+remains a claim EcoIQ must not make** — being able to run a task is not the
+same as running it on a schedule, and the pricing page is correct to say
+monitoring is "scheduler-ready rather than running".
+
+### Two open decisions for the owner
+
+Recorded here rather than acted on, because both are cost and product calls:
+
+1. A Key Value instance and a background worker are being paid for while
+   nothing schedules work. Either that is deliberate headroom, or one or both
+   should be suspended.
+2. `render.yaml` does not describe the running estate, and **cannot currently
+   sync at all** — which is very likely why the estate drifted in the first
+   place. Measured:
+
+   ```
+   $ render blueprints validate render.yaml
+   {"errors": [{"path": "databases[0].plan",
+     "error": "Legacy Postgres plans, including 'starter', are no longer
+               supported for new databases."}],
+    "valid": false}
+   ```
+
+   So the blueprint is presently decorative: no change in it can be applied,
+   whatever it contains. Creating a Key Value instance and a worker by hand was
+   not someone bypassing the blueprint — it was the only way to add anything.
+
+   Two further mismatches, verified against the live plans:
+
+   | | `render.yaml` | live |
+   |---|---|---|
+   | `ecoiq` web | `starter` | `standard` |
+   | `ecoiq-db` | `starter` (retired) | `basic_256mb` |
+
+   **Sequencing matters here.** PR #220 fixes exactly these two lines and makes
+   the blueprint valid again. The moment it merges, a sync becomes possible
+   against a file that still does not declare `ecoiq-keyvalue`, the worker or
+   the four cron jobs — and the web plan line, uncorrected, would have
+   attempted to downgrade production from Standard to Starter. That is the
+   order to think about: make the blueprint describe the estate BEFORE making
+   the blueprint able to act on it, or at least establish what a sync does to
+   services it does not declare. This runbook does not assert what Render does
+   with them, because that has not been tested here.
 
 ---
 

@@ -49,12 +49,25 @@ The administrator-credential P0 was fixed in the Phase 1 security patch, but
 ### P1-1 — `.delay()` is called although no Celery worker exists in production
 
 - **Files:** `backend_intelligence_engine/admin.py:69`, `backend_intelligence_engine/tasks.py:543`
-- **Evidence:** `render.yaml` defines no worker service and no `REDIS_URL`
-  (both are commented out at lines 166–230, deliberately, as a cost decision).
-  `settings.REDIS_URL` therefore falls back to `redis://localhost:6379/0`,
-  which does not exist on the Render instance. The admin action *Retry selected
-  failed tasks* calls `task.delay(...)`, so using it in production raises a
-  broker connection error rather than retrying anything.
+- **PREMISE NOW FALSE (checked 2026-08-28).** This item's evidence was
+  `render.yaml`, which still shows the worker and Key Value blocks commented
+  out. The running estate disagrees: `ecoiq-keyvalue` and
+  `ecoiq-celery-worker` were created by hand on 2026-08-24, the worker logs
+  `Connected to redis://red-…:6379//` and `ready.`, and `/readyz/` reports
+  `redis: ok` — which only happens when `REDIS_URL` is set explicitly. So
+  `.delay()` in production now reaches a real broker and a running worker.
+  The item is left here rather than deleted because the underlying design
+  question survives its evidence: the admin action still has no guard, so on a
+  deployment WITHOUT a worker it fails exactly as described, and on this one it
+  succeeds silently whether or not anyone intended background execution to be
+  live. Re-scope before acting. See `docs/operations/PRODUCTION_RUNBOOK.md`.
+- **Original evidence, retained for the record:** `render.yaml` defines no
+  worker service and no `REDIS_URL` (both commented out at lines 166–230,
+  deliberately, as a cost decision). `settings.REDIS_URL` therefore falls back
+  to `redis://localhost:6379/0`, which does not exist on the Render instance.
+  The admin action *Retry selected failed tasks* calls `task.delay(...)`, so
+  using it in production raises a broker connection error rather than retrying
+  anything.
 - **Risk:** A staff-facing admin action fails with a 500. Operators may believe
   work was re-queued when nothing was.
 - **Fix:** Add a `CELERY_WORKER_AVAILABLE`-style guard (derived from whether

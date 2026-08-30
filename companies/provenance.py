@@ -46,16 +46,57 @@ def current(company, metric_key: str):
     ).select_related('evidence').first()
 
 
+#: Attribute a caller may set on a profile to supply the rows itself.
+#:
+#: Set by a bulk prefetch so a LIST endpoint can read every profile's
+#: provenance in one query instead of one per row. Deliberately an attribute
+#: rather than a module-level cache: a cache would go stale the moment
+#: `record()` wrote, and would do so invisibly. This is scoped to the object
+#: the caller built, and dies with it.
+PREFETCHED_ATTRIBUTE = '_prefetched_current_provenance'
+
+
 def current_map(company) -> dict:
     """
     Every current provenance row for a company, keyed by metric.
 
-    One query. Callers rendering a whole profile must use this rather than
-    calling current() fifteen times — that is the N+1 the brief warns about, and
-    it is easier to avoid now than to find later.
+    One query — or none, if a caller has already fetched the rows in bulk and
+    attached them (see PREFETCHED_ATTRIBUTE). Callers rendering a whole profile
+    must use this rather than calling current() fifteen times — that is the N+1
+    the brief warns about, and it is easier to avoid now than to find later.
     """
+    prefetched = getattr(company, PREFETCHED_ATTRIBUTE, None)
+    if prefetched is not None:
+        return prefetched
     rows = company.metric_provenance.filter(is_current=True).select_related('evidence')
     return {row.metric_key: row for row in rows}
+
+
+def attach_current_maps(profiles) -> None:
+    """
+    Fetch the current provenance for many profiles in ONE query and attach it.
+
+    The list endpoints served a directory page in 92 queries for 30 rows,
+    growing linearly, because every row independently asked for its own
+    provenance — twice, since `decide()` reached it through both `coverage_for`
+    and `confidence_for`.
+
+    Nothing about any decision changes: the same rows are read, by the same
+    code, in the same order. Only the number of round trips does.
+    """
+    from companies.models import CompanyMetricProvenance
+
+    profiles = [p for p in profiles if p is not None]
+    if not profiles:
+        return
+    by_company: dict = {p.pk: {} for p in profiles}
+    rows = (CompanyMetricProvenance.objects
+            .filter(is_current=True, company_id__in=by_company)
+            .select_related('evidence'))
+    for row in rows:
+        by_company[row.company_id][row.metric_key] = row
+    for profile in profiles:
+        setattr(profile, PREFETCHED_ATTRIBUTE, by_company[profile.pk])
 
 
 @transaction.atomic

@@ -84,6 +84,19 @@ def why_company(slug: str):
     from harvester.models import RegistryCompany, Evidence, Datapoint
 
     rc = RegistryCompany.objects.filter(slug=slug).first()
+    if rc is None and not Datapoint.objects.filter(company_slug=slug).exists() \
+            and not Evidence.objects.filter(company_slug=slug).exists():
+        # Nothing is on record under this slug, so there is no organisation to
+        # report on. Returning a report anyway title-cased the URL into a
+        # company name — "no-such-org-xyz" became "No Such Org Xyz" — and
+        # published seven metrics of NOT_FOUND about an entity EcoIQ had
+        # invented from the path. Any string answered 200, which is an
+        # unbounded supply of indexable documents naming organisations that
+        # may not exist.
+        #
+        # why_country() has always returned None here. This is the company
+        # side behaving the same way, not a new rule.
+        return None
     name = rc.company_name if rc else slug.replace("-", " ").title()
     present = {}
     for d in Datapoint.objects.filter(company_slug=slug, status="NORMALIZED").order_by("metric", "period_year"):

@@ -238,3 +238,58 @@ describe('the selected evidence item lives in the URL', () => {
     expect(await screen.findByText(/Select any evidence item/i)).toBeInTheDocument();
   });
 });
+
+describe('heading outline', () => {
+  /**
+   * A screen-reader user moves through a long page by heading level. The
+   * evidence graph renders a semantic list — "the same graph, as content" —
+   * whose three branch headings are H3s, and nothing sat between them and the
+   * page H1. So the outline skipped a level at exactly the point where the
+   * evidence begins.
+   *
+   * Measured across the public routes, this was the only page with a broken
+   * outline; the homepage, the organisation directory and the principles list
+   * were all clean.
+   */
+  function levels() {
+    return screen.getAllByRole('heading')
+      .map((h) => Number(h.tagName[1]));
+  }
+
+  it('never skips a heading level', async () => {
+    renderPage(base);
+    await screen.findByText('Consumer Protection & Anti-Manipulation');
+    const seen = levels();
+    const skips: string[] = [];
+    for (let i = 1; i < seen.length; i += 1) {
+      const previous = seen[i - 1]!;
+      const current = seen[i]!;
+      if (current - previous > 1) skips.push(`H${previous} -> H${current}`);
+    }
+    expect(skips).toEqual([]);
+  });
+
+  it('starts at H1', async () => {
+    renderPage(base);
+    await screen.findByText('Consumer Protection & Anti-Manipulation');
+    expect(levels()[0]).toBe(1);
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
+  it('gives the evidence graph a heading without changing the design', async () => {
+    renderPage(base);
+    await screen.findByText('Consumer Protection & Anti-Manipulation');
+    const heading = screen.getByText('The evidence, as a chain');
+    expect(heading.tagName).toBe('H2');
+    expect(heading.className).toContain('visually-hidden');
+  });
+
+  it('leaves the drawn graph hidden from assistive technology', async () => {
+    // The SVG renders the same list. Announcing both would read the evidence
+    // out twice.
+    const { container } = renderPage(base);
+    await screen.findByText('Consumer Protection & Anti-Manipulation');
+    expect(container.querySelector('.kpi-graph__svg')
+      ?.getAttribute('aria-hidden')).toBe('true');
+  });
+});
