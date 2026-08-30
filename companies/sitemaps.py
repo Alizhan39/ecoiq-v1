@@ -66,6 +66,12 @@ class StaticSitemap(Sitemap):
         'contact',
         'trust',
         'pricing',
+        # The public-sector page. It states what EcoIQ can support on its
+        # face, so it is indexable and asked for. There is only one URL to
+        # list: the borough demonstration and the procurement detail are
+        # sections of it, which is also why no separate demo URL can end up
+        # in a search result carrying fictitious figures without its notice.
+        'public_sector',
         'countries:directory',
         # 'methodology' is gone: it is a 301 to /trust/ now, and a sitemap
         # entry that redirects asks a crawler to fetch two URLs to reach one

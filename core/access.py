@@ -112,6 +112,8 @@ SIGN_IN_PREFIXES: tuple[str, ...] = (
     # The country pair is untouched: /why/country/ and /api/why/country/ are
     # both public, and consistently so.
     '/api/why/company/',
+    # Unfinished industrial-modernisation preview remains sign-in gated.
+    '/industrial-modernisation-preview/',
 )
 
 #: Exact paths that require sign-in where the PREFIX must stay public.

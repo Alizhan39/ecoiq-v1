@@ -35,6 +35,9 @@ export const ROUTE_TITLES: Record<string, string> = {
   '/league': 'League — EcoIQ',
   '/labs': 'EcoIQ Labs — EcoIQ',
   '/trust': 'Trust Center — EcoIQ',
+  '/industrial-modernisation': 'Industrial modernisation — EcoIQ',
+  '/industrial-modernisation-preview': 'Industrial modernisation preview — EcoIQ',
+  '/public-sector': 'Public sector — EcoIQ',
 };
 
 const NOT_FOUND = 'Page not found — EcoIQ';

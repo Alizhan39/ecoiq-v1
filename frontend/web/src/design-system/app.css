@@ -635,3 +635,821 @@
   max-width: var(--measure); font-size: .9rem; color: var(--warn-strong);
   border-left: 3px solid var(--warn-strong); padding-left: .8rem;
 }
+
+/* ── Industrial transition scene (prototype) ──────────────────────────────
+   Background narrative. Content sits above it; nothing here is interactive
+   and nothing here is required to understand the page. */
+.itscene {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  /* Behind content without a global stacking hack: the section that hosts it
+     creates the context, and content inside that section sits above. */
+  z-index: 0;
+}
+.itscene__svg, .itscene__nodes, .itscene__canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+.itscene__edge { stroke: var(--ink-soft); }
+.itscene__edge--electricity { stroke: var(--accent); }
+.itscene__edge--heat        { stroke: var(--warn-strong); }
+.itscene__edge--water       { stroke: var(--unknown); }
+.itscene__edge--material    { stroke: var(--ink-soft); }
+.itscene__edge--waste       { stroke: var(--danger); }
+.itscene__edge--evidence    { stroke: var(--ink); }
+.itscene__node path {
+  fill: none; stroke: var(--ink-soft); stroke-width: 1.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.itscene__node--recovery path, .itscene__node--measure path { stroke: var(--accent); }
+.itscene__node--thermal path  { stroke: var(--warn-strong); }
+
+/* ── Industrial modernisation preview ─────────────────────────────────────────
+   INTERNAL. The scene is a schematic, so the visual language is a P&ID: white
+   ground, hairline rules, tagged equipment, flows distinguished by dash pattern
+   as well as colour. Deliberately not a dark "AI landing page" — an engineer
+   should recognise the drawing, and a reader with no colour vision should still
+   be able to tell a heat line from a water line. */
+
+.itpreview { display: block; }
+.itpreview__intro {
+  max-width: var(--measure); margin: 0 auto; padding: 3rem 1.25rem 2rem;
+}
+.itpreview__eyebrow {
+  text-transform: uppercase; letter-spacing: .08em; font-size: .7rem;
+  font-weight: 700; color: var(--warn-strong); margin: 0 0 .5rem;
+}
+.itpreview__intro h1 { font-size: clamp(1.7rem, 4vw, 2.6rem); margin: 0 0 .75rem; }
+.itpreview__lede { font-size: 1.1rem; line-height: 1.6; margin: 0 0 1rem; }
+.itpreview__disclaimer {
+  font-size: .85rem; color: var(--ink-soft); border-left: 3px solid var(--warn);
+  padding-left: .75rem; margin: 0;
+}
+
+/* The scroll driver. Tall enough that each of the eight stages gets real
+   travel; the visual is pinned while it passes. */
+.itpreview__scroller { position: relative; }
+.itpreview__track { height: 640vh; }
+.itpreview__sticky {
+  position: sticky; top: 0; height: 100vh;
+  display: grid; grid-template-columns: 1fr 20rem; gap: 1rem;
+  align-items: stretch; padding: 1rem; box-sizing: border-box;
+  background: var(--paper);
+}
+/* The scene needs a positioned ancestor of its own, since .itscene is
+   absolutely inset into whatever contains it. */
+.itpreview__sticky > .itscene {
+  position: relative; grid-column: 1; border: 1px solid var(--line);
+  border-radius: var(--radius); background:
+    linear-gradient(var(--paper-soft) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, var(--paper-soft) 1px, transparent 1px) 0 0 / 28px 100%,
+    var(--paper);
+}
+
+/* Equipment tags. Small, sentence case, always legible against the grid. */
+.itscene__label {
+  font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  fill: var(--ink); stroke: none; paint-order: stroke;
+  stroke-width: 3px; stroke-linejoin: round;
+}
+.itscene__nodes .itscene__label { stroke: var(--paper); }
+.itscene__glyph, .itscene__glyph-detail {
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.itscene__glyph { stroke-width: 1.5; }
+.itscene__glyph-detail { stroke-width: 1.1; }
+
+.itscene__edge--fuel { stroke: var(--danger); }
+/* A loss line is dimmer and thinner than a working line: it is leaving. */
+.itscene__edge.is-loss { stroke-dasharray: 2 4; }
+/* A returning line is the argument. Slightly heavier, so a closed loop reads
+   as a deliberate route rather than an incidental one. */
+.itscene__edge.is-loop { stroke-width: 0.7; }
+
+/* ── State panel ─────────────────────────────────────────────────────────── */
+.itstate {
+  grid-column: 2; overflow-y: auto; border: 1px solid var(--line);
+  border-radius: var(--radius); padding: .9rem 1rem; background: var(--paper);
+  font-size: .82rem;
+}
+.itstate h2 {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-soft); margin: 0 0 .75rem;
+}
+.itstate__list { margin: 0; display: grid; gap: .7rem; }
+.itstate__row { display: grid; gap: .2rem; }
+.itstate__row dt { font-weight: 700; font-size: .78rem; }
+.itstate__row dd { margin: 0; }
+.itstate__track {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .3rem;
+}
+/* The arrow between states is generated, so the markup stays a plain list and
+   a screen reader reads "Lost, Captured, Reused" rather than punctuation. */
+.itstate__step + .itstate__step::before {
+  content: '→'; margin-right: .3rem; color: var(--ink-soft);
+}
+.itstate__step { color: var(--unknown); }
+.itstate__step.is-past { color: var(--ink-soft); text-decoration: line-through; }
+.itstate__step.is-now {
+  color: var(--ink); font-weight: 700;
+  background: var(--accent-soft); border-radius: 4px; padding: 0 .3rem;
+}
+.itstate__row.is-complete .itstate__step.is-now { background: var(--accent-soft); }
+.itstate__row--unknown strong { color: var(--warn-strong); }
+.itstate__note {
+  font-size: .72rem; color: var(--ink-soft); line-height: 1.45; margin: .3rem 0 0;
+}
+.itstate__debug { margin-top: 1rem; font-size: .72rem; }
+.itstate__debug table { width: 100%; border-collapse: collapse; }
+.itstate__debug th, .itstate__debug td {
+  text-align: left; padding: .15rem .3rem; border-bottom: 1px solid var(--line);
+  font-weight: 400;
+}
+
+/* ── Narrative ───────────────────────────────────────────────────────────── */
+.transition-narrative {
+  max-width: var(--measure); margin: 0 auto; padding: 3rem 1.25rem 5rem;
+}
+.transition-narrative__disclaimer {
+  font-size: .85rem; color: var(--ink-soft);
+  border-left: 3px solid var(--warn); padding-left: .75rem;
+}
+.transition-narrative__steps { display: grid; gap: 1.5rem; padding-left: 1.2rem; }
+.transition-narrative__step { padding-left: .4rem; border-left: 3px solid transparent; }
+.transition-narrative__step.is-reached { border-left-color: var(--line); }
+.transition-narrative__step.is-current { border-left-color: var(--accent); }
+.transition-narrative__step h3 { margin: 0 0 .35rem; font-size: 1.05rem; }
+.transition-narrative__step h4 {
+  margin: .8rem 0 .25rem; font-size: .75rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-soft);
+}
+.transition-narrative__step ul { margin: 0; padding-left: 1.1rem; font-size: .88rem; }
+.transition-narrative__scroll { overflow-x: auto; }
+.transition-narrative__losses {
+  width: 100%; min-width: 26rem; border-collapse: collapse; font-size: .85rem;
+}
+.transition-narrative__losses caption {
+  text-align: left; color: var(--ink-soft); font-size: .8rem; padding-bottom: .5rem;
+}
+.transition-narrative__losses th, .transition-narrative__losses td {
+  text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--line);
+}
+
+/* Narrow screens: the panel goes under the drawing rather than beside it, and
+   the drawing keeps the taller share — a schematic squeezed into a third of a
+   phone screen stops being readable, which defeats the point. */
+@media (max-width: 900px) {
+  .itpreview__sticky {
+    grid-template-columns: 1fr; grid-template-rows: 58vh 1fr; gap: .5rem;
+  }
+  .itpreview__sticky > .itscene { grid-column: 1; grid-row: 1; }
+  .itstate { grid-column: 1; grid-row: 2; }
+  .itscene__label { font-size: 7px; }
+}
+
+/* Reduced motion: the scene pins to the finished system, so the sticky
+   container has nothing to animate and the page reads as a document. */
+@media (prefers-reduced-motion: reduce) {
+  .itpreview__track { height: 100vh; }
+  .itpreview__sticky { position: static; height: auto; }
+}
+
+/* ── Industrial modernisation, the product page ───────────────────────────────
+   Two axes, laid out so they cannot be read as one sequence: the plant
+   transformation is a pinned schematic, the EcoIQ workflow is a separate
+   card list further down with its own heading and its own vocabulary. */
+
+.itpage__hero {
+  max-width: var(--measure); margin: 0 auto; padding: 4rem 1.25rem 2.5rem;
+}
+.itpage__eyebrow {
+  text-transform: uppercase; letter-spacing: .09em; font-size: .72rem;
+  font-weight: 700; color: var(--warn-strong); margin: 0 0 .6rem;
+}
+.itpage__hero h1 {
+  font-size: clamp(1.8rem, 4.4vw, 3rem); line-height: 1.12; margin: 0 0 1rem;
+}
+.itpage__lede { font-size: 1.12rem; line-height: 1.6; margin: 0 0 1.1rem; }
+.itpage__note {
+  font-size: .85rem; color: var(--ink-soft); line-height: 1.5;
+  border-left: 3px solid var(--warn); padding-left: .75rem; margin: 0;
+}
+
+/* Axis A — the pinned schematic. */
+.itpage__scroller { position: relative; }
+.itpage__track { height: 640vh; }
+.itpage__sticky {
+  position: sticky; top: 0; height: 100vh;
+  display: grid; grid-template-columns: 1fr 20rem; gap: 1rem;
+  padding: 1rem; box-sizing: border-box; background: var(--paper);
+}
+.itpage__sticky > .itscene {
+  position: relative; grid-column: 1;
+  border: 1px solid var(--line); border-radius: var(--radius); background:
+    linear-gradient(var(--paper-soft) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, var(--paper-soft) 1px, transparent 1px) 0 0 / 28px 100%,
+    var(--paper);
+}
+
+/* Axis B — the workflow. Cards, not a track: a second horizontal sequence
+   beside the first is exactly the misreading this layout has to prevent. */
+.itworkflow { max-width: 62rem; margin: 0 auto; padding: 3.5rem 1.25rem; }
+.itworkflow__lede { font-size: 1.02rem; margin: 0 0 .6rem; }
+.itworkflow__disclaimer {
+  font-size: .85rem; color: var(--ink-soft);
+  border-left: 3px solid var(--warn); padding-left: .75rem; margin: 0 0 1.6rem;
+}
+.itworkflow__list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: .8rem;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+.itworkflow__step {
+  border: 1px solid var(--line); border-left: 4px solid var(--unknown);
+  border-radius: var(--radius); padding: .9rem 1rem; background: var(--paper);
+}
+.itworkflow__step.is-active { border-left-color: var(--accent); background: var(--accent-soft); }
+.itworkflow__head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.itworkflow__step h3 { margin: 0; font-size: 1.02rem; }
+.itworkflow__status {
+  font-size: .62rem; font-weight: 700; letter-spacing: .07em;
+  padding: .12rem .45rem; border-radius: 999px; border: 1px solid currentColor;
+}
+/* Status colour never carries the meaning alone — the word is always there. */
+.itworkflow__status.is-experimental { color: var(--warn-strong); }
+.itworkflow__status.is-planned { color: var(--unknown); }
+.itworkflow__status.is-specification { color: var(--ink-soft); }
+.itworkflow__summary { font-size: .88rem; line-height: 1.5; margin: .5rem 0 0; }
+.itworkflow__contains {
+  margin-top: .75rem; padding: .55rem .7rem;
+  border: 1px dashed var(--line); border-radius: 8px; background: var(--paper-soft);
+}
+.itworkflow__contains h4 {
+  margin: 0 0 .35rem; font-size: .66rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-soft);
+}
+.itworkflow__contains ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: .3rem; font-size: .78rem;
+}
+.itworkflow__contains li {
+  padding: .1rem .45rem; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--paper);
+}
+.itworkflow__contains li.is-current {
+  border-color: var(--accent); color: var(--ink); font-weight: 700;
+}
+.itworkflow__basis { margin-top: .7rem; font-size: .8rem; }
+.itworkflow__basis summary { color: var(--ink-soft); cursor: pointer; }
+.itworkflow__basis p { margin: .45rem 0 0; line-height: 1.5; }
+
+/* Boundary, data, principles, CTA. */
+.itpage__boundary, .itdata, .itpage__principles, .itpage__cta {
+  max-width: 62rem; margin: 0 auto; padding: 3rem 1.25rem;
+}
+.itpage__columns {
+  display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+.itpage__column { border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
+.itpage__status {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--warn-strong); margin: 0 0 .6rem;
+}
+.itpage__status--future { color: var(--unknown); }
+.itpage__chain { margin: 0 0 .8rem; padding-left: 1.2rem; font-size: .88rem; line-height: 1.7; }
+.itdata__scroll { overflow-x: auto; }
+.itdata__table { width: 100%; min-width: 42rem; border-collapse: collapse; font-size: .85rem; }
+.itdata__table caption {
+  text-align: left; color: var(--ink-soft); font-size: .8rem; padding-bottom: .5rem;
+}
+.itdata__table th, .itdata__table td {
+  text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.itdata__table code { font-size: .78rem; color: var(--ink-soft); }
+.itdata__yes { color: var(--ink); }
+.itdata__no { color: var(--warn-strong); font-weight: 600; }
+.itpage__cta { text-align: center; padding-bottom: 5rem; }
+.itpage__button {
+  display: inline-block; margin-top: 1rem; padding: .7rem 1.4rem;
+  background: var(--accent); color: #fff; border-radius: 999px;
+  text-decoration: none; font-weight: 700;
+}
+
+/* An explicit slot where photography belongs, so the gap is visible rather
+   than filled with whatever stock image was to hand. */
+.itpage__imageslot {
+  border: 2px dashed var(--line); border-radius: var(--radius);
+  padding: 2rem 1rem; text-align: center; color: var(--ink-soft);
+  font-size: .82rem; background: var(--paper-soft); margin: 1.5rem 0;
+}
+
+@media (max-width: 900px) {
+  .itpage__sticky {
+    grid-template-columns: 1fr; grid-template-rows: 58vh 1fr; gap: .5rem;
+  }
+  .itpage__sticky > .itscene { grid-column: 1; grid-row: 1; }
+  .itpage__sticky > .itstate { grid-column: 1; grid-row: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itpage__track { height: 100vh; }
+  .itpage__sticky { position: static; height: auto; }
+}
+.itpage__gallery {
+  max-width: 62rem; margin: 0 auto; padding: 0 1.25rem;
+  display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+.itpage__imageslot p { margin: 0 0 .4rem; }
+.itpage__note--slot { border: 0; padding: 0; font-size: .74rem; }
+
+/* ── Public sector ──────────────────────────────────────────────────────────
+   /public-sector/, /public-sector/procurement/ and the borough demonstration.
+
+   RESTRAINT IS THE BRIEF. The reader is a procurement officer with a minute,
+   and every decorative gradient is a second they spend not reading a number.
+   So: one accent, borders instead of shadows, generous vertical rhythm, and
+   tabular data rendered as tables.
+
+   NO NEW TOKENS. Everything below resolves to design-system/tokens.css, which
+   mirrors frontend/app/src/design/tokens.ts — the authority (CLAUDE.md rule
+   1). Nothing here introduces a colour, a radius or a font of its own.
+
+   NO ANIMATION beyond a border and background transition on interactive
+   elements, which are already covered by the global reduced-motion rule in
+   tokens.css. A dashboard that moves is a dashboard being read twice. */
+
+.pspage { max-width: 68rem; margin: 0 auto; }
+.pspage > * + * { margin-top: 3.5rem; }
+
+/* Hero */
+.pshero { max-width: 46rem; padding-top: 1.5rem; }
+.pshero--compact { padding-top: .5rem; }
+.pshero__eyebrow {
+  text-transform: uppercase; letter-spacing: .09em; font-size: .72rem;
+  font-weight: 700; color: var(--ink-soft); margin: 0 0 .8rem;
+}
+.pshero h1 {
+  font-size: clamp(1.9rem, 4.6vw, 3.1rem); line-height: 1.08;
+  letter-spacing: -.03em; margin: 0 0 1.1rem;
+}
+.pshero__lede { font-size: 1.15rem; line-height: 1.55; margin: 0 0 1rem; }
+.pshero__supporting {
+  font-size: .96rem; line-height: 1.6; color: var(--ink-soft); margin: 0 0 1.6rem;
+}
+.pshero__actions {
+  display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.4rem;
+}
+
+.psbutton {
+  display: inline-block; padding: .62rem 1.1rem; border-radius: var(--radius);
+  border: 1px solid var(--line); text-decoration: none; font-weight: 600;
+  font-size: .95rem; background: var(--paper); color: var(--ink);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.psbutton:hover { border-color: var(--accent); }
+/* --accent-strong, not --accent: white on #00a86b is 3.08:1, under the AA
+   floor for a 15px label. The pair flips with the theme — see tokens.css. */
+.psbutton--primary {
+  background: var(--accent-strong); border-color: var(--accent-strong);
+  color: var(--on-accent-strong);
+}
+.psbutton--primary:hover { border-color: var(--ink); }
+.psbutton--quiet { border-color: transparent; color: var(--ink-soft); }
+.psbutton--quiet:hover { border-color: var(--line); color: var(--ink); }
+
+/* Sections */
+.pssection { scroll-margin-top: 1.5rem; }
+.pssection > h2 {
+  font-size: 1.5rem; letter-spacing: -.02em; margin: 0 0 .6rem;
+  padding-bottom: .6rem; border-bottom: 1px solid var(--line);
+}
+.pssection__lede {
+  max-width: var(--measure); color: var(--ink-soft); margin: 0 0 1.4rem;
+}
+.pssection__subhead {
+  font-size: 1.05rem; margin: 2.2rem 0 .8rem;
+  padding-top: 1.2rem; border-top: 1px solid var(--line);
+}
+.psnote {
+  max-width: var(--measure); font-size: .86rem; line-height: 1.55;
+  color: var(--ink-soft); border-left: 3px solid var(--line);
+  padding-left: .8rem; margin: 1.4rem 0 0;
+}
+
+/* Card grids */
+.psgrid {
+  list-style: none; margin: 1.2rem 0 0; padding: 0;
+  display: grid; gap: .9rem;
+}
+.psgrid--outcomes { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.psgrid--services { grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+.psgrid--bands    { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+
+.pscard {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1rem 1.1rem; background: var(--paper);
+}
+.pscard h3 { margin: 0 0 .4rem; font-size: 1rem; letter-spacing: -.01em; }
+.pscard p { margin: 0; font-size: .89rem; line-height: 1.55; color: var(--ink-soft); }
+.pscard__number {
+  font-variant-numeric: tabular-nums; font-size: .74rem; font-weight: 700;
+  letter-spacing: .08em; color: var(--accent-strong); margin: 0 0 .35rem !important;
+}
+.pscard--band { border-top: 3px solid var(--accent); }
+.pscard__range {
+  font-size: 1.25rem; font-weight: 700; color: var(--ink) !important;
+  letter-spacing: -.02em; margin: .2rem 0 .5rem !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Delivery flow. An ordered list that reads left-to-right on desktop and
+   top-to-bottom on mobile, with the connector as a border rather than a glyph
+   so nothing is announced twice. */
+.psflow {
+  list-style: none; margin: 1.2rem 0 0; padding: 0;
+  display: grid; gap: 0; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+.psflow__stage {
+  border-top: 3px solid var(--accent); padding: .9rem 1rem .9rem 0;
+}
+.psflow__number {
+  display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--accent-strong); font-variant-numeric: tabular-nums;
+}
+.psflow__stage h3 { margin: .3rem 0 .35rem; font-size: .98rem; }
+.psflow__stage p { margin: 0; font-size: .85rem; line-height: 1.5; color: var(--ink-soft); }
+
+/* Definition-style lists */
+.pslist { list-style: none; margin: 1.2rem 0 0; padding: 0; }
+.pslist__item {
+  border-top: 1px solid var(--line); padding: .95rem 0;
+}
+.pslist__item h3, .pslist__item h4 { margin: 0 0 .3rem; font-size: 1rem; }
+.pslist__item p {
+  margin: 0; max-width: var(--measure); font-size: .89rem; line-height: 1.6;
+  color: var(--ink-soft);
+}
+.pslist__head {
+  display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap;
+  margin-bottom: .3rem;
+}
+.pslist__head h3 { margin: 0; }
+.pslist--absent .pslist__item { border-left: 3px solid var(--warn); padding-left: .9rem; }
+
+/* Chips. The word is always present; the tint only speeds a scan up.
+   Text colours are the -strong pair: these are 11px, and --accent/--danger
+   are fills at that size, not text. Borders stay on the plain hue — a border
+   carries no reading. */
+.pschip {
+  display: inline-block; font-size: .68rem; font-weight: 700;
+  letter-spacing: .05em; padding: .16rem .5rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap;
+}
+.pschip--tech-production { color: var(--accent-strong); }
+.pschip--tech-partial    { color: var(--warn-strong); }
+.pschip--tech-defined    { color: var(--ink-soft); }
+.pschip--confidence-high   { color: var(--accent-strong); }
+.pschip--confidence-medium { color: var(--warn-strong); }
+.pschip--confidence-low    { color: var(--danger-strong); }
+.pschip--status-verified    { color: var(--accent-strong); }
+.pschip--status-recorded    { color: var(--ink-soft); }
+.pschip--status-modelled    { color: var(--ink-soft); }
+.pschip--status-outstanding { color: var(--danger-strong); }
+.pschip--pending { color: var(--warn-strong); }
+
+/* Supplier */
+.pssupplier__statement { font-size: 1.08rem; margin: 1.1rem 0 1.2rem; max-width: var(--measure); }
+.pssupplier__facts {
+  display: grid; gap: .8rem; margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.pssupplier__facts > div {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: .8rem .9rem;
+}
+.pssupplier__facts dt {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-soft); margin-bottom: .3rem;
+}
+.pssupplier__facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Closing call to action */
+.pscta {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.8rem 1.5rem; background: var(--paper-soft);
+}
+.pscta h2 { margin: 0 0 .7rem; font-size: 1.35rem; letter-spacing: -.02em; }
+.pscta p { margin: 0; max-width: var(--measure); color: var(--ink-soft); line-height: 1.6; }
+
+/* The seven-step narrative */
+.psnarrative > :is(h2, h3) {
+  font-size: 1.15rem; letter-spacing: -.02em; margin: 0 0 1rem;
+}
+.psnarrative__list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: .7rem;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+}
+.psnarrative__step {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  border-top: 3px solid var(--accent); padding: .8rem .85rem;
+}
+.psnarrative__number {
+  font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--accent-strong); font-variant-numeric: tabular-nums;
+}
+.psnarrative__name { margin: .3rem 0 .3rem; font-size: .95rem; }
+.psnarrative__detail { margin: 0; font-size: .82rem; line-height: 1.5; color: var(--ink-soft); }
+
+/* ── Demonstration notice ──────────────────────────────────────────────────
+   Above the figures it qualifies, never below them. Warn-coloured rather than
+   accent-coloured: this is a caution, and the accent means "good" everywhere
+   else in this product. */
+.psnotice {
+  border: 1px solid var(--warn); border-left-width: 4px;
+  border-radius: var(--radius); background: var(--warn-soft);
+  padding: .85rem 1rem; margin: 1.2rem 0;
+}
+.psnotice__badge {
+  margin: 0 0 .35rem; font-size: .72rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--warn-strong);
+}
+.psnotice__body {
+  margin: 0; font-size: .87rem; line-height: 1.55; max-width: var(--measure);
+}
+.psnotice--compact { margin: 1.2rem 0 0; }
+.psnotice--compact .psnotice__body { font-size: .82rem; }
+
+/* ── The demonstration ─────────────────────────────────────────────────────
+   A SECTION of /public-sector/, not a page. It is the longest thing on the
+   page and the most interactive, so it is set inside a tinted, bordered well:
+   a reader scrolling past should be able to see where the demonstration
+   starts and stops without reading a word. */
+.psdemo {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper-soft); padding: 2rem 1.6rem 2.2rem;
+}
+.psdemo > h2 {
+  font-size: clamp(1.5rem, 3.2vw, 2.1rem); line-height: 1.12;
+  letter-spacing: -.03em; margin: 0 0 .5rem;
+}
+.psdemo > * + * { margin-top: 2.2rem; }
+.psdemo > .pshero__eyebrow + h2 { margin-top: 0; }
+.psdemo > h2 + .psdemo__lede { margin-top: .5rem; }
+.psdemo__lede {
+  font-size: 1.05rem; line-height: 1.55; margin: 0; max-width: var(--measure);
+}
+/* The panels inside the well sit on --paper so they read as content on a
+   ground rather than as a flat continuation of it. */
+.psdemo .psdetail, .psdemo .psapproval, .psdemo .psfigure,
+.psdemo .psnarrative__step, .psdemo .psmrv__stage {
+  background: var(--paper);
+}
+/* minmax(0, 1fr), NOT 1fr. A grid item's default min-width is `auto`, which
+   means "as wide as my content" — and this item contains a table with a
+   44rem min-width. With a plain 1fr the track grew to 704px inside a 360px
+   viewport and the whole PAGE scrolled sideways, taking the header and every
+   other section with it. Found in the browser at mobile width, not reasoned
+   about: the give-away was a horizontal scrollbar on the document rather than
+   on the table.
+
+   The table still scrolls — inside .psassets__scroll, which is where it
+   should. */
+.psdemo__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
+
+/* Headline figures */
+.psestate__figures {
+  display: grid; gap: .8rem; margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.psfigure {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: .9rem 1rem; background: var(--paper);
+}
+.psfigure dt {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-soft); margin-bottom: .4rem;
+}
+.psfigure dd {
+  margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; line-height: 1.15;
+}
+.psfigure--accent { border-color: var(--accent); background: var(--accent-soft); }
+.psfigure__unit { font-size: .85rem; font-weight: 600; color: var(--ink-soft); }
+.psfigure--small dd { font-size: 1.05rem; letter-spacing: -.01em; }
+.psfigure--small dd.is-adverse { color: var(--danger-strong); }
+
+.psestate__callout {
+  margin: 1.2rem 0 .5rem; font-size: 1.02rem; max-width: var(--measure);
+}
+.psestate__derivation {
+  margin: 0; font-size: .84rem; color: var(--ink-soft);
+  max-width: var(--measure); line-height: 1.55;
+}
+
+/* Tables */
+/* :is(), not a fixed tag. These blocks moved down a heading level when the
+   demonstration stopped being a page and became a section of /public-sector/,
+   and every one of these selectors silently stopped matching. Matching the
+   role rather than the level means the next such move is a no-op here. */
+.psassets > :is(h2, h3, h4),
+.pscompare > :is(h2, h3, h4),
+.psevidence > :is(h2, h3, h4),
+.psapproval > :is(h2, h3, h4),
+.psmrv > :is(h2, h3, h4),
+.psdetail > :is(h2, h3, h4) {
+  font-size: 1.3rem; letter-spacing: -.02em; margin: 0 0 .5rem;
+}
+.psassets__hint { margin: 0 0 1rem; color: var(--ink-soft); font-size: .9rem; }
+/* Wide content scrolls inside its own container. The page body never scrolls
+   sideways — a table that widens the document is how a phone layout breaks.
+
+   max-width and min-width belt-and-brace the overflow: `overflow-x: auto`
+   alone does not stop a box from being sized by its content when it is a
+   grid or flex item, which is exactly how this broke the first time. */
+.psassets__scroll { overflow-x: auto; max-width: 100%; min-width: 0; }
+
+/* min-width is what makes six columns readable rather than wrapped into
+   unreadable slivers; the container above scrolls to accommodate it. Kept off
+   `.pstable` itself for the three-column procurement tables, which fit. */
+.pstable {
+  width: 100%; border-collapse: collapse; font-size: .88rem;
+  min-width: min(44rem, 100%);
+}
+.psassets .pstable, .pscompare .pstable, .psevidence .pstable { min-width: 44rem; }
+.pstable th, .pstable td {
+  text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.pstable thead th {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-soft); border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+.pstable tbody th { font-weight: 600; }
+.pstable__num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pstable tfoot th, .pstable tfoot td {
+  border-top: 2px solid var(--line); border-bottom: 0; font-weight: 700;
+}
+.pstable tr.is-selected { background: var(--accent-soft); }
+.pstable__pick {
+  background: none; border: 0; padding: 0; font: inherit; font-weight: 600;
+  color: var(--ink); text-align: left; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: var(--line);
+}
+.pstable__pick:hover { text-decoration-color: var(--accent); }
+.pstable__pick[aria-current='true'] { color: var(--accent-strong); }
+.pstable__sub {
+  display: block; font-weight: 400; font-size: .78rem; color: var(--ink-soft);
+  line-height: 1.45; margin-top: .25rem; max-width: 22rem; white-space: normal;
+}
+.pstable__method { font-size: .82rem; color: var(--ink-soft); min-width: 16rem; }
+
+/* Asset drill-down */
+.psdetail {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.4rem 1.4rem 1.6rem;
+}
+.psdetail__eyebrow {
+  margin: 0 0 .3rem; font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent-strong);
+}
+.psdetail h2:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.psdetail__figures, .psanomaly__figures, .psmrv__figures {
+  display: grid; gap: .7rem; margin: 1rem 0 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+.psdetail__shallow {
+  margin: 0; font-size: .88rem; line-height: 1.6; color: var(--ink-soft);
+  max-width: var(--measure); border-left: 3px solid var(--line); padding-left: .9rem;
+}
+
+.psanomaly { border-top: 1px solid var(--line); padding-top: 1.3rem; }
+.psanomaly__method, .psanomaly__note {
+  margin: 0; font-size: .84rem; line-height: 1.55; color: var(--ink-soft);
+  max-width: var(--measure);
+}
+.psanomaly__causes-heading {
+  margin: 1.2rem 0 .5rem; font-size: .76rem; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--ink-soft);
+}
+.pschips {
+  list-style: none; margin: 0 0 .7rem; padding: 0;
+  display: flex; flex-wrap: wrap; gap: .35rem;
+}
+.pschips li {
+  font-size: .82rem; padding: .2rem .6rem; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--paper-soft);
+}
+
+.pscompare { border-top: 1px solid var(--line); margin-top: 1.6rem; padding-top: 1.3rem; }
+.psrecommend {
+  margin-top: 1.3rem; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--paper-soft);
+}
+.psrecommend h4 { margin: 0 0 .5rem; font-size: .95rem; }
+.psrecommend__sequence { margin: 0 0 .8rem; padding-left: 1.2rem; font-size: .9rem; }
+.psrecommend__sequence li { margin-bottom: .2rem; }
+.psrecommend__why, .psrecommend__gate {
+  margin: 0 0 .6rem; font-size: .86rem; line-height: 1.6; max-width: var(--measure);
+}
+.psrecommend__gate { margin-bottom: 0; color: var(--ink); }
+
+/* Evidence */
+.psevidence__lede, .psevidence__note, .psapproval__lede, .psmrv__lede,
+.psmrv__caveat {
+  max-width: var(--measure); font-size: .89rem; line-height: 1.6; color: var(--ink-soft);
+}
+.psevidence__lede { margin: 0 0 1rem; }
+.psevidence__note { margin: 1rem 0 0; color: var(--ink); }
+
+/* Approval */
+.psapproval {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem;
+}
+.psapproval__status { display: flex; align-items: center; gap: .7rem; margin: 0 0 .9rem; }
+.psapproval__label {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-soft);
+}
+.psapproval__lede { margin: 0 0 1.1rem; }
+.psapproval__actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1.1rem; }
+.psapproval__button {
+  font: inherit; font-weight: 600; font-size: .92rem; cursor: pointer;
+  padding: .55rem 1rem; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.psapproval__button:hover { border-color: var(--accent); }
+.psapproval__button.is-chosen { border-color: var(--accent); background: var(--accent-soft); }
+.psapproval__outcome {
+  border-top: 1px solid var(--line); padding-top: .9rem; min-height: 3.4rem;
+}
+.psapproval__outcome p {
+  margin: 0 0 .5rem; font-size: .88rem; line-height: 1.6; max-width: var(--measure);
+}
+.psapproval__outcome p:last-child { margin-bottom: 0; }
+.psapproval__nothing, .psapproval__prompt { color: var(--ink-soft); font-size: .84rem !important; }
+
+/* MRV */
+.psmrv__lede { margin: 0 0 1.2rem; }
+.psmrv__stages {
+  list-style: none; margin: 0 0 1.6rem; padding: 0;
+  display: grid; gap: .6rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.psmrv__stage {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  border-top: 3px solid var(--accent); padding: .75rem .8rem;
+}
+.psmrv__step {
+  font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--accent-strong); font-variant-numeric: tabular-nums;
+}
+.psmrv__stage h4 { margin: .25rem 0 .3rem; font-size: .92rem; }
+.psmrv__stage p { margin: 0; font-size: .8rem; line-height: 1.5; color: var(--ink-soft); }
+.psmrv__outcome {
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  padding: 1.1rem 1.2rem; background: var(--accent-soft);
+}
+.psmrv__outcome h4 { margin: 0 0 .3rem; font-size: 1rem; }
+.psmrv__figures { margin: .8rem 0 .9rem; }
+.psmrv__outcome .psfigure { background: var(--paper); }
+.psmrv__caveat { margin: 0; }
+
+/* Technology, in two groups: what runs, and what a delivery builds. Columns
+   on desktop so the distinction is visible at a glance; stacked on mobile,
+   where the headings carry it instead. */
+.pscolumns {
+  display: grid; gap: 1.5rem 2.5rem; margin-top: 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
+.pscolumns__head {
+  font-size: .74rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent-strong); margin: 0; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--line);
+}
+.pscolumns .pslist { margin-top: 0; }
+
+/* Procurement and supplier detail: denser, list-first. */
+.psdl { margin: 1rem 0 0; display: grid; gap: .85rem; }
+.psdl > div { border-top: 1px solid var(--line); padding-top: .75rem; }
+.psdl dt { font-weight: 700; font-size: .92rem; margin-bottom: .25rem; }
+.psdl dd {
+  margin: 0; font-size: .88rem; line-height: 1.6; color: var(--ink-soft);
+  max-width: var(--measure);
+}
+.psdl--absent > div { border-left: 3px solid var(--warn); padding-left: .9rem; }
+.psdense { margin: 1rem 0 0; padding-left: 1.3rem; }
+.psdense li { margin-bottom: .55rem; font-size: .9rem; line-height: 1.6; color: var(--ink-soft); }
+.psdense strong { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .pspage > * + * { margin-top: 2.5rem; }
+  .psfigure dd { font-size: 1.35rem; }
+  .pscta { padding: 1.3rem 1.1rem; }
+  .psdetail, .psapproval { padding: 1.1rem; }
+  .psdemo { padding: 1.3rem 1rem 1.5rem; }
+  .psdemo > * + * { margin-top: 1.8rem; }
+  .psflow__stage { padding-right: 0; }
+}

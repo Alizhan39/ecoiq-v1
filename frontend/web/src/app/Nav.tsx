@@ -4,15 +4,23 @@ import { useSession } from '@/hooks/useSession';
 import type { Identity } from '@/types/session';
 
 /**
- * The canonical public navigation. Five destinations, plus sign-in.
+ * The canonical public navigation, plus sign-in.
  *
  * Deliberately NOT here: Rankings, Countries, AI Agents, Compendium,
  * Framework, Methodology, Geo Intelligence. Those are either experiments
  * (which belong under Labs) or internal. A primary navigation that lists
  * thirty things is a statement that the product is thirty things.
+ *
+ * Public Sector is here, and it is the only sector page that is. It earns the
+ * slot because it is a complete buyer-facing proposition on one URL —
+ * outcomes, a working demonstration, delivery, technology, governance,
+ * commercials and the supplier — rather than a landing page that funnels
+ * somewhere else. It sits after Intelligence because Intelligence is what the
+ * product does and this is who it is for.
  */
 const LINKS = [
   { to: '/intelligence', label: 'Intelligence' },
+  { to: '/public-sector', label: 'Public Sector' },
   { to: '/principles', label: 'Principles' },
   { to: '/projects', label: 'Projects' },
   { to: '/tours', label: 'Eco Tours' },

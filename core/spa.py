@@ -234,6 +234,22 @@ ROUTE_META: dict[str, dict[str, str]] = {
             'how much of it is supported, and where the gaps are. No score is '
             'shown unless the evidence supports one.'),
     },
+    '/industrial-modernisation': {
+        'title': 'Industrial modernisation — EcoIQ',
+        'description': (
+            'EcoIQ maps industrial systems, identifies where energy, heat, '
+            'water and material are lost, structures the engineering '
+            'interventions that stop the losses, and builds an evidence trail '
+            'from diagnosis to verification.'),
+    },
+    '/industrial-modernisation-preview': {
+        'title': 'Industrial modernisation preview — EcoIQ',
+        'description': (
+            'Internal preview. An illustration of how an industrial '
+            'modernisation sequence works: where a plant loses energy, heat, '
+            'water and material, and how the topology changes to stop it. '
+            'Describes no specific facility and contains no measured data.'),
+    },
     '/principles': {
         'title': 'The 114 stewardship principles — EcoIQ',
         'description': (
@@ -298,6 +314,18 @@ ROUTE_META: dict[str, dict[str, str]] = {
         'description': (
             'How EcoIQ handles evidence, provenance, confidence and data — '
             'including the certifications it does not hold.'),
+    },
+    # The public-sector page. One route: the borough demonstration and the
+    # procurement detail are sections of it. The description states a
+    # capability EcoIQ can support and stops there — no framework place, no
+    # certification, no client, no delivered saving.
+    '/public-sector': {
+        'title': 'Public sector — EcoIQ',
+        'description': (
+            'AI, data and sustainability intelligence for UK public-sector '
+            'organisations. Connect energy, carbon, operational and financial '
+            'data, identify inefficiency, compare interventions and verify '
+            'delivered savings.'),
     },
 }
 

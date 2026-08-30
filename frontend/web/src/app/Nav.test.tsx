@@ -20,12 +20,35 @@ beforeEach(() => {
 });
 
 describe('primary navigation', () => {
-  it('shows exactly the five canonical destinations', async () => {
+  it('shows the canonical destinations', async () => {
     renderNav();
     const nav = screen.getByRole('navigation', { name: /primary/i });
 
-    for (const label of ['Intelligence', 'Projects', 'Eco Tours', 'About', 'Contact']) {
+    for (const label of ['Intelligence', 'Public Sector', 'Projects',
+                         'Eco Tours', 'About', 'Contact']) {
       expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument();
+    }
+  });
+
+  it('promotes Public Sector as a primary destination, not a minor one', async () => {
+    // It is a complete buyer-facing proposition on one URL — outcomes, a
+    // working demonstration, delivery, technology, governance, commercials
+    // and the supplier. That is a destination, not a footnote.
+    renderNav();
+    const nav = screen.getByRole('navigation', { name: /primary/i });
+    const link = within(nav).getByRole('link', { name: 'Public Sector' });
+
+    expect(link).toHaveAttribute('href', '/public-sector');
+    expect(link.className).not.toContain('nav__link--minor');
+  });
+
+  it('adds no second public-sector destination', async () => {
+    // One tab, one route. A "Procurement" or "Borough demo" item would
+    // reintroduce the microsite this navigation deliberately does not have.
+    renderNav();
+
+    for (const label of [/procurement/i, /borough/i, /demo/i]) {
+      expect(screen.queryByRole('link', { name: label })).toBeNull();
     }
   });
 
