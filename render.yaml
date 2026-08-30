@@ -262,7 +262,6 @@ databases:
   - name: ecoiq-db
     databaseName: ecoiq
     user: ecoiq
-    plan: starter                        # $7/month PostgreSQL — 1 GB storage
     region: oregon                       # same region as web service for low latency
 
 # ══════════════════════════════════════════════════════════════════════════════
