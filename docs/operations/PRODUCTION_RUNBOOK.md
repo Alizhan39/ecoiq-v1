@@ -79,16 +79,15 @@ remains a claim EcoIQ must not make** — being able to run a task is not the
 same as running it on a schedule, and the pricing page is correct to say
 monitoring is "scheduler-ready rather than running".
 
-### Two open decisions for the owner
+### Owner decision: move to the low-cost topology
 
-Recorded here rather than acted on, because both are cost and product calls:
+The owner has chosen to remove the idle worker and Key Value cost and move the
+web service to Free. The safe, reversible sequence is recorded in
+`docs/operations/FREE_RENDER_MIGRATION.md`. This inventory continues to describe
+the running estate until those manual resources are actually removed.
 
-1. A Key Value instance and a background worker are being paid for while
-   nothing schedules work. Either that is deliberate headroom, or one or both
-   should be suspended.
-2. `render.yaml` does not describe the running estate, and **cannot currently
-   sync at all** — which is very likely why the estate drifted in the first
-   place. Measured:
+The earlier Blueprint was unable to sync because it used a retired database
+plan. The invalid configuration was measured as:
 
    ```
    $ render blueprints validate render.yaml
@@ -98,26 +97,20 @@ Recorded here rather than acted on, because both are cost and product calls:
     "valid": false}
    ```
 
-   So the blueprint is presently decorative: no change in it can be applied,
-   whatever it contains. Creating a Key Value instance and a worker by hand was
-   not someone bypassing the blueprint — it was the only way to add anything.
+The current Blueprint omits the database plan, which retains the existing
+database plan during sync, and explicitly targets Free for the web service.
 
-   Two further mismatches, verified against the live plans:
+The intentional cutover differences, verified against the current live plans:
 
-   | | `render.yaml` | live |
-   |---|---|---|
-   | `ecoiq` web | `starter` | `standard` |
-   | `ecoiq-db` | `starter` (retired) | `basic_256mb` |
+| | `render.yaml` target | live before cutover |
+|---|---|---|
+| `ecoiq` web | `free` | `standard` |
+| `ecoiq-db` | plan omitted (retain existing) | `basic_256mb` |
 
-   **Sequencing matters here.** PR #220 fixes exactly these two lines and makes
-   the blueprint valid again. The moment it merges, a sync becomes possible
-   against a file that still does not declare `ecoiq-keyvalue`, the worker or
-   the four cron jobs — and the web plan line, uncorrected, would have
-   attempted to downgrade production from Standard to Starter. That is the
-   order to think about: make the blueprint describe the estate BEFORE making
-   the blueprint able to act on it, or at least establish what a sync does to
-   services it does not declare. This runbook does not assert what Render does
-   with them, because that has not been tested here.
+**Sequencing matters.** The worker, Key Value instance and four cron services
+were created manually and remain unmanaged by the Blueprint. Remove them only
+after the new web deployment passes its smoke checks; do not assume Blueprint
+sync will delete them.
 
 ---
 
@@ -126,14 +119,13 @@ Recorded here rather than acted on, because both are cost and product calls:
 Merging to `main` triggers a Render deploy.
 
 ```
-build.sh       → install deps, collectstatic, build frontend assets
-predeploy.sh   → python manage.py migrate
-start.sh       → gunicorn
+build.sh       → install deps, collectstatic, verify frontend assets
+start.sh       → python manage.py migrate, then gunicorn
 ```
 
-Migrations run in `preDeployCommand`, which means **they run before the new
-code serves traffic**. A failing migration fails the deploy rather than leaving
-a half-migrated database serving requests.
+The Free plan has no paid Pre-Deploy command. `start.sh` retries migrations in
+the runtime network before it opens the HTTP port. A failing migration exits
+non-zero, so new code does not serve against an old schema.
 
 ### Verify a deploy
 
@@ -160,10 +152,10 @@ Render reads a 301 as unhealthy and would replace a perfectly healthy process.
 
 **Do not "fix" that exemption.** It is a correctness requirement.
 
-`/readyz/` returns JSON and checks PostgreSQL (and Redis, only when
-`REDIS_URL` is explicitly set — it is not, in production). It is **not** wired
-to `healthCheckPath` and must not be: readiness failing means stop sending
-traffic, never restart the process.
+`/readyz/` returns JSON and checks PostgreSQL (and Redis only while
+`REDIS_URL` is explicitly set; it remains set until the low-cost cutover). It is
+**not** wired to `healthCheckPath` and must not be: readiness failing means stop
+sending traffic, never restart the process.
 
 Use it during an incident. `/healthz/` `200` with `/readyz/` `503` means the
 process is fine and a dependency is not — restarting fixes nothing.
@@ -214,8 +206,9 @@ outage. This is a known limit of the current plan, not an oversight.
 
 ## Worker failure
 
-There are no workers. If something appears to need one, it is running
-synchronously in a request or a management command — find it there.
+Before the low-cost cutover, `ecoiq-celery-worker` is a manually-created service
+and should be inspected in Render. After the cutover there is no worker: bounded
+staff actions run synchronously because `CELERY_TASK_ALWAYS_EAGER=True`.
 
 ---
 

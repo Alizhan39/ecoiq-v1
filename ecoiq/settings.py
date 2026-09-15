@@ -1125,10 +1125,10 @@ REDIS_CONFIGURED = 'REDIS_URL' in os.environ
 # and would do it during an outage, when nobody is looking for it.
 #
 # When Redis is NOT configured the backend is LocMem and that is a deliberate,
-# documented state — not a failure. Production runs this way today, because no
-# Key Value instance is provisioned (render.yaml keeps that block commented
-# out). A warning is logged rather than raising, because refusing to start
-# would take down a service that is otherwise healthy.
+# documented state — not a failure. The low-cost production topology uses this
+# after REDIS_URL and the manually-created Key Value instance are removed. A
+# warning is logged rather than raising, because refusing to start would take
+# down a service that is otherwise healthy.
 # ── Authentication rate limits ────────────────────────────────────────────────
 #
 # Per-IP ceilings on the two unauthenticated write surfaces the estate exposes:

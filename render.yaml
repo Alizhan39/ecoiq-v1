@@ -2,11 +2,11 @@
 # EcoIQ — Render Blueprint
 # Docs: https://render.com/docs/blueprint-spec
 #
-# THIS BLUEPRINT DOES NOT DESCRIBE THE RUNNING ESTATE.
+# COST-REDUCTION TARGET: one Free web service plus the existing durable database.
 #
 # Services declared here:
-#   ecoiq       — Django/Gunicorn web service (starter plan, Oregon)
-#   ecoiq-db    — PostgreSQL database (starter plan, Oregon)
+#   ecoiq       — Django/Gunicorn web service (free plan, Oregon)
+#   ecoiq-db    — existing PostgreSQL database; its current plan is retained
 #
 # Services ALSO RUNNING in production, created by hand in the Render dashboard
 # on 2026-08-24 and therefore absent from this file:
@@ -17,32 +17,19 @@
 #                           ecoiq-rss-signals, ecoiq-weekly-full-ingest,
 #                           ALL SUSPENDED
 #
-# The commented Key Value and worker blocks further down say those services are
-# "NOT enabled by default". Read as a description of production that is now
-# wrong; read as a description of THIS FILE it is still accurate, which is
-# exactly how the estate and its blueprint came apart without anyone noticing.
+# The manually-created Key Value, Celery worker and suspended cron jobs are not
+# managed by this Blueprint. After this change deploys and the smoke checks in
+# docs/operations/FREE_RENDER_MIGRATION.md pass, remove those manual resources
+# in the Render dashboard. A Blueprint sync cannot delete unmanaged services.
 #
-# AND THIS FILE CURRENTLY CANNOT SYNC AT ALL.
-#   $ render blueprints validate render.yaml   ->   "valid": false
-#   databases[0].plan: legacy Postgres plan 'starter' is no longer supported.
-# Which is very likely why the estate drifted: creating those services by hand
-# was not bypassing the blueprint, it was the only way to add anything.
-#
-# PR #220 fixes that line, and the web `plan: starter` below, which does not
-# match the live Standard service either. When it merges the blueprint becomes
-# able to act — against a file that still does not declare the Key Value
-# instance, the worker or the crons. Make this file describe the estate before
-# making it able to apply itself.
-#
-# Closing the gap — adding the real services here, or removing them from Render
-# — is an owner decision with a monthly cost attached, and is deliberately not
-# made by editing this comment.
-# See docs/operations/PRODUCTION_RUNBOOK.md for the measured inventory.
+# The database plan is deliberately omitted. Render retains the current plan
+# for an existing database. A Free Render Postgres database expires after 30
+# days, so it is not an acceptable store for accounting records.
 #
 # build.sh is DB-FREE — the build environment cannot reach the private database
-# network (the internal hostname dpg-…-a only resolves at runtime). Migrations +
-# seeding run at runtime via the Pre-Deploy Command (predeploy.sh) and start.sh,
-# both best-effort, so a temporarily-unavailable database never blocks a deploy.
+# network (the internal hostname dpg-…-a only resolves at runtime). start.sh
+# applies migrations strictly before Gunicorn starts; migration failure stops
+# the new release from serving against an old schema.
 # Secrets (ANTHROPIC_API_KEY, COMPANIES_HOUSE_API_KEY) must be set
 # manually in the Render dashboard — they are never committed to git.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -52,13 +39,11 @@ services:
     name: ecoiq                          # Blueprint matches by this name — do NOT rename
     env: python
     region: oregon
-    plan: starter                        # $7/month — persistent disk, no cold starts
+    plan: free                           # 512 MB; sleeps after 15 minutes idle
     buildCommand: pip install -r requirements.txt && ./build.sh
-    # Pre-Deploy runs once per deploy in the runtime network (internal DB hostname
-    # resolves here) — migrations + seeding live here, not in the build.
-    preDeployCommand: ./predeploy.sh
-    # start.sh runs a fast best-effort migrate (safety net) then launches Gunicorn.
-    # 1 worker, 4 threads (gthread) — Render Starter plan is 512 MB RAM.
+    # Free web services have no Pre-Deploy step. start.sh applies migrations
+    # strictly in the runtime network before it launches Gunicorn.
+    # 1 worker, 4 threads (gthread) — Render Free plan is 512 MB RAM.
     # gthread lets 4 requests run concurrently (I/O overlap) without forking
     # a second full Python process. max-requests recycles the worker after
     # 300 requests to prevent WeasyPrint PDF memory from accumulating.
@@ -79,6 +64,17 @@ services:
 
       - key: WEB_CONCURRENCY
         value: "1"                       # belt-and-suspenders: matches --workers above
+
+      # Bound glibc allocator arenas for the four-thread worker. This reduces
+      # fragmentation after NumPy/Pandas/PDF requests on a 512 MB instance.
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+
+      # No always-on Celery worker on the low-cost topology. The two remaining
+      # staff-triggered `.delay()` call sites execute synchronously instead of
+      # trying to connect to a broker that is intentionally absent.
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "True"
 
       - key: DEBUG
         value: "False"                   # always False in production
